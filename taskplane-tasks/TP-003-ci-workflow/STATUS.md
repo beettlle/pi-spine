@@ -67,6 +67,9 @@
 | 2026-05-31 | Step 1 complete | Added .github/workflows/ci.yml |
 | 2026-05-31 | Step 2 complete | npm ci, typecheck, CLI smoke pass locally |
 | 2026-05-31 | Step 3 complete | README badge + CI section; discoveries logged |
+| 2026-05-31 23:58 | Agent reply | TP-003 complete. Added .github/workflows/ci.yml (push/PR to main: npm ci, typecheck, npm test --if-present, CLI smoke with doctor non-fatal until TP-002). README badge + CI section. All CI commands pa |
+| 2026-05-31 23:58 | Worker iter 1 | done in 81s, tools: 42 |
+| 2026-05-31 23:58 | Task complete | .DONE created |
 
 ---
 
