@@ -1,10 +1,10 @@
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { registerSpineSlashCommands } from "./spine/slash-commands.ts";
+
 /**
- * pi-spine orchestrator extension (Phase 0 stub).
- * Slash commands and batch engine land in later phases.
+ * pi-spine orchestrator extension (Phase 0).
+ * Registers PRD §15.1 slash command stubs; batch engine lands in later phases.
  */
-export default function spineOrchestrator() {
-	return {
-		name: "spine-orchestrator",
-		description: "pi-spine batch orchestration (stub)",
-	};
+export default function spineOrchestrator(pi: ExtensionAPI): void {
+	registerSpineSlashCommands(pi);
 }

@@ -133,7 +133,22 @@ spine init --tasks-root taskplane-tasks --preset taskplane-compat
 spine doctor
 ```
 
-In a pi session:
+In a pi session (Phase 0 — slash commands are registered stubs; batch engine lands in later phases):
+
+| Command | Status |
+|---------|--------|
+| `/spine` | Stub — project guide / batch execute (`/spine [all\|paths]`, Phase 2+) |
+| `/spine-plan` | Stub — preview waves and lanes |
+| `/spine-status` | Stub — batch and lane health |
+| `/spine-pause` | Stub — pause after current tasks |
+| `/spine-resume` | Stub — resume paused or failed batch |
+| `/spine-abort` | Stub — abort batch |
+| `/spine-gate` | Stub — gate inspection and resolution |
+| `/spine-integrate` | Stub — merge orch branch (gate required) |
+| `/spine-settings` | Stub — interactive configuration |
+| `/spine-deps` | Stub — dependency graph |
+
+Each stub replies with a notification pointing to `spine help` and a future phase. Example flow once implemented:
 
 ```text
 /spine-plan all    # preview waves and lanes
