@@ -32,3 +32,12 @@ name: task-worker
   To use this file as a FULLY STANDALONE prompt (ignoring the base),
   uncomment `standalone: true` above and write the complete prompt below.
 ═══════════════════════════════════════════════════════════════════ -->
+
+## pi-spine project rules
+
+- **Package manager:** Use `npm` (not pnpm, yarn, or bun).
+- **Commit prefix:** `{taskId} step {n}: {title}` (e.g. `TP-005 step 1: fix testing config`).
+- **During steps:** Run `npm run typecheck` after code changes to verify TypeScript compiles.
+- **At verification gate:** Run full `npm test` when the script exists; until then, `npm run typecheck` is the test gate.
+- **Runtime:** ESM modules with Node.js 22+ (`"type": "module"`, `engines.node >= 22`).
+- **Style:** Match existing code in touched files — minimal scope, no unrelated refactors.

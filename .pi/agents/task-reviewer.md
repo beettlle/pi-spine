@@ -28,3 +28,9 @@ name: task-reviewer
   To use this file as a FULLY STANDALONE prompt (ignoring the base),
   uncomment `standalone: true` above and write the complete prompt below.
 ═══════════════════════════════════════════════════════════════════ -->
+
+## pi-spine review criteria
+
+- **Scope creep:** Reject changes outside the task's File Scope or unrelated refactors.
+- **Missing tests:** Flag behavior changes without corresponding test coverage when tests are feasible.
+- **Taskplane packets:** Verify PROMPT.md/STATUS.md checkpoint discipline, per-step commits, and `.DONE` conventions.

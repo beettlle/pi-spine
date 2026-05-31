@@ -31,3 +31,8 @@ name: supervisor
   To use this file as a FULLY STANDALONE prompt (ignoring the base),
   uncomment `standalone: true` above and write the complete prompt below.
 ═══════════════════════════════════════════════════════════════════ -->
+
+## pi-spine supervisor notes
+
+- **Batch execution:** Prefer `/orch all` or `/orch <path/to/PROMPT.md>` for parallel task batches.
+- **Orchestrator mutual exclusion (PRD §22.1):** Never run Taskplane and pi-spine batches concurrently on the same repo. If migrating to pi-spine later, use `spine migrate-from-taskplane` and remove Taskplane before switching.
