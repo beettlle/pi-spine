@@ -1,0 +1,52 @@
+{
+  "name": "pi-spine",
+  "version": "0.0.1",
+  "description": "Orchestration spine for long-running pi development",
+  "keywords": [
+    "pi-package",
+    "ai",
+    "agent",
+    "orchestration",
+    "task-runner",
+    "parallel"
+  ],
+  "bin": {
+    "spine": "bin/spine.mjs"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/spine-orchestrator.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "minPiVersion": "0.60.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "doctor": "node bin/spine.mjs doctor",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "files": [
+    "bin/",
+    "extensions/",
+    "skills/",
+    "templates/"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.18",
+    "typescript": "5.6.3"
+  },
+  "license": "MIT"
+}

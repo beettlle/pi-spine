@@ -1,0 +1,30 @@
+{
+  "configVersion": 1,
+  "taskRunner": {
+    "project": {
+      "name": "pi-spine",
+      "description": ""
+    },
+    "paths": {
+      "tasks": "taskplane-tasks"
+    },
+    "testing": {
+      "commands": {
+        "unit": "agents run this to verify work",
+        "build": "agents run this after tests"
+      }
+    },
+    "taskAreas": {
+      "general": {
+        "path": "taskplane-tasks",
+        "prefix": "TP",
+        "context": "taskplane-tasks/CONTEXT.md"
+      }
+    }
+  },
+  "orchestrator": {
+    "orchestrator": {
+      "maxLanes": 5
+    }
+  }
+}
