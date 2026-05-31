@@ -1,5 +1,7 @@
 # pi-spine
 
+[![CI](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml/badge.svg)](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml)
+
 **Orchestration spine for long-running pi development.**
 
 pi-spine is a [pi](https://pi.dev) package that helps you run parallel, multi-day agent batches on real codebases. It combines the strongest ideas from [Taskplane](https://pi.dev/packages/taskplane), [Babysitter](https://github.com/a5c-ai/babysitter), and [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) without asking you to operate three separate orchestrators—or pick one and miss what the others do well.
@@ -167,6 +169,10 @@ Do **not** run Taskplane and pi-spine batches on the same repo at the same time.
 ## Project status
 
 **Early development.** pi-spine is designed as a personal orchestration spine first, publishable as `npm:pi-spine` when stable. API and behavior may change before v1.0.
+
+## Continuous integration
+
+Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows/ci.yml): `npm ci`, `npm run typecheck`, `npm test` (when defined), and CLI smoke checks (`spine version`, `help`, `doctor`).
 
 ---
 
