@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-012
+**Next Task ID:** TP-013
 **Orchestration policy:** **Option B** — prioritize pi-spine **Phase 2/3** (own worker + recovery); Taskplane `/orch` only for bounded, serial dogfood until `/spine-retry-task` exists.
 
 ---
@@ -45,8 +45,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-012 | *Packet TBD* — minimal `spine batch run`, one worktree, pi worker | **Next** | TP-011 |
-| TP-013 | *Planned* — checkpoint heartbeat (FR-WORK-09, §18.4) | Staged | TP-012 |
+| TP-012 | Single-lane batch engine (`spine batch start`, worktree, pi worker) | **Staged** — packet ready | TP-011 |
+| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | Staged | TP-012 |
 | TP-014 | *Planned* — orchestration journal + `.spine/batch-state.json` | Staged | TP-012 |
 
 ### Phase 3 — Multi-lane + recovery (after Phase 2)
@@ -83,8 +83,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 ## Next steps (Option B)
 
-1. **Draft TP-012 packet** — Phase 2: single-lane worker + minimal batch start (`/spine` or `spine batch run`); worktree + STATUS + step commits.
-2. **Implement Phase 2 serially** — dogfood **one task per batch** on pi-spine engine (not Taskplane workers).
+1. **Run TP-012** — `/orch taskplane-tasks/TP-012-single-lane-worker/PROMPT.md` **or** implement serially on `main` (prefer pi-spine engine self-dogfood once Step 4 lands).
+2. **Dogfood one task per batch** — `spine batch start <id>` only; no Taskplane workers for spine tasks.
 3. **Phase 3 next** — journal, atomic retry, progress-aware stall, abort archive (closes GAP-RETRY/STALL/ABORT/MERGE).
 4. **Phase 4+** — review fail-closed, integrate gate, dashboard (GAP-UX-03), npm publish.
 
@@ -99,7 +99,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | ~~P0~~ | Batch preflight (FR-BATCH-11) | 1 | **Done** |
 | ~~P0~~ | Batch reconciliation UX (FR-BATCH-12–18) | 1b | **Done** |
 | ~~P0~~ | CI green on `main` | 1c | **Done** (TP-011) |
-| **P0** | Single-lane worker + batch start | 2 | **Next (TP-012)** |
+| **P0** | Single-lane worker + batch start | 2 | **Staged (TP-012 packet)** |
 | **P1** | Orchestration journal | 2–3 | Staged |
 | **P1** | Atomic task+segment retry (§18.5) | 3 | Staged |
 | **P1** | Progress-aware stall (§18.4) | 3 | Staged |
@@ -136,7 +136,7 @@ Run full `npm test` (49 tests) for any batch- or worker-touching change.
 
 ## Technical Debt / Future Work
 
-- **TP-012 packet** — not yet written; next housekeeping deliverable after this CONTEXT sync.
+- **TP-012 packet** — `taskplane-tasks/TP-012-single-lane-worker/PROMPT.md` (execute when ready).
 - FR-INIT-05 `spine init --preset taskplane-compat` (defer until Phase 2 worker stable).
 - Taskplane `.pi/batch-state.json` adapter — **done** in TP-009 reconciliation reader (dogfood only).
 - Do not run Taskplane and pi-spine batches concurrently (PRD §22.1).
