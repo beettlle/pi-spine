@@ -1,0 +1,21 @@
+taskplane-tasks/CONTEXT.md
+  s_cc44f834948ce7::t_ef3379f6c35c89 12
+taskplane-tasks/TP-013-checkpoint-heartbeat/STATUS.md
+  s_cc44f834948ce7::t_1d900445ad7256 3-4,14-43,51-52,60-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "bc6be3e45f924a6c9dff7021bf5b1a950c5ada27",
+  "prompts": {},
+  "sessions": {
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
