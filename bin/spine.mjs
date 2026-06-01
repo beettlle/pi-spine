@@ -424,9 +424,26 @@ async function cmdNext(args) {
 
 async function cmdIntegrate(args) {
 	const { runSpineIntegrate } = await import("./spine-integrate.mjs");
-const { runSpineReviewStep } = await import("./spine-review-step.mjs");
 	const result = runSpineIntegrate({ projectRoot: process.cwd(), args });
 	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
+async function cmdGate(args) {
+	const { runSpineGate } = await import("./spine-gate.mjs");
+	const result = runSpineGate({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
+async function cmdReview(args) {
+	const sub = args[0];
+	if (sub !== "step") {
+		die(`Unknown review subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine review step --step N${c.reset} for usage.`);
+	}
+	const { runSpineReviewStep } = await import("./spine-review-step.mjs");
+	const result = runSpineReviewStep({ projectRoot: process.cwd(), args: args.slice(1) });
+	process.stdout.write(result.output ?? "");
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
@@ -477,6 +494,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
   ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
   ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
+ ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
@@ -500,7 +518,8 @@ ${c.bold}Examples:${c.reset}
  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine review step --step N [--type plan|code] # cross-model step review
- spine integrate [--dry-run]                   # merge orch branch into main
+ spine gate [approve|reject|status]            # integrate gate FSM
+ spine integrate [--dry-run] [--force-integrate]  # merge orch branch into main
   spine journal replay --batch 20260601T120000  # audit timeline for a batch
   spine state validate                          # validate active batch-state.json
   spine next                                    # suggested next command (dry-run)
@@ -543,6 +562,12 @@ if (isMainModule) {
 				break;
 			case "next":
 				await cmdNext(args);
+				break;
+			case "review":
+				await cmdReview(args);
+				break;
+			case "gate":
+				await cmdGate(args);
 				break;
 			case "integrate":
 				await cmdIntegrate(args);

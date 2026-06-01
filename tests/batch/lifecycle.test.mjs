@@ -7,6 +7,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
 import { archiveBatchStatePath, completeBatch, dismissBatch } from "../../src/batch/lifecycle.mjs";
+import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { batchHistoryPath } from "../../src/batch/state.mjs";
 
@@ -124,6 +126,11 @@ test("complete refused when mergeResults succeeded but orch not on main", async 
 		assert.equal(refused.ok, false);
 		assert.equal(refused.failureClass, "NeedsIntegrate");
 		assert.equal(refused.suggestedCommand, "spine integrate");
+
+		const batchId = String(batchFixture.batchId ?? batchFixture.id ?? "");
+		const config = loadSpineConfig(projectRoot).config;
+		openIntegrateGate({ projectRoot, batchId, batchState: batchFixture, config });
+		approveIntegrateGate({ projectRoot, batchId });
 
 		const integrated = integrateOrchToBase({ projectRoot });
 		assert.equal(integrated.ok, true);
