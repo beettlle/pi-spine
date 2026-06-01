@@ -37,11 +37,11 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine",
 		description:
-			"Detect project state; run batch (usage: /spine <task-id>; single-task Phase 2) ",
+			"Detect project state; run batch (usage: /spine <task-id|pending|all>; pending = unfinished tasks) ",
 	},
 	{
 		name: "spine-plan",
-		description: "Preview waves and lanes (usage: /spine-plan <all|paths>)",
+		description: "Preview waves and lanes (usage: /spine-plan <all|pending|paths>)",
 	},
 	{
 		name: "spine-status",
@@ -414,7 +414,7 @@ Run \`spine preflight\` for details.`,
 
 → ${reconciliation.suggestedCommand ?? "spine preflight"}
 
-Run \`/spine <task-id>\` or \`/spine all\` after preflight (single-task batches only in Phase 2).`,
+Run \`/spine pending\`, \`/spine all\` (pending-filtered), or \`/spine <task-id>\` after preflight. CLI alias: \`spine run pending\`.`,
 		"info",
 	);
 }
