@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { readAbortSignal } from "./abort.mjs";
 import {
 	collectProgressSignals,
 	computeStallDeadline,
@@ -89,6 +90,7 @@ function collectChildOutput(child) {
  * @param {string} [params.laneCorrelationId]
  * @param {object} [params.config]
  * @param {(timestamp: number) => void} [params.onHeartbeat]
+ * @param {(pid: number) => void} [params.onWorkerPid]
  * @param {number} [params.timeoutMs]
  */
 export async function runWorker({
@@ -102,6 +104,7 @@ export async function runWorker({
 	laneCorrelationId,
 	config = {},
 	onHeartbeat,
+	onWorkerPid,
 	timeoutMs = DEFAULT_TIMEOUT_MS,
 }) {
 	const donePath = path.join(taskFolder, ".DONE");
@@ -122,11 +125,29 @@ export async function runWorker({
 	let stallWarningSent = false;
 
 	const child = spawnWorkerChild({ worktreePath, taskFolder, useStub, timeoutMs });
+	onWorkerPid?.(child.pid ?? 0);
 	const childDone = collectChildOutput(child);
 
 	while (true) {
 		if (fs.existsSync(donePath)) {
 			break;
+		}
+
+		if (projectRoot && batchId) {
+			const abortSignal = readAbortSignal(projectRoot, batchId);
+			if (abortSignal) {
+				const hard = Boolean(abortSignal.hard);
+				child.kill(hard ? "SIGKILL" : "SIGTERM");
+				const { output } = await childDone;
+				return {
+					ok: false,
+					exitCode: hard ? 137 : 130,
+					mode: useStub ? "stub" : "pi",
+					output,
+					classification: "aborted",
+					doneFound: fs.existsSync(donePath),
+				};
+			}
 		}
 
 		const now = Date.now();

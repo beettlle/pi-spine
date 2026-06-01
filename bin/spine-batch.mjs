@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { abortBatch } from "../src/batch/abort.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
@@ -70,6 +71,7 @@ function parseBatchArgs(args) {
 			(t) =>
 				t === "dismiss" ||
 				t === "complete" ||
+				t === "abort" ||
 				t === "start" ||
 				t === "pause" ||
 				t === "resume" ||
@@ -82,6 +84,7 @@ function parseBatchArgs(args) {
 	return {
 		json: flags.has("--json"),
 		force: flags.has("--force"),
+		hard: flags.has("--hard"),
 		detectManualMerge: flags.has("--detect-manual-merge"),
 		dryRun,
 		skipPreflight,
@@ -108,6 +111,20 @@ export async function runSpineBatch(options) {
 			batchId: parsed.batchId,
 			reason: parsed.reason,
 			force: parsed.force,
+		});
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: formatLifecycleHuman(result, parsed.json),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "abort") {
+		const result = abortBatch({
+			projectRoot,
+			batchId: parsed.batchId,
+			reason: parsed.reason,
+			hard: parsed.hard,
 		});
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
@@ -266,7 +283,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

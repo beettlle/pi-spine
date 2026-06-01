@@ -151,6 +151,25 @@ function runSpineBatchDismiss(argsText: string, cwd = process.cwd()) {
 	};
 }
 
+function runSpineBatchAbort(argsText: string, cwd = process.cwd()) {
+	const tokens = ["abort", ...String(argsText ?? "").trim().split(/\s+/).filter(Boolean)];
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "batch", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function runSpineBatchPauseResume(
 	subcommand: "pause" | "resume",
 	argsText: string,
@@ -456,6 +475,16 @@ async function spineRetryTaskHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || `task ${taskId} reset for retry`, "info");
 }
 
+async function spineAbortHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineBatchAbort(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch abort failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "batch aborted", "info");
+}
+
 async function spineSkipTaskHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const taskId = args.trim();
 	if (!taskId) {
@@ -516,9 +545,11 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 												? spineRetryTaskHandler
 												: name === "spine-skip-task"
 													? spineSkipTaskHandler
-													: name === "spine-integrate"
-												? spineIntegrateHandler
-												: stubHandler(name),
+													: name === "spine-abort"
+														? spineAbortHandler
+														: name === "spine-integrate"
+															? spineIntegrateHandler
+															: stubHandler(name),
 		});
 	}
 }

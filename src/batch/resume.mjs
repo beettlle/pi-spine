@@ -265,6 +265,12 @@ export async function resumeBatch({ projectRoot, force = false }) {
 				state.lanes[0].lastHeartbeatAt = timestamp;
 				saveSpineBatchState(projectRoot, state);
 			},
+			onWorkerPid: (pid) => {
+				if (pid > 0) {
+					state.lanes[0].workerPid = pid;
+					saveSpineBatchState(projectRoot, state);
+				}
+			},
 		});
 
 		if (!workerResult.ok) {
