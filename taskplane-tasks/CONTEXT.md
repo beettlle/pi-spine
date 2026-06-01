@@ -9,7 +9,7 @@
 
 ## Current State
 
-**Phases 0–1c, TP-012–TP-015 are on `main`.** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **77/77** tests pass locally (`SPINE_WORKER_STUB=1`). TP-014/TP-015 required manual worktree land once before lane auto-commit shipped; engine now auto-commits lane work and rejects `EmptyMerge` at merge time (`777adcf`).
+**Phases 0–1c, TP-012–TP-016 are on `main` (TP-016 landing in this branch).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **86/86** tests pass locally (`SPINE_WORKER_STUB=1`). Engine auto-commits lane work, rejects `EmptyMerge` at merge time (TP-015), and `spine batch complete` / `spine integrate` enforce orch→`main` landing (TP-016).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -59,7 +59,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-016 | Integrate validation + `spine integrate` (**run first**; was “016a”) | **Staged** | TP-015 |
+| TP-016 | Integrate validation + `spine integrate` | **Done** | TP-015 |
 | TP-017 | Atomic retry + skip-task (narrowed ex–TP-016) | **Staged** | TP-016 |
 | TP-018 | Archive-first abort | **Staged** | TP-017 |
 | TP-019 | Multi-lane engine + mixed-outcome merge | **Staged** | TP-018 |
@@ -97,8 +97,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 ## Next steps (Option B)
 
-1. **Run TP-016** — integrate validation + `spine integrate` (wave 8).
-2. **Run TP-017** — atomic retry + skip (wave 9; unblocks `/orch` policy).
+1. **Run TP-017** — atomic retry + skip (wave 9; unblocks `/orch` policy).
 3. **Run TP-018** — archive-first abort (wave 10).
 4. **Run TP-019** — multi-lane + mixed-outcome merge (wave 11).
 5. **Dogfood** — one `spine batch start <id>` per task on `main` that already contains prior tasks’ code.
@@ -118,7 +117,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | ~~P0~~ | Single-lane worker + batch start | 2 | **Done** (TP-012, TP-013) |
 | **P1** | Orchestration journal | 2–3 | **Done (TP-014)** |
 | **P1** | Lane commit + segments + resume | 3 | **Done (TP-015)** |
-| **P1** | Integrate validation + `spine integrate` | 3 | **Staged (TP-016)** |
+| **P1** | Integrate validation + `spine integrate` | 3 | **Done (TP-016)** |
 | **P1** | Atomic retry + skip (§18.5) | 3 | **Staged (TP-017)** |
 | **P1** | Archive-first abort (§18.6) | 3 | **Staged (TP-018)** |
 | P2 | Multi-lane + mixed-outcome merge | 3 | **Staged (TP-019)** |

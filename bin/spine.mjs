@@ -422,6 +422,13 @@ async function cmdNext(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdIntegrate(args) {
+	const { runSpineIntegrate } = await import("./spine-integrate.mjs");
+	const result = runSpineIntegrate({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdPlan(args) {
 	const json = args.includes("--json");
 	const scope = args.find((a) => !a.startsWith("--")) ?? "all";
@@ -468,6 +475,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
   ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
+  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
@@ -489,6 +497,7 @@ ${c.bold}Examples:${c.reset}
   spine batch start TP-012                      # single-task batch (Phase 2)
  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
+  spine integrate [--dry-run]                   # merge orch branch into main
   spine journal replay --batch 20260601T120000  # audit timeline for a batch
   spine state validate                          # validate active batch-state.json
   spine next                                    # suggested next command (dry-run)
@@ -531,6 +540,9 @@ if (isMainModule) {
 				break;
 			case "next":
 				await cmdNext(args);
+				break;
+			case "integrate":
+				await cmdIntegrate(args);
 				break;
 			case "version":
 			case "--version":

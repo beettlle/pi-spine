@@ -37,7 +37,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "needs_merge":
 			return "/spine-resume --force";
 		case "needs_integrate":
-			return "/spine-integrate";
+			return "spine integrate";
 		case "running":
 			return "/spine-status --diagnose";
 		case "paused":
@@ -109,7 +109,7 @@ export function buildAlternatives(diagnosis) {
 		case "needs_merge":
 			return ["/spine-status --diagnose", ...common];
 		case "needs_integrate":
-			return ["/spine-gate", ...common];
+			return ["/spine-integrate", "/spine-gate", ...common];
 		case "running":
 			return ["/spine-pause", ...common];
 		case "paused":

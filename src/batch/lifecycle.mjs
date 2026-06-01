@@ -5,9 +5,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { assertOrchIntegratable } from "./integrate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
-import { loadBatchStateFile, reconcileBatch } from "./reconcile.mjs";
+import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
@@ -268,6 +269,36 @@ export function completeBatch(ctx) {
 				? "spine status --diagnose"
 				: "spine batch complete --detect-manual-merge",
 			alternatives: ["spine batch dismiss", ...(output.alternatives ?? [])],
+			batchId,
+		};
+	}
+
+	const batch = parseBatchState(loaded.raw, loaded.path ?? "");
+	const integratable = assertOrchIntegratable(projectRoot, {
+		baseBranch: batch?.baseBranch ?? String(loaded.raw.baseBranch ?? "main"),
+		orchBranch: batch?.orchBranch ?? loaded.raw.orchBranch ?? null,
+		mergeResultsEmpty: signals.mergeResultsEmpty,
+		orchMergedToBase: Boolean(signals.git?.orchMergedToBase),
+	});
+
+	if (!integratable.ok && !manualMergeOk) {
+		const output = buildDiagnosisOutput(
+			integratable.failureClass === "NeedsIntegrate" ? "needs_integrate" : (diagnosis ?? "paused"),
+			{
+				batchId,
+				phase: reconciliation.phase,
+				gitMerged: false,
+			},
+		);
+		return {
+			ok: false,
+			exitCode: 1,
+			error: integratable.error,
+			failureClass: integratable.failureClass,
+			...output,
+			headline: `${integratable.error} — complete refused`,
+			suggestedCommand: integratable.suggestedCommand ?? output.suggestedCommand,
+			alternatives: output.alternatives,
 			batchId,
 		};
 	}

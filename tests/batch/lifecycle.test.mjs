@@ -7,6 +7,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
 import { archiveBatchStatePath, completeBatch, dismissBatch } from "../../src/batch/lifecycle.mjs";
+import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { batchHistoryPath } from "../../src/batch/state.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
@@ -87,6 +88,48 @@ test("complete with --detect-manual-merge succeeds when orch merged to main", as
 		const archivePath = archiveBatchStatePath(projectRoot, fixture.batchId);
 		assert.ok(fs.existsSync(archivePath));
 		assert.ok(!fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")));
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("complete refused when mergeResults succeeded but orch not on main", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		const orchBranch = fixture.orchBranch;
+		const batchFixture = {
+			...fixture,
+			phase: "completed",
+			endedAt: Date.now(),
+			mergeResults: [
+				{
+					waveIndex: 0,
+					status: "succeeded",
+					failedLane: null,
+					failureReason: null,
+					mergeCommit: "abc1234",
+				},
+			],
+		};
+		writePiBatchState(projectRoot, batchFixture);
+
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "orch-only.txt"), "not on main yet", "utf-8");
+		execFileSync("git", ["add", "orch-only.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch only"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const refused = completeBatch({ projectRoot });
+		assert.equal(refused.ok, false);
+		assert.equal(refused.failureClass, "NeedsIntegrate");
+		assert.equal(refused.suggestedCommand, "spine integrate");
+
+		const integrated = integrateOrchToBase({ projectRoot });
+		assert.equal(integrated.ok, true);
+
+		const completed = completeBatch({ projectRoot });
+		assert.equal(completed.ok, true);
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

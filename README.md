@@ -172,10 +172,22 @@ Archive-first lifecycle for terminal limbo (FR-BATCH-15–16, §18.6):
 ```bash
 spine batch dismiss --reason "manual recovery"     # limbo_stale, completed_manual, aborted
 spine batch complete --detect-manual-merge         # after manual merge to main
-spine batch complete --batch ID                    # all tasks succeeded + merge satisfied
+spine batch complete --batch ID                    # orch on main + merge satisfied (FR-BATCH-16)
+spine integrate [--dry-run]                        # merge orch branch → main (FR-INT-01)
 spine next                                         # print suggestedCommand from reconciliation
 spine next --execute                               # run suggested command (dismiss, preflight, etc.)
 ```
+
+**Post-batch landing on `main`** (after `spine batch start` succeeds):
+
+1. `spine status --diagnose` — expect `needs_integrate` when orch has commits not on `main`
+2. `spine integrate` — local `--no-ff` merge of `orchBranch` → `baseBranch` (journal `integrate.started` / `integrate.completed`)
+3. `spine batch complete` — archive batch record (refuses if orch is ahead of `main` but not merged; refuses **empty orch** when `mergeResults` claim success)
+4. Push `main` to your remote when ready (pi-spine never auto-pushes)
+
+`spine batch complete` validates orch integration using `countCommitsAhead` (same guard family as lane **EmptyMerge** at merge time). Gate approval (`gates.requireBeforeIntegrate`) is logged as a Phase 3 stub — full gate FSM is Phase 4.
+
+In pi: `/spine-integrate` delegates to `spine integrate`.
 
 **Limbo recovery playbook** (Taskplane batch red, all tasks green, empty `mergeResults`):
 
@@ -283,7 +295,7 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-resume` | Stub — resume paused or failed batch |
 | `/spine-abort` | Stub — abort batch |
 | `/spine-gate` | Stub — gate inspection and resolution |
-| `/spine-integrate` | Stub — merge orch branch (gate required) |
+| `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; gate stub in Phase 3) |
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
 

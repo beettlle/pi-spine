@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
+import { countCommitsAhead } from "./lane-commit.mjs";
 import { parseSpineBatchState } from "./readers/spine-state.mjs";
 import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
 
@@ -248,6 +249,7 @@ export function inspectGitState(ctx) {
 		orchBranchExists: false,
 		orchMergedToBase: false,
 		mergedOrchBranch: null,
+		orchCommitsAhead: null,
 	};
 
 	if (!result.inGitRepo) return result;
@@ -266,6 +268,15 @@ export function inspectGitState(ctx) {
 			result.orchMergedToBase = true;
 			result.mergedOrchBranch = branch;
 			break;
+		}
+	}
+
+	const resolvedOrch = orchBranch && gitRefExists(projectRoot, orchBranch) ? orchBranch : result.mergedOrchBranch;
+	if (resolvedOrch && gitRefExists(projectRoot, resolvedOrch) && !result.orchMergedToBase) {
+		try {
+			result.orchCommitsAhead = countCommitsAhead(projectRoot, baseBranch, resolvedOrch);
+		} catch {
+			result.orchCommitsAhead = null;
 		}
 	}
 
@@ -312,7 +323,12 @@ export function deriveDiagnosis(signals) {
 	} = signals;
 
 	if (phase === "aborted") return { diagnosis: "aborted", failedTaskId: null };
-	if (phase === "completed" && endedAt != null) return { diagnosis: "completed", failedTaskId: null };
+	if (phase === "completed" && endedAt != null) {
+		if (git.orchBranchExists && !git.orchMergedToBase) {
+			return { diagnosis: "needs_integrate", failedTaskId: null };
+		}
+		return { diagnosis: "completed", failedTaskId: null };
+	}
 
 	const limboSignals =
 		allTasksTerminalSuccess &&
