@@ -5,6 +5,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { readJournalEvents, readJournalTail } from "./journal.mjs";
+import { generateBatchPostMortem } from "./postmortem.mjs";
+import { reconcileBatch } from "./reconcile.mjs";
 
 const TASKPLANE_CONFIG_PATH = ".pi/taskplane-config.json";
 
@@ -157,7 +160,10 @@ export function collectEvidenceBundle(ctx) {
 	/** @type {string[]} */
 	const evidenceRefs = [];
 
-	fs.writeFileSync(path.join(dir, "summary.md"), buildTaskScorecard(batchState), "utf-8");
+	const reconciliation = reconcileBatch({ projectRoot, batchState, verbose: true });
+	const journalTail = readJournalTail(readJournalEvents(projectRoot, batchId));
+	const summary = generateBatchPostMortem(batchState, journalTail, reconciliation, projectRoot);
+	fs.writeFileSync(path.join(dir, "summary.md"), summary, "utf-8");
 	evidenceRefs.push("evidence/summary.md");
 
 	const baseBranch = batchState?.baseBranch ?? config?.baseBranch ?? "main";

@@ -1,3 +1,6 @@
+import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
+import { generateBatchPostMortem } from "../src/batch/postmortem.mjs";
+import { readJournalEvents, readJournalTail } from "../src/batch/journal.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 
 /**
@@ -56,6 +59,18 @@ export function runSpineStatus(options) {
 		lines.push("", "  Segment frontier:");
 		for (const segment of result.signals.segments) {
 			lines.push(`    ${segment.segmentId}: ${segment.status} (${segment.classification})`);
+		}
+	}
+
+	if (verbose && result.batchId) {
+		const loaded = loadBatchStateFile(projectRoot, result.batchStatePath ?? null);
+		if (loaded.raw) {
+			const journalTail = readJournalTail(readJournalEvents(projectRoot, result.batchId));
+			const postMortem = generateBatchPostMortem(loaded.raw, journalTail, result, projectRoot);
+			lines.push("", "  Post-mortem:", "");
+			for (const line of postMortem.split("\n")) {
+				lines.push(line ? `    ${line}` : "");
+			}
 		}
 	}
 
