@@ -32,7 +32,34 @@ async function createProjectFixture() {
 function writeTask(projectRoot, taskId, slug = "task") {
 	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-${slug}`);
 	fs.mkdirSync(folder, { recursive: true });
-	fs.writeFileSync(path.join(folder, "PROMPT.md"), `# ${taskId}\n`, "utf-8");
+
+	const title = `${taskId} ${slug}`;
+	const prompt = `# Task: ${taskId} — ${title}
+
+## Mission
+Write something.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/${slug}/${taskId}.txt\`
+
+## Steps
+### Step 0: Implement
+- [ ] a
+
+### Step 1: Testing & Verification
+- [ ] t
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- do not change files outside File Scope
+`;
+
+	fs.writeFileSync(path.join(folder, "PROMPT.md"), prompt, "utf-8");
 }
 
 function writeDependencies(projectRoot, tasks) {
@@ -43,10 +70,32 @@ function writeDependencies(projectRoot, tasks) {
 	);
 }
 
-test("runPreflightPlanCheck returns TP-008 placeholder shape", () => {
-	const plan = runPreflightPlanCheck({ projectRoot: process.cwd() });
-	assert.equal(plan.status, "stub");
-	assert.match(plan.message, /TP-008/);
+test("runPreflightPlanCheck builds wave plan during preflight", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		writeTask(projectRoot, "TP-001", "alpha");
+		writeTask(projectRoot, "TP-002", "beta");
+		writeDependencies(projectRoot, { "TP-001": [], "TP-002": ["TP-001"] });
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const result = runBatchPreflight({
+			projectRoot,
+			skipDoctor: true,
+		});
+
+		assert.equal(result.ok, true);
+		const planCheck = result.checks.find((check) => check.id === "plan");
+		assert.ok(planCheck);
+		assert.equal(planCheck.ok, true);
+
+		const waveLines = String(planCheck.message).match(/Wave \d+:/g) ?? [];
+		assert.equal(waveLines.length, 2);
+		assert.ok(String(planCheck.message).includes("Wave 0:"));
+		assert.ok(String(planCheck.message).includes("Wave 1:"));
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
 });
 
 test("runReconciliationCheck stub returns expected placeholder shape", () => {

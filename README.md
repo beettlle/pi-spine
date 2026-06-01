@@ -133,6 +133,7 @@ pi install npm:pi-spine
 cd my-project
 spine init --tasks-root taskplane-tasks --preset taskplane-compat
 spine doctor
+spine plan all
 spine preflight
 ```
 
@@ -145,16 +146,29 @@ Run **`spine preflight`** before every batch (FR-BATCH-11). It verifies:
 | No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
 | Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
 | Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
-| Wave plan | Stub in Phase 1 (TP-008 completes wave plan printing) |
+| Wave plan | Dependency waves and lane assignment (same output as `spine plan all`) |
 
 Use `spine preflight --json` for automation. Exit code is non-zero when any check fails.
 
-In a pi session (Phase 0 — most slash commands are stubs; `/spine` runs preflight before batch guidance):
+### Wave planning
+
+Preview dependency waves and parallel lanes before starting a batch (FR-SCHED-01–06):
+
+```bash
+spine plan all                              # all discovered tasks
+spine plan TP-008                           # explicit task ID(s)
+spine plan 'taskplane-tasks/TP-008-*'       # glob on task folder paths
+spine plan all --json                       # JSON plan to stdout
+```
+
+Each `spine plan` run writes a plan artifact to `.spine/runtime/plan-{timestamp}.json`.
+
+In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` invokes the planner):
 
 | Command | Status |
 |---------|--------|
 | `/spine` | Runs batch preflight; guides batch execute (`/spine [all\|paths]`, Phase 2+) |
-| `/spine-plan` | Stub — preview waves and lanes |
+| `/spine-plan` | Preview waves and lanes (usage: `/spine-plan <all\|paths>`) |
 | `/spine-status` | Stub — batch and lane health |
 | `/spine-pause` | Stub — pause after current tasks |
 | `/spine-resume` | Stub — resume paused or failed batch |
@@ -164,7 +178,7 @@ In a pi session (Phase 0 — most slash commands are stubs; `/spine` runs prefli
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
 
-Each stub replies with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow once implemented:
+Most slash commands remain stubs; **`/spine`** and **`/spine-plan`** are implemented. Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)

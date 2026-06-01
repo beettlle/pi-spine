@@ -4,6 +4,8 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { runDoctorChecks } from "./spine.mjs";
 import { runReconciliationCheck } from "../src/batch/reconcile.mjs";
+import { buildPlan } from "../src/planner/index.mjs";
+import { formatPlanHuman } from "./spine-plan.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
@@ -362,10 +364,40 @@ export function checkDependenciesJson(ctx) {
  * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
-	return {
-		status: "stub",
-		message: "Wave plan available after TP-008",
-	};
+	const { projectRoot, configResult } = ctx;
+	const config = configResult?.config;
+
+	if (!config || configResult?.error) {
+		const msg = configResult?.error?.message ?? 'spine-config.json not initialized';
+		return {
+			status: "error",
+			message: `Cannot build plan: ${msg}`,
+		};
+	}
+
+	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
+	if (!tasksRootPath) {
+		return {
+			status: "error",
+			message: "Cannot build plan: tasksRoot not configured",
+		};
+	}
+
+	try {
+		const plan = buildPlan({ scope: "all", config, tasksRoot: tasksRootPath });
+		const waveCount = plan.waves?.length ?? 0;
+		return {
+			status: "ok",
+			message: `${formatPlanHuman(plan).trimEnd()}`,
+			details: { waves: waveCount },
+		};
+	} catch (err) {
+		const msg = err?.message ?? String(err);
+		return {
+			status: "error",
+			message: `Failed to build plan: ${msg}`,
+		};
+	}
 }
 
 /**
@@ -401,7 +433,7 @@ export function runBatchPreflight(options) {
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(
-		makeCheck("plan", plan.status === "stub", plan.message, {
+		makeCheck("plan", plan.status === "ok", plan.message, {
 			details: plan,
 		}),
 	);
