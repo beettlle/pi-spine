@@ -7,6 +7,7 @@ import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 
@@ -158,6 +159,11 @@ export function dismissBatch(ctx) {
 	}
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+	const postMortemPath = writeBatchPostMortem({
+		projectRoot,
+		batchState: loaded.raw,
+		reconciliation,
+	});
 	const endedAt = Date.now();
 	appendBatchHistoryEntry(projectRoot, {
 		batchId,
@@ -166,6 +172,7 @@ export function dismissBatch(ctx) {
 		diagnosis,
 		reason: reason ?? null,
 		archivePath: path.relative(projectRoot, archivePath),
+		postMortemPath,
 	});
 	appendJournalEvent(projectRoot, batchId, "batch.dismissed", {
 		diagnosis,
@@ -304,6 +311,11 @@ export function completeBatch(ctx) {
 	}
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+	const postMortemPath = writeBatchPostMortem({
+		projectRoot,
+		batchState: loaded.raw,
+		reconciliation,
+	});
 	const endedAt = Date.now();
 	appendBatchHistoryEntry(projectRoot, {
 		batchId,
@@ -312,6 +324,7 @@ export function completeBatch(ctx) {
 		diagnosis: "completed",
 		detectManualMerge,
 		archivePath: path.relative(projectRoot, archivePath),
+		postMortemPath,
 	});
 	appendJournalEvent(projectRoot, batchId, "batch.completed", {
 		detectManualMerge,
