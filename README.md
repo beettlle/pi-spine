@@ -229,6 +229,23 @@ spine batch start TP-012 --json              # machine-readable result
 
 Workers should still **commit at step boundaries** (see `.spine/agents/worker.md`); auto-commit is a safety net for pi sessions that finish with `.DONE` but forgot to commit.
 
+### Step review (FR-REV, TP-020)
+
+When a task `PROMPT.md` has **Review Level > 0**, workers call the reviewer after step boundaries:
+
+```bash
+spine review step --step 1 --type plan     # level >= 1
+spine review step --step 1 --type code     # level >= 2 (optional --baseline <sha>)
+```
+
+- Verdicts: structured JSON `{ "verdict": "APPROVE"|"REVISE", "feedback": "..." }` (also written in the review artifact)
+- Artifacts: `{taskFolder}/.reviews/{step}-{timestamp}.md`
+- Journal: `review.started`, `review.completed`, `review.failed`
+- **Fail closed (FR-REV-06):** if review spawn fails at level > 0, the worker stops (non-zero exit) — no silent skip
+
+Reviewer model is configured separately in `.spine/spine-config.json` (`agents.reviewer`).
+
+
 ### Pause and resume (Phase 3 — single lane)
 
 ```bash
