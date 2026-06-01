@@ -1,0 +1,34 @@
+{
+  "configVersion": 1,
+  "project": {
+    "name": "my-project",
+    "description": ""
+  },
+  "paths": {
+    "tasksRoot": "spine-tasks"
+  },
+  "baseBranch": "main",
+  "testing": {
+    "build": "",
+    "test": "",
+    "testWithCoverage": ""
+  },
+  "agents": {
+    "worker": { "model": "inherit", "thinking": "high" },
+    "reviewer": { "model": "inherit", "thinking": "medium" },
+    "supervisor": { "model": "inherit", "thinking": "off" }
+  },
+  "lanes": {
+    "maxParallel": 3,
+    "queueExcess": true
+  },
+  "gates": {
+    "requireBeforeIntegrate": true,
+    "collectBuildEvidence": true,
+    "collectTestEvidence": true
+  },
+  "worktreeSetupHook": "",
+  "referenceDocs": [],
+  "standards": [],
+  "neverLoad": []
+}

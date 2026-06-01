@@ -28,6 +28,7 @@
   },
   "scripts": {
     "doctor": "node bin/spine.mjs doctor",
+    "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "files": [

@@ -1,62 +1,62 @@
 # TP-002: Implement spine init and templates — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-05-31
+**Current Step:** Step 5: Documentation & Delivery
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-01
 **Review Level:** 2
 **Review Counter:** 0
-**Iteration:** 0
+**Iteration:** 1
 **Size:** M
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] PRD FR-INIT and schema reviewed against `bin/spine-config.mjs`
-- [ ] Taskplane init patterns reviewed
+- [x] PRD FR-INIT and schema reviewed against `bin/spine-config.mjs`
+- [x] Taskplane init patterns reviewed
 
 ---
 
 ### Step 1: Create init templates
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `templates/spine-config.json` added
-- [ ] Agent stub templates added under `templates/agents/`
+- [x] `templates/spine-config.json` added
+- [x] Agent stub templates added under `templates/agents/`
 
 ---
 
 ### Step 2: Implement spine init command
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `bin/spine-init.mjs` implements init with flags
-- [ ] `bin/spine.mjs` wired and help updated
-- [ ] Targeted init tests run
+- [x] `bin/spine-init.mjs` implements init with flags
+- [x] `bin/spine.mjs` wired and help updated
+- [x] Targeted init tests run
 
 ---
 
 ### Step 3: Add init tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/spine-init.test.mjs` covers create/refuse/tasks-root/dry-run
-- [ ] `npm test` script added to `package.json`
+- [x] `tests/spine-init.test.mjs` covers create/refuse/tasks-root/dry-run
+- [x] `npm test` script added to `package.json`
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Typecheck passing
-- [ ] Doctor exits 0 after init in fixture
+- [x] FULL test suite passing
+- [x] Typecheck passing
+- [x] Doctor exits 0 after init in fixture
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README.md updated
-- [ ] Discoveries logged
+- [x] README.md updated (Quick start documents `spine init`)
+- [x] Discoveries logged
 
 ---
 
@@ -71,6 +71,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Taskplane stall kill twice on long LLM turns despite passing tests | Documented | `docs/incidents/20260531-phase0-taskplane-batch.md` |
+| Manual completion required after second stall | Operator finish | Execution log |
 
 ---
 
@@ -79,6 +81,12 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-05-31 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-05-31 23:57 | Task started | Runtime V2 lane-runner execution |
+| 2026-05-31 23:57 | Step 0 started | Preflight |
+| 2026-06-01 00:57 | Worker iter 1 | error (code 143) stall kill in 3643s |
+| 2026-06-01 01:08 | Retry started | Re-executed in existing worktree |
+| 2026-06-01 01:26 | Second stall | No tool activity ~17+ min; supervisor takeover |
+| 2026-06-01 01:26 | Manual completion | Tests/typecheck/doctor verified; committed + .DONE |
 
 ---
 
@@ -90,4 +98,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Completed manually after second Taskplane stall. Implementation was verified in lane worktree before commit.
