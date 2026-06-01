@@ -239,6 +239,23 @@ Resume skips tasks already marked complete via `.DONE` or journal `task.complete
 
 In pi: `/spine-pause` and `/spine-resume` delegate to `spine batch pause|resume`. When `spine status` reports `diagnosis: paused`, the suggested command is `spine batch resume` (not Taskplane pause).
 
+### Abort (Phase 3 — archive-first, §18.6)
+
+Stop a batch without losing recoverable state (closes GAP-ABORT-01):
+
+```bash
+spine batch abort                         # graceful: abort signal; worker may finish step boundary
+spine batch abort --hard                  # SIGKILL lane workers; remove worktrees (configurable)
+spine batch abort --reason "stall kill"   # journal reason on batch.aborted
+spine batch abort --hard --json
+```
+
+**Archive-first:** pi-spine always writes `.spine/runtime/{batchId}/archive/batch-state.json` (including `segments[]`) **before** clearing `.spine/batch-state.json` or Taskplane `.pi/batch-state.json`. The journal append-only log is preserved; `batch.aborted` is appended with reason and prior tail metadata.
+
+Graceful abort writes `.spine/runtime/{batchId}/abort-signal.json` (`hard: false`). The worker host polls this signal and sends SIGTERM so the worker can exit at the next poll boundary. Hard abort sets `hard: true`, kills `lane.workerPid` when recorded, and removes lane worktrees unless `lanes.cleanupWorktreesOnHardAbort` is `false` in `.spine/spine-config.json`.
+
+In pi: `/spine-abort` and `/spine-abort --hard` delegate to `spine batch abort`. When a batch was aborted, `spine status` reports `diagnosis: aborted` — use `spine batch dismiss` to clear limbo if needed.
+
 ### Retry and skip (Phase 3 — single lane)
 
 When a task fails or segment state drifts (Taskplane GAP-RETRY-01), reset task + segments atomically before resume:
@@ -258,7 +275,9 @@ In pi: `/spine-retry-task <taskId>` and `/spine-skip-task <taskId>` delegate to 
 | Path | Purpose |
 |------|---------|
 | `.spine/batch-state.json` | Active batch (pi-spine native; not `.pi/batch-state.json`) |
-| `.spine/batch-history.json` | Terminal batch summaries (complete/dismiss) |
+| `.spine/batch-history.json` | Terminal batch summaries (complete/dismiss/aborted) |
+| `.spine/runtime/{batchId}/archive/batch-state.json` | Archived batch snapshot after abort/dismiss/complete |
+| `.spine/runtime/{batchId}/abort-signal.json` | In-flight abort request (graceful or hard) |
 | `.spine/runtime/{batchId}/journal/events.jsonl` | Append-only journal |
 | `.worktrees/spine-{batchId}/lane-1` | Lane worktree |
 
@@ -305,9 +324,9 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-status` | Reconciled batch diagnosis + lane health (FR-BATCH-14) |
 | `/spine-dismiss` | `spine batch dismiss` (limbo / completed_manual) |
 | `/spine-next` | `spine next` — suggested next command |
-| `/spine-pause` | Stub — pause after current tasks |
-| `/spine-resume` | Stub — resume paused or failed batch |
-| `/spine-abort` | Stub — abort batch |
+| `/spine-pause` | `spine batch pause` — stop scheduling |
+| `/spine-resume` | `spine batch resume` — continue paused or failed batch |
+| `/spine-abort` | `spine batch abort` — archive-first abort (`--hard` kills workers) |
 | `/spine-gate` | Stub — gate inspection and resolution |
 | `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; gate stub in Phase 3) |
 | `/spine-settings` | Stub — interactive configuration |

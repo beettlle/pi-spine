@@ -111,7 +111,7 @@ export function buildAlternatives(diagnosis) {
 		case "needs_integrate":
 			return ["/spine-integrate", "/spine-gate", ...common];
 		case "running":
-			return ["/spine-pause", ...common];
+			return ["/spine-pause", "/spine-abort", ...common];
 		case "paused":
 			return ["spine batch resume --force", "spine status --diagnose", ...common];
 		case "failed":

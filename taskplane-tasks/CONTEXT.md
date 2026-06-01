@@ -60,8 +60,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-016 | Integrate validation + `spine integrate` | **Done** | TP-015 |
-| TP-017 | Atomic retry + skip-task (narrowed ex–TP-016) | **Staged** | TP-016 |
-| TP-018 | Archive-first abort | **Staged** | TP-017 |
+| TP-017 | Atomic retry + skip-task (narrowed ex–TP-016) | **Done** | TP-016 |
+| TP-018 | Archive-first abort | **Done** | TP-017 |
 | TP-019 | Multi-lane engine + mixed-outcome merge | **Staged** | TP-018 |
 
 | Theme | PRD / gaps | Task |
@@ -97,13 +97,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 ## Next steps (Option B)
 
-1. **Run TP-017** — atomic retry + skip (wave 9; unblocks `/orch` policy).
-3. **Run TP-018** — archive-first abort (wave 10).
-4. **Run TP-019** — multi-lane + mixed-outcome merge (wave 11).
+1. **Run TP-019** — multi-lane + mixed-outcome merge (wave 11).
 5. **Dogfood** — one `spine batch start <id>` per task on `main` that already contains prior tasks’ code.
 6. **Phase 4+** — review fail-closed, full integrate gate, dashboard.
 
-**Do not** start Phase 4 gates or multi-lane Taskplane batches until **TP-017** retry lands.
+**Do not** start Phase 4 gates or multi-lane Taskplane batches until **TP-019** multi-lane lands.
 
 ---
 
@@ -118,8 +116,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | **P1** | Orchestration journal | 2–3 | **Done (TP-014)** |
 | **P1** | Lane commit + segments + resume | 3 | **Done (TP-015)** |
 | **P1** | Integrate validation + `spine integrate` | 3 | **Done (TP-016)** |
-| **P1** | Atomic retry + skip (§18.5) | 3 | **Staged (TP-017)** |
-| **P1** | Archive-first abort (§18.6) | 3 | **Staged (TP-018)** |
+| **P1** | Atomic retry + skip (§18.5) | 3 | **Done (TP-017)** |
+| **P1** | Archive-first abort (§18.6) | 3 | **Done (TP-018)** |
 | P2 | Multi-lane + mixed-outcome merge | 3 | **Staged (TP-019)** |
 | ~~P1~~ | Progress-aware stall (§18.4) | 3 | **Done** (TP-013/015) |
 | P2 | Honest post-mortem (NFR-OBS-03) | 4 | Staged |
