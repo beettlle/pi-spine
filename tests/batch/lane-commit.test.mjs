@@ -3,7 +3,8 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { commitLaneWorktree } from "../../src/batch/lane-commit.mjs";
+import { commitLaneWorktree, countCommitsAhead } from "../../src/batch/lane-commit.mjs";
+import { mergeLaneToOrch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 test("commitLaneWorktree commits dirty worktree when .DONE exists", async () => {
@@ -89,6 +90,33 @@ test("commitLaneWorktree fails loud when dirty without .DONE", async () => {
 		assert.equal(result.ok, false);
 		assert.equal(result.failureClass, "DirtyWorktree");
 		assert.match(result.error, /\.DONE is missing/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("mergeLaneToOrch rejects empty merge when lane commits were required", async () => {
+	const projectRoot = await initGitRepo("spine-empty-merge-");
+	try {
+		const batchId = "20260601T160000";
+		const orchBranch = `orch/spine-${batchId}`;
+		const taskBranch = `task/spine-lane-1-${batchId}`;
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["branch", taskBranch, orchBranch], { cwd: projectRoot, stdio: "ignore" });
+
+		assert.equal(countCommitsAhead(projectRoot, orchBranch, taskBranch), 0);
+
+		const merge = mergeLaneToOrch({
+			projectRoot,
+			baseBranch: "main",
+			orchBranch,
+			taskBranch,
+			batchId,
+			requireLaneCommits: true,
+		});
+
+		assert.equal(merge.ok, false);
+		assert.equal(merge.failureClass, "EmptyMerge");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

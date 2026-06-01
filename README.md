@@ -210,7 +210,9 @@ spine batch start TP-012 --dry-run           # preflight + plan only
 spine batch start TP-012 --json              # machine-readable result
 ```
 
-**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1, includes `segments[]`) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → **lane auto-commit** (uncommitted work is staged and committed on the task branch when `.DONE` exists; fails loud if dirty without `.DONE`) → deterministic merge into `orch/spine-{batchId}` → batch phase `completed` or `failed`.
+**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1, includes `segments[]`) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → **lane auto-commit** (uncommitted work is staged and committed on the task branch when `.DONE` exists; fails loud if dirty without `.DONE`) → merge into `orch/spine-{batchId}` only when the task branch has commits to integrate (**empty merge fails** if auto-commit ran but nothing reached git) → batch phase `completed` or `failed`.
+
+Workers should still **commit at step boundaries** (see `.spine/agents/worker.md`); auto-commit is a safety net for pi sessions that finish with `.DONE` but forgot to commit.
 
 ### Pause and resume (Phase 3 — single lane)
 

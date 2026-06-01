@@ -11,7 +11,7 @@ import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.m
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import crypto from "node:crypto";
 import { appendJournalEvent } from "./journal.mjs";
-import { commitLaneWorktree } from "./lane-commit.mjs";
+import { commitLaneWorktree, countCommitsAhead, gitPorcelain } from "./lane-commit.mjs";
 import {
 	assertNoActiveBatch,
 	createInitialBatchState,
@@ -55,14 +55,46 @@ function git(projectRoot, args) {
 
 /**
  * @param {object} params
+ * @param {boolean} [params.requireLaneCommits] When true, task branch must be ahead of orch before merge (post lane auto-commit).
  */
-export function mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranch, batchId }) {
+export function mergeLaneToOrch({
+	projectRoot,
+	baseBranch,
+	orchBranch,
+	taskBranch,
+	batchId,
+	requireLaneCommits = false,
+}) {
 	const previous = git(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	try {
+		const orchHeadBefore = git(projectRoot, ["rev-parse", orchBranch]);
+		const commitsAhead = countCommitsAhead(projectRoot, orchBranch, taskBranch);
+
+		if (requireLaneCommits && commitsAhead === 0) {
+			return {
+				ok: false,
+				failureClass: "EmptyMerge",
+				error:
+					`Task branch ${taskBranch} has no commits ahead of ${orchBranch} after lane auto-commit. ` +
+					`Worker may have created .DONE without persisting file changes to git.`,
+			};
+		}
+
 		git(projectRoot, ["checkout", orchBranch]);
 		git(projectRoot, ["merge", "--no-ff", taskBranch, "-m", `merge ${taskBranch} into ${orchBranch}`]);
 		const mergeCommit = git(projectRoot, ["rev-parse", "HEAD"]);
-		return { ok: true, mergeCommit };
+
+		if (requireLaneCommits && mergeCommit === orchHeadBefore) {
+			return {
+				ok: false,
+				failureClass: "EmptyMerge",
+				error:
+					`Merge into ${orchBranch} did not advance HEAD (still ${orchHeadBefore.slice(0, 7)}). ` +
+					`Lane work was not integrated.`,
+			};
+		}
+
+		return { ok: true, mergeCommit, commitsAhead };
 	} catch (err) {
 		return {
 			ok: false,
@@ -376,11 +408,45 @@ export async function startBatch({
 			});
 		}
 
+		const remainingDirty = gitPorcelain(wt);
+		if (remainingDirty) {
+			state.tasks[0].status = "failed";
+			state.tasks[0].endedAt = Date.now();
+			state.tasks[0].exitReason = "DirtyWorktree";
+			state.failedTasks = 1;
+			state.succeededTasks = 0;
+			updateSegmentForTask(state, taskId, "failed");
+			state.endedAt = Date.now();
+			state.lastError =
+				"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output";
+			transitionPhase(state, "failed", {
+				projectRoot,
+				batchId,
+				extra: { taskId, reason: "dirty_after_commit" },
+			});
+			saveSpineBatchState(projectRoot, state);
+			return {
+				ok: false,
+				exitCode: 1,
+				batchId,
+				taskId,
+				error: "dirty_after_lane_commit",
+				output: state.lastError,
+			};
+		}
+
 		appendJournalEvent(projectRoot, batchId, "batch.merge_started", {
 			taskBranch,
 			orchBranch,
 		});
-		const merge = mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranch, batchId });
+		const merge = mergeLaneToOrch({
+			projectRoot,
+			baseBranch,
+			orchBranch,
+			taskBranch,
+			batchId,
+			requireLaneCommits: laneCommit.committed,
+		});
 		if (!merge.ok) {
 			state.endedAt = Date.now();
 			state.lastError = merge.error ?? "merge failed";

@@ -69,8 +69,12 @@ if (workerAgentPath && fs.existsSync(workerAgentPath)) {
 if (fs.existsSync(promptPath)) {
 	piArgs.push(`@${promptPath}`);
 }
+const taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID";
 piArgs.push(
-	`Complete this task in the worktree. Follow PROMPT.md, keep STATUS.md current, run npm test, and create ${donePath} when all completion criteria are met.`,
+	`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
+		`Commit at step boundaries when you change files (feat(${taskIdHint}): …). ` +
+		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +
+		`Create ${donePath} only when all completion criteria are met.`,
 );
 
 const timeoutMs = Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS || 60 * 60 * 1000);

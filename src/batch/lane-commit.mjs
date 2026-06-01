@@ -21,12 +21,28 @@ function git(worktreePath, args) {
 /**
  * @param {string} worktreePath
  */
-function gitPorcelain(worktreePath) {
+export function gitPorcelain(worktreePath) {
 	return execFileSync("git", ["status", "--porcelain"], {
 		cwd: worktreePath,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
 	}).trim();
+}
+
+/**
+ * Commits on `headRef` not reachable from `baseRef`.
+ *
+ * @param {string} projectRoot
+ * @param {string} baseRef
+ * @param {string} headRef
+ */
+export function countCommitsAhead(projectRoot, baseRef, headRef) {
+	const count = execFileSync("git", ["rev-list", "--count", `${baseRef}..${headRef}`], {
+		cwd: projectRoot,
+		encoding: "utf-8",
+		stdio: ["ignore", "pipe", "pipe"],
+	}).trim();
+	return Number.parseInt(count, 10) || 0;
 }
 
 /**
