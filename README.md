@@ -239,6 +239,20 @@ Resume skips tasks already marked complete via `.DONE` or journal `task.complete
 
 In pi: `/spine-pause` and `/spine-resume` delegate to `spine batch pause|resume`. When `spine status` reports `diagnosis: paused`, the suggested command is `spine batch resume` (not Taskplane pause).
 
+### Retry and skip (Phase 3 — single lane)
+
+When a task fails or segment state drifts (Taskplane GAP-RETRY-01), reset task + segments atomically before resume:
+
+```bash
+spine batch retry TP-012              # reset task + segments; journal pendingSegments
+spine batch skip TP-012               # skip failed task; update counters (FR-BATCH-10)
+spine batch retry TP-012 --json
+```
+
+Retry clears task timestamps, resets all segment records for the task to `pending`, decrements `failedTasks`, and journals `task.retry_requested` with `{ taskId, previousClassification, pendingSegments }`. Resume refuses segment drift (`RetrySegmentDrift`) until retry or `--force`.
+
+In pi: `/spine-retry-task <taskId>` and `/spine-skip-task <taskId>` delegate to `spine batch retry|skip`. When `spine status` reports `diagnosis: needs_retry`, the suggested command is `/spine-retry-task {id}`.
+
 **Runtime layout:**
 
 | Path | Purpose |
