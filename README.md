@@ -133,13 +133,27 @@ pi install npm:pi-spine
 cd my-project
 spine init --tasks-root taskplane-tasks --preset taskplane-compat
 spine doctor
+spine preflight
 ```
 
-In a pi session (Phase 0 — slash commands are registered stubs; batch engine lands in later phases):
+Run **`spine preflight`** before every batch (FR-BATCH-11). It verifies:
+
+| Check | Requirement |
+|-------|-------------|
+| Doctor | `spine doctor` passes (Node, git, pi, config, agents, model provider) |
+| Git clean | No uncommitted changes in the working tree |
+| No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
+| Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
+| Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
+| Wave plan | Stub in Phase 1 (TP-008 completes wave plan printing) |
+
+Use `spine preflight --json` for automation. Exit code is non-zero when any check fails.
+
+In a pi session (Phase 0 — most slash commands are stubs; `/spine` runs preflight before batch guidance):
 
 | Command | Status |
 |---------|--------|
-| `/spine` | Stub — project guide / batch execute (`/spine [all\|paths]`, Phase 2+) |
+| `/spine` | Runs batch preflight; guides batch execute (`/spine [all\|paths]`, Phase 2+) |
 | `/spine-plan` | Stub — preview waves and lanes |
 | `/spine-status` | Stub — batch and lane health |
 | `/spine-pause` | Stub — pause after current tasks |
@@ -150,9 +164,10 @@ In a pi session (Phase 0 — slash commands are registered stubs; batch engine l
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
 
-Each stub replies with a notification pointing to `spine help` and a future phase. Example flow once implemented:
+Each stub replies with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow once implemented:
 
 ```text
+spine preflight   # required before batch (FR-BATCH-11)
 /spine-plan all    # preview waves and lanes
 /spine all         # run the batch
 /spine-status      # monitor progress

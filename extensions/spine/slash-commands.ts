@@ -2,6 +2,11 @@ import type {
 	ExtensionAPI,
 	ExtensionCommandContext,
 } from "@earendil-works/pi-coding-agent";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** PRD §15.1 slash command names (single `/spine` registration for guide + execute). */
 export const SPINE_SLASH_COMMAND_NAMES = [
@@ -68,6 +73,23 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	},
 ];
 
+function runSpinePreflight(cwd = process.cwd()) {
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "preflight"],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function stubHandler(command: string) {
 	return async (_args: string, ctx: ExtensionCommandContext): Promise<void> => {
 		ctx.ui.notify(
@@ -77,12 +99,38 @@ function stubHandler(command: string) {
 	};
 }
 
+async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const scope = args.trim();
+	const preflight = runSpinePreflight();
+
+	if (!preflight.ok) {
+		ctx.ui.notify(
+			`Batch preflight failed — fix issues before starting a batch.\n\n${preflight.output}\n\nRun \`spine preflight\` for details.`,
+			"error",
+		);
+		return;
+	}
+
+	if (scope === "all" || scope.length > 0) {
+		ctx.ui.notify(
+			`Preflight passed. Batch execution for \`/spine ${scope || "all"}\` lands in Phase 2+ — run \`spine preflight\` before every batch.`,
+			"info",
+		);
+		return;
+	}
+
+	ctx.ui.notify(
+		"Preflight passed. Run `/spine all` after `spine preflight` when the batch engine is available (Phase 2+).",
+		"info",
+	);
+}
+
 /** Register all PRD §15.1 pi slash commands with Phase 0 stub handlers. */
 export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 	for (const { name, description } of SPINE_SLASH_COMMANDS) {
 		pi.registerCommand(name, {
 			description,
-			handler: stubHandler(name),
+			handler: name === "spine" ? spineEntryHandler : stubHandler(name),
 		});
 	}
 }
