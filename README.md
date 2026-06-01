@@ -197,7 +197,7 @@ spine integrate                      # merge after approval
 spine integrate --force-integrate    # bypass only with SPINE_ALLOW_FORCE=1 (journaled)
 ```
 
-Evidence is collected under `.spine/runtime/{batchId}/evidence/` (`summary.md`, `diff-stat.txt`, optional test/build output from `spine-config.json` or `.pi/taskplane-config.json`).
+Evidence is collected under `.spine/runtime/{batchId}/evidence/` (`summary.md` is an honest post-mortem per NFR-OBS-03, plus `diff-stat.txt` and optional test/build output from `spine-config.json` or `.pi/taskplane-config.json`). `spine batch dismiss` / `complete` also write `.spine/runtime/{batchId}/post-mortem.md` and record the path in `batch-history.json`.
 
 In pi: `/spine-gate` and `/spine-integrate` delegate to `spine gate` and `spine integrate`.
 

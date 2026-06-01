@@ -11,7 +11,7 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-ABORT-01 | Abort deletes `.pi/batch-state.json` without guaranteed segment archive | §18.6 archive-first abort | **Closed** — `spine batch abort` + `/spine-abort` (TP-018) |
 | GAP-STALL-01 | Stall kill on tool-call silence only | §18.4 progress-aware stall | Open — pi-spine Phase 3 |
 | GAP-MERGE-01 | Force-resume can merge succeeded lanes while failed task pending | §17.4 mixed-outcome policy | **Closed (TP-019)** — wave merge blocked until all tasks terminal/skipped/force-merge |
-| GAP-POST-01 | Supervisor summary claims batch "ran smoothly" with failures | NFR-OBS-03 | Open — pi-spine Phase 4 |
+| GAP-POST-01 | Supervisor summary claims batch "ran smoothly" with failures | NFR-OBS-03 | **Closed (TP-022)** — `generateBatchPostMortem` + evidence `summary.md` |
 | GAP-REV-01 | Plan review fail-open when review tool errors at level > 0 | FR-REV-06 | **Closed (TP-020)** — `spine review step` + fail-closed worker |
 | GAP-PREFLIGHT-01 | No batch preflight before `/orch all` | FR-BATCH-11, §23.1 | **Closed** — `spine preflight` + `/spine` gate with wave plan (TP-006 + TP-008) |
 | GAP-UX-01 | All tasks succeeded, batch `stopped`, UI red | FR-BATCH-12–16, §17.5 | **Closed** — `spine status --diagnose` + `spine batch dismiss` / `complete` (TP-009 + TP-010) |
