@@ -1,0 +1,37 @@
+taskplane-tasks/TP-006-batch-preflight/STATUS.md
+  s_cc44f834948ce7::t_23c8f02645255d 1-87
+taskplane-tasks/TP-008-planner/PROMPT.md
+  s_cc44f834948ce7::t_0e263e3fdae1e6 127
+  s_cc44f834948ce7::t_23c8f02645255d 1-119,121-126,128-148
+  s_cc44f834948ce7::t_019f932ec8d2c0 120
+taskplane-tasks/dependencies.json
+  s_cc44f834948ce7::t_23c8f02645255d 3,9-15
+taskplane-tasks/TP-008-planner/STATUS.md
+  s_cc44f834948ce7::t_23c8f02645255d 1-101
+taskplane-tasks/TP-007-taskplane-parsers/PROMPT.md
+  s_cc44f834948ce7::t_23c8f02645255d 1-125
+taskplane-tasks/TP-007-taskplane-parsers/STATUS.md
+  s_cc44f834948ce7::t_23c8f02645255d 1-92
+taskplane-tasks/TP-006-batch-preflight/PROMPT.md
+  s_cc44f834948ce7::t_ac52c0d9f98cb9 95
+  s_cc44f834948ce7::t_4717733eed1b3c 102
+  s_cc44f834948ce7::t_23c8f02645255d 1-94,96-101,103-122
+taskplane-tasks/CONTEXT.md
+  s_cc44f834948ce7::t_23c8f02645255d 5,20-27,39-49,52,59,67-68,70,90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "8259d3ee8b6185c87beb07879a0e233cf66d96e7",
+  "prompts": {},
+  "sessions": {
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
