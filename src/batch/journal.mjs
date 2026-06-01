@@ -213,6 +213,8 @@ export function summarizeJournalEvent(event) {
 		parts.push(`${payload.baseBranch} → ${payload.orchBranch}`);
 	}
 	if (payload.worktreePath) parts.push(String(payload.worktreePath).split("/").slice(-2).join("/"));
+	if (payload.verdict) parts.push(String(payload.verdict));
+	if (payload.reviewType) parts.push(`${payload.reviewType} review`);
 	if (payload.diagnosis) parts.push(String(payload.diagnosis));
 	if (payload.stallDeadline) parts.push(`stall deadline ${payload.stallDeadline}`);
 
@@ -231,7 +233,7 @@ export function extractJournalDiagnosisHints(events) {
 	const tail = readJournalTail(events);
 	const hints = [];
 
-	const priority = ["batch.failed", "task.failed", "lane.stall_warning", "lane.died"];
+	const priority = ["batch.failed", "task.failed", "review.failed", "lane.stall_warning", "lane.died"];
 	for (const type of priority) {
 		const match = [...tail].reverse().find((event) => event.type === type);
 		if (match) {
