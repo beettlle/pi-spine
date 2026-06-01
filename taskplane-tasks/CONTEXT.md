@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-011
+**Next Task ID:** TP-012
 
 ---
 
@@ -17,20 +17,26 @@ Phase 0 complete — batch `20260531T165700` merged to `main` (TP-002–TP-005).
 | TP-004 | Pi slash command stubs (§15.1) | Done |
 | TP-005 | Taskplane testing config + agent overrides | Done |
 
-### Phase 1 — Compat + planner (staged)
+### Phase 1 — Compat + planner (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-006 | Batch preflight (FR-BATCH-11) + reconciliation stub | Staged | — |
-| TP-007 | Taskplane parsers (FR-TASK-01–05) | Staged | — |
-| TP-008 | Planner + `spine plan` / `/spine-plan` (FR-SCHED-01–04,06) | Staged | TP-006, TP-007 |
+| TP-006 | Batch preflight (FR-BATCH-11) + reconciliation stub | Done | — |
+| TP-007 | Taskplane parsers (FR-TASK-01–05) | Done | — |
+| TP-008 | Planner + `spine plan` / `/spine-plan` (FR-SCHED-01–04,06) | Done | TP-006, TP-007 |
 
-### Phase 1b — Batch reconciliation UX (staged)
+### Phase 1b — Batch reconciliation UX (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-009 | Batch status & reconciliation CLI (FR-BATCH-12–14) | Staged | TP-006 |
-| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Staged | TP-009 |
+| TP-009 | Batch status & reconciliation CLI (FR-BATCH-12–14) | Done | TP-006 |
+| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Done (manual recovery batch `20260601T100359`) | TP-009 |
+
+### Phase 1c — CI hygiene (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-011 | CI test fixture hardening | Done (manual recovery batch `20260601T114445`) | TP-010 |
 
 ---
 

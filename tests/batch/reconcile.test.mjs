@@ -1,28 +1,15 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
-import { runInit } from "../../bin/spine-init.mjs";
 import { reconcileBatch, runReconciliationCheck } from "../../src/batch/reconcile.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
 
 function loadFixture(name) {
 	return JSON.parse(fs.readFileSync(path.join(FIXTURES, name), "utf-8"));
-}
-
-async function createProjectFixture() {
-	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-reconcile-"));
-	execFileSync("git", ["init"], { cwd: projectRoot, stdio: "ignore" });
-	runInit(projectRoot, ["--tasks-root", "taskplane-tasks"]);
-	execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["config", "user.name", "Test User"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
-	return projectRoot;
 }
 
 function writePiBatchState(projectRoot, fixture) {
@@ -35,7 +22,7 @@ function writePiBatchState(projectRoot, fixture) {
 }
 
 test("idle-no-batch returns healthy idle state", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-reconcile-");
 	try {
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, null);
@@ -43,12 +30,12 @@ test("idle-no-batch returns healthy idle state", async () => {
 		assert.equal(result.suggestedCommand, "spine preflight");
 		assert.ok(result.alternatives?.includes("spine plan all"));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("limbo_stale detected from incident fixture", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-reconcile-");
 	try {
 		const fixture = loadFixture("limbo-stale-20260531T165700.json");
 		writePiBatchState(projectRoot, fixture);
@@ -59,12 +46,12 @@ test("limbo_stale detected from incident fixture", async () => {
 		assert.equal(result.suggestedCommand, "spine batch dismiss");
 		assert.equal(result.batchId, "20260531T165700");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("completed_manual when orch branch merged to main", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-reconcile-");
 	try {
 		const fixture = loadFixture("limbo-stale-20260531T165700.json");
 		writePiBatchState(projectRoot, fixture);
@@ -83,12 +70,12 @@ test("completed_manual when orch branch merged to main", async () => {
 		assert.equal(result.diagnosis, "completed_manual");
 		assert.equal(result.suggestedCommand, "spine batch dismiss");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("needs_retry when a task failed", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-reconcile-");
 	try {
 		const fixture = loadFixture("needs-retry-batch.json");
 		writePiBatchState(projectRoot, fixture);
@@ -98,12 +85,12 @@ test("needs_retry when a task failed", async () => {
 		assert.equal(result.suggestedCommand, "/spine-retry-task TP-002");
 		assert.match(result.headline, /TP-002/);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("running diagnosis for active batch", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-reconcile-");
 	try {
 		const fixture = loadFixture("running-batch.json");
 		writePiBatchState(projectRoot, fixture);
@@ -113,7 +100,7 @@ test("running diagnosis for active batch", async () => {
 		assert.match(result.headline, /running/i);
 		assert.equal(result.suggestedCommand, "/spine-status --diagnose");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 

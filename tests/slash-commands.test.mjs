@@ -5,6 +5,7 @@ import {
 	SPINE_SLASH_COMMAND_NAMES,
 	registerSpineSlashCommands,
 } from "../extensions/spine/slash-commands.ts";
+import { destroyGitRepo, initGitRepo } from "./helpers/git-fixture.mjs";
 
 test("registerSpineSlashCommands registers all PRD §15.1 command names", () => {
 	const registered = [];
@@ -46,7 +47,15 @@ test("/spine handler runs preflight before batch guidance", async () => {
 		},
 	};
 
-	await handlers.get("spine")("", ctx);
-	assert.ok(notifications.length > 0);
-	assert.match(notifications[0].message, /preflight/i);
+	const projectRoot = await initGitRepo("spine-slash-");
+	const previousCwd = process.cwd();
+	process.chdir(projectRoot);
+	try {
+		await handlers.get("spine")("", ctx);
+		assert.ok(notifications.length > 0);
+		assert.match(notifications[0].message, /preflight/i);
+	} finally {
+		process.chdir(previousCwd);
+		await destroyGitRepo(projectRoot);
+	}
 });

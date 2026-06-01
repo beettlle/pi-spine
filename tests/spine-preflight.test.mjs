@@ -3,9 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
-import { runInit } from "../bin/spine-init.mjs";
+import { destroyGitRepo, initGitRepo } from "./helpers/git-fixture.mjs";
 import {
 	checkDependenciesJson,
 	checkDoctor,
@@ -17,17 +16,6 @@ import {
 	runPreflightPlanCheck,
 } from "../bin/spine-preflight.mjs";
 import { runReconciliationCheck } from "../src/batch/reconcile.mjs";
-
-async function createProjectFixture() {
-	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-preflight-"));
-	execFileSync("git", ["init"], { cwd: projectRoot, stdio: "ignore" });
-	runInit(projectRoot, ["--tasks-root", "taskplane-tasks"]);
-	execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["config", "user.name", "Test User"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
-	return projectRoot;
-}
 
 function writeTask(projectRoot, taskId, slug = "task") {
 	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-${slug}`);
@@ -71,7 +59,7 @@ function writeDependencies(projectRoot, tasks) {
 }
 
 test("runPreflightPlanCheck builds wave plan during preflight", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		writeTask(projectRoot, "TP-001", "alpha");
 		writeTask(projectRoot, "TP-002", "beta");
@@ -94,7 +82,7 @@ test("runPreflightPlanCheck builds wave plan during preflight", async () => {
 		assert.ok(String(planCheck.message).includes("Wave 0:"));
 		assert.ok(String(planCheck.message).includes("Wave 1:"));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -148,17 +136,17 @@ test("checkGitClean lists up to 20 dirty paths", () => {
 });
 
 test("checkNoActiveBatch passes when no batch-state file exists", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		const result = checkNoActiveBatch({ projectRoot });
 		assert.equal(result.ok, true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("checkNoActiveBatch calls reconciliation when batch-state exists", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	const calls = [];
 	try {
 		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
@@ -184,24 +172,24 @@ test("checkNoActiveBatch calls reconciliation when batch-state exists", async ()
 		assert.equal(result.ok, false);
 		assert.equal(result.suggestedCommand, "spine batch dismiss");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("checkTasksRoot validates discoverable task folders", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		writeTask(projectRoot, "TP-001", "alpha");
 		const result = checkTasksRoot({ projectRoot });
 		assert.equal(result.ok, true);
 		assert.ok(result.details.taskFolders.some((folder) => folder.startsWith("TP-001")));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("checkDependenciesJson validates version and task IDs", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		writeTask(projectRoot, "TP-001", "alpha");
 		writeTask(projectRoot, "TP-002", "beta");
@@ -211,12 +199,12 @@ test("checkDependenciesJson validates version and task IDs", async () => {
 		assert.equal(result.ok, true);
 		assert.deepEqual(discoverTaskIds(path.join(projectRoot, "taskplane-tasks")), ["TP-001", "TP-002"]);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
-test("runBatchPreflight passes on initialized clean fixture", async () => {
-	const projectRoot = await createProjectFixture();
+test("runBatchPreflight passes on initialized clean fixture", { concurrency: false }, async () => {
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		writeTask(projectRoot, "TP-001", "alpha");
 		writeDependencies(projectRoot, { "TP-001": [] });
@@ -232,12 +220,12 @@ test("runBatchPreflight passes on initialized clean fixture", async () => {
 		assert.equal(result.exitCode, 0);
 		assert.ok(result.checks.some((check) => check.id === "plan" && check.ok));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("runBatchPreflight fails when git working tree is dirty", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		writeTask(projectRoot, "TP-001", "alpha");
 		writeDependencies(projectRoot, { "TP-001": [] });
@@ -252,12 +240,12 @@ test("runBatchPreflight fails when git working tree is dirty", async () => {
 		assert.equal(result.exitCode, 1);
 		assert.ok(result.checks.find((check) => check.id === "git-clean" && !check.ok));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
 test("runBatchPreflight fails on limbo fixture with dismiss suggestion", async () => {
-	const projectRoot = await createProjectFixture();
+	const projectRoot = await initGitRepo("spine-preflight-");
 	try {
 		const fixture = JSON.parse(
 			fs.readFileSync(
@@ -284,6 +272,6 @@ test("runBatchPreflight fails on limbo fixture with dismiss suggestion", async (
 		assert.equal(batchCheck.suggestedCommand, "spine batch dismiss");
 		assert.equal(batchCheck.details.diagnosis, "limbo_stale");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
