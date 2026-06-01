@@ -309,9 +309,16 @@ export async function startBatch({
 				state.lanes[0].lastHeartbeatAt = timestamp;
 				saveSpineBatchState(projectRoot, state);
 			},
+			onWorkerPid: (pid) => {
+				if (pid > 0) {
+					state.lanes[0].workerPid = pid;
+					saveSpineBatchState(projectRoot, state);
+				}
+			},
 		});
 
 		if (!workerResult.ok) {
+			const aborted = workerResult.classification === "aborted";
 			appendJournalEvent(projectRoot, batchId, "lane.died", {
 				laneNumber: 1,
 				laneId: "lane-1",
@@ -319,32 +326,44 @@ export async function startBatch({
 				correlationId: laneCorrelationId,
 				reason: workerResult.classification ?? "worker_failed",
 			});
-			state.tasks[0].status = "failed";
+			state.tasks[0].status = aborted ? "aborted" : "failed";
 			state.tasks[0].endedAt = Date.now();
 			state.tasks[0].exitReason = workerResult.classification ?? "worker_failed";
-			updateSegmentForTask(state, taskId, "failed");
-			state.failedTasks = 1;
-			state.endedAt = Date.now();
-			state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
-			transitionPhase(state, "failed", {
-				projectRoot,
-				batchId,
-				extra: { taskId },
-			});
+			updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
+			if (aborted) {
+				state.endedAt = Date.now();
+				state.lastError = workerResult.output?.slice(0, 500) ?? "aborted";
+				transitionPhase(state, "aborted", {
+					projectRoot,
+					batchId,
+					extra: { taskId },
+				});
+			} else {
+				state.failedTasks = 1;
+				state.endedAt = Date.now();
+				state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
+				transitionPhase(state, "failed", {
+					projectRoot,
+					batchId,
+					extra: { taskId },
+				});
+			}
 			saveSpineBatchState(projectRoot, state);
-			appendJournalEvent(projectRoot, batchId, "task.failed", {
-				taskId,
-				laneNumber: 1,
-				laneId: "lane-1",
-				correlationId: laneCorrelationId,
-				...workerResult,
-			});
+			if (!aborted) {
+				appendJournalEvent(projectRoot, batchId, "task.failed", {
+					taskId,
+					laneNumber: 1,
+					laneId: "lane-1",
+					correlationId: laneCorrelationId,
+					...workerResult,
+				});
+			}
 			return {
 				ok: false,
 				exitCode: workerResult.exitCode ?? 1,
 				batchId,
 				taskId,
-				error: "worker_failed",
+				error: aborted ? "aborted" : "worker_failed",
 				output: workerResult.output,
 			};
 		}
