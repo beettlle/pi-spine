@@ -1,0 +1,42 @@
+bin/spine-batch.mjs
+  s_cc44f834948ce7::t_a504c604910276 89
+  s_cc44f834948ce7::t_c027fab3451ca0 121
+src/batch/heartbeat.mjs
+  s_cc44f834948ce7::t_a72229d3c3b293 1-124
+src/batch/state.mjs
+  s_cc44f834948ce7::t_803fb9b883d19e 117
+src/batch/engine.mjs
+  s_cc44f834948ce7::t_ba46ca7730fd05 84
+  s_cc44f834948ce7::t_78acafe3fd56bc 173
+  s_cc44f834948ce7::t_66f11629f64bd0 212-225
+bin/spine.mjs
+  s_cc44f834948ce7::t_8d6de9839963c3 399
+tests/batch/engine.test.mjs
+  s_cc44f834948ce7::t_5e37ba62542776 85
+  s_cc44f834948ce7::t_afabcbf946c895 48
+bin/spine-worker-runner.mjs
+  s_cc44f834948ce7::t_1038acc188fdb6 5,13,22-25,35-37,42-46,48,52-91
+tests/batch/heartbeat.test.mjs
+  s_cc44f834948ce7::t_98057812b160be 1-57,67-97
+  s_cc44f834948ce7::t_141f11bf37394f 58-66
+src/batch/worker-host.mjs
+  s_cc44f834948ce7::t_3072922ea8291a 2,7,9-16,35-79,83-90,93-104,115-120,122-156,159-185,187,190-191
+README.md
+  s_cc44f834948ce7::t_1420dd2ae8118b 227-238
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ac19a5b9ed7f6b49dd31cf47c6042cd8d26ad342",
+  "prompts": {},
+  "sessions": {
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
