@@ -199,11 +199,38 @@ spine plan all --json                       # JSON plan to stdout
 
 Each `spine plan` run writes a plan artifact to `.spine/runtime/plan-{timestamp}.json`.
 
+### Running a batch (Phase 2 — single lane)
+
+pi-spine can run **one task per batch** without Taskplane `/orch`:
+
+```bash
+spine preflight                              # required (FR-BATCH-11)
+spine batch start TP-012                     # exactly one task in scope
+spine batch start TP-012 --dry-run           # preflight + plan only
+spine batch start TP-012 --json              # machine-readable result
+```
+
+**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → deterministic merge into `orch/spine-{batchId}` → batch phase `completed` or `failed`.
+
+**Runtime layout:**
+
+| Path | Purpose |
+|------|---------|
+| `.spine/batch-state.json` | Active batch (pi-spine native; not `.pi/batch-state.json`) |
+| `.spine/runtime/{batchId}/journal/events.jsonl` | Append-only journal |
+| `.worktrees/spine-{batchId}/lane-1` | Lane worktree |
+
+**Recovery:** `spine status --diagnose` → `spine batch dismiss` or `spine batch complete` (same as Phase 1b lifecycle).
+
+**CI / tests without `pi`:** set `SPINE_WORKER_STUB=1` so the worker runner touches `.DONE` instead of spawning `pi` (see `bin/spine-worker-runner.mjs`).
+
+Do **not** run `spine batch start` and Taskplane `/orch` on the same repo concurrently.
+
 In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` invokes the planner):
 
 | Command | Status |
 |---------|--------|
-| `/spine` | Runs batch preflight; guides batch execute (`/spine [all\|paths]`, Phase 2+) |
+| `/spine` | Preflight + `spine batch start` for a **single** task ID (Phase 2) |
 | `/spine-plan` | Preview waves and lanes (usage: `/spine-plan <all\|paths>`) |
 | `/spine-status` | Reconciled batch diagnosis + lane health (FR-BATCH-14) |
 | `/spine-dismiss` | `spine batch dismiss` (limbo / completed_manual) |
@@ -216,7 +243,7 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
 
-Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, and **`/spine-next`** are implemented. Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
+Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, and **`/spine-next`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)

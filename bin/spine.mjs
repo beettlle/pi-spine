@@ -453,7 +453,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
-  ${c.cyan}batch${c.reset}           Dismiss or complete active batch (FR-BATCH-15/16)
+  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
@@ -470,7 +470,8 @@ ${c.bold}Examples:${c.reset}
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
-  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
+  spine batch start TP-012                      # single-task batch (Phase 2)
+ spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine next                                    # suggested next command (dry-run)
   spine next --execute                          # run suggested spine command

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
+import { startBatch } from "../src/batch/engine.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -59,15 +60,24 @@ function parseBatchArgs(args) {
 		reason = args[reasonIdx + 1];
 	}
 
-	const subcommand = args.find((t) => t === "dismiss" || t === "complete") ?? null;
+	const dryRun = flags.has("--dry-run");
+	const skipPreflight = flags.has("--skip-preflight");
+
+	const subcommand =
+		args.find((t) => t === "dismiss" || t === "complete" || t === "start") ?? null;
+
+	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
 
 	return {
 		json: flags.has("--json"),
 		force: flags.has("--force"),
 		detectManualMerge: flags.has("--detect-manual-merge"),
+		dryRun,
+		skipPreflight,
 		batchId,
 		reason,
 		subcommand,
+		scope: positional.join(" ") || "all",
 	};
 }
 
@@ -107,10 +117,40 @@ export function runSpineBatch(options) {
 		};
 	}
 
+	if (parsed.subcommand === "start") {
+		const result = startBatch({
+			projectRoot,
+			scope: parsed.scope,
+			dryRun: parsed.dryRun,
+			skipPreflight: parsed.skipPreflight,
+		});
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		const lines = [
+			"",
+			result.ok ? "Batch started" : "Batch start failed",
+			"",
+			result.output ?? result.error ?? "",
+		];
+		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		lines.push("");
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: lines.join("\n"),
+			result,
+		};
+	}
+
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch dismiss|complete [--batch ID] [--reason TEXT] [--force] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

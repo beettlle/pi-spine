@@ -9,7 +9,7 @@
 
 ## Current State
 
-**Phases 0–1c are on `main`.** CI is green ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226) — TP-011). **49/49** tests pass locally.
+**Phases 0–1c and TP-012 are on `main` (local).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **51/51** tests pass locally (`SPINE_WORKER_STUB=1`).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -41,12 +41,12 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 |------|---------|--------|------|
 | TP-011 | CI test fixture hardening (`git branch -M main`) | Done (manual recovery `20260601T114445`) | TP-010 |
 
-### Phase 2 — Single-lane worker (next)
+### Phase 2 — Single-lane worker
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-012 | Single-lane batch engine (`spine batch start`, worktree, pi worker) | **Staged** — packet ready | TP-011 |
-| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | Staged | TP-012 |
+| TP-012 | Single-lane batch engine (`spine batch start`, worktree, pi worker) | **Done** — implement on `main`; dogfood TP-013+ | TP-011 |
+| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Next** | TP-012 |
 | TP-014 | *Planned* — orchestration journal + `.spine/batch-state.json` | Staged | TP-012 |
 
 ### Phase 3 — Multi-lane + recovery (after Phase 2)

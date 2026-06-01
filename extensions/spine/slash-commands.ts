@@ -35,7 +35,7 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine",
 		description:
-			"Detect project state; guide or run batch (usage: /spine [all|paths]; batch execution Phase 2+) ",
+			"Detect project state; run batch (usage: /spine <task-id>; single-task Phase 2) ",
 	},
 	{
 		name: "spine-plan",
@@ -269,9 +269,23 @@ Run \`spine preflight\` for details.`,
 	}
 
 	if (scope === "all" || scope.length > 0) {
+		const startScope = scope === "all" ? "all" : scope;
+		const startResult = spawnSync(
+			process.execPath,
+			[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "batch", "start", startScope],
+			{
+				cwd: process.cwd(),
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				env: { ...process.env, SPINE_WORKER_STUB: process.env.SPINE_WORKER_STUB ?? "1" },
+			},
+		);
+		const output = `${startResult.stdout ?? ""}${startResult.stderr ?? ""}`.trim();
 		ctx.ui.notify(
-			`Preflight passed. Batch execution for \`/spine ${scope || "all"}\` lands in Phase 2+ — run \`spine preflight\` before every batch.`,
-			"info",
+			startResult.status === 0
+				? output || `Batch start succeeded for scope: ${startScope}`
+				: `Batch start failed:\n\n${output}`,
+			startResult.status === 0 ? "info" : "error",
 		);
 		return;
 	}
@@ -281,7 +295,7 @@ Run \`spine preflight\` for details.`,
 
 → ${reconciliation.suggestedCommand ?? "spine preflight"}
 
-Run \`/spine all\` after \`spine preflight\` when the batch engine is available (Phase 2+).`,
+Run \`/spine <task-id>\` or \`/spine all\` after preflight (single-task batches only in Phase 2).`,
 		"info",
 	);
 }
