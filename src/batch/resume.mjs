@@ -7,6 +7,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
+import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree } from "./lane-commit.mjs";
 import { mergeLaneToOrch } from "./engine.mjs";
@@ -401,6 +402,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		mergeCommit: merge.mergeCommit,
 		resumed: true,
 	});
+	openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
 	return {
 		ok: true,
@@ -408,6 +410,8 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		batchId,
 		taskId,
 		mergeCommit: merge.mergeCommit,
-		output: `Batch ${batchId} resumed and completed: ${taskId} succeeded; merged to ${orchBranch}.\n  → spine batch complete\n`,
+		output:
+			`Batch ${batchId} resumed and completed: ${taskId} succeeded; merged to ${orchBranch}.\n` +
+			`  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
 	};
 }

@@ -4,25 +4,10 @@
 
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
-
-/**
- * Phase 3 gate stub — full gate FSM is Phase 4.
- *
- * @param {import("../../bin/spine-config.mjs").SpineConfig|null} config
- */
-export function checkIntegrateGateStub(config) {
-	if (config?.gates?.requireBeforeIntegrate) {
-		return {
-			ok: true,
-			warning:
-				"gates.requireBeforeIntegrate is set but gate approval is not enforced until Phase 4 — review changes before pushing",
-		};
-	}
-	return { ok: true };
-}
 
 /**
  * @param {string} projectRoot
@@ -242,9 +227,40 @@ export function integrateOrchToBase(ctx) {
 	}
 
 	const configResult = loadSpineConfig(projectRoot);
-	const gate = checkIntegrateGateStub(configResult.config ?? null);
+	const config = configResult.config ?? null;
+	const gateCheck = checkIntegrateGate({
+		projectRoot,
+		batchId,
+		config,
+		forceIntegrate: Boolean(ctx.forceIntegrate),
+		dryRun,
+	});
+
+	if (!gateCheck.ok && !dryRun) {
+		appendJournalEvent(projectRoot, batchId, "integrate.failed", {
+			baseBranch,
+			orchBranch,
+			gateBlocked: true,
+			gateStatus: gateCheck.gate?.status ?? "missing",
+			error: gateCheck.error ?? gateCheck.headline,
+		});
+
+		return {
+			ok: false,
+			exitCode: gateCheck.exitCode ?? 2,
+			failureClass: gateCheck.failureClass ?? "GateBlocked",
+			error: gateCheck.error,
+			headline: gateCheck.headline ?? "Integrate blocked by gate",
+			suggestedCommand: gateCheck.suggestedCommand ?? "spine gate approve",
+			alternatives: gateCheck.alternatives ?? ["/spine-gate approve"],
+			batchId,
+			gate: gateCheck.gate ?? null,
+			diagnosis: "needs_integrate",
+		};
+	}
 
 	if (dryRun) {
+		const gatePending = gateCheck.required && !gateCheck.ok;
 		return {
 			ok: true,
 			exitCode: 0,
@@ -253,9 +269,12 @@ export function integrateOrchToBase(ctx) {
 			baseBranch,
 			orchBranch,
 			commitsAhead,
-			gateWarning: gate.warning ?? null,
-			headline: `Would merge ${orchBranch} → ${baseBranch} (${commitsAhead ?? "?"} commit(s))`,
-			suggestedCommand: "spine integrate",
+			gateRequired: gateCheck.required ?? false,
+			gatePending,
+			headline: gatePending
+				? `Would merge ${orchBranch} → ${baseBranch} after gate approval (${commitsAhead ?? "?"} commit(s))`
+				: `Would merge ${orchBranch} → ${baseBranch} (${commitsAhead ?? "?"} commit(s))`,
+			suggestedCommand: gatePending ? "spine gate approve" : "spine integrate",
 			mergePlan: `git checkout ${baseBranch} && git merge --no-ff ${orchBranch}`,
 		};
 	}
@@ -264,7 +283,8 @@ export function integrateOrchToBase(ctx) {
 		baseBranch,
 		orchBranch,
 		commitsAhead,
-		gateWarning: gate.warning ?? null,
+		gateRequired: gateCheck.required ?? false,
+		gateForced: gateCheck.forced ?? false,
 	});
 
 	const previous = git(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
@@ -288,7 +308,7 @@ export function integrateOrchToBase(ctx) {
 			orchBranch,
 			mergeCommit,
 			commitsAhead,
-			gateWarning: gate.warning ?? null,
+			gateRequired: gateCheck.required ?? false,
 			headline: `Integrated ${orchBranch} into ${baseBranch}`,
 			suggestedCommand: "spine batch complete",
 			alternatives: ["spine status --diagnose"],

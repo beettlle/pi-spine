@@ -181,13 +181,25 @@ spine next --execute                               # run suggested command (dism
 **Post-batch landing on `main`** (after `spine batch start` succeeds):
 
 1. `spine status --diagnose` — expect `needs_integrate` when orch has commits not on `main`
-2. `spine integrate` — local `--no-ff` merge of `orchBranch` → `baseBranch` (journal `integrate.started` / `integrate.completed`)
-3. `spine batch complete` — archive batch record (refuses if orch is ahead of `main` but not merged; refuses **empty orch** when `mergeResults` claim success)
+2. `spine gate status` — review evidence under `.spine/runtime/{batchId}/evidence/`
+3. `spine gate approve` — required when `gates.requireBeforeIntegrate` is true
+4. `spine integrate` — local `--no-ff` merge of `orchBranch` → `baseBranch` (journal `integrate.started` / `integrate.completed`)
+5. `spine batch complete` — archive batch record (refuses if orch is ahead of `main` but not merged; refuses **empty orch** when `mergeResults` claim success)
 4. Push `main` to your remote when ready (pi-spine never auto-pushes)
 
-`spine batch complete` validates orch integration using `countCommitsAhead` (same guard family as lane **EmptyMerge** at merge time). Gate approval (`gates.requireBeforeIntegrate`) is logged as a Phase 3 stub — full gate FSM is Phase 4.
+`spine batch complete` validates orch integration using `countCommitsAhead` (same guard family as lane **EmptyMerge** at merge time). When `gates.requireBeforeIntegrate` is true, integrate is blocked until you approve the evidence bundle.
 
-In pi: `/spine-integrate` delegates to `spine integrate`.
+```bash
+spine gate status                    # pending integrate gate + evidence paths
+spine gate approve                   # required before integrate (exit 2 if skipped)
+spine gate reject --reason "…"       # refuse merge; journals gate.rejected
+spine integrate                      # merge after approval
+spine integrate --force-integrate    # bypass only with SPINE_ALLOW_FORCE=1 (journaled)
+```
+
+Evidence is collected under `.spine/runtime/{batchId}/evidence/` (`summary.md`, `diff-stat.txt`, optional test/build output from `spine-config.json` or `.pi/taskplane-config.json`).
+
+In pi: `/spine-gate` and `/spine-integrate` delegate to `spine gate` and `spine integrate`.
 
 **Limbo recovery playbook** (Taskplane batch red, all tasks green, empty `mergeResults`):
 

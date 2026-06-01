@@ -5,6 +5,8 @@ import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
 import { runSpineIntegrate } from "../../bin/spine-integrate.mjs";
+import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { assertOrchIntegratable, integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { completeBatch } from "../../src/batch/lifecycle.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
@@ -33,6 +35,12 @@ function createOrchWithWork(projectRoot, orchBranch) {
 	execFileSync("git", ["add", "orch-work.txt"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", "orch work"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+}
+
+function approveGateForIntegrate(projectRoot, fixture, batchId) {
+	const config = loadSpineConfig(projectRoot).config;
+	openIntegrateGate({ projectRoot, batchId, batchState: fixture, config });
+	approveIntegrateGate({ projectRoot, batchId });
 }
 
 function completedBatchFixture(orchBranch, batchId = "20260601T120000") {
@@ -148,7 +156,9 @@ test("integrateOrchToBase merges orch into main and journals events", async () =
 	const batchId = "20260601T120000";
 	try {
 		createOrchWithWork(projectRoot, orchBranch);
-		writeSpineBatchState(projectRoot, completedBatchFixture(orchBranch, batchId));
+		const fixture = completedBatchFixture(orchBranch, batchId);
+		writeSpineBatchState(projectRoot, fixture);
+		approveGateForIntegrate(projectRoot, fixture, batchId);
 
 		const result = integrateOrchToBase({ projectRoot });
 		assert.equal(result.ok, true);
@@ -204,6 +214,8 @@ test("completeBatch succeeds after integrate lands orch on main", async () => {
 		createOrchWithWork(projectRoot, orchBranch);
 		writeSpineBatchState(projectRoot, completedBatchFixture(orchBranch));
 
+		const fixture = completedBatchFixture(orchBranch);
+		approveGateForIntegrate(projectRoot, fixture, fixture.batchId);
 		const integrate = integrateOrchToBase({ projectRoot });
 		assert.equal(integrate.ok, true);
 
