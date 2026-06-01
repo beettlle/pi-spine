@@ -144,6 +144,7 @@ export function validateBatchState(state) {
 	if (!Array.isArray(raw.tasks)) errors.push("tasks must be an array");
 	if (!Array.isArray(raw.lanes)) errors.push("lanes must be an array");
 	if (!Array.isArray(raw.mergeResults)) errors.push("mergeResults must be an array");
+	if (!Array.isArray(raw.segments)) errors.push("segments must be an array");
 
 	const totalTasks = Number(raw.totalTasks ?? 0);
 	const succeededTasks = Number(raw.succeededTasks ?? 0);
@@ -198,6 +199,51 @@ export function validateBatchState(state) {
 			if (!found) {
 				errors.push(`lane ${laneNumber} lists task ${taskId} not assigned to that lane`);
 			}
+		}
+	}
+
+	const segments = Array.isArray(raw.segments) ? raw.segments : [];
+	const taskIds = new Set(
+		(Array.isArray(raw.tasks) ? raw.tasks : [])
+			.map((task) =>
+				task && typeof task === "object"
+					? String(/** @type {{ taskId?: string }} */ (task).taskId ?? "").trim()
+					: "",
+			)
+			.filter(Boolean),
+	);
+	const segmentIds = new Set();
+
+	for (const segment of segments) {
+		if (!segment || typeof segment !== "object") {
+			errors.push("each segment must be an object");
+			continue;
+		}
+		const segmentId = String(/** @type {{ segmentId?: string }} */ (segment).segmentId ?? "").trim();
+		const taskId = String(/** @type {{ taskId?: string }} */ (segment).taskId ?? "").trim();
+		const status = String(/** @type {{ status?: string }} */ (segment).status ?? "").trim();
+
+		if (!segmentId) errors.push("each segment must have segmentId");
+		if (!taskId) errors.push("each segment must have taskId");
+		if (!status) errors.push(`segment ${segmentId || "(missing)"} must have status`);
+		if (segmentId && segmentIds.has(segmentId)) {
+			errors.push(`duplicate segmentId ${segmentId}`);
+		}
+		if (segmentId) segmentIds.add(segmentId);
+		if (taskId && !taskIds.has(taskId)) {
+			errors.push(`segment ${segmentId || taskId} references unknown task ${taskId}`);
+		}
+	}
+
+	for (const taskId of taskIds) {
+		const hasSegment = segments.some(
+			(segment) =>
+				segment &&
+				typeof segment === "object" &&
+				String(/** @type {{ taskId?: string }} */ (segment).taskId) === taskId,
+		);
+		if (!hasSegment) {
+			errors.push(`task ${taskId} has no matching segment record`);
 		}
 	}
 
@@ -272,6 +318,53 @@ export function appendBatchHistoryEntry(projectRoot, entry) {
 }
 
 /**
+ * @param {string} taskId
+ */
+export function defaultSegmentId(taskId) {
+	return `${taskId}::default`;
+}
+
+/**
+ * @param {Array<{ taskId: string }>} tasks
+ */
+export function buildSegmentsFromTasks(tasks) {
+	return tasks.map((task) => ({
+		segmentId: defaultSegmentId(task.taskId),
+		taskId: task.taskId,
+		status: "pending",
+		repoId: "default",
+	}));
+}
+
+/**
+ * @param {object} state
+ * @param {string} taskId
+ * @param {string} status
+ */
+export function updateSegmentForTask(state, taskId, status) {
+	if (!Array.isArray(state.segments)) return;
+	for (const segment of state.segments) {
+		if (segment && typeof segment === "object" && segment.taskId === taskId) {
+			segment.status = status;
+		}
+	}
+}
+
+/**
+ * @param {object} state
+ * @param {string} [taskId]
+ */
+export function countPendingSegments(state, taskId = null) {
+	const segments = Array.isArray(state.segments) ? state.segments : [];
+	return segments.filter((segment) => {
+		if (!segment || typeof segment !== "object") return false;
+		if (taskId && segment.taskId !== taskId) return false;
+		const status = String(segment.status ?? "pending").toLowerCase();
+		return status === "pending" || status === "running";
+	}).length;
+}
+
+/**
  * @param {object} params
  */
 export function createInitialBatchState({
@@ -297,6 +390,7 @@ export function createInitialBatchState({
 		wavePlan,
 		lanes: lanes.map((lane) => ({ ...lane, lastHeartbeatAt: lane.lastHeartbeatAt ?? null })),
 		tasks,
+		segments: buildSegmentsFromTasks(tasks),
 		mergeResults: [],
 		totalTasks: tasks.length,
 		succeededTasks: 0,

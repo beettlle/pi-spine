@@ -141,6 +141,29 @@ function runSpineBatchDismiss(argsText: string, cwd = process.cwd()) {
 	};
 }
 
+function runSpineBatchPauseResume(
+	subcommand: "pause" | "resume",
+	argsText: string,
+	cwd = process.cwd(),
+) {
+	const tokens = [subcommand, ...String(argsText ?? "").trim().split(/\s+/).filter(Boolean)];
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "batch", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function runSpineNext(argsText: string, cwd = process.cwd()) {
 	const tokens = String(argsText ?? "")
 		.trim()
@@ -342,6 +365,26 @@ async function spineDismissHandler(args: string, ctx: ExtensionCommandContext): 
 	ctx.ui.notify(result.output || "batch dismissed", "info");
 }
 
+async function spinePauseHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineBatchPauseResume("pause", args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch pause failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "batch paused", "info");
+}
+
+async function spineResumeHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineBatchPauseResume("resume", args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch resume failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "batch resumed", "info");
+}
+
 async function spineNextHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const result = runSpineNext(args);
 	if (!result.ok) {
@@ -368,7 +411,11 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 								? spineDismissHandler
 								: name === "spine-next"
 									? spineNextHandler
-									: stubHandler(name),
+									: name === "spine-pause"
+										? spinePauseHandler
+										: name === "spine-resume"
+											? spineResumeHandler
+											: stubHandler(name),
 		});
 	}
 }

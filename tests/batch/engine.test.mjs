@@ -37,6 +37,48 @@ Smoke task for engine tests.
 	);
 }
 
+test("startBatch lane branch has commit before merge when stub touches files", async () => {
+	const projectRoot = await initGitRepo("spine-engine-commit-");
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	const prevTouch = process.env.SPINE_WORKER_STUB_TOUCH;
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_WORKER_STUB_TOUCH = "1";
+	try {
+		writeSmokeTask(projectRoot, "TP-999");
+		execCommit(projectRoot, "add smoke task");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "TP-999",
+			skipPreflight: true,
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		const mainHead = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		const orchHead = execFileSync("git", ["rev-parse", result.orchBranch], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		assert.notEqual(mainHead, orchHead);
+		execFileSync("git", ["merge-base", "--is-ancestor", "main", result.orchBranch], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+
+		const events = readJournalEvents(projectRoot, result.batchId);
+		assert.ok(events.some((event) => event.type === "lane.committed"));
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		if (prevTouch === undefined) delete process.env.SPINE_WORKER_STUB_TOUCH;
+		else process.env.SPINE_WORKER_STUB_TOUCH = prevTouch;
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("startBatch completes single task with stub worker", async () => {
 	const projectRoot = await initGitRepo("spine-engine-");
 	const prevStub = process.env.SPINE_WORKER_STUB;
@@ -58,6 +100,8 @@ test("startBatch completes single task with stub worker", async () => {
 		const state = loadSpineBatchState(projectRoot);
 		assert.equal(state.raw?.phase, "completed");
 		assert.equal(state.raw?.succeededTasks, 1);
+		assert.ok(Array.isArray(state.raw?.segments));
+		assert.equal(state.raw?.segments[0]?.status, "succeeded");
 
 		const events = readJournalEvents(projectRoot, result.batchId);
 		const types = events.map((e) => e.type);

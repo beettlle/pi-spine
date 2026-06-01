@@ -43,6 +43,8 @@ test("validateBatchState accepts healthy schema v1 state", () => {
 
 	const result = validateBatchState(state);
 	assert.equal(result.ok, true);
+	assert.equal(state.segments.length, 1);
+	assert.equal(state.segments[0].taskId, "TP-014");
 });
 
 test("validateBatchState rejects counter drift", () => {

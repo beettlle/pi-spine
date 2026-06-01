@@ -210,7 +210,20 @@ spine batch start TP-012 --dry-run           # preflight + plan only
 spine batch start TP-012 --json              # machine-readable result
 ```
 
-**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → deterministic merge into `orch/spine-{batchId}` → batch phase `completed` or `failed`.
+**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1, includes `segments[]`) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → **lane auto-commit** (uncommitted work is staged and committed on the task branch when `.DONE` exists; fails loud if dirty without `.DONE`) → deterministic merge into `orch/spine-{batchId}` → batch phase `completed` or `failed`.
+
+### Pause and resume (Phase 3 — single lane)
+
+```bash
+spine batch pause                    # stop scheduling; journal batch.paused
+spine batch resume                   # continue paused batch (§18.2 resume semantics)
+spine batch resume --force           # resume failed batch after stale lane state
+spine batch pause --json
+```
+
+Resume skips tasks already marked complete via `.DONE` or journal `task.completed`, respawns the worker in the existing lane worktree for pending segments, logs `batch.resumed` with `{ resumeForced, pendingSegments }`, then runs lane commit + merge.
+
+In pi: `/spine-pause` and `/spine-resume` delegate to `spine batch pause|resume`. When `spine status` reports `diagnosis: paused`, the suggested command is `spine batch resume` (not Taskplane pause).
 
 **Runtime layout:**
 

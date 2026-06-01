@@ -23,6 +23,13 @@ if (mode === "stub") {
 	if (delayMs > 0) {
 		spawnSync("sleep", [String(delayMs / 1000)], { stdio: "ignore" });
 	}
+	if (process.env.SPINE_WORKER_STUB_TOUCH === "1" && worktreePath) {
+		fs.writeFileSync(
+			path.join(worktreePath, "stub-worker-touch.txt"),
+			`stub touch ${new Date().toISOString()}\n`,
+			"utf-8",
+		);
+	}
 	const donePath = path.join(taskFolder, ".DONE");
 	fs.writeFileSync(
 		donePath,

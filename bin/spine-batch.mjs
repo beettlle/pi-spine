@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { startBatch } from "../src/batch/engine.mjs";
+import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -64,7 +65,14 @@ function parseBatchArgs(args) {
 	const skipPreflight = flags.has("--skip-preflight");
 
 	const subcommand =
-		args.find((t) => t === "dismiss" || t === "complete" || t === "start") ?? null;
+		args.find(
+			(t) =>
+				t === "dismiss" ||
+				t === "complete" ||
+				t === "start" ||
+				t === "pause" ||
+				t === "resume",
+		) ?? null;
 
 	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
 
@@ -117,6 +125,47 @@ export async function runSpineBatch(options) {
 		};
 	}
 
+	if (parsed.subcommand === "pause") {
+		const result = pauseBatch({ projectRoot });
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: result.output ?? (result.ok ? "Batch paused.\n" : "Batch pause failed.\n"),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "resume") {
+		const result = await resumeBatch({ projectRoot, force: parsed.force });
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		const lines = [
+			"",
+			result.ok ? "Batch resumed" : "Batch resume failed",
+			"",
+			result.output ?? result.error ?? "",
+		];
+		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		lines.push("");
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: lines.join("\n"),
+			result,
+		};
+	}
+
 	if (parsed.subcommand === "start") {
 		const result = await startBatch({
 			projectRoot,
@@ -150,7 +199,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

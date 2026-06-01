@@ -9,7 +9,7 @@
 
 ## Current State
 
-**Phases 0–1c, TP-012–TP-014 are on `main`.** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **69/69** tests pass locally (`SPINE_WORKER_STUB=1`). TP-014 landed via manual merge after empty batch merge (uncommitted lane work).
+**Phases 0–1c, TP-012–TP-015 are on `main` (TP-015 pending merge from lane-1 worktree).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **76/76** tests pass locally (`SPINE_WORKER_STUB=1`). TP-014 landed via manual merge after empty batch merge (uncommitted lane work); TP-015 adds lane auto-commit, `segments[]`, and pause/resume.
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -49,11 +49,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Done** | TP-012 |
 | TP-014 | Orchestration journal + batch-state hardening | **Done** | TP-013 |
 
-### Phase 3 — Segments, resume, multi-lane (in progress)
+### Phase 3 — Segments, resume, multi-lane
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-015 | Segment model + lane commit + pause/resume | **Staged** — packet ready | TP-014 |
+| TP-015 | Segment model + lane commit + pause/resume | **Done** (lane-1 worktree) | TP-014 |
 
 ### Phase 3 — Multi-lane + recovery (remaining)
 
@@ -89,7 +89,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 ## Next steps (Option B)
 
-1. **Run TP-015** — `spine batch start TP-015` (lane commit, segments, pause/resume).
+1. **Run TP-016** — atomic `/spine-retry-task` (segment frontier reset).
 2. **Stage TP-016** — atomic retry + skip-task (§18.5, GAP-RETRY-01).
 3. **Dogfood one task per batch** — `spine batch start <id>` only; no Taskplane workers for spine tasks.
 4. **Phase 4+** — review fail-closed, integrate gate, dashboard (GAP-UX-03), npm publish.

@@ -11,11 +11,13 @@ import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.m
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import crypto from "node:crypto";
 import { appendJournalEvent } from "./journal.mjs";
+import { commitLaneWorktree } from "./lane-commit.mjs";
 import {
 	assertNoActiveBatch,
 	createInitialBatchState,
 	generateBatchId,
 	saveSpineBatchState,
+	updateSegmentForTask,
 } from "./state.mjs";
 import {
 	ensureOrchBranch,
@@ -288,6 +290,7 @@ export async function startBatch({
 			state.tasks[0].status = "failed";
 			state.tasks[0].endedAt = Date.now();
 			state.tasks[0].exitReason = workerResult.classification ?? "worker_failed";
+			updateSegmentForTask(state, taskId, "failed");
 			state.failedTasks = 1;
 			state.endedAt = Date.now();
 			state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
@@ -332,6 +335,46 @@ export async function startBatch({
 			laneId: "lane-1",
 			correlationId: laneCorrelationId,
 		});
+		updateSegmentForTask(state, taskId, "succeeded");
+
+		const laneCommit = commitLaneWorktree({
+			worktreePath: wt,
+			taskBranch,
+			taskId,
+			batchId,
+			taskFolder: taskFolderInWorktree,
+		});
+		if (!laneCommit.ok) {
+			state.tasks[0].status = "failed";
+			state.tasks[0].endedAt = Date.now();
+			state.tasks[0].exitReason = laneCommit.failureClass ?? "lane_commit_failed";
+			state.failedTasks = 1;
+			state.succeededTasks = 0;
+			updateSegmentForTask(state, taskId, "failed");
+			state.endedAt = Date.now();
+			state.lastError = laneCommit.error ?? "lane commit failed";
+			transitionPhase(state, "failed", {
+				projectRoot,
+				batchId,
+				extra: { taskId, reason: "lane_commit" },
+			});
+			saveSpineBatchState(projectRoot, state);
+			return {
+				ok: false,
+				exitCode: 1,
+				batchId,
+				taskId,
+				error: "lane_commit_failed",
+				output: laneCommit.error,
+			};
+		}
+		if (laneCommit.committed) {
+			appendJournalEvent(projectRoot, batchId, "lane.committed", {
+				taskId,
+				laneNumber: 1,
+				commitSha: laneCommit.commitSha,
+			});
+		}
 
 		appendJournalEvent(projectRoot, batchId, "batch.merge_started", {
 			taskBranch,

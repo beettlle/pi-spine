@@ -41,7 +41,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "running":
 			return "/spine-status --diagnose";
 		case "paused":
-			return "/spine-resume --force";
+			return "spine batch resume";
 		case "failed":
 			return "spine status --diagnose";
 		case "aborted":
@@ -113,7 +113,7 @@ export function buildAlternatives(diagnosis) {
 		case "running":
 			return ["/spine-pause", ...common];
 		case "paused":
-			return ["/spine-status --diagnose", ...common];
+			return ["spine batch resume --force", "spine status --diagnose", ...common];
 		case "failed":
 			return ["/spine-retry-task", ...common];
 		default:
