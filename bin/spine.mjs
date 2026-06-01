@@ -394,6 +394,20 @@ async function cmdStatus(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdBatch(args) {
+	const { runSpineBatch } = await import("./spine-batch.mjs");
+	const result = runSpineBatch({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
+async function cmdNext(args) {
+	const { runSpineNext } = await import("./spine-batch.mjs");
+	const result = runSpineNext({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdPlan(args) {
 	const json = args.includes("--json");
 	const scope = args.find((a) => !a.startsWith("--")) ?? "all";
@@ -439,6 +453,8 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
+  ${c.cyan}batch${c.reset}           Dismiss or complete active batch (FR-BATCH-15/16)
+  ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -454,6 +470,10 @@ ${c.bold}Examples:${c.reset}
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
+  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
+  spine batch complete --detect-manual-merge    # complete after manual git merge
+  spine next                                    # suggested next command (dry-run)
+  spine next --execute                          # run suggested spine command
   spine version                                 # show package and environment info
 `);
 }
@@ -480,6 +500,12 @@ if (isMainModule) {
 				break;
 			case "status":
 				await cmdStatus(args);
+				break;
+			case "batch":
+				await cmdBatch(args);
+				break;
+			case "next":
+				await cmdNext(args);
 				break;
 			case "version":
 			case "--version":

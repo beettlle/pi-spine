@@ -20,6 +20,8 @@ export const SPINE_SLASH_COMMAND_NAMES = [
 	"spine-integrate",
 	"spine-settings",
 	"spine-deps",
+	"spine-dismiss",
+	"spine-next",
 ] as const;
 
 type SpineSlashCommandName = (typeof SPINE_SLASH_COMMAND_NAMES)[number];
@@ -71,6 +73,14 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 		name: "spine-deps",
 		description: "Show dependency graph (usage: /spine-deps <all|paths>)",
 	},
+	{
+		name: "spine-dismiss",
+		description: "Archive and clear limbo/stale active batch (usage: /spine-dismiss [--reason])",
+	},
+	{
+		name: "spine-next",
+		description: "Print suggested next command from reconciliation",
+	},
 ];
 
 function runSpinePreflight(cwd = process.cwd()) {
@@ -99,6 +109,47 @@ function runSpinePlan(argsText: string, cwd = process.cwd()) {
 	const result = spawnSync(
 		process.execPath,
 		[path.join(PACKAGE_ROOT, "bin/spine-plan.mjs"), ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
+function runSpineBatchDismiss(argsText: string, cwd = process.cwd()) {
+	const tokens = ["dismiss", ...String(argsText ?? "").trim().split(/\s+/).filter(Boolean)];
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "batch", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
+function runSpineNext(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "next", ...tokens],
 		{
 			cwd,
 			encoding: "utf-8",
@@ -145,6 +196,64 @@ function stubHandler(command: string) {
 
 async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const scope = args.trim();
+	const status = runSpineStatus("--json");
+	let reconciliation: {
+		diagnosis?: string | null;
+		headline?: string;
+		suggestedCommand?: string;
+		alternatives?: string[];
+	} = {};
+
+	if (status.ok && status.output) {
+		try {
+			reconciliation = JSON.parse(status.output) as typeof reconciliation;
+		} catch {
+			// fall through to preflight guidance
+		}
+	}
+
+	const diagnosis = reconciliation.diagnosis ?? null;
+
+	if (diagnosis === "limbo_stale" || diagnosis === "completed_manual") {
+		ctx.ui.notify(
+			`${reconciliation.headline ?? "Batch is in limbo"}
+
+→ ${reconciliation.suggestedCommand ?? "spine batch dismiss"}
+
+Never pause a terminal limbo batch — dismiss or complete to clear active state.`,
+			"warning",
+		);
+		return;
+	}
+
+	if (
+		diagnosis === "needs_retry" ||
+		diagnosis === "needs_merge" ||
+		diagnosis === "needs_integrate" ||
+		diagnosis === "running" ||
+		diagnosis === "paused" ||
+		diagnosis === "failed" ||
+		diagnosis === "aborted"
+	) {
+		ctx.ui.notify(
+			`${reconciliation.headline ?? "Active batch requires attention"}
+
+→ ${reconciliation.suggestedCommand ?? "spine status --diagnose"}`,
+			diagnosis === "running" ? "info" : "warning",
+		);
+		return;
+	}
+
+	if (diagnosis === "completed") {
+		ctx.ui.notify(
+			`${reconciliation.headline ?? "Batch completed"}
+
+→ ${reconciliation.suggestedCommand ?? "spine preflight"}`,
+			"info",
+		);
+		return;
+	}
+
 	const preflight = runSpinePreflight();
 
 	if (!preflight.ok) {
@@ -168,7 +277,11 @@ Run \`spine preflight\` for details.`,
 	}
 
 	ctx.ui.notify(
-		"Preflight passed. Run `/spine all` after `spine preflight` when the batch engine is available (Phase 2+).",
+		`${reconciliation.headline ?? "No active batch — ready to plan or start"}
+
+→ ${reconciliation.suggestedCommand ?? "spine preflight"}
+
+Run \`/spine all\` after \`spine preflight\` when the batch engine is available (Phase 2+).`,
 		"info",
 	);
 }
@@ -205,6 +318,26 @@ async function spineStatusHandler(args: string, ctx: ExtensionCommandContext): P
 	ctx.ui.notify(status.output || "status unavailable", "info");
 }
 
+async function spineDismissHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineBatchDismiss(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch dismiss failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "batch dismissed", "info");
+}
+
+async function spineNextHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineNext(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine next failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "no next action", "info");
+}
+
 /** Register all PRD §15.1 pi slash commands with Phase 0 stub handlers. */
 export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 	for (const { name, description } of SPINE_SLASH_COMMANDS) {
@@ -217,7 +350,11 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 						? spinePlanHandler
 						: name === "spine-status"
 							? spineStatusHandler
-							: stubHandler(name),
+							: name === "spine-dismiss"
+								? spineDismissHandler
+								: name === "spine-next"
+									? spineNextHandler
+									: stubHandler(name),
 		});
 	}
 }
