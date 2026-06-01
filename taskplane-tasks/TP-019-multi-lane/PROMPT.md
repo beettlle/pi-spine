@@ -31,20 +31,20 @@
 ## Steps
 
 ### Step 0: Preflight
-- [ ] §17.4; GAP-MERGE-01; retry/skip on `main`
+- [x] §17.4; GAP-MERGE-01; retry/skip on `main`
 
 ### Step 1: Multi-lane provision + wave loop
-- [ ] Provision N lanes; assign tasks from plan ticks
+- [x] Provision N lanes; assign tasks from plan ticks
 
 ### Step 2: Mixed-outcome merge guard
-- [ ] Refuse merge with failed/pending; operator messaging
+- [x] Refuse merge with failed/pending; operator messaging
 
 ### Step 3: Tests + docs
-- [ ] Multi-lane fixture; README; CONTEXT
+- [x] Multi-lane fixture; README; CONTEXT
 
 ## Completion Criteria
 
-- [ ] Two-lane smoke batch in tests; merge blocked on mixed outcomes
+- [x] Two-lane smoke batch in tests; merge blocked on mixed outcomes
 
 ## Git Commit Convention
 

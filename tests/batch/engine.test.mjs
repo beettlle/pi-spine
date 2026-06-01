@@ -5,10 +5,18 @@ import path from "node:path";
 import test from "node:test";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { loadSpineBatchState } from "../../src/batch/state.mjs";
-import { startBatch } from "../../src/batch/engine.mjs";
+import {
+	assessWaveMergeEligibility,
+	startBatch,
+} from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
-function writeSmokeTask(projectRoot, taskId = "TP-999") {
+/**
+ * @param {string} projectRoot
+ * @param {string} taskId
+ * @param {string} fileScopePath
+ */
+function writeSmokeTask(projectRoot, taskId = "TP-999", fileScopePath = "src/smoke.txt") {
 	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
@@ -22,7 +30,7 @@ Smoke task for engine tests.
 - **None**
 
 ## File Scope
-- \`src/smoke.txt\`
+- \`${fileScopePath}\`
 
 ## Steps
 ### Step 0: Done
@@ -30,11 +38,25 @@ Smoke task for engine tests.
 `,
 		"utf-8",
 	);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {Record<string, string[]>} tasks
+ */
+function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
 		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
-		JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);
+}
+
+function setMaxParallel(projectRoot, maxParallel) {
+	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
+	const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+	config.lanes = { ...config.lanes, maxParallel, queueExcess: true };
+	fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf-8");
 }
 
 test("startBatch lane branch has commit before merge when stub touches files", async () => {
@@ -45,6 +67,7 @@ test("startBatch lane branch has commit before merge when stub touches files", a
 	process.env.SPINE_WORKER_STUB_TOUCH = "1";
 	try {
 		writeSmokeTask(projectRoot, "TP-999");
+		writeDependencies(projectRoot, { "TP-999": [] });
 		execCommit(projectRoot, "add smoke task");
 
 		const result = await startBatch({
@@ -85,6 +108,7 @@ test("startBatch completes single task with stub worker", async () => {
 	process.env.SPINE_WORKER_STUB = "1";
 	try {
 		writeSmokeTask(projectRoot, "TP-999");
+		writeDependencies(projectRoot, { "TP-999": [] });
 		execCommit(projectRoot, "add smoke task");
 
 		const result = await startBatch({
@@ -124,23 +148,114 @@ test("startBatch completes single task with stub worker", async () => {
 	}
 });
 
-test("startBatch rejects multi-task scope", async () => {
+test("startBatch rejects multi-task all scope without multi-lane plan", async () => {
 	const projectRoot = await initGitRepo("spine-engine-multi-");
 	try {
-		writeSmokeTask(projectRoot, "TP-999");
-		writeSmokeTask(projectRoot, "TP-998");
-		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
-			JSON.stringify({ version: 1, tasks: { "TP-999": [], "TP-998": [] } }, null, 2),
-		);
+		writeSmokeTask(projectRoot, "TP-999", "src/shared.txt");
+		writeSmokeTask(projectRoot, "TP-998", "src/shared.txt");
+		writeDependencies(projectRoot, { "TP-999": [], "TP-998": ["TP-999"] });
 		execCommit(projectRoot, "tasks");
 
 		const result = await startBatch({ projectRoot, scope: "all", skipPreflight: true });
 		assert.equal(result.ok, false);
-		assert.equal(result.error, "single_task_required");
+		assert.equal(result.error, "multi_task_not_allowed");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("startBatch completes two-lane wave with stub workers", async () => {
+	const projectRoot = await initGitRepo("spine-engine-2lane-");
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+	try {
+		setMaxParallel(projectRoot, 2);
+		writeSmokeTask(projectRoot, "TP-997", "src/lane-a.txt");
+		writeSmokeTask(projectRoot, "TP-998", "src/lane-b.txt");
+		writeDependencies(projectRoot, { "TP-997": [], "TP-998": [] });
+		execCommit(projectRoot, "add two-lane tasks");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "TP-997 TP-998",
+			skipPreflight: true,
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.ok(result.taskIds?.includes("TP-997"));
+		assert.ok(result.taskIds?.includes("TP-998"));
+
+		const state = loadSpineBatchState(projectRoot);
+		assert.equal(state.raw?.phase, "completed");
+		assert.equal(state.raw?.succeededTasks, 2);
+		assert.equal(state.raw?.lanes?.length, 2);
+		assert.ok(state.raw?.mergeResults?.length >= 1);
+
+		const events = readJournalEvents(projectRoot, result.batchId);
+		const provisioned = events.filter((event) => event.type === "lane.provisioned");
+		assert.equal(provisioned.length, 2);
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("startBatch blocks merge on mixed outcomes", async () => {
+	const projectRoot = await initGitRepo("spine-engine-mixed-");
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	const prevFail = process.env.SPINE_WORKER_STUB_FAIL_TASKS;
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_WORKER_STUB_FAIL_TASKS = "TP-998";
+	try {
+		setMaxParallel(projectRoot, 2);
+		writeSmokeTask(projectRoot, "TP-997", "src/lane-a.txt");
+		writeSmokeTask(projectRoot, "TP-998", "src/lane-b.txt");
+		writeDependencies(projectRoot, { "TP-997": [], "TP-998": [] });
+		execCommit(projectRoot, "add mixed-outcome tasks");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "TP-997 TP-998",
+			skipPreflight: true,
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "mixed_outcome_merge_blocked");
+		assert.deepEqual(result.failedTaskIds, ["TP-998"]);
+
+		const state = loadSpineBatchState(projectRoot);
+		assert.equal(state.raw?.phase, "failed");
+		assert.equal(state.raw?.succeededTasks, 1);
+		assert.equal(state.raw?.failedTasks, 1);
+		assert.equal(state.raw?.mergeResults?.length ?? 0, 0);
+		assert.match(state.raw?.lastError ?? "", /§17\.4/);
+
+		const events = readJournalEvents(projectRoot, result.batchId);
+		assert.ok(events.some((event) => event.type === "batch.merge_blocked"));
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		if (prevFail === undefined) delete process.env.SPINE_WORKER_STUB_FAIL_TASKS;
+		else process.env.SPINE_WORKER_STUB_FAIL_TASKS = prevFail;
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("assessWaveMergeEligibility blocks failed and pending tasks", () => {
+	const state = {
+		wavePlan: [["TP-997", "TP-998"]],
+		tasks: [
+			{ taskId: "TP-997", status: "succeeded" },
+			{ taskId: "TP-998", status: "failed" },
+		],
+		resilience: { forceMergedWaves: [] },
+	};
+
+	const blocked = assessWaveMergeEligibility(state, 0);
+	assert.equal(blocked.ok, false);
+	assert.deepEqual(blocked.failedTaskIds, ["TP-998"]);
+	assert.match(blocked.message ?? "", /\/spine-retry-task TP-998/);
 });
 
 function execCommit(projectRoot, message) {

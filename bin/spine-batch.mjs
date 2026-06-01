@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { abortBatch } from "../src/batch/abort.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
-import { startBatch } from "../src/batch/engine.mjs";
+import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
@@ -63,6 +63,12 @@ function parseBatchArgs(args) {
 		reason = args[reasonIdx + 1];
 	}
 
+	let waveIndex = 0;
+	const waveIdx = args.indexOf("--wave");
+	if (waveIdx >= 0 && args[waveIdx + 1]) {
+		waveIndex = Number(args[waveIdx + 1]);
+	}
+
 	const dryRun = flags.has("--dry-run");
 	const skipPreflight = flags.has("--skip-preflight");
 
@@ -76,7 +82,8 @@ function parseBatchArgs(args) {
 				t === "pause" ||
 				t === "resume" ||
 				t === "retry" ||
-				t === "skip",
+				t === "skip" ||
+				t === "force-merge",
 		) ?? null;
 
 	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
@@ -90,6 +97,7 @@ function parseBatchArgs(args) {
 		skipPreflight,
 		batchId,
 		reason,
+		waveIndex,
 		subcommand,
 		taskId: subcommand === "retry" || subcommand === "skip" ? positional[0] ?? null : null,
 		scope: positional.join(" ") || "all",
@@ -225,6 +233,30 @@ export async function runSpineBatch(options) {
 		};
 	}
 
+	if (parsed.subcommand === "force-merge") {
+		const result = forceMergeWave({ projectRoot, waveIndex: parsed.waveIndex });
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		const lines = [
+			"",
+			result.ok ? "Force merge requested" : "Force merge failed",
+			"",
+			result.output ?? result.error ?? "",
+		];
+		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+		lines.push("");
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: lines.join("\n"),
+			result,
+		};
+	}
+
 	if (parsed.subcommand === "resume") {
 		const result = await resumeBatch({ projectRoot, force: parsed.force });
 		if (parsed.json) {
@@ -283,7 +315,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

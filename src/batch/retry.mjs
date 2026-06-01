@@ -119,16 +119,6 @@ export function retryTask({ projectRoot, taskId }) {
 		};
 	}
 
-	if (state.tasks.length !== 1 || state.lanes.length !== 1) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "single_lane_required",
-			output: "TP-017 retry supports exactly one task and one lane per batch.\n",
-			batchId: state.batchId,
-		};
-	}
-
 	const task = findTask(state, taskId);
 	if (!task) {
 		return {
@@ -234,16 +224,6 @@ export function skipTask({ projectRoot, taskId }) {
 			exitCode: 1,
 			error: "invalid_batch_state",
 			output: `Batch state validation failed:\n  ${validation.errors.join("\n  ")}\n`,
-			batchId: state.batchId,
-		};
-	}
-
-	if (state.tasks.length !== 1 || state.lanes.length !== 1) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "single_lane_required",
-			output: "TP-017 skip supports exactly one task and one lane per batch.\n",
 			batchId: state.batchId,
 		};
 	}
