@@ -9,7 +9,7 @@
 
 ## Current State
 
-**Phases 0–1c and TP-012 are on `main` (local).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **51/51** tests pass locally (`SPINE_WORKER_STUB=1`).
+**Phases 0–1c, TP-012, and TP-013 are on `main` (local).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **55/55** tests pass locally (`SPINE_WORKER_STUB=1`).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
