@@ -224,6 +224,18 @@ spine batch start TP-012 --json              # machine-readable result
 
 **CI / tests without `pi`:** set `SPINE_WORKER_STUB=1` so the worker runner touches `.DONE` instead of spawning `pi` (see `bin/spine-worker-runner.mjs`).
 
+**Heartbeat and stall (TP-013):** during a batch, the engine polls lane progress (STATUS.md mtime, lane-branch commits) and appends `lane.heartbeat` to the journal on an interval (default 10 minutes). Stall kill uses §18.4 grace after progress. Configure in `.spine/spine-config.json`:
+
+```json
+"lanes": {
+  "stallTimeoutMinutes": 60,
+  "stallGraceAfterProgressMinutes": 15,
+  "heartbeatIntervalMinutes": 10
+}
+```
+
+With `pi` on PATH, `spine batch start` runs `pi -p` against the task `PROMPT.md` (disable via `SPINE_WORKER_PI_AGENT=0`).
+
 Do **not** run `spine batch start` and Taskplane `/orch` on the same repo concurrently.
 
 In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` invokes the planner):

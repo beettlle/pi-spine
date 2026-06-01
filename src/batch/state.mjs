@@ -114,7 +114,7 @@ export function createInitialBatchState({
 		currentWaveIndex: 0,
 		totalWaves: wavePlan.length,
 		wavePlan,
-		lanes,
+		lanes: lanes.map((lane) => ({ ...lane, lastHeartbeatAt: lane.lastHeartbeatAt ?? null })),
 		tasks,
 		mergeResults: [],
 		totalTasks: tasks.length,

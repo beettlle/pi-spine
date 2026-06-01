@@ -81,7 +81,7 @@ export function mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranc
  * @param {boolean} [options.dryRun]
  * @param {boolean} [options.skipPreflight]
  */
-export function startBatch({
+export async function startBatch({
 	projectRoot,
 	scope = "all",
 	dryRun = false,
@@ -170,6 +170,7 @@ export function startBatch({
 			worktreePath,
 			branch: taskBranch,
 			taskIds: [taskId],
+			lastHeartbeatAt: null,
 		},
 	];
 
@@ -208,7 +209,20 @@ export function startBatch({
 		appendJournalEvent(projectRoot, batchId, "task.started", { taskId, laneNumber: 1 });
 
 		const taskFolderInWorktree = path.join(wt, taskFolderRel);
-		const workerResult = runWorker({ worktreePath: wt, taskFolder: taskFolderInWorktree });
+		const workerResult = await runWorker({
+			worktreePath: wt,
+			taskFolder: taskFolderInWorktree,
+			projectRoot,
+			batchId,
+			laneNumber: 1,
+			taskId,
+			laneBranch: taskBranch,
+			config,
+			onHeartbeat: (timestamp) => {
+				state.lanes[0].lastHeartbeatAt = timestamp;
+				saveSpineBatchState(projectRoot, state);
+			},
+		});
 
 		if (!workerResult.ok) {
 			state.tasks[0].status = "failed";

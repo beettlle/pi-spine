@@ -45,7 +45,7 @@ test("startBatch completes single task with stub worker", async () => {
 		writeSmokeTask(projectRoot, "TP-999");
 		execCommit(projectRoot, "add smoke task");
 
-		const result = startBatch({
+		const result = await startBatch({
 			projectRoot,
 			scope: "TP-999",
 			skipPreflight: true,
@@ -82,7 +82,7 @@ test("startBatch rejects multi-task scope", async () => {
 		);
 		execCommit(projectRoot, "tasks");
 
-		const result = startBatch({ projectRoot, scope: "all", skipPreflight: true });
+		const result = await startBatch({ projectRoot, scope: "all", skipPreflight: true });
 		assert.equal(result.ok, false);
 		assert.equal(result.error, "single_task_required");
 	} finally {

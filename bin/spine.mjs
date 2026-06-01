@@ -396,7 +396,7 @@ async function cmdStatus(args) {
 
 async function cmdBatch(args) {
 	const { runSpineBatch } = await import("./spine-batch.mjs");
-	const result = runSpineBatch({ projectRoot: process.cwd(), args });
+	const result = await runSpineBatch({ projectRoot: process.cwd(), args });
 	process.stdout.write(result.output);
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }

@@ -1,11 +1,19 @@
 /**
- * pi-spine worker host — spawn worker in lane worktree.
+ * pi-spine worker host — spawn worker in lane worktree with heartbeat polling.
  */
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import {
+	collectProgressSignals,
+	computeStallDeadline,
+	progressSignalsChanged,
+	recordLaneHeartbeat,
+	recordStallWarning,
+	resolveStallConfig,
+} from "./heartbeat.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -25,12 +33,75 @@ function commandExists(cmd) {
 }
 
 /**
+ * @param {number} ms
+ */
+function sleep(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * @param {object} params
+ */
+function spawnWorkerChild({ worktreePath, taskFolder, useStub, timeoutMs }) {
+	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
+	const env = {
+		...process.env,
+		SPINE_TASK_FOLDER: taskFolder,
+		SPINE_WORKTREE: worktreePath,
+	};
+	const args = useStub ? ["--stub"] : ["--pi"];
+
+	return spawn(process.execPath, [runner, ...args], {
+		cwd: worktreePath,
+		env,
+		stdio: ["ignore", "pipe", "pipe"],
+	});
+}
+
+/**
+ * @param {import("node:child_process").ChildProcess} child
+ */
+function collectChildOutput(child) {
+	return new Promise((resolve) => {
+		let stdout = "";
+		let stderr = "";
+		child.stdout?.on("data", (chunk) => {
+			stdout += chunk.toString();
+		});
+		child.stderr?.on("data", (chunk) => {
+			stderr += chunk.toString();
+		});
+		child.on("close", (code) => {
+			resolve({ exitCode: code ?? 1, output: `${stdout}${stderr}` });
+		});
+	});
+}
+
+/**
  * @param {object} params
  * @param {string} params.worktreePath
- * @param {string} params.taskFolder absolute path to task folder in worktree
+ * @param {string} params.taskFolder
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneBranch]
+ * @param {object} [params.config]
+ * @param {(timestamp: number) => void} [params.onHeartbeat]
  * @param {number} [params.timeoutMs]
  */
-export function runWorker({ worktreePath, taskFolder, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+export async function runWorker({
+	worktreePath,
+	taskFolder,
+	projectRoot,
+	batchId,
+	laneNumber = 1,
+	taskId,
+	laneBranch,
+	config = {},
+	onHeartbeat,
+	timeoutMs = DEFAULT_TIMEOUT_MS,
+}) {
 	const donePath = path.join(taskFolder, ".DONE");
 	if (fs.existsSync(donePath)) {
 		return { ok: true, exitCode: 0, mode: "already-done" };
@@ -41,44 +112,83 @@ export function runWorker({ worktreePath, taskFolder, timeoutMs = DEFAULT_TIMEOU
 		process.env.SPINE_WORKER_STUB === "true" ||
 		!commandExists("pi");
 
-	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
-	const env = {
-		...process.env,
-		SPINE_TASK_FOLDER: taskFolder,
-		SPINE_WORKTREE: worktreePath,
-	};
+	const stallConfig = resolveStallConfig(config);
+	const startedAt = Date.now();
+	let lastProgressAt = startedAt;
+	let lastHeartbeatAt = 0;
+	let lastSignals = null;
+	let stallWarningSent = false;
 
-	let result;
-	if (useStub) {
-		result = spawnSync(process.execPath, [runner, "--stub"], {
-			cwd: worktreePath,
-			env,
-			encoding: "utf-8",
-			timeout: timeoutMs,
+	const child = spawnWorkerChild({ worktreePath, taskFolder, useStub, timeoutMs });
+	const childDone = collectChildOutput(child);
+
+	while (true) {
+		if (fs.existsSync(donePath)) {
+			break;
+		}
+
+		const now = Date.now();
+		const signals = collectProgressSignals({ worktreePath, taskFolder, laneBranch });
+		if (progressSignalsChanged(lastSignals, signals)) {
+			lastProgressAt = now;
+			lastSignals = signals;
+		}
+
+		if (
+			projectRoot &&
+			batchId &&
+			now - lastHeartbeatAt >= stallConfig.heartbeatIntervalMs
+		) {
+			recordLaneHeartbeat({
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				signals,
+			});
+			onHeartbeat?.(now);
+			lastHeartbeatAt = now;
+		}
+
+		const stallDeadline = computeStallDeadline({
+			startedAt,
+			lastProgressAt,
+			stallConfig,
 		});
-	} else {
-		result = spawnSync(process.execPath, [runner, "--pi"], {
-			cwd: worktreePath,
-			env,
-			encoding: "utf-8",
-			timeout: timeoutMs,
-		});
+
+		if (now >= stallDeadline) {
+			if (!stallWarningSent && projectRoot && batchId) {
+				recordStallWarning({
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					signals,
+					stallDeadline,
+				});
+				stallWarningSent = true;
+			}
+			child.kill("SIGTERM");
+			const { output } = await childDone;
+			return {
+				ok: false,
+				exitCode: 124,
+				mode: useStub ? "stub" : "pi",
+				output,
+				classification: "stall_timeout",
+				doneFound: fs.existsSync(donePath),
+			};
+		}
+
+		if (child.exitCode !== null) {
+			break;
+		}
+
+		await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
 	}
 
-	const exitCode = result.status ?? 1;
-	const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+	const { exitCode, output } = await childDone;
 	const doneFound = fs.existsSync(donePath);
-
-	if (result.error?.code === "ETIMEDOUT") {
-		return {
-			ok: false,
-			exitCode: 124,
-			mode: useStub ? "stub" : "pi",
-			output,
-			classification: "stall_timeout",
-			doneFound,
-		};
-	}
 
 	return {
 		ok: doneFound && exitCode === 0,

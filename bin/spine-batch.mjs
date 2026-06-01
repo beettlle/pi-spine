@@ -86,7 +86,7 @@ function parseBatchArgs(args) {
  * @param {string} options.projectRoot
  * @param {string[]} options.args
  */
-export function runSpineBatch(options) {
+export async function runSpineBatch(options) {
 	const { projectRoot, args } = options;
 	const parsed = parseBatchArgs(args);
 
@@ -118,7 +118,7 @@ export function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "start") {
-		const result = startBatch({
+		const result = await startBatch({
 			projectRoot,
 			scope: parsed.scope,
 			dryRun: parsed.dryRun,
