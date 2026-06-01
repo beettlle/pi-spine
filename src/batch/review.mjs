@@ -253,6 +253,28 @@ function journalReviewEvent(type, journal, payload) {
 }
 
 /**
+ * Resolve batch journal target from env only when the batch engine opts in.
+ * Prevents `npm test` (and other child processes) from polluting a live batch
+ * journal via inherited SPINE_BATCH_ID / SPINE_PROJECT_ROOT.
+ */
+export function resolveBatchJournalContext() {
+	if (process.env.SPINE_JOURNAL_ATTACH !== "1") return undefined;
+	const projectRoot = process.env.SPINE_PROJECT_ROOT;
+	const batchId = process.env.SPINE_BATCH_ID;
+	if (!projectRoot || !batchId) return undefined;
+
+	return {
+		projectRoot,
+		batchId,
+		taskId: process.env.SPINE_TASK_ID,
+		laneNumber: process.env.SPINE_LANE_NUMBER
+			? Number(process.env.SPINE_LANE_NUMBER)
+			: undefined,
+		correlationId: process.env.SPINE_LANE_CORRELATION_ID,
+	};
+}
+
+/**
  * @param {object} params
  */
 function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt, config = {} }) {

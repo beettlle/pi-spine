@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpineConfig } from "./spine-config.mjs";
-import { runStepReview } from "../src/batch/review.mjs";
+import { resolveBatchJournalContext, runStepReview } from "../src/batch/review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,19 +59,7 @@ export function runSpineReviewStep(options) {
 		if (loaded.config) config = loaded.config;
 	}
 
-	const journal =
-		options.journal ??
-		(process.env.SPINE_BATCH_ID && projectRoot
-			? {
-					projectRoot,
-					batchId: process.env.SPINE_BATCH_ID,
-					taskId: process.env.SPINE_TASK_ID,
-					laneNumber: process.env.SPINE_LANE_NUMBER
-						? Number(process.env.SPINE_LANE_NUMBER)
-						: undefined,
-					correlationId: process.env.SPINE_LANE_CORRELATION_ID,
-				}
-			: undefined);
+	const journal = options.journal ?? resolveBatchJournalContext();
 
 	const result = runStepReview({
 		taskFolder,

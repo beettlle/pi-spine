@@ -63,7 +63,10 @@ function spawnWorkerChild({
 		SPINE_WORKTREE: worktreePath,
 	};
 	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;
-	if (batchId) env.SPINE_BATCH_ID = batchId;
+	if (batchId) {
+		env.SPINE_BATCH_ID = batchId;
+		env.SPINE_JOURNAL_ATTACH = "1";
+	}
 	if (laneNumber != null) env.SPINE_LANE_NUMBER = String(laneNumber);
 	if (taskId) env.SPINE_TASK_ID = taskId;
 	if (laneCorrelationId) env.SPINE_LANE_CORRELATION_ID = laneCorrelationId;

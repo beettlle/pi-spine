@@ -8,7 +8,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { assertReviewToolAvailable, readReviewLevel, runStepReview } from "../src/batch/review.mjs";
+import {
+	assertReviewToolAvailable,
+	readReviewLevel,
+	resolveBatchJournalContext,
+	runStepReview,
+} from "../src/batch/review.mjs";
 
 const taskFolder = process.env.SPINE_TASK_FOLDER;
 const worktreePath = process.env.SPINE_WORKTREE;
@@ -26,16 +31,7 @@ if (!reviewGate.ok) {
 const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 function buildReviewJournal() {
-	if (!process.env.SPINE_BATCH_ID || !process.env.SPINE_PROJECT_ROOT) return undefined;
-	return {
-		projectRoot: process.env.SPINE_PROJECT_ROOT,
-		batchId: process.env.SPINE_BATCH_ID,
-		taskId: process.env.SPINE_TASK_ID,
-		laneNumber: process.env.SPINE_LANE_NUMBER
-			? Number(process.env.SPINE_LANE_NUMBER)
-			: undefined,
-		correlationId: process.env.SPINE_LANE_CORRELATION_ID,
-	};
+	return resolveBatchJournalContext();
 }
 
 function enforceStubReviewIfConfigured() {

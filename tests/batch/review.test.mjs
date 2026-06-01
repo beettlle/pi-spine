@@ -15,6 +15,7 @@ import {
 	isReviewTypeRequired,
 	parseReviewLevel,
 	parseReviewVerdict,
+	resolveBatchJournalContext,
 	runStepReview,
 } from "../../src/batch/review.mjs";
 
@@ -89,6 +90,29 @@ test("parseReviewVerdict reads JSON and markdown verdicts", () => {
 	const revise = parseReviewVerdict("### Verdict: REVISE\n### Summary\nFix tests.\n");
 	assert.equal(revise.verdict, "REVISE");
 	assert.match(revise.feedback, /Fix tests/);
+});
+
+test("resolveBatchJournalContext ignores SPINE_BATCH_ID without SPINE_JOURNAL_ATTACH", () => {
+	const prev = {
+		batchId: process.env.SPINE_BATCH_ID,
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+	};
+	process.env.SPINE_BATCH_ID = "20260601T999999";
+	process.env.SPINE_PROJECT_ROOT = "/tmp/spine-fake-root";
+	delete process.env.SPINE_JOURNAL_ATTACH;
+	try {
+		assert.equal(resolveBatchJournalContext(), undefined);
+		process.env.SPINE_JOURNAL_ATTACH = "1";
+		const ctx = resolveBatchJournalContext();
+		assert.equal(ctx?.batchId, "20260601T999999");
+		assert.equal(ctx?.projectRoot, "/tmp/spine-fake-root");
+	} finally {
+		for (const [key, value] of Object.entries(prev)) {
+			if (value === undefined) delete process.env[key === "batchId" ? "SPINE_BATCH_ID" : key === "projectRoot" ? "SPINE_PROJECT_ROOT" : "SPINE_JOURNAL_ATTACH"];
+			else process.env[key === "batchId" ? "SPINE_BATCH_ID" : key === "projectRoot" ? "SPINE_PROJECT_ROOT" : "SPINE_JOURNAL_ATTACH"] = value;
+		}
+	}
 });
 
 test("runStepReview stub APPROVE writes artifact and journal events", async () => {
@@ -272,12 +296,19 @@ test("stub worker stops when enforced review spawn fails", () => {
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	try {
+		const isolatedEnv = { ...process.env };
+		delete isolatedEnv.SPINE_BATCH_ID;
+		delete isolatedEnv.SPINE_PROJECT_ROOT;
+		delete isolatedEnv.SPINE_JOURNAL_ATTACH;
+		delete isolatedEnv.SPINE_TASK_ID;
+		delete isolatedEnv.SPINE_LANE_NUMBER;
+		delete isolatedEnv.SPINE_LANE_CORRELATION_ID;
 		assert.throws(
 			() => {
 				execFileSync(process.execPath, [path.join(PACKAGE_ROOT, "bin/spine-worker-runner.mjs"), "--stub"], {
 					cwd: root,
 					stdio: "pipe",
-					env: process.env,
+					env: isolatedEnv,
 				});
 			},
 			(err) => {
