@@ -20,6 +20,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { getVersion } from "./get-version.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
+import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,13 +39,6 @@ const c = {
 const OK = `${c.green}✅${c.reset}`;
 const WARN = `${c.yellow}⚠️${c.reset}`;
 const FAIL = `${c.red}❌${c.reset}`;
-
-const SPINE_GITIGNORE_ENTRIES = [
-	".spine/runtime/",
-	".spine/batch-state.json",
-	".spine/batch-history.json",
-	".worktrees/",
-];
 
 const REQUIRED_AGENT_FILES = ["worker.md", "reviewer.md", "supervisor.md"];
 
@@ -392,19 +386,31 @@ ${c.bold}Usage:${c.reset}
   spine <command> [options]
 
 ${c.bold}Commands:${c.reset}
+  ${c.cyan}init${c.reset}           Scaffold .spine/ config and agent stubs
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
+${c.bold}Init options:${c.reset}
+  --tasks-root PATH   Tasks root relative to project (default: spine-tasks)
+  --dry-run           Preview files without writing
+  --force             Overwrite existing .spine/spine-config.json and agent stubs
+
 ${c.bold}Examples:${c.reset}
-  spine doctor                      # check installation health
-  spine version                     # show package and environment info
+  spine init                                    # scaffold defaults
+  spine init --tasks-root taskplane-tasks       # use existing task folder
+  spine init --dry-run                          # preview changes
+  spine doctor                                  # check installation health
+  spine version                                 # show package and environment info
 `);
 }
 
 const [command = "help", ...args] = process.argv.slice(2);
 
 switch (command) {
+	case "init":
+		cmdInit(args);
+		break;
 	case "doctor":
 		cmdDoctor();
 		break;
