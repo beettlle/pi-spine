@@ -486,7 +486,7 @@ export async function startBatch({
 			orchBranch,
 			taskBranch,
 			mergeCommit: merge.mergeCommit,
-			output: `Batch ${batchId} completed: ${taskId} succeeded; merged to ${orchBranch}.\n  → spine batch complete\n  → spine status\n`,
+			output: `Batch ${batchId} completed: ${taskId} succeeded; merged to ${orchBranch}.\n  → spine integrate\n  → spine batch complete\n  → spine status\n`,
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
