@@ -1,0 +1,21 @@
+taskplane-tasks/TP-012-single-lane-worker/.DONE
+  s_ca0db411fbc320::t_78436170fcd3c7 1
+taskplane-tasks/TP-013-checkpoint-heartbeat/.DONE
+  s_ca0db411fbc320::t_78436170fcd3c7 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "bf63a1a84a9f74bf624675a885409ba4ec1c9a8c",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
