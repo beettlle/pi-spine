@@ -1,0 +1,31 @@
+src/batch/review.mjs
+  s_ca0db411fbc320::t_053eaeb9bceebf 256-276
+bin/spine-review-step.mjs
+  s_ca0db411fbc320::t_d12bd5d37a6a94 62
+  s_ca0db411fbc320::t_ef9512824fcbc0 11
+tests/batch/review.test.mjs
+  s_ca0db411fbc320::t_9fa135ce66d06f 18
+  s_ca0db411fbc320::t_4280f644362754 299-305,311
+  s_ca0db411fbc320::t_f0e8cd1c0ddb36 95-117
+src/batch/worker-host.mjs
+  s_ca0db411fbc320::t_86a99910f8ef29 66-69
+bin/spine-worker-runner.mjs
+  s_ca0db411fbc320::t_ceb8b415174401 34
+  s_ca0db411fbc320::t_1a3f637b371164 11-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a9db0183b311d5b2c9eac5fea3713c757b7540ba",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
