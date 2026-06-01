@@ -185,6 +185,14 @@ Tests: 5/5 pass. No `.DONE`. STATUS at Step 2 / 29%.
 3. `orch_resume(force=true)`
 4. Confirm log: `pendingSegments=1` and `re-executing interrupted task in existing worktree`
 
+### pi-spine recovery (Phase 1b — after TP-009/TP-010)
+
+After manual git merge to `main`, if Taskplane still shows red **stopped** with all tasks green and empty `mergeResults`:
+
+1. `spine status --diagnose` — expect `completed_manual` or `limbo_stale`
+2. `spine batch dismiss --reason manual-merge-on-main` **or** `spine batch complete --detect-manual-merge`
+3. Do **not** hand-edit `.pi/batch-state.json`; pi-spine archives to `.spine/runtime/{batchId}/archive/` first
+
 ---
 
 ## Required pi-spine deltas (traceability)

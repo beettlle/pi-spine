@@ -10,7 +10,7 @@
 
 ## Mission
 
-Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight` before starting a batch: `spine doctor` green, clean git working tree, no active batch, valid tasks root, parseable `dependencies.json`, and a **stub** `runPreflightPlanCheck` hook that TP-008 will complete to print the wave plan.
+Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight` before starting a batch: `spine doctor` green, clean git working tree, no active batch (or stale batch reconciled per FR-BATCH-17), valid tasks root, parseable `dependencies.json`, a **stub** `runPreflightPlanCheck` hook that TP-008 will complete to print the wave plan, and a **stub** `runReconciliationCheck` hook that TP-009 will implement for limbo detection.
 
 ## Dependencies
 
@@ -22,7 +22,7 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 - `taskplane-tasks/CONTEXT.md`
 
 **Tier 3:**
-- `pi-spine-PRD.md` — §7.9 FR-BATCH-11, §15.2 CLI commands
+- `pi-spine-PRD.md` — §7.9 FR-BATCH-11, FR-BATCH-17, §15.2 CLI commands, §17.5 reconciliation overview
 - `bin/spine.mjs` — existing `doctor` wiring
 - `extensions/spine/slash-commands.ts` — stub handlers to replace for preflight-related commands
 - `docs/compatibility/taskplane-gap-list.md` — GAP-PREFLIGHT-01
@@ -35,6 +35,7 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 ## File Scope
 
 - `bin/spine-preflight.mjs` (new)
+- `src/batch/reconcile.mjs` (stub — TP-009 implements)
 - `bin/spine.mjs`
 - `extensions/spine-orchestrator.ts`
 - `extensions/spine/slash-commands.ts`
@@ -46,7 +47,8 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 
 - [ ] Read FR-BATCH-11 and list each required check explicitly
 - [ ] Confirm `spine doctor` exit codes and output shape in this repo
-- [ ] Confirm where active batch state will live (`.spine/batch-state.json` per PRD §22.3)
+- [ ] Confirm where active batch state will live (`.spine/batch-state.json` per PRD §22.3; also read `.pi/batch-state.json` during Taskplane dogfood)
+- [ ] Read FR-BATCH-17 limbo preflight requirement
 
 ### Step 1: Implement preflight checks module
 
@@ -55,13 +57,15 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 - [ ] Create `bin/spine-preflight.mjs` exporting `runBatchPreflight(options)` and individual check helpers
 - [ ] **Doctor check:** invoke existing doctor logic; fail preflight when doctor fails
 - [ ] **Git clean check:** fail when working tree has uncommitted changes; list up to 20 dirty paths
-- [ ] **No active batch check:** fail when `.spine/batch-state.json` indicates an active batch (or equivalent v1 stub reader)
+- [ ] **No active batch check:** fail when `.spine/batch-state.json` indicates a **healthy active** batch; when batch exists, call `runReconciliationCheck` stub — if stub returns `limbo_stale` or `completed_manual`, fail with `suggestedCommand: spine batch dismiss` (TP-009 completes real logic)
 - [ ] **Tasks root check:** validate configured tasks root exists and contains discoverable task folders
 - [ ] **Dependencies JSON check:** parse `{tasksRoot}/dependencies.json`; validate schema version and task IDs
 - [ ] **Plan check stub:** export `runPreflightPlanCheck(ctx)` that returns a structured placeholder (e.g. `{ status: 'stub', message: 'Wave plan available after TP-008' }`) — TP-008 replaces this to print waves
+- [ ] **Reconciliation check stub:** create `src/batch/reconcile.mjs` exporting `runReconciliationCheck(ctx)` returning `{ diagnosis: 'unknown', headline: 'Reconciliation available after TP-009', suggestedCommand: 'spine status --diagnose' }` — TP-009 replaces with real reconciliation
 
 **Artifacts:**
 - `bin/spine-preflight.mjs` (new)
+- `src/batch/reconcile.mjs` (stub)
 
 ### Step 2: Wire CLI and pi slash command
 
@@ -78,6 +82,7 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 
 - [ ] Create `tests/spine-preflight.test.mjs` covering each check with temp-dir fixtures (doctor mocked or skipped where environment-dependent)
 - [ ] Assert stub `runPreflightPlanCheck` is callable and returns expected placeholder shape
+- [ ] Assert stub `runReconciliationCheck` is callable from preflight when batch-state file exists
 - [ ] Run targeted tests: `node --test tests/spine-preflight.test.mjs`
 
 **Artifacts:**
@@ -103,7 +108,7 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 
 ## Completion Criteria
 
-- [ ] All FR-BATCH-11 checks implemented except wave plan printing (stub only; completed in TP-008)
+- [ ] All FR-BATCH-11 checks implemented except wave plan printing (stub only; completed in TP-008) and reconciliation (stub only; completed in TP-009)
 - [ ] `spine preflight` exits non-zero on any failed check
 - [ ] Typecheck and tests pass
 
@@ -114,6 +119,8 @@ Implement batch preflight (FR-BATCH-11) so operators must pass `spine preflight`
 ## Do NOT
 
 - Implement the planner or real wave plan (TP-008)
+- Implement full reconciliation engine (TP-009)
+- Implement dismiss/complete commands (TP-010)
 - Implement batch start, worktrees, or worker execution
 - Modify task parsers (TP-007)
 

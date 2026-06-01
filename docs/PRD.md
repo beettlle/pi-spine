@@ -2,8 +2,8 @@
 
 **Document type:** Product Requirements Document (greenfield repo handoff)  
 **Product:** pi-spine  
-**Version:** 1.1  
-**Last updated:** 2026-05-31  
+**Version:** 1.2  
+**Last updated:** 2026-06-01  
 **Status:** Draft — ready for new repository  
 
 **Primary reference for:** All implementation work in the `pi-spine` repository  
@@ -61,6 +61,8 @@
 
 **Tagline:** *Orchestration spine for long-running pi development.*
 
+**Product intent:** pi-spine is not only a batch runner — it is a **batch interpreter** that always answers: *what state am I in, and what single command should I run next?*
+
 **Primary user (v1):** Solo developer running parallel agent work on production codebases who needs durable task memory, auditable batch history, explicit human approval before integration, and recoverability when lanes crash — without maintaining three separate orchestrators.
 
 ---
@@ -117,7 +119,9 @@ Real-world example (2026-05-29): A Taskplane batch ran 3 lanes across 11 tasks; 
 
 Real-world example (2026-05-31, pi-spine Phase 0 dogfood): A four-lane Taskplane batch on this repo completed 3/4 tasks. **TP-002 failed on a 60-minute stall kill despite passing tests** — the worker had uncommitted valid work but had not updated STATUS or created `.DONE`. Recovery then failed repeatedly: `orch_retry_task` reset the task record but **not** the segment frontier, so resume skipped re-execution (`pendingSegments=0`) and started merging other lanes; abort deleted `.pi/batch-state.json`; manual JSON repair was required to re-spawn lane-1. Full post-mortem: [`docs/incidents/20260531-phase0-taskplane-batch.md`](docs/incidents/20260531-phase0-taskplane-batch.md).
 
-pi-spine exists to reduce recurrence of this class of failure through **journal-backed reconciliation**, **atomic retry/resume**, **progress-aware stall detection**, **explicit gates**, and **Taskplane-compatible task packets** the operator already authors.
+After manual recovery and git merge to `main`, the Taskplane UI still showed **red "stopped"** with all tasks green and prompted to pause — batch merge/completion was never recorded (`mergeResults` empty, `endedAt` null). pi-spine Phase 1b adds reconciliation so operators get `spine batch dismiss` or `complete` instead of debugging orchestrator internals.
+
+pi-spine exists to reduce recurrence of this class of failure through **journal-backed reconciliation**, **batch diagnosis UX**, **atomic retry/resume**, **progress-aware stall detection**, **explicit gates**, and **Taskplane-compatible task packets** the operator already authors.
 
 ### 3.2 Design philosophy: compose, don't merge
 
@@ -128,6 +132,8 @@ pi-spine is **Tier A/B** on the complexity spectrum — not a Tier C unified eng
 | **Compose** | One thin orchestration loop; adopt patterns; optional deps on battle-tested libraries |
 | **Boundary journaling** | Journal records orchestration events (task start, gate, lane death), not every LLM token |
 | **Fail closed** | Integrate, resume-after-corruption, and gate bypass all require explicit operator action |
+| **Act, don't explain internals** | Every ambiguous batch state resolves to a named `diagnosis` plus executable next step — never "figure out segment frontier yourself" |
+| **Never orphan active batch** | When work is on `baseBranch` or the batch is terminal, pi-spine archives and clears active state; operators never hand-edit batch-state JSON |
 | **Compat first** | Taskplane packet format is the v1 task contract; native format deferred |
 | **pi-native** | Extension + skill + CLI; no cross-harness v1 scope |
 
@@ -175,6 +181,7 @@ pi-spine occupies the **upper-right intent space**: batch orchestration with str
 | G6 | Support cross-model review (worker model ≠ reviewer model) at step boundaries |
 | G7 | Ship as installable pi package: `pi install npm:pi-spine` |
 | G8 | Provide local status dashboard (SSE) for batch, lane, and gate visibility |
+| G9 | Reconcile batch state from tasks, git, and registry — surface one headline and `suggestedCommand` without orchestrator literacy |
 
 ### 4.2 Non-goals (v1)
 
@@ -201,6 +208,8 @@ pi-spine occupies the **upper-right intent space**: batch orchestration with str
 | M7 | Journal replay produces readable post-mortem | `spine journal replay --batch {id}` after forced lane death |
 | M8 | Single-task retry re-executes without hand-editing state | Kill lane mid-task; `/spine-retry-task TP-002`; resume; verify `pendingSegments=1` equivalent |
 | M9 | Abort preserves recoverable batch snapshot | `/spine-abort`; force-resume rebuilds segment topology without operator JSON surgery |
+| M10 | Known limbo states resolved with one `spine` command — no JSON surgery | All tasks succeeded + stale batch phase → `spine batch dismiss` or `complete` |
+| M11 | Preflight blocks new batch when stale active batch exists | `spine preflight` prints dismiss/complete suggestion |
 
 ---
 
@@ -311,6 +320,17 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | AC-6.1 | `TP-*` folders discovered and planned |
 | AC-6.2 | `dependencies.json` merged with PROMPT dependencies |
 
+#### US-7: Always know what to do next
+
+**As** a pi user, **I want** `/spine-status` (or `spine status`) to tell me the **real** batch situation, **so that** I never guess pause vs resume vs dismiss vs integrate.
+
+| AC | Criterion |
+|----|-----------|
+| AC-7.1 | Output includes `diagnosis`, human `headline`, and `suggestedCommand` |
+| AC-7.2 | When all tasks are terminal-success and git shows orch work on `baseBranch`, diagnosis is `completed_manual` or `needs_integrate` — **not** "pause batch" |
+| AC-7.3 | CLI, slash command, and dashboard show the **same** reconciled diagnosis (NFR-OBS-04) |
+| AC-7.4 | Limbo with no running lanes offers `spine batch dismiss` or `spine batch complete`, never bare `pause` |
+
 ---
 
 ## 7. Functional requirements
@@ -409,7 +429,7 @@ See [§12](#12-human-gates-specification).
 | ID | Requirement | P |
 |----|-------------|---|
 | FR-BATCH-01 | Batch ID format: `{YYYYMMDD}T{HHmmss}` UTC | 0 |
-| FR-BATCH-02 | Phases: `planning`, `running`, `paused`, `completed`, `failed`, `aborted` | 0 |
+| FR-BATCH-02 | Phases: `planning`, `running`, `paused`, `completed`, `failed`, `aborted` (engine may also use `stopped`, `merging`, `executing`; **operator-facing** state is always `diagnosis` per FR-BATCH-13) | 0 |
 | FR-BATCH-03 | Only one active batch per repo (second start fails with active batchId) | 0 |
 | FR-BATCH-04 | `/spine-pause` stops scheduling new tasks; in-flight tasks finish | 0 |
 | FR-BATCH-05 | `/spine-resume` continues paused batch; `--force` reconciles stale lane state | 0 |
@@ -418,7 +438,15 @@ See [§12](#12-human-gates-specification).
 | FR-BATCH-08 | On batch completion, collect lane branches into orch branch (sequential merge v1) | 0 |
 | FR-BATCH-09 | `/spine-retry-task ID` atomically resets task record, all segment records, counters, and lane allocation | 3 |
 | FR-BATCH-10 | Wave merge blocked while any wave task is `failed` or `pending` unless operator `/spine-skip-task` or `/spine-force-merge` | 3 |
-| FR-BATCH-11 | Batch preflight before start: doctor green, tasks committed, no active batch, wave plan printed | 0 |
+| FR-BATCH-11 | Batch preflight before start: doctor green, tasks committed, no active batch (or stale batch reconciled), wave plan printed | 0 |
+| FR-BATCH-12 | **Batch reconciliation:** on every status read, derive `diagnosis` from task records, segment frontier, merge results, journal tail, git (`orchBranch` vs `baseBranch`), lane registry, and `.DONE` files — not from `phase` alone | 1 |
+| FR-BATCH-13 | **Diagnosis taxonomy:** `running`, `paused`, `needs_retry`, `needs_merge`, `needs_integrate`, `completed`, `completed_manual`, `limbo_stale`, `failed`, `aborted` | 1 |
+| FR-BATCH-14 | **`spine status [--diagnose]`** and **`/spine-status`:** JSON + human output with `suggestedCommand` and optional `alternatives[]` per §18.3 | 1 |
+| FR-BATCH-15 | **`spine batch dismiss` / `/spine-dismiss`:** archive active batch snapshot, clear active state, journal `batch.dismissed` — for limbo or abandoned Taskplane batches | 1 |
+| FR-BATCH-16 | **`spine batch complete`:** when reconciliation says all work terminal + merge satisfied, mark `completed`, move to history | 1 |
+| FR-BATCH-17 | **Extend FR-BATCH-11 preflight:** if active/stale batch detected, run reconciliation; block start with dismiss/complete suggestion (not generic "batch already running") | 1 |
+| FR-BATCH-18 | **`/spine` entry command:** detect project + batch diagnosis; offer the **single best** next action (plan / run / resume / retry / dismiss / integrate) | 1 |
+| FR-BATCH-19 | **Zombie registry cleanup:** if batch phase is terminal but lane workers registered as running, reconcile registry before showing "pause" | 2 |
 
 ### 7.10 Integration (FR-INT)
 
@@ -457,6 +485,8 @@ See [§12](#12-human-gates-specification).
 | NFR-OBS-01 | Observability | Structured logs: `{ batchId, laneId, taskId, event }` |
 | NFR-OBS-02 | Observability | Dashboard SSE latency <500ms for status updates |
 | NFR-OBS-03 | Observability | Post-mortem summary must list failures, suggested recovery commands, and never claim success when `failedTasks > 0` |
+| NFR-OBS-04 | Observability | CLI, slash, dashboard, and MCP-style status must share one reconciliation implementation — no drift |
+| NFR-OBS-05 | Observability | Operator never needs to read segment frontier unless running `spine status --verbose` |
 | NFR-UX-01 | UX | Every error includes `suggestedCommand` field |
 | NFR-TEST-01 | Testing | ≥80% unit coverage on planner, journal, gate FSM |
 | NFR-TEST-02 | Testing | Integration fixture repo in CI |
@@ -939,15 +969,17 @@ name: worker
 
 | Command | Description |
 |---------|-------------|
-| `/spine` | Detect project state; guide or offer batch |
+| `/spine` | Detect project state; guide or offer batch — **route to best next action** from reconciliation (FR-BATCH-18) |
 | `/spine-plan <all\|paths>` | Preview waves and lanes |
 | `/spine <all\|paths>` | Execute batch |
-| `/spine-status` | Batch + lane health |
+| `/spine-status` | **Reconciled** batch diagnosis + lane health (not raw `phase`) |
 | `/spine-pause` | Pause after current tasks |
 | `/spine-resume [--force]` | Resume paused/failed batch |
 | `/spine-abort [--hard]` | Abort batch |
 | `/spine-retry-task <taskId>` | Reset one failed task for re-execution (atomic segment retry) |
 | `/spine-skip-task <taskId>` | Skip failed task and unblock dependents |
+| `/spine-dismiss [--reason]` | Archive and clear limbo/stale active batch (FR-BATCH-15) |
+| `/spine-next` | Print or execute `suggestedCommand` for current diagnosis |
 | `/spine-gate [approve\|reject]` | Gate inspection and resolution |
 | `/spine-integrate [--dry-run]` | Merge orch branch (gate required) |
 | `/spine-settings` | Interactive configuration |
@@ -961,7 +993,10 @@ name: worker
 | `spine doctor` | Validate installation |
 | `spine plan <scope>` | Plan only (JSON to stdout with `--json`) |
 | `spine run <scope>` | Execute batch (non-pi automation) |
-| `spine status` | Batch status |
+| `spine status [--diagnose] [--json]` | Reconciled batch diagnosis + lane health |
+| `spine batch dismiss [--batch ID] [--reason]` | Archive and clear limbo/stale active batch |
+| `spine batch complete [--batch ID]` | Finalize batch when reconciliation says work is done |
+| `spine next` | Print or execute `suggestedCommand` for current diagnosis |
 | `spine dashboard` | Start SSE dashboard (default port 8109) |
 | `spine journal replay --batch ID` | Timeline replay |
 | `spine migrate-from-taskplane` | Config migration helper |
@@ -977,7 +1012,8 @@ Default dashboard port **8109** (avoid Taskplane 8099 collision when both instal
 
 - URL: `http://localhost:8109`
 - Transport: SSE
-- Panels: batch summary, wave progress, lane table, active gate, last 20 journal events
+- Panels: batch summary, **diagnosis banner** (headline + primary action), wave progress, lane table, active gate, last 20 journal events
+- Diagnosis banner primary actions: `Dismiss`, `Complete`, `Integrate`, `Retry`, `Resume` — badge color from **`diagnosis`**, not raw `phase`
 
 ### 16.2 Lane table columns
 
@@ -1044,7 +1080,7 @@ stateDiagram-v2
 8. Gate opened with evidence
 9. Operator: /spine-gate approve
 10. Operator: /spine-integrate
-11. batch.completed archived to history
+11. batch.completed or batch.dismissed archived to history — active state cleared
 ```
 
 ### 17.4 Mixed-outcome wave policy (normative)
@@ -1057,6 +1093,20 @@ When a wave has both terminal successes and failures:
 4. **Salvage path:** if worktree has uncommitted progress and tests pass, retry reuses the existing worktree (do not spawn a fresh lane that loses work).
 
 This policy directly addresses Taskplane incident I-02 and I-05 (see incident report).
+
+### 17.5 Batch reconciliation (normative)
+
+On every status read, preflight, and dashboard refresh, pi-spine runs reconciliation:
+
+1. Load batch-state cache (`.spine/batch-state.json` or, during Taskplane dogfood, `.pi/batch-state.json`) plus journal tail when present.
+2. Classify each task: pending / running / terminal (from records + `.DONE` + git on lane branch).
+3. Compare merge state: `mergeResults`, orch branch existence, whether `baseBranch` already contains orch commits.
+4. Detect **split-brain limbo:** e.g. `failedTasks=0`, all tasks succeeded, `phase ∈ {stopped, failed, executing}`, `endedAt=null`, empty `mergeResults`.
+5. Detect **zombie registry:** terminal batch + lane heartbeat stale or worker session absent while registry shows running.
+6. Emit `diagnosis` + `suggestedCommand` per §18.3.
+7. **Never** suggest pause/resume when `diagnosis ∈ {limbo_stale, completed_manual, needs_integrate}`.
+
+Reconciliation does not require a full journal in v1 — git + batch-state + `.DONE` files are sufficient for limbo detection; journal enriches diagnosis when available.
 
 ---
 
@@ -1075,6 +1125,9 @@ This policy directly addresses Taskplane incident I-02 and I-05 (see incident re
 | `MergeConflict` | Git conflict on integrate | Open conflict gate; abort integrate |
 | `DirtyWorktree` | Uncommitted parent files | Fail batch start |
 | `CycleDetected` | Bad dependencies | Fail plan |
+| `BatchLimbo` | All tasks succeeded but batch phase stale / merge never recorded | `spine status --diagnose` → `spine batch dismiss` or `complete` |
+| `ManualMergeBypass` | Git integrated but batch record still active | `spine batch complete --detect-manual-merge` |
+| `ZombieRegistry` | Terminal batch but lane workers still registered running | Reconcile registry; if terminal → dismiss |
 
 ### 18.2 Resume algorithm (normative)
 
@@ -1093,10 +1146,15 @@ Every error JSON / CLI output:
 {
   "error": "Lane lane-2 stale (no heartbeat 240s)",
   "failureClass": "LaneStale",
+  "diagnosis": "paused",
+  "headline": "Lane 2 stopped responding — batch is paused",
   "batchId": "20260529T134925",
-  "suggestedCommand": "/spine-resume --force"
+  "suggestedCommand": "/spine-resume --force",
+  "alternatives": ["/spine-status --diagnose"]
 }
 ```
+
+Status output (non-error) uses the same shape minus `error` / `failureClass` when `diagnosis` is informational.
 
 ### 18.4 Progress-aware stall detection
 
@@ -1155,8 +1213,26 @@ Document and test against Taskplane behavior that pi-spine must **not** replicat
 | GAP-STALL-01 | Tool-silence stall kill | §18.4 progress-aware |
 | GAP-MERGE-01 | Merge starts with pending failed segments | §17.4 mixed-outcome |
 | GAP-POST-01 | "Ran smoothly" with failures | NFR-OBS-03 |
+| GAP-UX-01 | All tasks succeeded, batch `stopped`, UI red | FR-BATCH-12–16, §17.5 |
+| GAP-UX-02 | "Pause?" when nothing running | FR-BATCH-18, §17.5 |
+| GAP-UX-03 | Live status vs disk `phase` mismatch | NFR-OBS-04; reconcile from disk + git |
+| GAP-UX-04 | Manual git merge leaves active batch | FR-BATCH-16, §18.9 |
 
 Maintain [`docs/compatibility/taskplane-gap-list.md`](docs/compatibility/taskplane-gap-list.md) during Phase 6.
+
+### 18.9 Batch limbo and manual recovery
+
+Documented from Phase 0 dogfood (batch `20260531T165700`):
+
+| Symptom | Root cause | pi-spine behavior |
+|---------|------------|-------------------|
+| All tasks green, batch red `stopped`, empty `mergeResults` | Operator bypassed orch merge/integrate; engine never wrote terminal batch event | `diagnosis: completed_manual` or `limbo_stale` → suggest `spine batch complete` or `spine batch dismiss` |
+| UI prompts "pause?" while nothing runs | Zombie registry + stale `phase` | Reconcile first; never show pause for terminal diagnoses |
+| Preflight blocks new batch | Stale active batch record | Run reconciliation; print dismiss/complete — not "batch already running" |
+
+**Anti-pattern:** Do not pause Taskplane when work is already on `main` — dismiss or complete the batch record first (§23.1).
+
+**Success criterion:** Operator never edits `.spine/batch-state.json` or `.pi/batch-state.json` by hand for known limbo states.
 
 ---
 
@@ -1282,6 +1358,7 @@ spine doctor
 | **0 — Bootstrap** | Repo, CI, pi manifest, `spine doctor`, slash stubs, **batch preflight** (FR-BATCH-11), incident doc template |
 | **0b — Phase 0 completion (revised)** | Finish TP-002–TP-005 using **serial or 2-lane max** Taskplane runs until pi-spine engine exists; commit task packets; no `/orch all` on greenfield without preflight |
 | **1 — Compat + planner** | Taskplane parsers, DAG, `/spine-plan`, fixtures, `spine state validate` |
+| **1b — Batch reconciliation UX** | **`spine status --diagnose`**, diagnosis taxonomy (FR-BATCH-12–14), **`spine batch dismiss/complete`** (FR-BATCH-15–16), preflight limbo block (FR-BATCH-17), `/spine` routing (FR-BATCH-18); Taskplane `.pi/batch-state.json` adapter optional |
 | **2 — Single lane worker** | Worktree, AgentSession worker, STATUS discipline, step commits, **checkpoint heartbeat** (FR-WORK-09) |
 | **3 — Multi-lane + journal + recovery** | Parallel lanes, journal, **atomic retry** (§18.5), **progress-aware stall** (§18.4), **abort archive** (§18.6), mixed-outcome policy (§17.4), resume |
 | **4 — Review + gates** | Review tool (fail closed FR-REV-06), integrate gate, `/spine-integrate`, honest post-mortem (NFR-OBS-03) |
@@ -1297,6 +1374,7 @@ Do **not** repeat the 2026-05-31 failure mode:
 3. Prefer **serial** execution for bootstrap tasks (TP-002 first — largest, review level 2).
 4. Parallelize only tasks with proven disjoint scopes **after** CI exists.
 5. When using Taskplane during bootstrap, document recovery steps in CONTEXT.md; migrate to `/spine` as soon as Phase 3 delivers retry/resume.
+6. When all tasks succeeded but the batch UI shows red `stopped`, run `spine status --diagnose` — do **not** pause; dismiss or complete the batch record before starting a new batch.
 
 ---
 
@@ -1314,6 +1392,7 @@ Do **not** repeat the 2026-05-31 failure mode:
 | iOS worktree friction | Medium | Medium | Single-lane mode; documented setup hook |
 | npm name collision | Low | Low | Fallback `@scope/pi-spine` or `pi-keel` |
 | Duplicate orchestrator conflict | Medium | High | Document mutual exclusion with Taskplane |
+| Batch limbo after manual recovery | High | Medium | §17.5 reconciliation; FR-BATCH-15/16; preflight block (FR-BATCH-17) |
 
 ---
 
@@ -1364,6 +1443,7 @@ Score dimensions 0–2: blast radius, pattern novelty, security, reversibility.
 | **Orch branch** | Integration branch receiving lane merges |
 | **Gate** | Human approval checkpoint with evidence |
 | **Journal** | Append-only control-plane event log |
+| **Diagnosis** | Reconciled operator-facing batch state (FR-BATCH-13), distinct from raw engine `phase` |
 | **Packet** | Task folder with PROMPT.md + STATUS.md |
 | **Spine** | pi-spine control plane (not LLM session) |
 
@@ -1374,6 +1454,7 @@ Score dimensions 0–2: blast radius, pattern novelty, security, reversibility.
 | 0.1 | 2026-05-29 | Initial draft from planning session |
 | 1.0 | 2026-05-29 | Full PRD for new repository handoff |
 | 1.1 | 2026-05-31 | Incident-driven updates from Phase 0 Taskplane batch (I-01–I-10); §17.4, §18.4–18.8, revised Phase 0 policy |
+| 1.2 | 2026-06-01 | Batch reconciliation UX (§17.5, §18.9); FR-BATCH-12–19; US-7; G9; M10–M11; GAP-UX-01–04; Phase 1b |
 
 ### Appendix E — Incident references
 

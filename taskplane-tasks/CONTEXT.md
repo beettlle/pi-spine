@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-05-31
+**Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-009
+**Next Task ID:** TP-011
 
 ---
 
@@ -21,9 +21,16 @@ Phase 0 complete — batch `20260531T165700` merged to `main` (TP-002–TP-005).
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-006 | Batch preflight (FR-BATCH-11) | Staged | — |
+| TP-006 | Batch preflight (FR-BATCH-11) + reconciliation stub | Staged | — |
 | TP-007 | Taskplane parsers (FR-TASK-01–05) | Staged | — |
 | TP-008 | Planner + `spine plan` / `/spine-plan` (FR-SCHED-01–04,06) | Staged | TP-006, TP-007 |
+
+### Phase 1b — Batch reconciliation UX (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-009 | Batch status & reconciliation CLI (FR-BATCH-12–14) | Staged | TP-006 |
+| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Staged | TP-009 |
 
 ---
 
@@ -35,28 +42,33 @@ Phase 0 complete — batch `20260531T165700` merged to `main` (TP-002–TP-005).
 2. **No `/orch all` on greenfield** until CI exists and largest task has completed once serially.
 3. **Serial first** for bootstrap work; parallelize only with proven disjoint scopes.
 4. **Recovery literacy:** retry must reset task **and** segment frontier (see incident I-02).
+5. **Limbo literacy:** when all tasks succeeded but batch UI is red `stopped`, run `spine status --diagnose` — dismiss or complete; do not pause.
 
-### `/orch` wave plan (Phase 1 dogfood)
+### `/orch` wave plan (Phase 1 + 1b dogfood)
 
 Run with **max 2 lanes** until pi-spine engine replaces Taskplane:
 
 | Wave | Tasks | Notes |
 |------|-------|-------|
-| 0 | TP-006 ∥ TP-007 | Disjoint file scopes — preflight vs parsers |
+| 0 | TP-006 ∥ TP-007 | Disjoint scopes — preflight vs parsers |
 | 1 | TP-008 | Depends on TP-006 + TP-007; completes FR-BATCH-11 wave plan |
+| 2 | TP-009 | Reconciliation — answers "what state am I in?" |
+| 3 | TP-010 | Dismiss/complete — clears limbo before next batch |
 
 Preflight policy: run `spine doctor` (or Taskplane equivalent) before wave 0; commit task packets before batch start.
 
 ### Next steps
 
-1. **Execute Phase 1** using the wave plan above (2-lane max for wave 0).
-2. Replace Taskplane `/orch` for dogfood as soon as `/spine-retry-task` exists (Phase 3).
+1. **Execute Phase 1** waves 0–1 using the plan above (2-lane max for wave 0).
+2. **Execute Phase 1b** waves 2–3 so Taskplane limbo is fixable via `spine batch dismiss` / `complete`.
+3. Replace Taskplane `/orch` for dogfood as soon as `/spine-retry-task` exists (Phase 3).
 
 ### What pi-spine must fix (priority order)
 
-| Priority | Requirement | Phase |
-|----------|-------------|-------|
+| Priority | Requirement | Phase / Task |
+|----------|-------------|--------------|
 | P0 | Batch preflight (FR-BATCH-11) | 1 (TP-006 + TP-008) |
+| P0 | Batch reconciliation UX (FR-BATCH-12–18) | 1b (TP-009 + TP-010) |
 | P1 | Atomic task+segment retry (§18.5) | 3 |
 | P1 | Progress-aware stall detection (§18.4) | 3 |
 | P1 | Abort archive + segment-safe rebuild (§18.6) | 3 |
@@ -77,7 +89,7 @@ Use `npm test` for full verification once the test script exists in `package.jso
 |----------|------|
 | Tasks | `taskplane-tasks/` |
 | Config | `.pi/taskplane-config.json` |
-| PRD | `pi-spine-PRD.md` (v1.1 — incident updates) |
+| PRD | `docs/PRD.md` / `pi-spine-PRD.md` (v1.2 — reconciliation UX) |
 | Incident report | `docs/incidents/20260531-phase0-taskplane-batch.md` |
 | Taskplane gaps | `docs/compatibility/taskplane-gap-list.md` |
 | Package | `package.json`, `bin/spine.mjs` |
@@ -88,5 +100,6 @@ Use `npm test` for full verification once the test script exists in `package.jso
 
 - FR-INIT-05 `spine init --preset taskplane-compat` (Phase 1)
 - Batch engine, journal (Phases 2–3) — **recovery tooling is now P1, not nice-to-have**
+- Optional: Taskplane `.pi/batch-state.json` adapter folded into TP-009 reconciliation reader
 - Do not run Taskplane and pi-spine batches concurrently (PRD §22.1)
 - Replace Taskplane `/orch` for dogfood as soon as `/spine-retry-task` exists (Phase 3)

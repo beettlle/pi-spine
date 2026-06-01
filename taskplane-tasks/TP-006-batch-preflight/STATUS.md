@@ -15,7 +15,8 @@
 
 - [ ] FR-BATCH-11 requirements listed
 - [ ] Doctor exit codes confirmed
-- [ ] Active batch state location confirmed
+- [ ] Active batch state location confirmed (`.spine/` and `.pi/` paths)
+- [ ] FR-BATCH-17 limbo preflight requirement noted
 
 ---
 
@@ -24,6 +25,7 @@
 
 - [ ] `bin/spine-preflight.mjs` created with all checks
 - [ ] `runPreflightPlanCheck` stub exported
+- [ ] `src/batch/reconcile.mjs` stub exported with `runReconciliationCheck`
 
 ---
 
