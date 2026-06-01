@@ -18,6 +18,7 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-UX-02 | "Pause?" when nothing running | FR-BATCH-18, §17.5 | **Closed** — reconciliation and `/spine` never suggest pause for limbo (TP-010) |
 | GAP-UX-03 | Live status vs disk `phase` mismatch | NFR-OBS-04 | **Partial** — CLI and `/spine-status` share reconciliation; dashboard in Phase 5 |
 | GAP-UX-04 | Manual git merge leaves active batch | FR-BATCH-16, §18.9 | **Closed** — `spine batch complete --detect-manual-merge` (TP-010) |
+| GAP-BATCH-PENDING-01 | `/orch all` runs full backlog; no pending-only scope | FR-SCHED-06, §15.2 `spine run <scope>` | **Closed (TP-024)** — `pending` scope, relaxed batch `all`, `spine run pending` |
 
 ## Verification
 
