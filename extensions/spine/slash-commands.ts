@@ -15,6 +15,8 @@ export const SPINE_SLASH_COMMAND_NAMES = [
 	"spine-status",
 	"spine-pause",
 	"spine-resume",
+	"spine-retry-task",
+	"spine-skip-task",
 	"spine-abort",
 	"spine-gate",
 	"spine-integrate",
@@ -52,6 +54,14 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine-resume",
 		description: "Resume paused or failed batch (usage: /spine-resume [--force])",
+	},
+	{
+		name: "spine-retry-task",
+		description: "Atomically retry a failed task (usage: /spine-retry-task <taskId>)",
+	},
+	{
+		name: "spine-skip-task",
+		description: "Skip a failed task and unblock merge (usage: /spine-skip-task <taskId>)",
 	},
 	{
 		name: "spine-abort",
@@ -143,6 +153,29 @@ function runSpineBatchDismiss(argsText: string, cwd = process.cwd()) {
 
 function runSpineBatchPauseResume(
 	subcommand: "pause" | "resume",
+	argsText: string,
+	cwd = process.cwd(),
+) {
+	const tokens = [subcommand, ...String(argsText ?? "").trim().split(/\s+/).filter(Boolean)];
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "batch", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
+function runSpineBatchRetrySkip(
+	subcommand: "retry" | "skip",
 	argsText: string,
 	cwd = process.cwd(),
 ) {
@@ -407,6 +440,38 @@ async function spineResumeHandler(args: string, ctx: ExtensionCommandContext): P
 	ctx.ui.notify(result.output || "batch resumed", "info");
 }
 
+async function spineRetryTaskHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const taskId = args.trim();
+	if (!taskId) {
+		ctx.ui.notify("Usage: /spine-retry-task <taskId>", "error");
+		return;
+	}
+
+	const result = runSpineBatchRetrySkip("retry", taskId);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch retry failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || `task ${taskId} reset for retry`, "info");
+}
+
+async function spineSkipTaskHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const taskId = args.trim();
+	if (!taskId) {
+		ctx.ui.notify("Usage: /spine-skip-task <taskId>", "error");
+		return;
+	}
+
+	const result = runSpineBatchRetrySkip("skip", taskId);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine batch skip failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || `task ${taskId} skipped`, "info");
+}
+
 async function spineNextHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const result = runSpineNext(args);
 	if (!result.ok) {
@@ -447,7 +512,11 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 										? spinePauseHandler
 										: name === "spine-resume"
 											? spineResumeHandler
-											: name === "spine-integrate"
+											: name === "spine-retry-task"
+												? spineRetryTaskHandler
+												: name === "spine-skip-task"
+													? spineSkipTaskHandler
+													: name === "spine-integrate"
 												? spineIntegrateHandler
 												: stubHandler(name),
 		});

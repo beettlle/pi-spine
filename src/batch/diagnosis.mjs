@@ -105,7 +105,7 @@ export function buildAlternatives(diagnosis) {
 		case "completed_manual":
 			return ["spine batch complete --detect-manual-merge", "spine batch dismiss", ...common];
 		case "needs_retry":
-			return ["/spine-resume --force", ...common];
+			return ["/spine-skip-task", "/spine-resume --force", ...common];
 		case "needs_merge":
 			return ["/spine-status --diagnose", ...common];
 		case "needs_integrate":

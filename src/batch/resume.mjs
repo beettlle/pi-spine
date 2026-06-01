@@ -18,6 +18,7 @@ import {
 	validateBatchState,
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
+import { detectSegmentDrift } from "./retry.mjs";
 import { runWorker } from "./worker-host.mjs";
 
 /**
@@ -131,6 +132,28 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			error: "invalid_batch_state",
 			output: `Batch state validation failed:\n  ${validation.errors.join("\n  ")}\n`,
 			batchId: state.batchId,
+		};
+	}
+
+	if (detectSegmentDrift(state) && !(phase === "failed" && force)) {
+		const driftTask = state.tasks.find(
+			(task) =>
+				task?.status === "pending" &&
+				state.segments?.some(
+					(segment) =>
+						segment?.taskId === task.taskId &&
+						(segment.status === "failed" || segment.status === "succeeded"),
+				),
+		);
+		const driftTaskId = driftTask?.taskId ?? state.tasks[0]?.taskId ?? "unknown";
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "RetrySegmentDrift",
+			failureClass: "RetrySegmentDrift",
+			output: `Segment drift: task ${driftTaskId} is pending but segments are terminal.\n  → spine batch retry ${driftTaskId}\n  → spine batch resume --force\n`,
+			batchId: state.batchId,
+			taskId: driftTaskId,
 		};
 	}
 
