@@ -2,14 +2,14 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-015
+**Next Task ID:** TP-016
 **Orchestration policy:** **Option B** — prioritize pi-spine **Phase 2/3** (own worker + recovery); Taskplane `/orch` only for bounded, serial dogfood until `/spine-retry-task` exists.
 
 ---
 
 ## Current State
 
-**Phases 0–1c, TP-012, TP-013, and TP-014 are on `main` (local).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **69/69** tests pass locally (`SPINE_WORKER_STUB=1`).
+**Phases 0–1c, TP-012–TP-014 are on `main`.** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **69/69** tests pass locally (`SPINE_WORKER_STUB=1`). TP-014 landed via manual merge after empty batch merge (uncommitted lane work).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -49,7 +49,13 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Done** | TP-012 |
 | TP-014 | Orchestration journal + batch-state hardening | **Done** | TP-013 |
 
-### Phase 3 — Multi-lane + recovery (after Phase 2)
+### Phase 3 — Segments, resume, multi-lane (in progress)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-015 | Segment model + lane commit + pause/resume | **Staged** — packet ready | TP-014 |
+
+### Phase 3 — Multi-lane + recovery (remaining)
 
 | Theme | PRD / gaps | Status |
 |-------|------------|--------|
@@ -83,12 +89,12 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 
 ## Next steps (Option B)
 
-1. **Phase 3 next** — multi-lane, atomic retry (§18.5), full resume, abort archive (GAP-RETRY/ABORT/MERGE).
-2. **Dogfood one task per batch** — `spine batch start <id>` only; no Taskplane workers for spine tasks.
-3. **Stage TP-015** — Phase 3 theme TBD (atomic retry / resume).
+1. **Run TP-015** — `spine batch start TP-015` (lane commit, segments, pause/resume).
+2. **Stage TP-016** — atomic retry + skip-task (§18.5, GAP-RETRY-01).
+3. **Dogfood one task per batch** — `spine batch start <id>` only; no Taskplane workers for spine tasks.
 4. **Phase 4+** — review fail-closed, integrate gate, dashboard (GAP-UX-03), npm publish.
 
-**Do not** start Phase 4 gates or multi-lane Taskplane batches until TP-014 journal hardening lands.
+**Do not** start Phase 4 gates or multi-lane Taskplane batches until TP-015 resume foundation lands.
 
 ---
 
@@ -101,7 +107,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | ~~P0~~ | CI green on `main` | 1c | **Done** (TP-011) |
 | ~~P0~~ | Single-lane worker + batch start | 2 | **Done** (TP-012, TP-013) |
 | **P1** | Orchestration journal | 2–3 | **Done (TP-014)** |
-| **P1** | Atomic task+segment retry (§18.5) | 3 | Staged |
+| **P1** | Lane commit + segments + resume | 3 | **Staged (TP-015)** |
+| **P1** | Atomic task+segment retry (§18.5) | 3 | Staged (TP-016) |
 | **P1** | Progress-aware stall (§18.4) | 3 | Staged |
 | **P1** | Abort archive (§18.6) | 3 | Staged |
 | P2 | Mixed-outcome merge block (§17.4) | 3 | Staged |
@@ -136,7 +143,8 @@ Run full `npm test` (69 tests) for any batch- or worker-touching change.
 
 ## Technical Debt / Future Work
 
-- **TP-015** — Phase 3 theme TBD (atomic retry, resume, multi-lane).
+- **TP-015 packet** — `taskplane-tasks/TP-015-segments-resume-commit/PROMPT.md`
+- **TP-016** — atomic retry + skip-task (not staged).
 - FR-INIT-05 `spine init --preset taskplane-compat` (defer until Phase 2 worker stable).
 - Taskplane `.pi/batch-state.json` adapter — **done** in TP-009 reconciliation reader (dogfood only).
 - Do not run Taskplane and pi-spine batches concurrently (PRD §22.1).
