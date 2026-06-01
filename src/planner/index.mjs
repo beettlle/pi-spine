@@ -103,6 +103,9 @@ export function buildPlan({ scope, config, tasksRoot }) {
 			tasksRoot,
 			tasksDiscovered: discovered.length,
 			tasksSelected: selectedIdsSorted.length,
+			...(scopeResult.mode === 'pending'
+				? { tasksExcluded: scopeResult.excludedCount ?? 0 }
+				: {}),
 		},
 	};
 }

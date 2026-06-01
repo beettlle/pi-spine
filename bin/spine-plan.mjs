@@ -18,6 +18,9 @@ export function formatPlanHuman(plan) {
 	lines.push(
 		`Tasks: ${plan.metadata?.tasksSelected ?? (plan.tasks ? Object.keys(plan.tasks).length : 'unknown')}`,
 	);
+	if (plan.scope?.mode === 'pending' && plan.metadata?.tasksExcluded != null) {
+		lines.push(`Excluded (done on disk): ${plan.metadata.tasksExcluded}`);
+	}
 	lines.push('');
 
 	for (const wave of plan.waves ?? []) {

@@ -3,13 +3,17 @@
  *
  * Supported scope forms:
  *  - "all"
+ *  - "pending" (tasks without `.DONE` marker)
  *  - explicit task IDs (e.g. "TP-008")
  *  - glob-like path patterns (e.g. "taskplane-tasks/TP-008-*")
  */
 
 import path from 'node:path';
+import { summarizePendingScope } from './pending.mjs';
 
 export const TASK_ID_RE = /^[A-Z][A-Z0-9]*-\d{3,}$/;
+
+export const NO_PENDING_TASKS_ERROR = 'No pending tasks (all discovered tasks have .DONE).';
 
 function escapeRegexChar(ch) {
 	// Escape regex meta characters.
@@ -64,7 +68,7 @@ function tokenizeScope(scope) {
 /**
  * @param {any} scopeArg
  * @param {{ tasksRoot: string, discoveredTasks: Array<{ taskId: string, folderPath: string }> }} args
- * @returns {{ mode: 'all'|'ids'|'glob'|'custom', taskIds: string[] }}
+ * @returns {{ mode: 'all'|'pending'|'ids'|'glob'|'custom', taskIds: string[], excludedCount?: number }}
  */
 export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
 	const allTaskIds = discoveredTasks.map((t) => t.taskId).sort();
@@ -80,6 +84,14 @@ export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
 		return { mode: 'all', taskIds: allTaskIds };
 	}
 
+	if (tokens.length === 1 && tokens[0] === 'pending') {
+		const { pendingIds, excludedCount } = summarizePendingScope(discoveredTasks, tasksRoot);
+		if (pendingIds.length === 0) {
+			throw new Error(NO_PENDING_TASKS_ERROR);
+		}
+		return { mode: 'pending', taskIds: pendingIds, excludedCount };
+	}
+
 	const selected = new Set();
 	let sawGlob = false;
 	let sawId = false;
@@ -87,6 +99,10 @@ export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
 	for (const token of tokens) {
 		if (token === 'all') {
 			return { mode: 'all', taskIds: allTaskIds };
+		}
+
+		if (token === 'pending') {
+			throw new Error('Use scope "pending" alone; do not combine with other tokens.');
 		}
 
 		if (TASK_ID_RE.test(token)) {
