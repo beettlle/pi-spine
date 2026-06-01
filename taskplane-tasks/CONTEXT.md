@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-023
+**Next Task ID:** TP-025
 **Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
@@ -90,7 +90,14 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 2. **`spine batch start TP-020`** — review fail-closed (wave 12).
 3. **`spine batch start TP-021`** — integrate gate + evidence (wave 13).
 4. **`spine batch start TP-022`** — honest post-mortem (wave 14).
-5. After Phase 4: **Phase 5** dashboard (TP-023+ TBD).
+5. After Phase 4: **Phase 5** — TP-024 pending batch scope, then dashboard (TP-023 TBD).
+
+### Phase 5 — Operator UX (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-024 | Pending scope + relaxed batch `all` / `spine run pending` | **Staged** | TP-022 |
+| TP-023 | Dashboard (NFR-OBS-04) | Planned | TBD |
 
 ---
 
@@ -102,7 +109,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | **P1** | Review fail-closed | 4 | **Staged (TP-020)** |
 | **P1** | Integrate gate + evidence | 4 | **Staged (TP-021)** |
 | P2 | Honest post-mortem | 4 | **Staged (TP-022)** |
-| P2 | Dashboard (NFR-OBS-04) | 5 | Planned |
+| **P1** | Pending batch scope (`spine batch start pending`) | 5 | **Staged (TP-024)** |
+| P2 | Dashboard (NFR-OBS-04) | 5 | Planned (TP-023) |
 
 ---
 
@@ -133,5 +141,6 @@ Run full `npm test` (**101** tests baseline) for any batch-touching change.
 - **TP-020** — `taskplane-tasks/TP-020-review-fail-closed/PROMPT.md`
 - **TP-021** — `taskplane-tasks/TP-021-integrate-gate/PROMPT.md`
 - **TP-022** — `taskplane-tasks/TP-022-honest-postmortem/PROMPT.md`
-- **TP-023+** — Phase 5 dashboard (not staged)
+- **TP-024** — `taskplane-tasks/TP-024-batch-pending-scope/PROMPT.md`
+- **TP-023** — Phase 5 dashboard (not staged)
 - FR-INIT-05 `spine init --preset taskplane-compat` — deferred
