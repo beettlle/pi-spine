@@ -459,7 +459,7 @@ async function cmdReview(args) {
 
 async function cmdPlan(args) {
 	const json = args.includes("--json");
-	const scope = args.find((a) => !a.startsWith("--")) ?? "all";
+	const scope = args.filter((a) => !a.startsWith("--")).join(" ") || "all";
 	const { runSpinePlan } = await import("./spine-plan.mjs");
 	const result = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
 	process.stdout.write(result.output);

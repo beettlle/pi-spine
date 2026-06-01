@@ -83,8 +83,7 @@ export async function runSpinePlan({
 async function main() {
 	const argv = process.argv.slice(2);
 	const json = argv.includes('--json');
-	const scopeToken = argv.find((a) => !a.startsWith('--'));
-	const scope = scopeToken ?? 'all';
+	const scope = argv.filter((a) => !a.startsWith('--')).join(' ') || 'all';
 
 	try {
 		const { output } = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
