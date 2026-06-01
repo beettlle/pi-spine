@@ -3,15 +3,15 @@
   "taskRunner": {
     "project": {
       "name": "pi-spine",
-      "description": ""
+      "description": "Orchestration spine for long-running pi development — a pi package with parallel batch tooling, worktree lanes, and Taskplane-compatible task packets."
     },
     "paths": {
       "tasks": "taskplane-tasks"
     },
     "testing": {
       "commands": {
-        "unit": "agents run this to verify work",
-        "build": "agents run this after tests"
+        "unit": "npm run typecheck",
+        "build": "npm run typecheck"
       }
     },
     "taskAreas": {

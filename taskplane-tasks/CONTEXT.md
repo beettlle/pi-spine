@@ -14,6 +14,12 @@ to a specific domain area are created here.
 Taskplane is configured and ready for task execution. Use `/orch all` for
 parallel batch execution or `/orch <path/to/PROMPT.md>` for a single task.
 
+Testing commands in `.pi/taskplane-config.json`:
+- **unit:** `npm run typecheck`
+- **build:** `npm run typecheck`
+
+(No `npm test` script yet — typecheck is the verification gate until tests are added.)
+
 ---
 
 ## Key Files
