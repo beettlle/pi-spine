@@ -112,6 +112,28 @@ function runSpinePlan(argsText: string, cwd = process.cwd()) {
 	};
 }
 
+function runSpineStatus(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "status", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function stubHandler(command: string) {
 	return async (_args: string, ctx: ExtensionCommandContext): Promise<void> => {
 		ctx.ui.notify(
@@ -173,6 +195,16 @@ ${preflight.output}
 	ctx.ui.notify(plan.output || "plan generated", "info");
 }
 
+async function spineStatusHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const status = runSpineStatus(args);
+	if (!status.ok) {
+		ctx.ui.notify(status.output || "spine status failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(status.output || "status unavailable", "info");
+}
+
 /** Register all PRD §15.1 pi slash commands with Phase 0 stub handlers. */
 export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 	for (const { name, description } of SPINE_SLASH_COMMANDS) {
@@ -183,7 +215,9 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 					? spineEntryHandler
 					: name === "spine-plan"
 						? spinePlanHandler
-						: stubHandler(name),
+						: name === "spine-status"
+							? spineStatusHandler
+							: stubHandler(name),
 		});
 	}
 }

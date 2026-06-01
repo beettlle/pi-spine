@@ -1,0 +1,22 @@
+{
+  "batchId": "20260601T120000",
+  "phase": "running",
+  "baseBranch": "main",
+  "orchBranch": "orch/spine-operator-20260601T120000",
+  "startedAt": 1748788800000,
+  "endedAt": null,
+  "failedTasks": 0,
+  "succeededTasks": 1,
+  "totalTasks": 3,
+  "mergeResults": [],
+  "tasks": [
+    { "taskId": "TP-001", "status": "succeeded", "taskFolder": "TP-001-alpha", "doneFileFound": true },
+    { "taskId": "TP-002", "status": "running", "taskFolder": "TP-002-beta", "doneFileFound": false },
+    { "taskId": "TP-003", "status": "pending", "taskFolder": "TP-003-gamma", "doneFileFound": false }
+  ],
+  "segments": [
+    { "segmentId": "TP-001::default", "taskId": "TP-001", "status": "succeeded" },
+    { "segmentId": "TP-002::default", "taskId": "TP-002", "status": "running" },
+    { "segmentId": "TP-003::default", "taskId": "TP-003", "status": "pending" }
+  ]
+}

@@ -14,9 +14,9 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-POST-01 | Supervisor summary claims batch "ran smoothly" with failures | NFR-OBS-03 | Open — pi-spine Phase 4 |
 | GAP-REV-01 | Plan review fail-open when review tool errors at level > 0 | FR-REV-06 | Open — pi-spine Phase 4 |
 | GAP-PREFLIGHT-01 | No batch preflight before `/orch all` | FR-BATCH-11, §23.1 | **Closed** — `spine preflight` + `/spine` gate with wave plan (TP-006 + TP-008) |
-| GAP-UX-01 | All tasks succeeded, batch `stopped`, UI red | FR-BATCH-12–16, §17.5 | Open — pi-spine Phase 1b (TP-009 + TP-010) |
-| GAP-UX-02 | "Pause?" when nothing running | FR-BATCH-18, §17.5 | Open — pi-spine Phase 1b (TP-009 + TP-010) |
-| GAP-UX-03 | Live status vs disk `phase` mismatch | NFR-OBS-04 | Open — pi-spine Phase 1b (TP-009) |
+| GAP-UX-01 | All tasks succeeded, batch `stopped`, UI red | FR-BATCH-12–16, §17.5 | **Partial** — `spine status --diagnose` detects limbo; dismiss/complete in TP-010 |
+| GAP-UX-02 | "Pause?" when nothing running | FR-BATCH-18, §17.5 | **Partial** — reconciliation never suggests pause for limbo; `/spine` routing in TP-010 |
+| GAP-UX-03 | Live status vs disk `phase` mismatch | NFR-OBS-04 | **Partial** — CLI and `/spine-status` share reconciliation; dashboard in Phase 5 |
 | GAP-UX-04 | Manual git merge leaves active batch | FR-BATCH-16, §18.9 | Open — pi-spine Phase 1b (TP-010) |
 
 ## Verification

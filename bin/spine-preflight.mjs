@@ -195,8 +195,45 @@ export function checkNoActiveBatch(ctx) {
 					batchStatePath: path.relative(ctx.projectRoot, batchStatePath),
 					diagnosis: reconciliation.diagnosis,
 					batchId: batchState.batchId ?? batchState.id ?? null,
+					headline: reconciliation.headline,
 				},
-				suggestedCommand: "spine batch dismiss",
+				suggestedCommand: reconciliation.suggestedCommand ?? "spine batch dismiss",
+			},
+		);
+	}
+
+	if (reconciliation.diagnosis === "running") {
+		const batchId = batchState.batchId ?? batchState.id ?? "unknown";
+		return makeCheck(
+			"no-active-batch",
+			false,
+			reconciliation.headline ?? `batch ${batchId} is running`,
+			{
+				details: {
+					batchStatePath: path.relative(ctx.projectRoot, batchStatePath),
+					diagnosis: reconciliation.diagnosis,
+					batchId,
+					headline: reconciliation.headline,
+				},
+				suggestedCommand: reconciliation.suggestedCommand ?? "/spine-status --diagnose",
+			},
+		);
+	}
+
+	if (reconciliation.diagnosis === "paused") {
+		const batchId = batchState.batchId ?? batchState.id ?? "unknown";
+		return makeCheck(
+			"no-active-batch",
+			false,
+			reconciliation.headline ?? `batch ${batchId} is paused`,
+			{
+				details: {
+					batchStatePath: path.relative(ctx.projectRoot, batchStatePath),
+					diagnosis: reconciliation.diagnosis,
+					batchId,
+					headline: reconciliation.headline,
+				},
+				suggestedCommand: reconciliation.suggestedCommand ?? "/spine-resume --force",
 			},
 		);
 	}

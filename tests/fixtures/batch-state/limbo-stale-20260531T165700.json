@@ -1,0 +1,24 @@
+{
+  "batchId": "20260531T165700",
+  "phase": "stopped",
+  "baseBranch": "main",
+  "orchBranch": "orch/cdelgado-20260531T165700",
+  "startedAt": 1748713020000,
+  "endedAt": null,
+  "failedTasks": 0,
+  "succeededTasks": 4,
+  "totalTasks": 4,
+  "mergeResults": [],
+  "tasks": [
+    { "taskId": "TP-002", "status": "succeeded", "taskFolder": "TP-002-spine-init", "doneFileFound": true },
+    { "taskId": "TP-003", "status": "succeeded", "taskFolder": "TP-003-ci-scaffold", "doneFileFound": true },
+    { "taskId": "TP-004", "status": "succeeded", "taskFolder": "TP-004-slash-commands", "doneFileFound": true },
+    { "taskId": "TP-005", "status": "succeeded", "taskFolder": "TP-005-preflight", "doneFileFound": true }
+  ],
+  "segments": [
+    { "segmentId": "TP-002::default", "taskId": "TP-002", "status": "succeeded" },
+    { "segmentId": "TP-003::default", "taskId": "TP-003", "status": "succeeded" },
+    { "segmentId": "TP-004::default", "taskId": "TP-004", "status": "succeeded" },
+    { "segmentId": "TP-005::default", "taskId": "TP-005", "status": "succeeded" }
+  ]
+}

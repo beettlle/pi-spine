@@ -1,7 +1,7 @@
 # TP-009: Batch status and reconciliation CLI — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** Not Started
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,61 +11,61 @@
 ---
 
 ### Step 0: Preflight
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] FR-BATCH-12–14 and §17.5 read
-- [ ] TP-006 stub signature confirmed
-- [ ] Diagnosis taxonomy listed
+- [x] FR-BATCH-12–14 and §17.5 read
+- [x] TP-006 stub signature confirmed
+- [x] Diagnosis taxonomy listed
 
 ---
 
 ### Step 1: Implement reconciliation core
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] Reconciliation module and readers implemented
-- [ ] Limbo and completed_manual detection working
+- [x] Reconciliation module and readers implemented
+- [x] Limbo and completed_manual detection working
 
 ---
 
 ### Step 2: spine status CLI and /spine-status slash command
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] `bin/spine-status.mjs` created
-- [ ] CLI and slash command wired
+- [x] `bin/spine-status.mjs` created
+- [x] CLI and slash command wired
 
 ---
 
 ### Step 3: Complete FR-BATCH-17 preflight integration
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] Preflight calls real reconciliation
-- [ ] Limbo blocks preflight with suggested command
+- [x] Preflight calls real reconciliation
+- [x] Limbo blocks preflight with suggested command
 
 ---
 
 ### Step 4: Reconciliation test suite
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] Incident fixtures added
-- [ ] `tests/batch/reconcile.test.mjs` passes
+- [x] Incident fixtures added
+- [x] `tests/batch/reconcile.test.mjs` passes
 
 ---
 
 ### Step 5: Testing & Verification
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] `npm run typecheck` passes
-- [ ] `npm test` passes
-- [ ] Manual status smoke logged
+- [x] `npm run typecheck` passes
+- [x] `npm test` passes
+- [x] Manual status smoke logged
 
 ---
 
 ### Step 6: Documentation & Delivery
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] README updated
-- [ ] Gap list updated
-- [ ] Discoveries logged
+- [x] README updated
+- [x] Gap list updated
+- [x] Discoveries logged
 
 ---
 
@@ -80,6 +80,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Taskplane batch-state uses `succeeded` task/segment status, not pi-spine `completed` | Normalized in `taskplane-state.mjs` reader | `src/batch/readers/taskplane-state.mjs` |
+| Explicit `ctx.batchState` must bypass disk load (preflight/tests pass in-memory state) | Fixed in `reconcileBatch` | `src/batch/reconcile.mjs` |
+| Manual smoke: no active batch → idle diagnosis with `spine preflight` suggested | Logged below | Execution log |
 
 ---
 
@@ -88,6 +91,17 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-01 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-01 04:48 | Task started | Runtime V2 lane-runner execution |
+| 2026-06-01 04:48 | Step 0 started | Preflight |
+| 2026-06-01 | Step 0 complete | FR-BATCH-12–14, §17.5 read; stub confirmed; taxonomy listed |
+| 2026-06-01 | Step 1 complete | Reconciliation core, readers, diagnosis module |
+| 2026-06-01 | Step 2 complete | `spine status` CLI + `/spine-status` slash command |
+| 2026-06-01 | Step 3 complete | Preflight uses real reconciliation; limbo/running/paused messages |
+| 2026-06-01 | Step 4 complete | Incident fixtures + reconcile test suite (17 targeted, 46 full) |
+| 2026-06-01 | Step 5 complete | typecheck pass; npm test 46/46; smoke: idle batch → `spine preflight` |
+| 2026-06-01 | Step 6 complete | README + gap list updated |
+| 2026-06-01 04:53 | Worker iter 1 | done in 303s, tools: 111 |
+| 2026-06-01 04:53 | Task complete | .DONE created |
 
 ---
 

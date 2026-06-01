@@ -1,17 +1,485 @@
 /**
- * Batch reconciliation (stub — TP-009 implements real logic).
+ * Batch reconciliation (FR-BATCH-12, §17.5).
  */
+
+import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { parseSpineBatchState } from "./readers/spine-state.mjs";
+import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
+
+const LIMBO_PHASES = new Set(["stopped", "failed", "executing"]);
+const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
+
+/**
+ * @typedef {object} NormalizedTask
+ * @property {string} taskId
+ * @property {string} status
+ * @property {string|null} taskFolder
+ * @property {boolean} doneFileFound
+ * @property {string} classification
+ * @property {boolean} [doneOnDisk]
+ */
+
+/**
+ * @typedef {object} NormalizedBatchState
+ * @property {"spine"|"taskplane"} source
+ * @property {string} batchId
+ * @property {string} phase
+ * @property {string} baseBranch
+ * @property {string|null} orchBranch
+ * @property {unknown} startedAt
+ * @property {unknown} endedAt
+ * @property {number} failedTasks
+ * @property {number} succeededTasks
+ * @property {number} totalTasks
+ * @property {unknown[]} mergeResults
+ * @property {NormalizedTask[]} tasks
+ * @property {Array<{ segmentId: string, taskId: string, status: string, classification: string }>} segments
+ * @property {unknown[]} lanes
+ * @property {Record<string, unknown>} raw
+ */
+
+/**
+ * @typedef {object} ReconciliationResult
+ * @property {string|null} diagnosis
+ * @property {string} headline
+ * @property {string} suggestedCommand
+ * @property {string[]} [alternatives]
+ * @property {string|null} [batchId]
+ * @property {string|null} [batchStatePath]
+ * @property {string|null} [phase]
+ * @property {object} [signals]
+ */
+
+/**
+ * @param {string} projectRoot
+ */
+export function resolveBatchStatePath(projectRoot) {
+	const spinePath = path.join(projectRoot, ".spine", "batch-state.json");
+	if (fs.existsSync(spinePath)) return spinePath;
+
+	const piPath = path.join(projectRoot, ".pi", "batch-state.json");
+	if (fs.existsSync(piPath)) return piPath;
+
+	return null;
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string|null} [batchStatePath]
+ */
+export function loadBatchStateFile(projectRoot, batchStatePath = null) {
+	const resolved = batchStatePath ?? resolveBatchStatePath(projectRoot);
+	if (!resolved) return { path: null, raw: null, parseError: null };
+
+	try {
+		const raw = JSON.parse(fs.readFileSync(resolved, "utf-8"));
+		return { path: resolved, raw, parseError: null };
+	} catch (err) {
+		return { path: resolved, raw: null, parseError: err.message };
+	}
+}
+
+/**
+ * @param {unknown} raw
+ * @param {string} batchStatePath
+ */
+export function parseBatchState(raw, batchStatePath) {
+	if (!raw) return null;
+	if (batchStatePath.includes(`${path.sep}.pi${path.sep}`)) {
+		return parseTaskplaneBatchState(raw);
+	}
+	return parseSpineBatchState(raw) ?? parseTaskplaneBatchState(raw);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [configResult]
+ */
+export function resolveTasksRoot(projectRoot, configResult) {
+	const loaded = configResult ?? loadSpineConfig(projectRoot);
+	if (loaded.config?.paths?.tasksRoot) {
+		return path.join(projectRoot, loaded.config.paths.tasksRoot);
+	}
+
+	const envRoot = process.env.SPINE_TASKS_ROOT;
+	if (envRoot) return path.resolve(projectRoot, envRoot);
+
+	return null;
+}
+
+/**
+ * @param {string} tasksRoot
+ * @param {string} taskId
+ * @param {string|null} taskFolder
+ */
+function resolveTaskFolder(tasksRoot, taskId, taskFolder) {
+	if (taskFolder) {
+		const direct = path.join(tasksRoot, taskFolder);
+		if (fs.existsSync(direct)) return direct;
+	}
+
+	if (!tasksRoot || !fs.existsSync(tasksRoot)) return null;
+
+	const match = fs
+		.readdirSync(tasksRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory() && entry.name.startsWith(`${taskId}-`))
+		.map((entry) => path.join(tasksRoot, entry.name))[0];
+
+	return match ?? null;
+}
+
+/**
+ * @param {NormalizedBatchState} batch
+ * @param {string|null} tasksRoot
+ */
+export function classifyTasks(batch, tasksRoot) {
+	return batch.tasks.map((task) => {
+		const folderPath =
+			tasksRoot && task.taskId
+				? resolveTaskFolder(tasksRoot, task.taskId, task.taskFolder)
+				: null;
+		const doneOnDisk = folderPath ? fs.existsSync(path.join(folderPath, ".DONE")) : false;
+
+		let classification = task.classification;
+		if (doneOnDisk || task.doneFileFound) {
+			classification = "terminal-success";
+		}
+
+		return {
+			...task,
+			doneOnDisk,
+			classification,
+		};
+	});
+}
+
+/**
+ * @param {string} projectRoot
+ */
+function isInsideGitRepo(projectRoot) {
+	try {
+		execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ref
+ */
+function gitRefExists(projectRoot, ref) {
+	try {
+		execFileSync("git", ["rev-parse", "--verify", ref], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ancestor
+ * @param {string} descendant
+ */
+function gitIsAncestor(projectRoot, ancestor, descendant) {
+	try {
+		execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+function listOrchBranches(projectRoot, batchId) {
+	try {
+		const output = execFileSync("git", ["branch", "-a", "--list", "*orch*"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			timeout: 5000,
+		});
+
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim().replace(/^\*?\s+/, "").replace(/^remotes\/[^/]+\//, ""))
+			.filter(Boolean)
+			.filter((branch) => branch.includes(batchId));
+	} catch {
+		return [];
+	}
+}
 
 /**
  * @param {object} ctx
  * @param {string} ctx.projectRoot
- * @param {object|null} ctx.batchState
- * @param {string|null} ctx.batchStatePath
+ * @param {string} ctx.batchId
+ * @param {string} ctx.baseBranch
+ * @param {string|null} ctx.orchBranch
+ */
+export function inspectGitState(ctx) {
+	const { projectRoot, batchId, baseBranch, orchBranch } = ctx;
+	const result = {
+		inGitRepo: isInsideGitRepo(projectRoot),
+		baseBranch,
+		orchBranch,
+		orchBranches: [],
+		orchBranchExists: false,
+		orchMergedToBase: false,
+		mergedOrchBranch: null,
+	};
+
+	if (!result.inGitRepo) return result;
+
+	const candidates = new Set(listOrchBranches(projectRoot, batchId));
+	if (orchBranch) candidates.add(orchBranch);
+	candidates.add(`orch/cdelgado-${batchId}`);
+	candidates.add(`orch/spine-*-${batchId}`.replace("*", "operator"));
+
+	result.orchBranches = [...candidates].filter((branch) => !branch.includes("*"));
+
+	for (const branch of result.orchBranches) {
+		if (!gitRefExists(projectRoot, branch)) continue;
+		result.orchBranchExists = true;
+		if (gitIsAncestor(projectRoot, branch, baseBranch)) {
+			result.orchMergedToBase = true;
+			result.mergedOrchBranch = branch;
+			break;
+		}
+	}
+
+	if (!result.orchMergedToBase) {
+		try {
+			const merged = execFileSync("git", ["branch", "--merged", baseBranch], {
+				cwd: projectRoot,
+				encoding: "utf-8",
+				timeout: 5000,
+			});
+			const mergedOrch = merged
+				.split(/\r?\n/)
+				.map((line) => line.trim().replace(/^\*?\s+/, ""))
+				.filter((branch) => branch.includes("orch") && branch.includes(batchId));
+			if (mergedOrch.length > 0) {
+				result.orchMergedToBase = true;
+				result.mergedOrchBranch = mergedOrch[0];
+				result.orchBranchExists = true;
+			}
+		} catch {
+			// ignore git errors
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @param {object} signals
+ */
+export function deriveDiagnosis(signals) {
+	const {
+		phase,
+		endedAt,
+		failedTasks,
+		allTasksTerminalSuccess,
+		hasRunningTasks,
+		hasPendingTasks,
+		hasFailedTasks,
+		hasSegmentDrift,
+		failedTaskId,
+		mergeResultsEmpty,
+		git,
+	} = signals;
+
+	if (phase === "aborted") return { diagnosis: "aborted", failedTaskId: null };
+	if (phase === "completed" && endedAt != null) return { diagnosis: "completed", failedTaskId: null };
+
+	const limboSignals =
+		allTasksTerminalSuccess &&
+		failedTasks === 0 &&
+		LIMBO_PHASES.has(phase) &&
+		endedAt == null &&
+		mergeResultsEmpty;
+
+	if (limboSignals && git.orchMergedToBase) {
+		return { diagnosis: "completed_manual", failedTaskId: null };
+	}
+
+	if (limboSignals) {
+		return { diagnosis: "limbo_stale", failedTaskId: null };
+	}
+
+	if (hasFailedTasks || hasSegmentDrift) {
+		return { diagnosis: "needs_retry", failedTaskId };
+	}
+
+	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {
+		if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && !mergeResultsEmpty) {
+			return { diagnosis: "needs_integrate", failedTaskId: null };
+		}
+		return { diagnosis: "needs_merge", failedTaskId: null };
+	}
+
+	if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && mergeResultsEmpty) {
+		return { diagnosis: "needs_integrate", failedTaskId: null };
+	}
+
+	if (phase === "failed" || (failedTasks > 0 && !hasPendingTasks && !hasRunningTasks)) {
+		return { diagnosis: "failed", failedTaskId };
+	}
+
+	if (phase === "paused") {
+		return { diagnosis: "paused", failedTaskId: null };
+	}
+
+	if (RUNNING_PHASES.has(phase) || hasRunningTasks || hasPendingTasks) {
+		return { diagnosis: "running", failedTaskId: null };
+	}
+
+	return { diagnosis: "paused", failedTaskId: null };
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {object|null} [ctx.batchState]
+ * @param {string|null} [ctx.batchStatePath]
+ * @param {boolean} [ctx.verbose]
+ */
+export function reconcileBatch(ctx) {
+	const { projectRoot } = ctx;
+	const loaded = ctx.batchState
+		? {
+				path: ctx.batchStatePath ?? null,
+				raw: ctx.batchState,
+				parseError: null,
+			}
+		: loadBatchStateFile(projectRoot, ctx.batchStatePath ?? null);
+
+	if (!loaded.path && !loaded.raw) {
+		return {
+			diagnosis: null,
+			headline: "No active batch — ready to plan or start",
+			suggestedCommand: "spine preflight",
+			alternatives: ["spine plan all"],
+			batchId: null,
+			batchStatePath: null,
+			phase: null,
+			signals: { idle: true },
+		};
+	}
+
+	if (loaded.parseError) {
+		return {
+			diagnosis: "failed",
+			headline: `Cannot parse batch state: ${loaded.parseError}`,
+			suggestedCommand: "spine status --diagnose",
+			alternatives: ["spine doctor"],
+			batchId: null,
+			batchStatePath: loaded.path,
+			phase: null,
+			signals: { parseError: loaded.parseError },
+		};
+	}
+
+	const batch = parseBatchState(loaded.raw ?? ctx.batchState, loaded.path ?? ctx.batchStatePath ?? "");
+	if (!batch) {
+		return {
+			diagnosis: "failed",
+			headline: "Batch state is unreadable",
+			suggestedCommand: "spine status --diagnose",
+			batchId: null,
+			batchStatePath: loaded.path,
+			phase: null,
+			signals: { unreadable: true },
+		};
+	}
+
+	const tasksRoot = resolveTasksRoot(projectRoot);
+	const classifiedTasks = classifyTasks(batch, tasksRoot);
+	const git = inspectGitState({
+		projectRoot,
+		batchId: batch.batchId,
+		baseBranch: batch.baseBranch,
+		orchBranch: batch.orchBranch,
+	});
+
+	const hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
+	const hasPendingTasks = classifiedTasks.some((task) => task.classification === "pending");
+	const hasFailedTasks = classifiedTasks.some((task) => task.classification === "terminal-failure");
+	const allTasksTerminalSuccess =
+		classifiedTasks.length > 0 &&
+		classifiedTasks.every((task) => task.classification === "terminal-success");
+	const failedTask = classifiedTasks.find((task) => task.classification === "terminal-failure");
+	const pendingWithFailedSegment = batch.segments.some(
+		(segment) => segment.classification === "terminal-failure",
+	);
+	const driftTask = batch.tasks.find((task) => {
+		if (task.classification !== "pending") return false;
+		return batch.segments.some(
+			(segment) => segment.taskId === task.taskId && segment.classification === "terminal-failure",
+		);
+	});
+
+	const signals = {
+		phase: batch.phase,
+		endedAt: batch.endedAt,
+		failedTasks: hasFailedTasks ? Math.max(batch.failedTasks, 1) : batch.failedTasks,
+		allTasksTerminalSuccess,
+		hasRunningTasks,
+		hasPendingTasks,
+		hasFailedTasks,
+		hasSegmentDrift: pendingWithFailedSegment || Boolean(driftTask),
+		failedTaskId: failedTask?.taskId ?? driftTask?.taskId ?? null,
+		mergeResultsEmpty: batch.mergeResults.length === 0,
+		git,
+		tasks: classifiedTasks,
+		segments: batch.segments,
+	};
+
+	const { diagnosis, failedTaskId } = deriveDiagnosis(signals);
+	const output = buildDiagnosisOutput(diagnosis, {
+		batchId: batch.batchId,
+		phase: batch.phase,
+		failedTasks: signals.failedTasks,
+		failedTaskId,
+		gitMerged: git.orchMergedToBase,
+	});
+
+	return {
+		...output,
+		batchId: batch.batchId,
+		batchStatePath: loaded.path ?? ctx.batchStatePath ?? null,
+		phase: batch.phase,
+		signals: ctx.verbose ? signals : undefined,
+	};
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {object|null} [ctx.batchState]
+ * @param {string|null} [ctx.batchStatePath]
  */
 export function runReconciliationCheck(ctx) {
-	return {
-		diagnosis: "unknown",
-		headline: "Reconciliation available after TP-009",
-		suggestedCommand: "spine status --diagnose",
-	};
+	return reconcileBatch(ctx);
 }

@@ -98,15 +98,21 @@ test("runPreflightPlanCheck builds wave plan during preflight", async () => {
 	}
 });
 
-test("runReconciliationCheck stub returns expected placeholder shape", () => {
+test("runReconciliationCheck returns real diagnosis for running batch", () => {
+	const fixture = JSON.parse(
+		fs.readFileSync(
+			path.join(process.cwd(), "tests/fixtures/batch-state/running-batch.json"),
+			"utf-8",
+		),
+	);
 	const result = runReconciliationCheck({
 		projectRoot: process.cwd(),
-		batchState: { batchId: "20260531T120000", phase: "running" },
-		batchStatePath: ".spine/batch-state.json",
+		batchState: fixture,
+		batchStatePath: ".pi/batch-state.json",
 	});
-	assert.equal(result.diagnosis, "unknown");
-	assert.match(result.headline, /TP-009/);
-	assert.equal(result.suggestedCommand, "spine status --diagnose");
+	assert.equal(result.diagnosis, "running");
+	assert.ok(result.headline);
+	assert.equal(result.suggestedCommand, "/spine-status --diagnose");
 });
 
 test("checkDoctor fails when doctor reports issues", () => {
@@ -245,6 +251,38 @@ test("runBatchPreflight fails when git working tree is dirty", async () => {
 		assert.equal(result.ok, false);
 		assert.equal(result.exitCode, 1);
 		assert.ok(result.checks.find((check) => check.id === "git-clean" && !check.ok));
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("runBatchPreflight fails on limbo fixture with dismiss suggestion", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = JSON.parse(
+			fs.readFileSync(
+				path.join(process.cwd(), "tests/fixtures/batch-state/limbo-stale-20260531T165700.json"),
+				"utf-8",
+			),
+		);
+		fs.mkdirSync(path.join(projectRoot, ".pi"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".pi", "batch-state.json"),
+			JSON.stringify(fixture, null, 2),
+			"utf-8",
+		);
+
+		const result = runBatchPreflight({
+			projectRoot,
+			skipDoctor: true,
+		});
+
+		assert.equal(result.ok, false);
+		const batchCheck = result.checks.find((check) => check.id === "no-active-batch");
+		assert.ok(batchCheck);
+		assert.equal(batchCheck.ok, false);
+		assert.equal(batchCheck.suggestedCommand, "spine batch dismiss");
+		assert.equal(batchCheck.details.diagnosis, "limbo_stale");
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

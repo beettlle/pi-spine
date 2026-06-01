@@ -379,6 +379,21 @@ async function cmdPreflight(args) {
 	if (!result.ok) process.exit(result.exitCode);
 }
 
+async function cmdStatus(args) {
+	const json = args.includes("--json");
+	const diagnose = args.includes("--diagnose");
+	const verbose = args.includes("--verbose");
+	const { runSpineStatus } = await import("./spine-status.mjs");
+	const result = runSpineStatus({
+		projectRoot: process.cwd(),
+		json,
+		diagnose,
+		verbose,
+	});
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdPlan(args) {
 	const json = args.includes("--json");
 	const scope = args.find((a) => !a.startsWith("--")) ?? "all";
@@ -423,6 +438,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
+  ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -437,6 +453,7 @@ ${c.bold}Examples:${c.reset}
   spine init --dry-run                          # preview changes
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
+  spine status --diagnose                       # reconciled batch diagnosis
   spine version                                 # show package and environment info
 `);
 }
@@ -460,6 +477,9 @@ if (isMainModule) {
 				break;
 			case "plan":
 				await cmdPlan(args);
+				break;
+			case "status":
+				await cmdStatus(args);
 				break;
 			case "version":
 			case "--version":
