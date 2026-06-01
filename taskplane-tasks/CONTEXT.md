@@ -2,20 +2,20 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-020
-**Orchestration policy:** **Option B** — prioritize pi-spine **Phase 2/3** (own worker + recovery); Taskplane `/orch` only for bounded, serial dogfood until `/spine-retry-task` exists.
+**Next Task ID:** TP-023
+**Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
 
 ## Current State
 
-**Phases 0–1c, TP-012–TP-016 are on `main` (TP-016 landing in this branch).** CI green after TP-011 ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226)). **86/86** tests pass locally (`SPINE_WORKER_STUB=1`). Engine auto-commits lane work, rejects `EmptyMerge` at merge time (TP-015), and `spine batch complete` / `spine integrate` enforce orch→`main` landing (TP-016).
+**Phases 0–3 complete on `main`.** **101/101** tests pass locally (`SPINE_WORKER_STUB=1`). Lane auto-commit, integrate validation, retry/skip, abort archive, and multi-lane engine shipped (TP-015–TP-019).
 
-Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
+Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
 | Task | Summary | Status |
 |------|---------|--------|
-| TP-002 | Implement `spine init` + templates | Done (manual completion after stall) |
+| TP-002 | Implement `spine init` + templates | Done |
 | TP-003 | Minimal GitHub Actions CI | Done |
 | TP-004 | Pi slash command stubs (§15.1) | Done |
 | TP-005 | Taskplane testing config + agent overrides | Done |
@@ -33,92 +33,76 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-009 | Batch status & reconciliation CLI (FR-BATCH-12–14) | Done | TP-006 |
-| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Done (manual recovery `20260601T100359`) | TP-009 |
+| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Done | TP-009 |
 
 ### Phase 1c — CI hygiene (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-011 | CI test fixture hardening (`git branch -M main`) | Done (manual recovery `20260601T114445`) | TP-010 |
+| TP-011 | CI test fixture hardening | Done | TP-010 |
 
-### Phase 2 — Single-lane worker
-
-| Task | Summary | Status | Deps |
-|------|---------|--------|------|
-| TP-012 | Single-lane batch engine (`spine batch start`, worktree, pi worker) | **Done** — implement on `main`; dogfood TP-013+ | TP-011 |
-| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Done** | TP-012 |
-| TP-014 | Orchestration journal + batch-state hardening | **Done** | TP-013 |
-
-### Phase 3 — Segments, resume, multi-lane
+### Phase 2 — Single-lane worker (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-015 | Segment model + lane commit + pause/resume | **Done** | TP-014 |
+| TP-012 | Single-lane batch engine | Done | TP-011 |
+| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | Done | TP-012 |
+| TP-014 | Orchestration journal + batch-state hardening | Done | TP-013 |
 
-### Phase 3 — Integrate, retry, abort, multi-lane (staged)
+### Phase 3 — Recovery + multi-lane (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-016 | Integrate validation + `spine integrate` | **Done** | TP-015 |
-| TP-017 | Atomic retry + skip-task (narrowed ex–TP-016) | **Done** | TP-016 |
-| TP-018 | Archive-first abort | **Done** | TP-017 |
-| TP-019 | Multi-lane engine + mixed-outcome merge | **Done** | TP-018 |
+| TP-015 | Segment model + lane commit + pause/resume | Done | TP-014 |
+| TP-016 | Integrate validation + `spine integrate` | Done | TP-015 |
+| TP-017 | Atomic retry + skip-task | Done | TP-016 |
+| TP-018 | Archive-first abort | Done | TP-017 |
+| TP-019 | Multi-lane engine + mixed-outcome merge | Done | TP-018 |
+
+### Phase 4 — Review + gates (staged — ready to run)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-020 | Review tool + fail-closed worker (FR-REV-06, GAP-REV-01) | **Staged** | TP-019 |
+| TP-021 | Integrate gate FSM + evidence bundle (§12) | **Staged** | TP-020 |
+| TP-022 | Honest batch post-mortem (NFR-OBS-03, GAP-POST-01) | **Staged** | TP-021 |
 
 | Theme | PRD / gaps | Task |
 |-------|------------|------|
-| Integrate landing | FR-INT-01, complete validation | **TP-016** |
-| Atomic retry | §18.5, GAP-RETRY-01 | **TP-017** |
-| Archive-first abort | §18.6, GAP-ABORT-01 | **TP-018** |
-| Mixed-outcome merge | §17.4, GAP-MERGE-01 | **Done (TP-019)** |
-| Progress-aware stall | §18.4, GAP-STALL-01 | **Done** (TP-013/015) |
-| `/spine-resume` | Phase 3 resume | **Done** (TP-015) |
+| Review fail-closed | FR-REV-06, GAP-REV-01 | **TP-020** |
+| Integrate gate + evidence | §12, FR-INT-02 | **TP-021** |
+| Honest post-mortem | NFR-OBS-03, GAP-POST-01 | **TP-022** |
 
 ---
 
-## Execution policy (PRD §23.1 + lessons learned)
+## Execution policy
 
-1. **Preflight before any batch:** `spine preflight` (clean git, no active batch, wave plan).
-2. **No more large Taskplane-only batches** for core spine work — build Phase 2 engine first (Option B).
-3. **Until Phase 3:** if using `/orch`, **serial / 1 lane max**; supervisor watches for >15 min tool silence → steer → wrap-up → takeover.
-4. **Recovery literacy:** `spine status --diagnose` → `spine batch dismiss` or `complete`; never hand-edit `.pi/batch-state.json`.
-5. **Limbo literacy:** all tasks green + batch red `stopped` → dismiss/complete, not pause.
-
-### Historical `/orch` waves (Phase 1 dogfood — complete)
-
-| Wave | Tasks | Outcome |
-|------|-------|---------|
-| 0 | TP-006 ∥ TP-007 | Succeeded |
-| 1 | TP-008 | Succeeded |
-| 2 | TP-009 | Succeeded |
-| 3 | TP-010 | Succeeded (manual recovery) |
-| 4 | TP-011 | Succeeded (manual recovery); CI green |
+1. **Preflight** before every batch: `spine preflight` (clean git, no active batch).
+2. **One task per batch** for implementation tasks (engine still supports scoped runs).
+3. **Land loop:** `spine batch start` → `spine integrate` → `spine batch complete` → push `main`.
+4. **Never** hand-edit `.spine/batch-state.json`.
 
 ---
 
-## Next steps (Option B)
+## Next steps — Phase 4 run order
 
-1. **Dogfood** — multi-task `spine batch start` on disjoint scopes; verify §17.4 messaging on forced failures.
-2. **Phase 4+** — review fail-closed, full integrate gate, dashboard.
+1. Commit Phase 4 packets (if not already on `main`).
+2. **`spine batch start TP-020`** — review fail-closed (wave 12).
+3. **`spine batch start TP-021`** — integrate gate + evidence (wave 13).
+4. **`spine batch start TP-022`** — honest post-mortem (wave 14).
+5. After Phase 4: **Phase 5** dashboard (TP-023+ TBD).
 
 ---
 
-## Priority backlog (what pi-spine must fix)
+## Priority backlog
 
 | Priority | Requirement | Phase | Status |
 |----------|-------------|-------|--------|
-| ~~P0~~ | Batch preflight (FR-BATCH-11) | 1 | **Done** |
-| ~~P0~~ | Batch reconciliation UX (FR-BATCH-12–18) | 1b | **Done** |
-| ~~P0~~ | CI green on `main` | 1c | **Done** (TP-011) |
-| ~~P0~~ | Single-lane worker + batch start | 2 | **Done** (TP-012, TP-013) |
-| **P1** | Orchestration journal | 2–3 | **Done (TP-014)** |
-| **P1** | Lane commit + segments + resume | 3 | **Done (TP-015)** |
-| **P1** | Integrate validation + `spine integrate` | 3 | **Done (TP-016)** |
-| **P1** | Atomic retry + skip (§18.5) | 3 | **Done (TP-017)** |
-| **P1** | Archive-first abort (§18.6) | 3 | **Done (TP-018)** |
-| P2 | Multi-lane + mixed-outcome merge | 3 | **Done (TP-019)** |
-| ~~P1~~ | Progress-aware stall (§18.4) | 3 | **Done** (TP-013/015) |
-| P2 | Honest post-mortem (NFR-OBS-03) | 4 | Staged |
-| P2 | Dashboard live status (NFR-OBS-04) | 5 | Staged |
+| ~~P1~~ | Phase 3 recovery + multi-lane | 3 | **Done (TP-015–019)** |
+| **P1** | Review fail-closed | 4 | **Staged (TP-020)** |
+| **P1** | Integrate gate + evidence | 4 | **Staged (TP-021)** |
+| P2 | Honest post-mortem | 4 | **Staged (TP-022)** |
+| P2 | Dashboard (NFR-OBS-04) | 5 | Planned |
 
 ---
 
@@ -129,7 +113,7 @@ From `.pi/taskplane-config.json`:
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Run full `npm test` (77 tests) for any batch- or worker-touching change.
+Run full `npm test` (**101** tests baseline) for any batch-touching change.
 
 ---
 
@@ -138,21 +122,16 @@ Run full `npm test` (77 tests) for any batch- or worker-touching change.
 | Category | Path |
 |----------|------|
 | Tasks | `taskplane-tasks/` |
-| Config | `.pi/taskplane-config.json` |
-| PRD | `docs/PRD.md` / `pi-spine-PRD.md` (v1.2) |
-| Incident report | `docs/incidents/20260531-phase0-taskplane-batch.md` |
-| Taskplane gaps | `docs/compatibility/taskplane-gap-list.md` |
-| Package | `package.json`, `bin/spine.mjs` |
+| PRD | `docs/PRD.md` |
+| Gap list | `docs/compatibility/taskplane-gap-list.md` |
+| Package | `bin/spine.mjs`, `src/batch/` |
 
 ---
 
 ## Technical Debt / Future Work
 
-- **TP-016** — `taskplane-tasks/TP-016-integrate-validation/PROMPT.md` (run first)
-- **TP-017** — `taskplane-tasks/TP-017-retry-skip/PROMPT.md`
-- **TP-018** — `taskplane-tasks/TP-018-abort-archive/PROMPT.md`
-- **TP-019** — `taskplane-tasks/TP-019-multi-lane/PROMPT.md`
-- FR-INIT-05 `spine init --preset taskplane-compat` (defer until Phase 2 worker stable).
-- Taskplane `.pi/batch-state.json` adapter — **done** in TP-009 reconciliation reader (dogfood only).
-- Do not run Taskplane and pi-spine batches concurrently (PRD §22.1).
-- Repeated worker LLM stalls (TP-010, TP-011) — **root fix is Phase 2/3**, not more `/orch` parallelism.
+- **TP-020** — `taskplane-tasks/TP-020-review-fail-closed/PROMPT.md`
+- **TP-021** — `taskplane-tasks/TP-021-integrate-gate/PROMPT.md`
+- **TP-022** — `taskplane-tasks/TP-022-honest-postmortem/PROMPT.md`
+- **TP-023+** — Phase 5 dashboard (not staged)
+- FR-INIT-05 `spine init --preset taskplane-compat` — deferred
