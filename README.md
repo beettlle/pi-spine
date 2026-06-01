@@ -211,18 +211,21 @@ spine plan all --json                       # JSON plan to stdout
 
 Each `spine plan` run writes a plan artifact to `.spine/runtime/plan-{timestamp}.json`.
 
-### Running a batch (Phase 2 — single lane)
+### Running a batch (Phase 2–3)
 
-pi-spine can run **one task per batch** without Taskplane `/orch`:
+pi-spine runs batches without Taskplane `/orch`. **Single-task** batches always work; **multi-task** batches are allowed when the plan has one wave with multiple virtual lanes (disjoint file scopes) or when scope is explicit (task IDs, not bare `all` across multiple waves):
 
 ```bash
 spine preflight                              # required (FR-BATCH-11)
-spine batch start TP-012                     # exactly one task in scope
+spine batch start TP-012                     # one task
+spine batch start TP-997 TP-998              # explicit multi-task (one wave, parallel lanes)
 spine batch start TP-012 --dry-run           # preflight + plan only
 spine batch start TP-012 --json              # machine-readable result
 ```
 
-**What happens:** preflight → planner resolves scope to a single task → `.spine/batch-state.json` (schema v1, includes `segments[]`) → git worktree at `.worktrees/spine-{batchId}/lane-1` on branch `task/spine-lane-1-{batchId}` → worker subprocess → `.DONE` in the task folder → **lane auto-commit** (uncommitted work is staged and committed on the task branch when `.DONE` exists; fails loud if dirty without `.DONE`) → merge into `orch/spine-{batchId}` only when the task branch has commits to integrate (**empty merge fails** if auto-commit ran but nothing reached git) → batch phase `completed` or `failed`.
+**What happens:** preflight → planner waves + lane ticks (`lanes.maxParallel`, FR-SCHED-03/04) → `.spine/batch-state.json` (schema v1, includes `segments[]`) → one git worktree per physical lane (`.worktrees/spine-{batchId}/lane-N`, branch `task/spine-lane-N-{batchId}`) → workers run in parallel per tick → `.DONE` → **lane auto-commit** → after each wave, **sequential merges** into `orch/spine-{batchId}` (FR-BATCH-08) only when every wave task is `succeeded` or `skipped` (§17.4 mixed-outcome policy; GAP-MERGE-01).
+
+**Mixed outcomes:** if any task in a wave is `failed` or still `pending`, merge is blocked, phase becomes `failed`, and messaging names failed IDs with `/spine-retry-task` / `/spine-skip-task` hints (never “batch ran smoothly”). Operator override: `spine batch force-merge --wave 0` then `spine batch resume --force`.
 
 Workers should still **commit at step boundaries** (see `.spine/agents/worker.md`); auto-commit is a safety net for pi sessions that finish with `.DONE` but forgot to commit.
 
@@ -256,13 +259,14 @@ Graceful abort writes `.spine/runtime/{batchId}/abort-signal.json` (`hard: false
 
 In pi: `/spine-abort` and `/spine-abort --hard` delegate to `spine batch abort`. When a batch was aborted, `spine status` reports `diagnosis: aborted` — use `spine batch dismiss` to clear limbo if needed.
 
-### Retry and skip (Phase 3 — single lane)
+### Retry and skip (Phase 3)
 
 When a task fails or segment state drifts (Taskplane GAP-RETRY-01), reset task + segments atomically before resume:
 
 ```bash
 spine batch retry TP-012              # reset task + segments; journal pendingSegments
-spine batch skip TP-012               # skip failed task; update counters (FR-BATCH-10)
+spine batch skip TP-012               # skip failed task; unblock wave merge (FR-BATCH-10)
+spine batch force-merge --wave 0      # operator override for §17.4 (then resume --force)
 spine batch retry TP-012 --json
 ```
 
@@ -279,7 +283,7 @@ In pi: `/spine-retry-task <taskId>` and `/spine-skip-task <taskId>` delegate to 
 | `.spine/runtime/{batchId}/archive/batch-state.json` | Archived batch snapshot after abort/dismiss/complete |
 | `.spine/runtime/{batchId}/abort-signal.json` | In-flight abort request (graceful or hard) |
 | `.spine/runtime/{batchId}/journal/events.jsonl` | Append-only journal |
-| `.worktrees/spine-{batchId}/lane-1` | Lane worktree |
+| `.worktrees/spine-{batchId}/lane-N` | Lane worktree (N = 1 … `lanes.maxParallel`) |
 
 **Recovery:** `spine status --diagnose` → `spine batch dismiss` or `spine batch complete` (same as Phase 1b lifecycle).
 
@@ -299,7 +303,7 @@ Journal events use **schema v1** (`schemaVersion`, `eventId`, ISO `timestamp`, o
 
 On **complete** or **dismiss**, pi-spine appends a summary entry to `.spine/batch-history.json` and writes terminal journal events (`batch.completed` / `batch.dismissed`).
 
-**CI / tests without `pi`:** set `SPINE_WORKER_STUB=1` so the worker runner touches `.DONE` instead of spawning `pi` (see `bin/spine-worker-runner.mjs`).
+**CI / tests without `pi`:** set `SPINE_WORKER_STUB=1` so the worker runner touches `.DONE` instead of spawning `pi` (see `bin/spine-worker-runner.mjs`). Use `SPINE_WORKER_STUB_FAIL_TASKS=TP-998` (comma-separated) to simulate task failure for mixed-outcome tests.
 
 **Heartbeat and stall (TP-013):** during a batch, the engine polls lane progress (STATUS.md mtime, lane-branch commits) and appends `lane.heartbeat` to the journal on an interval (default 10 minutes). Stall kill uses §18.4 grace after progress. Configure in `.spine/spine-config.json`:
 
