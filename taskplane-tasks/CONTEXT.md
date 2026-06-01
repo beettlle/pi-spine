@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-013
+**Next Task ID:** TP-014
 **Orchestration policy:** **Option B** — prioritize pi-spine **Phase 2/3** (own worker + recovery); Taskplane `/orch` only for bounded, serial dogfood until `/spine-retry-task` exists.
 
 ---
@@ -46,7 +46,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-012 | Single-lane batch engine (`spine batch start`, worktree, pi worker) | **Done** — implement on `main`; dogfood TP-013+ | TP-011 |
-| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Next** | TP-012 |
+| TP-013 | Checkpoint heartbeat (FR-WORK-09, §18.4) | **Done** | TP-012 |
+| TP-014 | Orchestration journal hardening | **Next** | TP-012 |
 | TP-014 | *Planned* — orchestration journal + `.spine/batch-state.json` | Staged | TP-012 |
 
 ### Phase 3 — Multi-lane + recovery (after Phase 2)
