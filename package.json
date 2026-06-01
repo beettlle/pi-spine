@@ -35,6 +35,7 @@
     "bin/",
     "extensions/",
     "skills/",
+    "src/",
     "templates/"
   ],
   "peerDependencies": {

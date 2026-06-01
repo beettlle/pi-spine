@@ -26,7 +26,7 @@ test("registerSpineSlashCommands registers all PRD §15.1 command names", () => 
 	}
 });
 
-test("stub handler notifies with the command name", async () => {
+test("/spine handler runs preflight before batch guidance", async () => {
 	const notifications = [];
 	const handlers = new Map();
 
@@ -40,13 +40,13 @@ test("stub handler notifies with the command name", async () => {
 
 	const ctx = {
 		ui: {
-			notify(message) {
-				notifications.push(message);
+			notify(message, level) {
+				notifications.push({ message, level });
 			},
 		},
 	};
 
 	await handlers.get("spine")("", ctx);
-	assert.match(notifications[0], /\/spine is not implemented yet/);
-	assert.match(notifications[0], /spine help/);
+	assert.ok(notifications.length > 0);
+	assert.match(notifications[0].message, /preflight/i);
 });

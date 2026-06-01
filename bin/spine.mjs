@@ -194,41 +194,21 @@ function resolveTasksRoot(projectRoot, configResult) {
 	return null;
 }
 
-function cmdDoctor() {
-	const projectRoot = process.cwd();
-	let issues = 0;
+export function runDoctorChecks(projectRoot = process.cwd()) {
+	const checks = [];
+	let issueCount = 0;
 
-	console.log(`\n${c.bold}pi-spine Doctor${c.reset}\n`);
+	const record = (label, ok, extra = {}) => {
+		checks.push({ label, ok, ...extra });
+		if (!ok) issueCount++;
+	};
 
-	const checks = [
-		{
-			label: "Node.js >= 22.0.0",
-			check: () => nodeMajor >= MIN_NODE_MAJOR,
-			detail: () => `v${process.versions.node}`,
-		},
-		{
-			label: "git installed",
-			check: () => commandExists("git"),
-			detail: () => getVersion("git"),
-		},
-		{
-			label: "git worktree support",
-			check: () => gitSupportsWorktrees(),
-			detail: () => getVersion("git"),
-		},
-		{
-			label: "pi installed",
-			check: () => commandExists("pi"),
-			detail: () => getVersion("pi"),
-		},
-	];
-
-	for (const { label, check, detail } of checks) {
-		const ok = check();
-		const info = ok && detail?.() ? ` ${c.dim}(${detail()})${c.reset}` : "";
-		console.log(`  ${ok ? OK : FAIL} ${label}${info}`);
-		if (!ok) issues++;
-	}
+	record("Node.js >= 22.0.0", nodeMajor >= MIN_NODE_MAJOR, {
+		detail: `v${process.versions.node}`,
+	});
+	record("git installed", commandExists("git"), { detail: getVersion("git") });
+	record("git worktree support", gitSupportsWorktrees(), { detail: getVersion("git") });
+	record("pi installed", commandExists("pi"), { detail: getVersion("pi") });
 
 	const piVersionText = getVersion("pi");
 	const minPiVersion = getMinPiVersion();
@@ -237,121 +217,166 @@ function cmdDoctor() {
 		const minimum = parseSemver(minPiVersion);
 		const cmp = compareSemver(current, minimum);
 		if (cmp === null) {
-			console.log(`  ${WARN} could not parse pi version ${c.dim}(${piVersionText})${c.reset}`);
+			checks.push({
+				label: "pi version supported",
+				ok: true,
+				warning: true,
+				detail: `could not parse pi version (${piVersionText})`,
+			});
 		} else if (cmp < 0) {
-			console.log(
-				`  ${WARN} pi ${piVersionText} is below supported minimum ${minPiVersion} ${c.dim}[PI_VERSION_UNSUPPORTED]${c.reset}`,
-			);
-			console.log(`     ${c.dim}→ Upgrade pi: https://pi.dev${c.reset}`);
+			checks.push({
+				label: "pi version supported",
+				ok: true,
+				warning: true,
+				detail: `${piVersionText} is below supported minimum ${minPiVersion}`,
+			});
 		} else {
-			console.log(`  ${OK} pi version supported ${c.dim}(>= ${minPiVersion})${c.reset}`);
+			checks.push({
+				label: "pi version supported",
+				ok: true,
+				detail: `>= ${minPiVersion}`,
+			});
 		}
 	}
 
 	const pkgVersion = getPackageVersion();
 	const isProjectLocal = PACKAGE_ROOT.includes(".pi");
 	const installType = isProjectLocal ? "project-local" : "development";
-	console.log(
-		`  ${OK} pi-spine package ${c.dim}(v${pkgVersion}, ${installType})${c.reset}`,
-	);
+	checks.push({
+		label: "pi-spine package",
+		ok: true,
+		detail: `v${pkgVersion}, ${installType}`,
+	});
 
-	console.log();
-	if (isInsideGitRepo(projectRoot)) {
-		console.log(`  ${OK} git repository detected`);
-	} else {
-		console.log(`  ${FAIL} not inside a git repository`);
-		console.log(`     ${c.dim}→ Run: git init${c.reset}`);
-		issues++;
-	}
+	record("git repository detected", isInsideGitRepo(projectRoot));
 
 	const modelCheck = checkModelProvider();
-	if (modelCheck.ok) {
-		console.log(`  ${OK} model provider configured ${c.dim}(${modelCheck.detail})${c.reset}`);
-	} else {
-		console.log(`  ${FAIL} model provider not configured ${c.dim}(${modelCheck.detail})${c.reset}`);
-		console.log(`     ${c.dim}→ Run: ${modelCheck.suggestedCommand}${c.reset}`);
-		issues++;
-	}
+	record("model provider configured", modelCheck.ok, {
+		detail: modelCheck.detail,
+		suggestedCommand: modelCheck.suggestedCommand,
+	});
 
-	console.log();
 	const configResult = loadSpineConfig(projectRoot);
 	if (configResult.error) {
-		const codeHint = configResult.error.code ? ` [${configResult.error.code}]` : "";
-		console.log(`  ${FAIL} .spine/spine-config.json${codeHint}`);
-		console.log(`     ${c.dim}${configResult.error.message}${c.reset}`);
-		if (configResult.error.suggestedCommand) {
-			console.log(`     ${c.dim}→ Run: ${c.cyan}${configResult.error.suggestedCommand}${c.reset}`);
-		}
-		issues++;
+		record(".spine/spine-config.json valid", false, {
+			detail: configResult.error.message,
+			code: configResult.error.code,
+			suggestedCommand: configResult.error.suggestedCommand,
+		});
 	} else {
-		console.log(`  ${OK} .spine/spine-config.json valid`);
-		console.log(
-			`     ${c.dim}project: ${configResult.config.project.name}, tasks: ${configResult.config.paths.tasksRoot}${c.reset}`,
-		);
+		record(".spine/spine-config.json valid", true, {
+			detail: `project: ${configResult.config.project.name}, tasks: ${configResult.config.paths.tasksRoot}`,
+		});
 	}
 
 	for (const agentFile of REQUIRED_AGENT_FILES) {
 		const relPath = `.spine/agents/${agentFile}`;
-		const fullPath = path.join(projectRoot, relPath);
-		if (fs.existsSync(fullPath)) {
-			console.log(`  ${OK} ${relPath} exists`);
-		} else {
-			console.log(`  ${FAIL} ${relPath} missing`);
-			console.log(`     ${c.dim}→ Run: ${c.cyan}spine init${c.reset}`);
-			issues++;
-		}
+		record(`${relPath} exists`, fs.existsSync(path.join(projectRoot, relPath)), {
+			suggestedCommand: "spine init",
+		});
 	}
 
 	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
 	if (tasksRootPath) {
-		console.log();
-		if (fs.existsSync(tasksRootPath)) {
-			console.log(`  ${OK} tasks root: ${path.relative(projectRoot, tasksRootPath) || "."}`);
-		} else {
-			console.log(`  ${FAIL} tasks root missing: ${path.relative(projectRoot, tasksRootPath)}`);
-			console.log(`     ${c.dim}→ Run: mkdir -p ${path.relative(projectRoot, tasksRootPath)}${c.reset}`);
-			issues++;
-		}
+		record(
+			"tasks root exists",
+			fs.existsSync(tasksRootPath),
+			{
+				detail: path.relative(projectRoot, tasksRootPath),
+				suggestedCommand: `mkdir -p ${path.relative(projectRoot, tasksRootPath)}`,
+			},
+		);
 
 		const contextPath = path.join(tasksRootPath, "CONTEXT.md");
-		if (fs.existsSync(contextPath)) {
-			console.log(`  ${OK} CONTEXT.md exists`);
-		} else {
-			console.log(`  ${WARN} CONTEXT.md missing ${c.dim}(optional)${c.reset}`);
-		}
+		checks.push({
+			label: "CONTEXT.md exists",
+			ok: true,
+			warning: !fs.existsSync(contextPath),
+			optional: true,
+			detail: fs.existsSync(contextPath) ? "present" : "missing (optional)",
+		});
 	}
 
 	if (isInsideGitRepo(projectRoot)) {
-		console.log();
 		const gitignorePath = path.join(projectRoot, ".gitignore");
 		if (!fs.existsSync(gitignorePath)) {
-			console.log(`  ${WARN} .gitignore missing — spine runtime entries not protected`);
-			console.log(`     ${c.dim}→ Run: ${c.cyan}spine init${c.dim} to add them${c.reset}`);
+			checks.push({
+				label: ".gitignore has spine runtime entries",
+				ok: true,
+				warning: true,
+				detail: ".gitignore missing",
+				suggestedCommand: "spine init",
+			});
 		} else {
 			const content = fs.readFileSync(gitignorePath, "utf-8");
 			const existingLines = new Set(content.split(/\r?\n/).map((line) => line.trim()));
 			const missing = SPINE_GITIGNORE_ENTRIES.filter((entry) => !existingLines.has(entry));
-			if (missing.length === 0) {
-				console.log(`  ${OK} .gitignore has spine runtime entries`);
-			} else {
-				console.log(
-					`  ${WARN} .gitignore missing ${missing.length} spine runtime entr${missing.length === 1 ? "y" : "ies"}`,
-				);
-				console.log(`     ${c.dim}→ Run: ${c.cyan}spine init${c.dim} to add them${c.reset}`);
+			checks.push({
+				label: ".gitignore has spine runtime entries",
+				ok: true,
+				warning: missing.length > 0,
+				detail:
+					missing.length === 0
+						? "complete"
+						: `missing ${missing.length} entr${missing.length === 1 ? "y" : "ies"}`,
+				suggestedCommand: missing.length > 0 ? "spine init" : undefined,
+			});
+		}
+	}
+
+	return {
+		ok: issueCount === 0,
+		issueCount,
+		checks,
+	};
+}
+
+function cmdDoctor() {
+	const projectRoot = process.cwd();
+	const result = runDoctorChecks(projectRoot);
+
+	console.log(`\n${c.bold}pi-spine Doctor${c.reset}\n`);
+
+	for (const check of result.checks) {
+		if (check.warning) {
+			console.log(`  ${WARN} ${check.label} ${c.dim}(${check.detail})${c.reset}`);
+			if (check.suggestedCommand) {
+				console.log(`     ${c.dim}→ Run: ${check.suggestedCommand}${c.reset}`);
 			}
+			continue;
+		}
+
+		const info = check.detail ? ` ${c.dim}(${check.detail})${c.reset}` : "";
+		console.log(`  ${check.ok ? OK : FAIL} ${check.label}${info}`);
+		if (!check.ok && check.suggestedCommand) {
+			console.log(`     ${c.dim}→ Run: ${c.cyan}${check.suggestedCommand}${c.reset}`);
 		}
 	}
 
 	console.log();
-	if (issues === 0) {
+	if (result.ok) {
 		console.log(`${OK} ${c.green}All checks passed!${c.reset}\n`);
 		return;
 	}
 
 	console.log(
-		`${FAIL} ${issues} issue(s) found. Run ${c.cyan}spine init${c.reset} to fix config issues.\n`,
+		`${FAIL} ${result.issueCount} issue(s) found. Run ${c.cyan}spine init${c.reset} to fix config issues.\n`,
 	);
 	process.exit(1);
+}
+
+async function cmdPreflight(args) {
+	const json = args.includes("--json");
+	const { runBatchPreflight, formatPreflightHuman } = await import("./spine-preflight.mjs");
+	const result = runBatchPreflight({ projectRoot: process.cwd() });
+
+	if (json) {
+		console.log(JSON.stringify(result, null, 2));
+	} else {
+		console.log(formatPreflightHuman(result));
+	}
+
+	if (!result.ok) process.exit(result.exitCode);
 }
 
 function cmdVersion() {
@@ -388,6 +413,7 @@ ${c.bold}Usage:${c.reset}
 ${c.bold}Commands:${c.reset}
   ${c.cyan}init${c.reset}           Scaffold .spine/ config and agent stubs
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
+  ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -401,29 +427,45 @@ ${c.bold}Examples:${c.reset}
   spine init --tasks-root taskplane-tasks       # use existing task folder
   spine init --dry-run                          # preview changes
   spine doctor                                  # check installation health
+  spine preflight                               # verify batch readiness
   spine version                                 # show package and environment info
 `);
 }
 
-const [command = "help", ...args] = process.argv.slice(2);
+const isMainModule =
+	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
 
-switch (command) {
-	case "init":
-		cmdInit(args);
-		break;
-	case "doctor":
-		cmdDoctor();
-		break;
-	case "version":
-	case "--version":
-	case "-v":
-		cmdVersion();
-		break;
-	case "help":
-	case "--help":
-	case "-h":
-		printHelp();
-		break;
-	default:
-		die(`Unknown command: ${command}\nRun ${c.cyan}spine help${c.reset} for usage.`);
+if (isMainModule) {
+	const [command = "help", ...args] = process.argv.slice(2);
+
+	const runCli = async () => {
+		switch (command) {
+			case "init":
+				cmdInit(args);
+				break;
+			case "doctor":
+				cmdDoctor();
+				break;
+			case "preflight":
+				await cmdPreflight(args);
+				break;
+			case "version":
+			case "--version":
+			case "-v":
+				cmdVersion();
+				break;
+			case "help":
+			case "--help":
+			case "-h":
+				printHelp();
+				break;
+			default:
+				die(`Unknown command: ${command}\nRun ${c.cyan}spine help${c.reset} for usage.`);
+		}
+	};
+
+	runCli().catch((err) => {
+		console.error(err);
+		process.exit(1);
+	});
 }
