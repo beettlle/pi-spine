@@ -3,12 +3,15 @@
 **Last Updated:** 2026-06-01
 **Status:** Active
 **Next Task ID:** TP-012
+**Orchestration policy:** **Option B** — prioritize pi-spine **Phase 2/3** (own worker + recovery); Taskplane `/orch` only for bounded, serial dogfood until `/spine-retry-task` exists.
 
 ---
 
 ## Current State
 
-Phase 0 complete — batch `20260531T165700` merged to `main` (TP-002–TP-005). TP-002 finished manually after two Taskplane stall kills; see post-mortem.
+**Phases 0–1c are on `main`.** CI is green ([run 26775968226](https://github.com/beettlle/pi-spine/actions/runs/26775968226) — TP-011). **49/49** tests pass locally.
+
+Phase 0 — batch `20260531T165700` (TP-002–TP-005). TP-002 and several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
 | Task | Summary | Status |
 |------|---------|--------|
@@ -30,62 +33,91 @@ Phase 0 complete — batch `20260531T165700` merged to `main` (TP-002–TP-005).
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-009 | Batch status & reconciliation CLI (FR-BATCH-12–14) | Done | TP-006 |
-| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Done (manual recovery batch `20260601T100359`) | TP-009 |
+| TP-010 | Batch dismiss & complete lifecycle (FR-BATCH-15–18) | Done (manual recovery `20260601T100359`) | TP-009 |
 
-### Phase 1c — CI hygiene (staged)
+### Phase 1c — CI hygiene (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-011 | CI test fixture hardening | Done (manual recovery batch `20260601T114445`) | TP-010 |
+| TP-011 | CI test fixture hardening (`git branch -M main`) | Done (manual recovery `20260601T114445`) | TP-010 |
+
+### Phase 2 — Single-lane worker (next)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-012 | *Packet TBD* — minimal `spine batch run`, one worktree, pi worker | **Next** | TP-011 |
+| TP-013 | *Planned* — checkpoint heartbeat (FR-WORK-09, §18.4) | Staged | TP-012 |
+| TP-014 | *Planned* — orchestration journal + `.spine/batch-state.json` | Staged | TP-012 |
+
+### Phase 3 — Multi-lane + recovery (after Phase 2)
+
+| Theme | PRD / gaps | Status |
+|-------|------------|--------|
+| Atomic retry | §18.5, GAP-RETRY-01 | Staged |
+| Progress-aware stall | §18.4, GAP-STALL-01 | Staged |
+| Archive-first abort | §18.6, GAP-ABORT-01 | Staged |
+| Mixed-outcome merge | §17.4, GAP-MERGE-01 | Staged |
+| `/spine-retry-task`, `/spine-resume` | Replace Taskplane dogfood | Staged |
 
 ---
 
-## Revised execution plan (do not repeat 20260531 failure)
+## Execution policy (PRD §23.1 + lessons learned)
 
-### Policy (PRD §23.1)
+1. **Preflight before any batch:** `spine preflight` (clean git, no active batch, wave plan).
+2. **No more large Taskplane-only batches** for core spine work — build Phase 2 engine first (Option B).
+3. **Until Phase 3:** if using `/orch`, **serial / 1 lane max**; supervisor watches for >15 min tool silence → steer → wrap-up → takeover.
+4. **Recovery literacy:** `spine status --diagnose` → `spine batch dismiss` or `complete`; never hand-edit `.pi/batch-state.json`.
+5. **Limbo literacy:** all tasks green + batch red `stopped` → dismiss/complete, not pause.
 
-1. **Preflight before any batch:** `spine doctor`, clean git status, task packets committed.
-2. **No `/orch all` on greenfield** until CI exists and largest task has completed once serially.
-3. **Serial first** for bootstrap work; parallelize only with proven disjoint scopes.
-4. **Recovery literacy:** retry must reset task **and** segment frontier (see incident I-02).
-5. **Limbo literacy:** when all tasks succeeded but batch UI is red `stopped`, run `spine status --diagnose` — dismiss or complete; do not pause.
+### Historical `/orch` waves (Phase 1 dogfood — complete)
 
-### `/orch` wave plan (Phase 1 + 1b dogfood)
+| Wave | Tasks | Outcome |
+|------|-------|---------|
+| 0 | TP-006 ∥ TP-007 | Succeeded |
+| 1 | TP-008 | Succeeded |
+| 2 | TP-009 | Succeeded |
+| 3 | TP-010 | Succeeded (manual recovery) |
+| 4 | TP-011 | Succeeded (manual recovery); CI green |
 
-Run with **max 2 lanes** until pi-spine engine replaces Taskplane:
+---
 
-| Wave | Tasks | Notes |
-|------|-------|-------|
-| 0 | TP-006 ∥ TP-007 | Disjoint scopes — preflight vs parsers |
-| 1 | TP-008 | Depends on TP-006 + TP-007; completes FR-BATCH-11 wave plan |
-| 2 | TP-009 | Reconciliation — answers "what state am I in?" |
-| 3 | TP-010 | Dismiss/complete — clears limbo before next batch |
+## Next steps (Option B)
 
-Preflight policy: run `spine doctor` (or Taskplane equivalent) before wave 0; commit task packets before batch start.
+1. **Draft TP-012 packet** — Phase 2: single-lane worker + minimal batch start (`/spine` or `spine batch run`); worktree + STATUS + step commits.
+2. **Implement Phase 2 serially** — dogfood **one task per batch** on pi-spine engine (not Taskplane workers).
+3. **Phase 3 next** — journal, atomic retry, progress-aware stall, abort archive (closes GAP-RETRY/STALL/ABORT/MERGE).
+4. **Phase 4+** — review fail-closed, integrate gate, dashboard (GAP-UX-03), npm publish.
 
-### Next steps
+**Do not** start Phase 4 gates or multi-lane Taskplane batches until Phase 2 proves one lane end-to-end.
 
-1. **Execute Phase 1** waves 0–1 using the plan above (2-lane max for wave 0).
-2. **Execute Phase 1b** waves 2–3 so Taskplane limbo is fixable via `spine batch dismiss` / `complete`.
-3. Replace Taskplane `/orch` for dogfood as soon as `/spine-retry-task` exists (Phase 3).
+---
 
-### What pi-spine must fix (priority order)
+## Priority backlog (what pi-spine must fix)
 
-| Priority | Requirement | Phase / Task |
-|----------|-------------|--------------|
-| P0 | Batch preflight (FR-BATCH-11) | 1 (TP-006 + TP-008) |
-| P0 | Batch reconciliation UX (FR-BATCH-12–18) | 1b (TP-009 + TP-010) |
-| P1 | Atomic task+segment retry (§18.5) | 3 |
-| P1 | Progress-aware stall detection (§18.4) | 3 |
-| P1 | Abort archive + segment-safe rebuild (§18.6) | 3 |
-| P2 | Mixed-outcome merge block (§17.4) | 3 |
-| P2 | Honest post-mortem (NFR-OBS-03) | 4 |
+| Priority | Requirement | Phase | Status |
+|----------|-------------|-------|--------|
+| ~~P0~~ | Batch preflight (FR-BATCH-11) | 1 | **Done** |
+| ~~P0~~ | Batch reconciliation UX (FR-BATCH-12–18) | 1b | **Done** |
+| ~~P0~~ | CI green on `main` | 1c | **Done** (TP-011) |
+| **P0** | Single-lane worker + batch start | 2 | **Next (TP-012)** |
+| **P1** | Orchestration journal | 2–3 | Staged |
+| **P1** | Atomic task+segment retry (§18.5) | 3 | Staged |
+| **P1** | Progress-aware stall (§18.4) | 3 | Staged |
+| **P1** | Abort archive (§18.6) | 3 | Staged |
+| P2 | Mixed-outcome merge block (§17.4) | 3 | Staged |
+| P2 | Honest post-mortem (NFR-OBS-03) | 4 | Staged |
+| P2 | Dashboard live status (NFR-OBS-04) | 5 | Staged |
 
-Testing commands in `.pi/taskplane-config.json`:
+---
+
+## Verification
+
+From `.pi/taskplane-config.json`:
+
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Use `npm test` for full verification once the test script exists in `package.json`; typecheck alone is insufficient for planner/preflight tasks.
+Run full `npm test` (49 tests) for any batch- or worker-touching change.
 
 ---
 
@@ -95,7 +127,7 @@ Use `npm test` for full verification once the test script exists in `package.jso
 |----------|------|
 | Tasks | `taskplane-tasks/` |
 | Config | `.pi/taskplane-config.json` |
-| PRD | `docs/PRD.md` / `pi-spine-PRD.md` (v1.2 — reconciliation UX) |
+| PRD | `docs/PRD.md` / `pi-spine-PRD.md` (v1.2) |
 | Incident report | `docs/incidents/20260531-phase0-taskplane-batch.md` |
 | Taskplane gaps | `docs/compatibility/taskplane-gap-list.md` |
 | Package | `package.json`, `bin/spine.mjs` |
@@ -104,8 +136,8 @@ Use `npm test` for full verification once the test script exists in `package.jso
 
 ## Technical Debt / Future Work
 
-- FR-INIT-05 `spine init --preset taskplane-compat` (Phase 1)
-- Batch engine, journal (Phases 2–3) — **recovery tooling is now P1, not nice-to-have**
-- Optional: Taskplane `.pi/batch-state.json` adapter folded into TP-009 reconciliation reader
-- Do not run Taskplane and pi-spine batches concurrently (PRD §22.1)
-- Replace Taskplane `/orch` for dogfood as soon as `/spine-retry-task` exists (Phase 3)
+- **TP-012 packet** — not yet written; next housekeeping deliverable after this CONTEXT sync.
+- FR-INIT-05 `spine init --preset taskplane-compat` (defer until Phase 2 worker stable).
+- Taskplane `.pi/batch-state.json` adapter — **done** in TP-009 reconciliation reader (dogfood only).
+- Do not run Taskplane and pi-spine batches concurrently (PRD §22.1).
+- Repeated worker LLM stalls (TP-010, TP-011) — **root fix is Phase 2/3**, not more `/orch` parallelism.
