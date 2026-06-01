@@ -63,13 +63,13 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-020 | Review tool + fail-closed worker (FR-REV-06, GAP-REV-01) | **Staged** | TP-019 |
+| TP-020 | Review tool + fail-closed worker (FR-REV-06, GAP-REV-01) | **In progress (lane-1)** | TP-019 |
 | TP-021 | Integrate gate FSM + evidence bundle (§12) | **Staged** | TP-020 |
 | TP-022 | Honest batch post-mortem (NFR-OBS-03, GAP-POST-01) | **Staged** | TP-021 |
 
 | Theme | PRD / gaps | Task |
 |-------|------------|------|
-| Review fail-closed | FR-REV-06, GAP-REV-01 | **TP-020** |
+| Review fail-closed | FR-REV-06, GAP-REV-01 | **TP-020 (in progress)** |
 | Integrate gate + evidence | §12, FR-INT-02 | **TP-021** |
 | Honest post-mortem | NFR-OBS-03, GAP-POST-01 | **TP-022** |
 

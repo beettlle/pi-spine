@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { assertReviewToolAvailable, readReviewLevel, runStepReview } from "../src/batch/review.mjs";
 
 const taskFolder = process.env.SPINE_TASK_FOLDER;
 const worktreePath = process.env.SPINE_WORKTREE;
@@ -16,7 +17,45 @@ if (!taskFolder) {
 	process.exit(1);
 }
 
+const reviewGate = assertReviewToolAvailable({ taskFolder });
+if (!reviewGate.ok) {
+	console.error(reviewGate.error);
+	process.exit(1);
+}
+
 const mode = process.argv.includes("--stub") ? "stub" : "pi";
+
+function buildReviewJournal() {
+	if (!process.env.SPINE_BATCH_ID || !process.env.SPINE_PROJECT_ROOT) return undefined;
+	return {
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+		batchId: process.env.SPINE_BATCH_ID,
+		taskId: process.env.SPINE_TASK_ID,
+		laneNumber: process.env.SPINE_LANE_NUMBER
+			? Number(process.env.SPINE_LANE_NUMBER)
+			: undefined,
+		correlationId: process.env.SPINE_LANE_CORRELATION_ID,
+	};
+}
+
+function enforceStubReviewIfConfigured() {
+	if (process.env.SPINE_WORKER_STUB_ENFORCE_REVIEW !== "1") return;
+	if (readReviewLevel(taskFolder) <= 0) return;
+
+	const reviewResult = runStepReview({
+		taskFolder,
+		worktreePath: worktreePath || process.cwd(),
+		stepNumber: Number(process.env.SPINE_WORKER_STUB_REVIEW_STEP || 1),
+		reviewType: process.env.SPINE_WORKER_STUB_REVIEW_TYPE === "code" ? "code" : "plan",
+		stub: true,
+		journal: buildReviewJournal(),
+	});
+
+	if (!reviewResult.ok) {
+		console.error(reviewResult.error ?? `review failed: ${reviewResult.verdict ?? "spawn"}`);
+		process.exit(reviewResult.exitCode ?? 1);
+	}
+}
 
 if (mode === "stub") {
 	const taskIdFromFolder = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "";
@@ -39,6 +78,9 @@ if (mode === "stub") {
 			"utf-8",
 		);
 	}
+
+	enforceStubReviewIfConfigured();
+
 	const donePath = path.join(taskFolder, ".DONE");
 	fs.writeFileSync(
 		donePath,
@@ -79,8 +121,14 @@ if (fs.existsSync(promptPath)) {
 	piArgs.push(`@${promptPath}`);
 }
 const taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID";
+const reviewLevel = readReviewLevel(taskFolder);
+const reviewHint =
+	reviewLevel > 0
+		? `When Review Level > 0, after each step run: spine review step --step N [--type plan|code]. On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. `
+		: "";
 piArgs.push(
 	`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
+		reviewHint +
 		`Commit at step boundaries when you change files (feat(${taskIdHint}): …). ` +
 		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +
 		`Create ${donePath} only when all completion criteria are met.`,

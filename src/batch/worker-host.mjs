@@ -15,6 +15,8 @@ import {
 	recordStallWarning,
 	resolveStallConfig,
 } from "./heartbeat.mjs";
+import { appendJournalEvent } from "./journal.mjs";
+import { assertReviewToolAvailable } from "./review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -43,13 +45,28 @@ function sleep(ms) {
 /**
  * @param {object} params
  */
-function spawnWorkerChild({ worktreePath, taskFolder, useStub, timeoutMs }) {
+function spawnWorkerChild({
+	worktreePath,
+	taskFolder,
+	useStub,
+	timeoutMs,
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	laneCorrelationId,
+}) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	const env = {
 		...process.env,
 		SPINE_TASK_FOLDER: taskFolder,
 		SPINE_WORKTREE: worktreePath,
 	};
+	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;
+	if (batchId) env.SPINE_BATCH_ID = batchId;
+	if (laneNumber != null) env.SPINE_LANE_NUMBER = String(laneNumber);
+	if (taskId) env.SPINE_TASK_ID = taskId;
+	if (laneCorrelationId) env.SPINE_LANE_CORRELATION_ID = laneCorrelationId;
 	const args = useStub ? ["--stub"] : ["--pi"];
 
 	return spawn(process.execPath, [runner, ...args], {
@@ -117,6 +134,29 @@ export async function runWorker({
 		process.env.SPINE_WORKER_STUB === "true" ||
 		!commandExists("pi");
 
+	const reviewCheck = assertReviewToolAvailable({ taskFolder });
+	if (!reviewCheck.ok) {
+		if (projectRoot && batchId) {
+			appendJournalEvent(projectRoot, batchId, "review.failed", {
+				taskId,
+				laneNumber,
+				correlationId: laneCorrelationId,
+				reviewLevel: reviewCheck.reviewLevel,
+				error: reviewCheck.error,
+				spawnFailed: true,
+				phase: "preflight",
+			});
+		}
+		return {
+			ok: false,
+			exitCode: 1,
+			mode: useStub ? "stub" : "pi",
+			output: reviewCheck.error ?? "review tool unavailable",
+			classification: "review_failed",
+			doneFound: false,
+		};
+	}
+
 	const stallConfig = resolveStallConfig(config);
 	const startedAt = Date.now();
 	let lastProgressAt = startedAt;
@@ -124,7 +164,17 @@ export async function runWorker({
 	let lastSignals = null;
 	let stallWarningSent = false;
 
-	const child = spawnWorkerChild({ worktreePath, taskFolder, useStub, timeoutMs });
+	const child = spawnWorkerChild({
+		worktreePath,
+		taskFolder,
+		useStub,
+		timeoutMs,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		laneCorrelationId,
+	});
 	onWorkerPid?.(child.pid ?? 0);
 	const childDone = collectChildOutput(child);
 

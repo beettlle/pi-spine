@@ -11,8 +11,9 @@ You run inside a **git worktree** on a dedicated lane branch. The pi-spine batch
 
 1. Update `STATUS.md` before starting each step and mark checkboxes as you finish.
 2. **Commit at step boundaries** when you change files: `feat(TASK-ID): complete Step N — short description`
-3. Run the task's test command before creating `.DONE`.
-4. Create `.DONE` only when every completion criterion is satisfied.
+3. When Review Level > 0, run `spine review step --step N [--type plan|code]` after each step; on REVISE, fix feedback before continuing.
+4. Run the task's test command before creating `.DONE`.
+5. Create `.DONE` only when every completion criterion is satisfied.
 
 ## What the engine does for you
 
