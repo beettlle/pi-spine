@@ -217,10 +217,27 @@ spine batch start TP-012 --json              # machine-readable result
 | Path | Purpose |
 |------|---------|
 | `.spine/batch-state.json` | Active batch (pi-spine native; not `.pi/batch-state.json`) |
+| `.spine/batch-history.json` | Terminal batch summaries (complete/dismiss) |
 | `.spine/runtime/{batchId}/journal/events.jsonl` | Append-only journal |
 | `.worktrees/spine-{batchId}/lane-1` | Lane worktree |
 
 **Recovery:** `spine status --diagnose` → `spine batch dismiss` or `spine batch complete` (same as Phase 1b lifecycle).
+
+### Journal replay and state validation (TP-014)
+
+Audit orchestration timelines and validate batch-state cache integrity:
+
+```bash
+spine journal replay --batch 20260601T120000     # human table: time | type | lane | task | summary
+spine journal replay --batch 20260601T120000 --json
+spine state validate                             # active .spine/batch-state.json
+spine state validate --batch 20260601T120000     # archived runtime copy
+spine state validate --diagnose                  # extra context on validation failure
+```
+
+Journal events use **schema v1** (`schemaVersion`, `eventId`, ISO `timestamp`, optional `correlationId`, `payload`). Legacy JSONL lines without `schemaVersion` remain readable.
+
+On **complete** or **dismiss**, pi-spine appends a summary entry to `.spine/batch-history.json` and writes terminal journal events (`batch.completed` / `batch.dismissed`).
 
 **CI / tests without `pi`:** set `SPINE_WORKER_STUB=1` so the worker runner touches `.DONE` instead of spawning `pi` (see `bin/spine-worker-runner.mjs`).
 

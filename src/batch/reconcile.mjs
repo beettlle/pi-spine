@@ -7,6 +7,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { parseSpineBatchState } from "./readers/spine-state.mjs";
 import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
 
@@ -455,6 +456,12 @@ export function reconcileBatch(ctx) {
 		tasks: classifiedTasks,
 		segments: batch.segments,
 	};
+
+	const journalFile = journalPath(projectRoot, batch.batchId);
+	if (fs.existsSync(journalFile)) {
+		const journalEvents = readJournalEvents(projectRoot, batch.batchId);
+		signals.journalHints = extractJournalDiagnosisHints(journalEvents);
+	}
 
 	const { diagnosis, failedTaskId } = deriveDiagnosis(signals);
 	const output = buildDiagnosisOutput(diagnosis, {

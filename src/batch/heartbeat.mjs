@@ -92,10 +92,18 @@ export function computeStallDeadline({ startedAt, lastProgressAt, stallConfig })
 /**
  * @param {object} params
  */
-export function recordLaneHeartbeat({ projectRoot, batchId, laneNumber, taskId, signals }) {
+export function recordLaneHeartbeat({
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	signals,
+	correlationId,
+}) {
 	appendJournalEvent(projectRoot, batchId, "lane.heartbeat", {
 		laneNumber,
 		taskId,
+		correlationId,
 		statusMtimeMs: signals.statusMtimeMs,
 		lastCommitAtMs: signals.lastCommitAtMs,
 	});
@@ -111,10 +119,12 @@ export function recordStallWarning({
 	taskId,
 	signals,
 	stallDeadline,
+	correlationId,
 }) {
 	appendJournalEvent(projectRoot, batchId, "lane.stall_warning", {
 		laneNumber,
 		taskId,
+		correlationId,
 		stallDeadline,
 		statusMtimeMs: signals.statusMtimeMs,
 		lastCommitAtMs: signals.lastCommitAtMs,

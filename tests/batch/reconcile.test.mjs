@@ -116,3 +116,22 @@ test("runReconciliationCheck matches reconcileBatch output shape", () => {
 	assert.ok(result.headline);
 	assert.ok(result.suggestedCommand);
 });
+
+test("reconcileBatch includes journal hints when journal exists", async () => {
+	const projectRoot = await initGitRepo("spine-reconcile-journal-");
+	try {
+		const fixture = loadFixture("needs-retry-batch.json");
+		writePiBatchState(projectRoot, fixture);
+		const { appendJournalEvent } = await import("../../src/batch/journal.mjs");
+		appendJournalEvent(projectRoot, fixture.batchId, "task.failed", {
+			taskId: "TP-002",
+			classification: "worker_failed",
+		});
+
+		const result = reconcileBatch({ projectRoot, verbose: true });
+		assert.ok(result.signals?.journalHints?.length);
+		assert.equal(result.signals.journalHints[0].type, "task.failed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

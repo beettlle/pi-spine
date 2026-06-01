@@ -64,6 +64,15 @@ test("startBatch completes single task with stub worker", async () => {
 		assert.ok(types.includes("batch.started"));
 		assert.ok(types.includes("task.completed"));
 		assert.ok(types.includes("batch.completed"));
+		assert.ok(types.includes("lane.provisioned"));
+		assert.equal(events[0].schemaVersion, 1);
+		assert.ok(events[0].eventId);
+		const provisioned = events.find((e) => e.type === "lane.provisioned");
+		assert.ok(provisioned?.correlationId);
+		const heartbeats = events.filter((e) => e.type === "lane.heartbeat");
+		if (heartbeats.length > 0) {
+			assert.equal(heartbeats[0].correlationId, provisioned?.correlationId);
+		}
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;

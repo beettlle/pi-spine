@@ -6,11 +6,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
-import {
-	archiveBatchStatePath,
-	completeBatch,
-	dismissBatch,
-} from "../../src/batch/lifecycle.mjs";
+import { archiveBatchStatePath, completeBatch, dismissBatch } from "../../src/batch/lifecycle.mjs";
+import { batchHistoryPath } from "../../src/batch/state.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
 
@@ -55,6 +52,13 @@ test("dismiss archives batch-state before clearing active file", async () => {
 
 		const archived = JSON.parse(fs.readFileSync(archivePath, "utf-8"));
 		assert.equal(archived.batchId, fixture.batchId);
+
+		const historyPath = batchHistoryPath(projectRoot);
+		assert.ok(fs.existsSync(historyPath), "batch-history.json must exist");
+		const history = JSON.parse(fs.readFileSync(historyPath, "utf-8"));
+		assert.ok(Array.isArray(history));
+		assert.equal(history.at(-1)?.batchId, fixture.batchId);
+		assert.equal(history.at(-1)?.action, "dismissed");
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

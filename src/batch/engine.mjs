@@ -9,6 +9,7 @@ import { discoverTasks } from "../compat/taskplane/discover.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import crypto from "node:crypto";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	assertNoActiveBatch,
@@ -72,6 +73,49 @@ export function mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranc
 			git(projectRoot, ["checkout", baseBranch]);
 		}
 	}
+}
+
+/**
+ * @param {string} fromPhase
+ * @param {string} toPhase
+ */
+function phaseTransitionEventType(fromPhase, toPhase) {
+	if (fromPhase === "planning" && toPhase === "running") return "batch.started";
+	if (toPhase === "completed") return "batch.completed";
+	if (toPhase === "failed") return "batch.failed";
+	if (toPhase === "aborted") return "batch.aborted";
+	return null;
+}
+
+/**
+ * @param {object} params
+ */
+function recordPhaseTransition({ projectRoot, batchId, fromPhase, toPhase, extra = {} }) {
+	const type = phaseTransitionEventType(fromPhase, toPhase);
+	if (!type) return null;
+	return appendJournalEvent(projectRoot, batchId, type, {
+		fromPhase,
+		toPhase,
+		...extra,
+	});
+}
+
+/**
+ * @param {object} state
+ * @param {string} newPhase
+ * @param {object} ctx
+ */
+function transitionPhase(state, newPhase, ctx) {
+	const fromPhase = state.phase;
+	if (fromPhase === newPhase) return;
+	state.phase = newPhase;
+	recordPhaseTransition({
+		projectRoot: ctx.projectRoot,
+		batchId: ctx.batchId,
+		fromPhase,
+		toPhase: newPhase,
+		...ctx.extra,
+	});
 }
 
 /**
@@ -184,11 +228,12 @@ export async function startBatch({
 	});
 
 	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "batch.started", { baseBranch, orchBranch });
+
+	const laneCorrelationId = crypto.randomUUID();
 
 	try {
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
-		state.phase = "running";
+		transitionPhase(state, "running", { projectRoot, batchId });
 		saveSpineBatchState(projectRoot, state);
 
 		const { worktreePath: wt } = provisionLaneWorktree({
@@ -199,14 +244,21 @@ export async function startBatch({
 		});
 		appendJournalEvent(projectRoot, batchId, "lane.provisioned", {
 			laneNumber: 1,
+			laneId: "lane-1",
 			worktreePath: wt,
 			taskBranch,
+			correlationId: laneCorrelationId,
 		});
 
 		state.tasks[0].status = "running";
 		state.tasks[0].startedAt = Date.now();
 		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "task.started", { taskId, laneNumber: 1 });
+		appendJournalEvent(projectRoot, batchId, "task.started", {
+			taskId,
+			laneNumber: 1,
+			laneId: "lane-1",
+			correlationId: laneCorrelationId,
+		});
 
 		const taskFolderInWorktree = path.join(wt, taskFolderRel);
 		const workerResult = await runWorker({
@@ -217,6 +269,7 @@ export async function startBatch({
 			laneNumber: 1,
 			taskId,
 			laneBranch: taskBranch,
+			laneCorrelationId,
 			config,
 			onHeartbeat: (timestamp) => {
 				state.lanes[0].lastHeartbeatAt = timestamp;
@@ -225,16 +278,32 @@ export async function startBatch({
 		});
 
 		if (!workerResult.ok) {
+			appendJournalEvent(projectRoot, batchId, "lane.died", {
+				laneNumber: 1,
+				laneId: "lane-1",
+				taskId,
+				correlationId: laneCorrelationId,
+				reason: workerResult.classification ?? "worker_failed",
+			});
 			state.tasks[0].status = "failed";
 			state.tasks[0].endedAt = Date.now();
 			state.tasks[0].exitReason = workerResult.classification ?? "worker_failed";
 			state.failedTasks = 1;
-			state.phase = "failed";
 			state.endedAt = Date.now();
 			state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
+			transitionPhase(state, "failed", {
+				projectRoot,
+				batchId,
+				extra: { taskId },
+			});
 			saveSpineBatchState(projectRoot, state);
-			appendJournalEvent(projectRoot, batchId, "task.failed", { taskId, ...workerResult });
-			appendJournalEvent(projectRoot, batchId, "batch.failed", { taskId });
+			appendJournalEvent(projectRoot, batchId, "task.failed", {
+				taskId,
+				laneNumber: 1,
+				laneId: "lane-1",
+				correlationId: laneCorrelationId,
+				...workerResult,
+			});
 			return {
 				ok: false,
 				exitCode: workerResult.exitCode ?? 1,
@@ -245,22 +314,39 @@ export async function startBatch({
 			};
 		}
 
+		appendJournalEvent(projectRoot, batchId, "lane.completed", {
+			laneNumber: 1,
+			laneId: "lane-1",
+			taskId,
+			correlationId: laneCorrelationId,
+		});
 		state.tasks[0].status = "succeeded";
 		state.tasks[0].endedAt = Date.now();
 		state.tasks[0].doneFileFound = true;
 		state.tasks[0].exitReason = "done";
 		state.succeededTasks = 1;
 		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "task.completed", { taskId });
+		appendJournalEvent(projectRoot, batchId, "task.completed", {
+			taskId,
+			laneNumber: 1,
+			laneId: "lane-1",
+			correlationId: laneCorrelationId,
+		});
 
-		appendJournalEvent(projectRoot, batchId, "batch.merge_started", { taskBranch, orchBranch });
+		appendJournalEvent(projectRoot, batchId, "batch.merge_started", {
+			taskBranch,
+			orchBranch,
+		});
 		const merge = mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranch, batchId });
 		if (!merge.ok) {
-			state.phase = "failed";
 			state.endedAt = Date.now();
 			state.lastError = merge.error ?? "merge failed";
+			transitionPhase(state, "failed", {
+				projectRoot,
+				batchId,
+				extra: { reason: "merge" },
+			});
 			saveSpineBatchState(projectRoot, state);
-			appendJournalEvent(projectRoot, batchId, "batch.failed", { reason: "merge" });
 			return { ok: false, exitCode: 1, batchId, error: "merge_failed", output: merge.error };
 		}
 
@@ -275,10 +361,13 @@ export async function startBatch({
 			mergeCommit: merge.mergeCommit,
 		});
 
-		state.phase = "completed";
 		state.endedAt = Date.now();
+		transitionPhase(state, "completed", {
+			projectRoot,
+			batchId,
+			extra: { taskId, mergeCommit: merge.mergeCommit },
+		});
 		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "batch.completed", { taskId, mergeCommit: merge.mergeCommit });
 
 		return {
 			ok: true,
@@ -292,11 +381,14 @@ export async function startBatch({
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		state.phase = "failed";
 		state.endedAt = Date.now();
 		state.lastError = message;
+		transitionPhase(state, "failed", {
+			projectRoot,
+			batchId,
+			extra: { error: message },
+		});
 		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "batch.failed", { error: message });
 		removeLaneWorktree(projectRoot, batchId, 1);
 		return { ok: false, exitCode: 1, batchId, error: message };
 	}

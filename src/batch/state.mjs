@@ -93,6 +93,187 @@ export function assertNoActiveBatch(projectRoot) {
 /**
  * @param {object} params
  */
+export const BATCH_HISTORY_REL = path.join(".spine", "batch-history.json");
+
+/**
+ * @param {string} projectRoot
+ */
+export function batchHistoryPath(projectRoot) {
+	return path.join(projectRoot, BATCH_HISTORY_REL);
+}
+
+/**
+ * @param {unknown} state
+ * @returns {{ ok: true } | { ok: false, errors: string[], suggestedCommand: string }}
+ */
+export function validateBatchState(state) {
+	/** @type {string[]} */
+	const errors = [];
+
+	if (!state || typeof state !== "object" || Array.isArray(state)) {
+		return {
+			ok: false,
+			errors: ["batch state must be a JSON object"],
+			suggestedCommand: "spine state validate --diagnose",
+		};
+	}
+
+	/** @type {Record<string, unknown>} */
+	const raw = /** @type {Record<string, unknown>} */ (state);
+
+	if (raw.schemaVersion !== 1) {
+		errors.push(`schemaVersion must be 1 (found ${String(raw.schemaVersion)})`);
+	}
+
+	const batchId = String(raw.batchId ?? "").trim();
+	if (!batchId) errors.push("batchId is required");
+
+	const phase = String(raw.phase ?? "").trim();
+	const validPhases = new Set(["planning", "running", "paused", "completed", "failed", "aborted"]);
+	if (!validPhases.has(phase)) {
+		errors.push(`phase must be one of ${[...validPhases].join(", ")} (found ${phase || "missing"})`);
+	}
+
+	for (const field of ["baseBranch", "orchBranch", "startedAt", "updatedAt", "totalTasks"]) {
+		if (raw[field] == null || raw[field] === "") {
+			errors.push(`${field} is required`);
+		}
+	}
+
+	if (!Array.isArray(raw.wavePlan)) errors.push("wavePlan must be an array");
+	if (!Array.isArray(raw.tasks)) errors.push("tasks must be an array");
+	if (!Array.isArray(raw.lanes)) errors.push("lanes must be an array");
+	if (!Array.isArray(raw.mergeResults)) errors.push("mergeResults must be an array");
+
+	const totalTasks = Number(raw.totalTasks ?? 0);
+	const succeededTasks = Number(raw.succeededTasks ?? 0);
+	const failedTasks = Number(raw.failedTasks ?? 0);
+	const skippedTasks = Number(raw.skippedTasks ?? 0);
+	const blockedTasks = Number(raw.blockedTasks ?? 0);
+	const taskCount = Array.isArray(raw.tasks) ? raw.tasks.length : 0;
+
+	if (taskCount !== totalTasks) {
+		errors.push(`tasks.length (${taskCount}) must match totalTasks (${totalTasks})`);
+	}
+
+	const terminalSum = succeededTasks + failedTasks + skippedTasks + blockedTasks;
+	if (terminalSum > totalTasks) {
+		errors.push(
+			`succeeded+failed+skipped+blocked (${terminalSum}) exceeds totalTasks (${totalTasks})`,
+		);
+	}
+
+	const lanes = Array.isArray(raw.lanes) ? raw.lanes : [];
+	const laneNumbers = new Set(
+		lanes.map((lane) =>
+			lane && typeof lane === "object" ? Number(/** @type {{ laneNumber?: number }} */ (lane).laneNumber) : NaN,
+		),
+	);
+
+	for (const task of Array.isArray(raw.tasks) ? raw.tasks : []) {
+		if (!task || typeof task !== "object") continue;
+		const taskId = String(/** @type {{ taskId?: string }} */ (task).taskId ?? "").trim();
+		if (!taskId) errors.push("each task must have taskId");
+
+		const laneNumber = Number(/** @type {{ laneNumber?: number }} */ (task).laneNumber);
+		if (!Number.isNaN(laneNumber) && laneNumbers.size > 0 && !laneNumbers.has(laneNumber)) {
+			errors.push(`task ${taskId} references missing lane ${laneNumber}`);
+		}
+	}
+
+	for (const lane of lanes) {
+		if (!lane || typeof lane !== "object") continue;
+		const laneNumber = Number(/** @type {{ laneNumber?: number }} */ (lane).laneNumber);
+		const taskIds = Array.isArray(/** @type {{ taskIds?: string[] }} */ (lane).taskIds)
+			? /** @type {{ taskIds?: string[] }} */ (lane).taskIds
+			: [];
+		for (const taskId of taskIds) {
+			const found = (raw.tasks ?? []).some(
+				(task) =>
+					task &&
+					typeof task === "object" &&
+					String(/** @type {{ taskId?: string }} */ (task).taskId) === taskId &&
+					Number(/** @type {{ laneNumber?: number }} */ (task).laneNumber) === laneNumber,
+			);
+			if (!found) {
+				errors.push(`lane ${laneNumber} lists task ${taskId} not assigned to that lane`);
+			}
+		}
+	}
+
+	if (errors.length > 0) {
+		return {
+			ok: false,
+			errors,
+			suggestedCommand: "spine state validate --diagnose",
+		};
+	}
+
+	return { ok: true };
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string|null} [batchId]
+ */
+export function resolveBatchStateFileForValidation(projectRoot, batchId = null) {
+	if (batchId) {
+		const archived = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			batchId,
+			"archive",
+			"batch-state.json",
+		);
+		if (fs.existsSync(archived)) {
+			return { path: archived, source: "archive" };
+		}
+	}
+
+	const active = spineBatchStatePath(projectRoot);
+	if (fs.existsSync(active)) {
+		const loaded = loadSpineBatchState(projectRoot);
+		if (batchId && loaded.raw && String(loaded.raw.batchId) !== batchId) {
+			return { path: null, source: null, error: `Active batch is ${loaded.raw.batchId}, not ${batchId}` };
+		}
+		return { path: active, source: "active" };
+	}
+
+	if (batchId) {
+		return { path: null, source: null, error: `No batch-state found for batch ${batchId}` };
+	}
+
+	return { path: null, source: null, error: "No active batch-state.json" };
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object} entry
+ */
+export function appendBatchHistoryEntry(projectRoot, entry) {
+	const filePath = batchHistoryPath(projectRoot);
+	fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+	/** @type {object[]} */
+	let history = [];
+	if (fs.existsSync(filePath)) {
+		try {
+			const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+			if (Array.isArray(parsed)) history = parsed;
+		} catch {
+			history = [];
+		}
+	}
+
+	history.push(entry);
+	fs.writeFileSync(filePath, `${JSON.stringify(history, null, 2)}\n`, "utf-8");
+	return filePath;
+}
+
+/**
+ * @param {object} params
+ */
 export function createInitialBatchState({
 	batchId,
 	baseBranch,

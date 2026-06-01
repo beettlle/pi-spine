@@ -401,6 +401,20 @@ async function cmdBatch(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdJournal(args) {
+	const { runSpineJournal } = await import("./spine-journal.mjs");
+	const result = runSpineJournal({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
+async function cmdState(args) {
+	const { runSpineState } = await import("./spine-state.mjs");
+	const result = runSpineState({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdNext(args) {
 	const { runSpineNext } = await import("./spine-batch.mjs");
 	const result = runSpineNext({ projectRoot: process.cwd(), args });
@@ -454,6 +468,8 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
   ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
+  ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
+  ${c.cyan}state${c.reset}           Validate batch-state cache schema
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
@@ -473,6 +489,8 @@ ${c.bold}Examples:${c.reset}
   spine batch start TP-012                      # single-task batch (Phase 2)
  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
+  spine journal replay --batch 20260601T120000  # audit timeline for a batch
+  spine state validate                          # validate active batch-state.json
   spine next                                    # suggested next command (dry-run)
   spine next --execute                          # run suggested spine command
   spine version                                 # show package and environment info
@@ -504,6 +522,12 @@ if (isMainModule) {
 				break;
 			case "batch":
 				await cmdBatch(args);
+				break;
+			case "journal":
+				await cmdJournal(args);
+				break;
+			case "state":
+				await cmdState(args);
 				break;
 			case "next":
 				await cmdNext(args);

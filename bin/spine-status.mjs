@@ -45,6 +45,13 @@ export function runSpineStatus(options) {
 		lines.push(`    ${JSON.stringify(result.signals, null, 2).split("\n").join("\n    ")}`);
 	}
 
+	if (diagnose && result.signals?.journalHints?.length) {
+		lines.push("", "  Journal hints (tail):");
+		for (const hint of result.signals.journalHints) {
+			lines.push(`    • ${hint.type} @ ${hint.timestamp}: ${hint.summary}`);
+		}
+	}
+
 	if (verbose && result.signals?.segments?.length) {
 		lines.push("", "  Segment frontier:");
 		for (const segment of result.signals.segments) {

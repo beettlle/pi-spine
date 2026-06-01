@@ -86,6 +86,7 @@ function collectChildOutput(child) {
  * @param {number} [params.laneNumber]
  * @param {string} [params.taskId]
  * @param {string} [params.laneBranch]
+ * @param {string} [params.laneCorrelationId]
  * @param {object} [params.config]
  * @param {(timestamp: number) => void} [params.onHeartbeat]
  * @param {number} [params.timeoutMs]
@@ -98,6 +99,7 @@ export async function runWorker({
 	laneNumber = 1,
 	taskId,
 	laneBranch,
+	laneCorrelationId,
 	config = {},
 	onHeartbeat,
 	timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -145,6 +147,7 @@ export async function runWorker({
 				laneNumber,
 				taskId,
 				signals,
+				correlationId: laneCorrelationId,
 			});
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;
@@ -165,6 +168,7 @@ export async function runWorker({
 					taskId,
 					signals,
 					stallDeadline,
+					correlationId: laneCorrelationId,
 				});
 				stallWarningSent = true;
 			}

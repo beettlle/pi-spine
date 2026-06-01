@@ -5,6 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { appendJournalEvent } from "./journal.mjs";
+import { appendBatchHistoryEntry } from "./state.mjs";
 import { loadBatchStateFile, reconcileBatch } from "./reconcile.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
@@ -35,29 +37,6 @@ function archiveBatchState(projectRoot, batchId, raw) {
 	}
 
 	return archivePath;
-}
-
-/**
- * @param {string} projectRoot
- * @param {string} batchId
- * @param {object} entry
- */
-function appendJournalEvent(projectRoot, batchId, entry) {
-	const journalPath = path.join(projectRoot, ".spine", "runtime", batchId, "journal", "events.jsonl");
-	fs.mkdirSync(path.dirname(journalPath), { recursive: true });
-	fs.appendFileSync(journalPath, `${JSON.stringify(entry)}\n`, "utf-8");
-}
-
-/**
- * @param {string} projectRoot
- * @param {string} batchId
- * @param {object} summary
- */
-function writeBatchHistory(projectRoot, batchId, summary) {
-	const historyPath = path.join(projectRoot, ".spine", "runtime", batchId, "history.json");
-	fs.mkdirSync(path.dirname(historyPath), { recursive: true });
-	fs.writeFileSync(historyPath, `${JSON.stringify(summary, null, 2)}\n`, "utf-8");
-	return historyPath;
 }
 
 /**
@@ -179,7 +158,7 @@ export function dismissBatch(ctx) {
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
 	const endedAt = Date.now();
-	writeBatchHistory(projectRoot, batchId, {
+	appendBatchHistoryEntry(projectRoot, {
 		batchId,
 		action: "dismissed",
 		endedAt,
@@ -187,12 +166,10 @@ export function dismissBatch(ctx) {
 		reason: reason ?? null,
 		archivePath: path.relative(projectRoot, archivePath),
 	});
-	appendJournalEvent(projectRoot, batchId, {
-		type: "batch.dismissed",
-		batchId,
-		at: endedAt,
+	appendJournalEvent(projectRoot, batchId, "batch.dismissed", {
 		diagnosis,
 		reason: reason ?? null,
+		archivePath: path.relative(projectRoot, archivePath),
 	});
 	clearActiveBatchState(loaded.path);
 
@@ -297,7 +274,7 @@ export function completeBatch(ctx) {
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
 	const endedAt = Date.now();
-	writeBatchHistory(projectRoot, batchId, {
+	appendBatchHistoryEntry(projectRoot, {
 		batchId,
 		action: "completed",
 		endedAt,
@@ -305,11 +282,10 @@ export function completeBatch(ctx) {
 		detectManualMerge,
 		archivePath: path.relative(projectRoot, archivePath),
 	});
-	appendJournalEvent(projectRoot, batchId, {
-		type: "batch.completed",
-		batchId,
-		at: endedAt,
+	appendJournalEvent(projectRoot, batchId, "batch.completed", {
 		detectManualMerge,
+		archivePath: path.relative(projectRoot, archivePath),
+		lifecycle: "complete",
 	});
 	clearActiveBatchState(loaded.path);
 
