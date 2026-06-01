@@ -86,3 +86,14 @@ export function removeLaneWorktree(projectRoot, batchId, laneNumber = 1) {
 		fs.rmSync(worktreePath, { recursive: true, force: true, maxRetries: 3 });
 	}
 }
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {number} maxLaneNumber
+ */
+export function removeLaneWorktrees(projectRoot, batchId, maxLaneNumber) {
+	for (let laneNumber = 1; laneNumber <= maxLaneNumber; laneNumber++) {
+		removeLaneWorktree(projectRoot, batchId, laneNumber);
+	}
+}

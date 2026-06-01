@@ -19,6 +19,15 @@ if (!taskFolder) {
 const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 if (mode === "stub") {
+	const taskIdFromFolder = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "";
+	const failTasks = String(process.env.SPINE_WORKER_STUB_FAIL_TASKS ?? "")
+		.split(/[,\s]+/)
+		.filter(Boolean);
+	if (failTasks.includes(taskIdFromFolder)) {
+		console.error(`stub worker forced failure for ${taskIdFromFolder}`);
+		process.exit(1);
+	}
+
 	const delayMs = Number(process.env.SPINE_WORKER_STUB_DELAY_MS || 0);
 	if (delayMs > 0) {
 		spawnSync("sleep", [String(delayMs / 1000)], { stdio: "ignore" });
