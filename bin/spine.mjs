@@ -379,6 +379,14 @@ async function cmdPreflight(args) {
 	if (!result.ok) process.exit(result.exitCode);
 }
 
+async function cmdPlan(args) {
+	const json = args.includes("--json");
+	const scope = args.find((a) => !a.startsWith("--")) ?? "all";
+	const { runSpinePlan } = await import("./spine-plan.mjs");
+	const result = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
+	process.stdout.write(result.output);
+}
+
 function cmdVersion() {
 	const pkgVersion = getPackageVersion();
 	const isProjectLocal = PACKAGE_ROOT.includes(".pi");
@@ -414,6 +422,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}init${c.reset}           Scaffold .spine/ config and agent stubs
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
+  ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -448,6 +457,9 @@ if (isMainModule) {
 				break;
 			case "preflight":
 				await cmdPreflight(args);
+				break;
+			case "plan":
+				await cmdPlan(args);
 				break;
 			case "version":
 			case "--version":

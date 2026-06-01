@@ -37,8 +37,8 @@
 ### Step 3: spine plan CLI and /spine-plan slash command
 **Status:** Pending
 
-- [ ] `bin/spine-plan.mjs` and CLI wiring complete
-- [ ] Plan artifacts written under `.spine/runtime/`
+- [x] `bin/spine-plan.mjs` and CLI wiring complete
+- [x] Plan artifacts written under `.spine/runtime/`
 
 ---
 

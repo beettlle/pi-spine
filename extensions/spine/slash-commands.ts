@@ -33,7 +33,7 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine",
 		description:
-			"Detect project state; guide or run batch (usage: /spine [all|paths]; batch execution Phase 2+)",
+			"Detect project state; guide or run batch (usage: /spine [all|paths]; batch execution Phase 2+) ",
 	},
 	{
 		name: "spine-plan",
@@ -90,6 +90,28 @@ function runSpinePreflight(cwd = process.cwd()) {
 	};
 }
 
+function runSpinePlan(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine-plan.mjs"), ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function stubHandler(command: string) {
 	return async (_args: string, ctx: ExtensionCommandContext): Promise<void> => {
 		ctx.ui.notify(
@@ -105,7 +127,11 @@ async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Pr
 
 	if (!preflight.ok) {
 		ctx.ui.notify(
-			`Batch preflight failed — fix issues before starting a batch.\n\n${preflight.output}\n\nRun \`spine preflight\` for details.`,
+			`Batch preflight failed — fix issues before starting a batch.
+
+${preflight.output}
+
+Run \`spine preflight\` for details.`,
 			"error",
 		);
 		return;
@@ -125,12 +151,39 @@ async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Pr
 	);
 }
 
+async function spinePlanHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const preflight = runSpinePreflight();
+	if (!preflight.ok) {
+		ctx.ui.notify(
+			`Batch preflight failed — fix issues before planning.
+
+${preflight.output}
+`,
+			"error",
+		);
+		return;
+	}
+
+	const plan = runSpinePlan(args);
+	if (!plan.ok) {
+		ctx.ui.notify(plan.output || "spine plan failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(plan.output || "plan generated", "info");
+}
+
 /** Register all PRD §15.1 pi slash commands with Phase 0 stub handlers. */
 export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 	for (const { name, description } of SPINE_SLASH_COMMANDS) {
 		pi.registerCommand(name, {
 			description,
-			handler: name === "spine" ? spineEntryHandler : stubHandler(name),
+			handler:
+				name === "spine"
+					? spineEntryHandler
+					: name === "spine-plan"
+						? spinePlanHandler
+						: stubHandler(name),
 		});
 	}
 }
