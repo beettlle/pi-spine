@@ -14,23 +14,7 @@ import {
 import { buildGraph, topoWaves } from './graph.mjs';
 import { findCyclePath } from './cycles.mjs';
 import { assignLanesToWaves } from './lanes.mjs';
-
-function resolveScopeToTaskIds(scope, allTaskIds) {
-	if (scope == null || scope === 'all') return new Set(allTaskIds);
-
-	if (Array.isArray(scope)) return new Set(scope.map(String));
-
-	if (typeof scope === 'object' && Array.isArray(scope.taskIds)) {
-		return new Set(scope.taskIds.map(String));
-	}
-
-	if (typeof scope === 'string') {
-		// Step 2 will formalize scope parsing; for Step 1 we treat unknown strings as "all".
-		return new Set(allTaskIds);
-	}
-
-	throw new Error('Unsupported scope shape: ' + String(scope));
-}
+import { parseScope } from './scope.mjs';
 
 /**
  * @param {{ scope?: any, config: { lanes?: { maxParallel?: number, queueExcess?: boolean } }, tasksRoot: string }} args
@@ -40,9 +24,9 @@ export function buildPlan({ scope, config, tasksRoot }) {
 	if (!config) throw new Error('buildPlan requires config');
 
 	const discovered = discoverTasks(tasksRoot);
-	const allTaskIds = discovered.map((t) => t.taskId);
-
-	const selectedTaskIds = resolveScopeToTaskIds(scope, allTaskIds);
+	const scopeResult = parseScope(scope, { tasksRoot, discoveredTasks: discovered });
+	const selectedIdsSorted = scopeResult.taskIds;
+	const selectedTaskIds = new Set(selectedIdsSorted);
 
 	const depsJson = loadDependenciesJson(tasksRoot);
 
@@ -55,7 +39,6 @@ export function buildPlan({ scope, config, tasksRoot }) {
 
 		const packet = loadTaskPacket(discoveredTask.folderPath);
 		const prompt = packet.prompt;
-
 		const mergedDeps = mergeTaskDeps({ taskId, prompt }, depsJson);
 
 		tasksById[taskId] = {
@@ -65,10 +48,6 @@ export function buildPlan({ scope, config, tasksRoot }) {
 			dependencies: mergedDeps,
 		};
 	}
-
-	const selectedIdsSorted = Array.from(selectedTaskIds)
-		.filter((id) => tasksById[id])
-		.sort();
 
 	/** @type {Record<string, string[]>} */
 	const depsByTask = {};
@@ -104,7 +83,7 @@ export function buildPlan({ scope, config, tasksRoot }) {
 	return {
 		generatedAt: new Date().toISOString(),
 		scope: {
-			mode: scope == null ? 'all' : scope === 'all' ? 'all' : 'custom',
+			mode: scopeResult.mode,
 			taskIds: selectedIdsSorted,
 		},
 		laneConfig: { maxParallel, queueExcess },

@@ -30,7 +30,7 @@
 ### Step 2: Plan scope resolution
 **Status:** Pending
 
-- [ ] Scope modes implemented and tested
+- [x] Scope modes implemented and tested
 
 ---
 
