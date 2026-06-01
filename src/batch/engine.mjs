@@ -10,6 +10,7 @@ import { buildPlan } from "../planner/index.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import crypto from "node:crypto";
+import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { commitLaneWorktree, countCommitsAhead, gitPorcelain } from "./lane-commit.mjs";
 import {
@@ -835,6 +836,7 @@ export async function startBatch({
 			extra: { taskIds, mergeCommit: state.mergeResults.at(-1)?.mergeCommit },
 		});
 		saveSpineBatchState(projectRoot, state);
+		openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
 		const summaryTask =
 			taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
@@ -848,7 +850,7 @@ export async function startBatch({
 			mergeCommit: state.mergeResults.at(-1)?.mergeCommit,
 			output:
 				`Batch ${batchId} completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
-				`  → spine integrate\n  → spine batch complete\n  → spine status\n`,
+				`  → spine gate status\n  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

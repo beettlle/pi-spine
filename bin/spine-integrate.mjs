@@ -27,8 +27,11 @@ export function formatIntegrateHuman(result, json = false) {
 	if (result.mergePlan) {
 		lines.push(`  Plan: ${result.mergePlan}`);
 	}
-	if (result.gateWarning) {
-		lines.push("", `  Warning: ${result.gateWarning}`);
+	if (result.gateRequired) {
+		lines.push("", "  Gate: approval required before integrate");
+	}
+	if (result.failureClass === "GateBlocked") {
+		lines.push("", "  Gate: integrate blocked until approved");
 	}
 
 	lines.push("", `  → ${result.suggestedCommand}`);
@@ -63,6 +66,7 @@ export function runSpineIntegrate(options) {
 		projectRoot,
 		dryRun: flags.has("--dry-run"),
 		batchId,
+		forceIntegrate: flags.has("--force-integrate"),
 	});
 
 	return {

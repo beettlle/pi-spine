@@ -216,6 +216,28 @@ function runSpineBatchRetrySkip(
 	};
 }
 
+function runSpineGate(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "gate", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function runSpineIntegrate(argsText: string, cwd = process.cwd()) {
 	const tokens = String(argsText ?? "")
 		.trim()
@@ -511,6 +533,16 @@ async function spineNextHandler(args: string, ctx: ExtensionCommandContext): Pro
 	ctx.ui.notify(result.output || "no next action", "info");
 }
 
+async function spineGateHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineGate(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine gate failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "gate updated", "info");
+}
+
 async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const result = runSpineIntegrate(args);
 	if (!result.ok) {
@@ -547,9 +579,11 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 													? spineSkipTaskHandler
 													: name === "spine-abort"
 														? spineAbortHandler
-														: name === "spine-integrate"
-															? spineIntegrateHandler
-															: stubHandler(name),
+														: name === "spine-gate"
+															? spineGateHandler
+															: name === "spine-integrate"
+																? spineIntegrateHandler
+																: stubHandler(name),
 		});
 	}
 }
