@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
+import { retryTask, skipTask } from "../src/batch/retry.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +72,9 @@ function parseBatchArgs(args) {
 				t === "complete" ||
 				t === "start" ||
 				t === "pause" ||
-				t === "resume",
+				t === "resume" ||
+				t === "retry" ||
+				t === "skip",
 		) ?? null;
 
 	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
@@ -85,6 +88,7 @@ function parseBatchArgs(args) {
 		batchId,
 		reason,
 		subcommand,
+		taskId: subcommand === "retry" || subcommand === "skip" ? positional[0] ?? null : null,
 		scope: positional.join(" ") || "all",
 	};
 }
@@ -137,6 +141,69 @@ export async function runSpineBatch(options) {
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
 			output: result.output ?? (result.ok ? "Batch paused.\n" : "Batch pause failed.\n"),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "retry") {
+		if (!parsed.taskId) {
+			return {
+				exitCode: 1,
+				output: "Usage: spine batch retry <taskId> [--json]\n",
+			};
+		}
+		const result = retryTask({ projectRoot, taskId: parsed.taskId });
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		const lines = [
+			"",
+			result.ok ? "Task retry" : "Task retry failed",
+			"",
+			result.output ?? result.error ?? "",
+		];
+		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		if (result.pendingSegments != null) lines.push(`  Pending segments: ${result.pendingSegments}`);
+		lines.push("");
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: lines.join("\n"),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "skip") {
+		if (!parsed.taskId) {
+			return {
+				exitCode: 1,
+				output: "Usage: spine batch skip <taskId> [--json]\n",
+			};
+		}
+		const result = skipTask({ projectRoot, taskId: parsed.taskId });
+		if (parsed.json) {
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: `${JSON.stringify(result, null, 2)}\n`,
+				result,
+			};
+		}
+		const lines = [
+			"",
+			result.ok ? "Task skipped" : "Task skip failed",
+			"",
+			result.output ?? result.error ?? "",
+		];
+		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		lines.push("");
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: lines.join("\n"),
 			result,
 		};
 	}
@@ -199,7 +266,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|dismiss|complete [--batch ID] [--reason TEXT] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

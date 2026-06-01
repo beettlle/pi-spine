@@ -1,0 +1,313 @@
+/**
+ * Atomic task retry and skip (TP-017, PRD §18.5, FR-BATCH-09/10).
+ */
+
+import { appendJournalEvent } from "./journal.mjs";
+import {
+	countPendingSegments,
+	loadSpineBatchState,
+	saveSpineBatchState,
+	updateSegmentForTask,
+	validateBatchState,
+} from "./state.mjs";
+
+const RETRY_ALLOWED_PHASES = new Set(["paused", "failed"]);
+const RETRY_BLOCKED_PHASES = new Set(["running", "planning"]);
+
+/**
+ * @param {object} state
+ * @param {string} taskId
+ */
+function findTask(state, taskId) {
+	return (state.tasks ?? []).find(
+		(task) => task && typeof task === "object" && task.taskId === taskId,
+	);
+}
+
+/**
+ * @param {object} state
+ */
+export function detectSegmentDrift(state) {
+	return (state.tasks ?? []).some((task) => {
+		if (!task || task.status !== "pending") return false;
+		return (state.segments ?? []).some(
+			(segment) =>
+				segment &&
+				segment.taskId === task.taskId &&
+				(segment.status === "failed" || segment.status === "succeeded"),
+		);
+	});
+}
+
+/**
+ * @param {object} state
+ * @param {string} taskId
+ */
+function resetTaskAndSegments(state, taskId) {
+	const task = findTask(state, taskId);
+	if (!task) return null;
+
+	const previousClassification = String(task.status ?? "unknown");
+	const wasFailed = task.status === "failed";
+
+	task.status = "pending";
+	task.startedAt = null;
+	task.endedAt = null;
+	task.exitReason = null;
+	task.doneFileFound = false;
+
+	for (const segment of state.segments ?? []) {
+		if (!segment || segment.taskId !== taskId) continue;
+		segment.status = "pending";
+		if ("startedAt" in segment) segment.startedAt = null;
+		if ("endedAt" in segment) segment.endedAt = null;
+	}
+
+	if (wasFailed) {
+		state.failedTasks = Math.max(0, Number(state.failedTasks ?? 0) - 1);
+	}
+
+	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
+
+	return { previousClassification, wasFailed };
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.taskId
+ */
+export function retryTask({ projectRoot, taskId }) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw) {
+		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+	}
+
+	const state = loaded.raw;
+	const phase = String(state.phase ?? "");
+
+	if (RETRY_BLOCKED_PHASES.has(phase)) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "cannot_retry",
+			output: `Cannot retry task while batch phase is ${phase}. Pause the batch first.\n`,
+			batchId: state.batchId,
+			phase,
+		};
+	}
+
+	if (!RETRY_ALLOWED_PHASES.has(phase)) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "cannot_retry",
+			output: `Cannot retry task in batch phase ${phase}. Retry is allowed in paused or failed batches.\n`,
+			batchId: state.batchId,
+			phase,
+		};
+	}
+
+	const validation = validateBatchState(state);
+	if (!validation.ok) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "invalid_batch_state",
+			output: `Batch state validation failed:\n  ${validation.errors.join("\n  ")}\n`,
+			batchId: state.batchId,
+		};
+	}
+
+	if (state.tasks.length !== 1 || state.lanes.length !== 1) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "single_lane_required",
+			output: "TP-017 retry supports exactly one task and one lane per batch.\n",
+			batchId: state.batchId,
+		};
+	}
+
+	const task = findTask(state, taskId);
+	if (!task) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "task_not_found",
+			output: `Task ${taskId} not found in batch ${state.batchId}.\n`,
+			batchId: state.batchId,
+		};
+	}
+
+	const taskStatus = String(task.status ?? "");
+	const segmentFailed = (state.segments ?? []).some(
+		(segment) => segment?.taskId === taskId && segment.status === "failed",
+	);
+	if (taskStatus !== "failed" && !(taskStatus === "pending" && segmentFailed)) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "task_not_retryable",
+			output: `Task ${taskId} is ${taskStatus} — only failed tasks (or pending with failed segments) can be retried.\n`,
+			batchId: state.batchId,
+			taskId,
+		};
+	}
+
+	const reset = resetTaskAndSegments(state, taskId);
+	if (!reset) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "task_not_found",
+			output: `Task ${taskId} not found.\n`,
+			batchId: state.batchId,
+		};
+	}
+
+	state.phase = "failed";
+	state.endedAt = null;
+	state.lastError = null;
+	state.resilience = state.resilience ?? {};
+	state.resilience.retryCountByScope = state.resilience.retryCountByScope ?? {};
+	state.resilience.retryCountByScope[taskId] = (state.resilience.retryCountByScope[taskId] ?? 0) + 1;
+
+	const pendingSegments = countPendingSegments(state, taskId);
+	saveSpineBatchState(projectRoot, state);
+
+	appendJournalEvent(projectRoot, state.batchId, "task.retry_requested", {
+		taskId,
+		previousClassification: reset.previousClassification,
+		pendingSegments,
+	});
+
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId: state.batchId,
+		taskId,
+		pendingSegments,
+		output: `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).\n  → spine batch resume --force\n`,
+	};
+}
+
+/**
+ * @param {object} state
+ */
+function recomputeCounters(state) {
+	const tasks = state.tasks ?? [];
+	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
+	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
+	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.taskId
+ */
+export function skipTask({ projectRoot, taskId }) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw) {
+		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+	}
+
+	const state = loaded.raw;
+	const phase = String(state.phase ?? "");
+
+	if (RETRY_BLOCKED_PHASES.has(phase)) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "cannot_skip",
+			output: `Cannot skip task while batch phase is ${phase}. Pause the batch first.\n`,
+			batchId: state.batchId,
+			phase,
+		};
+	}
+
+	const validation = validateBatchState(state);
+	if (!validation.ok) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "invalid_batch_state",
+			output: `Batch state validation failed:\n  ${validation.errors.join("\n  ")}\n`,
+			batchId: state.batchId,
+		};
+	}
+
+	if (state.tasks.length !== 1 || state.lanes.length !== 1) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "single_lane_required",
+			output: "TP-017 skip supports exactly one task and one lane per batch.\n",
+			batchId: state.batchId,
+		};
+	}
+
+	const task = findTask(state, taskId);
+	if (!task) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "task_not_found",
+			output: `Task ${taskId} not found in batch ${state.batchId}.\n`,
+			batchId: state.batchId,
+		};
+	}
+
+	const taskStatus = String(task.status ?? "");
+	if (taskStatus === "succeeded" || taskStatus === "skipped") {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "task_not_skippable",
+			output: `Task ${taskId} is already ${taskStatus}.\n`,
+			batchId: state.batchId,
+			taskId,
+		};
+	}
+
+	task.status = "skipped";
+	task.endedAt = Date.now();
+	task.exitReason = "skipped_by_operator";
+	updateSegmentForTask(state, taskId, "skipped");
+
+	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
+	recomputeCounters(state);
+
+	const allTerminal = (state.tasks ?? []).every((entry) => {
+		const status = String(entry?.status ?? "");
+		return status === "succeeded" || status === "skipped";
+	});
+
+	if (allTerminal && state.mergeResults.length === 0) {
+		state.phase = "failed";
+		state.lastError = null;
+	} else if (allTerminal) {
+		state.phase = "completed";
+		state.endedAt = Date.now();
+	} else {
+		state.phase = phase === "paused" ? "paused" : "failed";
+	}
+
+	saveSpineBatchState(projectRoot, state);
+
+	appendJournalEvent(projectRoot, state.batchId, "task.skipped", {
+		taskId,
+		previousStatus: taskStatus,
+	});
+
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId: state.batchId,
+		taskId,
+		output: allTerminal
+			? `Task ${taskId} skipped. All batch tasks are terminal — resume or merge as needed.\n  → spine batch resume --force\n`
+			: `Task ${taskId} skipped.\n  → spine batch resume --force\n`,
+	};
+}
