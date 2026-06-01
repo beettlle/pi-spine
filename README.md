@@ -215,25 +215,32 @@ In pi: `/spine-dismiss`, `/spine-next`, and `/spine` route to the same reconcili
 Preview dependency waves and parallel lanes before starting a batch (FR-SCHED-01–06):
 
 ```bash
-spine plan all                              # all discovered tasks
+spine plan all                              # all discovered tasks (full backlog)
+spine plan pending                          # tasks without `.DONE` marker
 spine plan TP-008                           # explicit task ID(s)
 spine plan 'taskplane-tasks/TP-008-*'       # glob on task folder paths
-spine plan all --json                       # JSON plan to stdout
+spine plan pending --json                   # JSON plan; scope.mode pending + excluded count
 ```
 
 Each `spine plan` run writes a plan artifact to `.spine/runtime/plan-{timestamp}.json`.
 
-### Running a batch (Phase 2–3)
+### Running a batch (Phase 2–5)
 
-pi-spine runs batches without Taskplane `/orch`. **Single-task** batches always work; **multi-task** batches are allowed when the plan has one wave with multiple virtual lanes (disjoint file scopes) or when scope is explicit (task IDs, not bare `all` across multiple waves):
+pi-spine runs batches without Taskplane `/orch`. **Single-task** batches always work. **Multi-task** batches are allowed when the plan has one wave with multiple virtual lanes (disjoint file scopes), when scope is explicit (task IDs), or when scope is **`pending`** (unfinished tasks only). **`spine batch start all`** resolves to the same pending-filtered set as `pending` (unlike `spine plan all`, which previews the full backlog):
 
 ```bash
 spine preflight                              # required (FR-BATCH-11)
 spine batch start TP-012                     # one task
 spine batch start TP-997 TP-998              # explicit multi-task (one wave, parallel lanes)
+spine batch start pending                    # all tasks without `.DONE`, dependency order
+spine batch start all                        # same as pending (not full backlog)
+spine run pending                            # alias for batch start (PRD §15.2 automation)
+spine run pending --dry-run --skip-preflight # flag passthrough
 spine batch start TP-012 --dry-run           # preflight + plan only
 spine batch start TP-012 --json              # machine-readable result
 ```
+
+If every discovered task has a `.DONE` marker, `pending` / `all` batch start fails fast: `No pending tasks (all discovered tasks have .DONE).` Tasks that already have `.DONE` on disk are skipped before the worker runs (journal event `task.skipped_done_on_disk`). Wave integrate / `batch complete` between waves is still manual — pi-spine does not auto-integrate mid-batch.
 
 **What happens:** preflight → planner waves + lane ticks (`lanes.maxParallel`, FR-SCHED-03/04) → `.spine/batch-state.json` (schema v1, includes `segments[]`) → one git worktree per physical lane (`.worktrees/spine-{batchId}/lane-N`, branch `task/spine-lane-N-{batchId}`) → workers run in parallel per tick → `.DONE` → **lane auto-commit** → after each wave, **sequential merges** into `orch/spine-{batchId}` (FR-BATCH-08) only when every wave task is `succeeded` or `skipped` (§17.4 mixed-outcome policy; GAP-MERGE-01).
 

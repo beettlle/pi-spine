@@ -401,6 +401,16 @@ async function cmdBatch(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdRun(args) {
+	const { runSpineBatch } = await import("./spine-batch.mjs");
+	const result = await runSpineBatch({
+		projectRoot: process.cwd(),
+		args: ["start", ...args],
+	});
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdJournal(args) {
 	const { runSpineJournal } = await import("./spine-journal.mjs");
 	const result = runSpineJournal({ projectRoot: process.cwd(), args });
@@ -492,8 +502,9 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
-  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
-  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
+ ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
+ ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
+ ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
@@ -515,7 +526,8 @@ ${c.bold}Examples:${c.reset}
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
   spine batch start TP-012                      # single-task batch (Phase 2)
- spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
+  spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
+  spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine review step --step N [--type plan|code] # cross-model step review
  spine gate [approve|reject|status]            # integrate gate FSM
@@ -553,6 +565,9 @@ if (isMainModule) {
 				break;
 			case "batch":
 				await cmdBatch(args);
+				break;
+			case "run":
+				await cmdRun(args);
 				break;
 			case "journal":
 				await cmdJournal(args);
