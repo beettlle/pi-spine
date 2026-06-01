@@ -217,3 +217,4 @@ After manual git merge to `main`, if Taskplane still shows red **stopped** with 
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-05-31 | Initial report from Phase 0 batch recovery |
+| 1.1 | 2026-06-01 | Phase 1b recovery commands (`spine batch dismiss` / `complete`) implemented in TP-010 |

@@ -165,7 +165,26 @@ Output includes `diagnosis`, `headline`, `suggestedCommand`, and optional `alter
 
 Reads `.spine/batch-state.json` first, then Taskplane `.pi/batch-state.json` during dogfood. When no batch exists, status reports a healthy idle state with `spine preflight` or `spine plan all` as the suggested next action.
 
-Known limbo (all tasks succeeded, batch `stopped`, empty `mergeResults`): status suggests `spine batch dismiss` — implemented in TP-010.
+### Batch dismiss, complete, and next action
+
+Archive-first lifecycle for terminal limbo (FR-BATCH-15–16, §18.6):
+
+```bash
+spine batch dismiss --reason "manual recovery"     # limbo_stale, completed_manual, aborted
+spine batch complete --detect-manual-merge         # after manual merge to main
+spine batch complete --batch ID                    # all tasks succeeded + merge satisfied
+spine next                                         # print suggestedCommand from reconciliation
+spine next --execute                               # run suggested command (dismiss, preflight, etc.)
+```
+
+**Limbo recovery playbook** (Taskplane batch red, all tasks green, empty `mergeResults`):
+
+1. `spine status --diagnose` — expect `limbo_stale` or `completed_manual`
+2. If work is already on `main`: `spine batch complete --detect-manual-merge`
+3. If batch should be cleared without claiming merge: `spine batch dismiss --reason …`
+4. Do not hand-edit `.pi/batch-state.json`; pi-spine archives to `.spine/runtime/{batchId}/archive/` first
+
+In pi: `/spine-dismiss`, `/spine-next`, and `/spine` route to the same reconciliation (never suggest pause for terminal limbo).
 
 ### Wave planning
 
@@ -187,6 +206,8 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine` | Runs batch preflight; guides batch execute (`/spine [all\|paths]`, Phase 2+) |
 | `/spine-plan` | Preview waves and lanes (usage: `/spine-plan <all\|paths>`) |
 | `/spine-status` | Reconciled batch diagnosis + lane health (FR-BATCH-14) |
+| `/spine-dismiss` | `spine batch dismiss` (limbo / completed_manual) |
+| `/spine-next` | `spine next` — suggested next command |
 | `/spine-pause` | Stub — pause after current tasks |
 | `/spine-resume` | Stub — resume paused or failed batch |
 | `/spine-abort` | Stub — abort batch |
@@ -195,7 +216,7 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
 
-Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, and **`/spine-status`** are implemented. Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
+Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, and **`/spine-next`** are implemented. Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)

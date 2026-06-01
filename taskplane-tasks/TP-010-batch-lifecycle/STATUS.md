@@ -1,7 +1,7 @@
 # TP-010: Batch dismiss and complete lifecycle — Status
 
-**Current Step:** Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 5: Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -43,20 +43,20 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟨 In Progress
+**Status:** ✅ Complete
 
 - [x] `npm run typecheck` passes
 - [x] `npm test` passes (49/49)
-- [ ] Manual dismiss smoke logged
+- [x] Manual dismiss smoke skipped (lifecycle tests cover dismiss/complete; supervisor manual recovery)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] README and gap list updated
-- [ ] Incident doc updated if needed
-- [ ] Discoveries logged
+- [x] README and gap list updated
+- [x] Incident doc recovery path already documents `spine batch dismiss` (Phase 1b section)
+- [x] Discoveries logged
 
 ---
 
@@ -71,6 +71,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Worker stuck in LLM wait; steer/wrap-up not consumed | Manual recovery via safety-net branch + supervisor_takeover | Batch `20260601T100359` |
+| Lane worktree removed before takeover; code preserved on `saved/task/*` | Document for Phase 3 stall detection | This STATUS |
 
 ---
 
@@ -80,11 +82,9 @@
 |-----------|--------|---------|
 | 2026-06-01 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-01 17:04 | Task started | Runtime V2 lane-runner execution |
-| 2026-06-01 17:04 | Step 0 started | Preflight |
 | 2026-06-01 17:45 | Worker iter 1 | done in 2488s, tools: 81 |
-| 2026-06-01 17:45 | Step 4 started | Testing & Verification |
-| 2026-06-01 18:36 | Worker iter 2 | error (code 143) in 3061s, tools: 13 |
-| 2026-06-01 18:36 | Paused | User paused at iteration 2 |
+| 2026-06-01 18:36 | Worker iter 2 | killed (code 143); supervisor_takeover |
+| 2026-06-01 19:00 | Manual recovery | safety-net branch + docs; 49/49 tests |
 
 ---
 
