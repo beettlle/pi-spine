@@ -1,29 +1,29 @@
 # TP-008: Phase 1 planner and spine plan CLI — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** Not Started
-**Last Updated:** 2026-05-31
+**Current Step:** Step 1: Implement planner core
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-01
 **Review Level:** 2
 **Review Counter:** 0
-**Iteration:** 1
+**Iteration:** 2
 **Size:** L
 
 ---
 
 ### Step 0: Preflight
-**Status:** Pending
+**Status:** ✅ Complete
 
-- [ ] FR-SCHED requirements reviewed
-- [ ] TP-007 parser exports confirmed
-- [ ] TP-006 preflight stub signature confirmed
+- [x] FR-SCHED requirements reviewed
+- [x] TP-007 parser exports confirmed
+- [x] TP-006 preflight stub signature confirmed
 
 ---
 
 ### Step 1: Implement planner core
-**Status:** Pending
+**Status:** 🟨 In Progress
 
-- [ ] Graph, cycle, lane modules implemented
-- [ ] `src/planner/index.mjs` exports `buildPlan`
+- [x] Graph, cycle, lane modules implemented
+- [x] `src/planner/index.mjs` exports `buildPlan`
 
 ---
 
@@ -93,6 +93,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-05-31 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-01 02:38 | Task started | Runtime V2 lane-runner execution |
+| 2026-06-01 02:38 | Step 0 started | Preflight |
+| 2026-06-01 02:38 | Worker iter 1 | done in 29s, tools: 10 |
+| 2026-06-01 02:38 | Step 1 started | Implement planner core |
+| 2026-06-01 02:41 | Exit intercept reprompt | Supervisor provided instructions (581 chars) — reprompting worker |
 
 ---
 
