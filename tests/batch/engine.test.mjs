@@ -7,6 +7,8 @@ import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { loadSpineBatchState } from "../../src/batch/state.mjs";
 import {
 	assessWaveMergeEligibility,
+	isExplicitBatchScope,
+	resolveBatchStartScope,
 	startBatch,
 } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -148,7 +150,130 @@ test("startBatch completes single task with stub worker", async () => {
 	}
 });
 
-test("startBatch rejects multi-task all scope without multi-lane plan", async () => {
+test("isExplicitBatchScope treats pending as explicit", () => {
+	assert.equal(isExplicitBatchScope("pending"), true);
+	assert.equal(isExplicitBatchScope("all"), false);
+	assert.equal(isExplicitBatchScope("TP-001"), true);
+});
+
+test("startBatch all dry-run allows multi-wave pending backlog", async () => {
+	const projectRoot = await initGitRepo("spine-engine-all-pending-");
+	try {
+		writeSmokeTask(projectRoot, "TP-999", "src/shared.txt");
+		writeSmokeTask(projectRoot, "TP-998", "src/shared.txt");
+		writeDependencies(projectRoot, { "TP-999": [], "TP-998": ["TP-999"] });
+		execCommit(projectRoot, "tasks");
+
+		const result = await startBatch({ projectRoot, scope: "all", dryRun: true, skipPreflight: true });
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.deepEqual(result.taskIds, ["TP-999", "TP-998"]);
+		assert.equal(result.plan.waves.length, 2);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("startBatch pending dry-run excludes done tasks", async () => {
+	const projectRoot = await initGitRepo("spine-engine-pending-");
+	try {
+		writeSmokeTask(projectRoot, "TP-999", "src/a.txt");
+		writeSmokeTask(projectRoot, "TP-998", "src/b.txt");
+		writeDependencies(projectRoot, { "TP-999": [], "TP-998": ["TP-999"] });
+		fs.writeFileSync(
+			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			"",
+			"utf-8",
+		);
+		execCommit(projectRoot, "tasks");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "pending",
+			dryRun: true,
+			skipPreflight: true,
+		});
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.deepEqual(result.taskIds, ["TP-998"]);
+		assert.equal(result.plan.waves.length, 1);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("startBatch all fails when every task has .DONE", async () => {
+	const projectRoot = await initGitRepo("spine-engine-all-done-");
+	try {
+		writeSmokeTask(projectRoot, "TP-999");
+		writeDependencies(projectRoot, { "TP-999": [] });
+		fs.writeFileSync(
+			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			"",
+			"utf-8",
+		);
+		execCommit(projectRoot, "tasks");
+
+		const result = await startBatch({ projectRoot, scope: "all", skipPreflight: true });
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "no_pending_tasks");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("startBatch skips worker when .DONE exists on disk", async () => {
+	const projectRoot = await initGitRepo("spine-engine-skip-done-");
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+	try {
+		writeSmokeTask(projectRoot, "TP-999");
+		writeDependencies(projectRoot, { "TP-999": [] });
+		fs.writeFileSync(
+			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			"",
+			"utf-8",
+		);
+		execCommit(projectRoot, "tasks with done marker");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "TP-999",
+			skipPreflight: true,
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		const events = readJournalEvents(projectRoot, result.batchId);
+		assert.ok(events.some((event) => event.type === "task.skipped_done_on_disk"));
+		assert.equal(events.some((event) => event.type === "task.started"), false);
+
+		const state = loadSpineBatchState(projectRoot);
+		assert.equal(state.raw?.phase, "completed");
+		assert.equal(state.raw?.succeededTasks, 1);
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("resolveBatchStartScope normalizes all to pending IDs", async () => {
+	const projectRoot = await initGitRepo("spine-engine-resolve-");
+	try {
+		writeSmokeTask(projectRoot, "TP-999");
+		writeSmokeTask(projectRoot, "TP-998");
+		writeDependencies(projectRoot, { "TP-999": [], "TP-998": [] });
+		execCommit(projectRoot, "tasks");
+		const tasksRoot = path.join(projectRoot, "taskplane-tasks");
+		const resolved = resolveBatchStartScope("all", tasksRoot);
+		assert.equal(resolved.ok, true);
+		assert.equal(resolved.policyScope, "pending");
+		assert.match(resolved.scope, /TP-999/);
+		assert.match(resolved.scope, /TP-998/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("startBatch explicit IDs still allow multi-wave when scope is not bare all", async () => {
 	const projectRoot = await initGitRepo("spine-engine-multi-");
 	try {
 		writeSmokeTask(projectRoot, "TP-999", "src/shared.txt");
@@ -156,9 +281,15 @@ test("startBatch rejects multi-task all scope without multi-lane plan", async ()
 		writeDependencies(projectRoot, { "TP-999": [], "TP-998": ["TP-999"] });
 		execCommit(projectRoot, "tasks");
 
-		const result = await startBatch({ projectRoot, scope: "all", skipPreflight: true });
-		assert.equal(result.ok, false);
-		assert.equal(result.error, "multi_task_not_allowed");
+		const result = await startBatch({
+			projectRoot,
+			scope: "TP-999 TP-998",
+			dryRun: true,
+			skipPreflight: true,
+		});
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.deepEqual(result.taskIds, ["TP-999", "TP-998"]);
+		assert.equal(result.plan.waves.length, 2);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

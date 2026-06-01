@@ -7,6 +7,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { discoverTasks } from "../compat/taskplane/discover.mjs";
 import { buildPlan } from "../planner/index.mjs";
+import { filterPendingTaskIds } from "../planner/pending.mjs";
+import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import crypto from "node:crypto";
@@ -51,6 +53,40 @@ export function isExplicitBatchScope(scope) {
 		.trim()
 		.toLowerCase();
 	return Boolean(normalized) && normalized !== "all";
+}
+
+/**
+ * Batch start resolves bare `all` to pending-filtered IDs (plan CLI keeps full `all`).
+ *
+ * @param {string} scope
+ * @param {string} tasksRoot
+ */
+export function resolveBatchStartScope(scope, tasksRoot) {
+	const trimmed = String(scope ?? "").trim();
+	const normalized = trimmed.toLowerCase();
+
+	if (!trimmed || normalized === "all") {
+		const discovered = discoverTasks(tasksRoot);
+		const pendingIds = filterPendingTaskIds(discovered, tasksRoot);
+		if (pendingIds.length === 0) {
+			return {
+				ok: false,
+				error: "no_pending_tasks",
+				output: `${NO_PENDING_TASKS_ERROR}\n`,
+			};
+		}
+		return {
+			ok: true,
+			scope: pendingIds.join(" "),
+			policyScope: "pending",
+		};
+	}
+
+	if (normalized === "pending") {
+		return { ok: true, scope: "pending", policyScope: "pending" };
+	}
+
+	return { ok: true, scope: trimmed, policyScope: trimmed };
 }
 
 /**
@@ -384,6 +420,39 @@ function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batchId, ma
 /**
  * @param {object} params
  */
+async function skipTaskDoneOnDisk({
+	projectRoot,
+	state,
+	batchId,
+	task,
+	lane,
+	taskFolderPath,
+	laneCorrelationId,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+
+	task.status = "succeeded";
+	task.doneFileFound = true;
+	task.exitReason = "skipped_done_on_disk";
+	if (!task.startedAt) task.startedAt = Date.now();
+	task.endedAt = Date.now();
+	updateSegmentForTask(state, taskId, "succeeded");
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+	appendJournalEvent(projectRoot, batchId, "task.skipped_done_on_disk", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		taskFolder: taskFolderPath,
+	});
+	return { ok: true, skipped: true };
+}
+
+/**
+ * @param {object} params
+ */
 async function runTaskOnLane({
 	projectRoot,
 	state,
@@ -624,8 +693,21 @@ export async function startBatch({
 		return { ok: false, exitCode: 1, error: "tasks_root_missing" };
 	}
 
-	const plan = buildPlan({ scope, config, tasksRoot });
-	const batchPolicy = canStartMultiTaskBatch(plan, scope);
+	const scopeResolution = resolveBatchStartScope(scope, tasksRoot);
+	if (!scopeResolution.ok) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: scopeResolution.error,
+			output: scopeResolution.output,
+		};
+	}
+
+	const effectiveScope = scopeResolution.scope;
+	const policyScope = scopeResolution.policyScope ?? effectiveScope;
+
+	const plan = buildPlan({ scope: effectiveScope, config, tasksRoot });
+	const batchPolicy = canStartMultiTaskBatch(plan, policyScope);
 	if (!batchPolicy.ok) {
 		return {
 			ok: false,
@@ -729,6 +811,22 @@ export async function startBatch({
 						if (!task || !entry) continue;
 
 						const taskFolderRel = path.relative(projectRoot, entry.folderPath);
+						const doneOnDisk = fs.existsSync(path.join(entry.folderPath, ".DONE"));
+
+						if (doneOnDisk) {
+							tickRuns.push(
+								skipTaskDoneOnDisk({
+									projectRoot,
+									state,
+									batchId,
+									task,
+									lane,
+									taskFolderPath: entry.folderPath,
+									laneCorrelationId: lane.correlationId ?? crypto.randomUUID(),
+								}),
+							);
+							continue;
+						}
 
 						tickRuns.push(
 							runTaskOnLane({
