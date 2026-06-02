@@ -37,17 +37,17 @@ Phase 6 closes PRD §23 compatibility validation:
 | `PRD §20.2 two-lane stub batch completes ABC waves` | pass |
 | `PRD §20.2 mixed-outcome blocks merge; retry and resume complete wave B` | pass |
 
-## Manual validation checklist (optional)
+## Manual validation checklist (stub-free)
 
-Run with `SPINE_WORKER_STUB=0` and `pi` on PATH when exercising real workers:
+Run with `SPINE_WORKER_STUB=0` and `pi` on PATH. Guided script: [`scripts/stub-free-dogfood.sh`](../../scripts/stub-free-dogfood.sh). Full results: [`stub-free-dogfood-report.md`](stub-free-dogfood-report.md) (TP-047, batch `20260602T221506`).
 
-- [ ] `spine preflight` on clean repo
-- [ ] `spine plan pending --json`
-- [ ] `spine batch start <scope>` (stub or real pi)
-- [ ] `spine status --diagnose`
-- [ ] `spine gate status` → `spine gate approve`
-- [ ] `spine integrate` → `spine batch complete`
-- [ ] Dashboard: `spine dashboard` or `/spine-dashboard`
+- [x] `spine preflight` on clean repo
+- [x] `spine plan pending --json`
+- [x] `spine batch start <scope>` with real pi (`SPINE_WORKER_STUB=0`)
+- [x] `spine status --diagnose`
+- [ ] `spine gate status` → `spine gate approve` (post-batch land loop — see stub-free report)
+- [ ] `spine integrate` → `spine batch complete` (post-batch land loop — see stub-free report)
+- [x] Dashboard: `spine dashboard` or `/spine-dashboard`
 
 ## Known deferrals for v1.0 publish (TP-030+)
 
@@ -55,7 +55,7 @@ Run with `SPINE_WORKER_STUB=0` and `pi` on PATH when exercising real workers:
 - `spine init --preset taskplane-compat`
 - npm publish / pi.dev listing
 - ~~Worker MCP tools (`spine_report_progress`)~~ — **Closed TP-038** (all three PRD §14.5 tools registered; `spine_request_gate` integrate-only limitation documented)
-- `/spine-settings`, `/spine-deps` slash stubs
+- ~~`/spine-settings`, `/spine-deps` slash stubs~~ — **Closed** (implemented; see README slash command table)
 
 ## Sign-off
 
