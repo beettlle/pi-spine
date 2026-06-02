@@ -20,7 +20,8 @@
   },
   "lanes": {
     "maxParallel": 3,
-    "queueExcess": true
+    "queueExcess": true,
+    "workerBackend": "subprocess"
   },
   "dashboard": {
     "port": 8109

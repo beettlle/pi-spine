@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
+import { validateWorkerBackendConfig } from "../src/config/worker-backend.mjs";
 
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
@@ -133,6 +134,11 @@ export function validateSpineConfig(config) {
 			message: "lanes.maxParallel must be a number >= 1",
 			suggestedCommand: "/spine-settings",
 		};
+	}
+
+	const workerBackendError = validateWorkerBackendConfig(config);
+	if (workerBackendError) {
+		return workerBackendError;
 	}
 
 	return null;

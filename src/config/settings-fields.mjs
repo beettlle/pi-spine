@@ -17,6 +17,7 @@
  * @property {number} [min]
  * @property {number} [max]
  * @property {string[]} [enum]
+ * @property {boolean} [caseSensitive] When true, enum values match exactly (no lowercasing)
  * @property {boolean} [optional] When true, empty string is allowed for string fields
  */
 
@@ -28,6 +29,13 @@ export const SETTINGS_FIELDS = Object.freeze([
 		type: "number",
 		min: 1,
 		max: 32,
+	},
+	{
+		path: "lanes.workerBackend",
+		label: "Worker execution backend",
+		type: "enum",
+		enum: ["subprocess", "agentSession"],
+		caseSensitive: true,
 	},
 	{
 		path: "gates.requireBeforeIntegrate",
@@ -188,16 +196,20 @@ function validateEnum(rawValue, field) {
 	}
 
 	const normalized =
-		typeof rawValue === "string" ? rawValue.trim().toLowerCase() : String(rawValue).trim().toLowerCase();
+		typeof rawValue === "string" ? rawValue.trim() : String(rawValue).trim();
+	const candidate = field.caseSensitive ? normalized : normalized.toLowerCase();
+	const allowed = field.caseSensitive
+		? (field.enum ?? [])
+		: (field.enum ?? []).map((value) => value.toLowerCase());
 
-	if (!field.enum?.includes(normalized)) {
+	if (!allowed.includes(candidate)) {
 		return {
 			ok: false,
 			error: `Expected one of: ${field.enum?.join(", ") ?? "(none)"}`,
 		};
 	}
 
-	return { ok: true, normalizedValue: normalized };
+	return { ok: true, normalizedValue: candidate };
 }
 
 /**
