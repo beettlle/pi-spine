@@ -101,7 +101,7 @@ SPINE_WORKER_STUB=1 spine batch start <task-id>
 SPINE_WORKER_STUB=0 spine batch start <task-id>
 ```
 
-Monitor with `spine status` or `/spine-status` in pi. After batch completes, follow the land loop (`spine batch complete`, integrate gate) per README.
+Monitor with `spine status` or `/spine-status` in pi. After batch completes, follow the land loop per [operator-runbook.md](./operator-runbook.md) (gate → integrate → complete).
 
 ---
 
@@ -169,5 +169,6 @@ After a successful stub batch, remove or disable Taskplane `/orch` usage. Until 
 | Doc | Purpose |
 |-----|---------|
 | [local-install.md](./local-install.md) | Git/path install before npm publish |
+| [operator-runbook.md](./operator-runbook.md) | Daily operator procedures |
 | [real-project-readiness.md](./real-project-readiness.md) | Phase 9 adoption tiers and task map |
-| [README](../../README.md) | Full CLI, batch, and land-loop reference |
+| [README](../../README.md) | Full CLI reference |
