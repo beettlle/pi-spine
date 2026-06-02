@@ -1,0 +1,28 @@
+bin/spine-plan.mjs
+  s_14d12b2a61ce27::t_611b0f6751b2c1 16
+  s_14d12b2a61ce27::t_3d3849549a623a 14
+tests/planner/lanes-parallel.test.mjs
+  s_14d12b2a61ce27::t_64fa5e385badf8 91-94
+  s_14d12b2a61ce27::t_563b46c8e8e279 9
+  s_14d12b2a61ce27::t_892919c550581f 103-106
+src/planner/format-plan.mjs
+  s_14d12b2a61ce27::t_2bdde682367a5c 1-130
+tests/planner/format-plan.test.mjs
+  s_14d12b2a61ce27::t_bba045c09f9d73 1-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "61068188ef5562f50ed90742b9b3dc57b51a7130",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
