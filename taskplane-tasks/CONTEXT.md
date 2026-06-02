@@ -124,7 +124,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-038 | `spine_request_gate` + worker tool registration | **Staged** | TP-037 |
 | TP-039 | Multi-task resume validation | **Done** | TP-030 |
 | TP-040 | Multi-task resume engine + detached | **Done** | TP-039 |
-| TP-041 | Multi-task resume integration + docs | **In progress** | TP-040 |
+| TP-041 | Multi-task resume integration + docs | **Done** | TP-040 |
 
 **Suggested spine run order** (preflight before each batch; default detached — monitor with `spine status --diagnose`):
 
