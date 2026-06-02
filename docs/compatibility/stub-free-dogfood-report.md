@@ -24,15 +24,32 @@ Closes the Phase 6 **manual validation checklist** gap from [`phase6-dogfood-rep
 
 | # | Step | Command | Result | Notes |
 |---|------|---------|--------|-------|
-| 1 | Preflight | `spine preflight` | **pass** | Clean worktree; doctor green |
-| 2 | Plan | `spine plan pending --json` | **pass** | JSON plan emitted |
-| 3 | Batch start | `SPINE_WORKER_STUB=0 spine batch start TP-047` | **pass** | Batch `20260602T221506`; lane-1 worker PID active |
-| 4 | Status | `spine status --diagnose` | **pass** | Phase `running`, TP-047 `running`, heartbeats recorded |
-| 5 | Gate inspect | `spine gate status` | **pass** | No gate yet (expected while batch running) |
-| 6 | Gate approve | `spine gate approve` | **deferred** | Run after batch merge wave completes |
-| 7 | Integrate | `spine integrate` | **deferred** | Run after gate approval |
-| 8 | Complete | `spine batch complete` | **deferred** | Run after integrate |
-| 9 | Dashboard | `spine dashboard` / `/spine-dashboard` | **pass** | CLI accepts command; optional during batch |
+| 1 | Preflight | `spine preflight` | **pass** | Clean repo before batch start (2026-06-02); fails `no-active-batch` while batch running (expected) |
+| 2 | Plan | `spine plan pending --json` | **pass** | JSON plan emitted on project root |
+| 3 | Batch start | `SPINE_WORKER_STUB=0 spine batch start TP-047` | **pass** | Batch `20260602T221506`; worker-host `--pi` mode; lane-1 PID 6640 |
+| 4 | Status | `spine status --diagnose` | **pass** | Phase `running`, TP-047 `running`, heartbeats in journal |
+| 5 | Gate inspect | `spine gate status` | **pass** | No gate on record (expected pre-merge) |
+| 6 | Gate approve | `spine gate approve` | **deferred** | Operator step after batch wave merge |
+| 7 | Integrate | `spine integrate` | **deferred** | After gate approval |
+| 8 | Complete | `spine batch complete` | **deferred** | After integrate |
+| 9 | Dashboard | `spine dashboard` / `/spine-dashboard` | **pass** | CLI reachable; port 8109 in use (dashboard already running) |
+
+## Execution log (2026-06-02)
+
+```text
+# Environment (lane-1 worktree)
+SPINE_WORKER_STUB=unset
+pi --version → 0.78.0
+./scripts/stub-free-dogfood.sh TP-047  → env checks pass; preflight warns git-clean in lane worktree
+
+# Project root (batch 20260602T221506 active)
+spine plan pending --json     → exit 0
+spine status --diagnose       → phase running, TP-047 running, lane-1 heartbeats
+spine gate status             → no integrate gate on record
+spine dashboard               → EADDRINUSE :8109 (already running — command path OK)
+```
+
+Guided script: `./scripts/stub-free-dogfood.sh` (see [`scripts/stub-free-dogfood.sh`](../../scripts/stub-free-dogfood.sh)).
 
 ## Real-pi worker evidence
 
