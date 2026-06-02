@@ -32,8 +32,8 @@ pi install . -l
 
 Verify in pi:
 
-```text
-/spine-help   # or pi list — package pi-spine should appear
+```bash
+pi list   # package pi-spine should appear
 ```
 
 Slash commands (`/spine`, `/spine-plan`, …) come from the pi extension; they require a successful `pi install`, not only a global `spine` binary.
