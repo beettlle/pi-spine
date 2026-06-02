@@ -665,7 +665,9 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 																? spineIntegrateHandler
 																: name === "spine-dashboard"
 																	? spineDashboardHandler
-																	: stubHandler(name),
+																	: name === "spine-deps"
+																		? spineDepsHandler
+																		: stubHandler(name),
 		});
 	}
 }
