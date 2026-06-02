@@ -22,6 +22,9 @@
     "maxParallel": 3,
     "queueExcess": true
   },
+  "dashboard": {
+    "port": 8109
+  },
   "gates": {
     "requireBeforeIntegrate": true,
     "collectBuildEvidence": true,
