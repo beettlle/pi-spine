@@ -122,7 +122,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-036 | `spine_report_progress` core + CLI + heartbeat | **Staged** | TP-030 |
 | TP-037 | `spine_review_step` Pi tool | **Staged** | TP-036 |
 | TP-038 | `spine_request_gate` + worker tool registration | **Staged** | TP-037 |
-| TP-039 | Multi-task resume validation | **Staged** | TP-030 |
+| TP-039 | Multi-task resume validation | **Done** | TP-030 |
 | TP-040 | Multi-task resume engine + detached | **Staged** | TP-039 |
 | TP-041 | Multi-task resume integration + docs | **Staged** | TP-040 |
 
