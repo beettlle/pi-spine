@@ -18,7 +18,7 @@ import {
 	updateSegmentForTask,
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
-import { validateMultiTaskResume } from "./resume-multi.mjs";
+import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
 import { runWorker } from "./worker-host.mjs";
 
 /**
@@ -128,6 +128,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 
 	const loaded = loadSpineBatchState(projectRoot);
 	const state = loaded.raw;
+	const tasks = state.tasks ?? [];
+	const lanes = state.lanes ?? [];
+
+	if (tasks.length > 1 || lanes.length > 1) {
+		return resumeMultiTaskBatch({ projectRoot, force, resumeCheck });
+	}
+
 	const phase = String(state.phase ?? "");
 
 	const configResult = loadSpineConfig(projectRoot);

@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { registerSpineSlashCommands } from "./spine/slash-commands.ts";
+import { registerSpineWorkerTools } from "./spine/worker-tools.ts";
 
 /**
  * pi-spine orchestrator extension (Phase 0).
@@ -7,4 +8,5 @@ import { registerSpineSlashCommands } from "./spine/slash-commands.ts";
  */
 export default function spineOrchestrator(pi: ExtensionAPI): void {
 	registerSpineSlashCommands(pi);
+	registerSpineWorkerTools(pi);
 }
