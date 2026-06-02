@@ -19,6 +19,7 @@ test("SETTINGS_FIELDS lists at least five editable paths", () => {
 			"dashboard.port",
 			"gates.requireBeforeIntegrate",
 			"lanes.maxParallel",
+			"lanes.workerBackend",
 		].sort(),
 	);
 });
@@ -119,6 +120,16 @@ test("dashboard.port accepts valid port range", () => {
 	const high = validateSettingValue("dashboard.port", 70000);
 	assert.equal(high.ok, false);
 	if (!high.ok) assert.match(high.error, /<= 65535/);
+});
+
+test("lanes.workerBackend accepts registered enum values", () => {
+	for (const value of ["subprocess", "agentSession"]) {
+		const result = validateSettingValue("lanes.workerBackend", value);
+		assert.equal(result.ok, true, value);
+		if (result.ok) assert.equal(result.normalizedValue, value);
+	}
+	const invalid = validateSettingValue("lanes.workerBackend", "agentsession");
+	assert.equal(invalid.ok, false);
 });
 
 test("validateSettingValue rejects unknown path", () => {
