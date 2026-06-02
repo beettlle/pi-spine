@@ -1,8 +1,8 @@
 # TP-033: spine settings show CLI — Status
 
-**Status:** In Progress | **Last Updated:** 2026-06-02 | **Review Level:** 1 | **Size:** S
+**Status:** Done | **Last Updated:** 2026-06-02 | **Review Level:** 1 | **Size:** S
 
-### Step 0 — Done | Step 1 — Done | Step 2 — In Progress
+### Step 0 — Done | Step 1 — Done | Step 2 — Done
 
 ## Summary
 
@@ -28,8 +28,8 @@ Implemented read-only `spine settings show [path] [--json]` using TP-032 editabl
 
 - [x] Settings tests green (9/9)
 - [x] Manual `spine settings show` on repo
-- [ ] Full suite (258 pass; 1 pre-existing unrelated failure)
+- [x] Full suite (258 pass; 1 pre-existing unrelated failure)
 
 ## Commits
 
-- _(pending step 1 commit)_
+- `b526357` feat(TP-033): add spine settings show CLI
