@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-030
+**Next Task ID:** TP-031
 **Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
@@ -103,6 +103,12 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|--------|------|
 | TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Staged** | TP-028 |
 
+### Phase 7 — Publish & migration (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Staged** | TP-029 |
+
 ---
 
 ## Priority backlog
@@ -153,4 +159,5 @@ Run full `npm test` (**150+** tests) for any batch-touching change.
 - **TP-026** — `taskplane-tasks/TP-026-dashboard-parity/PROMPT.md`
 - **TP-027** — `taskplane-tasks/TP-027-dashboard-cli-startup/PROMPT.md`
 - **TP-028** — `taskplane-tasks/TP-028-doctor-suggest-max-parallel/PROMPT.md`
-- FR-INIT-05 `spine init --preset taskplane-compat` — deferred
+- FR-INIT-05 `spine init --preset taskplane-compat` — **Staged (TP-030)**
+- `spine migrate-from-taskplane` — **Staged (TP-030)**
