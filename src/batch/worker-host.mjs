@@ -17,6 +17,8 @@ import {
 } from "./heartbeat.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
+import { startAgentSessionWorker } from "./agent-session-worker.mjs";
+import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -80,9 +82,12 @@ function spawnWorkerChild({
 }
 
 /**
- * @param {import("node:child_process").ChildProcess} child
+ * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
  */
 function collectChildOutput(child) {
+	if (typeof child.wait === "function") {
+		return child.wait();
+	}
 	return new Promise((resolve) => {
 		let stdout = "";
 		let stderr = "";
@@ -100,6 +105,43 @@ function collectChildOutput(child) {
 
 /**
  * @param {object} params
+ * @param {object} [params.workerBackendDeps]
+ */
+function spawnWorkerHandle({
+	worktreePath,
+	taskFolder,
+	useStub,
+	timeoutMs,
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	laneCorrelationId,
+	config,
+	workerBackendDeps,
+}) {
+	if (!useStub && resolveWorkerBackend(config) === "agentSession") {
+		return startAgentSessionWorker(
+			{ worktreePath, taskFolder, config },
+			workerBackendDeps ?? {},
+		);
+	}
+
+	return spawnWorkerChild({
+		worktreePath,
+		taskFolder,
+		useStub,
+		timeoutMs,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		laneCorrelationId,
+	});
+}
+
+/**
+ * @param {object} params
  * @param {string} params.worktreePath
  * @param {string} params.taskFolder
  * @param {string} [params.projectRoot]
@@ -112,6 +154,7 @@ function collectChildOutput(child) {
  * @param {(timestamp: number) => void} [params.onHeartbeat]
  * @param {(pid: number) => void} [params.onWorkerPid]
  * @param {number} [params.timeoutMs]
+ * @param {object} [params.workerBackendDeps] Test-only injectables for agentSession backend
  */
 export async function runWorker({
 	worktreePath,
@@ -124,9 +167,10 @@ export async function runWorker({
 	laneCorrelationId,
 	config = {},
 	onHeartbeat,
-onWorkerPid,
-fileScopePaths = [],
-timeoutMs = DEFAULT_TIMEOUT_MS,
+	onWorkerPid,
+	fileScopePaths = [],
+	timeoutMs = DEFAULT_TIMEOUT_MS,
+	workerBackendDeps = {},
 }) {
 	const donePath = path.join(taskFolder, ".DONE");
 	if (fs.existsSync(donePath)) {
@@ -136,7 +180,10 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 	const useStub =
 		process.env.SPINE_WORKER_STUB === "1" ||
 		process.env.SPINE_WORKER_STUB === "true" ||
-		!commandExists("pi");
+		(!commandExists("pi") && resolveWorkerBackend(config) !== "agentSession");
+
+	const workerBackend = useStub ? "subprocess" : resolveWorkerBackend(config);
+	const workerMode = useStub ? "stub" : workerBackend === "agentSession" ? "agentSession" : "pi";
 
 	const reviewCheck = assertReviewToolAvailable({ taskFolder });
 	if (!reviewCheck.ok) {
@@ -154,7 +201,7 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 		return {
 			ok: false,
 			exitCode: 1,
-			mode: useStub ? "stub" : "pi",
+			mode: workerMode,
 			output: reviewCheck.error ?? "review tool unavailable",
 			classification: "review_failed",
 			doneFound: false,
@@ -168,7 +215,7 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 	let lastSignals = null;
 	let stallWarningSent = false;
 
-	const child = spawnWorkerChild({
+	const child = spawnWorkerHandle({
 		worktreePath,
 		taskFolder,
 		useStub,
@@ -178,6 +225,8 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 		laneNumber,
 		taskId,
 		laneCorrelationId,
+		config,
+		workerBackendDeps,
 	});
 	onWorkerPid?.(child.pid ?? 0);
 	const childDone = collectChildOutput(child);
@@ -196,7 +245,7 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 				return {
 					ok: false,
 					exitCode: hard ? 137 : 130,
-					mode: useStub ? "stub" : "pi",
+					mode: workerMode,
 					output,
 					classification: "aborted",
 					doneFound: fs.existsSync(donePath),
@@ -261,7 +310,7 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 			return {
 				ok: false,
 				exitCode: 124,
-				mode: useStub ? "stub" : "pi",
+				mode: workerMode,
 				output,
 				classification: "stall_timeout",
 				doneFound: fs.existsSync(donePath),
@@ -281,7 +330,7 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 	return {
 		ok: doneFound && exitCode === 0,
 		exitCode,
-		mode: useStub ? "stub" : "pi",
+		mode: workerMode,
 		output,
 		classification: doneFound ? "succeeded" : "failed",
 		doneFound,
