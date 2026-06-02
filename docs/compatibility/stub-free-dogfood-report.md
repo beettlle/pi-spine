@@ -62,8 +62,8 @@ Guided script: `./scripts/stub-free-dogfood.sh` (see [`scripts/stub-free-dogfood
 ## Automated regression (stub CI path)
 
 **Command:** `npm run typecheck && SPINE_WORKER_STUB=1 npm test`  
-**Result:** 320/321 pass under default parallel runner; 321/321 with `--test-concurrency=1`  
-**Note:** Worker-tools tests (`review-step-tool`, `worker-tools-registration`) stable; one pre-existing parallel contention failure in `env-overrides.test.mjs` doctor subprocess under full parallel load (outside TP-047 file scope).
+**Result:** 321/321 pass (2026-06-02, TP-047 verification)  
+**Note:** Worker-tools tests (`review-step-tool`, `worker-tools-registration`) stable under parallel load.
 
 ## Blockers
 
