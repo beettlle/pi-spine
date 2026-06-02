@@ -95,7 +95,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-025 | Dashboard UI panels (§16.1) | **Done** | TP-023 |
 | TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Done** | TP-025 |
 | TP-027 | Dashboard CLI startup messaging (URL/port on listen) | **Done** | — |
-| TP-028 | `spine doctor` suggests `lanes.maxParallel` | **Staged** | — |
+| TP-028 | `spine doctor` suggests `lanes.maxParallel` | **Done** | — |
 
 ---
 
@@ -111,7 +111,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | ~~P1~~ | Dashboard server + SSE (NFR-OBS-02) | 5 | **Done (TP-023)** |
 | ~~P2~~ | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Done (TP-025, TP-026)** |
 | ~~P3~~ | Dashboard CLI startup operator hints | 5 | **Done (TP-027)** |
-| P3 | Doctor `maxParallel` sizing hint | 5 | **Staged (TP-028)** |
+| P3 | Doctor `maxParallel` sizing hint | 5 | **Done (TP-028)** |
 
 ---
 
