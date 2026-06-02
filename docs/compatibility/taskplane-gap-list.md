@@ -20,11 +20,14 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-UX-04 | Manual git merge leaves active batch | FR-BATCH-16, §18.9 | **Closed** — `spine batch complete --detect-manual-merge` (TP-010) |
 | GAP-BATCH-PENDING-01 | `/orch all` runs full backlog; no pending-only scope | FR-SCHED-06, §15.2 `spine run <scope>` | **Closed (TP-024)** — `pending` scope, relaxed batch `all`, `spine run pending` |
 | GAP-PROGRESS-01 | No structured worker progress journal signal for stall grace | PRD §14.5 `spine_report_progress`, §18.4 | **Closed (TP-036)** — `spine report progress` + `task.step_completed`; heartbeat honors journal progress |
+| GAP-WORKER-TOOLS-01 | Worker MCP tools not registered in pi runtime | PRD §14.5 | **Closed (TP-038)** — `spine_review_step`, `spine_report_progress`, `spine_request_gate` via `registerSpineWorkerTools`; gate tool returns `not_supported` for integrate-only v1.1 |
+| GAP-RESUME-MULTI-01 | Paused multi-task batch could not resume (single-lane gate; batch `20260602T181027`) | §18.2 multi-task resume, FR-BATCH-14 | **Closed (TP-039–041)** — `spine batch resume` for multi-task batches; `spine status --diagnose` multi-task paused headline; `tests/batch/resume-multi-integration.test.mjs` |
 
 ## Verification
 
 | Phase | Evidence |
 |-------|----------|
 | Phase 6 (TP-029) | [`phase6-dogfood-report.md`](phase6-dogfood-report.md), [`tests/compat/incidents.test.mjs`](../../tests/compat/incidents.test.mjs), [`tests/batch/integration-abc.test.mjs`](../../tests/batch/integration-abc.test.mjs) |
+| Phase 8 multi-task resume (TP-041) | [`tests/batch/resume-multi-integration.test.mjs`](../../tests/batch/resume-multi-integration.test.mjs), [`tests/batch/resume-multi-engine.test.mjs`](../../tests/batch/resume-multi-engine.test.mjs) |
 
 Regression tests assert pi-spine behavior for each incident **I-01–I-10**; optional Taskplane baseline comparison is not required for CI.

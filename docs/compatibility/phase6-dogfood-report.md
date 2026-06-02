@@ -54,7 +54,7 @@ Run with `SPINE_WORKER_STUB=0` and `pi` on PATH when exercising real workers:
 - `spine migrate-from-taskplane`
 - `spine init --preset taskplane-compat`
 - npm publish / pi.dev listing
-- Worker MCP tools (`spine_report_progress`)
+- ~~Worker MCP tools (`spine_report_progress`)~~ — **Closed TP-038** (all three PRD §14.5 tools registered; `spine_request_gate` integrate-only limitation documented)
 - `/spine-settings`, `/spine-deps` slash stubs
 
 ## Sign-off
