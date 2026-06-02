@@ -64,7 +64,7 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 			let placed = false;
 			for (let i = 0; i < virtualLanes.length; i++) {
 				const lane = virtualLanes[i];
-				if (!taskOverlapsLane(taskPaths, lane.lanePaths)) {
+				if (taskOverlapsLane(taskPaths, lane.lanePaths)) {
 					virtualLaneForTask[taskId] = i;
 					// Append to lane paths so future tasks are checked against everything already assigned.
 					lane.lanePaths.push(...taskPaths);

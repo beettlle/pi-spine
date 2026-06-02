@@ -164,6 +164,7 @@ export function buildLaneTableModel(snapshot) {
 	return (snapshot?.lanes ?? []).map((lane) => ({
 		laneId: lane.laneId,
 		status: lane.status,
+		activeTaskIds: lane.activeTaskIds ?? [],
 		taskIds: lane.taskIds ?? [],
 		heartbeatAgeSeconds: lane.heartbeatAgeSeconds,
 		worktree: lane.worktree,

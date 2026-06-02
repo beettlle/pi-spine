@@ -803,8 +803,8 @@ export async function startBatch({
 			saveSpineBatchState(projectRoot, state);
 
 			for (const tick of wave.ticks ?? []) {
-				/** @type {Promise<{ ok: boolean, aborted?: boolean }>[]} */
-				const tickRuns = [];
+				/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean }> }> }>} */
+				const runsByLane = new Map();
 
 				for (let laneInTick = 0; laneInTick < (tick.lanes?.length ?? 0); laneInTick++) {
 					const tickTaskIds = tick.lanes[laneInTick] ?? [];
@@ -814,6 +814,11 @@ export async function startBatch({
 					const lane = state.lanes.find((entry) => entry.laneNumber === laneNumber);
 					if (!lane) continue;
 
+					if (!runsByLane.has(laneNumber)) {
+						runsByLane.set(laneNumber, { lane, runs: [] });
+					}
+					const laneQueue = runsByLane.get(laneNumber);
+
 					for (const taskId of tickTaskIds) {
 						const task = state.tasks.find((entry) => entry.taskId === taskId);
 						const entry = discovered.find((item) => item.taskId === taskId);
@@ -821,42 +826,61 @@ export async function startBatch({
 
 						const taskFolderRel = path.relative(projectRoot, entry.folderPath);
 						const doneOnDisk = fs.existsSync(path.join(entry.folderPath, ".DONE"));
+						const laneCorrelationId = lane.correlationId ?? crypto.randomUUID();
 
-						if (doneOnDisk) {
-							tickRuns.push(
-								skipTaskDoneOnDisk({
-									projectRoot,
-									state,
-									batchId,
-									task,
-									lane,
-									taskFolderPath: entry.folderPath,
-									laneCorrelationId: lane.correlationId ?? crypto.randomUUID(),
-								}),
-							);
-							continue;
-						}
+						const run = doneOnDisk
+							? () =>
+									skipTaskDoneOnDisk({
+										projectRoot,
+										state,
+										batchId,
+										task,
+										lane,
+										taskFolderPath: entry.folderPath,
+										laneCorrelationId,
+									})
+							: () =>
+									runTaskOnLane({
+										projectRoot,
+										state,
+										batchId,
+										baseBranch,
+										config,
+										task,
+										lane,
+										taskFolderRel,
+										laneCorrelationId,
+									}).then((result) => {
+										if (result.aborted) batchAborted = true;
+										return result;
+									});
 
-						tickRuns.push(
-							runTaskOnLane({
-								projectRoot,
-								state,
-								batchId,
-								baseBranch,
-								config,
-								task,
-								lane,
-								taskFolderRel,
-								laneCorrelationId: lane.correlationId ?? crypto.randomUUID(),
-							}).then((result) => {
-								if (result.aborted) batchAborted = true;
-								return result;
-							}),
-						);
+						laneQueue.runs.push({ taskId, run });
 					}
 				}
 
-				await Promise.all(tickRuns);
+				const laneExecutions = [...runsByLane.entries()].map(async ([laneNumber, { lane, runs }]) => {
+					if (runs.length > 1) {
+						appendJournalEvent(projectRoot, batchId, "lane.tasks_serialized", {
+							laneNumber,
+							laneId: lane.laneId,
+							waveIndex: wave.index,
+							tickIndex: tick.index,
+							taskIds: runs.map((entry) => entry.taskId),
+							correlationId: lane.correlationId ?? null,
+						});
+					}
+
+					for (const { run } of runs) {
+						const result = await run();
+						if (result.aborted) {
+							return result;
+						}
+					}
+					return { ok: true };
+				});
+
+				await Promise.all(laneExecutions);
 				if (batchAborted) break;
 			}
 
