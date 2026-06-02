@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { discoverTasks } from "../compat/taskplane/discover.mjs";
+import { loadTaskPacket } from "../compat/taskplane/index.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { filterPendingTaskIds } from "../planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
@@ -469,6 +470,13 @@ async function runTaskOnLane({
 	const wt = lane.worktreePath;
 	const taskBranch = lane.branch;
 	const taskFolderInWorktree = path.join(wt, taskFolderRel);
+	let fileScopePaths = [];
+	try {
+		const packet = loadTaskPacket(path.join(projectRoot, taskFolderRel));
+		fileScopePaths = packet.prompt?.fileScope ?? [];
+	} catch {
+		fileScopePaths = [];
+	}
 
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();
@@ -490,6 +498,7 @@ async function runTaskOnLane({
 		taskId,
 		laneBranch: taskBranch,
 		laneCorrelationId,
+		fileScopePaths,
 		config,
 		onHeartbeat: (timestamp) => {
 			lane.lastHeartbeatAt = timestamp;

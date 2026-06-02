@@ -48,9 +48,29 @@ function git(worktreePath, args) {
 }
 
 /**
- * @param {object} params
+ * Max mtime among existing file-scope paths (FR-WORK-10 warning signal; extends stall grace).
+ * @param {string} worktreePath
+ * @param {string[]} [fileScopePaths]
  */
-export function collectProgressSignals({ worktreePath, taskFolder, laneBranch }) {
+function resolveFileScopeMtimeMs(worktreePath, fileScopePaths) {
+	if (!Array.isArray(fileScopePaths) || fileScopePaths.length === 0) return null;
+	let max = null;
+	for (const rel of fileScopePaths) {
+		if (!rel || typeof rel !== "string") continue;
+		const target = path.join(worktreePath, rel);
+		if (!fs.existsSync(target)) continue;
+		const stat = fs.statSync(target);
+		if (!stat.isFile()) continue;
+		max = max === null ? stat.mtimeMs : Math.max(max, stat.mtimeMs);
+	}
+	return max;
+}
+
+/**
+ * @param {object} params
+ * @param {string[]} [params.fileScopePaths]
+ */
+export function collectProgressSignals({ worktreePath, taskFolder, laneBranch, fileScopePaths }) {
 	const statusPath = path.join(taskFolder, "STATUS.md");
 	let statusMtimeMs = null;
 	if (fs.existsSync(statusPath)) {
@@ -66,7 +86,9 @@ export function collectProgressSignals({ worktreePath, taskFolder, laneBranch })
 		}
 	}
 
-	return { statusMtimeMs, lastCommitAtMs };
+	const fileScopeMtimeMs = resolveFileScopeMtimeMs(worktreePath, fileScopePaths);
+
+	return { statusMtimeMs, lastCommitAtMs, fileScopeMtimeMs };
 }
 
 /**
@@ -74,9 +96,12 @@ export function collectProgressSignals({ worktreePath, taskFolder, laneBranch })
  * @param {object} next
  */
 export function progressSignalsChanged(prev, next) {
-	if (!prev) return Boolean(next.statusMtimeMs || next.lastCommitAtMs);
+	if (!prev) {
+		return Boolean(next.statusMtimeMs || next.lastCommitAtMs || next.fileScopeMtimeMs);
+	}
 	if (prev.statusMtimeMs !== next.statusMtimeMs) return true;
 	if (prev.lastCommitAtMs !== next.lastCommitAtMs) return true;
+	if (prev.fileScopeMtimeMs !== next.fileScopeMtimeMs) return true;
 	return false;
 }
 
@@ -106,6 +131,7 @@ export function recordLaneHeartbeat({
 		correlationId,
 		statusMtimeMs: signals.statusMtimeMs,
 		lastCommitAtMs: signals.lastCommitAtMs,
+		fileScopeMtimeMs: signals.fileScopeMtimeMs,
 	});
 }
 
@@ -128,6 +154,7 @@ export function recordStallWarning({
 		stallDeadline,
 		statusMtimeMs: signals.statusMtimeMs,
 		lastCommitAtMs: signals.lastCommitAtMs,
+		fileScopeMtimeMs: signals.fileScopeMtimeMs,
 	});
 }
 

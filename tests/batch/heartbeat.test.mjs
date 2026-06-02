@@ -48,6 +48,39 @@ test("computeStallDeadline extends past hard timeout after progress", () => {
 	assert.equal(deadline, lastProgressAt + stallConfig.graceAfterProgressMs);
 });
 
+test("stall false positive avoided when STATUS updates extend deadline (I-01)", () => {
+	const stallConfig = resolveStallConfig({
+		lanes: { stallTimeoutMinutes: 1, stallGraceAfterProgressMinutes: 30 },
+	});
+	const startedAt = 0;
+	const hardDeadline = startedAt + stallConfig.stallTimeoutMs;
+	const lastProgressAt = 35 * 60 * 1000;
+	const deadline = computeStallDeadline({ startedAt, lastProgressAt, stallConfig });
+	const now = 40 * 60 * 1000;
+	assert.ok(now >= hardDeadline, "simulated worker silent past hard timeout");
+	assert.ok(now < deadline, "STATUS/progress grace keeps worker alive");
+});
+
+test("progressSignalsChanged detects file-scope mtime updates (FR-WORK-10)", () => {
+	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-scope-"));
+	const scopeFile = path.join(dir, "src", "touch.txt");
+	fs.mkdirSync(path.dirname(scopeFile), { recursive: true });
+	fs.writeFileSync(scopeFile, "a", "utf-8");
+	const first = collectProgressSignals({
+		worktreePath: dir,
+		taskFolder: dir,
+		fileScopePaths: ["src/touch.txt"],
+	});
+	fs.writeFileSync(scopeFile, "ab", "utf-8");
+	const second = collectProgressSignals({
+		worktreePath: dir,
+		taskFolder: dir,
+		fileScopePaths: ["src/touch.txt"],
+	});
+	assert.equal(progressSignalsChanged(first, second), true);
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test("startBatch records lane.heartbeat during stub worker delay", async () => {
 	const projectRoot = await initGitRepo("spine-heartbeat-");
 	const prevStub = process.env.SPINE_WORKER_STUB;

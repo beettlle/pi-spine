@@ -124,8 +124,9 @@ export async function runWorker({
 	laneCorrelationId,
 	config = {},
 	onHeartbeat,
-	onWorkerPid,
-	timeoutMs = DEFAULT_TIMEOUT_MS,
+onWorkerPid,
+fileScopePaths = [],
+timeoutMs = DEFAULT_TIMEOUT_MS,
 }) {
 	const donePath = path.join(taskFolder, ".DONE");
 	if (fs.existsSync(donePath)) {
@@ -204,7 +205,7 @@ export async function runWorker({
 		}
 
 		const now = Date.now();
-		const signals = collectProgressSignals({ worktreePath, taskFolder, laneBranch });
+		const signals = collectProgressSignals({ worktreePath, taskFolder, laneBranch, fileScopePaths });
 		if (progressSignalsChanged(lastSignals, signals)) {
 			lastProgressAt = now;
 			lastSignals = signals;

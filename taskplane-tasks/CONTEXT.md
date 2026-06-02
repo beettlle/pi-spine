@@ -3,13 +3,12 @@
 **Last Updated:** 2026-06-02
 **Status:** Active
 **Next Task ID:** TP-031
-**Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
 
 ## Current State
 
-**Phases 0–3 complete on `main`.** **101/101** tests pass locally (`SPINE_WORKER_STUB=1`). Lane auto-commit, integrate validation, retry/skip, abort archive, and multi-lane engine shipped (TP-015–TP-019).
+**Phases 0–6 complete on `main`.** **215/215** tests pass locally (`SPINE_WORKER_STUB=1`). Phase 7 publish prep (TP-030) complete; npm publish deferred to operator.
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -101,15 +100,15 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Re-opened** — stub-free batch queued | TP-028 |
+| TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Done** | TP-028 |
 
 ### Phase 7 — Publish & migration (re-opened)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Re-opened** — after TP-029 | TP-029 |
+| TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Done** | TP-029 |
 
-**Orchestration note:** Prior batch `20260602T180119` wrote `.DONE` only (stub worker). Run with `SPINE_WORKER_STUB=0` and `pi` on PATH.
+**Orchestration note:** Batch `20260602T181027` resumed via fresh batch after TP-015 single-task resume limit; land loop completed on `main`.
 
 ---
 

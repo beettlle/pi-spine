@@ -9,7 +9,7 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 |----|---------------------|----------------------|--------|
 | GAP-RETRY-01 | `orch_retry_task` resets task record but not segment frontier | §18.5 atomic retry | **Closed** — `spine batch retry` + `/spine-retry-task` (TP-017) |
 | GAP-ABORT-01 | Abort deletes `.pi/batch-state.json` without guaranteed segment archive | §18.6 archive-first abort | **Closed** — `spine batch abort` + `/spine-abort` (TP-018) |
-| GAP-STALL-01 | Stall kill on tool-call silence only | §18.4 progress-aware stall | Open — pi-spine Phase 3 |
+| GAP-STALL-01 | Stall kill on tool-call silence only | §18.4 progress-aware stall, FR-WORK-10 | **Closed (TP-029)** — STATUS mtime, lane commit, file-scope mtime in `collectProgressSignals`; tests in `heartbeat.test.mjs`, `incidents.test.mjs` |
 | GAP-MERGE-01 | Force-resume can merge succeeded lanes while failed task pending | §17.4 mixed-outcome policy | **Closed (TP-019)** — wave merge blocked until all tasks terminal/skipped/force-merge |
 | GAP-POST-01 | Supervisor summary claims batch "ran smoothly" with failures | NFR-OBS-03 | **Closed (TP-022)** — `generateBatchPostMortem` + evidence `summary.md` |
 | GAP-REV-01 | Plan review fail-open when review tool errors at level > 0 | FR-REV-06 | **Closed (TP-020)** — `spine review step` + fail-closed worker |
@@ -22,4 +22,8 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 
 ## Verification
 
-When pi-spine Phase 6 runs, add regression tests that reproduce each gap against Taskplane (optional baseline) and assert pi-spine does not regress.
+| Phase | Evidence |
+|-------|----------|
+| Phase 6 (TP-029) | [`phase6-dogfood-report.md`](phase6-dogfood-report.md), [`tests/compat/incidents.test.mjs`](../../tests/compat/incidents.test.mjs), [`tests/batch/integration-abc.test.mjs`](../../tests/batch/integration-abc.test.mjs) |
+
+Regression tests assert pi-spine behavior for each incident **I-01–I-10**; optional Taskplane baseline comparison is not required for CI.
