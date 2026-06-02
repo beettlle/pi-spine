@@ -2,6 +2,11 @@
  * spine settings show — read-only display of editable spine-config fields (FR-CFG-03).
  */
 
+import {
+	formatConfigSourceDetail,
+	getValueAtPath as getConfigValueAtPath,
+	listEnvAwareDisplayFields,
+} from "../config/env-overrides.mjs";
 import { listEditableFields, parseSettingPath } from "../config/settings-fields.mjs";
 
 /**
@@ -10,15 +15,7 @@ import { listEditableFields, parseSettingPath } from "../config/settings-fields.
  * @returns {unknown}
  */
 export function getValueAtPath(config, dottedPath) {
-	const parts = dottedPath.split(".");
-	let current = config;
-	for (const part of parts) {
-		if (current == null || typeof current !== "object") {
-			return undefined;
-		}
-		current = /** @type {Record<string, unknown>} */ (current)[part];
-	}
-	return current;
+	return getConfigValueAtPath(config, dottedPath);
 }
 
 /**
@@ -54,10 +51,27 @@ export function buildSettingsShowFields(config) {
 
 /**
  * @param {object} config
- * @param {{ path?: string, json?: boolean }} [options]
+ * @param {Record<string, import("../config/env-overrides.mjs").ConfigValueSource>} [sources]
+ * @param {Record<string, string>} [envVars]
+ */
+export function buildEnvAwareShowFields(config, sources, envVars) {
+	return listEnvAwareDisplayFields().map((field) => ({
+		path: field.path,
+		label: field.label,
+		value: getValueAtPath(config, field.path),
+		type: field.type,
+		source: sources?.[field.path] ?? "file",
+		envVar: envVars?.[field.path],
+		detail: formatConfigSourceDetail(sources, envVars, field.path, getValueAtPath(config, field.path)),
+	}));
+}
+
+/**
+ * @param {object} config
+ * @param {{ path?: string, json?: boolean, sources?: Record<string, string>, envVars?: Record<string, string> }} [options]
  * @returns {{ exitCode: number, output: string, error?: string, suggestedCommand?: string }}
  */
-export function formatSettingsShow(config, { path, json = false } = {}) {
+export function formatSettingsShow(config, { path, json = false, sources, envVars } = {}) {
 	if (path) {
 		const parsed = parseSettingPath(path);
 		if (!parsed.ok) {
@@ -77,31 +91,44 @@ export function formatSettingsShow(config, { path, json = false } = {}) {
 		}
 
 		const value = getValueAtPath(config, parsed.path);
+		const source = sources?.[parsed.path];
+		const envVar = envVars?.[parsed.path];
 		if (json) {
 			return {
 				exitCode: 0,
-				output: `${JSON.stringify({ path: parsed.path, value }, null, 2)}\n`,
+				output: `${JSON.stringify({ path: parsed.path, value, source, envVar }, null, 2)}\n`,
 			};
 		}
 
+		const suffix =
+			source === "env" && envVar ? ` (${source}: ${envVar})` : source ? ` (${source})` : "";
 		return {
 			exitCode: 0,
-			output: `${formatSettingValue(value, parsed.field.type)}\n`,
+			output: `${formatSettingValue(value, parsed.field.type)}${suffix}\n`,
 		};
 	}
 
+	const envAwareFields = buildEnvAwareShowFields(config, sources, envVars);
 	const fields = buildSettingsShowFields(config);
 	if (json) {
 		return {
 			exitCode: 0,
-			output: `${JSON.stringify({ fields }, null, 2)}\n`,
+			output: `${JSON.stringify({ envAwareFields, fields }, null, 2)}\n`,
 		};
 	}
 
-	const lines = ["", "Spine settings", ""];
+	const lines = ["", "Effective config (env > file)", ""];
+	for (const field of envAwareFields) {
+		lines.push(`${field.path.padEnd(28)} ${field.label}: ${field.detail}`);
+	}
+	lines.push("", "Spine settings (editable via settings set)", "");
 	for (const field of fields) {
+		const source = sources?.[field.path];
+		const envVar = envVars?.[field.path];
+		const suffix =
+			source === "env" && envVar ? ` (${source}: ${envVar})` : source ? ` (${source})` : "";
 		lines.push(
-			`${field.path.padEnd(28)} ${field.label}: ${formatSettingValue(field.value, field.type)}`,
+			`${field.path.padEnd(28)} ${field.label}: ${formatSettingValue(field.value, field.type)}${suffix}`,
 		);
 	}
 	lines.push("");

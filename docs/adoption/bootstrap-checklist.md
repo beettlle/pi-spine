@@ -72,6 +72,15 @@ spine plan pending
 spine preflight
 ```
 
+**Optional — environment overrides (FR-CFG-04):** runtime values override `.spine/spine-config.json` (precedence: **env > file**).
+
+| Variable | Config field | Example |
+|----------|--------------|---------|
+| `SPINE_TASKS_ROOT` | `paths.tasksRoot` | `SPINE_TASKS_ROOT=alt-tasks spine plan pending` |
+| `SPINE_MAX_LANES` | `lanes.maxParallel` | `SPINE_MAX_LANES=2 spine batch start pending` |
+
+Inspect effective values and source with `spine settings show` or `spine doctor` (look for `source: env`).
+
 Resolve reconcile hints (stale batch state, limbo worktrees) before `batch start`.
 
 ### 6. First batch (stub, then real pi)

@@ -28,6 +28,10 @@ import {
 } from "../src/doctor/suggest-max-parallel.mjs";
 import { buildStalePathDoctorCheck } from "../src/doctor/stale-path.mjs";
 import { buildCoexistenceDoctorCheck } from "../src/doctor/coexistence.mjs";
+import {
+	formatConfigSourceDetail,
+	resolveTasksRootPath,
+} from "../src/config/env-overrides.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -191,14 +195,10 @@ ${result.stderr ?? ""}`.trim();
 }
 
 function resolveTasksRoot(projectRoot, configResult) {
-	if (configResult.config?.paths?.tasksRoot) {
-		return path.join(projectRoot, configResult.config.paths.tasksRoot);
+	if (!configResult.config) {
+		return null;
 	}
-
-	const envRoot = process.env.SPINE_TASKS_ROOT;
-	if (envRoot) return path.resolve(projectRoot, envRoot);
-
-	return null;
+	return resolveTasksRootPath(projectRoot, configResult.config);
 }
 
 export function runDoctorChecks(projectRoot = process.cwd()) {
@@ -282,8 +282,30 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			suggestedCommand: configResult.error.suggestedCommand,
 		});
 	} else {
+		const tasksRootDetail = formatConfigSourceDetail(
+			configResult.sources,
+			configResult.envVars,
+			"paths.tasksRoot",
+			configResult.config.paths?.tasksRoot,
+		);
+		const maxParallelDetail = formatConfigSourceDetail(
+			configResult.sources,
+			configResult.envVars,
+			"lanes.maxParallel",
+			configResult.config.lanes?.maxParallel,
+		);
 		record(".spine/spine-config.json valid", true, {
-			detail: `project: ${configResult.config.project.name}, tasks: ${configResult.config.paths.tasksRoot}`,
+			detail: `project: ${configResult.config.project.name}`,
+		});
+		checks.push({
+			label: "paths.tasksRoot (effective)",
+			ok: true,
+			detail: tasksRootDetail,
+		});
+		checks.push({
+			label: "lanes.maxParallel (effective)",
+			ok: true,
+			detail: maxParallelDetail,
 		});
 
 		const configuredMaxParallel = configResult.config.lanes?.maxParallel ?? 3;

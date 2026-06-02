@@ -1,6 +1,10 @@
 /**
  * FR-CFG-03 editable spine-config field registry (TP-032).
  * Pure validation — no filesystem writes.
+ *
+ * FR-CFG-04 (TP-046): `paths.tasksRoot` and `lanes.maxParallel` may be overridden at
+ * runtime by `SPINE_TASKS_ROOT` and `SPINE_MAX_LANES` (precedence: env > file).
+ * Only `lanes.maxParallel` is editable via `spine settings set`; tasks root is env/file only.
  */
 
 /** @typedef {"boolean" | "number" | "string" | "enum"} SettingFieldType */
