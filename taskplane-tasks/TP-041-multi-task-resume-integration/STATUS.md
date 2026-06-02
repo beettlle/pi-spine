@@ -1,17 +1,18 @@
 # TP-041: Multi-task resume integration + docs — Status
 
-**Status:** Pending | **Last Updated:** 2026-06-02 | **Review Level:** 1 | **Size:** S
+**Status:** Done | **Last Updated:** 2026-06-02 | **Review Level:** 1 | **Size:** S
 
-### Step 0 — Not Started | Step 1 — Not Started | Step 2 — Not Started | Step 3 — Not Started
+### Step 0 — Done | Step 1 — Done | Step 2 — Done | Step 3 — Done
 
 ## Summary
 
-_(Pending execution.)_
+Added `tests/batch/resume-multi-integration.test.mjs` (start → paused state → resume, diagnosis headline, start path). `reconcileBatch` / `buildHeadline` report multi-task paused batches with pending task count. Updated README recovery, CONTEXT Phase 8 + execution policy, gap list GAP-RESUME-MULTI-01 closed.
 
 ## Baseline
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — **280/280** pass (final)
 
 ## Commits
 
-_(none yet)_
+- `feat(TP-041): add multi-task resume integration test`
+- `feat(TP-041): multi-task paused diagnosis and docs`
