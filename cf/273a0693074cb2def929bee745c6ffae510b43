@@ -1,0 +1,27 @@
+taskplane-tasks/dependencies.json
+  s_14d12b2a61ce27::t_9e4b7bab6b6fff 71-74
+taskplane-tasks/TP-029-phase6-compat-validation/STATUS.md
+  s_14d12b2a61ce27::t_71de083b34b0c9 1-23
+taskplane-tasks/CONTEXT.md
+  s_14d12b2a61ce27::t_0dbf65d829914a 100-105
+  s_14d12b2a61ce27::t_0566ac63fb9394 5
+taskplane-tasks/TP-029-phase6-compat-validation/PROMPT.md
+  s_14d12b2a61ce27::t_71de083b34b0c9 1-59,61-82,84-102,104-155,157-190
+  s_14d12b2a61ce27::t_bab79ce896e8e0 60,83,103,156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "cf273a0693074cb2def929bee745c6ffae510b43",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
