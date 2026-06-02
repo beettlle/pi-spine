@@ -129,15 +129,34 @@ test("spine_review_step handler returns APPROVE via stub review", async () => {
 	}
 });
 
-test("spine_review_step handler marks non-zero exitCode as tool error", async () => {
-	const prev = process.env.SPINE_TASK_FOLDER;
-	process.env.SPINE_TASK_FOLDER = "/nonexistent/task-folder";
+
+test("spine_review_step handler marks stub spawn failure as tool error", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-tool-fail-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const prev = {
+		taskFolder: process.env.SPINE_TASK_FOLDER,
+		worktree: process.env.SPINE_WORKTREE,
+		stubFail: process.env.SPINE_REVIEW_STUB_FAIL,
+	};
+	process.env.SPINE_TASK_FOLDER = taskFolder;
+	process.env.SPINE_WORKTREE = root;
+	process.env.SPINE_REVIEW_STUB_FAIL = "1";
 	try {
-		const result = await spineReviewStepTool.execute("tc-2", { step: 99, type: "plan" });
+		const result = await spineReviewStepTool.execute("tc-2", { step: 1, type: "plan" });
 		assert.equal(result.isError, true);
-		assert.ok(result.details.exitCode !== 0);
+		assert.equal(result.details.spawnFailed, true);
+		assert.equal(result.details.exitCode, 1);
 	} finally {
-		if (prev === undefined) delete process.env.SPINE_TASK_FOLDER;
-		else process.env.SPINE_TASK_FOLDER = prev;
+		if (prev.stubFail === undefined) delete process.env.SPINE_REVIEW_STUB_FAIL;
+		else process.env.SPINE_REVIEW_STUB_FAIL = prev.stubFail;
+		for (const [key, envKey] of [
+			["taskFolder", "SPINE_TASK_FOLDER"],
+			["worktree", "SPINE_WORKTREE"],
+		]) {
+			const value = prev[key];
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
+		}
+		await rm(root, { recursive: true, force: true });
 	}
 });
