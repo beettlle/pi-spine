@@ -1,0 +1,27 @@
+taskplane-tasks/CONTEXT.md
+  s_14d12b2a61ce27::t_5082d0f0fbe41a 128
+  s_14d12b2a61ce27::t_b780842c600fb8 5
+  s_14d12b2a61ce27::t_7436047d2e4838 187
+taskplane-tasks/TP-042-lane-parallel-packing/PROMPT.md
+  s_14d12b2a61ce27::t_80d078dfb2f369 1-165
+taskplane-tasks/dependencies.json
+  s_14d12b2a61ce27::t_c174937110f5c4 110-113
+taskplane-tasks/TP-042-lane-parallel-packing/STATUS.md
+  s_14d12b2a61ce27::t_80d078dfb2f369 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "8d5825b4a382a52687869aba8e25bb3f2ef42836",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
