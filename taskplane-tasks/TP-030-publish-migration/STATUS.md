@@ -1,19 +1,20 @@
 # TP-030: Publish prep + Taskplane migration CLI — Status
 
-**Status:** Re-opened | **Last Updated:** 2026-06-02 | **Review Level:** 2 | **Size:** M
+**Status:** Done | **Last Updated:** 2026-06-02 | **Review Level:** 2 | **Size:** M
 
-**Re-open reason:** Prior batch `20260602T180119` completed with stub worker only (`.DONE` without deliverables). Re-queued after TP-029 stub-free run.
-
-### Step 0 — Not Started | Step 1 — Not Started | Step 2 — Not Started | Step 3 — Not Started | Step 4 — Not Started | Step 5 — Not Started
+### Step 0 — Done | Step 1 — Done | Step 2 — Done | Step 3 — Done | Step 4 — Done | Step 5 — Done
 
 ## Summary
 
-- v1.0 tail re-opened: `spine migrate-from-taskplane`, `spine init --preset taskplane-compat`, npm publish metadata, release checklist.
+- `spine migrate-from-taskplane` + `src/migrate/taskplane-config.mjs`
+- `spine init --preset taskplane-compat`
+- LICENSE, package.json publish metadata, `docs/release/v1.0-checklist.md`
+- Tests: `tests/migrate/`, `tests/spine-init-preset.test.mjs`
 
 ## Baseline
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — record count: ___
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — **215** pass
 
 ## Commits
 
-- (none yet — prior stub `.DONE` invalidated)
+- feat(TP-030): migrate-from-taskplane, taskplane-compat preset, release checklist

@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { getVersion } from "./get-version.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
+import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
 import {
 	buildMaxParallelDoctorCheck,
 	detectCpuCount,
@@ -517,6 +518,7 @@ ${c.bold}Usage:${c.reset}
 
 ${c.bold}Commands:${c.reset}
   ${c.cyan}init${c.reset}           Scaffold .spine/ config and agent stubs
+  ${c.cyan}migrate-from-taskplane${c.reset}  Migrate .pi/taskplane-config.json to spine-config.json
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
@@ -535,12 +537,21 @@ ${c.bold}Commands:${c.reset}
 
 ${c.bold}Init options:${c.reset}
   --tasks-root PATH   Tasks root relative to project (default: spine-tasks)
+  --preset NAME       Preset bundle (taskplane-compat for Taskplane migrants)
   --dry-run           Preview files without writing
   --force             Overwrite existing .spine/spine-config.json and agent stubs
+
+${c.bold}Migrate options:${c.reset}
+  --source PATH       Taskplane config path (default: .pi/taskplane-config.json)
+  --dry-run           Print mapped spine-config.json without writing
+  --force             Overwrite existing .spine/spine-config.json
+  --json              Emit machine-readable result JSON
 
 ${c.bold}Examples:${c.reset}
   spine init                                    # scaffold defaults
   spine init --tasks-root taskplane-tasks       # use existing task folder
+  spine init --preset taskplane-compat --tasks-root taskplane-tasks
+  spine migrate-from-taskplane --dry-run --source .pi/taskplane-config.json
   spine init --dry-run                          # preview changes
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
@@ -573,6 +584,9 @@ if (isMainModule) {
 		switch (command) {
 			case "init":
 				cmdInit(args);
+				break;
+			case "migrate-from-taskplane":
+				cmdMigrateFromTaskplane(args);
 				break;
 			case "doctor":
 				cmdDoctor();

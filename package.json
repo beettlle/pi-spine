@@ -29,7 +29,16 @@
   "scripts": {
     "doctor": "node bin/spine.mjs doctor",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs tests/compat/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs tests/compat/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs tests/migrate/*.test.mjs",
+    "prepublishOnly": "npm run typecheck && SPINE_WORKER_STUB=1 npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beettlle/pi-spine.git"
+  },
+  "homepage": "https://github.com/beettlle/pi-spine#readme",
+  "bugs": {
+    "url": "https://github.com/beettlle/pi-spine/issues"
   },
   "files": [
     "bin/",

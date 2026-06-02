@@ -23,6 +23,8 @@ export const AGENT_STUB_FILES = [
 ];
 
 export const DEFAULT_TASKS_ROOT = "spine-tasks";
+export const TASKPLANE_COMPAT_TASKS_ROOT = "taskplane-tasks";
+export const TASKPLANE_COMPAT_PRESET = "taskplane-compat";
 
 export const SPINE_GITIGNORE_ENTRIES = [
 	".spine/runtime/",
@@ -78,20 +80,45 @@ export function parseInitArgs(args) {
 	const dryRun = args.includes("--dry-run");
 	const tasksRootIdx = args.indexOf("--tasks-root");
 	const tasksRootRaw = tasksRootIdx !== -1 ? args[tasksRootIdx + 1] : null;
+	const presetIdx = args.indexOf("--preset");
+	const presetRaw = presetIdx !== -1 ? args[presetIdx + 1] : null;
 
-	let tasksRoot = DEFAULT_TASKS_ROOT;
+	if (presetRaw?.startsWith("--")) {
+		throw new Error("Missing value for --preset <name>.");
+	}
+	if (presetRaw && presetRaw !== TASKPLANE_COMPAT_PRESET) {
+		throw new Error(`Unknown preset: ${presetRaw}. Supported: ${TASKPLANE_COMPAT_PRESET}.`);
+	}
+
+	const preset = presetRaw ?? null;
+	let tasksRoot = preset === TASKPLANE_COMPAT_PRESET ? TASKPLANE_COMPAT_TASKS_ROOT : DEFAULT_TASKS_ROOT;
 	if (tasksRootRaw) {
 		tasksRoot = normalizeTasksRoot(tasksRootRaw);
 	}
 
-	return { force, dryRun, tasksRoot };
+	return { force, dryRun, tasksRoot, preset };
 }
 
-export function buildSpineConfig(projectRoot, tasksRoot) {
+export function applyTaskplaneCompatPreset(config) {
+	const testingCommand = "npm run typecheck && npm test";
+	config.paths.tasksRoot = config.paths.tasksRoot || TASKPLANE_COMPAT_TASKS_ROOT;
+	config.testing.build = testingCommand;
+	config.testing.test = testingCommand;
+	config.dashboard = { ...(config.dashboard ?? {}), port: 8109 };
+	config.gates = { ...(config.gates ?? {}), requireBeforeIntegrate: true };
+	config.lanes = { ...(config.lanes ?? {}), maxParallel: 3 };
+	return config;
+}
+
+export function buildSpineConfig(projectRoot, tasksRoot, { preset } = {}) {
 	const template = loadSpineConfigTemplate();
 	const config = structuredClone(template);
 	config.project.name = path.basename(projectRoot);
 	config.paths.tasksRoot = tasksRoot;
+	if (preset === TASKPLANE_COMPAT_PRESET) {
+		applyTaskplaneCompatPreset(config);
+		config.paths.tasksRoot = tasksRoot;
+	}
 	return config;
 }
 
@@ -154,7 +181,7 @@ export function runInit(projectRoot, args = []) {
 		return { ok: false, error: err.message, exitCode: 1 };
 	}
 
-	const { force, dryRun, tasksRoot } = parsed;
+	const { force, dryRun, tasksRoot, preset } = parsed;
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
 
 	if (fs.existsSync(configPath) && !force) {
@@ -165,7 +192,7 @@ export function runInit(projectRoot, args = []) {
 		};
 	}
 
-	const config = buildSpineConfig(projectRoot, tasksRoot);
+	const config = buildSpineConfig(projectRoot, tasksRoot, { preset });
 	const validationError = validateSpineConfig(config);
 	if (validationError) {
 		return {
