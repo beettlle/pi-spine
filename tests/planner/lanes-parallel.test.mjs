@@ -6,7 +6,7 @@ import test from "node:test";
 import { assignLanesToWaves } from "../../src/planner/lanes.mjs";
 import { buildPlan } from "../../src/planner/index.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { formatPlanHuman } from "../../bin/spine-plan.mjs";
+import { formatPlanHuman } from "../../src/planner/format-plan.mjs";
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "../..");
 
@@ -88,10 +88,10 @@ test("buildPlan for TP-034 TP-038 TP-041 lists three lanes in human output", () 
 
 	assert.equal(plan.waves[0].virtualLaneCount, 3);
 	const human = formatPlanHuman(plan);
-	assert.match(human, /Lane 0: TP-034/);
-	assert.match(human, /Lane 1: TP-038/);
-	assert.match(human, /Lane 2: TP-041/);
-	assert.doesNotMatch(human, /Lane 0: TP-034, TP-038, TP-041/);
+	assert.match(human, /Lane 1: TP-034/);
+	assert.match(human, /Lane 2: TP-038/);
+	assert.match(human, /Lane 3: TP-041/);
+	assert.doesNotMatch(human, /Lane 1: TP-034, TP-038, TP-041/);
 });
 
 test("spine plan CLI shows three lanes for TP-034 TP-038 TP-041", () => {
@@ -100,8 +100,8 @@ test("spine plan CLI shows three lanes for TP-034 TP-038 TP-041", () => {
 		["bin/spine.mjs", "plan", "TP-034", "TP-038", "TP-041"],
 		{ cwd: PROJECT_ROOT, encoding: "utf-8" },
 	);
-	assert.match(output, /Lane 0: TP-034/);
-	assert.match(output, /Lane 1: TP-038/);
-	assert.match(output, /Lane 2: TP-041/);
-	assert.doesNotMatch(output, /Lane 0: TP-034, TP-038, TP-041/);
+	assert.match(output, /Lane 1: TP-034/);
+	assert.match(output, /Lane 2: TP-038/);
+	assert.match(output, /Lane 3: TP-041/);
+	assert.doesNotMatch(output, /Lane 1: TP-034, TP-038, TP-041/);
 });

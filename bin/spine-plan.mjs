@@ -11,36 +11,9 @@ import { fileURLToPath } from 'node:url';
 
 import { loadSpineConfig } from './spine-config.mjs';
 import { buildPlan } from '../src/planner/index.mjs';
+import { formatPlanHuman } from '../src/planner/format-plan.mjs';
 
-export function formatPlanHuman(plan) {
-	const lines = [];
-	lines.push(`\nSpine plan (${plan.scope?.mode ?? 'custom'})`);
-	lines.push(
-		`Tasks: ${plan.metadata?.tasksSelected ?? (plan.tasks ? Object.keys(plan.tasks).length : 'unknown')}`,
-	);
-	if (plan.scope?.mode === 'pending' && plan.metadata?.tasksExcluded != null) {
-		lines.push(`Excluded (done on disk): ${plan.metadata.tasksExcluded}`);
-	}
-	lines.push('');
-
-	for (const wave of plan.waves ?? []) {
-		lines.push(`Wave ${wave.index}: ${wave.taskIds.join(', ')}`);
-		for (const tick of wave.ticks ?? []) {
-			const nonEmpty = tick.lanes
-				.map((taskIds, laneIndex) => ({ taskIds, laneIndex }))
-				.filter(({ taskIds }) => taskIds.length > 0);
-			if (nonEmpty.length === 0) continue;
-
-			lines.push(`  Tick ${tick.index}:`);
-			for (const { taskIds, laneIndex } of nonEmpty) {
-				lines.push(`    Lane ${laneIndex}: ${taskIds.join(', ')}`);
-			}
-		}
-		lines.push('');
-	}
-
-	return lines.join('\n').trimEnd() + '\n';
-}
+export { formatPlanHuman } from '../src/planner/format-plan.mjs';
 
 function getTimestampForFilename(d = new Date()) {
 	// Keep filename safe across platforms.
