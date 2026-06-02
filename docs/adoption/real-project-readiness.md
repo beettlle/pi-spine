@@ -30,9 +30,15 @@
 
 ---
 
+## Local install guide
+
+Step-by-step install from git checkout, `pi install -l`, `npm link`, and PATH troubleshooting: **[local-install.md](./local-install.md)** (TP-043).
+
+---
+
 ## Adoption tiers
 
-**Tier 0 — pi-spine repo:** `pi install . -l`, `node bin/spine.mjs doctor`, stub tests.
+**Tier 0 — pi-spine repo:** `pi install . -l`, `node bin/spine.mjs doctor`, stub tests (see [local-install.md](./local-install.md)).
 
 **Tier 1 — consumer stub:** `spine init`, `SPINE_WORKER_STUB=1 spine batch start <scope>`, land loop.
 
