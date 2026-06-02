@@ -446,6 +446,13 @@ async function cmdGate(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdDashboard(args) {
+	const { runSpineDashboard } = await import("./spine-dashboard.mjs");
+	const result = await runSpineDashboard({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdReview(args) {
 	const sub = args[0];
 	if (sub !== "step") {
@@ -510,6 +517,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
+ ${c.cyan}dashboard${c.reset}       Local SSE dashboard (default http://127.0.0.1:8109)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -536,6 +544,8 @@ ${c.bold}Examples:${c.reset}
   spine state validate                          # validate active batch-state.json
   spine next                                    # suggested next command (dry-run)
   spine next --execute                          # run suggested spine command
+  spine dashboard                               # local status dashboard (loopback only)
+  spine dashboard --json                        # one-shot snapshot JSON
   spine version                                 # show package and environment info
 `);
 }
@@ -586,6 +596,9 @@ if (isMainModule) {
 				break;
 			case "integrate":
 				await cmdIntegrate(args);
+				break;
+			case "dashboard":
+				await cmdDashboard(args);
 				break;
 			case "version":
 			case "--version":
