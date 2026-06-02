@@ -1,6 +1,8 @@
 import { defineTool, type AgentToolResult, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { runSpineReviewStep } from "../../bin/spine-review-step.mjs";
+import { reportTaskProgress } from "../../src/worker-tools/report-progress.mjs";
+import { requestWorkerGate } from "../../src/worker-tools/request-gate.mjs";
 
 export interface SpineReviewStepParams {
 	step: number;
@@ -114,7 +116,174 @@ export const spineReviewStepTool = defineTool({
 	},
 });
 
+export interface SpineReportProgressParams {
+	step: number;
+	checkboxesComplete?: number;
+	checkboxesTotal?: number;
+}
+
+export interface SpineReportProgressDetails {
+	ok: boolean;
+	eventId?: string;
+	error?: string;
+	exitCode: number;
+}
+
+type SpineReportProgressToolResult = AgentToolResult<SpineReportProgressDetails> & { isError?: boolean };
+
+function parseLaneNumber(value: string | undefined): number | undefined {
+	if (value == null || value === "") return undefined;
+	const parsed = Number(value);
+	return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+/** Run report progress logic shared by the Pi tool handler. */
+export function executeSpineReportProgress(
+	params: SpineReportProgressParams,
+): SpineReportProgressToolResult {
+	const projectRoot = process.env.SPINE_PROJECT_ROOT ?? "";
+	const batchId = process.env.SPINE_BATCH_ID ?? "";
+	const taskId = process.env.SPINE_TASK_ID ?? "";
+	const laneId = process.env.SPINE_LANE_ID;
+	const laneNumber = parseLaneNumber(process.env.SPINE_LANE_NUMBER ?? process.env.SPINE_LANE_ID);
+	const correlationId = process.env.SPINE_LANE_CORRELATION_ID;
+
+	const result = reportTaskProgress({
+		projectRoot,
+		batchId,
+		taskId,
+		laneNumber,
+		laneId: laneId || undefined,
+		step: params.step,
+		checkboxesComplete: params.checkboxesComplete,
+		checkboxesTotal: params.checkboxesTotal,
+		correlationId,
+	});
+
+	const details: SpineReportProgressDetails = {
+		ok: result.ok,
+		eventId: result.eventId,
+		error: result.error,
+		exitCode: result.ok ? 0 : 1,
+	};
+
+	const text = result.ok
+		? JSON.stringify({ ok: true, eventId: result.eventId })
+		: (result.error ?? "report progress failed");
+
+	return {
+		content: [{ type: "text" as const, text }],
+		details,
+		isError: !result.ok,
+	};
+}
+
+export const spineReportProgressTool = defineTool({
+	name: "spine_report_progress",
+	label: "Spine Report Progress",
+	description:
+		"Emit structured step progress to the batch journal (task.step_completed). Suppresses stall kill when the engine detects recent progress.",
+	promptSnippet: "Report worker step completion to the batch journal",
+	promptGuidelines: [
+		"Call after completing a PROMPT step to record progress for stall detection.",
+		"Prefer this tool over bash for spine report progress when available.",
+	],
+	parameters: Type.Object({
+		step: Type.Integer({ minimum: 0, description: "Step number from PROMPT.md." }),
+		checkboxesComplete: Type.Optional(
+			Type.Integer({ minimum: 0, description: "Checkboxes completed in the current step." }),
+		),
+		checkboxesTotal: Type.Optional(
+			Type.Integer({ minimum: 0, description: "Total checkboxes in the current step." }),
+		),
+	}),
+	async execute(_toolCallId, params): Promise<SpineReportProgressToolResult> {
+		return executeSpineReportProgress(params);
+	},
+});
+
+export interface SpineRequestGateParams {
+	reason?: string;
+}
+
+export interface SpineRequestGateDetails {
+	ok: boolean;
+	notSupported?: boolean;
+	limitation?: string;
+	reason?: string;
+	headline?: string;
+	suggestedCommand?: string;
+	alternatives?: string[];
+	error?: string;
+	exitCode: number;
+}
+
+type SpineRequestGateToolResult = AgentToolResult<SpineRequestGateDetails> & { isError?: boolean };
+
+/** Run request gate logic shared by the Pi tool handler. */
+export function executeSpineRequestGate(params: SpineRequestGateParams): SpineRequestGateToolResult {
+	const projectRoot = process.env.SPINE_PROJECT_ROOT ?? "";
+	const batchId = process.env.SPINE_BATCH_ID ?? "";
+
+	const result = requestWorkerGate({
+		projectRoot,
+		batchId,
+		reason: params.reason,
+	});
+
+	const details: SpineRequestGateDetails = {
+		ok: result.ok,
+		notSupported: result.notSupported,
+		limitation: result.limitation,
+		reason: result.reason,
+		headline: result.headline,
+		suggestedCommand: result.suggestedCommand,
+		alternatives: result.alternatives,
+		error: result.error,
+		exitCode: result.ok ? 0 : 1,
+	};
+
+	const text = JSON.stringify({
+		ok: result.ok,
+		notSupported: result.notSupported,
+		limitation: result.limitation,
+		reason: result.reason,
+		headline: result.headline,
+		suggestedCommand: result.suggestedCommand,
+		alternatives: result.alternatives,
+		error: result.error,
+	});
+
+	return {
+		content: [{ type: "text" as const, text }],
+		details,
+		isError: !result.ok,
+	};
+}
+
+export const spineRequestGateTool = defineTool({
+	name: "spine_request_gate",
+	label: "Spine Request Gate",
+	description:
+		"Request a manual human gate (rare). v1.1 limitation: integrate gates are automatic; returns not_supported with suggestedCommand spine gate.",
+	promptSnippet: "Request operator attention via a human gate (integrate gates are automatic)",
+	promptGuidelines: [
+		"Integrate gates open automatically at batch completion — use spine gate status/approve via operator.",
+		"Worker manual gate requests are not supported in v1.1; this tool returns structured not_supported.",
+	],
+	parameters: Type.Object({
+		reason: Type.Optional(
+			Type.String({ description: "Optional reason for requesting operator attention." }),
+		),
+	}),
+	async execute(_toolCallId, params): Promise<SpineRequestGateToolResult> {
+		return executeSpineRequestGate(params);
+	},
+});
+
 /** Register worker-facing Pi tools (PRD §14.5). */
 export function registerSpineWorkerTools(pi: ExtensionAPI): void {
 	pi.registerTool(spineReviewStepTool);
+	pi.registerTool(spineReportProgressTool);
+	pi.registerTool(spineRequestGateTool);
 }
