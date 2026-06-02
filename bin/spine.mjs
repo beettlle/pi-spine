@@ -477,6 +477,19 @@ async function cmdReview(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdReport(args) {
+	const sub = args[0];
+	if (sub !== "progress") {
+		die(
+			`Unknown report subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine report progress --step N${c.reset} for usage.`,
+		);
+	}
+	const { runSpineReportProgress } = await import("./spine-report-progress.mjs");
+	const result = runSpineReportProgress({ projectRoot: process.cwd(), args: args.slice(1) });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdPlan(args) {
 	const json = args.includes("--json");
 	const scope = args.filter((a) => !a.startsWith("--")).join(" ") || "all";
@@ -526,6 +539,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
+ ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
@@ -562,6 +576,7 @@ ${c.bold}Examples:${c.reset}
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine review step --step N [--type plan|code] # cross-model step review
+  spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM
  spine integrate [--dry-run] [--force-integrate]  # merge orch branch into main
   spine journal replay --batch 20260601T120000  # audit timeline for a batch
@@ -617,6 +632,9 @@ if (isMainModule) {
 				break;
 			case "review":
 				await cmdReview(args);
+				break;
+			case "report":
+				await cmdReport(args);
 				break;
 			case "gate":
 				await cmdGate(args);
