@@ -35,6 +35,7 @@ test("formatSettingsShow lists all editable fields in human mode", () => {
 
 	const result = formatSettingsShow(config);
 	assert.equal(result.exitCode, 0);
+	assert.match(result.output, /Effective config/);
 	assert.match(result.output, /lanes\.maxParallel/);
 	assert.match(result.output, /Max parallel lanes: 2/);
 	assert.match(result.output, /gates\.requireBeforeIntegrate/);
@@ -51,10 +52,14 @@ test("formatSettingsShow returns JSON fields array for all settings", () => {
 		dashboard: { port: 8109 },
 	};
 
-	const result = formatSettingsShow(config, { json: true });
+	const result = formatSettingsShow(config, {
+		json: true,
+		sources: { "lanes.maxParallel": "file" },
+	});
 	assert.equal(result.exitCode, 0);
 	const parsed = JSON.parse(result.output);
 	assert.ok(Array.isArray(parsed.fields));
+	assert.ok(Array.isArray(parsed.envAwareFields));
 	assert.equal(parsed.fields.length, 5);
 	assert.deepEqual(
 		parsed.fields.find((field) => field.path === "lanes.maxParallel"),
@@ -138,6 +143,7 @@ test("spine settings show CLI single path and JSON modes", async () => {
 		const parsed = JSON.parse(json.stdout);
 		assert.ok(Array.isArray(parsed.fields));
 		assert.ok(parsed.fields.some((field) => field.path === "dashboard.port"));
+		assert.ok(Array.isArray(parsed.envAwareFields));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
