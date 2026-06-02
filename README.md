@@ -127,6 +127,13 @@ See `docs/PRD.md` for the full specification.
 
 pi-spine is not on npm yet. To use it on a real project from a git checkout or local path (slash commands, `spine` CLI, file dependency), see **[docs/adoption/local-install.md](docs/adoption/local-install.md)**. After install, `spine doctor` warns when a stale global `spine` on PATH does not match your checkout.
 
+| Doc | Purpose |
+|-----|---------|
+| [local-install.md](docs/adoption/local-install.md) | Git/path install before npm publish |
+| [bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) | First-time consumer setup |
+| [operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures (preflight, land loop, recovery) |
+| [real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |
+
 ---
 
 ## Quick start
@@ -465,6 +472,7 @@ Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows
 |----------|---------|
 | [docs/PRD.md](docs/PRD.md) | Product requirements and implementation contract |
 | [docs/adoption/local-install.md](docs/adoption/local-install.md) | Git/path install before npm publish |
+| [docs/adoption/operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures |
 | [docs/adoption/real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |
 | pi.dev package page | Install and package manifest (when published) |
 

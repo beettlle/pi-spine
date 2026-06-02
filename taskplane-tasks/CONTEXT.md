@@ -70,6 +70,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 ## Execution policy
 
+**Operator runbook:** [`docs/adoption/operator-runbook.md`](../docs/adoption/operator-runbook.md) — install, preflight, start/monitor, land loop, gate races, resume/dismiss/complete, dashboard, Taskplane coexistence, troubleshooting.
+
 1. **Preflight** before every batch: `spine preflight` (clean git, no active batch).
 2. **One task per batch** is still recommended for implementation work; **multi-task resume** is supported when a paused or failed batch has multiple tasks/lanes (`spine batch resume`). Multi-task **start** works when the plan shows one wave with parallel lanes (`spine plan <scope>` first).
 3. **Land loop:** `spine batch start` → monitor `spine status --diagnose` → `spine gate approve` → `spine integrate` → `spine batch complete` → push `main`.
@@ -170,7 +172,7 @@ node bin/spine.mjs batch complete
 git push origin main
 ```
 
-**Operator docs (when TP-049 Done):** [`docs/adoption/operator-runbook.md`](../docs/adoption/operator-runbook.md) (placeholder until task completes).
+**Operator docs:** [`docs/adoption/operator-runbook.md`](../docs/adoption/operator-runbook.md)
 
 ---
 
