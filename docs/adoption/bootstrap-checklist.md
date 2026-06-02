@@ -26,6 +26,8 @@ SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs
 
 Use this fixture to validate install and batch wiring before pointing spine at your real project.
 
+**Real-pi E2E (manual, optional):** after stub smoke passes, run [`real-pi-e2e.md`](./real-pi-e2e.md) / `./scripts/real-pi-adoption-e2e.sh --batch` against `AD-002-real-pi-smoke`.
+
 ---
 
 ## Greenfield bootstrap
