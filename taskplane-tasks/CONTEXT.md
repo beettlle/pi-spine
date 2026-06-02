@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-042
+**Next Task ID:** TP-043
 
 ---
 
@@ -125,6 +125,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-039 | Multi-task resume validation | **Done** | TP-030 |
 | TP-040 | Multi-task resume engine + detached | **Staged** | TP-039 |
 | TP-041 | Multi-task resume integration + docs | **Staged** | TP-040 |
+| TP-042 | Lane packing vs parallel execution (planner + engine + dashboard) | **Staged** | TP-019, TP-026 |
 
 **Suggested spine run order** (preflight before each batch; default detached — monitor with `spine status --diagnose`):
 
@@ -183,6 +184,7 @@ In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
 | **P2** | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Staged (TP-032–035)** |
 | **P2** | Worker MCP tools (§14.5) | 8 | **Staged (TP-036–038)** |
 | **P1** | Multi-task batch resume | 8 | **Staged (TP-039–041)** |
+| **P1** | Lane packing vs parallel execution (GAP-SCHED-01) | 8 | **Staged (TP-042)** |
 
 ---
 
