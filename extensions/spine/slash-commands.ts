@@ -2,7 +2,8 @@ import type {
 	ExtensionAPI,
 	ExtensionCommandContext,
 } from "@earendil-works/pi-coding-agent";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,6 +25,7 @@ export const SPINE_SLASH_COMMAND_NAMES = [
 	"spine-deps",
 	"spine-dismiss",
 	"spine-next",
+	"spine-dashboard",
 ] as const;
 
 type SpineSlashCommandName = (typeof SPINE_SLASH_COMMAND_NAMES)[number];
@@ -90,6 +92,10 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine-next",
 		description: "Print suggested next command from reconciliation",
+	},
+	{
+		name: "spine-dashboard",
+		description: "Start local dashboard (usage: /spine-dashboard [--port N])",
 	},
 ];
 
@@ -280,6 +286,25 @@ function runSpineNext(argsText: string, cwd = process.cwd()) {
 		ok: result.status === 0,
 		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
 	};
+}
+
+function runSpineDashboardDetached(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const child = spawn(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "dashboard", ...tokens],
+		{
+			cwd,
+			detached: true,
+			stdio: "ignore",
+		},
+	);
+	child.unref();
+	return { ok: true };
 }
 
 function runSpineStatus(argsText: string, cwd = process.cwd()) {
@@ -553,6 +578,42 @@ async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || "integrate completed", "info");
 }
 
+function resolveDashboardNotifyPort(args: string, cwd = process.cwd()): number {
+	const portMatch = args.match(/--port\s+(\d+)/);
+	if (portMatch) return Number(portMatch[1]);
+
+	try {
+		const configPath = path.join(cwd, ".spine", "spine-config.json");
+		if (fs.existsSync(configPath)) {
+			const parsed = JSON.parse(fs.readFileSync(configPath, "utf-8")) as {
+				dashboard?: { port?: number };
+			};
+			const fromConfig = parsed.dashboard?.port;
+			if (fromConfig != null && !Number.isNaN(Number(fromConfig))) {
+				return Number(fromConfig);
+			}
+		}
+	} catch {
+		// keep default
+	}
+
+	return 8109;
+}
+
+async function spineDashboardHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const port = resolveDashboardNotifyPort(args);
+
+	runSpineDashboardDetached(args);
+	ctx.ui.notify(
+		`pi-spine dashboard starting in the background.
+
+Open http://127.0.0.1:${port}/ in your browser (loopback only).
+
+CLI: \`spine dashboard\` · configure port in \`.spine/spine-config.json\` (\`dashboard.port\`, default 8109).`,
+		"info",
+	);
+}
+
 /** Register all PRD §15.1 pi slash commands with Phase 0 stub handlers. */
 export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 	for (const { name, description } of SPINE_SLASH_COMMANDS) {
@@ -583,7 +644,9 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 															? spineGateHandler
 															: name === "spine-integrate"
 																? spineIntegrateHandler
-																: stubHandler(name),
+																: name === "spine-dashboard"
+																	? spineDashboardHandler
+																	: stubHandler(name),
 		});
 	}
 }

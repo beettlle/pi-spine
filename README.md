@@ -371,8 +371,9 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; gate stub in Phase 3) |
 | `/spine-settings` | Stub — interactive configuration |
 | `/spine-deps` | Stub — dependency graph |
+| `/spine-dashboard` | Start local SSE dashboard (`spine dashboard` in background) |
 
-Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, and **`/spine-next`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
+Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, **`/spine-next`**, and **`/spine-dashboard`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)
@@ -383,13 +384,22 @@ spine preflight   # required before batch (FR-BATCH-11)
 /spine-integrate   # merge orch branch (after gate approval)
 ```
 
-Optional: run the dashboard in another terminal:
+Optional: run the dashboard in another terminal or from pi with `/spine-dashboard`:
 
 ```bash
-spine dashboard    # default http://localhost:8109
+spine dashboard              # default http://127.0.0.1:8109
+spine dashboard --port 8110  # override CLI port
 ```
 
-The browser UI at `http://localhost:8109/` streams reconciled snapshots over SSE (`/api/events`). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), wave progress, lane table, integrate gate, and journal tail. When no batch is active, the banner shows the same idle headline as `spine status` (“ready to plan or start”).
+Set `dashboard.port` in `.spine/spine-config.json` (default **8109**, avoids Taskplane port 8099). Example from `spine init`:
+
+```json
+"dashboard": {
+  "port": 8109
+}
+```
+
+The browser UI streams reconciled snapshots over SSE (`/api/events`, **2s** poll interval per NFR-OBS-02). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), copyable CLI action chips (primary + `alternatives[]` — run commands in your terminal; no HTTP mutations), wave progress, lane table, integrate gate, and journal tail. Diagnosis fields match `spine status --json` and `buildDashboardSnapshot()` (NFR-OBS-04 / GAP-UX-03).
 
 ---
 
