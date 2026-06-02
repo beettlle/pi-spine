@@ -11,7 +11,8 @@ The pi-spine repo ships a minimal consumer layout at **`tests/fixtures/adoption-
 | Path | Role |
 |------|------|
 | `taskplane-tasks/AD-001-smoke/` | Review Level 0 smoke task |
-| `taskplane-tasks/dependencies.json` | Single-task dependency graph |
+| `taskplane-tasks/AD-002-real-pi-smoke/` | Review Level 1 real-pi smoke task |
+| `taskplane-tasks/dependencies.json` | Task dependency graph (AD-001, AD-002) |
 
 No `.spine/` config is checked in — bootstrap runs `spine init` on first use. Stub batch completion is marked by **`taskplane-tasks/AD-001-smoke/.DONE`** (worker also touches `DONE.txt` when using real pi).
 
@@ -24,6 +25,8 @@ SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs
 ```
 
 Use this fixture to validate install and batch wiring before pointing spine at your real project.
+
+**Real-pi E2E (manual, optional):** after stub smoke passes, run [`real-pi-e2e.md`](./real-pi-e2e.md) / `./scripts/real-pi-adoption-e2e.sh --batch` against `AD-002-real-pi-smoke`.
 
 ---
 
