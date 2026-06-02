@@ -6,10 +6,11 @@ import test from "node:test";
 import {
 	collectProgressSignals,
 	computeStallDeadline,
+	findLatestStepCompletedMs,
 	progressSignalsChanged,
 	resolveStallConfig,
 } from "../../src/batch/heartbeat.mjs";
-import { readJournalEvents } from "../../src/batch/journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -59,6 +60,77 @@ test("stall false positive avoided when STATUS updates extend deadline (I-01)", 
 	const now = 40 * 60 * 1000;
 	assert.ok(now >= hardDeadline, "simulated worker silent past hard timeout");
 	assert.ok(now < deadline, "STATUS/progress grace keeps worker alive");
+});
+
+test("findLatestStepCompletedMs returns newest matching task.step_completed", () => {
+	const events = [
+		{
+			type: "task.step_completed",
+			taskId: "TP-036",
+			laneId: "lane-1",
+			timestamp: "2026-06-02T10:00:00.000Z",
+		},
+		{
+			type: "task.step_completed",
+			taskId: "TP-036",
+			laneId: "lane-1",
+			timestamp: "2026-06-02T11:00:00.000Z",
+		},
+		{
+			type: "task.step_completed",
+			taskId: "TP-999",
+			laneId: "lane-1",
+			timestamp: "2026-06-02T12:00:00.000Z",
+		},
+	];
+	const latest = findLatestStepCompletedMs(events, { laneNumber: 1, taskId: "TP-036" });
+	assert.equal(latest, Date.parse("2026-06-02T11:00:00.000Z"));
+});
+
+test("progressSignalsChanged detects journal task.step_completed (silent tools)", () => {
+	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-step-"));
+	const batchId = "20260602T140000";
+	const taskFolder = path.join(projectRoot, "task");
+	fs.mkdirSync(taskFolder, { recursive: true });
+	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "unchanged", "utf-8");
+
+	const first = collectProgressSignals({
+		worktreePath: projectRoot,
+		taskFolder,
+		journalContext: { projectRoot, batchId, laneNumber: 1, taskId: "TP-036" },
+	});
+	assert.equal(first.stepCompletedAtMs, null);
+
+	appendJournalEvent(projectRoot, batchId, "task.step_completed", {
+		taskId: "TP-036",
+		laneNumber: 1,
+		step: 1,
+		checkboxesComplete: 1,
+		checkboxesTotal: 2,
+	});
+
+	const second = collectProgressSignals({
+		worktreePath: projectRoot,
+		taskFolder,
+		journalContext: { projectRoot, batchId, laneNumber: 1, taskId: "TP-036" },
+	});
+	assert.ok(second.stepCompletedAtMs);
+	assert.equal(progressSignalsChanged(first, second), true);
+
+	const stallConfig = resolveStallConfig({
+		lanes: { stallTimeoutMinutes: 1, stallGraceAfterProgressMinutes: 30 },
+	});
+	const startedAt = 0;
+	const deadline = computeStallDeadline({
+		startedAt,
+		lastProgressAt: second.stepCompletedAtMs,
+		stallConfig,
+	});
+	const now = 5 * 60 * 1000;
+	assert.ok(now >= startedAt + stallConfig.stallTimeoutMs);
+	assert.ok(now < deadline, "step_completed extends stall grace without STATUS/git changes");
+
+	fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 
 test("progressSignalsChanged detects file-scope mtime updates (FR-WORK-10)", () => {
