@@ -1,17 +1,17 @@
 # TP-044 Status
 
 **Task:** Adoption fixture repo + bootstrap checklist
-**Started:** —
+**Started:** 2026-06-02
 **Last Updated:** 2026-06-02
 
 ## Progress
 
 ### Step 1: Fixture layout
-**Status:** ⬜ Not Started
-- [ ] adoption-repo fixture + AD-001
+**Status:** ✅ Complete
+- [x] adoption-repo fixture + AD-001
 
 ### Step 2: Bootstrap checklist
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] bootstrap-checklist.md
 
 ### Step 3: Integration test + script
