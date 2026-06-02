@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-031
+**Next Task ID:** TP-042
 
 ---
 
@@ -71,8 +71,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 ## Execution policy
 
 1. **Preflight** before every batch: `spine preflight` (clean git, no active batch).
-2. **One task per batch** for implementation tasks (engine still supports scoped runs).
-3. **Land loop:** `spine batch start` → `spine integrate` → `spine batch complete` → push `main`.
+2. **One task per batch** for implementation tasks (recommended); multi-task start works when the plan shows one wave with parallel lanes (`spine plan <scope>` first).
+3. **Land loop:** `spine batch start` → monitor `spine status --diagnose` → `spine gate approve` → `spine integrate` → `spine batch complete` → push `main`.
 4. **Never** hand-edit `.spine/batch-state.json`.
 
 ---
@@ -110,6 +110,60 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Orchestration note:** Batch `20260602T181027` resumed via fresh batch after TP-015 single-task resume limit; land loop completed on `main`.
 
+### Phase 8 — Operator UX + worker tools + multi-task resume (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-031 | `spine deps` CLI + `/spine-deps` | **Staged** | TP-030 |
+| TP-032 | Settings editable-field registry | **Staged** | TP-030 |
+| TP-033 | `spine settings show` CLI | **Staged** | TP-032 |
+| TP-034 | `spine settings set` CLI | **Staged** | TP-033 |
+| TP-035 | `/spine-settings` interactive menu (FR-CFG-03) | **Staged** | TP-034 |
+| TP-036 | `spine_report_progress` core + CLI + heartbeat | **Staged** | TP-030 |
+| TP-037 | `spine_review_step` Pi tool | **Staged** | TP-036 |
+| TP-038 | `spine_request_gate` + worker tool registration | **Staged** | TP-037 |
+| TP-039 | Multi-task resume validation | **Staged** | TP-030 |
+| TP-040 | Multi-task resume engine + detached | **Staged** | TP-039 |
+| TP-041 | Multi-task resume integration + docs | **Staged** | TP-040 |
+
+**Suggested spine run order** (preflight before each batch; default detached — monitor with `spine status --diagnose`):
+
+1. **Wave A (parallel OK — disjoint file scopes):**
+   ```bash
+   spine preflight
+   spine plan TP-031 TP-032 TP-036 TP-039    # preview lanes
+   spine batch start TP-031 TP-032 TP-036 TP-039
+   ```
+   Or serial (one task per batch, recommended in execution policy below):
+   ```bash
+   spine preflight && spine batch start TP-031
+   # after .DONE + integrate + complete → repeat for TP-032, TP-036, TP-039
+   ```
+
+2. **Wave B:** `spine batch start TP-033` (after TP-032 Done), `TP-037` (after TP-036), `TP-040` (after TP-039)
+
+3. **Wave C:** `spine batch start TP-034`, `TP-038`
+
+4. **Wave D:** `spine batch start TP-035`, `TP-041`
+
+**Land loop per task (or per wave after merge):**
+```bash
+spine status --diagnose
+spine gate approve          # when gates.requireBeforeIntegrate
+spine integrate
+spine batch complete
+git push origin main        # operator
+```
+
+**Run all remaining Phase 8 tasks in dependency order:**
+```bash
+spine preflight
+spine plan pending --json   # should include TP-031…TP-041 once prior phases Done
+spine batch start pending   # or: spine run pending
+```
+
+In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
+
 ---
 
 ## Priority backlog
@@ -125,6 +179,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | ~~P2~~ | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Done (TP-025, TP-026)** |
 | ~~P3~~ | Dashboard CLI startup operator hints | 5 | **Done (TP-027)** |
 | P3 | Doctor `maxParallel` sizing hint | 5 | **Done (TP-028)** |
+| **P2** | `/spine-deps` + dependency graph CLI | 8 | **Staged (TP-031)** |
+| **P2** | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Staged (TP-032–035)** |
+| **P2** | Worker MCP tools (§14.5) | 8 | **Staged (TP-036–038)** |
+| **P1** | Multi-task batch resume | 8 | **Staged (TP-039–041)** |
 
 ---
 
