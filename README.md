@@ -389,6 +389,8 @@ Optional: run the dashboard in another terminal:
 spine dashboard    # default http://localhost:8109
 ```
 
+The browser UI at `http://localhost:8109/` streams reconciled snapshots over SSE (`/api/events`). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), wave progress, lane table, integrate gate, and journal tail. When no batch is active, the banner shows the same idle headline as `spine status` (“ready to plan or start”).
+
 ---
 
 ## Migrating from Taskplane
