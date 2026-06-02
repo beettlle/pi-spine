@@ -1,0 +1,48 @@
+docs/release/v1.0-checklist.md
+  s_14d12b2a61ce27::t_54ad7b5763b677 1-81
+LICENSE
+  s_14d12b2a61ce27::t_773c1110abe608 1-21
+bin/spine.mjs
+  s_14d12b2a61ce27::t_57272a0e031350 540,544-548
+  s_14d12b2a61ce27::t_0ea8f3cafd3bbf 588-590
+  s_14d12b2a61ce27::t_d63832f6b6c39a 553-554
+  s_14d12b2a61ce27::t_97682eef396089 24
+  s_14d12b2a61ce27::t_8fe6c3c56f5cd1 521
+tests/migrate/taskplane-config.test.mjs
+  s_14d12b2a61ce27::t_cbfad0beb24e70 1-70
+tests/spine-init-preset.test.mjs
+  s_14d12b2a61ce27::t_605b0d4cd1fa3f 1-60
+src/migrate/taskplane-config.mjs
+  s_14d12b2a61ce27::t_e0dc91d8adad27 1-4,6-116
+  s_14d12b2a61ce27::t_8eac1dd24e6081 5
+package.json
+  s_14d12b2a61ce27::t_d52ea950ded77e 32-41
+taskplane-tasks/TP-030-publish-migration/STATUS.md
+  s_14d12b2a61ce27::t_f6cbc5275807dd 3,5,9-12,16,20
+bin/spine-migrate-from-taskplane.mjs
+  s_14d12b2a61ce27::t_ef343077046c50 1-136
+taskplane-tasks/TP-030-publish-migration/.DONE
+  s_14d12b2a61ce27::t_81aaee3ad549b2 1-2
+bin/spine-init.mjs
+  s_14d12b2a61ce27::t_1119fe9b607119 26-27
+  s_14d12b2a61ce27::t_3fc145e3090ede 195
+  s_14d12b2a61ce27::t_41489bb6f69e4a 184
+  s_14d12b2a61ce27::t_61dfdafef0b15c 113,118-121
+  s_14d12b2a61ce27::t_2f9e6f0d6f74d2 83-84,86-94,99,102-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "f000d8422b06f3377bf15a4ebcc0fb4759f48720",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
