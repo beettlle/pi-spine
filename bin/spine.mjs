@@ -486,6 +486,13 @@ async function cmdDeps(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdSettings(args) {
+	const { runSpineSettings } = await import("./spine-settings.mjs");
+	const result = runSpineSettings({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdReport(args) {
 	const sub = args[0];
 	if (sub !== "progress") {
@@ -545,6 +552,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}deps${c.reset}            Show task dependency graph (FR-SCHED-01)
+  ${c.cyan}settings${c.reset}        Show editable spine-config fields (FR-CFG-03)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
@@ -582,6 +590,8 @@ ${c.bold}Examples:${c.reset}
   spine status --diagnose                       # reconciled batch diagnosis
   spine deps all                                # show dependency graph
   spine deps TP-031 --json                      # JSON graph for one task scope
+  spine settings show                           # list editable config fields
+  spine settings show lanes.maxParallel --json  # single setting as JSON
   spine batch start TP-012                      # detached batch engine (default)
   spine batch start TP-012 --attached           # foreground batch engine
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
@@ -626,6 +636,9 @@ if (isMainModule) {
 				break;
 			case "deps":
 				await cmdDeps(args);
+				break;
+			case "settings":
+				await cmdSettings(args);
 				break;
 			case "status":
 				await cmdStatus(args);
