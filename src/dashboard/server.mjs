@@ -2,25 +2,56 @@
  * Loopback-only dashboard HTTP server (PRD §16, SEC-04).
  */
 
+import fs from "node:fs";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildDashboardSnapshot } from "./snapshot.mjs";
 import { formatSseDataFrame, writeSseHeaders } from "./sse.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.join(__dirname, "public");
 
 export const DEFAULT_DASHBOARD_HOST = "127.0.0.1";
 export const DEFAULT_DASHBOARD_PORT = 8109;
 export const DEFAULT_DASHBOARD_POLL_MS = 2000;
 
-const PLACEHOLDER_HTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>pi-spine dashboard</title>
-</head>
-<body>
-  <h1>pi-spine dashboard</h1>
-  <p>API: <a href="/api/snapshot">/api/snapshot</a> · SSE: <code>/api/events</code></p>
-</body>
-</html>`;
+const STATIC_ROUTES = {
+	"/": { file: "index.html", contentType: "text/html; charset=utf-8" },
+	"/dashboard.css": { file: "dashboard.css", contentType: "text/css; charset=utf-8" },
+	"/dashboard.js": { file: "dashboard.js", contentType: "text/javascript; charset=utf-8" },
+	"/view.mjs": { file: path.join("..", "view.mjs"), contentType: "text/javascript; charset=utf-8" },
+};
+
+/**
+ * @param {string} routePath
+ */
+export function resolveStaticAsset(routePath) {
+	const route = STATIC_ROUTES[routePath];
+	if (!route) return null;
+	const filePath = path.resolve(PUBLIC_DIR, route.file);
+	const allowedRoot = path.resolve(__dirname);
+	if (filePath !== allowedRoot && !filePath.startsWith(`${allowedRoot}${path.sep}`)) {
+		return null;
+	}
+	return { filePath, contentType: route.contentType };
+}
+
+/**
+ * @param {import("node:http").ServerResponse} res
+ * @param {string} routePath
+ * @returns {boolean}
+ */
+export function serveStaticAsset(res, routePath) {
+	const asset = resolveStaticAsset(routePath);
+	if (!asset || !fs.existsSync(asset.filePath)) {
+		return false;
+	}
+	const body = fs.readFileSync(asset.filePath);
+	res.writeHead(200, { "Content-Type": asset.contentType });
+	res.end(body);
+	return true;
+}
 
 /**
  * @param {string} host
@@ -53,9 +84,7 @@ export function createDashboardServer({
 	const server = http.createServer((req, res) => {
 		const url = new URL(req.url ?? "/", `http://${host}:${port}`);
 
-		if (req.method === "GET" && url.pathname === "/") {
-			res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-			res.end(PLACEHOLDER_HTML);
+		if (req.method === "GET" && serveStaticAsset(res, url.pathname)) {
 			return;
 		}
 
