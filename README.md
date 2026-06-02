@@ -142,6 +142,8 @@ Run **`spine preflight`** before every batch (FR-BATCH-11). It verifies:
 | Check | Requirement |
 |-------|-------------|
 | Doctor | `spine doctor` passes (Node, git, pi, config, agents, model provider) |
+
+`spine doctor` also prints an advisory **lanes.maxParallel sizing** line when config is valid: configured value vs a conservative suggestion from CPU count (`floor(cpus/2)`, capped at 4). Lanes are parallel agents and git worktrees, not CPU threads — the hint never fails doctor; it may warn when `configured > suggested + 1` so you can lower `.spine/spine-config.json` → `lanes.maxParallel` if API cost or supervision feels high.
 | Git clean | No uncommitted changes in the working tree |
 | No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
 | Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
