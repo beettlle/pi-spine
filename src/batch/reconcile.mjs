@@ -7,6 +7,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { parseSpineBatchState } from "./readers/spine-state.mjs";
@@ -479,6 +480,9 @@ export function reconcileBatch(ctx) {
 		signals.journalHints = extractJournalDiagnosisHints(journalEvents);
 	}
 
+	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
+	signals.pendingTaskCount = pendingTaskCount;
+
 	const { diagnosis, failedTaskId } = deriveDiagnosis(signals);
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
@@ -486,6 +490,7 @@ export function reconcileBatch(ctx) {
 		failedTasks: signals.failedTasks,
 		failedTaskId,
 		gitMerged: git.orchMergedToBase,
+		pendingTaskCount,
 	});
 
 	return {

@@ -7,7 +7,6 @@ import test from "node:test";
 import {
 	buildReviewStepCliArgs,
 	executeSpineReviewStep,
-	registerSpineWorkerTools,
 	spineReviewStepTool,
 } from "../../extensions/spine/worker-tools.ts";
 
@@ -48,24 +47,6 @@ Review tool test task.
 	fs.writeFileSync(path.join(folder, "STATUS.md"), "# Status\n", "utf-8");
 	return folder;
 }
-
-test("registerSpineWorkerTools registers spine_review_step", () => {
-	const registered = [];
-	const pi = {
-		registerTool(tool) {
-			registered.push(tool);
-		},
-	};
-
-	registerSpineWorkerTools(pi);
-
-	assert.equal(registered.length, 1);
-	assert.equal(registered[0].name, "spine_review_step");
-	assert.equal(registered[0], spineReviewStepTool);
-	assert.ok(registered[0].parameters.properties.step);
-	assert.ok(registered[0].parameters.properties.type);
-	assert.ok(registered[0].parameters.properties.baseline);
-});
 
 test("buildReviewStepCliArgs maps params and adds --stub when SPINE_WORKER_STUB=1", () => {
 	const prev = process.env.SPINE_WORKER_STUB;

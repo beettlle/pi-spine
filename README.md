@@ -142,15 +142,28 @@ Run **`spine preflight`** before every batch (FR-BATCH-11). It verifies:
 | Check | Requirement |
 |-------|-------------|
 | Doctor | `spine doctor` passes (Node, git, pi, config, agents, model provider) |
-
-`spine doctor` also prints an advisory **lanes.maxParallel sizing** line when config is valid: configured value vs a conservative suggestion from CPU count (`floor(cpus/2)`, capped at 4). Lanes are parallel agents and git worktrees, not CPU threads — the hint never fails doctor; it may warn when `configured > suggested + 1` so you can lower `.spine/spine-config.json` → `lanes.maxParallel` if API cost or supervision feels high.
 | Git clean | No uncommitted changes in the working tree |
 | No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
 | Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
 | Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
 | Wave plan | Dependency waves and lane assignment (same output as `spine plan all`) |
 
+`spine doctor` also prints an advisory **lanes.maxParallel sizing** line when config is valid: configured value vs a conservative suggestion from CPU count (`floor(cpus/2)`, capped at 4). Lanes are parallel agents and git worktrees, not CPU threads — the hint never fails doctor; it may warn when `configured > suggested + 1` so you can lower `.spine/spine-config.json` → `lanes.maxParallel` if API cost or supervision feels high.
+
 Use `spine preflight --json` for automation. Exit code is non-zero when any check fails.
+
+### Settings (FR-CFG-03)
+
+Inspect and update registered `.spine/spine-config.json` fields:
+
+```bash
+spine settings show                              # all editable fields
+spine settings show lanes.maxParallel --json     # single value
+spine settings set lanes.maxParallel 2           # validate and persist
+spine settings set dashboard.port 8110 --dry-run # preview without writing
+```
+
+Only paths in the editable registry can be changed; invalid values exit non-zero with actionable errors. Writes use atomic tmp + rename.
 
 ### Batch status and reconciliation
 
@@ -330,6 +343,8 @@ In pi: `/spine-retry-task <taskId>` and `/spine-skip-task <taskId>` delegate to 
 | `.worktrees/spine-{batchId}/lane-N` | Lane worktree (N = 1 … `lanes.maxParallel`) |
 
 **Recovery:** `spine status --diagnose` → `spine batch dismiss` or `spine batch complete` (same as Phase 1b lifecycle).
+
+**Multi-task paused batch:** when more than one task is still pending, `spine status --diagnose` reports `diagnosis: paused` with a headline naming how many tasks remain (for example, “2 tasks pending — use spine batch resume (multi-task)”). Run `spine batch resume` (detached by default) to continue all lanes; use `--attached` to block until the batch finishes. This replaces the Phase 8 workaround of starting a fresh single-task batch after a multi-task pause (batch `20260602T181027`).
 
 ### Journal replay and state validation (TP-014)
 

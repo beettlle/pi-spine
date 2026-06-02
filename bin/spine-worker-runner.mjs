@@ -3,6 +3,17 @@
  * Worker runner invoked by spine engine in lane worktree.
  * --stub: create .DONE for CI / tests when pi is unavailable.
  * --pi: run `pi -p` with task PROMPT unless SPINE_WORKER_PI_AGENT=0.
+ *
+ * Batch context env (set by worker-host.mjs, inherited by pi child):
+ *   SPINE_TASK_FOLDER   — absolute path to taskplane-tasks/TP-NNN-…/
+ *   SPINE_WORKTREE      — lane git worktree root
+ *   SPINE_PROJECT_ROOT  — pi-spine project root (journal + gate paths)
+ *   SPINE_BATCH_ID      — active batch id
+ *   SPINE_TASK_ID       — e.g. TP-038
+ *   SPINE_LANE_NUMBER   — 1-based lane index
+ *   SPINE_LANE_ID       — optional alias (falls back to lane number in CLIs)
+ *   SPINE_LANE_CORRELATION_ID — journal correlation id for this lane run
+ *   SPINE_JOURNAL_ATTACH — "1" when batch journal writes are enabled
  */
 
 import fs from "node:fs";
@@ -120,10 +131,13 @@ const taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TAS
 const reviewLevel = readReviewLevel(taskFolder);
 const reviewHint =
 	reviewLevel > 0
-		? `When Review Level > 0, after each step run: spine review step --step N [--type plan|code]. On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. `
+		? `When Review Level > 0, after each step run: spine review step --step N [--type plan|code] (or spine_review_step tool). On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. `
 		: "";
+const toolsHint =
+	"Prefer spine_review_step, spine_report_progress, and spine_request_gate Pi tools over bash when available. ";
 piArgs.push(
 	`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
+		toolsHint +
 		reviewHint +
 		`Commit at step boundaries when you change files (feat(${taskIdHint}): …). ` +
 		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +

@@ -71,7 +71,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 ## Execution policy
 
 1. **Preflight** before every batch: `spine preflight` (clean git, no active batch).
-2. **One task per batch** for implementation tasks (recommended); multi-task start works when the plan shows one wave with parallel lanes (`spine plan <scope>` first).
+2. **One task per batch** is still recommended for implementation work; **multi-task resume** is supported when a paused or failed batch has multiple tasks/lanes (`spine batch resume`). Multi-task **start** works when the plan shows one wave with parallel lanes (`spine plan <scope>` first).
 3. **Land loop:** `spine batch start` → monitor `spine status --diagnose` → `spine gate approve` → `spine integrate` → `spine batch complete` → push `main`.
 4. **Never** hand-edit `.spine/batch-state.json`.
 
@@ -108,7 +108,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|--------|------|
 | TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Done** | TP-029 |
 
-**Orchestration note:** Batch `20260602T181027` resumed via fresh batch after TP-015 single-task resume limit; land loop completed on `main`.
+**Orchestration note:** Batch `20260602T181027` originally required a fresh batch after the TP-015 single-task resume limit; TP-039–041 closed multi-task resume (validation, engine, integration + docs).
 
 ### Phase 8 — Operator UX + worker tools + multi-task resume (staged)
 
@@ -123,8 +123,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-037 | `spine_review_step` Pi tool | **Staged** | TP-036 |
 | TP-038 | `spine_request_gate` + worker tool registration | **Staged** | TP-037 |
 | TP-039 | Multi-task resume validation | **Done** | TP-030 |
-| TP-040 | Multi-task resume engine + detached | **Staged** | TP-039 |
-| TP-041 | Multi-task resume integration + docs | **Staged** | TP-040 |
+| TP-040 | Multi-task resume engine + detached | **Done** | TP-039 |
+| TP-041 | Multi-task resume integration + docs | **Done** | TP-040 |
 
 **Suggested spine run order** (preflight before each batch; default detached — monitor with `spine status --diagnose`):
 
@@ -182,7 +182,7 @@ In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
 | **P2** | `/spine-deps` + dependency graph CLI | 8 | **Done (TP-031)** |
 | **P2** | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Staged (TP-032–035)** |
 | **P2** | Worker MCP tools (§14.5) | 8 | **Staged (TP-036–038)** |
-| **P1** | Multi-task batch resume | 8 | **Staged (TP-039–041)** |
+| ~~P1~~ | Multi-task batch resume | 8 | **Done (TP-039–041)** |
 
 ---
 

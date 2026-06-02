@@ -61,6 +61,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {number} [ctx.failedTasks]
  * @param {string|null} [ctx.failedTaskId]
  * @param {boolean} [ctx.gitMerged]
+ * @param {number} [ctx.pendingTaskCount]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
@@ -80,8 +81,13 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return `${batchLabel} ready to integrate orch branch to main`;
 		case "running":
 			return `${batchLabel} is running`;
-		case "paused":
+		case "paused": {
+			const pending = ctx.pendingTaskCount ?? 0;
+			if (pending > 1) {
+				return `${batchLabel} is paused with ${pending} tasks pending — use spine batch resume (multi-task)`;
+			}
 			return `${batchLabel} is paused`;
+		}
 		case "failed":
 			return `${batchLabel} failed (${ctx.failedTasks ?? 0} failed task(s))`;
 		case "aborted":
