@@ -239,6 +239,8 @@ spine plan pending --json                   # JSON plan; scope.mode pending + ex
 
 Each `spine plan` run writes a plan artifact to `.spine/runtime/plan-{timestamp}.json`.
 
+**Waves, lanes, and ticks:** A **wave** is a dependency group — tasks in wave *N* start only after wave *N−1* merges. Within a wave, the planner assigns **virtual lanes** from file-scope overlap: disjoint scopes get separate lanes (parallel up to `lanes.maxParallel`); overlapping scopes share one lane (serialized on one worktree). A **tick** queues virtual lanes when there are more lanes than `maxParallel` (tick 0 runs lanes 0…`maxParallel−1`, tick 1 runs the rest, and so on). The batch engine runs **one worker at a time per physical lane/worktree** and parallelizes only across distinct lane numbers in the same tick. The dashboard **Lanes** table shows **Active tasks** (running/pending in the current wave on that lane) separately from **Batch assignment** (all tasks ever bound to the lane).
+
 ### Running a batch (Phase 2–5)
 
 pi-spine runs batches without Taskplane `/orch`. **Single-task** batches always work. **Multi-task** batches are allowed when the plan has one wave with multiple virtual lanes (disjoint file scopes), when scope is explicit (task IDs), or when scope is **`pending`** (unfinished tasks only). **`spine batch start all`** resolves to the same pending-filtered set as `pending` (unlike `spine plan all`, which previews the full backlog):
@@ -258,7 +260,7 @@ spine batch start TP-012 --json              # machine-readable result
 
 If every discovered task has a `.DONE` marker, `pending` / `all` batch start fails fast: `No pending tasks (all discovered tasks have .DONE).` Tasks that already have `.DONE` on disk are skipped before the worker runs (journal event `task.skipped_done_on_disk`). Wave integrate / `batch complete` between waves is still manual — pi-spine does not auto-integrate mid-batch.
 
-**What happens:** preflight → planner waves + lane ticks (`lanes.maxParallel`, FR-SCHED-03/04) → `.spine/batch-state.json` (schema v1, includes `segments[]`) → one git worktree per physical lane (`.worktrees/spine-{batchId}/lane-N`, branch `task/spine-lane-N-{batchId}`) → workers run in parallel per tick → `.DONE` → **lane auto-commit** → after each wave, **sequential merges** into `orch/spine-{batchId}` (FR-BATCH-08) only when every wave task is `succeeded` or `skipped` (§17.4 mixed-outcome policy; GAP-MERGE-01).
+**What happens:** preflight → planner waves + lane ticks (`lanes.maxParallel`, FR-SCHED-03/04) → `.spine/batch-state.json` (schema v1, includes `segments[]`) → one git worktree per physical lane (`.worktrees/spine-{batchId}/lane-N`, branch `task/spine-lane-N-{batchId}`) → workers run in parallel across lanes per tick, serialized within a lane when multiple tasks share it → `.DONE` → **lane auto-commit** → after each wave, **sequential merges** into `orch/spine-{batchId}` (FR-BATCH-08) only when every wave task is `succeeded` or `skipped` (§17.4 mixed-outcome policy; GAP-MERGE-01).
 
 **Detached by default:** `spine batch start` and `spine batch resume` spawn the batch engine in the background (like `/orch`) and return once `.spine/batch-state.json` shows the batch running again. Monitor with `spine status --diagnose`; engine logs append to `.spine/runtime/detached-engine.log`. Use `--attached` to run the engine in the foreground (previous behavior).
 
@@ -424,7 +426,7 @@ Set `dashboard.port` in `.spine/spine-config.json` (default **8109**, avoids Tas
 }
 ```
 
-The browser UI streams reconciled snapshots over SSE (`/api/events`, **2s** poll interval per NFR-OBS-02). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), copyable CLI action chips (primary + `alternatives[]` — run commands in your terminal; no HTTP mutations), wave progress, lane table, integrate gate, and journal tail. Diagnosis fields match `spine status --json` and `buildDashboardSnapshot()` (NFR-OBS-04 / GAP-UX-03).
+The browser UI streams reconciled snapshots over SSE (`/api/events`, **2s** poll interval per NFR-OBS-02). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), copyable CLI action chips (primary + `alternatives[]` — run commands in your terminal; no HTTP mutations), wave progress (with a lane ≠ wave reminder), lane table (**Active tasks** vs **Batch assignment**), integrate gate, and journal tail. Diagnosis fields match `spine status --json` and `buildDashboardSnapshot()` (NFR-OBS-04 / GAP-UX-03).
 
 ---
 
