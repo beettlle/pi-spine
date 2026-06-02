@@ -7,6 +7,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { runSpineSettingsSlash } from "./settings-slash.ts";
+
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** PRD §15.1 slash command names (single `/spine` registration for guide + execute). */
@@ -600,6 +602,9 @@ async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || "integrate completed", "info");
 }
 
+async function spineSettingsHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	await runSpineSettingsSlash(args, ctx);
+}
 
 async function spineDepsHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const scope = args.trim() || "all";
@@ -663,11 +668,13 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 															? spineGateHandler
 															: name === "spine-integrate"
 																? spineIntegrateHandler
-																: name === "spine-dashboard"
-																	? spineDashboardHandler
-																	: name === "spine-deps"
-																		? spineDepsHandler
-																		: stubHandler(name),
+																: name === "spine-settings"
+																	? spineSettingsHandler
+																	: name === "spine-dashboard"
+																		? spineDashboardHandler
+																		: name === "spine-deps"
+																			? spineDepsHandler
+																			: stubHandler(name),
 		});
 	}
 }
