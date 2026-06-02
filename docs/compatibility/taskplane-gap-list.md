@@ -19,6 +19,7 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-UX-03 | Live status vs disk `phase` mismatch | NFR-OBS-04 | **Closed (TP-026)** — dashboard snapshot + CLI share `reconcileBatch()`; parity tests; `/spine-dashboard` |
 | GAP-UX-04 | Manual git merge leaves active batch | FR-BATCH-16, §18.9 | **Closed** — `spine batch complete --detect-manual-merge` (TP-010) |
 | GAP-BATCH-PENDING-01 | `/orch all` runs full backlog; no pending-only scope | FR-SCHED-06, §15.2 `spine run <scope>` | **Closed (TP-024)** — `pending` scope, relaxed batch `all`, `spine run pending` |
+| GAP-PROGRESS-01 | No structured worker progress journal signal for stall grace | PRD §14.5 `spine_report_progress`, §18.4 | **Closed (TP-036)** — `spine report progress` + `task.step_completed`; heartbeat honors journal progress |
 
 ## Verification
 

@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 
 const DEFAULT_STALL_TIMEOUT_MIN = 60;
 const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
@@ -67,10 +67,47 @@ function resolveFileScopeMtimeMs(worktreePath, fileScopePaths) {
 }
 
 /**
+ * @param {object[]} events
+ * @param {object} filter
+ * @param {number} [filter.laneNumber]
+ * @param {string} [filter.laneId]
+ * @param {string} [filter.taskId]
+ */
+export function findLatestStepCompletedMs(events, { laneNumber, laneId, taskId }) {
+	let latest = null;
+	const expectedLaneId =
+		laneNumber != null ? `lane-${laneNumber}` : typeof laneId === "string" ? laneId : null;
+
+	for (const event of events) {
+		if (event.type !== "task.step_completed") continue;
+		if (taskId && event.taskId !== taskId) continue;
+		if (expectedLaneId && event.laneId && event.laneId !== expectedLaneId) continue;
+
+		const ts = Date.parse(event.timestamp);
+		if (Number.isNaN(ts)) continue;
+		latest = latest === null ? ts : Math.max(latest, ts);
+	}
+
+	return latest;
+}
+
+/**
  * @param {object} params
  * @param {string[]} [params.fileScopePaths]
+ * @param {object} [params.journalContext]
+ * @param {string} [params.journalContext.projectRoot]
+ * @param {string} [params.journalContext.batchId]
+ * @param {number} [params.journalContext.laneNumber]
+ * @param {string} [params.journalContext.laneId]
+ * @param {string} [params.journalContext.taskId]
  */
-export function collectProgressSignals({ worktreePath, taskFolder, laneBranch, fileScopePaths }) {
+export function collectProgressSignals({
+	worktreePath,
+	taskFolder,
+	laneBranch,
+	fileScopePaths,
+	journalContext,
+}) {
 	const statusPath = path.join(taskFolder, "STATUS.md");
 	let statusMtimeMs = null;
 	if (fs.existsSync(statusPath)) {
@@ -88,7 +125,17 @@ export function collectProgressSignals({ worktreePath, taskFolder, laneBranch, f
 
 	const fileScopeMtimeMs = resolveFileScopeMtimeMs(worktreePath, fileScopePaths);
 
-	return { statusMtimeMs, lastCommitAtMs, fileScopeMtimeMs };
+	let stepCompletedAtMs = null;
+	if (journalContext?.projectRoot && journalContext?.batchId) {
+		const events = readJournalEvents(journalContext.projectRoot, journalContext.batchId);
+		stepCompletedAtMs = findLatestStepCompletedMs(events, {
+			laneNumber: journalContext.laneNumber,
+			laneId: journalContext.laneId,
+			taskId: journalContext.taskId,
+		});
+	}
+
+	return { statusMtimeMs, lastCommitAtMs, fileScopeMtimeMs, stepCompletedAtMs };
 }
 
 /**
@@ -97,11 +144,17 @@ export function collectProgressSignals({ worktreePath, taskFolder, laneBranch, f
  */
 export function progressSignalsChanged(prev, next) {
 	if (!prev) {
-		return Boolean(next.statusMtimeMs || next.lastCommitAtMs || next.fileScopeMtimeMs);
+		return Boolean(
+			next.statusMtimeMs ||
+				next.lastCommitAtMs ||
+				next.fileScopeMtimeMs ||
+				next.stepCompletedAtMs,
+		);
 	}
 	if (prev.statusMtimeMs !== next.statusMtimeMs) return true;
 	if (prev.lastCommitAtMs !== next.lastCommitAtMs) return true;
 	if (prev.fileScopeMtimeMs !== next.fileScopeMtimeMs) return true;
+	if (prev.stepCompletedAtMs !== next.stepCompletedAtMs) return true;
 	return false;
 }
 

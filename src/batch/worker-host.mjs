@@ -205,7 +205,16 @@ timeoutMs = DEFAULT_TIMEOUT_MS,
 		}
 
 		const now = Date.now();
-		const signals = collectProgressSignals({ worktreePath, taskFolder, laneBranch, fileScopePaths });
+		const signals = collectProgressSignals({
+			worktreePath,
+			taskFolder,
+			laneBranch,
+			fileScopePaths,
+			journalContext:
+				projectRoot && batchId
+					? { projectRoot, batchId, laneNumber, taskId }
+					: undefined,
+		});
 		if (progressSignalsChanged(lastSignals, signals)) {
 			lastProgressAt = now;
 			lastSignals = signals;
