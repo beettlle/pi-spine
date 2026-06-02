@@ -142,8 +142,15 @@ Run **`spine preflight`** before every batch (FR-BATCH-11). It verifies:
 | Check | Requirement |
 |-------|-------------|
 | Doctor | `spine doctor` passes (Node, git, pi, config, agents, model provider) |
+| Git clean | No uncommitted changes in the working tree |
+| No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
+| Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
+| Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
+| Wave plan | Dependency waves and lane assignment (same output as `spine plan all`) |
 
 `spine doctor` also prints an advisory **lanes.maxParallel sizing** line when config is valid: configured value vs a conservative suggestion from CPU count (`floor(cpus/2)`, capped at 4). Lanes are parallel agents and git worktrees, not CPU threads — the hint never fails doctor; it may warn when `configured > suggested + 1` so you can lower `.spine/spine-config.json` → `lanes.maxParallel` if API cost or supervision feels high.
+
+Use `spine preflight --json` for automation. Exit code is non-zero when any check fails.
 
 ### Settings (FR-CFG-03)
 
@@ -157,13 +164,6 @@ spine settings set dashboard.port 8110 --dry-run # preview without writing
 ```
 
 Only paths in the editable registry can be changed; invalid values exit non-zero with actionable errors. Writes use atomic tmp + rename.
-| Git clean | No uncommitted changes in the working tree |
-| No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
-| Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
-| Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
-| Wave plan | Dependency waves and lane assignment (same output as `spine plan all`) |
-
-Use `spine preflight --json` for automation. Exit code is non-zero when any check fails.
 
 ### Batch status and reconciliation
 

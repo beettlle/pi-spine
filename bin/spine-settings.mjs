@@ -105,7 +105,21 @@ export function runSpineSettingsSet({ projectRoot, args }) {
 	}
 
 	if (!dryRun && result.config) {
-		writeSpineConfigAtomic(projectRoot, result.config);
+		try {
+			writeSpineConfigAtomic(projectRoot, result.config);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			if (json) {
+				return {
+					exitCode: 1,
+					output: `${JSON.stringify({ error: `Failed to write spine config: ${message}` }, null, 2)}\n`,
+				};
+			}
+			return {
+				exitCode: 1,
+				output: `Error: Failed to write spine config: ${message}\n`,
+			};
+		}
 	}
 
 	return result;

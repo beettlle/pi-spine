@@ -157,3 +157,31 @@ test("spine settings set --json reports write metadata", async () => {
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("spine settings set exits 1 with suggestedCommand when config missing", async () => {
+	const projectRoot = await initGitRepo("spine-settings-set-missing-");
+	try {
+		fs.rmSync(path.join(projectRoot, ".spine", "spine-config.json"));
+
+		const result = spawnSync(
+			process.execPath,
+			[SPINE_BIN, "settings", "set", "lanes.maxParallel", "2"],
+			{ cwd: projectRoot, encoding: "utf-8" },
+		);
+		assert.equal(result.status, 1);
+		assert.match(result.stdout, /Error:/);
+		assert.match(result.stdout, /Suggested: spine init/);
+
+		const json = spawnSync(
+			process.execPath,
+			[SPINE_BIN, "settings", "set", "lanes.maxParallel", "2", "--json"],
+			{ cwd: projectRoot, encoding: "utf-8" },
+		);
+		assert.equal(json.status, 1);
+		const parsed = JSON.parse(json.stdout);
+		assert.equal(parsed.suggestedCommand, "spine init");
+		assert.match(parsed.error, /not found/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
