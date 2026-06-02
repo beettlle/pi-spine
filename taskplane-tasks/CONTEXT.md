@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-043
+**Next Task ID:** TP-051
 
 ---
 
 ## Current State
 
-**Phases 0–6 complete on `main`.** **215/215** tests pass locally (`SPINE_WORKER_STUB=1`). Phase 7 publish prep (TP-030) complete; npm publish deferred to operator.
+**Phases 0–8 complete on `main`.** **~287** tests pass locally (`SPINE_WORKER_STUB=1`; fix 2 flaky worker-tools tests before pilot). Phase 7 publish prep (TP-030) complete; **npm publish deferred**. Phase 9 (**real-project adoption**, TP-043–050) staged — see [`docs/adoption/real-project-readiness.md`](../docs/adoption/real-project-readiness.md).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -110,7 +110,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Orchestration note:** Batch `20260602T181027` originally required a fresh batch after the TP-015 single-task resume limit; TP-039–041 closed multi-task resume (validation, engine, integration + docs).
 
-### Phase 8 — Operator UX + worker tools + multi-task resume (staged)
+### Phase 8 — Operator UX + worker tools + multi-task resume (complete)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
@@ -118,7 +118,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-032 | Settings editable-field registry | **Done** | TP-030 |
 | TP-033 | `spine settings show` CLI | **Done** | TP-032 |
 | TP-034 | `spine settings set` CLI | **Done** | TP-033 |
-| TP-035 | `/spine-settings` interactive menu (FR-CFG-03) | **Staged** | TP-034 |
+| TP-035 | `/spine-settings` interactive menu (FR-CFG-03) | **Done** | TP-034 |
 | TP-036 | `spine_report_progress` core + CLI + heartbeat | **Done** | TP-030 |
 | TP-037 | `spine_review_step` Pi tool | **Done** | TP-036 |
 | TP-038 | `spine_request_gate` + worker tool registration | **Done** | TP-037 |
@@ -127,43 +127,50 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-041 | Multi-task resume integration + docs | **Done** | TP-040 |
 | TP-042 | Lane packing vs parallel execution (planner + engine + dashboard) | **Done** | TP-019, TP-026 |
 
-**Suggested spine run order** (preflight before each batch; default detached — monitor with `spine status --diagnose`):
+### Phase 9 — Real-project adoption (no npm publish)
 
-1. **Wave A (parallel OK — disjoint file scopes):**
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-043 | Local install without npm publish + doctor stale PATH | **Staged** | TP-030 |
+| TP-044 | Adoption fixture repo + bootstrap checklist | **Staged** | TP-043 |
+| TP-045 | Taskplane / spine mutual exclusion guard | **Staged** | TP-043 |
+| TP-046 | FR-CFG-04 env overrides (`SPINE_TASKS_ROOT`, `SPINE_MAX_LANES`) | **Staged** | TP-043 |
+| TP-047 | Stub-free dogfood sign-off + flaky test fix | **Staged** | TP-044 |
+| TP-048 | Real pi worker + reviewer E2E | **Staged** | TP-047 |
+| TP-049 | Operator runbook for external teams | **Staged** | TP-048 |
+| TP-050 | `createAgentSession` worker backend spike (v1.1) | **Staged** | TP-048 |
+
+**Master plan:** [`docs/adoption/real-project-readiness.md`](../docs/adoption/real-project-readiness.md)
+
+**Suggested spine run order** (use `node bin/spine.mjs` from repo root; preflight before each batch):
+
+1. **Wave A (parallel — disjoint scopes):**
    ```bash
-   spine preflight
-   spine plan TP-031 TP-032 TP-036 TP-039    # preview lanes
-   spine batch start TP-031 TP-032 TP-036 TP-039
-   ```
-   Or serial (one task per batch, recommended in execution policy below):
-   ```bash
-   spine preflight && spine batch start TP-031
-   # after .DONE + integrate + complete → repeat for TP-032, TP-036, TP-039
+   node bin/spine.mjs preflight
+   node bin/spine.mjs plan TP-043 TP-045 TP-046
+   node bin/spine.mjs batch start TP-043 TP-045 TP-046
    ```
 
-2. **Wave B:** `spine batch start TP-033` (after TP-032 Done), `TP-037` (after TP-036), `TP-040` (after TP-039)
+2. **Wave B:** `node bin/spine.mjs batch start TP-044` (after TP-043)
 
-3. **Wave C:** `spine batch start TP-034`, `TP-038`
+3. **Wave C:** `node bin/spine.mjs batch start TP-047` (after TP-044)
 
-4. **Wave D:** `spine batch start TP-035`, `TP-041`
+4. **Wave D:** `node bin/spine.mjs batch start TP-048` (after TP-047; manual real-pi steps)
 
-**Land loop per task (or per wave after merge):**
+5. **Wave E:** `node bin/spine.mjs batch start TP-049` (after TP-048)
+
+6. **Wave F (optional v1.1):** `node bin/spine.mjs batch start TP-050`
+
+**Land loop per wave:**
 ```bash
-spine status --diagnose
-spine gate approve          # when gates.requireBeforeIntegrate
-spine integrate
-spine batch complete
-git push origin main        # operator
+node bin/spine.mjs status --diagnose
+node bin/spine.mjs gate approve
+node bin/spine.mjs integrate
+node bin/spine.mjs batch complete
+git push origin main
 ```
 
-**Run all remaining Phase 8 tasks in dependency order:**
-```bash
-spine preflight
-spine plan pending --json   # should include TP-031…TP-041 once prior phases Done
-spine batch start pending   # or: spine run pending
-```
-
-In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
+**Operator docs (when TP-049 Done):** [`docs/adoption/operator-runbook.md`](../docs/adoption/operator-runbook.md) (placeholder until task completes).
 
 ---
 
@@ -181,10 +188,15 @@ In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
 | ~~P3~~ | Dashboard CLI startup operator hints | 5 | **Done (TP-027)** |
 | P3 | Doctor `maxParallel` sizing hint | 5 | **Done (TP-028)** |
 | **P2** | `/spine-deps` + dependency graph CLI | 8 | **Done (TP-031)** |
-| **P2** | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Staged (TP-035)** |
+| ~~P2~~ | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Done (TP-035)** |
 | ~~P2~~ | Worker MCP tools (§14.5) | 8 | **Done (TP-036–038)** |
 | ~~P1~~ | Multi-task batch resume | 8 | **Done (TP-039–041)** |
-| **P1** | Lane packing vs parallel execution (GAP-SCHED-01) | 8 | **Done (TP-042)** |
+| ~~P1~~ | Lane packing vs parallel execution (GAP-SCHED-01) | 8 | **Done (TP-042)** |
+| **P1** | Local install + adoption fixture (pre-publish) | 9 | **Staged (TP-043–044)** |
+| **P1** | Stub-free + real-pi dogfood | 9 | **Staged (TP-047–048)** |
+| **P2** | Operator runbook + env overrides | 9 | **Staged (TP-046, TP-049)** |
+| **P2** | Taskplane coexistence guard | 9 | **Staged (TP-045)** |
+| **P3** | createAgentSession backend (v1.1) | 9 | **Staged (TP-050)** |
 
 ---
 
