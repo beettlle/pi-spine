@@ -26,6 +26,7 @@ import {
 	buildMaxParallelDoctorCheck,
 	detectCpuCount,
 } from "../src/doctor/suggest-max-parallel.mjs";
+import { buildStalePathDoctorCheck } from "../src/doctor/stale-path.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -252,6 +253,13 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		ok: true,
 		detail: `v${pkgVersion}, ${installType}`,
 	});
+
+	checks.push(
+		buildStalePathDoctorCheck({
+			packageRoot: PACKAGE_ROOT,
+			runningSpinePath: __filename,
+		}),
+	);
 
 	record("git repository detected", isInsideGitRepo(projectRoot));
 
