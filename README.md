@@ -394,11 +394,11 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-abort` | `spine batch abort` — archive-first abort (`--hard` kills workers) |
 | `/spine-gate` | Stub — gate inspection and resolution |
 | `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; gate stub in Phase 3) |
-| `/spine-settings` | Stub — interactive configuration |
+| `/spine-settings` | Editable config menu + inline `set` (delegates to `spine settings`) |
 | `/spine-deps` | Show dependency graph (`spine deps`; usage: `/spine-deps <all\|paths>`) |
 | `/spine-dashboard` | Start local SSE dashboard (`spine dashboard` in background) |
 
-Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, **`/spine-next`**, **`/spine-deps`**, and **`/spine-dashboard`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
+Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, **`/spine-next`**, **`/spine-deps`**, **`/spine-settings`**, and **`/spine-dashboard`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)
