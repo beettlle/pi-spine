@@ -16,10 +16,9 @@ import {
 	loadSpineBatchState,
 	saveSpineBatchState,
 	updateSegmentForTask,
-	validateBatchState,
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
-import { detectSegmentDrift } from "./retry.mjs";
+import { validateMultiTaskResume } from "./resume-multi.mjs";
 import { runWorker } from "./worker-host.mjs";
 
 /**
@@ -103,92 +102,16 @@ function taskAlreadyComplete({ taskFolder, events, task }) {
  * @param {boolean} [params.force]
  */
 export function validateResumeBatch({ projectRoot, force = false }) {
-	const loaded = loadSpineBatchState(projectRoot);
-	if (!loaded.raw) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+	const result = validateMultiTaskResume({ projectRoot, force });
+	if (!result.ok) {
+		return result;
 	}
 
-	const state = loaded.raw;
-	const phase = String(state.phase ?? "");
-	const resumable = phase === "paused" || (phase === "failed" && force);
-	if (!resumable) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "cannot_resume",
-			output:
-				phase === "failed" && !force
-					? `Batch ${state.batchId} failed. Use spine batch resume --force to continue.\n`
-					: `Cannot resume batch in phase ${phase}.\n`,
-			batchId: state.batchId,
-			phase,
-		};
-	}
-
-	const validation = validateBatchState(state);
-	if (!validation.ok) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "invalid_batch_state",
-			output: `Batch state validation failed:\n  ${validation.errors.join("\n  ")}\n`,
-			batchId: state.batchId,
-		};
-	}
-
-	if (detectSegmentDrift(state) && !(phase === "failed" && force)) {
-		const driftTask = state.tasks.find(
-			(task) =>
-				task?.status === "pending" &&
-				state.segments?.some(
-					(segment) =>
-						segment?.taskId === task.taskId &&
-						(segment.status === "failed" || segment.status === "succeeded"),
-				),
-		);
-		const driftTaskId = driftTask?.taskId ?? state.tasks[0]?.taskId ?? "unknown";
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "RetrySegmentDrift",
-			failureClass: "RetrySegmentDrift",
-			output: `Segment drift: task ${driftTaskId} is pending but segments are terminal.\n  → spine batch retry ${driftTaskId}\n  → spine batch resume --force\n`,
-			batchId: state.batchId,
-			taskId: driftTaskId,
-		};
-	}
-
-	if (state.tasks.length !== 1 || state.lanes.length !== 1) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "single_lane_required",
-			output: "TP-015 resume supports exactly one task and one lane per batch.\n",
-			batchId: state.batchId,
-		};
-	}
-
-	const task = state.tasks[0];
-	const lane = state.lanes[0];
-	const batchId = state.batchId;
-	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, batchId, 1);
-
-	if (!fs.existsSync(wt)) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "worktree_missing",
-			output: `Lane worktree not found: ${wt}\n`,
-			batchId,
-		};
-	}
+	const taskId = result.pendingTasks.length === 1 ? result.pendingTasks[0].taskId : undefined;
 
 	return {
-		ok: true,
-		batchId,
-		phase,
-		updatedAt: Number(state.updatedAt ?? 0),
-		taskId: task.taskId,
+		...result,
+		taskId,
 	};
 }
 

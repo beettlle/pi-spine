@@ -477,6 +477,15 @@ async function cmdReview(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdDeps(args) {
+	const json = args.includes("--json");
+	const scope = args.filter((a) => !a.startsWith("--")).join(" ") || "all";
+	const { runSpineDeps } = await import("./spine-deps.mjs");
+	const result = await runSpineDeps({ projectRoot: process.cwd(), scope, json });
+	process.stdout.write(result.output);
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdPlan(args) {
 	const json = args.includes("--json");
 	const scope = args.filter((a) => !a.startsWith("--")).join(" ") || "all";
@@ -522,6 +531,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}doctor${c.reset}         Validate installation and project configuration
   ${c.cyan}preflight${c.reset}      Run batch preflight checks (FR-BATCH-11)
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
+  ${c.cyan}deps${c.reset}            Show task dependency graph (FR-SCHED-01)
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
@@ -556,6 +566,8 @@ ${c.bold}Examples:${c.reset}
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
+  spine deps all                                # show dependency graph
+  spine deps TP-031 --json                      # JSON graph for one task scope
   spine batch start TP-012                      # detached batch engine (default)
   spine batch start TP-012 --attached           # foreground batch engine
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
@@ -596,6 +608,9 @@ if (isMainModule) {
 				break;
 			case "plan":
 				await cmdPlan(args);
+				break;
+			case "deps":
+				await cmdDeps(args);
 				break;
 			case "status":
 				await cmdStatus(args);

@@ -114,15 +114,15 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-031 | `spine deps` CLI + `/spine-deps` | **Staged** | TP-030 |
-| TP-032 | Settings editable-field registry | **Staged** | TP-030 |
+| TP-031 | `spine deps` CLI + `/spine-deps` | **Done** | TP-030 |
+| TP-032 | Settings editable-field registry | **Done** | TP-030 |
 | TP-033 | `spine settings show` CLI | **Staged** | TP-032 |
 | TP-034 | `spine settings set` CLI | **Staged** | TP-033 |
 | TP-035 | `/spine-settings` interactive menu (FR-CFG-03) | **Staged** | TP-034 |
 | TP-036 | `spine_report_progress` core + CLI + heartbeat | **Staged** | TP-030 |
 | TP-037 | `spine_review_step` Pi tool | **Staged** | TP-036 |
 | TP-038 | `spine_request_gate` + worker tool registration | **Staged** | TP-037 |
-| TP-039 | Multi-task resume validation | **Staged** | TP-030 |
+| TP-039 | Multi-task resume validation | **Done** | TP-030 |
 | TP-040 | Multi-task resume engine + detached | **Staged** | TP-039 |
 | TP-041 | Multi-task resume integration + docs | **Staged** | TP-040 |
 
@@ -179,7 +179,7 @@ In pi: `/spine-plan pending`, `/spine TP-031`, `/spine-status`, `/spine-resume`.
 | ~~P2~~ | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Done (TP-025, TP-026)** |
 | ~~P3~~ | Dashboard CLI startup operator hints | 5 | **Done (TP-027)** |
 | P3 | Doctor `maxParallel` sizing hint | 5 | **Done (TP-028)** |
-| **P2** | `/spine-deps` + dependency graph CLI | 8 | **Staged (TP-031)** |
+| **P2** | `/spine-deps` + dependency graph CLI | 8 | **Done (TP-031)** |
 | **P2** | `/spine-settings` + settings CLI (FR-CFG-03) | 8 | **Staged (TP-032–035)** |
 | **P2** | Worker MCP tools (§14.5) | 8 | **Staged (TP-036–038)** |
 | **P1** | Multi-task batch resume | 8 | **Staged (TP-039–041)** |

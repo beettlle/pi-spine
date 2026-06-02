@@ -116,6 +116,28 @@ function runSpinePreflight(cwd = process.cwd()) {
 	};
 }
 
+function runSpineDeps(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine-deps.mjs"), ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
 function runSpinePlan(argsText: string, cwd = process.cwd()) {
 	const tokens = String(argsText ?? "")
 		.trim()
@@ -578,6 +600,24 @@ async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || "integrate completed", "info");
 }
 
+
+async function spineDepsHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const scope = args.trim() || "all";
+	const deps = runSpineDeps(scope);
+	if (!deps.ok) {
+		ctx.ui.notify(deps.output || "spine deps failed", "error");
+		return;
+	}
+
+	const maxChars = 8000;
+	const output =
+		deps.output.length > maxChars
+			? `${deps.output.slice(0, maxChars)}\n\n… (truncated; run \`spine deps ${scope}\` for full output)`
+			: deps.output;
+
+	ctx.ui.notify(output || "dependency graph unavailable", "info");
+}
+
 async function spineDashboardHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const { resolveDashboardPortWithSource, formatDashboardNotifyMessage, DEFAULT_DASHBOARD_HOST } =
 		await import(path.join(PACKAGE_ROOT, "bin/spine-dashboard.mjs"));
@@ -625,7 +665,9 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 																? spineIntegrateHandler
 																: name === "spine-dashboard"
 																	? spineDashboardHandler
-																	: stubHandler(name),
+																	: name === "spine-deps"
+																		? spineDepsHandler
+																		: stubHandler(name),
 		});
 	}
 }
