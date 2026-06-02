@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-025
+**Next Task ID:** TP-027
 **Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
@@ -59,19 +59,13 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-018 | Archive-first abort | Done | TP-017 |
 | TP-019 | Multi-lane engine + mixed-outcome merge | Done | TP-018 |
 
-### Phase 4 — Review + gates (staged — ready to run)
+### Phase 4 — Review + gates (on main)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-020 | Review tool + fail-closed worker (FR-REV-06, GAP-REV-01) | **In progress (lane-1)** | TP-019 |
-| TP-021 | Integrate gate FSM + evidence bundle (§12) | **Staged** | TP-020 |
-| TP-022 | Honest batch post-mortem (NFR-OBS-03, GAP-POST-01) | **In progress (lane-1)** | TP-021 |
-
-| Theme | PRD / gaps | Task |
-|-------|------------|------|
-| Review fail-closed | FR-REV-06, GAP-REV-01 | **TP-020 (in progress)** |
-| Integrate gate + evidence | §12, FR-INT-02 | **TP-021** |
-| Honest post-mortem | NFR-OBS-03, GAP-POST-01 | **TP-022 (in progress)** |
+| TP-020 | Review tool + fail-closed worker (FR-REV-06, GAP-REV-01) | Done | TP-019 |
+| TP-021 | Integrate gate FSM + evidence bundle (§12) | Done | TP-020 |
+| TP-022 | Honest batch post-mortem (NFR-OBS-03, GAP-POST-01) | Done | TP-021 |
 
 ---
 
@@ -90,14 +84,16 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 2. **`spine batch start TP-020`** — review fail-closed (wave 12).
 3. **`spine batch start TP-021`** — integrate gate + evidence (wave 13).
 4. **`spine batch start TP-022`** — honest post-mortem (wave 14).
-5. **Phase 5:** `spine run pending` or `spine batch start pending` for unfinished backlog; dashboard (TP-023 TBD).
+5. **Phase 5 — Dashboard:** `spine batch start TP-023` → TP-025 → TP-026 (see run order below).
 
 ### Phase 5 — Operator UX
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-024 | Pending scope + relaxed batch `all` / `spine run pending` | **Done** | TP-022 |
-| TP-023 | Dashboard (NFR-OBS-04) | Planned | TBD |
+| TP-023 | Dashboard server + SSE snapshot API (§16 backend) | **Staged** | TP-024 |
+| TP-025 | Dashboard UI panels (§16.1) | **Staged** | TP-023 |
+| TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Staged** | TP-025 |
 
 ---
 
@@ -110,7 +106,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | **P1** | Integrate gate + evidence | 4 | **Staged (TP-021)** |
 | P2 | Honest post-mortem | 4 | **Staged (TP-022)** |
 | ~~P1~~ | Pending batch scope (`spine batch start pending` / `spine run pending`) | 5 | **Done (TP-024)** |
-| P2 | Dashboard (NFR-OBS-04) | 5 | Planned (TP-023) |
+| **P1** | Dashboard server + SSE (NFR-OBS-02) | 5 | **Staged (TP-023)** |
+| P2 | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Staged (TP-025, TP-026)** |
 
 ---
 
@@ -141,5 +138,7 @@ Run full `npm test` (**130+** tests) for any batch-touching change.
 - **TP-020** — `taskplane-tasks/TP-020-review-fail-closed/PROMPT.md`
 - **TP-021** — `taskplane-tasks/TP-021-integrate-gate/PROMPT.md`
 - **TP-022** — `taskplane-tasks/TP-022-honest-postmortem/PROMPT.md`
-- **TP-023** — Phase 5 dashboard (not staged)
+- **TP-023** — `taskplane-tasks/TP-023-dashboard-server/PROMPT.md`
+- **TP-025** — `taskplane-tasks/TP-025-dashboard-ui/PROMPT.md`
+- **TP-026** — `taskplane-tasks/TP-026-dashboard-parity/PROMPT.md`
 - FR-INIT-05 `spine init --preset taskplane-compat` — deferred
