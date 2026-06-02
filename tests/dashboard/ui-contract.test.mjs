@@ -4,7 +4,9 @@ import http from "node:http";
 import path from "node:path";
 import test from "node:test";
 import {
+	alternativeActionLabel,
 	bannerUsesDiagnosisNotPhase,
+	buildActionChips,
 	buildBannerModel,
 	buildDashboardViewModel,
 	diagnosisBadgeClass,
@@ -39,6 +41,20 @@ test("idle snapshot uses reconcile headline", () => {
 	assert.ok(vm.idle);
 	assert.equal(vm.banner.headline, snapshot.headline);
 	assert.equal(vm.banner.badgeClass, "badge-idle");
+});
+
+test("buildActionChips exposes copyable primary and alternatives", () => {
+	const snapshot = {
+		diagnosis: "needs_integrate",
+		suggestedCommand: "spine integrate",
+		alternatives: ["/spine-integrate", "/spine-gate", "spine status --diagnose"],
+	};
+	const chips = buildActionChips(snapshot);
+	assert.equal(chips[0].label, "Integrate");
+	assert.equal(chips[0].command, "spine integrate");
+	assert.ok(chips[0].primary);
+	assert.ok(chips.some((c) => c.label === "Gate" && !c.primary));
+	assert.equal(alternativeActionLabel("spine batch dismiss"), "Dismiss");
 });
 
 test("needs_integrate banner ignores completed phase for badge color", () => {
@@ -118,6 +134,7 @@ test("dashboard server GET / returns HTML shell", async () => {
 		});
 		assert.equal(body.status, 200);
 		assert.match(body.data, /diagnosis-banner/);
+		assert.match(body.data, /banner-actions/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {

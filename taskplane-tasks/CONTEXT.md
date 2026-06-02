@@ -91,9 +91,9 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-024 | Pending scope + relaxed batch `all` / `spine run pending` | **Done** | TP-022 |
-| TP-023 | Dashboard server + SSE snapshot API (§16 backend) | **Staged** | TP-024 |
-| TP-025 | Dashboard UI panels (§16.1) | **Staged** | TP-023 |
-| TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Staged** | TP-025 |
+| TP-023 | Dashboard server + SSE snapshot API (§16 backend) | **Done** | TP-024 |
+| TP-025 | Dashboard UI panels (§16.1) | **Done** | TP-023 |
+| TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Done** | TP-025 |
 
 ---
 
@@ -106,8 +106,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | **P1** | Integrate gate + evidence | 4 | **Staged (TP-021)** |
 | P2 | Honest post-mortem | 4 | **Staged (TP-022)** |
 | ~~P1~~ | Pending batch scope (`spine batch start pending` / `spine run pending`) | 5 | **Done (TP-024)** |
-| **P1** | Dashboard server + SSE (NFR-OBS-02) | 5 | **Staged (TP-023)** |
-| P2 | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Staged (TP-025, TP-026)** |
+| ~~P1~~ | Dashboard server + SSE (NFR-OBS-02) | 5 | **Done (TP-023)** |
+| ~~P2~~ | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Done (TP-025, TP-026)** |
 
 ---
 
@@ -118,7 +118,7 @@ From `.pi/taskplane-config.json`:
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Run full `npm test` (**130+** tests) for any batch-touching change.
+Run full `npm test` (**150+** tests) for any batch-touching change.
 
 ---
 

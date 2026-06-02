@@ -23,12 +23,46 @@ function setConnection(state, text) {
 	el.textContent = text;
 }
 
+/** @param {string} command */
+async function copyCommand(command) {
+	if (navigator.clipboard?.writeText) {
+		await navigator.clipboard.writeText(command);
+		return;
+	}
+	const textarea = document.createElement("textarea");
+	textarea.value = command;
+	textarea.setAttribute("readonly", "");
+	textarea.style.position = "absolute";
+	textarea.style.left = "-9999px";
+	document.body.appendChild(textarea);
+	textarea.select();
+	document.execCommand("copy");
+	textarea.remove();
+}
+
+/**
+ * @param {HTMLElement} chip
+ * @param {string} command
+ */
+async function handleChipCopy(chip, command) {
+	try {
+		await copyCommand(command);
+		chip.classList.add("action-chip-copied");
+		chip.setAttribute("aria-label", `Copied: ${command}`);
+		setTimeout(() => {
+			chip.classList.remove("action-chip-copied");
+			chip.setAttribute("aria-label", `Copy command: ${command}`);
+		}, 1200);
+	} catch (err) {
+		console.error("Failed to copy command", err);
+	}
+}
+
 /** @param {ReturnType<typeof buildDashboardViewModel>} vm */
 function renderBanner(vm) {
 	const badge = $("banner-badge");
 	const headline = $("banner-headline");
-	const action = $("banner-action");
-	const alts = $("banner-alternatives");
+	const actions = $("banner-actions");
 	const banner = vm.banner;
 
 	headline.textContent = banner.headline;
@@ -36,25 +70,39 @@ function renderBanner(vm) {
 	if (banner.idle || !banner.diagnosis) {
 		badge.hidden = true;
 		badge.className = "badge badge-idle";
-		action.textContent = banner.suggestedCommand ? `→ ${banner.suggestedCommand}` : "";
 	} else {
 		badge.hidden = false;
 		badge.className = `badge ${banner.badgeClass}`;
 		badge.textContent = banner.diagnosis.replace(/_/g, " ");
-		const label = banner.primaryAction ? `${banner.primaryAction}: ` : "";
-		action.textContent = `${label}${banner.suggestedCommand}`;
 	}
 
-	alts.replaceChildren();
-	if (banner.alternatives?.length) {
-		alts.hidden = false;
-		for (const alt of banner.alternatives) {
-			const li = document.createElement("li");
-			li.textContent = alt;
-			alts.appendChild(li);
-		}
-	} else {
-		alts.hidden = true;
+	actions.replaceChildren();
+	const chips = banner.actionChips ?? [];
+	if (!chips.length) {
+		actions.hidden = true;
+		return;
+	}
+
+	actions.hidden = false;
+	for (const chip of chips) {
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = chip.primary ? "action-chip action-chip-primary" : "action-chip";
+		btn.setAttribute("aria-label", `Copy command: ${chip.command}`);
+
+		const labelEl = document.createElement("span");
+		labelEl.className = "action-chip-label";
+		labelEl.textContent = chip.label;
+
+		const cmdEl = document.createElement("span");
+		cmdEl.className = "action-chip-command";
+		cmdEl.textContent = chip.command;
+
+		btn.append(labelEl, cmdEl);
+		btn.addEventListener("click", () => {
+			void handleChipCopy(btn, chip.command);
+		});
+		actions.appendChild(btn);
 	}
 }
 

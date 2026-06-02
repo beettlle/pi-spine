@@ -52,6 +52,59 @@ export function isIdleSnapshot(snapshot) {
 }
 
 /**
+ * @param {string} command
+ */
+export function alternativeActionLabel(command) {
+	const cmd = String(command ?? "").trim();
+	if (!cmd) return "Action";
+	if (/dismiss/i.test(cmd)) return "Dismiss";
+	if (/complete/i.test(cmd)) return "Complete";
+	if (/integrate/i.test(cmd)) return "Integrate";
+	if (/retry/i.test(cmd)) return "Retry";
+	if (/resume/i.test(cmd)) return "Resume";
+	if (/pause/i.test(cmd)) return "Pause";
+	if (/abort/i.test(cmd)) return "Abort";
+	if (/preflight/i.test(cmd)) return "Preflight";
+	if (/plan/i.test(cmd)) return "Plan";
+	if (/skip/i.test(cmd)) return "Skip";
+	if (/gate/i.test(cmd)) return "Gate";
+	if (/status|diagnose/i.test(cmd)) return "Status";
+	return cmd.replace(/^\//, "").split(/\s+/)[0] || "Action";
+}
+
+/**
+ * Copyable CLI chips for the diagnosis banner (§16.1). No HTTP mutations.
+ *
+ * @param {object} snapshot
+ * @returns {{ label: string, command: string, primary: boolean }[]}
+ */
+export function buildActionChips(snapshot) {
+	const chips = [];
+	const diagnosis = snapshot?.diagnosis ?? null;
+	const suggested = snapshot?.suggestedCommand ?? "";
+	const primaryLabel = primaryActionLabel(diagnosis);
+
+	if (suggested) {
+		chips.push({
+			label: primaryLabel ?? (diagnosis ? "Diagnose" : "Preflight"),
+			command: suggested,
+			primary: true,
+		});
+	}
+
+	for (const alt of snapshot?.alternatives ?? []) {
+		if (!alt || alt === suggested) continue;
+		chips.push({
+			label: alternativeActionLabel(alt),
+			command: alt,
+			primary: false,
+		});
+	}
+
+	return chips;
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildBannerModel(snapshot) {
@@ -63,6 +116,7 @@ export function buildBannerModel(snapshot) {
 		diagnosis,
 		badgeClass: diagnosisBadgeClass(diagnosis),
 		primaryAction: primaryActionLabel(diagnosis),
+		actionChips: buildActionChips(snapshot),
 		idle: isIdleSnapshot(snapshot),
 	};
 }
