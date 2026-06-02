@@ -115,7 +115,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | TP-031 | `spine deps` CLI + `/spine-deps` | **Staged** | TP-030 |
-| TP-032 | Settings editable-field registry | **Staged** | TP-030 |
+| TP-032 | Settings editable-field registry | **Done** | TP-030 |
 | TP-033 | `spine settings show` CLI | **Staged** | TP-032 |
 | TP-034 | `spine settings set` CLI | **Staged** | TP-033 |
 | TP-035 | `/spine-settings` interactive menu (FR-CFG-03) | **Staged** | TP-034 |
