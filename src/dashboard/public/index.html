@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>pi-spine dashboard</title>
+  <link rel="stylesheet" href="/dashboard.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>pi-spine dashboard</h1>
+    <p id="connection-status" class="connection-status" aria-live="polite">Connecting…</p>
+  </header>
+
+  <section id="diagnosis-banner" class="diagnosis-banner" aria-labelledby="banner-headline">
+    <div class="banner-main">
+      <span id="banner-badge" class="badge badge-idle" hidden></span>
+      <h2 id="banner-headline" class="banner-headline">Loading…</h2>
+    </div>
+    <p id="banner-action" class="banner-action"></p>
+    <ul id="banner-alternatives" class="banner-alternatives" hidden></ul>
+  </section>
+
+  <main class="panels" id="active-panels" hidden>
+    <section class="panel" aria-labelledby="batch-summary-heading">
+      <h3 id="batch-summary-heading">Batch summary</h3>
+      <dl id="batch-summary" class="kv-grid"></dl>
+    </section>
+
+    <section class="panel" aria-labelledby="wave-progress-heading">
+      <h3 id="wave-progress-heading">Wave progress</h3>
+      <p id="wave-progress-summary" class="wave-summary"></p>
+      <ol id="wave-list" class="wave-list"></ol>
+    </section>
+
+    <section class="panel panel-wide" aria-labelledby="lane-table-heading">
+      <h3 id="lane-table-heading">Lanes</h3>
+      <div class="table-wrap">
+        <table id="lane-table" class="lane-table">
+          <thead>
+            <tr>
+              <th scope="col">Lane</th>
+              <th scope="col">Status</th>
+              <th scope="col">Tasks</th>
+              <th scope="col">Heartbeat</th>
+              <th scope="col">Worktree</th>
+            </tr>
+          </thead>
+          <tbody id="lane-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="gate-heading">
+      <h3 id="gate-heading">Integrate gate</h3>
+      <div id="gate-panel" class="gate-panel"></div>
+    </section>
+
+    <section class="panel panel-wide" aria-labelledby="journal-heading">
+      <h3 id="journal-heading">Journal (last 20)</h3>
+      <ol id="journal-list" class="journal-list"></ol>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <span id="snapshot-time" class="snapshot-time"></span>
+  </footer>
+
+  <script type="module" src="/dashboard.js"></script>
+</body>
+</html>
