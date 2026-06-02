@@ -1,0 +1,28 @@
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/STATUS.md
+  s_ca0db411fbc320::t_4ce1714664b061 1-75
+taskplane-tasks/CONTEXT.md
+  s_ca0db411fbc320::t_35dff9f1529d8b 98
+  s_ca0db411fbc320::t_a30d6a16acc36b 114
+  s_ca0db411fbc320::t_24ed6e7bb22ab2 5
+  s_ca0db411fbc320::t_701fb765400089 149
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/PROMPT.md
+  s_ca0db411fbc320::t_4ce1714664b061 1-131
+taskplane-tasks/dependencies.json
+  s_ca0db411fbc320::t_3058b82fd3881d 70-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1889da5c85a5e2526409ff7aed3abb3c8c753efd",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
