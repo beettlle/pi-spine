@@ -391,6 +391,8 @@ spine dashboard              # default http://127.0.0.1:8109
 spine dashboard --port 8110  # override CLI port
 ```
 
+As soon as the server is listening, the CLI prints the browser URL, listen address, SSE note, suggested `spine status` / `spine batch start` commands, and API paths (keep the terminal open while the dashboard runs).
+
 Set `dashboard.port` in `.spine/spine-config.json` (default **8109**, avoids Taskplane port 8099). Example from `spine init`:
 
 ```json

@@ -578,38 +578,17 @@ async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || "integrate completed", "info");
 }
 
-function resolveDashboardNotifyPort(args: string, cwd = process.cwd()): number {
-	const portMatch = args.match(/--port\s+(\d+)/);
-	if (portMatch) return Number(portMatch[1]);
-
-	try {
-		const configPath = path.join(cwd, ".spine", "spine-config.json");
-		if (fs.existsSync(configPath)) {
-			const parsed = JSON.parse(fs.readFileSync(configPath, "utf-8")) as {
-				dashboard?: { port?: number };
-			};
-			const fromConfig = parsed.dashboard?.port;
-			if (fromConfig != null && !Number.isNaN(Number(fromConfig))) {
-				return Number(fromConfig);
-			}
-		}
-	} catch {
-		// keep default
-	}
-
-	return 8109;
-}
-
 async function spineDashboardHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
-	const port = resolveDashboardNotifyPort(args);
+	const { resolveDashboardPortWithSource, formatDashboardNotifyMessage, DEFAULT_DASHBOARD_HOST } =
+		await import(path.join(PACKAGE_ROOT, "bin/spine-dashboard.mjs"));
+
+	const portMatch = args.match(/--port\s+(\d+)/);
+	const cliPort = portMatch ? Number(portMatch[1]) : undefined;
+	const { port, portSource } = resolveDashboardPortWithSource(process.cwd(), cliPort);
 
 	runSpineDashboardDetached(args);
 	ctx.ui.notify(
-		`pi-spine dashboard starting in the background.
-
-Open http://127.0.0.1:${port}/ in your browser (loopback only).
-
-CLI: \`spine dashboard\` · configure port in \`.spine/spine-config.json\` (\`dashboard.port\`, default 8109).`,
+		formatDashboardNotifyMessage({ host: DEFAULT_DASHBOARD_HOST, port, portSource }),
 		"info",
 	);
 }
