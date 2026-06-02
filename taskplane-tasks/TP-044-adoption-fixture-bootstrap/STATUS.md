@@ -15,9 +15,9 @@
 - [x] bootstrap-checklist.md
 
 ### Step 3: Integration test + script
-**Status:** ⬜ Not Started
-- [ ] fixture-batch.test.mjs
-- [ ] adoption-smoke.sh
+**Status:** ✅ Complete
+- [x] fixture-batch.test.mjs
+- [x] adoption-smoke.sh
 
 ### Step 4: Verification
 **Status:** ⬜ Not Started
