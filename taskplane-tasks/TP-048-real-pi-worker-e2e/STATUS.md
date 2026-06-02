@@ -19,4 +19,7 @@
 - [x] `scripts/real-pi-adoption-e2e.sh` added (manual/optional)
 
 ### Step 3: Worker template + verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
+- [x] `templates/agents/worker.md` documents `spine_review_step`, `spine_report_progress`, `spine_request_gate` (no change needed)
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — **321/321** pass (2026-06-02)
+- [x] Step 2 plan review APPROVE (`.reviews/2-20260602T224750.md`)

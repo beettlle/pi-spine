@@ -48,6 +48,6 @@ done
 section "evidence"
 echo "  temp: $TMP"
 echo "  done: ${DONE:-MISSING}"
-[[ -f .spine/journal.ndjson ]] && tail -5 .spine/journal.ndjson
+[[ -f .spine/runtime/*/journal/events.jsonl ]] && tail -5 .spine/runtime/*/journal/events.jsonl 2>/dev/null || true
 [[ -n "$DONE" ]] || fail "no .DONE"
 pass "batch complete"
