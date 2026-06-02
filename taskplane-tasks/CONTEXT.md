@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-01
 **Status:** Active
-**Next Task ID:** TP-027
+**Next Task ID:** TP-028
 **Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
@@ -94,6 +94,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-023 | Dashboard server + SSE snapshot API (§16 backend) | **Done** | TP-024 |
 | TP-025 | Dashboard UI panels (§16.1) | **Done** | TP-023 |
 | TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Done** | TP-025 |
+| TP-027 | Dashboard CLI startup messaging (URL/port on listen) | **Staged** | — |
 
 ---
 
@@ -108,6 +109,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | ~~P1~~ | Pending batch scope (`spine batch start pending` / `spine run pending`) | 5 | **Done (TP-024)** |
 | ~~P1~~ | Dashboard server + SSE (NFR-OBS-02) | 5 | **Done (TP-023)** |
 | ~~P2~~ | Dashboard UI + parity (NFR-OBS-04, GAP-UX-03) | 5 | **Done (TP-025, TP-026)** |
+| P3 | Dashboard CLI startup operator hints | 5 | **Staged (TP-027)** |
 
 ---
 
@@ -141,4 +143,5 @@ Run full `npm test` (**150+** tests) for any batch-touching change.
 - **TP-023** — `taskplane-tasks/TP-023-dashboard-server/PROMPT.md`
 - **TP-025** — `taskplane-tasks/TP-025-dashboard-ui/PROMPT.md`
 - **TP-026** — `taskplane-tasks/TP-026-dashboard-parity/PROMPT.md`
+- **TP-027** — `taskplane-tasks/TP-027-dashboard-cli-startup/PROMPT.md`
 - FR-INIT-05 `spine init --preset taskplane-compat` — deferred
