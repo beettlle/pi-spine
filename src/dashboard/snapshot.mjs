@@ -1,0 +1,248 @@
+/**
+ * Dashboard snapshot builder (PRD §16, NFR-OBS-04).
+ */
+
+import {
+	classifyTasks,
+	loadBatchStateFile,
+	parseBatchState,
+	reconcileBatch,
+} from "../batch/reconcile.mjs";
+import { loadGateRecord, formatGateSummary } from "../batch/gate.mjs";
+import {
+	readJournalEvents,
+	readJournalTail,
+	summarizeJournalEvent,
+} from "../batch/journal.mjs";
+import { resolveStallConfig } from "../batch/heartbeat.mjs";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
+
+/**
+ * @param {string|null|undefined} worktreePath
+ */
+export function truncateWorktreePath(worktreePath) {
+	if (!worktreePath) return null;
+	const parts = String(worktreePath).split(/[/\\]/).filter(Boolean);
+	if (parts.length <= 3) return parts.join("/");
+	return parts.slice(-3).join("/");
+}
+
+/**
+ * @param {number|string|null|undefined} lastHeartbeatAt
+ * @param {number} [now]
+ */
+export function heartbeatAgeSeconds(lastHeartbeatAt, now = Date.now()) {
+	if (lastHeartbeatAt == null) return null;
+	const ts =
+		typeof lastHeartbeatAt === "number"
+			? lastHeartbeatAt
+			: new Date(lastHeartbeatAt).getTime();
+	if (Number.isNaN(ts)) return null;
+	return Math.max(0, Math.floor((now - ts) / 1000));
+}
+
+/**
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {ReturnType<typeof resolveStallConfig>} params.stallConfig
+ * @param {number} [params.now]
+ */
+export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = Date.now() }) {
+	const taskIds = lane.taskIds ?? [];
+	const tasks = classifiedTasks.filter((task) => taskIds.includes(task.taskId));
+
+	if (taskIds.length === 0) {
+		return "completed";
+	}
+
+	const allDone =
+		tasks.length > 0 && tasks.every((task) => task.classification === "terminal-success");
+	if (allDone) return "completed";
+
+	const hasActive = tasks.some(
+		(task) => task.classification === "running" || task.classification === "pending",
+	);
+	if (!hasActive) return "completed";
+
+	let referenceMs = null;
+	if (lane.lastHeartbeatAt != null) {
+		referenceMs =
+			typeof lane.lastHeartbeatAt === "number"
+				? lane.lastHeartbeatAt
+				: new Date(lane.lastHeartbeatAt).getTime();
+	}
+
+	if (referenceMs == null || Number.isNaN(referenceMs)) {
+		const startedAts = tasks
+			.map((task) => task.startedAt)
+			.filter((value) => value != null)
+			.map((value) =>
+				typeof value === "number" ? value : new Date(/** @type {string} */ (value)).getTime(),
+			)
+			.filter((value) => !Number.isNaN(value));
+		referenceMs = startedAts.length ? Math.max(...startedAts) : now;
+	}
+
+	if (now - referenceMs > stallConfig.stallTimeoutMs) {
+		return "stale";
+	}
+
+	return "running";
+}
+
+/**
+ * @param {object} params
+ * @param {object[]} params.lanes
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {ReturnType<typeof resolveStallConfig>} params.stallConfig
+ * @param {number} [params.now]
+ */
+export function buildLaneRows({ lanes, classifiedTasks, stallConfig, now = Date.now() }) {
+	return (lanes ?? []).map((lane) => ({
+		laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
+		laneNumber: lane.laneNumber,
+		status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
+		taskIds: lane.taskIds ?? [],
+		heartbeatAgeSeconds: heartbeatAgeSeconds(lane.lastHeartbeatAt, now),
+		worktree: truncateWorktreePath(lane.worktreePath),
+	}));
+}
+
+/**
+ * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
+ */
+export function buildWaveProgress(batchState) {
+	const raw =
+		batchState && typeof batchState === "object" && "raw" in batchState
+			? /** @type {Record<string, unknown>} */ (batchState.raw)
+			: /** @type {Record<string, unknown>} */ (batchState ?? {});
+
+	const wavePlan = Array.isArray(raw.wavePlan) ? raw.wavePlan : [];
+	const currentWaveIndex = Number(raw.currentWaveIndex ?? 0);
+	const totalWaves = Number(raw.totalWaves ?? wavePlan.length);
+
+	return {
+		currentWaveIndex,
+		totalWaves,
+		waves: wavePlan.map((entry, index) => ({
+			index,
+			taskIds: Array.isArray(entry) ? entry.map(String) : [],
+			status:
+				index < currentWaveIndex ? "completed" : index === currentWaveIndex ? "active" : "pending",
+		})),
+	};
+}
+
+/**
+ * @param {object} event
+ */
+export function formatJournalTailEntry(event) {
+	return {
+		eventId: event.eventId,
+		type: event.type,
+		timestamp: event.timestamp,
+		laneId: event.laneId ?? null,
+		taskId: event.taskId ?? null,
+		summary: summarizeJournalEvent(event),
+	};
+}
+
+/**
+ * @param {import("../batch/reconcile.mjs").NormalizedBatchState | null} batch
+ */
+function summarizeBatch(batch) {
+	if (!batch) return null;
+
+	return {
+		batchId: batch.batchId,
+		phase: batch.phase,
+		baseBranch: batch.baseBranch,
+		orchBranch: batch.orchBranch,
+		startedAt: batch.startedAt,
+		endedAt: batch.endedAt,
+		failedTasks: batch.failedTasks,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
+		currentWaveIndex:
+			batch.raw && typeof batch.raw === "object"
+				? /** @type {{ currentWaveIndex?: number }} */ (batch.raw).currentWaveIndex ?? 0
+				: 0,
+		totalWaves:
+			batch.raw && typeof batch.raw === "object"
+				? /** @type {{ totalWaves?: number }} */ (batch.raw).totalWaves ??
+					(Array.isArray(/** @type {{ wavePlan?: unknown[] }} */ (batch.raw).wavePlan)
+						? /** @type {{ wavePlan: unknown[] }} */ (batch.raw).wavePlan.length
+						: 0)
+				: 0,
+	};
+}
+
+/**
+ * @param {string} projectRoot
+ */
+export function buildDashboardSnapshot(projectRoot) {
+	const configResult = loadSpineConfig(projectRoot);
+	const stallConfig = resolveStallConfig(configResult.config ?? {});
+	const reconciliation = reconcileBatch({ projectRoot, verbose: true });
+
+	let batch = null;
+	if (reconciliation.batchStatePath) {
+		const loaded = loadBatchStateFile(projectRoot, reconciliation.batchStatePath);
+		if (loaded.raw) {
+			batch = parseBatchState(loaded.raw, loaded.path ?? reconciliation.batchStatePath);
+		}
+	}
+
+	const classifiedTasks =
+		reconciliation.signals?.tasks ??
+		(batch ? classifyTasks(batch, null) : []);
+
+	let gate = null;
+	if (reconciliation.batchId) {
+		const record = loadGateRecord(projectRoot, reconciliation.batchId);
+		if (record) {
+			gate = {
+				gateId: record.gateId,
+				batchId: record.batchId,
+				kind: record.kind,
+				status: record.status,
+				openedAt: record.openedAt,
+				summary: formatGateSummary(record),
+				evidenceRefs: record.evidenceRefs ?? [],
+			};
+		}
+	}
+
+	let journalTail = [];
+	if (reconciliation.batchId) {
+		const events = readJournalEvents(projectRoot, reconciliation.batchId);
+		journalTail = readJournalTail(events, 20).map(formatJournalTailEntry);
+	}
+
+	const now = Date.now();
+	const lanes = buildLaneRows({
+		lanes: batch?.lanes ?? [],
+		classifiedTasks,
+		stallConfig,
+		now,
+	});
+	const waves = buildWaveProgress(batch);
+
+	return {
+		generatedAt: new Date(now).toISOString(),
+		diagnosis: reconciliation.diagnosis,
+		headline: reconciliation.headline,
+		suggestedCommand: reconciliation.suggestedCommand,
+		alternatives: reconciliation.alternatives ?? [],
+		batchId: reconciliation.batchId,
+		phase: reconciliation.phase,
+		batchStatePath: reconciliation.batchStatePath,
+		reconciliation,
+		batch: summarizeBatch(batch),
+		lanes,
+		gate,
+		journalTail,
+		waves,
+	};
+}
