@@ -27,4 +27,4 @@
 |------|------|---------|
 | 1 | plan | APPROVE |
 | 2 | plan | APPROVE |
-| 3 | code | (pending) |
+| 3 | plan | APPROVE |
