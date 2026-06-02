@@ -270,7 +270,7 @@ spine review step --step 1 --type code     # level >= 2 (optional --baseline <sh
 Reviewer model is configured separately in `.spine/spine-config.json` (`agents.reviewer`).
 
 
-### Pause and resume (Phase 3 — single lane)
+### Pause and resume (Phase 3 — single and multi lane)
 
 ```bash
 spine batch pause                    # stop scheduling; journal batch.paused
@@ -280,7 +280,9 @@ spine batch resume --force           # resume failed batch after stale lane stat
 spine batch pause --json
 ```
 
-Resume skips tasks already marked complete via `.DONE` or journal `task.completed`, respawns the worker in the existing lane worktree for pending segments, logs `batch.resumed` with `{ resumeForced, pendingSegments }`, then runs lane commit + merge.
+Resume skips tasks already marked complete via `.DONE` or journal `task.completed`, respawns workers in existing lane worktrees for pending segments across all lanes, logs `batch.resumed` with `{ resumeForced, pendingSegments }`, then runs lane commit + merge per wave.
+
+Multi-task batches (more than one task or lane) use the same commands; validation and execution resume pending tasks in parallel within each wave, then merge succeeded lane branches into the orch branch.
 
 In pi: `/spine-pause` and `/spine-resume` delegate to `spine batch pause|resume`. When `spine status` reports `diagnosis: paused`, the suggested command is `spine batch resume` (not Taskplane pause).
 
