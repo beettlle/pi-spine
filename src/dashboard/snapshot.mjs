@@ -92,17 +92,49 @@ export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = D
 }
 
 /**
+ * Tasks running or pending in the current wave on this physical lane (tick-active subset).
+ *
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {string[]} [params.currentWaveTaskIds]
+ */
+export function computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }) {
+	if (!currentWaveTaskIds?.length) return [];
+	const waveSet = new Set(currentWaveTaskIds.map(String));
+	return classifiedTasks
+		.filter((task) => task.laneNumber === lane.laneNumber)
+		.filter((task) => waveSet.has(task.taskId))
+		.filter(
+			(task) =>
+				task.classification === "running" ||
+				task.classification === "pending" ||
+				task.status === "running" ||
+				task.status === "pending",
+		)
+		.map((task) => task.taskId);
+}
+
+/**
  * @param {object} params
  * @param {object[]} params.lanes
  * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
  * @param {ReturnType<typeof resolveStallConfig>} params.stallConfig
+ * @param {string[]} [params.currentWaveTaskIds]
  * @param {number} [params.now]
  */
-export function buildLaneRows({ lanes, classifiedTasks, stallConfig, now = Date.now() }) {
+export function buildLaneRows({
+	lanes,
+	classifiedTasks,
+	stallConfig,
+	currentWaveTaskIds = [],
+	now = Date.now(),
+}) {
 	return (lanes ?? []).map((lane) => ({
 		laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 		laneNumber: lane.laneNumber,
 		status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
+		activeTaskIds: computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }),
 		taskIds: lane.taskIds ?? [],
 		heartbeatAgeSeconds: heartbeatAgeSeconds(lane.lastHeartbeatAt, now),
 		worktree: truncateWorktreePath(lane.worktreePath),
@@ -221,10 +253,21 @@ export function buildDashboardSnapshot(projectRoot) {
 	}
 
 	const now = Date.now();
+	const rawBatch =
+		batch?.raw && typeof batch.raw === "object"
+			? /** @type {Record<string, unknown>} */ (batch.raw)
+			: {};
+	const currentWaveIndex = Number(rawBatch.currentWaveIndex ?? 0);
+	const wavePlan = Array.isArray(rawBatch.wavePlan) ? rawBatch.wavePlan : [];
+	const currentWaveTaskIds = Array.isArray(wavePlan[currentWaveIndex])
+		? wavePlan[currentWaveIndex].map(String)
+		: [];
+
 	const lanes = buildLaneRows({
 		lanes: batch?.lanes ?? [],
 		classifiedTasks,
 		stallConfig,
+		currentWaveTaskIds,
 		now,
 	});
 	const waves = buildWaveProgress(batch);

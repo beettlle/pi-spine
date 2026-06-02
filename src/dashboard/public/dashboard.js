@@ -139,7 +139,7 @@ function renderBatch(batch) {
 function renderWaves(waves) {
 	$("wave-progress-summary").textContent =
 		waves.totalWaves > 0
-			? `Wave ${waves.currentWaveIndex + 1} of ${waves.totalWaves}`
+			? `Wave ${waves.currentWaveIndex + 1} of ${waves.totalWaves} — lane ≠ wave (see Lanes table)`
 			: "No waves";
 	const list = $("wave-list");
 	list.replaceChildren();
@@ -158,7 +158,7 @@ function renderLanes(lanes) {
 	if (!lanes.length) {
 		const tr = document.createElement("tr");
 		const td = document.createElement("td");
-		td.colSpan = 5;
+		td.colSpan = 6;
 		td.className = "empty-hint";
 		td.textContent = "No lanes";
 		tr.appendChild(td);
@@ -170,7 +170,8 @@ function renderLanes(lanes) {
 		const values = [
 			lane.laneId,
 			lane.status,
-			(lane.taskIds ?? []).join(", "),
+			(lane.activeTaskIds ?? []).join(", ") || "—",
+			(lane.taskIds ?? []).join(", ") || "—",
 			formatHeartbeat(lane.heartbeatAgeSeconds),
 			lane.worktree ?? "—",
 		];

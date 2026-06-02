@@ -1,17 +1,26 @@
 # TP-042: Fix lane packing vs parallel execution — Status
 
-**Status:** Pending | **Last Updated:** 2026-06-02 | **Review Level:** 2 | **Size:** M
+**Status:** Done | **Last Updated:** 2026-06-02 | **Review Level:** 2 | **Size:** M
 
-### Step 0 — Not Started | Step 1 — Not Started | Step 2 — Not Started | Step 3 — Not Started | Step 4 — Not Started
+### Step 0 — Done | Step 1 — Done | Step 2 — Done | Step 3 — Done | Step 4 — Done
 
 ## Summary
 
-_(Pending execution. Opened after Phase 8 dogfood: batch `20260602T194520` packed TP-034/038/041 on one lane but ran workers in parallel.)_
+Fixed scheduler/engine mismatch from batch `20260602T194520`: disjoint-scope tasks (TP-034/038/041) now get separate virtual lanes; overlapping scopes share a lane; engine serializes multiple tasks on one worktree; dashboard distinguishes active vs batch-assigned tasks.
 
 ## Baseline
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `SPINE_WORKER_STUB=1 npm test` — 280 pass, 2 pre-existing worker-tools failures (`typebox` module)
+- [ ] `npm run typecheck` — pre-existing `typebox` missing in extensions
+
+## Verification
+
+- [x] `node bin/spine.mjs plan TP-034 TP-038 TP-041` → 3 lanes in tick 0
+- [x] Planner, engine, dashboard tests added and passing
 
 ## Commits
 
-_(none yet)_
+- `fix(TP-042): assign disjoint tasks to separate virtual lanes`
+- `fix(TP-042): serialize tasks on the same physical lane`
+- `feat(TP-042): dashboard separates active lane tasks from assignment`
+- `docs(TP-042): wave vs lane vs tick and close GAP-SCHED-01`
