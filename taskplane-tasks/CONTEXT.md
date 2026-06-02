@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-029
+**Next Task ID:** TP-030
 **Orchestration policy:** **Option B** — pi-spine owns batch execution; Phase 3 complete (`/spine-retry-task` on `main`). Taskplane `/orch` optional for bounded dogfood only.
 
 ---
@@ -96,6 +96,12 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-026 | Dashboard parity + `/spine-dashboard` (GAP-UX-03) | **Done** | TP-025 |
 | TP-027 | Dashboard CLI startup messaging (URL/port on listen) | **Done** | — |
 | TP-028 | `spine doctor` suggests `lanes.maxParallel` | **Done** | — |
+
+### Phase 6 — Compatibility validation (staged)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Staged** | TP-028 |
 
 ---
 
