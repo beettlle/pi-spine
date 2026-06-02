@@ -29,7 +29,7 @@
   "scripts": {
     "doctor": "node bin/spine.mjs doctor",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs tests/compat/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/dashboard/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs tests/compat/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs"
   },
   "files": [
     "bin/",

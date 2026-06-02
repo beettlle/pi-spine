@@ -21,6 +21,10 @@ import { fileURLToPath } from "node:url";
 import { getVersion } from "./get-version.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
+import {
+	buildMaxParallelDoctorCheck,
+	detectCpuCount,
+} from "../src/doctor/suggest-max-parallel.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -267,6 +271,14 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		record(".spine/spine-config.json valid", true, {
 			detail: `project: ${configResult.config.project.name}, tasks: ${configResult.config.paths.tasksRoot}`,
 		});
+
+		const configuredMaxParallel = configResult.config.lanes?.maxParallel ?? 3;
+		checks.push(
+			buildMaxParallelDoctorCheck({
+				configured: configuredMaxParallel,
+				cpuCount: detectCpuCount(),
+			}),
+		);
 	}
 
 	for (const agentFile of REQUIRED_AGENT_FILES) {
