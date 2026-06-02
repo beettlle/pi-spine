@@ -27,6 +27,7 @@ import {
 	detectCpuCount,
 } from "../src/doctor/suggest-max-parallel.mjs";
 import { buildStalePathDoctorCheck } from "../src/doctor/stale-path.mjs";
+import { buildCoexistenceDoctorCheck } from "../src/doctor/coexistence.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -260,6 +261,10 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			runningSpinePath: __filename,
 		}),
 	);
+
+	const coexistenceCheck = buildCoexistenceDoctorCheck({ projectRoot });
+	checks.push(coexistenceCheck);
+	if (!coexistenceCheck.ok) issueCount++;
 
 	record("git repository detected", isInsideGitRepo(projectRoot));
 

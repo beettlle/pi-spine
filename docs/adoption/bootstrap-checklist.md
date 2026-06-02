@@ -99,7 +99,7 @@ For repos that already use Taskplane `/orch` and `taskplane-tasks/`:
 
 ### 1. Stop Taskplane batches
 
-Do **not** run Taskplane `/orch` and `spine batch start` concurrently on the same repo.
+Do **not** run Taskplane `/orch` and `spine batch start` concurrently on the same repo. `spine doctor` and `spine preflight` inspect **both** `.pi/batch-state.json` (Taskplane) and `.spine/batch-state.json` (pi-spine) and fail with `suggestedCommand` when an active Taskplane batch would conflict (PRD §22.1).
 
 ### 2. Install pi-spine
 
@@ -135,7 +135,7 @@ Same as greenfield steps 4–6. Existing `taskplane-tasks/` folders and `depende
 
 ### 6. Retire Taskplane orchestration
 
-After a successful stub batch, remove or disable Taskplane `/orch` usage. Track coexistence rules in README until TP-045 guard lands.
+After a successful stub batch, remove or disable Taskplane `/orch` usage. Until then, rely on `spine doctor` / `spine preflight` mutual-exclusion checks before each spine batch.
 
 ---
 
