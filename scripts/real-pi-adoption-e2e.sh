@@ -48,6 +48,7 @@ done
 section "evidence"
 echo "  temp: $TMP"
 echo "  done: ${DONE:-MISSING}"
-[[ -f .spine/runtime/*/journal/events.jsonl ]] && tail -5 .spine/runtime/*/journal/events.jsonl 2>/dev/null || true
+JOURNAL="$(find .spine/runtime -path '*/journal/events.jsonl' -print 2>/dev/null | head -1)"
+[[ -n "$JOURNAL" ]] && tail -5 "$JOURNAL"
 [[ -n "$DONE" ]] || fail "no .DONE"
 pass "batch complete"
