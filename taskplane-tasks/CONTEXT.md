@@ -97,17 +97,19 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-027 | Dashboard CLI startup messaging (URL/port on listen) | **Done** | — |
 | TP-028 | `spine doctor` suggests `lanes.maxParallel` | **Done** | — |
 
-### Phase 6 — Compatibility validation (staged)
+### Phase 6 — Compatibility validation (re-opened)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Staged** | TP-028 |
+| TP-029 | Incident regression I-01–I-10, ABC integration fixture, gap list, dogfood report | **Re-opened** — stub-free batch queued | TP-028 |
 
-### Phase 7 — Publish & migration (staged)
+### Phase 7 — Publish & migration (re-opened)
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Staged** | TP-029 |
+| TP-030 | `migrate-from-taskplane`, `--preset taskplane-compat`, npm publish prep | **Re-opened** — after TP-029 | TP-029 |
+
+**Orchestration note:** Prior batch `20260602T180119` wrote `.DONE` only (stub worker). Run with `SPINE_WORKER_STUB=0` and `pi` on PATH.
 
 ---
 
