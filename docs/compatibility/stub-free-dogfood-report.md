@@ -73,4 +73,6 @@ None for stub-free worker path. Land-loop steps (gate → integrate → complete
 
 **Stub-free single-task batch validated on pi-spine repo.** Real `pi` workers exercised for TP-047; Phase 6 manual checklist items 1–5 and 9 pass; land loop (6–8) documented for post-batch operator steps.
 
+**Adoption fixture real-pi:** see [`docs/adoption/real-pi-e2e.md`](../adoption/real-pi-e2e.md) for AD-002 consumer-layout validation with plan review.
+
 — Cesar Delgado, 2026-06-02
