@@ -77,10 +77,10 @@ test("runPreflightPlanCheck builds wave plan during preflight", async () => {
 		assert.ok(planCheck);
 		assert.equal(planCheck.ok, true);
 
-		const waveLines = String(planCheck.message).match(/Wave \d+:/g) ?? [];
+		const waveLines = String(planCheck.message).match(/Wave \d+ ·/g) ?? [];
 		assert.equal(waveLines.length, 2);
-		assert.ok(String(planCheck.message).includes("Wave 0:"));
-		assert.ok(String(planCheck.message).includes("Wave 1:"));
+		assert.ok(String(planCheck.message).includes("Wave 0 ·"));
+		assert.ok(String(planCheck.message).includes("Wave 1 ·"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
