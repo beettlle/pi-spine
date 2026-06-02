@@ -11,7 +11,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadSpineConfig } from "./spine-config.mjs";
+import { loadSpineConfig, loadSpineConfigFile } from "./spine-config.mjs";
 import { formatSettingsShow } from "../src/cli/settings-show.mjs";
 import {
 	runSettingsSetOperation,
@@ -45,7 +45,12 @@ export function runSpineSettingsShow({ projectRoot, args }) {
 		};
 	}
 
-	return formatSettingsShow(configResult.config, { path: settingPath, json });
+	return formatSettingsShow(configResult.config, {
+		path: settingPath,
+		json,
+		sources: configResult.sources,
+		envVars: configResult.envVars,
+	});
 }
 
 /**
@@ -75,7 +80,7 @@ export function runSpineSettingsSet({ projectRoot, args }) {
 	const [settingPath, ...valueParts] = positional;
 	const rawValue = valueParts.join(" ");
 
-	const configResult = loadSpineConfig(projectRoot);
+	const configResult = loadSpineConfigFile(projectRoot);
 	if (configResult.error) {
 		const message = configResult.error.message;
 		const suggestedCommand = configResult.error.suggestedCommand;

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "./spine-config.mjs";
+import { resolveTasksRootPath } from "../src/config/env-overrides.mjs";
 import { runDoctorChecks } from "./spine.mjs";
 import { runReconciliationCheck } from "../src/batch/reconcile.mjs";
 import { buildPlan } from "../src/planner/index.mjs";
@@ -20,14 +21,10 @@ const TASK_ID_PATTERN = /^[A-Z]{2,}-\d{3,}$/;
  */
 export function resolveTasksRoot(projectRoot, configResult) {
 	const loaded = configResult ?? loadSpineConfig(projectRoot);
-	if (loaded.config?.paths?.tasksRoot) {
-		return path.join(projectRoot, loaded.config.paths.tasksRoot);
+	if (!loaded.config) {
+		return null;
 	}
-
-	const envRoot = process.env.SPINE_TASKS_ROOT;
-	if (envRoot) return path.resolve(projectRoot, envRoot);
-
-	return null;
+	return resolveTasksRootPath(projectRoot, loaded.config);
 }
 
 function isInsideGitRepo(dir) {

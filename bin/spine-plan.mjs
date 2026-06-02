@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadSpineConfig } from './spine-config.mjs';
+import { resolveTasksRootPath } from '../src/config/env-overrides.mjs';
 import { buildPlan } from '../src/planner/index.mjs';
 import { formatPlanHuman } from '../src/planner/format-plan.mjs';
 
@@ -42,7 +43,12 @@ export async function runSpinePlan({
 	}
 
 	const config = configResult.config;
-	const tasksRoot = path.join(projectRoot, config.paths.tasksRoot);
+	const tasksRoot = resolveTasksRootPath(projectRoot, config);
+	if (!tasksRoot) {
+		const err = new Error('Cannot build plan: tasksRoot not configured');
+		err.suggestedCommand = 'spine init --tasks-root taskplane-tasks';
+		throw err;
+	}
 	const plan = buildPlan({ scope, config, tasksRoot });
 	const artifactPath = writePlanArtifact({ projectRoot, plan });
 

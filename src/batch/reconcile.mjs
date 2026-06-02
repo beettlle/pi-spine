@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
@@ -104,14 +105,10 @@ export function parseBatchState(raw, batchStatePath) {
  */
 export function resolveTasksRoot(projectRoot, configResult) {
 	const loaded = configResult ?? loadSpineConfig(projectRoot);
-	if (loaded.config?.paths?.tasksRoot) {
-		return path.join(projectRoot, loaded.config.paths.tasksRoot);
+	if (!loaded.config) {
+		return null;
 	}
-
-	const envRoot = process.env.SPINE_TASKS_ROOT;
-	if (envRoot) return path.resolve(projectRoot, envRoot);
-
-	return null;
+	return resolveTasksRootPath(projectRoot, loaded.config);
 }
 
 /**

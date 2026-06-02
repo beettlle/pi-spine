@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
+
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
 	"project",
@@ -12,7 +14,11 @@ const REQUIRED_TOP_LEVEL = [
 	"gates",
 ];
 
-export function loadSpineConfig(projectRoot) {
+/**
+ * Load spine-config.json from disk only (no FR-CFG-04 env overrides).
+ * Use for persistence paths (e.g. settings set) so env values are not written to file.
+ */
+export function loadSpineConfigFile(projectRoot) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
 
 	if (!fs.existsSync(configPath)) {
@@ -54,6 +60,34 @@ export function loadSpineConfig(projectRoot) {
 	return {
 		configPath,
 		config: parsed,
+		error: null,
+	};
+}
+
+/**
+ * Load config with FR-CFG-04 env overrides applied (precedence: env > file).
+ */
+export function loadSpineConfig(projectRoot) {
+	const fileResult = loadSpineConfigFile(projectRoot);
+	if (fileResult.error) {
+		return fileResult;
+	}
+
+	const envResult = applyEnvOverrides(fileResult.config, projectRoot);
+	if (!envResult.ok) {
+		return {
+			configPath: fileResult.configPath,
+			config: null,
+			error: envResult.error,
+		};
+	}
+
+	return {
+		configPath: fileResult.configPath,
+		config: envResult.config,
+		fileConfig: fileResult.config,
+		sources: envResult.sources,
+		envVars: envResult.envVars,
 		error: null,
 	};
 }
