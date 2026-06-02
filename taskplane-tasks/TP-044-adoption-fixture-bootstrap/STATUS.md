@@ -20,5 +20,5 @@
 - [x] adoption-smoke.sh
 
 ### Step 4: Verification
-**Status:** ⬜ Not Started
-- [ ] full suite green
+**Status:** ✅ Complete
+- [x] full suite green
