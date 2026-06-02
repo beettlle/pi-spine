@@ -38,6 +38,10 @@ Step-by-step install from git checkout, `pi install -l`, `npm link`, and PATH tr
 
 Copy-paste greenfield and Taskplane-migration steps, plus the adoption fixture smoke target: **[bootstrap-checklist.md](./bootstrap-checklist.md)** (TP-044).
 
+## Operator runbook
+
+Daily procedures (preflight, land loop, gate races, recovery, dashboard, Taskplane coexistence): **[operator-runbook.md](./operator-runbook.md)** (TP-049).
+
 ---
 
 ## Adoption tiers
