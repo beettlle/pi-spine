@@ -1,10 +1,10 @@
 # TP-027: Dashboard CLI startup operator messaging — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-02
 **Review Level:** 1
-**Review Counter:** 0
+**Review Counter:** 1
 **Iteration:** 0
 **Size:** S
 
@@ -13,46 +13,46 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduced deferred stdout bug on `spine dashboard`
-- [ ] Dependencies satisfied (dashboard on main)
+- [x] Reproduced deferred stdout bug on `spine dashboard`
+- [x] Dependencies satisfied (dashboard on main)
 
 ---
 
 ### Step 1: Startup banner + immediate stdout
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `formatDashboardStartupMessage` exported and used at listen time
-- [ ] Stdout shows URL, port, operator hints before block
-- [ ] Shutdown line does not duplicate full banner
+- [x] `formatDashboardStartupMessage` exported and used at listen time
+- [x] Stdout shows URL, port, operator hints before block
+- [x] Shutdown line does not duplicate full banner
 
 ---
 
 ### Step 2: Tests + slash notify alignment
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/dashboard/cli-startup.test.mjs` added and passing
-- [ ] Regression covers pre-shutdown emit
-- [ ] `/spine-dashboard` notify consistent with formatter (if touched)
+- [x] `tests/dashboard/cli-startup.test.mjs` added and passing
+- [x] Regression covers pre-shutdown emit
+- [x] `/spine-dashboard` notify consistent with formatter (if touched)
 
 ---
 
 ### Step 3: Testing & verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Targeted dashboard CLI tests pass
-- [ ] Full `npm test` pass
-- [ ] `npm run typecheck` pass
-- [ ] Manual smoke: URL visible without Ctrl+C
+- [x] Targeted dashboard CLI tests pass
+- [x] Full `npm test` pass (174 tests)
+- [x] `npm run typecheck` pass
+- [x] Manual smoke: URL visible without Ctrl+C
 
 ---
 
 ### Step 4: Documentation & delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README updated
-- [ ] CONTEXT.md updated
+- [x] README updated
+- [x] CONTEXT.md updated
 
 ---
 
@@ -60,6 +60,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260602T165526.md` |
 
 ---
 
@@ -67,6 +68,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `loadSpineConfig` requires full schema; port-from-config tests need `initGitRepo` fixture | Used initGitRepo in cli-startup test | `tests/dashboard/cli-startup.test.mjs` |
 
 ---
 
@@ -75,6 +77,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-02 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-02 | Step 1 plan review | APPROVE |
+| 2026-06-02 | Implementation + verification | 174 tests pass; manual smoke OK |
 
 ---
 
@@ -86,4 +90,4 @@
 
 ## Notes
 
-Root cause: `runSpineDashboard` returns `output: lines.join` only after `server.close` on SIGINT; `spine.mjs` writes output once at function return.
+Root cause: `runSpineDashboard` returned `output: lines.join` only after `server.close` on SIGINT; `spine.mjs` wrote output once at function return. Fixed by `process.stdout.write` at listen time plus one-line shutdown return.
