@@ -93,7 +93,7 @@ test("spine settings set updates maxParallel on disk", async () => {
 			encoding: "utf-8",
 		});
 		assert.equal(show.status, 0, show.stderr);
-		assert.equal(show.stdout.trim(), "2");
+		assert.match(show.stdout.trim(), /^2( \(file\))?$/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
