@@ -15,3 +15,4 @@ Implemented `spine settings set <path> <value> [--dry-run] [--json]`: validates 
 ## Commits
 
 - `feat(TP-034): implement spine settings set CLI`
+- `fix(TP-034): address review feedback for settings set`
