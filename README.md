@@ -232,7 +232,8 @@ pi-spine runs batches without Taskplane `/orch`. **Single-task** batches always 
 
 ```bash
 spine preflight                              # required (FR-BATCH-11)
-spine batch start TP-012                     # one task
+spine batch start TP-012                     # one task (detached engine; returns immediately)
+spine batch start TP-012 --attached          # foreground engine (blocks until batch completes)
 spine batch start TP-997 TP-998              # explicit multi-task (one wave, parallel lanes)
 spine batch start pending                    # all tasks without `.DONE`, dependency order
 spine batch start all                        # same as pending (not full backlog)
@@ -245,6 +246,8 @@ spine batch start TP-012 --json              # machine-readable result
 If every discovered task has a `.DONE` marker, `pending` / `all` batch start fails fast: `No pending tasks (all discovered tasks have .DONE).` Tasks that already have `.DONE` on disk are skipped before the worker runs (journal event `task.skipped_done_on_disk`). Wave integrate / `batch complete` between waves is still manual — pi-spine does not auto-integrate mid-batch.
 
 **What happens:** preflight → planner waves + lane ticks (`lanes.maxParallel`, FR-SCHED-03/04) → `.spine/batch-state.json` (schema v1, includes `segments[]`) → one git worktree per physical lane (`.worktrees/spine-{batchId}/lane-N`, branch `task/spine-lane-N-{batchId}`) → workers run in parallel per tick → `.DONE` → **lane auto-commit** → after each wave, **sequential merges** into `orch/spine-{batchId}` (FR-BATCH-08) only when every wave task is `succeeded` or `skipped` (§17.4 mixed-outcome policy; GAP-MERGE-01).
+
+**Detached by default:** `spine batch start` and `spine batch resume` spawn the batch engine in the background (like `/orch`) and return once `.spine/batch-state.json` shows the batch running again. Monitor with `spine status --diagnose`; engine logs append to `.spine/runtime/detached-engine.log`. Use `--attached` to run the engine in the foreground (previous behavior).
 
 **Mixed outcomes:** if any task in a wave is `failed` or still `pending`, merge is blocked, phase becomes `failed`, and messaging names failed IDs with `/spine-retry-task` / `/spine-skip-task` hints (never “batch ran smoothly”). Operator override: `spine batch force-merge --wave 0` then `spine batch resume --force`.
 
@@ -271,7 +274,8 @@ Reviewer model is configured separately in `.spine/spine-config.json` (`agents.r
 
 ```bash
 spine batch pause                    # stop scheduling; journal batch.paused
-spine batch resume                   # continue paused batch (§18.2 resume semantics)
+spine batch resume                   # continue paused batch (detached; returns immediately)
+spine batch resume --attached       # foreground resume (blocks until batch completes)
 spine batch resume --force           # resume failed batch after stale lane state
 spine batch pause --json
 ```

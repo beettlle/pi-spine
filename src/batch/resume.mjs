@@ -102,7 +102,7 @@ function taskAlreadyComplete({ taskFolder, events, task }) {
  * @param {string} params.projectRoot
  * @param {boolean} [params.force]
  */
-export async function resumeBatch({ projectRoot, force = false }) {
+export function validateResumeBatch({ projectRoot, force = false }) {
 	const loaded = loadSpineBatchState(projectRoot);
 	if (!loaded.raw) {
 		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
@@ -168,15 +168,9 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		};
 	}
 
-	const configResult = loadSpineConfig(projectRoot);
-	const config = configResult.config ?? {};
-	const batchId = state.batchId;
-	const baseBranch = state.baseBranch ?? "main";
-	const orchBranch = state.orchBranch;
 	const task = state.tasks[0];
 	const lane = state.lanes[0];
-	const taskId = task.taskId;
-	const taskBranch = lane.branch ?? laneTaskBranch(batchId, 1);
+	const batchId = state.batchId;
 	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, batchId, 1);
 
 	if (!fs.existsSync(wt)) {
@@ -189,7 +183,40 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		};
 	}
 
-	const events = readJournalEvents(projectRoot, batchId);
+	return {
+		ok: true,
+		batchId,
+		phase,
+		updatedAt: Number(state.updatedAt ?? 0),
+		taskId: task.taskId,
+	};
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {boolean} [params.force]
+ */
+export async function resumeBatch({ projectRoot, force = false }) {
+	const resumeCheck = validateResumeBatch({ projectRoot, force });
+	if (!resumeCheck.ok) {
+		return resumeCheck;
+	}
+
+	const loaded = loadSpineBatchState(projectRoot);
+	const state = loaded.raw;
+	const phase = String(state.phase ?? "");
+
+	const configResult = loadSpineConfig(projectRoot);
+	const config = configResult.config ?? {};
+	const batchId = state.batchId;
+	const baseBranch = state.baseBranch ?? "main";
+	const orchBranch = state.orchBranch;
+	const task = state.tasks[0];
+	const lane = state.lanes[0];
+	const taskId = task.taskId;
+	const taskBranch = lane.branch ?? laneTaskBranch(batchId, 1);
+	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, batchId, 1);
 	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
 	const taskFolderRel = task.taskFolder
 		? path.isAbsolute(task.taskFolder)
@@ -200,6 +227,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		? path.join(wt, taskFolderRel)
 		: path.join(wt, "taskplane-tasks", `${taskId}-smoke`);
 
+	const events = readJournalEvents(projectRoot, batchId);
 	const pendingSegments = countPendingSegments(state, taskId);
 	const resumeForced = Boolean(force);
 

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { abortBatch } from "../src/batch/abort.mjs";
+import { startBatchDetached, resumeBatchDetached } from "../src/batch/detached-start.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
@@ -48,7 +49,7 @@ export function formatLifecycleHuman(result, json = false) {
 /**
  * @param {string[]} args
  */
-function parseBatchArgs(args) {
+export function parseBatchArgs(args) {
 	const flags = new Set(args.filter((a) => a.startsWith("--")));
 
 	let batchId = null;
@@ -93,6 +94,7 @@ function parseBatchArgs(args) {
 		force: flags.has("--force"),
 		hard: flags.has("--hard"),
 		detectManualMerge: flags.has("--detect-manual-merge"),
+		attached: flags.has("--attached"),
 		dryRun,
 		skipPreflight,
 		batchId,
@@ -258,6 +260,20 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "resume") {
+		if (!parsed.attached) {
+			const detached = await resumeBatchDetached({
+				projectRoot,
+				spineBin: path.join(__dirname, "spine.mjs"),
+				force: parsed.force,
+				json: parsed.json,
+			});
+			return {
+				exitCode: detached.exitCode ?? (detached.ok ? 0 : 1),
+				output: detached.output,
+				result: detached.result,
+			};
+		}
+
 		const result = await resumeBatch({ projectRoot, force: parsed.force });
 		if (parsed.json) {
 			return {
@@ -283,6 +299,22 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "start") {
+		const useAttached = parsed.attached || parsed.dryRun;
+		if (!useAttached) {
+			const detached = await startBatchDetached({
+				projectRoot,
+				spineBin: path.join(__dirname, "spine.mjs"),
+				scope: parsed.scope,
+				skipPreflight: parsed.skipPreflight,
+				json: parsed.json,
+			});
+			return {
+				exitCode: detached.exitCode ?? (detached.ok ? 0 : 1),
+				output: detached.output,
+				result: detached.result,
+			};
+		}
+
 		const result = await startBatch({
 			projectRoot,
 			scope: parsed.scope,
@@ -315,7 +347,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--attached] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

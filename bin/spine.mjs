@@ -545,7 +545,8 @@ ${c.bold}Examples:${c.reset}
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
-  spine batch start TP-012                      # single-task batch (Phase 2)
+  spine batch start TP-012                      # detached batch engine (default)
+  spine batch start TP-012 --attached           # foreground batch engine
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
