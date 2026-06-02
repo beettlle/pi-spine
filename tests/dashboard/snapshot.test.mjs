@@ -82,6 +82,11 @@ test("running batch fixture has lanes and waves", async () => {
 		assert.equal(snapshot.waves.currentWaveIndex, 1);
 		assert.equal(snapshot.waves.waves.length, 2);
 		assert.ok(snapshot.lanes.some((lane) => lane.laneId === "lane-1"));
+		const lane1 = snapshot.lanes.find((lane) => lane.laneId === "lane-1");
+		const lane2 = snapshot.lanes.find((lane) => lane.laneId === "lane-2");
+		assert.deepEqual(lane1?.activeTaskIds, ["TP-002"]);
+		assert.deepEqual(lane2?.activeTaskIds, ["TP-003"]);
+		assert.deepEqual(lane1?.taskIds, ["TP-001", "TP-002"]);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
