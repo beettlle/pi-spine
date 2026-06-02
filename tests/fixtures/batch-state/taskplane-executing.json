@@ -1,0 +1,21 @@
+{
+  "batchId": "20260602T120000",
+  "phase": "executing",
+  "operator": "cdelgado",
+  "baseBranch": "main",
+  "orchBranch": "orch/cdelgado-20260602T120000",
+  "startedAt": 1748788800000,
+  "endedAt": null,
+  "failedTasks": 0,
+  "succeededTasks": 0,
+  "totalTasks": 2,
+  "mergeResults": [],
+  "tasks": [
+    { "taskId": "TP-001", "status": "running", "taskFolder": "TP-001-alpha", "doneFileFound": false },
+    { "taskId": "TP-002", "status": "pending", "taskFolder": "TP-002-beta", "doneFileFound": false }
+  ],
+  "segments": [
+    { "segmentId": "TP-001::default", "taskId": "TP-001", "status": "running" },
+    { "segmentId": "TP-002::default", "taskId": "TP-002", "status": "pending" }
+  ]
+}

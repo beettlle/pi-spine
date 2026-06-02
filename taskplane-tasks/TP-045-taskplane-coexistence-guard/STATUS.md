@@ -1,19 +1,29 @@
 # TP-045 Status
 
 **Task:** Taskplane / spine mutual exclusion guard
-**Started:** —
+**Started:** 2026-06-02
 **Last Updated:** 2026-06-02
 
 ## Progress
 
 ### Step 1: Detection logic
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+- Shared `src/doctor/coexistence.mjs`: path + content markers, dual-file load, blocking via reconciliation
 
 ### Step 2: Wire preflight + doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+- `buildCoexistencePreflightCheck` in `runBatchPreflight` (`orchestrator-coexistence` check id)
+- `buildCoexistenceDoctorCheck` in `runDoctorChecks` (increments `issueCount` on failure)
 
 ### Step 3: Tests + docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+- `tests/doctor/taskplane-coexistence.test.mjs` + `taskplane-executing.json` fixture
+- `docs/adoption/bootstrap-checklist.md` mutual-exclusion notes
 
 ### Step 4: Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+- `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 313 pass
+
+## Reviews
+- Step 1 plan: APPROVE (stub)
+- Steps 2–4 code: APPROVE (stub)

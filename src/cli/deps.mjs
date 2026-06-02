@@ -4,6 +4,7 @@
 
 import path from 'node:path';
 
+import { resolveTasksRootPath } from '../config/env-overrides.mjs';
 import {
 	discoverTasks,
 	loadDependenciesJson,
@@ -21,7 +22,10 @@ import { parseScope } from '../planner/scope.mjs';
  * @returns {{ mode: string, taskIds: string[] }}
  */
 export function resolveDepsScope(projectRoot, scopeArg, { config }) {
-	const tasksRoot = path.join(projectRoot, config.paths.tasksRoot);
+	const tasksRoot = resolveTasksRootPath(projectRoot, config);
+	if (!tasksRoot) {
+		throw new Error('Cannot resolve tasks root');
+	}
 	const discovered = discoverTasks(tasksRoot);
 	return parseScope(scopeArg, { tasksRoot, discoveredTasks: discovered });
 }
@@ -90,7 +94,10 @@ export function formatDepsHuman(report) {
  * @returns {{ nodes: string[], edges: { from: string, to: string }[], cycles: string[][], waves?: string[][], scope: ReturnType<typeof parseScope>, error?: string }}
  */
 export function buildDepsReport({ projectRoot, scope = 'all', config }) {
-	const tasksRoot = path.join(projectRoot, config.paths.tasksRoot);
+	const tasksRoot = resolveTasksRootPath(projectRoot, config);
+	if (!tasksRoot) {
+		return { nodes: [], edges: [], cycles: [], scope: { mode: 'custom', taskIds: [] }, error: 'tasks root not configured' };
+	}
 	const discovered = discoverTasks(tasksRoot);
 	const scopeResult = parseScope(scope, { tasksRoot, discoveredTasks: discovered });
 	const selectedTaskIds = new Set(scopeResult.taskIds);

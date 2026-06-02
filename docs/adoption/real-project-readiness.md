@@ -34,13 +34,17 @@
 
 Step-by-step install from git checkout, `pi install -l`, `npm link`, and PATH troubleshooting: **[local-install.md](./local-install.md)** (TP-043).
 
+## Bootstrap checklist
+
+Copy-paste greenfield and Taskplane-migration steps, plus the adoption fixture smoke target: **[bootstrap-checklist.md](./bootstrap-checklist.md)** (TP-044).
+
 ---
 
 ## Adoption tiers
 
 **Tier 0 — pi-spine repo:** `pi install . -l`, `node bin/spine.mjs doctor`, stub tests (see [local-install.md](./local-install.md)).
 
-**Tier 1 — consumer stub:** `spine init`, `SPINE_WORKER_STUB=1 spine batch start <scope>`, land loop.
+**Tier 1 — consumer stub:** `spine init`, `SPINE_WORKER_STUB=1 spine batch start <scope>`, land loop. Validate with `./scripts/adoption-smoke.sh` or the adoption fixture (see [bootstrap-checklist.md](./bootstrap-checklist.md)).
 
 **Tier 2 — consumer real pi:** `SPINE_WORKER_STUB=0`, single-task batch, monitor dashboard.
 
