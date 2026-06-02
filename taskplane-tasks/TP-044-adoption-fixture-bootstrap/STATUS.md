@@ -11,8 +11,8 @@
 - [x] adoption-repo fixture + AD-001
 
 ### Step 2: Bootstrap checklist
-**Status:** 🔄 In Progress
-- [ ] bootstrap-checklist.md
+**Status:** ✅ Complete
+- [x] bootstrap-checklist.md
 
 ### Step 3: Integration test + script
 **Status:** ⬜ Not Started
