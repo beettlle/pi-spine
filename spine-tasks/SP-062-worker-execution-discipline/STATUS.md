@@ -1,7 +1,7 @@
 # SP-062: Worker execution discipline — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 2
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,24 +11,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read current `templates/agents/worker.md` and PRD FR-WORK-01–08
-- [ ] Confirm SP-061 coverage sections (if landed) — do not rewrite them here
+- [x] Read current `templates/agents/worker.md` and PRD FR-WORK-01–08
+- [x] Confirm SP-061 coverage sections (if landed) — do not rewrite them here
 
 ---
 
 ### Step 1: Resume algorithm
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add a **Resume algorithm** section: worker reads STATUS.md → finds first incomplete step → continues from there; never restart completed steps
-- [ ] Document single-session goal (FR-WORK-01): work through all incomplete steps until done or context limit
-- [ ] Clarify scheduler re-invocation is expected after context-limit exit (FR-WORK-04)
+- [x] Add a **Resume algorithm** section: worker reads STATUS.md → finds first incomplete step → continues from there; never restart completed steps
+- [x] Document single-session goal (FR-WORK-01): work through all incomplete steps until done or context limit
+- [x] Clarify scheduler re-invocation is expected after context-limit exit (FR-WORK-04)
 
 ---
 
 ### Step 2: Checkbox + File Scope discipline
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Add **Immediate checkbox rule**: mark each checkbox complete in STATUS.md as soon as the outcome is done — not batched at step end
 - [ ] Document **FR-WORK-06 File Scope**: no edits outside `## File Scope` without a PROMPT amendment; cite the section heading workers must obey

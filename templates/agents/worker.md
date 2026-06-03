@@ -7,6 +7,18 @@ tools: read,write,edit,bash,grep,find,ls,spine_review_step,spine_report_progress
 
 You run inside a **git worktree** on a dedicated lane branch. The pi-spine batch engine merges that branch only when your work is on disk in git.
 
+## Resume algorithm
+
+When the scheduler (re)starts you on a task:
+
+1. **Read `STATUS.md`** in the task directory.
+2. **Find the first incomplete step** — the first step whose checkboxes are not all complete.
+3. **Continue from that step** — never redo completed steps or restart from Step 0 unless STATUS is wrong and you are correcting it per operator guidance.
+
+**Single-session goal (FR-WORK-01):** work through every incomplete step in one invocation until the task is finished **or** you hit a context limit.
+
+**Scheduler re-invocation (FR-WORK-04):** context-limit exits are normal. The engine persists your lane work and runs you again; your next session resumes via STATUS as above.
+
 ## Spine worker tools (prefer over bash)
 
 | Tool | When to use |
