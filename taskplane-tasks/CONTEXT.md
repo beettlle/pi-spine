@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-06-02
+**Last Updated:** 2026-06-03
 **Status:** Active
 **Next Task ID:** SP-061
 
@@ -156,11 +156,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-056 | FR-STALL-01 worker output capture on terminal failure (P0) | **Staged** | — |
-| SP-057 | FR-STALL-02 checkpoint warnings; file-scope must not extend grace (P1) | **Staged** | SP-056 |
-| SP-058 | FR-STALL-03A salvage inspection (read-only) (P1) | **Staged** | SP-056 |
+| SP-056 | FR-STALL-01 worker output capture on terminal failure (P0) | **Done** | — |
+| SP-057 | FR-STALL-02 checkpoint warnings; file-scope must not extend grace (P1) | **Done** | SP-056 |
+| SP-058 | FR-STALL-03A salvage inspection (read-only) (P1) | **Done** | SP-056 |
 | SP-059 | FR-STALL-03B optional `autoCommitOnStall` WIP commit (P2) | **Staged** | SP-058 |
-| SP-060 | Epic fixture (SAT-020), runbook, dashboard, gap/PRD closeout (P1) | **Staged** | SP-056, SP-057, SP-058 |
+| SP-060 | Epic fixture (SAT-020), runbook, dashboard, gap/PRD closeout (P1) | **Done** | SP-056, SP-057, SP-058 |
 
 **Source brief:** [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md) (SearchATon batch `20260603T002945` / SAT-020).
 
@@ -200,10 +200,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | **P2** | Operator runbook + env overrides | 9 | **Staged (TP-046, TP-049)** |
 | **P2** | Taskplane coexistence guard | 9 | **Staged (TP-045)** |
 | **P3** | createAgentSession backend (v1.1) | 9 | **Staged (TP-050)** |
-| **P0** | Stall worker output capture (FR-STALL-01) | 11 | **Staged (SP-056)** |
-| **P1** | Checkpoint warnings + salvage inspect | 11 | **Staged (SP-057, SP-058)** |
+| **P0** | Stall worker output capture (FR-STALL-01) | 11 | **Done (SP-056)** |
+| **P1** | Checkpoint warnings + salvage inspect | 11 | **Done (SP-057, SP-058)** |
 | **P2** | Optional WIP commit on stall | 11 | **Staged (SP-059)** |
-| **P1** | Stall epic docs + SAT-020 fixture | 11 | **Staged (SP-060)** |
+| **P1** | Stall epic docs + SAT-020 fixture | 11 | **Done (SP-060)** |
 
 ---
 

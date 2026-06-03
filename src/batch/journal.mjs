@@ -266,14 +266,10 @@ export function extractJournalDiagnosisHints(events) {
 	const priority = [
 		"batch.failed",
 		"task.failed",
-<<<<<<< HEAD
 		"lane.stall_killed",
-		"review.failed",
-=======
 		"review.failed",
 		"lane.salvage_inspection",
 		"lane.checkpoint_warning",
->>>>>>> 75daa5f (feat(SP-057): checkpoint warnings for stall activity)
 		"lane.stall_warning",
 		"lane.died",
 	];

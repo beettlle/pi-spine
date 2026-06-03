@@ -22,14 +22,11 @@
     "maxParallel": 3,
     "queueExcess": true,
     "workerBackend": "subprocess",
-<<<<<<< HEAD
     "workerOutputMaxBytes": 262144,
     "workerOutputTailLines": 200,
-    "retainWorkerOutputOnSuccess": false
-=======
+    "retainWorkerOutputOnSuccess": false,
     "checkpointWarningMinutes": 10,
     "extendGraceOnFileScope": false
->>>>>>> 75daa5f (feat(SP-057): checkpoint warnings for stall activity)
   },
   "dashboard": {
     "port": 8109
