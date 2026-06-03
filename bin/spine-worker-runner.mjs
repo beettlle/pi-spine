@@ -70,12 +70,24 @@ if (mode === "stub") {
 		.split(/[,\s]+/)
 		.filter(Boolean);
 	if (failTasks.includes(taskIdFromFolder)) {
+		const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
+		if (dirtyRel && worktreePath) {
+			const dirtyPath = path.join(worktreePath, dirtyRel);
+			fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
+			fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
+		}
 		console.error(`stub worker forced failure for ${taskIdFromFolder}`);
 		process.exit(1);
 	}
 
 	const delayMs = Number(process.env.SPINE_WORKER_STUB_DELAY_MS || 0);
 	if (delayMs > 0) {
+		const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
+		if (dirtyRel && worktreePath) {
+			const dirtyPath = path.join(worktreePath, dirtyRel);
+			fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
+			fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
+		}
 		spawnSync("sleep", [String(delayMs / 1000)], { stdio: "ignore" });
 	}
 	if (process.env.SPINE_WORKER_STUB_TOUCH === "1" && worktreePath) {

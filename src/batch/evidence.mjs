@@ -197,5 +197,11 @@ export function collectEvidenceBundle(ctx) {
 		evidenceRefs.push("evidence/coverage-output.txt");
 	}
 
+	for (const name of fs.readdirSync(dir)) {
+		if (name.startsWith("salvage-") && name.endsWith(".json")) {
+			evidenceRefs.push(`evidence/${name}`);
+		}
+	}
+
 	return { evidenceDir: dir, evidenceRefs };
 }
