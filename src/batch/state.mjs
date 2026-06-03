@@ -11,6 +11,9 @@ export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
 /** @type {ReadonlySet<string>} */
 export const ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 
+/** @type {ReadonlySet<string>} */
+export const TERMINAL_BATCH_PHASES = new Set(["completed", "failed", "aborted"]);
+
 /**
  * @returns {string} batchId `{YYYYMMDD}T{HHmmss}` UTC
  */
@@ -58,9 +61,52 @@ export function loadSpineBatchState(projectRoot) {
 export function saveSpineBatchState(projectRoot, state) {
 	const filePath = spineBatchStatePath(projectRoot);
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
+	if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {
+		clearBatchEnginePid(state);
+	}
 	const next = { ...state, updatedAt: Date.now() };
 	fs.writeFileSync(filePath, `${JSON.stringify(next, null, 2)}\n`, "utf-8");
 	return next;
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {number|null}
+ */
+export function readBatchEnginePid(raw) {
+	if (!raw || typeof raw !== "object") return null;
+	/** @type {Record<string, unknown>} */
+	const state = /** @type {Record<string, unknown>} */ (raw);
+	const resilience =
+		state.resilience && typeof state.resilience === "object"
+			? /** @type {Record<string, unknown>} */ (state.resilience)
+			: null;
+	const fromResilience = Number(resilience?.enginePid);
+	if (Number.isFinite(fromResilience) && fromResilience > 0) return fromResilience;
+	const topLevel = Number(state.enginePid);
+	if (Number.isFinite(topLevel) && topLevel > 0) return topLevel;
+	return null;
+}
+
+/**
+ * @param {object} state
+ * @param {number} enginePid
+ */
+export function recordBatchEnginePid(state, enginePid) {
+	const pid = Number(enginePid);
+	if (!Number.isFinite(pid) || pid <= 0) return;
+	state.resilience = state.resilience ?? {};
+	state.resilience.enginePid = pid;
+	state.resilience.engineStartedAt = Date.now();
+}
+
+/**
+ * @param {object} state
+ */
+export function clearBatchEnginePid(state) {
+	if (!state?.resilience || typeof state.resilience !== "object") return;
+	delete state.resilience.enginePid;
+	delete state.resilience.engineStartedAt;
 }
 
 /**

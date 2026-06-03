@@ -7,7 +7,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { runBatchPreflight } from "../../bin/spine-preflight.mjs";
 import { validateResumeBatch } from "./resume.mjs";
-import { ACTIVE_PHASES, loadSpineBatchState } from "./state.mjs";
+import { ACTIVE_PHASES, loadSpineBatchState, recordBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 
 export const DETACHED_ENGINE_LOG_REL = path.join(".spine", "runtime", "detached-engine.log");
 
@@ -75,6 +75,19 @@ export function spawnDetachedBatchEngine({ projectRoot, spineBin, argv }) {
 	fs.closeSync(logFd);
 
 	return { enginePid: child.pid ?? null, logPath: DETACHED_ENGINE_LOG_REL };
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {number|null} enginePid
+ */
+function persistDetachedEnginePid(projectRoot, enginePid) {
+	const pid = Number(enginePid);
+	if (!Number.isFinite(pid) || pid <= 0) return;
+	const { raw } = loadSpineBatchState(projectRoot);
+	if (!raw) return;
+	recordBatchEnginePid(raw, pid);
+	saveSpineBatchState(projectRoot, raw);
 }
 
 /**
@@ -281,6 +294,8 @@ export async function startBatchDetached({
 		};
 	}
 
+	persistDetachedEnginePid(projectRoot, enginePid);
+
 	const payload = {
 		ok: true,
 		detached: true,
@@ -330,6 +345,7 @@ export async function resumeBatchDetached({ projectRoot, spineBin, force = false
 	const { batchId, updatedAt, taskId } = resumeCheck;
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
+	persistDetachedEnginePid(projectRoot, enginePid);
 	const wait = await waitForDetachedBatchResume({ projectRoot, batchId, updatedAtBefore: updatedAt });
 
 	if (!wait.ok) {
