@@ -7,9 +7,13 @@ import {
 	buildDashboardSnapshot,
 	buildWaveProgress,
 	classifyLaneStatus,
+	formatLaneHeartbeatDisplay,
+	resolveLaneHeartbeatMeta,
 	truncateWorktreePath,
 } from "../../src/dashboard/snapshot.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";
+import { appendJournalEvent } from "../../src/batch/journal.mjs";
+import { formatLaneHeartbeatDisplay as viewFormatLaneHeartbeatDisplay } from "../../src/dashboard/view.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
@@ -26,6 +30,81 @@ function writeSpineBatchState(projectRoot, fixture) {
 		"utf-8",
 	);
 }
+
+test("resolveLaneHeartbeatMeta reads latest lane heartbeat kind and phase", () => {
+	const events = [
+		{
+			type: "lane.heartbeat",
+			laneId: "lane-2",
+			payload: { laneNumber: 2, heartbeatKind: "worker_alive", workerPhase: "launching" },
+		},
+		{
+			type: "lane.heartbeat",
+			laneId: "lane-2",
+			payload: { laneNumber: 2, heartbeatKind: "checkpoint", workerPhase: "pi" },
+		},
+	];
+	assert.deepEqual(resolveLaneHeartbeatMeta(2, events), {
+		heartbeatKind: "checkpoint",
+		workerPhase: "pi",
+	});
+});
+
+test("formatLaneHeartbeatDisplay shows launching instead of age", () => {
+	assert.equal(
+		formatLaneHeartbeatDisplay({ workerPhase: "launching", heartbeatAgeSeconds: 12 }),
+		"launching",
+	);
+	assert.equal(
+		viewFormatLaneHeartbeatDisplay({ workerPhase: "launching", heartbeatAgeSeconds: 12 }),
+		"launching",
+	);
+	assert.equal(formatLaneHeartbeatDisplay({ workerPhase: "pi", heartbeatAgeSeconds: 12 }), "12s");
+});
+
+test("dashboard snapshot exposes launching heartbeat display from journal", async () => {
+	const projectRoot = await initGitRepo("spine-dash-launch-");
+	try {
+		const base = loadFixture("running-batch.json");
+		const batchId = base.batchId;
+		appendJournalEvent(projectRoot, batchId, "lane.heartbeat", {
+			laneNumber: 1,
+			taskId: "TP-002",
+			heartbeatKind: "worker_alive",
+			workerPhase: "launching",
+			statusMtimeMs: null,
+		});
+		const fixture = {
+			...base,
+			currentWaveIndex: 1,
+			totalWaves: 2,
+			wavePlan: [["TP-001"], ["TP-002", "TP-003"]],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: path.join(projectRoot, ".worktrees", "spine-test", "lane-1"),
+					branch: `task/spine-lane-1-${base.batchId}`,
+					taskIds: ["TP-001", "TP-002"],
+					lastHeartbeatAt: Date.now(),
+				},
+			],
+			tasks: base.tasks.map((task, index) => ({
+				...task,
+				laneNumber: index === 2 ? 2 : 1,
+			})),
+		};
+		writeSpineBatchState(projectRoot, fixture);
+
+		const snapshot = buildDashboardSnapshot(projectRoot);
+		const lane1 = snapshot.lanes.find((lane) => lane.laneId === "lane-1");
+		assert.equal(lane1?.workerPhase, "launching");
+		assert.equal(lane1?.heartbeatKind, "worker_alive");
+		assert.equal(lane1?.heartbeatDisplay, "launching");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
 
 test("idle snapshot diagnosis null matches reconcile", async () => {
 	const projectRoot = await initGitRepo("spine-dash-idle-");
