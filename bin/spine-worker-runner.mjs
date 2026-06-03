@@ -75,6 +75,22 @@ if (mode === "stub") {
 	}
 
 	const delayMs = Number(process.env.SPINE_WORKER_STUB_DELAY_MS || 0);
+	const hangMs = Number(process.env.SPINE_WORKER_STUB_HANG_MS || 0);
+	if (process.env.SPINE_WORKER_STUB_OUTPUT) {
+		console.error(process.env.SPINE_WORKER_STUB_OUTPUT);
+	}
+	if (hangMs > 0) {
+		const step = 100;
+		let elapsed = 0;
+		while (elapsed < hangMs) {
+			const slice = Math.min(step, hangMs - elapsed);
+			spawnSync("sleep", [String(slice / 1000)], { stdio: "ignore" });
+			elapsed += slice;
+		}
+		console.error("stub worker hang finished without .DONE");
+		process.exit(1);
+	}
+
 	if (delayMs > 0) {
 		spawnSync("sleep", [String(delayMs / 1000)], { stdio: "ignore" });
 	}

@@ -197,5 +197,30 @@ export function collectEvidenceBundle(ctx) {
 		evidenceRefs.push("evidence/coverage-output.txt");
 	}
 
+	for (const ref of collectWorkerOutputEvidenceRefs(projectRoot, batchId)) {
+		evidenceRefs.push(ref);
+	}
+
 	return { evidenceDir: dir, evidenceRefs };
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+function collectWorkerOutputEvidenceRefs(projectRoot, batchId) {
+	const lanesDir = path.join(projectRoot, ".spine", "runtime", batchId, "lanes");
+	if (!fs.existsSync(lanesDir)) return [];
+
+	/** @type {string[]} */
+	const refs = [];
+	for (const laneDir of fs.readdirSync(lanesDir)) {
+		if (!laneDir.startsWith("lane-")) continue;
+		const lanePath = path.join(lanesDir, laneDir);
+		for (const name of fs.readdirSync(lanePath)) {
+			if (!name.startsWith("worker-output-") || !name.endsWith(".log")) continue;
+			refs.push(path.join(".spine", "runtime", batchId, "lanes", laneDir, name));
+		}
+	}
+	return refs.sort();
 }

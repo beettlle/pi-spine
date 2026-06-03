@@ -21,7 +21,10 @@
   "lanes": {
     "maxParallel": 3,
     "queueExcess": true,
-    "workerBackend": "subprocess"
+    "workerBackend": "subprocess",
+    "workerOutputMaxBytes": 262144,
+    "workerOutputTailLines": 200,
+    "retainWorkerOutputOnSuccess": false
   },
   "dashboard": {
     "port": 8109

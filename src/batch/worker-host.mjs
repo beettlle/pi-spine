@@ -18,6 +18,7 @@ import {
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
+import { finalizeWorkerOutput } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -79,6 +80,50 @@ function spawnWorkerChild({
 		env,
 		stdio: ["ignore", "pipe", "pipe"],
 	});
+}
+
+/**
+ * @param {object} params
+ */
+function buildWorkerFailureResult({
+	rawOutput,
+	classification,
+	exitCode,
+	mode,
+	doneFound,
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	laneCorrelationId,
+	config,
+	stallDeadline,
+	signals,
+}) {
+	const finalized = finalizeWorkerOutput({
+		rawOutput,
+		classification,
+		ok: false,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		correlationId: laneCorrelationId,
+		exitCode,
+		stallDeadline,
+		signals,
+		config,
+	});
+	return {
+		ok: false,
+		exitCode,
+		mode,
+		output: finalized.output,
+		workerOutputLogPath: finalized.logPath,
+		workerOutputLogRef: finalized.logRef,
+		classification,
+		doneFound,
+	};
 }
 
 /**
@@ -242,14 +287,19 @@ export async function runWorker({
 				const hard = Boolean(abortSignal.hard);
 				child.kill(hard ? "SIGKILL" : "SIGTERM");
 				const { output } = await childDone;
-				return {
-					ok: false,
+				return buildWorkerFailureResult({
+					rawOutput: output,
+					classification: "aborted",
 					exitCode: hard ? 137 : 130,
 					mode: workerMode,
-					output,
-					classification: "aborted",
 					doneFound: fs.existsSync(donePath),
-				};
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					laneCorrelationId,
+					config,
+				});
 			}
 		}
 
@@ -307,14 +357,21 @@ export async function runWorker({
 			}
 			child.kill("SIGTERM");
 			const { output } = await childDone;
-			return {
-				ok: false,
+			return buildWorkerFailureResult({
+				rawOutput: output,
+				classification: "stall_timeout",
 				exitCode: 124,
 				mode: workerMode,
-				output,
-				classification: "stall_timeout",
 				doneFound: fs.existsSync(donePath),
-			};
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				laneCorrelationId,
+				config,
+				stallDeadline,
+				signals,
+			});
 		}
 
 		if (child.exitCode !== null) {
@@ -326,13 +383,30 @@ export async function runWorker({
 
 	const { exitCode, output } = await childDone;
 	const doneFound = fs.existsSync(donePath);
+	const ok = doneFound && exitCode === 0;
+	const classification = ok ? "succeeded" : "failed";
+
+	const finalized = finalizeWorkerOutput({
+		rawOutput: output,
+		classification,
+		ok,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		correlationId: laneCorrelationId,
+		exitCode,
+		config,
+	});
 
 	return {
-		ok: doneFound && exitCode === 0,
+		ok,
 		exitCode,
 		mode: workerMode,
-		output,
-		classification: doneFound ? "succeeded" : "failed",
+		output: finalized.output,
+		workerOutputLogPath: finalized.logPath,
+		workerOutputLogRef: finalized.logRef,
+		classification,
 		doneFound,
 	};
 }

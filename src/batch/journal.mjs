@@ -217,6 +217,7 @@ export function summarizeJournalEvent(event) {
 	if (payload.reviewType) parts.push(`${payload.reviewType} review`);
 	if (payload.diagnosis) parts.push(String(payload.diagnosis));
 	if (payload.stallDeadline) parts.push(`stall deadline ${payload.stallDeadline}`);
+	if (payload.logPath) parts.push(`→ ${payload.logPath}`);
 
 	if (parts.length === 0 && Object.keys(payload).length > 0) {
 		const preview = JSON.stringify(payload);
@@ -233,7 +234,14 @@ export function extractJournalDiagnosisHints(events) {
 	const tail = readJournalTail(events);
 	const hints = [];
 
-	const priority = ["batch.failed", "task.failed", "review.failed", "lane.stall_warning", "lane.died"];
+	const priority = [
+		"batch.failed",
+		"task.failed",
+		"lane.stall_killed",
+		"review.failed",
+		"lane.stall_warning",
+		"lane.died",
+	];
 	for (const type of priority) {
 		const match = [...tail].reverse().find((event) => event.type === type);
 		if (match) {
