@@ -19,6 +19,15 @@
 .worktrees/
 .taskplane-tasks/
 
+# Ephemeral dirs from batch tests (mkdtemp under cwd — do not commit)
+cp-signals-*/
+salvage-scope-*/
+cp-warn-*/
+cp-journal-*/
+hb-*/
+hb-scope-*/
+hb-step-*/
+
 # pi-spine runtime artifacts
 .spine/runtime/
 .spine/batch-state.json

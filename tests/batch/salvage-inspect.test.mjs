@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
@@ -52,7 +53,7 @@ Salvage inspect smoke.
 }
 
 test("inspectLaneSalvage scopes porcelain to file scope and task folder", () => {
-	const worktree = fs.mkdtempSync(path.join(fs.realpathSync("."), "salvage-scope-"));
+	const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "salvage-scope-"));
 	const taskFolder = path.join(worktree, "spine-tasks", "TP-900-smoke");
 	const scopeFile = path.join(worktree, "src", "scoped.txt");
 	const outOfScope = path.join(worktree, "other.txt");
