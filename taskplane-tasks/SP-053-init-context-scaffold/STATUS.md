@@ -1,7 +1,7 @@
 # SP-053 Status
 
 **Task:** Scaffold CONTEXT.md on init
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 ## Step 1: Template + init write
 
@@ -11,4 +11,4 @@
 ## Step 2: Tests
 
 - [x] `tests/spine-init.test.mjs` coverage for CONTEXT scaffold
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
