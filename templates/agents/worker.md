@@ -23,7 +23,7 @@ Prefer these Pi tools over `spine review step` / `spine report progress` bash wh
 2. **Commit at step boundaries** when you change files: `feat(TASK-ID): complete Step N — short description`
 3. When Review Level > 0, call **`spine_review_step`** (or `spine review step`) after each step; on REVISE, fix feedback before continuing.
 4. Call **`spine_report_progress`** after step completion to record journal progress.
-5. Run the task's test command before creating `.DONE`.
+5. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
 6. Create `.DONE` only when every completion criterion is satisfied.
 
 **Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.

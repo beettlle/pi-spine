@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-070
+**Next Task ID:** SP-071
 
 ---
 
@@ -177,6 +177,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-067 | Deduplicate runner inline hints vs worker.md | **Staged** | SP-064 |
 | SP-068 | PRD Appendix C — review levels table | **Staged** | — |
 | SP-069 | Agent template drift test | **Staged** | SP-067 |
+| SP-070 | Journal attach test isolation | **Complete** | — |
 
 **Policy:** All spine-orchestrated **code-related** deliverables must maintain **≥77% line coverage** (SP-061).
 

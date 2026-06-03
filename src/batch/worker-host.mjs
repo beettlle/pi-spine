@@ -48,6 +48,25 @@ function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+
+/**
+ * @param {string} projectRoot
+ * @param {object} [config]
+ * @returns {string|null}
+ */
+function resolveWorkerLaunchScript(projectRoot, config = {}) {
+	const configured = config?.development?.workerLaunchScript;
+	if (typeof configured === "string" && configured.trim()) {
+		const scriptPath = path.isAbsolute(configured)
+			? configured
+			: path.join(projectRoot, configured);
+		if (fs.existsSync(scriptPath)) return scriptPath;
+	}
+	const conventional = path.join(projectRoot, "scripts", "spine-worker-launch.sh");
+	if (fs.existsSync(conventional)) return conventional;
+	return null;
+}
+
 /**
  * @param {object} params
  */
@@ -61,22 +80,35 @@ function spawnWorkerChild({
 	laneNumber,
 	taskId,
 	laneCorrelationId,
+	config = {},
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	const env = {
 		...process.env,
 		SPINE_TASK_FOLDER: taskFolder,
 		SPINE_WORKTREE: worktreePath,
+		SPINE_WORKER_RUNNER: runner,
 	};
 	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;
 	if (batchId) {
 		env.SPINE_BATCH_ID = batchId;
 		env.SPINE_JOURNAL_ATTACH = "1";
+		delete env.SPINE_SUPPRESS_JOURNAL_ATTACH;
 	}
 	if (laneNumber != null) env.SPINE_LANE_NUMBER = String(laneNumber);
 	if (taskId) env.SPINE_TASK_ID = taskId;
 	if (laneCorrelationId) env.SPINE_LANE_CORRELATION_ID = laneCorrelationId;
 	const args = useStub ? ["--stub"] : ["--pi"];
+
+	const launchScript =
+		!useStub && projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null;
+	if (launchScript) {
+		return spawn(launchScript, [runner, ...args], {
+			cwd: worktreePath,
+			env,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+	}
 
 	return spawn(process.execPath, [runner, ...args], {
 		cwd: worktreePath,
@@ -185,6 +217,7 @@ function spawnWorkerHandle({
 		laneNumber,
 		taskId,
 		laneCorrelationId,
+		config,
 	});
 }
 

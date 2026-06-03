@@ -127,3 +127,44 @@ test("runSpineReportProgress returns non-zero when batchId missing", () => {
 	assert.equal(exitCode, 1);
 	assert.equal(result?.ok, false);
 });
+
+test("runSpineReportProgress does not write with attach env when attach suppressed", () => {
+	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rp-attach-"));
+	const batchId = "20260603Tprogress001";
+	const prev = {
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
+		batchId: process.env.SPINE_BATCH_ID,
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+		taskId: process.env.SPINE_TASK_ID,
+	};
+	process.env.SPINE_JOURNAL_ATTACH = "1";
+	process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = "1";
+	process.env.SPINE_PROJECT_ROOT = projectRoot;
+	process.env.SPINE_BATCH_ID = batchId;
+	process.env.SPINE_TASK_ID = "TP-036";
+	try {
+		const { exitCode } = runSpineReportProgress({
+			args: ["--step", "1"],
+			worktreePath: projectRoot,
+		});
+		assert.equal(exitCode, 1);
+		assert.equal(readJournalEvents(projectRoot, batchId).length, 0);
+	} finally {
+		for (const [key, value] of Object.entries(prev)) {
+			const envKey =
+				key === "batchId"
+					? "SPINE_BATCH_ID"
+					: key === "projectRoot"
+						? "SPINE_PROJECT_ROOT"
+						: key === "attach"
+							? "SPINE_JOURNAL_ATTACH"
+							: key === "suppress"
+								? "SPINE_SUPPRESS_JOURNAL_ATTACH"
+								: "SPINE_TASK_ID";
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
+		}
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});

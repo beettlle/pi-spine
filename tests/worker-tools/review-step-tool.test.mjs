@@ -118,9 +118,11 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 		taskFolder: process.env.SPINE_TASK_FOLDER,
 		worktree: process.env.SPINE_WORKTREE,
 		stubFail: process.env.SPINE_REVIEW_STUB_FAIL,
+		stub: process.env.SPINE_REVIEW_STUB,
 	};
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
+	process.env.SPINE_REVIEW_STUB = "1";
 	process.env.SPINE_REVIEW_STUB_FAIL = "1";
 	try {
 		const result = await spineReviewStepTool.execute("tc-2", { step: 1, type: "plan" });
@@ -130,6 +132,8 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 	} finally {
 		if (prev.stubFail === undefined) delete process.env.SPINE_REVIEW_STUB_FAIL;
 		else process.env.SPINE_REVIEW_STUB_FAIL = prev.stubFail;
+		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.stub;
 		for (const [key, envKey] of [
 			["taskFolder", "SPINE_TASK_FOLDER"],
 			["worktree", "SPINE_WORKTREE"],

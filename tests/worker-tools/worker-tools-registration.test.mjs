@@ -42,11 +42,15 @@ test("executeSpineReportProgress appends task.step_completed via tool handler", 
 		batchId: process.env.SPINE_BATCH_ID,
 		taskId: process.env.SPINE_TASK_ID,
 		laneNumber: process.env.SPINE_LANE_NUMBER,
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
 	};
 	process.env.SPINE_PROJECT_ROOT = projectRoot;
 	process.env.SPINE_BATCH_ID = batchId;
 	process.env.SPINE_TASK_ID = "TP-038";
 	process.env.SPINE_LANE_NUMBER = "1";
+	process.env.SPINE_JOURNAL_ATTACH = "1";
+	delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
 	try {
 		const result = executeSpineReportProgress({
 			step: 2,
@@ -66,6 +70,8 @@ test("executeSpineReportProgress appends task.step_completed via tool handler", 
 			["batchId", "SPINE_BATCH_ID"],
 			["taskId", "SPINE_TASK_ID"],
 			["laneNumber", "SPINE_LANE_NUMBER"],
+			["attach", "SPINE_JOURNAL_ATTACH"],
+			["suppress", "SPINE_SUPPRESS_JOURNAL_ATTACH"],
 		]) {
 			const value = prev[key];
 			if (value === undefined) delete process.env[envKey];
@@ -79,9 +85,13 @@ test("executeSpineReportProgress fails closed without batch context", () => {
 	const prev = {
 		projectRoot: process.env.SPINE_PROJECT_ROOT,
 		batchId: process.env.SPINE_BATCH_ID,
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
 	};
 	delete process.env.SPINE_PROJECT_ROOT;
 	delete process.env.SPINE_BATCH_ID;
+	delete process.env.SPINE_JOURNAL_ATTACH;
+	process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = "1";
 	try {
 		const result = executeSpineReportProgress({ step: 1 });
 		assert.equal(result.isError, true);
@@ -92,6 +102,10 @@ test("executeSpineReportProgress fails closed without batch context", () => {
 		else process.env.SPINE_PROJECT_ROOT = prev.projectRoot;
 		if (prev.batchId === undefined) delete process.env.SPINE_BATCH_ID;
 		else process.env.SPINE_BATCH_ID = prev.batchId;
+		if (prev.attach === undefined) delete process.env.SPINE_JOURNAL_ATTACH;
+		else process.env.SPINE_JOURNAL_ATTACH = prev.attach;
+		if (prev.suppress === undefined) delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+		else process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = prev.suppress;
 	}
 });
 

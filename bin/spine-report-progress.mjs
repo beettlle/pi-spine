@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveBatchJournalContext } from "../src/batch/review.mjs";
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -69,21 +70,26 @@ export function runSpineReportProgress(options = {}) {
 	}
 
 	const worktreePath = options.worktreePath ?? process.env.SPINE_WORKTREE ?? process.cwd();
+	const attachCtx = options.journal ? null : resolveBatchJournalContext();
 	const projectRoot =
-		options.projectRoot ?? process.env.SPINE_PROJECT_ROOT ?? findProjectRoot(worktreePath);
-	const batchId = options.batchId ?? process.env.SPINE_BATCH_ID;
-	const taskId = options.taskId ?? process.env.SPINE_TASK_ID;
+		options.projectRoot ?? attachCtx?.projectRoot ?? findProjectRoot(worktreePath);
+	const batchId = options.batchId ?? attachCtx?.batchId ?? "";
+	const taskId = options.taskId ?? attachCtx?.taskId ?? process.env.SPINE_TASK_ID ?? "";
 	const laneId = options.laneId ?? process.env.SPINE_LANE_ID;
 	const laneNumber =
 		options.laneNumber ??
+		attachCtx?.laneNumber ??
 		parseLaneNumber(process.env.SPINE_LANE_NUMBER ?? process.env.SPINE_LANE_ID);
 	const correlationId =
-		options.correlationId ?? process.env.SPINE_LANE_CORRELATION_ID ?? undefined;
+		options.correlationId ??
+		attachCtx?.correlationId ??
+		process.env.SPINE_LANE_CORRELATION_ID ??
+		undefined;
 
 	const result = reportTaskProgress({
 		projectRoot: projectRoot ?? "",
-		batchId: batchId ?? "",
-		taskId: taskId ?? "",
+		batchId,
+		taskId,
 		laneNumber,
 		laneId: laneId || undefined,
 		step: args.step,

@@ -13,6 +13,7 @@ import {
 	assertReviewToolAvailable,
 	buildReviewArtifactPath,
 	isReviewTypeRequired,
+	isJournalAttachBlocked,
 	parseReviewLevel,
 	parseReviewVerdict,
 	resolveBatchJournalContext,
@@ -97,21 +98,105 @@ test("resolveBatchJournalContext ignores SPINE_BATCH_ID without SPINE_JOURNAL_AT
 		batchId: process.env.SPINE_BATCH_ID,
 		projectRoot: process.env.SPINE_PROJECT_ROOT,
 		attach: process.env.SPINE_JOURNAL_ATTACH,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
 	};
 	process.env.SPINE_BATCH_ID = "20260601T999999";
 	process.env.SPINE_PROJECT_ROOT = "/tmp/spine-fake-root";
 	delete process.env.SPINE_JOURNAL_ATTACH;
+	delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
 	try {
 		assert.equal(resolveBatchJournalContext(), undefined);
+		delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
 		process.env.SPINE_JOURNAL_ATTACH = "1";
 		const ctx = resolveBatchJournalContext();
 		assert.equal(ctx?.batchId, "20260601T999999");
 		assert.equal(ctx?.projectRoot, "/tmp/spine-fake-root");
 	} finally {
 		for (const [key, value] of Object.entries(prev)) {
-			if (value === undefined) delete process.env[key === "batchId" ? "SPINE_BATCH_ID" : key === "projectRoot" ? "SPINE_PROJECT_ROOT" : "SPINE_JOURNAL_ATTACH"];
-			else process.env[key === "batchId" ? "SPINE_BATCH_ID" : key === "projectRoot" ? "SPINE_PROJECT_ROOT" : "SPINE_JOURNAL_ATTACH"] = value;
+			const envKey =
+				key === "batchId"
+					? "SPINE_BATCH_ID"
+					: key === "projectRoot"
+						? "SPINE_PROJECT_ROOT"
+						: key === "attach"
+							? "SPINE_JOURNAL_ATTACH"
+							: key === "suppress"
+								? "SPINE_SUPPRESS_JOURNAL_ATTACH"
+								: "SPINE_JOURNAL_ATTACH";
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
 		}
+	}
+});
+
+test("isJournalAttachBlocked honors SPINE_SUPPRESS_JOURNAL_ATTACH", () => {
+	const prev = process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+	delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+	try {
+		assert.equal(isJournalAttachBlocked(), false);
+		process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = "1";
+		assert.equal(isJournalAttachBlocked(), true);
+	} finally {
+		if (prev === undefined) delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+		else process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = prev;
+	}
+});
+
+test("resolveBatchJournalContext blocked when attach suppressed", () => {
+	const prev = {
+		batchId: process.env.SPINE_BATCH_ID,
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
+	};
+	process.env.SPINE_BATCH_ID = "20260601T999999";
+	process.env.SPINE_PROJECT_ROOT = "/tmp/spine-fake-root";
+	process.env.SPINE_JOURNAL_ATTACH = "1";
+	process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = "1";
+	try {
+		assert.equal(resolveBatchJournalContext(), undefined);
+	} finally {
+		for (const [key, value] of Object.entries(prev)) {
+			const envKey =
+				key === "batchId"
+					? "SPINE_BATCH_ID"
+					: key === "projectRoot"
+						? "SPINE_PROJECT_ROOT"
+						: key === "attach"
+							? "SPINE_JOURNAL_ATTACH"
+							: "SPINE_SUPPRESS_JOURNAL_ATTACH";
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
+		}
+	}
+});
+
+test("runStepReview ignores SPINE_REVIEW_STUB_FAIL without stub mode", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-stubfail-env-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const prevFail = process.env.SPINE_REVIEW_STUB_FAIL;
+	const prevStub = process.env.SPINE_REVIEW_STUB;
+	const prevNoPi = process.env.SPINE_REVIEW_TEST_NO_PI;
+	delete process.env.SPINE_REVIEW_STUB;
+	process.env.SPINE_REVIEW_STUB_FAIL = "1";
+	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
+	try {
+		const result = runStepReview({
+			taskFolder,
+			worktreePath: root,
+			stepNumber: 1,
+			reviewType: "plan",
+		});
+		assert.equal(result.spawnFailed, true);
+		assert.notEqual(result.error, "review spawn failed (stub)");
+	} finally {
+		if (prevFail === undefined) delete process.env.SPINE_REVIEW_STUB_FAIL;
+		else process.env.SPINE_REVIEW_STUB_FAIL = prevFail;
+		if (prevStub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prevStub;
+		if (prevNoPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
+		else process.env.SPINE_REVIEW_TEST_NO_PI = prevNoPi;
+		await rm(root, { recursive: true, force: true });
 	}
 });
 
@@ -205,8 +290,15 @@ test("runStepReview skips when review level does not require type", async () => 
 test("runSpineReviewStep CLI emits JSON verdict", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-cli-"));
 	const taskFolder = writeReviewTask(root, 2);
-	const prevStub = process.env.SPINE_REVIEW_STUB;
+	const batchId = "20260601Tcli000";
+	const prev = {
+		stub: process.env.SPINE_REVIEW_STUB,
+		attach: process.env.SPINE_JOURNAL_ATTACH,
+		batchId: process.env.SPINE_BATCH_ID,
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+	};
 	process.env.SPINE_REVIEW_STUB = "1";
+	delete process.env.SPINE_JOURNAL_ATTACH;
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	try {
@@ -214,14 +306,23 @@ test("runSpineReviewStep CLI emits JSON verdict", async () => {
 			taskFolder,
 			worktreePath: root,
 			args: ["--step", "1", "--type", "plan", "--stub"],
+			journal: { projectRoot: root, batchId, taskId: "TP-777", laneNumber: 1 },
 		});
 		assert.equal(exitCode, 0);
 		assert.equal(result?.verdict, "APPROVE");
 		const parsed = JSON.parse(output.trim());
 		assert.equal(parsed.verdict, "APPROVE");
+		const events = readJournalEvents(root, batchId);
+		assert.ok(events.some((event) => event.type === "review.completed"));
 	} finally {
-		if (prevStub === undefined) delete process.env.SPINE_REVIEW_STUB;
-		else process.env.SPINE_REVIEW_STUB = prevStub;
+		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.stub;
+		if (prev.attach === undefined) delete process.env.SPINE_JOURNAL_ATTACH;
+		else process.env.SPINE_JOURNAL_ATTACH = prev.attach;
+		if (prev.batchId === undefined) delete process.env.SPINE_BATCH_ID;
+		else process.env.SPINE_BATCH_ID = prev.batchId;
+		if (prev.projectRoot === undefined) delete process.env.SPINE_PROJECT_ROOT;
+		else process.env.SPINE_PROJECT_ROOT = prev.projectRoot;
 		delete process.env.SPINE_TASK_FOLDER;
 		delete process.env.SPINE_WORKTREE;
 		await rm(root, { recursive: true, force: true });

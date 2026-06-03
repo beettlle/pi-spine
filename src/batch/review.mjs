@@ -253,12 +253,21 @@ function journalReviewEvent(type, journal, payload) {
 }
 
 /**
+ * True when inherited worker batch env must not write to the live journal
+ * (e.g. npm test subprocess with SPINE_JOURNAL_ATTACH=1).
+ */
+export function isJournalAttachBlocked() {
+	return process.env.SPINE_SUPPRESS_JOURNAL_ATTACH === "1";
+}
+
+/**
  * Resolve batch journal target from env only when the batch engine opts in.
  * Prevents `npm test` (and other child processes) from polluting a live batch
  * journal via inherited SPINE_BATCH_ID / SPINE_PROJECT_ROOT.
  */
 export function resolveBatchJournalContext() {
 	if (process.env.SPINE_JOURNAL_ATTACH !== "1") return undefined;
+	if (isJournalAttachBlocked()) return undefined;
 	const projectRoot = process.env.SPINE_PROJECT_ROOT;
 	const batchId = process.env.SPINE_BATCH_ID;
 	if (!projectRoot || !batchId) return undefined;
@@ -381,13 +390,20 @@ export function runStepReview({
 
 	const useStub =
 		stub === true ||
+		stubFail === true ||
 		process.env.SPINE_REVIEW_STUB === "1" ||
-		process.env.SPINE_REVIEW_STUB === "true" ||
-		stubFail ||
-		process.env.SPINE_REVIEW_STUB_FAIL === "1";
+		process.env.SPINE_REVIEW_STUB === "true";
+
+	const stubFailRequested =
+		stubFail === true ||
+		(useStub &&
+			(process.env.SPINE_REVIEW_STUB === "1" ||
+				process.env.SPINE_REVIEW_STUB === "true") &&
+			(process.env.SPINE_REVIEW_STUB_FAIL === "1" ||
+				process.env.SPINE_REVIEW_STUB_FAIL === "true"));
 
 	if (useStub) {
-		if (stubFail || process.env.SPINE_REVIEW_STUB_FAIL === "1") {
+		if (stubFailRequested) {
 			const error = "review spawn failed (stub)";
 			journalReviewEvent("review.failed", journal, {
 				stepNumber,

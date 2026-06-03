@@ -1,7 +1,7 @@
 import { defineTool, type AgentToolResult, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { runSpineReviewStep } from "../../bin/spine-review-step.mjs";
-import { reportTaskProgress } from "../../src/worker-tools/report-progress.mjs";
+import { runSpineReportProgress } from "../../bin/spine-report-progress.mjs";
 import { requestWorkerGate } from "../../src/worker-tools/request-gate.mjs";
 
 export interface SpineReviewStepParams {
@@ -131,50 +131,35 @@ export interface SpineReportProgressDetails {
 
 type SpineReportProgressToolResult = AgentToolResult<SpineReportProgressDetails> & { isError?: boolean };
 
-function parseLaneNumber(value: string | undefined): number | undefined {
-	if (value == null || value === "") return undefined;
-	const parsed = Number(value);
-	return Number.isNaN(parsed) ? undefined : parsed;
-}
-
 /** Run report progress logic shared by the Pi tool handler. */
 export function executeSpineReportProgress(
 	params: SpineReportProgressParams,
 ): SpineReportProgressToolResult {
-	const projectRoot = process.env.SPINE_PROJECT_ROOT ?? "";
-	const batchId = process.env.SPINE_BATCH_ID ?? "";
-	const taskId = process.env.SPINE_TASK_ID ?? "";
-	const laneId = process.env.SPINE_LANE_ID;
-	const laneNumber = parseLaneNumber(process.env.SPINE_LANE_NUMBER ?? process.env.SPINE_LANE_ID);
-	const correlationId = process.env.SPINE_LANE_CORRELATION_ID;
+	const args = ["--step", String(params.step)];
+	if (params.checkboxesComplete != null) {
+		args.push("--checkboxes-complete", String(params.checkboxesComplete));
+	}
+	if (params.checkboxesTotal != null) {
+		args.push("--checkboxes-total", String(params.checkboxesTotal));
+	}
 
-	const result = reportTaskProgress({
-		projectRoot,
-		batchId,
-		taskId,
-		laneNumber,
-		laneId: laneId || undefined,
-		step: params.step,
-		checkboxesComplete: params.checkboxesComplete,
-		checkboxesTotal: params.checkboxesTotal,
-		correlationId,
-	});
+	const { exitCode, result } = runSpineReportProgress({ args });
 
 	const details: SpineReportProgressDetails = {
-		ok: result.ok,
-		eventId: result.eventId,
-		error: result.error,
-		exitCode: result.ok ? 0 : 1,
+		ok: result?.ok ?? false,
+		eventId: result?.eventId,
+		error: result?.error,
+		exitCode,
 	};
 
-	const text = result.ok
-		? JSON.stringify({ ok: true, eventId: result.eventId })
-		: (result.error ?? "report progress failed");
+	const text = details.ok
+		? JSON.stringify({ ok: true, eventId: details.eventId })
+		: (details.error ?? "report progress failed");
 
 	return {
 		content: [{ type: "text" as const, text }],
 		details,
-		isError: !result.ok,
+		isError: !details.ok,
 	};
 }
 
