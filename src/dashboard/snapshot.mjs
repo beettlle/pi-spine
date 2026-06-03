@@ -123,11 +123,32 @@ export function computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWave
  * @param {string[]} [params.currentWaveTaskIds]
  * @param {number} [params.now]
  */
+const LANE_ALERT_RECENT_MS = 30 * 60 * 1000;
+
+/**
+ * @param {number} laneNumber
+ * @param {ReturnType<typeof formatJournalTailEntry>[]} journalTail
+ * @param {number} now
+ */
+export function resolveLaneAlert(laneNumber, journalTail, now = Date.now()) {
+	const laneId = `lane-${laneNumber}`;
+	for (let i = journalTail.length - 1; i >= 0; i -= 1) {
+		const entry = journalTail[i];
+		if (entry.laneId && entry.laneId !== laneId) continue;
+		const ts = Date.parse(entry.timestamp);
+		if (Number.isNaN(ts) || now - ts > LANE_ALERT_RECENT_MS) continue;
+		if (entry.type === "lane.stall_killed") return "stall-killed";
+		if (entry.type === "lane.checkpoint_warning") return "checkpoint-warning";
+	}
+	return null;
+}
+
 export function buildLaneRows({
 	lanes,
 	classifiedTasks,
 	stallConfig,
 	currentWaveTaskIds = [],
+	journalTail = [],
 	now = Date.now(),
 }) {
 	return (lanes ?? []).map((lane) => ({
@@ -138,6 +159,7 @@ export function buildLaneRows({
 		taskIds: lane.taskIds ?? [],
 		heartbeatAgeSeconds: heartbeatAgeSeconds(lane.lastHeartbeatAt, now),
 		worktree: truncateWorktreePath(lane.worktreePath),
+		laneAlert: resolveLaneAlert(lane.laneNumber, journalTail, now),
 	}));
 }
 
@@ -268,6 +290,7 @@ export function buildDashboardSnapshot(projectRoot) {
 		classifiedTasks,
 		stallConfig,
 		currentWaveTaskIds,
+		journalTail,
 		now,
 	});
 	const waves = buildWaveProgress(batch);

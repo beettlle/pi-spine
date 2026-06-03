@@ -167,9 +167,15 @@ function renderLanes(lanes) {
 	}
 	for (const lane of lanes) {
 		const tr = document.createElement("tr");
+		const statusLabel =
+			lane.laneAlert === "checkpoint-warning"
+				? `${lane.status} · checkpoint warning`
+				: lane.laneAlert === "stall-killed"
+					? `${lane.status} · stall killed`
+					: lane.status;
 		const values = [
 			lane.laneId,
-			lane.status,
+			statusLabel,
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
 			formatHeartbeat(lane.heartbeatAgeSeconds),
@@ -178,7 +184,11 @@ function renderLanes(lanes) {
 		values.forEach((text, index) => {
 			const td = document.createElement("td");
 			td.textContent = text;
-			if (index === 1) td.className = `lane-status-${lane.status}`;
+			if (index === 1) {
+				td.className = `lane-status-${lane.status}`;
+				if (lane.laneAlert === "checkpoint-warning") td.classList.add("lane-alert-checkpoint");
+				if (lane.laneAlert === "stall-killed") td.classList.add("lane-alert-stall");
+			}
 			tr.appendChild(td);
 		});
 		tbody.appendChild(tr);
