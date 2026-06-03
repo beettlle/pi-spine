@@ -75,6 +75,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|--------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-03 | Step 0 complete | Read SP-061 reviewer coverage + spine-config testing shape |
+| 2026-06-03 | Steps 1–3 complete | Reviewer template expanded; plan/code reviews APPROVE |
 | 2026-06-03 | Step 4 complete | typecheck + 376 tests pass; template self-contained |
 
 ---
