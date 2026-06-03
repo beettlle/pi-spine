@@ -28,11 +28,11 @@
 ---
 
 ### Step 2: Checkbox + File Scope discipline
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Add **Immediate checkbox rule**: mark each checkbox complete in STATUS.md as soon as the outcome is done — not batched at step end
-- [ ] Document **FR-WORK-06 File Scope**: no edits outside `## File Scope` without a PROMPT amendment; cite the section heading workers must obey
-- [ ] Keep existing checkpoint / stall / spine tool guidance coherent with new sections
+- [x] Add **Immediate checkbox rule**: mark each checkbox complete in STATUS.md as soon as the outcome is done — not batched at step end
+- [x] Document **FR-WORK-06 File Scope**: no edits outside `## File Scope` without a PROMPT amendment; cite the section heading workers must obey
+- [x] Keep existing checkpoint / stall / spine tool guidance coherent with new sections
 
 ---
 
