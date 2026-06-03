@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-072
+**Next Task ID:** SP-082
 
 ---
 
@@ -182,7 +182,30 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Policy:** All spine-orchestrated **code-related** deliverables must maintain **≥77% line coverage** (SP-061).
 
-**Suggested spine run order:**
+### Phase 13 — Cursor rules audit remediation (SP-072–081)
+
+**Source:** Brutal audit of pi-spine against `.cursor/rules/` (2026-06-03). Cleanliness **7/10** — strong tests/coverage/fail-closed orchestration; gaps in security (evidence shell exec), dead FR-WORK-05 config, god files, silent PROMPT parse degradation, Cursor↔spine standards parity.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-072 | Evidence command hardening (no shell, allowlist) | **Staged** | — |
+| SP-073 | Wire FR-WORK-05 standards into worker context | **Staged** | SP-081 |
+| SP-074 | Engine strangler: scope + lane modules | **Staged** | SP-075 |
+| SP-075 | Fail loud on PROMPT parse errors | **Staged** | — |
+| SP-076 | DRY resume shared core | **Staged** | SP-075 |
+| SP-077 | Sandbox workerLaunchScript | **Staged** | SP-072 |
+| SP-078 | Error-path test hardening | **Staged** | SP-072 |
+| SP-079 | Split spine.mjs CLI router | **Staged** | — |
+| SP-080 | CI doctor enforce + PR template | **Staged** | — |
+| SP-081 | Commit `.cursor/rules` for contributors | **Staged** | — |
+
+**Suggested run order:**
+
+1. **Wave A (parallel):** `SP-075`, `SP-072`, `SP-081`, `SP-080`, `SP-079`
+2. **Wave B:** `SP-073` (after SP-081), `SP-077` + `SP-078` (after SP-072)
+3. **Wave C:** `SP-074` (after SP-075), then `SP-076` (after SP-075)
+
+**Suggested spine run order (Phase 12):**
 
 1. **Wave A (parallel):** `SP-061`, `SP-066`, `SP-068`
 2. **Wave B (parallel after SP-061):** `SP-062`, `SP-065`
