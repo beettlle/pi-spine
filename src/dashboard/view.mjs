@@ -158,6 +158,15 @@ export function buildWaveModel(snapshot) {
 }
 
 /**
+ * @param {object} lane
+ */
+export function formatLaneHeartbeatDisplay(lane) {
+	if (lane?.workerPhase === "launching") return "launching";
+	if (lane?.heartbeatAgeSeconds == null) return "—";
+	return `${lane.heartbeatAgeSeconds}s`;
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildLaneTableModel(snapshot) {
@@ -167,6 +176,9 @@ export function buildLaneTableModel(snapshot) {
 		activeTaskIds: lane.activeTaskIds ?? [],
 		taskIds: lane.taskIds ?? [],
 		heartbeatAgeSeconds: lane.heartbeatAgeSeconds,
+		heartbeatKind: lane.heartbeatKind ?? null,
+		workerPhase: lane.workerPhase ?? null,
+		heartbeatDisplay: lane.heartbeatDisplay ?? formatLaneHeartbeatDisplay(lane),
 		worktree: lane.worktree,
 	}));
 }
