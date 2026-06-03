@@ -5,7 +5,7 @@
     "description": ""
   },
   "paths": {
-    "tasksRoot": "taskplane-tasks"
+    "tasksRoot": "spine-tasks"
   },
   "baseBranch": "main",
   "testing": {

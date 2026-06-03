@@ -150,7 +150,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-052 | Rename `src/compat/taskplane` module (Phase B) | **Staged** | SP-051 |
 | SP-053 | Scaffold `CONTEXT.md` on init | **Staged** | SP-051 |
 | SP-054 | `create-spine-tasks` skill | **Staged** | SP-051, SP-053 |
-| SP-055 | Migrate pi-spine repo `taskplane-tasks/` → `spine-tasks/` | **Staged** | SP-051 |
+| SP-055 | Migrate pi-spine repo `taskplane-tasks/` → `spine-tasks/` | **In Progress** | SP-051 |
 
 ### Phase 11 — Stall recovery & operator observability
 
@@ -222,7 +222,7 @@ Run full `npm test` (**150+** tests) for any batch-touching change.
 
 | Category | Path |
 |----------|------|
-| Tasks | `taskplane-tasks/` |
+| Tasks | `spine-tasks/` |
 | PRD | `docs/PRD.md` |
 | Gap list | `docs/compatibility/taskplane-gap-list.md` |
 | Package | `bin/spine.mjs`, `src/batch/` |
