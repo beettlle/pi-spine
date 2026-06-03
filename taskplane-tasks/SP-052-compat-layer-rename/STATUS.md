@@ -8,8 +8,8 @@
 - [x] Update all importers
 
 ## Step 2: Rename tests + PRD wording
-- [ ] Rename `tests/compat/taskplane-*.test.mjs`
-- [ ] Update PRD module references
+- [x] Rename `tests/compat/taskplane-*.test.mjs` → `tests/tasks/packet-*.test.mjs`
+- [x] Update PRD module references
 
 ## Step 3: Full test suite
 - [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
