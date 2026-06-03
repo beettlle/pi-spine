@@ -1,6 +1,6 @@
 # SP-064: Commit convention alignment — Status
 
-**Current Step:** 1
+**Current Step:** 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
@@ -30,15 +30,19 @@ SP-063 defers commit format to SP-064; L2+ ordering already uses Option B in wor
 ---
 
 ### Step 1: Choose convention
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Decide Option A or Option B (prefer consistency with create-spine-tasks skill / existing worker template unless PRD rationale favors A)
-- [ ] Record decision in STATUS.md Discoveries table
+- [x] Decide Option A or Option B (prefer consistency with create-spine-tasks skill / existing worker template unless PRD rationale favors A)
+- [x] Record decision in STATUS.md Discoveries table
+
+**Decision:** **Option B** — `feat({taskId}): complete Step {n} — {step title}`
+
+Rationale: worker template, both runners, create-spine-tasks skill, and all staged task PROMPTs already use Option B; only PRD FR-WORK-03 still documents Option A.
 
 ---
 
 ### Step 2: Apply across execution surfaces
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Update `docs/PRD.md` FR-WORK-03 with chosen format + one example
 - [ ] Update `templates/agents/worker.md` checkpoint / Git Commit Convention text
@@ -66,6 +70,7 @@ SP-063 defers commit format to SP-064; L2+ ordering already uses Option B in wor
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Chose Option B (`feat(TASK-ID): complete Step N — …`); aligns with worker template, runners, create-spine-tasks skill | Update PRD FR-WORK-03 only; worker template already correct | Step 1 |
 
 ---
 
@@ -74,7 +79,7 @@ SP-063 defers commit format to SP-064; L2+ ordering already uses Option B in wor
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
-| 2026-06-03 | Step 0 preflight | Grep complete; SP-063 reviewed |
+| 2026-06-03 | Step 1 decision | Option B chosen; PRD is sole drift source |
 
 ---
 
