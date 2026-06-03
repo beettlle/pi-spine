@@ -1,7 +1,7 @@
 # SP-068: PRD Appendix C review levels — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -30,10 +30,10 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Verify internal links / appendix numbering consistent with existing PRD appendices
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Verify internal links / appendix numbering consistent with existing PRD appendices
 
 ---
 
@@ -41,6 +41,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE (CLI stub) | — |
 
 ---
 
@@ -59,6 +60,7 @@
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-03 | Step 0 preflight | FR-REV-05 had stale Taskplane rubric wording; Appendix C missing |
 | 2026-06-03 | Step 1 | Added §26 Appendix C; updated FR-REV-05 |
+| 2026-06-03 | Step 2 | typecheck + 376 tests pass; TOC link `#26-appendices` valid |
 
 ---
 
