@@ -3,8 +3,7 @@ import { spawnSync } from "node:child_process";
 export function getVersion(cmd, flag = "--version") {
 	let result;
 	try {
-		result = spawnSync(`${cmd} ${flag}`, [], {
-			shell: true,
+		result = spawnSync(cmd, [flag], {
 			encoding: "utf-8",
 			stdio: ["ignore", "pipe", "pipe"],
 		});
