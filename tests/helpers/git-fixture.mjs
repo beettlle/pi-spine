@@ -10,6 +10,14 @@ import path from "node:path";
 import { runInit } from "../../bin/spine-init.mjs";
 
 /**
+ * @param {string} projectRoot
+ */
+export function configureGitIdentity(projectRoot) {
+	execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: projectRoot, stdio: "ignore" });
+	execFileSync("git", ["config", "user.name", "Test User"], { cwd: projectRoot, stdio: "ignore" });
+}
+
+/**
  * @param {string} [prefix]
  * @param {{ tasksRoot?: string }} [options]
  * @returns {Promise<string>} projectRoot
@@ -18,8 +26,7 @@ export async function initGitRepo(prefix = "spine-test-", options = {}) {
 	const projectRoot = await mkdtemp(path.join(os.tmpdir(), prefix));
 	execFileSync("git", ["init"], { cwd: projectRoot, stdio: "ignore" });
 	runInit(projectRoot, ["--tasks-root", options.tasksRoot ?? "spine-tasks"]);
-	execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["config", "user.name", "Test User"], { cwd: projectRoot, stdio: "ignore" });
+	configureGitIdentity(projectRoot);
 	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["branch", "-M", "main"], { cwd: projectRoot, stdio: "ignore" });

@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { configureGitIdentity } from "../helpers/git-fixture.mjs";
 import {
 	activitySignalsChanged,
 	checkpointSignalsChanged,
@@ -108,6 +109,7 @@ test("resolveScopedDirtyPaths limits porcelain to file scope and task folder", (
 	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "s", "utf-8");
 
 	execFileSync("git", ["init"], { cwd: dir, stdio: "ignore" });
+	configureGitIdentity(dir);
 	execFileSync("git", ["add", "-A"], { cwd: dir, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", "init"], { cwd: dir, stdio: "ignore" });
 	fs.writeFileSync(scoped, "ab", "utf-8");
@@ -167,6 +169,7 @@ test("collectProgressSignals includes dirtyPaths for scoped changes", () => {
 	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "ok", "utf-8");
 
 	execFileSync("git", ["init"], { cwd: dir, stdio: "ignore" });
+	configureGitIdentity(dir);
 	execFileSync("git", ["add", "-A"], { cwd: dir, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", "init"], { cwd: dir, stdio: "ignore" });
 	fs.writeFileSync(scoped, "2", "utf-8");
