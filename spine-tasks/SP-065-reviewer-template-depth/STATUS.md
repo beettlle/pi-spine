@@ -1,7 +1,7 @@
 # SP-065: Reviewer template depth — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -36,19 +36,19 @@
 ---
 
 ### Step 3: Fresh spawn + coverage
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Document **fresh-spawn-only**: reviewer writes verdict to requested output path and exits — no waiting for worker, no `wait_for_review`
-- [ ] Code review: verify **≥77% line coverage** on changed/in-scope modules (SP-061); REVISE when coverage or tests insufficient
-- [ ] Preserve FR-REV-02 JSON verdict block contract
+- [x] Document **fresh-spawn-only**: reviewer writes verdict to requested output path and exits — no waiting for worker, no `wait_for_review`
+- [x] Code review: verify **≥77% line coverage** on changed/in-scope modules (SP-061); REVISE when coverage or tests insufficient
+- [x] Preserve FR-REV-02 JSON verdict block contract
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Self-review: reviewer template is actionable without external Taskplane docs
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Self-review: reviewer template is actionable without external Taskplane docs
 
 ---
 
@@ -56,6 +56,8 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260603T214015.md` |
+| 2 | code | 2 | APPROVE | `.reviews/2-20260603T214035.md` |
 
 ---
 
@@ -73,7 +75,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|--------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
-| 2026-06-03 | Step 0 complete | Read SP-061 reviewer coverage + spine-config testing shape |
+| 2026-06-03 | Step 4 complete | typecheck + 376 tests pass; template self-contained |
 
 ---
 
