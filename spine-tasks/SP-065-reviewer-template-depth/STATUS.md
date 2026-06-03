@@ -1,6 +1,6 @@
 # SP-065: Reviewer template depth — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
@@ -27,16 +27,16 @@
 ---
 
 ### Step 2: REVISE structure + review level rubric
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] **REVISE** must list blocking issues with file paths, line references, and missing test names/paths
-- [ ] Add inline **Review Levels 0–3** rubric table (aligned with create-spine-tasks skill)
-- [ ] Plan review section: evaluate step plan against PROMPT outcomes (unchanged spirit, clearer structure)
+- [x] **REVISE** must list blocking issues with file paths, line references, and missing test names/paths
+- [x] Add inline **Review Levels 0–3** rubric table (aligned with create-spine-tasks skill)
+- [x] Plan review section: evaluate step plan against PROMPT outcomes (unchanged spirit, clearer structure)
 
 ---
 
 ### Step 3: Fresh spawn + coverage
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Document **fresh-spawn-only**: reviewer writes verdict to requested output path and exits — no waiting for worker, no `wait_for_review`
 - [ ] Code review: verify **≥77% line coverage** on changed/in-scope modules (SP-061); REVISE when coverage or tests insufficient
