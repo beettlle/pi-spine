@@ -382,6 +382,9 @@ async function runResumedTaskOnLane({
 				fileScopePaths,
 				taskFolder: taskFolderInWorktree,
 				workerResult,
+				config,
+				batchPhase: state.phase,
+				taskBranch,
 			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,

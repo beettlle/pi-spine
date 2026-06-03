@@ -267,6 +267,9 @@ export async function resumeBatch({ projectRoot, force = false }) {
 				fileScopePaths,
 				taskFolder: taskFolderInWorktree,
 				workerResult,
+				config,
+				batchPhase: state.phase,
+				taskBranch,
 			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,

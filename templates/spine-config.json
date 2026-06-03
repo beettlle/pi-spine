@@ -23,7 +23,8 @@
     "queueExcess": true,
     "workerBackend": "subprocess",
     "checkpointWarningMinutes": 10,
-    "extendGraceOnFileScope": false
+    "extendGraceOnFileScope": false,
+    "autoCommitOnStall": false
   },
   "dashboard": {
     "port": 8109
