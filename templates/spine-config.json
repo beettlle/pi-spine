@@ -11,7 +11,7 @@
   "testing": {
     "build": "",
     "test": "",
-    "testWithCoverage": ""
+    "testWithCoverage": "npm run coverage:check"
   },
   "agents": {
     "worker": { "model": "inherit", "thinking": "high" },

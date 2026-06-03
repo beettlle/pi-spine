@@ -476,7 +476,7 @@ Do **not** run Taskplane and pi-spine batches on the same repo at the same time.
 
 ## Continuous integration
 
-Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows/ci.yml): `npm ci`, `npm run typecheck`, `npm test` (when defined), and CLI smoke checks (`spine version`, `help`, `doctor`).
+Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows/ci.yml): `npm ci`, `npm run typecheck`, `npm test` (when defined), **`npm run coverage:check`** (≥77% line coverage on `src/`, `bin/`, `extensions/`), and CLI smoke checks (`spine version`, `help`, `doctor`). `spine init` sets `testing.testWithCoverage` to the same command by default.
 
 ---
 

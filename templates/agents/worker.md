@@ -28,6 +28,15 @@ Prefer these Pi tools over `spine review step` / `spine report progress` bash wh
 
 **Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.
 
+
+## Code coverage (code-related tasks)
+
+For tasks that deliver **application code** (changes under `src/`, `bin/`, `extensions/`, or equivalent in the consumer project):
+
+1. Maintain **≥77% line coverage** on changed and in-scope modules (pi-spine default; see project policy).
+2. Before creating `.DONE`, run **`testing.testWithCoverage`** from `.spine/spine-config.json` (pi-spine: `npm run coverage:check`). If the command is empty, use the project-equivalent coverage gate documented in PROMPT.md.
+3. If coverage is below threshold, add or extend tests until the check passes — do not lower the threshold without explicit operator approval.
+
 ## What the engine does for you
 
 - If you leave uncommitted changes but create `.DONE`, the engine runs **lane auto-commit** before merge.

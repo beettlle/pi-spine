@@ -404,6 +404,7 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-WORK-08 | Project overrides compose with base prompt in `.spine/agents/worker.md` | 0 |
 | FR-WORK-09 | Worker emits checkpoint heartbeat to journal every completed step (or every 10 min during long steps) | 3 |
 | FR-WORK-10 | Monitor compares STATUS checkboxes to filesystem signals before stall kill (e.g. new files in File Scope) | 3 |
+| FR-WORK-11 | Code-related deliverables maintain **≥77% line coverage** on changed in-scope modules; worker runs `testing.testWithCoverage` before `.DONE` | 12 |
 
 ### 7.6 Review (FR-REV)
 
@@ -413,8 +414,9 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-REV-02 | Verdicts: `APPROVE` \| `REVISE` (structured JSON) | 0 |
 | FR-REV-03 | REVISE returns actionable feedback; worker addresses inline | 0 |
 | FR-REV-04 | Review artifacts: `{taskFolder}/.reviews/{step}-{timestamp}.md` | 0 |
-| FR-REV-05 | Review levels 0–3 per Taskplane rubric (see Appendix C) | 0 |
+| FR-REV-05 | Review levels 0–3 (see Appendix C) | 0 |
 | FR-REV-06 | When review level > 0 and review spawn fails, worker stops (fail closed); journal `review.failed` | 4 |
+| FR-REV-07 | Code reviews verify **≥77% line coverage** on changed in-scope paths; **REVISE** when coverage or tests are insufficient | 12 |
 
 ### 7.7 Orchestration journal (FR-JRN)
 
@@ -490,6 +492,7 @@ See [§12](#12-human-gates-specification).
 | NFR-UX-01 | UX | Every error includes `suggestedCommand` field |
 | NFR-TEST-01 | Testing | ≥80% unit coverage on planner, journal, gate FSM |
 | NFR-TEST-02 | Testing | Integration fixture repo in CI |
+| NFR-TEST-03 | Testing | Spine-orchestrated **code-related** task deliverables: **≥77% line coverage** on in-scope source (`src/`, `bin/`, `extensions/` or project equivalent); enforced via `testing.testWithCoverage` and CI |
 | NFR-MAINT-01 | Maintainability | Taskplane compat tests pinned to reference doc URLs |
 
 ---
@@ -757,7 +760,7 @@ interface SpineGate {
   "testing": {
     "build": "",
     "test": "",
-    "testWithCoverage": ""
+    "testWithCoverage": "npm run coverage:check"
   },
   "agents": {
     "worker": { "model": "inherit", "thinking": "high" },
@@ -929,15 +932,17 @@ Golden fixtures: 3 sample packets (S/M/L complexity) in `test/fixtures/taskplane
 2. Execute next incomplete step from `PROMPT.md`; one step at a time.
 3. After each step: update STATUS checkboxes, commit, call `spine_review_step` if level > 0.
 4. On context pressure: flush STATUS, commit partial step if needed, exit cleanly.
-5. On completion: run testing step command, create `.DONE`, report via `spine_report_progress`.
+5. On completion: run testing step commands (`testing.test`, and `testing.testWithCoverage` for code-related work), create `.DONE`, report via `spine_report_progress`.
 6. Never edit files outside File Scope.
 7. Never skip verification steps to claim done.
+8. Code-related tasks: maintain **≥77% line coverage** on changed in-scope modules; do not lower the threshold without operator approval.
 
 ### 14.3 Reviewer standing orders
 
 1. Receive step diff summary + File Scope + review level rubric.
 2. Return JSON: `{ "verdict": "APPROVE"|"REVISE", "feedback": "..." }`.
 3. REVISE must cite specific files/lines or missing tests.
+4. Code reviews: verify **≥77% line coverage** on changed in-scope modules when the task delivers application code.
 
 ### 14.4 Composable project overrides
 
@@ -1161,27 +1166,32 @@ Status output (non-error) uses the same shape minus `error` / `failureClass` whe
 Stall detection must **not** rely on tool-call silence alone.
 
 | Signal | Weight |
-|--------|--------|
-| Tool call in last N minutes | Necessary but not sufficient |
-| STATUS.md `Last Updated` or step checkbox change | Suppresses stall kill |
-| Git commit on lane branch in last N minutes | Suppresses stall kill |
-| `spine_report_progress` / journal `task.step_completed` | Suppresses stall kill |
-| File Scope files modified (mtime) | Warning only; suggest worker checkpoint |
 
-Configurable: `lanes.stallTimeoutMinutes` (default 60), `lanes.stallGraceAfterProgressMinutes` (default 15), `lanes.checkpointWarningMinutes` (default 10), `lanes.extendGraceOnFileScope` (default false).
+[Showing lines 1-1168 of 1192 (50.0KB limit). Use offset=1169 to continue.]
+## 26. Appendices
 
-When activity (file-scope mtime or scoped dirty paths) persists without a checkpoint for `checkpointWarningMinutes`, engine writes `lane.checkpoint_warning` once per episode (scoped `dirtyPaths`, commit + `spine_report_progress` suggestion).
+### Appendix C: Review Levels
 
-Before killing a lane for stall, engine writes `lane.stall_warning` and `lane.stall_killed` (with bounded worker output path when captured). On terminal failure without `.DONE`, engine writes `lane.salvage_inspection` and enriches `task.failed` with salvage fields.
+Task packets declare a **Review Level** (0–3) in `PROMPT.md`. The level controls when pi-spine spawns a cross-model reviewer at step boundaries.
 
-### 18.5 Atomic task retry
+| Level | Label | Spine behavior | Worker / reviewer actions |
+|-------|-------|----------------|---------------------------|
+| 0 | None | No `spine_review_step` | Worker completes steps without review; reviewer not spawned |
+| 1 | Plan Only | Plan review before each step (or checkpoint marker) | Worker calls `spine_review_step` with `--type plan`; reviewer validates approach before implementation |
+| 2 | Plan + Code | Plan + code review at step boundaries | Worker calls `spine_review_step` for plan and code; reviewer inspects diff and tests |
+| 3 | Full | Plan + code + test review | Worker calls `spine_review_step` for plan, code, and test coverage; reviewer verifies tests and coverage gates |
 
-`/spine-retry-task {taskId}` must update in one persisted transaction:
+Workers invoke **`spine_review_step`** (Pi tool) or the CLI equivalent: `spine review step --step N [--type plan|code]`.
 
-- Task record → `pending`; clear `startedAt`, `endedAt`, `exitReason`, `doneFileFound`
-- All segment records for task → `pending`; clear terminal timestamps
+#### Complexity scoring (task authoring)
 
-When `lanes.autoCommitOnStall` is enabled (default **false**), a stall/failure salvage path may create one scoped WIP commit on the **lane branch** (`wip(<taskId>): stall salvage <iso>`). Atomic retry (`spine batch retry`) resets task/segment records only — it does **not** revert that WIP commit; the lane worktree retains salvage work for operator review and re-run.
+When creating tasks, score four dimensions (0–2 each): **Blast radius**, **Pattern novelty**, **Security**, **Reversibility**. Sum maps to review level:
 
+| Total score | Review level |
+|-------------|--------------|
+| 0–1 | 0 |
+| 2–3 | 1 |
+| 4–5 | 2 |
+| 6–8 | 3 |
 
-[Showing lines 1-1181 of 1182 (50.0KB limit). Use offset=1182 to continue.]
+Full dimension rubric lives in `skills/create-spine-tasks/SKILL.md`. Individual steps may override the task-level level with checkpoint markers (e.g. `**Plan-review checkpoint**`, `**Code review checkpoint**`).

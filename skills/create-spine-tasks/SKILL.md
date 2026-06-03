@@ -36,7 +36,7 @@ The skill only creates and updates task files. Execution behavior lives in pi-sp
 | Key | Purpose |
 |-----|---------|
 | `paths.tasksRoot` | Task folder root (default `spine-tasks`) |
-| `testing.test` / `testing.build` | Commands for PROMPT.md verification steps |
+| `testing.test` / `testing.build` / `testing.testWithCoverage` | Test, build, and **coverage gate** commands for PROMPT.md verification (pi-spine default: `npm run coverage:check`, **≥77% line coverage**) |
 | `referenceDocs` | Tier 3 docs for "Context to Read First" |
 | `standards` | Project coding rules |
 | `neverLoad` | Docs that must NOT appear in any task |
@@ -122,6 +122,7 @@ Use [references/prompt-template.md](references/prompt-template.md). Spine-specif
 - **Environment** — include `npm run typecheck && SPINE_WORKER_STUB=1 npm test` when that is the project test command
 - **Git Commit Convention** — `feat(SP-###): …` at step boundaries
 - **Worker tools** — when Review Level > 0, steps must note `spine_review_step` after each step
+- **Coverage gate** — when the task changes application code, add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy)
 - **Completion** — worker creates `{task-folder}/.DONE`; batch engine may auto-commit remaining work
 
 ### Step 5: Create STATUS.md
@@ -298,7 +299,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 ## Key Principles
 
 - **Self-contained PROMPT.md** — the worker has no memory of this conversation.
-- **Testing step required** — use `testing.test` from spine config in the verification step.
+- **Testing step required** — use `testing.test` from spine config in the verification step; for **code deliverables**, include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template).
 - **Documentation in every task** — "Must Update" / "Check If Affected" prevent doc drift.
 - **Concrete deliverables** — name files to create/modify; avoid shortcuttable vague steps.
 - **Local install** — skill ships with pi-spine; `pi install /path/to/pi-spine -l` loads `./skills`.
