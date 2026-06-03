@@ -15,8 +15,8 @@ M-complexity packet with PROMPT deps that conflict with dependencies.json (JSON 
 
 ## File Scope
 
-- `src/compat/taskplane/merge-deps.mjs`
-- `tests/compat/taskplane-deps.test.mjs`
+- `src/tasks/packet/merge-deps.mjs`
+- `tests/tasks/packet-deps.test.mjs`
 
 ## Steps
 

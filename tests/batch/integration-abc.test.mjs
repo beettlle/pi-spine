@@ -28,7 +28,7 @@ const TASK_C = "TP-903";
  * @param {string[]} deps
  */
 function writeAbcTask(projectRoot, taskId, slug, fileScopePath, deps = []) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-${slug}`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-${slug}`);
 	fs.mkdirSync(folder, { recursive: true });
 	const depLines = deps.length ? deps.map((d) => `- **${d}**`).join("\n") : "- **None**";
 	fs.writeFileSync(
@@ -54,7 +54,7 @@ ${depLines}
 
 function writeAbcDependencies(projectRoot) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify(
 			{
 				version: 1,

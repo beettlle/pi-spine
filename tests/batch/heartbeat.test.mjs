@@ -173,7 +173,7 @@ test("startBatch records lane.heartbeat during stub worker delay", async () => {
 		fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf-8");
 
 		const taskId = "TP-999";
-		const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+		const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 		fs.mkdirSync(folder, { recursive: true });
 		fs.writeFileSync(
 			path.join(folder, "PROMPT.md"),
@@ -181,7 +181,7 @@ test("startBatch records lane.heartbeat during stub worker delay", async () => {
 			"utf-8",
 		);
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks/dependencies.json"),
+			path.join(projectRoot, "spine-tasks/dependencies.json"),
 			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
 			"utf-8",
 		);

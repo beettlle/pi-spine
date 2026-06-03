@@ -8,7 +8,7 @@ import { startBatch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 function writeSmokeTask(projectRoot, taskId, fileScopePath) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -33,7 +33,7 @@ Smoke task for lane execution tests.
 
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);

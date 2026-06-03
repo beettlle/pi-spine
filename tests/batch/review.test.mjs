@@ -26,7 +26,7 @@ const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
  * @param {number} reviewLevel
  */
 function writeReviewTask(root, reviewLevel = 2) {
-	const folder = path.join(root, "taskplane-tasks", "TP-777-review");
+	const folder = path.join(root, "spine-tasks", "TP-777-review");
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),

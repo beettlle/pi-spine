@@ -5,12 +5,12 @@ import path from "node:path";
 import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
 
-import { discoverTasks } from "../../src/compat/taskplane/index.mjs";
+import { discoverTasks } from "../../src/tasks/packet/index.mjs";
 import { parseScope } from "../../src/planner/scope.mjs";
 
 async function createTasksRootFixture() {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-scope-"));
-	const tasksRoot = path.join(root, "taskplane-tasks");
+	const tasksRoot = path.join(root, "spine-tasks");
 	fs.mkdirSync(tasksRoot, { recursive: true });
 
 	function writeTask(folderName, taskId) {

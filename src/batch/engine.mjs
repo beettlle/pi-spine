@@ -5,8 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { discoverTasks } from "../compat/taskplane/discover.mjs";
-import { loadTaskPacket } from "../compat/taskplane/index.mjs";
+import { discoverTasks } from "../tasks/packet/discover.mjs";
+import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { filterPendingTaskIds } from "../planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
@@ -540,6 +540,9 @@ async function runTaskOnLane({
 				fileScopePaths,
 				taskFolder: taskFolderInWorktree,
 				workerResult,
+				config,
+				batchPhase: state.phase,
+				taskBranch,
 			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,

@@ -221,6 +221,8 @@ export function summarizeJournalEvent(event) {
 	if (payload.changedFileCount != null) {
 		parts.push(`${payload.changedFileCount} scoped file(s)`);
 	}
+	if (payload.commitSha) parts.push(`commit ${String(payload.commitSha).slice(0, 8)}`);
+	if (payload.reason && payload.refused) parts.push(`refused: ${payload.reason}`);
 	if (payload.retryCommand) parts.push(String(payload.retryCommand));
 	if (payload.recommendedAction && !payload.retryCommand) {
 		parts.push(String(payload.recommendedAction));
@@ -269,6 +271,7 @@ export function extractJournalDiagnosisHints(events) {
 		"lane.stall_killed",
 		"review.failed",
 		"lane.salvage_inspection",
+		"lane.salvage_commit",
 		"lane.checkpoint_warning",
 		"lane.stall_warning",
 		"lane.died",

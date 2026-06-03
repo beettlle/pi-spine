@@ -26,7 +26,7 @@ const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", 
  * @param {string} taskId
  */
 function writeSmokeTask(projectRoot, taskId = "TP-920") {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -48,7 +48,7 @@ function writeSmokeTask(projectRoot, taskId = "TP-920") {
  */
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);
@@ -189,7 +189,7 @@ test("batch resume returns quickly and runs engine in background", async () => {
 					taskId,
 					laneNumber: 1,
 					status: "running",
-					taskFolder: path.join("taskplane-tasks", `${taskId}-smoke`),
+					taskFolder: path.join("spine-tasks", `${taskId}-smoke`),
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,

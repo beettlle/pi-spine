@@ -29,7 +29,7 @@ function execCommit(projectRoot, message) {
  * @param {string} fileScopePath
  */
 function writeSmokeTask(projectRoot, taskId, fileScopePath) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -54,7 +54,7 @@ Salvage inspect smoke.
 
 test("inspectLaneSalvage scopes porcelain to file scope and task folder", () => {
 	const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "salvage-scope-"));
-	const taskFolder = path.join(worktree, "taskplane-tasks", "TP-900-smoke");
+	const taskFolder = path.join(worktree, "spine-tasks", "TP-900-smoke");
 	const scopeFile = path.join(worktree, "src", "scoped.txt");
 	const outOfScope = path.join(worktree, "other.txt");
 
@@ -89,7 +89,7 @@ test("inspectLaneSalvage scopes porcelain to file scope and task folder", () => 
 	assert.equal(inspectionAfterStatus.changedFileCount, 2);
 	assert.ok(inspectionAfterStatus.dirtyPaths.includes("src/scoped.txt"));
 	assert.ok(
-		inspectionAfterStatus.dirtyPaths.some((p) => p.startsWith("taskplane-tasks/TP-900-smoke/")),
+		inspectionAfterStatus.dirtyPaths.some((p) => p.startsWith("spine-tasks/TP-900-smoke/")),
 	);
 	assert.equal(inspectionAfterStatus.salvageable, true);
 	fs.rmSync(worktree, { recursive: true, force: true });
@@ -113,7 +113,7 @@ test("recordTaskFailureSalvage journals inspection and writes evidence without c
 	});
 	fs.writeFileSync(path.join(wt, fileScope), "uncommitted\n", "utf-8");
 
-	const taskFolder = path.join(wt, "taskplane-tasks", `${taskId}-smoke`);
+	const taskFolder = path.join(wt, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(taskFolder, { recursive: true });
 	assert.equal(fs.existsSync(path.join(taskFolder, ".DONE")), false);
 
@@ -165,7 +165,7 @@ test("startBatch worker failure with dirty scoped file emits salvage and diagnos
 	fs.mkdirSync(path.dirname(path.join(projectRoot, fileScope)), { recursive: true });
 	fs.writeFileSync(path.join(projectRoot, fileScope), "clean\n", "utf-8");
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
 		"utf-8",
 	);

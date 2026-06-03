@@ -17,11 +17,11 @@ import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../s
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 function writeSmokeTask(projectRoot, taskId = "TP-999") {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(path.join(folder, "PROMPT.md"), `# Task: ${taskId}\n`, "utf-8");
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
 		"utf-8",
 	);
@@ -42,7 +42,7 @@ test("pauseBatch sets phase paused and journals batch.paused", async () => {
 					taskId: "TP-999",
 					laneNumber: 1,
 					status: "running",
-					taskFolder: "taskplane-tasks/TP-999-smoke",
+					taskFolder: "spine-tasks/TP-999-smoke",
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,
@@ -105,7 +105,7 @@ test("resumeBatch continues paused single-lane batch", async () => {
 					taskId,
 					laneNumber: 1,
 					status: "running",
-					taskFolder: path.join("taskplane-tasks", `${taskId}-smoke`),
+					taskFolder: path.join("spine-tasks", `${taskId}-smoke`),
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,
@@ -155,7 +155,7 @@ test("paused spine batch reconciliation suggests spine batch resume", async () =
 					taskId: "TP-999",
 					laneNumber: 1,
 					status: "running",
-					taskFolder: "taskplane-tasks/TP-999-smoke",
+					taskFolder: "spine-tasks/TP-999-smoke",
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,
@@ -195,7 +195,7 @@ test("validateBatchState requires segments aligned with tasks", () => {
 				taskId: "TP-999",
 				laneNumber: 1,
 				status: "pending",
-				taskFolder: "taskplane-tasks/TP-999-smoke",
+				taskFolder: "spine-tasks/TP-999-smoke",
 				startedAt: null,
 				endedAt: null,
 				doneFileFound: false,

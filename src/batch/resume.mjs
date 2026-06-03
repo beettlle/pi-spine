@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
@@ -19,7 +20,9 @@ import {
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
+import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { runWorker } from "./worker-host.mjs";
+import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 /**
  * @param {object} state
@@ -153,9 +156,18 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			? path.relative(projectRoot, task.taskFolder)
 			: task.taskFolder
 		: null;
+	const tasksRootRel = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
 	const taskFolderInWorktree = taskFolderRel
 		? path.join(wt, taskFolderRel)
-		: path.join(wt, "taskplane-tasks", `${taskId}-smoke`);
+		: path.join(wt, tasksRootRel, `${taskId}-smoke`);
+
+	let fileScopePaths = [];
+	try {
+		const packet = loadTaskPacket(path.join(projectRoot, taskFolderRel ?? path.join(tasksRootRel, `${taskId}-smoke`)));
+		fileScopePaths = packet.prompt?.fileScope ?? [];
+	} catch {
+		fileScopePaths = [];
+	}
 
 	const events = readJournalEvents(projectRoot, batchId);
 	const pendingSegments = countPendingSegments(state, taskId);
@@ -219,6 +231,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			taskId,
 			laneBranch: taskBranch,
 			laneCorrelationId,
+			fileScopePaths,
 			config,
 			onHeartbeat: (timestamp) => {
 				state.lanes[0].lastHeartbeatAt = timestamp;
@@ -243,12 +256,28 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
 			state.phase = "failed";
 			saveSpineBatchState(projectRoot, state);
+			const salvageFields = recordTaskFailureSalvage({
+				projectRoot,
+				batchId,
+				laneNumber: 1,
+				laneId: "lane-1",
+				taskId,
+				correlationId: laneCorrelationId,
+				worktreePath: wt,
+				fileScopePaths,
+				taskFolder: taskFolderInWorktree,
+				workerResult,
+				config,
+				batchPhase: state.phase,
+				taskBranch,
+			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,
 				laneNumber: 1,
 				laneId: "lane-1",
 				correlationId: laneCorrelationId,
 				...workerResult,
+				...salvageFields,
 			});
 			return {
 				ok: false,

@@ -8,7 +8,7 @@ export const TASK_FOLDER_RE = /^([A-Z][A-Z0-9]*-\d{3})-([a-z0-9][a-z0-9-]*)$/;
  * Discover Taskplane task packets under `{tasksRoot}/{PREFIX-###-slug}/PROMPT.md`.
  * FR-TASK-01.
  *
- * @param {string} tasksRoot Absolute or relative path to tasks root (e.g. taskplane-tasks)
+ * @param {string} tasksRoot Absolute or relative path to tasks root (e.g. spine-tasks)
  * @returns {Array<{ taskId: string, slug: string, folderName: string, folderPath: string, promptPath: string }>}
  */
 export function discoverTasks(tasksRoot) {

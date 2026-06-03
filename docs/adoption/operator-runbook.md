@@ -398,7 +398,8 @@ spine status --diagnose
 |---------|----------------|
 | Preflight git dirty | Commit or stash; lanes need clean tree |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
-| Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); ensure `spine_report_progress` after steps |
+| Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); `spine status --diagnose` → worker log + `lane.salvage_inspection`; ensure `spine_report_progress` after steps |
+| Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |

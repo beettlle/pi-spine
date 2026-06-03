@@ -71,7 +71,7 @@ test("runWorker stall_timeout captures stderr, persists log, journals stall_kill
 	const batchId = "20260603T120000";
 	const projectRoot = path.join(root, "project");
 	const worktreePath = path.join(root, "worktree");
-	const taskFolder = path.join(worktreePath, "taskplane-tasks", "SP-056-test");
+	const taskFolder = path.join(worktreePath, "spine-tasks", "SP-056-test");
 	fs.mkdirSync(taskFolder, { recursive: true });
 	fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), "# Task\n\n## Review Level: 0\n", "utf-8");
 	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "# Status\n", "utf-8");
@@ -152,7 +152,7 @@ test("successful worker skips log unless retainWorkerOutputOnSuccess", async () 
 	const batchId = "20260603T140000";
 	const projectRoot = path.join(root, "project");
 	const worktreePath = path.join(root, "worktree");
-	const taskFolder = path.join(worktreePath, "taskplane-tasks", "TP-901-ok");
+	const taskFolder = path.join(worktreePath, "spine-tasks", "TP-901-ok");
 	fs.mkdirSync(taskFolder, { recursive: true });
 	fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), "# Task\n\n## Review Level: 0\n", "utf-8");
 

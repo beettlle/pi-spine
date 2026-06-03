@@ -43,7 +43,7 @@ import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
-const CONTEXT_PATH = path.join(process.cwd(), "taskplane-tasks/CONTEXT.md");
+const CONTEXT_PATH = path.join(process.cwd(), "spine-tasks/CONTEXT.md");
 
 function loadFixture(name) {
 	return JSON.parse(fs.readFileSync(path.join(FIXTURES, name), "utf-8"));
@@ -328,7 +328,7 @@ test("I-08 post-mortem does not claim success when failures exist", async () => 
 });
 
 test("I-09 CONTEXT documents serial bootstrap and preflight execution policy", () => {
-	assert.ok(fs.existsSync(CONTEXT_PATH), "taskplane-tasks/CONTEXT.md must exist");
+	assert.ok(fs.existsSync(CONTEXT_PATH), "spine-tasks/CONTEXT.md must exist");
 	const content = fs.readFileSync(CONTEXT_PATH, "utf-8");
 	assert.match(content, /Execution policy/i);
 	assert.match(content, /Preflight/i);

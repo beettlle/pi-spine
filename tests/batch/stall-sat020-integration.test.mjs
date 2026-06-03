@@ -17,7 +17,7 @@ const TASK_ID = "SAT-020";
 const FILE_SCOPE = "src/sat020-health.ts";
 
 function writeSat020Task(projectRoot) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${TASK_ID}-health-endpoint`);
+	const folder = path.join(projectRoot, "spine-tasks", `${TASK_ID}-health-endpoint`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -43,7 +43,7 @@ SAT-020 stall replay fixture.
 		"utf-8",
 	);
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks: { [TASK_ID]: [] } }),
 		"utf-8",
 	);
@@ -147,7 +147,7 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 test("regression: stub worker still requires .DONE for batch success", async () => {
 	const projectRoot = await initGitRepo("sat020-done-");
 	const taskId = "TP-999";
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -155,7 +155,7 @@ test("regression: stub worker still requires .DONE for batch success", async () 
 		"utf-8",
 	);
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks: { [taskId]: [], [TASK_ID]: [] } }),
 		"utf-8",
 	);
@@ -169,7 +169,7 @@ test("regression: stub worker still requires .DONE for batch success", async () 
 		assert.equal(result.ok, true, result.output ?? result.error);
 		const wt = laneWorktreePath(projectRoot, result.batchId, 1);
 		assert.ok(
-			fs.existsSync(path.join(wt, "taskplane-tasks", `${taskId}-smoke`, ".DONE")),
+			fs.existsSync(path.join(wt, "spine-tasks", `${taskId}-smoke`, ".DONE")),
 			".DONE still required",
 		);
 	} finally {

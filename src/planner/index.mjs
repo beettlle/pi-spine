@@ -9,7 +9,7 @@ import {
 	loadTaskPacket,
 	loadDependenciesJson,
 	mergeTaskDeps,
-} from '../compat/taskplane/index.mjs';
+} from '../tasks/packet/index.mjs';
 
 import { buildGraph, topoWaves } from './graph.mjs';
 import { findCyclePath } from './cycles.mjs';

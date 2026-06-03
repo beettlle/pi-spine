@@ -8,7 +8,7 @@ import {
 	getStepProgress,
 	listIncompleteSteps,
 	parseStatus,
-} from "../../src/compat/taskplane/index.mjs";
+} from "../../src/tasks/packet/index.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_ROOT = path.join(__dirname, "../../test/fixtures/taskplane");
