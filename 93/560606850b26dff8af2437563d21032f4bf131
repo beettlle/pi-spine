@@ -1,0 +1,575 @@
+spine-tasks/SP-055-repo-spine-tasks-migrate/.reviews/3-20260603T172344.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-044-adoption-fixture-bootstrap/.reviews/3-20260602T214750.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-50
+spine-tasks/TP-047-stub-free-dogfood-signoff/.reviews/2-20260602T222830.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-36
+spine-tasks/TP-041-multi-task-resume-integration/.reviews/3-20260602T195510.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/SP-052-compat-layer-rename/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 4-15
+spine-tasks/TP-025-dashboard-ui/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-5
+spine-tasks/TP-006-batch-preflight/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-129
+spine-tasks/TP-030-publish-migration/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-20
+spine-tasks/SP-053-init-context-scaffold/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-14
+src/batch/journal.mjs
+  ai_agent 224-225,274
+spine-tasks/SP-058-stall-salvage-inspect/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-66
+spine-tasks/TP-045-taskplane-coexistence-guard/.reviews/2-20260602T215522.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-045-taskplane-coexistence-guard/.reviews/1-20260602T215520.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/spine-run.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 17,42,76
+src/tasks/packet/merge-deps.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-79
+docs/adoption/operator-runbook.md
+  ai_agent 401-402
+spine-tasks/TP-022-honest-postmortem/.reviews/1-20260601T231846.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-012-single-lane-worker/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+templates/spine-config.json
+  ai_agent 29-30
+tests/planner/lanes-parallel.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 33
+spine-tasks/TP-003-ci-workflow/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-78
+spine-tasks/TP-005-taskplane-config/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-84
+spine-tasks/TP-019-multi-lane/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-23
+spine-tasks/TP-037-worker-review-step-tool/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/1-20260602T220040.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/3-20260602T220041.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/batch/stall-sat020-integration.test.mjs
+  s_14d12b2a61ce27::t_c95f6b9389c336 20,46,150,158,172
+spine-tasks/TP-031-spine-deps-cli/.reviews/2-20260602T192223.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-038-worker-gate-and-registration/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-048-real-pi-worker-e2e/.reviews/3-20260602T225010.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+.spine/spine-config.json
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 8
+spine-tasks/TP-019-multi-lane/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-59
+spine-tasks/TP-021-integrate-gate/.reviews/4-20260601T230811.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-016-integrate-validation/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-26
+spine-tasks/TP-021-integrate-gate/.reviews/2-20260601T230810.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-014-orchestration-journal/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-143
+spine-tasks/TP-030-publish-migration/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-188
+spine-tasks/TP-030-publish-migration/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-017-retry-skip/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-54
+spine-tasks/SP-053-init-context-scaffold/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-43
+spine-tasks/TP-050-create-agent-session-spike/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-3
+test/fixtures/taskplane/FX-002-medium-feature/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 18-19
+spine-tasks/TP-009-batch-reconciliation/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-151
+spine-tasks/TP-038-worker-gate-and-registration/.reviews/1-20260602T195047.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-047-stub-free-dogfood-signoff/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-3
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-049-operator-runbook/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/SP-059-stall-salvage-auto-commit/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 6-9
+src/planner/index.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 12
+spine-tasks/TP-029-phase6-compat-validation/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-20
+bin/spine-worker-runner.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 136-141
+spine-tasks/TP-042-lane-parallel-packing/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-033-spine-settings-show/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-96
+spine-tasks/TP-033-spine-settings-show/.reviews/1-20260602T193710.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-33
+spine-tasks/TP-043-local-install-no-publish/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-30
+spine-tasks/TP-011-ci-test-fixtures/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-134
+spine-tasks/TP-015-segments-resume-commit/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-4
+spine-tasks/TP-008-planner/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+tests/batch/state-validate.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 25,61,100
+tests/batch/stall-output.test.mjs
+  s_14d12b2a61ce27::t_14603d3b2d601e 74,155
+spine-tasks/TP-002-spine-init/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-143
+spine-tasks/TP-023-dashboard-server/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-10
+spine-tasks/TP-018-abort-archive/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-3
+pi-spine-PRD.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 587,1182,1185
+spine-tasks/TP-022-honest-postmortem/.reviews/2-20260601T231849.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-027-dashboard-cli-startup/.reviews/1-20260602T165526.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-30
+spine-tasks/TP-005-taskplane-config/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/SP-051-init-docs-rebrand/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-043-local-install-no-publish/.reviews/3-20260602T213002.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-33
+spine-tasks/TP-044-adoption-fixture-bootstrap/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-24
+src/tasks/packet/parse-status.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-118
+spine-tasks/TP-004-slash-stubs/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-97
+spine-tasks/TP-039-multi-task-resume-validation/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+tests/batch/integration-abc.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 31,57
+tests/planner/pending-scope.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 9,15,64,84
+tests/batch/engine.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 22,51,183,209,231,265
+spine-tasks/SP-060-stall-observability-docs/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-77
+spine-tasks/TP-011-ci-test-fixtures/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-005-taskplane-config/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-99
+spine-tasks/TP-014-orchestration-journal/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-013-checkpoint-heartbeat/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-68
+spine-tasks/TP-002-spine-init/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-026-dashboard-parity/.reviews/2-20260602T163649.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-84
+spine-tasks/TP-026-dashboard-parity/.reviews/2-20260602T163334.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-33
+spine-tasks/TP-040-multi-task-resume-engine/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/SP-058-stall-salvage-inspect/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 6-9
+spine-tasks/TP-034-spine-settings-set/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-99
+tests/spine-preflight.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 21,55,200
+tests/tasks/packet-deps.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 12
+spine-tasks/TP-041-multi-task-resume-integration/.reviews/1-20260602T195253.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/SP-051-init-docs-rebrand/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-23
+spine-tasks/TP-009-batch-reconciliation/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-035-spine-settings-slash/.reviews/1-20260602T202421.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-012-single-lane-worker/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-183
+spine-tasks/TP-006-batch-preflight/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-106
+spine-tasks/TP-047-stub-free-dogfood-signoff/.reviews/3-20260602T223053.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/TP-022-honest-postmortem/.reviews/1-20260601T231848.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-004-slash-stubs/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-99
+spine-tasks/TP-032-settings-editable-registry/.reviews/1-20260602T191815.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-31
+spine-tasks/TP-015-segments-resume-commit/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-135
+spine-tasks/TP-025-dashboard-ui/.reviews/1-20260602T160904.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+src/batch/salvage.mjs
+  s_14d12b2a61ce27::t_5ede122bd6edbb 2,15-26,44-152,197,216,254-256,261,285-311,319,327-330
+spine-tasks/TP-040-multi-task-resume-engine/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-28
+spine-tasks/TP-007-taskplane-parsers/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-106
+spine-tasks/TP-037-worker-review-step-tool/.reviews/0-20260602T194047.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-028-doctor-suggest-max-parallel/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-131
+spine-tasks/SP-059-stall-salvage-auto-commit/.reviews/1-20260603T182218.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-32
+spine-tasks/TP-026-dashboard-parity/.reviews/1-20260602T163044.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-71
+spine-tasks/TP-038-worker-gate-and-registration/.reviews/2-20260602T195114.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-019-multi-lane/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-007-taskplane-parsers/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-125
+spine-tasks/TP-026-dashboard-parity/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-80
+spine-tasks/TP-042-lane-parallel-packing/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-165
+spine-tasks/TP-039-multi-task-resume-validation/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-108
+spine-tasks/TP-028-doctor-suggest-max-parallel/.reviews/2-20260602T170750.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-021-integrate-gate/.reviews/1-20260601T230810.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/batch/lane-commit.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 17,67
+spine-tasks/TP-031-spine-deps-cli/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-25
+spine-tasks/TP-026-dashboard-parity/.reviews/1-20260602T162756.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-30
+spine-tasks/TP-050-create-agent-session-spike/.reviews/1-20260602T230350.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-31
+spine-tasks/SP-054-create-spine-tasks-skill/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-29
+spine-tasks/SP-060-stall-observability-docs/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-16
+bin/spine-config.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 144-154
+spine-tasks/TP-010-batch-lifecycle/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-025-dashboard-ui/.reviews/1-20260602T160856.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/SP-055-repo-spine-tasks-migrate/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-49
+spine-tasks/TP-031-spine-deps-cli/.reviews/1-20260602T192202.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-034-spine-settings-set/.reviews/1-20260602T195035.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/TP-045-taskplane-coexistence-guard/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1,3-5,7,9-11,13-16,18-21,23-25,27-29
+spine-tasks/TP-047-stub-free-dogfood-signoff/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-81
+tests/batch/resume.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 20,24,45,108,158,198
+spine-tasks/SP-056-stall-worker-output/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-85
+spine-tasks/TP-026-dashboard-parity/.reviews/3-20260602T163904.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-80
+spine-tasks/TP-041-multi-task-resume-integration/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-104
+src/planner/scope.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 8
+spine-tasks/TP-035-spine-settings-slash/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-034-spine-settings-set/.reviews/2-20260602T195820.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-85
+spine-tasks/TP-046-env-overrides-fr-cfg-04/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-76
+spine-tasks/SP-056-stall-worker-output/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-11
+spine-tasks/SP-057-stall-checkpoint-warnings/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+spine-tasks/TP-037-worker-review-step-tool/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-105
+src/batch/resume-multi.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 9,11,26,215,224,374-388,395,558,612-613
+spine-tasks/TP-040-multi-task-resume-engine/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-111
+docs/PRD.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 587,1184,1187
+spine-tasks/TP-013-checkpoint-heartbeat/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-87
+spine-tasks/TP-028-doctor-suggest-max-parallel/.reviews/3-20260602T170751.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-034-spine-settings-set/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+tests/helpers/git-fixture.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 20
+spine-tasks/TP-004-slash-stubs/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-011-ci-test-fixtures/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-86
+tests/batch/detached-start.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 29,51,192
+spine-tasks/TP-048-real-pi-worker-e2e/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-76
+spine-tasks/TP-038-worker-gate-and-registration/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+spine-tasks/TP-026-dashboard-parity/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-27
+spine-tasks/TP-023-dashboard-server/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-93
+spine-tasks/CONTEXT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 153,225
+spine-tasks/TP-028-doctor-suggest-max-parallel/.reviews/4-20260602T170751.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-042-lane-parallel-packing/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-26
+spine-tasks/TP-020-review-fail-closed/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-75
+spine-tasks/TP-018-abort-archive/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-27
+spine-tasks/TP-025-dashboard-ui/.reviews/2-20260602T160904.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-031-spine-deps-cli/.reviews/3-20260602T192223.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-047-stub-free-dogfood-signoff/.reviews/1-20260602T222650.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-35
+spine-tasks/TP-028-doctor-suggest-max-parallel/.reviews/1-20260602T170750.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-045-taskplane-coexistence-guard/.reviews/4-20260602T215522.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-006-batch-preflight/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-021-integrate-gate/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-31
+spine-tasks/TP-029-phase6-compat-validation/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-190
+spine-tasks/TP-043-local-install-no-publish/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-83
+tests/batch/review.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 29
+spine-tasks/SP-059-stall-salvage-auto-commit/.reviews/2-20260603T182628.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/TP-049-operator-runbook/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-72
+spine-tasks/TP-032-settings-editable-registry/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-012-single-lane-worker/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-102
+tests/planner/integration.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 7-8
+spine-tasks/TP-032-settings-editable-registry/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-27
+spine-tasks/TP-034-spine-settings-set/.reviews/2-20260602T195520.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-85
+spine-tasks/TP-020-review-fail-closed/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-20
+spine-tasks/TP-021-integrate-gate/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-69
+spine-tasks/TP-044-adoption-fixture-bootstrap/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-86
+spine-tasks/SP-055-repo-spine-tasks-migrate/.reviews/1-20260603T172255.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-8,10-11,13
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/2-20260602T220041.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/compat/incidents.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 46,331
+spine-tasks/SP-055-repo-spine-tasks-migrate/.reviews/4-20260603T172652.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-027-dashboard-cli-startup/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-93
+spine-tasks/TP-032-settings-editable-registry/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-106
+spine-tasks/TP-024-batch-pending-scope/.reviews/3-20260601T233837.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-36
+spine-tasks/TP-022-honest-postmortem/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-24
+tests/batch/resume-multi-engine.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 17,25,44,54
+spine-tasks/TP-038-worker-gate-and-registration/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-116
+spine-tasks/TP-048-real-pi-worker-e2e/.reviews/1-20260602T224303.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/dependencies.json
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-131
+spine-tasks/TP-018-abort-archive/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-59
+spine-tasks/TP-040-multi-task-resume-engine/.reviews/3-20260602T194126.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/tasks/packet-prompt.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 13
+spine-tasks/TP-007-taskplane-parsers/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/SP-054-create-spine-tasks-skill/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-43
+spine-tasks/TP-040-multi-task-resume-engine/.reviews/1-20260602T193852.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/batch/salvage-inspect.test.mjs
+  s_14d12b2a61ce27::t_5ede122bd6edbb 32,57,92,116,168
+spine-tasks/TP-022-honest-postmortem/.reviews/3-20260601T231849.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-050-create-agent-session-spike/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-83
+spine-tasks/TP-003-ci-workflow/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-86
+tests/batch/resume-multi-validation.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 28,38,186
+tests/spine-deps.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 22,59
+spine-tasks/TP-020-review-fail-closed/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-041-multi-task-resume-integration/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+tests/planner/scope.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 8,13
+tests/batch/worker-backend.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 24
+spine-tasks/TP-002-spine-init/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-101
+src/tasks/packet/discover.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 11
+src/tasks/packet/parse-prompt.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-159
+spine-tasks/TP-050-create-agent-session-spike/.reviews/3-20260602T230453.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-33
+spine-tasks/TP-048-real-pi-worker-e2e/.reviews/2-20260602T224750.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+tests/batch/retry.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 28
+spine-tasks/SP-052-compat-layer-rename/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-47
+spine-tasks/TP-050-create-agent-session-spike/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-33
+package.json
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 32
+spine-tasks/TP-015-segments-resume-commit/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-96
+tests/batch/heartbeat.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 176,184
+spine-tasks/TP-044-adoption-fixture-bootstrap/.reviews/1-20260602T214503.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-35
+spine-tasks/TP-047-stub-free-dogfood-signoff/.reviews/4-20260602T223358.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-35
+spine-tasks/TP-045-taskplane-coexistence-guard/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-80
+spine-tasks/TP-035-spine-settings-slash/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-103
+spine-tasks/TP-016-integrate-validation/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-69
+spine-tasks/SP-059-stall-salvage-auto-commit/.reviews/3-20260603T183015.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/TP-024-batch-pending-scope/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-108
+spine-tasks/TP-037-worker-review-step-tool/.reviews/2-20260602T194058.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+.gitignore
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 17-18,22-29
+spine-tasks/SP-051-init-docs-rebrand/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-88
+spine-tasks/SP-057-stall-checkpoint-warnings/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-65
+spine-tasks/TP-028-doctor-suggest-max-parallel/.reviews/0-20260602T170750.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+tests/worker-tools/review-step-tool.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 18
+spine-tasks/SP-059-stall-salvage-auto-commit/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-65
+spine-tasks/TP-029-phase6-compat-validation/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-024-batch-pending-scope/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-5
+spine-tasks/TP-031-spine-deps-cli/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-123
+spine-tasks/TP-047-stub-free-dogfood-signoff/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-31
+tests/batch/resume-multi-integration.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 31,59,95,154,164
+spine-tasks/TP-025-dashboard-ui/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-86
+spine-tasks/TP-010-batch-lifecycle/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-93
+spine-tasks/TP-033-spine-settings-show/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-35
+spine-tasks/TP-008-planner/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-146
+spine-tasks/TP-045-taskplane-coexistence-guard/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+tests/batch/engine-lane-execution.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 11,36
+tests/batch/abort.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 28
+spine-tasks/TP-027-dashboard-cli-startup/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-128
+tests/batch/salvage-auto-commit.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-396
+spine-tasks/TP-014-orchestration-journal/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-103
+spine-tasks/TP-048-real-pi-worker-e2e/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-25
+src/cli/deps.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 13
+src/tasks/packet/index.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 2,12,14
+spine-tasks/TP-036-worker-report-progress/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+spine-tasks/TP-022-honest-postmortem/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-66
+spine-tasks/TP-043-local-install-no-publish/.reviews/1-20260602T212557.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/TP-036-worker-report-progress/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-113
+spine-tasks/TP-035-spine-settings-slash/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-23
+src/batch/engine.mjs
+  ai_agent 8-9,543-545
+spine-tasks/TP-043-local-install-no-publish/.reviews/2-20260602T212752.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-34
+spine-tasks/SP-055-repo-spine-tasks-migrate/.reviews/2-20260603T172335.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-008-planner/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-148
+spine-tasks/TP-046-env-overrides-fr-cfg-04/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-29
+spine-tasks/SP-055-repo-spine-tasks-migrate/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 4-40
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/1-20260602T220038.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-009-batch-reconciliation/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-43,45-69,72,74-75,77,79,81-106,108,110
+spine-tasks/SP-058-stall-salvage-inspect/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-2
+spine-tasks/TP-021-integrate-gate/.reviews/3-20260601T230810.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-028-doctor-suggest-max-parallel/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-82
+spine-tasks/TP-017-retry-skip/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-15
+spine-tasks/TP-041-multi-task-resume-integration/.reviews/2-20260602T195509.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/TP-049-operator-runbook/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-30
+src/batch/resume.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 9,23,25,159,162-170,234,259-273,280
+tests/tasks/packet-status.test.mjs
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 11
+spine-tasks/TP-003-ci-workflow/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-010-batch-lifecycle/PROMPT.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-129
+spine-tasks/TP-013-checkpoint-heartbeat/.DONE
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1
+spine-tasks/TP-045-taskplane-coexistence-guard/.reviews/3-20260602T215522.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+spine-tasks/SP-059-stall-salvage-auto-commit/.reviews/4-20260603T183118.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-39
+spine-tasks/TP-034-spine-settings-set/STATUS.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-18
+spine-tasks/TP-025-dashboard-ui/.reviews/3-20260602T160905.md
+  s_14d12b2a61ce27::t_a7cae6a93fb5f9 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "93560606850b26dff8af2437563d21032f4bf131",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
