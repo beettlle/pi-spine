@@ -82,7 +82,7 @@ test("needs_retry when a task failed", async () => {
 
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, "needs_retry");
-		assert.equal(result.suggestedCommand, "/spine-retry-task TP-002");
+		assert.equal(result.suggestedCommand, "spine batch retry TP-002");
 		assert.match(result.headline, /TP-002/);
 	} finally {
 		await destroyGitRepo(projectRoot);

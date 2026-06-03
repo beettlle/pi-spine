@@ -17,6 +17,7 @@ import { detectSegmentDrift } from "./retry.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
+	recordBatchEnginePid,
 	saveSpineBatchState,
 	updateSegmentForTask,
 	validateBatchState,
@@ -567,6 +568,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 	state.phase = "running";
 	state.endedAt = null;
 	state.lastError = null;
+	recordBatchEnginePid(state, process.pid);
 	saveSpineBatchState(projectRoot, state);
 	recordBatchResumed(projectRoot, batchId, fromPhase, {
 		resumeForced,

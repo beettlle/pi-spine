@@ -15,6 +15,7 @@ import { mergeLaneToOrch } from "./engine.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
+	recordBatchEnginePid,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
@@ -191,6 +192,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	state.phase = "running";
 	state.endedAt = null;
 	state.lastError = null;
+	recordBatchEnginePid(state, process.pid);
 	saveSpineBatchState(projectRoot, state);
 	recordPhaseTransition(projectRoot, batchId, fromPhase, "running", {
 		resumeForced,

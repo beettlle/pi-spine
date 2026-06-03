@@ -21,6 +21,7 @@ import {
 	createInitialBatchState,
 	generateBatchId,
 	loadSpineBatchState,
+	recordBatchEnginePid,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
@@ -792,6 +793,7 @@ export async function startBatch({
 	try {
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
 		transitionPhase(state, "running", { projectRoot, batchId });
+		recordBatchEnginePid(state, process.pid);
 		saveSpineBatchState(projectRoot, state);
 
 		for (const lane of state.lanes) {

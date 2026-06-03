@@ -178,7 +178,7 @@ function renderLanes(lanes) {
 			statusLabel,
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
-			formatHeartbeat(lane.heartbeatAgeSeconds),
+			formatHeartbeat(lane.heartbeatDisplay ?? lane.heartbeatAgeSeconds),
 			lane.worktree ?? "—",
 		];
 		values.forEach((text, index) => {
