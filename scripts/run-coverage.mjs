@@ -27,6 +27,7 @@ const nodeArgs = [
 const env = {
 	...process.env,
 	SPINE_SUPPRESS_JOURNAL_ATTACH: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH ?? "1",
+	SPINE_WORKER_STUB: process.env.SPINE_WORKER_STUB ?? "1",
 };
 
 const result = spawnSync(process.execPath, nodeArgs, {
@@ -43,6 +44,14 @@ process.stderr.write(result.stderr ?? "");
 if (result.error) {
 	console.error(`coverage run failed: ${result.error.message}`);
 	process.exit(1);
+}
+
+
+const failMatch = combined.match(/\u2139 fail (\d+)/);
+const failCount = failMatch ? Number.parseInt(failMatch[1], 10) : 0;
+if (failCount > 0) {
+	console.error(`Coverage run aborted: ${failCount} test failure(s).`);
+	process.exit(result.status === 0 ? 1 : (result.status ?? 1));
 }
 
 const linePct = parseAggregateLineCoverage(combined);

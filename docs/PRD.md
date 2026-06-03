@@ -404,6 +404,7 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-WORK-08 | Project overrides compose with base prompt in `.spine/agents/worker.md` | 0 |
 | FR-WORK-09 | Worker emits checkpoint heartbeat to journal every completed step (or every 10 min during long steps) | 3 |
 | FR-WORK-10 | Monitor compares STATUS checkboxes to filesystem signals before stall kill (e.g. new files in File Scope) | 3 |
+| FR-WORK-11 | Code-related deliverables maintain **≥77% line coverage** on changed in-scope modules; worker runs `testing.testWithCoverage` before `.DONE` | 12 |
 
 ### 7.6 Review (FR-REV)
 
@@ -415,6 +416,7 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-REV-04 | Review artifacts: `{taskFolder}/.reviews/{step}-{timestamp}.md` | 0 |
 | FR-REV-05 | Review levels 0–3 per Taskplane rubric (see Appendix C) | 0 |
 | FR-REV-06 | When review level > 0 and review spawn fails, worker stops (fail closed); journal `review.failed` | 4 |
+| FR-REV-07 | Code reviews verify **≥77% line coverage** on changed in-scope paths; **REVISE** when coverage or tests are insufficient | 12 |
 
 ### 7.7 Orchestration journal (FR-JRN)
 
@@ -490,6 +492,7 @@ See [§12](#12-human-gates-specification).
 | NFR-UX-01 | UX | Every error includes `suggestedCommand` field |
 | NFR-TEST-01 | Testing | ≥80% unit coverage on planner, journal, gate FSM |
 | NFR-TEST-02 | Testing | Integration fixture repo in CI |
+| NFR-TEST-03 | Testing | Spine-orchestrated **code-related** task deliverables: **≥77% line coverage** on in-scope source (`src/`, `bin/`, `extensions/` or project equivalent); enforced via `testing.testWithCoverage` and CI |
 | NFR-MAINT-01 | Maintainability | Taskplane compat tests pinned to reference doc URLs |
 
 ---
@@ -757,7 +760,7 @@ interface SpineGate {
   "testing": {
     "build": "",
     "test": "",
-    "testWithCoverage": ""
+    "testWithCoverage": "npm run coverage:check"
   },
   "agents": {
     "worker": { "model": "inherit", "thinking": "high" },
@@ -929,15 +932,17 @@ Golden fixtures: 3 sample packets (S/M/L complexity) in `test/fixtures/taskplane
 2. Execute next incomplete step from `PROMPT.md`; one step at a time.
 3. After each step: update STATUS checkboxes, commit, call `spine_review_step` if level > 0.
 4. On context pressure: flush STATUS, commit partial step if needed, exit cleanly.
-5. On completion: run testing step command, create `.DONE`, report via `spine_report_progress`.
+5. On completion: run testing step commands (`testing.test`, and `testing.testWithCoverage` for code-related work), create `.DONE`, report via `spine_report_progress`.
 6. Never edit files outside File Scope.
 7. Never skip verification steps to claim done.
+8. Code-related tasks: maintain **≥77% line coverage** on changed in-scope modules; do not lower the threshold without operator approval.
 
 ### 14.3 Reviewer standing orders
 
 1. Receive step diff summary + File Scope + review level rubric.
 2. Return JSON: `{ "verdict": "APPROVE"|"REVISE", "feedback": "..." }`.
 3. REVISE must cite specific files/lines or missing tests.
+4. Code reviews: verify **≥77% line coverage** on changed in-scope modules when the task delivers application code.
 
 ### 14.4 Composable project overrides
 
