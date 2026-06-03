@@ -1,0 +1,27 @@
+spine-tasks/CONTEXT.md
+  s_f1d1097b6a7c0d::t_2495bda0b73605 5
+  s_f1d1097b6a7c0d::t_8d744422e4f2a3 190
+  s_f1d1097b6a7c0d::t_670634d337c798 181
+spine-tasks/SP-071-ci-checkpoint-warning-git-fix/PROMPT.md
+  s_f1d1097b6a7c0d::t_168014ea1905cf 1-103
+spine-tasks/dependencies.json
+  s_f1d1097b6a7c0d::t_d9a7504e58a0e5 151-152
+spine-tasks/SP-071-ci-checkpoint-warning-git-fix/STATUS.md
+  s_f1d1097b6a7c0d::t_168014ea1905cf 1-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ed90b443b86a8e411825162bd063b18a0bcc0de6",
+  "prompts": {},
+  "sessions": {
+    "s_f1d1097b6a7c0d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8ee1-2b9d-748e-a16c-16cd17320a24",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
