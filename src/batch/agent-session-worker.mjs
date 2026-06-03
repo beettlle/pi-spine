@@ -36,7 +36,7 @@ export function buildAgentSessionWorkerPrompt({ worktreePath, taskFolder, config
 		`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
 		toolsHint +
 		reviewHint +
-		`Commit at step boundaries when you change files (feat(${taskIdHint}): …). ` +
+		`Commit at step boundaries when you change files (feat(${taskIdHint}): complete Step N — {step title}). ` +
 		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +
 		`Create ${donePath} only when all completion criteria are met.` +
 		agentAppend +

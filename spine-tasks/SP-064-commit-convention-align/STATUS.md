@@ -1,6 +1,6 @@
 # SP-064: Commit convention alignment — Status
 
-**Current Step:** 2
+**Current Step:** 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
@@ -42,17 +42,17 @@ Rationale: worker template, both runners, create-spine-tasks skill, and all stag
 ---
 
 ### Step 2: Apply across execution surfaces
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Update `docs/PRD.md` FR-WORK-03 with chosen format + one example
-- [ ] Update `templates/agents/worker.md` checkpoint / Git Commit Convention text
-- [ ] Update inline commit hint in `bin/spine-worker-runner.mjs`
-- [ ] Update inline commit hint in `src/batch/agent-session-worker.mjs` (`buildAgentSessionWorkerPrompt`)
+- [x] Update `docs/PRD.md` FR-WORK-03 with chosen format + one example
+- [x] Update `templates/agents/worker.md` checkpoint / Git Commit Convention text
+- [x] Update inline commit hint in `bin/spine-worker-runner.mjs`
+- [x] Update inline commit hint in `src/batch/agent-session-worker.mjs` (`buildAgentSessionWorkerPrompt`)
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Grep confirms no contradictory commit examples remain in File Scope files

@@ -80,7 +80,7 @@ For tasks at **Review Level ≥ 2**, complete **each step** in this strict order
 
 1. **Finish step work** — all outcomes for this step in PROMPT.
 2. **Update outcome checkboxes** in `STATUS.md` as each outcome completes (immediate checkbox rule).
-3. **Commit** step work on the lane branch: `feat(TASK-ID): complete Step N — short description`
+3. **Commit** step work on the lane branch: `feat(TASK-ID): complete Step N — {step title}`
 4. **Request review** — `spine_review_step` with `type=plan` and/or `type=code` as required by PROMPT (step markers and task level).
 5. **On APPROVE only** — set the step **Status** to complete in `STATUS.md`, advance `Current Step`, then call **`spine_report_progress`**.
 
@@ -96,7 +96,7 @@ For **Review Level 0**, skip `spine_review_step`. For **Level 1**, follow PROMPT
 
 1. Update `STATUS.md` **before starting** each step (`Current Step`, step status → in progress).
 2. Mark **outcome** checkboxes **immediately** when each outcome completes (see Checkbox discipline).
-3. **Commit** at step boundaries when you change files: `feat(TASK-ID): complete Step N — short description`
+3. **Commit** at step boundaries when you change files: `feat(TASK-ID): complete Step N — {step title}`
 4. When Review Level ≥ 2, follow **Level 2+ order of operations** (commit → review → APPROVE → mark step Status complete). When Review Level is 1, call **`spine_review_step`** for required plan reviews before marking the step complete.
 5. On **REVISE**, fix feedback and re-request review; do not advance step **Status** or `Current Step` until **APPROVE**.
 6. Call **`spine_report_progress`** after the step is marked complete (after review **APPROVE** when review level > 0).
