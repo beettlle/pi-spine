@@ -16,6 +16,7 @@ export const COVERAGE_INCLUDES = [
 /** Test entrypoints (must stay aligned with package.json "test" script). */
 export const TEST_GLOBS = [
 	"tests/*.test.mjs",
+	"tests/cli/*.test.mjs",
 	"tests/compat/*.test.mjs",
 	"tests/tasks/*.test.mjs",
 	"tests/config/*.test.mjs",
