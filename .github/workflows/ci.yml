@@ -37,6 +37,9 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
+      - name: Coverage check (77% line minimum)
+        run: npm run coverage:check --if-present
+
       - name: CLI smoke checks
         run: |
           node bin/spine.mjs version

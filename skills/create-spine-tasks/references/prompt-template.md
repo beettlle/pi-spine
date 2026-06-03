@@ -94,6 +94,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 > (Earlier steps should use targeted tests for fast feedback — see worker prompt.)
 
 - [ ] Run FULL test suite: `[test command from project config]`
+- [ ] Run coverage gate: `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code (code-related tasks only)
 - [ ] Run integration tests (if applicable)
 - [ ] Fix all failures
 - [ ] Build passes: `[build command]`
@@ -197,6 +198,7 @@ this from PROMPT.md.
 **Status:** ⬜ Not Started
 
 - [ ] FULL test suite passing
+- [ ] Coverage gate passes (≥77% line coverage on in-scope code, when applicable)
 - [ ] Integration tests (if applicable)
 - [ ] All failures fixed
 - [ ] Build passes
