@@ -14,6 +14,8 @@
 .pi/supervisor/
 .pi/telemetry/
 .pi/verification/
+.pi/taskplane.json
+.pi/agents/
 .worktrees/
 .taskplane-tasks/
 

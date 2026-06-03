@@ -1,7 +1,13 @@
 # SP-055 Status
 
 **Task:** Migrate pi-spine repo to spine-tasks/
-**Status:** 🔄 In Progress — Step 2
+**Status:** 🔄 In Progress — Step 3
+
+## Step 3: Purge or gitignore `.pi/` runtime cruft
+
+- [x] Remove tracked `.pi/taskplane.json` and `.pi/agents/*`
+- [x] Gitignore `.pi/taskplane.json` and `.pi/agents/`
+- [x] Keep `.pi/taskplane-config.json` as migration test fixture
 
 ## Step 1: Move tasks root + config
 
