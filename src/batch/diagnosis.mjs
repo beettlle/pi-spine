@@ -8,6 +8,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"running",
 	"paused",
 	"needs_retry",
+	"engine_orphaned",
 	"needs_merge",
 	"needs_integrate",
 	"completed",
@@ -34,8 +35,12 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "needs_retry":
 			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
 			return ctx.failedTaskId
-				? `/spine-retry-task ${ctx.failedTaskId}`
+				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine status --diagnose";
+		case "engine_orphaned":
+			return ctx.failedTaskId
+				? `spine batch retry ${ctx.failedTaskId}`
+				: "spine batch abort";
 		case "needs_merge":
 			return "/spine-resume --force";
 		case "needs_integrate":
@@ -79,8 +84,12 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
 			}
 			return ctx.failedTaskId
-				? `${batchLabel} has failed task ${ctx.failedTaskId} — retry before resume`
+				? `${batchLabel} worker died while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} has failed tasks — retry before resume`;
+		case "engine_orphaned":
+			return ctx.failedTaskId
+				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
+				: `${batchLabel} batch engine died while running — retry or abort`;
 		case "needs_merge":
 			return `${batchLabel} tasks done — lane merges pending`;
 		case "needs_integrate":
@@ -117,7 +126,9 @@ export function buildAlternatives(diagnosis) {
 		case "completed_manual":
 			return ["spine batch complete --detect-manual-merge", "spine batch dismiss", ...common];
 		case "needs_retry":
-			return ["/spine-skip-task", "/spine-resume --force", ...common];
+			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
+		case "engine_orphaned":
+			return ["spine batch abort", "spine batch resume --force", ...common];
 		case "needs_merge":
 			return ["/spine-status --diagnose", ...common];
 		case "needs_integrate":
