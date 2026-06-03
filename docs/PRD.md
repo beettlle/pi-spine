@@ -414,7 +414,7 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-REV-02 | Verdicts: `APPROVE` \| `REVISE` (structured JSON) | 0 |
 | FR-REV-03 | REVISE returns actionable feedback; worker addresses inline | 0 |
 | FR-REV-04 | Review artifacts: `{taskFolder}/.reviews/{step}-{timestamp}.md` | 0 |
-| FR-REV-05 | Review levels 0–3 per Taskplane rubric (see Appendix C) | 0 |
+| FR-REV-05 | Review levels 0–3 (see Appendix C) | 0 |
 | FR-REV-06 | When review level > 0 and review spawn fails, worker stops (fail closed); journal `review.failed` | 4 |
 | FR-REV-07 | Code reviews verify **≥77% line coverage** on changed in-scope paths; **REVISE** when coverage or tests are insufficient | 12 |
 
@@ -1166,27 +1166,32 @@ Status output (non-error) uses the same shape minus `error` / `failureClass` whe
 Stall detection must **not** rely on tool-call silence alone.
 
 | Signal | Weight |
-|--------|--------|
-| Tool call in last N minutes | Necessary but not sufficient |
-| STATUS.md `Last Updated` or step checkbox change | Suppresses stall kill |
-| Git commit on lane branch in last N minutes | Suppresses stall kill |
-| `spine_report_progress` / journal `task.step_completed` | Suppresses stall kill |
-| File Scope files modified (mtime) | Warning only; suggest worker checkpoint |
 
-Configurable: `lanes.stallTimeoutMinutes` (default 60), `lanes.stallGraceAfterProgressMinutes` (default 15), `lanes.checkpointWarningMinutes` (default 10), `lanes.extendGraceOnFileScope` (default false).
+[Showing lines 1-1168 of 1192 (50.0KB limit). Use offset=1169 to continue.]
+## 26. Appendices
 
-When activity (file-scope mtime or scoped dirty paths) persists without a checkpoint for `checkpointWarningMinutes`, engine writes `lane.checkpoint_warning` once per episode (scoped `dirtyPaths`, commit + `spine_report_progress` suggestion).
+### Appendix C: Review Levels
 
-Before killing a lane for stall, engine writes `lane.stall_warning` and `lane.stall_killed` (with bounded worker output path when captured). On terminal failure without `.DONE`, engine writes `lane.salvage_inspection` and enriches `task.failed` with salvage fields.
+Task packets declare a **Review Level** (0–3) in `PROMPT.md`. The level controls when pi-spine spawns a cross-model reviewer at step boundaries.
 
-### 18.5 Atomic task retry
+| Level | Label | Spine behavior | Worker / reviewer actions |
+|-------|-------|----------------|---------------------------|
+| 0 | None | No `spine_review_step` | Worker completes steps without review; reviewer not spawned |
+| 1 | Plan Only | Plan review before each step (or checkpoint marker) | Worker calls `spine_review_step` with `--type plan`; reviewer validates approach before implementation |
+| 2 | Plan + Code | Plan + code review at step boundaries | Worker calls `spine_review_step` for plan and code; reviewer inspects diff and tests |
+| 3 | Full | Plan + code + test review | Worker calls `spine_review_step` for plan, code, and test coverage; reviewer verifies tests and coverage gates |
 
-`/spine-retry-task {taskId}` must update in one persisted transaction:
+Workers invoke **`spine_review_step`** (Pi tool) or the CLI equivalent: `spine review step --step N [--type plan|code]`.
 
-- Task record → `pending`; clear `startedAt`, `endedAt`, `exitReason`, `doneFileFound`
-- All segment records for task → `pending`; clear terminal timestamps
+#### Complexity scoring (task authoring)
 
-When `lanes.autoCommitOnStall` is enabled (default **false**), a stall/failure salvage path may create one scoped WIP commit on the **lane branch** (`wip(<taskId>): stall salvage <iso>`). Atomic retry (`spine batch retry`) resets task/segment records only — it does **not** revert that WIP commit; the lane worktree retains salvage work for operator review and re-run.
+When creating tasks, score four dimensions (0–2 each): **Blast radius**, **Pattern novelty**, **Security**, **Reversibility**. Sum maps to review level:
 
+| Total score | Review level |
+|-------------|--------------|
+| 0–1 | 0 |
+| 2–3 | 1 |
+| 4–5 | 2 |
+| 6–8 | 3 |
 
-[Showing lines 1-1181 of 1182 (50.0KB limit). Use offset=1182 to continue.]
+Full dimension rubric lives in `skills/create-spine-tasks/SKILL.md`. Individual steps may override the task-level level with checkpoint markers (e.g. `**Plan-review checkpoint**`, `**Code review checkpoint**`).
