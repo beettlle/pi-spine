@@ -14,9 +14,10 @@ import {
 import {
 	createInitialBatchState,
 	loadSpineBatchState,
+	recordBatchEnginePid,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
-import { laneTaskBranch, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
@@ -117,8 +118,12 @@ test("batch start returns quickly and runs engine in background", async () => {
 
 		const deadline = Date.now() + 60_000;
 		let terminal = false;
+		let sawEnginePid = false;
 		while (Date.now() < deadline) {
 			const { raw } = loadSpineBatchState(projectRoot);
+			if (raw?.resilience?.enginePid) {
+				sawEnginePid = true;
+			}
 			if (raw?.phase === "completed" || raw?.phase === "failed" || raw?.phase === "aborted") {
 				terminal = true;
 				break;
@@ -126,6 +131,7 @@ test("batch start returns quickly and runs engine in background", async () => {
 			await new Promise((resolve) => setTimeout(resolve, 250));
 		}
 		assert.ok(terminal, "background engine should finish stub batch");
+		assert.ok(sawEnginePid, "detached start should persist enginePid in batch-state");
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;
