@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-061
+**Next Task ID:** SP-070
 
 ---
 
 ## Current State
 
-**Phases 0–9 complete on `main`.** Phase 10 (**standalone branding**, SP-051–055) in progress. Phase 11 (**stall recovery & observability**, SP-056–060) staged from SearchATon dogfood brief — see [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md).
+**Phases 0–9 complete on `main`.** Phase 10 (**standalone branding**, SP-051–055) in progress. Phase 11 (**stall recovery & observability**, SP-056–060) complete. Phase 12 (**agent prompts + 77% coverage**, SP-061–069) staged — see agent prompt improvement backlog below.
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -164,7 +164,29 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Source brief:** [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md) (SearchATon batch `20260603T002945` / SAT-020).
 
+### Phase 12 — Agent prompts + 77% code coverage
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-061 | 77% line coverage policy — CI, spine-config, worker/reviewer/skill | **Staged** | — |
+| SP-062 | Worker execution discipline — resume, checkboxes, scope, context limit | **Staged** | SP-061 |
+| SP-063 | Worker review levels 0–3 + L2+ order of operations | **Staged** | SP-062 |
+| SP-064 | Commit convention alignment — worker, runner, PRD FR-WORK-03 | **Staged** | SP-063 |
+| SP-065 | Reviewer template depth — build gate, REVISE cites, rubric, coverage | **Staged** | SP-061 |
+| SP-066 | Supervisor v1 honest stub — CLI/diagnose guidance, no agent session | **Staged** | — |
+| SP-067 | Deduplicate runner inline hints vs worker.md | **Staged** | SP-064 |
+| SP-068 | PRD Appendix C — review levels table | **Staged** | — |
+| SP-069 | Agent template drift test | **Staged** | SP-067 |
+
+**Policy:** All spine-orchestrated **code-related** deliverables must maintain **≥77% line coverage** (SP-061).
+
 **Suggested spine run order:**
+
+1. **Wave A (parallel):** `SP-061`, `SP-066`, `SP-068`
+2. **Wave B (parallel after SP-061):** `SP-062`, `SP-065`
+3. **Wave C (serial worker chain):** `SP-063` → `SP-064` → `SP-067` → `SP-069`
+
+**Suggested spine run order (Phase 11):**
 
 1. **Wave A:** `node bin/spine.mjs batch start SP-056` (P0 — unblocks diagnose on every stall)
 2. **Wave B (parallel after SP-056 lands):** `SP-057` + `SP-058` (disjoint file scope: heartbeat vs salvage module)
@@ -204,6 +226,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | **P1** | Checkpoint warnings + salvage inspect | 11 | **Done (SP-057, SP-058)** |
 | **P2** | Optional WIP commit on stall | 11 | **Staged (SP-059)** |
 | **P1** | Stall epic docs + SAT-020 fixture | 11 | **Done (SP-060)** |
+| **P1** | 77% code coverage policy | 12 | **Staged (SP-061)** |
+| **P1** | Agent prompt improvements (worker/reviewer/supervisor) | 12 | **Staged (SP-062–069)** |
 
 ---
 
