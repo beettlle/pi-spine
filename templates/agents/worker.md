@@ -59,15 +59,49 @@ Spine documents honest `.DONE` + lane auto-commit behavior below — `.DONE` mea
 
 Prefer these Pi tools over `spine review step` / `spine report progress` bash when available in your runtime.
 
+## Review levels (FR-REV-05, FR-WORK-07)
+
+Task packets declare a **Review Level** (0–3) in `PROMPT.md`. Read it at task start; match behavior to the table below (aligned with `skills/create-spine-tasks` and Appendix C in `docs/PRD.md`).
+
+| Level | Label | When to call `spine_review_step` |
+|-------|-------|----------------------------------|
+| 0 | None | Never — reviewer is not spawned |
+| 1 | Plan Only | Plan review before each step (or at `**Plan-review checkpoint**` markers) |
+| 2 | Plan + Code | Plan and/or code review at step boundaries per PROMPT |
+| 3 | Full | Plan + code + test review at step boundaries per PROMPT |
+
+**FR-WORK-07:** when Review Level > 0, you **must** call **`spine_review_step`** (Pi tool) or `spine review step --step N [--type plan|code]` at the points required by PROMPT. Use `type=plan` for plan reviews (Level ≥ 1) and `type=code` for code reviews (Level ≥ 2). Level 3 code reviews also expect sufficient test depth (see reviewer template).
+
+Checkpoint markers in PROMPT (`**Plan-review checkpoint**`, `**Code review checkpoint**`) consolidate reviews on single-deliverable tasks; otherwise default is per-step reviews when steps are independent.
+
+## Level 2+ order of operations
+
+For tasks at **Review Level ≥ 2**, complete **each step** in this strict order:
+
+1. **Finish step work** — all outcomes for this step in PROMPT.
+2. **Update outcome checkboxes** in `STATUS.md` as each outcome completes (immediate checkbox rule).
+3. **Commit** step work on the lane branch: `feat(TASK-ID): complete Step N — short description`
+4. **Request review** — `spine_review_step` with `type=plan` and/or `type=code` as required by PROMPT (step markers and task level).
+5. **On APPROVE only** — set the step **Status** to complete in `STATUS.md`, advance `Current Step`, then call **`spine_report_progress`**.
+
+**While review is pending:** do **not** mark the step **Status** complete or advance to the next step. Outcome checkboxes may already be checked.
+
+**On REVISE (FR-REV-03):** address feedback in `{taskFolder}/.reviews/`; re-commit if needed; call `spine_review_step` again. Do **not** start the next step until you receive **APPROVE**.
+
+**On review spawn failure (FR-REV-06):** exit with a **non-zero** status — fail closed. Do not mark the step complete, advance `Current Step`, or create `.DONE`.
+
+For **Review Level 0**, skip `spine_review_step`. For **Level 1**, follow PROMPT plan-review markers; still commit at step boundaries and mark step **Status** complete only after plan review **APPROVE** when a review was required for that step.
+
 ## Checkpoint discipline
 
-1. Update `STATUS.md` **before starting** each step (`Current Step`, step status).
-2. Mark checkboxes **immediately** when each outcome completes (see Checkbox discipline).
-3. **Commit at step boundaries** when you change files: `feat(TASK-ID): complete Step N — short description`
-4. When Review Level > 0, call **`spine_review_step`** (or `spine review step`) after each step; on REVISE, fix feedback before continuing.
-5. Call **`spine_report_progress`** after step completion to record journal progress.
-6. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
-7. Create `.DONE` only when every completion criterion is satisfied.
+1. Update `STATUS.md` **before starting** each step (`Current Step`, step status → in progress).
+2. Mark **outcome** checkboxes **immediately** when each outcome completes (see Checkbox discipline).
+3. **Commit** at step boundaries when you change files: `feat(TASK-ID): complete Step N — short description`
+4. When Review Level ≥ 2, follow **Level 2+ order of operations** (commit → review → APPROVE → mark step Status complete). When Review Level is 1, call **`spine_review_step`** for required plan reviews before marking the step complete.
+5. On **REVISE**, fix feedback and re-request review; do not advance step **Status** or `Current Step` until **APPROVE**.
+6. Call **`spine_report_progress`** after the step is marked complete (after review **APPROVE** when review level > 0).
+7. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
+8. Create `.DONE` only when every completion criterion is satisfied.
 
 **Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.
 
