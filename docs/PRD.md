@@ -442,7 +442,7 @@ See [§12](#12-human-gates-specification).
 | FR-BATCH-10 | Wave merge blocked while any wave task is `failed` or `pending` unless operator `/spine-skip-task` or `/spine-force-merge` | 3 |
 | FR-BATCH-11 | Batch preflight before start: doctor green, tasks committed, no active batch (or stale batch reconciled), wave plan printed | 0 |
 | FR-BATCH-12 | **Batch reconciliation:** on every status read, derive `diagnosis` from task records, segment frontier, merge results, journal tail, git (`orchBranch` vs `baseBranch`), lane registry, and `.DONE` files — not from `phase` alone | 1 |
-| FR-BATCH-13 | **Diagnosis taxonomy:** `running`, `paused`, `needs_retry`, `needs_merge`, `needs_integrate`, `completed`, `completed_manual`, `limbo_stale`, `failed`, `aborted` | 1 |
+| FR-BATCH-13 | **Diagnosis taxonomy:** `running`, `paused`, `needs_retry`, `engine_orphaned`, `needs_merge`, `needs_integrate`, `completed`, `completed_manual`, `limbo_stale`, `failed`, `aborted` | 1 |
 | FR-BATCH-14 | **`spine status [--diagnose]`** and **`/spine-status`:** JSON + human output with `suggestedCommand` and optional `alternatives[]` per §18.3 | 1 |
 | FR-BATCH-15 | **`spine batch dismiss` / `/spine-dismiss`:** archive active batch snapshot, clear active state, journal `batch.dismissed` — for limbo or abandoned Taskplane batches | 1 |
 | FR-BATCH-16 | **`spine batch complete`:** when reconciliation says all work terminal + merge satisfied, mark `completed`, move to history | 1 |
@@ -1108,8 +1108,9 @@ On every status read, preflight, and dashboard refresh, pi-spine runs reconcilia
 3. Compare merge state: `mergeResults`, orch branch existence, whether `baseBranch` already contains orch commits.
 4. Detect **split-brain limbo:** e.g. `failedTasks=0`, all tasks succeeded, `phase ∈ {stopped, failed, executing}`, `endedAt=null`, empty `mergeResults`.
 5. Detect **zombie registry:** terminal batch + lane heartbeat stale or worker session absent while registry shows running.
-6. Emit `diagnosis` + `suggestedCommand` per §18.3.
-7. **Never** suggest pause/resume when `diagnosis ∈ {limbo_stale, completed_manual, needs_integrate}`.
+6. Detect **orphan running:** `phase=running` with dead `resilience.enginePid` and/or dead lane `workerPid` and no terminal journal event — emit `engine_orphaned` or `needs_retry`, never plain `running`.
+7. Emit `diagnosis` + `suggestedCommand` per §18.3.
+8. **Never** suggest pause/resume when `diagnosis ∈ {limbo_stale, completed_manual, needs_integrate}`.
 
 Reconciliation does not require a full journal in v1 — git + batch-state + `.DONE` files are sufficient for limbo detection; journal enriches diagnosis when available.
 
@@ -1166,8 +1167,16 @@ Status output (non-error) uses the same shape minus `error` / `failureClass` whe
 Stall detection must **not** rely on tool-call silence alone.
 
 | Signal | Weight |
+|--------|--------|
+| `lane.heartbeat` / `task.step_completed` | Primary — extends stall grace |
+| STATUS.md mtime in task folder | Secondary — activity signal |
+| Lane-branch commits | Secondary — progress outside worker stdout |
+| File-scope mtime (when enabled) | Tertiary — does not extend grace by default |
 
-[Showing lines 1-1168 of 1192 (50.0KB limit). Use offset=1169 to continue.]
+Configurable: `lanes.stallTimeoutMinutes` (default 60), `lanes.stallGraceAfterProgressMinutes` (default 15).
+
+---
+
 ## 26. Appendices
 
 ### Appendix C: Review Levels

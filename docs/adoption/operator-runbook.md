@@ -152,7 +152,8 @@ spine journal replay --batch <batchId>
 |-------------|---------|-------------------|
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
-| `needs_retry` | Failed task | `spine batch retry <id>` or skip |
+| `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
+| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` or `spine batch abort` |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
@@ -281,6 +282,20 @@ spine batch pause
 spine batch abort                   # graceful — worker may finish step
 spine batch abort --hard            # SIGKILL + worktree cleanup
 ```
+
+### Orphan running (zombie batch)
+
+When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume).
+
+1. Confirm diagnosis: `spine status --diagnose` (never trust plain `running` when PIDs are dead).
+2. Inspect journal tail: `spine journal tail` — expect `task.started` / `lane.heartbeat` then silence.
+3. Check detached engine log: `.spine/runtime/detached-engine.log`.
+4. Recover:
+   - `spine batch retry <taskId>` when a running task is named in the headline.
+   - `spine batch abort` when no task is active or work should be discarded.
+   - `spine batch resume --force` only after retry/abort clears stale running records.
+
+Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
 ### Dismiss and complete (terminal limbo)
 
