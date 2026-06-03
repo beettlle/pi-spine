@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-071
+**Next Task ID:** SP-072
 
 ---
 
@@ -178,6 +178,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-068 | PRD Appendix C — review levels table | **Staged** | — |
 | SP-069 | Agent template drift test | **Staged** | SP-067 |
 | SP-070 | Journal attach test isolation | **Complete** | — |
+| SP-071 | CI checkpoint-warning git identity fix | **Staged** | — |
 
 **Policy:** All spine-orchestrated **code-related** deliverables must maintain **≥77% line coverage** (SP-061).
 
@@ -186,6 +187,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 1. **Wave A (parallel):** `SP-061`, `SP-066`, `SP-068`
 2. **Wave B (parallel after SP-061):** `SP-062`, `SP-065`
 3. **Wave C (serial worker chain):** `SP-063` → `SP-064` → `SP-067` → `SP-069`
+4. **Wave D (CI hygiene, parallel when Wave 1 runs):** `SP-071` — fix checkpoint-warning git fixtures (runs 26911437218 / 26911648989)
 
 **Suggested spine run order (Phase 11):**
 
