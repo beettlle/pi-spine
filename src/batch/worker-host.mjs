@@ -15,6 +15,7 @@ import {
 	recordCheckpointWarning,
 	recordLaneHeartbeat,
 	recordStallWarning,
+	resolveHeartbeatKind,
 	resolveStallConfig,
 	shouldEmitCheckpointWarning,
 } from "./heartbeat.mjs";
@@ -100,8 +101,7 @@ function spawnWorkerChild({
 	if (laneCorrelationId) env.SPINE_LANE_CORRELATION_ID = laneCorrelationId;
 	const args = useStub ? ["--stub"] : ["--pi"];
 
-	const launchScript =
-		!useStub && projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null;
+	const launchScript = projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null;
 	if (launchScript) {
 		return spawn(launchScript, [runner, ...args], {
 			cwd: worktreePath,
@@ -159,6 +159,31 @@ function buildWorkerFailureResult({
 		classification,
 		doneFound,
 	};
+}
+
+/**
+ * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
+ */
+function markChildPastPreflight(child, onPreflightComplete) {
+	if (typeof child.stdout?.on === "function") {
+		child.stdout.on("data", onPreflightComplete);
+	}
+	if (typeof child.stderr?.on === "function") {
+		child.stderr.on("data", onPreflightComplete);
+	}
+}
+
+/**
+ * @param {object} params
+ */
+function resolveWorkerPhase({
+	childPastPreflight,
+	useStub,
+	workerBackend,
+}) {
+	if (!childPastPreflight) return "launching";
+	if (useStub || workerBackend === "agentSession") return "pi";
+	return "pi";
 }
 
 /**
@@ -265,6 +290,9 @@ export async function runWorker({
 
 	const workerBackend = useStub ? "subprocess" : resolveWorkerBackend(config);
 	const workerMode = useStub ? "stub" : workerBackend === "agentSession" ? "agentSession" : "pi";
+	const useLaunchScript = Boolean(
+		projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null,
+	);
 
 	const reviewCheck = assertReviewToolAvailable({ taskFolder });
 	if (!reviewCheck.ok) {
@@ -311,6 +339,11 @@ export async function runWorker({
 		config,
 		workerBackendDeps,
 	});
+	let childPastPreflight = !useLaunchScript;
+	let workerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
+	markChildPastPreflight(child, () => {
+		childPastPreflight = true;
+	});
 	onWorkerPid?.(child.pid ?? 0);
 	const childDone = collectChildOutput(child);
 
@@ -352,8 +385,19 @@ export async function runWorker({
 					? { projectRoot, batchId, laneNumber, taskId }
 					: undefined,
 		});
-		const checkpointChanged = checkpointSignalsChanged(lastSignals, signals);
-		const activityChanged = activitySignalsChanged(lastSignals, signals);
+		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
+		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
+			lastCheckpointAt = now;
+			activitySinceCheckpoint = false;
+			checkpointWarningSent = false;
+			lastSignals = null;
+		}
+		workerPhase = nextWorkerPhase;
+
+		const checkpointChanged =
+			workerPhase !== "launching" && checkpointSignalsChanged(lastSignals, signals);
+		const activityChanged =
+			workerPhase !== "launching" && activitySignalsChanged(lastSignals, signals);
 
 		if (checkpointChanged) {
 			lastCheckpointAt = now;
@@ -397,6 +441,11 @@ export async function runWorker({
 			batchId &&
 			now - lastHeartbeatAt >= stallConfig.heartbeatIntervalMs
 		) {
+			const heartbeatKind = resolveHeartbeatKind({
+				workerPhase,
+				checkpointChanged,
+				activityChanged,
+			});
 			recordLaneHeartbeat({
 				projectRoot,
 				batchId,
@@ -404,6 +453,8 @@ export async function runWorker({
 				taskId,
 				signals,
 				correlationId: laneCorrelationId,
+				workerPhase,
+				heartbeatKind,
 			});
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;

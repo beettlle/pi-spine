@@ -143,24 +143,76 @@ export function resolveLaneAlert(laneNumber, journalTail, now = Date.now()) {
 	return null;
 }
 
+/**
+ * @param {number} laneNumber
+ * @param {object[]} journalEvents
+ */
+export function resolveLaneHeartbeatMeta(laneNumber, journalEvents) {
+	const laneId = `lane-${laneNumber}`;
+	for (let i = journalEvents.length - 1; i >= 0; i -= 1) {
+		const event = journalEvents[i];
+		if (event.type !== "lane.heartbeat") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (payload.laneNumber != null && payload.laneNumber !== laneNumber) continue;
+		if (event.laneId && event.laneId !== laneId) continue;
+		return {
+			heartbeatKind:
+				typeof payload.heartbeatKind === "string" ? payload.heartbeatKind : null,
+			workerPhase: typeof payload.workerPhase === "string" ? payload.workerPhase : null,
+		};
+	}
+	return { heartbeatKind: null, workerPhase: null };
+}
+
+/**
+ * @param {object} params
+ * @param {string|null|undefined} params.workerPhase
+ * @param {number|null|undefined} params.heartbeatAgeSeconds
+ */
+export function formatLaneHeartbeatDisplay({ workerPhase, heartbeatAgeSeconds }) {
+	if (workerPhase === "launching") return "launching";
+	if (heartbeatAgeSeconds == null) return "—";
+	return `${heartbeatAgeSeconds}s`;
+}
+
+/**
+ * @param {object} params
+ * @param {object[]} params.lanes
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {ReturnType<typeof resolveStallConfig>} params.stallConfig
+ * @param {string[]} [params.currentWaveTaskIds]
+ * @param {number} [params.now]
+ * @param {object[]} [params.journalEvents]
+ */
 export function buildLaneRows({
 	lanes,
 	classifiedTasks,
 	stallConfig,
 	currentWaveTaskIds = [],
 	journalTail = [],
+	journalEvents = [],
 	now = Date.now(),
 }) {
-	return (lanes ?? []).map((lane) => ({
-		laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
-		laneNumber: lane.laneNumber,
-		status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
-		activeTaskIds: computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }),
-		taskIds: lane.taskIds ?? [],
-		heartbeatAgeSeconds: heartbeatAgeSeconds(lane.lastHeartbeatAt, now),
-		worktree: truncateWorktreePath(lane.worktreePath),
-		laneAlert: resolveLaneAlert(lane.laneNumber, journalTail, now),
-	}));
+	return (lanes ?? []).map((lane) => {
+		const heartbeatMeta = resolveLaneHeartbeatMeta(lane.laneNumber, journalEvents);
+		const heartbeatAgeSecondsValue = heartbeatAgeSeconds(lane.lastHeartbeatAt, now);
+		return {
+			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
+			laneNumber: lane.laneNumber,
+			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
+			activeTaskIds: computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }),
+			taskIds: lane.taskIds ?? [],
+			heartbeatAgeSeconds: heartbeatAgeSecondsValue,
+			heartbeatKind: heartbeatMeta.heartbeatKind,
+			workerPhase: heartbeatMeta.workerPhase,
+			heartbeatDisplay: formatLaneHeartbeatDisplay({
+				workerPhase: heartbeatMeta.workerPhase,
+				heartbeatAgeSeconds: heartbeatAgeSecondsValue,
+			}),
+			worktree: truncateWorktreePath(lane.worktreePath),
+			laneAlert: resolveLaneAlert(lane.laneNumber, journalTail, now),
+		};
+	});
 }
 
 /**
@@ -269,9 +321,10 @@ export function buildDashboardSnapshot(projectRoot) {
 	}
 
 	let journalTail = [];
+	let journalEvents = [];
 	if (reconciliation.batchId) {
-		const events = readJournalEvents(projectRoot, reconciliation.batchId);
-		journalTail = readJournalTail(events, 20).map(formatJournalTailEntry);
+		journalEvents = readJournalEvents(projectRoot, reconciliation.batchId);
+		journalTail = readJournalTail(journalEvents, 20).map(formatJournalTailEntry);
 	}
 
 	const now = Date.now();
@@ -291,6 +344,7 @@ export function buildDashboardSnapshot(projectRoot) {
 		stallConfig,
 		currentWaveTaskIds,
 		journalTail,
+		journalEvents,
 		now,
 	});
 	const waves = buildWaveProgress(batch);

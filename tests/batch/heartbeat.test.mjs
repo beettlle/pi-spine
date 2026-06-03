@@ -5,15 +5,152 @@ import path from "node:path";
 import test from "node:test";
 import {
 	activitySignalsChanged,
+	buildHeartbeatPayloadFields,
 	collectProgressSignals,
 	computeStallDeadline,
 	findLatestStepCompletedMs,
 	progressSignalsChanged,
+	recordLaneHeartbeat,
+	resolveHeartbeatKind,
 	resolveStallConfig,
 } from "../../src/batch/heartbeat.mjs";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
+import { runWorker } from "../../src/batch/worker-host.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+
+test("resolveHeartbeatKind marks launching as worker_alive only", () => {
+	assert.equal(
+		resolveHeartbeatKind({
+			workerPhase: "launching",
+			checkpointChanged: true,
+			activityChanged: true,
+		}),
+		"worker_alive",
+	);
+	assert.equal(
+		resolveHeartbeatKind({
+			workerPhase: "pi",
+			checkpointChanged: true,
+		}),
+		"checkpoint",
+	);
+	assert.equal(
+		resolveHeartbeatKind({
+			workerPhase: "pi",
+			activityChanged: true,
+		}),
+		"file_scope_activity",
+	);
+});
+
+test("buildHeartbeatPayloadFields omits stale checkpoint signals during launching", () => {
+	const signals = {
+		statusMtimeMs: 123,
+		lastCommitAtMs: 456,
+		fileScopeMtimeMs: 789,
+		dirtyPaths: ["src/a.mjs"],
+	};
+	const launching = buildHeartbeatPayloadFields(signals, "launching", "worker_alive");
+	assert.equal(launching.statusMtimeMs, null);
+	assert.equal(launching.lastCommitAtMs, null);
+	assert.equal(launching.fileScopeMtimeMs, null);
+	assert.equal(launching.dirtyPathCount, 0);
+
+	const checkpoint = buildHeartbeatPayloadFields(signals, "pi", "checkpoint");
+	assert.equal(checkpoint.statusMtimeMs, 123);
+	assert.equal(checkpoint.dirtyPathCount, 1);
+});
+
+test("recordLaneHeartbeat journals kind and phase", () => {
+	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-kind-"));
+	const batchId = "20260603T120000";
+	const signals = collectProgressSignals({
+		worktreePath: projectRoot,
+		taskFolder: projectRoot,
+	});
+	recordLaneHeartbeat({
+		projectRoot,
+		batchId,
+		laneNumber: 2,
+		taskId: "SP-084",
+		signals,
+		correlationId: "corr-1",
+		workerPhase: "launching",
+		heartbeatKind: "worker_alive",
+	});
+	const events = readJournalEvents(projectRoot, batchId);
+	const heartbeat = events.find((event) => event.type === "lane.heartbeat");
+	assert.ok(heartbeat);
+	assert.equal(heartbeat.payload.heartbeatKind, "worker_alive");
+	assert.equal(heartbeat.payload.workerPhase, "launching");
+	assert.equal(heartbeat.payload.statusMtimeMs, null);
+	fs.rmSync(projectRoot, { recursive: true, force: true });
+});
+
+test("runWorker launching heartbeat does not journal stale STATUS mtime on fast-fail retry", async () => {
+	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-retry-"));
+	const batchId = "20260603T130000";
+	const taskId = "TP-084";
+	const taskFolder = path.join(projectRoot, "spine-tasks", `${taskId}-retry`);
+	fs.mkdirSync(taskFolder, { recursive: true });
+	const staleStatusMtime = Date.now() - 60 * 60 * 1000;
+	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "stale from prior attempt", "utf-8");
+	fs.utimesSync(path.join(taskFolder, "STATUS.md"), staleStatusMtime / 1000, staleStatusMtime / 1000);
+	fs.mkdirSync(path.join(projectRoot, "scripts"), { recursive: true });
+	const launchScript = path.join(projectRoot, "scripts/spine-worker-launch.sh");
+	fs.writeFileSync(
+		launchScript,
+		"#!/bin/sh\nsleep 2\nexec \"$@\"\n",
+		{ encoding: "utf-8", mode: 0o755 },
+	);
+	fs.writeFileSync(
+		path.join(taskFolder, "PROMPT.md"),
+		`# Task: ${taskId}\n\n## Review Level: 0\n\n## Mission\nFail fast.\n\n## Dependencies\n- **None**\n\n## File Scope\n- \`README.md\`\n\n## Steps\n### Step 0\n- [ ] one\n`,
+		"utf-8",
+	);
+
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	const prevFail = process.env.SPINE_WORKER_STUB_FAIL_TASKS;
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_WORKER_STUB_FAIL_TASKS = taskId;
+	try {
+		const result = await runWorker({
+			worktreePath: projectRoot,
+			taskFolder,
+			projectRoot,
+			batchId,
+			laneNumber: 2,
+			taskId,
+			config: {
+				lanes: {
+					heartbeatIntervalMinutes: 0.001,
+					stallTimeoutMinutes: 10,
+					stallGraceAfterProgressMinutes: 5,
+				},
+				development: { workerLaunchScript: "scripts/spine-worker-launch.sh" },
+			},
+		});
+		assert.equal(result.ok, false);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const heartbeats = events.filter((event) => event.type === "lane.heartbeat");
+		const launchingHeartbeats = heartbeats.filter(
+			(event) => event.payload.workerPhase === "launching",
+		);
+		assert.ok(launchingHeartbeats.length > 0, "expected launching heartbeat before fast fail");
+		for (const heartbeat of launchingHeartbeats) {
+			assert.equal(heartbeat.payload.heartbeatKind, "worker_alive");
+			assert.equal(heartbeat.payload.statusMtimeMs, null);
+		}
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		if (prevFail === undefined) delete process.env.SPINE_WORKER_STUB_FAIL_TASKS;
+		else process.env.SPINE_WORKER_STUB_FAIL_TASKS = prevFail;
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});
 
 test("resolveStallConfig applies lane overrides", () => {
 	const cfg = resolveStallConfig({
