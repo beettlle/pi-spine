@@ -46,7 +46,7 @@ export async function runSpinePlan({
 	const tasksRoot = resolveTasksRootPath(projectRoot, config);
 	if (!tasksRoot) {
 		const err = new Error('Cannot build plan: tasksRoot not configured');
-		err.suggestedCommand = 'spine init --tasks-root taskplane-tasks';
+		err.suggestedCommand = 'spine init';
 		throw err;
 	}
 	const plan = buildPlan({ scope, config, tasksRoot });

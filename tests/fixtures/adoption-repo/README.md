@@ -12,4 +12,4 @@ Minimal git-backed consumer project layout for pi-spine adoption smoke tests and
 | `taskplane-tasks/AD-002-real-pi-smoke/` | Review Level 1 real-pi smoke task |
 | `taskplane-tasks/dependencies.json` | Task dependency graph |
 
-Spine config (`.spine/spine-config.json`) is **not** checked in — bootstrap runs `spine init --preset taskplane-compat` on first use. See [bootstrap-checklist.md](../../../docs/adoption/bootstrap-checklist.md).
+Spine config (`.spine/spine-config.json`) is **not** checked in — bootstrap runs `spine init` on first use. See [bootstrap-checklist.md](../../../docs/adoption/bootstrap-checklist.md).

@@ -13,7 +13,7 @@ Validate **live `pi` workers and reviewers** on the adoption consumer fixture (`
 
 ## Model config
 
-Agent models come from `.spine/spine-config.json` created by `spine init --preset taskplane-compat`:
+Agent models come from `.spine/spine-config.json` created by `spine init`:
 
 ```json
 "agents": {

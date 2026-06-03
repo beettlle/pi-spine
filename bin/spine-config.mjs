@@ -124,7 +124,7 @@ export function validateSpineConfig(config) {
 		return {
 			code: "CONFIG_TASKS_ROOT_INVALID",
 			message: "paths.tasksRoot must be a non-empty string",
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		};
 	}
 

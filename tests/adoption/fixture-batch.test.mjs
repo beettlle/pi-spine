@@ -83,13 +83,7 @@ function ensureSpineInit(projectRoot) {
 	if (fs.existsSync(configPath)) {
 		return;
 	}
-	runSpine(projectRoot, [
-		"init",
-		"--tasks-root",
-		"taskplane-tasks",
-		"--preset",
-		"taskplane-compat",
-	]);
+	runSpine(projectRoot, ["init", "--tasks-root", "taskplane-tasks"]);
 	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", "spine init"], { cwd: projectRoot, stdio: "ignore" });
 }

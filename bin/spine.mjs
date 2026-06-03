@@ -168,7 +168,7 @@ function checkModelProvider() {
 		const result = spawnSync("pi", ["--list-models"], {
 			encoding: "utf-8",
 			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 15000,
+			timeout: 30_000,
 		});
 		if (result.error) throw result.error;
 		const output = `${result.stdout ?? ""}
@@ -604,7 +604,7 @@ ${c.bold}Commands:${c.reset}
 
 ${c.bold}Init options:${c.reset}
   --tasks-root PATH   Tasks root relative to project (default: spine-tasks)
-  --preset NAME       Preset bundle (taskplane-compat for Taskplane migrants)
+  --preset NAME       Deprecated: taskplane-compat (migrants — prefer migrate-from-taskplane)
   --dry-run           Preview files without writing
   --force             Overwrite existing .spine/spine-config.json and agent stubs
 
@@ -615,9 +615,9 @@ ${c.bold}Migrate options:${c.reset}
   --json              Emit machine-readable result JSON
 
 ${c.bold}Examples:${c.reset}
-  spine init                                    # scaffold defaults
-  spine init --tasks-root taskplane-tasks       # use existing task folder
-  spine init --preset taskplane-compat --tasks-root taskplane-tasks
+  spine init                                    # greenfield: spine-tasks/ + defaults
+  spine init --tasks-root taskplane-tasks       # existing Taskplane task folder
+  spine init --preset taskplane-compat          # deprecated alias (defaults taskplane-tasks/)
   spine migrate-from-taskplane --dry-run --source .pi/taskplane-config.json
   spine init --dry-run                          # preview changes
   spine doctor                                  # check installation health

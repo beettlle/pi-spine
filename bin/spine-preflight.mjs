@@ -280,7 +280,7 @@ export function checkTasksRoot(ctx) {
 
 	if (!tasksRootPath) {
 		return makeCheck("tasks-root", false, "tasks root not configured", {
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		});
 	}
 
@@ -299,7 +299,7 @@ export function checkTasksRoot(ctx) {
 	if (taskFolders.length === 0) {
 		return makeCheck("tasks-root", false, "no discoverable task folders (PROMPT.md)", {
 			details: { tasksRootPath: path.relative(ctx.projectRoot, tasksRootPath) },
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		});
 	}
 
@@ -327,7 +327,7 @@ export function checkDependenciesJson(ctx) {
 
 	if (!tasksRootPath) {
 		return makeCheck("dependencies-json", false, "tasks root not configured", {
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		});
 	}
 
@@ -337,7 +337,7 @@ export function checkDependenciesJson(ctx) {
 			"dependencies-json",
 			false,
 			`dependencies.json missing: ${path.relative(ctx.projectRoot, depsPath)}`,
-			{ suggestedCommand: "spine init --tasks-root taskplane-tasks" },
+			{ suggestedCommand: "spine init" },
 		);
 	}
 
@@ -346,7 +346,7 @@ export function checkDependenciesJson(ctx) {
 		parsed = JSON.parse(fs.readFileSync(depsPath, "utf-8"));
 	} catch (err) {
 		return makeCheck("dependencies-json", false, `cannot parse dependencies.json: ${err.message}`, {
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		});
 	}
 
@@ -355,13 +355,13 @@ export function checkDependenciesJson(ctx) {
 			"dependencies-json",
 			false,
 			`dependencies.json version must be ${DEPENDENCIES_SCHEMA_VERSION} (found ${parsed.version ?? "missing"})`,
-			{ suggestedCommand: "spine init --tasks-root taskplane-tasks" },
+			{ suggestedCommand: "spine init" },
 		);
 	}
 
 	if (typeof parsed.tasks !== "object" || parsed.tasks === null || Array.isArray(parsed.tasks)) {
 		return makeCheck("dependencies-json", false, "dependencies.json tasks must be an object", {
-			suggestedCommand: "spine init --tasks-root taskplane-tasks",
+			suggestedCommand: "spine init",
 		});
 	}
 

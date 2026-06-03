@@ -89,7 +89,7 @@ fi
 pass "pi on PATH ($(pi --version 2>&1 | head -1 || echo unknown))"
 
 if [[ ! -f "$ROOT/.spine/spine-config.json" ]]; then
-	fail "missing .spine/spine-config.json — run: spine init --preset taskplane-compat"
+	fail "missing .spine/spine-config.json — run: spine init"
 	exit 1
 fi
 pass ".spine/spine-config.json present"

@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-06-02
 **Status:** Active
-**Next Task ID:** TP-051
+**Next Task ID:** SP-061
 
 ---
 
 ## Current State
 
-**Phases 0–8 complete on `main`.** **~287** tests pass locally (`SPINE_WORKER_STUB=1`; fix 2 flaky worker-tools tests before pilot). Phase 7 publish prep (TP-030) complete; **npm publish deferred**. Phase 9 (**real-project adoption**, TP-043–050) staged — see [`docs/adoption/real-project-readiness.md`](../docs/adoption/real-project-readiness.md).
+**Phases 0–9 complete on `main`.** Phase 10 (**standalone branding**, SP-051–055) in progress. Phase 11 (**stall recovery & observability**, SP-056–060) staged from SearchATon dogfood brief — see [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md).
 
 Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks required **manual supervisor recovery** after Taskplane worker stalls; see post-mortem.
 
@@ -139,38 +139,39 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | TP-046 | FR-CFG-04 env overrides (`SPINE_TASKS_ROOT`, `SPINE_MAX_LANES`) | **Staged** | TP-043 |
 | TP-047 | Stub-free dogfood sign-off + flaky test fix | **Staged** | TP-044 |
 | TP-048 | Real pi worker + reviewer E2E | **Staged** | TP-047 |
-| TP-049 | Operator runbook for external teams | **Staged** | TP-048 |
-| TP-050 | `createAgentSession` worker backend spike (v1.1) | **Staged** | TP-048 |
+| TP-049 | Operator runbook for external teams | **Done** | TP-048 |
+| TP-050 | `createAgentSession` worker backend spike (v1.1) | **Done** | TP-048 |
 
-**Master plan:** [`docs/adoption/real-project-readiness.md`](../docs/adoption/real-project-readiness.md)
+### Phase 10 — Standalone branding (Taskplane decruft)
 
-**Suggested spine run order** (use `node bin/spine.mjs` from repo root; preflight before each batch):
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-051 | Default `spine init` + docs rebrand (Phase A) | **Done** | — |
+| SP-052 | Rename `src/compat/taskplane` module (Phase B) | **Staged** | SP-051 |
+| SP-053 | Scaffold `CONTEXT.md` on init | **Staged** | SP-051 |
+| SP-054 | `create-spine-tasks` skill | **Staged** | SP-051, SP-053 |
+| SP-055 | Migrate pi-spine repo `taskplane-tasks/` → `spine-tasks/` | **Staged** | SP-051 |
 
-1. **Wave A (parallel — disjoint scopes):**
-   ```bash
-   node bin/spine.mjs preflight
-   node bin/spine.mjs plan TP-043 TP-045 TP-046
-   node bin/spine.mjs batch start TP-043 TP-045 TP-046
-   ```
+### Phase 11 — Stall recovery & operator observability
 
-2. **Wave B:** `node bin/spine.mjs batch start TP-044` (after TP-043)
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-056 | FR-STALL-01 worker output capture on terminal failure (P0) | **Staged** | — |
+| SP-057 | FR-STALL-02 checkpoint warnings; file-scope must not extend grace (P1) | **Staged** | SP-056 |
+| SP-058 | FR-STALL-03A salvage inspection (read-only) (P1) | **Staged** | SP-056 |
+| SP-059 | FR-STALL-03B optional `autoCommitOnStall` WIP commit (P2) | **Staged** | SP-058 |
+| SP-060 | Epic fixture (SAT-020), runbook, dashboard, gap/PRD closeout (P1) | **Staged** | SP-056, SP-057, SP-058 |
 
-3. **Wave C:** `node bin/spine.mjs batch start TP-047` (after TP-044)
+**Source brief:** [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md) (SearchATon batch `20260603T002945` / SAT-020).
 
-4. **Wave D:** `node bin/spine.mjs batch start TP-048` (after TP-047; manual real-pi steps)
+**Suggested spine run order:**
 
-5. **Wave E:** `node bin/spine.mjs batch start TP-049` (after TP-048)
+1. **Wave A:** `node bin/spine.mjs batch start SP-056` (P0 — unblocks diagnose on every stall)
+2. **Wave B (parallel after SP-056 lands):** `SP-057` + `SP-058` (disjoint file scope: heartbeat vs salvage module)
+3. **Wave C:** `SP-059` (optional; after SP-058)
+4. **Wave D:** `SP-060` (integration fixture + docs; after SP-056–058)
 
-6. **Wave F (optional v1.1):** `node bin/spine.mjs batch start TP-050`
-
-**Land loop per wave:**
-```bash
-node bin/spine.mjs status --diagnose
-node bin/spine.mjs gate approve
-node bin/spine.mjs integrate
-node bin/spine.mjs batch complete
-git push origin main
-```
+**Greenfield init:** `spine init` → `spine-tasks/` with gates, testing, and lane defaults. **Migrants:** `spine migrate-from-taskplane` or `spine init --tasks-root taskplane-tasks` (legacy `--preset taskplane-compat` deprecated).
 
 **Operator docs:** [`docs/adoption/operator-runbook.md`](../docs/adoption/operator-runbook.md)
 
@@ -199,6 +200,10 @@ git push origin main
 | **P2** | Operator runbook + env overrides | 9 | **Staged (TP-046, TP-049)** |
 | **P2** | Taskplane coexistence guard | 9 | **Staged (TP-045)** |
 | **P3** | createAgentSession backend (v1.1) | 9 | **Staged (TP-050)** |
+| **P0** | Stall worker output capture (FR-STALL-01) | 11 | **Staged (SP-056)** |
+| **P1** | Checkpoint warnings + salvage inspect | 11 | **Staged (SP-057, SP-058)** |
+| **P2** | Optional WIP commit on stall | 11 | **Staged (SP-059)** |
+| **P1** | Stall epic docs + SAT-020 fixture | 11 | **Staged (SP-060)** |
 
 ---
 

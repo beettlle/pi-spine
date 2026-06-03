@@ -144,7 +144,7 @@ pi install npm:pi-spine
 
 # In your project repo
 cd my-project
-spine init --tasks-root taskplane-tasks --preset taskplane-compat
+spine init
 spine doctor
 spine plan all
 spine preflight
@@ -448,7 +448,7 @@ The browser UI streams reconciled snapshots over SSE (`/api/events`, **2s** poll
 If you already use Taskplane task folders:
 
 1. Install pi-spine in the same or a new repo.
-2. `spine init --tasks-root taskplane-tasks --preset taskplane-compat`
+2. `spine init` then `spine doctor`
 3. Migrate config from `.pi/taskplane-config.json` (see `spine migrate-from-taskplane`).
 4. Run `/spine-plan all` and compare to your last Taskplane plan.
 

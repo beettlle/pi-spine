@@ -77,7 +77,7 @@ In your application repo (not the pi-spine repo):
 # If pi-spine is not already installed for this project:
 pi install /absolute/path/to/pi-spine -l
 
-spine init --tasks-root taskplane-tasks --preset taskplane-compat
+spine init
 spine doctor
 spine migrate-from-taskplane --dry-run --source .pi/taskplane-config.json   # Taskplane migrants
 spine plan pending

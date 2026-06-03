@@ -8,6 +8,7 @@ import test from "node:test";
 
 import { loadSpineConfig, loadSpineConfigFile } from "../../bin/spine-config.mjs";
 import { runSpinePlan } from "../../bin/spine-plan.mjs";
+import { runDoctorChecks } from "../../bin/spine.mjs";
 import {
 	applyEnvOverrides,
 	normalizeTasksRootFromEnv,
@@ -144,19 +145,20 @@ test("spine settings show reports env source for overridden lanes.maxParallel", 
 	}
 });
 
-test("spine doctor lists effective config with env source", async () => {
+test("runDoctorChecks lists effective config with env source", async () => {
 	const projectRoot = await initGitRepo("env-doctor-");
+	const prev = process.env.SPINE_TASKS_ROOT;
+	process.env.SPINE_TASKS_ROOT = "taskplane-tasks";
 	try {
-		const result = spawnSync(process.execPath, [SPINE_BIN, "doctor"], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			env: { ...process.env, SPINE_TASKS_ROOT: "taskplane-tasks" },
-		});
-		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /paths\.tasksRoot \(effective\)/);
-		assert.match(result.stdout, /source: env/);
-		assert.match(result.stdout, /SPINE_TASKS_ROOT/);
+		const result = runDoctorChecks(projectRoot);
+		const tasksRootCheck = result.checks.find((c) => c.label === "paths.tasksRoot (effective)");
+		assert.ok(tasksRootCheck, "expected paths.tasksRoot (effective) check");
+		assert.match(tasksRootCheck.detail, /source: env/);
+		assert.match(tasksRootCheck.detail, /SPINE_TASKS_ROOT/);
+		assert.match(tasksRootCheck.detail, /taskplane-tasks/);
 	} finally {
+		if (prev === undefined) delete process.env.SPINE_TASKS_ROOT;
+		else process.env.SPINE_TASKS_ROOT = prev;
 		await destroyGitRepo(projectRoot);
 	}
 });

@@ -47,7 +47,7 @@ export function runMigrateFromTaskplane(projectRoot, args = []) {
 		return {
 			ok: false,
 			error: err.message,
-			suggestedCommand: "spine init --preset taskplane-compat",
+			suggestedCommand: "spine init",
 			exitCode: 1,
 		};
 	}

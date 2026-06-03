@@ -24,7 +24,11 @@ export const AGENT_STUB_FILES = [
 
 export const DEFAULT_TASKS_ROOT = "spine-tasks";
 export const TASKPLANE_COMPAT_TASKS_ROOT = "taskplane-tasks";
+/** @deprecated Use plain `spine init`; kept for Taskplane migrants. */
 export const TASKPLANE_COMPAT_PRESET = "taskplane-compat";
+export const LEGACY_TASKPLANE_PRESET_ALIASES = [TASKPLANE_COMPAT_PRESET];
+
+export const SPINE_INIT_TESTING_COMMAND = "npm run typecheck && npm test";
 
 export const SPINE_GITIGNORE_ENTRIES = [
 	".spine/runtime/",
@@ -86,12 +90,17 @@ export function parseInitArgs(args) {
 	if (presetRaw?.startsWith("--")) {
 		throw new Error("Missing value for --preset <name>.");
 	}
-	if (presetRaw && presetRaw !== TASKPLANE_COMPAT_PRESET) {
-		throw new Error(`Unknown preset: ${presetRaw}. Supported: ${TASKPLANE_COMPAT_PRESET}.`);
+	if (presetRaw && !LEGACY_TASKPLANE_PRESET_ALIASES.includes(presetRaw)) {
+		throw new Error(
+			`Unknown preset: ${presetRaw}. Supported: ${LEGACY_TASKPLANE_PRESET_ALIASES.join(", ")} (deprecated — use plain spine init).`,
+		);
 	}
 
 	const preset = presetRaw ?? null;
-	let tasksRoot = preset === TASKPLANE_COMPAT_PRESET ? TASKPLANE_COMPAT_TASKS_ROOT : DEFAULT_TASKS_ROOT;
+	let tasksRoot = DEFAULT_TASKS_ROOT;
+	if (preset === TASKPLANE_COMPAT_PRESET && !tasksRootRaw) {
+		tasksRoot = TASKPLANE_COMPAT_TASKS_ROOT;
+	}
 	if (tasksRootRaw) {
 		tasksRoot = normalizeTasksRoot(tasksRootRaw);
 	}
@@ -99,15 +108,24 @@ export function parseInitArgs(args) {
 	return { force, dryRun, tasksRoot, preset };
 }
 
-export function applyTaskplaneCompatPreset(config) {
-	const testingCommand = "npm run typecheck && npm test";
-	config.paths.tasksRoot = config.paths.tasksRoot || TASKPLANE_COMPAT_TASKS_ROOT;
-	config.testing.build = testingCommand;
-	config.testing.test = testingCommand;
+/** Apply production-ready defaults for every greenfield init. */
+export function applySpineInitDefaults(config) {
+	config.testing.build = SPINE_INIT_TESTING_COMMAND;
+	config.testing.test = SPINE_INIT_TESTING_COMMAND;
 	config.dashboard = { ...(config.dashboard ?? {}), port: 8109 };
-	config.gates = { ...(config.gates ?? {}), requireBeforeIntegrate: true };
-	config.lanes = { ...(config.lanes ?? {}), maxParallel: 3 };
+	config.gates = {
+		...(config.gates ?? {}),
+		requireBeforeIntegrate: true,
+		collectBuildEvidence: true,
+		collectTestEvidence: true,
+	};
+	config.lanes = { ...(config.lanes ?? {}), maxParallel: 3, queueExcess: true };
 	return config;
+}
+
+/** @deprecated Alias for {@link applySpineInitDefaults}. */
+export function applyTaskplaneCompatPreset(config) {
+	return applySpineInitDefaults(config);
 }
 
 export function buildSpineConfig(projectRoot, tasksRoot, { preset } = {}) {
@@ -115,9 +133,10 @@ export function buildSpineConfig(projectRoot, tasksRoot, { preset } = {}) {
 	const config = structuredClone(template);
 	config.project.name = path.basename(projectRoot);
 	config.paths.tasksRoot = tasksRoot;
+	applySpineInitDefaults(config);
 	if (preset === TASKPLANE_COMPAT_PRESET) {
-		applyTaskplaneCompatPreset(config);
-		config.paths.tasksRoot = tasksRoot;
+		// Preset only affects default tasks root when --tasks-root omitted; config already applied.
+		void preset;
 	}
 	return config;
 }

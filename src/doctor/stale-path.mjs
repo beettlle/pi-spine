@@ -47,7 +47,7 @@ export function readSpineCliVersion(spinePath, spawn = spawnSync) {
 	const result = spawn(process.execPath, [spinePath, "--version"], {
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
-		timeout: 10000,
+		timeout: 30_000,
 	});
 	if (result.status !== 0) return null;
 	const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;

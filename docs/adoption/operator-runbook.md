@@ -41,7 +41,7 @@ pi install /absolute/path/to/pi-spine -l
 cd /absolute/path/to/pi-spine && npm link
 
 # First-time spine layout
-spine init --tasks-root taskplane-tasks --preset taskplane-compat
+spine init
 
 # Taskplane migrants — preview then apply
 spine migrate-from-taskplane --dry-run --source .pi/taskplane-config.json
@@ -198,7 +198,7 @@ Dry-run integrate:
 spine integrate --dry-run
 ```
 
-When `gates.requireBeforeIntegrate` is true (default with `taskplane-compat` preset), `spine integrate` **refuses** until the gate is approved.
+When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine integrate` **refuses** until the gate is approved.
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 

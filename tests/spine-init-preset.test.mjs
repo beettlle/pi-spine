@@ -48,6 +48,20 @@ test("init --preset taskplane-compat defaults tasksRoot to taskplane-tasks", asy
 	}
 });
 
+test("plain init applies spine defaults without preset flag", async () => {
+	const projectRoot = await createFixture();
+	try {
+		const result = runInit(projectRoot, ["--dry-run"]);
+		assert.equal(result.ok, true);
+		assert.equal(result.config.paths.tasksRoot, "spine-tasks");
+		assert.equal(result.config.testing.test, "npm run typecheck && npm test");
+		assert.equal(result.config.gates.requireBeforeIntegrate, true);
+		assert.equal(result.config.lanes.maxParallel, 3);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
 test("init rejects unknown preset", async () => {
 	const projectRoot = await createFixture();
 	try {

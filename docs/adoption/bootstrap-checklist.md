@@ -49,16 +49,16 @@ See [local-install.md](./local-install.md) for `file:` dependencies and PATH tro
 ### 2. Initialize spine
 
 ```bash
-spine init --tasks-root taskplane-tasks --preset taskplane-compat
+spine init
 ```
 
-This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, and spine gitignore entries.
+This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, and spine gitignore entries (testing commands, gates, dashboard port, lane defaults).
 
 ### 3. Add your first task
 
-Create `taskplane-tasks/<ID>-<slug>/PROMPT.md` (Taskplane-compatible format). Start with **Review Level 0** for wiring checks.
+Create `spine-tasks/<ID>-<slug>/PROMPT.md` (spine task packet format; Taskplane-interoperable). Start with **Review Level 0** for wiring checks.
 
-Register dependencies in `taskplane-tasks/dependencies.json` when you have more than one task.
+Register dependencies in `spine-tasks/dependencies.json` when you have more than one task.
 
 ### 4. Doctor
 
@@ -136,7 +136,7 @@ spine migrate-from-taskplane --source .pi/taskplane-config.json
 **If no Taskplane config (tasks only):**
 
 ```bash
-spine init --tasks-root taskplane-tasks --preset taskplane-compat
+spine init --tasks-root taskplane-tasks
 ```
 
 Agent stubs are copied on init; re-run init with `--force` only if you intend to overwrite.
@@ -156,7 +156,8 @@ After a successful stub batch, remove or disable Taskplane `/orch` usage. Until 
 | Step | Command |
 |------|---------|
 | Install | `pi install /path/to/pi-spine -l` |
-| Init (greenfield) | `spine init --tasks-root taskplane-tasks --preset taskplane-compat` |
+| Init (greenfield) | `spine init` |
+| Init (Taskplane tasks folder) | `spine init --tasks-root taskplane-tasks` or `spine migrate-from-taskplane` |
 | Migrate | `spine migrate-from-taskplane --source .pi/taskplane-config.json` |
 | Health | `spine doctor` |
 | Preview work | `spine plan pending` |
