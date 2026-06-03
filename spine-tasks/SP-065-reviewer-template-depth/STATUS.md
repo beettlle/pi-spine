@@ -19,15 +19,15 @@
 ---
 
 ### Step 1: Build + typecheck gate
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Code review section: run `testing.build` and typecheck from `.spine/spine-config.json` (or documented fallback) **before** APPROVE on code reviews
-- [ ] Fail closed: if build/typecheck fails, REVISE with command output summary
+- [x] Code review section: run `testing.build` and typecheck from `.spine/spine-config.json` (or documented fallback) **before** APPROVE on code reviews
+- [x] Fail closed: if build/typecheck fails, REVISE with command output summary
 
 ---
 
 ### Step 2: REVISE structure + review level rubric
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] **REVISE** must list blocking issues with file paths, line references, and missing test names/paths
 - [ ] Add inline **Review Levels 0–3** rubric table (aligned with create-spine-tasks skill)
