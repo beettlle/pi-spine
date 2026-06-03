@@ -30,6 +30,9 @@ Write the review file using the `write` tool. Include:
 - Flag missing tests, scope creep outside File Scope, and regressions
 - REVISE only for blocking issues; minor suggestions do not block
 
+
+- For **code reviews** on code-related deliverables: verify **≥77% line coverage** on changed/in-scope modules (run or inspect `testing.testWithCoverage` output when available). **REVISE** when coverage is below threshold or tests are missing for changed paths.
+
 ## Plan review
 
 - Evaluate whether the step plan achieves PROMPT.md outcomes
