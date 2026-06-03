@@ -108,6 +108,7 @@ pi-spine targets the upper-right: **batch orchestration with strong audit trail 
 - **Orchestration journal** — JSONL event log for debugging and resume context
 - **Human gates** — approve or reject integrate with test/build evidence
 - **Local dashboard** — batch, lane, and gate visibility (SSE)
+- **`create-spine-tasks` skill** — decompose PRDs into `spine-tasks/` packets (local install; no npm publish)
 
 See `docs/PRD.md` for the full specification.
 
@@ -133,6 +134,19 @@ pi-spine is not on npm yet. To use it on a real project from a git checkout or l
 | [bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) | First-time consumer setup |
 | [operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures (preflight, land loop, recovery) |
 | [real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |
+
+### Task authoring (`create-spine-tasks` skill)
+
+After `pi install /path/to/pi-spine -l`, the **`create-spine-tasks`** skill is available in pi. Use it to decompose a PRD or feature brief into `spine-tasks/<ID>-<slug>/` folders (`PROMPT.md`, `STATUS.md`, `dependencies.json` updates).
+
+Example prompt in pi:
+
+```text
+Use the create-spine-tasks skill to break docs/PRD.md into M-sized SP-* tasks
+under spine-tasks/. Update CONTEXT.md and dependencies.json.
+```
+
+Skill source: [`skills/create-spine-tasks/SKILL.md`](skills/create-spine-tasks/SKILL.md). See [bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) for the greenfield flow.
 
 ---
 

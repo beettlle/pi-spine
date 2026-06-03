@@ -8,7 +8,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 ---
 
 ````markdown
-# Task: [PREFIX-###] - [Name]
+# Task: [PREFIX-###] — [Name]
 
 **Created:** [YYYY-MM-DD]
 **Size:** [S | M | L]
@@ -71,7 +71,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 ## Steps
 
 > **Hydration:** STATUS.md tracks outcomes, not individual code changes. Workers
-> expand steps when runtime discoveries warrant it. See task-worker agent for rules.
+> expand steps when runtime discoveries warrant it. See `.spine/agents/worker.md` for rules.
 
 ### Step 0: Preflight
 
@@ -87,37 +87,6 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 **Artifacts:**
 - `path/to/file` (new | modified)
-
-> **Multi-repo variant:** When file scope spans multiple repos, use
-> `#### Segment: <repoId>` markers within each step instead of flat checkboxes.
-> Replace the single-repo Step 1 above with segment-annotated steps like:
->
-> ```markdown
-> ### Step 1: [Name]
->
-> #### Segment: shared-libs
->
-> - [ ] Create string utility module
-> - [ ] Export from package index
->
-> #### Segment: web-client
->
-> - [ ] Add API client wrapper
-> - [ ] Wire into app initialization
->
-> ### Step [N]: Documentation & Delivery
->
-> #### Segment: [packet-repo]
->
-> - [ ] "Must Update" docs modified
-> - [ ] Discoveries logged in STATUS.md
-> ```
->
-> Rules:
-> - Always use explicit `#### Segment: <repoId>` markers (never rely on fallback)
-> - Order: shared/common repos → per-repo impl → integration/docs (packet repo)
-> - Final documentation/delivery step always uses the packet repo
-> - Max 10 segments per task; split larger tasks with dependencies
 
 ### Step [N-1]: Testing & Verification
 
@@ -221,14 +190,6 @@ this from PROMPT.md.
 > ⚠️ Hydrate: Expand checkboxes when entering this step based on [what]
 
 - [ ] [High-level placeholder — worker will expand]
-
-[Multi-repo variant — use segment markers matching PROMPT.md:]
-
-#### Segment: [repo-a]
-- [ ] [Item in repo-a]
-
-#### Segment: [repo-b]
-- [ ] [Item in repo-b]
 
 ---
 

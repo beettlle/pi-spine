@@ -2,7 +2,7 @@
 
 **Task:** create-spine-tasks skill
 **Status:** 🟡 In Progress
-**Current Step:** Step 1 — Skill authoring
+**Current Step:** Step 2 — Bootstrap doc link + example
 
 ---
 
@@ -11,11 +11,12 @@
 
 - [x] `skills/create-spine-tasks/SKILL.md` (spine-native paths, PRD decomposition)
 - [x] `references/prompt-template.md` and `references/context-template.md`
+- [x] Plan review APPROVE (review feedback applied to template)
 
 ---
 
 ### Step 2: Bootstrap doc link + example
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README.md skill mention
-- [ ] bootstrap-checklist.md link + example
+- [x] README.md skill mention + example prompt
+- [x] bootstrap-checklist.md link + example
