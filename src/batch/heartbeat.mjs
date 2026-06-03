@@ -16,6 +16,19 @@ const POLL_INTERVAL_MS = 30_000;
 const CHECKPOINT_WARNING_SUGGESTION =
 	"Commit step work and call spine_report_progress so stall grace tracks checkpoints, not file edits alone.";
 
+/** @typedef {"worker_alive" | "checkpoint" | "file_scope_activity"} HeartbeatKind */
+/** @typedef {"launching" | "pi" | "verify" | "unknown"} WorkerPhase */
+
+/** @type {readonly HeartbeatKind[]} */
+export const HEARTBEAT_KINDS = Object.freeze([
+	"worker_alive",
+	"checkpoint",
+	"file_scope_activity",
+]);
+
+/** @type {readonly WorkerPhase[]} */
+export const WORKER_PHASES = Object.freeze(["launching", "pi", "verify", "unknown"]);
+
 /**
  * @param {object} [config]
  */
@@ -288,6 +301,54 @@ export function computeStallDeadline({ startedAt, lastProgressAt, stallConfig })
 
 /**
  * @param {object} params
+ * @param {WorkerPhase} [params.workerPhase]
+ * @param {HeartbeatKind} [params.heartbeatKind]
+ */
+export function resolveHeartbeatKind({
+	workerPhase,
+	checkpointChanged = false,
+	activityChanged = false,
+}) {
+	if (workerPhase === "launching") return "worker_alive";
+	if (checkpointChanged) return "checkpoint";
+	if (activityChanged) return "file_scope_activity";
+	return "worker_alive";
+}
+
+/**
+ * Progress-class heartbeat fields are omitted during launcher preflight so retries
+ * do not reuse stale STATUS / git checkpoint signals from a prior attempt.
+ *
+ * @param {object} signals
+ * @param {WorkerPhase} workerPhase
+ * @param {HeartbeatKind} heartbeatKind
+ */
+export function buildHeartbeatPayloadFields(signals, workerPhase, heartbeatKind) {
+	const includeProgressFields =
+		workerPhase !== "launching" &&
+		(heartbeatKind === "checkpoint" || heartbeatKind === "file_scope_activity");
+
+	if (!includeProgressFields) {
+		return {
+			statusMtimeMs: null,
+			lastCommitAtMs: null,
+			fileScopeMtimeMs: null,
+			dirtyPathCount: 0,
+		};
+	}
+
+	return {
+		statusMtimeMs: signals.statusMtimeMs,
+		lastCommitAtMs: signals.lastCommitAtMs,
+		fileScopeMtimeMs: signals.fileScopeMtimeMs,
+		dirtyPathCount: signals.dirtyPaths?.length ?? 0,
+	};
+}
+
+/**
+ * @param {object} params
+ * @param {WorkerPhase} [params.workerPhase]
+ * @param {HeartbeatKind} [params.heartbeatKind]
  */
 export function recordLaneHeartbeat({
 	projectRoot,
@@ -296,15 +357,17 @@ export function recordLaneHeartbeat({
 	taskId,
 	signals,
 	correlationId,
+	workerPhase = "unknown",
+	heartbeatKind = "worker_alive",
 }) {
+	const progressFields = buildHeartbeatPayloadFields(signals, workerPhase, heartbeatKind);
 	appendJournalEvent(projectRoot, batchId, "lane.heartbeat", {
 		laneNumber,
 		taskId,
 		correlationId,
-		statusMtimeMs: signals.statusMtimeMs,
-		lastCommitAtMs: signals.lastCommitAtMs,
-		fileScopeMtimeMs: signals.fileScopeMtimeMs,
-		dirtyPathCount: signals.dirtyPaths?.length ?? 0,
+		heartbeatKind,
+		workerPhase,
+		...progressFields,
 	});
 }
 
