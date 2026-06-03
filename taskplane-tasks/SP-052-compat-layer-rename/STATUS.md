@@ -1,7 +1,7 @@
 # SP-052 Status
 
 **Task:** Rename compat/taskplane module
-**Status:** 🟨 In Progress
+**Status:** ✅ Complete
 
 ## Step 1: Move module + update imports
 - [x] Move `src/compat/taskplane/` → `src/tasks/packet/`
@@ -12,4 +12,4 @@
 - [x] Update PRD module references
 
 ## Step 3: Full test suite
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` (334/334 pass)
