@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { detectOrphanRunning } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
@@ -319,7 +320,15 @@ export function deriveDiagnosis(signals) {
 		failedTaskId,
 		mergeResultsEmpty,
 		git,
+		orphanRunning,
 	} = signals;
+
+	if (orphanRunning) {
+		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
+			return { diagnosis: "needs_retry", failedTaskId: orphanRunning.taskId };
+		}
+		return { diagnosis: "engine_orphaned", failedTaskId: orphanRunning.taskId ?? null };
+	}
 
 	if (phase === "aborted") return { diagnosis: "aborted", failedTaskId: null };
 	if (phase === "completed" && endedAt != null) {
@@ -470,6 +479,8 @@ export function reconcileBatch(ctx) {
 		git,
 		tasks: classifiedTasks,
 		segments: batch.segments,
+		lanes: batch.lanes,
+		raw: batch.raw,
 	};
 
 	const journalFile = journalPath(projectRoot, batch.batchId);
@@ -478,7 +489,17 @@ export function reconcileBatch(ctx) {
 	if (fs.existsSync(journalFile)) {
 		journalEvents = readJournalEvents(projectRoot, batch.batchId);
 		signals.journalHints = extractJournalDiagnosisHints(journalEvents);
+		signals.journalEvents = journalEvents;
 	}
+
+	signals.orphanRunning = detectOrphanRunning({
+		phase: batch.phase,
+		hasRunningTasks,
+		tasks: classifiedTasks,
+		lanes: batch.lanes,
+		raw: batch.raw,
+		journalEvents,
+	});
 
 	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
 	signals.pendingTaskCount = pendingTaskCount;
@@ -487,7 +508,11 @@ export function reconcileBatch(ctx) {
 	const salvagePayload = findLatestSalvageInspection(journalEvents, failedTaskId);
 	const salvageChangedFileCount = Number(salvagePayload?.changedFileCount ?? 0) || 0;
 	const salvageRetryCommand =
-		typeof salvagePayload?.retryCommand === "string" ? salvagePayload.retryCommand : null;
+		typeof salvagePayload?.retryCommand === "string"
+			? salvagePayload.retryCommand
+			: signals.orphanRunning?.taskId
+				? `spine batch retry ${signals.orphanRunning.taskId}`
+				: null;
 
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
