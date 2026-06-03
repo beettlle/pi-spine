@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
+	activitySignalsChanged,
 	collectProgressSignals,
 	computeStallDeadline,
 	findLatestStepCompletedMs,
@@ -133,7 +134,7 @@ test("progressSignalsChanged detects journal task.step_completed (silent tools)"
 	fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 
-test("progressSignalsChanged detects file-scope mtime updates (FR-WORK-10)", () => {
+test("activitySignalsChanged detects file-scope mtime updates (FR-WORK-10 / FR-STALL-02)", () => {
 	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-scope-"));
 	const scopeFile = path.join(dir, "src", "touch.txt");
 	fs.mkdirSync(path.dirname(scopeFile), { recursive: true });
@@ -149,7 +150,8 @@ test("progressSignalsChanged detects file-scope mtime updates (FR-WORK-10)", () 
 		taskFolder: dir,
 		fileScopePaths: ["src/touch.txt"],
 	});
-	assert.equal(progressSignalsChanged(first, second), true);
+	assert.equal(activitySignalsChanged(first, second), true);
+	assert.equal(progressSignalsChanged(first, second), false);
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 

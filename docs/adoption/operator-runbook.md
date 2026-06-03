@@ -362,13 +362,43 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 **Rule of thumb:** Developing pi-spine itself → always `node bin/spine.mjs` from repo root. Consumer pilot → `npm link` or explicit `node` path after every `git pull`.
 
+### Stall diagnosis (5-minute path)
+
+When a lane dies with `stall_timeout` or frozen heartbeats, use this flow before re-running a long batch. Full design: [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md).
+
+```bash
+spine status --diagnose
+# Journal tail: .spine/runtime/<batchId>/journal/events.jsonl
+```
+
+| Step | What to look for | Action |
+|------|------------------|--------|
+| 1 | `lane.checkpoint_warning` | File-scope edits without commit — commit step work + `spine_report_progress` |
+| 2 | `lane.stall_killed` → `logPath` | Read `.spine/runtime/<batchId>/lanes/lane-N/worker-output-<taskId>.log` for stderr tail |
+| 3 | `lane.salvage_inspection` | Note `changedFileCount` / `dirtyPaths` — valid WIP may exist without `.DONE` |
+| 4 | `task.failed` | Confirm non-empty `output` and `classification` |
+| 5 | Retry | `spine batch retry <taskId>` (diagnose may suggest this when salvageable) |
+
+**Lane config** (`.spine/spine-config.json` → `lanes`):
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `stallTimeoutMinutes` | 60 | Hard silence timeout |
+| `stallGraceAfterProgressMinutes` | 15 | Extra grace after STATUS/commit/`task.step_completed` |
+| `checkpointWarningMinutes` | 10 | Warn when file-scope activity lacks checkpoint |
+| `extendGraceOnFileScope` | false | File-scope mtime must **not** extend stall grace |
+| `workerOutputMaxBytes` / `workerOutputTailLines` | 262144 / 200 | Bounded worker log on terminal failure |
+| `autoCommitOnStall` | false | Opt-in WIP commit on stall (§18.5 lane branch); default off |
+
+**Retry with salvage:** `autoCommitOnStall: false` (default) leaves uncommitted scoped work on the lane branch for human review before retry. When `autoCommitOnStall: true`, one scoped `wip(<taskId>): stall salvage …` commit may be created; atomic retry (§18.5) keeps that commit on the lane branch.
+
 ### Common batch failures
 
 | Problem | Command / fix |
 |---------|----------------|
 | Preflight git dirty | Commit or stash; lanes need clean tree |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
-| Worker stall | Worker should call `spine_report_progress`; check journal for `lane.heartbeat` |
+| Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); ensure `spine_report_progress` after steps |
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
@@ -414,3 +444,4 @@ spine next --execute       # run suggested dismiss/preflight (careful)
 | [real-pi-e2e.md](./real-pi-e2e.md) | Real-pi fixture validation |
 | [README § Batch lifecycle](../../README.md) | Full CLI reference |
 | [PRD](../PRD.md) | Normative requirements |
+| [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md) | Stall epic (SAT-020), FR-STALL-* |

@@ -2,7 +2,7 @@
 
 Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine requirements in `pi-spine-PRD.md` §18.8.
 
-**Last updated:** 2026-06-02  
+**Last updated:** 2026-06-03 (post SP-060 stall epic closeout)  
 **Source incident:** [`../incidents/20260531-phase0-taskplane-batch.md`](../incidents/20260531-phase0-taskplane-batch.md)
 
 | ID | Taskplane behavior | pi-spine requirement | Status |
@@ -10,6 +10,10 @@ Tracked gaps discovered during pi-spine dogfooding. Each gap maps to pi-spine re
 | GAP-RETRY-01 | `orch_retry_task` resets task record but not segment frontier | §18.5 atomic retry | **Closed** — `spine batch retry` + `/spine-retry-task` (TP-017) |
 | GAP-ABORT-01 | Abort deletes `.pi/batch-state.json` without guaranteed segment archive | §18.6 archive-first abort | **Closed** — `spine batch abort` + `/spine-abort` (TP-018) |
 | GAP-STALL-01 | Stall kill on tool-call silence only | §18.4 progress-aware stall, FR-WORK-10 | **Closed (TP-029)** — STATUS mtime, lane commit, file-scope mtime in `collectProgressSignals`; tests in `heartbeat.test.mjs`, `incidents.test.mjs` |
+| GAP-STALL-02 | Empty `task.failed.output` on stall | FR-STALL-01 | **Closed (SP-056)** — bounded worker output log + `lane.stall_killed` |
+| GAP-STALL-03 | File-scope edits extend stall grace silently | FR-STALL-02, §18.4 | **Closed (SP-057)** — `lane.checkpoint_warning`; `extendGraceOnFileScope: false` default |
+| GAP-STALL-04 | No salvage hint on stall without `.DONE` | FR-STALL-03A | **Closed (SP-058)** — `lane.salvage_inspection`, diagnose retry, evidence JSON |
+| GAP-STALL-05 | Operator stall playbook / SAT-020 fixture | FR-STALL-* epic | **Closed (SP-060)** — runbook §, `tests/fixtures/stall-sat020/`, `stall-sat020-integration.test.mjs` |
 | GAP-MERGE-01 | Force-resume can merge succeeded lanes while failed task pending | §17.4 mixed-outcome policy | **Closed (TP-019)** — wave merge blocked until all tasks terminal/skipped/force-merge |
 | GAP-POST-01 | Supervisor summary claims batch "ran smoothly" with failures | NFR-OBS-03 | **Closed (TP-022)** — `generateBatchPostMortem` + evidence `summary.md` |
 | GAP-REV-01 | Plan review fail-open when review tool errors at level > 0 | FR-REV-06 | **Closed (TP-020)** — `spine review step` + fail-closed worker |

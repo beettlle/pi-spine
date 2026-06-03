@@ -5,6 +5,8 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import {
+	buildContextMd,
+	DEFAULT_NEXT_TASK_ID,
 	DEFAULT_TASKS_ROOT,
 	ensureGitignoreEntries,
 	runInit,
@@ -45,6 +47,14 @@ test("fresh init creates config, agents, tasks root, and gitignore entries", asy
 		}
 
 		assert.ok(fs.existsSync(path.join(projectRoot, DEFAULT_TASKS_ROOT)));
+
+		const contextPath = path.join(projectRoot, DEFAULT_TASKS_ROOT, "CONTEXT.md");
+		assert.ok(fs.existsSync(contextPath));
+		const contextMd = fs.readFileSync(contextPath, "utf-8");
+		assert.match(contextMd, new RegExp(`\\*\\*Next Task ID:\\*\\* ${DEFAULT_NEXT_TASK_ID}`));
+		assert.match(contextMd, /Phase 0 — Bootstrap/);
+		assert.match(contextMd, /operator-runbook\.md/);
+		assert.match(contextMd, /## Execution policy/);
 
 		const gitignoreLines = readGitignoreLines(projectRoot);
 		for (const entry of SPINE_GITIGNORE_ENTRIES) {
@@ -95,6 +105,63 @@ test("--dry-run makes no filesystem changes", async () => {
 		assert.equal(fs.existsSync(path.join(projectRoot, ".spine")), false);
 		assert.equal(fs.existsSync(path.join(projectRoot, ".gitignore")), false);
 		assert.equal(fs.existsSync(path.join(projectRoot, DEFAULT_TASKS_ROOT)), false);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("init skips CONTEXT.md when it already exists without --force", async () => {
+	const projectRoot = await createFixture();
+	try {
+		fs.mkdirSync(path.join(projectRoot, DEFAULT_TASKS_ROOT), { recursive: true });
+		const contextPath = path.join(projectRoot, DEFAULT_TASKS_ROOT, "CONTEXT.md");
+		fs.writeFileSync(contextPath, "# Custom\n**Next Task ID:** CUSTOM-001\n", "utf-8");
+
+		const result = runInit(projectRoot, []);
+		assert.equal(result.ok, true);
+		assert.equal(fs.readFileSync(contextPath, "utf-8"), "# Custom\n**Next Task ID:** CUSTOM-001\n");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("init --force overwrites existing CONTEXT.md", async () => {
+	const projectRoot = await createFixture();
+	try {
+		const first = runInit(projectRoot, []);
+		assert.equal(first.ok, true);
+
+		const contextPath = path.join(projectRoot, DEFAULT_TASKS_ROOT, "CONTEXT.md");
+		fs.writeFileSync(contextPath, "# stale\n", "utf-8");
+
+		const second = runInit(projectRoot, ["--force"]);
+		assert.equal(second.ok, true);
+		const contextMd = fs.readFileSync(contextPath, "utf-8");
+		assert.match(contextMd, new RegExp(`\\*\\*Next Task ID:\\*\\* ${DEFAULT_NEXT_TASK_ID}`));
+		assert.doesNotMatch(contextMd, /# stale/);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("buildContextMd substitutes project title from directory name", () => {
+	const projectRoot = path.join(os.tmpdir(), "my-consumer-app");
+	const contextMd = buildContextMd(projectRoot);
+	assert.match(contextMd, /# my-consumer-app — Context/);
+	assert.match(contextMd, /\*\*Next Task ID:\*\* SP-001/);
+});
+
+test("--dry-run plans CONTEXT.md create without writing files", async () => {
+	const projectRoot = await createFixture();
+	try {
+		const result = runInit(projectRoot, ["--dry-run"]);
+		assert.equal(result.ok, true);
+
+		const contextAction = result.actions.find((a) => a.path?.endsWith("CONTEXT.md"));
+		assert.ok(contextAction);
+		assert.equal(contextAction.action, "create");
+
+		assert.equal(fs.existsSync(path.join(projectRoot, DEFAULT_TASKS_ROOT, "CONTEXT.md")), false);
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

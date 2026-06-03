@@ -32,6 +32,7 @@ import {
 	removeLaneWorktrees,
 } from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
+import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 /**
  * @param {import("../planner/index.mjs").buildPlan} plan
@@ -528,12 +529,25 @@ async function runTaskOnLane({
 		recomputeTaskCounters(state);
 		saveSpineBatchState(projectRoot, state);
 		if (!aborted) {
+			const salvageFields = recordTaskFailureSalvage({
+				projectRoot,
+				batchId,
+				laneNumber,
+				laneId: lane.laneId,
+				taskId,
+				correlationId: laneCorrelationId,
+				worktreePath: wt,
+				fileScopePaths,
+				taskFolder: taskFolderInWorktree,
+				workerResult,
+			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,
 				laneNumber,
 				laneId: lane.laneId,
 				correlationId: laneCorrelationId,
 				...workerResult,
+				...salvageFields,
 			});
 		}
 		return { ok: false, aborted, workerResult };

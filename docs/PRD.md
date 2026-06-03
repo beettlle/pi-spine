@@ -1168,9 +1168,11 @@ Stall detection must **not** rely on tool-call silence alone.
 | `spine_report_progress` / journal `task.step_completed` | Suppresses stall kill |
 | File Scope files modified (mtime) | Warning only; suggest worker checkpoint |
 
-Configurable: `lanes.stallTimeoutMinutes` (default 60), `lanes.stallGraceAfterProgressMinutes` (default 15).
+Configurable: `lanes.stallTimeoutMinutes` (default 60), `lanes.stallGraceAfterProgressMinutes` (default 15), `lanes.checkpointWarningMinutes` (default 10), `lanes.extendGraceOnFileScope` (default false).
 
-Before killing a lane for stall, engine writes journal event `lane.stall_warning` with last progress signals.
+When activity (file-scope mtime or scoped dirty paths) persists without a checkpoint for `checkpointWarningMinutes`, engine writes `lane.checkpoint_warning` once per episode (scoped `dirtyPaths`, commit + `spine_report_progress` suggestion).
+
+Before killing a lane for stall, engine writes `lane.stall_warning` and `lane.stall_killed` (with bounded worker output path when captured). On terminal failure without `.DONE`, engine writes `lane.salvage_inspection` and enriches `task.failed` with salvage fields.
 
 ### 18.5 Atomic task retry
 

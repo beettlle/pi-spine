@@ -47,6 +47,8 @@ body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); 
 .badge-warn { background: rgba(227,179,65,0.15); color: var(--warn); }
 .badge-success { background: rgba(63,185,80,0.1); color: var(--running); }
 .badge-error { background: rgba(248,81,73,0.15); color: var(--error); }
+.lane-alert-checkpoint { color: var(--warn); font-weight: 600; }
+.lane-alert-stall { color: var(--error); font-weight: 600; }
 .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
 .panel-wide { grid-column: 1 / -1; }

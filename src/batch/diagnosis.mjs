@@ -24,6 +24,7 @@ const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_in
  * @param {object} [ctx]
  * @param {string|null} [ctx.failedTaskId]
  * @param {string|null} [ctx.batchId]
+ * @param {string|null} [ctx.salvageRetryCommand]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	switch (diagnosis) {
@@ -31,6 +32,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "spine batch dismiss";
 		case "needs_retry":
+			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
 			return ctx.failedTaskId
 				? `/spine-retry-task ${ctx.failedTaskId}`
 				: "spine status --diagnose";
@@ -62,6 +64,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {string|null} [ctx.failedTaskId]
  * @param {boolean} [ctx.gitMerged]
  * @param {number} [ctx.pendingTaskCount]
+ * @param {number} [ctx.salvageChangedFileCount]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
@@ -72,6 +75,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return `${batchLabel} work is on main but batch record is still active`;
 		case "needs_retry":
+			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
+				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
+			}
 			return ctx.failedTaskId
 				? `${batchLabel} has failed task ${ctx.failedTaskId} — retry before resume`
 				: `${batchLabel} has failed tasks — retry before resume`;

@@ -10,6 +10,7 @@ import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
+import { findLatestSalvageInspection } from "./salvage.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { parseSpineBatchState } from "./readers/spine-state.mjs";
 import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
@@ -472,8 +473,10 @@ export function reconcileBatch(ctx) {
 	};
 
 	const journalFile = journalPath(projectRoot, batch.batchId);
+	/** @type {object[]} */
+	let journalEvents = [];
 	if (fs.existsSync(journalFile)) {
-		const journalEvents = readJournalEvents(projectRoot, batch.batchId);
+		journalEvents = readJournalEvents(projectRoot, batch.batchId);
 		signals.journalHints = extractJournalDiagnosisHints(journalEvents);
 	}
 
@@ -481,6 +484,11 @@ export function reconcileBatch(ctx) {
 	signals.pendingTaskCount = pendingTaskCount;
 
 	const { diagnosis, failedTaskId } = deriveDiagnosis(signals);
+	const salvagePayload = findLatestSalvageInspection(journalEvents, failedTaskId);
+	const salvageChangedFileCount = Number(salvagePayload?.changedFileCount ?? 0) || 0;
+	const salvageRetryCommand =
+		typeof salvagePayload?.retryCommand === "string" ? salvagePayload.retryCommand : null;
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -488,6 +496,8 @@ export function reconcileBatch(ctx) {
 		failedTaskId,
 		gitMerged: git.orchMergedToBase,
 		pendingTaskCount,
+		salvageChangedFileCount,
+		salvageRetryCommand,
 	});
 
 	return {

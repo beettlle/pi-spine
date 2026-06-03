@@ -116,6 +116,41 @@ async function loadCreateAgentSession(deps = {}) {
 }
 
 /**
+ * @param {{ transcript: string }} state
+ * @param {string} message
+ */
+function appendAgentSessionOutput(state, message) {
+	const parts = [];
+	if (state.transcript.trim()) parts.push(state.transcript.trim());
+	if (message) parts.push(message);
+	return parts.join("\n\n");
+}
+
+/**
+ * @param {unknown} event
+ */
+function formatAgentSessionEvent(event) {
+	if (!event || typeof event !== "object") return "";
+	const record = /** @type {Record<string, unknown>} */ (event);
+	if (typeof record.text === "string" && record.text) {
+		return `${record.text}\n`;
+	}
+	if (typeof record.content === "string" && record.content) {
+		return `${record.content}\n`;
+	}
+	if (typeof record.delta === "string" && record.delta) {
+		return record.delta;
+	}
+	if (record.message && typeof record.message === "object") {
+		const message = /** @type {Record<string, unknown>} */ (record.message);
+		if (typeof message.content === "string" && message.content) {
+			return `${message.content}\n`;
+		}
+	}
+	return "";
+}
+
+/**
  * @param {object} config
  */
 function resolveThinkingLevel(config) {
@@ -140,7 +175,10 @@ export function startAgentSessionWorker({ worktreePath, taskFolder, config = {} 
 	const state = {
 		exitCode: /** @type {number | null} */ (null),
 		output: "",
-		session: /** @type {{ abort?: () => Promise<void>; dispose?: () => void } | null} */ (null),
+		transcript: "",
+		session: /** @type {{ abort?: () => Promise<void>; dispose?: () => void; subscribe?: (fn: (event: unknown) => void) => () => void } | null} */ (
+			null
+		),
 		aborted: false,
 	};
 
@@ -171,24 +209,46 @@ export function startAgentSessionWorker({ worktreePath, taskFolder, config = {} 
 
 			const { session } = await createAgentSession(sessionOptions);
 			state.session = session;
-			await session.prompt(promptText);
+
+			// Agent sessions do not expose a subprocess stdout/stderr stream; append
+			// streamed assistant/tool text when subscribe is available (pi-coding-agent).
+			let unsubscribe = () => {};
+			if (typeof session.subscribe === "function") {
+				unsubscribe = session.subscribe((event) => {
+					const chunk = formatAgentSessionEvent(event);
+					if (chunk) state.transcript += chunk;
+				});
+			}
+
+			try {
+				await session.prompt(promptText);
+			} finally {
+				unsubscribe();
+			}
 
 			if (state.aborted) {
 				state.exitCode = 130;
-				state.output = "agent session aborted";
+				state.output = appendAgentSessionOutput(state, "agent session aborted");
 				return;
 			}
 
 			if (!fs.existsSync(donePath)) {
 				state.exitCode = 1;
-				state.output = "agent session finished but .DONE was not created";
+				state.output = appendAgentSessionOutput(
+					state,
+					"agent session finished but .DONE was not created",
+				);
 				return;
 			}
 
 			state.exitCode = 0;
+			state.output = state.transcript.trim();
 		} catch (err) {
 			state.exitCode = 1;
-			state.output = err instanceof Error ? err.message : String(err);
+			state.output = appendAgentSessionOutput(
+				state,
+				err instanceof Error ? err.message : String(err),
+			);
 		} finally {
 			state.session?.dispose?.();
 			state.session = null;
