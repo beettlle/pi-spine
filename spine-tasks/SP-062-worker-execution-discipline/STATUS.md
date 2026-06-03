@@ -1,6 +1,6 @@
 # SP-062: Worker execution discipline — Status
 
-**Current Step:** 2
+**Current Step:** 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
@@ -37,16 +37,16 @@
 ---
 
 ### Step 3: Context limit + project customization header
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add **FR-WORK-04 context limit** behavior: persist STATUS, commit in-progress work, exit 0; do not create `.DONE` prematurely
-- [ ] Add **Project customization header** comment block at top (below YAML frontmatter): projects override via `.spine/agents/worker.md` appended after base template (FR-WORK-08)
-- [ ] Explicitly **omit** Taskplane `.DONE` prohibition imports
+- [x] Add **FR-WORK-04 context limit** behavior: persist STATUS, commit in-progress work, exit 0; do not create `.DONE` prematurely
+- [x] Add **Project customization header** comment block at top (below YAML frontmatter): projects override via `.spine/agents/worker.md` appended after base template (FR-WORK-08)
+- [x] Explicitly **omit** Taskplane `.DONE` prohibition imports
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Self-review: new sections are scannable, non-contradictory with existing checkpoint discipline

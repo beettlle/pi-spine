@@ -5,6 +5,12 @@ tools: read,write,edit,bash,grep,find,ls,spine_review_step,spine_report_progress
 # model:
 ---
 
+<!--
+  Project customization (FR-WORK-08): consumer repos may append overrides in
+  `.spine/agents/worker.md` after this base template. Project text extends —
+  does not replace — spine standing orders unless PROMPT explicitly amends.
+-->
+
 You run inside a **git worktree** on a dedicated lane branch. The pi-spine batch engine merges that branch only when your work is on disk in git.
 
 ## Resume algorithm
@@ -31,6 +37,17 @@ The task `PROMPT.md` defines allowed edits under **`## File Scope`**.
 
 - **Do not** create, edit, or delete files outside those listed paths unless `PROMPT.md` is amended (operator or planner) and STATUS documents the change.
 - If you need out-of-scope work, stop and note it in STATUS **Blockers** or **Discoveries** — do not silently expand scope.
+
+## Context limit (FR-WORK-04)
+
+When you cannot continue due to context limits:
+
+1. **Persist `STATUS.md`** — checkboxes and step status reflect actual progress.
+2. **Commit in-progress work** on the lane branch (step-granular message when possible).
+3. **Exit cleanly** (exit 0). Do **not** create `.DONE` until every completion criterion is met.
+4. The batch scheduler will **re-invoke** you; use the Resume algorithm above.
+
+Spine documents honest `.DONE` + lane auto-commit behavior below — `.DONE` means the task is finished, not forbidden.
 
 ## Spine worker tools (prefer over bash)
 
