@@ -9,12 +9,15 @@ export const PACKAGE_ROOT = path.resolve(__dirname, "..");
 
 export const TEMPLATE_PATHS = {
 	spineConfig: path.join(PACKAGE_ROOT, "templates", "spine-config.json"),
+	tasksContext: path.join(PACKAGE_ROOT, "templates", "tasks", "CONTEXT.md"),
 	agents: {
 		worker: path.join(PACKAGE_ROOT, "templates", "agents", "worker.md"),
 		reviewer: path.join(PACKAGE_ROOT, "templates", "agents", "reviewer.md"),
 		supervisor: path.join(PACKAGE_ROOT, "templates", "agents", "supervisor.md"),
 	},
 };
+
+export const DEFAULT_NEXT_TASK_ID = "SP-001";
 
 export const AGENT_STUB_FILES = [
 	{ templateKey: "worker", destName: "worker.md" },
@@ -42,6 +45,7 @@ const SPINE_GITIGNORE_HEADER = "# pi-spine runtime";
 export function getTemplatePaths() {
 	for (const templatePath of [
 		TEMPLATE_PATHS.spineConfig,
+		TEMPLATE_PATHS.tasksContext,
 		...Object.values(TEMPLATE_PATHS.agents),
 	]) {
 		if (!fs.existsSync(templatePath)) {
@@ -54,6 +58,21 @@ export function getTemplatePaths() {
 export function loadSpineConfigTemplate() {
 	const templatePath = getTemplatePaths().spineConfig;
 	return JSON.parse(fs.readFileSync(templatePath, "utf-8"));
+}
+
+export function loadTasksContextTemplate() {
+	const templatePath = getTemplatePaths().tasksContext;
+	return fs.readFileSync(templatePath, "utf-8");
+}
+
+export function buildContextMd(projectRoot, { nextTaskId = DEFAULT_NEXT_TASK_ID } = {}) {
+	const template = loadTasksContextTemplate();
+	const projectTitle = path.basename(projectRoot);
+	const lastUpdated = new Date().toISOString().slice(0, 10);
+	return template
+		.replaceAll("{{PROJECT_TITLE}}", projectTitle)
+		.replaceAll("{{LAST_UPDATED}}", lastUpdated)
+		.replaceAll("{{NEXT_TASK_ID}}", nextTaskId);
 }
 
 export function normalizeTasksRoot(tasksRootRaw) {
@@ -249,6 +268,15 @@ export function runInit(projectRoot, args = []) {
 	} else if (dryRun && !fs.existsSync(tasksRootPath)) {
 		actions.push({ action: "create", path: `${tasksRoot}/` });
 	}
+
+	const contextContent = buildContextMd(projectRoot);
+	const contextResult = writeFileIfAllowed(
+		projectRoot,
+		`${tasksRoot}/CONTEXT.md`,
+		contextContent,
+		{ force, dryRun },
+	);
+	actions.push(contextResult);
 
 	const gitignoreResult = ensureGitignoreEntries(projectRoot, { dryRun });
 	if (gitignoreResult.added.length > 0) {
