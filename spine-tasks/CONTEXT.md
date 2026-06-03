@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-082
+**Next Task ID:** SP-086
 
 ---
 
@@ -205,7 +205,23 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 2. **Wave B:** `SP-073` (after SP-081), `SP-077` + `SP-078` (after SP-072)
 3. **Wave C:** `SP-074` (after SP-075), then `SP-076` (after SP-075)
 
-**Suggested spine run order (Phase 12):**
+### Phase 14 — Orphan running / detached resume (searchATon incident)
+
+**Source:** Consumer bug report — batch `20260603T185308` (searchATon Wave 8). Worker infra failures are expected; **orphan `phase: running`** with dead workerPid/engine is the spine gap.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-082 | Orphan running reconciliation + enginePid persistence | **Staged** | — |
+| SP-083 | Detached resume semantics + failure surfacing | **Staged** | SP-082 |
+| SP-084 | Heartbeat workerPhase / kind semantics | **Staged** | — |
+| SP-085 | Orphan incident fixture + regression test | **Staged** | SP-082 |
+
+**Suggested run order:**
+
+1. **Wave A (parallel):** `SP-082`, `SP-084`
+2. **Wave B:** `SP-083`, `SP-085` (after SP-082)
+
+**Suggested spine run order (Phase 13):**
 
 1. **Wave A (parallel):** `SP-061`, `SP-066`, `SP-068`
 2. **Wave B (parallel after SP-061):** `SP-062`, `SP-065`

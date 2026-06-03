@@ -28,7 +28,7 @@
     }
   },
   "lanes": {
-    "maxParallel": 3,
+    "maxParallel": 4,
     "queueExcess": true
   },
   "gates": {
