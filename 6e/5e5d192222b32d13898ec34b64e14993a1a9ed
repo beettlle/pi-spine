@@ -1,60 +1,7 @@
-spine-tasks/SP-067-runner-hint-dedup/PROMPT.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-102
-spine-tasks/dependencies.json
-  s_f1d1097b6a7c0d::t_86ff27939fc378 129-149
-spine-tasks/SP-064-commit-convention-align/PROMPT.md
-  s_f1d1097b6a7c0d::t_5008257892e1dc 1-100
-spine-tasks/SP-069-agent-template-drift-test/STATUS.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-70
-spine-tasks/SP-063-worker-review-levels/STATUS.md
-  s_f1d1097b6a7c0d::t_5008257892e1dc 1-77
-spine-tasks/SP-065-reviewer-template-depth/PROMPT.md
-  s_f1d1097b6a7c0d::t_1556eac56caeb0 1-105
-spine-tasks/SP-061-code-coverage-policy/STATUS.md
-  s_f1d1097b6a7c0d::t_0e88d70446c4da 1-73
-spine-tasks/SP-065-reviewer-template-depth/STATUS.md
-  s_f1d1097b6a7c0d::t_1556eac56caeb0 1-85
-spine-tasks/SP-067-runner-hint-dedup/STATUS.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-78
-spine-tasks/CONTEXT.md
-  s_f1d1097b6a7c0d::t_328f2561b0e48f 229-230
-  s_f1d1097b6a7c0d::t_c9053cd10a6395 167-182,185-189
-  s_f1d1097b6a7c0d::t_0148f36dff2d69 11
-  s_f1d1097b6a7c0d::t_603d7371adf2a2 5
-spine-tasks/SP-066-supervisor-v1-stub/PROMPT.md
-  s_f1d1097b6a7c0d::t_1556eac56caeb0 1-85
-spine-tasks/SP-061-code-coverage-policy/PROMPT.md
-  s_f1d1097b6a7c0d::t_85bfda507b221f 1-122
-spine-tasks/SP-062-worker-execution-discipline/PROMPT.md
-  s_f1d1097b6a7c0d::t_636fe0177035ad 1-110
-spine-tasks/SP-066-supervisor-v1-stub/STATUS.md
-  s_f1d1097b6a7c0d::t_1556eac56caeb0 1-70
-spine-tasks/SP-063-worker-review-levels/PROMPT.md
-  s_f1d1097b6a7c0d::t_5008257892e1dc 1-95
-spine-tasks/SP-064-commit-convention-align/STATUS.md
-  s_f1d1097b6a7c0d::t_5008257892e1dc 1-77
-spine-tasks/SP-068-prd-appendix-c/PROMPT.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-85
-spine-tasks/SP-062-worker-execution-discipline/STATUS.md
-  s_f1d1097b6a7c0d::t_636fe0177035ad 1-86
-spine-tasks/SP-069-agent-template-drift-test/PROMPT.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-90
-spine-tasks/SP-068-prd-appendix-c/STATUS.md
-  s_f1d1097b6a7c0d::t_37769cd836d12b 1-70
 ---
 {
   "schema_version": "authorship/3.0.0",
   "git_ai_version": "1.5.2",
   "base_commit_sha": "6e5e5d192222b32d13898ec34b64e14993a1a9ed",
-  "prompts": {},
-  "sessions": {
-    "s_f1d1097b6a7c0d": {
-      "agent_id": {
-        "tool": "pi",
-        "id": "019e8ee1-2b9d-748e-a16c-16cd17320a24",
-        "model": "default"
-      },
-      "human_author": "Cesar Delgado <beettlle@gmail.com>"
-    }
-  }
+  "prompts": {}
 }
