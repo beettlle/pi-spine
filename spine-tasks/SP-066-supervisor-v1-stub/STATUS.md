@@ -1,7 +1,7 @@
 # SP-066: Supervisor v1 stub — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,17 +11,17 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read operator runbook diagnose and journal sections
-- [ ] Confirm no v1 supervisor agent spawn in codebase (grep `supervisor` in `src/batch/`)
+- [x] Read operator runbook diagnose and journal sections
+- [x] Confirm no v1 supervisor agent spawn in codebase (grep `supervisor` in `src/batch/` — no matches)
 
 ---
 
 ### Step 1: Write v1 supervisor guidance
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Replace `<!-- Customize supervisor instructions -->` with structured sections:
+- [x] Replace `<!-- Customize supervisor instructions -->` with structured sections:
   - **v1 reality:** no supervisor Pi agent session; human operator + CLI/dashboard
   - **Operator tools:** `spine status --diagnose`, batch journal paths, dashboard URL/pattern
   - **Project overrides:** optional `.spine/agents/supervisor.md` for future use / notes (not auto-spawned in v1)
@@ -48,6 +48,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| No `supervisor` references in `src/batch/` — confirms v1 has no supervisor agent spawn | Expected | Step 0 preflight |
 
 ---
 
@@ -56,6 +57,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-03 | Step 0 preflight | Runbook + grep complete; no batch supervisor runtime |
+| 2026-06-03 | Step 1 draft | `templates/agents/supervisor.md` v1 guidance written |
 
 ---
 
