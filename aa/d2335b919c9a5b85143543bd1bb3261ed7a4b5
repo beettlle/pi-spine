@@ -1,3 +1,549 @@
+taskplane-tasks/dependencies.json
+  ai_agent 1-131
+taskplane-tasks/TP-039-multi-task-resume-validation/PROMPT.md
+  ai_agent 1-108
+src/batch/resume-multi.mjs
+  ai_agent 10-594
+taskplane-tasks/TP-031-spine-deps-cli/.reviews/2-20260602T192223.md
+  ai_agent 1-13
+taskplane-tasks/TP-007-taskplane-parsers/PROMPT.md
+  ai_agent 1-125
+taskplane-tasks/TP-035-spine-settings-slash/STATUS.md
+  ai_agent 1-23
+taskplane-tasks/TP-014-orchestration-journal/PROMPT.md
+  ai_agent 1-143
+taskplane-tasks/TP-045-taskplane-coexistence-guard/.reviews/3-20260602T215522.md
+  ai_agent 1-13
+taskplane-tasks/TP-011-ci-test-fixtures/STATUS.md
+  ai_agent 1-86
+tests/batch/engine.test.mjs
+  ai_agent 22-265
+taskplane-tasks/TP-043-local-install-no-publish/STATUS.md
+  ai_agent 1-30
+src/batch/engine.mjs
+  ai_agent 8-9
+taskplane-tasks/TP-038-worker-gate-and-registration/PROMPT.md
+  ai_agent 1-116
+taskplane-tasks/TP-026-dashboard-parity/.reviews/1-20260602T162756.md
+  ai_agent 1-30
+taskplane-tasks/TP-006-batch-preflight/PROMPT.md
+  ai_agent 1-129
+taskplane-tasks/TP-015-segments-resume-commit/STATUS.md
+  ai_agent 1-96
+taskplane-tasks/TP-036-worker-report-progress/PROMPT.md
+  ai_agent 1-113
+taskplane-tasks/TP-038-worker-gate-and-registration/.reviews/1-20260602T195047.md
+  ai_agent 1-13
+taskplane-tasks/TP-036-worker-report-progress/STATUS.md
+  ai_agent 1-18
+taskplane-tasks/TP-021-integrate-gate/.reviews/4-20260601T230811.md
+  ai_agent 1-13
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/.DONE
+  ai_agent 1
+taskplane-tasks/SP-058-stall-salvage-inspect/STATUS.md
+  ai_agent 1-9
+taskplane-tasks/TP-029-phase6-compat-validation/STATUS.md
+  ai_agent 1-20
+taskplane-tasks/TP-026-dashboard-parity/PROMPT.md
+  ai_agent 1-80
+taskplane-tasks/TP-014-orchestration-journal/.DONE
+  ai_agent 1
+taskplane-tasks/TP-004-slash-stubs/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-025-dashboard-ui/.reviews/2-20260602T160904.md
+  ai_agent 1-13
+taskplane-tasks/TP-038-worker-gate-and-registration/.DONE
+  ai_agent 1-2
+taskplane-tasks/SP-056-stall-worker-output/STATUS.md
+  ai_agent 1-9
+taskplane-tasks/TP-031-spine-deps-cli/PROMPT.md
+  ai_agent 1-123
+taskplane-tasks/TP-022-honest-postmortem/.reviews/1-20260601T231846.md
+  ai_agent 1-13
+taskplane-tasks/TP-004-slash-stubs/PROMPT.md
+  ai_agent 1-99
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/.reviews/4-20260602T223358.md
+  ai_agent 1-35
+taskplane-tasks/TP-018-abort-archive/PROMPT.md
+  ai_agent 1-59
+src/compat/taskplane/discover.mjs
+  ai_agent 1-40
+tests/batch/resume-multi-engine.test.mjs
+  ai_agent 17-54
+taskplane-tasks/TP-040-multi-task-resume-engine/PROMPT.md
+  ai_agent 1-111
+taskplane-tasks/TP-023-dashboard-server/PROMPT.md
+  ai_agent 1-93
+taskplane-tasks/TP-003-ci-workflow/.DONE
+  ai_agent 1
+taskplane-tasks/TP-020-review-fail-closed/.DONE
+  ai_agent 1
+taskplane-tasks/TP-026-dashboard-parity/.reviews/2-20260602T163649.md
+  ai_agent 1-84
+taskplane-tasks/SP-059-stall-salvage-auto-commit/PROMPT.md
+  ai_agent 1-65
+tests/batch/integration-abc.test.mjs
+  ai_agent 31-57
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/.reviews/3-20260602T223053.md
+  ai_agent 1-34
+taskplane-tasks/TP-025-dashboard-ui/PROMPT.md
+  ai_agent 1-86
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/.reviews/2-20260602T222830.md
+  ai_agent 1-36
+taskplane-tasks/TP-032-settings-editable-registry/STATUS.md
+  ai_agent 1-27
+taskplane-tasks/TP-033-spine-settings-show/PROMPT.md
+  ai_agent 1-96
+tests/compat/taskplane-deps.test.mjs
+  ai_agent 1-50
+tests/compat/taskplane-status.test.mjs
+  ai_agent 1-53
+taskplane-tasks/TP-033-spine-settings-show/.reviews/1-20260602T193710.md
+  ai_agent 1-33
+taskplane-tasks/SP-054-create-spine-tasks-skill/PROMPT.md
+  ai_agent 1-43
+docs/compatibility/taskplane-gap-list.md
+  ai_agent 5
+src/cli/deps.mjs
+  ai_agent 13
+taskplane-tasks/TP-050-create-agent-session-spike/.reviews/3-20260602T230453.md
+  ai_agent 1-33
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/.reviews/1-20260602T170750.md
+  ai_agent 1-13
+taskplane-tasks/TP-003-ci-workflow/PROMPT.md
+  ai_agent 1-86
+taskplane-tasks/TP-050-create-agent-session-spike/STATUS.md
+  ai_agent 1-33
+docs/PRD.md
+  ai_agent 587-1478
+taskplane-tasks/TP-018-abort-archive/STATUS.md
+  ai_agent 1-27
+taskplane-tasks/TP-030-publish-migration/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-016-integrate-validation/PROMPT.md
+  ai_agent 1-69
+package.json
+  ai_agent 32
+taskplane-tasks/TP-019-multi-lane/STATUS.md
+  ai_agent 1-23
+taskplane-tasks/TP-049-operator-runbook/.DONE
+  ai_agent 1
+src/compat/taskplane/index.mjs
+  ai_agent 1-70
+taskplane-tasks/TP-010-batch-lifecycle/PROMPT.md
+  ai_agent 1-129
+taskplane-tasks/TP-024-batch-pending-scope/STATUS.md
+  ai_agent 1-5
+taskplane-tasks/TP-010-batch-lifecycle/STATUS.md
+  ai_agent 1-93
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/.reviews/4-20260602T170751.md
+  ai_agent 1-13
+taskplane-tasks/TP-040-multi-task-resume-engine/.reviews/3-20260602T194126.md
+  ai_agent 1-13
+taskplane-tasks/TP-013-checkpoint-heartbeat/PROMPT.md
+  ai_agent 1-87
+taskplane-tasks/TP-034-spine-settings-set/.reviews/1-20260602T195035.md
+  ai_agent 1-34
+taskplane-tasks/TP-031-spine-deps-cli/.reviews/1-20260602T192202.md
+  ai_agent 1-13
+tests/helpers/git-fixture.mjs
+  ai_agent 20
+taskplane-tasks/SP-056-stall-worker-output/PROMPT.md
+  ai_agent 1-85
+tests/batch/abort.test.mjs
+  ai_agent 28
+taskplane-tasks/TP-027-dashboard-cli-startup/.reviews/1-20260602T165526.md
+  ai_agent 1-30
+taskplane-tasks/TP-012-single-lane-worker/STATUS.md
+  ai_agent 1-102
+taskplane-tasks/TP-037-worker-review-step-tool/PROMPT.md
+  ai_agent 1-105
+taskplane-tasks/TP-011-ci-test-fixtures/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-006-batch-preflight/STATUS.md
+  ai_agent 1-106
+taskplane-tasks/TP-026-dashboard-parity/.reviews/3-20260602T163904.md
+  ai_agent 1-80
+taskplane-tasks/SP-060-stall-observability-docs/STATUS.md
+  ai_agent 1-9
+taskplane-tasks/TP-013-checkpoint-heartbeat/.DONE
+  ai_agent 1
+taskplane-tasks/TP-041-multi-task-resume-integration/STATUS.md
+  ai_agent 1-18
+taskplane-tasks/TP-032-settings-editable-registry/PROMPT.md
+  ai_agent 1-106
+taskplane-tasks/TP-017-retry-skip/STATUS.md
+  ai_agent 1-15
+taskplane-tasks/TP-018-abort-archive/.DONE
+  ai_agent 1-3
+taskplane-tasks/TP-019-multi-lane/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-050-create-agent-session-spike/.DONE
+  ai_agent 1-3
+taskplane-tasks/TP-031-spine-deps-cli/STATUS.md
+  ai_agent 1-25
+taskplane-tasks/SP-060-stall-observability-docs/PROMPT.md
+  ai_agent 1-77
+taskplane-tasks/TP-045-taskplane-coexistence-guard/STATUS.md
+  ai_agent 1-29
+taskplane-tasks/TP-039-multi-task-resume-validation/STATUS.md
+  ai_agent 1-18
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/STATUS.md
+  ai_agent 1-31
+taskplane-tasks/TP-049-operator-runbook/STATUS.md
+  ai_agent 1-30
+taskplane-tasks/TP-024-batch-pending-scope/.reviews/3-20260601T233837.md
+  ai_agent 1-36
+tests/batch/resume-multi-integration.test.mjs
+  ai_agent 31-164
+tests/planner/lanes-parallel.test.mjs
+  ai_agent 33
+taskplane-tasks/TP-032-settings-editable-registry/.reviews/1-20260602T191815.md
+  ai_agent 1-31
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/.reviews/3-20260602T214750.md
+  ai_agent 1-50
+taskplane-tasks/TP-009-batch-reconciliation/PROMPT.md
+  ai_agent 1-151
+taskplane-tasks/TP-042-lane-parallel-packing/.DONE
+  ai_agent 1
+taskplane-tasks/TP-042-lane-parallel-packing/PROMPT.md
+  ai_agent 1-165
+taskplane-tasks/TP-027-dashboard-cli-startup/PROMPT.md
+  ai_agent 1-128
+taskplane-tasks/TP-045-taskplane-coexistence-guard/.reviews/2-20260602T215522.md
+  ai_agent 1-13
+taskplane-tasks/TP-005-taskplane-config/PROMPT.md
+  ai_agent 1-99
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/1-20260602T220038.md
+  ai_agent 1-13
+taskplane-tasks/TP-025-dashboard-ui/.reviews/1-20260602T160856.md
+  ai_agent 1-13
+taskplane-tasks/TP-007-taskplane-parsers/STATUS.md
+  ai_agent 1-106
+taskplane-tasks/TP-030-publish-migration/PROMPT.md
+  ai_agent 1-188
+taskplane-tasks/TP-042-lane-parallel-packing/STATUS.md
+  ai_agent 1-26
+taskplane-tasks/TP-021-integrate-gate/PROMPT.md
+  ai_agent 1-69
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/.reviews/0-20260602T170750.md
+  ai_agent 1-13
+src/batch/worker-host.mjs
+  ai_agent 13-335
+tests/batch/retry.test.mjs
+  ai_agent 28
+taskplane-tasks/TP-022-honest-postmortem/STATUS.md
+  ai_agent 1-24
+tests/spine-preflight.test.mjs
+  ai_agent 21-200
+taskplane-tasks/TP-048-real-pi-worker-e2e/.reviews/3-20260602T225010.md
+  ai_agent 1-34
+taskplane-tasks/TP-045-taskplane-coexistence-guard/PROMPT.md
+  ai_agent 1-80
+taskplane-tasks/TP-035-spine-settings-slash/.DONE
+  ai_agent 1
+taskplane-tasks/TP-034-spine-settings-set/.DONE
+  ai_agent 1
+.spine/spine-config.json
+  ai_agent 8
+taskplane-tasks/SP-053-init-context-scaffold/PROMPT.md
+  ai_agent 1-43
+tests/planner/pending-scope.test.mjs
+  ai_agent 9-84
+taskplane-tasks/TP-024-batch-pending-scope/PROMPT.md
+  ai_agent 1-108
+taskplane-tasks/TP-035-spine-settings-slash/.reviews/1-20260602T202421.md
+  ai_agent 1-13
+templates/spine-config.json
+  ai_agent 24
+taskplane-tasks/TP-030-publish-migration/STATUS.md
+  ai_agent 1-20
+taskplane-tasks/TP-015-segments-resume-commit/PROMPT.md
+  ai_agent 1-135
+tests/batch/resume-multi-validation.test.mjs
+  ai_agent 28-186
+taskplane-tasks/TP-008-planner/STATUS.md
+  ai_agent 1-146
+taskplane-tasks/TP-016-integrate-validation/STATUS.md
+  ai_agent 1-26
+taskplane-tasks/TP-048-real-pi-worker-e2e/.reviews/2-20260602T224750.md
+  ai_agent 1-34
+tests/spine-deps.test.mjs
+  ai_agent 22-59
+taskplane-tasks/TP-012-single-lane-worker/PROMPT.md
+  ai_agent 1-183
+taskplane-tasks/SP-053-init-context-scaffold/STATUS.md
+  ai_agent 1-4
+taskplane-tasks/TP-019-multi-lane/PROMPT.md
+  ai_agent 1-59
+pi-spine-PRD.md
+  ai_agent 587-1478
+src/dashboard/public/dashboard.js
+  ai_agent 172-181
+.pi/agents/supervisor.md
+  ai_agent 1-38
+.pi/agents/task-worker.md
+  ai_agent 1-43
+taskplane-tasks/SP-052-compat-layer-rename/STATUS.md
+  ai_agent 1-4
+taskplane-tasks/TP-011-ci-test-fixtures/PROMPT.md
+  ai_agent 1-134
+taskplane-tasks/TP-027-dashboard-cli-startup/STATUS.md
+  ai_agent 1-93
+taskplane-tasks/TP-025-dashboard-ui/.reviews/1-20260602T160904.md
+  ai_agent 1-13
+taskplane-tasks/TP-032-settings-editable-registry/.DONE
+  ai_agent 1
+taskplane-tasks/TP-010-batch-lifecycle/.DONE
+  ai_agent 1-2
+src/compat/taskplane/merge-deps.mjs
+  ai_agent 1-79
+taskplane-tasks/TP-037-worker-review-step-tool/.reviews/0-20260602T194047.md
+  ai_agent 1-13
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/PROMPT.md
+  ai_agent 1-86
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/1-20260602T220040.md
+  ai_agent 1-13
+tests/batch/state-validate.test.mjs
+  ai_agent 25-100
+taskplane-tasks/TP-005-taskplane-config/.DONE
+  ai_agent 1
+taskplane-tasks/TP-050-create-agent-session-spike/.reviews/1-20260602T230350.md
+  ai_agent 1-31
+taskplane-tasks/TP-012-single-lane-worker/.DONE
+  ai_agent 1
+taskplane-tasks/TP-007-taskplane-parsers/.DONE
+  ai_agent 1
+taskplane-tasks/TP-015-segments-resume-commit/.DONE
+  ai_agent 1-4
+taskplane-tasks/SP-059-stall-salvage-auto-commit/STATUS.md
+  ai_agent 1-9
+taskplane-tasks/TP-037-worker-review-step-tool/.reviews/2-20260602T194058.md
+  ai_agent 1-13
+taskplane-tasks/TP-021-integrate-gate/STATUS.md
+  ai_agent 1-31
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/PROMPT.md
+  ai_agent 1-81
+taskplane-tasks/TP-041-multi-task-resume-integration/.reviews/2-20260602T195509.md
+  ai_agent 1-13
+taskplane-tasks/TP-006-batch-preflight/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/.reviews/2-20260602T170750.md
+  ai_agent 1-13
+taskplane-tasks/TP-026-dashboard-parity/.reviews/2-20260602T163334.md
+  ai_agent 1-33
+taskplane-tasks/TP-014-orchestration-journal/STATUS.md
+  ai_agent 1-103
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/.reviews/1-20260602T214503.md
+  ai_agent 1-35
+taskplane-tasks/TP-049-operator-runbook/PROMPT.md
+  ai_agent 1-72
+taskplane-tasks/SP-054-create-spine-tasks-skill/STATUS.md
+  ai_agent 1-4
+src/batch/agent-session-worker.mjs
+  ai_agent 143-191
+taskplane-tasks/TP-022-honest-postmortem/.reviews/1-20260601T231848.md
+  ai_agent 1-13
+taskplane-tasks/TP-025-dashboard-ui/STATUS.md
+  ai_agent 1-5
+taskplane-tasks/TP-031-spine-deps-cli/.reviews/3-20260602T192223.md
+  ai_agent 1-13
+taskplane-tasks/TP-037-worker-review-step-tool/STATUS.md
+  ai_agent 1-18
+taskplane-tasks/TP-043-local-install-no-publish/.reviews/3-20260602T213002.md
+  ai_agent 1-33
+taskplane-tasks/TP-050-create-agent-session-spike/PROMPT.md
+  ai_agent 1-83
+taskplane-tasks/TP-045-taskplane-coexistence-guard/.reviews/1-20260602T215520.md
+  ai_agent 1-13
+taskplane-tasks/TP-026-dashboard-parity/STATUS.md
+  ai_agent 1-27
+taskplane-tasks/TP-043-local-install-no-publish/.reviews/1-20260602T212557.md
+  ai_agent 1-34
+src/compat/taskplane/parse-status.mjs
+  ai_agent 1-118
+taskplane-tasks/SP-057-stall-checkpoint-warnings/PROMPT.md
+  ai_agent 1-65
+taskplane-tasks/TP-033-spine-settings-show/STATUS.md
+  ai_agent 1-35
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/.reviews/3-20260602T170751.md
+  ai_agent 1-13
+taskplane-tasks/TP-009-batch-reconciliation/STATUS.md
+  ai_agent 1-110
+taskplane-tasks/TP-041-multi-task-resume-integration/PROMPT.md
+  ai_agent 1-104
+tests/planner/integration.test.mjs
+  ai_agent 7-8
+taskplane-tasks/TP-004-slash-stubs/STATUS.md
+  ai_agent 1-97
+taskplane-tasks/TP-021-integrate-gate/.reviews/1-20260601T230810.md
+  ai_agent 1-13
+taskplane-tasks/TP-041-multi-task-resume-integration/.reviews/1-20260602T195253.md
+  ai_agent 1-13
+taskplane-tasks/TP-045-taskplane-coexistence-guard/.DONE
+  ai_agent 1
+taskplane-tasks/TP-009-batch-reconciliation/.DONE
+  ai_agent 1-2
+tests/batch/detached-start.test.mjs
+  ai_agent 29-192
+taskplane-tasks/TP-003-ci-workflow/STATUS.md
+  ai_agent 1-78
+tests/planner/scope.test.mjs
+  ai_agent 8-13
+src/batch/journal.mjs
+  ai_agent 236-238
+taskplane-tasks/TP-023-dashboard-server/STATUS.md
+  ai_agent 1-10
+src/planner/scope.mjs
+  ai_agent 8
+taskplane-tasks/TP-038-worker-gate-and-registration/STATUS.md
+  ai_agent 1-18
+tests/batch/resume.test.mjs
+  ai_agent 20-198
+taskplane-tasks/TP-022-honest-postmortem/PROMPT.md
+  ai_agent 1-66
+taskplane-tasks/SP-051-init-docs-rebrand/PROMPT.md
+  ai_agent 1-88
+src/planner/index.mjs
+  ai_agent 12
+taskplane-tasks/SP-051-init-docs-rebrand/STATUS.md
+  ai_agent 1-23
+.pi/agents/task-reviewer.md
+  ai_agent 1-36
+taskplane-tasks/TP-034-spine-settings-set/.reviews/2-20260602T195520.md
+  ai_agent 1-85
+src/batch/reconcile.mjs
+  ai_agent 476
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/PROMPT.md
+  ai_agent 1-76
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/STATUS.md
+  ai_agent 1-82
+.pi/agents/task-merger.md
+  ai_agent 1-27
+taskplane-tasks/TP-041-multi-task-resume-integration/.reviews/3-20260602T195510.md
+  ai_agent 1-13
+taskplane-tasks/TP-022-honest-postmortem/.reviews/3-20260601T231849.md
+  ai_agent 1-13
+tests/compat/incidents.test.mjs
+  ai_agent 23-331
+taskplane-tasks/TP-002-spine-init/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-008-planner/PROMPT.md
+  ai_agent 1-148
+taskplane-tasks/SP-055-repo-spine-tasks-migrate/PROMPT.md
+  ai_agent 1-49
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/STATUS.md
+  ai_agent 1-24
+taskplane-tasks/SP-055-repo-spine-tasks-migrate/STATUS.md
+  ai_agent 1-4
+taskplane-tasks/TP-022-honest-postmortem/.reviews/2-20260601T231849.md
+  ai_agent 1-13
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/3-20260602T220041.md
+  ai_agent 1-13
+src/batch/heartbeat.mjs
+  ai_agent 2-214
+tests/worker-tools/review-step-tool.test.mjs
+  ai_agent 18
+taskplane-tasks/SP-052-compat-layer-rename/PROMPT.md
+  ai_agent 1-47
+taskplane-tasks/TP-002-spine-init/STATUS.md
+  ai_agent 1-101
+taskplane-tasks/TP-005-taskplane-config/STATUS.md
+  ai_agent 1-84
+docs/adoption/operator-runbook.md
+  ai_agent 371
+taskplane-tasks/TP-008-planner/.DONE
+  ai_agent 1-2
+tests/batch/engine-lane-execution.test.mjs
+  ai_agent 11-36
+taskplane-tasks/TP-017-retry-skip/PROMPT.md
+  ai_agent 1-54
+taskplane-tasks/TP-043-local-install-no-publish/PROMPT.md
+  ai_agent 1-83
+tests/compat/taskplane-prompt.test.mjs
+  ai_agent 1-88
+taskplane-tasks/TP-021-integrate-gate/.reviews/2-20260601T230810.md
+  ai_agent 1-13
+taskplane-tasks/TP-040-multi-task-resume-engine/.reviews/1-20260602T193852.md
+  ai_agent 1-13
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/STATUS.md
+  ai_agent 1-29
+taskplane-tasks/TP-002-spine-init/PROMPT.md
+  ai_agent 1-143
+taskplane-tasks/TP-034-spine-settings-set/STATUS.md
+  ai_agent 1-18
+taskplane-tasks/TP-035-spine-settings-slash/PROMPT.md
+  ai_agent 1-103
+src/batch/resume.mjs
+  ai_agent 158
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/.reviews/2-20260602T220041.md
+  ai_agent 1-13
+taskplane-tasks/TP-020-review-fail-closed/PROMPT.md
+  ai_agent 1-75
+taskplane-tasks/TP-029-phase6-compat-validation/PROMPT.md
+  ai_agent 1-190
+taskplane-tasks/SP-051-init-docs-rebrand/.DONE
+  ai_agent 1
+taskplane-tasks/SP-057-stall-checkpoint-warnings/STATUS.md
+  ai_agent 1-9
+taskplane-tasks/TP-026-dashboard-parity/.reviews/1-20260602T163044.md
+  ai_agent 1-71
+.pi/taskplane.json
+  ai_agent 1-16
+taskplane-tasks/SP-058-stall-salvage-inspect/PROMPT.md
+  ai_agent 1-66
+taskplane-tasks/TP-040-multi-task-resume-engine/STATUS.md
+  ai_agent 1-28
+tests/spine-run.test.mjs
+  ai_agent 17-76
+taskplane-tasks/TP-034-spine-settings-set/PROMPT.md
+  ai_agent 1-99
+taskplane-tasks/TP-013-checkpoint-heartbeat/STATUS.md
+  ai_agent 1-68
+src/compat/taskplane/parse-prompt.mjs
+  ai_agent 1-159
+taskplane-tasks/TP-029-phase6-compat-validation/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-043-local-install-no-publish/.reviews/2-20260602T212752.md
+  ai_agent 1-34
+taskplane-tasks/TP-028-doctor-suggest-max-parallel/PROMPT.md
+  ai_agent 1-131
+taskplane-tasks/TP-048-real-pi-worker-e2e/PROMPT.md
+  ai_agent 1-76
+taskplane-tasks/TP-040-multi-task-resume-engine/.DONE
+  ai_agent 1-2
+taskplane-tasks/TP-045-taskplane-coexistence-guard/.reviews/4-20260602T215522.md
+  ai_agent 1-13
+taskplane-tasks/TP-048-real-pi-worker-e2e/.reviews/1-20260602T224303.md
+  ai_agent 1-34
+tests/batch/worker-backend.test.mjs
+  ai_agent 24
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/.DONE
+  ai_agent 1-3
+taskplane-tasks/TP-020-review-fail-closed/STATUS.md
+  ai_agent 1-20
+tests/batch/lane-commit.test.mjs
+  ai_agent 17-67
+tests/batch/review.test.mjs
+  ai_agent 29
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/.reviews/1-20260602T222650.md
+  ai_agent 1-35
+taskplane-tasks/TP-021-integrate-gate/.reviews/3-20260601T230810.md
+  ai_agent 1-13
+taskplane-tasks/CONTEXT.md
+  ai_agent 1-243
+taskplane-tasks/TP-048-real-pi-worker-e2e/STATUS.md
+  ai_agent 1-25
+test/fixtures/taskplane/FX-002-medium-feature/PROMPT.md
+  ai_agent 18-19
+taskplane-tasks/TP-034-spine-settings-set/.reviews/2-20260602T195820.md
+  ai_agent 1-85
+taskplane-tasks/TP-038-worker-gate-and-registration/.reviews/2-20260602T195114.md
+  ai_agent 1-13
+tests/batch/heartbeat.test.mjs
+  ai_agent 136-182
+taskplane-tasks/TP-025-dashboard-ui/.reviews/3-20260602T160905.md
+  ai_agent 1-13
 ---
 {
   "schema_version": "authorship/3.0.0",
