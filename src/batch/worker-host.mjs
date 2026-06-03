@@ -8,12 +8,15 @@ import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readAbortSignal } from "./abort.mjs";
 import {
+	activitySignalsChanged,
+	checkpointSignalsChanged,
 	collectProgressSignals,
 	computeStallDeadline,
-	progressSignalsChanged,
+	recordCheckpointWarning,
 	recordLaneHeartbeat,
 	recordStallWarning,
 	resolveStallConfig,
+	shouldEmitCheckpointWarning,
 } from "./heartbeat.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
@@ -255,9 +258,11 @@ export async function runWorker({
 
 	const stallConfig = resolveStallConfig(config);
 	const startedAt = Date.now();
-	let lastProgressAt = startedAt;
+	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
 	let lastSignals = null;
+	let activitySinceCheckpoint = false;
+	let checkpointWarningSent = false;
 	let stallWarningSent = false;
 
 	const child = spawnWorkerHandle({
@@ -314,10 +319,45 @@ export async function runWorker({
 					? { projectRoot, batchId, laneNumber, taskId }
 					: undefined,
 		});
-		if (progressSignalsChanged(lastSignals, signals)) {
-			lastProgressAt = now;
-			lastSignals = signals;
+		const checkpointChanged = checkpointSignalsChanged(lastSignals, signals);
+		const activityChanged = activitySignalsChanged(lastSignals, signals);
+
+		if (checkpointChanged) {
+			lastCheckpointAt = now;
+			activitySinceCheckpoint = false;
+			checkpointWarningSent = false;
+		} else if (activityChanged) {
+			activitySinceCheckpoint = true;
+			if (stallConfig.extendGraceOnFileScope) {
+				lastCheckpointAt = now;
+			}
 		}
+
+		if (
+			projectRoot &&
+			batchId &&
+			!checkpointWarningSent &&
+			shouldEmitCheckpointWarning({
+				now,
+				lastCheckpointAt,
+				signals,
+				stallConfig,
+				activitySinceCheckpoint,
+			})
+		) {
+			recordCheckpointWarning({
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				signals,
+				lastCheckpointAt,
+				correlationId: laneCorrelationId,
+			});
+			checkpointWarningSent = true;
+		}
+
+		lastSignals = signals;
 
 		if (
 			projectRoot &&
@@ -338,7 +378,7 @@ export async function runWorker({
 
 		const stallDeadline = computeStallDeadline({
 			startedAt,
-			lastProgressAt,
+			lastProgressAt: lastCheckpointAt,
 			stallConfig,
 		});
 
