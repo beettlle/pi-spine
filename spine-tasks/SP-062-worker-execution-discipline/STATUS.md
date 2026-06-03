@@ -1,7 +1,7 @@
 # SP-062: Worker execution discipline — Status
 
 **Current Step:** 4
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -46,10 +46,10 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Self-review: new sections are scannable, non-contradictory with existing checkpoint discipline
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Self-review: new sections are scannable, non-contradictory with existing checkpoint discipline
 
 ---
 
@@ -72,6 +72,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-03 | Steps 0–4 complete | worker.md expanded; 376 tests green |
 
 ---
 
