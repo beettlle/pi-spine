@@ -21,7 +21,9 @@
   "lanes": {
     "maxParallel": 3,
     "queueExcess": true,
-    "workerBackend": "subprocess"
+    "workerBackend": "subprocess",
+    "checkpointWarningMinutes": 10,
+    "extendGraceOnFileScope": false
   },
   "dashboard": {
     "port": 8109

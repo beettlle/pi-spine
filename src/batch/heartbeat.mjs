@@ -1,5 +1,5 @@
 /**
- * Lane heartbeat and progress-aware stall helpers (FR-WORK-09, PRD §18.4).
+ * Lane heartbeat and progress-aware stall helpers (FR-WORK-09, PRD §18.4, FR-STALL-02).
  */
 
 import fs from "node:fs";
@@ -10,7 +10,11 @@ import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 const DEFAULT_STALL_TIMEOUT_MIN = 60;
 const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
 const DEFAULT_HEARTBEAT_INTERVAL_MIN = 10;
+const DEFAULT_CHECKPOINT_WARNING_MIN = 10;
 const POLL_INTERVAL_MS = 30_000;
+
+const CHECKPOINT_WARNING_SUGGESTION =
+	"Commit step work and call spine_report_progress so stall grace tracks checkpoints, not file edits alone.";
 
 /**
  * @param {object} [config]
@@ -22,11 +26,15 @@ export function resolveStallConfig(config = {}) {
 		Number(lanes.stallGraceAfterProgressMinutes) || DEFAULT_GRACE_AFTER_PROGRESS_MIN;
 	const heartbeatIntervalMinutes =
 		Number(lanes.heartbeatIntervalMinutes) || DEFAULT_HEARTBEAT_INTERVAL_MIN;
+	const checkpointWarningMinutes =
+		Number(lanes.checkpointWarningMinutes) || DEFAULT_CHECKPOINT_WARNING_MIN;
 
 	return {
 		stallTimeoutMs: stallTimeoutMinutes * 60 * 1000,
 		graceAfterProgressMs: stallGraceAfterProgressMinutes * 60 * 1000,
 		heartbeatIntervalMs: heartbeatIntervalMinutes * 60 * 1000,
+		checkpointWarningMs: checkpointWarningMinutes * 60 * 1000,
+		extendGraceOnFileScope: lanes.extendGraceOnFileScope === true,
 		pollIntervalMs: POLL_INTERVAL_MS,
 	};
 }
@@ -48,7 +56,7 @@ function git(worktreePath, args) {
 }
 
 /**
- * Max mtime among existing file-scope paths (FR-WORK-10 warning signal; extends stall grace).
+ * Max mtime among existing file-scope paths (FR-WORK-10 activity signal; warning only by default).
  * @param {string} worktreePath
  * @param {string[]} [fileScopePaths]
  */
@@ -64,6 +72,49 @@ function resolveFileScopeMtimeMs(worktreePath, fileScopePaths) {
 		max = max === null ? stat.mtimeMs : Math.max(max, stat.mtimeMs);
 	}
 	return max;
+}
+
+/**
+ * Scoped git porcelain paths under File Scope or the task folder (FR-STALL-02 activity).
+ * @param {string} worktreePath
+ * @param {string[]} [fileScopePaths]
+ * @param {string} [taskFolder]
+ */
+export function resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder) {
+	const porcelain = git(worktreePath, ["status", "--porcelain"]);
+	if (!porcelain) return [];
+
+	const scopePrefixes = [];
+	if (Array.isArray(fileScopePaths)) {
+		for (const rel of fileScopePaths) {
+			if (!rel || typeof rel !== "string") continue;
+			scopePrefixes.push(rel.endsWith("/") ? rel : `${rel}/`);
+			scopePrefixes.push(rel);
+		}
+	}
+	let taskRel = null;
+	if (taskFolder) {
+		taskRel = path.relative(worktreePath, taskFolder);
+		if (taskRel && !taskRel.startsWith("..")) {
+			scopePrefixes.push(taskRel.endsWith("/") ? taskRel : `${taskRel}/`);
+			scopePrefixes.push(taskRel);
+		}
+	}
+
+	if (scopePrefixes.length === 0) return [];
+
+	const inScope = (filePath) =>
+		scopePrefixes.some((prefix) => filePath === prefix || filePath.startsWith(prefix));
+
+	const dirty = new Set();
+	for (const line of porcelain.split("\n")) {
+		if (!line.trim()) continue;
+		let filePath = line.length > 2 && line[2] === " " ? line.slice(3) : line.slice(2);
+		filePath = filePath.trim();
+		const renamed = filePath.includes(" -> ") ? filePath.split(" -> ").pop()?.trim() : filePath;
+		if (renamed && inScope(renamed)) dirty.add(renamed);
+	}
+	return [...dirty].sort();
 }
 
 /**
@@ -124,6 +175,7 @@ export function collectProgressSignals({
 	}
 
 	const fileScopeMtimeMs = resolveFileScopeMtimeMs(worktreePath, fileScopePaths);
+	const dirtyPaths = resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder);
 
 	let stepCompletedAtMs = null;
 	if (journalContext?.projectRoot && journalContext?.batchId) {
@@ -135,27 +187,94 @@ export function collectProgressSignals({
 		});
 	}
 
-	return { statusMtimeMs, lastCommitAtMs, fileScopeMtimeMs, stepCompletedAtMs };
+	return {
+		statusMtimeMs,
+		lastCommitAtMs,
+		fileScopeMtimeMs,
+		stepCompletedAtMs,
+		dirtyPaths,
+	};
+}
+
+/**
+ * Checkpoint signals extend stall grace (STATUS, lane commit, task.step_completed).
+ * @param {object | null} prev
+ * @param {object} next
+ */
+export function checkpointSignalsChanged(prev, next) {
+	if (!prev) {
+		return Boolean(next.statusMtimeMs || next.lastCommitAtMs || next.stepCompletedAtMs);
+	}
+	if (prev.statusMtimeMs !== next.statusMtimeMs) return true;
+	if (prev.lastCommitAtMs !== next.lastCommitAtMs) return true;
+	if (prev.stepCompletedAtMs !== next.stepCompletedAtMs) return true;
+	return false;
+}
+
+/**
+ * Activity signals are warning-only unless extendGraceOnFileScope is enabled.
+ * @param {object | null} prev
+ * @param {object} next
+ */
+export function activitySignalsChanged(prev, next) {
+	if (!prev) {
+		return Boolean(next.fileScopeMtimeMs || (next.dirtyPaths?.length ?? 0) > 0);
+	}
+	if (prev.fileScopeMtimeMs !== next.fileScopeMtimeMs) return true;
+	const prevDirty = (prev.dirtyPaths ?? []).join("\0");
+	const nextDirty = (next.dirtyPaths ?? []).join("\0");
+	if (prevDirty !== nextDirty) return true;
+	return false;
 }
 
 /**
  * @param {object | null} prev
  * @param {object} next
+ * @param {object} [options]
+ * @param {boolean} [options.extendGraceOnFileScope]
  */
-export function progressSignalsChanged(prev, next) {
-	if (!prev) {
-		return Boolean(
-			next.statusMtimeMs ||
-				next.lastCommitAtMs ||
-				next.fileScopeMtimeMs ||
-				next.stepCompletedAtMs,
-		);
-	}
-	if (prev.statusMtimeMs !== next.statusMtimeMs) return true;
-	if (prev.lastCommitAtMs !== next.lastCommitAtMs) return true;
-	if (prev.fileScopeMtimeMs !== next.fileScopeMtimeMs) return true;
-	if (prev.stepCompletedAtMs !== next.stepCompletedAtMs) return true;
+export function progressSignalsChanged(prev, next, options = {}) {
+	const checkpoint = checkpointSignalsChanged(prev, next);
+	if (checkpoint) return true;
+	if (options.extendGraceOnFileScope) return activitySignalsChanged(prev, next);
 	return false;
+}
+
+/**
+ * @param {object} signals
+ */
+export function resolveLastCheckpointMs(signals) {
+	const parts = [signals.statusMtimeMs, signals.lastCommitAtMs, signals.stepCompletedAtMs].filter(
+		(v) => v != null,
+	);
+	if (parts.length === 0) return null;
+	return Math.max(...parts);
+}
+
+/**
+ * @param {object} signals
+ */
+export function hasActivitySignals(signals) {
+	return Boolean(signals.fileScopeMtimeMs || (signals.dirtyPaths?.length ?? 0) > 0);
+}
+
+/**
+ * @param {object} params
+ * @param {number} params.now
+ * @param {number} params.lastCheckpointAt
+ * @param {object} params.signals
+ * @param {object} params.stallConfig
+ * @param {boolean} params.activitySinceCheckpoint
+ */
+export function shouldEmitCheckpointWarning({
+	now,
+	lastCheckpointAt,
+	signals,
+	stallConfig,
+	activitySinceCheckpoint,
+}) {
+	if (!activitySinceCheckpoint || !hasActivitySignals(signals)) return false;
+	return now - lastCheckpointAt >= stallConfig.checkpointWarningMs;
 }
 
 /**
@@ -185,6 +304,33 @@ export function recordLaneHeartbeat({
 		statusMtimeMs: signals.statusMtimeMs,
 		lastCommitAtMs: signals.lastCommitAtMs,
 		fileScopeMtimeMs: signals.fileScopeMtimeMs,
+		dirtyPathCount: signals.dirtyPaths?.length ?? 0,
+	});
+}
+
+/**
+ * @param {object} params
+ */
+export function recordCheckpointWarning({
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	signals,
+	lastCheckpointAt,
+	correlationId,
+}) {
+	appendJournalEvent(projectRoot, batchId, "lane.checkpoint_warning", {
+		laneNumber,
+		taskId,
+		correlationId,
+		lastCheckpointAt,
+		statusMtimeMs: signals.statusMtimeMs,
+		lastCommitAtMs: signals.lastCommitAtMs,
+		fileScopeMtimeMs: signals.fileScopeMtimeMs,
+		stepCompletedAtMs: signals.stepCompletedAtMs,
+		dirtyPaths: signals.dirtyPaths ?? [],
+		suggestion: CHECKPOINT_WARNING_SUGGESTION,
 	});
 }
 
@@ -211,4 +357,4 @@ export function recordStallWarning({
 	});
 }
 
-export { POLL_INTERVAL_MS };
+export { CHECKPOINT_WARNING_SUGGESTION, POLL_INTERVAL_MS };

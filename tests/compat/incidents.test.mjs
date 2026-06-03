@@ -18,9 +18,9 @@ import {
 	forceMergeWave,
 } from "../../src/batch/engine.mjs";
 import {
+	activitySignalsChanged,
 	collectProgressSignals,
 	computeStallDeadline,
-	progressSignalsChanged,
 	resolveStallConfig,
 } from "../../src/batch/heartbeat.mjs";
 import {
@@ -301,7 +301,7 @@ test("I-07 stall logic uses STATUS, lane commit, and file-scope mtime signals", 
 		taskFolder: dir,
 		fileScopePaths: ["src/scoped.txt"],
 	});
-	assert.equal(progressSignalsChanged(first, second), true);
+	assert.equal(activitySignalsChanged(first, second), true);
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
