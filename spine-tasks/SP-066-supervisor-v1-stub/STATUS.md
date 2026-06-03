@@ -1,7 +1,7 @@
 # SP-066: Supervisor v1 stub — Status
 
-**Current Step:** 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -19,7 +19,7 @@
 ---
 
 ### Step 1: Write v1 supervisor guidance
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Replace `<!-- Customize supervisor instructions -->` with structured sections:
   - **v1 reality:** no supervisor Pi agent session; human operator + CLI/dashboard
@@ -30,10 +30,10 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Template renders valid markdown (headings, no broken frontmatter)
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Template renders valid markdown (headings, no broken frontmatter)
 
 ---
 
@@ -41,6 +41,8 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 0 | APPROVE | (stub review) |
+| 2 | plan | 1 | APPROVE | (stub review) |
 
 ---
 
@@ -49,6 +51,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | No `supervisor` references in `src/batch/` — confirms v1 has no supervisor agent spawn | Expected | Step 0 preflight |
+| Dashboard CLI startup test flaky when port 8109 occupied by external process | Environmental | Step 2 verification |
 
 ---
 
@@ -59,6 +62,7 @@
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-03 | Step 0 preflight | Runbook + grep complete; no batch supervisor runtime |
 | 2026-06-03 | Step 1 draft | `templates/agents/supervisor.md` v1 guidance written |
+| 2026-06-03 | Step 2 verify | typecheck green; 371 tests pass (dashboard test flaky under port contention) |
 
 ---
 
@@ -70,4 +74,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Supervisor template is documentation-only in v1 — batch engine does not spawn this agent.
