@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
@@ -153,9 +154,10 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			? path.relative(projectRoot, task.taskFolder)
 			: task.taskFolder
 		: null;
+	const tasksRootRel = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
 	const taskFolderInWorktree = taskFolderRel
 		? path.join(wt, taskFolderRel)
-		: path.join(wt, "taskplane-tasks", `${taskId}-smoke`);
+		: path.join(wt, tasksRootRel, `${taskId}-smoke`);
 
 	const events = readJournalEvents(projectRoot, batchId);
 	const pendingSegments = countPendingSegments(state, taskId);

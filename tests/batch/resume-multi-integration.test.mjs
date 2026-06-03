@@ -28,7 +28,7 @@ const TASK_B = "TP-972";
  * @param {string} fileScopePath
  */
 function writeSmokeTask(projectRoot, taskId, fileScopePath) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -56,7 +56,7 @@ Multi-task resume integration fixture.
  */
 function writeDependencies(projectRoot) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks: { [TASK_A]: [], [TASK_B]: [] } }, null, 2),
 		"utf-8",
 	);
@@ -92,7 +92,7 @@ test("multi-task batch start → pause → resume completes both tasks", async (
 		assert.equal(startResult.ok, true, startResult.output ?? startResult.error);
 
 		for (const taskId of [TASK_A, TASK_B]) {
-			const donePath = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`, ".DONE");
+			const donePath = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`, ".DONE");
 			if (fs.existsSync(donePath)) fs.unlinkSync(donePath);
 		}
 
@@ -151,7 +151,7 @@ test("paused multi-task batch diagnose suggests multi-task resume", async () => 
 					taskId: TASK_A,
 					laneNumber: 1,
 					status: "running",
-					taskFolder: `taskplane-tasks/${TASK_A}-smoke`,
+					taskFolder: `spine-tasks/${TASK_A}-smoke`,
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,
@@ -161,7 +161,7 @@ test("paused multi-task batch diagnose suggests multi-task resume", async () => 
 					taskId: TASK_B,
 					laneNumber: 2,
 					status: "running",
-					taskFolder: `taskplane-tasks/${TASK_B}-smoke`,
+					taskFolder: `spine-tasks/${TASK_B}-smoke`,
 					startedAt: Date.now(),
 					endedAt: null,
 					doneFileFound: false,

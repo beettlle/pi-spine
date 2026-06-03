@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { assessWaveMergeEligibility, mergeLaneToOrch } from "./engine.mjs";
@@ -210,7 +211,7 @@ function taskAlreadyComplete({ taskFolder, events, task }) {
 /**
  * @param {object} params
  */
-function resolveTaskFolderInWorktree({ projectRoot, task, lane }) {
+function resolveTaskFolderInWorktree({ projectRoot, task, lane, tasksRootRel = DEFAULT_TASKS_ROOT }) {
 	const taskFolderRel = task.taskFolder
 		? path.isAbsolute(task.taskFolder)
 			? path.relative(projectRoot, task.taskFolder)
@@ -219,7 +220,7 @@ function resolveTaskFolderInWorktree({ projectRoot, task, lane }) {
 	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, lane.batchId ?? "", lane.laneNumber);
 	return taskFolderRel
 		? path.join(wt, taskFolderRel)
-		: path.join(wt, "taskplane-tasks", `${task.taskId}-smoke`);
+		: path.join(wt, tasksRootRel, `${task.taskId}-smoke`);
 }
 
 /**
@@ -537,6 +538,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 
 	const configResult = loadSpineConfig(projectRoot);
 	const config = configResult.config ?? {};
+	const tasksRootRel = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
 	resolveTasksRoot(projectRoot, configResult);
 
 	if (phase === "failed" && force) {
@@ -590,8 +592,8 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 				? path.isAbsolute(task.taskFolder)
 					? path.relative(projectRoot, task.taskFolder)
 					: task.taskFolder
-				: path.join("taskplane-tasks", `${taskId}-smoke`);
-			const taskFolderInWorktree = resolveTaskFolderInWorktree({ projectRoot, task, lane });
+				: path.join(tasksRootRel, `${taskId}-smoke`);
+			const taskFolderInWorktree = resolveTaskFolderInWorktree({ projectRoot, task, lane, tasksRootRel });
 			const laneCorrelationId = lane.correlationId ?? crypto.randomUUID();
 			lane.correlationId = laneCorrelationId;
 

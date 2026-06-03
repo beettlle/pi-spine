@@ -19,7 +19,7 @@ const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function writeTask(projectRoot, taskId, deps = []) {
-	const folder = path.join(projectRoot, 'taskplane-tasks', `${taskId}-test`);
+	const folder = path.join(projectRoot, 'spine-tasks', `${taskId}-test`);
 	fs.mkdirSync(folder, { recursive: true });
 
 	const depLines =
@@ -56,7 +56,7 @@ ${depLines}
 
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, 'taskplane-tasks', 'dependencies.json'),
+		path.join(projectRoot, 'spine-tasks', 'dependencies.json'),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		'utf-8',
 	);

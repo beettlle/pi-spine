@@ -17,7 +17,7 @@ import { runInit } from "../../bin/spine-init.mjs";
 export async function initGitRepo(prefix = "spine-test-", options = {}) {
 	const projectRoot = await mkdtemp(path.join(os.tmpdir(), prefix));
 	execFileSync("git", ["init"], { cwd: projectRoot, stdio: "ignore" });
-	runInit(projectRoot, ["--tasks-root", options.tasksRoot ?? "taskplane-tasks"]);
+	runInit(projectRoot, ["--tasks-root", options.tasksRoot ?? "spine-tasks"]);
 	execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["config", "user.name", "Test User"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });

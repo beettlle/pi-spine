@@ -15,7 +15,7 @@ import {
  * @param {number} reviewLevel
  */
 function writeReviewTask(root, reviewLevel = 2) {
-	const folder = path.join(root, "taskplane-tasks", "TP-037-review-tool");
+	const folder = path.join(root, "spine-tasks", "TP-037-review-tool");
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),

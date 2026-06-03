@@ -11,7 +11,7 @@
  *   mergeTaskDeps,
  * } from "./src/tasks/packet/index.mjs";
  *
- * const tasksRoot = "taskplane-tasks";
+ * const tasksRoot = "spine-tasks";
  * const depsJson = loadDependenciesJson(tasksRoot);
  *
  * for (const discovered of discoverTasks(tasksRoot)) {

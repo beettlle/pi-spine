@@ -25,7 +25,7 @@ function writeRunningBatch(projectRoot, batchId) {
 				taskId: "TP-999",
 				laneNumber: 1,
 				status: "running",
-				taskFolder: "taskplane-tasks/TP-999-smoke",
+				taskFolder: "spine-tasks/TP-999-smoke",
 				startedAt: Date.now(),
 				endedAt: null,
 				doneFileFound: false,

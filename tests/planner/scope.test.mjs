@@ -10,7 +10,7 @@ import { parseScope } from "../../src/planner/scope.mjs";
 
 async function createTasksRootFixture() {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-scope-"));
-	const tasksRoot = path.join(root, "taskplane-tasks");
+	const tasksRoot = path.join(root, "spine-tasks");
 	fs.mkdirSync(tasksRoot, { recursive: true });
 
 	function writeTask(folderName, taskId) {

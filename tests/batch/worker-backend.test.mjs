@@ -21,7 +21,7 @@ import {
 import { runWorker } from "../../src/batch/worker-host.mjs";
 
 function writeTaskFolder(root, reviewLevel = 0) {
-	const taskFolder = path.join(root, "taskplane-tasks", "TP-900-mock");
+	const taskFolder = path.join(root, "spine-tasks", "TP-900-mock");
 	fs.mkdirSync(taskFolder, { recursive: true });
 	fs.writeFileSync(
 		path.join(taskFolder, "PROMPT.md"),
