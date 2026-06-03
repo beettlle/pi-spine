@@ -1179,4 +1179,7 @@ Before killing a lane for stall, engine writes journal event `lane.stall_warning
 - Task record → `pending`; clear `startedAt`, `endedAt`, `exitReason`, `doneFileFound`
 - All segment records for task → `pending`; clear terminal timestamps
 
-[Showing lines 1-1180 of 1479 (50.0KB limit). Use offset=1181 to continue.]
+When `lanes.autoCommitOnStall` is enabled (default **false**), a stall/failure salvage path may create one scoped WIP commit on the **lane branch** (`wip(<taskId>): stall salvage <iso>`). Atomic retry (`spine batch retry`) resets task/segment records only — it does **not** revert that WIP commit; the lane worktree retains salvage work for operator review and re-run.
+
+
+[Showing lines 1-1181 of 1182 (50.0KB limit). Use offset=1182 to continue.]
