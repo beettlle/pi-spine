@@ -26,12 +26,22 @@ Write the review file using the `write` tool. Include:
 
 ## Code review
 
+Read `.spine/spine-config.json` for project testing commands before inspecting the diff.
+
+### Build and typecheck gate (fail closed)
+
+Before issuing **APPROVE** on any **code review**, run the project's build and typecheck commands:
+
+1. **`testing.build`** — run when non-empty. pi-spine default after `spine init`: `npm run typecheck && npm test`.
+2. **Typecheck** — when `testing.build` is empty or does not include a typecheck step, run the project-equivalent typecheck command (pi-spine: `npm run typecheck`). When in doubt, check `PROMPT.md` Environment or `package.json` scripts.
+
+If either command fails, return **REVISE** (do not APPROVE). In the review file, include a `### Build / typecheck` section with the command(s) run and a concise summary of the failure output (last ~20 lines or the first error block).
+
+### Diff and scope
+
 - Use `git diff` with the baseline commit from the request when provided
 - Flag missing tests, scope creep outside File Scope, and regressions
-- REVISE only for blocking issues; minor suggestions do not block
-
-
-- For **code reviews** on code-related deliverables: verify **≥77% line coverage** on changed/in-scope modules (run or inspect `testing.testWithCoverage` output when available). **REVISE** when coverage is below threshold or tests are missing for changed paths.
+- **REVISE** only for blocking issues; minor suggestions do not block
 
 ## Plan review
 

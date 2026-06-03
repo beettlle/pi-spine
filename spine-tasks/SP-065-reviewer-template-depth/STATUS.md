@@ -1,7 +1,7 @@
 # SP-065: Reviewer template depth — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,15 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read SP-061 reviewer coverage text (if landed)
-- [ ] Read spine-config testing command shape
+- [x] Read SP-061 reviewer coverage text (if landed)
+- [x] Read spine-config testing command shape
 
 ---
 
 ### Step 1: Build + typecheck gate
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Code review section: run `testing.build` and typecheck from `.spine/spine-config.json` (or documented fallback) **before** APPROVE on code reviews
 - [ ] Fail closed: if build/typecheck fails, REVISE with command output summary
@@ -63,14 +63,17 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-061 landed coverage text in reviewer.md (single bullet); SP-065 expands full contract | Incorporated | Step 0 |
+| spine-config has `testing.build` / `testing.test` / `testing.testWithCoverage` — no separate typecheck key; pi-spine init default embeds typecheck in build | Document fallback | Step 1 |
 
 ---
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
-|-----------|--------|---------|
+|-----------|--------|--------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-03 | Step 0 complete | Read SP-061 reviewer coverage + spine-config testing shape |
 
 ---
 
