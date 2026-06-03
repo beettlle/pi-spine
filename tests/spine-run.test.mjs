@@ -14,7 +14,7 @@ const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", 
  * @param {boolean} done
  */
 function writeTask(projectRoot, taskId, done = false) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-test`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-test`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -39,7 +39,7 @@ test("spine run pending is alias for batch start pending", async () => {
 		writeTask(projectRoot, "TP-901", true);
 		writeTask(projectRoot, "TP-902", false);
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
 			JSON.stringify({ version: 1, tasks: { "TP-901": [], "TP-902": [] } }, null, 2),
 			"utf-8",
 		);
@@ -73,7 +73,7 @@ test("spine run all dry-run matches pending-filtered batch start", async () => {
 		writeTask(projectRoot, "TP-911", true);
 		writeTask(projectRoot, "TP-912", false);
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
 			JSON.stringify({ version: 1, tasks: { "TP-911": [], "TP-912": [] } }, null, 2),
 			"utf-8",
 		);

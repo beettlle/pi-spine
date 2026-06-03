@@ -18,7 +18,7 @@ import {
 import { runReconciliationCheck } from "../src/batch/reconcile.mjs";
 
 function writeTask(projectRoot, taskId, slug = "task") {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-${slug}`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-${slug}`);
 	fs.mkdirSync(folder, { recursive: true });
 
 	const title = `${taskId} ${slug}`;
@@ -52,7 +52,7 @@ Write something.
 
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);
@@ -197,7 +197,7 @@ test("checkDependenciesJson validates version and task IDs", async () => {
 
 		const result = checkDependenciesJson({ projectRoot });
 		assert.equal(result.ok, true);
-		assert.deepEqual(discoverTaskIds(path.join(projectRoot, "taskplane-tasks")), ["TP-001", "TP-002"]);
+		assert.deepEqual(discoverTaskIds(path.join(projectRoot, "spine-tasks")), ["TP-001", "TP-002"]);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

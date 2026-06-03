@@ -5,7 +5,7 @@
  *  - "all"
  *  - "pending" (tasks without `.DONE` marker)
  *  - explicit task IDs (e.g. "TP-008")
- *  - glob-like path patterns (e.g. "taskplane-tasks/TP-008-*")
+ *  - glob-like path patterns (e.g. "spine-tasks/TP-008-*")
  */
 
 import path from 'node:path';

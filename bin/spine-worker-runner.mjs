@@ -25,6 +25,7 @@ import {
 	resolveBatchJournalContext,
 	runStepReview,
 } from "../src/batch/review.mjs";
+import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 
 const taskFolder = process.env.SPINE_TASK_FOLDER;
 const worktreePath = process.env.SPINE_WORKTREE;
@@ -70,12 +71,74 @@ if (mode === "stub") {
 		.split(/[,\s]+/)
 		.filter(Boolean);
 	if (failTasks.includes(taskIdFromFolder)) {
+		const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
+		if (dirtyRel && worktreePath) {
+			const dirtyPath = path.join(worktreePath, dirtyRel);
+			fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
+			fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
+		}
 		console.error(`stub worker forced failure for ${taskIdFromFolder}`);
 		process.exit(1);
 	}
 
+	if (process.env.SPINE_WORKER_STUB_SAT020 === "1") {
+		const journal = buildReviewJournal();
+		const laneNumber = Number(process.env.SPINE_LANE_NUMBER || 1);
+		const taskId = process.env.SPINE_TASK_ID || taskIdFromFolder;
+		const correlationId = process.env.SPINE_LANE_CORRELATION_ID;
+		// Let the host poll once before checkpoint signals land.
+		spawnSync("sleep", ["1"], { stdio: "ignore" });
+		if (journal?.projectRoot && journal?.batchId && taskId) {
+			for (const step of [0, 1]) {
+				reportTaskProgress({
+					projectRoot: journal.projectRoot,
+					batchId: journal.batchId,
+					taskId,
+					laneNumber,
+					step,
+					checkboxesComplete: step + 1,
+					checkboxesTotal: 2,
+					correlationId,
+				});
+			}
+		}
+		// Separate poll epochs: checkpoint progress first, then file-scope activity only.
+		spawnSync("sleep", ["4"], { stdio: "ignore" });
+		const scopeRel = process.env.SPINE_WORKER_STUB_FILE_SCOPE;
+		if (scopeRel && worktreePath) {
+			const scopePath = path.join(worktreePath, scopeRel);
+			fs.mkdirSync(path.dirname(scopePath), { recursive: true });
+			fs.writeFileSync(scopePath, `sat020 scope touch ${new Date().toISOString()}\n`, "utf-8");
+		}
+		spawnSync("sleep", ["10"], { stdio: "ignore" });
+	}
+
 	const delayMs = Number(process.env.SPINE_WORKER_STUB_DELAY_MS || 0);
+	const hangMs = Number(process.env.SPINE_WORKER_STUB_HANG_MS || 0);
+	if (process.env.SPINE_WORKER_STUB_OUTPUT) {
+		console.error(process.env.SPINE_WORKER_STUB_OUTPUT);
+	}
+	if (hangMs > 0 || process.env.SPINE_WORKER_STUB_SAT020 === "1") {
+		const effectiveHang =
+			hangMs > 0 ? hangMs : Number(process.env.SPINE_WORKER_STUB_SAT020_HANG_MS || 25_000);
+		const step = 100;
+		let elapsed = 0;
+		while (elapsed < effectiveHang) {
+			const slice = Math.min(step, effectiveHang - elapsed);
+			spawnSync("sleep", [String(slice / 1000)], { stdio: "ignore" });
+			elapsed += slice;
+		}
+		console.error("stub worker hang finished without .DONE");
+		process.exit(1);
+	}
+
 	if (delayMs > 0) {
+		const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
+		if (dirtyRel && worktreePath) {
+			const dirtyPath = path.join(worktreePath, dirtyRel);
+			fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
+			fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
+		}
 		spawnSync("sleep", [String(delayMs / 1000)], { stdio: "ignore" });
 	}
 	if (process.env.SPINE_WORKER_STUB_TOUCH === "1" && worktreePath) {

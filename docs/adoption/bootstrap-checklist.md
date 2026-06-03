@@ -56,6 +56,20 @@ This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `sp
 
 ### 3. Add your first task
 
+**Option A — authoring skill (recommended for PRD/epic work):**
+
+In pi (after `pi install /path/to/pi-spine -l`), ask the agent to use the **`create-spine-tasks`** skill:
+
+```text
+Use create-spine-tasks to decompose docs/PRD.md into spine-tasks/ packets.
+Start with Review Level 0 for a wiring smoke task, then M-sized implementation tasks.
+Update spine-tasks/CONTEXT.md and dependencies.json.
+```
+
+Skill reference: [`skills/create-spine-tasks/SKILL.md`](../../skills/create-spine-tasks/SKILL.md).
+
+**Option B — manual packet:**
+
 Create `spine-tasks/<ID>-<slug>/PROMPT.md` (spine task packet format; Taskplane-interoperable). Start with **Review Level 0** for wiring checks.
 
 Register dependencies in `spine-tasks/dependencies.json` when you have more than one task.
@@ -164,6 +178,7 @@ After a successful stub batch, remove or disable Taskplane `/orch` usage. Until 
 | Preflight | `spine preflight` |
 | Stub batch | `SPINE_WORKER_STUB=1 spine batch start <id>` |
 | Adoption smoke | `./scripts/adoption-smoke.sh` |
+| Task authoring | `create-spine-tasks` skill in pi (see step 3) |
 
 ## Related docs
 

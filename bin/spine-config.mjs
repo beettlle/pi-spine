@@ -141,5 +141,16 @@ export function validateSpineConfig(config) {
 		return workerBackendError;
 	}
 
+	if (
+		config.lanes?.autoCommitOnStall != null &&
+		typeof config.lanes.autoCommitOnStall !== "boolean"
+	) {
+		return {
+			code: "CONFIG_LANES_INVALID",
+			message: "lanes.autoCommitOnStall must be a boolean when set",
+			suggestedCommand: "spine settings set lanes.autoCommitOnStall false",
+		};
+	}
+
 	return null;
 }

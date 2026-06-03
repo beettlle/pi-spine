@@ -217,6 +217,23 @@ export function summarizeJournalEvent(event) {
 	if (payload.reviewType) parts.push(`${payload.reviewType} review`);
 	if (payload.diagnosis) parts.push(String(payload.diagnosis));
 	if (payload.stallDeadline) parts.push(`stall deadline ${payload.stallDeadline}`);
+	if (payload.logPath) parts.push(`→ ${payload.logPath}`);
+	if (payload.changedFileCount != null) {
+		parts.push(`${payload.changedFileCount} scoped file(s)`);
+	}
+	if (payload.commitSha) parts.push(`commit ${String(payload.commitSha).slice(0, 8)}`);
+	if (payload.reason && payload.refused) parts.push(`refused: ${payload.reason}`);
+	if (payload.retryCommand) parts.push(String(payload.retryCommand));
+	if (payload.recommendedAction && !payload.retryCommand) {
+		parts.push(String(payload.recommendedAction));
+	}
+	if (Array.isArray(payload.dirtyPaths) && payload.dirtyPaths.length > 0) {
+		const listed = payload.dirtyPaths.slice(0, 3).join(", ");
+		const more =
+			payload.dirtyPaths.length > 3 ? ` (+${payload.dirtyPaths.length - 3} more)` : "";
+		parts.push(`dirty: ${listed}${more}`);
+	}
+	if (payload.suggestion) parts.push(String(payload.suggestion).slice(0, 80));
 
 	if (parts.length === 0 && Object.keys(payload).length > 0) {
 		const preview = JSON.stringify(payload);
@@ -229,13 +246,42 @@ export function summarizeJournalEvent(event) {
 /**
  * @param {object[]} events
  */
+const JOURNAL_HINT_RECENT_MS = 30 * 60 * 1000;
+
+/**
+ * @param {string|undefined} timestamp
+ */
+function isRecentJournalHint(timestamp) {
+	if (!timestamp) return false;
+	const ts = Date.parse(timestamp);
+	if (Number.isNaN(ts)) return false;
+	return Date.now() - ts < JOURNAL_HINT_RECENT_MS;
+}
+
+/**
+ * @param {object[]} events
+ */
 export function extractJournalDiagnosisHints(events) {
 	const tail = readJournalTail(events);
 	const hints = [];
 
-	const priority = ["batch.failed", "task.failed", "review.failed", "lane.stall_warning", "lane.died"];
+	const priority = [
+		"batch.failed",
+		"task.failed",
+		"lane.stall_killed",
+		"review.failed",
+		"lane.salvage_inspection",
+		"lane.salvage_commit",
+		"lane.checkpoint_warning",
+		"lane.stall_warning",
+		"lane.died",
+	];
 	for (const type of priority) {
-		const match = [...tail].reverse().find((event) => event.type === type);
+		const match = [...tail].reverse().find((event) => {
+			if (event.type !== type) return false;
+			if (type === "lane.checkpoint_warning") return isRecentJournalHint(event.timestamp);
+			return true;
+		});
 		if (match) {
 			hints.push({
 				type: match.type,

@@ -14,7 +14,7 @@ import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../s
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 function writeSmokeTask(projectRoot, taskId) {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(path.join(folder, "PROMPT.md"), `# Task: ${taskId}\n`, "utf-8");
 	return folder;
@@ -22,7 +22,7 @@ function writeSmokeTask(projectRoot, taskId) {
 
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);
@@ -41,7 +41,7 @@ function buildTwoTaskPausedState({ batchId, orchBranch, worktreePaths }) {
 				taskId: taskA,
 				laneNumber: 1,
 				status: "running",
-				taskFolder: `taskplane-tasks/${taskA}-smoke`,
+				taskFolder: `spine-tasks/${taskA}-smoke`,
 				startedAt: Date.now(),
 				endedAt: null,
 				doneFileFound: false,
@@ -51,7 +51,7 @@ function buildTwoTaskPausedState({ batchId, orchBranch, worktreePaths }) {
 				taskId: taskB,
 				laneNumber: 2,
 				status: "running",
-				taskFolder: `taskplane-tasks/${taskB}-smoke`,
+				taskFolder: `spine-tasks/${taskB}-smoke`,
 				startedAt: Date.now(),
 				endedAt: null,
 				doneFileFound: false,

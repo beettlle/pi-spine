@@ -30,7 +30,7 @@ const TP_034_038_041_SCOPES = {
 			"tests/batch/resume-multi-integration.test.mjs",
 			"src/batch/status-diagnosis.mjs",
 			"README.md",
-			"taskplane-tasks/CONTEXT.md",
+			"spine-tasks/CONTEXT.md",
 			"docs/compatibility/taskplane-gap-list.md",
 		],
 	},

@@ -19,7 +19,7 @@ import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
  * @param {string} fileScopePath
  */
 function writeSmokeTask(projectRoot, taskId = "TP-999", fileScopePath = "src/smoke.txt") {
-	const folder = path.join(projectRoot, "taskplane-tasks", `${taskId}-smoke`);
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
@@ -48,7 +48,7 @@ Smoke task for engine tests.
  */
 function writeDependencies(projectRoot, tasks) {
 	fs.writeFileSync(
-		path.join(projectRoot, "taskplane-tasks", "dependencies.json"),
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
 		JSON.stringify({ version: 1, tasks }, null, 2),
 		"utf-8",
 	);
@@ -180,7 +180,7 @@ test("startBatch pending dry-run excludes done tasks", async () => {
 		writeSmokeTask(projectRoot, "TP-998", "src/b.txt");
 		writeDependencies(projectRoot, { "TP-999": [], "TP-998": ["TP-999"] });
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			path.join(projectRoot, "spine-tasks", "TP-999-smoke", ".DONE"),
 			"",
 			"utf-8",
 		);
@@ -206,7 +206,7 @@ test("startBatch all fails when every task has .DONE", async () => {
 		writeSmokeTask(projectRoot, "TP-999");
 		writeDependencies(projectRoot, { "TP-999": [] });
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			path.join(projectRoot, "spine-tasks", "TP-999-smoke", ".DONE"),
 			"",
 			"utf-8",
 		);
@@ -228,7 +228,7 @@ test("startBatch skips worker when .DONE exists on disk", async () => {
 		writeSmokeTask(projectRoot, "TP-999");
 		writeDependencies(projectRoot, { "TP-999": [] });
 		fs.writeFileSync(
-			path.join(projectRoot, "taskplane-tasks", "TP-999-smoke", ".DONE"),
+			path.join(projectRoot, "spine-tasks", "TP-999-smoke", ".DONE"),
 			"",
 			"utf-8",
 		);
@@ -262,7 +262,7 @@ test("resolveBatchStartScope normalizes all to pending IDs", async () => {
 		writeSmokeTask(projectRoot, "TP-998");
 		writeDependencies(projectRoot, { "TP-999": [], "TP-998": [] });
 		execCommit(projectRoot, "tasks");
-		const tasksRoot = path.join(projectRoot, "taskplane-tasks");
+		const tasksRoot = path.join(projectRoot, "spine-tasks");
 		const resolved = resolveBatchStartScope("all", tasksRoot);
 		assert.equal(resolved.ok, true);
 		assert.equal(resolved.policyScope, "pending");

@@ -5,8 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { discoverTasks } from "../compat/taskplane/discover.mjs";
-import { loadTaskPacket } from "../compat/taskplane/index.mjs";
+import { discoverTasks } from "../tasks/packet/discover.mjs";
+import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { filterPendingTaskIds } from "../planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
@@ -32,6 +32,7 @@ import {
 	removeLaneWorktrees,
 } from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
+import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 /**
  * @param {import("../planner/index.mjs").buildPlan} plan
@@ -528,12 +529,28 @@ async function runTaskOnLane({
 		recomputeTaskCounters(state);
 		saveSpineBatchState(projectRoot, state);
 		if (!aborted) {
+			const salvageFields = recordTaskFailureSalvage({
+				projectRoot,
+				batchId,
+				laneNumber,
+				laneId: lane.laneId,
+				taskId,
+				correlationId: laneCorrelationId,
+				worktreePath: wt,
+				fileScopePaths,
+				taskFolder: taskFolderInWorktree,
+				workerResult,
+				config,
+				batchPhase: state.phase,
+				taskBranch,
+			});
 			appendJournalEvent(projectRoot, batchId, "task.failed", {
 				taskId,
 				laneNumber,
 				laneId: lane.laneId,
 				correlationId: laneCorrelationId,
 				...workerResult,
+				...salvageFields,
 			});
 		}
 		return { ok: false, aborted, workerResult };

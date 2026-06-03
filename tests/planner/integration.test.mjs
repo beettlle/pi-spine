@@ -4,8 +4,8 @@ import test from "node:test";
 
 import { buildPlan } from "../../src/planner/index.mjs";
 
-test("repo taskplane-tasks plan has wave0 TP-006||TP-007 and wave1 TP-008", () => {
-	const tasksRoot = path.join(process.cwd(), "taskplane-tasks");
+test("repo spine-tasks plan has wave0 TP-006||TP-007 and wave1 TP-008", () => {
+	const tasksRoot = path.join(process.cwd(), "spine-tasks");
 	const plan = buildPlan({
 		scope: "TP-006,TP-007,TP-008",
 		config: { lanes: { maxParallel: 2, queueExcess: true } },

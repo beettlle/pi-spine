@@ -6,13 +6,13 @@ import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
 
 import { buildPlan } from "../../src/planner/index.mjs";
-import { discoverTasks } from "../../src/compat/taskplane/index.mjs";
+import { discoverTasks } from "../../src/tasks/packet/index.mjs";
 import { filterPendingTaskIds, summarizePendingScope } from "../../src/planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR, parseScope } from "../../src/planner/scope.mjs";
 
 async function createPendingFixture() {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-pending-"));
-	const tasksRoot = path.join(root, "taskplane-tasks");
+	const tasksRoot = path.join(root, "spine-tasks");
 	fs.mkdirSync(tasksRoot, { recursive: true });
 
 	function writeTask(folderName, taskId, done = false) {
@@ -61,7 +61,7 @@ test("parseScope pending mode returns pending IDs and excluded count", async () 
 
 test("parseScope pending throws when all tasks are done", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-pending-empty-"));
-	const tasksRoot = path.join(root, "taskplane-tasks");
+	const tasksRoot = path.join(root, "spine-tasks");
 	fs.mkdirSync(tasksRoot, { recursive: true });
 	const folder = path.join(tasksRoot, "TP-001-done");
 	fs.mkdirSync(folder, { recursive: true });
@@ -81,7 +81,7 @@ test("parseScope pending throws when all tasks are done", async () => {
 
 test("buildPlan pending scope preserves dependency waves", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-pending-plan-"));
-	const tasksRoot = path.join(root, "taskplane-tasks");
+	const tasksRoot = path.join(root, "spine-tasks");
 	fs.mkdirSync(tasksRoot, { recursive: true });
 
 	function writeTask(folderName, taskId, depsLine, done = false) {

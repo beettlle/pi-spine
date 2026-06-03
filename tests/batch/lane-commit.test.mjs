@@ -14,7 +14,7 @@ test("commitLaneWorktree commits dirty worktree when .DONE exists", async () => 
 		const taskId = "TP-999";
 		const taskBranch = `task/spine-lane-1-${batchId}`;
 		const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
-		const taskFolder = path.join(worktreePath, "taskplane-tasks", `${taskId}-smoke`);
+		const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
 
 		execFileSync("git", ["branch", `orch/spine-${batchId}`, "main"], {
 			cwd: projectRoot,
@@ -64,7 +64,7 @@ test("commitLaneWorktree fails loud when dirty without .DONE", async () => {
 		const taskId = "TP-999";
 		const taskBranch = `task/spine-lane-1-${batchId}`;
 		const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
-		const taskFolder = path.join(worktreePath, "taskplane-tasks", `${taskId}-smoke`);
+		const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
 
 		execFileSync("git", ["branch", `orch/spine-${batchId}`, "main"], {
 			cwd: projectRoot,

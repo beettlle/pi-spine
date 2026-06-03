@@ -26,6 +26,8 @@ Prefer these Pi tools over `spine review step` / `spine report progress` bash wh
 5. Run the task's test command before creating `.DONE`.
 6. Create `.DONE` only when every completion criterion is satisfied.
 
+**Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.
+
 ## What the engine does for you
 
 - If you leave uncommitted changes but create `.DONE`, the engine runs **lane auto-commit** before merge.
