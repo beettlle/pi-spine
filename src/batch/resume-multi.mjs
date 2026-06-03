@@ -7,7 +7,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
-import { loadTaskPacket } from "../compat/taskplane/index.mjs";
+import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { assessWaveMergeEligibility, mergeLaneToOrch } from "./engine.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";

@@ -1,5 +1,5 @@
 /**
- * Taskplane-compatible task packet parsers (FR-TASK-01–05).
+ * Task packet parsers (FR-TASK-01–05).
  *
  * Usage (planner / preflight — see TP-008):
  *
@@ -9,7 +9,7 @@
  *   loadDependenciesJson,
  *   loadTaskPacket,
  *   mergeTaskDeps,
- * } from "./src/compat/taskplane/index.mjs";
+ * } from "./src/tasks/packet/index.mjs";
  *
  * const tasksRoot = "taskplane-tasks";
  * const depsJson = loadDependenciesJson(tasksRoot);

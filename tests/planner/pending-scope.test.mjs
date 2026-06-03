@@ -6,7 +6,7 @@ import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
 
 import { buildPlan } from "../../src/planner/index.mjs";
-import { discoverTasks } from "../../src/compat/taskplane/index.mjs";
+import { discoverTasks } from "../../src/tasks/packet/index.mjs";
 import { filterPendingTaskIds, summarizePendingScope } from "../../src/planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR, parseScope } from "../../src/planner/scope.mjs";
 

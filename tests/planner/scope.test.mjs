@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
 
-import { discoverTasks } from "../../src/compat/taskplane/index.mjs";
+import { discoverTasks } from "../../src/tasks/packet/index.mjs";
 import { parseScope } from "../../src/planner/scope.mjs";
 
 async function createTasksRootFixture() {
