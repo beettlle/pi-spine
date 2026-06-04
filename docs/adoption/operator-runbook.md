@@ -306,7 +306,7 @@ spine batch resume --force          # after stale segment state
 
 Default detached resume success means **engine started**, not resume finished. Use `--wait-terminal` when you need the CLI to block until the resumed task or batch reaches a terminal state; otherwise monitor with `spine status --diagnose`.
 
-Multi-task paused batches resume **all** pending lanes in one command.
+Multi-task paused batches resume **all** pending lanes in one command. Tasks assigned to the same physical lane run **sequentially** (one worker at a time on that worktree); tasks on different lanes still run in parallel. The journal records `lane.tasks_serialized` when a lane queue has more than one pending task in a wave.
 
 ### Retry and skip
 

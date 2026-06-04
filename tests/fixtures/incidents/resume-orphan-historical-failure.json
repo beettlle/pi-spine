@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "incidentId": "20260603-resume-orphan-historical-failure",
+    "source": "searchATon batch 20260603T224829 Bug 1",
+    "batchId": "20260603T224829",
+    "pattern": "historical task.failed before batch.resumed, post-resume silence, dead enginePid",
+    "relatedTasks": ["SP-082", "SP-095"]
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "batchId": "20260603T224829",
+    "phase": "running",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260603T224829",
+    "startedAt": 1780610000000,
+    "updatedAt": 1780611000000,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [["SAT-040"]],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260603T224829/lane-1",
+        "branch": "task/spine-lane-1-20260603T224829",
+        "taskIds": ["SAT-040"],
+        "lastHeartbeatAt": 1780610915836
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SAT-040",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-040-wave8-feature",
+        "startedAt": 1780610905000,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      }
+    ],
+    "segments": [
+      {
+        "segmentId": "SAT-040::default",
+        "taskId": "SAT-040",
+        "status": "running"
+      }
+    ],
+    "mergeResults": [],
+    "totalTasks": 1,
+    "succeededTasks": 0,
+    "failedTasks": 0,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": true,
+      "retryCountByScope": {},
+      "lastFailureClass": null,
+      "repairHistory": [],
+      "enginePid": 999999999,
+      "engineStartedAt": 1780610903333
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "historical-task-failed",
+      "type": "task.failed",
+      "timestamp": "2026-06-03T22:00:00.000Z",
+      "batchId": "20260603T224829",
+      "taskId": "SAT-039",
+      "payload": { "taskId": "SAT-039", "laneNumber": 1, "reason": "prior failure" }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "historical-lane-died",
+      "type": "lane.died",
+      "timestamp": "2026-06-03T22:01:00.000Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "payload": { "laneNumber": 1, "reason": "prior lane death" }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "resume-orphan-batch-resumed",
+      "type": "batch.resumed",
+      "timestamp": "2026-06-03T22:48:23.333Z",
+      "batchId": "20260603T224829",
+      "payload": { "pendingSegments": 1, "resumeForced": true }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "resume-orphan-task-started",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:48:25.000Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-040",
+      "payload": { "laneNumber": 1, "taskId": "SAT-040" }
+    }
+  ]
+}
