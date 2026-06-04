@@ -1,0 +1,7 @@
+---
+description: "Comma-separated globs fixture"
+globs: "**/PROMPT.md, **/STATUS.md, **/spine-tasks/**"
+alwaysApply: false
+---
+
+# Comma globs

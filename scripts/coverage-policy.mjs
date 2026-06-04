@@ -20,6 +20,7 @@ export const TEST_GLOBS = [
 	"tests/compat/*.test.mjs",
 	"tests/tasks/*.test.mjs",
 	"tests/config/*.test.mjs",
+	"tests/config/cursor-rules/*.test.mjs",
 	"tests/planner/*.test.mjs",
 	"tests/batch/*.test.mjs",
 	"tests/adoption/*.test.mjs",
