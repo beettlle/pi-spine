@@ -189,7 +189,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-072 | Evidence command hardening (no shell, allowlist) | **Staged** | — |
-| SP-073 | Wire FR-WORK-05 standards into worker context | **Staged** | SP-081 |
+| SP-073 | Wire FR-WORK-05 standards into worker context | **Done** | SP-081 |
 | SP-074 | Engine strangler: scope + lane modules | **Staged** | SP-075 |
 | SP-075 | Fail loud on PROMPT parse errors | **Staged** | — |
 | SP-076 | DRY resume shared core | **Staged** | SP-075 |
