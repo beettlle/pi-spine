@@ -81,10 +81,10 @@ test("settings registry validates workerBackend enum case-sensitively", () => {
 	assert.equal(bad.ok, false);
 });
 
-test("buildAgentSessionWorkerPrompt includes PROMPT reference and review hint", () => {
+test("buildAgentSessionWorkerPrompt includes PROMPT reference and review hint", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-asw-prompt-"));
 	const taskFolder = writeTaskFolder(root, 2);
-	const prompt = buildAgentSessionWorkerPrompt({ worktreePath: root, taskFolder });
+	const prompt = await buildAgentSessionWorkerPrompt({ worktreePath: root, taskFolder });
 	assert.match(prompt, /@.*PROMPT\.md/);
 	assert.match(prompt, /spine_review_step/);
 	assert.match(prompt, /feat\(TP-900\)/);
