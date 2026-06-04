@@ -1,7 +1,7 @@
-tests/fixtures/incidents/orphan-running-resume.json
-  ai_agent 1-98
 tests/fixtures/incidents/README.md
   ai_agent 1-9
+tests/fixtures/incidents/orphan-running-resume.json
+  ai_agent 1-98
 docs/incidents/20260603-orphan-running-resume.md
   ai_agent 1-108
 tests/batch/orphan-reconcile.test.mjs
