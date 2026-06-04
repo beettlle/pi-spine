@@ -265,10 +265,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-095 | Orphan detect scoped to post-`batch.resumed` journal window | **Staged** | — |
-| SP-096 | Per-lane sequential multi-task resume | **Staged** | — |
-| SP-097 | Resume engine crash → terminal journal + phase | **Staged** | SP-096 |
-| SP-098 | Incident fixture + doc for batch `20260603T224829` | **Staged** | SP-095, SP-097 |
+| SP-095 | Orphan detect scoped to post-`batch.resumed` journal window | **Done** | — |
+| SP-096 | Per-lane sequential multi-task resume | **Done** | — |
+| SP-097 | Resume engine crash → terminal journal + phase | **Done** | SP-096 |
+| SP-098 | Incident fixture + doc for batch `20260603T224829` | **Done** | SP-095, SP-097 |
 
 **Suggested run order:**
 
