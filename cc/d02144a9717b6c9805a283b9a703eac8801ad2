@@ -1,0 +1,36 @@
+src/batch/agent-session-worker.mjs
+  s_ce96539baf8f8d::t_34c235d098b490 24-25
+  s_ce96539baf8f8d::t_ab989c2089d874 8
+  s_ce96539baf8f8d::t_0df094a4845a3f 18-23,26
+src/batch/worker-prompt.mjs
+  s_ce96539baf8f8d::t_dfa6a2ecf55e07 1-6,8-36,39-48,51-56,58-65
+  s_ce96539baf8f8d::t_87c9d5bed6566b 37-38
+  s_ce96539baf8f8d::t_23ace1a5fe3449 7
+  s_ce96539baf8f8d::t_7bb5e1e1778d8d 49-50,57
+bin/spine-worker-runner.mjs
+  s_ce96539baf8f8d::t_b19dad6fe33616 29
+  s_ce96539baf8f8d::t_e77d1755232c35 195-196,205-206
+  s_ce96539baf8f8d::t_61a0474fbbaae4 30
+  s_ce96539baf8f8d::t_1a614f945297e1 198-204,207
+spine-tasks/SP-067-runner-hint-dedup/.DONE
+  s_ce96539baf8f8d::t_0cc6cb5a4850ba 1-2
+tests/batch/worker-prompt.test.mjs
+  s_ce96539baf8f8d::t_80e5e417c82cd3 1-43,45-75
+  s_ce96539baf8f8d::t_4432cf7124f73f 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "ccd02144a9717b6c9805a283b9a703eac8801ad2",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
