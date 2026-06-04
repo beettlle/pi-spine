@@ -104,3 +104,25 @@ alwaysApply: false
 	assert.deepEqual(result.globs, []);
 	assert.equal(result.alwaysApply, false);
 });
+
+test("parseCursorRuleFrontmatter warns on invalid alwaysApply and bad globs", () => {
+	const invalidBool = parseCursorRuleFrontmatter(
+		"---\nalwaysApply: maybe\ndescription: x\n---\n",
+		"invalid-bool.mdc",
+	);
+	assert.equal(invalidBool.parseStatus, "warn");
+	assert.equal(invalidBool.alwaysApply, false);
+	assert.ok(invalidBool.warnings.some((w) => /alwaysApply/.test(w)));
+
+	const badGlobs = parseCursorRuleFrontmatter(
+		"---\nglobs: not-json-array\n---\n",
+		"bad-globs.mdc",
+	);
+	assert.equal(badGlobs.parseStatus, "ok");
+	assert.deepEqual(badGlobs.globs, ["not-json-array"]);
+
+	const unclosed = parseCursorRuleFrontmatter("---\nalwaysApply: true\n", "unclosed.mdc");
+	assert.equal(unclosed.parseStatus, "warn");
+	assert.ok(unclosed.warnings.some((w) => /unclosed/.test(w)));
+});
+

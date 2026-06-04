@@ -97,3 +97,53 @@ test("loadRulesProfile merges partial file overrides", async () => {
 		await rm(root, { recursive: true, force: true });
 	}
 });
+
+test("validateRulesProfile rejects schema and path traversal errors", () => {
+	const notObject = validateRulesProfile([]);
+	assert.equal(notObject?.code, "RULES_PROFILE_INVALID");
+
+	const traversal = validateRulesProfile({
+		profileVersion: 1,
+		worker: { alwaysInclude: ["../escape.mdc"] },
+	});
+	assert.match(traversal?.message ?? "", /path traversal/);
+
+	const badArray = validateRulesProfile({
+		profileVersion: 1,
+		worker: { alwaysInclude: "not-array" },
+	});
+	assert.match(badArray?.message ?? "", /alwaysInclude must be an array/);
+
+	const badGlobMatch = validateRulesProfile({
+		profileVersion: 1,
+		worker: { globMatch: "yes" },
+	});
+	assert.match(badGlobMatch?.message ?? "", /globMatch must be a boolean/);
+
+	const badDiscovery = validateRulesProfile({
+		profileVersion: 1,
+		discovery: { excludePatterns: 42 },
+	});
+	assert.match(badDiscovery?.message ?? "", /excludePatterns must be an array/);
+});
+
+test("loadRulesProfile rejects validated file errors", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-rules-profile-invalid-"));
+	try {
+		const spineDir = path.join(root, ".spine");
+		fs.mkdirSync(spineDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(spineDir, "rules-profile.json"),
+			JSON.stringify({ profileVersion: 1, worker: { neverInclude: [123] } }),
+			"utf-8",
+		);
+		const result = loadRulesProfile(root);
+		assert.equal(result.ok, false);
+		if (!result.ok) {
+			assert.equal(result.error.code, "RULES_PROFILE_INVALID");
+		}
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
