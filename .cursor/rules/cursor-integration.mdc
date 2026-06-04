@@ -63,6 +63,20 @@ This file contains Cursor IDE-specific optimizations for context window manageme
 
 ---
 
+### 1.4 Response Context Budget (CRIT)
+
+**CRITICAL:** Agent replies respect the same context budget as `@` loading: answer-first, no rule-echo, no unsolicited deep dives.
+
+❌ Bad: Echoing rule text verbatim; unsolicited architecture tours; long preamble before answering
+✅ Good: Direct answer first; proportional depth; cross-ref rules instead of restating them
+⚠️ Why: Reply verbosity consumes context and hides the user's answer
+🔧 Fix: Lead with outcome; cite paths and evidence; pointer to rules, not quotation
+📍 See: `critical-rules-quick-reference.mdc` Cooperative Communication, `general-llm-anti-patterns.mdc` §9.6–9.8, §1.1–1.3
+
+**Detect:** Rule echo in chat, tangent before answer, essay when user asked a narrow question, meta-references to instructions
+
+---
+
 ## Category 2: Rule Composition Strategy
 
 ### 2.1 Rule Dependency Documentation (CRIT)

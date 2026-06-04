@@ -82,7 +82,7 @@ When PROMPT uses `#### Segment: {id}`:
 - Satisfy all **Completion Criteria** checkboxes.
 - Create `.DONE` or other completion markers **only** if PROMPT assigns that to the worker and your runner does not create them automatically.
 
-End state: report what changed (paths), test evidence, and remaining unchecked items if any.
+End state: report what changed (paths), test evidence or explicit verification pending with commands attempted, remaining unchecked items if any. Not a generic "done." See `general-llm-anti-patterns.mdc` §9.8.
 
 ## Common mistakes to avoid
 
@@ -95,6 +95,8 @@ End state: report what changed (paths), test evidence, and remaining unchecked i
 - Loading `@codebase` when PROMPT lists three files
 - Mixing packet authoring and implementation in one turn without user direction
 - False "all tests pass" / "builds clean" claims
+- End-state violates **Quantity**: missing evidence, paths, or verification status (§9.8)
+- Scope recap essay violates **Relation**: user needs contract status, not narration (§9.7)
 
 ## Handoff to external runner
 

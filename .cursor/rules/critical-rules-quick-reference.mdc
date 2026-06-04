@@ -16,6 +16,19 @@ description: "Critical anti-patterns quick reference - condensed rules for fast 
 - Build/test claims: show output or say "verification pending"
 - Completion: brief summary of what changed and why
 
+## Cooperative Communication (Grice-inspired)
+
+Quick check before sending: **Quality** (evidence or "verification pending" + command attempted) · **Quantity** (match task depth) · **Relation** (answer the ask first) · **Manner** (outcome first, orderly, no filler).
+
+| Maxim | Rule |
+|-------|------|
+| Epistemic quality | No unsupported build/test/API claims |
+| Quantity | Enough to decide/act; no essay for simple asks; no one-liner when design/audit requested |
+| Relation | On-scope; no unsolicited docs/refactors (see documentation-policy) |
+| Manner | Lead with answer; then steps/evidence; proportional length |
+
+Details: `general-llm-anti-patterns.mdc` §9.6–9.8
+
 ## Top 15 Universal Anti-Patterns
 
 ### 1. Ghost Layer Prevention
@@ -181,6 +194,7 @@ After completing a development phase, run the appropriate brutal audit:
 - Output only changed code; cite file paths in backticks
 - Before claiming build/test success, run the command or say "verification pending"
 - When completing work: brief summary of changes and root cause (if fixing a bug)
+- Lead with outcome; state verification status explicitly
 
 ---
 

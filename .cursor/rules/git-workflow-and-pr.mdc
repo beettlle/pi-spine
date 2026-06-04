@@ -111,6 +111,20 @@ Use when performing Git operations or drafting PRs. Ensures clean history, revie
 
 ---
 
+### 5.2 PR Description Structure (Manner / Relation) (CRIT)
+
+**CRITICAL:** PR descriptions are skimmable and scoped to the diff. Manner = ordered blocks; Relation = only claims in the diff.
+
+❌ Bad: Unordered wall of text; claims not in diff; missing Test plan when changes are testable
+✅ Good: Summary → Test plan → Risks (when applicable); each claim traceable to changed files
+⚠️ Why: Reviewers scan for purpose and verification first; off-diff claims erode trust
+🔧 Fix: Use ordered sections; verify every claim against diff before submit
+📍 See: §5.1 PR Description and Diff Consistency, `general-llm-anti-patterns.mdc` §9.7–9.8
+
+**Detect:** No test plan for testable changes, risks buried in prose, claims without diff support, unstructured description
+
+---
+
 ## 6. Merge Strategy
 
 When merging PRs, prefer **squash merge** when the project allows; use the PR title as the squash commit message so main history stays consistent with Conventional Commits. Follow project policy if merge commits or other strategy is used.

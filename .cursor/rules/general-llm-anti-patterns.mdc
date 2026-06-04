@@ -889,6 +889,51 @@ This file contains universal, language-agnostic rules to prevent common LLM-indu
 
 ---
 
+### 9.6 Cooperative Communication (Gricean Maxims) (CRIT)
+
+**CRITICAL:** Agent↔user communication follows Grice's cooperative maxims. Quantity = what to include; Manner = how to order and word it.
+
+| Maxim | Agent↔user communication | Already enforced by |
+|---|---|---|
+| Epistemic quality | Truthful, evidence-backed; no unsupported claims | §3.7–3.9, §4.1, Forbidden Phrases |
+| Quantity | Match information units to task stage | §0.5, §3.5, §10.4 |
+| Relation | Answer what was asked; stay on-scope | §7.3 → §9.7 |
+| Manner | Clear, brief, orderly; lead with outcome | §0.1, §3.5 → §9.8 |
+
+📍 See: `critical-rules-quick-reference.mdc` Cooperative Communication, `engineering-philosophy.mdc` §2.7
+
+**Detect:** Unsupported claims in chat, essay answers to simple asks, off-topic narration, buried lede, generic "done" without evidence
+
+---
+
+### 9.7 Scope Relevance (Relation) (CRIT)
+
+**CRITICAL:** Answer the user's actual request; do not expand scope silently in chat or code.
+
+❌ Bad: Answering a different question; unrequested refactors or docs; silent scope creep; pursuing tangents without asking
+✅ Good: Address the actual request; flag tangents as a brief note without acting; ask when ambiguous (§7.3)
+⚠️ Why: Off-scope work wastes time, risks unwanted edits, buries the answer
+🔧 Fix: Restate the ask if ambiguous; confine changes to scope; flag side issues, don't pursue unasked
+📍 See: §7.3 Ambiguity Intolerance, §8.1 Pre-Execution Planning, `documentation-policy.mdc`, `taskplane-worker-cursor.mdc` File Scope
+
+**Detect:** Unrequested refactors, answer to adjacent question, scope expansion without confirmation, unsolicited repo docs
+
+---
+
+### 9.8 Orderly Responses (Manner / Quantity) (CRIT)
+
+**CRITICAL:** Agent↔user prose is clear, brief, and orderly; lead with the outcome. This governs chat and review text, not code clarity (§0.1 governs code).
+
+❌ Bad: Burying result under preamble; wall-of-text; restating whole file/diff; generic "done" without paths or evidence
+✅ Good: Outcome first; proportional depth (yes/no → short; audit → structured evidence); changed lines only in code citations
+⚠️ Why: Readers need the result first; verbosity hides signal; under-answer hides verification status
+🔧 Fix: Answer-first; 1–3 sentence summary of what changed and why; cite paths in backticks; state verification pending with commands attempted
+📍 See: §3.5 Formatting Trap, §0.5 Chain-of-Thought Over-Use, `critical-rules-quick-reference.mdc` Output Format
+
+**Detect:** Long lead-ins, full-file echoes, no clear takeaway, generic completion without paths/evidence, unstructured prose for structured data
+
+---
+
 ## Category 10: Modern LLM Capability Anti-Patterns
 
 ### 10.1 Reasoning Mode Misuse (CRIT)
@@ -1146,7 +1191,7 @@ These six patterns represent the most critical "making it work vs. making it rig
 5. **Zero-Hallucination Policy** - Verify all APIs
 6. **Hardcoded Secrets** - Use environment variables
 
-**Quick Ref:** Arch: Ghost layers, fake abstractions, dead code, logic leakage, state confusion, god objects, file size limit, Strangler Fig | Perf: O(N²), unoptimized hot paths, performance blindness | Quality: Duplication, defensive comments, context blindness, over/under-engineering, formatting, magic values, warning dismissal | API: Hallucination, dependency issues, workaround-first | Security: Hardcoded secrets, missing validation, silent failures, resource leaks, error handling, global state | Testing: Mock mismatches, missing error paths, incomplete coverage, flaky tests | Context: Ignoring patterns, context window limitations, ambiguity intolerance, large context strategies, exhaustion patterns | Process: Pre-execution planning, AST-based detection | Agent: UI-first, verbose prompts, pattern propagation, multi-agent coordination, feedback loops | Modern LLM: Reasoning mode misuse, long context waste, multimodal misuse, structured output overuse, tool use anti-patterns, extended reasoning, large context misuse | Operations: Logging anti-patterns, metrics anti-patterns, error tracking, observability blindness | File naming: no spaces, safe chars, dates YYYY-MM-DD, consistency, productivity pattern (subject_date_code)
+**Quick Ref:** Arch: Ghost layers, fake abstractions, dead code, logic leakage, state confusion, god objects, file size limit, Strangler Fig | Perf: O(N²), unoptimized hot paths, performance blindness | Quality: Duplication, defensive comments, context blindness, over/under-engineering, formatting, magic values, warning dismissal | API: Hallucination, dependency issues, workaround-first | Security: Hardcoded secrets, missing validation, silent failures, resource leaks, error handling, global state | Testing: Mock mismatches, missing error paths, incomplete coverage, flaky tests | Context: Ignoring patterns, context window limitations, ambiguity intolerance, large context strategies, exhaustion patterns | Process: Pre-execution planning, AST-based detection | Agent: UI-first, verbose prompts, pattern propagation, multi-agent coordination, feedback loops, cooperative communication (9.6–9.8) | Modern LLM: Reasoning mode misuse, long context waste, multimodal misuse, structured output overuse, tool use anti-patterns, extended reasoning, large context misuse | Operations: Logging anti-patterns, metrics anti-patterns, error tracking, observability blindness | File naming: no spaces, safe chars, dates YYYY-MM-DD, consistency, productivity pattern (subject_date_code)
 
 **For language-specific implementations:** See your project's language-specific anti-trap rules file for concrete detection patterns and code examples in your target language.
 

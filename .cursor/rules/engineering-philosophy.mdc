@@ -237,6 +237,20 @@ alwaysApply: false
 
 ---
 
+### 2.7 Cooperative, Right-Sized Communication (CRIT)
+
+**CRITICAL:** Agent↔user and review prose (commits, PRs, status) is cooperative, right-sized, and answer-first. Complements §2.6 (code comments).
+
+❌ Bad: Essay answers to simple asks; buried lede; generic "done" without paths or verification status
+✅ Good: Outcome first; proportional depth; evidence or explicit "verification pending" with commands attempted
+⚠️ Why: Readers need the result and trust signal first; verbosity and under-answer both waste time
+🔧 Fix: Match information units to task; lead with answer; cross-ref cooperative communication rules for detail
+📍 See: `general-llm-anti-patterns.mdc` §9.6–9.8, `critical-rules-quick-reference.mdc` Cooperative Communication
+
+**Detect:** Long preamble before answer, one-liner when design tradeoffs requested, completion without paths/evidence
+
+---
+
 ## Optimization Priorities
 
 | Priority | Detect |
