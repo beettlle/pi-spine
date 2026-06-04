@@ -1,9 +1,18 @@
 /**
  * FR-WORK-05: tiered worker context from spine-config referenceDocs/standards.
+ * SP-092: auto-select `.cursor/rules/` via manifest + PROMPT File Scope.
  */
 
 import fs from "node:fs";
 import path from "node:path";
+import { appendJournalEvent } from "../batch/journal.mjs";
+import {
+	CURSOR_RULES_ROOT_REL,
+	discoverCursorRules,
+	loadRulesManifest,
+} from "./cursor-rules/discover.mjs";
+import { loadRulesProfile } from "./cursor-rules/profile.mjs";
+import { selectRulesForWorker } from "./cursor-rules/select.mjs";
 
 /** Default injected standards for pi-spine / JS-CLI projects (matches bootstrap checklist). */
 export const DEFAULT_SPINE_INIT_STANDARDS = [
@@ -160,6 +169,219 @@ export function buildWorkerContext(config = {}, projectRoot = process.cwd(), byt
  * @param {object} config
  * @returns {{ code: string, message: string, suggestedCommand: string } | null}
  */
+/**
+ * @param {string} projectRoot
+ */
+export function cursorRulesRootExists(projectRoot) {
+	const rulesRoot = path.join(projectRoot, CURSOR_RULES_ROOT_REL);
+	return fs.existsSync(rulesRoot) && fs.statSync(rulesRoot).isDirectory();
+}
+
+/**
+ * @typedef {object} WorkerRulesJournalContext
+ * @property {string} projectRoot
+ * @property {string} batchId
+ * @property {string} [taskId]
+ * @property {number} [laneNumber]
+ * @property {string} [correlationId]
+ */
+
+/**
+ * @param {import("./cursor-rules/select.mjs").RulesSelectionResult} selection
+ * @returns {object[]}
+ */
+function journalEntriesFromSelection(selection) {
+	return selection.entries.map((entry) => ({
+		relPath: entry.relPath,
+		contextPath: entry.contextPath,
+		source: entry.source,
+		...(entry.spineClass ? { spineClass: entry.spineClass } : {}),
+	}));
+}
+
+/**
+ * @param {WorkerRulesJournalContext | undefined} journal
+ * @param {Record<string, unknown>} payload
+ */
+export function emitWorkerRulesSelected(journal, payload) {
+	if (!journal?.projectRoot || !journal?.batchId) {
+		return;
+	}
+	appendJournalEvent(journal.projectRoot, journal.batchId, "worker.rules_selected", {
+		taskId: journal.taskId,
+		laneNumber: journal.laneNumber,
+		correlationId: journal.correlationId,
+		...payload,
+	});
+}
+
+/**
+ * @param {object} params
+ * @param {object} [params.config]
+ * @param {string} [params.projectRoot]
+ * @param {string[]} [params.taskFileScope]
+ * @param {number} [params.byteCap]
+ * @param {WorkerRulesJournalContext} [params.journal]
+ */
+export async function buildWorkerContextAsync({
+	config = {},
+	projectRoot = process.cwd(),
+	taskFileScope = [],
+	byteCap = DEFAULT_WORKER_CONTEXT_BYTE_CAP,
+	journal,
+} = {}) {
+	const neverLoad = new Set(normalizeContextPathList(config.neverLoad) ?? []);
+	const referenceDocs = normalizeContextPathList(config.referenceDocs) ?? [];
+	const standards = normalizeContextPathList(config.standards) ?? [];
+
+	if (!cursorRulesRootExists(projectRoot)) {
+		const staticPaths = [...referenceDocs, ...standards];
+		const staticResult = buildWorkerContext(config, projectRoot, byteCap);
+		emitWorkerRulesSelected(journal, {
+			mode: "static",
+			manifestSource: "none",
+			pathCount: staticPaths.filter((entry) => !neverLoad.has(entry)).length,
+			paths: staticPaths.filter((entry) => !neverLoad.has(entry)),
+			fileScopeCount: taskFileScope.length,
+		});
+		return {
+			...staticResult,
+			selection: {
+				mode: "static",
+				manifestSource: "none",
+				paths: staticPaths,
+			},
+		};
+	}
+
+	const profileResult = loadRulesProfile(projectRoot);
+	if (!profileResult.ok) {
+		const staticResult = buildWorkerContext(config, projectRoot, byteCap);
+		emitWorkerRulesSelected(journal, {
+			mode: "static",
+			manifestSource: "none",
+			profileError: profileResult.error,
+			pathCount: 0,
+			paths: [],
+			fileScopeCount: taskFileScope.length,
+		});
+		return {
+			...staticResult,
+			selection: {
+				mode: "static",
+				manifestSource: "none",
+				profileError: profileResult.error,
+			},
+		};
+	}
+
+	let manifest = loadRulesManifest(projectRoot);
+	let manifestSource = "committed";
+	if (!manifest) {
+		const discovered = discoverCursorRules({
+			projectRoot,
+			profile: profileResult.profile,
+			writeManifest: false,
+		});
+		manifest = discovered.manifest;
+		manifestSource = "discovered";
+	}
+
+	const selection = selectRulesForWorker({
+		manifest,
+		profile: profileResult.profile,
+		fileScope: taskFileScope,
+		standards,
+		neverLoad: [...neverLoad],
+	});
+
+	const selectedSet = new Set(selection.paths);
+	const orderedPaths = [
+		...selection.paths,
+		...referenceDocs.filter((entry) => !neverLoad.has(entry) && !selectedSet.has(entry)),
+	];
+
+	emitWorkerRulesSelected(journal, {
+		mode: "auto",
+		manifestSource,
+		profileSource: profileResult.source,
+		pathCount: selection.paths.length,
+		paths: selection.paths,
+		entries: journalEntriesFromSelection(selection),
+		capped: selection.capped,
+		dropped: selection.dropped,
+		globMatchEnabled: selection.globMatchEnabled,
+		fileScopeProbeCount: selection.fileScopeProbeCount,
+		fileScopeCount: taskFileScope.length,
+		referenceDocCount: referenceDocs.filter(
+			(entry) => !neverLoad.has(entry) && !selectedSet.has(entry),
+		).length,
+	});
+
+	if (orderedPaths.length === 0) {
+		return {
+			text: "",
+			entries: [],
+			truncated: false,
+			skipped: [],
+			bytesUsed: 0,
+			byteCap,
+			selection: {
+				mode: "auto",
+				manifestSource,
+				profileSource: profileResult.source,
+				...selection,
+			},
+		};
+	}
+
+	const loaded = loadContextDocEntries({
+		projectRoot,
+		paths: orderedPaths,
+		neverLoad,
+		byteCap,
+	});
+	if (!loaded.ok) {
+		return {
+			text: "",
+			entries: [],
+			truncated: false,
+			skipped: [],
+			bytesUsed: 0,
+			byteCap,
+			error: loaded.error,
+			blockedPath: loaded.relPath,
+			selection: {
+				mode: "auto",
+				manifestSource,
+				profileSource: profileResult.source,
+				...selection,
+			},
+		};
+	}
+
+	const parts = loaded.entries.map(
+		(entry) => `--- ${entry.relPath} ---\n${entry.content.trim()}\n`,
+	);
+	const text =
+		parts.length > 0 ? `\n\n## Project standards & reference\n\n${parts.join("\n")}` : "";
+
+	return {
+		text,
+		entries: loaded.entries,
+		truncated: loaded.truncated,
+		skipped: loaded.skipped,
+		bytesUsed: loaded.bytesUsed,
+		byteCap: loaded.byteCap,
+		selection: {
+			mode: "auto",
+			manifestSource,
+			profileSource: profileResult.source,
+			...selection,
+		},
+	};
+}
+
 export function validateWorkerContextConfig(config) {
 	for (const [field, label] of [
 		["referenceDocs", "referenceDocs"],

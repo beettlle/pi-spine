@@ -28,6 +28,7 @@ import {
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
+import { parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
 
 const taskFolder = process.env.SPINE_TASK_FOLDER;
 const worktreePath = process.env.SPINE_WORKTREE;
@@ -46,6 +47,30 @@ const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 function buildReviewJournal() {
 	return resolveBatchJournalContext();
+}
+
+/**
+ * @param {string} taskFolder
+ * @returns {string[]}
+ */
+function resolveTaskFileScope(taskFolder) {
+	const envScope = process.env.SPINE_TASK_FILE_SCOPE;
+	if (envScope) {
+		try {
+			const parsed = JSON.parse(envScope);
+			if (Array.isArray(parsed)) {
+				return parsed.filter((entry) => typeof entry === "string");
+			}
+		} catch {
+			/* fall through to PROMPT parse */
+		}
+	}
+
+	const promptPath = path.join(taskFolder, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) {
+		return [];
+	}
+	return parsePrompt(fs.readFileSync(promptPath, "utf-8")).fileScope ?? [];
 }
 
 function enforceStubReviewIfConfigured() {
@@ -194,18 +219,20 @@ if (fs.existsSync(promptPath)) {
 }
 const projectRoot = process.env.SPINE_PROJECT_ROOT || worktreePath || process.cwd();
 const spineConfig = loadSpineConfig(projectRoot).config ?? {};
-piArgs.push(
-	buildWorkerTailPrompt({
-		worktreePath,
-		taskFolder,
-		donePath,
-		taskIdHint: taskIdFromFolder(taskFolder),
-		reviewLevel: readReviewLevel(taskFolder),
-		includePromptInclude: false,
-		config: spineConfig,
-		projectRoot,
-	}),
-);
+const taskFileScope = resolveTaskFileScope(taskFolder);
+const tailPrompt = await buildWorkerTailPrompt({
+	worktreePath,
+	taskFolder,
+	donePath,
+	taskIdHint: taskIdFromFolder(taskFolder),
+	reviewLevel: readReviewLevel(taskFolder),
+	includePromptInclude: false,
+	config: spineConfig,
+	projectRoot,
+	taskFileScope,
+	journal: buildReviewJournal(),
+});
+piArgs.push(tailPrompt);
 
 const timeoutMs = Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS || 60 * 60 * 1000);
 const result = spawnSync("pi", piArgs, {

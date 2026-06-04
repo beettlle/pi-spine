@@ -12,8 +12,16 @@ import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
  * @param {string} params.worktreePath
  * @param {string} params.taskFolder
  * @param {object} [params.config]
+ * @param {string[]} [params.taskFileScope]
+ * @param {import("../config/worker-context.mjs").WorkerRulesJournalContext} [params.journal]
  */
-export function buildAgentSessionWorkerPrompt({ worktreePath, taskFolder, config = {} }) {
+export async function buildAgentSessionWorkerPrompt({
+	worktreePath,
+	taskFolder,
+	config = {},
+	taskFileScope = [],
+	journal,
+}) {
 	const donePath = path.join(taskFolder, ".DONE");
 	return buildWorkerTailPrompt({
 		worktreePath,
@@ -23,6 +31,8 @@ export function buildAgentSessionWorkerPrompt({ worktreePath, taskFolder, config
 		includePromptInclude: true,
 		config,
 		projectRoot: worktreePath || process.cwd(),
+		taskFileScope,
+		journal,
 	});
 }
 
@@ -150,9 +160,14 @@ function resolveThinkingLevel(config) {
  * @param {string} params.worktreePath
  * @param {string} params.taskFolder
  * @param {object} [params.config]
+ * @param {string[]} [params.taskFileScope]
+ * @param {import("../config/worker-context.mjs").WorkerRulesJournalContext} [params.journal]
  * @param {object} [deps]
  */
-export function startAgentSessionWorker({ worktreePath, taskFolder, config = {} }, deps = {}) {
+export function startAgentSessionWorker(
+	{ worktreePath, taskFolder, config = {}, taskFileScope = [], journal },
+	deps = {},
+) {
 	const donePath = path.join(taskFolder, ".DONE");
 	const state = {
 		exitCode: /** @type {number | null} */ (null),
@@ -167,7 +182,13 @@ export function startAgentSessionWorker({ worktreePath, taskFolder, config = {} 
 	const donePromise = (async () => {
 		try {
 			const createAgentSession = await loadCreateAgentSession(deps);
-			const promptText = buildAgentSessionWorkerPrompt({ worktreePath, taskFolder, config });
+			const promptText = await buildAgentSessionWorkerPrompt({
+				worktreePath,
+				taskFolder,
+				config,
+				taskFileScope,
+				journal,
+			});
 			const thinkingLevel = resolveThinkingLevel(config);
 
 			/** @type {Record<string, unknown>} */

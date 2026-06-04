@@ -73,6 +73,7 @@ function spawnWorkerChild({
 	laneNumber,
 	taskId,
 	laneCorrelationId,
+	fileScopePaths = [],
 	config = {},
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
@@ -91,6 +92,9 @@ function spawnWorkerChild({
 	if (laneNumber != null) env.SPINE_LANE_NUMBER = String(laneNumber);
 	if (taskId) env.SPINE_TASK_ID = taskId;
 	if (laneCorrelationId) env.SPINE_LANE_CORRELATION_ID = laneCorrelationId;
+	if (Array.isArray(fileScopePaths) && fileScopePaths.length > 0) {
+		env.SPINE_TASK_FILE_SCOPE = JSON.stringify(fileScopePaths);
+	}
 	const args = useStub ? ["--stub"] : ["--pi"];
 
 	const launchScript = projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null;
@@ -214,12 +218,24 @@ function spawnWorkerHandle({
 	laneNumber,
 	taskId,
 	laneCorrelationId,
+	fileScopePaths = [],
 	config,
 	workerBackendDeps,
 }) {
+	const journal =
+		projectRoot && batchId
+			? {
+					projectRoot,
+					batchId,
+					taskId,
+					laneNumber,
+					correlationId: laneCorrelationId,
+				}
+			: undefined;
+
 	if (!useStub && resolveWorkerBackend(config) === "agentSession") {
 		return startAgentSessionWorker(
-			{ worktreePath, taskFolder, config },
+			{ worktreePath, taskFolder, config, taskFileScope: fileScopePaths, journal },
 			workerBackendDeps ?? {},
 		);
 	}
@@ -234,6 +250,7 @@ function spawnWorkerHandle({
 		laneNumber,
 		taskId,
 		laneCorrelationId,
+		fileScopePaths,
 		config,
 	});
 }
@@ -329,6 +346,7 @@ export async function runWorker({
 		laneNumber,
 		taskId,
 		laneCorrelationId,
+		fileScopePaths,
 		config,
 		workerBackendDeps,
 	});
