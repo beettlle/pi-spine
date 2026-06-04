@@ -1,0 +1,7 @@
+---
+description: "Array globs fixture"
+globs: ["**/*.js", "**/*.mjs"]
+alwaysApply: false
+---
+
+# Array globs

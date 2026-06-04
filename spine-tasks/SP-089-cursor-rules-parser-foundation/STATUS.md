@@ -1,7 +1,7 @@
 # SP-089: Cursor rules parser foundation — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `npm test` passes on current `main`
-- [ ] Sample `.mdc` frontmatter reviewed
+- [x] `npm test` passes on current `main`
+- [x] Sample `.mdc` frontmatter reviewed
 
 ### Step 1: Parser + profile schema
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `micromatch` in package.json
 - [ ] `parseCursorRuleFrontmatter` + `loadRulesProfile`
