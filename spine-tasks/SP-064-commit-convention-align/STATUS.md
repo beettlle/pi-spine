@@ -1,7 +1,7 @@
 # SP-064: Commit convention alignment — Status
 
 **Current Step:** 3
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -52,10 +52,10 @@ Rationale: worker template, both runners, create-spine-tasks skill, and all stag
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Grep confirms no contradictory commit examples remain in File Scope files
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Grep confirms no contradictory commit examples remain in File Scope files
 
 ---
 
@@ -79,7 +79,7 @@ Rationale: worker template, both runners, create-spine-tasks skill, and all stag
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
-| 2026-06-03 | Step 1 decision | Option B chosen; PRD is sole drift source |
+| 2026-06-03 | Step 3 verification | typecheck + 390 tests green; grep clean |
 
 ---
 
