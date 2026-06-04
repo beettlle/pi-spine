@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-03
+**Last Updated:** 2026-06-04
 **Status:** Active
-**Next Task ID:** SP-095
+**Next Task ID:** SP-099
 
 ---
 
@@ -258,6 +258,23 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 1. **Wave A (parallel):** `SP-082`, `SP-084`
 2. **Wave B:** `SP-083`, `SP-085` (after SP-082)
+
+### Phase 17 — Resume parallel-lane orphan (searchATon batch 20260603T224829)
+
+**Source:** Consumer bug report `/Users/cdelgado/Documents/github.com/searchATon/spine-bug-report-batch-20260603T224829.md` (2026-06-04). Extends SP-082: false `running` after `resume --force` when engine dies mid-batch; parallel lane-1 resume; ghost `running` tasks.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-095 | Orphan detect scoped to post-`batch.resumed` journal window | **Staged** | — |
+| SP-096 | Per-lane sequential multi-task resume | **Staged** | — |
+| SP-097 | Resume engine crash → terminal journal + phase | **Staged** | SP-096 |
+| SP-098 | Incident fixture + doc for batch `20260603T224829` | **Staged** | SP-095, SP-097 |
+
+**Suggested run order:**
+
+1. **Wave A (parallel):** `SP-095`, `SP-096` (disjoint file scope: orphan-detect vs resume-multi)
+2. **Wave B:** `SP-097` (after SP-096 lands — same `resume-multi.mjs`)
+3. **Wave C:** `SP-098` (after SP-095 + SP-097)
 
 **Suggested spine run order (Phase 13):**
 
