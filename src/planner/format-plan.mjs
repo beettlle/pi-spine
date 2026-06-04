@@ -2,6 +2,8 @@
  * Human-readable plan output for `spine plan` and `/spine-plan`.
  */
 
+import { appendBatchSizeGuidanceToPlanOutput } from "../doctor/batch-size-guidance.mjs";
+
 /**
  * @param {string} taskId
  * @param {Record<string, { title?: string|null }>|undefined} tasks
@@ -126,5 +128,5 @@ export function formatPlanHuman(plan) {
 		}
 	}
 
-	return `${lines.join("\n").trimEnd()}\n`;
+	return appendBatchSizeGuidanceToPlanOutput(`${lines.join("\n").trimEnd()}\n`, plan);
 }

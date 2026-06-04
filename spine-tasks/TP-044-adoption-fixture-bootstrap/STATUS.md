@@ -1,24 +1,6 @@
-# TP-044 Status
+# TP-044 Status — Status
 
-**Task:** Adoption fixture repo + bootstrap checklist
-**Started:** 2026-06-02
-**Last Updated:** 2026-06-02
-
-## Progress
-
-### Step 1: Fixture layout
 **Status:** ✅ Complete
-- [x] adoption-repo fixture + AD-001
+**Last Updated:** 2026-06-04
 
-### Step 2: Bootstrap checklist
-**Status:** ✅ Complete
-- [x] bootstrap-checklist.md
-
-### Step 3: Integration test + script
-**Status:** ✅ Complete
-- [x] fixture-batch.test.mjs
-- [x] adoption-smoke.sh
-
-### Step 4: Verification
-**Status:** ✅ Complete
-- [x] full suite green
+Deliverables verified on main during task tracking reconciliation (2026-06-04).

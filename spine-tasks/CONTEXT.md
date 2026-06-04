@@ -133,12 +133,12 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| TP-043 | Local install without npm publish + doctor stale PATH | **Staged** | TP-030 |
-| TP-044 | Adoption fixture repo + bootstrap checklist | **Staged** | TP-043 |
-| TP-045 | Taskplane / spine mutual exclusion guard | **Staged** | TP-043 |
-| TP-046 | FR-CFG-04 env overrides (`SPINE_TASKS_ROOT`, `SPINE_MAX_LANES`) | **Staged** | TP-043 |
-| TP-047 | Stub-free dogfood sign-off + flaky test fix | **Staged** | TP-044 |
-| TP-048 | Real pi worker + reviewer E2E | **Staged** | TP-047 |
+| TP-043 | Local install without npm publish + doctor stale PATH | **Done** | TP-030 |
+| TP-044 | Adoption fixture repo + bootstrap checklist | **Done** | TP-043 |
+| TP-045 | Taskplane / spine mutual exclusion guard | **Done** | TP-043 |
+| TP-046 | FR-CFG-04 env overrides (`SPINE_TASKS_ROOT`, `SPINE_MAX_LANES`) | **Done** | TP-043 |
+| TP-047 | Stub-free dogfood sign-off + flaky test fix | **Done** | TP-044 |
+| TP-048 | Real pi worker + reviewer E2E | **Done** | TP-047 |
 | TP-049 | Operator runbook for external teams | **Done** | TP-048 |
 | TP-050 | `createAgentSession` worker backend spike (v1.1) | **Done** | TP-048 |
 
@@ -147,9 +147,9 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-051 | Default `spine init` + docs rebrand (Phase A) | **Done** | — |
-| SP-052 | Rename `src/compat/taskplane` module (Phase B) | **Staged** | SP-051 |
-| SP-053 | Scaffold `CONTEXT.md` on init | **Staged** | SP-051 |
-| SP-054 | `create-spine-tasks` skill | **Staged** | SP-051, SP-053 |
+| SP-052 | Rename `src/compat/taskplane` module (Phase B) | **Done** | SP-051 |
+| SP-053 | Scaffold `CONTEXT.md` on init | **Done** | SP-051 |
+| SP-054 | `create-spine-tasks` skill | **Done** | SP-051, SP-053 |
 | SP-055 | Migrate pi-spine repo `taskplane-tasks/` → `spine-tasks/` | **Done** | SP-051 |
 
 ### Phase 11 — Stall recovery & operator observability
@@ -159,7 +159,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-056 | FR-STALL-01 worker output capture on terminal failure (P0) | **Done** | — |
 | SP-057 | FR-STALL-02 checkpoint warnings; file-scope must not extend grace (P1) | **Done** | SP-056 |
 | SP-058 | FR-STALL-03A salvage inspection (read-only) (P1) | **Done** | SP-056 |
-| SP-059 | FR-STALL-03B optional `autoCommitOnStall` WIP commit (P2) | **Staged** | SP-058 |
+| SP-059 | FR-STALL-03B optional `autoCommitOnStall` WIP commit (P2) | **Done** | SP-058 |
 | SP-060 | Epic fixture (SAT-020), runbook, dashboard, gap/PRD closeout (P1) | **Done** | SP-056, SP-057, SP-058 |
 
 **Source brief:** [`docs/features/stall-recovery-improvements-brief.md`](../docs/features/stall-recovery-improvements-brief.md) (SearchATon batch `20260603T002945` / SAT-020).
@@ -168,17 +168,17 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-061 | 77% line coverage policy — CI, spine-config, worker/reviewer/skill | **Staged** | — |
-| SP-062 | Worker execution discipline — resume, checkboxes, scope, context limit | **Staged** | SP-061 |
-| SP-063 | Worker review levels 0–3 + L2+ order of operations | **Staged** | SP-062 |
-| SP-064 | Commit convention alignment — worker, runner, PRD FR-WORK-03 | **Staged** | SP-063 |
-| SP-065 | Reviewer template depth — build gate, REVISE cites, rubric, coverage | **Staged** | SP-061 |
-| SP-066 | Supervisor v1 honest stub — CLI/diagnose guidance, no agent session | **Staged** | — |
-| SP-067 | Deduplicate runner inline hints vs worker.md | **Staged** | SP-064 |
-| SP-068 | PRD Appendix C — review levels table | **Staged** | — |
-| SP-069 | Agent template drift test | **Staged** | SP-067 |
-| SP-070 | Journal attach test isolation | **Complete** | — |
-| SP-071 | CI checkpoint-warning git identity fix | **Staged** | — |
+| SP-061 | 77% line coverage policy — CI, spine-config, worker/reviewer/skill | **Done** | — |
+| SP-062 | Worker execution discipline — resume, checkboxes, scope, context limit | **Done** | SP-061 |
+| SP-063 | Worker review levels 0–3 + L2+ order of operations | **Done** | SP-062 |
+| SP-064 | Commit convention alignment — worker, runner, PRD FR-WORK-03 | **Done** | SP-063 |
+| SP-065 | Reviewer template depth — build gate, REVISE cites, rubric, coverage | **Done** | SP-061 |
+| SP-066 | Supervisor v1 honest stub — CLI/diagnose guidance, no agent session | **Done** | — |
+| SP-067 | Deduplicate runner inline hints vs worker.md | **Done** | SP-064 |
+| SP-068 | PRD Appendix C — review levels table | **Done** | — |
+| SP-069 | Agent template drift test | **Done** | SP-067 |
+| SP-070 | Journal attach test isolation | **Done** | — |
+| SP-071 | CI checkpoint-warning git identity fix | **Done** | — |
 
 **Policy:** All spine-orchestrated **code-related** deliverables must maintain **≥77% line coverage** (SP-061).
 
@@ -188,16 +188,16 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-072 | Evidence command hardening (no shell, allowlist) | **Staged** | — |
+| SP-072 | Evidence command hardening (no shell, allowlist) | **Done** | — |
 | SP-073 | Wire FR-WORK-05 standards into worker context | **Done** | SP-081 |
-| SP-074 | Engine strangler: scope + lane modules | **Staged** | SP-075 |
-| SP-075 | Fail loud on PROMPT parse errors | **Staged** | — |
-| SP-076 | DRY resume shared core | **Staged** | SP-075 |
-| SP-077 | Sandbox workerLaunchScript | **Staged** | SP-072 |
-| SP-078 | Error-path test hardening | **Staged** | SP-072 |
-| SP-079 | Split spine.mjs CLI router | **Staged** | — |
-| SP-080 | CI doctor enforce + PR template | **Staged** | — |
-| SP-081 | Commit `.cursor/rules` for contributors | **Staged** | — |
+| SP-074 | Engine strangler: scope + lane modules | **Done** | SP-075 |
+| SP-075 | Fail loud on PROMPT parse errors | **Done** | — |
+| SP-076 | DRY resume shared core | **Done** | SP-075 |
+| SP-077 | Sandbox workerLaunchScript | **Done** | SP-072 |
+| SP-078 | Error-path test hardening | **Done** | SP-072 |
+| SP-079 | Split spine.mjs CLI router | **Done** | — |
+| SP-080 | CI doctor enforce + PR template | **Done** | — |
+| SP-081 | Commit `.cursor/rules` for contributors | **Done** | — |
 
 **Suggested run order:**
 
@@ -237,9 +237,9 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-086 | Task sizing guardrails (skill + doctor) | **Staged** | — |
-| SP-087 | Real-pi stall defaults + batch guidance | **Staged** | SP-086 |
-| SP-088 | Per-task stall budget from PROMPT Size | **Staged** | SP-087 |
+| SP-086 | Task sizing guardrails (skill + doctor) | **Done** | — |
+| SP-087 | Real-pi stall defaults + batch guidance | **Done** | SP-086 |
+| SP-088 | Per-task stall budget from PROMPT Size | **Done** | SP-087 |
 
 **Suggested run order:** `spine batch start SP-086` → land → `SP-087` → land → `SP-088`
 
@@ -249,10 +249,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-082 | Orphan running reconciliation + enginePid persistence | **Staged** | — |
-| SP-083 | Detached resume semantics + failure surfacing | **Staged** | SP-082 |
-| SP-084 | Heartbeat workerPhase / kind semantics | **Staged** | — |
-| SP-085 | Orphan incident fixture + regression test | **Staged** | SP-082 |
+| SP-082 | Orphan running reconciliation + enginePid persistence | **Done** | — |
+| SP-083 | Detached resume semantics + failure surfacing | **Done** | SP-082 |
+| SP-084 | Heartbeat workerPhase / kind semantics | **Done** | — |
+| SP-085 | Orphan incident fixture + regression test | **Done** | SP-082 |
 
 **Suggested run order:**
 

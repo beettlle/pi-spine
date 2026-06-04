@@ -1,3 +1,6 @@
 # SP-074: Engine strangler — Status
 
-**Status:** 🔵 Ready | **Depends on:** SP-075
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-04
+
+Deliverables verified on main during task tracking reconciliation (2026-06-04).
