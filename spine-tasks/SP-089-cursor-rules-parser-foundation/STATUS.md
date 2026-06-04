@@ -17,12 +17,12 @@
 - [x] Sample `.mdc` frontmatter reviewed
 
 ### Step 1: Parser + profile schema
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] `micromatch` in package.json
-- [ ] `parseCursorRuleFrontmatter` + `loadRulesProfile`
-- [ ] Fixtures + exports
-- [ ] Plan review APPROVE
+- [x] `micromatch` in package.json
+- [x] `parseCursorRuleFrontmatter` + `loadRulesProfile`
+- [x] Fixtures + exports
+- [x] Plan review APPROVE
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started
