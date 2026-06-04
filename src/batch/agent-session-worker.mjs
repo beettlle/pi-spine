@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readReviewLevel } from "./review.mjs";
+import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
 
 /**
  * @param {object} params
@@ -13,35 +14,16 @@ import { readReviewLevel } from "./review.mjs";
  * @param {object} [params.config]
  */
 export function buildAgentSessionWorkerPrompt({ worktreePath, taskFolder, config = {} }) {
-	const promptPath = path.join(taskFolder, "PROMPT.md");
 	const donePath = path.join(taskFolder, ".DONE");
-	const workerAgentPath = worktreePath
-		? path.join(worktreePath, ".spine", "agents", "worker.md")
-		: null;
-	const taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID";
-	const reviewLevel = readReviewLevel(taskFolder);
-	const reviewHint =
-		reviewLevel > 0
-			? "When Review Level > 0, after each step run: spine review step --step N [--type plan|code] (or spine_review_step tool). On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. "
-			: "";
-	const toolsHint =
-		"Prefer spine_review_step, spine_report_progress, and spine_request_gate Pi tools over bash when available. ";
-	const agentAppend =
-		workerAgentPath && fs.existsSync(workerAgentPath)
-			? `\n\n@${workerAgentPath}`
-			: "";
-	const promptInclude = fs.existsSync(promptPath) ? `@${promptPath}` : "";
-
-	return (
-		`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
-		toolsHint +
-		reviewHint +
-		`Commit at step boundaries when you change files (feat(${taskIdHint}): complete Step N — {step title}). ` +
-		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +
-		`Create ${donePath} only when all completion criteria are met.` +
-		agentAppend +
-		(promptInclude ? `\n\n${promptInclude}` : "")
-	);
+	return buildWorkerTailPrompt({
+		worktreePath,
+		taskFolder,
+		donePath,
+		reviewLevel: readReviewLevel(taskFolder),
+		includePromptInclude: true,
+		config,
+		projectRoot: worktreePath || process.cwd(),
+	});
 }
 
 /**

@@ -26,6 +26,8 @@ import {
 	runStepReview,
 } from "../src/batch/review.mjs";
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
+import { loadSpineConfig } from "./spine-config.mjs";
+import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
 
 const taskFolder = process.env.SPINE_TASK_FOLDER;
 const worktreePath = process.env.SPINE_WORKTREE;
@@ -190,21 +192,19 @@ if (workerAgentPath && fs.existsSync(workerAgentPath)) {
 if (fs.existsSync(promptPath)) {
 	piArgs.push(`@${promptPath}`);
 }
-const taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID";
-const reviewLevel = readReviewLevel(taskFolder);
-const reviewHint =
-	reviewLevel > 0
-		? `When Review Level > 0, after each step run: spine review step --step N [--type plan|code] (or spine_review_step tool). On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. `
-		: "";
-const toolsHint =
-	"Prefer spine_review_step, spine_report_progress, and spine_request_gate Pi tools over bash when available. ";
+const projectRoot = process.env.SPINE_PROJECT_ROOT || worktreePath || process.cwd();
+const spineConfig = loadSpineConfig(projectRoot).config ?? {};
 piArgs.push(
-	`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
-		toolsHint +
-		reviewHint +
-		`Commit at step boundaries when you change files (feat(${taskIdHint}): complete Step N — {step title}). ` +
-		`The batch engine auto-commits any remaining uncommitted work when you create ${donePath}, but uncommitted changes without .DONE fail the batch. ` +
-		`Create ${donePath} only when all completion criteria are met.`,
+	buildWorkerTailPrompt({
+		worktreePath,
+		taskFolder,
+		donePath,
+		taskIdHint: taskIdFromFolder(taskFolder),
+		reviewLevel: readReviewLevel(taskFolder),
+		includePromptInclude: false,
+		config: spineConfig,
+		projectRoot,
+	}),
 );
 
 const timeoutMs = Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS || 60 * 60 * 1000);
