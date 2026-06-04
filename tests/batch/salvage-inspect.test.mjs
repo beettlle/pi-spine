@@ -13,6 +13,7 @@ import {
 } from "../../src/batch/salvage.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { laneWorktreePath } from "../../src/batch/worktree.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /**
@@ -33,21 +34,10 @@ function writeSmokeTask(projectRoot, taskId, fileScopePath) {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — Smoke
-
-## Mission
-Salvage inspect smoke.
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`${fileScopePath}\`
-
-## Steps
-### Step 0
-- [ ] one
-`,
+		minimalValidPromptMarkdown(taskId, {
+			fileScope: fileScopePath,
+			mission: "Salvage inspect smoke.",
+		}),
 		"utf-8",
 	);
 }

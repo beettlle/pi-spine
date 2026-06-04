@@ -189,16 +189,6 @@ function evaluateDetachedResumeWait(raw, taskId, updatedAtBefore) {
 		};
 	}
 
-	if (raw.phase === "paused") {
-		return {
-			ok: true,
-			status: "resume_completed",
-			batchId: raw.batchId,
-			phase: raw.phase,
-			paused: true,
-		};
-	}
-
 	if (resumedTaskReachedTerminal(raw, taskId)) {
 		return {
 			ok: true,
@@ -388,11 +378,6 @@ export async function waitForDetachedBatchResume({
 			};
 		}
 
-		const completed = evaluateDetachedResumeWait(raw, taskId, updatedAtBefore);
-		if (completed) {
-			return completed;
-		}
-
 		const updatedAt = Number(raw.updatedAt ?? 0);
 		if (raw.phase === "running" && updatedAt > updatedAtBefore) {
 			engineStarted = true;
@@ -404,6 +389,11 @@ export async function waitForDetachedBatchResume({
 					phase: raw.phase,
 				};
 			}
+		}
+
+		const completed = evaluateDetachedResumeWait(raw, taskId, updatedAtBefore);
+		if (completed) {
+			return completed;
 		}
 
 		await sleep(200);

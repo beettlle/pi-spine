@@ -377,6 +377,84 @@ function recomputeTaskCounters(state) {
 }
 
 /**
+ * @param {string} taskFolderPath
+ */
+export function loadTaskFileScopePaths(taskFolderPath) {
+	try {
+		const packet = loadTaskPacket(taskFolderPath);
+		if (!packet.validation?.ok) {
+			return {
+				ok: false,
+				error: packet.validation.errors.join("; "),
+				errors: packet.validation.errors,
+				promptPath: packet.promptPath,
+			};
+		}
+		return { ok: true, fileScopePaths: packet.prompt?.fileScope ?? [] };
+	} catch (err) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : String(err),
+			promptPath: path.join(taskFolderPath, "PROMPT.md"),
+		};
+	}
+}
+
+/**
+ * @param {object} params
+ */
+function recordPromptParseFailure({
+	projectRoot,
+	state,
+	batchId,
+	task,
+	lane,
+	laneCorrelationId,
+	scopeResult,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	const parseError = scopeResult.error;
+
+	task.status = "failed";
+	task.endedAt = Date.now();
+	task.exitReason = "prompt_parse_failed";
+	if (!task.startedAt) task.startedAt = Date.now();
+	updateSegmentForTask(state, taskId, "failed");
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+
+	appendJournalEvent(projectRoot, batchId, "task.prompt_parse_failed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		error: parseError,
+		errors: scopeResult.errors,
+		promptPath: scopeResult.promptPath,
+	});
+	appendJournalEvent(projectRoot, batchId, "task.failed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		classification: "prompt_parse_failed",
+		exitCode: 1,
+		output: parseError,
+	});
+
+	return {
+		ok: false,
+		workerResult: {
+			ok: false,
+			classification: "prompt_parse_failed",
+			output: parseError,
+			exitCode: 1,
+		},
+	};
+}
+
+/**
  * @param {object} params
  */
 function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batchId, maxLaneNumber }) {
@@ -472,13 +550,19 @@ async function runTaskOnLane({
 	const wt = lane.worktreePath;
 	const taskBranch = lane.branch;
 	const taskFolderInWorktree = path.join(wt, taskFolderRel);
-	let fileScopePaths = [];
-	try {
-		const packet = loadTaskPacket(path.join(projectRoot, taskFolderRel));
-		fileScopePaths = packet.prompt?.fileScope ?? [];
-	} catch {
-		fileScopePaths = [];
+	const scopeResult = loadTaskFileScopePaths(path.join(projectRoot, taskFolderRel));
+	if (!scopeResult.ok) {
+		return recordPromptParseFailure({
+			projectRoot,
+			state,
+			batchId,
+			task,
+			lane,
+			laneCorrelationId,
+			scopeResult,
+		});
 	}
+	const fileScopePaths = scopeResult.fileScopePaths;
 
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();

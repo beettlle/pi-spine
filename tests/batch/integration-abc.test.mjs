@@ -14,6 +14,7 @@ import { startBatch } from "../../src/batch/engine.mjs";
 import { buildPlan } from "../../src/planner/index.mjs";
 import { retryTask } from "../../src/batch/retry.mjs";
 import { loadSpineBatchState } from "../../src/batch/state.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const TASK_A = "TP-901";
@@ -33,21 +34,14 @@ function writeAbcTask(projectRoot, taskId, slug, fileScopePath, deps = []) {
 	const depLines = deps.length ? deps.map((d) => `- **${d}**`).join("\n") : "- **None**";
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — ${slug}
-
-## Mission
-PRD §20.2 ABC integration fixture (${slug}).
-
-## Dependencies
-${depLines}
-
-## File Scope
-- \`${fileScopePath}\`
-
-## Steps
-### Step 0
-- [ ] one
-`,
+		minimalValidPromptMarkdown(taskId, {
+			title: slug,
+			fileScope: fileScopePath,
+			mission: `PRD §20.2 ABC integration fixture (${slug}).`,
+		}).replace(
+			"## Dependencies\n- **None**",
+			`## Dependencies\n${depLines}`,
+		),
 		"utf-8",
 	);
 }

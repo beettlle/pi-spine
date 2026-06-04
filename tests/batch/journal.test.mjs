@@ -12,6 +12,7 @@ import {
 	MAX_PAYLOAD_BYTES,
 	normalizeJournalEvent,
 	readJournalEvents,
+	readLastTaskFailedEvent,
 	redactSecrets,
 } from "../../src/batch/journal.mjs";
 
@@ -32,6 +33,26 @@ test("appendJournalEvent writes schema v1 with ISO timestamp and payload", async
 		const events = readJournalEvents(root, "20260601T120000");
 		assert.equal(events.length, 1);
 		assert.equal(events[0].schemaVersion, 1);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("readLastTaskFailedEvent returns most recent task.failed", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-failed-"));
+	try {
+		const batchId = "20260603T130000";
+		appendJournalEvent(root, batchId, "task.failed", { taskId: "TP-1", classification: "failed" });
+		appendJournalEvent(root, batchId, "task.completed", { taskId: "TP-1" });
+		appendJournalEvent(root, batchId, "task.failed", {
+			taskId: "TP-2",
+			classification: "stall_timeout",
+			error: "stalled",
+		});
+
+		const last = readLastTaskFailedEvent(root, batchId);
+		assert.equal(last?.taskId, "TP-2");
+		assert.equal(last?.payload?.classification, "stall_timeout");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

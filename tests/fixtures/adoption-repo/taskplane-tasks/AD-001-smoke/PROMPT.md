@@ -23,6 +23,10 @@ Minimal adoption fixture task: prove stub batch can complete end-to-end in a con
 
 - [ ] Create or update `DONE.txt` with a completion timestamp
 
+### Step 1: Testing & Verification
+
+- [ ] Stub batch completes with `.DONE` on disk
+
 ## Completion Criteria
 
 - [ ] `DONE.txt` exists in the lane worktree

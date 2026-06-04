@@ -17,6 +17,7 @@ import {
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const TASK_A = "TP-971";
@@ -32,21 +33,10 @@ function writeSmokeTask(projectRoot, taskId, fileScopePath) {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — Smoke
-
-## Mission
-Multi-task resume integration fixture.
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`${fileScopePath}\`
-
-## Steps
-### Step 0
-- [ ] one
-`,
+		minimalValidPromptMarkdown(taskId, {
+			fileScope: fileScopePath,
+			mission: "Multi-task resume integration fixture.",
+		}),
 		"utf-8",
 	);
 }

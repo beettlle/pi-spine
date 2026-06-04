@@ -11,7 +11,7 @@ import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree } from "./lane-commit.mjs";
-import { mergeLaneToOrch } from "./engine.mjs";
+import { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
@@ -21,7 +21,6 @@ import {
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
-import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 
@@ -162,13 +161,54 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		? path.join(wt, taskFolderRel)
 		: path.join(wt, tasksRootRel, `${taskId}-smoke`);
 
-	let fileScopePaths = [];
-	try {
-		const packet = loadTaskPacket(path.join(projectRoot, taskFolderRel ?? path.join(tasksRootRel, `${taskId}-smoke`)));
-		fileScopePaths = packet.prompt?.fileScope ?? [];
-	} catch {
-		fileScopePaths = [];
+	const taskFolderOnHost = path.join(
+		projectRoot,
+		taskFolderRel ?? path.join(tasksRootRel, `${taskId}-smoke`),
+	);
+	const scopeResult = loadTaskFileScopePaths(taskFolderOnHost);
+	if (!scopeResult.ok) {
+		const laneCorrelationId = crypto.randomUUID();
+		task.status = "failed";
+		task.endedAt = Date.now();
+		task.exitReason = "prompt_parse_failed";
+		if (!task.startedAt) task.startedAt = Date.now();
+		updateSegmentForTask(state, taskId, "failed");
+		state.failedTasks = 1;
+		state.succeededTasks = 0;
+		state.endedAt = Date.now();
+		state.lastError = scopeResult.error?.slice(0, 500) ?? "prompt parse failed";
+		state.phase = "failed";
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.prompt_parse_failed", {
+			taskId,
+			laneNumber: 1,
+			laneId: "lane-1",
+			correlationId: laneCorrelationId,
+			error: scopeResult.error,
+			errors: scopeResult.errors,
+			promptPath: scopeResult.promptPath,
+			resumed: true,
+		});
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber: 1,
+			laneId: "lane-1",
+			correlationId: laneCorrelationId,
+			classification: "prompt_parse_failed",
+			exitCode: 1,
+			output: scopeResult.error,
+			resumed: true,
+		});
+		return {
+			ok: false,
+			exitCode: 1,
+			batchId,
+			taskId,
+			error: "prompt_parse_failed",
+			output: scopeResult.error,
+		};
 	}
+	const fileScopePaths = scopeResult.fileScopePaths;
 
 	const events = readJournalEvents(projectRoot, batchId);
 	const pendingSegments = countPendingSegments(state, taskId);

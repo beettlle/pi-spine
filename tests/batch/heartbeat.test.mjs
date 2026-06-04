@@ -19,6 +19,7 @@ import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.m
 import { startBatch } from "../../src/batch/engine.mjs";
 import { runWorker } from "../../src/batch/worker-host.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
 test("resolveHeartbeatKind marks launching as worker_alive only", () => {
 	assert.equal(
@@ -344,7 +345,7 @@ test("startBatch records lane.heartbeat during stub worker delay", async () => {
 		fs.mkdirSync(folder, { recursive: true });
 		fs.writeFileSync(
 			path.join(folder, "PROMPT.md"),
-			`# Task: ${taskId} — Smoke\n\n## Mission\nSmoke.\n\n## Dependencies\n- **None**\n\n## File Scope\n- \`README.md\`\n\n## Steps\n### Step 0\n- [ ] one\n`,
+			minimalValidPromptMarkdown(taskId, { fileScope: "README.md", mission: "Smoke." }),
 			"utf-8",
 		);
 		fs.writeFileSync(

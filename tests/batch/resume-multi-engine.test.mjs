@@ -11,12 +11,17 @@ import {
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 function writeSmokeTask(projectRoot, taskId) {
 	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-smoke`);
 	fs.mkdirSync(folder, { recursive: true });
-	fs.writeFileSync(path.join(folder, "PROMPT.md"), `# Task: ${taskId}\n`, "utf-8");
+	fs.writeFileSync(
+		path.join(folder, "PROMPT.md"),
+		minimalValidPromptMarkdown(taskId),
+		"utf-8",
+	);
 	return folder;
 }
 

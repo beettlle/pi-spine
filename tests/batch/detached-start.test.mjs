@@ -8,9 +8,13 @@ import { parseBatchArgs } from "../../bin/spine-batch.mjs";
 import {
 	buildAttachedBatchResumeArgv,
 	buildAttachedBatchStartArgv,
+	collectDetachedFailureDiagnostics,
 	formatDetachedBatchStartOutput,
 	formatDetachedEngineOutput,
+	waitForDetachedBatchResume,
+	waitForDetachedBatchStart,
 } from "../../src/batch/detached-start.mjs";
+import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import {
 	createInitialBatchState,
 	loadSpineBatchState,
@@ -18,6 +22,7 @@ import {
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
@@ -31,14 +36,10 @@ function writeSmokeTask(projectRoot, taskId = "TP-920") {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — Detached smoke
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`README.md\`
-`,
+		minimalValidPromptMarkdown(taskId, {
+			title: "Detached smoke",
+			fileScope: "README.md",
+		}),
 		"utf-8",
 	);
 }
@@ -114,6 +115,7 @@ test("batch start returns quickly and runs engine in background", async () => {
 		const payload = JSON.parse(startResult.stdout);
 		assert.equal(payload.ok, true);
 		assert.equal(payload.detached, true);
+		assert.equal(payload.status, "engine_started");
 		assert.ok(payload.batchId);
 
 		const deadline = Date.now() + 60_000;
@@ -157,11 +159,162 @@ test("formatDetachedEngineOutput includes resume wording", () => {
 	const text = formatDetachedEngineOutput({
 		ok: true,
 		operation: "resume",
+		status: "engine_started",
 		batchId: "20260602T120000",
 		taskId: "TP-920",
 	});
-	assert.match(text, /resuming in the background/i);
+	assert.match(text, /engine started; resume not yet confirmed/i);
 	assert.match(text, /TP-920/);
+	assert.match(text, /Status: engine_started/);
+});
+
+test("waitForDetachedBatchResume returns engine_started by default", async () => {
+	const projectRoot = await initGitRepo("spine-detached-wait-resume-");
+	try {
+		const batchId = "20260603T120000";
+		const taskId = "TP-922";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: "spine-tasks/TP-922-smoke" }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "paused";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		const updatedAtBefore = state.updatedAt;
+
+		setTimeout(() => {
+			const next = loadSpineBatchState(projectRoot).raw;
+			next.phase = "running";
+			next.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, next);
+		}, 300);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, true);
+		assert.equal(wait.status, "engine_started");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("waitForDetachedBatchResume with waitTerminal returns resume_completed", async () => {
+	const projectRoot = await initGitRepo("spine-detached-wait-terminal-");
+	try {
+		const batchId = "20260603T120001";
+		const taskId = "TP-923";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: "spine-tasks/TP-923-smoke" }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "paused";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		const updatedAtBefore = state.updatedAt;
+
+		setTimeout(() => {
+			const running = loadSpineBatchState(projectRoot).raw;
+			running.phase = "running";
+			running.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, running);
+		}, 200);
+		setTimeout(() => {
+			const done = loadSpineBatchState(projectRoot).raw;
+			done.tasks[0].status = "succeeded";
+			done.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, done);
+		}, 500);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			waitTerminal: true,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, true);
+		assert.equal(wait.status, "resume_completed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("collectDetachedFailureDiagnostics includes task.failed summary and log tails", async () => {
+	const projectRoot = await initGitRepo("spine-detached-failure-diag-");
+	try {
+		const batchId = "20260603T120002";
+		const taskId = "TP-924";
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			classification: "failed",
+			error: "worker exited 1",
+			output: "stderr tail here",
+		});
+
+		const workerLogDir = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			batchId,
+			"lanes",
+			"lane-1",
+		);
+		fs.mkdirSync(workerLogDir, { recursive: true });
+		const workerLog = path.join(workerLogDir, `worker-output-${taskId}.log`);
+		fs.writeFileSync(workerLog, Array.from({ length: 25 }, (_, index) => `line-${index}`).join("\n"), "utf-8");
+
+		const engineLog = path.join(projectRoot, ".spine", "runtime", "detached-engine.log");
+		fs.mkdirSync(path.dirname(engineLog), { recursive: true });
+		fs.writeFileSync(engineLog, "engine boot\nengine error\n", "utf-8");
+
+		const diagnostics = collectDetachedFailureDiagnostics({
+			projectRoot,
+			batchId,
+			taskId,
+			logPath: ".spine/runtime/detached-engine.log",
+		});
+		assert.match(String(diagnostics.taskFailedSummary), /TP-924/);
+		assert.match(String(diagnostics.taskFailedSummary), /worker exited 1/);
+		assert.ok(String(diagnostics.workerLogTail).includes("line-24"));
+		assert.ok(String(diagnostics.engineLogTail).includes("engine error"));
+
+		const text = formatDetachedEngineOutput({
+			ok: false,
+			operation: "resume",
+			output: "Engine may still be running or orphaned — run `spine status --diagnose`.",
+			taskFailedSummary: diagnostics.taskFailedSummary,
+			workerLogPath: diagnostics.workerLogPath,
+			workerLogTail: diagnostics.workerLogTail,
+			engineLogPath: diagnostics.engineLogPath,
+			engineLogTail: diagnostics.engineLogTail,
+			suggestedCommand: "spine status --diagnose",
+		});
+		assert.match(text, /Last task\.failed:/);
+		assert.match(text, /Worker log tail/);
+		assert.match(text, /Detached engine log tail/);
+		assert.match(text, /spine status --diagnose/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("parseBatchArgs accepts --wait-terminal", () => {
+	const parsed = parseBatchArgs(["resume", "--wait-terminal"]);
+	assert.equal(parsed.waitTerminal, true);
 });
 
 test("batch resume returns quickly and runs engine in background", async () => {
@@ -231,6 +384,7 @@ test("batch resume returns quickly and runs engine in background", async () => {
 		assert.equal(payload.ok, true);
 		assert.equal(payload.detached, true);
 		assert.equal(payload.operation, "resume");
+		assert.equal(payload.status, "engine_started");
 		assert.equal(payload.batchId, batchId);
 
 		const deadline = Date.now() + 60_000;

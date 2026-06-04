@@ -11,6 +11,7 @@ import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { workerOutputLogPath } from "../../src/batch/worker-output.mjs";
 import { laneWorktreePath } from "../../src/batch/worktree.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const TASK_ID = "SAT-020";
@@ -21,25 +22,11 @@ function writeSat020Task(projectRoot) {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${TASK_ID} — Health endpoint
-
-## Mission
-SAT-020 stall replay fixture.
-
-## Dependencies
-- **None**
-
-## Review Level: 0
-
-## File Scope
-- \`${FILE_SCOPE}\`
-
-## Steps
-### Step 0
-- [ ] scaffold
-### Step 1
-- [ ] handler
-`,
+		minimalValidPromptMarkdown(TASK_ID, {
+			title: "Health endpoint",
+			fileScope: FILE_SCOPE,
+			mission: "SAT-020 stall replay fixture.",
+		}),
 		"utf-8",
 	);
 	fs.writeFileSync(
@@ -151,7 +138,7 @@ test("regression: stub worker still requires .DONE for batch success", async () 
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId}\n\n## Mission\nSmoke.\n\n## Dependencies\n- **None**\n\n## File Scope\n- \`README.md\`\n\n## Steps\n### Step 0\n- [ ] one\n`,
+		minimalValidPromptMarkdown(taskId, { fileScope: "README.md", mission: "Smoke." }),
 		"utf-8",
 	);
 	fs.writeFileSync(
