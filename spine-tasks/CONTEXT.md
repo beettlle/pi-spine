@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-089
+**Next Task ID:** SP-095
 
 ---
 
@@ -204,6 +204,34 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 1. **Wave A (parallel):** `SP-075`, `SP-072`, `SP-081`, `SP-080`, `SP-079`
 2. **Wave B:** `SP-073` (after SP-081), `SP-077` + `SP-078` (after SP-072)
 3. **Wave C:** `SP-074` (after SP-075), then `SP-076` (after SP-075)
+
+### Phase 16 — Cursor rules auto-discovery (SP-089–094)
+
+**Source:** Design discussion 2026-06-04. Auto-discover `.cursor/rules/` for spine workers with repo profile, committed manifest, micromatch glob match, append `standards[]`, include `taskplane-worker-cursor.mdc`.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-089 | Parser + profile foundation + micromatch dep | **Staged** | — |
+| SP-090 | `discoverCursorRules` + committed `.spine/rules-manifest.json` | **Staged** | SP-089 |
+| SP-091 | `selectRulesForWorker` + glob match (append semantics) | **Staged** | SP-090 |
+| SP-092 | Worker context integration + journal event | **Staged** | SP-091, SP-073 |
+| SP-093 | `spine rules` CLI + init + doctor | **Staged** | SP-091 |
+| SP-094 | Design doc + adoption docs + skill | **Staged** | SP-092, SP-093 |
+
+**Product decisions (locked):**
+
+1. `config.standards` non-empty **appends** to auto-selected rules (deduped).
+2. **`taskplane-worker-cursor.mdc`** included in default worker profile.
+3. **`.spine/rules-manifest.json`** committed to git (not gitignored).
+4. Glob matching via **`micromatch`**.
+
+**Suggested run order:**
+
+1. **Serial:** `SP-089` → `SP-090` → `SP-091`
+2. **Wave (parallel after SP-091):** `SP-092` + `SP-093` (disjoint file scope; SP-092 needs SP-073 landed first)
+3. **Docs:** `SP-094` after SP-092 and SP-093
+
+**Relation to SP-073:** SP-073 delivers static FR-WORK-05 wire; SP-092/093 supersede SP-073 Step 3 init defaults with auto-discovery. Run SP-073 before SP-092, or merge SP-073 first on `main`.
 
 ### Phase 15 — Task sizing & long-running worker stalls (batch 20260603T225112)
 
