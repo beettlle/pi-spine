@@ -1,0 +1,21 @@
+tests/doctor/task-packet-size.test.mjs
+  s_ce96539baf8f8d::t_59cf077a61fe2f 62
+  s_ce96539baf8f8d::t_adf093b3d00ce5 12
+  s_ce96539baf8f8d::t_6b7b4718843ed7 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "32369a447743092746de9fa9411dd6e386b3bee2",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
