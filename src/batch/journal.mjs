@@ -199,6 +199,19 @@ export function readJournalTail(events, limit = 50) {
 }
 
 /**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {object|null}
+ */
+export function readLastTaskFailedEvent(projectRoot, batchId) {
+	const events = readJournalEvents(projectRoot, batchId);
+	for (let index = events.length - 1; index >= 0; index -= 1) {
+		if (events[index].type === "task.failed") return events[index];
+	}
+	return null;
+}
+
+/**
  * @param {object} event
  */
 export function summarizeJournalEvent(event) {
