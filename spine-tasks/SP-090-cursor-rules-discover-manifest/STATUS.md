@@ -1,7 +1,7 @@
 # SP-090: Cursor rules discover + manifest — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-089 available
-- [ ] `.cursor/rules/` present
+- [x] SP-089 available on branch
+- [x] `.cursor/rules/` present (38 rule files)
 
 ### Step 1: Discovery engine
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `discoverCursorRules` implemented
 - [ ] Plan + code review APPROVE
