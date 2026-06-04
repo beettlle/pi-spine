@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
 import { validateWorkerBackendConfig } from "../src/config/worker-backend.mjs";
+import { validateWorkerContextConfig } from "../src/config/worker-context.mjs";
+import { validateWorkerLaunchScriptConfig } from "../src/config/worker-launch-script.mjs";
 
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
@@ -139,6 +141,16 @@ export function validateSpineConfig(config) {
 	const workerBackendError = validateWorkerBackendConfig(config);
 	if (workerBackendError) {
 		return workerBackendError;
+	}
+
+	const workerContextError = validateWorkerContextConfig(config);
+	if (workerContextError) {
+		return workerContextError;
+	}
+
+	const launchScriptError = validateWorkerLaunchScriptConfig(config);
+	if (launchScriptError) {
+		return launchScriptError;
 	}
 
 	if (

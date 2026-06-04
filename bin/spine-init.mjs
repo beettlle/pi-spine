@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateSpineConfig } from "./spine-config.mjs";
+import { DEFAULT_SPINE_INIT_STANDARDS } from "../src/config/worker-context.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,6 +140,12 @@ export function applySpineInitDefaults(config) {
 		collectTestEvidence: true,
 	};
 	config.lanes = { ...(config.lanes ?? {}), maxParallel: 3, queueExcess: true };
+	const existingStandards = Array.isArray(config.standards) ? config.standards : [];
+	const mergedStandards = [...new Set([...DEFAULT_SPINE_INIT_STANDARDS, ...existingStandards])];
+	config.standards = mergedStandards.filter((entry) => {
+		const neverLoad = Array.isArray(config.neverLoad) ? config.neverLoad : [];
+		return !neverLoad.includes(entry);
+	});
 	return config;
 }
 
