@@ -1,0 +1,27 @@
+spine-tasks/SP-092-cursor-rules-worker-integration/PROMPT.md
+  s_6909114266da53::t_266ccc6dda9a6c 66-82
+spine-tasks/SP-091-cursor-rules-select-globs/PROMPT.md
+  s_6909114266da53::t_a4f098d9636cab 67-82
+spine-tasks/SP-093-cursor-rules-cli-init/PROMPT.md
+  s_6909114266da53::t_defffa389728d3 19-28
+  s_6909114266da53::t_43128aa1b6d186 65-82
+spine-tasks/SP-094-cursor-rules-docs/PROMPT.md
+  s_6909114266da53::t_d12dc72b9bcfcb 60-75
+  s_6909114266da53::t_dad6b455a820c4 20-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "94797b374e914ecc374b633c5c7bba9b7320d86b",
+  "prompts": {},
+  "sessions": {
+    "s_6909114266da53": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e942c-d65f-7715-9444-cb2e35d92e3f",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
