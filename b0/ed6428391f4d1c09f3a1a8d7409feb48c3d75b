@@ -1,0 +1,58 @@
+tests/batch/engine.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 14,27-30
+tests/batch/heartbeat.test.mjs
+  s_ce96539baf8f8d::t_a706d87bacaf51 348
+  s_ce96539baf8f8d::t_9c3e09d358d7ce 22
+tests/fixtures/adoption-repo/taskplane-tasks/AD-001-smoke/PROMPT.md
+  s_ce96539baf8f8d::t_27879ef8287fb4 26-29
+tests/batch/salvage-auto-commit.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 23,45-48
+tests/batch/stall-sat020-integration.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 14,25-29,141
+tests/batch/salvage-inspect.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 16,37-40
+tests/batch/detached-start.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 11,14-15,17,25,39-42,118,162,166,168-317,387
+tests/batch/resume-multi-engine.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 14,20-24
+tests/batch/resume-multi-integration.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 20,36-39
+tests/batch/integration-abc.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 17,37-44
+src/batch/detached-start.mjs
+  s_ce96539baf8f8d::t_82da52ffd95ae1 394-396
+src/batch/resume.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 14,164-209,211
+tests/batch/journal.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 15,41-60
+src/batch/engine.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 380-456,553-563,565
+tests/batch/resume.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 17,23-27
+tests/helpers/smoke-task-prompt.mjs
+  s_ce96539baf8f8d::t_0c30a66807d0f3 1-38
+tests/batch/engine-lane-execution.test.mjs
+  s_ce96539baf8f8d::t_14c720b5ba1026 8,16-19
+tests/batch/prompt-parse-fail.test.mjs
+  s_ce96539baf8f8d::t_636b783d45c18a 1,3-12,15-25,28-40
+  s_ce96539baf8f8d::t_3b6a691c996868 2
+  s_ce96539baf8f8d::t_bc69362dfe06f3 26-27
+  s_ce96539baf8f8d::t_c36713bcb0b930 13
+  s_ce96539baf8f8d::t_5149908d6bdc51 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b0ed6428391f4d1c09f3a1a8d7409feb48c3d75b",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
