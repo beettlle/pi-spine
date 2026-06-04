@@ -8,8 +8,17 @@ import crypto from "node:crypto";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
-import { loadTaskPacket } from "../tasks/packet/index.mjs";
-import { assessWaveMergeEligibility, mergeLaneToOrch } from "./engine.mjs";
+import { assessWaveMergeEligibility } from "./engine-scope.mjs";
+import { mergeLaneToOrch } from "./engine-lanes.mjs";
+import {
+	journalHasTaskCompleted,
+	loadResumeFileScopePaths,
+	recomputeTaskCounters,
+	recordResumePhaseTransition,
+	resolveTaskFolderInWorktree,
+	resolveTaskFolderRel,
+	taskAlreadyComplete,
+} from "./resume-common.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, gitPorcelain } from "./lane-commit.mjs";
@@ -180,65 +189,6 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 }
 
 /**
- * @param {object} state
- */
-function recomputeTaskCounters(state) {
-	const tasks = state.tasks ?? [];
-	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
-	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
-	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
-}
-
-/**
- * @param {object[]} events
- * @param {string} taskId
- */
-function journalHasTaskCompleted(events, taskId) {
-	return events.some((event) => event.type === "task.completed" && event.taskId === taskId);
-}
-
-/**
- * @param {object} params
- */
-function taskAlreadyComplete({ taskFolder, events, task }) {
-	const doneOnDisk = fs.existsSync(path.join(taskFolder, ".DONE"));
-	return (
-		doneOnDisk ||
-		task.doneFileFound ||
-		task.status === "succeeded" ||
-		journalHasTaskCompleted(events, task.taskId)
-	);
-}
-
-/**
- * @param {object} params
- */
-function resolveTaskFolderInWorktree({ projectRoot, task, lane, tasksRootRel = DEFAULT_TASKS_ROOT }) {
-	const taskFolderRel = task.taskFolder
-		? path.isAbsolute(task.taskFolder)
-			? path.relative(projectRoot, task.taskFolder)
-			: task.taskFolder
-		: null;
-	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, lane.batchId ?? "", lane.laneNumber);
-	return taskFolderRel
-		? path.join(wt, taskFolderRel)
-		: path.join(wt, tasksRootRel, `${task.taskId}-smoke`);
-}
-
-/**
- * @param {object} params
- */
-function recordBatchResumed(projectRoot, batchId, fromPhase, extra = {}) {
-	if (fromPhase === "paused" || (fromPhase === "failed" && extra.resumeForced)) {
-		appendJournalEvent(projectRoot, batchId, "batch.resumed", {
-			fromPhase,
-			toPhase: "running",
-			...extra,
-		});
-	}
-}
-
-/**
  * @param {object} params
  */
 function resetFailedTasksForForceResume({ state, pendingTasks }) {
@@ -313,13 +263,8 @@ async function runResumedTaskOnLane({
 	const wt = lane.worktreePath;
 	const taskBranch = lane.branch ?? laneTaskBranch(batchId, laneNumber);
 	const taskFolderInWorktree = path.join(wt, taskFolderRel);
-	let fileScopePaths = [];
-	try {
-		const packet = loadTaskPacket(path.join(projectRoot, taskFolderRel));
-		fileScopePaths = packet.prompt?.fileScope ?? [];
-	} catch {
-		fileScopePaths = [];
-	}
+	const scopeResult = loadResumeFileScopePaths(path.join(projectRoot, taskFolderRel));
+	const fileScopePaths = scopeResult.ok ? scopeResult.fileScopePaths : [];
 
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();
@@ -570,7 +515,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 	state.lastError = null;
 	recordBatchEnginePid(state, process.pid);
 	saveSpineBatchState(projectRoot, state);
-	recordBatchResumed(projectRoot, batchId, fromPhase, {
+	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
 		resumeForced,
 		pendingSegments,
 		repairedLanes: [],
@@ -612,7 +557,13 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 					? path.relative(projectRoot, task.taskFolder)
 					: task.taskFolder
 				: path.join(tasksRootRel, `${taskId}-smoke`);
-			const taskFolderInWorktree = resolveTaskFolderInWorktree({ projectRoot, task, lane, tasksRootRel });
+			const taskFolderInWorktree = resolveTaskFolderInWorktree({
+				projectRoot,
+				task,
+				lane,
+				tasksRootRel,
+				batchId,
+			});
 			const laneCorrelationId = lane.correlationId ?? crypto.randomUUID();
 			lane.correlationId = laneCorrelationId;
 

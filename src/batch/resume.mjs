@@ -11,7 +11,14 @@ import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree } from "./lane-commit.mjs";
-import { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine.mjs";
+import { mergeLaneToOrch } from "./engine-lanes.mjs";
+import {
+	loadResumeFileScopePaths,
+	recordResumePhaseTransition,
+	resolveTaskFolderOnHost,
+	resolveTaskFolderRel,
+	taskAlreadyComplete,
+} from "./resume-common.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
@@ -23,24 +30,6 @@ import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
-
-/**
- * @param {object} state
- * @param {string} fromPhase
- * @param {string} toPhase
- */
-function recordPhaseTransition(projectRoot, batchId, fromPhase, toPhase, extra = {}) {
-	if (fromPhase === toPhase) return;
-	if (toPhase === "paused") {
-		appendJournalEvent(projectRoot, batchId, "batch.paused", { fromPhase, toPhase, ...extra });
-	}
-	if (
-		toPhase === "running" &&
-		(fromPhase === "paused" || (fromPhase === "failed" && extra.resumeForced))
-	) {
-		appendJournalEvent(projectRoot, batchId, "batch.resumed", { fromPhase, toPhase, ...extra });
-	}
-}
 
 /**
  * @param {string} projectRoot
@@ -67,7 +56,7 @@ export function pauseBatch({ projectRoot }) {
 	const fromPhase = phase;
 	state.phase = "paused";
 	saveSpineBatchState(projectRoot, state);
-	recordPhaseTransition(projectRoot, state.batchId, fromPhase, "paused");
+	recordResumePhaseTransition(projectRoot, state.batchId, fromPhase, "paused");
 
 	return {
 		ok: true,
@@ -76,27 +65,6 @@ export function pauseBatch({ projectRoot }) {
 		phase: "paused",
 		output: `Batch ${state.batchId} paused. No new tasks will be scheduled.\n  → spine batch resume\n`,
 	};
-}
-
-/**
- * @param {object[]} events
- * @param {string} taskId
- */
-function journalHasTaskCompleted(events, taskId) {
-	return events.some((event) => event.type === "task.completed" && event.taskId === taskId);
-}
-
-/**
- * @param {object} params
- */
-function taskAlreadyComplete({ taskFolder, events, task }) {
-	const doneOnDisk = fs.existsSync(path.join(taskFolder, ".DONE"));
-	return (
-		doneOnDisk ||
-		task.doneFileFound ||
-		task.status === "succeeded" ||
-		journalHasTaskCompleted(events, task.taskId)
-	);
 }
 
 /**
@@ -151,21 +119,14 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const taskBranch = lane.branch ?? laneTaskBranch(batchId, 1);
 	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, batchId, 1);
 	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
-	const taskFolderRel = task.taskFolder
-		? path.isAbsolute(task.taskFolder)
-			? path.relative(projectRoot, task.taskFolder)
-			: task.taskFolder
-		: null;
+	const taskFolderRel = resolveTaskFolderRel(task, projectRoot);
 	const tasksRootRel = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
 	const taskFolderInWorktree = taskFolderRel
 		? path.join(wt, taskFolderRel)
 		: path.join(wt, tasksRootRel, `${taskId}-smoke`);
 
-	const taskFolderOnHost = path.join(
-		projectRoot,
-		taskFolderRel ?? path.join(tasksRootRel, `${taskId}-smoke`),
-	);
-	const scopeResult = loadTaskFileScopePaths(taskFolderOnHost);
+	const taskFolderOnHost = resolveTaskFolderOnHost(projectRoot, taskFolderRel, tasksRootRel, taskId);
+	const scopeResult = loadResumeFileScopePaths(taskFolderOnHost);
 	if (!scopeResult.ok) {
 		const laneCorrelationId = crypto.randomUUID();
 		task.status = "failed";
@@ -234,7 +195,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	state.lastError = null;
 	recordBatchEnginePid(state, process.pid);
 	saveSpineBatchState(projectRoot, state);
-	recordPhaseTransition(projectRoot, batchId, fromPhase, "running", {
+	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
 		resumeForced,
 		pendingSegments,
 		repairedLanes: [],
