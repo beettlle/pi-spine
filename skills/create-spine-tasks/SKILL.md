@@ -37,9 +37,9 @@ The skill only creates and updates task files. Execution behavior lives in pi-sp
 |-----|---------|
 | `paths.tasksRoot` | Task folder root (default `spine-tasks`) |
 | `testing.test` / `testing.build` / `testing.testWithCoverage` | Test, build, and **coverage gate** commands for PROMPT.md verification (pi-spine default: `npm run coverage:check`, **≥77% line coverage**) |
-| `referenceDocs` | Tier 3 docs for "Context to Read First" |
-| `standards` | Project coding rules |
-| `neverLoad` | Docs that must NOT appear in any task |
+| `referenceDocs` | Tier 3 docs for "Context to Read First" (also injected into worker tail when not in `neverLoad`) |
+| `standards` | Explicit rule/doc paths; when `.cursor/rules/` exists these **append** after auto-selected rules (deduped) |
+| `neverLoad` | Docs that must NOT appear in any task or worker context |
 
 Override tasks root at runtime with `SPINE_TASKS_ROOT` (env > file).
 
@@ -216,8 +216,11 @@ Individual steps can override the task-level review:
 | **1** | PROMPT.md + STATUS.md | Always |
 | **2** | `{tasksRoot}/CONTEXT.md` | When listed in "Context to Read First" |
 | **3** | Specific reference docs | Only what the task needs |
+| **4** | Cursor rules (when `.cursor/rules/` exists) | Auto-selected per task: profile always-includes (`taskplane-worker-cursor.mdc`), `alwaysApply` rules, glob rules matching **File Scope** (micromatch), then `config.standards` append |
 
 Populate "Context to Read First" from `referenceDocs` in spine config. Never list docs in `neverLoad`.
+
+When authoring tasks for Cursor-based repos, **File Scope drives glob-matched worker rules** — include concrete paths (e.g. `src/**/*.mjs`, not only `src/`) so language packs activate. Preview with `spine rules select --task <id>`. See [docs/design/cursor-rules-discovery.md](../../docs/design/cursor-rules-discovery.md).
 
 ---
 
@@ -269,6 +272,8 @@ Task IDs in JSON use the **folder slug** (full `SP-011-api-handlers`) or bare ID
 `## File Scope` drives lane affinity. Overlapping scope → same lane (serial). Disjoint scope → parallel lanes.
 
 When decomposing a PRD, assign non-overlapping file scopes to tasks that should run in parallel.
+
+**Worker rules:** File Scope also drives **glob-matched Cursor rules** injected into batch workers (FR-WORK-05). Tasks touching `**/*.{js,mjs}` activate JS standards; Swift/Python tasks need scope paths that match those rule globs. Keep scope precise — wide scope pulls more rules and increases prompt byte usage.
 
 ---
 

@@ -398,13 +398,28 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 | FR-WORK-02 | STATUS.md updated before every step boundary commit | 0 |
 | FR-WORK-03 | Git commit per completed step: `feat({taskId}): complete Step {n} — {step title}` (e.g. `feat(SP-064): complete Step 2 — apply across execution surfaces`) | 0 |
 | FR-WORK-04 | On context limit: persist STATUS, commit, exit 0; scheduler re-invokes worker | 0 |
-| FR-WORK-05 | Worker receives tiered context: PROMPT, STATUS, config referenceDocs/standards | 0 |
+| FR-WORK-05 | Worker receives tiered context: PROMPT, STATUS, config `referenceDocs`/`standards`, and when `.cursor/rules/` exists auto-selected Cursor rules from committed manifest + PROMPT File Scope (micromatch glob match); `config.standards` **appends** after auto-selection; default profile includes `taskplane-worker-cursor.mdc`; 32 KiB byte cap on injected docs | 0 |
 | FR-WORK-06 | Worker must not edit files outside `## File Scope` without PROMPT amendment | 0 |
 | FR-WORK-07 | Worker calls `spine_review_step` when review level > 0 | 0 |
 | FR-WORK-08 | Project overrides compose with base prompt in `.spine/agents/worker.md` | 0 |
 | FR-WORK-09 | Worker emits checkpoint heartbeat to journal every completed step (or every 10 min during long steps) | 3 |
 | FR-WORK-10 | Monitor compares STATUS checkboxes to filesystem signals before stall kill (e.g. new files in File Scope) | 3 |
 | FR-WORK-11 | Code-related deliverables maintain **≥77% line coverage** on changed in-scope modules; worker runs `testing.testWithCoverage` before `.DONE` | 12 |
+
+#### 7.5.1 Cursor rules auto-discovery (FR-WORK-05 detail)
+
+When `.cursor/rules/` exists:
+
+1. **Discovery** scans rule files and writes `.spine/rules-manifest.json` (committed to git; not gitignored).
+2. **Selection** picks a bounded subset per task: profile `alwaysInclude` (includes `taskplane-worker-cursor.mdc` by default), manifest `alwaysApply` rules, glob rules matching PROMPT File Scope via **micromatch**, then **`config.standards` append** (deduped).
+3. **Injection** loads selected files + unmatched `referenceDocs`, honoring `config.neverLoad` and a **32 KiB** byte cap.
+4. **Journal** emits `worker.rules_selected` with selection metadata.
+
+CLI: `spine rules discover`, `spine rules sync`, `spine rules select --task <id>`. Doctor warns on missing/stale manifest (`RULES_MANIFEST_MISSING`, `RULES_MANIFEST_STALE`).
+
+Without `.cursor/rules/`, workers use static `referenceDocs` + `standards` only (SP-073 baseline).
+
+Design reference: `docs/design/cursor-rules-discovery.md`.
 
 ### 7.6 Review (FR-REV)
 
@@ -603,6 +618,8 @@ pi-spine/
 {repo}/
 ├── .spine/
 │   ├── spine-config.json
+│   ├── rules-profile.json       # worker/discovery profile (init)
+│   ├── rules-manifest.json      # committed discovery manifest (init / spine rules sync)
 │   ├── batch-state.json
 │   ├── batch-history.json
 │   ├── agents/                  # project overrides
@@ -995,6 +1012,9 @@ name: worker
 | Command | Description |
 |---------|-------------|
 | `spine init [options]` | Scaffold project |
+| `spine rules discover [--json]` | Scan `.cursor/rules/`; write `.spine/rules-manifest.json` |
+| `spine rules select --task <id> [--json]` | Preview worker rule selection for task File Scope |
+| `spine rules sync [--json]` | Re-run discovery; refresh committed manifest |
 | `spine doctor` | Validate installation |
 | `spine plan <scope>` | Plan only (JSON to stdout with `--json`) |
 | `spine run <scope>` | Execute batch (non-pi automation) |

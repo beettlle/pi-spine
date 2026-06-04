@@ -46,6 +46,8 @@ Implement FR-WORK-05 tiered context: inject configured standards/referenceDocs i
 ### Step 3: Init defaults + worker template
 - [ ] spine init populates standards from `.cursor/rules/`
 
+> **Amended (SP-094):** Step 3 init seeding of `DEFAULT_SPINE_INIT_STANDARDS` was superseded by SP-093 auto-discovery. Greenfield `spine init` now sets `standards: []`, copies `.spine/rules-profile.json`, and writes committed `.spine/rules-manifest.json`. Workers auto-select rules via `buildWorkerContextAsync` (SP-092). Static `buildWorkerContext` + explicit `config.standards`/`referenceDocs` remain for projects without `.cursor/rules/`. See `docs/design/cursor-rules-discovery.md`.
+
 ### Step 4: Testing & Verification
 - [ ] Unit tests + FULL suite + coverage ≥77%
 
@@ -62,3 +64,14 @@ Implement FR-WORK-05 tiered context: inject configured standards/referenceDocs i
 ---
 
 ## Amendments (Added During Execution)
+
+### SP-094 — Auto-discovery supersedes static init defaults (2026-06-04)
+
+SP-073 landed static FR-WORK-05 injection (`buildWorkerContext`, init standards merge). Phase 16 (SP-089–093) replaced init seeding with:
+
+- Committed `.spine/rules-manifest.json` (not gitignored)
+- Profile-driven selection including `taskplane-worker-cursor.mdc`
+- PROMPT File Scope glob match via micromatch
+- `config.standards` append semantics (non-empty values add to auto-selection, do not replace)
+
+SP-073 Step 3 checkbox remains historical; behavior is documented in PRD §7.5.1 and `docs/design/cursor-rules-discovery.md`.

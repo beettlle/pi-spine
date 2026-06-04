@@ -169,7 +169,9 @@ The repo ships [`.cursor/rules/`](.cursor/rules/) for Cursor IDE sessions. Rules
 
 **Phase / milestone audits:** follow [`.cursor/rules/audit-workflow.mdc`](.cursor/rules/audit-workflow.mdc). For pi-spine, invoke the JavaScript audit ([`javascript-3-brutal-audit.mdc`](.cursor/rules/javascript-3-brutal-audit.mdc)) after major phases.
 
-**Optional language packs** in the same folder (Swift, Python, Java, Go, Rust, AWS, iOS, Obsidian) apply when you work on those stacks; they are not injected into spine worker prompts by default (see SP-073 / FR-WORK-05 for wiring).
+**Spine batch workers:** When `.cursor/rules/` exists, pi-spine auto-selects rules per task (PROMPT File Scope + committed manifest) and injects them into worker prompts (FR-WORK-05). Glob-triggered language packs (Swift, Python, Java, Go, Rust, AWS, iOS, Obsidian) load when File Scope matches their frontmatter globs. **`taskplane-worker-cursor.mdc`** is always included via the default rules profile. Explicit `config.standards` paths **append** after auto-selection. See [docs/design/cursor-rules-discovery.md](docs/design/cursor-rules-discovery.md).
+
+**CLI:** `spine rules discover`, `spine rules sync`, `spine rules select --task <id>` — run `sync` after rule changes and commit `.spine/rules-manifest.json`.
 
 ---
 
