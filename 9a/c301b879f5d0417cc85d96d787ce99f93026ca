@@ -1,0 +1,11 @@
+package-lock.json
+  ai_agent 566
+tests/config/worker-context.test.mjs
+  ai_agent 109,120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "9ac301b879f5d0417cc85d96d787ce99f93026ca",
+  "prompts": {}
+}
