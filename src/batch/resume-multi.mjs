@@ -533,14 +533,15 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		saveSpineBatchState(projectRoot, state);
 
 		const waveTaskIds = wavePlan[waveIndex] ?? [];
-		/** @type {Promise<{ ok: boolean, aborted?: boolean, taskId?: string, laneNumber?: number, error?: string, output?: string }>[]} */
-		const waveRuns = [];
+		/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean, taskId?: string, laneNumber?: number, error?: string, output?: string }> }> }>} */
+		const runsByLane = new Map();
 
 		for (const taskId of waveTaskIds) {
 			const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
 			if (!task) continue;
 
-			const lane = (state.lanes ?? []).find((entry) => entry.laneNumber === task.laneNumber);
+			const laneNumber = task.laneNumber;
+			const lane = (state.lanes ?? []).find((entry) => entry.laneNumber === laneNumber);
 			if (!lane) {
 				return {
 					ok: false,
@@ -548,7 +549,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 					batchId,
 					taskId,
 					error: "lane_not_found",
-					output: `No lane assigned for task ${taskId} (lane ${task.laneNumber}).\n`,
+					output: `No lane assigned for task ${taskId} (lane ${laneNumber}).\n`,
 				};
 			}
 
@@ -567,18 +568,25 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 			const laneCorrelationId = lane.correlationId ?? crypto.randomUUID();
 			lane.correlationId = laneCorrelationId;
 
+			if (!runsByLane.has(laneNumber)) {
+				runsByLane.set(laneNumber, { lane, runs: [] });
+			}
+			const laneQueue = runsByLane.get(laneNumber);
+
 			if (taskAlreadyComplete({ taskFolder: taskFolderInWorktree, events, task })) {
-				waveRuns.push(
-					markTaskCompleteFromDisk({
-						projectRoot,
-						state,
-						batchId,
-						task,
-						lane,
-						taskFolderInWorktree,
-						laneCorrelationId,
-					}),
-				);
+				laneQueue.runs.push({
+					taskId,
+					run: () =>
+						markTaskCompleteFromDisk({
+							projectRoot,
+							state,
+							batchId,
+							task,
+							lane,
+							taskFolderInWorktree,
+							laneCorrelationId,
+						}),
+				});
 				continue;
 			}
 
@@ -586,24 +594,50 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 				continue;
 			}
 
-			waveRuns.push(
-				runResumedTaskOnLane({
-					projectRoot,
-					state,
-					batchId,
-					config,
-					task,
-					lane,
-					taskFolderRel,
-					laneCorrelationId,
-				}).then((result) => {
-					if (result.aborted) batchAborted = true;
-					return result;
-				}),
-			);
+			laneQueue.runs.push({
+				taskId,
+				run: () =>
+					runResumedTaskOnLane({
+						projectRoot,
+						state,
+						batchId,
+						config,
+						task,
+						lane,
+						taskFolderRel,
+						laneCorrelationId,
+					}).then((result) => {
+						if (result.aborted) batchAborted = true;
+						return result;
+					}),
+			});
 		}
 
-		const waveResults = await Promise.all(waveRuns);
+		const laneExecutions = [...runsByLane.entries()].map(async ([laneNumber, { lane, runs }]) => {
+			if (runs.length > 1) {
+				appendJournalEvent(projectRoot, batchId, "lane.tasks_serialized", {
+					laneNumber,
+					laneId: lane.laneId,
+					waveIndex,
+					taskIds: runs.map((entry) => entry.taskId),
+					correlationId: lane.correlationId ?? null,
+				});
+			}
+
+			/** @type {Array<{ ok: boolean, aborted?: boolean, taskId?: string, laneNumber?: number, error?: string, output?: string }>} */
+			const laneResults = [];
+			for (const { run } of runs) {
+				const result = await run();
+				laneResults.push(result);
+				if (result.aborted) {
+					batchAborted = true;
+					return laneResults;
+				}
+			}
+			return laneResults;
+		});
+
+		const waveResults = (await Promise.all(laneExecutions)).flat();
 		if (batchAborted) {
 			const abortedTask = state.tasks.find((task) => task.status === "aborted");
 			state.endedAt = Date.now();

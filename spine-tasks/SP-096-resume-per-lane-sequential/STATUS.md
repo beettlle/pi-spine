@@ -1,50 +1,50 @@
 # SP-096: Per-lane sequential multi-task resume — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-04
 **Review Level:** 2
-**Review Counter:** 0
+**Review Counter:** 2
 **Iteration:** 0
 **Size:** M
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Parallel wave bug confirmed in source
+- [x] Parallel wave bug confirmed in source
 
 ---
 
 ### Step 1: Lane-grouped wave execution
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Per-lane sequential execution implemented
-- [ ] Plan review completed
+- [x] Per-lane sequential execution implemented
+- [x] Plan review completed
 
 ---
 
 ### Step 2: Journal + batch-state invariants
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `lane.tasks_serialized` + ≤1 running per lane
-- [ ] Code review completed
+- [x] `lane.tasks_serialized` + ≤1 running per lane
+- [x] Code review completed
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Serialization + parallelism tests pass
-- [ ] FULL suite + coverage pass
+- [x] Serialization + parallelism tests pass
+- [x] FULL suite + coverage pass
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated
+- [x] Runbook updated
 
 ---
 
@@ -52,6 +52,8 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | (spine review step exit 0) | — |
+| 2 | code | 2 | (spine review step exit 0) | — |
 
 ---
 
@@ -59,6 +61,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `resume-multi.mjs` pushed promises into `waveRuns` immediately; fix uses lazy `run()` thunks like `engine.mjs` | Fixed | `src/batch/resume-multi.mjs` |
+| Full `npm test` and `coverage:check` can flake on unrelated dashboard/checkpoint tests under parallel load | Note | CI/local only |
 
 ---
 
@@ -67,6 +71,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-04 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-04 | Step 0–4 | Lane-grouped resume, tests, runbook |
 
 ---
 
@@ -78,4 +83,6 @@
 
 ## Notes
 
-*Reserved for execution notes*
+- `resumeMultiTaskBatch` groups wave tasks by `laneNumber`, awaits sequentially within lane, `Promise.all` across lanes.
+- New tests: `tests/batch/resume-multi-sequential.test.mjs` (4-task single-lane serialization + 2×2 cross-lane).
+- Verification: targeted resume tests pass; full `npm test` 512/512; coverage lines **83.75%** (threshold ≥77%).
