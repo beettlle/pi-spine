@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateSpineConfig } from "./spine-config.mjs";
-import { DEFAULT_SPINE_INIT_STANDARDS } from "../src/config/worker-context.mjs";
+import { discoverCursorRules } from "../src/config/cursor-rules/discover.mjs";
+import { RULES_PROFILE_REL_PATH } from "../src/config/cursor-rules/profile.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +11,7 @@ export const PACKAGE_ROOT = path.resolve(__dirname, "..");
 
 export const TEMPLATE_PATHS = {
 	spineConfig: path.join(PACKAGE_ROOT, "templates", "spine-config.json"),
+	rulesProfile: path.join(PACKAGE_ROOT, "templates", "rules-profile.json"),
 	tasksContext: path.join(PACKAGE_ROOT, "templates", "tasks", "CONTEXT.md"),
 	agents: {
 		worker: path.join(PACKAGE_ROOT, "templates", "agents", "worker.md"),
@@ -46,6 +48,7 @@ const SPINE_GITIGNORE_HEADER = "# pi-spine runtime";
 export function getTemplatePaths() {
 	for (const templatePath of [
 		TEMPLATE_PATHS.spineConfig,
+		TEMPLATE_PATHS.rulesProfile,
 		TEMPLATE_PATHS.tasksContext,
 		...Object.values(TEMPLATE_PATHS.agents),
 	]) {
@@ -59,6 +62,11 @@ export function getTemplatePaths() {
 export function loadSpineConfigTemplate() {
 	const templatePath = getTemplatePaths().spineConfig;
 	return JSON.parse(fs.readFileSync(templatePath, "utf-8"));
+}
+
+export function loadRulesProfileTemplate() {
+	const templatePath = getTemplatePaths().rulesProfile;
+	return fs.readFileSync(templatePath, "utf-8");
 }
 
 export function loadTasksContextTemplate() {
@@ -140,12 +148,9 @@ export function applySpineInitDefaults(config) {
 		collectTestEvidence: true,
 	};
 	config.lanes = { ...(config.lanes ?? {}), maxParallel: 3, queueExcess: true };
-	const existingStandards = Array.isArray(config.standards) ? config.standards : [];
-	const mergedStandards = [...new Set([...DEFAULT_SPINE_INIT_STANDARDS, ...existingStandards])];
-	config.standards = mergedStandards.filter((entry) => {
-		const neverLoad = Array.isArray(config.neverLoad) ? config.neverLoad : [];
-		return !neverLoad.includes(entry);
-	});
+	const standards = Array.isArray(config.standards) ? config.standards : [];
+	const neverLoad = Array.isArray(config.neverLoad) ? config.neverLoad : [];
+	config.standards = standards.filter((entry) => !neverLoad.includes(entry));
 	return config;
 }
 
@@ -216,6 +221,33 @@ function writeFileIfAllowed(projectRoot, relativePath, content, { force, dryRun 
 	return { action: fs.existsSync(fullPath) && force ? "overwrite" : "create", path: relativePath };
 }
 
+/**
+ * @param {string} projectRoot
+ * @param {{ dryRun?: boolean, force?: boolean }} [options]
+ */
+export function runInitRulesDiscover(projectRoot, { dryRun = false, force = false } = {}) {
+	if (dryRun) {
+		return { ok: true, dryRun: true, skipped: true };
+	}
+
+	const profilePath = path.join(projectRoot, RULES_PROFILE_REL_PATH);
+	if (!fs.existsSync(profilePath)) {
+		return {
+			ok: false,
+			error: `${RULES_PROFILE_REL_PATH} missing — init should copy templates/rules-profile.json first`,
+		};
+	}
+
+	const discovered = discoverCursorRules({ projectRoot, writeManifest: true });
+	return {
+		ok: true,
+		manifestPath: discovered.manifestPath,
+		ruleCount: discovered.manifest.rules.length,
+		excludedCount: discovered.manifest.excluded.length,
+		force,
+	};
+}
+
 export function runInit(projectRoot, args = []) {
 	getTemplatePaths();
 
@@ -257,6 +289,15 @@ export function runInit(projectRoot, args = []) {
 	);
 	actions.push(configResult);
 
+	const profileTemplate = loadRulesProfileTemplate();
+	const profileResult = writeFileIfAllowed(
+		projectRoot,
+		RULES_PROFILE_REL_PATH,
+		profileTemplate.endsWith("\n") ? profileTemplate : `${profileTemplate}\n`,
+		{ force, dryRun },
+	);
+	actions.push(profileResult);
+
 	for (const { templateKey, destName } of AGENT_STUB_FILES) {
 		const templateContent = fs.readFileSync(TEMPLATE_PATHS.agents[templateKey], "utf-8");
 		const agentResult = writeFileIfAllowed(
@@ -294,6 +335,24 @@ export function runInit(projectRoot, args = []) {
 		});
 	}
 
+	const rulesDiscoverResult = runInitRulesDiscover(projectRoot, { dryRun, force });
+	if (!rulesDiscoverResult.ok) {
+		return {
+			ok: false,
+			error: rulesDiscoverResult.error,
+			exitCode: 1,
+		};
+	}
+	if (!rulesDiscoverResult.skipped && rulesDiscoverResult.manifestPath) {
+		actions.push({
+			action: "create",
+			path: ".spine/rules-manifest.json",
+			ruleCount: rulesDiscoverResult.ruleCount,
+		});
+	} else if (dryRun && fs.existsSync(path.join(projectRoot, ".cursor", "rules"))) {
+		actions.push({ action: "create", path: ".spine/rules-manifest.json" });
+	}
+
 	return {
 		ok: true,
 		dryRun,
@@ -301,6 +360,7 @@ export function runInit(projectRoot, args = []) {
 		config,
 		actions,
 		gitignoreResult,
+		rulesDiscoverResult,
 		exitCode: 0,
 	};
 }
