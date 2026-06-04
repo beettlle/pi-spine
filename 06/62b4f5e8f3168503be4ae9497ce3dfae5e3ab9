@@ -1,0 +1,22 @@
+spine-tasks/SP-098-resume-orphan-incident-fixture/PROMPT.md
+  s_8df41865029927::t_4b638e875b6a74 55,57-65
+  s_8df41865029927::t_02e5e96794ae91 90-95
+spine-tasks/SP-098-resume-orphan-incident-fixture/STATUS.md
+  s_8df41865029927::t_674faa8fd2d843 28,31,33-41,56,65-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "0662b4f5e8f3168503be4ae9497ce3dfae5e3ab9",
+  "prompts": {},
+  "sessions": {
+    "s_8df41865029927": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e94c0-854f-75c6-b222-0c6faf6b4951",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
