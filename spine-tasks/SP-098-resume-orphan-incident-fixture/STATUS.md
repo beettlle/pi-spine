@@ -25,10 +25,20 @@
 
 ---
 
-### Step 3: Verification
+### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
 
+- [ ] Targeted orphan-reconcile tests pass
 - [ ] FULL suite passes
+- [ ] Coverage gate passes (≥77%)
+
+---
+
+### Step 4: Documentation & Delivery
+**Status:** ⬜ Not Started
+
+- [ ] Must-update / check-if-affected docs reviewed
+- [ ] Discoveries logged
 
 ---
 
@@ -43,6 +53,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Batch 20260604T233856 prompt_parse_failed — missing Testing step title | Fixed PROMPT Step 3/4 | Amendment 1 |
 
 ---
 
@@ -51,6 +62,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-04 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-04 | Batch 20260604T233856 failed | prompt_parse_failed at engine start |
+| 2026-06-04 | PROMPT amended | Testing & Verification step added |
 
 ---
 

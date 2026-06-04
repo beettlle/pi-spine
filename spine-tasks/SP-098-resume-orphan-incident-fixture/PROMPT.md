@@ -52,9 +52,17 @@ Complements SP-085 style; asserts reconcile diagnosis is actionable after SP-095
 - [ ] New incident doc: timeline, root causes (4 bugs), link to SP-095–097, reproduction sketch
 - [ ] Cross-link from `docs/incidents/20260603-orphan-running-resume.md`
 
-### Step 3: Verification
+### Step 3: Testing & Verification
 
-- [ ] FULL suite passes
+- [ ] Run targeted tests: `SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test -- tests/batch/orphan-reconcile.test.mjs`
+- [ ] Run FULL test suite: `npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test`
+- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage** on changed paths
+
+### Step 4: Documentation & Delivery
+
+- [ ] "Must Update" docs modified
+- [ ] "Check If Affected" docs reviewed
+- [ ] Discoveries logged in STATUS.md
 
 ## Documentation Requirements
 
@@ -79,3 +87,9 @@ Complements SP-085 style; asserts reconcile diagnosis is actionable after SP-095
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-04
+
+**Issue:** Batch `20260604T233856` failed at start with `prompt_parse_failed` — Step 3 was titled "Verification" (no "Testing" in title per SP-075 / `validatePrompt`).
+
+**Resolution:** Renamed Step 3 to "Testing & Verification"; added Step 4 documentation delivery per prompt template.
