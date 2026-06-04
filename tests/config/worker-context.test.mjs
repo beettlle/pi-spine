@@ -106,7 +106,7 @@ test("buildWorkerContextAsync uses auto selection when cursor rules exist", asyn
 	}
 });
 
-test("spine init seeds standards from cursor rules when present", async () => {
+test("spine init defaults standards to [] for auto-discovery (SP-093)", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-init-standards-"));
 	try {
 		for (const rel of DEFAULT_SPINE_INIT_STANDARDS) {
@@ -117,9 +117,7 @@ test("spine init seeds standards from cursor rules when present", async () => {
 
 		const result = runInit(root, ["--force"]);
 		assert.equal(result.ok, true);
-		for (const rel of DEFAULT_SPINE_INIT_STANDARDS) {
-			assert.ok(result.config.standards.includes(rel), `missing ${rel}`);
-		}
+		assert.deepEqual(result.config.standards, []);
 		assert.equal(validateSpineConfig(result.config), null);
 	} finally {
 		await rm(root, { recursive: true, force: true });
