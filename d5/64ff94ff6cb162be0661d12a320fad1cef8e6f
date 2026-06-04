@@ -1,0 +1,31 @@
+bin/spine-config.mjs
+  s_ce96539baf8f8d::t_720e83e12156f6 6-7
+  s_ce96539baf8f8d::t_10ea45a09386d7 146-155
+src/config/worker-context.mjs
+  s_ce96539baf8f8d::t_6bf9563726a14a 1-180
+spine-tasks/SP-073-fr-work-05-standards-wiring/.DONE
+  s_ce96539baf8f8d::t_0cc6cb5a4850ba 1-2
+bin/spine-init.mjs
+  s_ce96539baf8f8d::t_4c14a59690e1ba 5
+  s_ce96539baf8f8d::t_74577ffbb28980 143-148
+tests/config/worker-context.test.mjs
+  s_ce96539baf8f8d::t_1bf92f2095572a 33,40,45
+  s_ce96539baf8f8d::t_c905cfe720d261 32,36,47
+  s_ce96539baf8f8d::t_505501759f1a2a 1-31,34-35,37-39,41-44,46,48-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d564ff94ff6cb162be0661d12a320fad1cef8e6f",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
