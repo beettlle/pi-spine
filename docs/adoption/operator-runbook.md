@@ -59,6 +59,42 @@ In pi: `pi list` should show `pi-spine`; try `/spine-plan pending`.
 
 Details: [local-install.md](./local-install.md).
 
+### 1.1 Cursor rules (FR-WORK-05)
+
+When the consumer repo has `.cursor/rules/`, spine workers receive **auto-selected** rule files in their prompt tail (not the full rules tree). Full design: [cursor-rules-discovery.md](../design/cursor-rules-discovery.md).
+
+| File | Purpose |
+|------|---------|
+| `.spine/rules-profile.json` | Always-include (`taskplane-worker-cursor.mdc` by default), never-include, discovery exclusions |
+| `.spine/rules-manifest.json` | **Committed** inventory from last discovery scan |
+| `config.standards` | Explicit paths that **append** after auto-selection (deduped) |
+| `config.neverLoad` | Blocklist for all injected docs |
+
+**After changing rules:**
+
+```bash
+spine rules sync
+git add .spine/rules-manifest.json
+git commit -m "chore: refresh rules manifest"
+```
+
+**Preview what a task will load:**
+
+```bash
+spine rules select --task SP-042
+```
+
+**Doctor warnings:**
+
+| Code | Fix |
+|------|-----|
+| `RULES_MANIFEST_MISSING` | `spine rules sync` |
+| `RULES_MANIFEST_STALE` | `spine rules sync` (rescan differs from committed manifest) |
+
+Glob-triggered language packs match PROMPT **File Scope** via micromatch. Empty File Scope still loads profile always-includes and `alwaysApply` rules. Tune `.spine/rules-profile.json` or add paths to `config.standards` when workers miss expected rules.
+
+**Journal audit:** batch journal events `worker.rules_selected` list `paths`, `mode`, and cap metadata per worker spawn.
+
 ---
 
 ## 2. Preflight

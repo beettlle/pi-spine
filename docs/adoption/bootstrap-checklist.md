@@ -46,7 +46,9 @@ cd /absolute/path/to/pi-spine && npm link
 
 See [local-install.md](./local-install.md) for `file:` dependencies and PATH troubleshooting.
 
-**Optional — Cursor IDE rules:** If you develop with [Cursor](https://cursor.com), open the pi-spine checkout as the workspace. Rules under [`.cursor/rules/`](../../.cursor/rules/) load automatically in the IDE. For this repo, the primary subset is JavaScript/CLI (`javascript-3-development-standards.mdc`, `general-llm-anti-patterns.mdc`, `critical-rules-quick-reference.mdc`) plus task authoring (`taskplane-task-authoring.mdc`, `taskplane-worker-cursor.mdc`). Other language packs (Swift, Python, AWS, etc.) are optional. Phase audits: [`.cursor/rules/audit-workflow.mdc`](../../.cursor/rules/audit-workflow.mdc). Spine batch workers do not load `.cursor/rules/` unless configured (FR-WORK-05 / `spine init` standards).
+**Optional — Cursor IDE rules:** If you develop with [Cursor](https://cursor.com), open the pi-spine checkout as the workspace. Rules under [`.cursor/rules/`](../../.cursor/rules/) load automatically in the IDE. For this repo, the primary subset is JavaScript/CLI (`javascript-3-development-standards.mdc`, `general-llm-anti-patterns.mdc`, `critical-rules-quick-reference.mdc`) plus task authoring (`taskplane-task-authoring.mdc`, `taskplane-worker-cursor.mdc`). Other language packs (Swift, Python, AWS, etc.) are optional. Phase audits: [`.cursor/rules/audit-workflow.mdc`](../../.cursor/rules/audit-workflow.mdc).
+
+**Spine batch workers (FR-WORK-05):** When `.cursor/rules/` exists, `spine init` copies `.spine/rules-profile.json`, runs discovery, and writes **`.spine/rules-manifest.json`** (committed to git). Workers auto-select rules per task using PROMPT File Scope (micromatch glob match) plus profile always-includes (`taskplane-worker-cursor.mdc` by default). Non-empty `config.standards` **append** after auto-selection. See [cursor-rules-discovery.md](../design/cursor-rules-discovery.md).
 
 ### 2. Initialize spine
 
@@ -54,7 +56,7 @@ See [local-install.md](./local-install.md) for `file:` dependencies and PATH tro
 spine init
 ```
 
-This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, and spine gitignore entries (testing commands, gates, dashboard port, lane defaults).
+This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, and spine gitignore entries (testing commands, gates, dashboard port, lane defaults). When `.cursor/rules/` exists, init also copies `.spine/rules-profile.json`, runs `spine rules discover`, and writes `.spine/rules-manifest.json` — **commit the manifest** to git.
 
 ### 3. Add your first task
 
@@ -176,6 +178,7 @@ After a successful stub batch, remove or disable Taskplane `/orch` usage. Until 
 | Init (Taskplane tasks folder) | `spine init --tasks-root taskplane-tasks` or `spine migrate-from-taskplane` |
 | Migrate | `spine migrate-from-taskplane --source .pi/taskplane-config.json` |
 | Health | `spine doctor` |
+| Rules sync | `spine rules sync` (after `.cursor/rules/` changes) |
 | Preview work | `spine plan pending` |
 | Preflight | `spine preflight` |
 | Stub batch | `SPINE_WORKER_STUB=1 spine batch start <id>` |
@@ -190,3 +193,4 @@ After a successful stub batch, remove or disable Taskplane `/orch` usage. Until 
 | [operator-runbook.md](./operator-runbook.md) | Daily operator procedures |
 | [real-project-readiness.md](./real-project-readiness.md) | Phase 9 adoption tiers and task map |
 | [README](../../README.md) | Full CLI reference |
+| [cursor-rules-discovery.md](../design/cursor-rules-discovery.md) | Cursor rules auto-discovery for workers |
