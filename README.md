@@ -148,6 +148,29 @@ under spine-tasks/. Update CONTEXT.md and dependencies.json.
 
 Skill source: [`skills/create-spine-tasks/SKILL.md`](skills/create-spine-tasks/SKILL.md). See [bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) for the greenfield flow.
 
+### Cursor rules (contributors)
+
+The repo ships [`.cursor/rules/`](.cursor/rules/) for Cursor IDE sessions. Rules are versioned in git (no secrets or machine-local paths).
+
+**Primary subset for pi-spine** (Node.js CLI / `.mjs` codebase):
+
+| Rule | Role |
+|------|------|
+| [`critical-rules-quick-reference.mdc`](.cursor/rules/critical-rules-quick-reference.mdc) | Always-on condensed anti-patterns |
+| [`general-llm-anti-patterns.mdc`](.cursor/rules/general-llm-anti-patterns.mdc) | Universal LLM coding pitfalls |
+| [`javascript-3-development-standards.mdc`](.cursor/rules/javascript-3-development-standards.mdc) | JS/TS/MJS standards (globs on `**/*.{js,mjs,cjs,ts,tsx}`) |
+| [`owasp-secure-coding-practices.mdc`](.cursor/rules/owasp-secure-coding-practices.mdc) | Security baseline (evidence exec, CLI) |
+| [`git-workflow-and-pr.mdc`](.cursor/rules/git-workflow-and-pr.mdc) | Commits, PRs, CI expectations |
+| [`documentation-policy.mdc`](.cursor/rules/documentation-policy.mdc) | When to write docs vs task packets |
+| [`taskplane-task-authoring.mdc`](.cursor/rules/taskplane-task-authoring.mdc) | Authoring `PROMPT.md` / `STATUS.md` |
+| [`taskplane-worker-cursor.mdc`](.cursor/rules/taskplane-worker-cursor.mdc) | Executing task packets in Cursor |
+| [`engineering-philosophy.mdc`](.cursor/rules/engineering-philosophy.mdc) | Design trade-offs |
+| [`cursor-integration.mdc`](.cursor/rules/cursor-integration.mdc) | Rules vs skills in Cursor |
+
+**Phase / milestone audits:** follow [`.cursor/rules/audit-workflow.mdc`](.cursor/rules/audit-workflow.mdc). For pi-spine, invoke the JavaScript audit ([`javascript-3-brutal-audit.mdc`](.cursor/rules/javascript-3-brutal-audit.mdc)) after major phases.
+
+**Optional language packs** in the same folder (Swift, Python, Java, Go, Rust, AWS, iOS, Obsidian) apply when you work on those stacks; they are not injected into spine worker prompts by default (see SP-073 / FR-WORK-05 for wiring).
+
 ---
 
 ## Quick start

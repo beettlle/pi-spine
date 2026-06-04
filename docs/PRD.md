@@ -396,7 +396,7 @@ iOS / Xcode consumer repos require explicit `testing.build` and `testing.test` c
 |----|-------------|---|
 | FR-WORK-01 | Worker executes all incomplete steps in one session until done or context limit | 0 |
 | FR-WORK-02 | STATUS.md updated before every step boundary commit | 0 |
-| FR-WORK-03 | Git commit per completed step: `{taskId} step {n}: {step title}` | 0 |
+| FR-WORK-03 | Git commit per completed step: `feat({taskId}): complete Step {n} — {step title}` (e.g. `feat(SP-064): complete Step 2 — apply across execution surfaces`) | 0 |
 | FR-WORK-04 | On context limit: persist STATUS, commit, exit 0; scheduler re-invokes worker | 0 |
 | FR-WORK-05 | Worker receives tiered context: PROMPT, STATUS, config referenceDocs/standards | 0 |
 | FR-WORK-06 | Worker must not edit files outside `## File Scope` without PROMPT amendment | 0 |

@@ -1,7 +1,7 @@
 # SP-064: Commit convention alignment — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,36 +11,51 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Grep repo for both commit format patterns; list all occurrences in File Scope files
-- [ ] Read SP-063 worker template (review ordering references commits)
+- [x] Grep repo for both commit format patterns; list all occurrences in File Scope files
+- [x] Read SP-063 worker template (review ordering references commits)
+
+**Preflight findings (File Scope):**
+
+| File | Option A (`{taskId} step {n}:`) | Option B (`feat(TASK-ID): complete Step N —`) |
+|------|--------------------------------|-----------------------------------------------|
+| `docs/PRD.md` FR-WORK-03 | ✓ line 399 | — |
+| `templates/agents/worker.md` | — | ✓ lines 83, 99 |
+| `bin/spine-worker-runner.mjs` | — | ✓ line 205 (abbreviated `feat(${taskIdHint}): …`) |
+| `src/batch/agent-session-worker.mjs` | — | ✓ line 39 (abbreviated `feat(${taskIdHint}): …`) |
+
+SP-063 defers commit format to SP-064; L2+ ordering already uses Option B in worker template.
 
 ---
 
 ### Step 1: Choose convention
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Decide Option A or Option B (prefer consistency with create-spine-tasks skill / existing worker template unless PRD rationale favors A)
-- [ ] Record decision in STATUS.md Discoveries table
+- [x] Decide Option A or Option B (prefer consistency with create-spine-tasks skill / existing worker template unless PRD rationale favors A)
+- [x] Record decision in STATUS.md Discoveries table
+
+**Decision:** **Option B** — `feat({taskId}): complete Step {n} — {step title}`
+
+Rationale: worker template, both runners, create-spine-tasks skill, and all staged task PROMPTs already use Option B; only PRD FR-WORK-03 still documents Option A.
 
 ---
 
 ### Step 2: Apply across execution surfaces
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update `docs/PRD.md` FR-WORK-03 with chosen format + one example
-- [ ] Update `templates/agents/worker.md` checkpoint / Git Commit Convention text
-- [ ] Update inline commit hint in `bin/spine-worker-runner.mjs`
-- [ ] Update inline commit hint in `src/batch/agent-session-worker.mjs` (`buildAgentSessionWorkerPrompt`)
+- [x] Update `docs/PRD.md` FR-WORK-03 with chosen format + one example
+- [x] Update `templates/agents/worker.md` checkpoint / Git Commit Convention text
+- [x] Update inline commit hint in `bin/spine-worker-runner.mjs`
+- [x] Update inline commit hint in `src/batch/agent-session-worker.mjs` (`buildAgentSessionWorkerPrompt`)
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Grep confirms no contradictory commit examples remain in File Scope files
+- [x] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Grep confirms no contradictory commit examples remain in File Scope files
 
 ---
 
@@ -55,6 +70,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Chose Option B (`feat(TASK-ID): complete Step N — …`); aligns with worker template, runners, create-spine-tasks skill | Update PRD FR-WORK-03 only; worker template already correct | Step 1 |
 
 ---
 
@@ -63,6 +79,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-03 | Step 3 verification | typecheck + 390 tests green; grep clean |
 
 ---
 
