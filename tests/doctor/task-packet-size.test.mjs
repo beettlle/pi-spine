@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -8,7 +9,7 @@ import { collectTaskPacketSizeIssues } from "../../src/doctor/task-packet-size.m
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 test("collectTaskPacketSizeIssues flags XL and too many steps on pending packet", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "tp-size-warn-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tp-size-warn-"));
 	const folder = path.join(dir, "TP-997-smoke");
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
@@ -58,7 +59,7 @@ Too big.
 });
 
 test("collectTaskPacketSizeIssues ignores tasks with .DONE", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "tp-size-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tp-size-"));
 	const folder = path.join(dir, "TP-999-smoke");
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
