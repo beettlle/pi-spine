@@ -211,11 +211,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-089 | Parser + profile foundation + micromatch dep | **Staged** | — |
-| SP-090 | `discoverCursorRules` + committed `.spine/rules-manifest.json` | **Staged** | SP-089 |
-| SP-091 | `selectRulesForWorker` + glob match (append semantics) | **Staged** | SP-090 |
-| SP-092 | Worker context integration + journal event | **Staged** | SP-091, SP-073 |
-| SP-093 | `spine rules` CLI + init + doctor | **Staged** | SP-091 |
+| SP-089 | Parser + profile foundation + micromatch dep | **Done** | — |
+| SP-090 | `discoverCursorRules` + committed `.spine/rules-manifest.json` | **Done** | SP-089 |
+| SP-091 | `selectRulesForWorker` + glob match (append semantics) | **Done** | SP-090 |
+| SP-092 | Worker context integration + journal event | **Done** | SP-091, SP-073 |
+| SP-093 | `spine rules` CLI + init + doctor | **Done** | SP-091 |
 | SP-094 | Design doc + adoption docs + skill | **Staged** | SP-092, SP-093 |
 
 **Product decisions (locked):**
