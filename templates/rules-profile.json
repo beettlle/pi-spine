@@ -1,0 +1,17 @@
+{
+  "profileVersion": 1,
+  "worker": {
+    "alwaysInclude": ["taskplane-worker-cursor.mdc"],
+    "neverInclude": [],
+    "globMatch": true
+  },
+  "discovery": {
+    "excludePatterns": ["*-brutal-audit"],
+    "excludeRelPaths": [
+      "audit-workflow.mdc",
+      "cursor-integration.mdc",
+      "taskplane/prompt-template.md",
+      "taskplane/status-template.md"
+    ]
+  }
+}
