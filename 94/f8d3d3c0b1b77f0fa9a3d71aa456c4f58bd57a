@@ -1,0 +1,80 @@
+src/doctor/task-packet-size.mjs
+  s_ce96539baf8f8d::t_1c61261c7e666e 1-50,54,66-110
+  s_ce96539baf8f8d::t_b407f449c53328 51-53,55-65
+src/doctor/stall-config.mjs
+  s_ce96539baf8f8d::t_b337bbf5f9fef2 1-63
+spine-tasks/SP-087-real-pi-stall-defaults/STATUS.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-4
+templates/spine-config.json
+  s_ce96539baf8f8d::t_a6fec09df21c7f 28-30
+src/batch/worker-host.mjs
+  s_ce96539baf8f8d::t_c93a20b7072ae5 21
+  s_ce96539baf8f8d::t_c824d4285dfe5e 312-313
+src/tasks/packet/parse-prompt.mjs
+  s_ce96539baf8f8d::t_9bed40f781e2a1 81-84
+  s_ce96539baf8f8d::t_1115553e2f6f6f 17
+  s_ce96539baf8f8d::t_bbabd8a66517b4 37-38,43
+tests/doctor/task-packet-size.test.mjs
+  s_ce96539baf8f8d::t_6f93f305fdf7fa 1-10,53,58-104
+  s_ce96539baf8f8d::t_c4175c08650a7a 18
+  s_ce96539baf8f8d::t_868bcb9b4a3a6f 55
+  s_ce96539baf8f8d::t_5ae572220b3bef 40-41,43
+  s_ce96539baf8f8d::t_631e9ce2af6f38 11-17,19-39,42,44-52,54,56-57
+spine-tasks/SP-088-task-size-stall-budget/PROMPT.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-53
+bin/spine.mjs
+  s_ce96539baf8f8d::t_8d52ed258312ac 288
+  s_ce96539baf8f8d::t_0776fe2bc31be9 46-47
+  s_ce96539baf8f8d::t_3ca1b1e051098e 317
+.spine/spine-config.json
+  s_ce96539baf8f8d::t_6f264e920b2f0b 32-36
+spine-tasks/SP-086-task-sizing-guardrails/STATUS.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-13
+tests/doctor/stall-config.test.mjs
+  s_ce96539baf8f8d::t_bf1f8aac5a61c3 1-46
+skills/create-spine-tasks/SKILL.md
+  s_ce96539baf8f8d::t_7c504ed1560c16 198-199,201-208
+  s_ce96539baf8f8d::t_6a277c8734dd28 62-64
+tp-size-warn-LcQ5NO/TP-997-smoke/PROMPT.md
+  s_ce96539baf8f8d::t_ae12a14040db8c 1-33
+tp-size-warn-kRurwp/TP-997-smoke/PROMPT.md
+  s_ce96539baf8f8d::t_e590b4e9e9e7eb 1-35
+tp-size-warn-IbijEU/TP-997-smoke/PROMPT.md
+  s_ce96539baf8f8d::t_923d9b9ce45813 1-35
+spine-tasks/SP-088-task-size-stall-budget/STATUS.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-4
+spine-tasks/SP-087-real-pi-stall-defaults/PROMPT.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-51
+tests/batch/task-stall-budget.test.mjs
+  s_ce96539baf8f8d::t_348b22b85da066 1-28
+docs/adoption/operator-runbook.md
+  s_ce96539baf8f8d::t_e8bea972ed8016 422
+  s_ce96539baf8f8d::t_523f6769a44131 387-400
+spine-tasks/CONTEXT.md
+  s_ce96539baf8f8d::t_9fdf0440edf1ce 5
+  s_ce96539baf8f8d::t_d6306ccd7544f5 208-217
+src/batch/task-stall-budget.mjs
+  s_ce96539baf8f8d::t_56280ee3f90667 1-65
+spine-tasks/dependencies.json
+  s_ce96539baf8f8d::t_ee273ebff7055e 180-186
+tp-size-warn-lZ3I9Y/TP-997-smoke/PROMPT.md
+  ai_agent 1-35
+spine-tasks/SP-086-task-sizing-guardrails/PROMPT.md
+  s_ce96539baf8f8d::t_4f30f8204dee1d 1-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "94f8d3d3c0b1b77f0fa9a3d71aa456c4f58bd57a",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
