@@ -23,3 +23,15 @@ export {
 	RULES_MANIFEST_REL_PATH,
 	writeRulesManifestAtomic,
 } from "./discover.mjs";
+export {
+	expandFileScopeProbes,
+	ruleGlobsMatchFileScope,
+	SYNTHETIC_PROBE_EXTENSIONS,
+} from "./match-globs.mjs";
+export { priorityRank } from "./priority.mjs";
+export {
+	contextPathToRuleRelPath,
+	DEFAULT_SELECT_MAX_RULES,
+	ruleRelPathToContextPath,
+	selectRulesForWorker,
+} from "./select.mjs";
