@@ -1,0 +1,356 @@
+{
+  "generatedAt": "2026-06-04T20:52:12.679Z",
+  "rulesRoot": ".cursor/rules",
+  "rules": [
+    {
+      "relPath": "ai-ml-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AI/ML development standards - PyTorch, TensorFlow, GPU optimization, model management, reproducibility",
+      "globs": [
+        "**/*.py"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "aws-cloudwatch-best-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AWS CloudWatch best practices - logging, metrics, alarms, dashboards, and CloudTrail standards",
+      "globs": [
+        "**/*cloudwatch*.tf",
+        "**/*cloudwatch*.yml",
+        "**/*logging*.py",
+        "**/*metrics*.py"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "aws-fargate-best-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AWS Fargate (ECS) best practices - task definitions, service configuration, container security, and logging standards",
+      "globs": [
+        "**/Dockerfile*",
+        "**/docker-compose*.yml",
+        "**/*task-definition*.json",
+        "**/ecs*.tf",
+        "**/fargate*.tf"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "aws-general-best-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AWS Well-Architected Framework best practices - general security, reliability, performance, cost optimization, and operational excellence standards",
+      "globs": [
+        "**/infrastructure/**",
+        "**/*.tf",
+        "**/*.yml",
+        "**/*.yaml",
+        "**/*.json"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "aws-opensearch-best-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AWS OpenSearch best practices - domain configuration, index management, query optimization, access control, and audit logging standards",
+      "globs": [
+        "**/*opensearch*.tf",
+        "**/*opensearch*.yml",
+        "**/*elasticsearch*.tf"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "aws-rds-best-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "AWS RDS PostgreSQL best practices - database configuration, connection management, authentication, backup, and performance optimization standards",
+      "globs": [
+        "**/*rds*.tf",
+        "**/*rds*.yml",
+        "**/*database*.tf",
+        "**/*postgres*.tf"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "critical-rules-quick-reference.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Critical anti-patterns quick reference - condensed rules for fast context loading",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "documentation-policy.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Documentation and markdown creation policy - when to create .md files, Diátaxis structure, and strategic docs for agents",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "engineering-philosophy.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Core engineering philosophy and values",
+      "globs": [
+        "**/*"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "general-llm-anti-patterns.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Universal language-agnostic rules to prevent common LLM-induced anti-patterns across all programming languages and frameworks",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "git-workflow-and-pr.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Git commits, branches, rebase/merge, and PR titles/descriptions for clean, maintainable contributions",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "go-1-21-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Go-specific development standards following Effective Go, Go Code Review Comments, and Uber Go Style Guide",
+      "globs": [
+        "**/*.go"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "ios-build-automation.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Build automation rules for SweetPad/xcodebuild integration and automated verification workflows",
+      "globs": [
+        "**/*.swift"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "ios-ui-development-focus.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "UI/UX and SwiftUI best practices - HIG compliance, presentation APIs, layout patterns",
+      "globs": [
+        "**/*.swift"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "java-17-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Java-specific development standards following Effective Java, Google Java Style Guide, and modern Java 17 LTS best practices",
+      "globs": [
+        "**/*.java"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "java-21-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Java-specific development standards following Effective Java, Google Java Style Guide, and modern Java 21 LTS best practices",
+      "globs": [
+        "**/*.java"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "javascript-3-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions",
+      "globs": [
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "obsidian-integration.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Obsidian CLI commands and plugin dev loop when user interacts with a vault",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "obsidian-vault-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Obsidian vault anti-patterns for OFM notes, Bases, and JSON Canvas",
+      "globs": [
+        "**/*.md",
+        "**/*.base",
+        "**/*.canvas"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "owasp-secure-coding-practices.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "OWASP-aligned secure coding: input validation, output encoding, auth, session, access control, crypto, logging, data protection, DB, file, memory",
+      "globs": [
+        "**/*auth*",
+        "**/api/**",
+        "**/handlers/**",
+        "**/*controller*",
+        "**/*.go",
+        "**/*.py",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.java",
+        "**/*.swift",
+        "**/*.js",
+        "**/*.rs"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "python-3-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Python-specific development standards following PEP 8, PEP 20 (Zen of Python), and Pythonic best practices",
+      "globs": [
+        "**/*.py"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "rust-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Rust development standards: idioms, style, anti-patterns (Rust 2021 edition, 2024 where applicable)",
+      "globs": [
+        "**/*.rs"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "stet-integration.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Stet CLI usage - commands and dismiss reasons for Cursor and stet-assisted review",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "swift-5-9-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Swift 5.9 development standards - SwiftUI, layers, concurrency, testing; platform minimum from project deployment target",
+      "globs": [
+        "**/*.swift"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "swift-6-development-standards.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Swift 6 development standards - strict concurrency, SwiftUI, layers; platform minimum from project deployment target",
+      "globs": [
+        "**/*.swift"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "taskplane-task-authoring.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Create Taskplane-style task packets (PROMPT.md, STATUS.md, CONTEXT.md) for autonomous execution outside Cursor. Use when asked to create, stage, queue, or plan tasks—not when implementing code.",
+      "globs": [
+        "**/PROMPT.md",
+        "**/STATUS.md",
+        "**/taskplane-tasks/**",
+        "**/docs/task-management/**"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "taskplane-worker-cursor.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Execute a Taskplane-style task packet in Cursor: read PROMPT.md and STATUS.md, stay within File Scope, update checkboxes honestly, run verification before claiming done. Use when implementing or executing a task—not when creating new task packets.",
+      "globs": [],
+      "parseStatus": "ok"
+    }
+  ],
+  "excluded": [
+    {
+      "relPath": "audit-workflow.mdc",
+      "reason": "excludeRelPath",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "cursor-integration.mdc",
+      "reason": "excludeRelPath",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "go-1-21-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "java-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "javascript-3-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "python-3-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "rust-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "swift-5-9-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "swift-6-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "taskplane/prompt-template.md",
+      "reason": "excludeRelPath",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "taskplane/status-template.md",
+      "reason": "excludeRelPath",
+      "spineClass": "excluded"
+    }
+  ]
+}

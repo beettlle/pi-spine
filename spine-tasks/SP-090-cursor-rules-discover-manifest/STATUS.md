@@ -1,6 +1,6 @@
 # SP-090: Cursor rules discover + manifest — Status
 
-**Current Step:** 1
+**Current Step:** 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 2
@@ -17,15 +17,15 @@
 - [x] `.cursor/rules/` present (38 rule files)
 
 ### Step 1: Discovery engine
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] `discoverCursorRules` implemented
-- [ ] Plan + code review APPROVE
+- [x] `discoverCursorRules` implemented
+- [x] Plan review APPROVE
 
 ### Step 2: Init template + pi-spine manifest
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Template profile + committed manifest
+- [x] Template profile + committed manifest
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
