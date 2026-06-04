@@ -247,6 +247,12 @@ export function summarizeJournalEvent(event) {
 		parts.push(`dirty: ${listed}${more}`);
 	}
 	if (payload.suggestion) parts.push(String(payload.suggestion).slice(0, 80));
+	if (payload.mode === "auto" || payload.mode === "static") {
+		const count = payload.pathCount ?? payload.paths?.length;
+		if (count != null) parts.push(`${count} rule path(s)`);
+		if (payload.manifestSource) parts.push(`manifest ${payload.manifestSource}`);
+	}
+	if (payload.capped) parts.push("selection capped");
 
 	if (parts.length === 0 && Object.keys(payload).length > 0) {
 		const preview = JSON.stringify(payload);

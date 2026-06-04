@@ -34,10 +34,10 @@ test("worker-prompt tail aligns with worker.md commit and review conventions", (
 	assert.match(WORKER_TOOLS_HINT, /spine_report_progress/);
 });
 
-test("buildWorkerTailPrompt does not contradict worker.md on commit format", () => {
+test("buildWorkerTailPrompt does not contradict worker.md on commit format", async () => {
 	const taskFolder = path.join(PACKAGE_ROOT, "spine-tasks/SP-064-commit-convention-align");
 	const donePath = path.join(taskFolder, ".DONE");
-	const tail = buildWorkerTailPrompt({
+	const tail = await buildWorkerTailPrompt({
 		worktreePath: PACKAGE_ROOT,
 		taskFolder,
 		donePath,
@@ -52,9 +52,9 @@ test("buildWorkerTailPrompt does not contradict worker.md on commit format", () 
 	assert.doesNotMatch(tail, /restart from Step 0/i);
 });
 
-test("buildAgentSessionWorkerPrompt includes review hint when level > 0", () => {
+test("buildAgentSessionWorkerPrompt includes review hint when level > 0", async () => {
 	const taskFolder = path.join(PACKAGE_ROOT, "spine-tasks/SP-064-commit-convention-align");
-	const prompt = buildAgentSessionWorkerPrompt({
+	const prompt = await buildAgentSessionWorkerPrompt({
 		worktreePath: PACKAGE_ROOT,
 		taskFolder,
 		config: {},

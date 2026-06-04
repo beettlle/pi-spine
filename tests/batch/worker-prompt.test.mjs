@@ -32,9 +32,9 @@ test("buildDoneCheckpointHint references done path and uncommitted failure", () 
 	assert.match(hint, /uncommitted changes without \.DONE fail/);
 });
 
-test("buildWorkerTailPrompt includes tools hint and task id from folder", () => {
+test("buildWorkerTailPrompt includes tools hint and task id from folder", async () => {
 	const taskFolder = path.join(os.tmpdir(), "spine-tasks", "TP-100-smoke");
-	const prompt = buildWorkerTailPrompt({
+	const prompt = await buildWorkerTailPrompt({
 		worktreePath: "/wt",
 		taskFolder,
 		donePath: path.join(taskFolder, ".DONE"),
@@ -59,7 +59,7 @@ test("buildWorkerTailPrompt appends worker agent and PROMPT when present", async
 		fs.writeFileSync(agentPath, "# worker\n", "utf-8");
 		fs.writeFileSync(promptPath, "# Task\n", "utf-8");
 
-		const tail = buildWorkerTailPrompt({
+		const tail = await buildWorkerTailPrompt({
 			worktreePath,
 			taskFolder,
 			donePath: path.join(taskFolder, ".DONE"),

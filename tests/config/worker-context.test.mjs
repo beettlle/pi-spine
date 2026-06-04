@@ -8,6 +8,8 @@ import { validateSpineConfig } from "../../bin/spine-config.mjs";
 import { runInit } from "../../bin/spine-init.mjs";
 import {
 	buildWorkerContext,
+	buildWorkerContextAsync,
+	cursorRulesRootExists,
 	DEFAULT_SPINE_INIT_STANDARDS,
 	DEFAULT_WORKER_CONTEXT_BYTE_CAP,
 	loadContextDocEntries,
@@ -57,7 +59,7 @@ test("buildWorkerTailPrompt injects configured standards", async () => {
 		fs.mkdirSync(path.dirname(standardPath), { recursive: true });
 		fs.writeFileSync(standardPath, "Always run npm test.\n", "utf-8");
 
-		const tail = buildWorkerTailPrompt({
+		const tail = await buildWorkerTailPrompt({
 			worktreePath: root,
 			taskFolder: path.join(root, "spine-tasks", "SP-073-test"),
 			donePath: path.join(root, "spine-tasks", "SP-073-test", ".DONE"),
@@ -67,6 +69,38 @@ test("buildWorkerTailPrompt injects configured standards", async () => {
 
 		assert.match(tail, /Project standards & reference/);
 		assert.match(tail, /Always run npm test/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildWorkerContextAsync uses auto selection when cursor rules exist", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-auto-"));
+	try {
+		const rulesDir = path.join(root, ".cursor", "rules");
+		fs.mkdirSync(rulesDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(rulesDir, "taskplane-worker-cursor.mdc"),
+			"---\nalwaysApply: true\n---\n# Worker\n",
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(rulesDir, "critical-rules-quick-reference.mdc"),
+			"---\nalwaysApply: true\n---\n# Critical\n",
+			"utf-8",
+		);
+
+		assert.equal(cursorRulesRootExists(root), true);
+
+		const result = await buildWorkerContextAsync({
+			config: {},
+			projectRoot: root,
+			taskFileScope: ["src/worker.mjs"],
+		});
+
+		assert.equal(result.selection?.mode, "auto");
+		assert.ok(result.selection?.paths?.length > 0);
+		assert.match(result.text, /taskplane-worker-cursor\.mdc/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

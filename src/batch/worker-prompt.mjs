@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { buildWorkerContext } from "../config/worker-context.mjs";
+import { buildWorkerContextAsync } from "../config/worker-context.mjs";
 
 export function buildReviewLevelHint(reviewLevel) {
 	return reviewLevel > 0
@@ -27,7 +27,7 @@ export function buildDoneCheckpointHint(donePath) {
 	);
 }
 
-export function buildWorkerTailPrompt({
+export async function buildWorkerTailPrompt({
 	worktreePath,
 	taskFolder,
 	donePath,
@@ -36,6 +36,8 @@ export function buildWorkerTailPrompt({
 	includePromptInclude = false,
 	config = {},
 	projectRoot = worktreePath || process.cwd(),
+	taskFileScope = [],
+	journal,
 }) {
 	const workerAgentPath = worktreePath
 		? path.join(worktreePath, ".spine", "agents", "worker.md")
@@ -46,7 +48,12 @@ export function buildWorkerTailPrompt({
 	const promptInclude =
 		includePromptInclude && fs.existsSync(promptPath) ? `\n\n@${promptPath}` : "";
 
-	const context = buildWorkerContext(config, projectRoot);
+	const context = await buildWorkerContextAsync({
+		config,
+		projectRoot,
+		taskFileScope,
+		journal,
+	});
 
 	return (
 		`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
