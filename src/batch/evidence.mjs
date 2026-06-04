@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { runEvidenceCommand } from "./evidence-command.mjs";
 import { readJournalEvents, readJournalTail } from "./journal.mjs";
 import { generateBatchPostMortem } from "./postmortem.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
@@ -57,36 +58,6 @@ export function resolveTestingCommands(config, projectRoot) {
 			(typeof taskplane.testWithCoverage === "string" && taskplane.testWithCoverage.trim()) ||
 			"",
 	};
-}
-
-/**
- * @param {string} projectRoot
- * @param {string} command
- * @param {number} [maxBytes]
- */
-function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) {
-	if (!command) return { ok: false, skipped: true, output: "" };
-
-	try {
-		const output = execFileSync(command, {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			shell: true,
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 10 * 60 * 1000,
-			maxBuffer: maxBytes,
-		});
-		return { ok: true, skipped: false, output: String(output ?? "") };
-	} catch (err) {
-		const stdout = err && typeof err === "object" && "stdout" in err ? String(err.stdout ?? "") : "";
-		const stderr = err && typeof err === "object" && "stderr" in err ? String(err.stderr ?? "") : "";
-		const message = err instanceof Error ? err.message : String(err);
-		return {
-			ok: false,
-			skipped: false,
-			output: `${stdout}${stderr}\n[exit] ${message}`.trim(),
-		};
-	}
 }
 
 /**

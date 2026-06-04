@@ -140,6 +140,10 @@ spine next                      # print suggestedCommand only
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 
+**Detached start/resume return contract:** default detached `spine batch start` and `spine batch resume` return as soon as batch-state shows the engine has started (`status: engine_started`, `phase: running`). That means the background engine is running — not that the resumed task or batch finished. After a default detached return, run `spine status --diagnose` to confirm workers, PIDs, and journal progress.
+
+Optional `--wait-terminal` on start or resume blocks until the batch reaches a terminal phase (`completed` / `failed` / `aborted`), pauses, or (on resume) the resumed task reaches a terminal task status — then returns `status: start_completed` or `resume_completed`.
+
 Journal tail:
 
 ```bash
@@ -258,10 +262,13 @@ SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
 ### Resume (paused or failed)
 
 ```bash
-spine batch resume                  # detached
+spine batch resume                  # detached; returns engine_started
+spine batch resume --wait-terminal  # block until task/batch terminal
 spine batch resume --attached       # foreground
 spine batch resume --force          # after stale segment state
 ```
+
+Default detached resume success means **engine started**, not resume finished. Use `--wait-terminal` when you need the CLI to block until the resumed task or batch reaches a terminal state; otherwise monitor with `spine status --diagnose`.
 
 Multi-task paused batches resume **all** pending lanes in one command.
 

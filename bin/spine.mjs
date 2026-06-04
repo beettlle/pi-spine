@@ -18,7 +18,22 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { getVersion } from "./get-version.mjs";
+import { commandExists, getVersion } from "./get-version.mjs";
+import { handleBatch, handleNext, handleRun } from "./spine-cli/batch.mjs";
+import { handleGate } from "./spine-cli/gate.mjs";
+import { handleIntegrate } from "./spine-cli/integrate.mjs";
+import { handlePlan } from "./spine-cli/plan.mjs";
+import {
+	c,
+	die,
+	FAIL,
+	getMinPiVersion,
+	getPackageVersion,
+	OK,
+	PACKAGE_ROOT,
+	WARN,
+} from "./spine-cli/shared.mjs";
+import { handleStatus } from "./spine-cli/status.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
 import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
@@ -35,55 +50,8 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PACKAGE_ROOT = path.resolve(__dirname, "..");
-
-const c = {
-	reset: "\x1b[0m",
-	bold: "\x1b[1m",
-	dim: "\x1b[2m",
-	red: "\x1b[31m",
-	green: "\x1b[32m",
-	yellow: "\x1b[33m",
-	cyan: "\x1b[36m",
-};
-
-const OK = `${c.green}✅${c.reset}`;
-const WARN = `${c.yellow}⚠️${c.reset}`;
-const FAIL = `${c.red}❌${c.reset}`;
 
 const REQUIRED_AGENT_FILES = ["worker.md", "reviewer.md", "supervisor.md"];
-
-function die(msg) {
-	console.error(`${FAIL} ${msg}`);
-	process.exit(1);
-}
-
-function commandExists(cmd) {
-	try {
-		execFileSync("which", [cmd], { stdio: ["ignore", "pipe", "pipe"] });
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-function getPackageVersion() {
-	try {
-		const pkg = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, "package.json"), "utf-8"));
-		return pkg.version || "unknown";
-	} catch {
-		return "unknown";
-	}
-}
-
-function getMinPiVersion() {
-	try {
-		const pkg = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, "package.json"), "utf-8"));
-		return pkg.pi?.minPiVersion ?? null;
-	} catch {
-		return null;
-	}
-}
 
 function parseSemver(versionText) {
 	const match = String(versionText ?? "")
@@ -427,38 +395,6 @@ async function cmdPreflight(args) {
 	if (!result.ok) process.exit(result.exitCode);
 }
 
-async function cmdStatus(args) {
-	const json = args.includes("--json");
-	const diagnose = args.includes("--diagnose");
-	const verbose = args.includes("--verbose");
-	const { runSpineStatus } = await import("./spine-status.mjs");
-	const result = runSpineStatus({
-		projectRoot: process.cwd(),
-		json,
-		diagnose,
-		verbose,
-	});
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdBatch(args) {
-	const { runSpineBatch } = await import("./spine-batch.mjs");
-	const result = await runSpineBatch({ projectRoot: process.cwd(), args });
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdRun(args) {
-	const { runSpineBatch } = await import("./spine-batch.mjs");
-	const result = await runSpineBatch({
-		projectRoot: process.cwd(),
-		args: ["start", ...args],
-	});
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
 async function cmdJournal(args) {
 	const { runSpineJournal } = await import("./spine-journal.mjs");
 	const result = runSpineJournal({ projectRoot: process.cwd(), args });
@@ -469,27 +405,6 @@ async function cmdJournal(args) {
 async function cmdState(args) {
 	const { runSpineState } = await import("./spine-state.mjs");
 	const result = runSpineState({ projectRoot: process.cwd(), args });
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdNext(args) {
-	const { runSpineNext } = await import("./spine-batch.mjs");
-	const result = runSpineNext({ projectRoot: process.cwd(), args });
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdIntegrate(args) {
-	const { runSpineIntegrate } = await import("./spine-integrate.mjs");
-	const result = runSpineIntegrate({ projectRoot: process.cwd(), args });
-	process.stdout.write(result.output);
-	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdGate(args) {
-	const { runSpineGate } = await import("./spine-gate.mjs");
-	const result = runSpineGate({ projectRoot: process.cwd(), args });
 	process.stdout.write(result.output);
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
@@ -539,14 +454,6 @@ async function cmdReport(args) {
 	const result = runSpineReportProgress({ projectRoot: process.cwd(), args: args.slice(1) });
 	process.stdout.write(result.output ?? "");
 	if (result.exitCode !== 0) process.exit(result.exitCode);
-}
-
-async function cmdPlan(args) {
-	const json = args.includes("--json");
-	const scope = args.filter((a) => !a.startsWith("--")).join(" ") || "all";
-	const { runSpinePlan } = await import("./spine-plan.mjs");
-	const result = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
-	process.stdout.write(result.output);
 }
 
 function cmdVersion() {
@@ -669,7 +576,7 @@ if (isMainModule) {
 				await cmdPreflight(args);
 				break;
 			case "plan":
-				await cmdPlan(args);
+				await handlePlan(args);
 				break;
 			case "deps":
 				await cmdDeps(args);
@@ -678,13 +585,13 @@ if (isMainModule) {
 				await cmdSettings(args);
 				break;
 			case "status":
-				await cmdStatus(args);
+				await handleStatus(args);
 				break;
 			case "batch":
-				await cmdBatch(args);
+				await handleBatch(args);
 				break;
 			case "run":
-				await cmdRun(args);
+				await handleRun(args);
 				break;
 			case "journal":
 				await cmdJournal(args);
@@ -693,7 +600,7 @@ if (isMainModule) {
 				await cmdState(args);
 				break;
 			case "next":
-				await cmdNext(args);
+				await handleNext(args);
 				break;
 			case "review":
 				await cmdReview(args);
@@ -702,10 +609,10 @@ if (isMainModule) {
 				await cmdReport(args);
 				break;
 			case "gate":
-				await cmdGate(args);
+				await handleGate(args);
 				break;
 			case "integrate":
-				await cmdIntegrate(args);
+				await handleIntegrate(args);
 				break;
 			case "dashboard":
 				await cmdDashboard(args);
