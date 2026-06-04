@@ -7,15 +7,75 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { runBatchPreflight } from "../../bin/spine-preflight.mjs";
 import { validateResumeBatch } from "./resume.mjs";
-import { ACTIVE_PHASES, loadSpineBatchState, recordBatchEnginePid, saveSpineBatchState } from "./state.mjs";
+import {
+	ACTIVE_PHASES,
+	loadSpineBatchState,
+	recordBatchEnginePid,
+	saveSpineBatchState,
+	TERMINAL_BATCH_PHASES,
+} from "./state.mjs";
 
 export const DETACHED_ENGINE_LOG_REL = path.join(".spine", "runtime", "detached-engine.log");
+
+/** @type {ReadonlySet<string>} */
+const TERMINAL_TASK_STATUSES = new Set(["succeeded", "failed", "skipped", "aborted"]);
 
 /**
  * @param {number} ms
  */
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * @param {object|null|undefined} raw
+ * @param {string|null|undefined} taskId
+ */
+function resumedTaskReachedTerminal(raw, taskId) {
+	if (!taskId || !raw || !Array.isArray(raw.tasks)) return false;
+	const task = raw.tasks.find((entry) => entry?.taskId === taskId);
+	return Boolean(task && TERMINAL_TASK_STATUSES.has(String(task.status ?? "")));
+}
+
+/**
+ * @param {object|null|undefined} raw
+ * @param {string|null|undefined} taskId
+ * @param {number} updatedAtBefore
+ */
+function evaluateDetachedResumeWait(raw, taskId, updatedAtBefore) {
+	if (!raw?.batchId) return null;
+	const updatedAt = Number(raw.updatedAt ?? 0);
+	if (updatedAt <= updatedAtBefore) return null;
+
+	if (TERMINAL_BATCH_PHASES.has(String(raw.phase ?? ""))) {
+		return {
+			ok: true,
+			status: "resume_completed",
+			batchId: raw.batchId,
+			phase: raw.phase,
+		};
+	}
+
+	if (raw.phase === "paused") {
+		return {
+			ok: true,
+			status: "resume_completed",
+			batchId: raw.batchId,
+			phase: raw.phase,
+			paused: true,
+		};
+	}
+
+	if (resumedTaskReachedTerminal(raw, taskId)) {
+		return {
+			ok: true,
+			status: "resume_completed",
+			batchId: raw.batchId,
+			phase: raw.phase,
+		};
+	}
+
+	return null;
 }
 
 /**
@@ -95,20 +155,22 @@ function persistDetachedEnginePid(projectRoot, enginePid) {
  * @param {string} params.projectRoot
  * @param {string | null} [params.previousBatchId]
  * @param {number} [params.timeoutMs]
+ * @param {boolean} [params.waitTerminal]
  */
 export async function waitForDetachedBatchStart({
 	projectRoot,
 	previousBatchId = null,
 	timeoutMs = 30_000,
+	waitTerminal = false,
 }) {
 	const deadline = Date.now() + timeoutMs;
+	/** @type {string|null} */
+	let startedBatchId = null;
+
 	while (Date.now() < deadline) {
 		const { raw } = loadSpineBatchState(projectRoot);
 		const batchId = raw?.batchId ?? null;
 		if (batchId && batchId !== previousBatchId) {
-			if (ACTIVE_PHASES.has(raw.phase)) {
-				return { ok: true, batchId, phase: raw.phase };
-			}
 			if (raw.phase === "failed" || raw.phase === "aborted") {
 				return {
 					ok: false,
@@ -118,9 +180,40 @@ export async function waitForDetachedBatchStart({
 					lastError: raw.lastError ?? null,
 				};
 			}
+
+			if (TERMINAL_BATCH_PHASES.has(String(raw.phase ?? "")) || raw.phase === "paused") {
+				return {
+					ok: true,
+					status: "start_completed",
+					batchId,
+					phase: raw.phase,
+				};
+			}
+
+			if (ACTIVE_PHASES.has(raw.phase)) {
+				startedBatchId = batchId;
+				if (!waitTerminal) {
+					return {
+						ok: true,
+						status: "engine_started",
+						batchId,
+						phase: raw.phase,
+					};
+				}
+			}
 		}
 		await sleep(200);
 	}
+
+	if (startedBatchId) {
+		return {
+			ok: false,
+			error: "timeout_waiting_for_batch",
+			batchId: startedBatchId,
+			status: "engine_started",
+		};
+	}
+
 	return { ok: false, error: "timeout_waiting_for_batch" };
 }
 
@@ -129,15 +222,22 @@ export async function waitForDetachedBatchStart({
  * @param {string} params.projectRoot
  * @param {string} params.batchId
  * @param {number} params.updatedAtBefore
+ * @param {string|null|undefined} [params.taskId]
  * @param {number} [params.timeoutMs]
+ * @param {boolean} [params.waitTerminal]
  */
 export async function waitForDetachedBatchResume({
 	projectRoot,
 	batchId,
 	updatedAtBefore,
+	taskId = null,
 	timeoutMs = 30_000,
+	waitTerminal = false,
 }) {
 	const deadline = Date.now() + timeoutMs;
+	/** @type {boolean} */
+	let engineStarted = false;
+
 	while (Date.now() < deadline) {
 		const { raw } = loadSpineBatchState(projectRoot);
 		if (raw?.batchId !== batchId) {
@@ -145,13 +245,6 @@ export async function waitForDetachedBatchResume({
 			continue;
 		}
 
-		const updatedAt = Number(raw.updatedAt ?? 0);
-		if (raw.phase === "running" && updatedAt > updatedAtBefore) {
-			return { ok: true, batchId, phase: raw.phase };
-		}
-		if (raw.phase === "completed" && updatedAt > updatedAtBefore) {
-			return { ok: true, batchId, phase: raw.phase, fastComplete: true };
-		}
 		if (raw.phase === "failed" || raw.phase === "aborted") {
 			return {
 				ok: false,
@@ -161,9 +254,34 @@ export async function waitForDetachedBatchResume({
 				lastError: raw.lastError ?? null,
 			};
 		}
+
+		const completed = evaluateDetachedResumeWait(raw, taskId, updatedAtBefore);
+		if (completed) {
+			return completed;
+		}
+
+		const updatedAt = Number(raw.updatedAt ?? 0);
+		if (raw.phase === "running" && updatedAt > updatedAtBefore) {
+			engineStarted = true;
+			if (!waitTerminal) {
+				return {
+					ok: true,
+					status: "engine_started",
+					batchId,
+					phase: raw.phase,
+				};
+			}
+		}
+
 		await sleep(200);
 	}
-	return { ok: false, error: "timeout_waiting_for_resume", batchId };
+
+	return {
+		ok: false,
+		error: "timeout_waiting_for_resume",
+		batchId,
+		engineStarted,
+	};
 }
 
 /**
@@ -213,17 +331,31 @@ export function formatDetachedEngineOutput(result, json = false) {
 		return lines.join("\n");
 	}
 
-	const lines = [
-		"",
-		`Batch engine ${operationLabel === "resume" ? "resuming" : "starting"} in the background.`,
-		"",
-	];
+	/** @type {string} */
+	let headline;
+	if (result.status === "resume_completed" || result.status === "start_completed") {
+		headline =
+			operationLabel === "resume"
+				? "Batch resume completed."
+				: "Batch start completed.";
+	} else if (result.status === "engine_started") {
+		headline =
+			operationLabel === "resume"
+				? "Batch engine resuming in the background (engine started; resume not yet confirmed)."
+				: "Batch engine starting in the background (engine started; batch not yet confirmed).";
+	} else {
+		headline = `Batch engine ${operationLabel === "resume" ? "resuming" : "starting"} in the background.`;
+	}
+
+	const lines = ["", headline, ""];
+	if (result.status) lines.push(`  Status: ${result.status}`);
 	if (result.scope) lines.push(`  Scope: ${result.scope}`);
 	if (result.batchId) lines.push(`  Batch: ${result.batchId}`);
 	if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+	if (result.phase) lines.push(`  Phase: ${result.phase}`);
 	if (result.enginePid) lines.push(`  Engine PID: ${result.enginePid}`);
 	if (result.logPath) lines.push(`  Log: ${result.logPath}`);
-	lines.push("", "  → spine status --diagnose", "");
+	lines.push("", `  → ${result.suggestedCommand ?? "spine status --diagnose"}`, "");
 	return lines.join("\n");
 }
 
@@ -238,6 +370,7 @@ export function formatDetachedBatchStartOutput(result, json = false) {
  * @param {string} params.spineBin
  * @param {string} params.scope
  * @param {boolean} [params.skipPreflight]
+ * @param {boolean} [params.waitTerminal]
  * @param {boolean} [params.json]
  */
 export async function startBatchDetached({
@@ -245,6 +378,7 @@ export async function startBatchDetached({
 	spineBin,
 	scope,
 	skipPreflight = false,
+	waitTerminal = false,
 	json = false,
 }) {
 	const preflight = runDetachedStartPreflight({ projectRoot, skipPreflight });
@@ -268,7 +402,7 @@ export async function startBatchDetached({
 	const previousBatchId = before.raw?.batchId ?? null;
 	const argv = buildAttachedBatchStartArgv({ scope, skipPreflight: true });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
-	const wait = await waitForDetachedBatchStart({ projectRoot, previousBatchId });
+	const wait = await waitForDetachedBatchStart({ projectRoot, previousBatchId, waitTerminal });
 
 	if (!wait.ok) {
 		const payload = {
@@ -300,6 +434,7 @@ export async function startBatchDetached({
 		ok: true,
 		detached: true,
 		operation: "start",
+		status: wait.status ?? "engine_started",
 		batchId: wait.batchId,
 		phase: wait.phase,
 		scope,
@@ -320,9 +455,16 @@ export async function startBatchDetached({
  * @param {string} params.projectRoot
  * @param {string} params.spineBin
  * @param {boolean} [params.force]
+ * @param {boolean} [params.waitTerminal]
  * @param {boolean} [params.json]
  */
-export async function resumeBatchDetached({ projectRoot, spineBin, force = false, json = false }) {
+export async function resumeBatchDetached({
+	projectRoot,
+	spineBin,
+	force = false,
+	waitTerminal = false,
+	json = false,
+}) {
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
 		const payload = {
@@ -346,7 +488,13 @@ export async function resumeBatchDetached({ projectRoot, spineBin, force = false
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
 	persistDetachedEnginePid(projectRoot, enginePid);
-	const wait = await waitForDetachedBatchResume({ projectRoot, batchId, updatedAtBefore: updatedAt });
+	const wait = await waitForDetachedBatchResume({
+		projectRoot,
+		batchId,
+		updatedAtBefore: updatedAt,
+		taskId,
+		waitTerminal,
+	});
 
 	if (!wait.ok) {
 		const payload = {
@@ -376,6 +524,7 @@ export async function resumeBatchDetached({ projectRoot, spineBin, force = false
 		ok: true,
 		detached: true,
 		operation: "resume",
+		status: wait.status ?? "engine_started",
 		batchId: wait.batchId,
 		taskId,
 		phase: wait.phase,

@@ -95,6 +95,7 @@ export function parseBatchArgs(args) {
 		hard: flags.has("--hard"),
 		detectManualMerge: flags.has("--detect-manual-merge"),
 		attached: flags.has("--attached"),
+		waitTerminal: flags.has("--wait-terminal"),
 		dryRun,
 		skipPreflight,
 		batchId,
@@ -265,6 +266,7 @@ export async function runSpineBatch(options) {
 				projectRoot,
 				spineBin: path.join(__dirname, "spine.mjs"),
 				force: parsed.force,
+				waitTerminal: parsed.waitTerminal,
 				json: parsed.json,
 			});
 			return {
@@ -306,6 +308,7 @@ export async function runSpineBatch(options) {
 				spineBin: path.join(__dirname, "spine.mjs"),
 				scope: parsed.scope,
 				skipPreflight: parsed.skipPreflight,
+				waitTerminal: parsed.waitTerminal,
 				json: parsed.json,
 			});
 			return {
