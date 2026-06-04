@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
@@ -226,6 +227,57 @@ test("completeBatch succeeds after integrate lands orch on main", async () => {
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("integrateOrchToBase aborts merge on conflict and restores checkout", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-conflict-");
+	const orchBranch = "orch/spine-conflict";
+	const batchId = "20260603T150000";
+	try {
+		fs.writeFileSync(path.join(projectRoot, "base-only.txt"), "on main\n", "utf-8");
+		execFileSync("git", ["add", "base-only.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "main file"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "conflict.txt"), "orch version\n", "utf-8");
+		execFileSync("git", ["add", "conflict.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "conflict.txt"), "main version\n", "utf-8");
+		execFileSync("git", ["add", "conflict.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "main conflict"], { cwd: projectRoot, stdio: "ignore" });
+
+		const fixture = completedBatchFixture(orchBranch, batchId);
+		writeSpineBatchState(projectRoot, fixture);
+		approveGateForIntegrate(projectRoot, fixture, batchId);
+
+		const result = integrateOrchToBase({ projectRoot });
+		assert.equal(result.ok, false);
+		assert.equal(result.failureClass, "MergeConflict");
+		assert.match(result.headline, /conflict/i);
+
+		const onMain = execFileSync("git", ["branch", "--show-current"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		assert.equal(onMain, "main");
+		assert.equal(
+			fs.readFileSync(path.join(projectRoot, "conflict.txt"), "utf-8"),
+			"main version\n",
+		);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.ok(events.some((event) => event.type === "integrate.failed"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("integrateOrchToBase fails when batch state is missing", () => {
+	const result = integrateOrchToBase({ projectRoot: os.tmpdir() });
+	assert.equal(result.ok, false);
+	assert.match(result.headline, /No active batch/i);
 });
 
 test("runSpineIntegrate CLI succeeds when orch tip already matches main", async () => {

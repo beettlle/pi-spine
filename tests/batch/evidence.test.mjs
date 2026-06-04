@@ -58,6 +58,20 @@ test("runEvidenceCommand skips empty command", () => {
 	assert.equal(result.ok, false);
 });
 
+test("runEvidenceCommand rejects disallowed build binary", () => {
+	const result = runEvidenceCommand(os.tmpdir(), "make install");
+	assert.equal(result.skipped, false);
+	assert.equal(result.ok, false);
+	assert.match(result.output, /\[rejected\].*not allowed: make/);
+});
+
+test("parseEvidenceCommandArgv rejects subshell injection", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("npm test $(whoami)"),
+		(err) => err instanceof EvidenceCommandError,
+	);
+});
+
 test("collectEvidenceBundle writes rejected output for unsafe testing.test", async () => {
 	const fs = await import("node:fs");
 	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
