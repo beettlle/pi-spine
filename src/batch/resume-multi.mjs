@@ -25,6 +25,7 @@ import { commitLaneWorktree, gitPorcelain } from "./lane-commit.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
 import {
 	countPendingSegments,
+	failBatchFromEngineError,
 	loadSpineBatchState,
 	recordBatchEnginePid,
 	saveSpineBatchState,
@@ -510,25 +511,26 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 
 	const pendingSegments = countPendingSegments(state);
 
-	state.phase = "running";
-	state.endedAt = null;
-	state.lastError = null;
-	recordBatchEnginePid(state, process.pid);
-	saveSpineBatchState(projectRoot, state);
-	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
-		resumeForced,
-		pendingSegments,
-		repairedLanes: [],
-		pendingTaskIds: check.pendingTasks.map((task) => task.taskId),
-		resumableWave: check.resumableWave,
-	});
+	try {
+		state.phase = "running";
+		state.endedAt = null;
+		state.lastError = null;
+		recordBatchEnginePid(state, process.pid);
+		saveSpineBatchState(projectRoot, state);
+		recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
+			resumeForced,
+			pendingSegments,
+			repairedLanes: [],
+			pendingTaskIds: check.pendingTasks.map((task) => task.taskId),
+			resumableWave: check.resumableWave,
+		});
 
-	const events = readJournalEvents(projectRoot, batchId);
-	let batchAborted = false;
-	const startWave = check.resumableWave ?? 0;
-	const wavePlan = state.wavePlan ?? [];
+		const events = readJournalEvents(projectRoot, batchId);
+		let batchAborted = false;
+		const startWave = check.resumableWave ?? 0;
+		const wavePlan = state.wavePlan ?? [];
 
-	for (let waveIndex = startWave; waveIndex < wavePlan.length; waveIndex++) {
+		for (let waveIndex = startWave; waveIndex < wavePlan.length; waveIndex++) {
 		state.currentWaveIndex = waveIndex;
 		saveSpineBatchState(projectRoot, state);
 
@@ -722,29 +724,50 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		}
 	}
 
-	state.endedAt = Date.now();
-	state.phase = "completed";
-	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "batch.completed", {
-		taskIds: (state.tasks ?? []).map((task) => task.taskId),
-		mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-		resumed: true,
-	});
-	openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
+		state.endedAt = Date.now();
+		state.phase = "completed";
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "batch.completed", {
+			taskIds: (state.tasks ?? []).map((task) => task.taskId),
+			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+			resumed: true,
+		});
+		openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
-	const taskIds = (state.tasks ?? []).map((task) => task.taskId);
-	const summaryTask =
-		taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
+		const taskIds = (state.tasks ?? []).map((task) => task.taskId);
+		const summaryTask =
+			taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
 
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId,
-		taskIds,
-		taskId: taskIds.length === 1 ? taskIds[0] : undefined,
-		mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-		output:
-			`Batch ${batchId} resumed and completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
-			`  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
-	};
+		return {
+			ok: true,
+			exitCode: 0,
+			batchId,
+			taskIds,
+			taskId: taskIds.length === 1 ? taskIds[0] : undefined,
+			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+			output:
+				`Batch ${batchId} resumed and completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
+				`  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
+		};
+	} catch (err) {
+		/** @type {{ taskId?: string, laneNumber?: number }} */
+		const ctx = err && typeof err === "object" ? err : {};
+		failBatchFromEngineError({
+			projectRoot,
+			state,
+			batchId,
+			error: err,
+			taskId: ctx.taskId ?? null,
+			laneNumber: ctx.laneNumber ?? null,
+		});
+		const message = err instanceof Error ? err.message : String(err);
+		return {
+			ok: false,
+			exitCode: 1,
+			batchId,
+			taskId: ctx.taskId,
+			error: "engine_crashed",
+			output: message,
+		};
+	}
 }
