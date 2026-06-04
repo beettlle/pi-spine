@@ -46,6 +46,8 @@ cd /absolute/path/to/pi-spine && npm link
 
 See [local-install.md](./local-install.md) for `file:` dependencies and PATH troubleshooting.
 
+**Optional — Cursor IDE rules:** If you develop with [Cursor](https://cursor.com), open the pi-spine checkout as the workspace. Rules under [`.cursor/rules/`](../../.cursor/rules/) load automatically in the IDE. For this repo, the primary subset is JavaScript/CLI (`javascript-3-development-standards.mdc`, `general-llm-anti-patterns.mdc`, `critical-rules-quick-reference.mdc`) plus task authoring (`taskplane-task-authoring.mdc`, `taskplane-worker-cursor.mdc`). Other language packs (Swift, Python, AWS, etc.) are optional. Phase audits: [`.cursor/rules/audit-workflow.mdc`](../../.cursor/rules/audit-workflow.mdc). Spine batch workers do not load `.cursor/rules/` unless configured (FR-WORK-05 / `spine init` standards).
+
 ### 2. Initialize spine
 
 ```bash
