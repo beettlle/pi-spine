@@ -24,6 +24,7 @@ import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { finalizeWorkerOutput } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
+import { resolveSafeWorkerLaunchScript } from "../config/worker-launch-script.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -56,16 +57,7 @@ function sleep(ms) {
  * @returns {string|null}
  */
 function resolveWorkerLaunchScript(projectRoot, config = {}) {
-	const configured = config?.development?.workerLaunchScript;
-	if (typeof configured === "string" && configured.trim()) {
-		const scriptPath = path.isAbsolute(configured)
-			? configured
-			: path.join(projectRoot, configured);
-		if (fs.existsSync(scriptPath)) return scriptPath;
-	}
-	const conventional = path.join(projectRoot, "scripts", "spine-worker-launch.sh");
-	if (fs.existsSync(conventional)) return conventional;
-	return null;
+	return resolveSafeWorkerLaunchScript(projectRoot, config);
 }
 
 /**
