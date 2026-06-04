@@ -47,6 +47,39 @@ test("isProcessAlive returns false for absent pid", () => {
 	assert.equal(isProcessAlive(0), false);
 });
 
+test("resume parallel lane orphan fixture: multiple running on lane 1", () => {
+	const fixture = loadIncidentFixture("resume-parallel-lane-orphan.json");
+	const runningLane1 = fixture.batchState.tasks.filter(
+		(task) => task.laneNumber === 1 && task.status === "running",
+	);
+	assert.equal(runningLane1.length, 5);
+	assert.deepEqual(
+		runningLane1.map((task) => task.taskId).sort(),
+		["SAT-039", "SAT-040", "SAT-042", "SAT-043", "SAT-044"],
+	);
+});
+
+test("resume parallel lane orphan fixture: reconcile is actionable after scoped orphan detect", async () => {
+	const projectRoot = await initGitRepo("spine-resume-parallel-lane-orphan-");
+	try {
+		const fixture = loadIncidentFixture("resume-parallel-lane-orphan.json");
+		materializeIncidentFixture(projectRoot, fixture);
+
+		const result = reconcileBatch({ projectRoot, verbose: true });
+		assert.notEqual(result.diagnosis, "running");
+		assert.ok(["engine_orphaned", "needs_retry"].includes(result.diagnosis));
+		assert.match(result.suggestedCommand, /^spine batch retry /);
+		assert.equal(result.batchId, "20260603T224829");
+		if (result.diagnosis === "engine_orphaned") {
+			assert.match(result.headline, /engine died/i);
+		} else {
+			assert.match(result.headline, /worker died/i);
+		}
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("searchATon orphan incident fixture: dead workerPid is not diagnosed as running", async () => {
 	const projectRoot = await initGitRepo("spine-orphan-incident-");
 	try {
