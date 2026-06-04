@@ -1,0 +1,21 @@
+spine-tasks/SP-073-fr-work-05-standards-wiring/STATUS.md
+  s_6909114266da53::t_f19003ab1ae5d8 3-9,11-58
+spine-tasks/CONTEXT.md
+  s_6909114266da53::t_248dd446b38623 192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "c3295f7c4ee254ed91b1022e3e82965935f8b001",
+  "prompts": {},
+  "sessions": {
+    "s_6909114266da53": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e942c-d65f-7715-9444-cb2e35d92e3f",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
