@@ -340,6 +340,8 @@ When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a *
 
 Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
+Incident narratives: [`20260603-orphan-running-resume.md`](../incidents/20260603-orphan-running-resume.md) (single-task resume silence), [`20260604-resume-parallel-lane-orphan.md`](../incidents/20260604-resume-parallel-lane-orphan.md) (forced multi-task resume, parallel lane-1, batch `20260603T224829`).
+
 ### Resume engine crash (fail-closed)
 
 When the detached resume engine throws (for example a broken lane worktree during `commitLaneWorktree`), pi-spine should leave **`phase: failed`**, append **`batch.failed`** to the journal, mark ghost **`running`** tasks as **`failed`**, and clear **`resilience.enginePid`**. This is the fail-closed path — not the orphan/zombie case above where the process exits without writing terminal state.
