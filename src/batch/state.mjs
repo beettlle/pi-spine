@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { appendJournalEvent } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 
 export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
@@ -107,6 +108,72 @@ export function clearBatchEnginePid(state) {
 	if (!state?.resilience || typeof state.resilience !== "object") return;
 	delete state.resilience.enginePid;
 	delete state.resilience.engineStartedAt;
+}
+
+/**
+ * Mark running tasks that lost their worker when the engine exits unexpectedly.
+ *
+ * @param {object} state
+ * @param {string} [exitReason]
+ */
+export function reconcileGhostRunningTasks(state, exitReason = "engine_crashed") {
+	const now = Date.now();
+	for (const task of state.tasks ?? []) {
+		if (!task || task.status !== "running") continue;
+		task.status = "failed";
+		task.endedAt = now;
+		task.exitReason = task.exitReason ?? exitReason;
+		updateSegmentForTask(state, task.taskId, "failed");
+	}
+
+	for (const lane of state.lanes ?? []) {
+		if (!lane || typeof lane !== "object") continue;
+		delete lane.workerPid;
+	}
+
+	const tasks = state.tasks ?? [];
+	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
+	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
+	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
+}
+
+/**
+ * Fail closed when the detached resume engine throws: terminal journal, phase, ghost cleanup.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.batchId
+ * @param {unknown} params.error
+ * @param {string|null} [params.taskId]
+ * @param {number|null} [params.laneNumber]
+ */
+export function failBatchFromEngineError({
+	projectRoot,
+	state,
+	batchId,
+	error,
+	taskId = null,
+	laneNumber = null,
+}) {
+	const message = error instanceof Error ? error.message : String(error);
+	const fromPhase = String(state.phase ?? "running");
+
+	reconcileGhostRunningTasks(state);
+	state.endedAt = Date.now();
+	state.lastError = message.slice(0, 500);
+	state.phase = "failed";
+
+	appendJournalEvent(projectRoot, batchId, "batch.failed", {
+		fromPhase,
+		toPhase: "failed",
+		reason: "engine_error",
+		error: message,
+		taskId,
+		laneNumber,
+	});
+
+	saveSpineBatchState(projectRoot, state);
 }
 
 /**

@@ -340,6 +340,20 @@ When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a *
 
 Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
+### Resume engine crash (fail-closed)
+
+When the detached resume engine throws (for example a broken lane worktree during `commitLaneWorktree`), pi-spine should leave **`phase: failed`**, append **`batch.failed`** to the journal, mark ghost **`running`** tasks as **`failed`**, and clear **`resilience.enginePid`**. This is the fail-closed path — not the orphan/zombie case above where the process exits without writing terminal state.
+
+1. Confirm: `spine status --diagnose` — expect **`failed`**, not **`running`**.
+2. Inspect journal: `spine journal tail` — look for **`batch.failed`** with `reason: engine_error` and the git/worktree message.
+3. Check detached engine log: `.spine/runtime/detached-engine.log`.
+4. Recover:
+   - `spine batch retry <taskId>` when a failed task is named in the headline.
+   - `spine batch resume --force` after retry clears stale segment state.
+   - `spine batch abort` when work should be discarded.
+
+If diagnosis is still **`engine_orphaned`** with **`phase: running`**, the engine died without hitting the fail-closed handler — use the orphan steps above.
+
 ### Dismiss and complete (terminal limbo)
 
 When tasks are green but the batch record is stale (common after Taskplane manual recovery):

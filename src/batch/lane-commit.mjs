@@ -22,6 +22,14 @@ function git(worktreePath, args) {
  * @param {string} worktreePath
  */
 export function gitPorcelain(worktreePath) {
+	if (process.env.SPINE_TEST_GIT_PORCELAIN_THROW === "after_commit") {
+		process.env.SPINE_TEST_GIT_PORCELAIN_THROW = "throw";
+		return "";
+	}
+	if (process.env.SPINE_TEST_GIT_PORCELAIN_THROW === "throw") {
+		throw new Error("git status failure: not a git repository");
+	}
+
 	return execFileSync("git", ["status", "--porcelain"], {
 		cwd: worktreePath,
 		encoding: "utf-8",
@@ -57,21 +65,21 @@ export function countCommitsAhead(projectRoot, baseRef, headRef) {
  * @returns {{ ok: true, committed: boolean, commitSha?: string } | { ok: false, error: string, failureClass: string }}
  */
 export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, taskFolder }) {
-	const porcelain = gitPorcelain(worktreePath);
-	if (!porcelain) {
-		return { ok: true, committed: false };
-	}
-
-	const donePath = path.join(taskFolder, ".DONE");
-	if (!fs.existsSync(donePath)) {
-		return {
-			ok: false,
-			error: `Lane worktree has uncommitted changes but ${path.basename(taskFolder)}/.DONE is missing — worker did not finish cleanly`,
-			failureClass: "DirtyWorktree",
-		};
-	}
-
 	try {
+		const porcelain = gitPorcelain(worktreePath);
+		if (!porcelain) {
+			return { ok: true, committed: false };
+		}
+
+		const donePath = path.join(taskFolder, ".DONE");
+		if (!fs.existsSync(donePath)) {
+			return {
+				ok: false,
+				error: `Lane worktree has uncommitted changes but ${path.basename(taskFolder)}/.DONE is missing — worker did not finish cleanly`,
+				failureClass: "DirtyWorktree",
+			};
+		}
+
 		git(worktreePath, ["checkout", taskBranch]);
 		git(worktreePath, ["add", "-A"]);
 		const message = `feat(${taskId}): batch ${batchId} worker completion`;
