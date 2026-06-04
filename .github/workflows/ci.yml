@@ -47,5 +47,24 @@ jobs:
         run: |
           node bin/spine.mjs version
           node bin/spine.mjs help
-          # doctor may exit 1 until TP-002 (no spine init in CI); non-fatal for now
-          node bin/spine.mjs doctor || true
+
+          # Minimal pi stub so doctor can pass without real pi credentials in CI.
+          MOCK_BIN="$RUNNER_TEMP/ci-mock-bin"
+          mkdir -p "$MOCK_BIN"
+          cat > "$MOCK_BIN/pi" << 'EOF'
+          #!/usr/bin/env bash
+          case "$1" in
+            --version) echo "0.78.0"; exit 0 ;;
+            --list-models) printf 'provider model\nci mock-model\n'; exit 0 ;;
+            *) exit 0 ;;
+          esac
+          EOF
+          chmod +x "$MOCK_BIN/pi"
+          export PATH="$MOCK_BIN:$PATH"
+
+          FIXTURE="$RUNNER_TEMP/spine-ci-fixture"
+          mkdir -p "$FIXTURE"
+          cd "$FIXTURE"
+          git init -q
+          node "$GITHUB_WORKSPACE/bin/spine.mjs" init
+          node "$GITHUB_WORKSPACE/bin/spine.mjs" doctor
