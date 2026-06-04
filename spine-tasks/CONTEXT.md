@@ -216,7 +216,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-091 | `selectRulesForWorker` + glob match (append semantics) | **Done** | SP-090 |
 | SP-092 | Worker context integration + journal event | **Done** | SP-091, SP-073 |
 | SP-093 | `spine rules` CLI + init + doctor | **Done** | SP-091 |
-| SP-094 | Design doc + adoption docs + skill | **Staged** | SP-092, SP-093 |
+| SP-094 | Design doc + adoption docs + skill | **Done** | SP-092, SP-093 |
 
 **Product decisions (locked):**
 
