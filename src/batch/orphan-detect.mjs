@@ -24,6 +24,65 @@ export function journalHasTerminalBatchEvent(events) {
 }
 
 /**
+ * @param {unknown} event
+ * @returns {number|null}
+ */
+function eventTimestampMs(event) {
+	if (!event || typeof event !== "object") return null;
+	const ts = /** @type {{ timestamp?: unknown }} */ (event).timestamp;
+	if (typeof ts === "number" && Number.isFinite(ts)) return ts;
+	if (typeof ts === "string") {
+		const parsed = Date.parse(ts);
+		return Number.isFinite(parsed) ? parsed : null;
+	}
+	return null;
+}
+
+/**
+ * @param {Record<string, unknown>|null|undefined} raw
+ * @returns {number|null}
+ */
+function readEngineStartedAt(raw) {
+	if (!raw || typeof raw !== "object") return null;
+	const resilience = /** @type {Record<string, unknown>} */ (raw).resilience;
+	if (!resilience || typeof resilience !== "object") return null;
+	const startedAt = Number(/** @type {Record<string, unknown>} */ (resilience).engineStartedAt);
+	return Number.isFinite(startedAt) && startedAt > 0 ? startedAt : null;
+}
+
+/**
+ * Journal events for the current detached engine session only.
+ * Prefers the latest `batch.resumed`; otherwise filters from `engineStartedAt`.
+ *
+ * @param {object[]} events
+ * @param {Record<string, unknown>|null|undefined} [raw]
+ */
+export function journalEventsSinceResume(events, raw) {
+	if (!Array.isArray(events) || events.length === 0) return [];
+
+	let resumeIndex = -1;
+	for (let i = events.length - 1; i >= 0; i--) {
+		if (String(events[i]?.type ?? "") === "batch.resumed") {
+			resumeIndex = i;
+			break;
+		}
+	}
+	if (resumeIndex >= 0) {
+		return events.slice(resumeIndex);
+	}
+
+	const engineStartedAt = readEngineStartedAt(raw);
+	if (engineStartedAt != null) {
+		return events.filter((event) => {
+			const ts = eventTimestampMs(event);
+			return ts == null || ts >= engineStartedAt;
+		});
+	}
+
+	return events;
+}
+
+/**
  * @param {unknown[]} lanes
  * @param {number|null|undefined} laneNumber
  */
@@ -73,7 +132,8 @@ export function detectOrphanRunning(ctx) {
 	}
 
 	const enginePid = readBatchEnginePid(ctx.raw);
-	if (enginePid && !isProcessAlive(enginePid) && !journalHasTerminalBatchEvent(ctx.journalEvents ?? [])) {
+	const scopedJournalEvents = journalEventsSinceResume(ctx.journalEvents ?? [], ctx.raw);
+	if (enginePid && !isProcessAlive(enginePid) && !journalHasTerminalBatchEvent(scopedJournalEvents)) {
 		/** @type {OrphanRunningSignal} */
 		return {
 			kind: "engine",
