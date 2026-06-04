@@ -102,13 +102,18 @@ See [operator runbook § Orphan running](../adoption/operator-runbook.md#orphan-
 
 ---
 
-## Related incident: batch `20260603T224829` (SP-095)
+## Related incident: batch `20260603T224829` (SP-095 / SP-098)
 
-searchATon batch `20260603T224829` resumed after prior failures (`task.failed`, `lane.died` already in journal). The engine died post-resume with journal silence, but SP-082 reconcile still returned **`running`** because `journalHasTerminalBatchEvent` scanned the **full** journal and matched historical terminal events from before `batch.resumed`.
+searchATon batch `20260603T224829` resumed after prior failures (`task.failed`, `batch.failed` already in journal). Forced multi-task resume started **five lane-1 tasks in parallel**; the engine died post-resume with journal silence, but SP-082 reconcile still returned **`running`** because `journalHasTerminalBatchEvent` scanned the **full** journal and matched historical terminal events from before `batch.resumed`.
 
 **Fix (SP-095):** Engine orphan detection now scopes journal events to the current detached engine session — from the latest `batch.resumed` or `resilience.engineStartedAt` onward. Pre-resume failures no longer suppress `engine_orphaned`.
 
-Replay fixture: [`tests/fixtures/incidents/resume-orphan-historical-failure.json`](../../tests/fixtures/incidents/resume-orphan-historical-failure.json)
+**Related fixes:** SP-096 (per-lane resume serialization), SP-097 (engine crash → terminal phase). Full narrative: [`20260604-resume-parallel-lane-orphan.md`](20260604-resume-parallel-lane-orphan.md).
+
+| Fixture | Scope |
+|---------|-------|
+| [`resume-orphan-historical-failure.json`](../../tests/fixtures/incidents/resume-orphan-historical-failure.json) | SP-095 unit — historical terminal suppression |
+| [`resume-parallel-lane-orphan.json`](../../tests/fixtures/incidents/resume-parallel-lane-orphan.json) | SP-098 replay — parallel lane-1 + multi-running + dead engine |
 
 ---
 
@@ -118,3 +123,4 @@ Replay fixture: [`tests/fixtures/incidents/resume-orphan-historical-failure.json
 |---------|------|--------|
 | 1.0 | 2026-06-03 | Initial report + replay fixture (SP-085) |
 | 1.1 | 2026-06-04 | SP-095: batch `20260603T224829` — historical pre-resume `task.failed` / `lane.died` suppressed `engine_orphaned`; fixed by scoping terminal-event window to current engine session (`journalEventsSinceResume`) |
+| 1.2 | 2026-06-04 | SP-098: cross-link to [`20260604-resume-parallel-lane-orphan.md`](20260604-resume-parallel-lane-orphan.md) — parallel lane-1 resume replay fixture |

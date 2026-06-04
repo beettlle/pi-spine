@@ -1,0 +1,427 @@
+{
+  "meta": {
+    "incidentId": "20260604-resume-parallel-lane-orphan",
+    "source": "searchATon batch 20260603T224829 (forced multi-task resume)",
+    "batchId": "20260603T224829",
+    "pattern": "historical task.failed, batch.resumed, parallel lane-1 task.started, engine died in commitLaneWorktree, post-resume journal silence, dead enginePid, multiple running on lane 1",
+    "relatedTasks": [
+      "SP-082",
+      "SP-095",
+      "SP-096",
+      "SP-097",
+      "SP-098"
+    ]
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "batchId": "20260603T224829",
+    "phase": "running",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260603T224829",
+    "startedAt": 1780526909576,
+    "updatedAt": 1780610915836,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [
+      [
+        "SAT-036",
+        "SAT-037",
+        "SAT-038",
+        "SAT-039",
+        "SAT-040",
+        "SAT-042",
+        "SAT-043",
+        "SAT-044"
+      ]
+    ],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260603T224829/lane-1",
+        "branch": "task/spine-lane-1-20260603T224829",
+        "taskIds": [
+          "SAT-036",
+          "SAT-039",
+          "SAT-040",
+          "SAT-042",
+          "SAT-043",
+          "SAT-044"
+        ],
+        "lastHeartbeatAt": 1780610915836,
+        "correlationId": "dcc9f4a0-1907-4360-97a7-63bf1522ca6a"
+      },
+      {
+        "laneNumber": 2,
+        "laneId": "lane-2",
+        "worktreePath": ".worktrees/spine-20260603T224829/lane-2",
+        "branch": "task/spine-lane-2-20260603T224829",
+        "taskIds": [
+          "SAT-037"
+        ],
+        "lastHeartbeatAt": 1780606925224,
+        "correlationId": "51c8cbdc-0463-44e5-93ab-9836dc4b325e"
+      },
+      {
+        "laneNumber": 3,
+        "laneId": "lane-3",
+        "worktreePath": ".worktrees/spine-20260603T224829/lane-3",
+        "branch": "task/spine-lane-3-20260603T224829",
+        "taskIds": [
+          "SAT-038"
+        ],
+        "lastHeartbeatAt": 1780609979579,
+        "correlationId": "57741b47-3922-4957-8d4e-b915794e9610"
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SAT-036",
+        "laneNumber": 1,
+        "status": "failed",
+        "taskFolder": "spine-tasks/SAT-036-worker-runtime",
+        "startedAt": 1780610362252,
+        "endedAt": 1780610613425,
+        "doneFileFound": false,
+        "exitReason": "failed"
+      },
+      {
+        "taskId": "SAT-037",
+        "laneNumber": 2,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-037-instance-status-api",
+        "startedAt": 1780606924953,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-038",
+        "laneNumber": 3,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-038-pii-safe-logging",
+        "startedAt": 1780609978896,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-039",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-039-docs-rules-alignment",
+        "startedAt": 1780610903872,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-040",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-040-operator-cli-logging",
+        "startedAt": 1780610906479,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-042",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-042-search-p95-load-test",
+        "startedAt": 1780610908986,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-043",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-043-opt-out-sla-monitor",
+        "startedAt": 1780610911331,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      },
+      {
+        "taskId": "SAT-044",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SAT-044-crawl-url-ssrf-guard",
+        "startedAt": 1780610914299,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      }
+    ],
+    "segments": [
+      {
+        "segmentId": "SAT-036::default",
+        "taskId": "SAT-036",
+        "status": "failed",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-037::default",
+        "taskId": "SAT-037",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-038::default",
+        "taskId": "SAT-038",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-039::default",
+        "taskId": "SAT-039",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-040::default",
+        "taskId": "SAT-040",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-042::default",
+        "taskId": "SAT-042",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-043::default",
+        "taskId": "SAT-043",
+        "status": "running",
+        "repoId": "default"
+      },
+      {
+        "segmentId": "SAT-044::default",
+        "taskId": "SAT-044",
+        "status": "running",
+        "repoId": "default"
+      }
+    ],
+    "mergeResults": [],
+    "totalTasks": 8,
+    "succeededTasks": 0,
+    "failedTasks": 1,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": true,
+      "retryCountByScope": {
+        "SAT-036": 2,
+        "SAT-037": 2,
+        "SAT-038": 3,
+        "SAT-039": 3,
+        "SAT-040": 3,
+        "SAT-042": 3,
+        "SAT-043": 3,
+        "SAT-044": 3
+      },
+      "lastFailureClass": null,
+      "repairHistory": [],
+      "enginePid": 999999999,
+      "engineStartedAt": 1780527099533
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-historical-task-failed",
+      "type": "task.failed",
+      "timestamp": "2026-06-03T22:49:12.435Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-040",
+      "payload": {
+        "taskId": "SAT-040",
+        "laneNumber": 1,
+        "reason": "prior wave failure"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-historical-batch-failed",
+      "type": "batch.failed",
+      "timestamp": "2026-06-03T22:49:12.456Z",
+      "batchId": "20260603T224829",
+      "payload": {
+        "fromPhase": "running",
+        "toPhase": "failed"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-batch-resumed",
+      "type": "batch.resumed",
+      "timestamp": "2026-06-03T22:51:39.533Z",
+      "batchId": "20260603T224829",
+      "payload": {
+        "fromPhase": "failed",
+        "toPhase": "running",
+        "resumeForced": true,
+        "pendingSegments": 8,
+        "pendingTaskIds": [
+          "SAT-036",
+          "SAT-037",
+          "SAT-038",
+          "SAT-039",
+          "SAT-040",
+          "SAT-042",
+          "SAT-043",
+          "SAT-044"
+        ],
+        "resumableWave": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-036",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:39.566Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-036",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-036"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-037",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:39.883Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-2",
+      "taskId": "SAT-037",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 2,
+        "taskId": "SAT-037"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-038",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:40.318Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-3",
+      "taskId": "SAT-038",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 3,
+        "taskId": "SAT-038"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-039",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:40.763Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-039",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-039"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-040",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:41.176Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-040",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-040"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-042",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:42.016Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-042",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-042"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-043",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:43.462Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-043",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-043"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-task-started-sat-044",
+      "type": "task.started",
+      "timestamp": "2026-06-03T22:51:45.357Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-044",
+      "payload": {
+        "resumed": true,
+        "laneNumber": 1,
+        "taskId": "SAT-044"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-heartbeat-sat-039",
+      "type": "lane.heartbeat",
+      "timestamp": "2026-06-03T22:51:41.147Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-039",
+      "payload": {
+        "laneNumber": 1,
+        "taskId": "SAT-039",
+        "heartbeatKind": "worker_alive"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "parallel-orphan-heartbeat-sat-040",
+      "type": "lane.heartbeat",
+      "timestamp": "2026-06-03T22:51:41.988Z",
+      "batchId": "20260603T224829",
+      "laneId": "lane-1",
+      "taskId": "SAT-040",
+      "payload": {
+        "laneNumber": 1,
+        "taskId": "SAT-040",
+        "heartbeatKind": "worker_alive"
+      }
+    }
+  ]
+}
