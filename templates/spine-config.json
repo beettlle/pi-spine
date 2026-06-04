@@ -25,6 +25,9 @@
     "workerOutputMaxBytes": 262144,
     "workerOutputTailLines": 200,
     "retainWorkerOutputOnSuccess": false,
+    "stallTimeoutMinutes": 120,
+    "stallGraceAfterProgressMinutes": 30,
+    "heartbeatIntervalMinutes": 10,
     "checkpointWarningMinutes": 10,
     "extendGraceOnFileScope": false,
     "autoCommitOnStall": false

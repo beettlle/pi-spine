@@ -43,6 +43,8 @@ import {
 } from "../src/doctor/suggest-max-parallel.mjs";
 import { buildStalePathDoctorCheck } from "../src/doctor/stale-path.mjs";
 import { buildCoexistenceDoctorCheck } from "../src/doctor/coexistence.mjs";
+import { buildTaskPacketSizeDoctorCheck } from "../src/doctor/task-packet-size.mjs";
+import { buildStallConfigDoctorCheck } from "../src/doctor/stall-config.mjs";
 import {
 	formatConfigSourceDetail,
 	resolveTasksRootPath,
@@ -283,6 +285,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 				cpuCount: detectCpuCount(),
 			}),
 		);
+		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
 	}
 
 	for (const agentFile of REQUIRED_AGENT_FILES) {
@@ -311,6 +314,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			optional: true,
 			detail: fs.existsSync(contextPath) ? "present" : "missing (optional)",
 		});
+		checks.push(buildTaskPacketSizeDoctorCheck({ tasksRoot: tasksRootPath }));
 	}
 
 	if (isInsideGitRepo(projectRoot)) {

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-03
 **Status:** Active
-**Next Task ID:** SP-086
+**Next Task ID:** SP-089
 
 ---
 
@@ -204,6 +204,16 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 1. **Wave A (parallel):** `SP-075`, `SP-072`, `SP-081`, `SP-080`, `SP-079`
 2. **Wave B:** `SP-073` (after SP-081), `SP-077` + `SP-078` (after SP-072)
 3. **Wave C:** `SP-074` (after SP-075), then `SP-076` (after SP-075)
+
+### Phase 15 — Task sizing & long-running worker stalls (batch 20260603T225112)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-086 | Task sizing guardrails (skill + doctor) | **Staged** | — |
+| SP-087 | Real-pi stall defaults + batch guidance | **Staged** | SP-086 |
+| SP-088 | Per-task stall budget from PROMPT Size | **Staged** | SP-087 |
+
+**Suggested run order:** `spine batch start SP-086` → land → `SP-087` → land → `SP-088`
 
 ### Phase 14 — Orphan running / detached resume (searchATon incident)
 

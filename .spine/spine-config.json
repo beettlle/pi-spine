@@ -29,7 +29,11 @@
   },
   "lanes": {
     "maxParallel": 4,
-    "queueExcess": true
+    "queueExcess": true,
+    "stallTimeoutMinutes": 120,
+    "stallGraceAfterProgressMinutes": 30,
+    "heartbeatIntervalMinutes": 10,
+    "checkpointWarningMinutes": 10
   },
   "gates": {
     "requireBeforeIntegrate": true,

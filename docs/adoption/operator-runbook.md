@@ -384,6 +384,20 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 **Rule of thumb:** Developing pi-spine itself → always `node bin/spine.mjs` from repo root. Consumer pilot → `npm link` or explicit `node` path after every `git pull`.
 
+### Task sizing vs batch stalls
+
+Oversized task packets and wide parallel waves are the main cause of **stall_timeout** on real `pi` workers (workers alive but no checkpoint progress).
+
+| Practice | Why |
+|----------|-----|
+| Target **S/M** tasks (≤4 implementation steps) | Fits stall grace + review cycles |
+| Split **L/XL** epics into dependent tasks | Avoids 60m+ silent pi runs |
+| Run **≤4** parallel M tasks per wave; land between waves | Batch `20260603T225112` stalled 5/8 tasks at once |
+| Set `lanes.stallTimeoutMinutes` ≥ **120** for real `pi` | Template default; doctor warns if unset/low |
+| Use PROMPT **Size:** S/M/L | Engine applies per-task floor (SP-088): M→180m, L→300m |
+
+`spine doctor` warns on oversized **pending** packets (XL, >4 steps, wide file scope). `skills/create-spine-tasks` documents decomposition rules.
+
 ### Stall diagnosis (5-minute path)
 
 When a lane dies with `stall_timeout` or frozen heartbeats, use this flow before re-running a long batch. Full design: [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md).
@@ -405,7 +419,7 @@ spine status --diagnose
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `stallTimeoutMinutes` | 60 | Hard silence timeout |
+| `stallTimeoutMinutes` | 120 (template); 60 if unset | Hard silence timeout; use ≥120 for real `pi` workers |
 | `stallGraceAfterProgressMinutes` | 15 | Extra grace after STATUS/commit/`task.step_completed` |
 | `checkpointWarningMinutes` | 10 | Warn when file-scope activity lacks checkpoint |
 | `extendGraceOnFileScope` | false | File-scope mtime must **not** extend stall grace |

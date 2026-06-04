@@ -16,9 +16,9 @@ import {
 	recordLaneHeartbeat,
 	recordStallWarning,
 	resolveHeartbeatKind,
-	resolveStallConfig,
 	shouldEmitCheckpointWarning,
 } from "./heartbeat.mjs";
+import { resolveStallConfigForTask, parseTaskSizeFromFolder } from "./task-stall-budget.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
@@ -309,7 +309,8 @@ export async function runWorker({
 		};
 	}
 
-	const stallConfig = resolveStallConfig(config);
+	const taskSize = parseTaskSizeFromFolder(taskFolder);
+	const stallConfig = resolveStallConfigForTask({ config, taskSize });
 	const startedAt = Date.now();
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;

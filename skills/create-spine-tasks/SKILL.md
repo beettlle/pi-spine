@@ -59,7 +59,9 @@ Use this workflow when the user supplies a PRD, epic brief, or feature spec inst
 
 | Rule | Guidance |
 |------|----------|
-| **Size** | Target **M** (2–4 h). Split **XL** work into multiple tasks with dependencies. |
+| **Size** | Target **M** (2–4 h). **L** → split when possible. **XL** → **must** split into multiple S/M tasks with dependencies. |
+| **Steps** | Max **4** implementation steps per task (exclude Testing & Verification / Documentation & Delivery). More steps → split. |
+| **Parallel waves** | Prefer **≤4** M-sized tasks per wave; 8-task mega-waves stall pi workers (see Phase 15 / SP-086–088). |
 | **Scope** | One deliverable per task; disjoint **File Scope** when tasks can run in parallel. |
 | **IDs** | Use `Next Task ID` from CONTEXT.md; increment after each new task. Greenfield spine projects typically use `SP-###`; Taskplane migrants may keep `TP-###`. |
 | **Waves** | Order via `## Dependencies` and `{tasksRoot}/dependencies.json`. |
@@ -193,9 +195,17 @@ Individual steps can override the task-level review:
 | **S** | < 2 hours | Create as-is |
 | **M** | 2–4 hours | Ideal — create as-is |
 | **L** | 4–8 hours | Split if possible |
-| **XL** | 8+ hours | **Must split** with dependencies |
+| **XL** | 8+ hours | **Must split** — never ship a single PROMPT with Size XL (validator rejects) |
+| **L** | 4–8 hours | **Prefer split** into 2–3 M tasks; if kept, set Size L and expect longer stall budget (SP-088) |
 
-**Rule of thumb:** More than ~3 major implementation steps → split.
+**Rule of thumb:** More than **4** implementation steps → split. More than **8** file-scope paths → narrow or split.
+
+**Example (incident-driven):** Eight Phase-13 tasks in one batch (`SP-064`…`SP-085`) caused parallel pi stalls. Prefer:
+
+| Instead of | Use |
+|------------|-----|
+| One batch with 8 M tasks | Wave A: 4 tasks → land → Wave B: 4 tasks |
+| One L task “refactor engine + resume + tests” | SP-074 engine scope, SP-076 resume DRY, SP-078 tests (deps) |
 
 ---
 

@@ -14,6 +14,7 @@ const OPTIONAL_SECTIONS = ["Testing", "Context to Read First", "Environment", "D
 
 const H2_SECTION_RE = /^## (.+)$/gm;
 const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
+const SIZE_LINE_RE = /^\*\*Size:\*\*\s*(S|M|L|XL)\s*$/im;
 
 /**
  * @param {string} markdown PROMPT.md contents
@@ -33,10 +34,13 @@ export function parsePrompt(markdown) {
 		steps.some((step) => /testing/i.test(step.title));
 
 	const missingSections = REQUIRED_SECTIONS.filter((name) => !sections[name]);
+	const sizeMatch = SIZE_LINE_RE.exec(markdown);
+	const size = sizeMatch ? sizeMatch[1].toUpperCase() : null;
 
 	return {
 		taskId,
 		title,
+		size,
 		headingLine,
 		sections,
 		steps,
@@ -72,6 +76,10 @@ export function validatePrompt(markdown) {
 
 	if (prompt.steps.length === 0) {
 		errors.push("No steps found; expected `### Step N: ...` headings under ## Steps");
+	}
+
+	if (prompt.size === "XL") {
+		errors.push('Size XL is not allowed — split into multiple S/M tasks (see create-spine-tasks skill)');
 	}
 
 	return { ok: errors.length === 0, errors, prompt };
