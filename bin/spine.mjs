@@ -447,6 +447,13 @@ async function cmdSettings(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdRules(args) {
+	const { runSpineRules } = await import("./spine-rules.mjs");
+	const result = runSpineRules({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdReport(args) {
 	const sub = args[0];
 	if (sub !== "progress") {
@@ -499,6 +506,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}plan${c.reset}            Preview waves and lanes (FR-SCHED-05)
   ${c.cyan}deps${c.reset}            Show task dependency graph (FR-SCHED-01)
   ${c.cyan}settings${c.reset}        Show or set editable spine-config fields (FR-CFG-03)
+  ${c.cyan}rules${c.reset}           Discover, select, and sync Cursor rules manifest
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
@@ -540,6 +548,9 @@ ${c.bold}Examples:${c.reset}
   spine settings show lanes.maxParallel --json  # single setting as JSON
   spine settings set lanes.maxParallel 2        # update one registered field
   spine settings set dashboard.port 8110 --dry-run  # preview without writing
+  spine rules discover                          # scan .cursor/rules → manifest
+  spine rules select --task SP-093              # preview worker rule selection
+  spine rules sync                              # refresh .spine/rules-manifest.json
   spine batch start TP-012                      # detached batch engine (default)
   spine batch start TP-012 --attached           # foreground batch engine
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
@@ -587,6 +598,9 @@ if (isMainModule) {
 				break;
 			case "settings":
 				await cmdSettings(args);
+				break;
+			case "rules":
+				await cmdRules(args);
 				break;
 			case "status":
 				await handleStatus(args);
