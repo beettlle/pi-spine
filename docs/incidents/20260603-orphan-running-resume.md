@@ -98,6 +98,17 @@ See [operator runbook § Orphan running](../adoption/operator-runbook.md#orphan-
 | FR-BATCH-13 `engine_orphaned` | `docs/PRD.md` §18.3 |
 | SP-082 implementation | `tests/batch/orphan-reconcile.test.mjs` (unit tests) |
 | SP-085 fixture + doc | This file + `tests/fixtures/incidents/` |
+| SP-095 resume-scope fix | `journalEventsSinceResume` in `orphan-detect.mjs`; fixture `resume-orphan-historical-failure.json` |
+
+---
+
+## Related incident: batch `20260603T224829` (SP-095)
+
+searchATon batch `20260603T224829` resumed after prior failures (`task.failed`, `lane.died` already in journal). The engine died post-resume with journal silence, but SP-082 reconcile still returned **`running`** because `journalHasTerminalBatchEvent` scanned the **full** journal and matched historical terminal events from before `batch.resumed`.
+
+**Fix (SP-095):** Engine orphan detection now scopes journal events to the current detached engine session — from the latest `batch.resumed` or `resilience.engineStartedAt` onward. Pre-resume failures no longer suppress `engine_orphaned`.
+
+Replay fixture: [`tests/fixtures/incidents/resume-orphan-historical-failure.json`](../../tests/fixtures/incidents/resume-orphan-historical-failure.json)
 
 ---
 
@@ -106,3 +117,4 @@ See [operator runbook § Orphan running](../adoption/operator-runbook.md#orphan-
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-06-03 | Initial report + replay fixture (SP-085) |
+| 1.1 | 2026-06-04 | SP-095: batch `20260603T224829` — historical pre-resume `task.failed` / `lane.died` suppressed `engine_orphaned`; fixed by scoping terminal-event window to current engine session (`journalEventsSinceResume`) |

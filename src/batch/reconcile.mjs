@@ -8,7 +8,7 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
-import { detectOrphanRunning } from "./orphan-detect.mjs";
+import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
@@ -492,13 +492,15 @@ export function reconcileBatch(ctx) {
 		signals.journalEvents = journalEvents;
 	}
 
+	const engineSessionJournalEvents = journalEventsSinceResume(journalEvents, batch.raw);
+
 	signals.orphanRunning = detectOrphanRunning({
 		phase: batch.phase,
 		hasRunningTasks,
 		tasks: classifiedTasks,
 		lanes: batch.lanes,
 		raw: batch.raw,
-		journalEvents,
+		journalEvents: engineSessionJournalEvents,
 	});
 
 	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
