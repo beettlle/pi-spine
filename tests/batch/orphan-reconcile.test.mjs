@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { appendJournalEvent } from "../../src/batch/journal.mjs";
+import { appendJournalEvent, journalPath } from "../../src/batch/journal.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	createInitialBatchState,
@@ -17,11 +17,51 @@ import { detectOrphanRunning } from "../../src/batch/orphan-detect.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const DEAD_PID = 999_999_999;
+const INCIDENT_FIXTURES = path.join(process.cwd(), "tests/fixtures/incidents");
+
+/**
+ * @param {string} name
+ */
+function loadIncidentFixture(name) {
+	return JSON.parse(fs.readFileSync(path.join(INCIDENT_FIXTURES, name), "utf-8"));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {{ batchState: object, journalTail?: object[], meta?: { batchId?: string } }} fixture
+ */
+function materializeIncidentFixture(projectRoot, fixture) {
+	const batchId = fixture.meta?.batchId ?? fixture.batchState.batchId;
+	saveSpineBatchState(projectRoot, fixture.batchState);
+
+	const journalFile = journalPath(projectRoot, batchId);
+	fs.mkdirSync(path.dirname(journalFile), { recursive: true });
+	for (const event of fixture.journalTail ?? []) {
+		fs.appendFileSync(journalFile, `${JSON.stringify(event)}\n`, "utf-8");
+	}
+}
 
 test("isProcessAlive returns false for absent pid", () => {
 	assert.equal(isProcessAlive(DEAD_PID), false);
 	assert.equal(isProcessAlive(null), false);
 	assert.equal(isProcessAlive(0), false);
+});
+
+test("searchATon orphan incident fixture: dead workerPid is not diagnosed as running", async () => {
+	const projectRoot = await initGitRepo("spine-orphan-incident-");
+	try {
+		const fixture = loadIncidentFixture("orphan-running-resume.json");
+		materializeIncidentFixture(projectRoot, fixture);
+
+		const result = reconcileBatch({ projectRoot, verbose: true });
+		assert.notEqual(result.diagnosis, "running");
+		assert.equal(result.diagnosis, "needs_retry");
+		assert.equal(result.suggestedCommand, "spine batch retry SAT-040");
+		assert.match(result.headline, /worker died/i);
+		assert.equal(result.batchId, "20260603T185308");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("dead workerPid with running task is not diagnosed as running", async () => {
