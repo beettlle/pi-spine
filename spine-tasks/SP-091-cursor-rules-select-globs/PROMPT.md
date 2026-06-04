@@ -64,6 +64,22 @@ Implement `ruleGlobsMatchFileScope()`, `expandFileScopeProbes()`, `selectRulesFo
 ### Step 4: Documentation & Delivery
 
 - [ ] Export selection shape for SP-092 journal event
+- [ ] Discoveries logged in STATUS.md
+
+## Documentation Requirements
+
+**Must Update:**
+- None
+
+**Check If Affected:**
+- `src/config/worker-context.mjs` — read only until SP-092
+
+## Completion Criteria
+
+- [ ] All steps complete
+- [ ] `selectRulesForWorker` and glob match tests pass
+- [ ] Append `config.standards` semantics verified in tests
+- [ ] Full test suite and coverage gate ≥77%
 
 ## Git Commit Convention
 

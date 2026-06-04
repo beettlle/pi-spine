@@ -17,6 +17,16 @@ Document auto-discovery (append standards, include taskplane-worker-cursor, mani
 - **Task:** SP-092
 - **Task:** SP-093
 
+## Context to Read First
+
+- `spine-tasks/SP-092-cursor-rules-worker-integration/STATUS.md`
+- `spine-tasks/SP-093-cursor-rules-cli-init/STATUS.md`
+
+## Environment
+
+- **Workspace:** pi-spine repo root
+- **Services required:** None
+
 ## File Scope
 
 - `docs/design/cursor-rules-discovery.md`
@@ -47,7 +57,22 @@ Document auto-discovery (append standards, include taskplane-worker-cursor, mani
 
 ### Step 4: Documentation & Delivery
 
-- [ ] Complete
+- [ ] Discoveries logged in STATUS.md
+
+## Documentation Requirements
+
+**Must Update:**
+- All paths in File Scope (except amendment-only SP-073)
+
+**Check If Affected:**
+- None
+
+## Completion Criteria
+
+- [ ] All steps complete
+- [ ] Design doc matches shipped behavior
+- [ ] Operator can follow docs without reading source
+- [ ] `npm run typecheck` passes
 
 ## Git Commit Convention
 

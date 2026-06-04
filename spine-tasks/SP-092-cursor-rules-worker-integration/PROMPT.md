@@ -63,6 +63,23 @@ Add `buildWorkerContextAsync()` using `selectRulesForWorker()` + PROMPT File Sco
 ### Step 4: Documentation & Delivery
 
 - [ ] STATUS notes for agent-session fileScope
+- [ ] Discoveries logged in STATUS.md
+
+## Documentation Requirements
+
+**Must Update:**
+- None (SP-094)
+
+**Check If Affected:**
+- `templates/agents/worker.md` — one line on auto-selected standards
+
+## Completion Criteria
+
+- [ ] All steps complete
+- [ ] Worker tail includes auto-selected rules for a JS-scoped task
+- [ ] `config.standards` append verified end-to-end
+- [ ] Journal emits `worker.rules_selected`
+- [ ] Full test suite and coverage gate ≥77%
 
 ## Git Commit Convention
 
