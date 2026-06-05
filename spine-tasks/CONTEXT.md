@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-04
 **Status:** Active
-**Next Task ID:** SP-099
+**Next Task ID:** SP-101
 
 ---
 
@@ -275,6 +275,22 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 1. **Wave A (parallel):** `SP-095`, `SP-096` (disjoint file scope: orphan-detect vs resume-multi)
 2. **Wave B:** `SP-097` (after SP-096 lands — same `resume-multi.mjs`)
 3. **Wave C:** `SP-098` (after SP-095 + SP-097)
+
+### Phase 18 — Global CLI symlink silent no-op (customer bug)
+
+**Source:** Customer bug report (2026-06-04). `npm install -g pi-spine` exposes `spine` as a symlink; `isMainModule` compares unresolved paths → CLI never runs, exit 0 with no output.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-099 | Symlink-aware `isCliEntrypoint` + all bin entrypoints + regression test | **Staged** | — |
+| SP-100 | Accept `./scripts/` worker launch script paths (secondary UX) | **Staged** | — |
+
+**Suggested run order:**
+
+1. **Wave A (parallel):** `SP-099` + `SP-100` (disjoint scope: `bin/` vs `src/config/`)
+2. **Priority:** Land **SP-099** first for operator impact (P0 customer-facing)
+
+**Acceptance (SP-099):** `spine plan pending` via global symlink prints plan or stderr error; never silent exit 0. Direct `node …/bin/spine.mjs` unchanged. CI symlink spawn test.
 
 **Suggested spine run order (Phase 13):**
 
