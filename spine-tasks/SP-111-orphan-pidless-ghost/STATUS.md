@@ -1,7 +1,7 @@
 # SP-111: Orphan PID-less ghost running — Status
 
-**Current Step:** Step 3
-**Status:** 🟢 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -25,6 +25,14 @@
 **Status:** ✅ Complete
 - [x] Reconcile returns non-running diagnosis for fixture
 - [x] Code review completed
+
+### Step 3: Testing & Verification
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate (562/563 pass; 1 pre-existing flaky `cli-startup` dashboard test out of scope)
+
+### Completion Criteria
+- [x] PID-less ghost fixture passes
+- [x] SP-095 scope rules preserved
 
 ---
 
