@@ -1,7 +1,7 @@
 # SP-117: Detached enginePid symmetry — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -24,8 +24,14 @@
 - [x] Fixture: timeout_waiting_for_batch + dead engine → reconcile ≠ running
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] FULL suite + coverage gate
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate
+
+---
+
+## Completion Criteria
+- [x] Start and resume persist enginePid symmetrically
+- [x] Timeout orphan test passes
 
 ---
 
@@ -44,3 +50,7 @@
 | 2026-06-05 | Task staged from Phase 20 audit synthesis | PROMPT.md created |
 | 2026-06-05 | Step 0 preflight | SP-111 dependency satisfied; audit Finding #5/#12 scoped |
 | 2026-06-05 | Step 1 implementation | Moved persistDetachedEnginePid before wait on start path |
+| 2026-06-05 | Step 1 plan review | APPROVE |
+| 2026-06-05 | Step 2 regression tests | 2/2 pass in detached-start-orphan-timeout.test.mjs |
+| 2026-06-05 | Step 2 code review | APPROVE |
+| 2026-06-05 | Step 3 verification | npm test 569/569 pass; coverage 83.69% (threshold 77%) |
