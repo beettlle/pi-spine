@@ -5,7 +5,9 @@
  */
 
 import {
+	collectPromptValidationFailure,
 	discoverTasks,
+	formatPromptValidationFailures,
 	loadTaskPacket,
 	loadDependenciesJson,
 	mergeTaskDeps,
@@ -32,12 +34,20 @@ export function buildPlan({ scope, config, tasksRoot }) {
 
 	/** @type {Record<string, { taskId: string, title: string|null, fileScope: string[], dependencies: string[] }> } */
 	const tasksById = {};
+	/** @type {Array<{ taskId: string, promptPath?: string, errors: string[] }>} */
+	const promptValidationFailures = [];
 
 	for (const discoveredTask of discovered) {
 		const taskId = discoveredTask.taskId;
 		if (!selectedTaskIds.has(taskId)) continue;
 
 		const packet = loadTaskPacket(discoveredTask.folderPath);
+		const validationFailure = collectPromptValidationFailure(packet, taskId);
+		if (validationFailure) {
+			promptValidationFailures.push(validationFailure);
+			continue;
+		}
+
 		const prompt = packet.prompt;
 		const mergedDeps = mergeTaskDeps({ taskId, prompt }, depsJson);
 
@@ -47,6 +57,10 @@ export function buildPlan({ scope, config, tasksRoot }) {
 			fileScope: Array.isArray(prompt.fileScope) ? prompt.fileScope : [],
 			dependencies: mergedDeps,
 		};
+	}
+
+	if (promptValidationFailures.length > 0) {
+		throw new Error(formatPromptValidationFailures(promptValidationFailures));
 	}
 
 	/** @type {Record<string, string[]>} */

@@ -407,7 +407,7 @@ From `.pi/taskplane-config.json`:
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Run full `npm test` (**559** tests) for any batch-touching change.
+Run full `npm test` (**567** tests) for any batch-touching change.
 
 ---
 

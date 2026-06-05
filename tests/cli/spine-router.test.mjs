@@ -7,6 +7,7 @@ import test from "node:test";
 
 import { commandExists, getVersion } from "../../bin/get-version.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
 
@@ -30,14 +31,10 @@ function writeTask(projectRoot, taskId) {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — Router smoke
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`README.md\`
-`,
+		minimalValidPromptMarkdown(taskId, {
+			title: "Router smoke",
+			fileScope: "README.md",
+		}),
 		"utf-8",
 	);
 }

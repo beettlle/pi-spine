@@ -158,6 +158,44 @@ function resolveTasksRoot(projectRoot, configResult) {
 	return resolveTasksRootPath(projectRoot, configResult.config);
 }
 
+function isTestingCommandEmpty(command) {
+	return !command || String(command).trim() === "";
+}
+
+/**
+ * Warn when evidence gates expect commands that are missing (SP-112).
+ *
+ * @param {object} [config]
+ * @returns {Array<{ label: string, ok: boolean, warning?: boolean, detail: string, suggestedCommand?: string }>}
+ */
+export function buildTestingEvidenceDoctorChecks(config = {}) {
+	const gates = config.gates ?? {};
+	const testing = config.testing ?? {};
+	const checks = [];
+
+	if (gates.collectBuildEvidence === true && isTestingCommandEmpty(testing.build)) {
+		checks.push({
+			label: "testing.build (evidence gate)",
+			ok: true,
+			warning: true,
+			detail: "collectBuildEvidence enabled but testing.build is empty — integrate evidence will skip build proof",
+			suggestedCommand: "spine settings set testing.build \"npm run typecheck\"",
+		});
+	}
+
+	if (gates.collectTestEvidence !== false && isTestingCommandEmpty(testing.test)) {
+		checks.push({
+			label: "testing.test (evidence gate)",
+			ok: true,
+			warning: true,
+			detail: "collectTestEvidence enabled but testing.test is empty — integrate evidence will skip test proof",
+			suggestedCommand: "spine settings set testing.test \"npm test\"",
+		});
+	}
+
+	return checks;
+}
+
 export function runDoctorChecks(projectRoot = process.cwd()) {
 	const checks = [];
 	let issueCount = 0;
@@ -273,6 +311,9 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			}),
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
+		for (const testingCheck of buildTestingEvidenceDoctorChecks(configResult.config)) {
+			checks.push(testingCheck);
+		}
 	}
 
 	for (const agentFile of REQUIRED_AGENT_FILES) {

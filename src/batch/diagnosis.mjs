@@ -8,6 +8,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"running",
 	"paused",
 	"needs_retry",
+	"worker_orphaned",
 	"engine_orphaned",
 	"needs_merge",
 	"needs_integrate",
@@ -40,6 +41,37 @@ function findLatestTaskFailedEvent(journalEvents, taskId) {
 }
 
 /**
+ * @param {string} haystack
+ * @param {object} [hints]
+ * @param {boolean} [hints.launchingPhase]
+ * @returns {string|null}
+ */
+function classifyLaunchFailureHaystack(haystack, hints = {}) {
+	const normalized = haystack.toLowerCase();
+
+	if (hints.launchingPhase) {
+		if (normalized.includes("pi_spine_root") || normalized.includes("config_pi_spine_root")) {
+			return "pi_spine_root";
+		}
+		return "launch_failed";
+	}
+
+	if (normalized.includes("pi_spine_root") || normalized.includes("config_pi_spine_root")) {
+		return "pi_spine_root";
+	}
+
+	if (
+		normalized.includes("not a git repository") ||
+		normalized.includes("worktree") ||
+		normalized.includes("worktreeunhealthy")
+	) {
+		return "worktree_unhealthy";
+	}
+
+	return null;
+}
+
+/**
  * @param {object|null} failedEvent
  * @param {string|null} exitReason
  * @returns {string|null}
@@ -51,26 +83,21 @@ function classifyLaunchFailureFromEvent(failedEvent, exitReason) {
 		payload.classification,
 		payload.output,
 		payload.exitReason,
-	].filter(Boolean).join("\n").toLowerCase();
+	].filter(Boolean).join("\n");
 
-	if (payload.workerPhase === "launching" || payload.classification === "launch_failed") {
-		if (haystack.includes("pi_spine_root")) return "pi_spine_root";
-		return "launch_failed";
-	}
+	return classifyLaunchFailureHaystack(haystack, {
+		launchingPhase:
+			payload.workerPhase === "launching" || payload.classification === "launch_failed",
+	});
+}
 
-	if (haystack.includes("pi_spine_root") || haystack.includes("config_pi_spine_root")) {
-		return "pi_spine_root";
-	}
-
-	if (
-		haystack.includes("not a git repository") ||
-		haystack.includes("worktree") ||
-		haystack.includes("worktreeunhealthy")
-	) {
-		return "worktree_unhealthy";
-	}
-
-	return null;
+/**
+ * @param {string|null|undefined} outputText
+ * @returns {string|null}
+ */
+export function inferLaunchFailureFromWorkerOutputTail(outputText) {
+	if (!outputText || !String(outputText).trim()) return null;
+	return classifyLaunchFailureHaystack(String(outputText));
 }
 
 /**
@@ -138,6 +165,18 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine status --diagnose";
+		case "worker_orphaned":
+			if (ctx.ghostRunningCluster) return "spine batch abort";
+			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
+				return "spine doctor";
+			}
+			if (ctx.launchFailureKind === "worktree_unhealthy") {
+				return "spine doctor";
+			}
+			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
+			return ctx.failedTaskId
+				? `spine batch retry ${ctx.failedTaskId}`
+				: "spine batch abort";
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
@@ -200,6 +239,21 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `${batchLabel} worker died while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} has failed tasks — retry before resume`;
+		case "worker_orphaned":
+			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
+				return `${batchLabel} lane worker orphaned during launch — fix PI_SPINE_ROOT/devcontainer, then retry`;
+			}
+			if (ctx.launchFailureKind === "worktree_unhealthy") {
+				return `${batchLabel} lane worker orphaned during launch — repair lane worktree git, then retry`;
+			}
+			if (ctx.ghostRunningCluster) {
+				return ctx.failedTaskId
+					? `${batchLabel} lane worker orphaned with multiple ghost running tasks (task ${ctx.failedTaskId}) — abort or retry`
+					: `${batchLabel} lane worker orphaned with multiple ghost running tasks — abort or retry`;
+			}
+			return ctx.failedTaskId
+				? `${batchLabel} lane worker orphaned while task ${ctx.failedTaskId} was running — retry or abort`
+				: `${batchLabel} lane worker orphaned — retry or abort`;
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
@@ -241,6 +295,8 @@ export function buildAlternatives(diagnosis) {
 			return ["spine batch complete --detect-manual-merge", "spine batch dismiss", ...common];
 		case "needs_retry":
 			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
+		case "worker_orphaned":
+			return ["spine batch abort", "spine batch resume --force", ...common];
 		case "engine_orphaned":
 			return ["spine batch abort", "spine batch resume --force", ...common];
 		case "needs_merge":

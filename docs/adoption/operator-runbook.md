@@ -115,7 +115,9 @@ spine preflight --json      # automation / CI
 | Git clean | Uncommitted changes in working tree |
 | No active batch | Stale `.spine/batch-state.json` or Taskplane `.pi/batch-state.json` |
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
-| Wave plan | Same planner output as `spine plan` |
+| Wave plan | Same planner output as `spine plan` (invalid PROMPTs fail here with actionable errors) |
+
+When `spine plan` or preflight **plan** fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files (heading em dash, required sections, testing step) before retrying. Scoped plans only validate selected tasks; `spine plan all` fails if any discovered packet is invalid.
 
 Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
 
@@ -475,11 +477,13 @@ spine status --diagnose
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `stallTimeoutMinutes` | 120 (template); 60 if unset | Hard silence timeout; use ≥120 for real `pi` workers |
-| `stallGraceAfterProgressMinutes` | 15 | Extra grace after STATUS/commit/`task.step_completed` |
+| `stallGraceAfterProgressMinutes` | **30** (`spine init` template); **15** code fallback when unset | Extra grace after STATUS/commit/`task.step_completed` |
 | `checkpointWarningMinutes` | 10 | Warn when file-scope activity lacks checkpoint |
 | `extendGraceOnFileScope` | false | File-scope mtime must **not** extend stall grace |
 | `workerOutputMaxBytes` / `workerOutputTailLines` | 262144 / 200 | Bounded worker log on terminal failure |
 | `autoCommitOnStall` | false | Opt-in WIP commit on stall (§18.5 lane branch); default off |
+
+**Stall grace default (template vs code):** `templates/spine-config.json` sets `stallGraceAfterProgressMinutes: 30` (SP-087 — longer grace for real `pi` workers). `src/batch/heartbeat.mjs` falls back to **15** only when the key is missing or zero in the loaded config. After `spine init`, the on-disk value is **30**; do not assume 15 unless you removed the key.
 
 **Retry with salvage:** `autoCommitOnStall: false` (default) leaves uncommitted scoped work on the lane branch for human review before retry. When `autoCommitOnStall: true`, one scoped `wip(<taskId>): stall salvage …` commit may be created; atomic retry (§18.5) keeps that commit on the lane branch.
 
@@ -502,7 +506,7 @@ spine status --diagnose
 | `.worktrees/spine-<batchId>/lane-N` | Lane worktrees |
 | `.spine/runtime/<batchId>/journal/events.jsonl` | Audit trail |
 | `.spine/runtime/<batchId>/evidence/` | Gate evidence bundle |
-| `taskplane-tasks/<id>/.DONE` | Task completion marker |
+| `<tasksRoot>/<id>/.DONE` | Task completion marker (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
 
 ### Get help from reconciliation
 

@@ -15,6 +15,7 @@ import {
 	resolveTasksRootPath,
 } from "../../src/config/env-overrides.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
 
@@ -101,7 +102,14 @@ test("SPINE_TASKS_ROOT env discovers tasks under alternate root in plan", async 
 	fs.mkdirSync(altRoot, { recursive: true });
 	const taskDir = path.join(altRoot, "TP-900-env-smoke");
 	fs.mkdirSync(taskDir);
-	fs.writeFileSync(path.join(taskDir, "PROMPT.md"), "# Env smoke\n", "utf-8");
+	fs.writeFileSync(
+		path.join(taskDir, "PROMPT.md"),
+		minimalValidPromptMarkdown("TP-900", {
+			title: "Env smoke",
+			fileScope: "src/env-smoke.txt",
+		}),
+		"utf-8",
+	);
 	fs.writeFileSync(
 		path.join(altRoot, "dependencies.json"),
 		JSON.stringify({ schemaVersion: 1, tasks: {} }, null, 2),

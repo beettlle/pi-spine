@@ -9,6 +9,7 @@ import { buildPlan } from "../../src/planner/index.mjs";
 import { discoverTasks } from "../../src/tasks/packet/index.mjs";
 import { filterPendingTaskIds, summarizePendingScope } from "../../src/planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR, parseScope } from "../../src/planner/scope.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
 async function createPendingFixture() {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-pending-"));
@@ -20,7 +21,7 @@ async function createPendingFixture() {
 		fs.mkdirSync(folder, { recursive: true });
 		fs.writeFileSync(
 			path.join(folder, "PROMPT.md"),
-			`# Task: ${taskId} — Test\n\n## Dependencies\n- **None**\n`,
+			minimalValidPromptMarkdown(taskId, { title: "Test", fileScope: `src/${taskId}.mjs` }),
 			"utf-8",
 		);
 		if (done) {
@@ -65,7 +66,11 @@ test("parseScope pending throws when all tasks are done", async () => {
 	fs.mkdirSync(tasksRoot, { recursive: true });
 	const folder = path.join(tasksRoot, "TP-001-done");
 	fs.mkdirSync(folder, { recursive: true });
-	fs.writeFileSync(path.join(folder, "PROMPT.md"), "# Task: TP-001 — Done\n", "utf-8");
+	fs.writeFileSync(
+		path.join(folder, "PROMPT.md"),
+		minimalValidPromptMarkdown("TP-001", { title: "Done", fileScope: "src/tp-001.mjs" }),
+		"utf-8",
+	);
 	fs.writeFileSync(path.join(folder, ".DONE"), "", "utf-8");
 
 	try {
@@ -89,7 +94,10 @@ test("buildPlan pending scope preserves dependency waves", async () => {
 		fs.mkdirSync(folder, { recursive: true });
 		fs.writeFileSync(
 			path.join(folder, "PROMPT.md"),
-			`# Task: ${taskId} — Test\n\n## Dependencies\n${depsLine}\n`,
+			minimalValidPromptMarkdown(taskId, { title: "Test", fileScope: `src/${taskId}.mjs` }).replace(
+				"## Dependencies\n- **None**",
+				`## Dependencies\n${depsLine}`,
+			),
 			"utf-8",
 		);
 		if (done) {

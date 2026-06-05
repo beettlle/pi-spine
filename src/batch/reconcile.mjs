@@ -7,14 +7,24 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
-import { buildDiagnosisOutput, inferLaunchFailureKind } from "./diagnosis.mjs";
+import {
+	buildDiagnosisOutput,
+	inferLaunchFailureFromWorkerOutputTail,
+	inferLaunchFailureKind,
+} from "./diagnosis.mjs";
+import { workerOutputLogPath } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
-import { parseSpineBatchState } from "./readers/spine-state.mjs";
-import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
+import {
+	loadBatchStateFile,
+	parseBatchState,
+	resolveBatchStatePath,
+} from "./batch-state-io.mjs";
+
+export { loadBatchStateFile, parseBatchState, resolveBatchStatePath } from "./batch-state-io.mjs";
 
 const LIMBO_PHASES = new Set(["stopped", "failed", "executing"]);
 const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
@@ -59,47 +69,6 @@ const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
  * @property {string|null} [phase]
  * @property {object} [signals]
  */
-
-/**
- * @param {string} projectRoot
- */
-export function resolveBatchStatePath(projectRoot) {
-	const spinePath = path.join(projectRoot, ".spine", "batch-state.json");
-	if (fs.existsSync(spinePath)) return spinePath;
-
-	const piPath = path.join(projectRoot, ".pi", "batch-state.json");
-	if (fs.existsSync(piPath)) return piPath;
-
-	return null;
-}
-
-/**
- * @param {string} projectRoot
- * @param {string|null} [batchStatePath]
- */
-export function loadBatchStateFile(projectRoot, batchStatePath = null) {
-	const resolved = batchStatePath ?? resolveBatchStatePath(projectRoot);
-	if (!resolved) return { path: null, raw: null, parseError: null };
-
-	try {
-		const raw = JSON.parse(fs.readFileSync(resolved, "utf-8"));
-		return { path: resolved, raw, parseError: null };
-	} catch (err) {
-		return { path: resolved, raw: null, parseError: err.message };
-	}
-}
-
-/**
- * @param {unknown} raw
- * @param {string} batchStatePath
- */
-export function parseBatchState(raw, batchStatePath) {
-	if (!raw) return null;
-	if (batchStatePath.includes(`${path.sep}.pi${path.sep}`)) {
-		return parseTaskplaneBatchState(raw);
-	}
-	return parseSpineBatchState(raw) ?? parseTaskplaneBatchState(raw);
-}
 
 /**
  * @param {string} projectRoot
@@ -211,6 +180,19 @@ function gitIsAncestor(projectRoot, ancestor, descendant) {
 }
 
 /**
+ * @param {object} result
+ * @param {unknown} err
+ * @param {string} context
+ */
+function recordGitInspectionError(result, err, context) {
+	const message = err instanceof Error ? err.message : String(err);
+	const detail = `${context}: ${message}`;
+	result.gitInspectionError = result.gitInspectionError
+		? `${result.gitInspectionError}; ${detail}`
+		: detail;
+}
+
+/**
  * @param {string} projectRoot
  * @param {string} batchId
  */
@@ -250,9 +232,15 @@ export function inspectGitState(ctx) {
 		orchMergedToBase: false,
 		mergedOrchBranch: null,
 		orchCommitsAhead: null,
+		gitInspectionError: null,
 	};
 
 	if (!result.inGitRepo) return result;
+
+	if (process.env.SPINE_TEST_GIT_INSPECTION_THROW) {
+		result.gitInspectionError = `simulated: ${process.env.SPINE_TEST_GIT_INSPECTION_THROW}`;
+		return result;
+	}
 
 	const candidates = new Set(listOrchBranches(projectRoot, batchId));
 	if (orchBranch) candidates.add(orchBranch);
@@ -275,8 +263,9 @@ export function inspectGitState(ctx) {
 	if (resolvedOrch && gitRefExists(projectRoot, resolvedOrch) && !result.orchMergedToBase) {
 		try {
 			result.orchCommitsAhead = countCommitsAhead(projectRoot, baseBranch, resolvedOrch);
-		} catch {
+		} catch (err) {
 			result.orchCommitsAhead = null;
+			recordGitInspectionError(result, err, "count_commits_ahead");
 		}
 	}
 
@@ -296,8 +285,8 @@ export function inspectGitState(ctx) {
 				result.mergedOrchBranch = mergedOrch[0];
 				result.orchBranchExists = true;
 			}
-		} catch {
-			// ignore git errors
+		} catch (err) {
+			recordGitInspectionError(result, err, "list_merged_branches");
 		}
 	}
 
@@ -337,6 +326,57 @@ function deriveFailureContext(failedTaskId, exitReason, signals) {
 	return { exitReason: resolvedExitReason, launchFailureKind };
 }
 
+const WORKER_OUTPUT_TAIL_LINES = 20;
+
+/**
+ * @param {string} filePath
+ * @param {number} [lineCount]
+ * @returns {string|null}
+ */
+function readWorkerOutputLogTail(filePath, lineCount = WORKER_OUTPUT_TAIL_LINES) {
+	if (!fs.existsSync(filePath)) return null;
+	const content = fs.readFileSync(filePath, "utf-8");
+	const lines = content.split("\n");
+	if (lines.at(-1) === "") lines.pop();
+	if (lines.length === 0) return null;
+	return lines.slice(-lineCount).join("\n");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string|null} failedTaskId
+ * @param {Array<{ taskId: string, laneNumber?: number|null }>} tasks
+ * @param {string|null} launchFailureKind
+ * @returns {string|null}
+ */
+function enrichLaunchFailureFromWorkerOutput(projectRoot, batchId, failedTaskId, tasks, launchFailureKind) {
+	if (launchFailureKind || !failedTaskId || !batchId) return launchFailureKind;
+	const task = tasks.find((entry) => entry.taskId === failedTaskId);
+	if (!task || task.laneNumber == null) return launchFailureKind;
+	const logPath = workerOutputLogPath(projectRoot, batchId, task.laneNumber, failedTaskId);
+	const tail = readWorkerOutputLogTail(logPath);
+	return inferLaunchFailureFromWorkerOutputTail(tail) ?? launchFailureKind;
+}
+
+/**
+ * @param {Array<{ taskId: string, classification: string, laneNumber?: number|null }>} tasks
+ * @param {string|null} failedTaskId
+ * @returns {boolean}
+ */
+function hasGhostRunningCluster(tasks, failedTaskId) {
+	if (!failedTaskId) return false;
+	const task = tasks.find((entry) => entry.taskId === failedTaskId);
+	if (!task || task.laneNumber == null) return false;
+	const laneNumber = Number(task.laneNumber);
+	return (
+		tasks.filter(
+			(entry) =>
+				entry.classification === "running" && Number(entry.laneNumber) === laneNumber,
+		).length > 1
+	);
+}
+
 /**
  * @param {string} diagnosis
  * @param {string|null} failedTaskId
@@ -374,9 +414,13 @@ export function deriveDiagnosis(signals) {
 
 	if (orphanRunning) {
 		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
-			return withFailureContext("needs_retry", orphanRunning.taskId, signals);
+			return withFailureContext("worker_orphaned", orphanRunning.taskId, signals);
 		}
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
+	}
+
+	if (git?.gitInspectionError) {
+		return withFailureContext("git_unavailable", null, signals);
 	}
 
 	if (phase === "aborted") {
@@ -558,6 +602,18 @@ export function reconcileBatch(ctx) {
 	signals.pendingTaskCount = pendingTaskCount;
 
 	const { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	const resolvedLaunchFailureKind =
+		diagnosis === "worker_orphaned"
+			? enrichLaunchFailureFromWorkerOutput(
+					projectRoot,
+					batch.batchId,
+					failedTaskId,
+					classifiedTasks,
+					launchFailureKind,
+				)
+			: launchFailureKind;
+	const ghostRunningCluster =
+		diagnosis === "worker_orphaned" && hasGhostRunningCluster(classifiedTasks, failedTaskId);
 	const salvagePayload = findLatestSalvageInspection(journalEvents, failedTaskId);
 	const salvageChangedFileCount = Number(salvagePayload?.changedFileCount ?? 0) || 0;
 	const salvageRetryCommand =
@@ -573,12 +629,19 @@ export function reconcileBatch(ctx) {
 		failedTasks: signals.failedTasks,
 		failedTaskId,
 		exitReason,
-		launchFailureKind,
+		launchFailureKind: resolvedLaunchFailureKind,
 		gitMerged: git.orchMergedToBase,
 		pendingTaskCount,
 		salvageChangedFileCount,
 		salvageRetryCommand,
+		ghostRunningCluster,
 	});
+
+	if (diagnosis === "git_unavailable") {
+		output.headline = `Batch ${batch.batchId} — git inspection failed: ${git.gitInspectionError}`;
+		output.suggestedCommand = "spine doctor";
+		output.alternatives = ["spine status --diagnose"];
+	}
 
 	return {
 		...output,
