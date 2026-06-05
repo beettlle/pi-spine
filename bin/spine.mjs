@@ -26,6 +26,7 @@ import {
 	die,
 	FAIL,
 	getPackageVersion,
+	isCliEntrypoint,
 	OK,
 	PACKAGE_ROOT,
 	WARN,
@@ -226,10 +227,7 @@ ${c.bold}Examples:${c.reset}
 `);
 }
 
-const isMainModule =
-	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	const [command = "help", ...args] = process.argv.slice(2);
 
 	const runCli = async () => {
