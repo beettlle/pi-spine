@@ -192,7 +192,7 @@ From pi-spine repo root (contributors and pre-publish validation):
 npm run typecheck && npm test
 ```
 
-Full suite: **559** tests (`npm test`). Targeted subsets:
+Full suite: **567** tests (`npm test`). Targeted subsets:
 
 | Command | Scope |
 |---------|-------|
