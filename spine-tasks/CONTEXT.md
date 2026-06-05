@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-05
 **Status:** Active
-**Next Task ID:** SP-106
+**Next Task ID:** SP-119
 
 ---
 
@@ -292,17 +292,52 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Acceptance (SP-099):** `spine plan pending` via global symlink prints plan or stderr error; never silent exit 0. Direct `node …/bin/spine.mjs` unchanged. CI symlink spawn test.
 
+### Phase 20 — Brutal audit wave (2026-06-05)
+
+**Source:** Three parallel brutal audits (SP-106–108) covering batch reliability, core architecture/CLI, and adoption/test quality. Aggregate cleanliness **6–7/10**.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-106 | Brutal audit: batch engine & reliability | **Done** | — |
+| SP-107 | Brutal audit: core architecture & CLI | **Done** | — |
+| SP-108 | Brutal audit: adoption, docs & test quality | **Done** | — |
+
+**Reports:** `spine-tasks/SP-106-audit-batch-reliability/AUDIT-REPORT.md`, `SP-107-…/AUDIT-REPORT.md`, `SP-108-…/AUDIT-REPORT.md`
+
+### Phase 21 — Audit remediation (SP-109–118)
+
+**Source:** Synthesized findings from Phase 20 audits (33 findings → 10 remediation tasks).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-109 | Fail-loud PROMPT validation in planner/plan | **Staged** | — |
+| SP-110 | Fix glob scope regex escape | **Staged** | — |
+| SP-111 | Orphan detect: PID-less ghost running | **Staged** | — |
+| SP-112 | Spine-config testing defaults + doctor warn | **Staged** | — |
+| SP-113 | Strangler split resume-multi.mjs | **Staged** | — |
+| SP-114 | Coverage TEST_GLOBS parity with npm test | **Staged** | — |
+| SP-115 | Orphan diagnosis taxonomy (worker_orphaned) | **Staged** | SP-111 |
+| SP-116 | batch-state-io extract + git error surfacing | **Staged** | — |
+| SP-117 | Detached enginePid persistence symmetry | **Staged** | SP-111 |
+| SP-118 | Adoption docs + test script hygiene | **Staged** | — |
+
+**Suggested run order:**
+
+1. **Wave A (parallel):** `SP-109`, `SP-110`, `SP-111`, `SP-112`
+2. **Wave B (parallel):** `SP-113`, `SP-114`, `SP-116`, `SP-118`
+3. **Wave C (parallel after SP-111):** `SP-115`, `SP-117`
+
 ### Phase 19 — Lane worktree devcontainer fix (searchATon batch 20260605T160800)
 
 **Source:** Consumer bug report — searchATon batch `20260605T160800` (2026-06-05). Lane worktrees get container-absolute `.git` gitdir pointers; devcontainer lane-only mounts break host git; worker launch fails without `PI_SPINE_ROOT`; lane commit `git add -A` masks out-of-scope dirty state.
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-101 | Normalize lane worktree gitdir to relative paths + resume repair | **Staged** | — |
-| SP-102 | `worktreeSetupHook` runner (FR-WT-05) — sandbox, 120s, JSON | **Staged** | SP-101 |
-| SP-103 | `PI_SPINE_ROOT` in worker spawn env | **Staged** | SP-101 |
-| SP-104 | Lane commit ordering + scoped dirty filter | **Staged** | SP-101, SP-102 |
-| SP-105 | Launch failure diagnosis + incident doc | **Staged** | SP-104 |
+| SP-101 | Normalize lane worktree gitdir to relative paths + resume repair | **Done** | — |
+| SP-102 | `worktreeSetupHook` runner (FR-WT-05) — sandbox, 120s, JSON | **Done** | SP-101 |
+| SP-103 | `PI_SPINE_ROOT` in worker spawn env | **Done** | SP-101 |
+| SP-104 | Lane commit ordering + scoped dirty filter | **Done** | SP-101, SP-102 |
+| SP-105 | Launch failure diagnosis + incident doc | **Done** | SP-104 |
 
 **Suggested run order:**
 
@@ -372,7 +407,7 @@ From `.pi/taskplane-config.json`:
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Run full `npm test` (**150+** tests) for any batch-touching change.
+Run full `npm test` (**559** tests) for any batch-touching change.
 
 ---
 
