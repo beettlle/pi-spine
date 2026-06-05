@@ -1,10 +1,10 @@
 # SP-116: batch-state-io and git errors — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-05
 **Review Level:** 2
-**Review Counter:** 2
+**Review Counter:** 3
 **Iteration:** 0
 **Size:** M
 
@@ -24,6 +24,16 @@
 **Status:** ✅ Complete
 - [x] Replace empty catch with structured hint or git_unavailable diagnosis
 
+### Step 3: Testing & Verification
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate
+
+---
+
+## Completion Criteria
+- [x] No circular import state↔reconcile
+- [x] Git failure produces actionable diagnosis
+
 ---
 
 ## Discoveries
@@ -31,6 +41,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | state.mjs imported loadBatchStateFile from reconcile.mjs (cycle via orphan-detect) | Fixed in Step 1 | src/batch/state.mjs |
+| dashboard cli-startup test flaky under coverage run | Passed on retry | tests/dashboard/cli-startup.test.mjs |
 
 ---
 
@@ -43,3 +54,4 @@
 | 2026-06-05 | Step 1 implementation | batch-state-io.mjs created; state/reconcile updated |
 | 2026-06-05 | Step 2 plan review | APPROVE |
 | 2026-06-05 | Step 2 code review | APPROVE |
+| 2026-06-05 | Step 3 verification | npm test 567/567; coverage:check 83.40% |
