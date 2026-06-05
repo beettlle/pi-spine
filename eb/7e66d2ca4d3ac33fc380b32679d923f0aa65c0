@@ -1,0 +1,42 @@
+spine-tasks/dependencies.json
+  s_aa37de32047f01::t_db7ed8c9600727 216-230
+spine-tasks/SP-104-lane-commit-hardening/STATUS.md
+  s_aa37de32047f01::t_4c67d7199d94ba 1-88
+spine-tasks/SP-101-normalize-lane-worktree-git-paths/STATUS.md
+  s_aa37de32047f01::t_0e795652c595cd 1-88
+spine-tasks/CONTEXT.md
+  s_aa37de32047f01::t_be1615a8bfb9ed 295-315
+  s_aa37de32047f01::t_a93b00a31e9cd5 3,5
+spine-tasks/SP-102-worktree-setup-hook/PROMPT.md
+  s_aa37de32047f01::t_98fc501ee432f5 1-108
+spine-tasks/SP-103-pi-spine-root-worker-env/STATUS.md
+  s_aa37de32047f01::t_429b2248ed48f1 1-79
+spine-tasks/SP-101-normalize-lane-worktree-git-paths/PROMPT.md
+  s_aa37de32047f01::t_6957d7a7967a7a 1-98
+spine-tasks/SP-102-worktree-setup-hook/STATUS.md
+  s_aa37de32047f01::t_98fc501ee432f5 1-89
+spine-tasks/SP-104-lane-commit-hardening/PROMPT.md
+  s_aa37de32047f01::t_4c67d7199d94ba 1-111
+spine-tasks/SP-105-launch-failure-diagnosis/PROMPT.md
+  s_aa37de32047f01::t_0d8a02352f65b9 1-113
+spine-tasks/SP-103-pi-spine-root-worker-env/PROMPT.md
+  s_aa37de32047f01::t_429b2248ed48f1 1-94
+spine-tasks/SP-105-launch-failure-diagnosis/STATUS.md
+  s_aa37de32047f01::t_0d8a02352f65b9 1-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "eb7e66d2ca4d3ac33fc380b32679d923f0aa65c0",
+  "prompts": {},
+  "sessions": {
+    "s_aa37de32047f01": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e98a3-3e1e-7cd4-9122-c7343f4a672c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
