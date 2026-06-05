@@ -1,0 +1,9 @@
+.spine/rules-manifest.json
+  ai_agent 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d3399ce3a06835ac5eb56d0386da0da7a72ec681",
+  "prompts": {}
+}
