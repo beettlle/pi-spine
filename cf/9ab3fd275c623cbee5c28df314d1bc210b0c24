@@ -1,0 +1,31 @@
+src/batch/resume-multi.mjs
+  s_aa37de32047f01::t_d2788f5ab611f2 176
+tests/batch/worktree-git-paths.test.mjs
+  s_aa37de32047f01::t_dbbfd12f2880d9 10,20,22,24-26,30,32,50-51,54,78,81,84,88-90,110-112,134
+src/batch/worktree.mjs
+  s_aa37de32047f01::t_c93620dc1e37eb 52
+  s_aa37de32047f01::t_4b48b12b4a8bc2 142-143
+  s_aa37de32047f01::t_4215e21c53f45b 97,100
+  s_aa37de32047f01::t_dbbca8311ef8b3 196
+  s_aa37de32047f01::t_a84304c7ccd87a 35-45,50,73-74,76,80-81,87,92-96,98-99,105-110,112-115
+  s_aa37de32047f01::t_675bfa591fae06 53-67,72,75
+  s_aa37de32047f01::t_dd019f55ea21e5 29-31
+  s_aa37de32047f01::t_1efd71ec2c45a0 68-71
+  s_aa37de32047f01::t_dd0a512283b170 111,116-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "cf9ab3fd275c623cbee5c28df314d1bc210b0c24",
+  "prompts": {},
+  "sessions": {
+    "s_aa37de32047f01": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e98a3-3e1e-7cd4-9122-c7343f4a672c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
