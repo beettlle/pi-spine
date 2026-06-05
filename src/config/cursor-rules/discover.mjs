@@ -278,6 +278,88 @@ export function discoverCursorRules({ projectRoot, profile, writeManifest = true
 }
 
 /**
+ * Stable fingerprint for semantic comparison (ignores `generatedAt`).
+ *
+ * @param {CursorRulesManifest} manifest
+ */
+export function fingerprintRulesManifest(manifest) {
+	const payload = {
+		rulesRoot: manifest.rulesRoot,
+		rules: [...manifest.rules]
+			.map((rule) => ({
+				relPath: rule.relPath,
+				spineClass: rule.spineClass,
+				alwaysApply: rule.alwaysApply,
+				description: rule.description,
+				globs: rule.globs,
+				parseStatus: rule.parseStatus,
+				warnings: rule.warnings ?? [],
+			}))
+			.sort((left, right) => left.relPath.localeCompare(right.relPath)),
+		excluded: [...manifest.excluded]
+			.map((entry) => ({
+				relPath: entry.relPath,
+				reason: entry.reason,
+				spineClass: entry.spineClass,
+			}))
+			.sort((left, right) => left.relPath.localeCompare(right.relPath)),
+		warnings: manifest.warnings ?? [],
+	};
+	return JSON.stringify(payload);
+}
+
+/**
+ * @param {string} text
+ */
+export function parseRulesManifestJson(text) {
+	try {
+		return {
+			ok: /** @type {const} */ (true),
+			manifest: /** @type {CursorRulesManifest} */ (JSON.parse(text)),
+		};
+	} catch (err) {
+		return {
+			ok: /** @type {const} */ (false),
+			error: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+/**
+ * Merge two manifest versions when only `generatedAt` differs.
+ *
+ * @param {object} params
+ * @param {CursorRulesManifest} params.ours
+ * @param {CursorRulesManifest} params.theirs
+ */
+export function resolveRulesManifestGeneratedAtMerge({ ours, theirs }) {
+	if (fingerprintRulesManifest(ours) !== fingerprintRulesManifest(theirs)) {
+		return {
+			ok: /** @type {const} */ (false),
+			failureClass: "RulesManifestMergeConflict",
+			error:
+				"Cannot auto-merge .spine/rules-manifest.json: rules[] (or excluded/rulesRoot) differ between orch and lane",
+		};
+	}
+
+	const oursMs = Date.parse(ours.generatedAt);
+	const theirsMs = Date.parse(theirs.generatedAt);
+	const generatedAt =
+		Number.isFinite(oursMs) && Number.isFinite(theirsMs)
+			? oursMs >= theirsMs
+				? ours.generatedAt
+				: theirs.generatedAt
+			: ours.generatedAt >= theirs.generatedAt
+				? ours.generatedAt
+				: theirs.generatedAt;
+
+	return {
+		ok: /** @type {const} */ (true),
+		manifest: { ...ours, generatedAt },
+	};
+}
+
+/**
  * @param {string} projectRoot
  * @returns {CursorRulesManifest | null}
  */
