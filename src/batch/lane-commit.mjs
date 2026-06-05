@@ -133,7 +133,10 @@ export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, 
 			};
 		}
 
-		git(worktreePath, ["checkout", taskBranch]);
+		const currentBranch = git(worktreePath, ["rev-parse", "--abbrev-ref", "HEAD"]);
+		if (currentBranch !== taskBranch) {
+			git(worktreePath, ["checkout", taskBranch]);
+		}
 		git(worktreePath, ["add", "-A"]);
 		const message = `feat(${taskId}): batch ${batchId} worker completion`;
 		git(worktreePath, ["commit", "-m", message]);
