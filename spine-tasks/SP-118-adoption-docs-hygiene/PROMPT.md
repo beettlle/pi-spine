@@ -42,6 +42,16 @@ Close doc/command drift from SP-106/108 audits: mark SP-101–105 Done in CONTEX
 - [ ] Add test:batch and test:core npm scripts
 - [ ] PR template: coverage:check checkbox
 
+### Step 4: Testing & Verification
+
+- [ ] Run `npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test` (docs-only — no coverage gate on product code)
+- [ ] Confirm new npm scripts execute: `npm run test:batch` and `npm run test:core`
+
+### Step 5: Documentation & Delivery
+
+- [ ] STATUS.md complete
+- [ ] Create `.DONE`
+
 ## Completion Criteria
 - [ ] No stale "Staged" for landed Phase 19 tasks
 - [ ] Fixture README complete
