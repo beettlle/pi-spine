@@ -1,6 +1,6 @@
 # SP-117: Detached enginePid symmetry — Status
 
-**Current Step:** Step 1 — Symmetric persistence
+**Current Step:** Step 3 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-05
 **Review Level:** 2
@@ -16,12 +16,12 @@
 - [x] Dependencies satisfied (SP-111 orphan detect foundation merged)
 
 ### Step 1: Symmetric persistence
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] persistDetachedEnginePid immediately after spawn on start path
 
 ### Step 2: Regression test
-**Status:** ⬜ Not Started
-- [ ] Fixture: timeout_waiting_for_batch + dead engine → reconcile ≠ running
+**Status:** ✅ Complete
+- [x] Fixture: timeout_waiting_for_batch + dead engine → reconcile ≠ running
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
