@@ -35,6 +35,7 @@ export const TASKPLANE_COMPAT_PRESET = "taskplane-compat";
 export const LEGACY_TASKPLANE_PRESET_ALIASES = [TASKPLANE_COMPAT_PRESET];
 
 export const SPINE_INIT_TESTING_COMMAND = "npm run typecheck && npm test";
+export const SPINE_INIT_COVERAGE_COMMAND = "npm run coverage:check";
 
 export const SPINE_GITIGNORE_ENTRIES = [
 	".spine/runtime/",
@@ -140,6 +141,7 @@ export function parseInitArgs(args) {
 export function applySpineInitDefaults(config) {
 	config.testing.build = SPINE_INIT_TESTING_COMMAND;
 	config.testing.test = SPINE_INIT_TESTING_COMMAND;
+	config.testing.testWithCoverage = SPINE_INIT_COVERAGE_COMMAND;
 	config.dashboard = { ...(config.dashboard ?? {}), port: 8109 };
 	config.gates = {
 		...(config.gates ?? {}),

@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "generatedAt": "2026-06-05T21:23:56.509Z",
+=======
+  "generatedAt": "2026-06-05T19:25:45.321Z",
+>>>>>>> task/spine-lane-3-20260605T191325
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
