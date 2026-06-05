@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "incidentId": "20260605-retry-clears-failed-classification",
+    "source": "pi-spine batch 20260605T191325 stress test (SP-118 retry)",
+    "batchId": "20260605T191325",
+    "pattern": "task.failed(prompt_parse_failed) → retry → task.completed while batch-state drifted failed",
+    "relatedTasks": ["SP-118", "SP-120"]
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "batchId": "20260605T191325",
+    "phase": "failed",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260605T191325",
+    "startedAt": 1749160000000,
+    "updatedAt": 1749161200000,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [["SP-118"]],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260605T191325/lane-1",
+        "branch": "task/spine-lane-1-20260605T191325",
+        "taskIds": ["SP-118"],
+        "lastHeartbeatAt": 1749161100000
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SP-118",
+        "laneNumber": 1,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-118-adoption-docs",
+        "startedAt": 1749160500000,
+        "endedAt": 1749161150000,
+        "doneFileFound": true,
+        "exitReason": "done"
+      }
+    ],
+    "segments": [
+      {
+        "segmentId": "SP-118::default",
+        "taskId": "SP-118",
+        "status": "succeeded",
+        "repoId": "default"
+      }
+    ],
+    "mergeResults": [],
+    "totalTasks": 1,
+    "succeededTasks": 1,
+    "failedTasks": 0,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": true,
+      "retryCountByScope": {
+        "SP-118": 2
+      },
+      "lastFailureClass": null,
+      "repairHistory": []
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "retry-fixture-task-failed",
+      "type": "task.failed",
+      "timestamp": "2026-06-05T19:20:00.000Z",
+      "batchId": "20260605T191325",
+      "taskId": "SP-118",
+      "payload": {
+        "taskId": "SP-118",
+        "laneNumber": 1,
+        "classification": "prompt_parse_failed",
+        "exitCode": 1,
+        "output": "PROMPT.md file scope parse failed"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "retry-fixture-retry-requested",
+      "type": "task.retry_requested",
+      "timestamp": "2026-06-05T19:25:00.000Z",
+      "batchId": "20260605T191325",
+      "taskId": "SP-118",
+      "payload": {
+        "taskId": "SP-118",
+        "previousClassification": "failed",
+        "pendingSegments": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "retry-fixture-task-completed",
+      "type": "task.completed",
+      "timestamp": "2026-06-05T19:40:00.000Z",
+      "batchId": "20260605T191325",
+      "taskId": "SP-118",
+      "payload": {
+        "taskId": "SP-118",
+        "laneNumber": 1,
+        "laneId": "lane-1"
+      }
+    }
+  ]
+}

@@ -464,6 +464,93 @@ export function updateSegmentForTask(state, taskId, status) {
 }
 
 /**
+ * @param {object} task
+ */
+export function clearTaskFailureMetadata(task) {
+	if (!task || typeof task !== "object") return;
+	task.exitReason = null;
+	if ("classification" in task) delete task.classification;
+}
+
+/**
+ * @param {object} state
+ */
+export function recomputeTaskCounters(state) {
+	const tasks = state.tasks ?? [];
+	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
+	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
+	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
+}
+
+/**
+ * @param {object} state
+ * @param {string} taskId
+ * @returns {{ previousClassification: string, wasFailed: boolean } | null}
+ */
+export function resetTaskForRetry(state, taskId) {
+	const task = (state.tasks ?? []).find(
+		(entry) => entry && typeof entry === "object" && entry.taskId === taskId,
+	);
+	if (!task) return null;
+
+	const previousClassification = String(task.status ?? "unknown");
+	const wasFailed = task.status === "failed";
+
+	clearTaskFailureMetadata(task);
+	task.status = "pending";
+	task.startedAt = null;
+	task.endedAt = null;
+	task.doneFileFound = false;
+
+	for (const segment of state.segments ?? []) {
+		if (!segment || segment.taskId !== taskId) continue;
+		segment.status = "pending";
+		if ("startedAt" in segment) segment.startedAt = null;
+		if ("endedAt" in segment) segment.endedAt = null;
+		if ("exitReason" in segment) segment.exitReason = null;
+		if ("classification" in segment) delete segment.classification;
+	}
+
+	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
+	recomputeTaskCounters(state);
+
+	return { previousClassification, wasFailed };
+}
+
+/**
+ * @param {object} state
+ * @param {string} taskId
+ * @param {object} [options]
+ * @param {string} [options.exitReason]
+ * @param {boolean} [options.doneFileFound]
+ * @param {number|null} [options.endedAt]
+ * @param {number|null} [options.startedAt]
+ * @returns {boolean}
+ */
+export function recordTaskSucceeded(state, taskId, options = {}) {
+	const task = (state.tasks ?? []).find(
+		(entry) => entry && typeof entry === "object" && entry.taskId === taskId,
+	);
+	if (!task) return false;
+
+	const exitReason = options.exitReason ?? "done";
+	const doneFileFound = options.doneFileFound ?? true;
+	const endedAt = options.endedAt ?? Date.now();
+	const startedAt = options.startedAt ?? null;
+
+	if ("classification" in task) delete task.classification;
+	task.status = "succeeded";
+	task.endedAt = endedAt;
+	task.doneFileFound = doneFileFound;
+	task.exitReason = exitReason;
+	if (startedAt != null && !task.startedAt) task.startedAt = startedAt;
+
+	updateSegmentForTask(state, taskId, "succeeded");
+	recomputeTaskCounters(state);
+	return true;
+}
+
+/**
  * @param {object} state
  * @param {string} [taskId]
  */

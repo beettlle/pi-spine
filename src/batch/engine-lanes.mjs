@@ -16,6 +16,8 @@ import {
 import { buildTaskLaneAssignments, countPlanTasks } from "./engine-scope.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 import {
+	recordTaskSucceeded,
+	recomputeTaskCounters,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
@@ -131,16 +133,6 @@ export function transitionPhase(state, newPhase, ctx) {
 		toPhase: newPhase,
 		...ctx.extra,
 	});
-}
-
-/**
- * @param {object} state
- */
-function recomputeTaskCounters(state) {
-	const tasks = state.tasks ?? [];
-	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
-	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
-	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
 }
 
 /**
@@ -279,14 +271,15 @@ export async function skipTaskDoneOnDisk({
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
+	const endedAt = Date.now();
+	const startedAt = task.startedAt ?? endedAt;
 
-	task.status = "succeeded";
-	task.doneFileFound = true;
-	task.exitReason = "skipped_done_on_disk";
-	if (!task.startedAt) task.startedAt = Date.now();
-	task.endedAt = Date.now();
-	updateSegmentForTask(state, taskId, "succeeded");
-	recomputeTaskCounters(state);
+	recordTaskSucceeded(state, taskId, {
+		exitReason: "skipped_done_on_disk",
+		doneFileFound: true,
+		endedAt,
+		startedAt,
+	});
 	saveSpineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.skipped_done_on_disk", {
 		taskId,
@@ -488,12 +481,7 @@ export async function runTaskOnLane({
 		};
 	}
 
-	task.status = "succeeded";
-	task.endedAt = Date.now();
-	task.doneFileFound = true;
-	task.exitReason = "done";
-	updateSegmentForTask(state, taskId, "succeeded");
-	recomputeTaskCounters(state);
+	recordTaskSucceeded(state, taskId, { exitReason: "done", doneFileFound: true });
 	saveSpineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.completed", {
 		taskId,

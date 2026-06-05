@@ -6,18 +6,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { recomputeTaskCounters } from "./state.mjs";
 import { loadTaskFileScopePaths } from "./engine-lanes.mjs";
 import { laneWorktreePath } from "./worktree.mjs";
 
 /**
  * @param {object} state
  */
-export function recomputeTaskCounters(state) {
-	const tasks = state.tasks ?? [];
-	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
-	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
-	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
-}
+export { recomputeTaskCounters };
 
 /**
  * @param {object[]} events
