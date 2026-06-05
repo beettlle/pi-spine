@@ -1,8 +1,8 @@
 # SP-100: Accept `./scripts/` worker launch paths — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-06-04
+**Current Step:** Step 3
+**Status:** 🟢 Complete
+**Last Updated:** 2026-06-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -28,19 +28,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Dot-prefix acceptance test
-- [ ] Traversal tests still pass
-- [ ] FULL suite + coverage ≥77%
+- [x] Dot-prefix acceptance test
+- [x] Traversal tests still pass
+- [x] FULL suite + coverage ≥77% (528 pass; line coverage 83.94%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Templates/docs checked
-- [ ] Discoveries logged
+- [x] Templates/docs checked — no workerLaunchScript `./scripts/` examples; both forms now valid
+- [x] Discoveries logged
 
 ---
 
@@ -64,7 +64,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-04 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-05 | Step 0 preflight | Reproduced dot-prefix rejection |
+| 2026-06-05 | Step 1 implement + plan review | APPROVE |
+| 2026-06-05 | Step 2 verify | 528 tests pass; coverage 83.94% |
 
 ---
 
