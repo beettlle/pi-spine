@@ -23,6 +23,7 @@ export const TEST_GLOBS = [
 	"tests/config/cursor-rules/*.test.mjs",
 	"tests/planner/*.test.mjs",
 	"tests/batch/*.test.mjs",
+	"tests/agents/*.test.mjs",
 	"tests/adoption/*.test.mjs",
 	"tests/dashboard/*.test.mjs",
 	"tests/doctor/*.test.mjs",

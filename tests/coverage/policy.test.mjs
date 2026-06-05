@@ -25,14 +25,21 @@ test("COVERAGE_INCLUDES scopes src, bin, and extensions", () => {
 	]);
 });
 
-test("TEST_GLOBS matches package.json test script entrypoints", () => {
+function extractTestGlobsFromScript(testScript) {
+	const matches = testScript.match(/tests\/[^\s]+\.test\.mjs/g);
+	return matches ?? [];
+}
+
+test("TEST_GLOBS has bidirectional parity with package.json test script", () => {
 	const pkg = JSON.parse(
 		readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
 	);
-	const testScript = pkg.scripts.test;
-	for (const glob of TEST_GLOBS) {
-		assert.ok(testScript.includes(glob), `package.json test script missing ${glob}`);
-	}
+	const npmTestGlobs = extractTestGlobsFromScript(pkg.scripts.test);
+	assert.deepEqual(
+		TEST_GLOBS,
+		npmTestGlobs,
+		"TEST_GLOBS must match package.json test entrypoints exactly",
+	);
 });
 
 test("parseAggregateLineCoverage reads all files line percent", () => {
