@@ -24,7 +24,7 @@
 **Status:** ✅ Complete
 - [x] Stall grace: template 30 vs code fallback 15 documented
 - [x] Tasks-root decision table (spine-tasks vs taskplane-tasks)
-- [x] Verification section: 559 tests
+- [x] Verification section: 567 tests (refreshed from npm test output)
 
 ### Step 3: CI/scripts
 **Status:** ✅ Complete
