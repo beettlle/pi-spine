@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpineConfig } from "./spine-config.mjs";
+import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { resolveBatchJournalContext, runStepReview } from "../src/batch/review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -115,10 +116,7 @@ function findProjectRoot(startPath) {
 	return null;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const isMainModule =
-	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	const { exitCode, output } = runSpineReviewStep({});
 	process.stdout.write(output ?? "");
 	process.exit(exitCode);

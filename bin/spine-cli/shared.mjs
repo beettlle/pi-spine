@@ -52,3 +52,22 @@ export function writeCommandResult(result) {
 	process.stdout.write(result.output ?? "");
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
+
+/**
+ * Returns true when this module is the Node CLI entrypoint.
+ * Uses fs.realpathSync so npm global bin symlinks resolve to the same file as import.meta.url.
+ * Falls back to path.resolve equality when realpath throws (missing path edge case).
+ * Requires Node >= 22 (see package engines).
+ *
+ * @param {string} importMetaUrl
+ * @param {string|undefined} [argv1=process.argv[1]]
+ */
+export function isCliEntrypoint(importMetaUrl, argv1 = process.argv[1]) {
+	if (!argv1) return false;
+	const modulePath = fileURLToPath(importMetaUrl);
+	try {
+		return fs.realpathSync(argv1) === fs.realpathSync(modulePath);
+	} catch {
+		return path.resolve(argv1) === path.resolve(modulePath);
+	}
+}
