@@ -1,7 +1,7 @@
-# SP-121: Status — In Progress
+# SP-121: Status — Complete
 
 **Last Updated:** 2026-06-05
-**Status:** 🟡 Step 2 — Testing & Verification
+**Status:** ✅ Complete
 
 ## Step 1: Conflict detection + auto-resolve
 
@@ -10,15 +10,15 @@
 
 ## Step 2: Testing & Verification
 
-- [ ] FULL suite + coverage gate
+- [x] FULL suite + coverage gate (606 tests; 83.67% line coverage)
 
 ## Step 3: Documentation & Delivery
 
-- [ ] Operator runbook note under merge troubleshooting
-- [ ] `.DONE`
+- [x] Operator runbook note under merge troubleshooting
+- [x] `.DONE`
 
 ## Discoveries
 
 | Finding | Impact |
 |---------|--------|
-| (none yet) | |
+| `fingerprintRulesManifest` moved to `discover.mjs`; doctor re-exports | Shared semantic compare for merge + stale checks |
