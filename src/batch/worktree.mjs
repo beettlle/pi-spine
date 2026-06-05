@@ -26,41 +26,95 @@ function git(projectRoot, args) {
  * @param {string} toPath
  */
 function posixRelative(fromDir, toPath) {
-	return path.relative(fromDir, toPath).split(path.sep).join("/");
+	const from = fs.realpathSync.native?.(fromDir) ?? fs.realpathSync(fromDir);
+	const to = fs.realpathSync.native?.(toPath) ?? fs.realpathSync(toPath);
+	return path.relative(from, to).split(path.sep).join("/");
+}
+
+/**
+ * @param {string} gitfilePath
+ * @param {string} resolveDir
+ */
+function readGitfileAdminDir(gitfilePath, resolveDir) {
+	const content = fs.readFileSync(gitfilePath, "utf-8").trim();
+	const match = content.match(/^gitdir:\s*(.+)$/);
+	if (!match) {
+		throw new Error(`Invalid lane worktree gitfile: ${gitfilePath}`);
+	}
+	const rawGitdir = match[1].trim();
+	return path.isAbsolute(rawGitdir) ? rawGitdir : path.resolve(resolveDir, rawGitdir);
 }
 
 /**
  * @param {string} projectRoot
- * @param {number} laneNumber
+ * @param {string} worktreePath
  */
-function adminWorktreeDir(projectRoot, laneNumber) {
-	return path.join(projectRoot, ".git", "worktrees", `lane-${laneNumber}`);
+export function findAdminDirForWorktree(projectRoot, worktreePath) {
+	const laneGitFile = path.resolve(path.join(worktreePath, ".git"));
+	const worktreesDir = path.join(projectRoot, ".git", "worktrees");
+	if (!fs.existsSync(worktreesDir)) {
+		throw new Error(`Missing git worktrees admin dir: ${worktreesDir}`);
+	}
+
+	for (const entry of fs.readdirSync(worktreesDir, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		const adminDir = path.join(worktreesDir, entry.name);
+		const gitdirFile = path.join(adminDir, "gitdir");
+		if (!fs.existsSync(gitdirFile)) continue;
+
+		const content = fs.readFileSync(gitdirFile, "utf-8").trim();
+		const absLaneGit = path.isAbsolute(content)
+			? content
+			: path.resolve(path.dirname(gitdirFile), content);
+		const resolvedLaneGit = fs.realpathSync.native?.(absLaneGit) ?? fs.realpathSync(absLaneGit);
+		const resolvedTarget = fs.realpathSync.native?.(laneGitFile) ?? fs.realpathSync(laneGitFile);
+		if (resolvedLaneGit === resolvedTarget) {
+			return adminDir;
+		}
+	}
+
+	throw new Error(`No git worktree admin metadata found for ${worktreePath}`);
 }
 
 /**
- * Rewrite lane `.git` gitfile and admin `.git/worktrees/lane-N/gitdir` to relative posix paths.
+ * Rewrite lane `.git` gitfile and admin `gitdir` to relative posix paths.
+ * Uses the admin directory git assigned (e.g. lane-111), not lane-N alone.
  *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.worktreePath
- * @param {number} params.laneNumber
  */
-export function normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath, laneNumber }) {
+export function normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath }) {
 	const laneGitFile = path.join(worktreePath, ".git");
-	const adminGitdirFile = path.join(adminWorktreeDir(projectRoot, laneNumber), "gitdir");
-	const adminWtDir = adminWorktreeDir(projectRoot, laneNumber);
-
 	if (!fs.existsSync(laneGitFile)) {
 		throw new Error(`Lane worktree .git file missing: ${laneGitFile}`);
 	}
+
+	let adminWtDir;
+	try {
+		adminWtDir = readGitfileAdminDir(laneGitFile, worktreePath);
+		if (!fs.existsSync(adminWtDir)) {
+			adminWtDir = findAdminDirForWorktree(projectRoot, worktreePath);
+		}
+	} catch {
+		adminWtDir = findAdminDirForWorktree(projectRoot, worktreePath);
+	}
+
+	const laneGitdirRel = posixRelative(worktreePath, adminWtDir);
+	fs.writeFileSync(laneGitFile, `gitdir: ${laneGitdirRel}\n`, "utf-8");
+
+	const adminGitdirFile = path.join(adminWtDir, "gitdir");
 	if (!fs.existsSync(adminGitdirFile)) {
 		throw new Error(`Admin worktree gitdir missing: ${adminGitdirFile}`);
 	}
 
-	const laneGitdirRel = posixRelative(worktreePath, adminWtDir);
-	const adminGitdirRel = posixRelative(path.join(projectRoot, ".git"), laneGitFile);
-
-	fs.writeFileSync(laneGitFile, `gitdir: ${laneGitdirRel}\n`, "utf-8");
+	const laneGitTarget = path.resolve(worktreePath, ".git");
+	const currentAdmin = fs.readFileSync(adminGitdirFile, "utf-8").trim();
+	const absLaneGit = path.isAbsolute(currentAdmin)
+		? currentAdmin
+		: path.resolve(path.dirname(adminGitdirFile), currentAdmin);
+	const resolvedLaneGit = fs.existsSync(absLaneGit) ? absLaneGit : laneGitTarget;
+	const adminGitdirRel = posixRelative(path.dirname(adminGitdirFile), resolvedLaneGit);
 	fs.writeFileSync(adminGitdirFile, `${adminGitdirRel}\n`, "utf-8");
 }
 
@@ -85,8 +139,8 @@ export function assertLaneWorktreeGitHealthy(worktreePath) {
  * @param {string} params.worktreePath
  * @param {number} params.laneNumber
  */
-export function repairLaneWorktreeGitMetadata({ projectRoot, worktreePath, laneNumber }) {
-	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath, laneNumber });
+export function repairLaneWorktreeGitMetadata({ projectRoot, worktreePath }) {
+	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
 	assertLaneWorktreeGitHealthy(worktreePath);
 }
 
@@ -139,7 +193,7 @@ export function provisionLaneWorktree({
 
 	fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
 	git(projectRoot, ["worktree", "add", "-b", taskBranch, worktreePath, orchBranch]);
-	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath, laneNumber });
+	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
 
 	return { worktreePath, taskBranch, orchBranch };
 }

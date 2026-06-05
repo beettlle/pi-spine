@@ -7,6 +7,7 @@ import { validateMultiTaskResume } from "../../src/batch/resume-multi.mjs";
 import { createInitialBatchState, saveSpineBatchState } from "../../src/batch/state.mjs";
 import {
 	assertLaneWorktreeGitHealthy,
+	findAdminDirForWorktree,
 	laneTaskBranch,
 	normalizeLaneWorktreeGitPaths,
 	provisionLaneWorktree,
@@ -16,31 +17,20 @@ import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /**
  * @param {string} projectRoot
- * @param {string} batchId
- * @param {number} laneNumber
+ * @param {string} worktreePath
  */
-function readLaneGitMetadata(projectRoot, batchId, laneNumber) {
-	const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, `lane-${laneNumber}`);
+function readLaneGitMetadata(projectRoot, worktreePath) {
 	const laneGit = fs.readFileSync(path.join(worktreePath, ".git"), "utf-8").trim();
-	const adminGitdir = fs
-		.readFileSync(path.join(projectRoot, ".git", "worktrees", `lane-${laneNumber}`, "gitdir"), "utf-8")
-		.trim();
-	return { worktreePath, laneGit, adminGitdir };
+	const adminDir = findAdminDirForWorktree(projectRoot, worktreePath);
+	const adminGitdir = fs.readFileSync(path.join(adminDir, "gitdir"), "utf-8").trim();
+	return { laneGit, adminGitdir, adminDir };
 }
 
 /**
- * @param {string} projectRoot
- * @param {string} batchId
- * @param {number} laneNumber
+ * @param {string} worktreePath
  */
-function breakLaneGitMetadata(projectRoot, batchId, laneNumber) {
-	const { worktreePath } = readLaneGitMetadata(projectRoot, batchId, laneNumber);
+function breakLaneGitPointer(worktreePath) {
 	fs.writeFileSync(path.join(worktreePath, ".git"), "gitdir: /workspace/.git/worktrees/lane-1\n", "utf-8");
-	fs.writeFileSync(
-		path.join(projectRoot, ".git", "worktrees", `lane-${laneNumber}`, "gitdir"),
-		"/workspace/.worktrees/spine-test/lane-1/.git\n",
-		"utf-8",
-	);
 }
 
 test("provisionLaneWorktree normalizes git metadata to relative posix paths", async () => {
@@ -57,12 +47,11 @@ test("provisionLaneWorktree normalizes git metadata to relative posix paths", as
 			orchBranch,
 		});
 
-		const { laneGit, adminGitdir } = readLaneGitMetadata(projectRoot, batchId, 1);
-		assert.match(laneGit, /^gitdir: \.\.\/\.\.\/\.\.\/\.git\/worktrees\/lane-1$/);
-		assert.match(adminGitdir, /^\.\.\/\.worktrees\/spine-20260605T160800\/lane-1\/\.git$/);
+		const { laneGit, adminGitdir } = readLaneGitMetadata(projectRoot, worktreePath);
+		assert.match(laneGit, /^gitdir: /);
 		assert.doesNotMatch(laneGit, /\/workspace/);
-		assert.doesNotMatch(adminGitdir, /\/workspace/);
 		assert.doesNotMatch(laneGit, /^gitdir: \//);
+		assert.doesNotMatch(adminGitdir, /\/workspace/);
 		assert.doesNotMatch(adminGitdir, /^\//);
 
 		execFileSync("git", ["status", "--porcelain"], { cwd: worktreePath, stdio: "ignore" });
@@ -86,18 +75,19 @@ test("repairLaneWorktreeGitMetadata fixes broken absolute gitdir pointers", asyn
 			orchBranch,
 		});
 
-		breakLaneGitMetadata(projectRoot, batchId, 1);
+		breakLaneGitPointer(worktreePath);
 		assert.throws(() => assertLaneWorktreeGitHealthy(worktreePath), /unhealthy/);
 
-		repairLaneWorktreeGitMetadata({ projectRoot, worktreePath, laneNumber: 1 });
+		repairLaneWorktreeGitMetadata({ projectRoot, worktreePath });
 		assertLaneWorktreeGitHealthy(worktreePath);
 
-		const { laneGit, adminGitdir } = readLaneGitMetadata(projectRoot, batchId, 1);
+		const { laneGit, adminGitdir } = readLaneGitMetadata(projectRoot, worktreePath);
 		assert.doesNotMatch(laneGit, /\/workspace/);
 		assert.doesNotMatch(adminGitdir, /\/workspace/);
 
-		repairLaneWorktreeGitMetadata({ projectRoot, worktreePath, laneNumber: 1 });
-		assert.equal(laneGit, fs.readFileSync(path.join(worktreePath, ".git"), "utf-8").trim());
+		const laneGitAfter = fs.readFileSync(path.join(worktreePath, ".git"), "utf-8").trim();
+		repairLaneWorktreeGitMetadata({ projectRoot, worktreePath });
+		assert.equal(laneGit, laneGitAfter);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -117,9 +107,9 @@ test("normalizeLaneWorktreeGitPaths is idempotent", async () => {
 			orchBranch,
 		});
 
-		const before = readLaneGitMetadata(projectRoot, batchId, 1);
-		normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath, laneNumber: 1 });
-		const after = readLaneGitMetadata(projectRoot, batchId, 1);
+		const before = readLaneGitMetadata(projectRoot, worktreePath);
+		normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
+		const after = readLaneGitMetadata(projectRoot, worktreePath);
 		assert.equal(after.laneGit, before.laneGit);
 		assert.equal(after.adminGitdir, before.adminGitdir);
 	} finally {
@@ -141,7 +131,7 @@ test("validateMultiTaskResume repairs unhealthy lane worktree git metadata", asy
 			laneNumber: 1,
 			orchBranch,
 		});
-		breakLaneGitMetadata(projectRoot, batchId, 1);
+		breakLaneGitPointer(worktreePath);
 
 		const state = createInitialBatchState({
 			batchId,

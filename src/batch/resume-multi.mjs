@@ -173,7 +173,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 			assertLaneWorktreeGitHealthy(wt);
 		} catch {
 			try {
-				repairLaneWorktreeGitMetadata({ projectRoot, worktreePath: wt, laneNumber });
+				repairLaneWorktreeGitMetadata({ projectRoot, worktreePath: wt });
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
 				return {
