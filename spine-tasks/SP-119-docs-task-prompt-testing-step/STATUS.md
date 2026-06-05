@@ -1,6 +1,6 @@
 # SP-119: Require Testing step in docs-only task packets — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-05
 **Review Level:** 0
@@ -18,17 +18,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run `npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test` (no product code change expected)
+- [x] Run `npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test` (no product code change expected)
+
+**Evidence:** typecheck clean; 596/596 tests pass.
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] STATUS.md complete
-- [ ] Create `.DONE`
+- [x] STATUS.md complete
+- [x] Create `.DONE`
 
 ---
 
@@ -36,3 +38,13 @@
 
 - [x] Skill explicitly forbids omitting Testing step for docs-only tasks
 - [x] Template example shows correct section order
+
+---
+
+## Execution Log
+
+| Timestamp | Action | Outcome |
+|-----------|--------|---------|
+| 2026-06-05 | Step 1 | Updated SKILL.md and prompt-template.md |
+| 2026-06-05 | Step 2 | typecheck + 596 tests pass |
+| 2026-06-05 | Step 3 | STATUS complete; .DONE created |
