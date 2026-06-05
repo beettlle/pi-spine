@@ -1,0 +1,22 @@
+spine-tasks/dependencies.json
+  s_8863c00a3b4a5d::t_debcf734f9a00c 250
+spine-tasks/CONTEXT.md
+  s_8863c00a3b4a5d::t_02aa28504b4170 425
+  s_8863c00a3b4a5d::t_c4d8465f763a9e 323-337
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "acd79243c6fc6b34ae2d2332abdd97b05105dfcb",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
