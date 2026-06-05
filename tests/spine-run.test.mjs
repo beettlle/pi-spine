@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { initGitRepo, destroyGitRepo } from "./helpers/git-fixture.mjs";
+import { minimalValidPromptMarkdown } from "./helpers/smoke-task-prompt.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "spine.mjs");
 
@@ -18,14 +19,10 @@ function writeTask(projectRoot, taskId, done = false) {
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
 		path.join(folder, "PROMPT.md"),
-		`# Task: ${taskId} — Run CLI
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`README.md\`
-`,
+		minimalValidPromptMarkdown(taskId, {
+			title: "Run CLI",
+			fileScope: "README.md",
+		}),
 		"utf-8",
 	);
 	if (done) {

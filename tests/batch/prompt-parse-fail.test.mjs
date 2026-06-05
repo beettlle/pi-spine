@@ -3,11 +3,11 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
-test("startBatch fails closed on invalid PROMPT and journals prompt_parse_failed", async () => {
+test("startBatch fails closed on invalid PROMPT before batch starts", async () => {
 	const projectRoot = await initGitRepo("spine-prompt-parse-");
 	try {
 		const taskId = "TP-998";
@@ -26,14 +26,15 @@ test("startBatch fails closed on invalid PROMPT and journals prompt_parse_failed
 		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
 
-		const result = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
-		assert.equal(result.ok, false);
-
-		const batchId = result.batchId;
-		assert.ok(batchId);
-		const events = readJournalEvents(projectRoot, batchId);
-		assert.ok(events.some((event) => event.type === "task.prompt_parse_failed"));
-		assert.ok(events.some((event) => event.type === "task.failed"));
+		const result = await assert.rejects(
+			() => startBatch({ projectRoot, scope: taskId, skipPreflight: true }),
+			(err) => {
+				assert.match(err.message, /Invalid PROMPT for TP-998/);
+				assert.match(err.message, /Missing required sections/);
+				return true;
+			},
+		);
+		assert.equal(result, undefined);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

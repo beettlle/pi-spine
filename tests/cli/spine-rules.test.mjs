@@ -138,14 +138,10 @@ test("runSpineRules select requires manifest", async () => {
 		fs.mkdirSync(taskDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(taskDir, "PROMPT.md"),
-			`# Task: TP-801 — Rules select smoke
-
-## Dependencies
-- **None**
-
-## File Scope
-- \`README.md\`
-`,
+			minimalValidPromptMarkdown("TP-801", {
+				title: "Rules select smoke",
+				fileScope: "README.md",
+			}),
 			"utf-8",
 		);
 
