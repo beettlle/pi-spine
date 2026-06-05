@@ -70,6 +70,12 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 ## Steps
 
+> **Section order:** All steps — including `Testing & Verification` and
+> `Documentation & Delivery` — belong **inside** `## Steps`, **before**
+> `## Completion Criteria`. Never end `## Steps` at implementation work and
+> jump straight to Completion Criteria; missing a Testing step fails batch launch
+> (`prompt_parse_failed`, SP-075).
+>
 > **Hydration:** STATUS.md tracks outcomes, not individual code changes. Workers
 > expand steps when runtime discoveries warrant it. See `.spine/agents/worker.md` for rules.
 
@@ -90,11 +96,15 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 ### Step [N-1]: Testing & Verification
 
+> **Required for every task** — including docs-only and Review Level 0 packets.
 > ZERO test failures allowed. This step runs the FULL test suite as a quality gate.
 > (Earlier steps should use targeted tests for fast feedback — see worker prompt.)
+>
+> **Docs-only tasks:** keep this step; run the full test suite. Omit the coverage-gate
+> checkbox below when the task does not change application code.
 
 - [ ] Run FULL test suite: `[test command from project config]`
-- [ ] Run coverage gate: `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code (code-related tasks only)
+- [ ] Run coverage gate: `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code (code-related tasks only; omit for docs-only)
 - [ ] Run integration tests (if applicable)
 - [ ] Fix all failures
 - [ ] Build passes: `[build command]`

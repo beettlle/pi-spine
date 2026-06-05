@@ -124,6 +124,7 @@ Use [references/prompt-template.md](references/prompt-template.md). Spine-specif
 - **Environment** — include `npm run typecheck && SPINE_WORKER_STUB=1 npm test` when that is the project test command
 - **Git Commit Convention** — `feat(SP-###): …` at step boundaries
 - **Worker tools** — when Review Level > 0, steps must note `spine_review_step` after each step
+- **Testing step (required for all tasks)** — every packet MUST include `### Step N: Testing & Verification` inside `## Steps`, placed **before** `## Completion Criteria`. This applies to **docs-only Review Level 0 tasks** as well — omitting the step causes `prompt_parse_failed` at batch launch (SP-075). Docs-only tasks still run the full test suite; they may omit the coverage-gate checkbox when no application code changes.
 - **Coverage gate** — when the task changes application code, add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy)
 - **Completion** — worker creates `{task-folder}/.DONE`; batch engine may auto-commit remaining work
 
@@ -292,6 +293,7 @@ Before reporting launch commands:
 - [ ] Complexity scored; review level assigned (0–3)
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Steps, Do NOT, Git Commit Convention, Amendments
+- [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
 - [ ] CONTEXT.md phase table updated for PRD decompositions
@@ -314,7 +316,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 ## Key Principles
 
 - **Self-contained PROMPT.md** — the worker has no memory of this conversation.
-- **Testing step required** — use `testing.test` from spine config in the verification step; for **code deliverables**, include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template).
+- **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. Use `testing.test` from spine config; for **code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only tasks may omit the coverage checkbox.
 - **Documentation in every task** — "Must Update" / "Check If Affected" prevent doc drift.
 - **Concrete deliverables** — name files to create/modify; avoid shortcuttable vague steps.
 - **Local install** — skill ships with pi-spine; `pi install /path/to/pi-spine -l` loads `./skills`.

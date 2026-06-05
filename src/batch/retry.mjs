@@ -6,6 +6,8 @@ import { appendJournalEvent } from "./journal.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
+	recomputeTaskCounters,
+	resetTaskForRetry,
 	saveSpineBatchState,
 	updateSegmentForTask,
 	validateBatchState,
@@ -37,39 +39,6 @@ export function detectSegmentDrift(state) {
 				(segment.status === "failed" || segment.status === "succeeded"),
 		);
 	});
-}
-
-/**
- * @param {object} state
- * @param {string} taskId
- */
-function resetTaskAndSegments(state, taskId) {
-	const task = findTask(state, taskId);
-	if (!task) return null;
-
-	const previousClassification = String(task.status ?? "unknown");
-	const wasFailed = task.status === "failed";
-
-	task.status = "pending";
-	task.startedAt = null;
-	task.endedAt = null;
-	task.exitReason = null;
-	task.doneFileFound = false;
-
-	for (const segment of state.segments ?? []) {
-		if (!segment || segment.taskId !== taskId) continue;
-		segment.status = "pending";
-		if ("startedAt" in segment) segment.startedAt = null;
-		if ("endedAt" in segment) segment.endedAt = null;
-	}
-
-	if (wasFailed) {
-		state.failedTasks = Math.max(0, Number(state.failedTasks ?? 0) - 1);
-	}
-
-	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
-
-	return { previousClassification, wasFailed };
 }
 
 /**
@@ -145,7 +114,7 @@ export function retryTask({ projectRoot, taskId }) {
 		};
 	}
 
-	const reset = resetTaskAndSegments(state, taskId);
+	const reset = resetTaskForRetry(state, taskId);
 	if (!reset) {
 		return {
 			ok: false,
@@ -180,16 +149,6 @@ export function retryTask({ projectRoot, taskId }) {
 		pendingSegments,
 		output: `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).\n  → spine batch resume --force\n`,
 	};
-}
-
-/**
- * @param {object} state
- */
-function recomputeCounters(state) {
-	const tasks = state.tasks ?? [];
-	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
-	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
-	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
 }
 
 /**
@@ -257,7 +216,7 @@ export function skipTask({ projectRoot, taskId }) {
 	updateSegmentForTask(state, taskId, "skipped");
 
 	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
-	recomputeCounters(state);
+	recomputeTaskCounters(state);
 
 	const allTerminal = (state.tasks ?? []).every((entry) => {
 		const status = String(entry?.status ?? "");
