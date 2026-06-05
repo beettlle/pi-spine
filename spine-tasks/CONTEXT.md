@@ -320,7 +320,21 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-116 | batch-state-io extract + git error surfacing | **Done** | — |
 | SP-117 | Detached enginePid persistence symmetry | **Done** | SP-111 |
 | SP-118 | Adoption docs + test script hygiene | **Done** | — |
-| SP-119 | Require Testing step in docs-only task packets | **Staged** | — |
+| SP-119 | Require Testing step in docs-only task packets | **Done** | — |
+
+**Batch:** `20260605T191325` (stress test, 10 tasks) — landed on `main`, 596 tests.
+
+### Phase 22 — Stress-test follow-ups (SP-120–122)
+
+**Source:** Operator recovery from batch `20260605T191325` and `20260605T213158`.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-120 | Batch retry clears stale failed task state | **Done** | — |
+| SP-121 | Auto-resolve rules-manifest merge conflicts | **Done** | — |
+| SP-122 | Preflight plan validates pending scope only | **Staged** | — |
+
+**Batch:** `20260605T213158` (SP-119–121) — landed on `main`, 606 tests. Lane-2 merge still required manual rules-manifest resolution (SP-121 landed same batch).
 
 **Suggested run order:**
 
@@ -408,7 +422,7 @@ From `.pi/taskplane-config.json`:
 - **unit:** `npm run typecheck && npm test`
 - **build:** `npm run typecheck && npm test`
 
-Run full `npm test` (**567** tests) for any batch-touching change.
+Run full `npm test` (**606** tests) for any batch-touching change.
 
 ---
 
