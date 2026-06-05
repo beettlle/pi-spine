@@ -7,7 +7,12 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
-import { buildDiagnosisOutput, inferLaunchFailureKind } from "./diagnosis.mjs";
+import {
+	buildDiagnosisOutput,
+	inferLaunchFailureFromWorkerOutputTail,
+	inferLaunchFailureKind,
+} from "./diagnosis.mjs";
+import { workerOutputLogPath } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
@@ -337,6 +342,57 @@ function deriveFailureContext(failedTaskId, exitReason, signals) {
 	return { exitReason: resolvedExitReason, launchFailureKind };
 }
 
+const WORKER_OUTPUT_TAIL_LINES = 20;
+
+/**
+ * @param {string} filePath
+ * @param {number} [lineCount]
+ * @returns {string|null}
+ */
+function readWorkerOutputLogTail(filePath, lineCount = WORKER_OUTPUT_TAIL_LINES) {
+	if (!fs.existsSync(filePath)) return null;
+	const content = fs.readFileSync(filePath, "utf-8");
+	const lines = content.split("\n");
+	if (lines.at(-1) === "") lines.pop();
+	if (lines.length === 0) return null;
+	return lines.slice(-lineCount).join("\n");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string|null} failedTaskId
+ * @param {Array<{ taskId: string, laneNumber?: number|null }>} tasks
+ * @param {string|null} launchFailureKind
+ * @returns {string|null}
+ */
+function enrichLaunchFailureFromWorkerOutput(projectRoot, batchId, failedTaskId, tasks, launchFailureKind) {
+	if (launchFailureKind || !failedTaskId || !batchId) return launchFailureKind;
+	const task = tasks.find((entry) => entry.taskId === failedTaskId);
+	if (!task || task.laneNumber == null) return launchFailureKind;
+	const logPath = workerOutputLogPath(projectRoot, batchId, task.laneNumber, failedTaskId);
+	const tail = readWorkerOutputLogTail(logPath);
+	return inferLaunchFailureFromWorkerOutputTail(tail) ?? launchFailureKind;
+}
+
+/**
+ * @param {Array<{ taskId: string, classification: string, laneNumber?: number|null }>} tasks
+ * @param {string|null} failedTaskId
+ * @returns {boolean}
+ */
+function hasGhostRunningCluster(tasks, failedTaskId) {
+	if (!failedTaskId) return false;
+	const task = tasks.find((entry) => entry.taskId === failedTaskId);
+	if (!task || task.laneNumber == null) return false;
+	const laneNumber = Number(task.laneNumber);
+	return (
+		tasks.filter(
+			(entry) =>
+				entry.classification === "running" && Number(entry.laneNumber) === laneNumber,
+		).length > 1
+	);
+}
+
 /**
  * @param {string} diagnosis
  * @param {string|null} failedTaskId
@@ -374,7 +430,7 @@ export function deriveDiagnosis(signals) {
 
 	if (orphanRunning) {
 		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
-			return withFailureContext("needs_retry", orphanRunning.taskId, signals);
+			return withFailureContext("worker_orphaned", orphanRunning.taskId, signals);
 		}
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
 	}
@@ -558,6 +614,18 @@ export function reconcileBatch(ctx) {
 	signals.pendingTaskCount = pendingTaskCount;
 
 	const { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	const resolvedLaunchFailureKind =
+		diagnosis === "worker_orphaned"
+			? enrichLaunchFailureFromWorkerOutput(
+					projectRoot,
+					batch.batchId,
+					failedTaskId,
+					classifiedTasks,
+					launchFailureKind,
+				)
+			: launchFailureKind;
+	const ghostRunningCluster =
+		diagnosis === "worker_orphaned" && hasGhostRunningCluster(classifiedTasks, failedTaskId);
 	const salvagePayload = findLatestSalvageInspection(journalEvents, failedTaskId);
 	const salvageChangedFileCount = Number(salvagePayload?.changedFileCount ?? 0) || 0;
 	const salvageRetryCommand =
@@ -573,11 +641,12 @@ export function reconcileBatch(ctx) {
 		failedTasks: signals.failedTasks,
 		failedTaskId,
 		exitReason,
-		launchFailureKind,
+		launchFailureKind: resolvedLaunchFailureKind,
 		gitMerged: git.orchMergedToBase,
 		pendingTaskCount,
 		salvageChangedFileCount,
 		salvageRetryCommand,
+		ghostRunningCluster,
 	});
 
 	return {

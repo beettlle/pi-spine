@@ -27,19 +27,19 @@ Add `worker_orphaned` diagnosis kind distinct from `needs_retry`. Enrich headlin
 ## Steps
 
 ### Step 1: Taxonomy
-- [ ] Add worker_orphaned to DIAGNOSIS_TAXONOMY
-- [ ] Map lane orphan in deriveDiagnosis
-- [ ] buildSuggestedCommand prefers abort when ghost running cluster
+- [x] Add worker_orphaned to DIAGNOSIS_TAXONOMY
+- [x] Map lane orphan in deriveDiagnosis
+- [x] buildSuggestedCommand prefers abort when ghost running cluster
 
 ### Step 2: Headline enrichment
-- [ ] Inspect worker output log tail when launching-phase orphan
+- [x] Inspect worker output log tail when launching-phase orphan
 
 ### Step 3: Testing & Verification
-- [ ] FULL suite + coverage gate
+- [x] FULL suite + coverage gate
 
 ## Completion Criteria
-- [ ] Orphan lane diagnosis ≠ needs_retry
-- [ ] Dashboard/diagnose shows distinct kind
+- [x] Orphan lane diagnosis ≠ needs_retry
+- [x] Dashboard/diagnose shows distinct kind
 
 ## Git Commit Convention
 - `feat(SP-115): worker_orphaned diagnosis taxonomy`
