@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-04
+**Last Updated:** 2026-06-05
 **Status:** Active
-**Next Task ID:** SP-101
+**Next Task ID:** SP-106
 
 ---
 
@@ -291,6 +291,27 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 2. **Priority:** Land **SP-099** first for operator impact (P0 customer-facing)
 
 **Acceptance (SP-099):** `spine plan pending` via global symlink prints plan or stderr error; never silent exit 0. Direct `node …/bin/spine.mjs` unchanged. CI symlink spawn test.
+
+### Phase 19 — Lane worktree devcontainer fix (searchATon batch 20260605T160800)
+
+**Source:** Consumer bug report — searchATon batch `20260605T160800` (2026-06-05). Lane worktrees get container-absolute `.git` gitdir pointers; devcontainer lane-only mounts break host git; worker launch fails without `PI_SPINE_ROOT`; lane commit `git add -A` masks out-of-scope dirty state.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-101 | Normalize lane worktree gitdir to relative paths + resume repair | **Staged** | — |
+| SP-102 | `worktreeSetupHook` runner (FR-WT-05) — sandbox, 120s, JSON | **Staged** | SP-101 |
+| SP-103 | `PI_SPINE_ROOT` in worker spawn env | **Staged** | SP-101 |
+| SP-104 | Lane commit ordering + scoped dirty filter | **Staged** | SP-101, SP-102 |
+| SP-105 | Launch failure diagnosis + incident doc | **Staged** | SP-104 |
+
+**Suggested run order:**
+
+1. **Wave A:** `SP-101` (gitdir normalization — unblocks host + devcontainer git)
+2. **Wave B (parallel after SP-101):** `SP-102` + `SP-103` (disjoint scope: worktree hook vs worker env)
+3. **Wave C:** `SP-104` (after SP-101 + SP-102 — hardened lane commit)
+4. **Wave D:** `SP-105` (after SP-104 — diagnosis surfaces launch/worktree failures)
+
+**Acceptance (SP-101):** Fresh lane worktrees pass `git status` on host; no absolute `/workspace/...` in `.git` gitfile.
 
 **Suggested spine run order (Phase 13):**
 
