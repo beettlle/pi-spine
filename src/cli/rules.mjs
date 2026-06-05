@@ -2,8 +2,6 @@
  * spine rules discover | select | sync (SP-093).
  */
 
-import fs from "node:fs";
-
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import {
@@ -14,7 +12,7 @@ import {
 import { loadRulesProfile, RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import { selectRulesForWorker } from "../config/cursor-rules/select.mjs";
 import { discoverTasks } from "../tasks/packet/discover.mjs";
-import { parsePrompt } from "../tasks/packet/parse-prompt.mjs";
+import { loadTaskPacket } from "../tasks/packet/index.mjs";
 
 /**
  * @param {string[]} argv
@@ -104,8 +102,17 @@ export function resolveTaskPromptFileScope(tasksRoot, taskId) {
 		};
 	}
 
-	const markdown = fs.readFileSync(match.promptPath, "utf-8");
-	const prompt = parsePrompt(markdown);
+	const packet = loadTaskPacket(match.folderPath);
+	if (!packet.validation.ok) {
+		return {
+			ok: false,
+			error: packet.validation.errors.join("; "),
+			errors: packet.validation.errors,
+			promptPath: packet.promptPath,
+		};
+	}
+
+	const prompt = packet.prompt;
 	if (!prompt.taskId) {
 		return {
 			ok: false,
