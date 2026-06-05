@@ -283,7 +283,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-099 | Symlink-aware `isCliEntrypoint` + all bin entrypoints + regression test | **Done** | — |
-| SP-100 | Accept `./scripts/` worker launch script paths (secondary UX) | **Staged** | — |
+| SP-100 | Accept `./scripts/` worker launch script paths (secondary UX) | **Done** | — |
 
 **Suggested run order:**
 
