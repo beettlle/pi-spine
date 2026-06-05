@@ -3,7 +3,11 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { commitLaneWorktree, countCommitsAhead } from "../../src/batch/lane-commit.mjs";
+import {
+	commitLaneWorktree,
+	countCommitsAhead,
+	filterPorcelain,
+} from "../../src/batch/lane-commit.mjs";
 import { mergeLaneToOrch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -93,6 +97,29 @@ test("commitLaneWorktree fails loud when dirty without .DONE", async () => {
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("filterPorcelain drops lines matching ignore patterns by full path", () => {
+	const porcelain = [" M pi-spine", " M src/app.mjs"].join("\n");
+	const filtered = filterPorcelain(porcelain, ["pi-spine"]);
+	assert.equal(filtered, " M src/app.mjs");
+});
+
+test("filterPorcelain drops lines matching ignore patterns by basename", () => {
+	const porcelain = ["?? vendor/pi-spine"].join("\n");
+	const filtered = filterPorcelain(porcelain, ["pi-spine"]);
+	assert.equal(filtered, "");
+});
+
+test("filterPorcelain keeps rename targets when only source matches ignore", () => {
+	const porcelain = "R  old.txt -> src/app.mjs";
+	const filtered = filterPorcelain(porcelain, ["old.txt"]);
+	assert.equal(filtered, porcelain);
+});
+
+test("filterPorcelain returns empty for empty input", () => {
+	assert.equal(filterPorcelain("", ["pi-spine"]), "");
+	assert.equal(filterPorcelain("   \n", ["pi-spine"]), "");
 });
 
 test("mergeLaneToOrch rejects empty merge when lane commits were required", async () => {

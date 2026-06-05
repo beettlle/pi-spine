@@ -41,6 +41,7 @@
     "collectTestEvidence": true
   },
   "worktreeSetupHook": "",
+  "worktreeSetupIgnorePaths": [],
   "referenceDocs": [],
   "standards": [],
   "neverLoad": []

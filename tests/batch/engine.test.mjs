@@ -376,7 +376,8 @@ test("assessWaveMergeEligibility blocks failed and pending tasks", () => {
 	const blocked = assessWaveMergeEligibility(state, 0);
 	assert.equal(blocked.ok, false);
 	assert.deepEqual(blocked.failedTaskIds, ["TP-998"]);
-	assert.match(blocked.message ?? "", /\/spine-retry-task TP-998/);
+	assert.match(blocked.message ?? "", /Succeeded task\(s\): TP-997/);
+	assert.match(blocked.message ?? "", /Retry TP-998 next: spine batch retry TP-998/);
 });
 
 function execCommit(projectRoot, message) {

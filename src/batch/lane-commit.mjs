@@ -38,6 +38,59 @@ export function gitPorcelain(worktreePath) {
 }
 
 /**
+ * @param {string} line
+ * @returns {string | null}
+ */
+function extractPorcelainPath(line) {
+	if (!line.trim()) return null;
+	let filePath = line.length > 2 && line[2] === " " ? line.slice(3) : line.slice(2);
+	filePath = filePath.trim();
+	if (!filePath) return null;
+	if (filePath.includes(" -> ")) {
+		return filePath.split(" -> ").pop()?.trim() ?? null;
+	}
+	return filePath;
+}
+
+/**
+ * @param {string} filePath
+ * @param {string} pattern
+ */
+function pathMatchesIgnorePattern(filePath, pattern) {
+	if (!pattern || typeof pattern !== "string") return false;
+	const normalizedPattern = pattern.replace(/\\/g, "/");
+	const normalizedPath = filePath.replace(/\\/g, "/");
+	if (normalizedPath === normalizedPattern) return true;
+	return path.posix.basename(normalizedPath) === normalizedPattern;
+}
+
+/**
+ * Drop porcelain lines whose path matches any ignore pattern (basename or full path).
+ *
+ * @param {string} porcelain
+ * @param {string[]} ignorePatterns
+ */
+export function filterPorcelain(porcelain, ignorePatterns) {
+	if (!porcelain?.trim()) return "";
+	if (!Array.isArray(ignorePatterns) || ignorePatterns.length === 0) {
+		return porcelain;
+	}
+
+	const kept = [];
+	for (const line of porcelain.split("\n")) {
+		if (!line.trim()) continue;
+		const filePath = extractPorcelainPath(line);
+		if (!filePath) {
+			kept.push(line);
+			continue;
+		}
+		const ignored = ignorePatterns.some((pattern) => pathMatchesIgnorePattern(filePath, pattern));
+		if (!ignored) kept.push(line);
+	}
+	return kept.length === 0 ? "" : kept.join("\n");
+}
+
+/**
  * Commits on `headRef` not reachable from `baseRef`.
  *
  * @param {string} projectRoot

@@ -10,7 +10,7 @@ import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
-import { commitLaneWorktree } from "./lane-commit.mjs";
+import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { mergeLaneToOrch } from "./engine-lanes.mjs";
 import {
 	loadResumeFileScopePaths,
@@ -203,15 +203,10 @@ export async function resumeBatch({ projectRoot, force = false }) {
 
 	const laneCorrelationId = crypto.randomUUID();
 	let workerResult = { ok: true, mode: "skipped" };
+	let workerSucceeded = false;
 
 	if (taskAlreadyComplete({ taskFolder: taskFolderInWorktree, events, task })) {
-		task.status = "succeeded";
-		task.doneFileFound = true;
-		task.exitReason = task.exitReason ?? "done";
-		if (!task.endedAt) task.endedAt = Date.now();
-		updateSegmentForTask(state, taskId, "succeeded");
-		state.succeededTasks = 1;
-		saveSpineBatchState(projectRoot, state);
+		workerSucceeded = true;
 	} else {
 		task.status = "running";
 		if (!task.startedAt) task.startedAt = Date.now();
@@ -298,6 +293,92 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			taskId,
 			correlationId: laneCorrelationId,
 		});
+		workerSucceeded = true;
+	}
+
+	if (workerSucceeded) {
+		const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
+			? config.worktreeSetupIgnorePaths
+			: [];
+		const laneCommit = commitLaneWorktree({
+			worktreePath: wt,
+			taskBranch,
+			taskId,
+			batchId,
+			taskFolder: taskFolderInWorktree,
+		});
+		if (!laneCommit.ok) {
+			task.status = "failed";
+			task.endedAt = Date.now();
+			task.exitReason = laneCommit.failureClass ?? "lane_commit_failed";
+			updateSegmentForTask(state, taskId, "failed");
+			state.failedTasks = 1;
+			state.succeededTasks = 0;
+			state.endedAt = Date.now();
+			state.lastError = laneCommit.error ?? "lane commit failed";
+			state.phase = "failed";
+			saveSpineBatchState(projectRoot, state);
+			appendJournalEvent(projectRoot, batchId, "task.failed", {
+				taskId,
+				laneNumber: 1,
+				laneId: "lane-1",
+				correlationId: laneCorrelationId,
+				classification: laneCommit.failureClass ?? "lane_commit_failed",
+				exitCode: 1,
+				output: laneCommit.error,
+				resumed: true,
+			});
+			return {
+				ok: false,
+				exitCode: 1,
+				batchId,
+				taskId,
+				error: "lane_commit_failed",
+				output: laneCommit.error,
+			};
+		}
+		if (laneCommit.committed) {
+			appendJournalEvent(projectRoot, batchId, "lane.committed", {
+				taskId,
+				laneNumber: 1,
+				commitSha: laneCommit.commitSha,
+			});
+		}
+
+		const remainingDirty = filterPorcelain(gitPorcelain(wt), ignorePatterns);
+		if (remainingDirty) {
+			const dirtyOutput =
+				"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output";
+			task.status = "failed";
+			task.endedAt = Date.now();
+			task.exitReason = "DirtyWorktree";
+			updateSegmentForTask(state, taskId, "failed");
+			state.failedTasks = 1;
+			state.succeededTasks = 0;
+			state.endedAt = Date.now();
+			state.lastError = dirtyOutput;
+			state.phase = "failed";
+			saveSpineBatchState(projectRoot, state);
+			appendJournalEvent(projectRoot, batchId, "task.failed", {
+				taskId,
+				laneNumber: 1,
+				laneId: "lane-1",
+				correlationId: laneCorrelationId,
+				classification: "DirtyWorktree",
+				exitCode: 1,
+				output: dirtyOutput,
+				resumed: true,
+			});
+			return {
+				ok: false,
+				exitCode: 1,
+				batchId,
+				taskId,
+				error: "dirty_after_lane_commit",
+				output: dirtyOutput,
+			};
+		}
+
 		task.status = "succeeded";
 		task.endedAt = Date.now();
 		task.doneFileFound = true;
@@ -310,41 +391,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			laneNumber: 1,
 			laneId: "lane-1",
 			correlationId: laneCorrelationId,
-		});
-	}
-
-	const laneCommit = commitLaneWorktree({
-		worktreePath: wt,
-		taskBranch,
-		taskId,
-		batchId,
-		taskFolder: taskFolderInWorktree,
-	});
-	if (!laneCommit.ok) {
-		task.status = "failed";
-		task.endedAt = Date.now();
-		task.exitReason = laneCommit.failureClass ?? "lane_commit_failed";
-		updateSegmentForTask(state, taskId, "failed");
-		state.failedTasks = 1;
-		state.succeededTasks = 0;
-		state.endedAt = Date.now();
-		state.lastError = laneCommit.error ?? "lane commit failed";
-		state.phase = "failed";
-		saveSpineBatchState(projectRoot, state);
-		return {
-			ok: false,
-			exitCode: 1,
-			batchId,
-			taskId,
-			error: "lane_commit_failed",
-			output: laneCommit.error,
-		};
-	}
-	if (laneCommit.committed) {
-		appendJournalEvent(projectRoot, batchId, "lane.committed", {
-			taskId,
-			laneNumber: 1,
-			commitSha: laneCommit.commitSha,
+			resumed: true,
 		});
 	}
 

@@ -21,7 +21,7 @@ import {
 } from "./resume-common.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
-import { commitLaneWorktree, gitPorcelain } from "./lane-commit.mjs";
+import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
 import {
 	countPendingSegments,
@@ -32,7 +32,12 @@ import {
 	updateSegmentForTask,
 	validateBatchState,
 } from "./state.mjs";
-import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
+import {
+	assertLaneWorktreeGitHealthy,
+	laneTaskBranch,
+	laneWorktreePath,
+	repairLaneWorktreeGitMetadata,
+} from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 
@@ -163,6 +168,24 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 				laneNumber,
 			};
 		}
+
+		try {
+			assertLaneWorktreeGitHealthy(wt);
+		} catch {
+			try {
+				repairLaneWorktreeGitMetadata({ projectRoot, worktreePath: wt, laneNumber });
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				return {
+					ok: false,
+					exitCode: 1,
+					error: "worktree_unhealthy",
+					output: `Lane ${laneNumber} worktree git metadata unhealthy: ${wt}\n  ${message}\n`,
+					batchId,
+					laneNumber,
+				};
+			}
+		}
 	}
 
 	const pendingTasks = computePendingTasks(state);
@@ -215,13 +238,88 @@ async function markTaskCompleteFromDisk({
 	projectRoot,
 	state,
 	batchId,
+	config,
 	task,
 	lane,
+	taskBranch,
 	taskFolderInWorktree,
 	laneCorrelationId,
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
+	const wt = lane.worktreePath;
+	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
+		? config.worktreeSetupIgnorePaths
+		: [];
+
+	const laneCommit = commitLaneWorktree({
+		worktreePath: wt,
+		taskBranch,
+		taskId,
+		batchId,
+		taskFolder: taskFolderInWorktree,
+	});
+	if (!laneCommit.ok) {
+		task.status = "failed";
+		task.endedAt = Date.now();
+		task.exitReason = laneCommit.failureClass ?? "lane_commit_failed";
+		updateSegmentForTask(state, taskId, "failed");
+		recomputeTaskCounters(state);
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: laneCommit.failureClass ?? "lane_commit_failed",
+			exitCode: 1,
+			output: laneCommit.error,
+			resumed: true,
+		});
+		return {
+			ok: false,
+			error: "lane_commit_failed",
+			output: laneCommit.error,
+			taskId,
+			laneNumber,
+		};
+	}
+	if (laneCommit.committed) {
+		appendJournalEvent(projectRoot, batchId, "lane.committed", {
+			taskId,
+			laneNumber,
+			commitSha: laneCommit.commitSha,
+		});
+	}
+
+	const remainingDirty = filterPorcelain(gitPorcelain(wt), ignorePatterns);
+	if (remainingDirty) {
+		const dirtyOutput =
+			"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output";
+		task.status = "failed";
+		task.endedAt = Date.now();
+		task.exitReason = "DirtyWorktree";
+		updateSegmentForTask(state, taskId, "failed");
+		recomputeTaskCounters(state);
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: "DirtyWorktree",
+			exitCode: 1,
+			output: dirtyOutput,
+			resumed: true,
+		});
+		return {
+			ok: false,
+			error: "dirty_after_lane_commit",
+			output: dirtyOutput,
+			taskId,
+			laneNumber,
+		};
+	}
 
 	task.status = "succeeded";
 	task.doneFileFound = true;
@@ -243,7 +341,7 @@ async function markTaskCompleteFromDisk({
 		});
 	}
 
-	return { ok: true, skipped: true };
+	return { ok: true, skipped: true, taskId, laneNumber };
 }
 
 /**
@@ -351,20 +449,10 @@ async function runResumedTaskOnLane({
 		taskId,
 		correlationId: laneCorrelationId,
 	});
-	task.status = "succeeded";
-	task.endedAt = Date.now();
-	task.doneFileFound = true;
-	task.exitReason = "done";
-	updateSegmentForTask(state, taskId, "succeeded");
-	recomputeTaskCounters(state);
-	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "task.completed", {
-		taskId,
-		laneNumber,
-		laneId: lane.laneId,
-		correlationId: laneCorrelationId,
-	});
 
+	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
+		? config.worktreeSetupIgnorePaths
+		: [];
 	const laneCommit = commitLaneWorktree({
 		worktreePath: wt,
 		taskBranch,
@@ -379,6 +467,16 @@ async function runResumedTaskOnLane({
 		updateSegmentForTask(state, taskId, "failed");
 		recomputeTaskCounters(state);
 		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: laneCommit.failureClass ?? "lane_commit_failed",
+			exitCode: 1,
+			output: laneCommit.error,
+			resumed: true,
+		});
 		return {
 			ok: false,
 			error: "lane_commit_failed",
@@ -395,23 +493,48 @@ async function runResumedTaskOnLane({
 		});
 	}
 
-	const remainingDirty = gitPorcelain(wt);
+	const remainingDirty = filterPorcelain(gitPorcelain(wt), ignorePatterns);
 	if (remainingDirty) {
+		const dirtyOutput =
+			"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output";
 		task.status = "failed";
 		task.endedAt = Date.now();
 		task.exitReason = "DirtyWorktree";
 		updateSegmentForTask(state, taskId, "failed");
 		recomputeTaskCounters(state);
 		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: "DirtyWorktree",
+			exitCode: 1,
+			output: dirtyOutput,
+			resumed: true,
+		});
 		return {
 			ok: false,
 			error: "dirty_after_lane_commit",
-			output:
-				"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output",
+			output: dirtyOutput,
 			taskId,
 			laneNumber,
 		};
 	}
+
+	task.status = "succeeded";
+	task.endedAt = Date.now();
+	task.doneFileFound = true;
+	task.exitReason = "done";
+	updateSegmentForTask(state, taskId, "succeeded");
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+	appendJournalEvent(projectRoot, batchId, "task.completed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+	});
 
 	return { ok: true, taskId, laneNumber };
 }
@@ -583,8 +706,10 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 							projectRoot,
 							state,
 							batchId,
+							config,
 							task,
 							lane,
+							taskBranch: lane.branch ?? laneTaskBranch(batchId, laneNumber),
 							taskFolderInWorktree,
 							laneCorrelationId,
 						}),

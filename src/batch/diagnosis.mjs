@@ -20,12 +20,107 @@ export const DIAGNOSIS_TAXONOMY = [
 
 const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_integrate"]);
 
+const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
+
+/**
+ * @param {object[]} [journalEvents]
+ * @param {string|null} [taskId]
+ * @returns {object|null}
+ */
+function findLatestTaskFailedEvent(journalEvents, taskId) {
+	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return null;
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event.type !== "task.failed") continue;
+		const eventTaskId = event.taskId ?? event.payload?.taskId;
+		if (taskId && eventTaskId && eventTaskId !== taskId) continue;
+		return event;
+	}
+	return null;
+}
+
+/**
+ * @param {object|null} failedEvent
+ * @param {string|null} exitReason
+ * @returns {string|null}
+ */
+function classifyLaunchFailureFromEvent(failedEvent, exitReason) {
+	const payload = failedEvent?.payload && typeof failedEvent.payload === "object" ? failedEvent.payload : {};
+	const haystack = [
+		exitReason,
+		payload.classification,
+		payload.output,
+		payload.exitReason,
+	].filter(Boolean).join("\n").toLowerCase();
+
+	if (payload.workerPhase === "launching" || payload.classification === "launch_failed") {
+		if (haystack.includes("pi_spine_root")) return "pi_spine_root";
+		return "launch_failed";
+	}
+
+	if (haystack.includes("pi_spine_root") || haystack.includes("config_pi_spine_root")) {
+		return "pi_spine_root";
+	}
+
+	if (
+		haystack.includes("not a git repository") ||
+		haystack.includes("worktree") ||
+		haystack.includes("worktreeunhealthy")
+	) {
+		return "worktree_unhealthy";
+	}
+
+	return null;
+}
+
+/**
+ * @param {object} ctx
+ * @param {string|null} [ctx.exitReason]
+ * @param {string|null} [ctx.launchFailureKind]
+ * @param {object[]} [ctx.journalEvents]
+ * @param {string|null} [ctx.failedTaskId]
+ * @returns {string|null}
+ */
+export function inferLaunchFailureKind(ctx = {}) {
+	const { exitReason, journalEvents, failedTaskId } = ctx;
+	if (exitReason === "launch_failed" || exitReason === "worker_launch_failed") {
+		return "launch_failed";
+	}
+
+	const kinds = [];
+	if (Array.isArray(journalEvents)) {
+		const taskFailedEvents = journalEvents.filter((event) => event.type === "task.failed");
+		const prioritized = failedTaskId
+			? [
+					...taskFailedEvents.filter(
+						(event) => (event.taskId ?? event.payload?.taskId) === failedTaskId,
+					),
+					...taskFailedEvents.filter(
+						(event) => (event.taskId ?? event.payload?.taskId) !== failedTaskId,
+					),
+				]
+			: taskFailedEvents;
+
+		for (const failedEvent of prioritized) {
+			const kind = classifyLaunchFailureFromEvent(failedEvent, exitReason);
+			if (kind) kinds.push(kind);
+		}
+	}
+
+	if (kinds.includes("pi_spine_root")) return "pi_spine_root";
+	if (kinds.includes("launch_failed")) return "launch_failed";
+	if (kinds.includes("worktree_unhealthy")) return "worktree_unhealthy";
+	return null;
+}
+
 /**
  * @param {string} diagnosis
  * @param {object} [ctx]
  * @param {string|null} [ctx.failedTaskId]
  * @param {string|null} [ctx.batchId]
  * @param {string|null} [ctx.salvageRetryCommand]
+ * @param {string|null} [ctx.exitReason]
+ * @param {string|null} [ctx.launchFailureKind]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	switch (diagnosis) {
@@ -33,6 +128,12 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "spine batch dismiss";
 		case "needs_retry":
+			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
+				return "spine doctor";
+			}
+			if (ctx.launchFailureKind === "worktree_unhealthy") {
+				return "spine doctor";
+			}
 			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
@@ -70,6 +171,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {boolean} [ctx.gitMerged]
  * @param {number} [ctx.pendingTaskCount]
  * @param {number} [ctx.salvageChangedFileCount]
+ * @param {string|null} [ctx.exitReason]
+ * @param {string|null} [ctx.launchFailureKind]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
@@ -80,6 +183,17 @@ export function buildHeadline(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return `${batchLabel} work is on main but batch record is still active`;
 		case "needs_retry":
+			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
+				return `${batchLabel} failed at worker launch — fix PI_SPINE_ROOT/devcontainer, then retry`;
+			}
+			if (ctx.launchFailureKind === "worktree_unhealthy") {
+				return `${batchLabel} failed at worker launch — repair lane worktree git, then retry`;
+			}
+			if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				return ctx.failedTaskId
+					? `${batchLabel} task ${ctx.failedTaskId} completed but lane commit failed`
+					: `${batchLabel} completed but lane commit failed`;
+			}
 			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
 			}

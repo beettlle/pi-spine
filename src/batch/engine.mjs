@@ -22,7 +22,9 @@ import {
 	ensureOrchBranch,
 	provisionLaneWorktree,
 	removeLaneWorktrees,
+	runWorktreeSetupHook,
 } from "./worktree.mjs";
+import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
 import {
 	assessWaveMergeEligibility,
 	canStartMultiTaskBatch,
@@ -170,6 +172,44 @@ export async function startBatch({
 				orchBranch,
 			});
 			lane.worktreePath = wt;
+
+			const setupHookPath = resolveWorktreeSetupHook(projectRoot, config);
+			if (setupHookPath) {
+				appendJournalEvent(projectRoot, batchId, "lane.setup_hook.started", {
+					laneNumber: lane.laneNumber,
+					laneId: lane.laneId,
+					worktreePath: wt,
+					hookPath: setupHookPath,
+					correlationId: lane.correlationId,
+				});
+				try {
+					const hookResult = runWorktreeSetupHook({
+						projectRoot,
+						worktreePath: wt,
+						batchId,
+						laneNumber: lane.laneNumber,
+						config,
+					});
+					appendJournalEvent(projectRoot, batchId, "lane.setup_hook.completed", {
+						laneNumber: lane.laneNumber,
+						laneId: lane.laneId,
+						worktreePath: wt,
+						durationMs: hookResult.durationMs,
+						correlationId: lane.correlationId,
+					});
+				} catch (err) {
+					const message = err instanceof Error ? err.message : String(err);
+					appendJournalEvent(projectRoot, batchId, "lane.setup_hook.failed", {
+						laneNumber: lane.laneNumber,
+						laneId: lane.laneId,
+						worktreePath: wt,
+						error: message,
+						correlationId: lane.correlationId,
+					});
+					throw err;
+				}
+			}
+
 			appendJournalEvent(projectRoot, batchId, "lane.provisioned", {
 				laneNumber: lane.laneNumber,
 				laneId: lane.laneId,

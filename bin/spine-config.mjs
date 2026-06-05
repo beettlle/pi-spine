@@ -5,6 +5,7 @@ import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
 import { validateWorkerBackendConfig } from "../src/config/worker-backend.mjs";
 import { validateWorkerContextConfig } from "../src/config/worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "../src/config/worker-launch-script.mjs";
+import { validateWorktreeSetupHookConfig } from "../src/config/worktree-setup-hook.mjs";
 
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
@@ -151,6 +152,30 @@ export function validateSpineConfig(config) {
 	const launchScriptError = validateWorkerLaunchScriptConfig(config);
 	if (launchScriptError) {
 		return launchScriptError;
+	}
+
+	const setupHookError = validateWorktreeSetupHookConfig(config);
+	if (setupHookError) {
+		return setupHookError;
+	}
+
+	if (config.worktreeSetupIgnorePaths != null) {
+		if (!Array.isArray(config.worktreeSetupIgnorePaths)) {
+			return {
+				code: "CONFIG_SETUP_IGNORE_INVALID",
+				message: "worktreeSetupIgnorePaths must be an array of strings when set",
+				suggestedCommand: "spine settings set worktreeSetupIgnorePaths '[]'",
+			};
+		}
+		for (const entry of config.worktreeSetupIgnorePaths) {
+			if (typeof entry !== "string" || !entry.trim()) {
+				return {
+					code: "CONFIG_SETUP_IGNORE_INVALID",
+					message: "worktreeSetupIgnorePaths entries must be non-empty strings",
+					suggestedCommand: "spine settings set worktreeSetupIgnorePaths '[]'",
+				};
+			}
+		}
 	}
 
 	if (

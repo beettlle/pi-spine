@@ -7,7 +7,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
-import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import { buildDiagnosisOutput, inferLaunchFailureKind } from "./diagnosis.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
@@ -305,6 +305,55 @@ export function inspectGitState(ctx) {
 }
 
 /**
+ * @param {unknown} rawTasks
+ * @param {string|null} failedTaskId
+ * @returns {string|null}
+ */
+function resolveFailedExitReason(rawTasks, failedTaskId) {
+	if (!failedTaskId || !Array.isArray(rawTasks)) return null;
+	const match = rawTasks.find((entry) => {
+		if (!entry || typeof entry !== "object") return false;
+		return String(entry.taskId ?? entry.id ?? "") === failedTaskId;
+	});
+	if (!match || typeof match !== "object") return null;
+	const exitReason = /** @type {{ exitReason?: unknown }} */ (match).exitReason;
+	return typeof exitReason === "string" && exitReason ? exitReason : null;
+}
+
+/**
+ * @param {string|null} failedTaskId
+ * @param {string|null} exitReason
+ * @param {object} signals
+ * @returns {{ exitReason: string|null, launchFailureKind: string|null }}
+ */
+function deriveFailureContext(failedTaskId, exitReason, signals) {
+	const resolvedExitReason =
+		exitReason ?? resolveFailedExitReason(signals.raw?.tasks, failedTaskId);
+	const launchFailureKind = inferLaunchFailureKind({
+		exitReason: resolvedExitReason,
+		journalEvents: signals.journalEvents,
+		failedTaskId,
+	});
+	return { exitReason: resolvedExitReason, launchFailureKind };
+}
+
+/**
+ * @param {string} diagnosis
+ * @param {string|null} failedTaskId
+ * @param {object} signals
+ * @param {string|null} [exitReason]
+ */
+function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null) {
+	const context = deriveFailureContext(failedTaskId, exitReason, signals);
+	return {
+		diagnosis,
+		failedTaskId,
+		exitReason: context.exitReason,
+		launchFailureKind: context.launchFailureKind,
+	};
+}
+
+/**
  * @param {object} signals
  */
 export function deriveDiagnosis(signals) {
@@ -325,17 +374,19 @@ export function deriveDiagnosis(signals) {
 
 	if (orphanRunning) {
 		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
-			return { diagnosis: "needs_retry", failedTaskId: orphanRunning.taskId };
+			return withFailureContext("needs_retry", orphanRunning.taskId, signals);
 		}
-		return { diagnosis: "engine_orphaned", failedTaskId: orphanRunning.taskId ?? null };
+		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
 	}
 
-	if (phase === "aborted") return { diagnosis: "aborted", failedTaskId: null };
+	if (phase === "aborted") {
+		return withFailureContext("aborted", null, signals);
+	}
 	if (phase === "completed" && endedAt != null) {
 		if (git.orchBranchExists && !git.orchMergedToBase) {
-			return { diagnosis: "needs_integrate", failedTaskId: null };
+			return withFailureContext("needs_integrate", null, signals);
 		}
-		return { diagnosis: "completed", failedTaskId: null };
+		return withFailureContext("completed", null, signals);
 	}
 
 	const limboSignals =
@@ -346,41 +397,41 @@ export function deriveDiagnosis(signals) {
 		mergeResultsEmpty;
 
 	if (limboSignals && git.orchMergedToBase) {
-		return { diagnosis: "completed_manual", failedTaskId: null };
+		return withFailureContext("completed_manual", null, signals);
 	}
 
 	if (limboSignals) {
-		return { diagnosis: "limbo_stale", failedTaskId: null };
+		return withFailureContext("limbo_stale", null, signals);
 	}
 
 	if (hasFailedTasks || hasSegmentDrift) {
-		return { diagnosis: "needs_retry", failedTaskId };
+		return withFailureContext("needs_retry", failedTaskId, signals);
 	}
 
 	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {
 		if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && !mergeResultsEmpty) {
-			return { diagnosis: "needs_integrate", failedTaskId: null };
+			return withFailureContext("needs_integrate", null, signals);
 		}
-		return { diagnosis: "needs_merge", failedTaskId: null };
+		return withFailureContext("needs_merge", null, signals);
 	}
 
 	if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && mergeResultsEmpty) {
-		return { diagnosis: "needs_integrate", failedTaskId: null };
+		return withFailureContext("needs_integrate", null, signals);
 	}
 
 	if (phase === "failed" || (failedTasks > 0 && !hasPendingTasks && !hasRunningTasks)) {
-		return { diagnosis: "failed", failedTaskId };
+		return withFailureContext("failed", failedTaskId, signals);
 	}
 
 	if (phase === "paused") {
-		return { diagnosis: "paused", failedTaskId: null };
+		return withFailureContext("paused", null, signals);
 	}
 
 	if (RUNNING_PHASES.has(phase) || hasRunningTasks || hasPendingTasks) {
-		return { diagnosis: "running", failedTaskId: null };
+		return withFailureContext("running", null, signals);
 	}
 
-	return { diagnosis: "paused", failedTaskId: null };
+	return withFailureContext("paused", null, signals);
 }
 
 /**
@@ -506,7 +557,7 @@ export function reconcileBatch(ctx) {
 	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
 	signals.pendingTaskCount = pendingTaskCount;
 
-	const { diagnosis, failedTaskId } = deriveDiagnosis(signals);
+	const { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
 	const salvagePayload = findLatestSalvageInspection(journalEvents, failedTaskId);
 	const salvageChangedFileCount = Number(salvagePayload?.changedFileCount ?? 0) || 0;
 	const salvageRetryCommand =
@@ -521,6 +572,8 @@ export function reconcileBatch(ctx) {
 		phase: batch.phase,
 		failedTasks: signals.failedTasks,
 		failedTaskId,
+		exitReason,
+		launchFailureKind,
 		gitMerged: git.orchMergedToBase,
 		pendingTaskCount,
 		salvageChangedFileCount,

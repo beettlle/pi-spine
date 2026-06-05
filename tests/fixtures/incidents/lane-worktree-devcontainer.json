@@ -1,0 +1,82 @@
+{
+  "batchId": "20260605T160800",
+  "batchState": {
+    "batchId": "20260605T160800",
+    "phase": "failed",
+    "baseBranch": "main",
+    "orchBranch": "orch/cdelgado-20260605T160800",
+    "startedAt": 1749137280000,
+    "endedAt": 1749137340000,
+    "failedTasks": 2,
+    "succeededTasks": 0,
+    "totalTasks": 2,
+    "mergeResults": [],
+    "tasks": [
+      {
+        "taskId": "SAT-047",
+        "status": "failed",
+        "taskFolder": "SAT-047-lane-worktree",
+        "doneFileFound": false,
+        "exitReason": "failed"
+      },
+      {
+        "taskId": "SAT-048",
+        "status": "failed",
+        "taskFolder": "SAT-048-launch-failure",
+        "doneFileFound": false,
+        "exitReason": "failed"
+      }
+    ],
+    "segments": [
+      { "segmentId": "SAT-047::default", "taskId": "SAT-047", "status": "failed" },
+      { "segmentId": "SAT-048::default", "taskId": "SAT-048", "status": "failed" }
+    ],
+    "lanes": [
+      { "laneId": "lane-1", "laneNumber": 1, "status": "failed" },
+      { "laneId": "lane-2", "laneNumber": 2, "status": "failed" }
+    ]
+  },
+  "journalEvents": [
+    {
+      "type": "batch.started",
+      "payload": { "baseBranch": "main" }
+    },
+    {
+      "type": "lane.setup_hook.failed",
+      "payload": {
+        "laneNumber": 1,
+        "error": "worktree gitdir points at /workspace/.git/worktrees/lane-1"
+      }
+    },
+    {
+      "type": "task.failed",
+      "taskId": "SAT-047",
+      "payload": {
+        "taskId": "SAT-047",
+        "laneNumber": 1,
+        "classification": "failed",
+        "workerPhase": "launching",
+        "output": "git status failure: not a git repository (worktree unhealthy)",
+        "workerOutputLogRef": ".spine/runtime/20260605T160800/lanes/lane-1/worker-output-SAT-047.log"
+      }
+    },
+    {
+      "type": "task.failed",
+      "taskId": "SAT-048",
+      "payload": {
+        "taskId": "SAT-048",
+        "laneNumber": 2,
+        "classification": "failed",
+        "workerPhase": "launching",
+        "output": "CONFIG_PI_SPINE_ROOT_MISSING: devcontainer launch script requires PI_SPINE_ROOT",
+        "workerOutputLogRef": ".spine/runtime/20260605T160800/lanes/lane-2/worker-output-SAT-048.log"
+      }
+    },
+    {
+      "type": "batch.failed",
+      "payload": {
+        "reason": "all tasks failed at worker launch"
+      }
+    }
+  ]
+}

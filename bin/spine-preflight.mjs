@@ -8,6 +8,9 @@ import { runReconciliationCheck } from "../src/batch/reconcile.mjs";
 import { buildPlan } from "../src/planner/index.mjs";
 import { formatPlanHuman } from "./spine-plan.mjs";
 import { buildCoexistencePreflightCheck } from "../src/doctor/coexistence.mjs";
+import { validatePiSpineRootConfig } from "../src/config/pi-spine-root.mjs";
+import { resolveSafeWorkerLaunchScript } from "../src/config/worker-launch-script.mjs";
+import { validateWorktreeSetupHookConfig } from "../src/config/worktree-setup-hook.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
@@ -274,6 +277,41 @@ export function checkNoActiveBatch(ctx) {
  * @param {string} ctx.projectRoot
  * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
  */
+export function checkPiSpineRoot(ctx) {
+	const configResult = ctx.configResult ?? loadSpineConfig(ctx.projectRoot);
+	const config = configResult?.config;
+
+	if (!config || configResult?.error) {
+		return makeCheck("pi-spine-root", true, "pi-spine root check skipped (config unavailable)");
+	}
+
+	const launchScript = resolveSafeWorkerLaunchScript(ctx.projectRoot, config);
+	const overrideConfigured = Boolean(config?.development?.piSpineRoot);
+	if (!launchScript && !overrideConfigured) {
+		return makeCheck("pi-spine-root", true, "pi-spine root not required (no custom worker launch script)");
+	}
+
+	const validationError = validatePiSpineRootConfig(config, ctx.projectRoot);
+	if (validationError) {
+		return makeCheck("pi-spine-root", false, validationError.message, {
+			suggestedCommand: validationError.suggestedCommand,
+		});
+	}
+
+	return makeCheck(
+		"pi-spine-root",
+		true,
+		launchScript
+			? "pi-spine root valid for custom worker launch script"
+			: "development.piSpineRoot override valid",
+	);
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
 export function checkTasksRoot(ctx) {
 	const configResult = ctx.configResult ?? loadSpineConfig(ctx.projectRoot);
 	const tasksRootPath = resolveTasksRoot(ctx.projectRoot, configResult);
@@ -397,6 +435,32 @@ export function checkDependenciesJson(ctx) {
 
 /**
  * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function checkWorktreeSetupHook(ctx) {
+	const configResult = ctx.configResult ?? loadSpineConfig(ctx.projectRoot);
+	const config = configResult?.config;
+	if (!config || configResult?.error) {
+		return makeCheck("worktree-setup-hook", true, "worktree setup hook not configured");
+	}
+
+	const hookError = validateWorktreeSetupHookConfig(config, ctx.projectRoot);
+	if (hookError) {
+		return makeCheck("worktree-setup-hook", false, hookError.message, {
+			suggestedCommand: hookError.suggestedCommand,
+		});
+	}
+
+	if (!config.worktreeSetupHook) {
+		return makeCheck("worktree-setup-hook", true, "worktree setup hook not configured");
+	}
+
+	return makeCheck("worktree-setup-hook", true, "worktree setup hook path valid");
+}
+
+/**
+ * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
 	const { projectRoot, configResult } = ctx;
@@ -470,7 +534,9 @@ export function runBatchPreflight(options) {
 		}),
 	);
 	checks.push(checkTasksRoot(ctx));
+	checks.push(checkPiSpineRoot(ctx));
 	checks.push(checkDependenciesJson(ctx));
+	checks.push(checkWorktreeSetupHook(ctx));
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(

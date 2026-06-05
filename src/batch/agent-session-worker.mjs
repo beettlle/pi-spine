@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { readReviewLevel } from "./review.mjs";
 import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
 
@@ -165,7 +166,7 @@ function resolveThinkingLevel(config) {
  * @param {object} [deps]
  */
 export function startAgentSessionWorker(
-	{ worktreePath, taskFolder, config = {}, taskFileScope = [], journal },
+	{ worktreePath, taskFolder, config = {}, taskFileScope = [], journal, projectRoot },
 	deps = {},
 ) {
 	const donePath = path.join(taskFolder, ".DONE");
@@ -178,6 +179,9 @@ export function startAgentSessionWorker(
 		),
 		aborted: false,
 	};
+
+	const piSpineRoot = resolvePiSpineRoot(config, projectRoot ?? process.cwd());
+	process.env.PI_SPINE_ROOT = piSpineRoot;
 
 	const donePromise = (async () => {
 		try {

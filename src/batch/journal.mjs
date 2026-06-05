@@ -221,6 +221,9 @@ export function summarizeJournalEvent(event) {
 	if (payload.reason) parts.push(String(payload.reason));
 	if (payload.error) parts.push(String(payload.error).slice(0, 80));
 	if (payload.classification) parts.push(String(payload.classification));
+	if (payload.workerPhase) parts.push(`phase ${payload.workerPhase}`);
+	if (payload.workerOutputLogRef) parts.push(`→ ${payload.workerOutputLogRef}`);
+	if (payload.exitReason) parts.push(String(payload.exitReason));
 	if (payload.mergeCommit) parts.push(`merge ${String(payload.mergeCommit).slice(0, 8)}`);
 	if (payload.baseBranch && payload.orchBranch) {
 		parts.push(`${payload.baseBranch} → ${payload.orchBranch}`);
@@ -286,7 +289,9 @@ export function extractJournalDiagnosisHints(events) {
 
 	const priority = [
 		"batch.failed",
+		"batch.merge_blocked",
 		"task.failed",
+		"lane.setup_hook.failed",
 		"lane.stall_killed",
 		"review.failed",
 		"lane.salvage_inspection",

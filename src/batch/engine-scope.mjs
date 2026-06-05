@@ -139,17 +139,22 @@ export function buildTaskLaneAssignments(plan) {
 /**
  * @param {object[]} failedTasks
  * @param {object[]} pendingTasks
+ * @param {object[]} [succeededTasks]
  */
-export function formatMixedOutcomeMessage(failedTasks, pendingTasks) {
+export function formatMixedOutcomeMessage(failedTasks, pendingTasks, succeededTasks = []) {
 	const failedIds = failedTasks.map((task) => task.taskId);
 	const pendingIds = pendingTasks.map((task) => task.taskId);
+	const succeededIds = succeededTasks.map((task) => task.taskId);
 	const lines = ["Wave merge blocked (§17.4 mixed-outcome policy)."];
 
+	if (succeededIds.length > 0) {
+		lines.push(`Succeeded task(s): ${succeededIds.join(", ")}.`);
+	}
 	if (failedIds.length > 0) {
 		lines.push(`Failed task(s): ${failedIds.join(", ")}.`);
-		lines.push(
-			`Suggested: ${failedIds.map((id) => `/spine-retry-task ${id}`).join("; ")} then /spine-resume --force`,
-		);
+		for (const taskId of failedIds) {
+			lines.push(`Retry ${taskId} next: spine batch retry ${taskId}`);
+		}
 		lines.push(`Or skip: ${failedIds.map((id) => `/spine-skip-task ${id}`).join("; ")}`);
 	}
 	if (pendingIds.length > 0) {
@@ -178,6 +183,7 @@ export function assessWaveMergeEligibility(state, waveIndex) {
 	const pending = tasks.filter(
 		(task) => task.status === "pending" || task.status === "running",
 	);
+	const succeeded = tasks.filter((task) => task.status === "succeeded");
 
 	if (failed.length === 0 && pending.length === 0) {
 		return { ok: true };
@@ -187,7 +193,8 @@ export function assessWaveMergeEligibility(state, waveIndex) {
 		ok: false,
 		failedTaskIds: failed.map((task) => task.taskId),
 		pendingTaskIds: pending.map((task) => task.taskId),
-		message: formatMixedOutcomeMessage(failed, pending),
+		succeededTaskIds: succeeded.map((task) => task.taskId),
+		message: formatMixedOutcomeMessage(failed, pending, succeeded),
 	};
 }
 

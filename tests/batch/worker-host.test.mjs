@@ -5,6 +5,7 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { validateSpineConfig } from "../../bin/spine-config.mjs";
+import { runWorker } from "../../src/batch/worker-host.mjs";
 import {
 	DEFAULT_WORKER_LAUNCH_SCRIPT,
 	resolveSafeWorkerLaunchScript,
@@ -91,4 +92,50 @@ test("validateSpineConfig rejects unsafe development.workerLaunchScript", () => 
 
 test("DEFAULT_WORKER_LAUNCH_SCRIPT matches conventional path", () => {
 	assert.equal(DEFAULT_WORKER_LAUNCH_SCRIPT, "scripts/spine-worker-launch.sh");
+});
+
+test("runWorker classifies launch script fast-fail as launch_failed", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-launch-fail-"));
+	try {
+		const taskId = "TP-104L";
+		const taskFolder = path.join(projectRoot, "spine-tasks", `${taskId}-launch`);
+		fs.mkdirSync(taskFolder, { recursive: true });
+		fs.mkdirSync(path.join(projectRoot, "scripts"), { recursive: true });
+		const launchScript = path.join(projectRoot, "scripts", "spine-worker-launch.sh");
+		fs.writeFileSync(launchScript, "#!/bin/sh\nexit 1\n", { encoding: "utf-8", mode: 0o755 });
+		fs.writeFileSync(
+			path.join(taskFolder, "PROMPT.md"),
+			`# Task: ${taskId}\n\n## Review Level: 0\n\n## Mission\nLaunch fail.\n\n## Dependencies\n- **None**\n\n## File Scope\n- \`README.md\`\n\n## Steps\n### Step 0\n- [ ] one\n`,
+			"utf-8",
+		);
+
+		const prevStub = process.env.SPINE_WORKER_STUB;
+		process.env.SPINE_WORKER_STUB = "1";
+		try {
+			const result = await runWorker({
+				worktreePath: projectRoot,
+				taskFolder,
+				projectRoot,
+				batchId: "20260605T140000",
+				laneNumber: 1,
+				taskId,
+				config: {
+					development: { workerLaunchScript: "scripts/spine-worker-launch.sh" },
+					lanes: {
+						heartbeatIntervalMinutes: 10,
+						stallTimeoutMinutes: 10,
+						stallGraceAfterProgressMinutes: 5,
+					},
+				},
+			});
+
+			assert.equal(result.ok, false);
+			assert.equal(result.classification, "launch_failed");
+		} finally {
+			if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+			else process.env.SPINE_WORKER_STUB = prevStub;
+		}
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
 });

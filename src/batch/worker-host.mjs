@@ -24,6 +24,7 @@ import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { finalizeWorkerOutput } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
+import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../config/worker-launch-script.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,11 +64,9 @@ function resolveWorkerLaunchScript(projectRoot, config = {}) {
 /**
  * @param {object} params
  */
-function spawnWorkerChild({
-	worktreePath,
+export function buildWorkerChildEnv({
 	taskFolder,
-	useStub,
-	timeoutMs,
+	worktreePath,
 	projectRoot,
 	batchId,
 	laneNumber,
@@ -82,6 +81,7 @@ function spawnWorkerChild({
 		SPINE_TASK_FOLDER: taskFolder,
 		SPINE_WORKTREE: worktreePath,
 		SPINE_WORKER_RUNNER: runner,
+		PI_SPINE_ROOT: resolvePiSpineRoot(config, projectRoot ?? process.cwd()),
 	};
 	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;
 	if (batchId) {
@@ -95,6 +95,37 @@ function spawnWorkerChild({
 	if (Array.isArray(fileScopePaths) && fileScopePaths.length > 0) {
 		env.SPINE_TASK_FILE_SCOPE = JSON.stringify(fileScopePaths);
 	}
+	return env;
+}
+
+/**
+ * @param {object} params
+ */
+function spawnWorkerChild({
+	worktreePath,
+	taskFolder,
+	useStub,
+	timeoutMs,
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	laneCorrelationId,
+	fileScopePaths = [],
+	config = {},
+}) {
+	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
+	const env = buildWorkerChildEnv({
+		taskFolder,
+		worktreePath,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		laneCorrelationId,
+		fileScopePaths,
+		config,
+	});
 	const args = useStub ? ["--stub"] : ["--pi"];
 
 	const launchScript = projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null;
@@ -235,7 +266,14 @@ function spawnWorkerHandle({
 
 	if (!useStub && resolveWorkerBackend(config) === "agentSession") {
 		return startAgentSessionWorker(
-			{ worktreePath, taskFolder, config, taskFileScope: fileScopePaths, journal },
+			{
+				worktreePath,
+				taskFolder,
+				config,
+				taskFileScope: fileScopePaths,
+				journal,
+				projectRoot,
+			},
 			workerBackendDeps ?? {},
 		);
 	}
@@ -520,7 +558,23 @@ export async function runWorker({
 	const { exitCode, output } = await childDone;
 	const doneFound = fs.existsSync(donePath);
 	const ok = doneFound && exitCode === 0;
-	const classification = ok ? "succeeded" : "failed";
+	let classification = ok ? "succeeded" : "failed";
+	if (!ok && useLaunchScript && !childPastPreflight) {
+		classification = "launch_failed";
+		return buildWorkerFailureResult({
+			rawOutput: output,
+			classification,
+			exitCode,
+			mode: workerMode,
+			doneFound,
+			projectRoot,
+			batchId,
+			laneNumber,
+			taskId,
+			laneCorrelationId,
+			config,
+		});
+	}
 
 	const finalized = finalizeWorkerOutput({
 		rawOutput: output,
