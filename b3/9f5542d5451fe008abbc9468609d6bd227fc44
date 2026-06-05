@@ -1,0 +1,29 @@
+spine-tasks/SP-113-resume-multi-strangler/.reviews/1-20260605T192330.md
+  ai_agent 1-33
+src/batch/resume-multi-lanes.mjs
+  ai_agent 1-477
+src/batch/resume-multi-validate.mjs
+  ai_agent 1-183
+src/batch/resume-multi.mjs
+  ai_agent 9-10,20-21,23,75,78-79,81-91,93-98,100-106,111-113,117-131,134-137,141-147,149-150,152-159,162-164,166-167,170-182
+spine-tasks/SP-113-resume-multi-strangler/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 3-4,7,14-35
+spine-tasks/SP-113-resume-multi-strangler/.reviews/2-20260605T193146.md
+  ai_agent 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b39f5542d5451fe008abbc9468609d6bd227fc44",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
