@@ -52,8 +52,10 @@ Verify:
 
 ```bash
 spine doctor
-spine version
+spine version   # confirms global npm link resolves (npm bin is a symlink to bin/spine.mjs)
 ```
+
+Global `npm link` / `npm install -g` invokes `spine` through a symlink on `PATH`. If `spine version` prints package and Node info, the CLI entrypoint is wired correctly (SP-099).
 
 In pi: `pi list` should show `pi-spine`; try `/spine-plan pending`.
 
@@ -430,6 +432,7 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 | Symptom | Fix |
 |---------|-----|
 | `spine: command not found` | `npm link` from checkout, or `node /path/to/pi-spine/bin/spine.mjs …` |
+| Global `spine` exits 0 with no output | Fixed in SP-099 — upgrade and run `spine version`; should print package info |
 | Doctor warns **stale global spine** | `which spine` points at old build — re-`npm link` or use `node …/bin/spine.mjs` |
 | Slash commands work, CLI wrong version | Pi uses linked package; shell uses stale PATH binary |
 | CI / scripts | `SPINE_BIN="node ../pi-spine/bin/spine.mjs"` (see `./scripts/adoption-smoke.sh`) |

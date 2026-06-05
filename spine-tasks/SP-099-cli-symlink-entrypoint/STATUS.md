@@ -1,7 +1,7 @@
 # SP-099: CLI symlink entrypoint detection — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Step 5
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -47,19 +47,19 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator runbook updated
-- [ ] Discoveries logged
+- [x] Operator runbook updated
+- [x] Discoveries logged
 
 ---
 
@@ -67,6 +67,8 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | pass | — |
+| 2 | code | 2 | pass | — |
 
 ---
 
@@ -74,6 +76,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `path.resolve(symlink) !== path.resolve(real bin)` reproduces silent exit 0 | Fixed via `fs.realpathSync` in `isCliEntrypoint` | `bin/spine-cli/shared.mjs` |
+| `spine-gate.mjs` used `fileURLToPath === path.resolve` variant | Normalized to shared helper | `bin/spine-gate.mjs` |
 
 ---
 
@@ -82,6 +86,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-04 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-04 | Step 1–5 complete | isCliEntrypoint + 9 entrypoints + tests + docs |
 
 ---
 
