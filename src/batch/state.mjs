@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { appendJournalEvent } from "./journal.mjs";
-import { loadBatchStateFile } from "./reconcile.mjs";
+import { loadBatchStateFile } from "./batch-state-io.mjs";
 
 export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
 
