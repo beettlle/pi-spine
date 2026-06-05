@@ -1,8 +1,8 @@
 # SP-100: Accept `./scripts/` worker launch paths — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-04
+**Current Step:** Step 3
+**Status:** 🟢 Complete
+**Last Updated:** 2026-06-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,36 +11,36 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `./scripts/...` failure reproduced
-- [ ] `scripts/...` success confirmed
+- [x] `./scripts/...` failure reproduced
+- [x] `scripts/...` success confirmed
 
 ---
 
 ### Step 1: Normalize relative prefix
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Leading `./` stripped before prefix check
-- [ ] worktreeSetupHook checked (if applicable)
-- [ ] Plan review completed
+- [x] Leading `./` stripped before prefix check
+- [x] worktreeSetupHook checked (if applicable) — no prefix validation in src/
+- [x] Plan review completed
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Dot-prefix acceptance test
-- [ ] Traversal tests still pass
-- [ ] FULL suite + coverage ≥77%
+- [x] Dot-prefix acceptance test
+- [x] Traversal tests still pass
+- [x] FULL suite + coverage ≥77% (528 pass; line coverage 83.94%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Templates/docs checked
-- [ ] Discoveries logged
+- [x] Templates/docs checked — no workerLaunchScript `./scripts/` examples; both forms now valid
+- [x] Discoveries logged
 
 ---
 
@@ -48,6 +48,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260605T004325.md` |
 
 ---
 
@@ -55,6 +56,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| No `worktreeSetupHook` path prefix validation in `src/` | N/A — Step 1 scope only | grep `src/` |
 
 ---
 
@@ -62,7 +64,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-04 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-05 | Step 0 preflight | Reproduced dot-prefix rejection |
+| 2026-06-05 | Step 1 implement + plan review | APPROVE |
+| 2026-06-05 | Step 2 verify | 528 tests pass; coverage 83.94% |
 
 ---
 
