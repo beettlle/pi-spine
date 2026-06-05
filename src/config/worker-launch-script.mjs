@@ -22,8 +22,8 @@ export function validateWorkerLaunchScriptPath(projectRoot, configured) {
 		};
 	}
 
-	const normalized = configured.trim().replace(/\\/g, "/");
-	if (path.isAbsolute(normalized)) {
+	const trimmed = configured.trim().replace(/\\/g, "/");
+	if (path.isAbsolute(trimmed)) {
 		return {
 			ok: false,
 			code: "CONFIG_LAUNCH_SCRIPT_INVALID",
@@ -31,7 +31,7 @@ export function validateWorkerLaunchScriptPath(projectRoot, configured) {
 			suggestedCommand: `spine settings set development.workerLaunchScript ${DEFAULT_WORKER_LAUNCH_SCRIPT}`,
 		};
 	}
-	if (normalized.includes("..")) {
+	if (trimmed.includes("..")) {
 		return {
 			ok: false,
 			code: "CONFIG_LAUNCH_SCRIPT_UNSAFE",
@@ -40,6 +40,7 @@ export function validateWorkerLaunchScriptPath(projectRoot, configured) {
 		};
 	}
 
+	const normalized = path.posix.normalize(trimmed);
 	const scriptsPrefix = "scripts/";
 	if (!normalized.startsWith(scriptsPrefix)) {
 		return {
