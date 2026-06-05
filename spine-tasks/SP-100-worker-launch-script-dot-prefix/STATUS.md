@@ -1,7 +1,7 @@
 # SP-100: Accept `./scripts/` worker launch paths — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `./scripts/...` failure reproduced
-- [ ] `scripts/...` success confirmed
+- [x] `./scripts/...` failure reproduced
+- [x] `scripts/...` success confirmed
 
 ---
 
 ### Step 1: Normalize relative prefix
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Leading `./` stripped before prefix check
-- [ ] worktreeSetupHook checked (if applicable)
-- [ ] Plan review completed
+- [x] Leading `./` stripped before prefix check
+- [x] worktreeSetupHook checked (if applicable) — no prefix validation in src/
+- [x] Plan review completed
 
 ---
 
@@ -48,6 +48,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260605T004325.md` |
 
 ---
 
@@ -55,6 +56,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| No `worktreeSetupHook` path prefix validation in `src/` | N/A — Step 1 scope only | grep `src/` |
 
 ---
 
