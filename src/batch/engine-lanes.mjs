@@ -6,6 +6,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadTaskPacket } from "../tasks/packet/index.mjs";
+import {
+	parseRulesManifestJson,
+	resolveRulesManifestGeneratedAtMerge,
+	RULES_MANIFEST_REL_PATH,
+	writeRulesManifestAtomic,
+} from "../config/cursor-rules/discover.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	commitLaneWorktree,
@@ -16,6 +22,8 @@ import {
 import { buildTaskLaneAssignments, countPlanTasks } from "./engine-scope.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 import {
+	recordTaskSucceeded,
+	recomputeTaskCounters,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
@@ -25,13 +33,115 @@ import { runWorker } from "./worker-host.mjs";
 /**
  * @param {string} projectRoot
  * @param {string[]} args
+ * @param {{ throwOnError?: boolean }} [options]
  */
-function git(projectRoot, args) {
-	return execFileSync("git", args, {
+function git(projectRoot, args, { throwOnError = true } = {}) {
+	try {
+		return execFileSync("git", args, {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		}).trim();
+	} catch (err) {
+		if (throwOnError) throw err;
+		return null;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ */
+function abortInProgressMerge(projectRoot) {
+	try {
+		execFileSync("git", ["merge", "--abort"], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+	} catch {
+		// best effort — leave checkout restoration to caller
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ */
+function listUnmergedPaths(projectRoot) {
+	const output = git(projectRoot, ["diff", "--name-only", "--diff-filter=U"], {
+		throwOnError: false,
+	});
+	if (!output) return [];
+	return output.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {2 | 3} stage
+ */
+function readRulesManifestMergeStage(projectRoot, stage) {
+	const output = git(projectRoot, ["show", `:${stage}:${RULES_MANIFEST_REL_PATH}`], {
+		throwOnError: false,
+	});
+	if (output == null) {
+		return { ok: false, error: `missing merge stage ${stage} for ${RULES_MANIFEST_REL_PATH}` };
+	}
+	return parseRulesManifestJson(output);
+}
+
+/**
+ * @param {string} projectRoot
+ */
+export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
+	const unmerged = listUnmergedPaths(projectRoot);
+	if (unmerged.length === 0) {
+		return {
+			ok: false,
+			error: "merge failed without unmerged paths",
+		};
+	}
+	if (unmerged.length !== 1 || unmerged[0] !== RULES_MANIFEST_REL_PATH) {
+		return {
+			ok: false,
+			failureClass: "MergeConflict",
+			error:
+				`merge conflict on ${unmerged.join(", ")}; automatic resolution only supports ${RULES_MANIFEST_REL_PATH}`,
+		};
+	}
+
+	const oursResult = readRulesManifestMergeStage(projectRoot, 2);
+	const theirsResult = readRulesManifestMergeStage(projectRoot, 3);
+	if (!oursResult.ok || !theirsResult.ok) {
+		return {
+			ok: false,
+			error: "unable to read rules-manifest merge stages",
+		};
+	}
+
+	const resolved = resolveRulesManifestGeneratedAtMerge({
+		ours: oursResult.manifest,
+		theirs: theirsResult.manifest,
+	});
+	if (!resolved.ok) {
+		return resolved;
+	}
+
+	writeRulesManifestAtomic(projectRoot, resolved.manifest);
+	execFileSync("git", ["add", RULES_MANIFEST_REL_PATH], {
 		cwd: projectRoot,
-		encoding: "utf-8",
-		stdio: ["ignore", "pipe", "pipe"],
-	}).trim();
+		stdio: "ignore",
+	});
+	return {
+		ok: true,
+		autoResolved: true,
+		generatedAt: resolved.manifest.generatedAt,
+	};
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string[]} args
+ */
+function gitStrict(projectRoot, args) {
+	return git(projectRoot, args);
 }
 
 /**
@@ -46,9 +156,10 @@ export function mergeLaneToOrch({
 	batchId,
 	requireLaneCommits = false,
 }) {
-	const previous = git(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	let mergeInProgress = false;
 	try {
-		const orchHeadBefore = git(projectRoot, ["rev-parse", orchBranch]);
+		const orchHeadBefore = gitStrict(projectRoot, ["rev-parse", orchBranch]);
 		const commitsAhead = countCommitsAhead(projectRoot, orchBranch, taskBranch);
 
 		if (requireLaneCommits && commitsAhead === 0) {
@@ -61,9 +172,30 @@ export function mergeLaneToOrch({
 			};
 		}
 
-		git(projectRoot, ["checkout", orchBranch]);
-		git(projectRoot, ["merge", "--no-ff", taskBranch, "-m", `merge ${taskBranch} into ${orchBranch}`]);
-		const mergeCommit = git(projectRoot, ["rev-parse", "HEAD"]);
+		gitStrict(projectRoot, ["checkout", orchBranch]);
+		try {
+			gitStrict(projectRoot, [
+				"merge",
+				"--no-ff",
+				taskBranch,
+				"-m",
+				`merge ${taskBranch} into ${orchBranch}`,
+			]);
+		} catch {
+			mergeInProgress = true;
+			const autoResolved = tryAutoResolveRulesManifestMergeConflict(projectRoot);
+			if (!autoResolved.ok) {
+				abortInProgressMerge(projectRoot);
+				return {
+					ok: false,
+					failureClass: autoResolved.failureClass ?? "MergeConflict",
+					error: autoResolved.error ?? "merge conflict",
+				};
+			}
+			gitStrict(projectRoot, ["commit", "--no-edit"]);
+		}
+
+		const mergeCommit = gitStrict(projectRoot, ["rev-parse", "HEAD"]);
 
 		if (requireLaneCommits && mergeCommit === orchHeadBefore) {
 			return {
@@ -77,15 +209,18 @@ export function mergeLaneToOrch({
 
 		return { ok: true, mergeCommit, commitsAhead };
 	} catch (err) {
+		if (mergeInProgress) {
+			abortInProgressMerge(projectRoot);
+		}
 		return {
 			ok: false,
 			error: err instanceof Error ? err.message : String(err),
 		};
 	} finally {
 		try {
-			git(projectRoot, ["checkout", previous || baseBranch]);
+			gitStrict(projectRoot, ["checkout", previous || baseBranch]);
 		} catch {
-			git(projectRoot, ["checkout", baseBranch]);
+			gitStrict(projectRoot, ["checkout", baseBranch]);
 		}
 	}
 }
@@ -131,16 +266,6 @@ export function transitionPhase(state, newPhase, ctx) {
 		toPhase: newPhase,
 		...ctx.extra,
 	});
-}
-
-/**
- * @param {object} state
- */
-function recomputeTaskCounters(state) {
-	const tasks = state.tasks ?? [];
-	state.succeededTasks = tasks.filter((task) => task?.status === "succeeded").length;
-	state.failedTasks = tasks.filter((task) => task?.status === "failed").length;
-	state.skippedTasks = tasks.filter((task) => task?.status === "skipped").length;
 }
 
 /**
@@ -279,14 +404,15 @@ export async function skipTaskDoneOnDisk({
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
+	const endedAt = Date.now();
+	const startedAt = task.startedAt ?? endedAt;
 
-	task.status = "succeeded";
-	task.doneFileFound = true;
-	task.exitReason = "skipped_done_on_disk";
-	if (!task.startedAt) task.startedAt = Date.now();
-	task.endedAt = Date.now();
-	updateSegmentForTask(state, taskId, "succeeded");
-	recomputeTaskCounters(state);
+	recordTaskSucceeded(state, taskId, {
+		exitReason: "skipped_done_on_disk",
+		doneFileFound: true,
+		endedAt,
+		startedAt,
+	});
 	saveSpineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.skipped_done_on_disk", {
 		taskId,
@@ -488,12 +614,7 @@ export async function runTaskOnLane({
 		};
 	}
 
-	task.status = "succeeded";
-	task.endedAt = Date.now();
-	task.doneFileFound = true;
-	task.exitReason = "done";
-	updateSegmentForTask(state, taskId, "succeeded");
-	recomputeTaskCounters(state);
+	recordTaskSucceeded(state, taskId, { exitReason: "done", doneFileFound: true });
 	saveSpineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.completed", {
 		taskId,

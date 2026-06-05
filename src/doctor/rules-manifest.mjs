@@ -7,10 +7,13 @@ import path from "node:path";
 
 import {
 	discoverCursorRules,
+	fingerprintRulesManifest,
 	loadRulesManifest,
 	RULES_MANIFEST_REL_PATH,
 } from "../config/cursor-rules/discover.mjs";
 import { loadRulesProfile } from "../config/cursor-rules/profile.mjs";
+
+export { fingerprintRulesManifest };
 
 export const RULES_MANIFEST_MISSING = "RULES_MANIFEST_MISSING";
 export const RULES_MANIFEST_STALE = "RULES_MANIFEST_STALE";
@@ -24,37 +27,6 @@ export function rulesManifestSummary(manifest) {
 		excluded: manifest.excluded.length,
 		warnings: manifest.warnings?.length ?? 0,
 	};
-}
-
-/**
- * Stable fingerprint for stale comparison (ignores `generatedAt`).
- *
- * @param {import("../config/cursor-rules/discover.mjs").CursorRulesManifest} manifest
- */
-export function fingerprintRulesManifest(manifest) {
-	const payload = {
-		rulesRoot: manifest.rulesRoot,
-		rules: [...manifest.rules]
-			.map((rule) => ({
-				relPath: rule.relPath,
-				spineClass: rule.spineClass,
-				alwaysApply: rule.alwaysApply,
-				description: rule.description,
-				globs: rule.globs,
-				parseStatus: rule.parseStatus,
-				warnings: rule.warnings ?? [],
-			}))
-			.sort((left, right) => left.relPath.localeCompare(right.relPath)),
-		excluded: [...manifest.excluded]
-			.map((entry) => ({
-				relPath: entry.relPath,
-				reason: entry.reason,
-				spineClass: entry.spineClass,
-			}))
-			.sort((left, right) => left.relPath.localeCompare(right.relPath)),
-		warnings: manifest.warnings ?? [],
-	};
-	return JSON.stringify(payload);
 }
 
 /**
