@@ -1,7 +1,7 @@
 # SP-118: Adoption docs hygiene — Status
 
-**Current Step:** Step 3 — CI/scripts
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-05
 **Review Level:** 0
 **Review Counter:** 0
@@ -26,6 +26,16 @@
 - [x] Tasks-root decision table (spine-tasks vs taskplane-tasks)
 - [x] Verification section: 559 tests
 
+### Step 3: CI/scripts
+**Status:** ✅ Complete
+- [x] Add test:batch and test:core npm scripts
+- [x] PR template: coverage:check checkbox
+
+### Completion Criteria
+**Status:** ✅ Complete
+- [x] No stale "Staged" for landed Phase 19 tasks
+- [x] Fixture README complete
+
 ---
 
 ## Discoveries
@@ -40,3 +50,4 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-05 | Task staged from Phase 20 audit synthesis | PROMPT.md created |
+| 2026-06-05 | Steps 1–3 complete | Docs + package.json + PR template updated |

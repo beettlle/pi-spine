@@ -10,6 +10,7 @@
 
 - [ ] `npm run typecheck`
 - [ ] `npm test`
+- [ ] `npm run coverage:check` (code changes touching `src/`, `bin/`, or `extensions/`)
 - [ ] Manual / scenario checks (describe):
 
 ## Related issues
