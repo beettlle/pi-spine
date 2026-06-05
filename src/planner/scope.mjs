@@ -17,7 +17,7 @@ export const NO_PENDING_TASKS_ERROR = 'No pending tasks (all discovered tasks ha
 
 function escapeRegexChar(ch) {
 	// Escape regex meta characters.
-	return /[\^$.*+?()[\]{}|]/.test(ch) ? `\${ch}` : ch;
+	return /[\^$.*+?()[\]{}|]/.test(ch) ? '\\' + ch : ch;
 }
 
 function globToRegExp(pattern) {

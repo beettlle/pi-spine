@@ -115,7 +115,9 @@ spine preflight --json      # automation / CI
 | Git clean | Uncommitted changes in working tree |
 | No active batch | Stale `.spine/batch-state.json` or Taskplane `.pi/batch-state.json` |
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
-| Wave plan | Same planner output as `spine plan` |
+| Wave plan | Same planner output as `spine plan` (invalid PROMPTs fail here with actionable errors) |
+
+When `spine plan` or preflight **plan** fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files (heading em dash, required sections, testing step) before retrying. Scoped plans only validate selected tasks; `spine plan all` fails if any discovered packet is invalid.
 
 Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
 

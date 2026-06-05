@@ -42,6 +42,11 @@ export {
 } from "./parse-prompt.mjs";
 export { parseStatus, getStepProgress, listIncompleteSteps } from "./parse-status.mjs";
 export { mergeDeps, mergeTaskDeps, loadDependenciesJson } from "./merge-deps.mjs";
+export {
+	assertValidTaskPacket,
+	collectPromptValidationFailure,
+	formatPromptValidationFailures,
+} from "./validate-prompt.mjs";
 
 /**
  * Load PROMPT.md and STATUS.md for a task folder.
