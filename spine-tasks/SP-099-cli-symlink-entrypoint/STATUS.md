@@ -1,7 +1,7 @@
 # SP-099: CLI symlink entrypoint detection — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -13,10 +13,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduction sketch confirmed (`path.resolve` mismatch on symlink)
-- [ ] All nine `isMainModule` entrypoints identified
+- [x] Reproduction sketch confirmed (`path.resolve` mismatch on symlink)
+- [x] All nine `isMainModule` entrypoints identified
 
 ---
 
