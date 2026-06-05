@@ -1,0 +1,31 @@
+spine-tasks/SP-100-worker-launch-script-dot-prefix/STATUS.md
+  s_45f9b7246cd93f::t_c6140718552bfc 1-77
+spine-tasks/SP-099-cli-symlink-entrypoint/STATUS.md
+  s_45f9b7246cd93f::t_c6140718552bfc 1-96
+spine-tasks/CONTEXT.md
+  s_45f9b7246cd93f::t_73c68283f9f08c 5
+  s_45f9b7246cd93f::t_30da855a6ffe7b 279-294
+spine-tasks/dependencies.json
+  s_45f9b7246cd93f::t_0fe6380391f52e 3
+  s_45f9b7246cd93f::t_05a527a627eb68 214-216
+spine-tasks/SP-099-cli-symlink-entrypoint/PROMPT.md
+  s_45f9b7246cd93f::t_f2f85bd75bcf14 1-127
+spine-tasks/SP-100-worker-launch-script-dot-prefix/PROMPT.md
+  s_45f9b7246cd93f::t_c6140718552bfc 1-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8e3007d0d79b75d9119d6f1e61fbb01ea81804a3",
+  "prompts": {},
+  "sessions": {
+    "s_45f9b7246cd93f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9531-9122-7477-9366-77055d9c54ee",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
