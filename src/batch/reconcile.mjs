@@ -175,6 +175,19 @@ function gitIsAncestor(projectRoot, ancestor, descendant) {
 }
 
 /**
+ * @param {object} result
+ * @param {unknown} err
+ * @param {string} context
+ */
+function recordGitInspectionError(result, err, context) {
+	const message = err instanceof Error ? err.message : String(err);
+	const detail = `${context}: ${message}`;
+	result.gitInspectionError = result.gitInspectionError
+		? `${result.gitInspectionError}; ${detail}`
+		: detail;
+}
+
+/**
  * @param {string} projectRoot
  * @param {string} batchId
  */
@@ -214,9 +227,15 @@ export function inspectGitState(ctx) {
 		orchMergedToBase: false,
 		mergedOrchBranch: null,
 		orchCommitsAhead: null,
+		gitInspectionError: null,
 	};
 
 	if (!result.inGitRepo) return result;
+
+	if (process.env.SPINE_TEST_GIT_INSPECTION_THROW) {
+		result.gitInspectionError = `simulated: ${process.env.SPINE_TEST_GIT_INSPECTION_THROW}`;
+		return result;
+	}
 
 	const candidates = new Set(listOrchBranches(projectRoot, batchId));
 	if (orchBranch) candidates.add(orchBranch);
@@ -239,8 +258,9 @@ export function inspectGitState(ctx) {
 	if (resolvedOrch && gitRefExists(projectRoot, resolvedOrch) && !result.orchMergedToBase) {
 		try {
 			result.orchCommitsAhead = countCommitsAhead(projectRoot, baseBranch, resolvedOrch);
-		} catch {
+		} catch (err) {
 			result.orchCommitsAhead = null;
+			recordGitInspectionError(result, err, "count_commits_ahead");
 		}
 	}
 
@@ -260,8 +280,8 @@ export function inspectGitState(ctx) {
 				result.mergedOrchBranch = mergedOrch[0];
 				result.orchBranchExists = true;
 			}
-		} catch {
-			// ignore git errors
+		} catch (err) {
+			recordGitInspectionError(result, err, "list_merged_branches");
 		}
 	}
 
@@ -341,6 +361,10 @@ export function deriveDiagnosis(signals) {
 			return withFailureContext("needs_retry", orphanRunning.taskId, signals);
 		}
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
+	}
+
+	if (git?.gitInspectionError) {
+		return withFailureContext("git_unavailable", null, signals);
 	}
 
 	if (phase === "aborted") {
@@ -543,6 +567,12 @@ export function reconcileBatch(ctx) {
 		salvageChangedFileCount,
 		salvageRetryCommand,
 	});
+
+	if (diagnosis === "git_unavailable") {
+		output.headline = `Batch ${batch.batchId} — git inspection failed: ${git.gitInspectionError}`;
+		output.suggestedCommand = "spine doctor";
+		output.alternatives = ["spine status --diagnose"];
+	}
 
 	return {
 		...output,
