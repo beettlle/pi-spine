@@ -67,13 +67,13 @@ test("resume parallel lane orphan fixture: reconcile is actionable after scoped 
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
-		assert.ok(["engine_orphaned", "needs_retry"].includes(result.diagnosis));
-		assert.match(result.suggestedCommand, /^spine batch retry /);
+		assert.ok(["engine_orphaned", "worker_orphaned"].includes(result.diagnosis));
+		assert.match(result.suggestedCommand, /^(spine batch retry |spine batch abort)/);
 		assert.equal(result.batchId, "20260603T224829");
 		if (result.diagnosis === "engine_orphaned") {
 			assert.match(result.headline, /engine died/i);
 		} else {
-			assert.match(result.headline, /worker died/i);
+			assert.match(result.headline, /lane worker orphaned/i);
 		}
 	} finally {
 		await destroyGitRepo(projectRoot);
@@ -88,9 +88,9 @@ test("searchATon orphan incident fixture: dead workerPid is not diagnosed as run
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
-		assert.equal(result.diagnosis, "needs_retry");
+		assert.equal(result.diagnosis, "worker_orphaned");
 		assert.equal(result.suggestedCommand, "spine batch retry SAT-040");
-		assert.match(result.headline, /worker died/i);
+		assert.match(result.headline, /lane worker orphaned/i);
 		assert.equal(result.batchId, "20260603T185308");
 	} finally {
 		await destroyGitRepo(projectRoot);
@@ -140,9 +140,9 @@ test("dead workerPid with running task is not diagnosed as running", async () =>
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
-		assert.equal(result.diagnosis, "needs_retry");
+		assert.equal(result.diagnosis, "worker_orphaned");
 		assert.equal(result.suggestedCommand, `spine batch retry ${taskId}`);
-		assert.match(result.headline, /worker died/i);
+		assert.match(result.headline, /lane worker orphaned/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
