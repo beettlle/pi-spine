@@ -34,15 +34,15 @@
 
 - [x] All nine bin files use shared helper
 - [x] `spine-gate.mjs` variant normalized
-- [ ] Code review completed
+- [x] Code review completed
 
 ---
 
 ### Step 3: Symlink regression test
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Temp symlink spawn tests pass
-- [ ] `isCliEntrypoint` unit cases covered
+- [x] Temp symlink spawn tests pass
+- [x] `isCliEntrypoint` unit cases covered
 
 ---
 
