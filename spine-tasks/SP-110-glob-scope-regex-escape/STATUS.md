@@ -1,10 +1,10 @@
 # SP-110: Fix glob scope regex escape — Status
 
-**Current Step:** Step 1 — Fix and test
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-05
 **Review Level:** 1
-**Review Counter:** 0
+**Review Counter:** 1
 **Iteration:** 0
 **Size:** S
 
@@ -22,8 +22,14 @@
 - [x] Call `spine_review_step` (plan)
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
-- [ ] FULL suite + coverage gate
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate
+
+---
+
+## Completion Criteria
+- [x] escapeRegexChar verified by unit tests
+- [x] No lane affinity regressions
 
 ---
 
@@ -41,3 +47,5 @@
 |-----------|--------|---------|
 | 2026-06-05 | Task staged from Phase 20 audit synthesis | PROMPT.md created |
 | 2026-06-05 | Step 1: fix escapeRegexChar + regression tests | 4 new tests pass |
+| 2026-06-05 | Step 1 plan review | APPROVE |
+| 2026-06-05 | Step 2: full suite + coverage gate | 570 pass, 83.21% line coverage |
