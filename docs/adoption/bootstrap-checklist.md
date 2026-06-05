@@ -4,6 +4,21 @@ Copy-paste steps to adopt pi-spine on a **greenfield** repo or **migrate from Ta
 
 **Prerequisites:** Node.js ≥ 22, Git, [pi](https://pi.dev). Install pi-spine from a checkout first — see [local-install.md](./local-install.md).
 
+## Tasks root decision
+
+Greenfield and Taskplane migration paths intentionally use different default folders. Pick one root per repo and keep `paths.tasksRoot` (or `SPINE_TASKS_ROOT`) aligned.
+
+| Situation | Tasks root | Command / source |
+|-----------|------------|------------------|
+| **Greenfield** (new spine project) | `spine-tasks/` | `spine init` |
+| **Taskplane migrant** (existing `taskplane-tasks/`) | `taskplane-tasks/` | `spine migrate-from-taskplane` or `spine init --tasks-root taskplane-tasks` |
+| **Custom layout** | Your folder name | Set `paths.tasksRoot` in `.spine/spine-config.json` or `SPINE_TASKS_ROOT` env |
+| **Adoption fixture** (pi-spine smoke only) | `taskplane-tasks/` | Pre-seeded under `tests/fixtures/adoption-repo/` |
+
+Both roots use the same packet format (`PROMPT.md`, `STATUS.md`, `dependencies.json`). Completion markers live at `<tasksRoot>/<task-id>/.DONE`. `spine doctor` and `spine plan` read the configured root — mixing folders without updating config will hide tasks.
+
+---
+
 ## Adoption fixture (smoke target)
 
 The pi-spine repo ships a minimal consumer layout at **`tests/fixtures/adoption-repo/`**:
@@ -166,6 +181,26 @@ Same as greenfield steps 4–6. Existing `taskplane-tasks/` folders and `depende
 ### 6. Retire Taskplane orchestration
 
 After a successful stub batch, remove or disable Taskplane `/orch` usage. Until then, rely on `spine doctor` / `spine preflight` mutual-exclusion checks before each spine batch.
+
+---
+
+## Verification
+
+From pi-spine repo root (contributors and pre-publish validation):
+
+```bash
+npm run typecheck && npm test
+```
+
+Full suite: **559** tests (`npm test`). Targeted subsets:
+
+| Command | Scope |
+|---------|-------|
+| `npm run test:core` | All suites except `tests/batch/` |
+| `npm run test:batch` | `tests/batch/*.test.mjs` only |
+| `npm run coverage:check` | Full suite + ≥77% line coverage gate (SP-061) |
+
+Use `npm run test:batch` or `npm run test:core` instead of appending directory paths to `npm test` (Node treats bare directories as test modules and reports false failures).
 
 ---
 

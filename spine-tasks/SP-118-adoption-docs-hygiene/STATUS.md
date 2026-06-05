@@ -1,6 +1,6 @@
 # SP-118: Adoption docs hygiene — Status
 
-**Current Step:** Step 1 — CONTEXT and fixtures
+**Current Step:** Step 3 — CI/scripts
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-05
 **Review Level:** 0
@@ -16,9 +16,15 @@
 - [x] Dependencies satisfied
 
 ### Step 1: CONTEXT and fixtures
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Phase 19 SP-101–105 → Done; Phase 20 audit summary (already present in CONTEXT)
 - [x] Incident fixture README lists all fixtures with test links
+
+### Step 2: Adoption docs
+**Status:** ✅ Complete
+- [x] Stall grace: template 30 vs code fallback 15 documented
+- [x] Tasks-root decision table (spine-tasks vs taskplane-tasks)
+- [x] Verification section: 559 tests
 
 ---
 
