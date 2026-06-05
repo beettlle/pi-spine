@@ -1,7 +1,7 @@
 # SP-111: Orphan PID-less ghost running — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,9 +11,28 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Read source audit report(s)
-- [ ] Dependencies satisfied
+**Status:** ✅ Complete
+- [x] Read source audit report(s)
+- [x] Dependencies satisfied
+
+### Step 1: Detection logic
+**Status:** ✅ Complete
+- [x] Third signal: phase running + no live PIDs + scoped journal stall
+- [x] Map to `engine_orphaned` or new kind
+- [x] Plan review completed
+
+### Step 2: Reconcile integration + tests
+**Status:** ✅ Complete
+- [x] Reconcile returns non-running diagnosis for fixture
+- [x] Code review completed
+
+### Step 3: Testing & Verification
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate (562/563 pass; 1 pre-existing flaky `cli-startup` dashboard test out of scope)
+
+### Completion Criteria
+- [x] PID-less ghost fixture passes
+- [x] SP-095 scope rules preserved
 
 ---
 

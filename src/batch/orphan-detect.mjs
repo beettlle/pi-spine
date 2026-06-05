@@ -15,12 +15,27 @@ export const TERMINAL_JOURNAL_TYPES = new Set([
 	"lane.stall_killed",
 ]);
 
+/** Session-start events in the scoped post-resume window (SP-095, SP-111). */
+/** @type {ReadonlySet<string>} */
+export const SESSION_START_JOURNAL_TYPES = new Set(["batch.resumed", "task.started"]);
+
 /**
  * @param {object[]} events
  */
 export function journalHasTerminalBatchEvent(events) {
 	if (!Array.isArray(events) || events.length === 0) return false;
 	return events.some((event) => TERMINAL_JOURNAL_TYPES.has(String(event?.type ?? "")));
+}
+
+/**
+ * Scoped journal shows a resumed/started session with no terminal closure (SP-111).
+ *
+ * @param {object[]} events
+ */
+export function journalIndicatesStalledSession(events) {
+	if (!Array.isArray(events) || events.length === 0) return false;
+	if (journalHasTerminalBatchEvent(events)) return false;
+	return events.some((event) => SESSION_START_JOURNAL_TYPES.has(String(event?.type ?? "")));
 }
 
 /**
@@ -84,6 +99,19 @@ export function journalEventsSinceResume(events, raw) {
 
 /**
  * @param {unknown[]} lanes
+ * @param {Array<{ laneNumber?: number|null }>} runningTasks
+ */
+function hasFiniteWorkerPidForRunningTasks(lanes, runningTasks) {
+	for (const task of runningTasks) {
+		const lane = findLane(lanes, task.laneNumber);
+		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane)?.workerPid);
+		if (Number.isFinite(workerPid) && workerPid > 0) return true;
+	}
+	return false;
+}
+
+/**
+ * @param {unknown[]} lanes
  * @param {number|null|undefined} laneNumber
  */
 function findLane(lanes, laneNumber) {
@@ -139,6 +167,23 @@ export function detectOrphanRunning(ctx) {
 			kind: "engine",
 			taskId: runningTasks[0]?.taskId ?? null,
 			enginePid,
+		};
+	}
+
+	const engineStartedAt = readEngineStartedAt(ctx.raw);
+	if (
+		ctx.phase === "running" &&
+		runningTasks.length > 0 &&
+		enginePid == null &&
+		!hasFiniteWorkerPidForRunningTasks(ctx.lanes, runningTasks) &&
+		engineStartedAt != null &&
+		journalIndicatesStalledSession(scopedJournalEvents)
+	) {
+		/** @type {OrphanRunningSignal} */
+		return {
+			kind: "engine",
+			taskId: runningTasks[0]?.taskId ?? null,
+			enginePid: null,
 		};
 	}
 

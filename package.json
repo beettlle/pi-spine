@@ -30,6 +30,8 @@
     "doctor": "node bin/spine.mjs doctor",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "test": "SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/*.test.mjs tests/cli/*.test.mjs tests/compat/*.test.mjs tests/tasks/*.test.mjs tests/config/*.test.mjs tests/config/cursor-rules/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/agents/*.test.mjs tests/adoption/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs tests/migrate/*.test.mjs tests/worker-tools/*.test.mjs tests/coverage/*.test.mjs",
+    "test:batch": "SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/*.test.mjs",
+    "test:core": "SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/*.test.mjs tests/cli/*.test.mjs tests/compat/*.test.mjs tests/tasks/*.test.mjs tests/config/*.test.mjs tests/config/cursor-rules/*.test.mjs tests/planner/*.test.mjs tests/agents/*.test.mjs tests/adoption/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs tests/migrate/*.test.mjs tests/worker-tools/*.test.mjs tests/coverage/*.test.mjs",
     "test:coverage": "node scripts/run-coverage.mjs --report-only",
     "coverage:check": "node scripts/run-coverage.mjs",
     "prepublishOnly": "npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check"

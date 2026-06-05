@@ -26,17 +26,17 @@ Mirror resume path: persist parent-spawned enginePid immediately on detached sta
 ## Steps
 
 ### Step 1: Symmetric persistence
-- [ ] persistDetachedEnginePid immediately after spawn on start path
+- [x] persistDetachedEnginePid immediately after spawn on start path
 
 ### Step 2: Regression test
-- [ ] Fixture: timeout_waiting_for_batch + dead engine → reconcile ≠ running
+- [x] Fixture: timeout_waiting_for_batch + dead engine → reconcile ≠ running
 
 ### Step 3: Testing & Verification
-- [ ] FULL suite + coverage gate
+- [x] FULL suite + coverage gate
 
 ## Completion Criteria
-- [ ] Start and resume persist enginePid symmetrically
-- [ ] Timeout orphan test passes
+- [x] Start and resume persist enginePid symmetrically
+- [x] Timeout orphan test passes
 
 ## Git Commit Convention
 - `fix(SP-117): detached start enginePid persistence symmetry`

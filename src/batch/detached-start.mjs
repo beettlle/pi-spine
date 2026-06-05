@@ -545,6 +545,7 @@ export async function startBatchDetached({
 	const previousBatchId = before.raw?.batchId ?? null;
 	const argv = buildAttachedBatchStartArgv({ scope, skipPreflight: true });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
+	persistDetachedEnginePid(projectRoot, enginePid);
 	const wait = await waitForDetachedBatchStart({ projectRoot, previousBatchId, waitTerminal });
 
 	if (!wait.ok) {
@@ -577,8 +578,6 @@ export async function startBatchDetached({
 			result: payload,
 		};
 	}
-
-	persistDetachedEnginePid(projectRoot, enginePid);
 
 	const payload = {
 		ok: true,

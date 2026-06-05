@@ -1,19 +1,38 @@
 # SP-116: batch-state-io and git errors — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-05
 **Review Level:** 2
-**Review Counter:** 0
+**Review Counter:** 3
 **Iteration:** 0
 **Size:** M
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Read source audit report(s)
-- [ ] Dependencies satisfied
+**Status:** ✅ Complete
+- [x] Read source audit report(s)
+- [x] Dependencies satisfied
+
+### Step 1: Extract IO module
+**Status:** ✅ Complete
+- [x] Move load/parse/resolve paths to batch-state-io.mjs
+- [x] Update imports in state + reconcile
+
+### Step 2: Git error surfacing
+**Status:** ✅ Complete
+- [x] Replace empty catch with structured hint or git_unavailable diagnosis
+
+### Step 3: Testing & Verification
+**Status:** ✅ Complete
+- [x] FULL suite + coverage gate
+
+---
+
+## Completion Criteria
+- [x] No circular import state↔reconcile
+- [x] Git failure produces actionable diagnosis
 
 ---
 
@@ -21,6 +40,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| state.mjs imported loadBatchStateFile from reconcile.mjs (cycle via orphan-detect) | Fixed in Step 1 | src/batch/state.mjs |
+| dashboard cli-startup test flaky under coverage run | Passed on retry | tests/dashboard/cli-startup.test.mjs |
 
 ---
 
@@ -29,3 +50,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-05 | Task staged from Phase 20 audit synthesis | PROMPT.md created |
+| 2026-06-05 | Step 1 plan review | APPROVE |
+| 2026-06-05 | Step 1 implementation | batch-state-io.mjs created; state/reconcile updated |
+| 2026-06-05 | Step 2 plan review | APPROVE |
+| 2026-06-05 | Step 2 code review | APPROVE |
+| 2026-06-05 | Step 3 verification | npm test 567/567; coverage:check 83.40% |
