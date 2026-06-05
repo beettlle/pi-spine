@@ -4,8 +4,7 @@
  * Usage: spine gate [approve|reject|status] [--batch ID] [--reason text] [--json]
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
 import {
 	approveIntegrateGate,
@@ -131,10 +130,7 @@ export function runSpineGate(options) {
 	};
 }
 
-const isMainModule =
-	process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	const { exitCode, output } = runSpineGate({ projectRoot: process.cwd(), args: process.argv.slice(2) });
 	process.stdout.write(output);
 	process.exit(exitCode);

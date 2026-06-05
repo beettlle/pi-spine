@@ -6,11 +6,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { resolveBatchJournalContext } from "../src/batch/review.mjs";
+import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
-
-const __filename = fileURLToPath(import.meta.url);
 
 /**
  * @param {string[]} argv
@@ -121,9 +119,7 @@ export function runSpineReportProgress(options = {}) {
 	};
 }
 
-const isMainModule =
-	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	const { exitCode, output } = runSpineReportProgress({});
 	process.stdout.write(output ?? "");
 	process.exit(exitCode);

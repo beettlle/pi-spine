@@ -1,6 +1,6 @@
 # SP-099: CLI symlink entrypoint detection — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-04
 **Review Level:** 2
@@ -21,19 +21,19 @@
 ---
 
 ### Step 1: Shared `isCliEntrypoint` helper
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `isCliEntrypoint` exported from `bin/spine-cli/shared.mjs`
-- [ ] realpath + resolve fallback implemented
-- [ ] Plan review completed
+- [x] `isCliEntrypoint` exported from `bin/spine-cli/shared.mjs`
+- [x] realpath + resolve fallback implemented
+- [x] Plan review completed
 
 ---
 
 ### Step 2: Wire all bin entrypoints
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] All nine bin files use shared helper
-- [ ] `spine-gate.mjs` variant normalized
+- [x] All nine bin files use shared helper
+- [x] `spine-gate.mjs` variant normalized
 - [ ] Code review completed
 
 ---

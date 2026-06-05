@@ -9,8 +9,8 @@
  */
 
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
+import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { printRulesHelp, runSpineRules } from "../src/cli/rules.mjs";
 
 export { printRulesHelp, runSpineRules } from "../src/cli/rules.mjs";
@@ -30,9 +30,6 @@ async function main() {
 	}
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const isMainModule =
-	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	main();
 }

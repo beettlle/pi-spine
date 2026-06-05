@@ -5,7 +5,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 
 import { commandExists, getVersion } from "./get-version.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
@@ -15,6 +14,7 @@ import {
 	FAIL,
 	getMinPiVersion,
 	getPackageVersion,
+	isCliEntrypoint,
 	OK,
 	PACKAGE_ROOT,
 	WARN,
@@ -38,7 +38,6 @@ import {
 const MIN_NODE_MAJOR = 22;
 const nodeMajor = parseInt(process.versions.node.split(".")[0], 10);
 
-const __filename = fileURLToPath(import.meta.url);
 const SPINE_CLI_ENTRY = path.join(PACKAGE_ROOT, "bin", "spine.mjs");
 
 const REQUIRED_AGENT_FILES = ["worker.md", "reviewer.md", "supervisor.md"];
@@ -375,8 +374,6 @@ export function cmdDoctor() {
 	process.exit(1);
 }
 
-const isMainModule =
-	process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-if (isMainModule) {
+if (isCliEntrypoint(import.meta.url)) {
 	cmdDoctor();
 }
