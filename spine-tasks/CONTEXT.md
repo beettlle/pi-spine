@@ -310,16 +310,17 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-109 | Fail-loud PROMPT validation in planner/plan | **Staged** | — |
-| SP-110 | Fix glob scope regex escape | **Staged** | — |
-| SP-111 | Orphan detect: PID-less ghost running | **Staged** | — |
-| SP-112 | Spine-config testing defaults + doctor warn | **Staged** | — |
-| SP-113 | Strangler split resume-multi.mjs | **Staged** | — |
-| SP-114 | Coverage TEST_GLOBS parity with npm test | **Staged** | — |
-| SP-115 | Orphan diagnosis taxonomy (worker_orphaned) | **Staged** | SP-111 |
-| SP-116 | batch-state-io extract + git error surfacing | **Staged** | — |
-| SP-117 | Detached enginePid persistence symmetry | **Staged** | SP-111 |
-| SP-118 | Adoption docs + test script hygiene | **Staged** | — |
+| SP-109 | Fail-loud PROMPT validation in planner/plan | **Done** | — |
+| SP-110 | Fix glob scope regex escape | **Done** | — |
+| SP-111 | Orphan detect: PID-less ghost running | **Done** | — |
+| SP-112 | Spine-config testing defaults + doctor warn | **Done** | — |
+| SP-113 | Strangler split resume-multi.mjs | **Done** | — |
+| SP-114 | Coverage TEST_GLOBS parity with npm test | **Done** | — |
+| SP-115 | Orphan diagnosis taxonomy (worker_orphaned) | **Done** | SP-111 |
+| SP-116 | batch-state-io extract + git error surfacing | **Done** | — |
+| SP-117 | Detached enginePid persistence symmetry | **Done** | SP-111 |
+| SP-118 | Adoption docs + test script hygiene | **Done** | — |
+| SP-119 | Require Testing step in docs-only task packets | **Staged** | — |
 
 **Suggested run order:**
 
