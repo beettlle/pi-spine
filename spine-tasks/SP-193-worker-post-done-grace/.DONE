@@ -1,2 +1,2 @@
-Completed: 2026-06-11T22:55:00Z
-Task: SP-193 — Post-.DONE worker grace watchdog
+Completed: 2026-06-11T23:10:00.000Z
+Task: feat(SP-193) post-done grace watchdog — hung pi child after .DONE no longer wedges batch
