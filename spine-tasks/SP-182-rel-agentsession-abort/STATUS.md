@@ -1,7 +1,7 @@
 # SP-182: agentSession abort fail-loud — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-11
 **Review Level:** 2
 **Size:** S
@@ -9,7 +9,7 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
 ---
 
@@ -24,3 +24,4 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-11 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-11 | Pre-landed in 57e1512; operator .DONE | Done |

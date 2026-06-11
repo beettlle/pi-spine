@@ -449,35 +449,35 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-171 | Reliability handoff doc | **Staged** | SP-170 |
-| SP-172 | Explore findings | **Staged** | SP-171 |
-| SP-173 | Journal timeline reader | **Staged** | SP-172 |
-| SP-174 | Journal rebuild core | **Staged** | SP-173 |
-| SP-175 | Reconcile state drift | **Staged** | SP-174 |
-| SP-176 | Atomic task transition | **Staged** | SP-175 |
-| SP-177 | Wire atomic transitions | **Staged** | SP-176 |
-| SP-178 | Real-pi CI workflow | **Staged** | SP-172 |
-| SP-179 | Multi-task real-pi fixture | **Staged** | SP-178 |
+| SP-171 | Reliability handoff doc | **Done** | SP-170 |
+| SP-172 | Explore findings | **Done** | SP-171 |
+| SP-173 | Journal timeline reader | **Done** | SP-172 |
+| SP-174 | Journal rebuild core | **Done** | SP-173 |
+| SP-175 | Reconcile state drift | **Done** | SP-174 |
+| SP-176 | Atomic task transition | **Done** | SP-175 |
+| SP-177 | Wire atomic transitions | **Done** | SP-176 |
+| SP-178 | Real-pi CI workflow | **Done** | SP-172 |
+| SP-179 | Multi-task real-pi fixture | **Done** | SP-178 |
 | SP-180 | Consumer pilot template | **Staged** | SP-179 |
-| SP-181 | agentSession doctor | **Staged** | SP-177 |
-| SP-182 | agentSession abort fail-loud | **Staged** | SP-181 |
+| SP-181 | agentSession doctor | **Done** | SP-177 |
+| SP-182 | agentSession abort fail-loud | **Done** | SP-181 |
 | SP-183 | agentSession dogfood report | **Staged** | SP-182 |
-| SP-184 | Resume wait-terminal default | **Staged** | SP-175 |
-| SP-185 | Doctor worktree health | **Staged** | SP-172 |
-| SP-186 | Attached-first runbook | **Staged** | SP-185 |
-| SP-187 | npm publish prep | **Staged** | SP-180 |
-| SP-188 | Auto wave integrate | **Staged** | SP-177 |
-| SP-189 | Contract required flip | **Staged** | SP-170 |
+| SP-184 | Resume wait-terminal default | **Done** | SP-175 |
+| SP-185 | Doctor worktree health | **Done** | SP-172 |
+| SP-186 | Attached-first runbook | **Done** | SP-185 |
+| SP-187 | npm publish prep | **Done** | SP-180 |
+| SP-188 | Auto wave integrate | **Done** | SP-177 |
+| SP-189 | Contract required flip | **Done** | SP-170 |
 | SP-190 | Handoff autoWriteOn | **Staged** | SP-189 |
 | SP-191 | CONTEXT Phase 22 tracking | **Staged** | leaves |
 
 **Phase 22 exit criteria:**
 
-- [ ] Journal rebuild parity on incident fixtures
-- [ ] `state_drift` in `spine status --diagnose`
+- [x] Journal rebuild parity on incident fixtures
+- [x] `state_drift` in `spine status --diagnose`
 - [ ] Real-pi CI workflow green or documented skip
 - [ ] Tier 3 consumer pilot template filled
-- [ ] Attached-first guidance in operator runbook
+- [x] Attached-first guidance in operator runbook
 
 **Suggested batches:** See handoff §5 — serial Waves B–C before real-pi sign-off (Wave D).
 
