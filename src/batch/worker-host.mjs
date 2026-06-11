@@ -31,6 +31,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
+const POST_DONE_KILL_BACKOFF_MS = 5_000;
 
 /**
  * @param {string} cmd
@@ -217,6 +218,24 @@ function resolveWorkerPhase({
 }
 
 /**
+ * SIGTERM then SIGKILL when a worker stays alive after post-.DONE grace.
+ *
+ * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
+ * @param {Promise<{ exitCode: number; output: string }>} childDone
+ */
+async function terminateHungWorkerChild(child, childDone) {
+	child.kill("SIGTERM");
+	const raced = await Promise.race([childDone, sleep(POST_DONE_KILL_BACKOFF_MS)]);
+	if (raced && typeof raced === "object" && "exitCode" in raced) {
+		return raced;
+	}
+	if (child.exitCode === null && typeof child.kill === "function") {
+		child.kill("SIGKILL");
+	}
+	return childDone;
+}
+
+/**
  * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
  */
 function collectChildOutput(child) {
@@ -376,6 +395,8 @@ export async function runWorker({
 	let activitySinceCheckpoint = false;
 	let checkpointWarningSent = false;
 	let stallWarningSent = false;
+	let postDoneStartedAt = null;
+	let postDoneTerminated = false;
 
 	const child = spawnWorkerHandle({
 		worktreePath,
@@ -400,8 +421,11 @@ export async function runWorker({
 	const childDone = collectChildOutput(child);
 
 	while (true) {
-		if (fs.existsSync(donePath)) {
-			break;
+		const doneOnDisk = fs.existsSync(donePath);
+		const now = Date.now();
+
+		if (doneOnDisk && postDoneStartedAt === null) {
+			postDoneStartedAt = now;
 		}
 
 		if (projectRoot && batchId) {
@@ -426,7 +450,30 @@ export async function runWorker({
 			}
 		}
 
-		const now = Date.now();
+		if (doneOnDisk) {
+			if (child.exitCode !== null) {
+				break;
+			}
+			const graceElapsed = now - (postDoneStartedAt ?? now);
+			if (graceElapsed >= stallConfig.postDoneGraceMs) {
+				if (projectRoot && batchId) {
+					appendJournalEvent(projectRoot, batchId, "worker.post_done_terminated", {
+						laneNumber,
+						taskId,
+						correlationId: laneCorrelationId,
+						graceElapsedMs: graceElapsed,
+						postDoneGraceMs: stallConfig.postDoneGraceMs,
+						childPid: child.pid ?? null,
+					});
+				}
+				postDoneTerminated = true;
+				await terminateHungWorkerChild(child, childDone);
+				break;
+			}
+			await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
+			continue;
+		}
+
 		const signals = collectProgressSignals({
 			worktreePath,
 			taskFolder,
@@ -560,7 +607,22 @@ export async function runWorker({
 
 	const { exitCode, output } = await childDone;
 	const doneFound = fs.existsSync(donePath);
-	const ok = doneFound && exitCode === 0;
+	if (postDoneTerminated && !doneFound) {
+		return buildWorkerFailureResult({
+			rawOutput: output,
+			classification: "failed",
+			exitCode,
+			mode: workerMode,
+			doneFound: false,
+			projectRoot,
+			batchId,
+			laneNumber,
+			taskId,
+			laneCorrelationId,
+			config,
+		});
+	}
+	const ok = doneFound && (exitCode === 0 || postDoneTerminated);
 	let classification = ok ? "succeeded" : "failed";
 	if (!ok && useLaunchScript && !childPastPreflight) {
 		classification = "launch_failed";
