@@ -12,7 +12,8 @@ import { validatePiSpineRootConfig } from "../src/config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../src/config/worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "../src/config/worktree-setup-hook.mjs";
 import { discoverTasks } from "../src/tasks/packet/discover.mjs";
-import { parseScope } from "../src/planner/scope.mjs";
+import { NO_PENDING_TASKS_ERROR } from "../src/planner/scope.mjs";
+import { summarizePendingScope } from "../src/planner/pending.mjs";
 import { validatePrompt } from "../src/tasks/packet/validate-prompt.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
@@ -486,8 +487,16 @@ export function checkTasksValidate(ctx) {
 
 	try {
 		const discovered = discoverTasks(tasksRootPath);
-		const scopeResult = parseScope("pending", { tasksRoot: tasksRootPath, discoveredTasks: discovered });
-		const selectedTaskIds = new Set(scopeResult.taskIds);
+		const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
+		if (pendingIds.length === 0) {
+			return makeCheck(
+				"tasks-validate",
+				true,
+				"no pending tasks (all discovered tasks have .DONE)",
+			);
+		}
+
+		const selectedTaskIds = new Set(pendingIds);
 		/** @type {string[]} */
 		const failures = [];
 
@@ -517,7 +526,15 @@ export function checkTasksValidate(ctx) {
 			details: { failures },
 		});
 	} catch (err) {
-		return makeCheck("tasks-validate", false, `tasks validate failed: ${err.message}`, {
+		const message = err?.message ?? String(err);
+		if (message === NO_PENDING_TASKS_ERROR) {
+			return makeCheck(
+				"tasks-validate",
+				true,
+				"no pending tasks (all discovered tasks have .DONE)",
+			);
+		}
+		return makeCheck("tasks-validate", false, `tasks validate failed: ${message}`, {
 			suggestedCommand: "spine tasks validate pending",
 		});
 	}
@@ -547,6 +564,21 @@ export function runPreflightPlanCheck(ctx) {
 	}
 
 	try {
+		const discovered = discoverTasks(tasksRootPath);
+		const { pendingIds, excludedCount } = summarizePendingScope(discovered, tasksRootPath);
+		if (pendingIds.length === 0) {
+			const maxParallel = config.lanes?.maxParallel ?? 1;
+			return {
+				status: "ok",
+				message: [
+					"Spine plan — pending",
+					`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
+					`${excludedCount} excluded (.DONE on disk)`,
+				].join("\n"),
+				details: { waves: 0, pendingCount: 0, excludedCount },
+			};
+		}
+
 		const plan = buildPlan({ scope: "pending", config, tasksRoot: tasksRootPath });
 		const waveCount = plan.waves?.length ?? 0;
 		return {
@@ -556,6 +588,18 @@ export function runPreflightPlanCheck(ctx) {
 		};
 	} catch (err) {
 		const msg = err?.message ?? String(err);
+		if (msg === NO_PENDING_TASKS_ERROR) {
+			const maxParallel = config.lanes?.maxParallel ?? 1;
+			return {
+				status: "ok",
+				message: [
+					"Spine plan — pending",
+					`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
+					"All discovered tasks have .DONE on disk",
+				].join("\n"),
+				details: { waves: 0, pendingCount: 0 },
+			};
+		}
 		return {
 			status: "error",
 			message: `Failed to build plan: ${msg}`,

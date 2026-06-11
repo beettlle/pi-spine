@@ -398,3 +398,34 @@ test("runBatchPreflight fails on limbo fixture with dismiss suggestion", async (
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("runBatchPreflight passes when all tasks have .DONE (zero pending)", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-zero-pending-");
+	try {
+		writeTask(projectRoot, "TP-001", "done-task");
+		writeDependencies(projectRoot, { "TP-001": [] });
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "TP-001-done-task", ".DONE"),
+			"2026-06-01T00:00:00.000Z",
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const configResult = loadSpineConfig(projectRoot);
+		const tasksValidate = checkTasksValidate({ projectRoot, configResult });
+		assert.equal(tasksValidate.ok, true);
+		assert.match(tasksValidate.message, /no pending tasks/i);
+
+		const plan = runPreflightPlanCheck({ projectRoot, configResult });
+		assert.equal(plan.status, "ok");
+		assert.match(plan.message, /0 task\(s\)/);
+
+		const result = runBatchPreflight({ projectRoot, skipDoctor: true });
+		assert.equal(result.ok, true);
+		const planCheck = result.checks.find((check) => check.id === "plan");
+		assert.equal(planCheck?.ok, true);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
