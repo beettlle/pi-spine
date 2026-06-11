@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { gitExec } from "./git-exec.mjs";
 import { loadTaskPacket } from "../tasks/packet/index.mjs";
 import {
 	parseRulesManifestJson,
@@ -36,16 +37,7 @@ import { runWorker } from "./worker-host.mjs";
  * @param {{ throwOnError?: boolean }} [options]
  */
 function git(projectRoot, args, { throwOnError = true } = {}) {
-	try {
-		return execFileSync("git", args, {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "pipe"],
-		}).trim();
-	} catch (err) {
-		if (throwOnError) throw err;
-		return null;
-	}
+	return gitExec(projectRoot, args, { throwOnError, projectRoot });
 }
 
 /**
@@ -125,10 +117,7 @@ export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
 	}
 
 	writeRulesManifestAtomic(projectRoot, resolved.manifest);
-	execFileSync("git", ["add", RULES_MANIFEST_REL_PATH], {
-		cwd: projectRoot,
-		stdio: "ignore",
-	});
+	gitExec(projectRoot, ["add", RULES_MANIFEST_REL_PATH], { projectRoot });
 	return {
 		ok: true,
 		autoResolved: true,

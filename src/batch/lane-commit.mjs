@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { resolveGitCommitEnv } from "./git-commit-env.mjs";
+import { gitExec } from "./git-exec.mjs";
 
 /**
  * @param {string} worktreePath
@@ -13,12 +13,7 @@ import { resolveGitCommitEnv } from "./git-commit-env.mjs";
  * @param {string} [projectRoot]
  */
 function git(worktreePath, args, projectRoot) {
-	return execFileSync("git", args, {
-		cwd: worktreePath,
-		encoding: "utf-8",
-		stdio: ["ignore", "pipe", "pipe"],
-		env: { ...process.env, ...resolveGitCommitEnv(projectRoot ?? worktreePath) },
-	}).trim();
+	return gitExec(worktreePath, args, { projectRoot: projectRoot ?? worktreePath });
 }
 
 /**

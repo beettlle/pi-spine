@@ -3,6 +3,7 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { gitExec } from "./git-exec.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
@@ -14,11 +15,7 @@ import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcil
  * @param {string[]} args
  */
 function git(projectRoot, args) {
-	return execFileSync("git", args, {
-		cwd: projectRoot,
-		encoding: "utf-8",
-		stdio: ["ignore", "pipe", "pipe"],
-	}).trim();
+	return gitExec(projectRoot, args, { projectRoot });
 }
 
 /**
