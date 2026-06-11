@@ -306,6 +306,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			taskId,
 			batchId,
 			taskFolder: taskFolderInWorktree,
+			projectRoot,
 		});
 		if (!laneCommit.ok) {
 			task.status = "failed";

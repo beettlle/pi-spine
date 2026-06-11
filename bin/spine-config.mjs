@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
+import { applyConfigDefaults } from "../src/config/merge-defaults.mjs";
 import { validateWorkerBackendConfig } from "../src/config/worker-backend.mjs";
 import { validateWorkerContextConfig } from "../src/config/worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "../src/config/worker-launch-script.mjs";
@@ -77,7 +78,10 @@ export function loadSpineConfig(projectRoot) {
 		return fileResult;
 	}
 
-	const envResult = applyEnvOverrides(fileResult.config, projectRoot);
+	const config = structuredClone(fileResult.config);
+	applyConfigDefaults(config);
+
+	const envResult = applyEnvOverrides(config, projectRoot);
 	if (!envResult.ok) {
 		return {
 			configPath: fileResult.configPath,
@@ -89,7 +93,7 @@ export function loadSpineConfig(projectRoot) {
 	return {
 		configPath: fileResult.configPath,
 		config: envResult.config,
-		fileConfig: fileResult.config,
+		fileConfig: config,
 		sources: envResult.sources,
 		envVars: envResult.envVars,
 		error: null,

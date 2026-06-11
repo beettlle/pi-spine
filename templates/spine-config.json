@@ -40,6 +40,18 @@
     "collectBuildEvidence": true,
     "collectTestEvidence": true
   },
+  "review": {
+    "requireFinalVerdict": true,
+    "maxFinalAttempts": 3
+  },
+  "handoff": {
+    "path": ".spine/handoff.md",
+    "autoWriteOn": []
+  },
+  "metrics": {
+    "enabled": true,
+    "path": ".spine/run-metrics.jsonl"
+  },
   "worktreeSetupHook": "",
   "worktreeSetupIgnorePaths": [],
   "referenceDocs": [],

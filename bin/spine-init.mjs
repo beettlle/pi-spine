@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateSpineConfig } from "./spine-config.mjs";
+import { applyConfigDefaults } from "../src/config/merge-defaults.mjs";
 import { discoverCursorRules } from "../src/config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../src/config/cursor-rules/profile.mjs";
 
@@ -153,6 +154,7 @@ export function applySpineInitDefaults(config) {
 	const standards = Array.isArray(config.standards) ? config.standards : [];
 	const neverLoad = Array.isArray(config.neverLoad) ? config.neverLoad : [];
 	config.standards = standards.filter((entry) => !neverLoad.includes(entry));
+	applyConfigDefaults(config);
 	return config;
 }
 

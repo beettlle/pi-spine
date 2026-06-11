@@ -557,6 +557,7 @@ export async function runTaskOnLane({
 		taskId,
 		batchId,
 		taskFolder: taskFolderInWorktree,
+		projectRoot,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";

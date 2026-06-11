@@ -65,6 +65,7 @@ async function markTaskCompleteFromDisk({
 		taskId,
 		batchId,
 		taskFolder: taskFolderInWorktree,
+		projectRoot,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";
@@ -266,6 +267,7 @@ async function runResumedTaskOnLane({
 		taskId,
 		batchId,
 		taskFolder: taskFolderInWorktree,
+		projectRoot,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";

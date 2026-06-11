@@ -5,16 +5,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 
 /**
  * @param {string} worktreePath
  * @param {string[]} args
+ * @param {string} [projectRoot]
  */
-function git(worktreePath, args) {
+function git(worktreePath, args, projectRoot) {
 	return execFileSync("git", args, {
 		cwd: worktreePath,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
+		env: { ...process.env, ...resolveGitCommitEnv(projectRoot ?? worktreePath) },
 	}).trim();
 }
 
@@ -115,9 +118,11 @@ export function countCommitsAhead(projectRoot, baseRef, headRef) {
  * @param {string} params.taskId
  * @param {string} params.batchId
  * @param {string} params.taskFolder Absolute path to task folder (for `.DONE` check)
+ * @param {string} [params.projectRoot] Main repo root for git identity resolution
  * @returns {{ ok: true, committed: boolean, commitSha?: string } | { ok: false, error: string, failureClass: string }}
  */
-export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, taskFolder }) {
+export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, taskFolder, projectRoot }) {
+	const identityRoot = projectRoot ?? worktreePath;
 	try {
 		const porcelain = gitPorcelain(worktreePath);
 		if (!porcelain) {
@@ -133,14 +138,14 @@ export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, 
 			};
 		}
 
-		const currentBranch = git(worktreePath, ["rev-parse", "--abbrev-ref", "HEAD"]);
+		const currentBranch = git(worktreePath, ["rev-parse", "--abbrev-ref", "HEAD"], identityRoot);
 		if (currentBranch !== taskBranch) {
-			git(worktreePath, ["checkout", taskBranch]);
+			git(worktreePath, ["checkout", taskBranch], identityRoot);
 		}
-		git(worktreePath, ["add", "-A"]);
+		git(worktreePath, ["add", "-A"], identityRoot);
 		const message = `feat(${taskId}): batch ${batchId} worker completion`;
-		git(worktreePath, ["commit", "-m", message]);
-		const commitSha = git(worktreePath, ["rev-parse", "HEAD"]);
+		git(worktreePath, ["commit", "-m", message], identityRoot);
+		const commitSha = git(worktreePath, ["rev-parse", "HEAD"], identityRoot);
 		return { ok: true, committed: true, commitSha };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
