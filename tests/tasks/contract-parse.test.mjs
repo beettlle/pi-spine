@@ -152,3 +152,74 @@ test("CONTRACT_FIELD_NAMES lists all normative contract fields", () => {
 		"artifactsMustExist",
 	]);
 });
+
+test("parseContract resolves see File Scope to File Scope bullet paths", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`true\` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| artifactsMustExist | — |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.deepEqual(parsed.fileScopeMustChange, ["src/example.mjs"]);
+	assert.deepEqual(parsed.fileScopeMustNotChange, []);
+	assert.deepEqual(parsed.artifactsMustExist, []);
+});
+
+test("parseContract excludes optional File Scope bullets from see File Scope expansion", () => {
+	const prompt = `# Task: SP-999 — Contract fixture
+
+## Mission
+x
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/required.mjs\`
+- \`src/optional.mjs\` (optional hook)
+- \`src/conditional.mjs\` (event type only if new)
+
+${`## Contract
+
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | see File Scope |
+`}
+
+## Steps
+### Step 1: Testing & Verification
+- [ ] t
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- n
+`;
+
+	const parsed = parseContract(prompt);
+	assert.deepEqual(parsed.fileScopeMustChange, ["src/required.mjs"]);
+});
+
+test("parseContract treats em dash contract cells as empty path lists", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | — |
+| fileScopeMustNotChange | — |
+| artifactsMustExist | — |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.deepEqual(parsed.fileScopeMustChange, []);
+	assert.deepEqual(parsed.fileScopeMustNotChange, []);
+	assert.deepEqual(parsed.artifactsMustExist, []);
+});

@@ -57,7 +57,8 @@ function buildPrompt(t) {
 	const relTag = t.rel ? ` (SP-REL-${String(t.rel).padStart(3, "0")})` : "";
 	const rs = reviewScore(t.review);
 	const testCmd = t.testCmd ?? DEFAULT_TEST;
-	const contractFileScope = t.review === 0 && t.testCmd === "true" ? "—" : "see File Scope";
+	const contractFileScope =
+		t.review === 0 && t.testCmd === "true" ? "—" : t.scope.map((s) => `\`${s}\``).join(", ");
 
 	return `# Task: SP-${t.id} — ${t.title}
 
@@ -100,9 +101,9 @@ ${scopeLines(t.scope)}
 |-------|-------|
 | testCommand | \`${testCmd}\` |
 | fileScopeMustChange | ${contractFileScope} |
-| fileScopeMustNotChange | — |
+| fileScopeMustNotChange | |
 ${t.review > 0 ? "| minLineCoverage | 77 |" : ""}
-| artifactsMustExist | — |
+| artifactsMustExist | |
 
 ## Steps
 

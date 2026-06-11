@@ -53,3 +53,10 @@ test("parseAggregateLineCoverage reads all files line percent", () => {
 test("parseAggregateLineCoverage returns null when summary missing", () => {
 	assert.equal(parseAggregateLineCoverage("no coverage here"), null);
 });
+
+test("parseAggregateLineCoverage reads coverage:check summary line", () => {
+	assert.equal(
+		parseAggregateLineCoverage("Line coverage (in-scope): 83.64% (threshold: 77%)"),
+		83.64,
+	);
+});

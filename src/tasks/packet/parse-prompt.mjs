@@ -30,6 +30,8 @@ const CONTRACT_TABLE_HEADER_RE = /^\|\s*Field\s*\|\s*Value\s*\|$/i;
 const CONTRACT_TABLE_SEPARATOR_RE = /^\|[\s\-:|]+\|$/;
 const CONTRACT_TABLE_ROW_RE = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/;
 const TEST_COMMAND_MAX_LENGTH = 500;
+const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
+const CONTRACT_NONE_VALUES = new Set(["—", "-", "none", "n/a", "na"]);
 
 /**
  * @param {string} markdown PROMPT.md contents
@@ -119,6 +121,7 @@ export function validatePrompt(markdown) {
 export function parseContract(markdown) {
 	const sections = extractH2Sections(markdown);
 	const contractSection = sections.Contract ?? "";
+	const fileScopePaths = parseBulletPaths(sections["File Scope"] ?? "");
 
 	/** @type {ReturnType<typeof parseContract>} */
 	const parsed = {
@@ -161,7 +164,28 @@ export function parseContract(markdown) {
 		applyContractField(parsed, field, value);
 	}
 
+	resolveContractFileScopeReferences(parsed, fileScopePaths);
+
 	return parsed;
+}
+
+/**
+ * Expand contract placeholders such as "see File Scope" into concrete paths.
+ *
+ * @param {ReturnType<typeof parseContract>} parsed
+ * @param {string[]} fileScopePaths
+ */
+export function resolveContractFileScopeReferences(parsed, fileScopePaths) {
+	/** @type {string[]} */
+	const expanded = [];
+	for (const pattern of parsed.fileScopeMustChange ?? []) {
+		if (SEE_FILE_SCOPE_RE.test(pattern.trim())) {
+			expanded.push(...fileScopePaths);
+			continue;
+		}
+		expanded.push(pattern);
+	}
+	parsed.fileScopeMustChange = [...new Set(expanded)];
 }
 
 /**
@@ -285,7 +309,15 @@ function parseContractPathList(raw) {
 	return raw
 		.split(",")
 		.map((part) => parseContractScalar(part.trim()))
-		.filter(Boolean);
+		.filter((part) => part && !isContractNoneValue(part));
+}
+
+/**
+ * @param {string} value
+ */
+function isContractNoneValue(value) {
+	const normalized = String(value ?? "").trim().toLowerCase();
+	return !normalized || CONTRACT_NONE_VALUES.has(normalized);
 }
 
 /**
@@ -359,6 +391,9 @@ function parseSteps(stepsSection) {
 function parseBulletPaths(section) {
 	const paths = [];
 	for (const line of section.split(/\r?\n/)) {
+		if (/\(optional\b/i.test(line) || /\bonly if\b/i.test(line)) {
+			continue;
+		}
 		const match = line.match(/^-\s+`([^`]+)`/);
 		if (match) paths.push(match[1]);
 	}

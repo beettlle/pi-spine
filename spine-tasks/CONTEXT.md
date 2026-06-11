@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-11
 **Status:** Active
-**Next Task ID:** SP-199
+**Next Task ID:** SP-200
 
 ---
 
@@ -484,8 +484,9 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-196 | Worker prompt review delegation | **Staged** | SP-195 |
 | SP-197 | SP-190 wedge incident fixture | **Staged** | SP-193, SP-195 |
 | SP-198 | Worker wedge epic capstone | **Staged** | SP-193–197 |
+| SP-199 | Contract placeholder resolution | **Staged** | SP-193 |
 
-**Suggested batches:** Wave A: `SP-193` → Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` after SP-193 lands.
+**Suggested batches:** Wave A: `SP-193` → Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` after SP-193 lands. **SP-199** follows SP-193 (migrate all contract tables + validate-time guards).
 
 **Phase 22 exit criteria:**
 
