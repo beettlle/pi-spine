@@ -49,6 +49,17 @@ Override tasks root at runtime with `SPINE_TASKS_ROOT` (env > file).
 
 Use this workflow when the user supplies a PRD, epic brief, or feature spec instead of a single task description.
 
+### Step 0: Explore (optional — brownfield / large epics)
+
+**When:** Brownfield repo, L/XL epic, or uncertain File Scope. **Skip** for greenfield S/M tasks with a clear PRD.
+
+1. Read-only investigation — no commits, no file edits.
+2. Write `{tasksRoot}/_explore/{slug}/findings.md` using [references/explore-template.md](references/explore-template.md).
+3. Link the slug in `{tasksRoot}/CONTEXT.md` (date + path).
+4. Use **Suggested file scopes** from findings when slicing tasks in Step B.
+
+See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-execution-workflow.md) for optional zero-pi upstream composition (pi-spine does not invoke zero-pi).
+
 ### Step A: Read sources
 
 1. PRD / brief / epic doc (user-provided path)
@@ -73,7 +84,7 @@ After creating packets:
 
 1. **`{tasksRoot}/CONTEXT.md`** — increment `Next Task ID`; add rows to the phase table for new tasks
 2. **`{tasksRoot}/dependencies.json`** — add edges for every dependency (machine-parseable)
-3. Report launch commands: `spine plan pending` then `spine batch start <id>`
+3. Report launch commands: `spine tasks validate pending`, `spine plan pending`, then `spine batch start <id>`
 
 **Example decomposition** (feature brief → three tasks):
 
@@ -142,6 +153,7 @@ If the task depends on others, update **both**:
 ### Step 7: Report launch command
 
 ```bash
+spine tasks validate pending
 spine plan pending
 spine preflight
 SPINE_WORKER_STUB=1 spine batch start SP-042   # stub / CI
@@ -164,6 +176,8 @@ In pi: `/spine-plan pending` then `/spine SP-042` (single-task) or `spine batch 
 | 3 | Full | Plan + code + test review |
 
 Workers call **`spine_review_step`** (Pi tool) or `spine review step --step N [--type plan|code]`.
+
+When Review Level ≥ 1 (v1.3), workers also run a **final** review (`--type final`) before `.DONE`. Verdicts: `PASS`, `REVISE`, or `REPLAN` (scope wrong — operator edits PROMPT then retries). See [PRD v1.3](../docs/PRD-v1.3-upstream-execution-bridge.md) FR-UXB-04.
 
 ### Scoring (0–2 per dimension)
 

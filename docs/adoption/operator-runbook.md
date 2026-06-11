@@ -12,6 +12,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 |-----|------|
 | [local-install.md](./local-install.md) | First install from git checkout |
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
+| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional zero-pi upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
 
 **CLI choice:** Until npm publish, prefer a pinned binary so PATH drift does not bite you:
@@ -99,14 +100,28 @@ Glob-triggered language packs match PROMPT **File Scope** via micromatch. Empty 
 
 ---
 
-## 2. Preflight
+## 2. Task validation and preflight
+
+### 2.1 Validate task packets (v1.3 — FR-UXB-02)
+
+Run **before** `spine batch start` when authoring or editing `PROMPT.md` files:
+
+```bash
+spine tasks validate pending
+spine tasks validate pending --json
+```
+
+Catches invalid headings, missing sections, missing Testing step, and Size XL — the same rules as the planner (`prompt_parse_failed` at worker launch).
+
+### 2.2 Preflight
 
 Run **before every batch** (FR-BATCH-11). Fails fast on dirty git, active batch, broken deps, or orchestrator conflict.
 
 ```bash
-spine plan pending          # optional — see waves and lanes
+spine tasks validate pending  # v1.3 — explicit validate before preflight
+spine plan pending            # optional — see waves and lanes
 spine preflight
-spine preflight --json      # automation / CI
+spine preflight --json        # automation / CI
 ```
 
 | Check | What it catches |
@@ -115,9 +130,10 @@ spine preflight --json      # automation / CI
 | Git clean | Uncommitted changes in working tree |
 | No active batch | Stale `.spine/batch-state.json` or Taskplane `.pi/batch-state.json` |
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
+| Tasks validate (v1.3) | Invalid PROMPT packets for pending scope |
 | Wave plan | Same planner output as `spine plan` (invalid PROMPTs fail here with actionable errors) |
 
-When `spine plan` or preflight **plan** fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files (heading em dash, required sections, testing step) before retrying. Scoped plans only validate selected tasks; `spine plan all` fails if any discovered packet is invalid.
+When validate, `spine plan`, or preflight fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files (heading em dash, required sections, testing step) before retrying. Scoped plans only validate selected tasks; `spine plan all` fails if any discovered packet is invalid.
 
 Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
 
@@ -322,6 +338,27 @@ spine batch force-merge --wave 0    # mixed-outcome override, then resume --forc
 
 In pi: `/spine-retry-task TP-012`, `/spine-skip-task TP-012`.
 
+### Replan (v1.3 — FR-UXB-04)
+
+When final review returns `REPLAN` (wrong scope in `PROMPT.md`), `spine status` reports `diagnosis: needs_replan`:
+
+1. Read reviewer feedback in `{taskFolder}/.reviews/final-*.md`.
+2. Edit `PROMPT.md` (scope, steps, or dependencies).
+3. `spine batch retry <taskId>` then `spine batch resume`.
+
+Alternatives: `spine batch skip <taskId>` to unblock the wave, or abandon via dismiss per §18.6.
+
+### Operator handoff (v1.3 — FR-UXB-05)
+
+Before closing your IDE or when pausing overnight:
+
+```bash
+spine handoff              # writes .spine/handoff.md
+spine next                 # suggested next command
+```
+
+In pi: `/spine-handoff`. Handoff summarizes batch diagnosis and pending tasks — not full pi conversation history (see optional zero-pi `/zero-resume` for session-level handoff).
+
 ### Pause and abort
 
 ```bash
@@ -404,6 +441,17 @@ Configure port in `.spine/spine-config.json`:
 ```
 
 When `diagnosis` is `needs_integrate`, the banner uses integrate styling even if raw `phase` is `completed`.
+
+### 7.1 Run metrics (v1.3 — FR-UXB-06)
+
+After batches complete, inspect per-task outcomes (model, duration, final verdict):
+
+```bash
+spine metrics show
+spine metrics show --batch 20260610T140000 --json
+```
+
+Data appends to `.spine/run-metrics.jsonl`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4.
 
 ---
 

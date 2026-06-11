@@ -483,7 +483,7 @@ export function runPreflightPlanCheck(ctx) {
 	}
 
 	try {
-		const plan = buildPlan({ scope: "all", config, tasksRoot: tasksRootPath });
+		const plan = buildPlan({ scope: "pending", config, tasksRoot: tasksRootPath });
 		const waveCount = plan.waves?.length ?? 0;
 		return {
 			status: "ok",

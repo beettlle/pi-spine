@@ -5,6 +5,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { destroyGitRepo, initGitRepo } from "./helpers/git-fixture.mjs";
+import { loadSpineConfig } from "../bin/spine-config.mjs";
 import {
 	checkDependenciesJson,
 	checkDoctor,
@@ -239,6 +240,56 @@ test("runBatchPreflight fails when git working tree is dirty", async () => {
 		assert.equal(result.ok, false);
 		assert.equal(result.exitCode, 1);
 		assert.ok(result.checks.find((check) => check.id === "git-clean" && !check.ok));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runPreflightPlanCheck validates pending scope only (SP-122)", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-pending-");
+	try {
+		const tasksRoot = path.join(projectRoot, "spine-tasks");
+
+		// Done task with invalid PROMPT (missing Testing) — must not fail preflight plan check.
+		const doneFolder = path.join(tasksRoot, "TP-001-done-invalid");
+		fs.mkdirSync(doneFolder, { recursive: true });
+		fs.writeFileSync(
+			path.join(doneFolder, "PROMPT.md"),
+			`# Task: TP-001 — done invalid
+
+## Mission
+Legacy done task.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/legacy.txt\`
+
+## Steps
+### Step 0: Implement
+- [ ] a
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- do not expand scope
+`,
+			"utf-8",
+		);
+		fs.writeFileSync(path.join(doneFolder, ".DONE"), "2026-06-01T00:00:00.000Z", "utf-8");
+
+		writeTask(projectRoot, "TP-002", "pending-valid");
+		writeDependencies(projectRoot, { "TP-001": [], "TP-002": [] });
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const configResult = loadSpineConfig(projectRoot);
+		const plan = runPreflightPlanCheck({ projectRoot, configResult });
+		assert.equal(plan.status, "ok");
+		assert.ok(String(plan.message).includes("TP-002"));
+		assert.ok(!String(plan.message).includes("TP-001"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

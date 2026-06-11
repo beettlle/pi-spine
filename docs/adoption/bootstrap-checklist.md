@@ -17,6 +17,8 @@ Greenfield and Taskplane migration paths intentionally use different default fol
 
 Both roots use the same packet format (`PROMPT.md`, `STATUS.md`, `dependencies.json`). Completion markers live at `<tasksRoot>/<task-id>/.DONE`. `spine doctor` and `spine plan` read the configured root — mixing folders without updating config will hide tasks.
 
+**Upstream authoring (v1.3):** Before your first batch, read [upstream-execution-workflow.md](./upstream-execution-workflow.md) — how PRDs (or optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) explore/plan) become task packets, then `spine tasks validate` → `spine batch start`. pi-spine does not depend on zero-pi.
+
 ---
 
 ## Adoption fixture (smoke target)

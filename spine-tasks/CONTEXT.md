@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-05
+**Last Updated:** 2026-06-11
 **Status:** Active
-**Next Task ID:** SP-122
+**Next Task ID:** SP-171
 
 ---
 
@@ -332,7 +332,59 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|--------|------|
 | SP-120 | Batch retry clears stale failed task state | **Done** | — |
 | SP-121 | Auto-resolve rules-manifest merge conflicts | **Done** | — |
-| SP-122 | Preflight plan validates pending scope only | **Staged** | — |
+| SP-122 | Preflight plan validates pending scope only | **Done** | — |
+
+### Phase 20 — v2.0 CDO (coarse) — Cancelled
+
+**Archived:** 2026-06-11 → `spine-tasks/_archive/phase20-coarse/` (SP-123–SP-140).  
+**Reason:** M/L packets replaced by S-sized Phase 20b (SP-141–SP-170).
+
+### Phase 20b — v2.0 CDO S-sized splits
+
+**Source:** [docs/PRD-v2.0-implementation-handoff.md §11.1](../docs/PRD-v2.0-implementation-handoff.md#111-task-decomposition--s-sized-sp-141sp-170--active)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-141 | Config defaults v2 (review, handoff, metrics) | **Staged** | SP-122 |
+| SP-142 | Contract config validation | **Staged** | SP-141 |
+| SP-143 | Contract parser | **Staged** | SP-142 |
+| SP-144 | Contract validate wire-up | **Staged** | SP-143 |
+| SP-145 | `spine tasks validate` CLI core | **Staged** | SP-144 |
+| SP-146 | `spine tasks validate` JSON output | **Staged** | SP-145 |
+| SP-147 | Handoff data assembly | **Staged** | SP-142 |
+| SP-148 | Handoff render and CLI | **Staged** | SP-147 |
+| SP-149 | Final verdict parsing | **Staged** | SP-142 |
+| SP-150 | Final review spawn path | **Staged** | SP-149 |
+| SP-151 | Engine final review phase | **Staged** | SP-150 |
+| SP-152 | Engine REVISE cap | **Staged** | SP-151 |
+| SP-153 | Engine REPLAN and merge block | **Staged** | SP-152 |
+| SP-154 | Contract verify core | **Staged** | SP-144, SP-150 |
+| SP-155 | Contract verify engine hook | **Staged** | SP-154, SP-151 |
+| SP-156 | `needs_replan` taxonomy | **Staged** | SP-153 |
+| SP-157 | `needs_replan` reconcile | **Staged** | SP-156 |
+| SP-158 | Task metrics writer | **Staged** | SP-153 |
+| SP-159 | Batch metrics writer | **Staged** | SP-158 |
+| SP-160 | Skill explore Step 0 | **Staged** | SP-144 |
+| SP-161 | Skill Contract template | **Staged** | SP-144 |
+| SP-162 | Runbook validate and handoff | **Staged** | SP-146, SP-148 |
+| SP-163 | Runbook replan and metrics | **Staged** | SP-157, SP-169 |
+| SP-164 | Phase 20 fixtures | **Staged** | SP-146, SP-153 |
+| SP-165 | Adoption smoke Phase 20 | **Staged** | SP-166, SP-157, SP-169 |
+| SP-166 | Preflight tasks-validate slash | **Staged** | SP-146 |
+| SP-167 | Handoff slash and journal | **Staged** | SP-148 |
+| SP-168 | Agent templates final verdict | **Staged** | SP-150, SP-155 |
+| SP-169 | `spine metrics show` CLI | **Staged** | SP-159 |
+| SP-170 | CONTEXT Phase 20b tracking | **Staged** | SP-160–169 (leaves) |
+
+**Suggested batches (≤3 tasks; real pi workers):**
+
+1. `SP-141` → `SP-142` → `SP-143`+`SP-160` → `SP-144`+`SP-161` → `SP-145` → `SP-146`
+2. `SP-147`+`SP-149` → `SP-148`+`SP-150` → `SP-166`
+3. `SP-151` → `SP-152` → `SP-153` (serial — engine-lanes)
+4. `SP-154` → `SP-155`+`SP-168` → `SP-156` → `SP-157`+`SP-167`
+5. `SP-158` → `SP-159`+`SP-169` → `SP-162` → `SP-163` → `SP-164` → `SP-165` → `SP-170`
+
+**Regression gate (each batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 **Batch:** `20260605T213158` (SP-119–121) — landed on `main`, 606 tests. Lane-2 merge still required manual rules-manifest resolution (SP-121 landed same batch).
 

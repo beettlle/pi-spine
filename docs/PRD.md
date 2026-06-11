@@ -1224,3 +1224,35 @@ When creating tasks, score four dimensions (0–2 each): **Blast radius**, **Pat
 | 6–8 | 3 |
 
 Full dimension rubric lives in `skills/create-spine-tasks/SKILL.md`. Individual steps may override the task-level level with checkpoint markers (e.g. `**Plan-review checkpoint**`, `**Code review checkpoint**`).
+
+---
+
+## 25. Roadmap (post-v1)
+
+### 25.1 PRD v1.3 — Upstream execution bridge
+
+**Status:** Spec complete — engineering handoff ready.
+
+Adds six capabilities inspired by [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) patterns **without** zero-pi or GitHub as runtime dependencies:
+
+| FR | Capability |
+|----|------------|
+| FR-UXB-01 | Upstream ↔ execution workflow documentation |
+| FR-UXB-02 | `spine tasks validate` |
+| FR-UXB-03 | Optional explore phase (`create-spine-tasks` Step 0) |
+| FR-UXB-04 | Task-level final verdict (`PASS` / `REVISE` / `REPLAN`) |
+| FR-UXB-05 | Operator handoff note (`spine handoff`) |
+| FR-UXB-06 | Run metrics (`spine metrics show`) |
+
+**Normative addendum:** [docs/PRD-v1.3-upstream-execution-bridge.md](PRD-v1.3-upstream-execution-bridge.md)  
+**Operator guide:** [docs/adoption/upstream-execution-workflow.md](adoption/upstream-execution-workflow.md)
+
+Implementation waves A–D are defined in addendum §15. Base PRD v1.2 remains authoritative for unlisted behavior.
+
+### 25.2 Deferred v1.4 (tracked, not v1.3 scope)
+
+- `spine settings suggest-models` from run-metrics aggregates
+- `spine explore` CLI wrapper (skill-only in v1.3)
+- `handoff.autoWriteOn` triggers
+- Journal rebuild from events (base PRD §11.4)
+- `pi-subagents` in-lane fanout (base PRD §3.4)

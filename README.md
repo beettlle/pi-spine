@@ -509,7 +509,9 @@ Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows
 
 | Document | Purpose |
 |----------|---------|
-| [docs/PRD.md](docs/PRD.md) | Product requirements and implementation contract |
+| [docs/PRD.md](docs/PRD.md) | Product requirements and implementation contract (v1.2) |
+| [docs/PRD-v1.3-upstream-execution-bridge.md](docs/PRD-v1.3-upstream-execution-bridge.md) | v1.3 addendum: validate, explore, final verdict, handoff, metrics |
+| [docs/adoption/upstream-execution-workflow.md](docs/adoption/upstream-execution-workflow.md) | Authoring → validation → batch (optional zero-pi upstream) |
 | [docs/adoption/local-install.md](docs/adoption/local-install.md) | Git/path install before npm publish |
 | [docs/adoption/operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures |
 | [docs/adoption/real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |

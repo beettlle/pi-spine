@@ -1,0 +1,82 @@
+# SP-127: spine handoff CLI — Status
+
+**Current Step:** Not Started
+**Status:** 🔵 Ready for Execution
+**Last Updated:** 2026-06-11
+**Review Level:** 2
+**Review Counter:** 0
+**Iteration:** 0
+**Size:** M
+
+---
+
+### Step 0: Preflight
+**Status:** ⬜ Not Started
+
+- [ ] Read handoff doc section
+- [ ] Dependencies satisfied
+
+---
+
+### Step 1: Work
+**Status:** ⬜ Not Started
+
+- [ ] Implement handoff data assembly from reconcileBatch and journal tail
+
+---
+
+### Step 2: Work
+**Status:** ⬜ Not Started
+
+- [ ] Markdown renderer with normative section order
+
+---
+
+### Step 3: Work
+**Status:** ⬜ Not Started
+
+- [ ] --json output with handoffPath
+
+---
+
+### Step 4: Work
+**Status:** ⬜ Not Started
+
+- [ ] Redact secrets (NFR-UXB-02); idle state when no active batch
+
+---
+
+### Step 5: Testing & Verification
+**Status:** ⬜ Not Started
+
+- [ ] FULL test suite passing
+- [ ] Coverage gate (if applicable)
+
+---
+
+### Step 6: Documentation & Delivery
+**Status:** ⬜ Not Started
+
+- [ ] Docs updated
+- [ ] .DONE created
+
+---
+
+## Reviews
+
+| # | Type | Step | Verdict | File |
+|---|------|------|---------|------|
+
+---
+
+## Blockers
+
+*None*
+
+---
+
+## Execution Log
+
+| Timestamp | Action | Outcome |
+|-----------|--------|---------|
+| 2026-06-11 | Task staged | PROMPT.md and STATUS.md created |
