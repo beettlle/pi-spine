@@ -51,11 +51,35 @@ Use this workflow when the user supplies a PRD, epic brief, or feature spec inst
 
 ### Step 0: Explore (optional — brownfield / large epics)
 
-**When:** Brownfield repo, L/XL epic, or uncertain File Scope. **Skip** for greenfield S/M tasks with a clear PRD.
+Run **before** Step A when decomposition needs codebase discovery. Authoring-only — `spine tasks validate` does **not** require explore artifacts.
 
-1. Read-only investigation — no commits, no file edits.
-2. Write `{tasksRoot}/_explore/{slug}/findings.md` using [references/explore-template.md](references/explore-template.md).
-3. Link the slug in `{tasksRoot}/CONTEXT.md` (date + path).
+**When to run:**
+
+| Signal | Why explore helps |
+|--------|-------------------|
+| Brownfield repo | Unfamiliar modules; map touch points before File Scope |
+| L/XL epic | Must split anyway; findings drive disjoint scopes per wave |
+| File Scope uncertainty | PRD lacks concrete paths; investigate before slicing |
+| Parallel wave planning | Need non-overlapping scopes for lane affinity |
+| Post-refactor on `main` | Re-explore; mark prior findings `Status: superseded` |
+
+**When to skip:**
+
+- Greenfield with clear PRD and known paths
+- Single S/M task with concrete `## File Scope` already
+- Migrating existing Taskplane packets unchanged
+
+**Constraints (read-only):**
+
+- No commits; no file edits outside read targets
+- Output path: `{tasksRoot}/_explore/{slug}/findings.md` (git-tracked by default)
+- Findings inform `## File Scope` in downstream packets (Step B) — not batch engine input
+
+**Workflow:**
+
+1. Read-only investigation — search code, read docs, trace dependencies.
+2. Write `{tasksRoot}/_explore/{slug}/findings.md` using [references/explore-template.md](references/explore-template.md) (v1.3 §6.3 schema: Summary, Codebase areas, Risks, Suggested file scopes, Open questions).
+3. Link the slug in `{tasksRoot}/CONTEXT.md` — explore table row or `Explore complete: {slug}` with date and path.
 4. Use **Suggested file scopes** from findings when slicing tasks in Step B.
 
 See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-execution-workflow.md) for optional zero-pi upstream composition (pi-spine does not invoke zero-pi).
@@ -340,6 +364,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 ## References
 
 - [references/prompt-template.md](references/prompt-template.md) — PROMPT.md and STATUS.md templates
+- [references/explore-template.md](references/explore-template.md) — Step 0 `findings.md` schema (v1.3 §6.3)
 - [references/context-template.md](references/context-template.md) — `{tasksRoot}/CONTEXT.md` scaffold
 - [docs/PRD.md](../../docs/PRD.md) — task format spec (§13)
 - [docs/adoption/bootstrap-checklist.md](../../docs/adoption/bootstrap-checklist.md) — greenfield setup

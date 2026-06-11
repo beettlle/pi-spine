@@ -16,6 +16,21 @@ const H2_SECTION_RE = /^## (.+)$/gm;
 const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
 const SIZE_LINE_RE = /^\*\*Size:\*\*\s*(S|M|L|XL)\s*$/im;
 
+/** Normative contract table fields per handoff §4.1. */
+export const CONTRACT_FIELD_NAMES = Object.freeze([
+	"testCommand",
+	"fileScopeMustChange",
+	"fileScopeMustNotChange",
+	"minLineCoverage",
+	"artifactsMustExist",
+]);
+
+const CONTRACT_KNOWN_FIELDS = new Set(CONTRACT_FIELD_NAMES);
+const CONTRACT_TABLE_HEADER_RE = /^\|\s*Field\s*\|\s*Value\s*\|$/i;
+const CONTRACT_TABLE_SEPARATOR_RE = /^\|[\s\-:|]+\|$/;
+const CONTRACT_TABLE_ROW_RE = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/;
+const TEST_COMMAND_MAX_LENGTH = 500;
+
 /**
  * @param {string} markdown PROMPT.md contents
  */
@@ -83,6 +98,194 @@ export function validatePrompt(markdown) {
 	}
 
 	return { ok: errors.length === 0, errors, prompt };
+}
+
+/**
+ * Parse the `## Contract` Markdown table from PROMPT.md (handoff §4.3).
+ *
+ * @param {string} markdown PROMPT.md contents
+ * @returns {{
+ *   testCommand: string | null,
+ *   fileScopeMustChange: string[],
+ *   fileScopeMustNotChange: string[],
+ *   minLineCoverage: number | null,
+ *   artifactsMustExist: string[],
+ *   rawTableValid: boolean,
+ *   errors: string[],
+ *   unknownFields: string[],
+ *   hasSection: boolean,
+ * }}
+ */
+export function parseContract(markdown) {
+	const sections = extractH2Sections(markdown);
+	const contractSection = sections.Contract ?? "";
+
+	/** @type {ReturnType<typeof parseContract>} */
+	const parsed = {
+		testCommand: null,
+		fileScopeMustChange: [],
+		fileScopeMustNotChange: [],
+		minLineCoverage: null,
+		artifactsMustExist: [],
+		rawTableValid: false,
+		errors: [],
+		unknownFields: [],
+		hasSection: Object.hasOwn(sections, "Contract"),
+	};
+
+	if (!parsed.hasSection) {
+		return parsed;
+	}
+
+	const tableRows = extractContractTableRows(contractSection);
+	if (tableRows === null) {
+		parsed.errors.push('Contract section must contain a Markdown table with header row "| Field | Value |"');
+		return parsed;
+	}
+
+	parsed.rawTableValid = true;
+	const seenFields = new Set();
+
+	for (const { field, value } of tableRows) {
+		if (seenFields.has(field)) {
+			parsed.errors.push(`Duplicate contract field row: ${field}`);
+			continue;
+		}
+		seenFields.add(field);
+
+		if (!CONTRACT_KNOWN_FIELDS.has(field)) {
+			parsed.unknownFields.push(field);
+			continue;
+		}
+
+		applyContractField(parsed, field, value);
+	}
+
+	return parsed;
+}
+
+/**
+ * @param {ReturnType<typeof parseContract>} parsed
+ * @param {string} field
+ * @param {string} rawValue
+ */
+function applyContractField(parsed, field, rawValue) {
+	const value = rawValue.trim();
+	if (!value) {
+		return;
+	}
+
+	switch (field) {
+		case "testCommand": {
+			const command = parseContractScalar(value);
+			if (command.includes("\n")) {
+				parsed.errors.push("Contract testCommand must not contain newlines");
+				return;
+			}
+			if (command.length > TEST_COMMAND_MAX_LENGTH) {
+				parsed.errors.push(`Contract testCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
+				return;
+			}
+			parsed.testCommand = command;
+			return;
+		}
+		case "fileScopeMustChange":
+			parsed.fileScopeMustChange = parseContractPathList(value);
+			return;
+		case "fileScopeMustNotChange":
+			parsed.fileScopeMustNotChange = parseContractPathList(value);
+			return;
+		case "artifactsMustExist":
+			parsed.artifactsMustExist = parseContractPathList(value);
+			return;
+		case "minLineCoverage": {
+			const coverage = parseContractScalar(value);
+			if (!/^\d+$/.test(coverage)) {
+				parsed.errors.push("Contract minLineCoverage must be an integer between 0 and 100");
+				return;
+			}
+			const numeric = Number(coverage);
+			if (numeric < 0 || numeric > 100) {
+				parsed.errors.push("Contract minLineCoverage must be an integer between 0 and 100");
+				return;
+			}
+			parsed.minLineCoverage = numeric;
+			return;
+		}
+		default:
+			return;
+	}
+}
+
+/**
+ * @param {string} section
+ * @returns {Array<{ field: string, value: string }> | null}
+ */
+function extractContractTableRows(section) {
+	/** @type {Array<{ field: string, value: string }>} */
+	const rows = [];
+	let sawHeader = false;
+	let sawSeparator = false;
+
+	for (const line of section.split(/\r?\n/)) {
+		const trimmed = line.trim();
+		if (!trimmed.startsWith("|")) {
+			continue;
+		}
+
+		if (CONTRACT_TABLE_HEADER_RE.test(trimmed)) {
+			sawHeader = true;
+			continue;
+		}
+
+		if (CONTRACT_TABLE_SEPARATOR_RE.test(trimmed)) {
+			if (!sawHeader) {
+				return null;
+			}
+			sawSeparator = true;
+			continue;
+		}
+
+		const match = trimmed.match(CONTRACT_TABLE_ROW_RE);
+		if (!match) {
+			return null;
+		}
+
+		if (!sawHeader || !sawSeparator) {
+			return null;
+		}
+
+		rows.push({ field: match[1].trim(), value: match[2].trim() });
+	}
+
+	if (!sawHeader || !sawSeparator) {
+		return null;
+	}
+
+	return rows;
+}
+
+/**
+ * @param {string} raw
+ * @returns {string}
+ */
+function parseContractScalar(raw) {
+	const backtick = raw.match(/^`([^`]*)`$/);
+	if (backtick) {
+		return backtick[1];
+	}
+	return raw;
+}
+
+/**
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function parseContractPathList(raw) {
+	return raw
+		.split(",")
+		.map((part) => parseContractScalar(part.trim()))
+		.filter(Boolean);
 }
 
 /**
