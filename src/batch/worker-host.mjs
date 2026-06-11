@@ -95,6 +95,9 @@ export function buildWorkerChildEnv({
 	if (Array.isArray(fileScopePaths) && fileScopePaths.length > 0) {
 		env.SPINE_TASK_FILE_SCOPE = JSON.stringify(fileScopePaths);
 	}
+	if (process.env.SPINE_WORKER_STUB === "1") {
+		env.SPINE_REVIEW_STUB = "1";
+	}
 	return env;
 }
 

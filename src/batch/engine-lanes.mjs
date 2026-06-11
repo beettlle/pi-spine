@@ -526,7 +526,9 @@ export function runEngineFinalReview({
 
 	const artifactPath = buildFinalReviewArtifactPath(taskFolder);
 	const useStub =
-		process.env.SPINE_REVIEW_STUB === "1" || process.env.SPINE_REVIEW_STUB === "true";
+		process.env.SPINE_REVIEW_STUB === "1" ||
+		process.env.SPINE_REVIEW_STUB === "true" ||
+		process.env.SPINE_WORKER_STUB === "1";
 
 	if (useStub) {
 		const verdict = resolveFinalStubVerdict();
@@ -648,7 +650,10 @@ async function runFinalReviewPhase({
 		let contractVerifyResult = null;
 		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
 		const parsedContract = parseContract(promptMarkdown);
-		if (shouldRunContractVerify(taskId, parsedContract, config)) {
+		if (
+			process.env.SPINE_WORKER_STUB !== "1" &&
+			shouldRunContractVerify(taskId, parsedContract, config)
+		) {
 			contractVerifyResult = verifyContract(wt, parsedContract, {
 				...config,
 				baseBranch,
