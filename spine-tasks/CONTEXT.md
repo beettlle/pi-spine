@@ -478,7 +478,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-193 | Post-.DONE worker grace watchdog | **Staged** | SP-192 |
+| SP-193 | Post-.DONE worker grace watchdog | **Done** | SP-192 |
 | SP-194 | Block nested pi reviewer in worker | **Staged** | SP-193 |
 | SP-195 | Engine code review phase (RL≥2) | **Staged** | SP-194, SP-151 |
 | SP-196 | Worker prompt review delegation | **Staged** | SP-195 |
@@ -488,7 +488,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-200 | Resume opens integrate gate | **Staged** | SP-193 |
 | SP-201 | Integrate rules-manifest auto-merge | **Staged** | SP-193 |
 
-**Suggested batches:** Wave A: `SP-193` → Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` after SP-193 lands. **SP-199–201** land-loop / contract follow-ups after SP-193.
+**Suggested batches:** Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` now that SP-193 landed. **SP-199–201** land-loop / contract follow-ups.
 
 **Phase 22 exit criteria:**
 

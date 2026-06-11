@@ -45,3 +45,4 @@
 |-----------|--------|---------|
 | 2026-06-11 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-11 | Step 0–3 complete | Post-done grace, tests green, coverage 83.60% |
+| 2026-06-11 | Batch land loop | Batch `20260611T225006` integrated to main; task closed |

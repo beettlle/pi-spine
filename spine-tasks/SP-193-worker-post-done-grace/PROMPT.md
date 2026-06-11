@@ -59,36 +59,36 @@ Fix `runWorker()` in `src/batch/worker-host.mjs` so that when `.DONE` appears on
 
 ### Step 0: Preflight
 
-- [ ] Reproduce wedge logic in `worker-host.mjs`: `.DONE` break disables stall loop before `await childDone`
-- [ ] Read incident journal + `worker-output-SP-190.log`
+- [x] Reproduce wedge logic in `worker-host.mjs`: `.DONE` break disables stall loop before `await childDone`
+- [x] Read incident journal + `worker-output-SP-190.log`
 
 ### Step 1: Implement post-done grace
 
 > **Plan-review checkpoint**
 
-- [ ] Add `postDoneGraceMs` to stall config (default 3–5 min)
-- [ ] Replace bare `.DONE` break with grace window: heartbeats/stall optional during grace
-- [ ] Terminate child after grace; succeed when `.DONE` persists
+- [x] Add `postDoneGraceMs` to stall config (default 3–5 min)
+- [x] Replace bare `.DONE` break with grace window: heartbeats/stall optional during grace
+- [x] Terminate child after grace; succeed when `.DONE` persists
 
 ### Step 2: Testing & Verification
 
 > **Code review checkpoint**
 
-- [ ] Stub test: child hangs after writing `.DONE` → host terminates and returns `ok: true`
-- [ ] Regression: pre-.DONE stall timeout still works
-- [ ] Run: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run: `npm run coverage:check` — ≥77%
+- [x] Stub test: child hangs after writing `.DONE` → host terminates and returns `ok: true`
+- [x] Regression: pre-.DONE stall timeout still works
+- [x] Run: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run: `npm run coverage:check` — ≥77%
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Note fix in `spine-tasks/_explore/reliability-epic/findings.md`
-- [ ] Create `.DONE` when complete
+- [x] Note fix in `spine-tasks/_explore/reliability-epic/findings.md`
+- [x] Create `.DONE` when complete
 
 ## Completion Criteria
 
-- [ ] SP-190-class wedge cannot block batch > post-done grace duration
-- [ ] `doneFound: true` + hung child → task succeeds (not `failed`)
-- [ ] Tests green
+- [x] SP-190-class wedge cannot block batch > post-done grace duration
+- [x] `doneFound: true` + hung child → task succeeds (not `failed`)
+- [x] Tests green
 
 ## Git Commit Convention
 
