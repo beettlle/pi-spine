@@ -52,6 +52,10 @@
     "enabled": true,
     "path": ".spine/run-metrics.jsonl"
   },
+  "contract": {
+    "mode": "required",
+    "legacyTaskIdPrefixes": ["TP-"]
+  },
   "worktreeSetupHook": "",
   "worktreeSetupIgnorePaths": [],
   "referenceDocs": [],

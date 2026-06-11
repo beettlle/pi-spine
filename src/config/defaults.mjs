@@ -21,9 +21,16 @@ export const METRICS_DEFAULTS = Object.freeze({
 	path: ".spine/run-metrics.jsonl",
 });
 
-/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS }>} */
+/** @type {Readonly<{ mode: string; legacyTaskIdPrefixes: readonly string[] }>} */
+export const CONTRACT_DEFAULTS = Object.freeze({
+	mode: "required",
+	legacyTaskIdPrefixes: Object.freeze(["TP-"]),
+});
+
+/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS }>} */
 export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	review: REVIEW_DEFAULTS,
 	handoff: HANDOFF_DEFAULTS,
 	metrics: METRICS_DEFAULTS,
+	contract: CONTRACT_DEFAULTS,
 });

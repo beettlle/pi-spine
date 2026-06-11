@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { applyEnvOverrides } from "../src/config/env-overrides.mjs";
 import { applyConfigDefaults } from "../src/config/merge-defaults.mjs";
+import { validateContractConfig } from "../src/config/contract.mjs";
 import { validateWorkerBackendConfig } from "../src/config/worker-backend.mjs";
 import { validateWorkerContextConfig } from "../src/config/worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "../src/config/worker-launch-script.mjs";
@@ -80,6 +81,15 @@ export function loadSpineConfig(projectRoot) {
 
 	const config = structuredClone(fileResult.config);
 	applyConfigDefaults(config);
+
+	const contractError = validateContractConfig(config);
+	if (contractError) {
+		return {
+			configPath: fileResult.configPath,
+			config: null,
+			error: contractError,
+		};
+	}
 
 	const envResult = applyEnvOverrides(config, projectRoot);
 	if (!envResult.ok) {
@@ -191,6 +201,11 @@ export function validateSpineConfig(config) {
 			message: "lanes.autoCommitOnStall must be a boolean when set",
 			suggestedCommand: "spine settings set lanes.autoCommitOnStall false",
 		};
+	}
+
+	const contractError = validateContractConfig(config);
+	if (contractError) {
+		return contractError;
 	}
 
 	return null;

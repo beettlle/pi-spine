@@ -345,7 +345,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-141 | Config defaults v2 (review, handoff, metrics) | **Staged** | SP-122 |
+| SP-141 | Config defaults v2 (review, handoff, metrics) | **Done** | SP-122 |
 | SP-142 | Contract config validation | **Staged** | SP-141 |
 | SP-143 | Contract parser | **Staged** | SP-142 |
 | SP-144 | Contract validate wire-up | **Staged** | SP-143 |
