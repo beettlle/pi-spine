@@ -11,6 +11,7 @@ const DEFAULT_STALL_TIMEOUT_MIN = 60;
 const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
 const DEFAULT_HEARTBEAT_INTERVAL_MIN = 10;
 const DEFAULT_CHECKPOINT_WARNING_MIN = 10;
+const DEFAULT_POST_DONE_GRACE_MIN = 4;
 const POLL_INTERVAL_MS = 30_000;
 
 const CHECKPOINT_WARNING_SUGGESTION =
@@ -41,12 +42,15 @@ export function resolveStallConfig(config = {}) {
 		Number(lanes.heartbeatIntervalMinutes) || DEFAULT_HEARTBEAT_INTERVAL_MIN;
 	const checkpointWarningMinutes =
 		Number(lanes.checkpointWarningMinutes) || DEFAULT_CHECKPOINT_WARNING_MIN;
+	const postDoneGraceMinutes =
+		Number(lanes.postDoneGraceMinutes) || DEFAULT_POST_DONE_GRACE_MIN;
 
 	return {
 		stallTimeoutMs: stallTimeoutMinutes * 60 * 1000,
 		graceAfterProgressMs: stallGraceAfterProgressMinutes * 60 * 1000,
 		heartbeatIntervalMs: heartbeatIntervalMinutes * 60 * 1000,
 		checkpointWarningMs: checkpointWarningMinutes * 60 * 1000,
+		postDoneGraceMs: postDoneGraceMinutes * 60 * 1000,
 		extendGraceOnFileScope: lanes.extendGraceOnFileScope === true,
 		pollIntervalMs: POLL_INTERVAL_MS,
 	};
