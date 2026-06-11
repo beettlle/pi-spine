@@ -17,6 +17,10 @@ Minimal **real-pi** adoption fixture task: prove a live `pi` worker can complete
 
 - `REAL-PI-SMOKE.txt`
 
+## Testing
+
+Verification only — this fixture has no npm test. Confirm `REAL-PI-SMOKE.txt` exists with a valid ISO-8601 UTC timestamp.
+
 ## Steps
 
 ### Step 1: Write smoke marker

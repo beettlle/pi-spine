@@ -13,7 +13,7 @@ import {
 	RULES_MANIFEST_REL_PATH,
 	writeRulesManifestAtomic,
 } from "../config/cursor-rules/discover.mjs";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordTaskTerminalMetric } from "./metrics.mjs";
 import {
 	commitLaneWorktree,
@@ -32,7 +32,13 @@ import {
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
-import { formatReviewTimestamp, readReviewLevel } from "./review.mjs";
+import {
+	findCompletedFinalReview,
+	findFinalReviewStepNumber,
+	formatReviewTimestamp,
+	readReviewLevel,
+	runStepReview,
+} from "./review.mjs";
 import { REVIEW_DEFAULTS } from "../config/defaults.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { shouldRunContractVerify, verifyContract } from "./contract-verify.mjs";
@@ -510,6 +516,7 @@ export function runEngineFinalReview({
 	config = {},
 	attempt = 1,
 	contractVerifyResult = null,
+	journal,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!shouldRunFinalReview({ config, reviewLevel })) {
@@ -553,18 +560,16 @@ export function runEngineFinalReview({
 		};
 	}
 
-	return {
-		ok: false,
-		skipped: false,
-		reviewLevel,
-		verdict: null,
-		feedback: "",
-		artifactPath,
-		spawnFailed: true,
-		error: "final review requires SPINE_REVIEW_STUB or spine review step --type final (SP-150)",
-		exitCode: 1,
-		attempt,
-	};
+	const stepNumber = findFinalReviewStepNumber(taskFolder);
+	return runStepReview({
+		taskFolder,
+		worktreePath,
+		stepNumber,
+		reviewType: "final",
+		config,
+		journal,
+		contractVerifyResult,
+	});
 }
 
 /**
@@ -646,6 +651,40 @@ async function runFinalReviewPhase({
 
 	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 	let finalAttempt = task.finalAttempts ?? 0;
+
+	if (finalAttempt === 0) {
+		const honored = findCompletedFinalReview({
+			taskFolder: taskFolderInWorktree,
+			journalEvents: readJournalEvents(projectRoot, batchId),
+			taskId,
+		});
+		if (honored?.verdict === "PASS") {
+			appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				reviewType: "final",
+				verdict: "PASS",
+				feedback: honored.feedback,
+				artifactPath: honored.artifactPath,
+				finalAttempt: 1,
+				honored: true,
+				honorSource: honored.source,
+			});
+			task.finalAttempts = 1;
+			saveSpineBatchState(projectRoot, state);
+			return { ok: true, verdict: "PASS", finalAttempt: 1, honored: true };
+		}
+	}
+
+	const journal = {
+		projectRoot,
+		batchId,
+		taskId,
+		laneNumber,
+		correlationId: laneCorrelationId,
+	};
 
 	while (true) {
 		let contractVerifyResult = null;
@@ -772,6 +811,7 @@ async function runFinalReviewPhase({
 			config,
 			attempt: finalAttempt + 1,
 			contractVerifyResult,
+			journal,
 		});
 
 		if (reviewResult.spawnFailed) {

@@ -35,7 +35,7 @@ git config user.email "real-pi@test"
 git config user.name "Real Pi"
 git add -A && git commit -q -m seed && git branch -M main
 if [[ ! -f .spine/spine-config.json ]]; then
-  $SPINE init
+  $SPINE init --tasks-root taskplane-tasks
   git add -A && git commit -q -m init
 fi
 $SPINE plan "$TASK_ID"

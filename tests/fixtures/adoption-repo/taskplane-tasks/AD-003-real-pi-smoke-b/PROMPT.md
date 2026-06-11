@@ -17,6 +17,10 @@ Second disjoint real-pi adoption fixture task for multi-task E2E (Phase 22). Wri
 
 - `REAL-PI-SMOKE-B.txt`
 
+## Testing
+
+Verification only — this fixture has no npm test. Confirm `REAL-PI-SMOKE-B.txt` exists with a valid ISO-8601 UTC timestamp.
+
 ## Steps
 
 ### Step 1: Write smoke marker B

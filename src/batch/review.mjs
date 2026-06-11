@@ -66,6 +66,96 @@ export function buildFinalReviewArtifactPath(taskFolder, date = new Date()) {
 }
 
 /**
+ * Highest numbered ### Step N heading in PROMPT.md (defaults to 1).
+ * @param {string} taskFolder
+ */
+export function findFinalReviewStepNumber(taskFolder) {
+	const promptPath = path.join(taskFolder, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) return 1;
+	const content = fs.readFileSync(promptPath, "utf-8");
+	const matches = [...content.matchAll(/###\s+Step\s+(\d+)/g)];
+	if (matches.length === 0) return 1;
+	return Math.max(...matches.map((match) => Number(match[1])));
+}
+
+/**
+ * Latest `.reviews/final-*.md` by mtime, if any.
+ * @param {string} taskFolder
+ * @returns {{ artifactPath: string, mtimeMs: number }|null}
+ */
+export function findLatestFinalReviewArtifact(taskFolder) {
+	const reviewsDir = path.join(taskFolder, ".reviews");
+	if (!fs.existsSync(reviewsDir)) return null;
+
+	const candidates = fs
+		.readdirSync(reviewsDir)
+		.filter((name) => name.startsWith("final-") && name.endsWith(".md"))
+		.map((name) => {
+			const artifactPath = path.join(reviewsDir, name);
+			return { artifactPath, mtimeMs: fs.statSync(artifactPath).mtimeMs };
+		})
+		.sort((left, right) => right.mtimeMs - left.mtimeMs);
+
+	return candidates[0] ?? null;
+}
+
+/**
+ * Resolve an existing worker or lane final review from journal and/or artifacts.
+ * Honors PASS from journal `review.completed` or latest final artifact.
+ *
+ * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {object[]} [params.journalEvents]
+ * @param {string} [params.taskId]
+ * @returns {{ verdict: "PASS"|"REVISE"|"REPLAN", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
+ */
+export function findCompletedFinalReview({ taskFolder, journalEvents = [], taskId }) {
+	/** @type {{ verdict: "PASS"|"REVISE"|"REPLAN", feedback: string, artifactPath: string, source: "journal"|"artifact", seq: number }|null} */
+	let journalMatch = null;
+	for (let index = 0; index < journalEvents.length; index += 1) {
+		const event = journalEvents[index];
+		if (taskId && event.taskId !== taskId) continue;
+		if (event.type !== "review.completed") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (payload.reviewType !== "final") continue;
+		const verdict = normalizeVerdict(payload.verdict, "final");
+		if (!verdict) continue;
+		journalMatch = {
+			verdict,
+			feedback: typeof payload.feedback === "string" ? payload.feedback : "",
+			artifactPath: typeof payload.artifactPath === "string" ? payload.artifactPath : "",
+			source: "journal",
+			seq: index,
+		};
+	}
+
+	if (journalMatch?.verdict === "PASS") {
+		const { seq: _seq, ...result } = journalMatch;
+		return result;
+	}
+
+	const latestArtifact = findLatestFinalReviewArtifact(taskFolder);
+	if (latestArtifact) {
+		const reviewContent = fs.readFileSync(latestArtifact.artifactPath, "utf-8");
+		const { verdict, feedback } = parseReviewVerdict(reviewContent, { reviewType: "final" });
+		if (verdict) {
+			const artifactMatch = {
+				verdict,
+				feedback,
+				artifactPath: latestArtifact.artifactPath,
+				source: /** @type {"artifact"} */ ("artifact"),
+			};
+			if (verdict === "PASS") return artifactMatch;
+			if (!journalMatch) return artifactMatch;
+		}
+	}
+
+	if (!journalMatch) return null;
+	const { seq: _seq, ...result } = journalMatch;
+	return result;
+}
+
+/**
  * @param {string} reviewContent
  * @param {{ reviewType?: "plan"|"code"|"final" }} [options]
  * @returns {{ verdict: "APPROVE"|"REVISE"|"PASS"|"REPLAN"|null, feedback: string }}
