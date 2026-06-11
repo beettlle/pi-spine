@@ -43,6 +43,16 @@ Finalize spine-tasks/CONTEXT.md Phase 20b section, verify dependencies.json grap
 - `spine-tasks/CONTEXT.md`
 - `spine-tasks/dependencies.json`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

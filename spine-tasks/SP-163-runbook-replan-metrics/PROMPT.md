@@ -35,6 +35,16 @@ Add runbook sections: needs_replan diagnosis, Contract mode config, spine metric
 
 - `docs/adoption/operator-runbook.md`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

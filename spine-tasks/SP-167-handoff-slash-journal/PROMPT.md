@@ -38,6 +38,16 @@ Wire /spine-handoff slash, handoff.written journal event, spine next handoff pat
 - `bin/spine-cli/batch.mjs`
 - `tests/cli/spine-handoff.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

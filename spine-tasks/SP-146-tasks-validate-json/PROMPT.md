@@ -36,6 +36,16 @@ Add --json TasksValidateResult output, --warnings-only mode, and spine help task
 - `bin/spine.mjs`
 - `tests/tasks/validate-cli.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

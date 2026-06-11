@@ -35,6 +35,16 @@ Implement reconcile precedence: needs_replan over needs_retry; blocks needs_merg
 - `src/batch/reconcile.mjs`
 - `tests/compat/final-verdict-reconcile.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

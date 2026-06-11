@@ -37,6 +37,16 @@ Render handoff.md per §7.4 section order; spine handoff CLI with --json; secret
 - `tests/cli/spine-handoff.test.mjs`
 - `tests/fixtures/handoff-golden.md`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

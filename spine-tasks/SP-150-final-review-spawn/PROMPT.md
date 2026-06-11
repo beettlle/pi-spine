@@ -37,6 +37,16 @@ Add spine review step --type final spawn path and .reviews/final-{timestamp}.md 
 - `bin/spine-review-step.mjs`
 - `tests/batch/review.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

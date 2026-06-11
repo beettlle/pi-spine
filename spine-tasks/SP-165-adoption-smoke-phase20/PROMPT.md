@@ -38,6 +38,16 @@ Extend scripts/adoption-smoke.sh with spine tasks validate before batch; integra
 - `scripts/adoption-smoke.sh`
 - `tests/adoption/**`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

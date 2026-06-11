@@ -36,6 +36,16 @@ Add needs_replan to DIAGNOSIS_TAXONOMY in diagnosis.mjs with headline and sugges
 - `src/batch/diagnosis.mjs`
 - `tests/compat/final-verdict-reconcile.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

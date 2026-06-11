@@ -36,6 +36,16 @@ Create src/batch/contract-verify.mjs with testCommand (exit 0) and artifactsMust
 - `src/batch/contract-verify.mjs`
 - `tests/batch/contract-verify.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

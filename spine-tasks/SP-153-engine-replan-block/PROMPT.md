@@ -37,6 +37,16 @@ REPLAN on final: status failed, exitReason needs_replan, no .DONE; block wave me
 - `tests/batch/final-verdict.test.mjs`
 - `test/fixtures/taskplane/FX-final-replan/**`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight

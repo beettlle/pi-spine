@@ -36,6 +36,16 @@ Extend parseReviewVerdict to accept PASS, REVISE, REPLAN when reviewType is fina
 - `src/batch/review.mjs`
 - `tests/batch/review.test.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| fileScopeMustChange | see File Scope |
+| fileScopeMustNotChange | — |
+| minLineCoverage | 77 |
+| artifactsMustExist | — |
+
 ## Steps
 
 ### Step 0: Preflight
