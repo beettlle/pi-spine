@@ -68,6 +68,24 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 - `[path/to/file.ext]`
 - `[path/to/directory/*]`
 
+## Contract
+
+> **Required for new `SP-*` tasks** when `contract.mode` is `required` (pi-spine default).
+> Defines machine-verifiable proof checked at final review. See
+> [references/contract-template.md](contract-template.md) for field guidance and examples.
+> Taskplane legacy `TP-*` tasks may omit this section when listed in `contract.legacyTaskIdPrefixes`.
+
+| Field | Value |
+|-------|-------|
+| testCommand | `[shell command in backticks, or \`true\` for docs-only S tasks]` |
+| fileScopeMustChange | `[optional: comma-separated paths/globs that must change]` |
+| fileScopeMustNotChange | `[optional: comma-separated paths/globs that must not change]` |
+| minLineCoverage | `[optional: integer 0–100; use 77 for code tasks]` |
+| artifactsMustExist | `[optional: comma-separated file paths that must exist]` |
+
+> **Code tasks:** include `testCommand` and usually `minLineCoverage` (≥77%). **Docs-only**
+> Review Level 0 + Size S may set `testCommand` to `` `true` ``.
+
 ## Steps
 
 > **Section order:** All steps — including `Testing & Verification` and

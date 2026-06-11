@@ -7,28 +7,51 @@ import micromatch from "micromatch";
 const GLOB_PROBE = "__probe__.mjs";
 
 /**
+ * Resolve effective contract validation mode (handoff §3.1).
+ *
+ * @param {{ mode?: string, taskId?: string | null, legacyTaskIdPrefixes?: string[] }} [options]
+ * @returns {"required" | "optional" | "legacy"}
+ */
+export function resolveContractMode(options = {}) {
+	const globalMode = options.mode ?? "optional";
+	if (globalMode === "legacy") {
+		return "legacy";
+	}
+
+	const taskId = options.taskId ?? null;
+	const legacyPrefixes = options.legacyTaskIdPrefixes ?? [];
+	if (taskId && legacyPrefixes.some((prefix) => taskId.startsWith(prefix))) {
+		return "legacy";
+	}
+
+	return globalMode === "required" ? "required" : "optional";
+}
+
+/**
  * @param {ReturnType<import("./parse-prompt.mjs").parseContract>} parsed
- * @param {{ mode?: "required" | "optional" | "legacy" }} [options]
- * @returns {{ ok: boolean, errors: string[], warnings: string[] }}
+ * @param {{ mode?: string, taskId?: string | null, legacyTaskIdPrefixes?: string[] }} [options]
+ * @returns {{ ok: boolean, errors: string[], warnings: string[], mode: "required" | "optional" | "legacy" }}
  */
 export function validateContract(parsed, options = {}) {
-	const mode = options.mode ?? "optional";
+	const mode = resolveContractMode(options);
 	const errors = [...(parsed.errors ?? [])];
 	const warnings = [];
 
 	if (mode === "legacy") {
-		return { ok: errors.length === 0, errors, warnings };
+		return { ok: errors.length === 0, errors, warnings, mode };
 	}
 
 	if (!parsed.hasSection) {
 		if (mode === "required") {
 			errors.push("Missing ## Contract section");
+		} else if (mode === "optional") {
+			warnings.push("Missing ## Contract section");
 		}
-		return { ok: errors.length === 0, errors, warnings };
+		return { ok: errors.length === 0, errors, warnings, mode };
 	}
 
 	if (!parsed.rawTableValid) {
-		return { ok: errors.length === 0, errors, warnings };
+		return { ok: errors.length === 0, errors, warnings, mode };
 	}
 
 	for (const field of parsed.unknownFields ?? []) {
@@ -47,7 +70,7 @@ export function validateContract(parsed, options = {}) {
 		}
 	}
 
-	return { ok: errors.length === 0, errors, warnings };
+	return { ok: errors.length === 0, errors, warnings, mode };
 }
 
 /**

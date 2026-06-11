@@ -30,14 +30,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { validatePrompt } from "./parse-prompt.mjs";
 import { parseStatus } from "./parse-status.mjs";
+import { validatePrompt } from "./validate-prompt.mjs";
 
 export { discoverTasks, TASK_FOLDER_RE } from "./discover.mjs";
 export {
 	parsePrompt,
 	parsePromptDependencies,
-	validatePrompt,
+	parseContract,
+	CONTRACT_FIELD_NAMES,
 	TASK_HEADING_RE,
 } from "./parse-prompt.mjs";
 export { parseStatus, getStepProgress, listIncompleteSteps } from "./parse-status.mjs";
@@ -46,17 +47,22 @@ export {
 	assertValidTaskPacket,
 	collectPromptValidationFailure,
 	formatPromptValidationFailures,
+	validatePrompt,
 } from "./validate-prompt.mjs";
+export {
+	validateContract,
+	resolveContractMode,
+} from "./validate-contract.mjs";
 
 /**
  * Load PROMPT.md and STATUS.md for a task folder.
  *
  * @param {string} taskFolderPath Path to `{PREFIX-###-slug}/`
  */
-export function loadTaskPacket(taskFolderPath) {
+export function loadTaskPacket(taskFolderPath, options = {}) {
 	const promptPath = path.join(taskFolderPath, "PROMPT.md");
 	const promptMarkdown = fs.readFileSync(promptPath, "utf-8");
-	const validation = validatePrompt(promptMarkdown);
+	const validation = validatePrompt(promptMarkdown, options);
 	const prompt = validation.prompt;
 
 	const statusPath = path.join(taskFolderPath, "STATUS.md");

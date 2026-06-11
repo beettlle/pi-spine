@@ -347,7 +347,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|--------|------|
 | SP-141 | Config defaults v2 (review, handoff, metrics) | **Done** | SP-122 |
 | SP-142 | Contract config validation | **Done** | SP-141 |
-| SP-143 | Contract parser | **Staged** | SP-142 |
+| SP-143 | Contract parser | **Done** | SP-142 |
 | SP-144 | Contract validate wire-up | **Staged** | SP-143 |
 | SP-145 | `spine tasks validate` CLI core | **Staged** | SP-144 |
 | SP-146 | `spine tasks validate` JSON output | **Staged** | SP-145 |
@@ -364,7 +364,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-157 | `needs_replan` reconcile | **Staged** | SP-156 |
 | SP-158 | Task metrics writer | **Staged** | SP-153 |
 | SP-159 | Batch metrics writer | **Staged** | SP-158 |
-| SP-160 | Skill explore Step 0 | **Staged** | SP-144 |
+| SP-160 | Skill explore Step 0 | **Done** | SP-144 |
 | SP-161 | Skill Contract template | **Staged** | SP-144 |
 | SP-162 | Runbook validate and handoff | **Staged** | SP-146, SP-148 |
 | SP-163 | Runbook replan and metrics | **Staged** | SP-157, SP-169 |
