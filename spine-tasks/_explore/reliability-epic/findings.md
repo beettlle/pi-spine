@@ -59,3 +59,7 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 2. **Wedge:** `worker-host.mjs` breaks poll loop on `.DONE` (disables stall/heartbeats) then `await childDone` indefinitely; success requires `exitCode === 0`.
 
 **Staged fix epic:** SP-193 (post-done grace + kill), SP-194 (nested spawn guard), SP-195 (engine code review), SP-196 (worker prompt), SP-197 (fixture), SP-198 (capstone).
+
+## Resolved (SP-193)
+
+**Fix:** `runWorker()` no longer breaks the poll loop on `.DONE`. A configurable post-done grace window (`lanes.postDoneGraceMinutes`, default 4 min) keeps polling; after grace the host SIGTERM/SIGKILLs a hung child and journals `worker.post_done_terminated`. When `.DONE` persists, the lane succeeds without requiring `exitCode === 0`. Pre-.DONE stall detection is unchanged.
