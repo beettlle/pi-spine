@@ -116,6 +116,13 @@ async function cmdTasks(args) {
 	await handleTasks(args);
 }
 
+async function cmdHandoff(args) {
+	const { runSpineHandoff } = await import("../src/cli/handoff.mjs");
+	const result = runSpineHandoff({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdReport(args) {
 	const sub = args[0];
 	if (sub !== "progress") {
@@ -172,6 +179,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
+ ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
@@ -180,6 +188,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
  ${c.cyan}dashboard${c.reset}       Local SSE dashboard (default http://127.0.0.1:8109)
+  ${c.cyan}tasks${c.reset}           Validate task PROMPT packets (FR-UXB-02)
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -218,7 +227,8 @@ ${c.bold}Examples:${c.reset}
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
-  spine review step --step N [--type plan|code] # cross-model step review
+  spine handoff [--batch ID] [--json]          # operator handoff note
+  spine review step --step N [--type plan|code|final] # step or final review
   spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM
  spine integrate [--dry-run] [--force-integrate]  # merge orch branch into main
@@ -228,6 +238,9 @@ ${c.bold}Examples:${c.reset}
   spine next --execute                          # run suggested spine command
   spine dashboard                               # local status dashboard (loopback only)
   spine dashboard --json                        # one-shot snapshot JSON
+  spine tasks validate pending                  # validate pending task PROMPTs
+  spine tasks validate all --json               # structured TasksValidateResult
+  spine help tasks                              # tasks subcommand usage
   spine version                                 # show package and environment info
 `);
 }
@@ -285,6 +298,9 @@ if (isCliEntrypoint(import.meta.url)) {
 			case "review":
 				await cmdReview(args);
 				break;
+			case "handoff":
+				await cmdHandoff(args);
+				break;
 			case "report":
 				await cmdReport(args);
 				break;
@@ -305,7 +321,12 @@ if (isCliEntrypoint(import.meta.url)) {
 			case "help":
 			case "--help":
 			case "-h":
-				printHelp();
+				if (args[0] === "tasks") {
+					const { printTasksHelp } = await import("./spine-tasks.mjs");
+					printTasksHelp();
+				} else {
+					printHelp();
+				}
 				break;
 			default:
 				die(`Unknown command: ${command}\nRun ${c.cyan}spine help${c.reset} for usage.`);

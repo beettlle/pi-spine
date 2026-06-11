@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import {
+	buildTasksValidateResult,
+	collectTaskAdvisoryWarnings,
 	formatTasksValidateHuman,
 	runSpineTasksValidate,
 } from '../../bin/spine-tasks.mjs';
@@ -250,6 +252,126 @@ x
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test('buildTasksValidateResult matches TasksValidateResult schema', () => {
+	const result = buildTasksValidateResult({
+		scope: { mode: 'ids', taskIds: ['FX-201'] },
+		tasks: [
+			{
+				taskId: 'FX-201',
+				ok: true,
+				promptPath: '/tmp/FX-201/PROMPT.md',
+				errors: [],
+				warnings: ['Missing STATUS.md'],
+			},
+		],
+	});
+
+	assert.equal(result.ok, true);
+	assert.deepEqual(result.scope, { mode: 'ids', taskCount: 1 });
+	assert.equal(result.tasks[0].taskId, 'FX-201');
+	assert.deepEqual(result.tasks[0].warnings, ['Missing STATUS.md']);
+});
+
+test('collectTaskAdvisoryWarnings reports folder, STATUS, and deps mismatches', () => {
+	const warnings = collectTaskAdvisoryWarnings(
+		{
+			prompt: { taskId: 'FX-202', dependencies: ['FX-100', 'FX-999'] },
+			statusPath: null,
+			promptPath: '/tmp/FX-201-wrong/PROMPT.md',
+		},
+		{ taskId: 'FX-201', folderName: 'FX-201-wrong' },
+		{ tasks: { 'FX-201': ['FX-100'] } },
+	);
+
+	assert.ok(warnings.some((w) => /folder name task id/i.test(w)));
+	assert.ok(warnings.some((w) => /missing status\.md/i.test(w)));
+	assert.ok(warnings.some((w) => /dependencies\.json/i.test(w) && w.includes('FX-999')));
+});
+
+test('runSpineTasksValidate --json emits TasksValidateResult', async () => {
+	const projectRoot = await initGitRepo('spine-validate-json-');
+	try {
+		writeTask(projectRoot, 'FX-105-json', 'FX-105', validPromptMarkdown('FX-105'));
+
+		const result = await runSpineTasksValidate({
+			projectRoot,
+			scope: 'FX-105',
+			json: true,
+		});
+		assert.equal(result.exitCode, 0);
+
+		const parsed = JSON.parse(result.output.trim());
+		assert.equal(parsed.ok, true);
+		assert.equal(parsed.scope.mode, 'ids');
+		assert.equal(parsed.scope.taskCount, 1);
+		assert.equal(parsed.tasks[0].taskId, 'FX-105');
+		assert.equal(parsed.tasks[0].ok, true);
+		assert.ok(parsed.tasks[0].promptPath.endsWith('PROMPT.md'));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test('runSpineTasksValidate --warnings-only keeps exit 0 for advisory issues', async () => {
+	const projectRoot = await initGitRepo('spine-validate-warn-');
+	try {
+		writeTask(
+			projectRoot,
+			'FX-106-warn',
+			'FX-106',
+			validPromptMarkdown('FX-106', {
+				extraBody: '',
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, 'spine-tasks', 'dependencies.json'),
+			JSON.stringify({ tasks: { 'FX-106': [] } }, null, 2),
+			'utf-8',
+		);
+
+		const result = await runSpineTasksValidate({
+			projectRoot,
+			scope: 'FX-106',
+			warningsOnly: true,
+		});
+		assert.equal(result.exitCode, 0);
+		assert.match(result.output, /warning: Missing STATUS\.md/);
+		assert.ok(result.result.tasks[0].warnings?.includes('Missing STATUS.md'));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test('spine tasks validate CLI --json exits 0 for valid scope', async () => {
+	const projectRoot = await initGitRepo('spine-validate-cli-json-');
+	try {
+		writeTask(projectRoot, 'FX-107-cli-json', 'FX-107', validPromptMarkdown('FX-107'));
+
+		const result = spawnSync(
+			process.execPath,
+			[SPINE_BIN, 'tasks', 'validate', 'FX-107', '--json'],
+			{ cwd: projectRoot, encoding: 'utf-8' },
+		);
+
+		assert.equal(result.status, 0, result.stderr);
+		const parsed = JSON.parse(result.stdout.trim());
+		assert.equal(parsed.ok, true);
+		assert.equal(parsed.tasks[0].taskId, 'FX-107');
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test('spine help tasks documents validate subcommand', () => {
+	const result = spawnSync(process.execPath, [SPINE_BIN, 'help', 'tasks'], {
+		encoding: 'utf-8',
+	});
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /spine tasks validate/i);
+	assert.match(result.stdout, /--json/);
+	assert.match(result.stdout, /--warnings-only/);
 });
 
 test('spine tasks validate CLI exits 2 for config error', async () => {
