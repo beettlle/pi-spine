@@ -111,6 +111,11 @@ async function cmdRules(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdTasks(args) {
+	const { handleTasks } = await import("./spine-tasks.mjs");
+	await handleTasks(args);
+}
+
 async function cmdReport(args) {
 	const sub = args[0];
 	if (sub !== "progress") {
@@ -255,6 +260,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "rules":
 				await cmdRules(args);
+				break;
+			case "tasks":
+				await cmdTasks(args);
 				break;
 			case "status":
 				await handleStatus(args);
