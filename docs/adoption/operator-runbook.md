@@ -104,14 +104,35 @@ Glob-triggered language packs match PROMPT **File Scope** via micromatch. Empty 
 
 ### 2.1 Validate task packets (v1.3 — FR-UXB-02)
 
-Run **before** `spine batch start` when authoring or editing `PROMPT.md` files:
+Run **before** `spine batch start` when authoring or editing `PROMPT.md` files. This is the same gate as upstream authoring — see [upstream-execution-workflow.md](./upstream-execution-workflow.md) Path 1 step 3.
+
+**When to run:**
+
+| Trigger | Command |
+|---------|---------|
+| After editing any `PROMPT.md` | `spine tasks validate <task-id>` or `spine tasks validate pending` |
+| Before every batch | `spine tasks validate pending` (also runs inside `spine preflight`) |
+| CI / automation | `spine tasks validate pending --json` (exit 0 pass, 1 validation fail, 2 config error) |
 
 ```bash
 spine tasks validate pending
 spine tasks validate pending --json
+spine tasks validate SP-042 --warnings-only   # advisory STATUS/deps warnings only
 ```
 
-Catches invalid headings, missing sections, missing Testing step, and Size XL — the same rules as the planner (`prompt_parse_failed` at worker launch).
+**Scope:** `pending` (no `.DONE`), explicit task IDs, or `all` (every discovered packet). Scoped plans validate only selected tasks; `spine plan all` fails if any discovered packet is invalid.
+
+Catches invalid headings, missing sections, missing Testing step, Size XL, and (v2.0) missing or invalid `## Contract` — the same rules as the planner (`prompt_parse_failed` at worker launch).
+
+**Fixing validation errors:**
+
+| Error pattern | Fix |
+|---------------|-----|
+| `em dash` / invalid heading | Use `# Task: SP-042 — Title` with U+2014 em dash, not hyphen |
+| `Missing required sections` | Add Mission, Dependencies, File Scope, Steps, Completion Criteria, Do NOT |
+| `Testing` / missing Testing step | Add `### Step N: Testing & Verification` under Steps |
+| `Contract` missing or empty | Add `## Contract` table (§2.3) or set `contract.mode: "optional"` during migration |
+| Size XL | Split into dependent S/M tasks (`skills/create-spine-tasks`) |
 
 ### 2.2 Preflight
 
@@ -133,9 +154,31 @@ spine preflight --json        # automation / CI
 | Tasks validate (v1.3) | Invalid PROMPT packets for pending scope |
 | Wave plan | Same planner output as `spine plan` (invalid PROMPTs fail here with actionable errors) |
 
-When validate, `spine plan`, or preflight fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files (heading em dash, required sections, testing step) before retrying. Scoped plans only validate selected tasks; `spine plan all` fails if any discovered packet is invalid.
+When validate, `spine plan`, or preflight fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files before retrying. Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
 
-Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
+### 2.3 Contract authoring (v2.0 — FR-CDO-01)
+
+New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.mode` is `"required"` (default after `spine init`). Legacy `TP-*` tasks skip Contract validation via `legacyTaskIdPrefixes`.
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm test -- tests/example.test.mjs` |
+| fileScopeMustChange | `src/example.mjs` |
+| minLineCoverage | 77 |
+```
+
+| `contract.mode` | Behavior |
+|-----------------|----------|
+| `required` | Missing or empty Contract fails `spine tasks validate` for non-legacy task IDs |
+| `optional` | Missing Contract warns only; present Contract must be syntactically valid |
+| `legacy` | Contract section ignored for validation and final-review verifier |
+
+**Migration tip:** Dogfood repos with 100+ legacy packets can start with `contract.mode: "optional"`, add Contract to new `SP-*` tasks, then flip to `"required"` when backlog is updated. Taskplane migrants keep `TP-*` on legacy behavior regardless of global mode.
+
+Authoring guidance: [create-spine-tasks skill](../../skills/create-spine-tasks/SKILL.md) and [upstream-execution-workflow.md](./upstream-execution-workflow.md).
 
 **Environment overrides** (optional, FR-CFG-04):
 
@@ -340,24 +383,38 @@ In pi: `/spine-retry-task TP-012`, `/spine-skip-task TP-012`.
 
 ### Replan (v1.3 — FR-UXB-04)
 
-When final review returns `REPLAN` (wrong scope in `PROMPT.md`), `spine status` reports `diagnosis: needs_replan`:
+When final review returns `REPLAN` (wrong scope in `PROMPT.md`), `spine status --diagnose` reports `diagnosis: needs_replan`. REPLAN blocks wave merge until the packet is fixed.
+
+```bash
+spine status --diagnose    # expect diagnosis: needs_replan
+spine journal tail         # look for task.verdict_recorded verdict: REPLAN
+```
+
+**Retry flow:**
 
 1. Read reviewer feedback in `{taskFolder}/.reviews/final-*.md`.
-2. Edit `PROMPT.md` (scope, steps, or dependencies).
-3. `spine batch retry <taskId>` then `spine batch resume`.
+2. Edit `PROMPT.md` (scope, steps, dependencies, or Contract).
+3. `spine tasks validate <taskId>` — confirm packet is valid before retry.
+4. `spine batch retry <taskId>` then `spine batch resume`.
 
 Alternatives: `spine batch skip <taskId>` to unblock the wave, or abandon via dismiss per §18.6.
 
+| Diagnosis | Meaning | Blocks merge? |
+|-----------|---------|---------------|
+| `needs_replan` | Final review REPLAN — edit PROMPT | Yes |
+| `needs_retry` | Worker/review failure — fix code | No (retry in place) |
+
 ### Operator handoff (v1.3 — FR-UXB-05)
 
-Before closing your IDE or when pausing overnight:
+Before closing your IDE, switching machines, or pausing overnight — write batch state for the next operator session. Complements upstream session handoff in [upstream-execution-workflow.md](./upstream-execution-workflow.md) (pi-spine handoff is batch-scoped; zero-pi `/zero-resume` is pi-session-scoped).
 
 ```bash
 spine handoff              # writes .spine/handoff.md
 spine next                 # suggested next command
+spine status --diagnose    # confirm diagnosis before handoff
 ```
 
-In pi: `/spine-handoff`. Handoff summarizes batch diagnosis and pending tasks — not full pi conversation history (see optional zero-pi `/zero-resume` for session-level handoff).
+In pi: `/spine-handoff`. Handoff summarizes batch diagnosis, pending tasks, and suggested next command — not full pi conversation history.
 
 ### Pause and abort
 
@@ -444,14 +501,23 @@ When `diagnosis` is `needs_integrate`, the banner uses integrate styling even if
 
 ### 7.1 Run metrics (v1.3 — FR-UXB-06)
 
-After batches complete, inspect per-task outcomes (model, duration, final verdict):
+After batches complete, inspect per-task outcomes (model, duration, final verdict, contract result):
 
 ```bash
 spine metrics show
+spine metrics show --batch 20260610T140000
 spine metrics show --batch 20260610T140000 --json
+spine metrics show --last 20
 ```
 
-Data appends to `.spine/run-metrics.jsonl`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4.
+| Field | Meaning |
+|-------|---------|
+| `finalVerdict` | `PASS`, `REVISE`, or `REPLAN` from final review |
+| `contractOk` | Machine contract verifier result |
+| `finalAttempts` | Final review attempt count (capped by `review.maxFinalAttempts`) |
+| `outcome` | `completed`, `failed`, or `skipped` |
+
+Data appends to `.spine/run-metrics.jsonl` when `metrics.enabled` is true (default). Disable with `"metrics": { "enabled": false }` in `.spine/spine-config.json`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4. `spine doctor` hints when the metrics file exists.
 
 ---
 

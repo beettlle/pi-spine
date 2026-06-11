@@ -95,6 +95,11 @@ test("adoption fixture: init, plan, stub batch AD-001 creates .DONE", async () =
 	try {
 		ensureSpineInit(projectRoot);
 
+		const validateOutput = runSpine(projectRoot, ["tasks", "validate", TASK_ID], {
+			SPINE_WORKER_STUB: "1",
+		});
+		assert.match(validateOutput, /Validated 1 task\(s\): 1 passed, 0 failed/);
+
 		const planOutput = runSpine(projectRoot, ["plan", TASK_ID], { SPINE_WORKER_STUB: "1" });
 		assert.match(planOutput, new RegExp(TASK_ID));
 

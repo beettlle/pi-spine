@@ -17,6 +17,12 @@ Fixture task for engine final-review REPLAN path and wave merge block tests.
 
 - `src/final-replan-fixture.mjs`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `true` |
+
 ## Steps
 
 ### Step 0: Preflight

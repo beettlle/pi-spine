@@ -11,7 +11,7 @@ echo "  repo: $ROOT"
 echo ""
 
 npm run typecheck
-SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs
+SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs tests/adoption/replan-needs-replan.test.mjs
 
 echo ""
 echo "✅ Adoption smoke passed"
