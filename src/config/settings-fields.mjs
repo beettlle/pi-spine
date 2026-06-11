@@ -38,6 +38,11 @@ export const SETTINGS_FIELDS = Object.freeze([
 		caseSensitive: true,
 	},
 	{
+		path: "lanes.autoIntegrateBetweenWaves",
+		label: "Auto integrate between waves",
+		type: "boolean",
+	},
+	{
 		path: "gates.requireBeforeIntegrate",
 		label: "Require gate before integrate",
 		type: "boolean",

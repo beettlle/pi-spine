@@ -2,13 +2,12 @@
  * Atomic task retry and skip (TP-017, PRD §18.5, FR-BATCH-09/10).
  */
 
-import { appendJournalEvent } from "./journal.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
 	recomputeTaskCounters,
+	recordTaskTransition,
 	resetTaskForRetry,
-	saveSpineBatchState,
 	updateSegmentForTask,
 	validateBatchState,
 } from "./state.mjs";
@@ -133,12 +132,15 @@ export function retryTask({ projectRoot, taskId }) {
 	state.resilience.retryCountByScope[taskId] = (state.resilience.retryCountByScope[taskId] ?? 0) + 1;
 
 	const pendingSegments = countPendingSegments(state, taskId);
-	saveSpineBatchState(projectRoot, state);
-
-	appendJournalEvent(projectRoot, state.batchId, "task.retry_requested", {
-		taskId,
-		previousClassification: reset.previousClassification,
-		pendingSegments,
+	recordTaskTransition({
+		projectRoot,
+		state,
+		journalType: "task.retry_requested",
+		journalPayload: {
+			taskId,
+			previousClassification: reset.previousClassification,
+			pendingSegments,
+		},
 	});
 
 	return {
@@ -233,11 +235,14 @@ export function skipTask({ projectRoot, taskId }) {
 		state.phase = phase === "paused" ? "paused" : "failed";
 	}
 
-	saveSpineBatchState(projectRoot, state);
-
-	appendJournalEvent(projectRoot, state.batchId, "task.skipped", {
-		taskId,
-		previousStatus: taskStatus,
+	recordTaskTransition({
+		projectRoot,
+		state,
+		journalType: "task.skipped",
+		journalPayload: {
+			taskId,
+			previousStatus: taskStatus,
+		},
 	});
 
 	return {

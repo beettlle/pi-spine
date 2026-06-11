@@ -412,6 +412,38 @@ function stubHandler(command: string) {
 	};
 }
 
+async function maybeAutoWriteHandoffOnSessionStart(diagnosis: string | null): Promise<void> {
+	let autoWriteOn: string[] = [];
+	try {
+		const configPath = path.join(process.cwd(), ".spine", "spine-config.json");
+		if (fs.existsSync(configPath)) {
+			const config = JSON.parse(fs.readFileSync(configPath, "utf-8")) as {
+				handoff?: { autoWriteOn?: string[] };
+			};
+			autoWriteOn = config.handoff?.autoWriteOn ?? [];
+		}
+	} catch {
+		return;
+	}
+	if (!autoWriteOn.includes("session_start")) return;
+
+	const activeDiagnoses = new Set([
+		"running",
+		"paused",
+		"needs_retry",
+		"worker_orphaned",
+		"engine_orphaned",
+		"state_drift",
+		"needs_merge",
+		"needs_integrate",
+		"needs_replan",
+		"failed",
+	]);
+	if (!diagnosis || !activeDiagnoses.has(diagnosis)) return;
+
+	runSpineHandoff("");
+}
+
 async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const scope = args.trim();
 	const status = runSpineStatus("--json");
@@ -431,6 +463,8 @@ async function spineEntryHandler(args: string, ctx: ExtensionCommandContext): Pr
 	}
 
 	const diagnosis = reconciliation.diagnosis ?? null;
+
+	await maybeAutoWriteHandoffOnSessionStart(diagnosis);
 
 	if (diagnosis === "limbo_stale" || diagnosis === "completed_manual") {
 		ctx.ui.notify(

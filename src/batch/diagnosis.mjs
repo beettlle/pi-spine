@@ -8,6 +8,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"running",
 	"paused",
 	"needs_retry",
+	"state_drift",
 	"worker_orphaned",
 	"engine_orphaned",
 	"needs_merge",
@@ -155,6 +156,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "limbo_stale":
 		case "completed_manual":
 			return "spine batch dismiss";
+		case "state_drift":
+			return "spine batch retry --force";
 		case "needs_retry":
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return "spine doctor";
@@ -246,6 +249,10 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `${batchLabel} worker died while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} has failed tasks — retry before resume`;
+		case "state_drift":
+			return ctx.failedTaskId
+				? `${batchLabel} batch-state drift for task ${ctx.failedTaskId} — journal disagrees with cache`
+				: `${batchLabel} batch-state drift — journal disagrees with cache`;
 		case "worker_orphaned":
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return `${batchLabel} lane worker orphaned during launch — fix PI_SPINE_ROOT/devcontainer, then retry`;

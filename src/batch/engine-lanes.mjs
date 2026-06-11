@@ -25,6 +25,7 @@ import { buildTaskLaneAssignments, countPlanTasks } from "./engine-scope.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 import {
 	recordTaskSucceeded,
+	recordTaskTransition,
 	recomputeTaskCounters,
 	saveSpineBatchState,
 	updateSegmentForTask,
@@ -962,13 +963,17 @@ export async function skipTaskDoneOnDisk({
 		endedAt,
 		startedAt,
 	});
-	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "task.skipped_done_on_disk", {
-		taskId,
-		laneNumber,
-		laneId: lane.laneId,
-		correlationId: laneCorrelationId,
-		taskFolder: taskFolderPath,
+	recordTaskTransition({
+		projectRoot,
+		state,
+		journalType: "task.skipped_done_on_disk",
+		journalPayload: {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			taskFolder: taskFolderPath,
+		},
 	});
 	recordLaneTaskMetric({
 		projectRoot,
@@ -1213,12 +1218,16 @@ export async function runTaskOnLane({
 	}
 
 	recordTaskSucceeded(state, taskId, { exitReason: "done", doneFileFound: true });
-	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "task.completed", {
-		taskId,
-		laneNumber,
-		laneId: lane.laneId,
-		correlationId: laneCorrelationId,
+	recordTaskTransition({
+		projectRoot,
+		state,
+		journalType: "task.completed",
+		journalPayload: {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+		},
 	});
 	recordLaneTaskMetric({
 		projectRoot,

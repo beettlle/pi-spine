@@ -60,7 +60,7 @@ test("formatSettingsShow returns JSON fields array for all settings", () => {
 	const parsed = JSON.parse(result.output);
 	assert.ok(Array.isArray(parsed.fields));
 	assert.ok(Array.isArray(parsed.envAwareFields));
-	assert.equal(parsed.fields.length, 6);
+	assert.equal(parsed.fields.length, 7);
 	assert.deepEqual(
 		parsed.fields.find((field) => field.path === "lanes.maxParallel"),
 		{
@@ -96,7 +96,7 @@ test("buildSettingsShowFields mirrors registry order", () => {
 		fs.readFileSync(path.join(REPO_ROOT, ".spine", "spine-config.json"), "utf-8"),
 	);
 	const fields = buildSettingsShowFields(config);
-	assert.equal(fields.length, 6);
+	assert.equal(fields.length, 7);
 	assert.equal(fields[0].path, "lanes.maxParallel");
 	assert.equal(fields[0].value, config.lanes.maxParallel);
 });

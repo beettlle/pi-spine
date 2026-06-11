@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { appendJournalEvent } from "./journal.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { readReviewLevel } from "./review.mjs";
 import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
@@ -274,7 +275,18 @@ export function startAgentSessionWorker(
 			}
 			const session = state.session;
 			if (session?.abort) {
-				void session.abort().catch(() => {});
+				void session.abort().catch((err) => {
+					const root =
+						process.env.SPINE_PROJECT_ROOT ?? projectRoot ?? process.cwd();
+					const batchId = process.env.SPINE_BATCH_ID;
+					if (batchId) {
+						appendJournalEvent(root, batchId, "lane.worker_abort_failed", {
+							taskId: process.env.SPINE_TASK_ID,
+							laneNumber: process.env.SPINE_LANE_NUMBER,
+							error: err instanceof Error ? err.message : String(err),
+						});
+					}
+				});
 			}
 		},
 		wait: async () => {

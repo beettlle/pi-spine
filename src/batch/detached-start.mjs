@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runBatchPreflight } from "../../bin/spine-preflight.mjs";
+import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
 import {
@@ -17,6 +18,35 @@ import {
 } from "./state.mjs";
 
 export const DETACHED_ENGINE_LOG_REL = path.join(".spine", "runtime", "detached-engine.log");
+
+/** Diagnoses that benefit from blocking until resume engine reaches terminal phase. */
+const RESUME_WAIT_TERMINAL_DIAGNOSES = new Set([
+	"engine_orphaned",
+	"worker_orphaned",
+	"state_drift",
+]);
+
+/**
+ * Default detached resume to --wait-terminal after orphan/drift diagnoses.
+ *
+ * @param {string} projectRoot
+ * @param {boolean} explicitWaitTerminal
+ * @param {boolean} noWaitTerminal
+ */
+export function resolveDefaultResumeWaitTerminal(
+	projectRoot,
+	explicitWaitTerminal,
+	noWaitTerminal = false,
+) {
+	if (explicitWaitTerminal) return true;
+	if (noWaitTerminal) return false;
+	const reconciliation = reconcileBatch({ projectRoot });
+	const diagnosis = reconciliation.diagnosis;
+	if (diagnosis && RESUME_WAIT_TERMINAL_DIAGNOSES.has(diagnosis)) {
+		return true;
+	}
+	return false;
+}
 
 /** @type {ReadonlySet<string>} */
 const TERMINAL_TASK_STATUSES = new Set(["succeeded", "failed", "skipped", "aborted"]);

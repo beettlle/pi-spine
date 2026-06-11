@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real-pi adoption E2E — copy adoption fixture, init, batch AD-002.
 # Manual/optional only — not part of default npm test.
-# Usage: ./scripts/real-pi-adoption-e2e.sh [--batch] [--keep-tmp]
+# Usage: ./scripts/real-pi-adoption-e2e.sh [--batch] [--multi] [--keep-tmp]
 # See docs/adoption/real-pi-e2e.md
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,10 +9,12 @@ FIXTURE="$ROOT/tests/fixtures/adoption-repo"
 SPINE="${SPINE_BIN:-node $ROOT/bin/spine.mjs}"
 TASK_ID="AD-002"
 RUN_BATCH=0
+RUN_MULTI=0
 KEEP_TMP=0
 for arg in "$@"; do
   case "$arg" in
     --batch) RUN_BATCH=1 ;;
+    --multi) RUN_MULTI=1 ;;
     --keep-tmp) KEEP_TMP=1 ;;
   esac
 done
@@ -38,9 +40,14 @@ if [[ ! -f .spine/spine-config.json ]]; then
 fi
 $SPINE plan "$TASK_ID"
 pass "plan $TASK_ID"
+[[ "$RUN_MULTI" == "1" ]] && { $SPINE plan AD-003; pass "plan AD-003"; }
 [[ "$RUN_BATCH" != "1" ]] && { echo "Run with --batch to execute"; exit 0; }
 section "batch start (attached, real pi)"
-SPINE_WORKER_STUB=0 $SPINE batch start "$TASK_ID" --skip-preflight --attached
+if [[ "$RUN_MULTI" == "1" ]]; then
+  SPINE_WORKER_STUB=0 $SPINE batch start AD-002 AD-003 --skip-preflight --attached
+else
+  SPINE_WORKER_STUB=0 $SPINE batch start "$TASK_ID" --skip-preflight --attached
+fi
 DONE=""
 for c in taskplane-tasks/AD-002-real-pi-smoke/.DONE .worktrees/*/lane-1/taskplane-tasks/AD-002-real-pi-smoke/.DONE; do
   [[ -f "$c" ]] && DONE="$c" && break

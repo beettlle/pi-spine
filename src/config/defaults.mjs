@@ -12,7 +12,7 @@ export const REVIEW_DEFAULTS = Object.freeze({
 /** @type {Readonly<{ path: string; autoWriteOn: readonly string[] }>} */
 export const HANDOFF_DEFAULTS = Object.freeze({
 	path: ".spine/handoff.md",
-	autoWriteOn: Object.freeze([]),
+	autoWriteOn: Object.freeze(["session_start"]),
 });
 
 /** @type {Readonly<{ enabled: boolean; path: string }>} */

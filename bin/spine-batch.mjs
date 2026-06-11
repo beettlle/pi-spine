@@ -2,7 +2,11 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { abortBatch } from "../src/batch/abort.mjs";
-import { startBatchDetached, resumeBatchDetached } from "../src/batch/detached-start.mjs";
+import {
+	resolveDefaultResumeWaitTerminal,
+	resumeBatchDetached,
+	startBatchDetached,
+} from "../src/batch/detached-start.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
@@ -96,6 +100,7 @@ export function parseBatchArgs(args) {
 		detectManualMerge: flags.has("--detect-manual-merge"),
 		attached: flags.has("--attached"),
 		waitTerminal: flags.has("--wait-terminal"),
+		noWaitTerminal: flags.has("--no-wait-terminal"),
 		dryRun,
 		skipPreflight,
 		batchId,
@@ -262,11 +267,16 @@ export async function runSpineBatch(options) {
 
 	if (parsed.subcommand === "resume") {
 		if (!parsed.attached) {
+			const waitTerminal = resolveDefaultResumeWaitTerminal(
+				projectRoot,
+				parsed.waitTerminal,
+				parsed.noWaitTerminal,
+			);
 			const detached = await resumeBatchDetached({
 				projectRoot,
 				spineBin: path.join(__dirname, "spine.mjs"),
 				force: parsed.force,
-				waitTerminal: parsed.waitTerminal,
+				waitTerminal,
 				json: parsed.json,
 			});
 			return {

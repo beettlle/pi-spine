@@ -16,7 +16,10 @@ import {
 
 test("CONFIG_V2_SECTION_DEFAULTS match handoff §6.2", () => {
 	assert.deepEqual(REVIEW_DEFAULTS, { requireFinalVerdict: true, maxFinalAttempts: 3 });
-	assert.deepEqual(HANDOFF_DEFAULTS, { path: ".spine/handoff.md", autoWriteOn: [] });
+	assert.deepEqual(HANDOFF_DEFAULTS, {
+		path: ".spine/handoff.md",
+		autoWriteOn: ["session_start"],
+	});
 	assert.deepEqual(METRICS_DEFAULTS, { enabled: true, path: ".spine/run-metrics.jsonl" });
 	assert.deepEqual(CONFIG_V2_SECTION_DEFAULTS.review, REVIEW_DEFAULTS);
 });
@@ -30,7 +33,7 @@ test("applyConfigDefaults merges missing v2 sections without overwriting existin
 	assert.equal(config.review.requireFinalVerdict, false);
 	assert.equal(config.review.maxFinalAttempts, 3);
 	assert.equal(config.handoff.path, "custom.md");
-	assert.deepEqual(config.handoff.autoWriteOn, []);
+	assert.deepEqual(config.handoff.autoWriteOn, ["session_start"]);
 	assert.equal(config.metrics.enabled, true);
 	assert.equal(config.metrics.path, ".spine/run-metrics.jsonl");
 });

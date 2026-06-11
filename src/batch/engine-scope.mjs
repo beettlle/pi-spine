@@ -12,6 +12,18 @@ import {
 } from "./state.mjs";
 
 /**
+ * Whether to auto-integrate orch→base after a wave merge when more waves remain.
+ *
+ * @param {object} params
+ * @param {object} [params.config]
+ * @param {number} params.waveIndex
+ * @param {number} params.totalWaves
+ */
+export function shouldAutoIntegrateAfterWave({ config = {}, waveIndex, totalWaves }) {
+	return Boolean(config.lanes?.autoIntegrateBetweenWaves) && waveIndex < totalWaves - 1;
+}
+
+/**
  * @param {import("../planner/index.mjs").buildPlan} plan
  */
 export function countPlanTasks(plan) {

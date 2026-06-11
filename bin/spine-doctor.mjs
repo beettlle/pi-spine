@@ -28,6 +28,8 @@ import { buildCoexistenceDoctorCheck } from "../src/doctor/coexistence.mjs";
 import { buildTaskPacketSizeDoctorCheck } from "../src/doctor/task-packet-size.mjs";
 import { buildStallConfigDoctorCheck } from "../src/doctor/stall-config.mjs";
 import { buildRulesManifestDoctorCheck } from "../src/doctor/rules-manifest.mjs";
+import { buildWorktreeHealthDoctorCheck } from "../src/doctor/worktree-health.mjs";
+import { buildAgentSessionDoctorCheck } from "../src/config/worker-backend.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../src/config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../src/config/cursor-rules/profile.mjs";
 import {
@@ -311,6 +313,15 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			}),
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
+		const worktreeHealthCheck = buildWorktreeHealthDoctorCheck({
+			projectRoot,
+			config: configResult.config,
+		});
+		checks.push(worktreeHealthCheck);
+		if (!worktreeHealthCheck.ok) issueCount++;
+		const agentSessionCheck = buildAgentSessionDoctorCheck(configResult.config);
+		checks.push(agentSessionCheck);
+		if (!agentSessionCheck.ok) issueCount++;
 		for (const testingCheck of buildTestingEvidenceDoctorChecks(configResult.config)) {
 			checks.push(testingCheck);
 		}

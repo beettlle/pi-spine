@@ -15,6 +15,10 @@ import {
 import { workerOutputLogPath } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
+import {
+	detectBatchStateDrift,
+	rebuildBatchStateFromJournal,
+} from "./journal-rebuild.mjs";
 import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
@@ -441,6 +445,11 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
 	}
 
+	if (signals.stateDrift?.drifted) {
+		const driftTask = signals.stateDrift.entries.find((entry) => entry.taskId !== "*");
+		return withFailureContext("state_drift", driftTask?.taskId ?? null, signals);
+	}
+
 	if (git?.gitInspectionError) {
 		return withFailureContext("git_unavailable", null, signals);
 	}
@@ -629,6 +638,13 @@ export function reconcileBatch(ctx) {
 	}
 
 	const engineSessionJournalEvents = journalEventsSinceResume(journalEvents, batch.raw);
+
+	if (journalEvents.length > 0 && batch.raw) {
+		const rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
+		const drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents);
+		signals.stateDrift = drift;
+		signals.rebuiltFromJournal = rebuilt;
+	}
 
 	signals.orphanRunning = detectOrphanRunning({
 		phase: batch.phase,

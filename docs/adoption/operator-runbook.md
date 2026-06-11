@@ -28,6 +28,26 @@ alias spine="node $SPINE"
 
 Throughout this doc, `spine` means whichever invocation you chose (`node …/bin/spine.mjs` or global `spine`).
 
+### Attached-first policy (Phase 22)
+
+Until you trust detached batches on a repo, prefer **attached** mode so the CLI blocks until the engine finishes:
+
+```bash
+spine batch start SP-042 --attached
+spine batch resume --attached
+```
+
+Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
+
+After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
+
+**Orphan recovery tree:**
+
+1. `spine status --diagnose` — read headline and `suggestedCommand`
+2. `state_drift` → retry affected task, then `spine batch resume --force`
+3. `engine_orphaned` / `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
+4. Never hand-edit `.spine/batch-state.json`
+
 ---
 
 ## 1. Install

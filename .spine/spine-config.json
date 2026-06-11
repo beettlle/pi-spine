@@ -40,6 +40,22 @@
     "collectBuildEvidence": true,
     "collectTestEvidence": true
   },
+  "review": {
+    "requireFinalVerdict": true,
+    "maxFinalAttempts": 3
+  },
+  "handoff": {
+    "path": ".spine/handoff.md",
+    "autoWriteOn": ["session_start"]
+  },
+  "metrics": {
+    "enabled": true,
+    "path": ".spine/run-metrics.jsonl"
+  },
+  "contract": {
+    "mode": "required",
+    "legacyTaskIdPrefixes": ["TP-"]
+  },
   "worktreeSetupHook": "",
   "referenceDocs": [],
   "standards": [],

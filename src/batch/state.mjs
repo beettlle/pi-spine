@@ -551,6 +551,28 @@ export function recordTaskSucceeded(state, taskId, options = {}) {
 }
 
 /**
+ * Single write path: persist batch-state then append matching journal event (FR-REL-04).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.journalType
+ * @param {Record<string, unknown>} [params.journalPayload]
+ */
+export function recordTaskTransition({
+	projectRoot,
+	state,
+	journalType,
+	journalPayload = {},
+}) {
+	const batchId = String(state.batchId ?? "");
+	saveSpineBatchState(projectRoot, state);
+	if (!batchId) return state;
+	appendJournalEvent(projectRoot, batchId, journalType, journalPayload);
+	return state;
+}
+
+/**
  * @param {object} state
  * @param {string} [taskId]
  */

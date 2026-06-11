@@ -18,6 +18,7 @@ test("SETTINGS_FIELDS lists at least five editable paths", () => {
 			"agents.worker.thinking",
 			"dashboard.port",
 			"gates.requireBeforeIntegrate",
+			"lanes.autoIntegrateBetweenWaves",
 			"lanes.maxParallel",
 			"lanes.workerBackend",
 		].sort(),

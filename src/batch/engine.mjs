@@ -10,6 +10,7 @@ import { buildPlan } from "../planner/index.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
+import { integrateOrchToBase } from "./integrate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	assertNoActiveBatch,
@@ -31,6 +32,7 @@ import {
 	countPlanTasks,
 	maxLaneNumberForPlan,
 	resolveBatchStartScope,
+	shouldAutoIntegrateAfterWave,
 } from "./engine-scope.mjs";
 import {
 	buildTasksAndLanesFromPlan,
@@ -381,6 +383,21 @@ export async function startBatch({
 					error: "merge_failed",
 					output: mergeResult.error,
 				};
+			}
+
+			if (
+				shouldAutoIntegrateAfterWave({
+					config,
+					waveIndex: wave.index,
+					totalWaves: state.totalWaves,
+				})
+			) {
+				const integrateResult = integrateOrchToBase({ projectRoot, batchId });
+				appendJournalEvent(projectRoot, batchId, "integrate.started", {
+					waveIndex: wave.index,
+					mode: "auto_between_waves",
+					ok: integrateResult.ok,
+				});
 			}
 		}
 

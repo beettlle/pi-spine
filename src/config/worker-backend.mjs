@@ -3,6 +3,10 @@
  * @see docs/adoption/create-agent-session-spike.md
  */
 
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+
 /** @typedef {"subprocess" | "agentSession"} WorkerBackend */
 
 export const WORKER_BACKENDS = Object.freeze(["subprocess", "agentSession"]);
@@ -41,6 +45,45 @@ export function resolveWorkerBackend(config = {}) {
  * @param {object} config
  * @returns {{ code: string, message: string, suggestedCommand: string } | null}
  */
+/**
+ * Doctor check when lanes.workerBackend is agentSession.
+ *
+ * @param {object} [config]
+ */
+export function buildAgentSessionDoctorCheck(config = {}) {
+	const backend = resolveWorkerBackend(config);
+	if (backend !== "agentSession") {
+		return {
+			label: "agentSession worker backend",
+			ok: true,
+			detail: `effective backend: ${backend}`,
+		};
+	}
+
+	/** @type {string[]} */
+	const issues = [];
+	try {
+		require.resolve("@earendil-works/pi-coding-agent");
+	} catch {
+		issues.push("@earendil-works/pi-coding-agent not installed");
+	}
+
+	if (issues.length === 0) {
+		return {
+			label: "agentSession worker backend",
+			ok: true,
+			detail: "pi-coding-agent peer available",
+		};
+	}
+
+	return {
+		label: "agentSession worker backend",
+		ok: false,
+		detail: issues.join("; "),
+		suggestion: "npm install @earendil-works/pi-coding-agent",
+	};
+}
+
 export function validateWorkerBackendConfig(config) {
 	const raw = config.lanes?.workerBackend;
 	if (raw == null || raw === "") {
