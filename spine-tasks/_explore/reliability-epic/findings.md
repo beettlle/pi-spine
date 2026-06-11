@@ -29,7 +29,7 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 | Retry state drift | retry-state-drift test | Covered SP-120; needs atomic helper |
 | Devcontainer launch | `lane-worktree-devcontainer.json` | Covered SP-101–105 |
 | Journal/cache drift | — | **Open** — Phase 22 |
-| Real-pi regression | AD-002 only | **Open** — Phase 22 |
+| Real-pi regression | AD-002 only | **Resolved SP-192** — engine honors worker `review.completed` final PASS; E2E re-run pending |
 
 ## Suggested file scopes per wave
 
@@ -43,3 +43,9 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 - Real-pi CI requires API credentials — use `workflow_dispatch` + weekly cron with secrets documented
 - Journal rebuild seeds structural fields from cache; full structural rebuild deferred v2.2
+
+## Resolved (SP-192)
+
+**Incident:** Batch `20260611T220521` — worker journal showed final **PASS** and `.DONE`, engine recorded `final_review_spawn_failed`.
+
+**Fix (4907ed5):** `findCompletedFinalReview()` honors journal `review.completed` or `.reviews/final-*.md` PASS before engine spawn; non-stub path delegates to `runStepReview({ reviewType: "final" })`.

@@ -470,13 +470,13 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-189 | Contract required flip | **Done** | SP-170 |
 | SP-190 | Handoff autoWriteOn | **Staged** | SP-189 |
 | SP-191 | CONTEXT Phase 22 tracking | **Staged** | leaves |
-| SP-192 | Engine honors worker final review | **Staged** | SP-151, SP-179 |
+| SP-192 | Engine honors worker final review | **Done** | SP-151, SP-179 |
 
 **Phase 22 exit criteria:**
 
 - [x] Journal rebuild parity on incident fixtures
 - [x] `state_drift` in `spine status --diagnose`
-- [ ] Real-pi CI workflow green or documented skip (blocked on SP-192)
+- [ ] Real-pi CI workflow green or documented skip (SP-192 landed; re-run `./scripts/real-pi-adoption-e2e.sh --batch`)
 - [ ] Tier 3 consumer pilot template filled
 - [x] Attached-first guidance in operator runbook
 
