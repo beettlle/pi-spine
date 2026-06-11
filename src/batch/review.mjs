@@ -32,10 +32,11 @@ export function readReviewLevel(taskFolder) {
 
 /**
  * @param {number} reviewLevel
- * @param {"plan"|"code"} reviewType
+ * @param {"plan"|"code"|"final"} reviewType
  */
 export function isReviewTypeRequired(reviewLevel, reviewType) {
 	if (reviewLevel <= 0) return false;
+	if (reviewType === "final") return reviewLevel >= 1;
 	if (reviewType === "plan") return reviewLevel >= 1;
 	return reviewLevel >= 2;
 }
@@ -57,15 +58,27 @@ export function buildReviewArtifactPath(taskFolder, stepNumber, date = new Date(
 }
 
 /**
- * @param {string} reviewContent
- * @returns {{ verdict: "APPROVE"|"REVISE"|null, feedback: string }}
+ * @param {string} taskFolder
+ * @param {Date} [date]
  */
-export function parseReviewVerdict(reviewContent) {
+export function buildFinalReviewArtifactPath(taskFolder, date = new Date()) {
+	return path.join(taskFolder, ".reviews", `final-${formatReviewTimestamp(date)}.md`);
+}
+
+/**
+ * @param {string} reviewContent
+ * @param {{ reviewType?: "plan"|"code"|"final" }} [options]
+ * @returns {{ verdict: "APPROVE"|"REVISE"|"PASS"|"REPLAN"|null, feedback: string }}
+ */
+export function parseReviewVerdict(reviewContent, options = {}) {
+	const reviewType = options.reviewType ?? "code";
+	const isFinal = reviewType === "final";
+
 	const jsonMatch = reviewContent.match(/```json\s*\n([\s\S]*?)\n```/i);
 	if (jsonMatch) {
 		try {
 			const parsed = JSON.parse(jsonMatch[1]);
-			const verdict = normalizeVerdict(parsed.verdict);
+			const verdict = normalizeVerdict(parsed.verdict, reviewType);
 			if (verdict) {
 				return {
 					verdict,
@@ -77,10 +90,13 @@ export function parseReviewVerdict(reviewContent) {
 		}
 	}
 
-	const headingMatch = reviewContent.match(/###?\s*Verdict[:\s]*(APPROVE|REVISE)/i);
+	const headingPattern = isFinal
+		? /###?\s*Verdict[:\s]*(PASS|REVISE|REPLAN)/i
+		: /###?\s*Verdict[:\s]*(APPROVE|REVISE)/i;
+	const headingMatch = reviewContent.match(headingPattern);
 	if (headingMatch) {
 		return {
-			verdict: normalizeVerdict(headingMatch[1]),
+			verdict: normalizeVerdict(headingMatch[1], reviewType),
 			feedback: extractSummary(reviewContent),
 		};
 	}
@@ -93,6 +109,12 @@ export function parseReviewVerdict(reviewContent) {
 	) {
 		return { verdict: "REVISE", feedback: extractSummary(reviewContent) };
 	}
+	if (isFinal && (lower.includes("replan") || lower.includes("re-plan"))) {
+		return { verdict: "REPLAN", feedback: extractSummary(reviewContent) };
+	}
+	if (isFinal && lower.includes("pass") && !lower.includes("cannot pass") && !lower.includes("do not pass")) {
+		return { verdict: "PASS", feedback: extractSummary(reviewContent) };
+	}
 	if (lower.includes("approve") && !lower.includes("do not approve") && !lower.includes("cannot approve")) {
 		return { verdict: "APPROVE", feedback: extractSummary(reviewContent) };
 	}
@@ -102,10 +124,14 @@ export function parseReviewVerdict(reviewContent) {
 
 /**
  * @param {unknown} value
+ * @param {"plan"|"code"|"final"} [reviewType]
  */
-function normalizeVerdict(value) {
+function normalizeVerdict(value, reviewType = "code") {
 	if (typeof value !== "string") return null;
 	const upper = value.trim().toUpperCase();
+	if (reviewType === "final") {
+		return upper === "PASS" || upper === "REVISE" || upper === "REPLAN" ? upper : null;
+	}
 	return upper === "APPROVE" || upper === "REVISE" ? upper : null;
 }
 
@@ -160,9 +186,44 @@ export function buildReviewRequest({
 	outputPath,
 	baseline,
 	projectName = "project",
+	contractVerifyResult = null,
 }) {
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	const statusPath = path.join(taskFolder, "STATUS.md");
+	if (reviewType === "final") {
+		const contractLines =
+			contractVerifyResult && Array.isArray(contractVerifyResult.checks)
+				? [
+						"",
+						"## Contract verification",
+						`Machine verifier: ${contractVerifyResult.ok ? "PASS" : "FAIL"}`,
+						...contractVerifyResult.checks.map(
+							(check) =>
+								`- ${check.ok ? "OK" : "FAIL"} ${check.field}: ${check.message}`,
+						),
+					]
+				: [];
+
+		return [
+			"# Review Request: Final Verdict",
+			"",
+			`You are performing a final verdict review for a ${projectName} task.`,
+			"",
+			"## Task Context",
+			`- **Task PROMPT:** ${promptPath}`,
+			`- **Task STATUS:** ${statusPath}`,
+			`- **Step completed:** Step ${stepNumber}: ${stepName}`,
+			`- **Worktree:** ${worktreePath}`,
+			"",
+			"## Instructions",
+			"Verify completion criteria and contract checks before returning a final verdict.",
+			...contractLines,
+			"",
+			"## Output",
+			`Write your review to: \`${outputPath}\``,
+			"Include `### Verdict: PASS`, `### Verdict: REVISE`, or `### Verdict: REPLAN` and a JSON block.",
+		].join("\n");
+	}
 	if (reviewType === "plan") {
 		return [
 			"# Review Request: Plan Review",
@@ -223,8 +284,10 @@ export function findStepName(taskFolder, stepNumber) {
  */
 function writeStubReviewArtifact({ artifactPath, reviewType, stepNumber, stepName, verdict, feedback }) {
 	fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
+	const reviewLabel =
+		reviewType === "final" ? "Final" : reviewType === "plan" ? "Plan" : "Code";
 	const body = [
-		`## ${reviewType === "plan" ? "Plan" : "Code"} Review: ${stepName}`,
+		`## ${reviewLabel} Review: ${stepName}`,
 		"",
 		`### Verdict: ${verdict}`,
 		"",
@@ -353,6 +416,7 @@ export function runStepReview({
 	stubVerdict = "APPROVE",
 	stubFail = false,
 	projectName,
+	contractVerifyResult = null,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!isReviewTypeRequired(reviewLevel, reviewType)) {
@@ -369,7 +433,10 @@ export function runStepReview({
 	}
 
 	const stepName = findStepName(taskFolder, stepNumber);
-	const artifactPath = buildReviewArtifactPath(taskFolder, stepNumber);
+	const artifactPath =
+		reviewType === "final"
+			? buildFinalReviewArtifactPath(taskFolder)
+			: buildReviewArtifactPath(taskFolder, stepNumber);
 	const reviewPrompt = buildReviewRequest({
 		reviewType,
 		stepNumber,
@@ -379,6 +446,7 @@ export function runStepReview({
 		outputPath: artifactPath,
 		baseline,
 		projectName,
+		contractVerifyResult,
 	});
 
 	journalReviewEvent("review.started", journal, {
@@ -425,8 +493,16 @@ export function runStepReview({
 			};
 		}
 
-		const verdict = normalizeVerdict(stubVerdict) ?? "APPROVE";
-		const feedback = verdict === "REVISE" ? "Stub reviewer requested changes." : "Stub reviewer approved.";
+		const defaultVerdict = reviewType === "final" ? "PASS" : "APPROVE";
+		const verdict = normalizeVerdict(stubVerdict, reviewType) ?? defaultVerdict;
+		const feedback =
+			verdict === "REVISE"
+				? "Stub reviewer requested changes."
+				: verdict === "REPLAN"
+					? "Stub reviewer requested replan."
+					: reviewType === "final"
+						? "Stub reviewer passed final verdict."
+						: "Stub reviewer approved.";
 		writeStubReviewArtifact({
 			artifactPath,
 			reviewType,
@@ -436,7 +512,7 @@ export function runStepReview({
 			feedback,
 		});
 
-		const ok = verdict === "APPROVE";
+		const ok = reviewType === "final" ? verdict === "PASS" : verdict === "APPROVE";
 		journalReviewEvent("review.completed", journal, {
 			stepNumber,
 			reviewType,
@@ -512,7 +588,7 @@ export function runStepReview({
 	}
 
 	const reviewContent = fs.readFileSync(artifactPath, "utf-8");
-	const { verdict, feedback } = parseReviewVerdict(reviewContent);
+	const { verdict, feedback } = parseReviewVerdict(reviewContent, { reviewType });
 	if (!verdict) {
 		const error = "review artifact missing structured verdict";
 		journalReviewEvent("review.failed", journal, {
@@ -535,7 +611,7 @@ export function runStepReview({
 		};
 	}
 
-	const ok = verdict === "APPROVE";
+	const ok = reviewType === "final" ? verdict === "PASS" : verdict === "APPROVE";
 	journalReviewEvent("review.completed", journal, {
 		stepNumber,
 		reviewType,

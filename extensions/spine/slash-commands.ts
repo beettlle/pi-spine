@@ -28,6 +28,8 @@ export const SPINE_SLASH_COMMAND_NAMES = [
 	"spine-dismiss",
 	"spine-next",
 	"spine-dashboard",
+	"spine-validate",
+	"spine-handoff",
 ] as const;
 
 type SpineSlashCommandName = (typeof SPINE_SLASH_COMMAND_NAMES)[number];
@@ -98,6 +100,14 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 	{
 		name: "spine-dashboard",
 		description: "Start local dashboard (usage: /spine-dashboard [--port N])",
+	},
+	{
+		name: "spine-validate",
+		description: "Validate task PROMPT packets (usage: /spine-validate [pending|all|task-id])",
+	},
+	{
+		name: "spine-handoff",
+		description: "Write operator handoff note (usage: /spine-handoff [--batch ID])",
 	},
 ];
 
@@ -277,6 +287,46 @@ function runSpineIntegrate(argsText: string, cwd = process.cwd()) {
 	const result = spawnSync(
 		process.execPath,
 		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "integrate", ...tokens],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
+function runSpineTasksValidate(argsText: string, cwd = process.cwd()) {
+	const scope = String(argsText ?? "").trim() || "pending";
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "tasks", "validate", scope],
+		{
+			cwd,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
+
+	return {
+		ok: result.status === 0,
+		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
+	};
+}
+
+function runSpineHandoff(argsText: string, cwd = process.cwd()) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	const result = spawnSync(
+		process.execPath,
+		[path.join(PACKAGE_ROOT, "bin/spine.mjs"), "handoff", ...tokens],
 		{
 			cwd,
 			encoding: "utf-8",
@@ -582,6 +632,48 @@ async function spineNextHandler(args: string, ctx: ExtensionCommandContext): Pro
 	ctx.ui.notify(result.output || "no next action", "info");
 }
 
+async function spineValidateHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineTasksValidate(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine tasks validate failed", "error");
+		return;
+	}
+
+	ctx.ui.notify(result.output || "task PROMPT packets valid", "info");
+}
+
+async function spineHandoffHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const result = runSpineHandoff(args);
+	if (!result.ok) {
+		ctx.ui.notify(result.output || "spine handoff failed", "error");
+		return;
+	}
+
+	const { recordHandoffWritten } = await import(
+		path.join(PACKAGE_ROOT, "src/batch/journal.mjs")
+	);
+	const status = runSpineStatus("--json");
+	if (status.ok && status.output) {
+		try {
+			const reconciliation = JSON.parse(status.output) as {
+				batchId?: string | null;
+				diagnosis?: string | null;
+			};
+			if (reconciliation.batchId) {
+				recordHandoffWritten(process.cwd(), reconciliation.batchId, {
+					handoffPath: ".spine/handoff.md",
+					diagnosis: reconciliation.diagnosis ?? "unknown",
+					batchId: reconciliation.batchId,
+				});
+			}
+		} catch {
+			// handoff file still written; journal event is best-effort
+		}
+	}
+
+	ctx.ui.notify(result.output || "handoff written", "info");
+}
+
 async function spineGateHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	const result = runSpineGate(args);
 	if (!result.ok) {
@@ -672,9 +764,13 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 																	? spineSettingsHandler
 																	: name === "spine-dashboard"
 																		? spineDashboardHandler
-																		: name === "spine-deps"
-																			? spineDepsHandler
-																			: stubHandler(name),
+										: name === "spine-deps"
+											? spineDepsHandler
+											: name === "spine-validate"
+												? spineValidateHandler
+												: name === "spine-handoff"
+													? spineHandoffHandler
+													: stubHandler(name),
 		});
 	}
 }

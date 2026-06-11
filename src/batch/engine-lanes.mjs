@@ -14,6 +14,7 @@ import {
 	writeRulesManifestAtomic,
 } from "../config/cursor-rules/discover.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { recordTaskTerminalMetric } from "./metrics.mjs";
 import {
 	commitLaneWorktree,
 	countCommitsAhead,
@@ -30,6 +31,10 @@ import {
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
+import { formatReviewTimestamp, readReviewLevel } from "./review.mjs";
+import { REVIEW_DEFAULTS } from "../config/defaults.mjs";
+import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import { shouldRunContractVerify, verifyContract } from "./contract-verify.mjs";
 
 /**
  * @param {string} projectRoot
@@ -258,6 +263,19 @@ export function transitionPhase(state, newPhase, ctx) {
 }
 
 /**
+ * @param {object} params
+ */
+function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskFolder }) {
+	recordTaskTerminalMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
+		taskFolder,
+	});
+}
+
+/**
  * @param {string} taskFolderPath
  */
 export function loadTaskFileScopePaths(taskFolderPath) {
@@ -292,6 +310,8 @@ function recordPromptParseFailure({
 	lane,
 	laneCorrelationId,
 	scopeResult,
+	config = {},
+	taskFolderPath,
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
@@ -322,6 +342,13 @@ function recordPromptParseFailure({
 		classification: "prompt_parse_failed",
 		exitCode: 1,
 		output: parseError,
+	});
+	recordLaneTaskMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
+		taskFolder: taskFolderPath,
 	});
 
 	return {
@@ -380,6 +407,533 @@ export function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batc
 }
 
 /**
+ * @param {string} taskFolder
+ * @param {Date} [date]
+ */
+export function buildFinalReviewArtifactPath(taskFolder, date = new Date()) {
+	return path.join(taskFolder, ".reviews", `final-${formatReviewTimestamp(date)}.md`);
+}
+
+/**
+ * @param {string} reviewContent
+ * @returns {{ verdict: "PASS"|"REVISE"|"REPLAN"|null, feedback: string }}
+ */
+export function parseFinalReviewVerdict(reviewContent) {
+	const jsonMatch = reviewContent.match(/```json\s*\n([\s\S]*?)\n```/i);
+	if (jsonMatch) {
+		try {
+			const parsed = JSON.parse(jsonMatch[1]);
+			const verdict = normalizeFinalVerdict(parsed.verdict);
+			if (verdict) {
+				return {
+					verdict,
+					feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
+				};
+			}
+		} catch {
+			/* fall through */
+		}
+	}
+
+	const headingMatch = reviewContent.match(/###?\s*Verdict[:\s]*(PASS|REVISE|REPLAN)/i);
+	if (headingMatch) {
+		return {
+			verdict: normalizeFinalVerdict(headingMatch[1]),
+			feedback: "",
+		};
+	}
+
+	return { verdict: null, feedback: "" };
+}
+
+/**
+ * @param {unknown} value
+ * @returns {"PASS"|"REVISE"|"REPLAN"|null}
+ */
+function normalizeFinalVerdict(value) {
+	if (typeof value !== "string") return null;
+	const upper = value.trim().toUpperCase();
+	return upper === "PASS" || upper === "REVISE" || upper === "REPLAN" ? upper : null;
+}
+
+/**
+ * @param {object} params
+ */
+export function shouldRunFinalReview({ config, reviewLevel }) {
+	const requireFinal = config?.review?.requireFinalVerdict ?? REVIEW_DEFAULTS.requireFinalVerdict;
+	return requireFinal && reviewLevel >= 1;
+}
+
+/**
+ * @returns {"PASS"|"REVISE"|"REPLAN"}
+ */
+function resolveFinalStubVerdict() {
+	const queue = process.env.SPINE_ENGINE_FINAL_STUB_VERDICTS;
+	if (queue) {
+		const parts = queue.split(",").map((entry) => entry.trim()).filter(Boolean);
+		const verdict = parts.shift() ?? "PASS";
+		process.env.SPINE_ENGINE_FINAL_STUB_VERDICTS = parts.join(",");
+		return normalizeFinalVerdict(verdict) ?? "PASS";
+	}
+	const single = process.env.SPINE_ENGINE_FINAL_STUB_VERDICT ?? "PASS";
+	return normalizeFinalVerdict(single) ?? "PASS";
+}
+
+/**
+ * @param {object} params
+ */
+function writeFinalStubReviewArtifact({ artifactPath, verdict, feedback }) {
+	fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
+	const body = [
+		"## Final Review",
+		"",
+		`### Verdict: ${verdict}`,
+		"",
+		"### Summary",
+		feedback || `Stub final review returned ${verdict}.`,
+		"",
+		"```json",
+		JSON.stringify({ verdict, feedback: feedback || "" }, null, 2),
+		"```",
+		"",
+	].join("\n");
+	fs.writeFileSync(artifactPath, body, "utf-8");
+}
+
+/**
+ * @param {object} params
+ */
+export function runEngineFinalReview({
+	taskFolder,
+	worktreePath,
+	config = {},
+	attempt = 1,
+	contractVerifyResult = null,
+}) {
+	const reviewLevel = readReviewLevel(taskFolder);
+	if (!shouldRunFinalReview({ config, reviewLevel })) {
+		return {
+			ok: true,
+			skipped: true,
+			reviewLevel,
+			verdict: null,
+			feedback: "",
+			artifactPath: "",
+			spawnFailed: false,
+			exitCode: 0,
+		};
+	}
+
+	const artifactPath = buildFinalReviewArtifactPath(taskFolder);
+	const useStub =
+		process.env.SPINE_REVIEW_STUB === "1" || process.env.SPINE_REVIEW_STUB === "true";
+
+	if (useStub) {
+		const verdict = resolveFinalStubVerdict();
+		const feedback =
+			verdict === "REVISE"
+				? "Stub reviewer requested changes."
+				: verdict === "REPLAN"
+					? "Stub reviewer requested replan."
+					: "Stub reviewer passed.";
+		writeFinalStubReviewArtifact({ artifactPath, verdict, feedback });
+		return {
+			ok: verdict === "PASS",
+			skipped: false,
+			reviewLevel,
+			verdict,
+			feedback,
+			artifactPath,
+			spawnFailed: false,
+			exitCode: verdict === "PASS" ? 0 : 2,
+			attempt,
+		};
+	}
+
+	return {
+		ok: false,
+		skipped: false,
+		reviewLevel,
+		verdict: null,
+		feedback: "",
+		artifactPath,
+		spawnFailed: true,
+		error: "final review requires SPINE_REVIEW_STUB or spine review step --type final (SP-150)",
+		exitCode: 1,
+		attempt,
+	};
+}
+
+/**
+ * @param {string} taskFolder
+ */
+function removeDoneFile(taskFolder) {
+	const donePath = path.join(taskFolder, ".DONE");
+	if (fs.existsSync(donePath)) {
+		fs.unlinkSync(donePath);
+	}
+}
+
+/**
+ * @param {object} params
+ */
+function recordFinalReviewTaskFailure({
+	projectRoot,
+	state,
+	batchId,
+	task,
+	lane,
+	laneCorrelationId,
+	exitReason,
+	verdict,
+	finalAttempt,
+	config,
+	taskFolder,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	task.status = "failed";
+	task.endedAt = Date.now();
+	task.exitReason = exitReason;
+	updateSegmentForTask(state, taskId, "failed");
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+	appendJournalEvent(projectRoot, batchId, "task.failed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		classification: exitReason,
+		exitCode: 1,
+		finalVerdict: verdict ?? null,
+		finalAttempt,
+	});
+	recordLaneTaskMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
+		taskFolder,
+	});
+}
+
+/**
+ * @param {object} params
+ */
+async function runFinalReviewPhase({
+	projectRoot,
+	state,
+	batchId,
+	config,
+	task,
+	lane,
+	taskFolderInWorktree,
+	wt,
+	taskBranch,
+	laneCorrelationId,
+	fileScopePaths,
+	baseBranch = "main",
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	const reviewLevel = readReviewLevel(taskFolderInWorktree);
+	if (!shouldRunFinalReview({ config, reviewLevel })) {
+		return { ok: true, skipped: true };
+	}
+
+	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
+	let finalAttempt = task.finalAttempts ?? 0;
+
+	while (true) {
+		let contractVerifyResult = null;
+		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
+		const parsedContract = parseContract(promptMarkdown);
+		if (shouldRunContractVerify(taskId, parsedContract, config)) {
+			contractVerifyResult = verifyContract(wt, parsedContract, {
+				...config,
+				baseBranch,
+			});
+			task.contractOk = contractVerifyResult.ok;
+			saveSpineBatchState(projectRoot, state);
+			appendJournalEvent(projectRoot, batchId, "contract.verified", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				ok: contractVerifyResult.ok,
+				checks: contractVerifyResult.checks,
+			});
+			if (!contractVerifyResult.ok) {
+				finalAttempt++;
+				task.finalAttempts = finalAttempt;
+				saveSpineBatchState(projectRoot, state);
+				appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+					taskId,
+					laneNumber,
+					laneId: lane.laneId,
+					correlationId: laneCorrelationId,
+					reviewType: "final",
+					verdict: "REVISE",
+					feedback: contractVerifyResult.checks
+						.filter((check) => !check.ok)
+						.map((check) => check.message)
+						.join("; "),
+					finalAttempt,
+					contractOk: false,
+				});
+
+				if (finalAttempt >= maxFinalAttempts) {
+					removeDoneFile(taskFolderInWorktree);
+					appendJournalEvent(projectRoot, batchId, "review.exhausted", {
+						taskId,
+						laneNumber,
+						laneId: lane.laneId,
+						correlationId: laneCorrelationId,
+						finalAttempt,
+						maxFinalAttempts,
+					});
+					recordFinalReviewTaskFailure({
+						projectRoot,
+						state,
+						batchId,
+						task,
+						lane,
+						laneCorrelationId,
+						exitReason: "review_exhausted",
+						verdict: "REVISE",
+						finalAttempt,
+						config,
+						taskFolder: taskFolderInWorktree,
+					});
+					return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
+				}
+
+				removeDoneFile(taskFolderInWorktree);
+				const reworkResult = await runWorker({
+					worktreePath: wt,
+					taskFolder: taskFolderInWorktree,
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					laneBranch: taskBranch,
+					laneCorrelationId,
+					fileScopePaths,
+					config,
+					onHeartbeat: (timestamp) => {
+						lane.lastHeartbeatAt = timestamp;
+						saveSpineBatchState(projectRoot, state);
+					},
+					onWorkerPid: (pid) => {
+						if (pid > 0) {
+							lane.workerPid = pid;
+							saveSpineBatchState(projectRoot, state);
+						}
+					},
+				});
+				if (!reworkResult.ok) {
+					const aborted = reworkResult.classification === "aborted";
+					task.status = aborted ? "aborted" : "failed";
+					task.endedAt = Date.now();
+					task.exitReason = reworkResult.classification ?? "worker_failed";
+					updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
+					recomputeTaskCounters(state);
+					saveSpineBatchState(projectRoot, state);
+					recordLaneTaskMetric({
+						projectRoot,
+						batchId,
+						task,
+						config,
+						taskFolder: taskFolderInWorktree,
+					});
+					return { ok: false, aborted, workerResult: reworkResult };
+				}
+
+				appendJournalEvent(projectRoot, batchId, "lane.completed", {
+					laneNumber,
+					laneId: lane.laneId,
+					taskId,
+					correlationId: laneCorrelationId,
+					phase: "final_rework",
+				});
+				continue;
+			}
+		}
+
+		const reviewResult = runEngineFinalReview({
+			taskFolder: taskFolderInWorktree,
+			worktreePath: wt,
+			config,
+			attempt: finalAttempt + 1,
+			contractVerifyResult,
+		});
+
+		if (reviewResult.spawnFailed) {
+			recordFinalReviewTaskFailure({
+				projectRoot,
+				state,
+				batchId,
+				task,
+				lane,
+				laneCorrelationId,
+				exitReason: "final_review_spawn_failed",
+				verdict: null,
+				finalAttempt,
+				config,
+				taskFolder: taskFolderInWorktree,
+			});
+			return {
+				ok: false,
+				error: "final_review_spawn_failed",
+				output: reviewResult.error ?? "final review spawn failed",
+			};
+		}
+
+		if (reviewResult.skipped) {
+			return { ok: true, skipped: true };
+		}
+
+		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			reviewType: "final",
+			verdict: reviewResult.verdict,
+			feedback: reviewResult.feedback,
+			artifactPath: reviewResult.artifactPath,
+			finalAttempt: finalAttempt + 1,
+		});
+
+		if (reviewResult.verdict === "PASS") {
+			task.finalAttempts = finalAttempt + 1;
+			saveSpineBatchState(projectRoot, state);
+			return { ok: true, verdict: "PASS", finalAttempt: finalAttempt + 1 };
+		}
+
+		if (reviewResult.verdict === "REPLAN") {
+			removeDoneFile(taskFolderInWorktree);
+			task.finalAttempts = finalAttempt + 1;
+			recordFinalReviewTaskFailure({
+				projectRoot,
+				state,
+				batchId,
+				task,
+				lane,
+				laneCorrelationId,
+				exitReason: "needs_replan",
+				verdict: "REPLAN",
+				finalAttempt: finalAttempt + 1,
+				config,
+				taskFolder: taskFolderInWorktree,
+			});
+			return { ok: false, exitReason: "needs_replan", verdict: "REPLAN" };
+		}
+
+		if (reviewResult.verdict === "REVISE") {
+			finalAttempt++;
+			task.finalAttempts = finalAttempt;
+			saveSpineBatchState(projectRoot, state);
+
+			if (finalAttempt >= maxFinalAttempts) {
+				removeDoneFile(taskFolderInWorktree);
+				appendJournalEvent(projectRoot, batchId, "review.exhausted", {
+					taskId,
+					laneNumber,
+					laneId: lane.laneId,
+					correlationId: laneCorrelationId,
+					finalAttempt,
+					maxFinalAttempts,
+				});
+				recordFinalReviewTaskFailure({
+					projectRoot,
+					state,
+					batchId,
+					task,
+					lane,
+					laneCorrelationId,
+					exitReason: "review_exhausted",
+					verdict: "REVISE",
+					finalAttempt,
+					config,
+					taskFolder: taskFolderInWorktree,
+				});
+				return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
+			}
+
+			removeDoneFile(taskFolderInWorktree);
+			const reworkResult = await runWorker({
+				worktreePath: wt,
+				taskFolder: taskFolderInWorktree,
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				laneBranch: taskBranch,
+				laneCorrelationId,
+				fileScopePaths,
+				config,
+				onHeartbeat: (timestamp) => {
+					lane.lastHeartbeatAt = timestamp;
+					saveSpineBatchState(projectRoot, state);
+				},
+				onWorkerPid: (pid) => {
+					if (pid > 0) {
+						lane.workerPid = pid;
+						saveSpineBatchState(projectRoot, state);
+					}
+				},
+			});
+			if (!reworkResult.ok) {
+				const aborted = reworkResult.classification === "aborted";
+				task.status = aborted ? "aborted" : "failed";
+				task.endedAt = Date.now();
+				task.exitReason = reworkResult.classification ?? "worker_failed";
+				updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
+				recomputeTaskCounters(state);
+				saveSpineBatchState(projectRoot, state);
+				recordLaneTaskMetric({
+					projectRoot,
+					batchId,
+					task,
+					config,
+					taskFolder: taskFolderInWorktree,
+				});
+				return { ok: false, aborted, workerResult: reworkResult };
+			}
+
+			appendJournalEvent(projectRoot, batchId, "lane.completed", {
+				laneNumber,
+				laneId: lane.laneId,
+				taskId,
+				correlationId: laneCorrelationId,
+				phase: "final_rework",
+			});
+			continue;
+		}
+
+		recordFinalReviewTaskFailure({
+			projectRoot,
+			state,
+			batchId,
+			task,
+			lane,
+			laneCorrelationId,
+			exitReason: "final_review_invalid_verdict",
+			verdict: reviewResult.verdict,
+			finalAttempt,
+			config,
+			taskFolder: taskFolderInWorktree,
+		});
+		return {
+			ok: false,
+			error: "final_review_invalid_verdict",
+			output: "final review artifact missing PASS, REVISE, or REPLAN verdict",
+		};
+	}
+}
+
+/**
  * @param {object} params
  */
 export async function skipTaskDoneOnDisk({
@@ -390,6 +944,7 @@ export async function skipTaskDoneOnDisk({
 	lane,
 	taskFolderPath,
 	laneCorrelationId,
+	config = {},
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
@@ -408,6 +963,13 @@ export async function skipTaskDoneOnDisk({
 		laneNumber,
 		laneId: lane.laneId,
 		correlationId: laneCorrelationId,
+		taskFolder: taskFolderPath,
+	});
+	recordLaneTaskMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
 		taskFolder: taskFolderPath,
 	});
 	return { ok: true, skipped: true };
@@ -442,6 +1004,8 @@ export async function runTaskOnLane({
 			lane,
 			laneCorrelationId,
 			scopeResult,
+			config,
+			taskFolderPath: path.join(projectRoot, taskFolderRel),
 		});
 	}
 	const fileScopePaths = scopeResult.fileScopePaths;
@@ -520,6 +1084,13 @@ export async function runTaskOnLane({
 				...salvageFields,
 			});
 		}
+		recordLaneTaskMetric({
+			projectRoot,
+			batchId,
+			task,
+			config,
+			taskFolder: taskFolderInWorktree,
+		});
 		return { ok: false, aborted, workerResult };
 	}
 
@@ -529,6 +1100,24 @@ export async function runTaskOnLane({
 		taskId,
 		correlationId: laneCorrelationId,
 	});
+
+	const finalReview = await runFinalReviewPhase({
+		projectRoot,
+		state,
+		batchId,
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+		baseBranch,
+	});
+	if (!finalReview.ok) {
+		return finalReview;
+	}
 
 	if (process.env.SPINE_TEST_STRIP_DONE_BEFORE_LANE_COMMIT === "1") {
 		const donePath = path.join(taskFolderInWorktree, ".DONE");
@@ -564,6 +1153,13 @@ export async function runTaskOnLane({
 			exitCode: 1,
 			output: laneCommit.error,
 		});
+		recordLaneTaskMetric({
+			projectRoot,
+			batchId,
+			task,
+			config,
+			taskFolder: taskFolderInWorktree,
+		});
 		return {
 			ok: false,
 			error: "lane_commit_failed",
@@ -597,6 +1193,13 @@ export async function runTaskOnLane({
 			exitCode: 1,
 			output: dirtyOutput,
 		});
+		recordLaneTaskMetric({
+			projectRoot,
+			batchId,
+			task,
+			config,
+			taskFolder: taskFolderInWorktree,
+		});
 		return {
 			ok: false,
 			error: "dirty_after_lane_commit",
@@ -611,6 +1214,13 @@ export async function runTaskOnLane({
 		laneNumber,
 		laneId: lane.laneId,
 		correlationId: laneCorrelationId,
+	});
+	recordLaneTaskMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
+		taskFolder: taskFolderInWorktree,
 	});
 
 	return { ok: true, laneCommit };
@@ -627,6 +1237,20 @@ export async function mergeWaveLanesToOrch({
 	orchBranch,
 	waveIndex,
 }) {
+	const waveTaskIds = state.wavePlan?.[waveIndex] ?? [];
+	const needsReplanTask = (state.tasks ?? []).find(
+		(entry) =>
+			waveTaskIds.includes(entry?.taskId) && entry?.exitReason === "needs_replan",
+	);
+	if (needsReplanTask) {
+		return {
+			ok: false,
+			error: `wave merge blocked: task ${needsReplanTask.taskId} has exitReason needs_replan`,
+			blockedBy: needsReplanTask.taskId,
+			exitReason: "needs_replan",
+		};
+	}
+
 	const lanes = state.lanes ?? [];
 	let lastMergeCommit = null;
 

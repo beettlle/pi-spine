@@ -396,6 +396,28 @@ function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null)
 /**
  * @param {object} signals
  */
+function findNeedsReplanTask(signals) {
+	const tasks = signals.raw?.tasks ?? signals.tasks ?? [];
+	return (
+		tasks.find(
+			(task) =>
+				task?.exitReason === "needs_replan" &&
+				(task.status === "failed" || task.classification === "terminal-failure"),
+		) ?? null
+	);
+}
+
+/**
+ * @param {object} signals
+ */
+function hasNeedsReplanBlocker(signals) {
+	const tasks = signals.raw?.tasks ?? signals.tasks ?? [];
+	return tasks.some((task) => task?.exitReason === "needs_replan");
+}
+
+/**
+ * @param {object} signals
+ */
 export function deriveDiagnosis(signals) {
 	const {
 		phase,
@@ -449,7 +471,26 @@ export function deriveDiagnosis(signals) {
 	}
 
 	if (hasFailedTasks || hasSegmentDrift) {
+		const replanTask = findNeedsReplanTask(signals);
+		if (replanTask) {
+			return withFailureContext(
+				"needs_replan",
+				replanTask.taskId ?? failedTaskId,
+				signals,
+				"needs_replan",
+			);
+		}
 		return withFailureContext("needs_retry", failedTaskId, signals);
+	}
+
+	if (hasNeedsReplanBlocker(signals)) {
+		const replanTask = findNeedsReplanTask(signals);
+		return withFailureContext(
+			"needs_replan",
+			replanTask?.taskId ?? failedTaskId,
+			signals,
+			"needs_replan",
+		);
 	}
 
 	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {

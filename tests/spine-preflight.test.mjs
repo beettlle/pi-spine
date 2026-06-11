@@ -12,6 +12,7 @@ import {
 	checkGitClean,
 	checkNoActiveBatch,
 	checkTasksRoot,
+	checkTasksValidate,
 	discoverTaskIds,
 	runBatchPreflight,
 	runPreflightPlanCheck,
@@ -290,6 +291,77 @@ Legacy done task.
 		assert.equal(plan.status, "ok");
 		assert.ok(String(plan.message).includes("TP-002"));
 		assert.ok(!String(plan.message).includes("TP-001"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("checkTasksValidate exposes distinct tasks-validate check id", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-validate-");
+	try {
+		writeTask(projectRoot, "TP-001", "alpha");
+		writeDependencies(projectRoot, { "TP-001": [] });
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const ok = checkTasksValidate({ projectRoot, configResult: loadSpineConfig(projectRoot) });
+		assert.equal(ok.id, "tasks-validate");
+		assert.equal(ok.ok, true);
+		assert.equal(ok.suggestedCommand, undefined);
+
+		const invalidFolder = path.join(projectRoot, "spine-tasks", "TP-002-invalid");
+		fs.mkdirSync(invalidFolder, { recursive: true });
+		fs.writeFileSync(
+			path.join(invalidFolder, "PROMPT.md"),
+			`# Task: TP-002 - invalid heading
+
+## Mission
+Broken packet.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/x.txt\`
+
+## Steps
+### Step 0: Implement
+- [ ] a
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- do not expand scope
+`,
+			"utf-8",
+		);
+		writeDependencies(projectRoot, { "TP-001": [], "TP-002": [] });
+
+		const failed = checkTasksValidate({ projectRoot, configResult: loadSpineConfig(projectRoot) });
+		assert.equal(failed.id, "tasks-validate");
+		assert.equal(failed.ok, false);
+		assert.equal(failed.suggestedCommand, "spine tasks validate pending");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runBatchPreflight includes tasks-validate check distinct from plan", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-validate-batch-");
+	try {
+		writeTask(projectRoot, "TP-001", "alpha");
+		writeDependencies(projectRoot, { "TP-001": [] });
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const result = runBatchPreflight({ projectRoot, skipDoctor: true });
+		const tasksValidate = result.checks.find((check) => check.id === "tasks-validate");
+		const plan = result.checks.find((check) => check.id === "plan");
+		assert.ok(tasksValidate);
+		assert.ok(plan);
+		assert.equal(tasksValidate.ok, true);
+		assert.notEqual(tasksValidate.id, plan.id);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

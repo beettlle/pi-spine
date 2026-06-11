@@ -12,6 +12,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"engine_orphaned",
 	"needs_merge",
 	"needs_integrate",
+	"needs_replan",
 	"completed",
 	"completed_manual",
 	"limbo_stale",
@@ -185,6 +186,12 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return "/spine-resume --force";
 		case "needs_integrate":
 			return "spine integrate";
+		case "needs_replan": {
+			const tasksRoot = ctx.tasksRoot ?? "spine-tasks";
+			return ctx.failedTaskId
+				? `edit ${tasksRoot}/${ctx.failedTaskId}/PROMPT.md then spine batch retry ${ctx.failedTaskId}`
+				: "spine status --diagnose";
+		}
 		case "running":
 			return "/spine-status --diagnose";
 		case "paused":
@@ -262,6 +269,10 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return `${batchLabel} tasks done — lane merges pending`;
 		case "needs_integrate":
 			return `${batchLabel} ready to integrate orch branch to main`;
+		case "needs_replan":
+			return ctx.failedTaskId
+				? `Task ${ctx.failedTaskId} needs replan — edit PROMPT.md before retry`
+				: `${batchLabel} has tasks needing replan — edit PROMPT.md before retry`;
 		case "running":
 			return `${batchLabel} is running`;
 		case "paused": {
@@ -284,8 +295,10 @@ export function buildHeadline(diagnosis, ctx = {}) {
 
 /**
  * @param {string} diagnosis
+ * @param {object} [ctx]
+ * @param {string|null} [ctx.failedTaskId]
  */
-export function buildAlternatives(diagnosis) {
+export function buildAlternatives(diagnosis, ctx = {}) {
 	const common = ["spine status --diagnose"];
 
 	switch (diagnosis) {
@@ -303,6 +316,10 @@ export function buildAlternatives(diagnosis) {
 			return ["/spine-status --diagnose", ...common];
 		case "needs_integrate":
 			return ["/spine-integrate", "/spine-gate", ...common];
+		case "needs_replan":
+			return ctx.failedTaskId
+				? [`spine batch skip ${ctx.failedTaskId}`, "spine handoff", ...common]
+				: ["spine handoff", ...common];
 		case "running":
 			return ["/spine-pause", "/spine-abort", ...common];
 		case "paused":
@@ -331,6 +348,6 @@ export function buildDiagnosisOutput(diagnosis, ctx = {}) {
 		diagnosis,
 		headline: buildHeadline(diagnosis, ctx),
 		suggestedCommand: buildSuggestedCommand(diagnosis, ctx),
-		alternatives: buildAlternatives(diagnosis),
+		alternatives: buildAlternatives(diagnosis, ctx),
 	};
 }

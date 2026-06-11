@@ -11,6 +11,9 @@ import { buildCoexistencePreflightCheck } from "../src/doctor/coexistence.mjs";
 import { validatePiSpineRootConfig } from "../src/config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../src/config/worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "../src/config/worktree-setup-hook.mjs";
+import { discoverTasks } from "../src/tasks/packet/discover.mjs";
+import { parseScope } from "../src/planner/scope.mjs";
+import { validatePrompt } from "../src/tasks/packet/validate-prompt.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
@@ -461,6 +464,67 @@ export function checkWorktreeSetupHook(ctx) {
 
 /**
  * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function checkTasksValidate(ctx) {
+	const { projectRoot, configResult } = ctx;
+	const config = configResult?.config;
+
+	if (!config || configResult?.error) {
+		return makeCheck("tasks-validate", false, "cannot validate tasks without spine config", {
+			suggestedCommand: "spine init",
+		});
+	}
+
+	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
+	if (!tasksRootPath) {
+		return makeCheck("tasks-validate", false, "tasks root not configured", {
+			suggestedCommand: "spine init",
+		});
+	}
+
+	try {
+		const discovered = discoverTasks(tasksRootPath);
+		const scopeResult = parseScope("pending", { tasksRoot: tasksRootPath, discoveredTasks: discovered });
+		const selectedTaskIds = new Set(scopeResult.taskIds);
+		/** @type {string[]} */
+		const failures = [];
+
+		for (const discoveredTask of discovered) {
+			if (!selectedTaskIds.has(discoveredTask.taskId)) continue;
+			const promptMarkdown = fs.readFileSync(
+				path.join(discoveredTask.folderPath, "PROMPT.md"),
+				"utf-8",
+			);
+			const validation = validatePrompt(promptMarkdown, {
+				taskId: discoveredTask.taskId,
+				contract: config.contract,
+			});
+			if (!validation.ok) {
+				failures.push(
+					`${discoveredTask.taskId}: ${validation.errors[0] ?? "invalid PROMPT packet"}`,
+				);
+			}
+		}
+
+		if (failures.length === 0) {
+			return makeCheck("tasks-validate", true, "pending task PROMPT packets valid");
+		}
+
+		return makeCheck("tasks-validate", false, failures[0], {
+			suggestedCommand: "spine tasks validate pending",
+			details: { failures },
+		});
+	} catch (err) {
+		return makeCheck("tasks-validate", false, `tasks validate failed: ${err.message}`, {
+			suggestedCommand: "spine tasks validate pending",
+		});
+	}
+}
+
+/**
+ * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
 	const { projectRoot, configResult } = ctx;
@@ -537,6 +601,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkPiSpineRoot(ctx));
 	checks.push(checkDependenciesJson(ctx));
 	checks.push(checkWorktreeSetupHook(ctx));
+	checks.push(checkTasksValidate(ctx));
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(

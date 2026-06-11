@@ -324,6 +324,34 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	}
 
 	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
+	const metricsPath = path.join(
+		projectRoot,
+		configResult.config?.metrics?.path ?? ".spine/run-metrics.jsonl",
+	);
+	if (fs.existsSync(metricsPath)) {
+		try {
+			const lines = fs
+				.readFileSync(metricsPath, "utf-8")
+				.trim()
+				.split("\n")
+				.filter(Boolean);
+			checks.push({
+				label: "run metrics available",
+				ok: true,
+				detail: `${lines.length} record(s) in ${path.relative(projectRoot, metricsPath)}`,
+				suggestedCommand: "spine metrics show",
+			});
+		} catch {
+			checks.push({
+				label: "run metrics available",
+				ok: true,
+				warning: true,
+				detail: `present but unreadable: ${path.relative(projectRoot, metricsPath)}`,
+				suggestedCommand: "spine metrics show",
+			});
+		}
+	}
+
 	if (tasksRootPath) {
 		record("tasks root exists", fs.existsSync(tasksRootPath), {
 			detail: path.relative(projectRoot, tasksRootPath),

@@ -6,7 +6,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
@@ -179,6 +181,14 @@ export function dismissBatch(ctx) {
 		reason: reason ?? null,
 		archivePath: path.relative(projectRoot, archivePath),
 	});
+	const configResult = loadSpineConfig(projectRoot);
+	recordBatchTerminalMetric({
+		projectRoot,
+		batchId,
+		batchState: { ...loaded.raw, endedAt },
+		diagnosis: diagnosis ?? "dismissed",
+		config: configResult.config ?? {},
+	});
 	clearActiveBatchState(loaded.path);
 
 	return {
@@ -330,6 +340,14 @@ export function completeBatch(ctx) {
 		detectManualMerge,
 		archivePath: path.relative(projectRoot, archivePath),
 		lifecycle: "complete",
+	});
+	const configResult = loadSpineConfig(projectRoot);
+	recordBatchTerminalMetric({
+		projectRoot,
+		batchId,
+		batchState: { ...loaded.raw, endedAt },
+		diagnosis: "completed",
+		config: configResult.config ?? {},
 	});
 	clearActiveBatchState(loaded.path);
 

@@ -22,6 +22,23 @@ test("worker.md documents spine tools, stall checkpoint, and coverage policy", (
 	assert.match(text, /77%/);
 });
 
+test("worker.md documents final review sequence before .DONE", () => {
+	const text = fs.readFileSync(WORKER_TEMPLATE, "utf-8");
+	assert.match(text, /--type final|type=final/i);
+	assert.match(text, /PASS/);
+	assert.match(text, /REPLAN/);
+	assert.match(text, /before.*\.DONE|before `.DONE`/i);
+});
+
+test("reviewer.md documents final PASS REVISE REPLAN verdicts", () => {
+	const reviewerTemplate = path.join(PACKAGE_ROOT, "templates/agents/reviewer.md");
+	const text = fs.readFileSync(reviewerTemplate, "utf-8");
+	assert.match(text, /PASS/);
+	assert.match(text, /REVISE/);
+	assert.match(text, /REPLAN/);
+	assert.match(text, /--type final|final verdict/i);
+});
+
 test("worker-prompt tail aligns with worker.md commit and review conventions", () => {
 	const commitHint = buildCommitBoundaryHint("SP-064");
 	assert.match(commitHint, /feat\(SP-064\): complete Step N/);

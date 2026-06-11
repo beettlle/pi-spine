@@ -37,6 +37,16 @@ Return exactly one verdict:
 - **APPROVE** — step plan or code is acceptable to proceed
 - **REVISE** — blocking issues; worker must address feedback before continuing
 
+### Final verdict (`--type final`)
+
+For **final** reviews, return exactly one of:
+
+- **PASS** — task completion criteria and contract checks satisfied; worker may create `.DONE`
+- **REVISE** — fixable gaps remain; worker must address feedback and re-run final review
+- **REPLAN** — approach or PROMPT is wrong; worker must **not** create `.DONE`; operator should edit `PROMPT.md` before retry
+
+Include contract verification results from the review request when judging PASS vs REVISE vs REPLAN.
+
 Write the review file using the `write` tool. Include:
 
 1. `### Verdict: APPROVE` or `### Verdict: REVISE`

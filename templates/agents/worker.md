@@ -101,7 +101,8 @@ For **Review Level 0**, skip `spine_review_step`. For **Level 1**, follow PROMPT
 5. On **REVISE**, fix feedback and re-request review; do not advance step **Status** or `Current Step` until **APPROVE**.
 6. Call **`spine_report_progress`** after the step is marked complete (after review **APPROVE** when review level > 0).
 7. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
-8. Create `.DONE` only when every completion criterion is satisfied.
+8. When **Review Level ≥ 1**, run **final review** before `.DONE`: `spine review step --step N --type final` (or `spine_review_step` with `type=final` on the last step). The engine may also run contract verification before the final reviewer.
+9. Create `.DONE` only after final verdict **PASS** (when required) and every completion criterion is satisfied. **REVISE** → fix and re-run final review. **REPLAN** → stop; do not create `.DONE`; edit `PROMPT.md` per reviewer feedback.
 
 **Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.
 

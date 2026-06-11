@@ -176,6 +176,15 @@ export function appendJournalEvent(projectRoot, batchId, type, options = {}) {
 /**
  * @param {string} projectRoot
  * @param {string} batchId
+ * @param {{ handoffPath: string, diagnosis: string, batchId?: string }} payload
+ */
+export function recordHandoffWritten(projectRoot, batchId, payload) {
+	return appendJournalEvent(projectRoot, batchId, "handoff.written", payload);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
  * @returns {object[]}
  */
 export function readJournalEvents(projectRoot, batchId) {

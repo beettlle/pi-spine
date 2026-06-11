@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Spawn reviewer for a task step (FR-REV, spine_review_step).
- * Usage: spine review step --step N [--type plan|code] [--baseline SHA]
+ * Usage: spine review step --step N [--type plan|code|final] [--baseline SHA]
  */
 
 import fs from "node:fs";
@@ -47,12 +47,13 @@ export function runSpineReviewStep(options) {
 	if (args.step == null || Number.isNaN(args.step)) {
 		return {
 			exitCode: 1,
-			output: "Usage: spine review step --step N [--type plan|code] [--baseline SHA] [--stub]\n",
+			output: "Usage: spine review step --step N [--type plan|code|final] [--baseline SHA] [--stub]\n",
 			result: null,
 		};
 	}
 
-	const reviewType = args.type === "code" ? "code" : "plan";
+	const reviewType =
+		args.type === "final" ? "final" : args.type === "code" ? "code" : "plan";
 	const projectRoot = options.projectRoot ?? process.env.SPINE_PROJECT_ROOT ?? findProjectRoot(worktreePath);
 	let config = options.config ?? {};
 	if (projectRoot && !options.config) {

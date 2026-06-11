@@ -11,6 +11,7 @@ import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { runWorker } from "../../src/batch/worker-host.mjs";
 import {
 	assertReviewToolAvailable,
+	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
 	isReviewTypeRequired,
 	isJournalAttachBlocked,
@@ -73,12 +74,21 @@ test("isReviewTypeRequired follows Taskplane rubric", () => {
 	assert.equal(isReviewTypeRequired(1, "plan"), true);
 	assert.equal(isReviewTypeRequired(1, "code"), false);
 	assert.equal(isReviewTypeRequired(2, "code"), true);
+	assert.equal(isReviewTypeRequired(0, "final"), false);
+	assert.equal(isReviewTypeRequired(1, "final"), true);
+	assert.equal(isReviewTypeRequired(2, "final"), true);
 });
 
 test("buildReviewArtifactPath uses step-timestamp pattern", () => {
 	const date = new Date("2026-06-01T12:30:45.123Z");
 	const artifact = buildReviewArtifactPath("/tmp/task", 3, date);
 	assert.match(artifact, /\/\.reviews\/3-20260601T123045\.md$/);
+});
+
+test("buildFinalReviewArtifactPath uses final-timestamp pattern", () => {
+	const date = new Date("2026-06-10T12:00:00.000Z");
+	const artifact = buildFinalReviewArtifactPath("/tmp/task", date);
+	assert.match(artifact, /\/\.reviews\/final-20260610T120000\.md$/);
 });
 
 test("parseReviewVerdict reads JSON and markdown verdicts", () => {
@@ -91,6 +101,58 @@ test("parseReviewVerdict reads JSON and markdown verdicts", () => {
 	const revise = parseReviewVerdict("### Verdict: REVISE\n### Summary\nFix tests.\n");
 	assert.equal(revise.verdict, "REVISE");
 	assert.match(revise.feedback, /Fix tests/);
+});
+
+test("parseReviewVerdict accepts PASS REVISE REPLAN when reviewType is final", () => {
+	const passJson = parseReviewVerdict(
+		"```json\n{\"verdict\":\"PASS\",\"feedback\":\"ship it\"}\n```\n",
+		{ reviewType: "final" },
+	);
+	assert.equal(passJson.verdict, "PASS");
+	assert.equal(passJson.feedback, "ship it");
+
+	const revise = parseReviewVerdict("### Verdict: REVISE\n### Summary\nTighten scope.\n", {
+		reviewType: "final",
+	});
+	assert.equal(revise.verdict, "REVISE");
+
+	const replan = parseReviewVerdict(
+		"### Verdict: REPLAN\n```json\n{\"verdict\":\"REPLAN\",\"feedback\":\"wrong contract\"}\n```\n",
+		{ reviewType: "final" },
+	);
+	assert.equal(replan.verdict, "REPLAN");
+	assert.equal(replan.feedback, "wrong contract");
+});
+
+test("parseReviewVerdict step mode rejects final-only verdict enums", () => {
+	const passAttempt = parseReviewVerdict(
+		"```json\n{\"verdict\":\"PASS\",\"feedback\":\"nope\"}\n```\n",
+		{ reviewType: "code" },
+	);
+	assert.equal(passAttempt.verdict, null);
+
+	const replanAttempt = parseReviewVerdict("### Verdict: REPLAN\n", { reviewType: "plan" });
+	assert.equal(replanAttempt.verdict, null);
+});
+
+test("parseReviewVerdict accepts PASS REVISE REPLAN for final review type", () => {
+	const passJson = parseReviewVerdict(
+		"### Verdict: PASS\n```json\n{\"verdict\":\"PASS\",\"feedback\":\"ship it\"}\n```\n",
+		{ reviewType: "final" },
+	);
+	assert.equal(passJson.verdict, "PASS");
+
+	const replan = parseReviewVerdict(
+		"### Verdict: REPLAN\n```json\n{\"verdict\":\"REPLAN\",\"feedback\":\"scope wrong\"}\n```\n",
+		{ reviewType: "final" },
+	);
+	assert.equal(replan.verdict, "REPLAN");
+	assert.equal(replan.feedback, "scope wrong");
+
+	const stepStillApprove = parseReviewVerdict(
+		"### Verdict: PASS\n```json\n{\"verdict\":\"PASS\"}\n```\n",
+	);
+	assert.equal(stepStillApprove.verdict, null);
 });
 
 test("resolveBatchJournalContext ignores SPINE_BATCH_ID without SPINE_JOURNAL_ATTACH", () => {
@@ -283,6 +345,80 @@ test("runStepReview skips when review level does not require type", async () => 
 		assert.equal(result.skipped, true);
 		assert.equal(result.ok, true);
 	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runStepReview final stub PASS writes final artifact path", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-final-"));
+	const taskFolder = writeReviewTask(root, 2);
+	try {
+		const result = runStepReview({
+			taskFolder,
+			worktreePath: root,
+			stepNumber: 1,
+			reviewType: "final",
+			stub: true,
+			stubVerdict: "PASS",
+		});
+		assert.equal(result.ok, true);
+		assert.equal(result.verdict, "PASS");
+		assert.match(result.artifactPath, /\/\.reviews\/final-\d{8}T\d{6}\.md$/);
+		assert.ok(fs.existsSync(result.artifactPath));
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runStepReview final spawn failure exits non-zero at review level >= 1", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-final-fail-"));
+	const taskFolder = writeReviewTask(root, 2);
+	try {
+		const result = runStepReview({
+			taskFolder,
+			worktreePath: root,
+			stepNumber: 1,
+			reviewType: "final",
+			stubFail: true,
+		});
+		assert.equal(result.ok, false);
+		assert.equal(result.spawnFailed, true);
+		assert.equal(result.exitCode, 1);
+		assert.match(result.artifactPath, /\/\.reviews\/final-/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runSpineReviewStep CLI --type final emits JSON verdict", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-final-cli-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const prev = {
+		stub: process.env.SPINE_REVIEW_STUB,
+		taskFolder: process.env.SPINE_TASK_FOLDER,
+		worktree: process.env.SPINE_WORKTREE,
+	};
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_TASK_FOLDER = taskFolder;
+	process.env.SPINE_WORKTREE = root;
+	try {
+		const { exitCode, output, result } = runSpineReviewStep({
+			taskFolder,
+			worktreePath: root,
+			args: ["--step", "1", "--type", "final", "--stub"],
+		});
+		assert.equal(exitCode, 0);
+		assert.equal(result?.verdict, "PASS");
+		const parsed = JSON.parse(output.trim());
+		assert.equal(parsed.verdict, "PASS");
+		assert.match(parsed.artifactPath, /final-/);
+	} finally {
+		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.stub;
+		if (prev.taskFolder === undefined) delete process.env.SPINE_TASK_FOLDER;
+		else process.env.SPINE_TASK_FOLDER = prev.taskFolder;
+		if (prev.worktree === undefined) delete process.env.SPINE_WORKTREE;
+		else process.env.SPINE_WORKTREE = prev.worktree;
 		await rm(root, { recursive: true, force: true });
 	}
 });

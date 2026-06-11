@@ -14,6 +14,7 @@ if (nodeMajor < MIN_NODE_MAJOR) {
 	process.exit(1);
 }
 
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getVersion } from "./get-version.mjs";
@@ -123,6 +124,53 @@ async function cmdHandoff(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdMetrics(args) {
+	const sub = args[0];
+	if (sub !== "show") {
+		die(`Unknown metrics subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine metrics show${c.reset} for usage.`);
+	}
+
+	const projectRoot = process.cwd();
+	const json = args.includes("--json");
+	let batchId = null;
+	let last = null;
+	for (let i = 1; i < args.length; i++) {
+		const arg = args[i];
+		if (arg === "--batch") batchId = args[++i] ?? null;
+		else if (arg === "--last") last = Number(args[++i]);
+	}
+
+	const configResult = loadSpineConfig(projectRoot);
+	const config = configResult.config ?? {};
+	const {
+		filterMetricsLines,
+		formatMetricsTable,
+		metricsFilePath,
+		readMetricsLines,
+	} = await import("../src/batch/metrics.mjs");
+	const filePath = metricsFilePath(projectRoot, config);
+
+	if (!fs.existsSync(filePath)) {
+		if (json) {
+			process.stdout.write(`${JSON.stringify({ lines: [] }, null, 2)}\n`);
+			process.exit(1);
+		}
+		die(`Metrics file not found: ${path.relative(projectRoot, filePath)}\n`);
+	}
+
+	const lines = filterMetricsLines(readMetricsLines(filePath), {
+		batchId: batchId ?? undefined,
+		last: last ?? undefined,
+	});
+
+	if (json) {
+		process.stdout.write(`${JSON.stringify({ lines }, null, 2)}\n`);
+		return;
+	}
+
+	process.stdout.write(formatMetricsTable(lines));
+}
+
 async function cmdReport(args) {
 	const sub = args[0];
 	if (sub !== "progress") {
@@ -180,6 +228,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
  ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
+ ${c.cyan}metrics${c.reset}         Show run metrics JSONL (FR-UXB-06)
  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
@@ -228,6 +277,7 @@ ${c.bold}Examples:${c.reset}
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine handoff [--batch ID] [--json]          # operator handoff note
+  spine metrics show [--batch ID] [--last N]   # read run-metrics.jsonl
   spine review step --step N [--type plan|code|final] # step or final review
   spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM
@@ -300,6 +350,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "handoff":
 				await cmdHandoff(args);
+				break;
+			case "metrics":
+				await cmdMetrics(args);
 				break;
 			case "report":
 				await cmdReport(args);
