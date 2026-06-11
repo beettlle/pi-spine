@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-11
 **Status:** Active
-**Next Task ID:** SP-193
+**Next Task ID:** SP-199
 
 ---
 
@@ -471,6 +471,21 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-190 | Handoff autoWriteOn | **Staged** | SP-189 |
 | SP-191 | CONTEXT Phase 22 tracking | **Staged** | leaves |
 | SP-192 | Engine honors worker final review | **Done** | SP-151, SP-179 |
+
+### Phase 22b — Worker wedge epic (SP-193–198)
+
+**Incident:** Batch `20260611T222221` — SP-190 wrote `.DONE` but pi child hung on nested `spine review step`; engine wedged 17m (`doneFound: true`, `task.failed` on manual kill).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-193 | Post-.DONE worker grace watchdog | **Staged** | SP-192 |
+| SP-194 | Block nested pi reviewer in worker | **Staged** | SP-193 |
+| SP-195 | Engine code review phase (RL≥2) | **Staged** | SP-194, SP-151 |
+| SP-196 | Worker prompt review delegation | **Staged** | SP-195 |
+| SP-197 | SP-190 wedge incident fixture | **Staged** | SP-193, SP-195 |
+| SP-198 | Worker wedge epic capstone | **Staged** | SP-193–197 |
+
+**Suggested batches:** Wave A: `SP-193` → Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` after SP-193 lands.
 
 **Phase 22 exit criteria:**
 

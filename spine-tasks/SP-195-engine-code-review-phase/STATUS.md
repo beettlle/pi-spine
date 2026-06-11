@@ -1,0 +1,26 @@
+# SP-195: Engine code review phase (RL≥2) — Status
+
+**Current Step:** Not Started
+**Status:** 🔵 Ready for Execution
+**Last Updated:** 2026-06-11
+**Review Level:** 2
+**Size:** M
+
+---
+
+### Step 0: Preflight
+**Status:** ⬜ Not Started
+
+---
+
+## Blockers
+
+*None*
+
+---
+
+## Execution Log
+
+| Timestamp | Action | Outcome |
+|-----------|--------|---------|
+| 2026-06-11 | Task staged | PROMPT.md and STATUS.md created |

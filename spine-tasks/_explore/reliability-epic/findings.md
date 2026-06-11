@@ -49,3 +49,13 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 **Incident:** Batch `20260611T220521` — worker journal showed final **PASS** and `.DONE`, engine recorded `final_review_spawn_failed`.
 
 **Fix (4907ed5):** `findCompletedFinalReview()` honors journal `review.completed` or `.reviews/final-*.md` PASS before engine spawn; non-stub path delegates to `runStepReview({ reviewType: "final" })`.
+
+## Open — Worker wedge (SP-190, batch `20260611T222221`)
+
+**Symptom:** Task work complete (`.DONE`, commit `b4807d1`) but batch `running` 17+ minutes; pi child PID hung at 0% CPU.
+
+**Root cause chain:**
+1. **Trigger:** RL2 worker called `spine_review_step` → `spawnReviewerPi()` nested `spawnSync("pi")` hung after work completed.
+2. **Wedge:** `worker-host.mjs` breaks poll loop on `.DONE` (disables stall/heartbeats) then `await childDone` indefinitely; success requires `exitCode === 0`.
+
+**Staged fix epic:** SP-193 (post-done grace + kill), SP-194 (nested spawn guard), SP-195 (engine code review), SP-196 (worker prompt), SP-197 (fixture), SP-198 (capstone).
