@@ -17,6 +17,12 @@ Minimal adoption fixture task: prove stub batch can complete end-to-end in a con
 
 - `DONE.txt`
 
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `true` |
+
 ## Steps
 
 ### Step 0: Mark complete
