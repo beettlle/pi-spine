@@ -413,6 +413,17 @@ export function isJournalAttachBlocked() {
 	return process.env.SPINE_SUPPRESS_JOURNAL_ATTACH === "1";
 }
 
+/** Set by {@link buildWorkerChildEnv} when the batch engine launches a pi worker child. */
+export function isActiveWorkerSession() {
+	const marker = process.env.SPINE_WORKER_RUNNER;
+	return typeof marker === "string" && marker.length > 0;
+}
+
+export const NESTED_REVIEW_SPAWN_BLOCKED =
+	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker code review — the batch engine runs code review after worker success (SP-195).";
+
+export const NESTED_REVIEW_SPAWN_REASON = "nested_spawn_blocked";
+
 /**
  * Resolve batch journal target from env only when the batch engine opts in.
  * Prevents `npm test` (and other child processes) from polluting a live batch
@@ -440,6 +451,15 @@ export function resolveBatchJournalContext() {
  * @param {object} params
  */
 function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt, config = {} }) {
+	if (isActiveWorkerSession()) {
+		return {
+			spawnFailed: true,
+			exitCode: 1,
+			error: NESTED_REVIEW_SPAWN_BLOCKED,
+			reason: NESTED_REVIEW_SPAWN_REASON,
+		};
+	}
+
 	if (!commandExists("pi")) {
 		return {
 			spawnFailed: true,
@@ -641,6 +661,7 @@ export function runStepReview({
 			error: spawnResult.error,
 			spawnFailed: true,
 			exitCode: spawnResult.exitCode,
+			...(spawnResult.reason ? { reason: spawnResult.reason } : {}),
 		});
 		return {
 			ok: false,

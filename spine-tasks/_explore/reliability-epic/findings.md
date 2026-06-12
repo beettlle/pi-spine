@@ -50,6 +50,12 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Fix (4907ed5):** `findCompletedFinalReview()` honors journal `review.completed` or `.reviews/final-*.md` PASS before engine spawn; non-stub path delegates to `runStepReview({ reviewType: "final" })`.
 
+## Resolved (SP-194)
+
+**Incident:** SP-190 worker log — `spine review step` hung on nested `spawnSync("pi")` reviewer inside active worker session.
+
+**Fix:** `spawnReviewerPi()` checks `isActiveWorkerSession()` (`SPINE_WORKER_RUNNER` set by `buildWorkerChildEnv`) and fails fast with `spawnFailed: true`, journal `review.failed` reason `nested_spawn_blocked`, and tool message directing workers to skip in-worker code review (engine runs code review in SP-195). Stub plan review path unchanged for CI.
+
 ## Open — Worker wedge (SP-190, batch `20260611T222221`)
 
 **Symptom:** Task work complete (`.DONE`, commit `b4807d1`) but batch `running` 17+ minutes; pi child PID hung at 0% CPU.
