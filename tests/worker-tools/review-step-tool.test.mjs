@@ -145,3 +145,37 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 		await rm(root, { recursive: true, force: true });
 	}
 });
+
+test("spine_review_step blocks nested reviewer spawn inside worker session", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-tool-nested-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const prev = {
+		taskFolder: process.env.SPINE_TASK_FOLDER,
+		worktree: process.env.SPINE_WORKTREE,
+		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		stub: process.env.SPINE_REVIEW_STUB,
+	};
+	process.env.SPINE_TASK_FOLDER = taskFolder;
+	process.env.SPINE_WORKTREE = root;
+	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	delete process.env.SPINE_REVIEW_STUB;
+	try {
+		const result = await spineReviewStepTool.execute("tc-3", { step: 1, type: "code" });
+		assert.equal(result.isError, true);
+		assert.equal(result.details.spawnFailed, true);
+		assert.match(result.content[0].text, /Nested reviewer spawn blocked/i);
+		assert.match(result.content[0].text, /SP-195/i);
+	} finally {
+		for (const [key, envKey] of [
+			["taskFolder", "SPINE_TASK_FOLDER"],
+			["worktree", "SPINE_WORKTREE"],
+			["workerRunner", "SPINE_WORKER_RUNNER"],
+			["stub", "SPINE_REVIEW_STUB"],
+		]) {
+			const value = prev[key];
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
+		}
+		await rm(root, { recursive: true, force: true });
+	}
+});
