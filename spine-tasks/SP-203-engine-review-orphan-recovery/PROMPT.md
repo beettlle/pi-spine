@@ -84,6 +84,17 @@ Fix **engine orphan during final review** and **resume vs in-flight engine race*
 - [ ] Update findings.md
 - [ ] Create `.DONE`
 
+## Completion Criteria
+
+- [ ] Resume kills stale detached engine PID before re-entering
+- [ ] Honored final review PASS skips re-spawn on resume
+- [ ] No `task.failed` review events after terminal `batch.completed`
+
 ## Git Commit Convention
 
 - `feat(SP-203): complete Step N — description`
+
+## Do NOT
+
+- Kill live engines on normal pause/resume without orphan diagnosis
+- Re-run final review when journal already records PASS

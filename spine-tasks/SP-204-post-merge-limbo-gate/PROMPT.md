@@ -76,6 +76,17 @@ When **all tasks terminal-success** and **wave merge completed** but batch `phas
 - [ ] Runbook § for post-merge limbo
 - [ ] Create `.DONE`
 
+## Completion Criteria
+
+- [ ] Merge-complete limbo diagnoses as `needs_integrate` with actionable command
+- [ ] Gate opens without manual `openIntegrateGateAfterBatchComplete` recovery
+- [ ] No duplicate `gate.opened` journal events
+
 ## Git Commit Convention
 
 - `feat(SP-204): complete Step N — description`
+
+## Do NOT
+
+- Open gate when mergeResults empty or tasks still pending
+- Auto-integrate without operator `gate approve`
