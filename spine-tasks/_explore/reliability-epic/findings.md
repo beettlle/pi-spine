@@ -164,3 +164,14 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 | §8 Phase 23 audit not runnable; CONTEXT still Staged; 5× `batch/*.mjs` >500 LOC | SP-214 manual audit | **SP-231** |
 
 **Recovery:** Land SP-227–231, then re-run SP-214 with real pi after `verify phase23-exit` green.
+
+## Open — Real-pi model inheritance (SP-232, 2026-06-12)
+
+**Pattern:** `agents.worker.model: inherit` + worker runner never passes `--model` → pi uses global selection (`pi-lmstudio` → `http://127.0.0.1:1234`, e.g. `qwen/qwen3-coder-next`). Spine doctor shows `cursor/auto` from pi defaults; batch workers hit LM Studio anyway.
+
+| Batch | Symptom | Fix |
+|-------|---------|-----|
+| `20260612T211613` (SP-214) | `Model unloaded` / MLX backend missing `libpython3.11.dylib` | **SP-232** — pin `cursor/auto` via spine-config + worker runner |
+| `20260612T215847` (SP-215–219) | Engine code review spawn failed on same LM Studio model | **SP-232** — reviewer pin parity + runbook |
+
+**Option A (task scope):** Honor `agents.worker.model` / `agents.reviewer.model` in pi spawn argv; template defaults `cursor/auto`; document `inherit` risks.

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-12
 **Status:** Active
-**Next Task ID:** SP-232
+**Next Task ID:** SP-233
 
 ---
 
@@ -502,8 +502,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-229 | Worker orphan final-review recovery | **Done** | SP-203, SP-193, SP-115 |
 | SP-230 | Exit verification stub guard | **Done** | SP-199, SP-115 |
 | SP-231 | Phase 23 exit audit helper | **Done** | SP-213, SP-211, SP-212 |
+| SP-232 | Pin agent models from spine-config | **Staged** | SP-212, SP-088 |
 
 **Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
+
+**Post stress-test (2026-06-12):** SP-232 — real-pi batches inherited `pi-lmstudio` / `127.0.0.1:1234` because `agents.worker.model: inherit`; pin `cursor/auto` via spine-config (Option A).
 
 **Suggested batches:** Land-loop follow-ups closed (SP-203, SP-204). Worker wedge epic closed (SP-193–198, SP-202).
 
