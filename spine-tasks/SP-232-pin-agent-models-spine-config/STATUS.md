@@ -1,9 +1,9 @@
 # SP: Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
-**Review Level:** (see PROMPT.md)
+**Review Level:** 2 (Plan and Code)
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** S
@@ -11,25 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm reviewer passes --model
-- [ ] Reproduce worker runner omits --model
+- [x] Confirm reviewer passes --model
+- [x] Reproduce worker runner omits --model
 
 ---
 
 ### Step 1: Worker model pin
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Pass --model when not inherit
-- [ ] Pass --thinking when configured
+- [x] Pass --model when not inherit
+- [x] Pass --thinking when configured
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Unit tests for argv
+- [x] Unit tests for argv
 - [ ] Run FULL test suite
 
 ---
@@ -52,6 +52,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Reviewer already passes `--model`/`--thinking` in `spawnReviewerPi` (review.mjs:590-595) | Confirmed preflight | `src/batch/review.mjs` |
+| Worker runner had no model pin before this task | Fixed in Step 1 | `bin/spine-worker-runner.mjs` |
 
 ---
 
@@ -60,6 +62,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
+| 2026-06-12 | Step 0 preflight | Reviewer model pin confirmed; worker gap reproduced |
+| 2026-06-12 | Step 1 implementation | `appendWorkerAgentModelArgs` + `buildWorkerPiArgs` |
 
 ---
 
@@ -71,4 +75,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Step 1 plan: mirror `spawnReviewerPi` model/thinking argv logic; export `buildWorkerPiArgs` for unit tests behind `isCliEntrypoint` guard.
