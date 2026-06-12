@@ -22,12 +22,12 @@ test("worker.md documents spine tools, stall checkpoint, and coverage policy", (
 	assert.match(text, /77%/);
 });
 
-test("worker.md documents final review sequence before .DONE", () => {
+test("worker.md documents engine-owned code and final review after .DONE", () => {
 	const text = fs.readFileSync(WORKER_TEMPLATE, "utf-8");
-	assert.match(text, /--type final|type=final/i);
-	assert.match(text, /PASS/);
-	assert.match(text, /REPLAN/);
-	assert.match(text, /before.*\.DONE|before `.DONE`/i);
+	assert.match(text, /engine runs/i);
+	assert.match(text, /after.*\.DONE|after `.DONE`/i);
+	assert.match(text, /exit immediately/i);
+	assert.doesNotMatch(text, /run \*\*final review\*\* before/i);
 });
 
 test("reviewer.md documents final PASS REVISE REPLAN verdicts", () => {
@@ -45,8 +45,8 @@ test("worker-prompt tail aligns with worker.md commit and review conventions", (
 	assert.doesNotMatch(commitHint, /\{taskId\} step \{n\}/i);
 
 	const reviewHint = buildReviewLevelHint(2);
-	assert.match(reviewHint, /spine_review_step/);
-	assert.match(reviewHint, /Review Level > 0/);
+	assert.match(reviewHint, /spine review step/i);
+	assert.match(reviewHint, /batch engine runs those after \.DONE/i);
 
 	assert.match(WORKER_TOOLS_HINT, /spine_report_progress/);
 });

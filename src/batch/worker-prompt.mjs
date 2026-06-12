@@ -7,9 +7,21 @@ import path from "node:path";
 import { buildWorkerContextAsync } from "../config/worker-context.mjs";
 
 export function buildReviewLevelHint(reviewLevel) {
-	return reviewLevel > 0
-		? "When Review Level > 0, after each step run: spine review step --step N [--type plan|code] (or spine_review_step tool). On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. "
-		: "";
+	if (reviewLevel <= 0) {
+		return "";
+	}
+	let hint =
+		"When Review Level ≥ 1, run plan review only at step checkpoints: spine review step --step N --type plan (or spine_review_step with type=plan). ";
+	if (reviewLevel >= 2) {
+		hint +=
+			"Do not run code or final review from inside the worker — the batch engine runs those after .DONE. ";
+	} else {
+		hint +=
+			"Do not run final review from the worker — the batch engine runs final review after .DONE. ";
+	}
+	hint +=
+		"On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. After creating .DONE, exit immediately with no further tool calls or reviewer spawns. ";
+	return hint;
 }
 
 export const WORKER_TOOLS_HINT =

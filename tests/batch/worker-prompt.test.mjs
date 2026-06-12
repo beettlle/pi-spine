@@ -13,11 +13,16 @@ import {
 	WORKER_TOOLS_HINT,
 } from "../../src/batch/worker-prompt.mjs";
 
-test("buildReviewLevelHint includes spine review when level > 0", () => {
+test("buildReviewLevelHint delegates code and final review to engine", () => {
 	const hint = buildReviewLevelHint(2);
-	assert.match(hint, /spine review step/i);
-	assert.match(hint, /REVISE/);
+	assert.match(hint, /plan review only/i);
+	assert.match(hint, /type plan/i);
+	assert.match(hint, /batch engine runs those after \.DONE/i);
+	assert.match(hint, /exit immediately/i);
+	assert.doesNotMatch(hint, /type=code|--type code/i);
 	assert.equal(buildReviewLevelHint(0), "");
+	const level1 = buildReviewLevelHint(1);
+	assert.match(level1, /final review after \.DONE/i);
 });
 
 test("buildCommitBoundaryHint uses SP-064 feat(taskId) convention", () => {

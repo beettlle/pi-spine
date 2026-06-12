@@ -53,7 +53,7 @@ Spine documents honest `.DONE` + lane auto-commit behavior below — `.DONE` mea
 
 | Tool | When to use |
 |------|-------------|
-| `spine_review_step` | After each PROMPT step when Review Level > 0 |
+| `spine_review_step` | Plan review at step checkpoints when Review Level ≥ 1 (`type=plan` only) |
 | `spine_report_progress` | After completing a step — emits `task.step_completed` for stall detection |
 | `spine_request_gate` | Rare — request operator attention (v1.1 returns `not_supported`; integrate gates are automatic) |
 
@@ -67,10 +67,10 @@ Task packets declare a **Review Level** (0–3) in `PROMPT.md`. Read it at task 
 |-------|-------|----------------------------------|
 | 0 | None | Never — reviewer is not spawned |
 | 1 | Plan Only | Plan review before each step (or at `**Plan-review checkpoint**` markers) |
-| 2 | Plan + Code | Plan and/or code review at step boundaries per PROMPT |
-| 3 | Full | Plan + code + test review at step boundaries per PROMPT |
+| 2 | Plan + Code | **Plan review in worker** at step boundaries; **code review runs on the engine** after `.DONE` |
+| 3 | Full | Plan review in worker; code + final review run on the **engine** after `.DONE` |
 
-**FR-WORK-07:** when Review Level > 0, you **must** call **`spine_review_step`** (Pi tool) or `spine review step --step N [--type plan|code]` at the points required by PROMPT. Use `type=plan` for plan reviews (Level ≥ 1) and `type=code` for code reviews (Level ≥ 2). Level 3 code reviews also expect sufficient test depth (see reviewer template).
+**FR-WORK-07:** when Review Level ≥ 1, call **`spine_review_step`** (Pi tool) or `spine review step --step N --type plan` at plan-review checkpoints in PROMPT. **Do not** spawn code or final reviewers from inside the worker (SP-194/SP-195) — the batch engine runs those phases after you create `.DONE`.
 
 Checkpoint markers in PROMPT (`**Plan-review checkpoint**`, `**Code review checkpoint**`) consolidate reviews on single-deliverable tasks; otherwise default is per-step reviews when steps are independent.
 
@@ -81,7 +81,7 @@ For tasks at **Review Level ≥ 2**, complete **each step** in this strict order
 1. **Finish step work** — all outcomes for this step in PROMPT.
 2. **Update outcome checkboxes** in `STATUS.md` as each outcome completes (immediate checkbox rule).
 3. **Commit** step work on the lane branch: `feat(TASK-ID): complete Step N — {step title}`
-4. **Request review** — `spine_review_step` with `type=plan` and/or `type=code` as required by PROMPT (step markers and task level).
+4. **Request plan review** — `spine_review_step` with `type=plan` when PROMPT requires a plan-review checkpoint (all levels ≥ 1).
 5. **On APPROVE only** — set the step **Status** to complete in `STATUS.md`, advance `Current Step`, then call **`spine_report_progress`**.
 
 **While review is pending:** do **not** mark the step **Status** complete or advance to the next step. Outcome checkboxes may already be checked.
@@ -101,8 +101,8 @@ For **Review Level 0**, skip `spine_review_step`. For **Level 1**, follow PROMPT
 5. On **REVISE**, fix feedback and re-request review; do not advance step **Status** or `Current Step` until **APPROVE**.
 6. Call **`spine_report_progress`** after the step is marked complete (after review **APPROVE** when review level > 0).
 7. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
-8. When **Review Level ≥ 1**, run **final review** before `.DONE`: `spine review step --step N --type final` (or `spine_review_step` with `type=final` on the last step). The engine may also run contract verification before the final reviewer.
-9. Create `.DONE` only after final verdict **PASS** (when required) and every completion criterion is satisfied. **REVISE** → fix and re-run final review. **REPLAN** → stop; do not create `.DONE`; edit `PROMPT.md` per reviewer feedback.
+8. Create `.DONE` only when every completion criterion in PROMPT is satisfied (tests pass, STATUS current). The **engine** runs contract verification, code review (RL ≥ 2), and final review (RL ≥ 1) **after** `.DONE` — do not spawn those reviewers yourself.
+9. **After `.DONE`:** exit immediately. No further tool calls, commits, or reviewer spawns (prevents SP-190-class wedges).
 
 **Stall detection:** only STATUS updates, lane commits, and `spine_report_progress` extend the stall grace window. Editing File Scope files without committing triggers `lane.checkpoint_warning` after ~10 minutes — commit and report progress to reset the episode.
 
