@@ -72,6 +72,28 @@ test("verifyContract checks artifactsMustExist paths in worktree", async () => {
 	});
 });
 
+test("verifyContract expands glob patterns in artifactsMustExist", async () => {
+	await withWorktree((worktreePath) => {
+		const artifactDir = "docs/adoption";
+		fs.mkdirSync(path.join(worktreePath, artifactDir), { recursive: true });
+		fs.writeFileSync(
+			path.join(worktreePath, artifactDir, "consumer-pilot-report-2026-06-12.md"),
+			"# report\n",
+			"utf-8",
+		);
+
+		const result = verifyContract(worktreePath, {
+			testCommand: null,
+			artifactsMustExist: [`${artifactDir}/consumer-pilot-report-*.md`],
+		});
+
+		assert.equal(result.ok, true);
+		assert.equal(result.checks.length, 1);
+		assert.equal(result.checks[0].ok, true);
+		assert.match(result.checks[0].message, /consumer-pilot-report-2026-06-12\.md/);
+	});
+});
+
 test("verifyContract returns ok with empty checks when contract has no verify fields", async () => {
 	await withWorktree((worktreePath) => {
 		const result = verifyContract(worktreePath, {

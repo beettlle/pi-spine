@@ -176,6 +176,48 @@ function resolveLineCoverage(worktreePath, parsedContract, config, testCommandOu
 
 /**
  * @param {string} worktreePath
+ * @param {string} artifactPattern
+ * @returns {{ ok: boolean, matchedPath?: string }}
+ */
+function findArtifactMatch(worktreePath, artifactPattern) {
+	const normalized = String(artifactPattern ?? "").replace(/\\/g, "/");
+	if (!normalized) {
+		return { ok: false };
+	}
+
+	if (!/[*?[\]{}]/.test(normalized)) {
+		const fullPath = path.join(worktreePath, normalized);
+		return fs.existsSync(fullPath) ? { ok: true, matchedPath: normalized } : { ok: false };
+	}
+
+	const baseDir = path.dirname(normalized);
+	const searchRoot = path.join(worktreePath, baseDir);
+	if (!fs.existsSync(searchRoot)) {
+		return { ok: false };
+	}
+
+	/** @type {Array<{ abs: string, rel: string }>} */
+	const stack = [{ abs: searchRoot, rel: baseDir === "." ? "" : baseDir }];
+	while (stack.length > 0) {
+		const { abs, rel } = stack.pop();
+		for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+			const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
+			const entryAbs = path.join(abs, entry.name);
+			if (entry.isDirectory()) {
+				stack.push({ abs: entryAbs, rel: entryRel });
+				continue;
+			}
+			if (micromatch.isMatch(entryRel, normalized)) {
+				return { ok: true, matchedPath: entryRel };
+			}
+		}
+	}
+
+	return { ok: false };
+}
+
+/**
+ * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {object} [config]
  * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }> }}
@@ -251,13 +293,12 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	}
 
 	for (const artifactPath of parsedContract.artifactsMustExist ?? []) {
-		const fullPath = path.join(worktreePath, artifactPath);
-		const exists = fs.existsSync(fullPath);
+		const match = findArtifactMatch(worktreePath, artifactPath);
 		checks.push({
 			field: "artifactsMustExist",
-			ok: exists,
-			message: exists
-				? `artifact exists: ${artifactPath}`
+			ok: match.ok,
+			message: match.ok
+				? `artifact exists: ${match.matchedPath ?? artifactPath}`
 				: `Contract artifactsMustExist: missing ${artifactPath}`,
 		});
 	}
