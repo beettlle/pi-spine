@@ -24,7 +24,7 @@ Verify Phase 25 exit criteria (PRD §8): journal structural rebuild, supervisor 
 
 ## Dependencies
 
-- **Task:** SP-221
+- **Task:** SP-240
 - **Task:** SP-222
 - **Task:** SP-223
 - **Task:** SP-224

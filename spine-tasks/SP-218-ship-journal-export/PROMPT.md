@@ -66,7 +66,6 @@ FR-SHIP-08: Implement `spine journal export --batch <batchId> [--format markdown
 ### Step 1: Implement export
 > **Plan-review checkpoint**
 
-
 - [ ] Add export subcommand with markdown and jsonl formats
 - [ ] Discover active batch when --batch omitted (if specified in PRD)
 - [ ] Regression test for markdown output shape
@@ -106,3 +105,7 @@ FR-SHIP-08: Implement `spine journal export --batch <batchId> [--format markdown
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-12
+**Issue:** Size decomposition split journal export into two S tasks.
+**Resolution:** Superseded — execution moved to SP-235 (jsonl) and SP-236 (markdown). This packet closed administratively.

@@ -1,12 +1,12 @@
-# SP-219: agentSession promotion decision — Status
+# SP: Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** 1
+**Review Level:** (see PROMPT.md)
 **Review Counter:** 0
 **Iteration:** 0
-**Size:** M
+**Size:** S
 
 ---
 
@@ -14,25 +14,21 @@
 **Status:** ⬜ Not Started
 
 - [ ] Read SP-181–183 prior dogfood work
-- [ ] Run doctor/preflight for agentSession signals
 
 ---
 
-### Step 1: Decision and wiring
+### Step 1: Decision and runbook
 **Status:** ⬜ Not Started
 
-- [ ] Complete dogfood report with land-loop evidence or defer rationale
+- [ ] Complete dogfood report
 - [ ] Update runbook default backend guidance
-- [ ] Ensure doctor/preflight matches decision
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77%
-- [ ] Fix all failures
+- [ ] Run FULL test suite
 
 ---
 
@@ -61,7 +57,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
 
 ---
 

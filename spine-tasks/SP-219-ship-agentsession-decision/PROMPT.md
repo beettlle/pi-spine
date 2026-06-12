@@ -1,12 +1,12 @@
-# Task: SP-219 — agentSession promotion decision
+# Task: SP-219 — agentSession promotion decision (report)
 
 **Created:** 2026-06-12
-**Size:** M
+**Size:** S
 
 ## Review Level: 1 (Plan Only)
 
-**Assessment:** Dogfood sign-off or explicit defer; touches worker backend config and docs.
-**Score:** 3/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 1
+**Assessment:** Dogfood sign-off or explicit defer in report + runbook default backend guidance.
+**Score:** 2/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
@@ -20,7 +20,7 @@ spine-tasks/SP-219-ship-agentsession-decision/
 
 ## Mission
 
-FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or** record explicit decision that subprocess `pi -p` remains default. Doctor/preflight reflects chosen default.
+FR-SHIP-09 (phase 1): Complete agent-session dogfood report with land-loop sign-off **or** record explicit decision that subprocess `pi -p` remains default. Update runbook default backend guidance. Doctor/preflight alignment is **SP-237**.
 
 ## Dependencies
 
@@ -33,8 +33,7 @@ FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or**
 
 **Tier 3:**
 - `docs/compatibility/agent-session-dogfood-report.md`
-- `src/config/worker-backend.mjs`
-- `src/batch/agent-session-worker.mjs`
+- `docs/adoption/operator-runbook.md`
 
 ## Environment
 
@@ -44,14 +43,13 @@ FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or**
 ## File Scope
 
 - `docs/compatibility/agent-session-dogfood-report.md`
-- `src/config/worker-backend.mjs`
 - `docs/adoption/operator-runbook.md`
 
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| testCommand | `true` |
 | fileScopeMustChange | `docs/compatibility/agent-session-dogfood-report.md` |
 
 ## Steps
@@ -59,20 +57,16 @@ FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or**
 ### Step 0: Preflight
 
 - [ ] Read SP-181–183 prior dogfood work
-- [ ] Run doctor/preflight for agentSession signals
 
-### Step 1: Decision and wiring
+### Step 1: Decision and runbook
 > **Plan-review checkpoint**
-
 
 - [ ] Complete dogfood report with land-loop evidence or defer rationale
 - [ ] Update runbook default backend guidance
-- [ ] Ensure doctor/preflight matches decision
 
 ### Step 2: Testing & Verification
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77%
 - [ ] Fix all failures
 
 ### Step 3: Documentation & Delivery
@@ -82,9 +76,7 @@ FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or**
 ## Completion Criteria
 
 - [ ] agentSession decision recorded in dogfood report + runbook
-- [ ] Doctor reflects default
 - [ ] All tests passing
-- [ ] Documentation updated
 
 ## Git Commit Convention
 
@@ -94,10 +86,14 @@ FR-SHIP-09: Complete agent-session dogfood report with land-loop sign-off **or**
 
 ## Do NOT
 
+- Wire doctor/preflight checks (SP-237)
 - Expand scope beyond File Scope without replan
 - Skip tests
-- Load docs not listed in Context to Read First
 
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-12
+**Issue:** Original M packet bundled report decision and doctor/preflight wiring.
+**Resolution:** Doctor/preflight alignment moved to SP-237; SP-219 is report + runbook only (Size S).

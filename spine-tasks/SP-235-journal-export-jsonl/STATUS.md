@@ -1,9 +1,9 @@
-# SP: Status
+# SP-235: Journal export jsonl CLI — Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** (see PROMPT.md)
+**Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** S
@@ -13,30 +13,33 @@
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Select external consumer repo
-- [ ] Copy template to dated instance
+- [ ] Review journal event schema
+- [ ] Draft jsonl export CLI flags
 
 ---
 
-### Step 1: Stub batch and skeleton
+### Step 1: Jsonl export
 **Status:** ⬜ Not Started
 
-- [ ] Run stub batch on consumer repo
-- [ ] Fill report skeleton with stub-batch evidence
+- [ ] Add export subcommand with jsonl format
+- [ ] Exit non-zero when journal missing
+- [ ] Unit test jsonl output
+- [ ] Call `spine_review_step` after this step
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite
+- [ ] FULL test suite passing
+- [ ] Coverage gate passes (when applicable)
+- [ ] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Report skeleton committed
 - [ ] Create `.DONE`
 
 ---
@@ -59,7 +62,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
+| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
 
 ---
 

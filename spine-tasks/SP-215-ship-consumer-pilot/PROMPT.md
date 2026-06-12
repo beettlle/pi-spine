@@ -1,12 +1,12 @@
-# Task: SP-215 — Tier-3 consumer pilot report
+# Task: SP-215 — Tier-3 consumer pilot report (stub phase)
 
 **Created:** 2026-06-12
-**Size:** M
+**Size:** S
 
 ## Review Level: 1 (Plan Only)
 
-**Assessment:** External repo dogfood with filled evidence report; mostly docs with operational verification.
-**Score:** 3/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 1
+**Assessment:** External repo selection, template copy, stub batch, report skeleton only.
+**Score:** 2/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
@@ -20,7 +20,7 @@ spine-tasks/SP-215-ship-consumer-pilot/
 
 ## Mission
 
-FR-SHIP-05: Produce filled consumer pilot report (e.g. `docs/adoption/consumer-pilot-report-YYYY-MM-DD.md`) on an **external** consumer repo. Include stub batch, real-pi batch, land loop, recovery path, and journal excerpt.
+FR-SHIP-05 (phase 1): Select an external consumer repo, copy the pilot report template to a dated file, run a **stub** batch on that repo, and commit a report skeleton with stub-batch evidence. Real-pi batch, land loop, recovery, and sign-off are **SP-233**.
 
 ## Dependencies
 
@@ -44,7 +44,6 @@ FR-SHIP-05: Produce filled consumer pilot report (e.g. `docs/adoption/consumer-p
 ## File Scope
 
 - `docs/adoption/consumer-pilot-report-*.md`
-- `docs/adoption/operator-runbook.md`
 
 ## Contract
 
@@ -60,14 +59,11 @@ FR-SHIP-05: Produce filled consumer pilot report (e.g. `docs/adoption/consumer-p
 - [ ] Select external consumer repo (not pi-spine dogfood only)
 - [ ] Copy template to dated instance
 
-### Step 1: Execute pilot
+### Step 1: Stub batch and skeleton
 > **Plan-review checkpoint**
 
-
 - [ ] Run stub batch on consumer repo
-- [ ] Run real-pi batch (or document skip with reason)
-- [ ] Complete land loop and at least one recovery path
-- [ ] Attach journal excerpt to report
+- [ ] Fill report skeleton with stub-batch evidence sections
 
 ### Step 2: Testing & Verification
 
@@ -76,15 +72,13 @@ FR-SHIP-05: Produce filled consumer pilot report (e.g. `docs/adoption/consumer-p
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Sign-off section filled (no placeholders)
+- [ ] Report skeleton committed (sign-off may remain placeholder until SP-233)
 - [ ] Create `.DONE`
 
 ## Completion Criteria
 
-- [ ] Named consumer pilot report committed with evidence
-- [ ] FR-REL-07 closed operationally
+- [ ] Named consumer pilot report skeleton committed with stub evidence
 - [ ] All tests passing
-- [ ] Documentation updated
 
 ## Git Commit Convention
 
@@ -94,10 +88,14 @@ FR-SHIP-05: Produce filled consumer pilot report (e.g. `docs/adoption/consumer-p
 
 ## Do NOT
 
+- Run real-pi batch (SP-233)
 - Expand scope beyond File Scope without replan
 - Skip tests
-- Load docs not listed in Context to Read First
 
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-12
+**Issue:** Original M packet combined stub + real-pi + recovery in one worker session.
+**Resolution:** Split real-pi/recovery/sign-off to SP-233; SP-215 is stub + skeleton only (Size S).

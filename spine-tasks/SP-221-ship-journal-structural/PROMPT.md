@@ -1,12 +1,12 @@
-# Task: SP-221 — Journal structural rebuild
+# Task: SP-221 — Journal structural rebuild (core)
 
 **Created:** 2026-06-12
 **Size:** M
 
 ## Review Level: 2 (Plan + Code)
 
-**Assessment:** Extend rebuildBatchStateFromJournal without cache seed; incident fixture tests.
-**Score:** 5/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1
+**Assessment:** Extend rebuildBatchStateFromJournal without cache seed for structural fields.
+**Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
@@ -20,7 +20,7 @@ spine-tasks/SP-221-ship-journal-structural/
 
 ## Mission
 
-FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch fields without cache seed per PRD §11.4 v2.2. Regression tests on incident fixtures; document limitations vs Babysitter full replay.
+FR-SHIP-10 (phase 1): Extend `rebuildBatchStateFromJournal()` to derive structural batch fields without cache seed per PRD §11.4 v2.2. Incident fixture regression tests and Babysitter limitations doc are **SP-240**.
 
 ## Dependencies
 
@@ -33,7 +33,6 @@ FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch f
 
 **Tier 3:**
 - `src/batch/journal-rebuild.mjs`
-- `tests/fixtures/incidents/**`
 - `docs/PRD-v2.2-ship-readiness-handoff.md` — FR-SHIP-10
 
 ## Environment
@@ -45,8 +44,6 @@ FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch f
 
 - `src/batch/journal-rebuild.mjs`
 - `src/batch/journal.mjs`
-- `tests/batch/journal-rebuild*.test.mjs`
-- `tests/fixtures/incidents/**`
 
 ## Contract
 
@@ -66,10 +63,7 @@ FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch f
 ### Step 1: Structural rebuild
 > **Plan-review checkpoint**
 
-
 - [ ] Implement cache-seed-free structural derivation
-- [ ] Add incident fixture regression tests
-- [ ] Document known limitations
 - [ ] Call `spine_review_step` after this step
 
 ### Step 2: Testing & Verification
@@ -80,15 +74,12 @@ FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch f
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Limitations vs Babysitter replay documented
 - [ ] Create `.DONE`
 
 ## Completion Criteria
 
 - [ ] Structural rebuild without cache seed where specified
-- [ ] Incident fixture tests pass
 - [ ] All tests passing
-- [ ] Documentation updated
 
 ## Git Commit Convention
 
@@ -98,8 +89,13 @@ FR-SHIP-10: Extend `rebuildBatchStateFromJournal()` to derive structural batch f
 
 ## Do NOT
 
+- Add incident fixture tests (SP-240)
 - If scope exceeds M, record v2.3 deferral in CONTEXT — do not XL this packet
 
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-12
+**Issue:** Original M packet bundled core rebuild, fixtures, and limitations doc.
+**Resolution:** Fixtures + limitations moved to SP-240; SP-221 is core implementation only.

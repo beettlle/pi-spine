@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-12
 **Status:** Active
-**Next Task ID:** SP-233
+**Next Task ID:** SP-243
 
 ---
 
@@ -502,11 +502,14 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-229 | Worker orphan final-review recovery | **Done** | SP-203, SP-193, SP-115 |
 | SP-230 | Exit verification stub guard | **Done** | SP-199, SP-115 |
 | SP-231 | Phase 23 exit audit helper | **Done** | SP-213, SP-211, SP-212 |
-| SP-232 | Pin agent models from spine-config | **Staged** | SP-212, SP-088 |
+| SP-232 | Pin agent models (worker `--model` pin) | **Staged** | SP-212, SP-088 |
+| SP-238 | Worker model pin template + runbook | **Staged** | SP-232 |
 
 **Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
 
-**Post stress-test (2026-06-12):** SP-232 — real-pi batches inherited `pi-lmstudio` / `127.0.0.1:1234` because `agents.worker.model: inherit`; pin `cursor/auto` via spine-config (Option A).
+**Post stress-test (2026-06-12):** SP-232/238 — real-pi batches inherited `pi-lmstudio` via `inherit`; worker runner must pass `--model` from spine-config; template/runbook in SP-238.
+
+**Size decomposition (2026-06-12):** Phase 24–26 M tasks split into S/M slices (SP-233–242). SP-218 superseded by SP-235/236. Run model-pin batch before consumer real-pi work.
 
 **Suggested batches:** Land-loop follow-ups closed (SP-203, SP-204). Worker wedge epic closed (SP-193–198, SP-202).
 
@@ -561,34 +564,44 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 #### Phase 24 — P1 Prove & parity
 
-| Task | Summary | Status | Deps |
-|------|---------|--------|------|
-| SP-215 | Tier-3 consumer pilot report (filled) | **Staged** | SP-214 |
-| SP-216 | Extension slash-command tests ≥70% | **Staged** | SP-214 |
-| SP-217 | Dashboard parity default view | **Staged** | SP-214 |
-| SP-218 | Journal export CLI | **Staged** | SP-214 |
-| SP-219 | agentSession promotion decision | **Staged** | SP-214 |
-| SP-220 | Phase 24 exit verification | **Staged** | SP-215–219 |
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-232 | Worker `--model` pin | S | **Staged** | SP-212, SP-088 |
+| SP-238 | Model pin template + runbook | S | **Staged** | SP-232 |
+| SP-215 | Consumer pilot stub + skeleton | S | **Staged** | SP-214 |
+| SP-233 | Consumer pilot real-pi + recovery | M | **Staged** | SP-215 |
+| SP-216 | Extension slash-command tests ≥70% | M | **Staged** | SP-214 |
+| SP-217 | Dashboard gate + diagnosis | S | **Staged** | SP-214 |
+| SP-234 | Dashboard journal tail panel | S | **Staged** | SP-217 |
+| SP-235 | Journal export jsonl CLI | S | **Staged** | SP-214 |
+| SP-236 | Journal export markdown timeline | S | **Staged** | SP-235 |
+| SP-219 | agentSession decision (report) | S | **Staged** | SP-214 |
+| SP-237 | agentSession doctor alignment | S | **Staged** | SP-219 |
+| SP-218 | Journal export CLI (superseded) | — | **Done** | → SP-235/236 |
+| SP-220 | Phase 24 exit verification | S | **Staged** | SP-233, SP-216, SP-234, SP-236, SP-237 |
 
-**Suggested batches (Phase 24):** SP-215 → (SP-216 + SP-217) → (SP-218 + SP-219) → SP-220.
+**Suggested batches (Phase 24):** (SP-232 → SP-238) → (SP-215 → SP-233) → (SP-216 + SP-217) → (SP-234 + SP-235) → (SP-236 + SP-219 → SP-237) → SP-220.
 
 #### Phase 25 — P2 Differentiation
 
-| Task | Summary | Status | Deps |
-|------|---------|--------|------|
-| SP-221 | Journal structural rebuild (FR-SHIP-10) | **Staged** | SP-220 |
-| SP-222 | Supervisor defer documentation | **Staged** | SP-220 |
-| SP-223 | Merger conflict UX spike | **Staged** | SP-220 |
-| SP-224 | Worker manual gate story | **Staged** | SP-220 |
-| SP-225 | Phase 25 exit verification | **Staged** | SP-221–224 |
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-221 | Journal structural rebuild (core) | M | **Staged** | SP-220 |
+| SP-240 | Journal rebuild incident fixtures | S | **Staged** | SP-221 |
+| SP-222 | Supervisor defer documentation | S | **Staged** | SP-220 |
+| SP-223 | Merger conflict UX spike | S | **Staged** | SP-220 |
+| SP-241 | Worker gate inventory | S | **Staged** | SP-220 |
+| SP-224 | Worker manual gate execution | S | **Staged** | SP-241 |
+| SP-225 | Phase 25 exit verification | S | **Staged** | SP-240, SP-222, SP-223, SP-224 |
 
-**Suggested batches (Phase 25):** SP-221–224 (parallel) → SP-225.
+**Suggested batches (Phase 25):** (SP-221 + SP-222 + SP-241 parallel) → (SP-240 + SP-223 + SP-224 parallel) → SP-225.
 
 #### Phase 26 — Publish (human-gated)
 
-| Task | Summary | Status | Deps |
-|------|---------|--------|------|
-| SP-226 | npm publish execution | **Staged** | SP-225 |
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-242 | npm pre-release checklist + dry-run | S | **Staged** | SP-225 |
+| SP-226 | npm publish execution (human-gated) | S | **Staged** | SP-242 |
 
 **Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check`
 

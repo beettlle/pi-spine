@@ -1,9 +1,9 @@
-# SP-221: Journal structural rebuild — Status
+# SP: Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** 2
+**Review Level:** (see PROMPT.md)
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** M
@@ -13,7 +13,7 @@
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Read PRD §11.4 v2.2 structural fields list
+- [ ] Read PRD §11.4 structural fields
 - [ ] Review SP-174 rebuild core
 
 ---
@@ -22,25 +22,20 @@
 **Status:** ⬜ Not Started
 
 - [ ] Implement cache-seed-free structural derivation
-- [ ] Add incident fixture regression tests
-- [ ] Document known limitations
-- [ ] Call `spine_review_step` after this step
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77%
-- [ ] Fix all failures
+- [ ] Run FULL test suite
+- [ ] Run coverage gate
 
 ---
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Limitations vs Babysitter replay documented
 - [ ] Create `.DONE`
 
 ---
@@ -63,7 +58,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
 
 ---
 

@@ -1,9 +1,9 @@
-# SP: Status
+# SP-242: npm pre-release checklist and dry-run — Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** (see PROMPT.md)
+**Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** S
@@ -13,30 +13,32 @@
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Select external consumer repo
-- [ ] Copy template to dated instance
+- [ ] Confirm SP-225 Done
+- [ ] Read v1.0 checklist Pre-release section
 
 ---
 
-### Step 1: Stub batch and skeleton
+### Step 1: Pre-release checklist
 **Status:** ⬜ Not Started
 
-- [ ] Run stub batch on consumer repo
-- [ ] Fill report skeleton with stub-batch evidence
+- [ ] Complete Pre-release + Dry-run pack sections
+- [ ] Run `npm pack` dry-run and record output
+- [ ] Document version bump decision and pi.dev listing fields
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite
+- [ ] FULL test suite passing
+- [ ] Coverage gate passes (when applicable)
+- [ ] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Report skeleton committed
 - [ ] Create `.DONE`
 
 ---
@@ -59,7 +61,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
+| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
 
 ---
 

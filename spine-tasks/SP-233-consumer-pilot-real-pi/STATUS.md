@@ -1,42 +1,45 @@
-# SP: Status
+# SP-233: Consumer pilot real-pi and recovery — Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** (see PROMPT.md)
+**Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
-**Size:** S
+**Size:** M
 
 ---
 
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Select external consumer repo
-- [ ] Copy template to dated instance
+- [ ] Confirm SP-215 report skeleton exists
+- [ ] Confirm external consumer repo still valid
 
 ---
 
-### Step 1: Stub batch and skeleton
+### Step 1: Real-pi pilot
 **Status:** ⬜ Not Started
 
-- [ ] Run stub batch on consumer repo
-- [ ] Fill report skeleton with stub-batch evidence
+- [ ] Run real-pi batch on consumer repo (or document skip with reason)
+- [ ] Complete land loop and at least one recovery path
+- [ ] Attach journal excerpt to report
+- [ ] Fill sign-off section (no placeholders)
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite
+- [ ] FULL test suite passing
+- [ ] Coverage gate passes (when applicable)
+- [ ] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Report skeleton committed
 - [ ] Create `.DONE`
 
 ---
@@ -59,7 +62,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
+| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
 
 ---
 

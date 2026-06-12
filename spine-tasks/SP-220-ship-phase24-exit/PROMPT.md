@@ -24,11 +24,11 @@ Verify Phase 24 exit criteria (PRD §8): consumer pilot, extension coverage, das
 
 ## Dependencies
 
-- **Task:** SP-215
+- **Task:** SP-233
 - **Task:** SP-216
-- **Task:** SP-217
-- **Task:** SP-218
-- **Task:** SP-219
+- **Task:** SP-234
+- **Task:** SP-236
+- **Task:** SP-237
 
 ## Context to Read First
 
@@ -57,7 +57,7 @@ Verify Phase 24 exit criteria (PRD §8): consumer pilot, extension coverage, das
 
 ### Step 0: Preflight
 
-- [ ] Confirm SP-215–219 Done
+- [ ] Confirm SP-233, SP-216, SP-234, SP-236, SP-237 Done
 - [ ] Read §8 Phase 24 checklist
 
 ### Step 1: Exit verification

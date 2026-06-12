@@ -1,54 +1,42 @@
-# SP-226: npm publish execution — Status
+# SP: Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** 1
+**Review Level:** (see PROMPT.md)
 **Review Counter:** 0
 **Iteration:** 0
-**Size:** M
+**Size:** S
 
 ---
 
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Confirm SP-225 Done and all Phase 23–25 exit checkboxes green
-- [ ] Obtain explicit human operator approval before publish
+- [ ] Confirm SP-242 Done
+- [ ] Obtain operator approval
 
 ---
 
-### Step 1: Pre-release checklist
+### Step 1: Publish (human-gated)
 **Status:** ⬜ Not Started
 
-- [ ] Complete v1.0 checklist Pre-release + Dry-run pack sections
-- [ ] Document version bump decision (0.1.0 vs 1.0.0)
-- [ ] Prepare pi.dev listing fields
+- [ ] Run npm publish after approval
+- [ ] Post-publish smoke
+- [ ] Record approval timestamp
 
 ---
 
-### Step 2: Publish (human-gated)
+### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run `npm publish --access public` only after operator approval recorded
-- [ ] Execute post-publish smoke per checklist
-- [ ] Record approval timestamp in checklist or release notes
+- [ ] Run FULL test suite
 
 ---
 
-### Step 3: Testing & Verification
+### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check`
-- [ ] Fix all failures
-
----
-
-### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
-
-- [ ] Checklist complete
 - [ ] CONTEXT Phase 26 Done
 - [ ] Create `.DONE`
 
@@ -72,7 +60,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
 
 ---
 

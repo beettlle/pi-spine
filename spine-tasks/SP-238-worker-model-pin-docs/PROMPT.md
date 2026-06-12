@@ -1,17 +1,17 @@
-# Task: SP-223 — Merger conflict UX spike
+# Task: SP-238 — Worker model pin template and runbook
 
 **Created:** 2026-06-12
 **Size:** S
 
 ## Review Level: 1 (Plan Only)
 
-**Assessment:** Spike or runbook for manual conflict resolution during integrate.
+**Assessment:** Template defaults, runbook LM Studio note, optional doctor warning for inherit.
 **Score:** 2/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
 ```
-spine-tasks/SP-223-ship-merger-spike/
+spine-tasks/SP-238-worker-model-pin-docs/
 ├── PROMPT.md   ← This file (immutable above --- divider)
 ├── STATUS.md   ← Execution state (worker updates this)
 ├── .reviews/   ← Reviewer output (created by the orchestrator runtime)
@@ -20,11 +20,11 @@ spine-tasks/SP-223-ship-merger-spike/
 
 ## Mission
 
-FR-SHIP-12: Spike or runbook section for manual conflict resolution during `spine integrate` when merge conflicts occur. Document Taskplane merger-agent as explicit non-goal unless spike proves minimal UX insufficient.
+Document and default spine-config model pins after SP-232 worker argv fix. Update greenfield template to recommend `cursor/auto`; document `inherit` opt-in; optional doctor warning when inherit + pi-lmstudio detected.
 
 ## Dependencies
 
-- **Task:** SP-220
+- **Task:** SP-232
 
 ## Context to Read First
 
@@ -32,8 +32,10 @@ FR-SHIP-12: Spike or runbook section for manual conflict resolution during `spin
 - `spine-tasks/CONTEXT.md`
 
 **Tier 3:**
+- `templates/spine-config.json`
+- `bin/spine-doctor.mjs`
 - `docs/adoption/operator-runbook.md`
-- `docs/PRD-v2.2-ship-readiness-handoff.md` — FR-SHIP-12
+- `spine-tasks/_explore/reliability-epic/findings.md`
 
 ## Environment
 
@@ -42,33 +44,33 @@ FR-SHIP-12: Spike or runbook section for manual conflict resolution during `spin
 
 ## File Scope
 
+- `templates/spine-config.json`
+- `bin/spine-doctor.mjs`
 - `docs/adoption/operator-runbook.md`
-- `docs/design/**`
 
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `true` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
 
 ## Steps
 
 ### Step 0: Preflight
 
-- [ ] Reproduce or review integrate conflict scenarios
-- [ ] Read Taskplane merger-agent gap notes
+- [ ] Confirm SP-232 worker `--model` pin landed
 
-### Step 1: Spike or runbook
+### Step 1: Defaults and docs
 > **Plan-review checkpoint**
 
-- [ ] Document operator workflow for merge conflicts during integrate
-- [ ] If spike: minimal UX improvement or explicit defer with rationale
-- [ ] State merger-agent non-goal for v2.2
+- [ ] Update template defaults to `cursor/auto` for worker + reviewer (document inherit in runbook)
+- [ ] Runbook subsection: pi model inheritance vs spine pins
+- [ ] Optional doctor warning for inherit + pi-lmstudio
 
 ### Step 2: Testing & Verification
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [ ] Run coverage gate: `npm run coverage:check` — ≥77% (when code changed)
 - [ ] Fix all failures
 
 ### Step 3: Documentation & Delivery
@@ -77,14 +79,14 @@ FR-SHIP-12: Spike or runbook section for manual conflict resolution during `spin
 
 ## Completion Criteria
 
-- [ ] Conflict resolution path documented or spike complete
+- [ ] Template + runbook guide operators away from accidental LM Studio inheritance
 - [ ] All tests passing
 
 ## Git Commit Convention
 
-- `feat(SP-223): complete Step N — description`
-- `fix(SP-223): description`
-- `test(SP-223): description`
+- `feat(SP-238): complete Step N — description`
+- `fix(SP-238): description`
+- `test(SP-238): description`
 
 ## Do NOT
 
@@ -94,7 +96,3 @@ FR-SHIP-12: Spike or runbook section for manual conflict resolution during `spin
 ---
 
 ## Amendments (Added During Execution)
-
-### Amendment 1 — 2026-06-12
-**Issue:** Labeled M but docs-only spike with no code changes.
-**Resolution:** Downgraded to Size S; removed integrate.mjs from file scope.

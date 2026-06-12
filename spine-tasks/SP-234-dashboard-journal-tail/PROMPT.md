@@ -1,17 +1,17 @@
-# Task: SP-217 — Dashboard gate and diagnosis parity
+# Task: SP-234 — Dashboard journal tail panel
 
 **Created:** 2026-06-12
 **Size:** S
 
 ## Review Level: 2 (Plan + Code)
 
-**Assessment:** Dashboard UX for integrate gate status and reconciliation headline on default view.
+**Assessment:** Journal tail or deep-link affordance on default dashboard view.
 **Score:** 3/8 — Blast radius: 2, Pattern novelty: 0, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
 ```
-spine-tasks/SP-217-ship-dashboard-parity/
+spine-tasks/SP-234-dashboard-journal-tail/
 ├── PROMPT.md   ← This file (immutable above --- divider)
 ├── STATUS.md   ← Execution state (worker updates this)
 ├── .reviews/   ← Reviewer output (created by the orchestrator runtime)
@@ -20,11 +20,11 @@ spine-tasks/SP-217-ship-dashboard-parity/
 
 ## Mission
 
-FR-SHIP-07 (phase 1): Default dashboard view shows integrate gate status (when applicable) and reconciliation headline/suggestedCommand — without requiring `--diagnose`. Journal tail affordance is **SP-234**.
+FR-SHIP-07 (phase 2): Add journal tail panel or deep link to default dashboard view (gate/diagnosis completed in SP-217).
 
 ## Dependencies
 
-- **Task:** SP-214
+- **Task:** SP-217
 
 ## Context to Read First
 
@@ -32,10 +32,10 @@ FR-SHIP-07 (phase 1): Default dashboard view shows integrate gate status (when a
 - `spine-tasks/CONTEXT.md`
 
 **Tier 3:**
-- `src/dashboard/snapshot.mjs`
+- `spine-tasks/CONTEXT.md`
 - `src/dashboard/public/dashboard.js`
 - `src/dashboard/public/index.html`
-- `docs/adoption/operator-runbook.md`
+- `src/dashboard/snapshot.mjs`
 
 ## Environment
 
@@ -44,7 +44,6 @@ FR-SHIP-07 (phase 1): Default dashboard view shows integrate gate status (when a
 
 ## File Scope
 
-- `src/dashboard/snapshot.mjs`
 - `src/dashboard/public/dashboard.js`
 - `src/dashboard/public/index.html`
 - `tests/dashboard/**`
@@ -54,56 +53,48 @@ FR-SHIP-07 (phase 1): Default dashboard view shows integrate gate status (when a
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
-| fileScopeMustChange | `src/dashboard/snapshot.mjs` |
+| fileScopeMustChange | src/dashboard/public/dashboard.js |
 | minLineCoverage | 77 |
 
 ## Steps
 
 ### Step 0: Preflight
 
-- [ ] Compare default view vs Taskplane parity gaps (gate + diagnosis only)
-- [ ] Read reconcile/diagnosis snapshot fields
+- [ ] Review snapshot journalTail fields
+- [ ] Confirm SP-217 gate/diagnosis panels landed
 
-### Step 1: Gate and diagnosis panels
+### Step 1: Journal tail panel
 > **Plan-review checkpoint**
 
-- [ ] Add gate status affordance to default view
-- [ ] Show reconciliation headline and suggestedCommand
+- [ ] Add journal tail list or deep link to default view
 - [ ] Call `spine_review_step` after this step
 
 ### Step 2: Testing & Verification
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77%
+- [ ] Run coverage gate: `npm run coverage:check` — ≥77% (when code changed)
 - [ ] Fix all failures
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Runbook land-loop visibility note (if needed for gate panel)
 - [ ] Create `.DONE`
 
 ## Completion Criteria
 
-- [ ] Default dashboard shows gate + diagnosis on idle/active views
+- [ ] Default dashboard shows journal tail or link
 - [ ] All tests passing
-- [ ] Documentation updated
 
 ## Git Commit Convention
 
-- `feat(SP-217): complete Step N — description`
-- `fix(SP-217): description`
-- `test(SP-217): description`
+- `feat(SP-234): complete Step N — description`
+- `fix(SP-234): description`
+- `test(SP-234): description`
 
 ## Do NOT
 
-- Implement journal tail panel (SP-234)
 - Expand scope beyond File Scope without replan
 - Skip tests
 
 ---
 
 ## Amendments (Added During Execution)
-
-### Amendment 1 — 2026-06-12
-**Issue:** Original M packet bundled gate, diagnosis, and journal tail.
-**Resolution:** Journal tail moved to SP-234; SP-217 is gate + diagnosis only (Size S).

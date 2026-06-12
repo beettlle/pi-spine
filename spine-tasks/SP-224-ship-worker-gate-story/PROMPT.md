@@ -1,12 +1,12 @@
-# Task: SP-224 — Worker manual gate story
+# Task: SP-224 — Worker manual gate execution
 
 **Created:** 2026-06-12
-**Size:** M
+**Size:** S
 
 ## Review Level: 2 (Plan + Code)
 
-**Assessment:** Implement request-gate kinds or document permanent not_supported.
-**Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1
+**Assessment:** Execute chosen manual-gate path after SP-241 inventory (implement or document not_supported).
+**Score:** 3/8 — Blast radius: 2, Pattern novelty: 0, Security: 0, Reversibility: 1
 
 ## Canonical Task Folder
 
@@ -20,11 +20,11 @@ spine-tasks/SP-224-ship-worker-gate-story/
 
 ## Mission
 
-FR-SHIP-13: Either wire `spine_request_gate` for supported manual gate kinds **or** document permanent `not_supported` in worker tool, runbook, and README with operator workaround (`spine gate approve` from host).
+FR-SHIP-13 (phase 2): Execute the decision from SP-241 — either wire `spine_request_gate` for supported manual gate kinds **or** document permanent `not_supported` in worker tool, runbook, and README with operator workaround (`spine gate approve` from host).
 
 ## Dependencies
 
-- **Task:** SP-220
+- **Task:** SP-241
 
 ## Context to Read First
 
@@ -60,12 +60,10 @@ FR-SHIP-13: Either wire `spine_request_gate` for supported manual gate kinds **o
 
 ### Step 0: Preflight
 
-- [ ] Inventory supported vs not_supported gate kinds
-- [ ] Read worker tool registration
+- [ ] Read SP-241 decision (implement vs document)
 
 ### Step 1: Implement or document
 > **Plan-review checkpoint**
-
 
 - [ ] Wire supported manual gate kinds OR document permanent limitation
 - [ ] Runbook workaround: `spine gate approve` from host
@@ -96,10 +94,14 @@ FR-SHIP-13: Either wire `spine_request_gate` for supported manual gate kinds **o
 
 ## Do NOT
 
+- Re-run gate inventory (SP-241)
 - Expand scope beyond File Scope without replan
 - Skip tests
-- Load docs not listed in Context to Read First
 
 ---
 
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-12
+**Issue:** Original M packet combined inventory spike and execution.
+**Resolution:** Inventory/decision moved to SP-241; SP-224 executes chosen path (Size S).

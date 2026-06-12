@@ -1,38 +1,35 @@
-# SP-224: Worker manual gate story — Status
+# SP: Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-12
-**Review Level:** 2
+**Review Level:** (see PROMPT.md)
 **Review Counter:** 0
 **Iteration:** 0
-**Size:** M
+**Size:** S
 
 ---
 
 ### Step 0: Preflight
 **Status:** ⬜ Not Started
 
-- [ ] Inventory supported vs not_supported gate kinds
-- [ ] Read worker tool registration
+- [ ] Read SP-241 decision
 
 ---
 
 ### Step 1: Implement or document
 **Status:** ⬜ Not Started
 
-- [ ] Wire supported manual gate kinds OR document permanent limitation
-- [ ] Runbook workaround: `spine gate approve` from host
-- [ ] Call `spine_review_step` if code changed
+- [ ] Wire supported kinds OR document limitation
+- [ ] Runbook workaround
 
 ---
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77%
-- [ ] Fix all failures
+- [ ] Run FULL test suite
+- [ ] Run coverage gate
 
 ---
 
@@ -62,7 +59,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
 
 ---
 
