@@ -183,6 +183,11 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		}
 
 		state.endedAt = Date.now();
+		openIntegrateGateAfterBatchComplete({
+			projectRoot,
+			batchId,
+			batchState: { ...state, phase: "completed" },
+		});
 		state.phase = "completed";
 		saveSpineBatchState(projectRoot, state);
 		appendJournalEvent(projectRoot, batchId, "batch.completed", {
@@ -190,7 +195,6 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
 			resumed: true,
 		});
-		openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
 		const taskIds = (state.tasks ?? []).map((task) => task.taskId);
 		const summaryTask =

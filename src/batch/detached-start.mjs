@@ -5,7 +5,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { runBatchPreflight } from "../../bin/spine-preflight.mjs";
+import { loadGateRecord } from "./gate.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
@@ -198,6 +200,32 @@ function resumedTaskReachedTerminal(raw, taskId) {
 	if (!taskId || !raw || !Array.isArray(raw.tasks)) return false;
 	const task = raw.tasks.find((entry) => entry?.taskId === taskId);
 	return Boolean(task && TERMINAL_TASK_STATUSES.has(String(task.status ?? "")));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object|null|undefined} raw
+ */
+function detachedResumeRequiresIntegrateGate(projectRoot, raw) {
+	if (!raw?.batchId || String(raw.phase ?? "") !== "completed") {
+		return false;
+	}
+	if (!raw.orchBranch) {
+		return false;
+	}
+	const config = loadSpineConfig(projectRoot).config ?? {};
+	return config.gates?.requireBeforeIntegrate === true;
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object|null|undefined} raw
+ */
+function detachedResumeIntegrateGateReady(projectRoot, raw) {
+	if (!detachedResumeRequiresIntegrateGate(projectRoot, raw)) {
+		return true;
+	}
+	return Boolean(loadGateRecord(projectRoot, String(raw.batchId)));
 }
 
 /**
@@ -422,7 +450,7 @@ export async function waitForDetachedBatchResume({
 		}
 
 		const completed = evaluateDetachedResumeWait(raw, taskId, updatedAtBefore);
-		if (completed) {
+		if (completed && detachedResumeIntegrateGateReady(projectRoot, raw)) {
 			return completed;
 		}
 

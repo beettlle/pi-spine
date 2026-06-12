@@ -5,6 +5,10 @@
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import {
+	resolveRulesManifestIntegrateDrift,
+	tryAutoResolveRulesManifestMergeConflict,
+} from "./engine-lanes.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
@@ -286,8 +290,66 @@ export function integrateOrchToBase(ctx) {
 
 	const previous = git(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	try {
+		const drift = resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, orchBranch });
+		if (!drift.ok) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: drift.error,
+				failureClass: drift.failureClass ?? "DirtyWorktree",
+				headline: drift.error ?? "Integrate refused — dirty rules-manifest",
+				suggestedCommand: "spine status --diagnose",
+				batchId,
+			};
+		}
+
 		git(projectRoot, ["checkout", baseBranch]);
-		git(projectRoot, ["merge", "--no-ff", orchBranch, "-m", `integrate ${orchBranch} into ${baseBranch}`]);
+		let mergeInProgress = false;
+		try {
+			git(projectRoot, [
+				"merge",
+				"--no-ff",
+				orchBranch,
+				"-m",
+				`integrate ${orchBranch} into ${baseBranch}`,
+			]);
+		} catch {
+			mergeInProgress = true;
+			const autoResolved = tryAutoResolveRulesManifestMergeConflict(projectRoot);
+			if (!autoResolved.ok) {
+				try {
+					execFileSync("git", ["merge", "--abort"], {
+						cwd: projectRoot,
+						stdio: ["ignore", "pipe", "pipe"],
+					});
+				} catch {
+					// best-effort abort
+				}
+				const message = autoResolved.error ?? "merge conflict";
+				appendJournalEvent(projectRoot, batchId, "integrate.failed", {
+					baseBranch,
+					orchBranch,
+					error: message.slice(0, 500),
+					conflict: true,
+				});
+				try {
+					git(projectRoot, ["checkout", previous || baseBranch]);
+				} catch {
+					// leave operator on base for manual recovery
+				}
+				return {
+					ok: false,
+					exitCode: 1,
+					error: message,
+					failureClass: autoResolved.failureClass ?? "MergeConflict",
+					headline: `Merge conflict integrating ${orchBranch} into ${baseBranch} — resolve manually`,
+					suggestedCommand: "spine status --diagnose",
+					batchId,
+					alternatives: ["/spine-gate"],
+				};
+			}
+			git(projectRoot, ["commit", "--no-edit"]);
+		}
 		const mergeCommit = git(projectRoot, ["rev-parse", "HEAD"]);
 
 		appendJournalEvent(projectRoot, batchId, "integrate.completed", {

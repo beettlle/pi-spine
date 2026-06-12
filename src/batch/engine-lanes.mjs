@@ -12,6 +12,8 @@ import {
 	resolveRulesManifestGeneratedAtMerge,
 	RULES_MANIFEST_REL_PATH,
 	writeRulesManifestAtomic,
+	loadRulesManifest,
+	fingerprintRulesManifest,
 } from "../config/cursor-rules/discover.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordTaskTerminalMetric } from "./metrics.mjs";
@@ -75,6 +77,114 @@ function listUnmergedPaths(projectRoot) {
 	});
 	if (!output) return [];
 	return output.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ref
+ */
+function readRulesManifestFromRef(projectRoot, ref) {
+	const output = git(projectRoot, ["show", `${ref}:${RULES_MANIFEST_REL_PATH}`], {
+		throwOnError: false,
+	});
+	if (output == null) {
+		return { ok: false, error: `missing ${RULES_MANIFEST_REL_PATH} at ${ref}` };
+	}
+	return parseRulesManifestJson(output);
+}
+
+/**
+ * @param {string} line
+ * @returns {string | null}
+ */
+function extractPorcelainPath(line) {
+	if (!line.trim()) return null;
+	let filePath = line.length > 2 && line[2] === " " ? line.slice(3) : line.slice(2);
+	filePath = filePath.trim();
+	if (!filePath) return null;
+	if (filePath.includes(" -> ")) {
+		return filePath.split(" -> ").pop()?.trim() ?? null;
+	}
+	return filePath;
+}
+
+/**
+ * @param {string} projectRoot
+ */
+function listDirtyPaths(projectRoot) {
+	const output = gitPorcelain(projectRoot);
+	if (!output) return [];
+	return output
+		.split("\n")
+		.map((line) => extractPorcelainPath(line))
+		.filter((entry) => Boolean(entry));
+}
+
+/**
+ * Before orch→main integrate, auto-resolve uncommitted generatedAt-only drift on rules-manifest.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ */
+export function resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, orchBranch }) {
+	const dirtyPaths = listDirtyPaths(projectRoot);
+	if (dirtyPaths.length === 0) {
+		return { ok: true, resolved: false };
+	}
+	if (dirtyPaths.length !== 1 || dirtyPaths[0] !== RULES_MANIFEST_REL_PATH) {
+		return { ok: true, resolved: false };
+	}
+
+	const working = loadRulesManifest(projectRoot);
+	if (!working) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error: `${RULES_MANIFEST_REL_PATH} is dirty but unreadable`,
+		};
+	}
+
+	const headResult = readRulesManifestFromRef(projectRoot, baseBranch);
+	const orchResult = readRulesManifestFromRef(projectRoot, orchBranch);
+	if (!headResult.ok || !orchResult.ok) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error: "unable to read rules-manifest from base or orch branch",
+		};
+	}
+
+	if (fingerprintRulesManifest(working) !== fingerprintRulesManifest(headResult.manifest)) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error:
+				`${RULES_MANIFEST_REL_PATH} has uncommitted content changes beyond generatedAt — commit or stash before integrate`,
+		};
+	}
+
+	if (fingerprintRulesManifest(headResult.manifest) !== fingerprintRulesManifest(orchResult.manifest)) {
+		const contentMerge = resolveRulesManifestGeneratedAtMerge({
+			ours: headResult.manifest,
+			theirs: orchResult.manifest,
+		});
+		if (!contentMerge.ok) {
+			return contentMerge;
+		}
+	}
+
+	gitExec(
+		projectRoot,
+		["restore", "--source=HEAD", "--staged", "--worktree", RULES_MANIFEST_REL_PATH],
+		{ projectRoot },
+	);
+	return {
+		ok: true,
+		resolved: true,
+		action: "restored_head_for_merge",
+	};
 }
 
 /**

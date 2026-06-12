@@ -433,6 +433,11 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		mergeCommit: merge.mergeCommit,
 	});
 	state.endedAt = Date.now();
+	openIntegrateGateAfterBatchComplete({
+		projectRoot,
+		batchId,
+		batchState: { ...state, phase: "completed" },
+	});
 	state.phase = "completed";
 	saveSpineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "batch.completed", {
@@ -440,7 +445,6 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		mergeCommit: merge.mergeCommit,
 		resumed: true,
 	});
-	openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
 	return {
 		ok: true,

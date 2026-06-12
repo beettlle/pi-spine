@@ -63,3 +63,23 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 ## Resolved (SP-193)
 
 **Fix:** `runWorker()` no longer breaks the poll loop on `.DONE`. A configurable post-done grace window (`lanes.postDoneGraceMinutes`, default 4 min) keeps polling; after grace the host SIGTERM/SIGKILLs a hung child and journals `worker.post_done_terminated`. When `.DONE` persists, the lane succeeds without requiring `exitCode === 0`. Pre-.DONE stall detection is unchanged.
+
+## Resolved (SP-200)
+
+**Incident:** Batch `20260611T225006` — detached resume reported `needs_integrate` but `gate.json` was missing until manual `openIntegrateGateAfterBatchComplete` (~2 min evidence collection).
+
+**Fix:**
+1. **Ordering** — `resume.mjs` and `resume-multi.mjs` call `openIntegrateGateAfterBatchComplete` *before* setting `phase: completed` and journaling `batch.completed`, so `gate.opened` precedes terminal batch events.
+2. **Detached waiter** — `waitForDetachedBatchResume` in `detached-start.mjs` keeps polling until `gate.json` exists when `gates.requireBeforeIntegrate` is true, even if batch phase is already `completed`.
+
+**Tests:** `tests/batch/resume-gate-open.test.mjs`, `tests/batch/detached-resume-gate.test.mjs`.
+
+## Resolved (SP-201)
+
+**Incident:** Batch `20260611T225006` land loop — `spine integrate` aborted because evidence collection left a dirty `.spine/rules-manifest.json` on `main` (only `generatedAt` differed from orch).
+
+**Fix:**
+1. **Pre-merge drift** — `resolveRulesManifestIntegrateDrift()` in `engine-lanes.mjs` restores HEAD manifest when working tree has generatedAt-only drift, unblocking `git merge`.
+2. **Merge conflict** — `integrateOrchToBase` reuses `tryAutoResolveRulesManifestMergeConflict()` for stage-2/3 generatedAt conflicts (same policy as lane→orch merge).
+
+**Tests:** `tests/batch/integrate-rules-manifest.test.mjs`.
