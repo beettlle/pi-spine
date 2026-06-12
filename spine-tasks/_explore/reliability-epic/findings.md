@@ -89,3 +89,31 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 2. **Merge conflict** — `integrateOrchToBase` reuses `tryAutoResolveRulesManifestMergeConflict()` for stage-2/3 generatedAt conflicts (same policy as lane→orch merge).
 
 **Tests:** `tests/batch/integrate-rules-manifest.test.mjs`.
+
+## Resolved (SP-199)
+
+**Incident:** Batch `20260611T225006` — SP-193 lane passed implementation but `contract.verified` failed with `no matching changes for see File Scope`, `missing —`, and unparseable coverage. Engine recorded unnecessary REVISE rework.
+
+**Root cause:** Phase 22 packet generator and legacy PROMPT contract tables used literal `see File Scope` and em-dash (`—`) cells. `parseContract()` treated those as real glob patterns before the hotfix; `verifyContract()` then compared git diffs against non-path tokens.
+
+**Fix:**
+1. **Parser** — `parseContract()` resolves `see File Scope` to File Scope bullets and treats em-dash cells as empty (hotfix on `main`; regression tests in `tests/tasks/contract-parse.test.mjs`).
+2. **Validate guard** — `validateContract()` errors in `required` mode when raw contract tables still contain unresolved placeholders (`detectContractPlaceholderIssues()`).
+3. **Generator** — `scripts/generate-phase22-packets.mjs` emits concrete paths or empty cells.
+4. **Packet migration** — Bulk-updated `spine-tasks/SP-*` contract tables to concrete paths / empty cells.
+
+**Tests:** `tests/tasks/contract-parse.test.mjs`, `tests/batch/contract-verify.test.mjs` (SP-193-shaped fixture).
+
+## Open — Pi timeout mismatch (batch `20260612T023712`)
+
+**Symptom:** SP-195/SP-199 failed with `pi worker timed out` (exit 124) ~66m; salvage found uncommitted work.
+
+**Root cause:** `spine-worker-runner.mjs` caps `spawnSync(pi)` at 60m; M-task stall budget is 180m; `worker-host` never passes stall-derived timeout to child env.
+
+**Staged fix:** SP-202.
+
+## Open — Engine review orphan + post-merge limbo (batch `20260612T011148`)
+
+**Symptom:** Merges complete, phase `running`, gate missing; resume completed batch then `review.failed` after `batch.completed`.
+
+**Staged fix:** SP-203 (orphan engine + resume race), SP-204 (post-merge limbo auto-gate).
