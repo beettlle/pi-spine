@@ -1,6 +1,6 @@
 # SP: Status
 
-**Current Step:** Step 0 — Preflight
+**Current Step:** Step 1 — Stub batch and skeleton
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
 **Review Level:** 1 (Plan Only)
@@ -11,18 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Select external consumer repo
-- [ ] Copy template to dated instance
+- [x] Select external consumer repo
+- [x] Copy template to dated instance
 
 ---
 
 ### Step 1: Stub batch and skeleton
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Run stub batch on consumer repo
-- [ ] Fill report skeleton with stub-batch evidence
+- [x] Run stub batch on consumer repo
+- [x] Fill report skeleton with stub-batch evidence
 
 ---
 
@@ -61,7 +61,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
-| 2026-06-12 | Step 0 start | Consumer: adoption fixture layout |
+| 2026-06-12 | Step 0 complete | Consumer: adoption fixture; report copied |
+| 2026-06-12 | Stub batch | Batch 20260612T232300 AD-001 pass |
 
 ---
 
@@ -73,4 +74,4 @@
 
 ## Notes
 
-**Consumer selection:** `tests/fixtures/adoption-repo` — documented external consumer layout (not pi-spine `spine-tasks/` dogfood). Historical production consumer: searchATon (bug reports SP-095–098); stub batch runs on temp copy per `fixture-batch.test.mjs`.
+**Consumer:** Adoption fixture (`tests/fixtures/adoption-repo`) temp copy. **Stub batch:** `20260612T232300`, AD-001, attached, ~6s, no state_drift.
