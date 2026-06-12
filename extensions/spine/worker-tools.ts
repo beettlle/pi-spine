@@ -83,8 +83,13 @@ export function executeSpineReviewStep(params: SpineReviewStepParams): SpineRevi
 		};
 	}
 
+	const fallbackText =
+		details.spawnFailed && details.error?.includes("Nested reviewer spawn blocked")
+			? `${details.error}\nUse stub plan review in CI or let the batch engine run code review (SP-195).`
+			: details.error || "review step failed";
+
 	return {
-		content: [{ type: "text" as const, text: output.trim() || details.error || "review step failed" }],
+		content: [{ type: "text" as const, text: output.trim() || fallbackText }],
 		details,
 		isError: exitCode !== 0,
 	};
