@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-12
 **Status:** Active
-**Next Task ID:** SP-205
+**Next Task ID:** SP-227
 
 ---
 
@@ -506,7 +506,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 ### Phase 23–26 — Ship readiness epic (SP-SHIP / SP-205–226)
 
-**Status:** Planned — spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+**Status:** **Staged** — spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
 
 | Phase | Theme | npm? |
 |-------|-------|------|
@@ -515,7 +515,59 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | 25 (P2) | Journal structural rebuild, supervisor/merger/worker-gate stories | No |
 | 26 | npm publish + pi.dev listing (human-gated) | **Final step only** |
 
-Decompose with `create-spine-tasks` after handoff review. FR-SHIP-04 (doc sync) closes stale entries in this file's priority backlog.
+**Explore (planned):** `engine-lanes-split` — SP-207 writes `spine-tasks/_explore/engine-lanes-split/findings.md` before SP-208–211 split.
+
+#### Phase 23 — P0 Trust & maintainability
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-205 | Ship readiness handoff doc (PRD cross-links) | **Staged** | SP-204 |
+| SP-206 | CI trust + SAT-020 guard | **Staged** | SP-205 |
+| SP-207 | Engine-lanes split explore findings | **Staged** | SP-205 |
+| SP-208 | Extract wave/tick scheduling module | **Staged** | SP-207 |
+| SP-209 | Extract lane queue / provisioning | **Staged** | SP-208 |
+| SP-210 | Extract review-phase wiring | **Staged** | SP-209 |
+| SP-211 | Extract merge-phase wiring; god-file removal | **Staged** | SP-210 |
+| SP-212 | Real-pi CI blocking hardening | **Staged** | SP-206 |
+| SP-213 | Operator doc sync (CONTEXT + readiness) | **Staged** | SP-205 |
+| SP-214 | Phase 23 exit verification | **Staged** | SP-211, SP-212, SP-213 |
+
+**Suggested batches (Phase 23):** SP-205 → (SP-206 + SP-213) → SP-207 → SP-208–211 serial → (SP-212 + SP-214).
+
+#### Phase 24 — P1 Prove & parity
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-215 | Tier-3 consumer pilot report (filled) | **Staged** | SP-214 |
+| SP-216 | Extension slash-command tests ≥70% | **Staged** | SP-214 |
+| SP-217 | Dashboard parity default view | **Staged** | SP-214 |
+| SP-218 | Journal export CLI | **Staged** | SP-214 |
+| SP-219 | agentSession promotion decision | **Staged** | SP-214 |
+| SP-220 | Phase 24 exit verification | **Staged** | SP-215–219 |
+
+**Suggested batches (Phase 24):** SP-215 → (SP-216 + SP-217) → (SP-218 + SP-219) → SP-220.
+
+#### Phase 25 — P2 Differentiation
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-221 | Journal structural rebuild (FR-SHIP-10) | **Staged** | SP-220 |
+| SP-222 | Supervisor defer documentation | **Staged** | SP-220 |
+| SP-223 | Merger conflict UX spike | **Staged** | SP-220 |
+| SP-224 | Worker manual gate story | **Staged** | SP-220 |
+| SP-225 | Phase 25 exit verification | **Staged** | SP-221–224 |
+
+**Suggested batches (Phase 25):** SP-221–224 (parallel) → SP-225.
+
+#### Phase 26 — Publish (human-gated)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-226 | npm publish execution | **Staged** | SP-225 |
+
+**Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check`
+
+FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 
 ---
 
