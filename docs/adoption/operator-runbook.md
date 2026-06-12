@@ -507,7 +507,8 @@ spine dashboard --port 8110
 In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
-- Panels: diagnosis banner, wave progress, lane table, integrate gate, journal tail
+- **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required)
+- **Active batch panels** (when a batch is reconciled): wave progress, lane table, journal tail
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
 - Keep the dashboard terminal open while it runs
 

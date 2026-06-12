@@ -285,6 +285,50 @@ function summarizeBatch(batch) {
 }
 
 /**
+ * Default dashboard view (FR-SHIP-07): reconciliation headline/commands plus gate affordance
+ * without requiring CLI `--diagnose`.
+ *
+ * @param {object} reconciliation
+ * @param {object|null} gate
+ */
+export function buildDefaultViewStatus(reconciliation, gate) {
+	const diagnosis = reconciliation?.diagnosis ?? null;
+	const gateApplicable = diagnosis === "needs_integrate" || gate != null;
+
+	let gateAffordance = null;
+	if (gate) {
+		gateAffordance = {
+			visible: true,
+			gateId: gate.gateId,
+			kind: gate.kind,
+			status: gate.status,
+			summary: gate.summary,
+			openedAt: gate.openedAt,
+			pending: gate.status === "pending",
+		};
+	} else if (diagnosis === "needs_integrate") {
+		gateAffordance = {
+			visible: true,
+			gateId: null,
+			kind: "integrate",
+			status: "missing",
+			summary: "Integrate gate not opened yet — wait for engine or run spine batch resume",
+			openedAt: null,
+			pending: true,
+		};
+	}
+
+	return {
+		diagnosis,
+		headline: reconciliation?.headline ?? "",
+		suggestedCommand: reconciliation?.suggestedCommand ?? "",
+		alternatives: reconciliation?.alternatives ?? [],
+		gateApplicable,
+		gate: gateAffordance,
+	};
+}
+
+/**
  * @param {string} projectRoot
  */
 export function buildDashboardSnapshot(projectRoot) {
@@ -348,9 +392,11 @@ export function buildDashboardSnapshot(projectRoot) {
 		now,
 	});
 	const waves = buildWaveProgress(batch);
+	const defaultView = buildDefaultViewStatus(reconciliation, gate);
 
 	return {
 		generatedAt: new Date(now).toISOString(),
+		defaultView,
 		diagnosis: reconciliation.diagnosis,
 		headline: reconciliation.headline,
 		suggestedCommand: reconciliation.suggestedCommand,

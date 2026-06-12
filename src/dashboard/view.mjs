@@ -198,6 +198,52 @@ export function buildGateModel(gate) {
 }
 
 /**
+ * Gate affordance for the default dashboard view (FR-SHIP-07).
+ *
+ * @param {object} snapshot
+ */
+export function buildGateAffordanceModel(snapshot) {
+	const defaultView = snapshot?.defaultView;
+	if (defaultView?.gate?.visible) {
+		return defaultView.gate;
+	}
+
+	const gate = snapshot?.gate;
+	if (gate) {
+		return {
+			visible: true,
+			gateId: gate.gateId,
+			kind: gate.kind,
+			status: gate.status,
+			summary: gate.summary,
+			openedAt: gate.openedAt,
+			pending: gate.status === "pending",
+		};
+	}
+
+	if (snapshot?.diagnosis === "needs_integrate") {
+		return {
+			visible: true,
+			gateId: null,
+			kind: "integrate",
+			status: "missing",
+			summary: "Integrate gate not opened yet — wait for engine or run spine batch resume",
+			openedAt: null,
+			pending: true,
+		};
+	}
+
+	return null;
+}
+
+/**
+ * @param {object} snapshot
+ */
+export function shouldShowGateAffordance(snapshot) {
+	return buildGateAffordanceModel(snapshot) != null;
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildJournalModel(snapshot) {
@@ -221,6 +267,8 @@ export function buildDashboardViewModel(snapshot) {
 		waves: buildWaveModel(snapshot),
 		lanes: buildLaneTableModel(snapshot),
 		gate: buildGateModel(snapshot?.gate),
+		gateAffordance: buildGateAffordanceModel(snapshot),
+		showGateAffordance: shouldShowGateAffordance(snapshot),
 		journal: buildJournalModel(snapshot),
 	};
 }

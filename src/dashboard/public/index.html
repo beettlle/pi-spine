@@ -20,6 +20,13 @@
     <div id="banner-actions" class="banner-actions" role="group" aria-label="Suggested CLI commands"></div>
   </section>
 
+  <section id="default-status-panels" class="default-status-panels" hidden>
+    <section class="panel" aria-labelledby="gate-heading">
+      <h3 id="gate-heading">Integrate gate</h3>
+      <div id="gate-panel" class="gate-panel"></div>
+    </section>
+  </section>
+
   <main class="panels" id="active-panels" hidden>
     <section class="panel" aria-labelledby="batch-summary-heading">
       <h3 id="batch-summary-heading">Batch summary</h3>
@@ -49,11 +56,6 @@
           <tbody id="lane-table-body"></tbody>
         </table>
       </div>
-    </section>
-
-    <section class="panel" aria-labelledby="gate-heading">
-      <h3 id="gate-heading">Integrate gate</h3>
-      <div id="gate-panel" class="gate-panel"></div>
     </section>
 
     <section class="panel panel-wide" aria-labelledby="journal-heading">

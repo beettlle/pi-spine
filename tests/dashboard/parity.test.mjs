@@ -156,8 +156,11 @@ test("parity: needs_integrate", async () => {
 	try {
 		createOrchWithWork(projectRoot, orchBranch);
 		writeSpineBatchState(projectRoot, completedBatchFixture(orchBranch));
-		const { reconcile } = assertDiagnosisParity(projectRoot);
+		const { reconcile, snapshot } = assertDiagnosisParity(projectRoot);
 		assert.equal(reconcile.diagnosis, "needs_integrate");
+		assert.ok(snapshot.defaultView.gateApplicable);
+		assert.equal(snapshot.defaultView.gate?.status, "missing");
+		assert.equal(snapshot.defaultView.headline, reconcile.headline);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
