@@ -23,7 +23,7 @@
 | Area | State |
 |------|--------|
 | Phase 8 (TP-031–042) | Complete on `main` |
-| Automated tests | ~287 tests with `SPINE_WORKER_STUB=1` |
+| Automated tests | ~772 tests with `SPINE_WORKER_STUB=1` (2026-06-12) |
 | Real `pi` workers | `SPINE_WORKER_STUB=0`; Phase 6 manual checklist unchecked |
 | Install story | README assumes npm; dev path is `pi install . -l` |
 | Global `spine` CLI | May be stale; `node bin/spine.mjs` is reliable |

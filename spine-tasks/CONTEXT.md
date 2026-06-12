@@ -497,11 +497,11 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-227 | Preflight git-clean rules-manifest drift | **Staged** | SP-201, SP-090 |
-| SP-228 | Attached batch land-loop completion | **Staged** | SP-204, SP-200 |
-| SP-229 | Worker orphan final-review recovery | **Staged** | SP-203, SP-193, SP-115 |
-| SP-230 | Exit verification stub guard | **Staged** | SP-199, SP-115 |
-| SP-231 | Phase 23 exit audit helper | **Staged** | SP-213, SP-211, SP-212 |
+| SP-227 | Preflight git-clean rules-manifest drift | **Done** | SP-201, SP-090 |
+| SP-228 | Attached batch land-loop completion | **Done** | SP-204, SP-200 |
+| SP-229 | Worker orphan final-review recovery | **Done** | SP-203, SP-193, SP-115 |
+| SP-230 | Exit verification stub guard | **Done** | SP-199, SP-115 |
+| SP-231 | Phase 23 exit audit helper | **Done** | SP-213, SP-211, SP-212 |
 
 **Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
 
@@ -535,18 +535,26 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-205 | Ship readiness handoff doc (PRD cross-links) | **Staged** | SP-204 |
-| SP-206 | CI trust + SAT-020 guard | **Staged** | SP-205 |
-| SP-207 | Engine-lanes split explore findings | **Staged** | SP-205 |
-| SP-208 | Extract wave/tick scheduling module | **Staged** | SP-207 |
-| SP-209 | Extract lane queue / provisioning | **Staged** | SP-208 |
-| SP-210 | Extract review-phase wiring | **Staged** | SP-209 |
-| SP-211 | Extract merge-phase wiring; god-file removal | **Staged** | SP-210 |
-| SP-212 | Real-pi CI blocking hardening | **Staged** | SP-206 |
-| SP-213 | Operator doc sync (CONTEXT + readiness) | **Staged** | SP-205 |
-| SP-214 | Phase 23 exit verification | **Staged** | SP-211, SP-212, SP-213 |
+| SP-205 | Ship readiness handoff doc (PRD cross-links) | **Done** | SP-204 |
+| SP-206 | CI trust + SAT-020 guard | **Done** | SP-205 |
+| SP-207 | Engine-lanes split explore findings | **Done** | SP-205 |
+| SP-208 | Extract wave/tick scheduling module | **Done** | SP-207 |
+| SP-209 | Extract lane queue / provisioning | **Done** | SP-208 |
+| SP-210 | Extract review-phase wiring | **Done** | SP-209 |
+| SP-211 | Extract merge-phase wiring; god-file removal | **Done** | SP-210 |
+| SP-212 | Real-pi CI blocking hardening | **Done** | SP-206 |
+| SP-213 | Operator doc sync (CONTEXT + readiness) | **Done** | SP-205 |
+| SP-214 | Phase 23 exit verification | **Done** | SP-211, SP-212, SP-213 |
 
-**Suggested batches (Phase 23):** SP-205 → (SP-206 + SP-213) → SP-207 → SP-208–211 serial → (SP-212 + SP-214).
+**Phase 23 exit criteria (PRD §8):**
+
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — zero failures (772 tests, 2026-06-12)
+- [x] No `src/batch/*.mjs` file >500 lines without grandfather list (`spine verify phase23-exit`; `engine-lanes.mjs` split complete)
+- [x] Real-pi workflow present; skip-when-absent documented (`.github/workflows/real-pi.yml`, operator runbook)
+- [x] CONTEXT.md Phase 23 table aligned with landed work (SP-205–214 Done)
+- [x] `real-project-readiness.md` test counts updated
+
+**Suggested batches (Phase 23):** Complete — Phase 24 unblocked.
 
 #### Phase 24 — P1 Prove & parity
 

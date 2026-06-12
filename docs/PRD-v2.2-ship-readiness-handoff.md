@@ -326,11 +326,11 @@ SP-204 (done)
 
 ### Phase 23 exit (blocks P1)
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — zero failures
-- [ ] No `src/batch/*.mjs` file >500 lines
-- [ ] Real-pi workflow fails CI when `pi` present and E2E fails; skip documented when absent
-- [ ] CONTEXT.md header and priority backlog aligned with Phases 0–22b Done
-- [ ] `real-project-readiness.md` test counts accurate
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — zero failures
+- [x] No `src/batch/*.mjs` file >500 lines (grandfather list in `spine verify phase23-exit`; `engine-lanes.mjs` ≤500 LOC)
+- [x] Real-pi workflow fails CI when `pi` present and E2E fails; skip documented when absent
+- [x] CONTEXT.md header and priority backlog aligned with Phases 0–22b Done
+- [x] `real-project-readiness.md` test counts accurate
 
 ### Phase 24 exit (blocks P2 and publish)
 
