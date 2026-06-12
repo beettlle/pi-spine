@@ -130,8 +130,23 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Tests:** `tests/batch/worker-pi-timeout.test.mjs`.
 
-## Open — Engine review orphan + post-merge limbo (batch `20260612T011148`)
+## Resolved (SP-203)
 
-**Symptom:** Merges complete, phase `running`, gate missing; resume completed batch then `review.failed` after `batch.completed`.
+**Incident:** Batch `20260612T011148` — orphaned detached engine stuck in final `spawnSync(pi)`; resume raced with in-flight review; `review.failed` after `batch.completed`.
 
-**Staged fix:** SP-203 (orphan engine + resume race), SP-204 (post-merge limbo auto-gate).
+**Fix:**
+1. **`terminateStaleDetachedEngine`** — SIGTERM/SIGKILL stale `enginePid` on resume (`resume-engine.mjs`).
+2. **`runStepReview`** — honors existing final PASS; skips `review.failed` journal when batch phase is `completed`/`dismissed`.
+
+**Tests:** `tests/batch/engine-review-orphan.test.mjs`.
+
+## Resolved (SP-204)
+
+**Incident:** Batch `20260612T011148` — all lanes merged, phase `running`, `integrate` blocked (no gate).
+
+**Fix:**
+1. **`isPostMergeLimbo`** — detects merge-complete + all tasks succeeded while phase still `running`.
+2. **Reconcile** — diagnoses `needs_integrate` with `spine batch resume` when post-merge limbo.
+3. **Resume fast path** — `finalizeResumedBatchForIntegrate` opens gate without re-running tasks (idempotent gate).
+
+**Tests:** `tests/batch/post-merge-limbo.test.mjs`.

@@ -14,6 +14,7 @@ import {
 } from "./diagnosis.mjs";
 import { workerOutputLogPath } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
+import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import {
 	detectBatchStateDrift,
@@ -502,6 +503,13 @@ export function deriveDiagnosis(signals) {
 		);
 	}
 
+	const postMergeLimbo = isPostMergeLimbo(signals.raw ?? {}, git);
+	signals.postMergeLimbo = postMergeLimbo;
+
+	if (postMergeLimbo) {
+		return withFailureContext("needs_integrate", null, signals);
+	}
+
 	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {
 		if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && !mergeResultsEmpty) {
 			return withFailureContext("needs_integrate", null, signals);
@@ -692,6 +700,7 @@ export function reconcileBatch(ctx) {
 		salvageChangedFileCount,
 		salvageRetryCommand,
 		ghostRunningCluster,
+		postMergeLimbo: signals.postMergeLimbo === true,
 	});
 
 	if (diagnosis === "git_unavailable") {

@@ -6,7 +6,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { loadSpineBatchState } from "./state.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -489,8 +490,21 @@ function writeStubReviewArtifact({ artifactPath, reviewType, stepNumber, stepNam
 /**
  * @param {object} params
  */
+/**
+ * @param {object} journal
+ */
+function isBatchJournalFrozen(journal) {
+	const loaded = loadSpineBatchState(journal.projectRoot);
+	if (!loaded.raw || loaded.raw.batchId !== journal.batchId) return false;
+	const phase = String(loaded.raw.phase ?? "");
+	return phase === "completed" || phase === "dismissed";
+}
+
 function journalReviewEvent(type, journal, payload) {
 	if (!journal?.projectRoot || !journal?.batchId) return;
+	if (type === "review.failed" && isBatchJournalFrozen(journal)) {
+		return;
+	}
 	appendJournalEvent(journal.projectRoot, journal.batchId, type, {
 		taskId: journal.taskId,
 		laneNumber: journal.laneNumber,
@@ -634,6 +648,28 @@ export function runStepReview({
 			spawnFailed: false,
 			exitCode: 0,
 		};
+	}
+
+	if (reviewType === "final" && journal?.projectRoot && journal?.batchId) {
+		const honored = findCompletedFinalReview({
+			taskFolder,
+			journalEvents: readJournalEvents(journal.projectRoot, journal.batchId),
+			taskId: journal.taskId,
+		});
+		if (honored?.verdict === "PASS") {
+			return {
+				ok: true,
+				skipped: true,
+				honored: true,
+				honorSource: honored.source,
+				reviewLevel,
+				verdict: "PASS",
+				feedback: honored.feedback,
+				artifactPath: honored.artifactPath,
+				spawnFailed: false,
+				exitCode: 0,
+			};
+		}
 	}
 
 	const stepName = findStepName(taskFolder, stepNumber);

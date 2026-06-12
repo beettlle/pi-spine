@@ -488,10 +488,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-200 | Resume opens integrate gate | **Done** | SP-193 |
 | SP-201 | Integrate rules-manifest auto-merge | **Done** | SP-193 |
 | SP-202 | Pi timeout / stall budget alignment | **Done** | SP-088 |
-| SP-203 | Engine review orphan recovery | **Staged** | SP-192, SP-200 |
-| SP-204 | Post-merge limbo auto-gate | **Staged** | SP-200 |
+| SP-203 | Engine review orphan recovery | **Done** | SP-192, SP-200 |
+| SP-204 | Post-merge limbo auto-gate | **Done** | SP-200 |
 
-**Suggested batches:** **SP-203 SP-204** (parallel land-loop follow-ups). Worker wedge epic closed (SP-193–198, SP-202).
+**Suggested batches:** Land-loop follow-ups closed (SP-203, SP-204). Worker wedge epic closed (SP-193–198, SP-202).
 
 **Phase 22 exit criteria:**
 

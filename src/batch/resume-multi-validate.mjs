@@ -3,6 +3,7 @@
  */
 
 import fs from "node:fs";
+import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
 import { loadSpineBatchState, validateBatchState } from "./state.mjs";
 import {
@@ -64,7 +65,9 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 
 	const state = loaded.raw;
 	const phase = String(state.phase ?? "");
-	const resumable = phase === "paused" || (phase === "failed" && force);
+	const postMergeLimbo = isPostMergeLimbo(state);
+	const resumable =
+		phase === "paused" || (phase === "failed" && force) || (phase === "running" && postMergeLimbo);
 	if (!resumable) {
 		return {
 			ok: false,
@@ -159,7 +162,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 	}
 
 	const pendingTasks = computePendingTasks(state);
-	if (pendingTasks.length < 1) {
+	if (pendingTasks.length < 1 && !postMergeLimbo) {
 		return {
 			ok: false,
 			exitCode: 1,
@@ -179,5 +182,6 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 		pendingTasks,
 		lanes,
 		resumableWave,
+		postMergeLimbo,
 	};
 }

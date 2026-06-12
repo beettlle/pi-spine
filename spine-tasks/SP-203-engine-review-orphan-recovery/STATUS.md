@@ -1,7 +1,7 @@
 # SP-203: Engine final-review orphan recovery — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟢 Complete
 **Last Updated:** 2026-06-12
 **Review Level:** 2
 **Size:** M
@@ -9,18 +9,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
----
+### Step 1: Orphan kill + honor final review on resume
+**Status:** ✅ Complete
 
-## Blockers
+### Step 2: Testing & Verification
+**Status:** ✅ Complete
 
-*None*
-
----
-
-## Execution Log
-
-| Timestamp | Action | Outcome |
-|-----------|--------|---------|
-| 2026-06-12 | Task staged | Follow-up from batch `20260612T011148` land-loop wedge |
+### Step 3: Documentation & Delivery
+**Status:** ✅ Complete

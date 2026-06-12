@@ -9,6 +9,8 @@ import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
 import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
+import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { mergeLaneToOrch } from "./engine-lanes.mjs";
@@ -176,6 +178,23 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const resumeForced = Boolean(force);
 
 	const fromPhase = phase;
+	terminateStaleDetachedEngine({
+		projectRoot,
+		state,
+		batchId,
+		fromPhase: phase,
+	});
+
+	if (isPostMergeLimbo(state) && task.status === "succeeded") {
+		return finalizeResumedBatchForIntegrate({
+			projectRoot,
+			state,
+			batchId,
+			orchBranch,
+			resumeForced: Boolean(force),
+		});
+	}
+
 	if (phase === "failed" && force) {
 		state.resilience = state.resilience ?? {};
 		state.resilience.resumeForced = true;
@@ -397,16 +416,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	}
 
 	if (state.mergeResults?.length > 0) {
-		state.endedAt = Date.now();
-		state.phase = "completed";
-		saveSpineBatchState(projectRoot, state);
-		return {
-			ok: true,
-			exitCode: 0,
+		return finalizeResumedBatchForIntegrate({
+			projectRoot,
+			state,
 			batchId,
-			taskId,
-			output: `Batch ${batchId} already merged; marked completed.\n`,
-		};
+			orchBranch,
+			resumeForced: Boolean(force),
+		});
 	}
 
 	appendJournalEvent(projectRoot, batchId, "batch.merge_started", {

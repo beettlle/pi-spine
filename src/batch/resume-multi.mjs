@@ -10,6 +10,8 @@ import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import {
 	countPendingSegments,
 	failBatchFromEngineError,
@@ -50,6 +52,23 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 
 	if (phase === "failed" && force) {
 		resetFailedTasksForForceResume({ state, pendingTasks: check.pendingTasks });
+	}
+
+	terminateStaleDetachedEngine({
+		projectRoot,
+		state,
+		batchId,
+		fromPhase: phase,
+	});
+
+	if (isPostMergeLimbo(state) && check.pendingTasks.length === 0) {
+		return finalizeResumedBatchForIntegrate({
+			projectRoot,
+			state,
+			batchId,
+			orchBranch,
+			resumeForced: resumeForced,
+		});
 	}
 
 	const pendingSegments = countPendingSegments(state);
