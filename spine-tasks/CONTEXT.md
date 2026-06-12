@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-06-12
+**Last Updated:** 2026-06-12 (Phase 24–26 stub reset)
 **Status:** Active
 **Next Task ID:** SP-243
 
@@ -502,8 +502,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-229 | Worker orphan final-review recovery | **Done** | SP-203, SP-193, SP-115 |
 | SP-230 | Exit verification stub guard | **Done** | SP-199, SP-115 |
 | SP-231 | Phase 23 exit audit helper | **Done** | SP-213, SP-211, SP-212 |
-| SP-232 | Pin agent models (worker `--model` pin) | **Staged** | SP-212, SP-088 |
-| SP-238 | Worker model pin template + runbook | **Staged** | SP-232 |
+| SP-232 | Pin agent models (worker `--model` pin) | **Pending** | SP-212, SP-088 |
+| SP-238 | Worker model pin template + runbook | **Pending** | SP-232 |
 
 **Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
 
@@ -526,7 +526,9 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 ### Phase 23–26 — Ship readiness epic (SP-SHIP / SP-205–226)
 
-**Status:** **Staged** — spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+**Status:** **In progress** — Phase 23 complete on `main`; Phases 24–26 pending real work. Spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+
+**Incident (2026-06-12):** Batch `20260612T225744` (SP-215–226) landed stub-only `.DONE` files (`Task: stub`) with no product code. Integrate gate approved; operator reset invalidated all 21 false completions (removed `.DONE` + stub `.reviews/`). Re-run with **real pi** (`unset SPINE_WORKER_STUB`) starting SP-232.
 
 | Phase | Theme | npm? |
 |-------|-------|------|
@@ -566,19 +568,19 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-232 | Worker `--model` pin | S | **Staged** | SP-212, SP-088 |
-| SP-238 | Model pin template + runbook | S | **Staged** | SP-232 |
-| SP-215 | Consumer pilot stub + skeleton | S | **Staged** | SP-214 |
-| SP-233 | Consumer pilot real-pi + recovery | M | **Staged** | SP-215 |
-| SP-216 | Extension slash-command tests ≥70% | M | **Staged** | SP-214 |
-| SP-217 | Dashboard gate + diagnosis | S | **Staged** | SP-214 |
-| SP-234 | Dashboard journal tail panel | S | **Staged** | SP-217 |
-| SP-235 | Journal export jsonl CLI | S | **Staged** | SP-214 |
-| SP-236 | Journal export markdown timeline | S | **Staged** | SP-235 |
-| SP-219 | agentSession decision (report) | S | **Staged** | SP-214 |
-| SP-237 | agentSession doctor alignment | S | **Staged** | SP-219 |
+| SP-232 | Worker `--model` pin | S | **Pending** | SP-212, SP-088 |
+| SP-238 | Model pin template + runbook | S | **Pending** | SP-232 |
+| SP-215 | Consumer pilot stub + skeleton | S | **Pending** | SP-214 |
+| SP-233 | Consumer pilot real-pi + recovery | M | **Pending** | SP-215 |
+| SP-216 | Extension slash-command tests ≥70% | M | **Pending** | SP-214 |
+| SP-217 | Dashboard gate + diagnosis | S | **Pending** | SP-214 |
+| SP-234 | Dashboard journal tail panel | S | **Pending** | SP-217 |
+| SP-235 | Journal export jsonl CLI | S | **Pending** | SP-214 |
+| SP-236 | Journal export markdown timeline | S | **Pending** | SP-235 |
+| SP-219 | agentSession decision (report) | S | **Pending** | SP-214 |
+| SP-237 | agentSession doctor alignment | S | **Pending** | SP-219 |
 | SP-218 | Journal export CLI (superseded) | — | **Done** | → SP-235/236 |
-| SP-220 | Phase 24 exit verification | S | **Staged** | SP-233, SP-216, SP-234, SP-236, SP-237 |
+| SP-220 | Phase 24 exit verification | S | **Pending** | SP-233, SP-216, SP-234, SP-236, SP-237 |
 
 **Suggested batches (Phase 24):** (SP-232 → SP-238) → (SP-215 → SP-233) → (SP-216 + SP-217) → (SP-234 + SP-235) → (SP-236 + SP-219 → SP-237) → SP-220.
 
@@ -586,13 +588,13 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-221 | Journal structural rebuild (core) | M | **Staged** | SP-220 |
-| SP-240 | Journal rebuild incident fixtures | S | **Staged** | SP-221 |
-| SP-222 | Supervisor defer documentation | S | **Staged** | SP-220 |
-| SP-223 | Merger conflict UX spike | S | **Staged** | SP-220 |
-| SP-241 | Worker gate inventory | S | **Staged** | SP-220 |
-| SP-224 | Worker manual gate execution | S | **Staged** | SP-241 |
-| SP-225 | Phase 25 exit verification | S | **Staged** | SP-240, SP-222, SP-223, SP-224 |
+| SP-221 | Journal structural rebuild (core) | M | **Pending** | SP-220 |
+| SP-240 | Journal rebuild incident fixtures | S | **Pending** | SP-221 |
+| SP-222 | Supervisor defer documentation | S | **Pending** | SP-220 |
+| SP-223 | Merger conflict UX spike | S | **Pending** | SP-220 |
+| SP-241 | Worker gate inventory | S | **Pending** | SP-220 |
+| SP-224 | Worker manual gate execution | S | **Pending** | SP-241 |
+| SP-225 | Phase 25 exit verification | S | **Pending** | SP-240, SP-222, SP-223, SP-224 |
 
 **Suggested batches (Phase 25):** (SP-221 + SP-222 + SP-241 parallel) → (SP-240 + SP-223 + SP-224 parallel) → SP-225.
 
@@ -600,8 +602,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-242 | npm pre-release checklist + dry-run | S | **Staged** | SP-225 |
-| SP-226 | npm publish execution (human-gated) | S | **Staged** | SP-242 |
+| SP-242 | npm pre-release checklist + dry-run | S | **Pending** | SP-225 |
+| SP-226 | npm publish execution (human-gated) | S | **Pending** | SP-242 |
 
 **Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check`
 
