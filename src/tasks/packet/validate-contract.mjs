@@ -62,6 +62,14 @@ export function validateContract(parsed, options = {}) {
 		errors.push("Contract table is empty");
 	}
 
+	for (const placeholderIssue of parsed.placeholderIssues ?? []) {
+		if (mode === "required") {
+			errors.push(placeholderIssue);
+		} else {
+			warnings.push(placeholderIssue);
+		}
+	}
+
 	for (const field of ["fileScopeMustChange", "fileScopeMustNotChange", "artifactsMustExist"]) {
 		for (const pattern of parsed[field] ?? []) {
 			if (!isValidContractGlob(pattern)) {

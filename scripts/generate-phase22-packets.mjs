@@ -58,7 +58,7 @@ function buildPrompt(t) {
 	const rs = reviewScore(t.review);
 	const testCmd = t.testCmd ?? DEFAULT_TEST;
 	const contractFileScope =
-		t.review === 0 && t.testCmd === "true" ? "—" : t.scope.map((s) => `\`${s}\``).join(", ");
+		t.review === 0 && t.testCmd === "true" ? "" : t.scope.map((s) => `\`${s}\``).join(", ");
 
 	return `# Task: SP-${t.id} — ${t.title}
 

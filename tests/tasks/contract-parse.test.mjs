@@ -207,6 +207,74 @@ ${`## Contract
 	assert.deepEqual(parsed.fileScopeMustChange, ["src/required.mjs"]);
 });
 
+test("validateContract errors on em-dash placeholders in required mode", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`true\` |
+| fileScopeMustChange | — |
+| fileScopeMustNotChange | — |
+| artifactsMustExist | — |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+	const result = validateContract(parsed, { mode: "required" });
+
+	assert.equal(result.ok, false);
+	assert.match(result.errors.join("\n"), /em-dash placeholder/);
+});
+
+test("validateContract errors on see File Scope with empty File Scope section in required mode", () => {
+	const prompt = `# Task: SP-999 — Contract fixture
+
+## Mission
+x
+
+## Dependencies
+- **None**
+
+## File Scope
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | see File Scope |
+
+## Steps
+### Step 1: Testing & Verification
+- [ ] t
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- n
+`;
+
+	const parsed = parseContract(prompt);
+	const result = validateContract(parsed, { mode: "required" });
+
+	assert.equal(result.ok, false);
+	assert.match(result.errors.join("\n"), /unresolved "see File Scope"/);
+});
+
+test("validateContract warns on placeholders in optional mode", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| fileScopeMustNotChange | — |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+	const result = validateContract(parsed, { mode: "optional" });
+
+	assert.equal(result.ok, true);
+	assert.match(result.warnings.join("\n"), /em-dash placeholder/);
+});
+
 test("parseContract treats em dash contract cells as empty path lists", () => {
 	const table = `## Contract
 

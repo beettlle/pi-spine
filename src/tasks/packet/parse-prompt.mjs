@@ -30,7 +30,8 @@ const CONTRACT_TABLE_HEADER_RE = /^\|\s*Field\s*\|\s*Value\s*\|$/i;
 const CONTRACT_TABLE_SEPARATOR_RE = /^\|[\s\-:|]+\|$/;
 const CONTRACT_TABLE_ROW_RE = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/;
 const TEST_COMMAND_MAX_LENGTH = 500;
-const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
+export const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
+const CONTRACT_EM_DASH_PLACEHOLDER_RE = /^[—\-]$/;
 const CONTRACT_NONE_VALUES = new Set(["—", "-", "none", "n/a", "na"]);
 
 /**
@@ -116,6 +117,8 @@ export function validatePrompt(markdown) {
  *   errors: string[],
  *   unknownFields: string[],
  *   hasSection: boolean,
+ *   rawFieldValues: Record<string, string>,
+ *   placeholderIssues: string[],
  * }}
  */
 export function parseContract(markdown) {
@@ -134,6 +137,8 @@ export function parseContract(markdown) {
 		errors: [],
 		unknownFields: [],
 		hasSection: Object.hasOwn(sections, "Contract"),
+		rawFieldValues: {},
+		placeholderIssues: [],
 	};
 
 	if (!parsed.hasSection) {
@@ -161,12 +166,47 @@ export function parseContract(markdown) {
 			continue;
 		}
 
+		parsed.rawFieldValues[field] = value;
 		applyContractField(parsed, field, value);
 	}
 
 	resolveContractFileScopeReferences(parsed, fileScopePaths);
+	parsed.placeholderIssues = detectContractPlaceholderIssues(parsed, fileScopePaths);
 
 	return parsed;
+}
+
+/**
+ * @param {ReturnType<typeof parseContract>} parsed
+ * @param {string[]} fileScopePaths
+ * @returns {string[]}
+ */
+export function detectContractPlaceholderIssues(parsed, fileScopePaths) {
+	/** @type {string[]} */
+	const issues = [];
+	const raw = parsed.rawFieldValues ?? {};
+
+	for (const field of ["fileScopeMustChange", "fileScopeMustNotChange", "artifactsMustExist"]) {
+		const value = String(raw[field] ?? "").trim();
+		if (!value) {
+			continue;
+		}
+
+		if (SEE_FILE_SCOPE_RE.test(value)) {
+			if (fileScopePaths.length === 0) {
+				issues.push(
+					`Contract ${field}: unresolved "see File Scope" placeholder (empty File Scope section)`,
+				);
+			}
+			continue;
+		}
+
+		if (CONTRACT_EM_DASH_PLACEHOLDER_RE.test(value)) {
+			issues.push(`Contract ${field}: em-dash placeholder; use an empty cell instead`);
+		}
+	}
+
+	return issues;
 }
 
 /**
