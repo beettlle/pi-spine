@@ -150,3 +150,17 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 3. **Resume fast path** — `finalizeResumedBatchForIntegrate` opens gate without re-running tasks (idempotent gate).
 
 **Tests:** `tests/batch/post-merge-limbo.test.mjs`.
+
+## Open — Stress test hotfixes (SP-205–225 epic, 2026-06-12)
+
+**Outcome:** Waves 0–5 landed (SP-205–211). Wave 6 (SP-214) **blocked**; batch `20260612T204048` force-dismissed (gate rejected — stub `.DONE` only).
+
+| Pattern | Batch / task | Staged fix |
+|---------|--------------|------------|
+| Preflight `git-clean` fails on rules-manifest `generatedAt` only | Waves 1+ after integrate | **SP-227** |
+| Attached `--attached` exits after merge without gate open | `20260612T195913` (SP-210) | **SP-228** |
+| `worker_orphaned` during engine final review despite worktree `.DONE` | `20260612T193902` (SP-209), `20260612T202559` (SP-211) | **SP-229** |
+| Stub retry marks exit task Done without contract/fileScope | `20260612T204048` (SP-214) | **SP-230** |
+| §8 Phase 23 audit not runnable; CONTEXT still Staged; 5× `batch/*.mjs` >500 LOC | SP-214 manual audit | **SP-231** |
+
+**Recovery:** Land SP-227–231, then re-run SP-214 with real pi after `verify phase23-exit` green.

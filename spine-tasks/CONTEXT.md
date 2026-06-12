@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-12
 **Status:** Active
-**Next Task ID:** SP-227
+**Next Task ID:** SP-232
 
 ---
 
@@ -490,6 +490,20 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-202 | Pi timeout / stall budget alignment | **Done** | SP-088 |
 | SP-203 | Engine review orphan recovery | **Done** | SP-192, SP-200 |
 | SP-204 | Post-merge limbo auto-gate | **Done** | SP-200 |
+
+#### Phase 22c — Stress test hotfixes (SP-227–231)
+
+**Incident:** Autonomous SP-205–225 stress test (2026-06-12) — Waves 0–5 landed; Wave 6 (SP-214) blocked on real-pi crash + stub false `.DONE`; batch `20260612T204048` force-dismissed.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-227 | Preflight git-clean rules-manifest drift | **Staged** | SP-201, SP-090 |
+| SP-228 | Attached batch land-loop completion | **Staged** | SP-204, SP-200 |
+| SP-229 | Worker orphan final-review recovery | **Staged** | SP-203, SP-193, SP-115 |
+| SP-230 | Exit verification stub guard | **Staged** | SP-199, SP-115 |
+| SP-231 | Phase 23 exit audit helper | **Staged** | SP-213, SP-211, SP-212 |
+
+**Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
 
 **Suggested batches:** Land-loop follow-ups closed (SP-203, SP-204). Worker wedge epic closed (SP-193–198, SP-202).
 
