@@ -3,7 +3,6 @@ import type {
 	ExtensionCommandContext,
 } from "@earendil-works/pi-coding-agent";
 import { spawn, spawnSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -415,13 +414,10 @@ function stubHandler(command: string) {
 async function maybeAutoWriteHandoffOnSessionStart(diagnosis: string | null): Promise<void> {
 	let autoWriteOn: string[] = [];
 	try {
-		const configPath = path.join(process.cwd(), ".spine", "spine-config.json");
-		if (fs.existsSync(configPath)) {
-			const config = JSON.parse(fs.readFileSync(configPath, "utf-8")) as {
-				handoff?: { autoWriteOn?: string[] };
-			};
-			autoWriteOn = config.handoff?.autoWriteOn ?? [];
-		}
+		const { loadSpineConfig } = await import(path.join(PACKAGE_ROOT, "bin/spine-config.mjs"));
+		const loaded = loadSpineConfig(process.cwd());
+		if (loaded.error || !loaded.config) return;
+		autoWriteOn = loaded.config.handoff?.autoWriteOn ?? [];
 	} catch {
 		return;
 	}
