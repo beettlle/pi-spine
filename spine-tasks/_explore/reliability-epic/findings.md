@@ -56,15 +56,17 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Fix:** `spawnReviewerPi()` checks `isActiveWorkerSession()` (`SPINE_WORKER_RUNNER` set by `buildWorkerChildEnv`) and fails fast with `spawnFailed: true`, journal `review.failed` reason `nested_spawn_blocked`, and tool message directing workers to skip in-worker code review (engine runs code review in SP-195). Stub plan review path unchanged for CI.
 
-## Open — Worker wedge (SP-190, batch `20260611T222221`)
+## Resolved — Worker wedge epic (SP-190, batch `20260611T222221`)
 
 **Symptom:** Task work complete (`.DONE`, commit `b4807d1`) but batch `running` 17+ minutes; pi child PID hung at 0% CPU.
 
 **Root cause chain:**
 1. **Trigger:** RL2 worker called `spine_review_step` → `spawnReviewerPi()` nested `spawnSync("pi")` hung after work completed.
-2. **Wedge:** `worker-host.mjs` breaks poll loop on `.DONE` (disables stall/heartbeats) then `await childDone` indefinitely; success requires `exitCode === 0`.
+2. **Wedge:** `worker-host.mjs` waited indefinitely for `exitCode === 0` after `.DONE`.
 
-**Staged fix epic:** SP-193 (post-done grace + kill), SP-194 (nested spawn guard), SP-195 (engine code review), SP-196 (worker prompt), SP-197 (fixture), SP-198 (capstone).
+**Fix epic (SP-193–198):** post-done grace (SP-193), nested spawn guard (SP-194), engine code review (SP-195), worker prompt delegation (SP-196), SP-190 fixture regression (SP-197), capstone tracking (SP-198).
+
+**Tests:** `tests/batch/worker-post-done-grace.test.mjs`, `tests/batch/worker-wedge-incident.test.mjs`, `tests/fixtures/batch-state/sp-190-wedge-hang.json`.
 
 ## Resolved (SP-193)
 

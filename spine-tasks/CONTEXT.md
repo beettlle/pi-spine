@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-11
+**Last Updated:** 2026-06-12
 **Status:** Active
-**Next Task ID:** SP-195
+**Next Task ID:** SP-205
 
 ---
 
@@ -480,15 +480,18 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|--------|------|
 | SP-193 | Post-.DONE worker grace watchdog | **Done** | SP-192 |
 | SP-194 | Block nested pi reviewer in worker | **Done** | SP-193 |
-| SP-195 | Engine code review phase (RL≥2) | **Staged** | SP-194, SP-151 |
-| SP-196 | Worker prompt review delegation | **Staged** | SP-195 |
-| SP-197 | SP-190 wedge incident fixture | **Staged** | SP-193, SP-195 |
-| SP-198 | Worker wedge epic capstone | **Staged** | SP-193–197 |
-| SP-199 | Contract placeholder resolution | **Staged** | SP-193 |
+| SP-195 | Engine code review phase (RL≥2) | **Done** | SP-194, SP-151 |
+| SP-196 | Worker prompt review delegation | **Done** | SP-195 |
+| SP-197 | SP-190 wedge incident fixture | **Done** | SP-193, SP-195 |
+| SP-198 | Worker wedge epic capstone | **Done** | SP-193–197 |
+| SP-199 | Contract placeholder resolution | **Done** | SP-193 |
 | SP-200 | Resume opens integrate gate | **Done** | SP-193 |
 | SP-201 | Integrate rules-manifest auto-merge | **Done** | SP-193 |
+| SP-202 | Pi timeout / stall budget alignment | **Done** | SP-088 |
+| SP-203 | Engine review orphan recovery | **Staged** | SP-192, SP-200 |
+| SP-204 | Post-merge limbo auto-gate | **Staged** | SP-200 |
 
-**Suggested batches:** Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` now that SP-193 landed. **SP-199–201** land-loop / contract follow-ups.
+**Suggested batches:** **SP-203 SP-204** (parallel land-loop follow-ups). Worker wedge epic closed (SP-193–198, SP-202).
 
 **Phase 22 exit criteria:**
 
@@ -497,7 +500,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 - [x] Real-pi CI workflow documented and runnable (SP-178; SP-192 engine fix landed — re-run `./scripts/real-pi-adoption-e2e.sh --batch` for sign-off)
 - [x] Tier 3 consumer pilot template filled (`docs/adoption/consumer-pilot-report-template.md`, SP-180)
 - [x] Attached-first guidance in operator runbook
-- [x] CONTEXT Phase 22 complete; Next Task ID → SP-195 (SP-192–194 landed ahead of capstone)
+- [x] CONTEXT Phase 22 complete; worker wedge epic closed (SP-193–198); Next Task ID → SP-205
 
 **Suggested batches:** See handoff §5 — serial Waves B–C before real-pi sign-off (Wave D).
 
