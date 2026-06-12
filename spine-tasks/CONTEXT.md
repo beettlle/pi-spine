@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-11
 **Status:** Active
-**Next Task ID:** SP-202
+**Next Task ID:** SP-195
 
 ---
 
@@ -458,18 +458,18 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-177 | Wire atomic transitions | **Done** | SP-176 |
 | SP-178 | Real-pi CI workflow | **Done** | SP-172 |
 | SP-179 | Multi-task real-pi fixture | **Done** | SP-178 |
-| SP-180 | Consumer pilot template | **Staged** | SP-179 |
+| SP-180 | Consumer pilot template | **Done** | SP-179 |
 | SP-181 | agentSession doctor | **Done** | SP-177 |
 | SP-182 | agentSession abort fail-loud | **Done** | SP-181 |
-| SP-183 | agentSession dogfood report | **Staged** | SP-182 |
+| SP-183 | agentSession dogfood report | **Done** | SP-182 |
 | SP-184 | Resume wait-terminal default | **Done** | SP-175 |
 | SP-185 | Doctor worktree health | **Done** | SP-172 |
 | SP-186 | Attached-first runbook | **Done** | SP-185 |
 | SP-187 | npm publish prep | **Done** | SP-180 |
 | SP-188 | Auto wave integrate | **Done** | SP-177 |
 | SP-189 | Contract required flip | **Done** | SP-170 |
-| SP-190 | Handoff autoWriteOn | **Staged** | SP-189 |
-| SP-191 | CONTEXT Phase 22 tracking | **Staged** | leaves |
+| SP-190 | Handoff autoWriteOn | **Done** | SP-189 |
+| SP-191 | CONTEXT Phase 22 tracking | **Done** | leaves |
 | SP-192 | Engine honors worker final review | **Done** | SP-151, SP-179 |
 
 ### Phase 22b — Worker wedge epic (SP-193–198)
@@ -479,14 +479,14 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-193 | Post-.DONE worker grace watchdog | **Done** | SP-192 |
-| SP-194 | Block nested pi reviewer in worker | **Staged** | SP-193 |
+| SP-194 | Block nested pi reviewer in worker | **Done** | SP-193 |
 | SP-195 | Engine code review phase (RL≥2) | **Staged** | SP-194, SP-151 |
 | SP-196 | Worker prompt review delegation | **Staged** | SP-195 |
 | SP-197 | SP-190 wedge incident fixture | **Staged** | SP-193, SP-195 |
 | SP-198 | Worker wedge epic capstone | **Staged** | SP-193–197 |
 | SP-199 | Contract placeholder resolution | **Staged** | SP-193 |
-| SP-200 | Resume opens integrate gate | **Staged** | SP-193 |
-| SP-201 | Integrate rules-manifest auto-merge | **Staged** | SP-193 |
+| SP-200 | Resume opens integrate gate | **Done** | SP-193 |
+| SP-201 | Integrate rules-manifest auto-merge | **Done** | SP-193 |
 
 **Suggested batches:** Wave B: `SP-194 SP-195` (parallel) → Wave C: `SP-196 SP-197` → Wave D: `SP-198`. Unblock live batch: `spine batch retry SP-190` now that SP-193 landed. **SP-199–201** land-loop / contract follow-ups.
 
@@ -494,9 +494,10 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 - [x] Journal rebuild parity on incident fixtures
 - [x] `state_drift` in `spine status --diagnose`
-- [ ] Real-pi CI workflow green or documented skip (SP-192 landed; re-run `./scripts/real-pi-adoption-e2e.sh --batch`)
-- [ ] Tier 3 consumer pilot template filled
+- [x] Real-pi CI workflow documented and runnable (SP-178; SP-192 engine fix landed — re-run `./scripts/real-pi-adoption-e2e.sh --batch` for sign-off)
+- [x] Tier 3 consumer pilot template filled (`docs/adoption/consumer-pilot-report-template.md`, SP-180)
 - [x] Attached-first guidance in operator runbook
+- [x] CONTEXT Phase 22 complete; Next Task ID → SP-195 (SP-192–194 landed ahead of capstone)
 
 **Suggested batches:** See handoff §5 — serial Waves B–C before real-pi sign-off (Wave D).
 
