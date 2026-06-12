@@ -1,7 +1,7 @@
 # SP-219: Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-12
 **Review Level:** 1 (Plan Only)
 **Review Counter:** 1
@@ -30,17 +30,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite
-- [ ] Fix all failures
+- [x] Run FULL test suite
+- [x] Fix all failures (none in repo; shell `SPINE_WORKER_PI_TIMEOUT_MS=7200000` caused 3 false failures — clean env: 772/772 pass)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -67,6 +67,8 @@
 | 2026-06-12 | Step 0 | Read SP-181/182/183 STATUS + dogfood report |
 | 2026-06-12 | Step 1 plan review | APPROVE |
 | 2026-06-12 | Step 1 | dogfood report + runbook updated |
+| 2026-06-12 | Step 2 | typecheck pass; 772/772 tests (env -u SPINE_WORKER_PI_TIMEOUT_MS) |
+| 2026-06-12 | Step 3 | .DONE created |
 
 ---
 
