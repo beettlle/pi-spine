@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 
 import micromatch from "micromatch";
@@ -369,4 +370,47 @@ export function loadRulesManifest(projectRoot) {
 		return null;
 	}
 	return /** @type {CursorRulesManifest} */ (JSON.parse(fs.readFileSync(manifestPath, "utf-8")));
+}
+
+/**
+ * True when the only dirty path is `.spine/rules-manifest.json` and rules[] fingerprint matches HEAD.
+ *
+ * @param {string} projectRoot
+ * @param {string[]} dirtyPaths Trimmed paths from `git status --porcelain` (no status prefix).
+ * @returns {{ ok: boolean, reason?: string, manifestPath?: string }}
+ */
+export function isRulesManifestGeneratedAtOnlyDrift(projectRoot, dirtyPaths) {
+	const normalized = (dirtyPaths ?? []).map((entry) => String(entry).trim()).filter(Boolean);
+	if (normalized.length !== 1 || normalized[0] !== RULES_MANIFEST_REL_PATH) {
+		return { ok: false, reason: "not_manifest_only" };
+	}
+
+	const manifestPath = path.join(projectRoot, RULES_MANIFEST_REL_PATH);
+	if (!fs.existsSync(manifestPath)) {
+		return { ok: false, reason: "manifest_missing" };
+	}
+
+	let headText = "";
+	try {
+		headText = execFileSync("git", ["show", `HEAD:${RULES_MANIFEST_REL_PATH}`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+	} catch {
+		return { ok: false, reason: "no_head_manifest" };
+	}
+
+	const headParsed = parseRulesManifestJson(headText);
+	const workParsed = parseRulesManifestJson(fs.readFileSync(manifestPath, "utf-8"));
+	if (!headParsed.ok || !workParsed.ok) {
+		return { ok: false, reason: "manifest_parse_error" };
+	}
+
+	if (fingerprintRulesManifest(headParsed.manifest) !== fingerprintRulesManifest(workParsed.manifest)) {
+		return { ok: false, reason: "rules_content_drift" };
+	}
+
+	return { ok: true, manifestPath: RULES_MANIFEST_REL_PATH };
 }

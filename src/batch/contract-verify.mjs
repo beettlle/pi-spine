@@ -33,6 +33,42 @@ export function shouldRunContractVerify(taskId, parsedContract, config = {}) {
 }
 
 /**
+ * Exit-verification tasks (§8 phase exit) must not stub-complete without contract pass.
+ *
+ * @param {string} promptMarkdown
+ */
+export function isExitVerificationTask(promptMarkdown) {
+	const text = String(promptMarkdown ?? "");
+	if (/^#\s*Task:.*exit verification/im.test(text)) {
+		return true;
+	}
+	if (/^##\s*Exit verification/im.test(text)) {
+		return true;
+	}
+	if (/Phase\s+\d+\s+exit verification/i.test(text)) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * @param {string} promptMarkdown
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {object} [config]
+ */
+export function shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config = {}) {
+	if (!shouldRunContractVerify(null, parsedContract, config)) {
+		return false;
+	}
+	const stubMode =
+		process.env.SPINE_WORKER_STUB === "1" || process.env.SPINE_WORKER_STUB === "true";
+	if (!stubMode) {
+		return true;
+	}
+	return isExitVerificationTask(promptMarkdown);
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} [baseBranch]
  */

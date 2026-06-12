@@ -160,6 +160,24 @@ export async function runTaskOnLane({
 	});
 
 	if (!workerResult.ok) {
+		const doneOnDisk = fs.existsSync(path.join(taskFolderInWorktree, ".DONE"));
+		const orphanSalvage =
+			doneOnDisk &&
+			(workerResult.doneFound === true || workerResult.classification === "stall_timeout");
+		if (orphanSalvage) {
+			appendJournalEvent(projectRoot, batchId, "worker.orphan_salvaged", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				classification: workerResult.classification ?? "worker_failed",
+				doneOnDisk: true,
+			});
+			if (lane.workerPid) {
+				delete lane.workerPid;
+				saveSpineBatchState(projectRoot, state);
+			}
+		} else {
 		const aborted = workerResult.classification === "aborted";
 		appendJournalEvent(projectRoot, batchId, "lane.died", {
 			laneNumber,
@@ -207,6 +225,7 @@ export async function runTaskOnLane({
 			taskFolder: taskFolderInWorktree,
 		});
 		return { ok: false, aborted, workerResult };
+		}
 	}
 
 	appendJournalEvent(projectRoot, batchId, "lane.completed", {

@@ -7,7 +7,7 @@ import path from "node:path";
 import { recordLaneTaskMetric } from "./queue.mjs";
 import { REVIEW_DEFAULTS } from "../../config/defaults.mjs";
 import { parseContract } from "../../tasks/packet/parse-prompt.mjs";
-import { shouldRunContractVerify, verifyContract } from "../contract-verify.mjs";
+import { shouldRunContractVerify, shouldRunContractVerifyForWorker, verifyContract } from "../contract-verify.mjs";
 import { appendJournalEvent, readJournalEvents } from "../journal.mjs";
 import {
 	recomputeTaskCounters,
@@ -681,10 +681,7 @@ async function runFinalReviewPhase({
 		let contractVerifyResult = null;
 		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
 		const parsedContract = parseContract(promptMarkdown);
-		if (
-			process.env.SPINE_WORKER_STUB !== "1" &&
-			shouldRunContractVerify(taskId, parsedContract, config)
-		) {
+		if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
 			contractVerifyResult = verifyContract(wt, parsedContract, {
 				...config,
 				baseBranch,

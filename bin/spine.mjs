@@ -78,6 +78,13 @@ async function cmdDashboard(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdVerify(args) {
+	const { runSpineVerify } = await import("./spine-cli/verify.mjs");
+	const result = runSpineVerify({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdReview(args) {
 	const sub = args[0];
 	if (sub !== "step") {
@@ -233,6 +240,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
+  ${c.cyan}verify${c.reset}          Phase exit verification checklists
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
@@ -362,6 +370,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "integrate":
 				await handleIntegrate(args);
+				break;
+			case "verify":
+				await cmdVerify(args);
 				break;
 			case "dashboard":
 				await cmdDashboard(args);

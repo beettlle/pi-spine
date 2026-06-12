@@ -5,6 +5,11 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { destroyGitRepo, initGitRepo } from "./helpers/git-fixture.mjs";
+import {
+	fingerprintRulesManifest,
+	isRulesManifestGeneratedAtOnlyDrift,
+	RULES_MANIFEST_REL_PATH,
+} from "../src/config/cursor-rules/discover.mjs";
 import { loadSpineConfig } from "../bin/spine-config.mjs";
 import {
 	checkDependenciesJson,
@@ -425,6 +430,67 @@ test("runBatchPreflight passes when all tasks have .DONE (zero pending)", async 
 		assert.equal(result.ok, true);
 		const planCheck = result.checks.find((check) => check.id === "plan");
 		assert.equal(planCheck?.ok, true);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("checkGitClean passes when only rules-manifest generatedAt drifted", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-manifest-");
+	try {
+		const manifestPath = path.join(projectRoot, RULES_MANIFEST_REL_PATH);
+		fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+		const manifest = {
+			generatedAt: "2026-06-12T20:00:00.000Z",
+			rulesRoot: ".cursor/rules",
+			rules: [{ relPath: "a.mdc", spineClass: "manual", alwaysApply: false, description: null, globs: [], parseStatus: "ok" }],
+			excluded: [],
+		};
+		fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf-8");
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "manifest"], { cwd: projectRoot, stdio: "ignore" });
+
+		fs.writeFileSync(
+			manifestPath,
+			`${JSON.stringify({ ...manifest, generatedAt: "2026-06-12T21:00:00.000Z" }, null, 2)}\n`,
+			"utf-8",
+		);
+
+		const check = checkGitClean({ projectRoot });
+		assert.equal(check.ok, true);
+		assert.match(check.message, /generatedAt-only drift ignored/i);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("checkGitClean still fails when rules-manifest rules[] differ", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-manifest-rules-");
+	try {
+		const manifestPath = path.join(projectRoot, RULES_MANIFEST_REL_PATH);
+		fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+		const manifest = {
+			generatedAt: "2026-06-12T20:00:00.000Z",
+			rulesRoot: ".cursor/rules",
+			rules: [{ relPath: "a.mdc", spineClass: "manual", alwaysApply: false, description: null, globs: [], parseStatus: "ok" }],
+			excluded: [],
+		};
+		fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf-8");
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "manifest"], { cwd: projectRoot, stdio: "ignore" });
+
+		fs.writeFileSync(
+			manifestPath,
+			`${JSON.stringify({
+				...manifest,
+				generatedAt: "2026-06-12T21:00:00.000Z",
+				rules: [{ relPath: "b.mdc", spineClass: "manual", alwaysApply: false, description: null, globs: [], parseStatus: "ok" }],
+			}, null, 2)}\n`,
+			"utf-8",
+		);
+
+		const check = checkGitClean({ projectRoot });
+		assert.equal(check.ok, false);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

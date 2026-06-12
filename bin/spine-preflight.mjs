@@ -11,6 +11,10 @@ import { buildCoexistencePreflightCheck } from "../src/doctor/coexistence.mjs";
 import { validatePiSpineRootConfig } from "../src/config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../src/config/worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "../src/config/worktree-setup-hook.mjs";
+import {
+	isRulesManifestGeneratedAtOnlyDrift,
+	RULES_MANIFEST_REL_PATH,
+} from "../src/config/cursor-rules/discover.mjs";
 import { discoverTasks } from "../src/tasks/packet/discover.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../src/planner/scope.mjs";
 import { summarizePendingScope } from "../src/planner/pending.mjs";
@@ -147,6 +151,21 @@ export function checkGitClean(ctx) {
 
 	if (dirtyPaths.length === 0) {
 		return makeCheck("git-clean", true, "working tree clean");
+	}
+
+	const manifestDrift = isRulesManifestGeneratedAtOnlyDrift(ctx.projectRoot, dirtyPaths);
+	if (manifestDrift.ok) {
+		return makeCheck(
+			"git-clean",
+			true,
+			`working tree clean (${RULES_MANIFEST_REL_PATH} generatedAt-only drift ignored)`,
+			{
+				details: {
+					manifestGeneratedAtDrift: true,
+					manifestPath: manifestDrift.manifestPath,
+				},
+			},
+		);
 	}
 
 	const listed = dirtyPaths.slice(0, 20);
