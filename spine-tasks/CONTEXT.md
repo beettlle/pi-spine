@@ -504,6 +504,19 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 **Suggested batches:** See handoff §5 — serial Waves B–C before real-pi sign-off (Wave D).
 
+### Phase 23–26 — Ship readiness epic (SP-SHIP / SP-205–226)
+
+**Status:** Planned — spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+
+| Phase | Theme | npm? |
+|-------|-------|------|
+| 23 (P0) | CI trust, engine-lanes split, real-pi CI hardening, doc sync | No |
+| 24 (P1) | Consumer pilot, extension tests, dashboard parity, journal export | No |
+| 25 (P2) | Journal structural rebuild, supervisor/merger/worker-gate stories | No |
+| 26 | npm publish + pi.dev listing (human-gated) | **Final step only** |
+
+Decompose with `create-spine-tasks` after handoff review. FR-SHIP-04 (doc sync) closes stale entries in this file's priority backlog.
+
 ---
 
 ## Priority backlog

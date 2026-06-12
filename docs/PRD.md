@@ -1249,10 +1249,25 @@ Adds six capabilities inspired by [zero-pi](https://pi.dev/packages/@gonrocca/ze
 
 Implementation waves A–D are defined in addendum §15. Base PRD v1.2 remains authoritative for unlisted behavior.
 
-### 25.2 Deferred v1.4 (tracked, not v1.3 scope)
+### 25.2 PRD v2.2 — Ship readiness & exceed-inspirations
+
+**Status:** Spec complete — ready for `create-spine-tasks` decomposition.
+
+Closes brutal-audit P0/P1/P2 gaps before distribution. **npm publish is Phase 26 only** — Phases 23–25 improve CI trust, maintainability, external proof, and differentiation first.
+
+| Phase | Theme |
+|-------|-------|
+| 23 (P0) | CI trust, `engine-lanes` strangler split, real-pi CI hardening, doc sync |
+| 24 (P1) | Consumer pilot, extension tests, dashboard parity, journal export, agentSession decision |
+| 25 (P2) | Journal structural rebuild, supervisor/merger/worker-gate stories |
+| 26 | npm publish + pi.dev listing (human-gated) |
+
+**Normative addendum:** [docs/PRD-v2.2-ship-readiness-handoff.md](PRD-v2.2-ship-readiness-handoff.md)
+
+### 25.3 Deferred v1.4 (tracked, not v1.3 scope)
 
 - `spine settings suggest-models` from run-metrics aggregates
 - `spine explore` CLI wrapper (skill-only in v1.3)
 - `handoff.autoWriteOn` triggers
-- Journal rebuild from events (base PRD §11.4)
+- Journal rebuild from events (base PRD §11.4) — partial in v2.1; structural rebuild in v2.2 FR-SHIP-10
 - `pi-subagents` in-lane fanout (base PRD §3.4)

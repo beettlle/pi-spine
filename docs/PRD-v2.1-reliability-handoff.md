@@ -54,9 +54,9 @@ pi-spine v2.0 delivered Contract-Driven Orchestration (validate, contract verify
 
 ### Deferred (v2.2+)
 
-- Full batch-state rebuild without cache seed (structural fields from journal only)
+- Full batch-state rebuild without cache seed (structural fields from journal only) — **FR-SHIP-10** in [PRD-v2.2-ship-readiness-handoff.md](PRD-v2.2-ship-readiness-handoff.md)
 - `spine settings suggest-models` from metrics
-- npm publish execution (checklist only in Phase 22)
+- npm publish execution — **FR-SHIP-14 Phase 26** in v2.2 handoff (checklist only in Phase 22)
 
 ### Non-goals
 
