@@ -1,7 +1,7 @@
 # SP-194: Block nested pi reviewer from worker session — Status
 
-**Current Step:** Step 1 — Implement guard
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-11
 **Review Level:** 1
 **Size:** S
@@ -15,7 +15,15 @@
 - Plan review via stub/engine paths unaffected (stub bypasses spawn; engine runs outside worker)
 
 ### Step 1: Implement guard
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
+
+### Step 2: Testing & Verification
+**Status:** ✅ Complete
+
+- `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 734 pass
+
+### Step 3: Documentation & Delivery
+**Status:** ✅ Complete
 
 ---
 
@@ -29,4 +37,4 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-11 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-11 | Step 3 | findings.md updated; `.DONE` created |
