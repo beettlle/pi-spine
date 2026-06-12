@@ -248,6 +248,24 @@ unset SPINE_WORKER_STUB   # or SPINE_WORKER_STUB=0
 spine batch start <task-id>
 ```
 
+### Worker backend default (FR-SHIP-09)
+
+**Default:** `lanes.workerBackend: subprocess` — lane workers spawn `pi -p` via `bin/spine-worker-runner.mjs`. This is the validated production path ([stub-free dogfood](../compatibility/stub-free-dogfood-report.md)).
+
+| Backend | Config | When to use |
+|---------|--------|-------------|
+| **subprocess** (default) | `lanes.workerBackend: subprocess` or omit key | All routine batches; real-pi and attached-first workflows |
+| **agentSession** (opt-in) | `spine settings set lanes.workerBackend agentSession` | Single-lane trials of in-process `createAgentSession`; requires `@earendil-works/pi-coding-agent` peer |
+
+**Rules:**
+
+- `SPINE_WORKER_STUB=1` **always** forces the subprocess stub — never agentSession (CI / tests).
+- Reviewers remain subprocess (`review.mjs`) regardless of worker backend until a future reviewer backend ships (spike blocker B1).
+- Before first agentSession batch: `npm install @earendil-works/pi-coding-agent`, `spine doctor`, then `./scripts/stub-free-dogfood.sh --agent-session`.
+- Promotion to default requires land-loop dogfood sign-off — see [agent-session dogfood report](../compatibility/agent-session-dogfood-report.md) (SP-219 decision: **subprocess remains default**).
+
+Doctor/preflight messaging for the configured backend: SP-237.
+
 ### Monitor
 
 ```bash
