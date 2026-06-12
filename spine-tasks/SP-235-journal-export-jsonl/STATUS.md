@@ -1,7 +1,7 @@
 # SP-235: Journal export jsonl CLI — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,15 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review journal event schema
-- [ ] Draft jsonl export CLI flags
+- [x] Review journal event schema
+- [x] Draft jsonl export CLI flags (`--batch`, `--format jsonl`, `--output`)
 
 ---
 
 ### Step 1: Jsonl export
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Add export subcommand with jsonl format
 - [ ] Exit non-zero when journal missing
@@ -55,6 +55,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| jsonl export reads raw `events.jsonl` verbatim for faithful audit export | Implemented | `src/batch/journal.mjs` |
 
 ---
 
@@ -63,6 +64,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
+| 2026-06-12 | Step 0 preflight | Schema reviewed; flags: `--batch`, `--format jsonl`, `--output` |
 
 ---
 
