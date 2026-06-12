@@ -25,6 +25,7 @@ FR-SHIP-05 (phase 2): On the external consumer repo selected in SP-215, run real
 ## Dependencies
 
 - **Task:** SP-215
+- **Task:** SP-238
 
 ## Context to Read First
 

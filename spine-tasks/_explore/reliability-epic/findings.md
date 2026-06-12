@@ -175,3 +175,5 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 | `20260612T215847` (SP-215–219) | Engine code review spawn failed on same LM Studio model | **SP-232** — reviewer pin parity + runbook |
 
 **Option A (task scope):** Honor `agents.worker.model` / `agents.reviewer.model` in pi spawn argv; template defaults `cursor/auto`; document `inherit` risks.
+
+**Policy edge (2026-06-12):** Encoded `SP-238` → `SP-233` in `dependencies.json` so real-pi consumer pilot cannot run before worker model-pin docs land (planner was dep-correct but risk-wrong).
