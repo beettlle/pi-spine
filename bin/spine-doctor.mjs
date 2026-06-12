@@ -26,7 +26,10 @@ import {
 import { buildStalePathDoctorCheck } from "../src/doctor/stale-path.mjs";
 import { buildCoexistenceDoctorCheck } from "../src/doctor/coexistence.mjs";
 import { buildTaskPacketSizeDoctorCheck } from "../src/doctor/task-packet-size.mjs";
-import { buildStallConfigDoctorCheck } from "../src/doctor/stall-config.mjs";
+import {
+	buildPiWorkerTimeoutDoctorCheck,
+	buildStallConfigDoctorCheck,
+} from "../src/doctor/stall-config.mjs";
 import { buildRulesManifestDoctorCheck } from "../src/doctor/rules-manifest.mjs";
 import { buildWorktreeHealthDoctorCheck } from "../src/doctor/worktree-health.mjs";
 import { buildAgentSessionDoctorCheck } from "../src/config/worker-backend.mjs";
@@ -313,6 +316,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			}),
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
+		checks.push(buildPiWorkerTimeoutDoctorCheck({ config: configResult.config }));
 		const worktreeHealthCheck = buildWorktreeHealthDoctorCheck({
 			projectRoot,
 			config: configResult.config,

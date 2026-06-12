@@ -18,7 +18,11 @@ import {
 	resolveHeartbeatKind,
 	shouldEmitCheckpointWarning,
 } from "./heartbeat.mjs";
-import { resolveStallConfigForTask, parseTaskSizeFromFolder } from "./task-stall-budget.mjs";
+import {
+	resolveStallConfigForTask,
+	resolveWorkerPiTimeoutMs,
+	parseTaskSizeFromFolder,
+} from "./task-stall-budget.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
@@ -75,6 +79,7 @@ export function buildWorkerChildEnv({
 	laneCorrelationId,
 	fileScopePaths = [],
 	config = {},
+	piTimeoutMs,
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	const env = {
@@ -99,6 +104,11 @@ export function buildWorkerChildEnv({
 	if (process.env.SPINE_WORKER_STUB === "1") {
 		env.SPINE_REVIEW_STUB = "1";
 	}
+	if (piTimeoutMs != null && Number.isFinite(piTimeoutMs) && piTimeoutMs > 0) {
+		env.SPINE_WORKER_PI_TIMEOUT_MS = String(
+			process.env.SPINE_WORKER_PI_TIMEOUT_MS ?? piTimeoutMs,
+		);
+	}
 	return env;
 }
 
@@ -117,6 +127,7 @@ function spawnWorkerChild({
 	laneCorrelationId,
 	fileScopePaths = [],
 	config = {},
+	piTimeoutMs,
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	const env = buildWorkerChildEnv({
@@ -129,6 +140,7 @@ function spawnWorkerChild({
 		laneCorrelationId,
 		fileScopePaths,
 		config,
+		piTimeoutMs,
 	});
 	const args = useStub ? ["--stub"] : ["--pi"];
 
@@ -266,6 +278,7 @@ function spawnWorkerHandle({
 	taskFolder,
 	useStub,
 	timeoutMs,
+	piTimeoutMs,
 	projectRoot,
 	batchId,
 	laneNumber,
@@ -305,6 +318,7 @@ function spawnWorkerHandle({
 		taskFolder,
 		useStub,
 		timeoutMs,
+		piTimeoutMs,
 		projectRoot,
 		batchId,
 		laneNumber,
@@ -388,6 +402,7 @@ export async function runWorker({
 
 	const taskSize = parseTaskSizeFromFolder(taskFolder);
 	const stallConfig = resolveStallConfigForTask({ config, taskSize });
+	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize });
 	const startedAt = Date.now();
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
@@ -402,7 +417,8 @@ export async function runWorker({
 		worktreePath,
 		taskFolder,
 		useStub,
-		timeoutMs,
+		timeoutMs: piTimeoutMs,
+		piTimeoutMs,
 		projectRoot,
 		batchId,
 		laneNumber,

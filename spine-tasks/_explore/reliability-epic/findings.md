@@ -115,13 +115,18 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Tests:** `tests/tasks/contract-parse.test.mjs`, `tests/batch/contract-verify.test.mjs` (SP-193-shaped fixture).
 
-## Open — Pi timeout mismatch (batch `20260612T023712`)
+## Resolved (SP-202)
 
-**Symptom:** SP-195/SP-199 failed with `pi worker timed out` (exit 124) ~66m; salvage found uncommitted work.
+**Incident:** Batch `20260612T023712` — SP-195/SP-199 failed with `pi worker timed out` (exit 124) ~66m; salvage found uncommitted work.
 
-**Root cause:** `spine-worker-runner.mjs` caps `spawnSync(pi)` at 60m; M-task stall budget is 180m; `worker-host` never passes stall-derived timeout to child env.
+**Root cause:** `spine-worker-runner.mjs` capped `spawnSync(pi)` at 60m while M-task stall budget is 180m; `worker-host` never passed stall-derived timeout to child env.
 
-**Staged fix:** SP-202.
+**Fix:**
+1. **`resolveWorkerPiTimeoutMs`** — derives pi timeout from per-task stall minutes (`task-stall-budget.mjs`).
+2. **`buildWorkerChildEnv`** — sets `SPINE_WORKER_PI_TIMEOUT_MS` for the runner child unless parent env overrides.
+3. **Doctor** — `buildPiWorkerTimeoutDoctorCheck` reports alignment for real-pi runs.
+
+**Tests:** `tests/batch/worker-pi-timeout.test.mjs`.
 
 ## Open — Engine review orphan + post-merge limbo (batch `20260612T011148`)
 

@@ -63,3 +63,26 @@ export function resolveStallConfigForTask({ config = {}, taskSize = null }) {
 		},
 	});
 }
+
+/** Implicit pi subprocess cap in `spine-worker-runner.mjs` when env unset (pre-SP-202). */
+export const DEFAULT_PI_WORKER_TIMEOUT_MS = 60 * 60 * 1000;
+
+/**
+ * Pi `spawnSync` timeout aligned with per-task stall budget (SP-202).
+ * Honors `SPINE_WORKER_PI_TIMEOUT_MS` when set in the parent environment.
+ *
+ * @param {object} params
+ * @param {object} [params.config]
+ * @param {"S"|"M"|"L"|"XL"|null} [params.taskSize]
+ */
+export function resolveWorkerPiTimeoutMs({ config = {}, taskSize = null }) {
+	const envRaw = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	if (envRaw) {
+		const parsed = Number(envRaw);
+		if (Number.isFinite(parsed) && parsed > 0) {
+			return parsed;
+		}
+	}
+	const stallMinutes = resolveTaskStallMinutes(taskSize, config);
+	return stallMinutes * 60 * 1000;
+}

@@ -2,8 +2,14 @@
  * Doctor warnings for stall config when running real pi workers (SP-087).
  */
 
+import {
+	DEFAULT_PI_WORKER_TIMEOUT_MS,
+	resolveTaskStallMinutes,
+} from "../batch/task-stall-budget.mjs";
+
 const DEFAULT_IMPLICIT_STALL_MIN = 60;
 const RECOMMENDED_STALL_MIN = 120;
+const RUNNER_IMPLICIT_PI_TIMEOUT_MIN = DEFAULT_PI_WORKER_TIMEOUT_MS / 60_000;
 
 /**
  * @returns {boolean}
@@ -59,5 +65,44 @@ export function buildStallConfigDoctorCheck({ config = {} }) {
 		label: "lanes.stallTimeoutMinutes (real pi)",
 		ok: true,
 		detail: `${configured}m`,
+	};
+}
+
+/**
+ * @param {object} params
+ * @param {object} [params.config]
+ */
+export function buildPiWorkerTimeoutDoctorCheck({ config = {} }) {
+	if (isStubWorkerMode()) {
+		return {
+			label: "pi worker timeout (real pi)",
+			ok: true,
+			detail: "SPINE_WORKER_STUB set — pi subprocess timeout not used",
+		};
+	}
+
+	if (process.env.SPINE_WORKER_PI_TIMEOUT_MS) {
+		const minutes = Math.round(Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS) / 60_000);
+		return {
+			label: "pi worker timeout (real pi)",
+			ok: true,
+			detail: `SPINE_WORKER_PI_TIMEOUT_MS override (${minutes}m)`,
+		};
+	}
+
+	const configured = resolveConfiguredStallMinutes(config) ?? DEFAULT_IMPLICIT_STALL_MIN;
+	const mFloorMinutes = resolveTaskStallMinutes("M", config);
+	if (mFloorMinutes > RUNNER_IMPLICIT_PI_TIMEOUT_MIN) {
+		return {
+			label: "pi worker timeout (real pi)",
+			ok: true,
+			detail: `follows stall budget (M tasks ≥${mFloorMinutes}m; configured ${configured}m)`,
+		};
+	}
+
+	return {
+		label: "pi worker timeout (real pi)",
+		ok: true,
+		detail: `aligned with stall budget (≥${configured}m)`,
 	};
 }
