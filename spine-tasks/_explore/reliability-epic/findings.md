@@ -90,6 +90,17 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Tests:** `tests/batch/integrate-rules-manifest.test.mjs`.
 
+## Resolved (SP-195)
+
+**Incident:** SP-190 (RL2) — worker nested `spine review step` code review hung; engine never reached lane commit.
+
+**Fix:**
+1. **Engine code review phase** — `runCodeReviewPhase()` in `engine-lanes.mjs` after worker success, before final review.
+2. **Honor worker verdicts** — `findCompletedCodeReview()` mirrors `findCompletedFinalReview` for journal/artifact APPROVE.
+3. **REVISE rework** — re-invokes worker on code review REVISE (same pattern as final review).
+
+**Tests:** `tests/batch/engine-code-review.test.mjs`.
+
 ## Resolved (SP-199)
 
 **Incident:** Batch `20260611T225006` — SP-193 lane passed implementation but `contract.verified` failed with `no matching changes for see File Scope`, `missing —`, and unparseable coverage. Engine recorded unnecessary REVISE rework.

@@ -79,6 +79,100 @@ export function findFinalReviewStepNumber(taskFolder) {
 }
 
 /**
+ * Step number containing a code review checkpoint blockquote, else highest step.
+ * @param {string} taskFolder
+ */
+export function findCodeReviewStepNumber(taskFolder) {
+	const promptPath = path.join(taskFolder, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) return findFinalReviewStepNumber(taskFolder);
+	const content = fs.readFileSync(promptPath, "utf-8");
+	const stepBlocks = [...content.matchAll(/###\s+Step\s+(\d+)[:\s][\s\S]*?(?=###\s+Step\s+\d+|$)/g)];
+	for (const match of stepBlocks) {
+		if (/code\s+review\s+checkpoint/i.test(match[0])) {
+			return Number(match[1]);
+		}
+	}
+	return findFinalReviewStepNumber(taskFolder);
+}
+
+/**
+ * Latest `.reviews/{stepNumber}-*.md` by mtime, if any.
+ * @param {string} taskFolder
+ * @param {number} stepNumber
+ * @returns {{ artifactPath: string, mtimeMs: number }|null}
+ */
+export function findLatestStepReviewArtifact(taskFolder, stepNumber) {
+	const reviewsDir = path.join(taskFolder, ".reviews");
+	if (!fs.existsSync(reviewsDir)) return null;
+	const prefix = `${stepNumber}-`;
+	const candidates = fs
+		.readdirSync(reviewsDir)
+		.filter((name) => name.startsWith(prefix) && name.endsWith(".md"))
+		.map((name) => {
+			const artifactPath = path.join(reviewsDir, name);
+			return { artifactPath, mtimeMs: fs.statSync(artifactPath).mtimeMs };
+		})
+		.sort((left, right) => right.mtimeMs - left.mtimeMs);
+	return candidates[0] ?? null;
+}
+
+/**
+ * Resolve an existing worker or lane code review from journal and/or artifacts.
+ *
+ * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {object[]} [params.journalEvents]
+ * @param {string} [params.taskId]
+ * @returns {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
+ */
+export function findCompletedCodeReview({ taskFolder, journalEvents = [], taskId }) {
+	/** @type {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact", seq: number }|null} */
+	let journalMatch = null;
+	for (let index = 0; index < journalEvents.length; index += 1) {
+		const event = journalEvents[index];
+		if (taskId && event.taskId !== taskId) continue;
+		if (event.type !== "review.completed") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (payload.reviewType !== "code") continue;
+		const verdict = normalizeVerdict(payload.verdict, "code");
+		if (!verdict) continue;
+		journalMatch = {
+			verdict,
+			feedback: typeof payload.feedback === "string" ? payload.feedback : "",
+			artifactPath: typeof payload.artifactPath === "string" ? payload.artifactPath : "",
+			source: "journal",
+			seq: index,
+		};
+	}
+
+	if (journalMatch?.verdict === "APPROVE") {
+		const { seq: _seq, ...result } = journalMatch;
+		return result;
+	}
+
+	const stepNumber = findCodeReviewStepNumber(taskFolder);
+	const latestArtifact = findLatestStepReviewArtifact(taskFolder, stepNumber);
+	if (latestArtifact) {
+		const reviewContent = fs.readFileSync(latestArtifact.artifactPath, "utf-8");
+		const { verdict, feedback } = parseReviewVerdict(reviewContent, { reviewType: "code" });
+		if (verdict) {
+			const artifactMatch = {
+				verdict,
+				feedback,
+				artifactPath: latestArtifact.artifactPath,
+				source: /** @type {"artifact"} */ ("artifact"),
+			};
+			if (verdict === "APPROVE") return artifactMatch;
+			if (!journalMatch) return artifactMatch;
+		}
+	}
+
+	if (!journalMatch) return null;
+	const { seq: _seq, ...result } = journalMatch;
+	return result;
+}
+
+/**
  * Latest `.reviews/final-*.md` by mtime, if any.
  * @param {string} taskFolder
  * @returns {{ artifactPath: string, mtimeMs: number }|null}
