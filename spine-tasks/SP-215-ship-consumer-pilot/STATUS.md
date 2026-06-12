@@ -1,9 +1,9 @@
 # SP: Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 0 — Preflight
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
-**Review Level:** (see PROMPT.md)
+**Review Level:** 1 (Plan Only)
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** S
@@ -11,7 +11,7 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Select external consumer repo
 - [ ] Copy template to dated instance
@@ -52,6 +52,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| searchATon not on local disk; adoption fixture used as external consumer layout | Document in report | Step 0 |
 
 ---
 
@@ -60,6 +61,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
+| 2026-06-12 | Step 0 start | Consumer: adoption fixture layout |
 
 ---
 
@@ -71,4 +73,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Consumer selection:** `tests/fixtures/adoption-repo` — documented external consumer layout (not pi-spine `spine-tasks/` dogfood). Historical production consumer: searchATon (bug reports SP-095–098); stub batch runs on temp copy per `fixture-batch.test.mjs`.
