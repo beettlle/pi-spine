@@ -1,7 +1,7 @@
 # SP: Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-12
 **Review Level:** 2 (Plan and Code)
 **Review Counter:** 0
@@ -27,17 +27,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Unit tests for argv
-- [ ] Run FULL test suite
+- [x] Run FULL test suite
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -63,7 +63,8 @@
 |-----------|--------|---------|
 | 2026-06-12 | Size decomposition | PROMPT narrowed per plan |
 | 2026-06-12 | Step 0 preflight | Reviewer model pin confirmed; worker gap reproduced |
-| 2026-06-12 | Step 1 implementation | `appendWorkerAgentModelArgs` + `buildWorkerPiArgs` |
+| 2026-06-12 | Step 2 verification | 777 tests pass (typecheck + SPINE_WORKER_STUB=1 npm test) |
+| 2026-06-12 | Step 3 delivery | .DONE created |
 
 ---
 
