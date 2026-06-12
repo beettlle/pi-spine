@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "phase": "running",
+  "batchId": "20260611T222221",
+  "baseBranch": "main",
+  "orchBranch": "orch/spine-20260611T222221",
+  "tasks": [
+    {
+      "taskId": "SP-190",
+      "status": "running",
+      "taskFolder": "spine-tasks/SP-190-rel-handoff-autowrite",
+      "laneNumber": 1,
+      "doneFileFound": true
+    }
+  ],
+  "lanes": [
+    {
+      "laneNumber": 1,
+      "laneId": "lane-1",
+      "workerPid": 99999,
+      "taskIds": ["SP-190"]
+    }
+  ],
+  "mergeResults": [],
+  "_comment": "SP-190 wedge class: .DONE on disk, pi child hung at 0% CPU until SP-193 post-done grace"
+}
