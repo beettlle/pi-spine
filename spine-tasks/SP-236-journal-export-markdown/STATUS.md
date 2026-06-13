@@ -1,7 +1,7 @@
 # SP-236: Journal export markdown timeline — Status
 
 **Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
 **Review Level:** 2
@@ -39,9 +39,17 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
+
+---
+
+## Completion Criteria
+
+- [x] Markdown journal export works
+- [x] Documented in runbook
+- [x] All tests passing
 
 ---
 
