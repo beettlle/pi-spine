@@ -40,7 +40,7 @@ test("formatJournalMarkdownTimeline produces stable table shape", () => {
 	const markdown = formatJournalMarkdownTimeline(batchId, events);
 	assert.match(markdown, /^# Batch journal timeline — 20260601T150000\n\n/);
 	assert.match(markdown, /\| Time \(UTC\) \| Event \| Lane \| Task \| Summary \|/);
-	assert.match(markdown, /\|------------\|-------\|------\|------\|--------- \|/);
+	assert.ok(markdown.includes("|------------|-------|------|------|---------|"));
 	assert.match(markdown, /\| 2026-06-01 15:00:00 \| batch.started \| — \| — \| main → orch\/batch \|/);
 	assert.match(markdown, /\| 2026-06-01 15:05:00 \| task.completed \| lane-1 \| SP-236 \| commit abc12345 \|/);
 });
