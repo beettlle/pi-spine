@@ -9,9 +9,11 @@ import {
 	buildActionChips,
 	buildBannerModel,
 	buildDashboardViewModel,
+	buildGateAffordanceModel,
 	diagnosisBadgeClass,
 	isIdleSnapshot,
 	primaryActionLabel,
+	shouldShowGateAffordance,
 } from "../../src/dashboard/view.mjs";
 import {
 	createDashboardServer,
@@ -70,6 +72,35 @@ test("needs_integrate banner ignores completed phase for badge color", () => {
 	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
 });
 
+test("needs_integrate without gate record shows default gate affordance", () => {
+	const snapshot = {
+		diagnosis: "needs_integrate",
+		headline: "Batch spine-2026 ready to integrate orch branch to main",
+		suggestedCommand: "spine integrate",
+		defaultView: {
+			diagnosis: "needs_integrate",
+			headline: "Batch spine-2026 ready to integrate orch branch to main",
+			suggestedCommand: "spine integrate",
+			alternatives: [],
+			gateApplicable: true,
+			gate: {
+				visible: true,
+				status: "missing",
+				kind: "integrate",
+				summary: "Integrate gate not opened yet — wait for engine or run spine batch resume",
+				pending: true,
+			},
+		},
+	};
+	assert.ok(shouldShowGateAffordance(snapshot));
+	const affordance = buildGateAffordanceModel(snapshot);
+	assert.equal(affordance?.status, "missing");
+	assert.match(affordance?.summary ?? "", /not opened/i);
+	const vm = buildDashboardViewModel(snapshot);
+	assert.ok(vm.showGateAffordance);
+	assert.equal(vm.gateAffordance?.status, "missing");
+});
+
 test("buildDashboardViewModel includes all §16.1 panels", () => {
 	const snapshot = {
 		diagnosis: "running",
@@ -101,6 +132,8 @@ test("buildDashboardViewModel includes all §16.1 panels", () => {
 	assert.equal(vm.waves.totalWaves, 2);
 	assert.equal(vm.lanes.length, 1);
 	assert.equal(vm.gate?.status, "open");
+	assert.equal(vm.gateAffordance?.status, "open");
+	assert.ok(vm.showGateAffordance);
 	assert.equal(vm.journal.length, 1);
 });
 
@@ -135,6 +168,7 @@ test("dashboard server GET / returns HTML shell", async () => {
 		assert.equal(body.status, 200);
 		assert.match(body.data, /diagnosis-banner/);
 		assert.match(body.data, /banner-actions/);
+		assert.match(body.data, /default-status-panels/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {

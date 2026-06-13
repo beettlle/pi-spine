@@ -67,7 +67,7 @@ function renderBanner(vm) {
 
 	headline.textContent = banner.headline;
 
-	if (banner.idle || !banner.diagnosis) {
+	if (!banner.diagnosis) {
 		badge.hidden = true;
 		badge.className = "badge badge-idle";
 	} else {
@@ -195,29 +195,39 @@ function renderLanes(lanes) {
 	}
 }
 
-/** @param {ReturnType<typeof buildDashboardViewModel>["gate"]} gate */
-function renderGate(gate) {
+/** @param {ReturnType<typeof buildDashboardViewModel>["gateAffordance"]} gateAffordance */
+function renderGateAffordance(gateAffordance) {
+	const section = $("default-status-panels");
 	const panel = $("gate-panel");
 	panel.replaceChildren();
-	if (!gate) {
-		const p = document.createElement("p");
-		p.className = "empty-hint";
-		p.textContent = "No active gate";
-		panel.appendChild(p);
+
+	if (!gateAffordance?.visible) {
+		section.hidden = true;
 		return;
 	}
+
+	section.hidden = false;
+
 	const status = document.createElement("p");
-	status.innerHTML = `<span class="gate-status">${gate.status}</span> · ${gate.kind ?? ""}`;
+	const statusClass =
+		gateAffordance.status === "approved"
+			? "gate-status-approved"
+			: gateAffordance.status === "rejected"
+				? "gate-status-rejected"
+				: "gate-status-pending";
+	status.innerHTML = `<span class="gate-status ${statusClass}">${gateAffordance.status}</span> · ${gateAffordance.kind ?? "integrate"}`;
 	panel.appendChild(status);
-	if (gate.summary) {
-		const p = document.createElement("p");
-		p.textContent = gate.summary;
-		panel.appendChild(p);
+
+	if (gateAffordance.summary) {
+		const summary = document.createElement("p");
+		summary.textContent = gateAffordance.summary;
+		panel.appendChild(summary);
 	}
-	if (gate.openedAt) {
-		const p = document.createElement("p");
-		p.textContent = `Opened: ${formatTs(gate.openedAt)}`;
-		panel.appendChild(p);
+
+	if (gateAffordance.openedAt) {
+		const opened = document.createElement("p");
+		opened.textContent = `Opened: ${formatTs(gateAffordance.openedAt)}`;
+		panel.appendChild(opened);
 	}
 }
 
@@ -244,11 +254,11 @@ export function renderSnapshot(snapshot) {
 	const vm = buildDashboardViewModel(snapshot);
 	$("active-panels").hidden = vm.idle;
 	renderBanner(vm);
+	renderGateAffordance(vm.gateAffordance);
 	if (!vm.idle) {
 		renderBatch(vm.batch);
 		renderWaves(vm.waves);
 		renderLanes(vm.lanes);
-		renderGate(vm.gate);
 		renderJournal(vm.journal);
 	}
 	$("snapshot-time").textContent = vm.generatedAt ? `Snapshot: ${vm.generatedAt}` : "";
