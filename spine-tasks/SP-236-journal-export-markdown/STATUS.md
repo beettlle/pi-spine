@@ -1,7 +1,7 @@
 # SP-236: Journal export markdown timeline — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-12
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Draft markdown timeline output shape
-- [ ] Review SP-235 jsonl export plumbing
+- [x] Draft markdown timeline output shape
+- [x] Review SP-235 jsonl export plumbing
 
 ---
 
 ### Step 1: Markdown export
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Implement markdown timeline formatter
-- [ ] Regression test for markdown output shape
-- [ ] Runbook feature summary
+- [x] Implement markdown timeline formatter
+- [x] Regression test for markdown output shape
+- [x] Runbook feature summary
 - [ ] Call `spine_review_step` after this step
 
 ---
@@ -74,4 +74,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Markdown timeline shape (Step 0):** H1 title with batch id; markdown table columns `Time (UTC) | Event | Lane | Task | Summary`; reuse `formatReplayTime` + `summarizeJournalEvent`; escape `|` in cell text.

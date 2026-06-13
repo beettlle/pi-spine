@@ -287,6 +287,21 @@ Journal tail:
 spine journal replay --batch <batchId>
 ```
 
+**Journal export (FR-SHIP-08):** attach a human-readable timeline or raw jsonl to incident reports and consumer pilot evidence.
+
+```bash
+# Markdown timeline table (default for post-mortems)
+spine journal export --batch <batchId> --format markdown
+
+# Raw jsonl (machine-readable audit trail)
+spine journal export --batch <batchId> --format jsonl
+
+# Write to file instead of stdout
+spine journal export --batch <batchId> --format markdown --output ./journal-timeline.md
+```
+
+Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-zero when the journal is missing.
+
 **Diagnosis quick map** (full taxonomy: PRD §18.3):
 
 | `diagnosis` | Meaning | Typical next step |
