@@ -169,10 +169,42 @@ test("dashboard server GET / returns HTML shell", async () => {
 		assert.match(body.data, /diagnosis-banner/);
 		assert.match(body.data, /banner-actions/);
 		assert.match(body.data, /default-status-panels/);
+		assert.match(body.data, /default-journal-section/);
+		assert.match(body.data, /default-journal-list/);
+		assert.match(body.data, /View full journal/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {
 		await new Promise((resolve) => server.close(resolve));
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("running batch view model exposes journal for default tail panel", () => {
+	const snapshot = {
+		diagnosis: "running",
+		batchId: "b1",
+		headline: "Batch b1 is running",
+		suggestedCommand: "spine status --diagnose",
+		journalTail: [
+			{ eventId: "e1", type: "batch.started", timestamp: "2026-06-13T00:00:00.000Z", summary: "started" },
+			{ eventId: "e2", type: "lane.heartbeat", timestamp: "2026-06-13T00:00:01.000Z", summary: "heartbeat" },
+		],
+	};
+	const vm = buildDashboardViewModel(snapshot);
+	assert.ok(!vm.idle);
+	assert.equal(vm.journal.length, 2);
+	assert.equal(vm.journal[0].type, "batch.started");
+});
+
+test("idle snapshot hides default journal tail affordance via idle flag", () => {
+	const snapshot = {
+		diagnosis: null,
+		batchId: null,
+		headline: "No active batch — ready to plan or start",
+		journalTail: [],
+	};
+	const vm = buildDashboardViewModel(snapshot);
+	assert.ok(vm.idle);
+	assert.equal(vm.journal.length, 0);
 });

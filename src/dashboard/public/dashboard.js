@@ -195,9 +195,26 @@ function renderLanes(lanes) {
 	}
 }
 
+/** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal @param {HTMLElement} listEl */
+function renderJournalList(listEl, journal) {
+	listEl.replaceChildren();
+	if (!journal.length) {
+		const li = document.createElement("li");
+		li.className = "empty-hint";
+		li.textContent = "No journal events";
+		listEl.appendChild(li);
+		return;
+	}
+	for (const entry of journal) {
+		const li = document.createElement("li");
+		li.textContent = `${formatTs(entry.timestamp)} · ${entry.type}: ${entry.summary}`;
+		listEl.appendChild(li);
+	}
+}
+
 /** @param {ReturnType<typeof buildDashboardViewModel>["gateAffordance"]} gateAffordance */
-function renderGateAffordance(gateAffordance) {
-	const section = $("default-status-panels");
+function renderGatePanel(gateAffordance) {
+	const section = $("gate-panel-section");
 	const panel = $("gate-panel");
 	panel.replaceChildren();
 
@@ -231,22 +248,49 @@ function renderGateAffordance(gateAffordance) {
 	}
 }
 
-/** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal */
-function renderJournal(journal) {
-	const list = $("journal-list");
-	list.replaceChildren();
-	if (!journal.length) {
-		const li = document.createElement("li");
-		li.className = "empty-hint";
-		li.textContent = "No journal events";
-		list.appendChild(li);
+/**
+ * FR-SHIP-07 phase 2: journal tail on default dashboard view (above active batch panels).
+ *
+ * @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal
+ * @param {boolean} showFullJournalLink
+ */
+function renderDefaultJournalTail(journal, showFullJournalLink) {
+	const section = $("default-journal-section");
+	const deepLink = $("default-journal-deep-link");
+
+	section.hidden = false;
+	renderJournalList($("default-journal-list"), journal);
+	deepLink.hidden = !showFullJournalLink;
+}
+
+/**
+ * Default view panels: integrate gate (when applicable) and journal tail for active batches.
+ *
+ * @param {ReturnType<typeof buildDashboardViewModel>} vm
+ */
+function renderDefaultStatusPanels(vm) {
+	const section = $("default-status-panels");
+	const showGate = vm.gateAffordance?.visible;
+	const showJournal = !vm.idle;
+
+	if (!showGate && !showJournal) {
+		section.hidden = true;
 		return;
 	}
-	for (const entry of journal) {
-		const li = document.createElement("li");
-		li.textContent = `${formatTs(entry.timestamp)} · ${entry.type}: ${entry.summary}`;
-		list.appendChild(li);
+
+	section.hidden = false;
+	renderGatePanel(vm.gateAffordance);
+	if (showJournal) {
+		renderDefaultJournalTail(vm.journal, true);
+	} else {
+		$("default-journal-section").hidden = true;
+		$("default-journal-deep-link").hidden = true;
 	}
+}
+
+/** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal */
+function renderJournal(journal) {
+	renderJournalList($("journal-list"), journal);
 }
 
 /** @param {object} snapshot */
@@ -254,7 +298,7 @@ export function renderSnapshot(snapshot) {
 	const vm = buildDashboardViewModel(snapshot);
 	$("active-panels").hidden = vm.idle;
 	renderBanner(vm);
-	renderGateAffordance(vm.gateAffordance);
+	renderDefaultStatusPanels(vm);
 	if (!vm.idle) {
 		renderBatch(vm.batch);
 		renderWaves(vm.waves);
