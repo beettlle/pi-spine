@@ -8,20 +8,30 @@ import {
 import { buildPiWorkerTimeoutDoctorCheck } from "../../src/doctor/stall-config.mjs";
 
 test("resolveWorkerPiTimeoutMs uses per-size stall floor", () => {
-	assert.equal(
-		resolveWorkerPiTimeoutMs({
-			config: { lanes: { stallTimeoutMinutes: 60 } },
-			taskSize: "M",
-		}),
-		STALL_MINUTES_BY_SIZE.M * 60 * 1000,
-	);
-	assert.equal(
-		resolveWorkerPiTimeoutMs({
-			config: { lanes: { stallTimeoutMinutes: 60 } },
-			taskSize: "S",
-		}),
-		STALL_MINUTES_BY_SIZE.S * 60 * 1000,
-	);
+	const previous = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	try {
+		assert.equal(
+			resolveWorkerPiTimeoutMs({
+				config: { lanes: { stallTimeoutMinutes: 60 } },
+				taskSize: "M",
+			}),
+			STALL_MINUTES_BY_SIZE.M * 60 * 1000,
+		);
+		assert.equal(
+			resolveWorkerPiTimeoutMs({
+				config: { lanes: { stallTimeoutMinutes: 60 } },
+				taskSize: "S",
+			}),
+			STALL_MINUTES_BY_SIZE.S * 60 * 1000,
+		);
+	} finally {
+		if (previous === undefined) {
+			delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+		} else {
+			process.env.SPINE_WORKER_PI_TIMEOUT_MS = previous;
+		}
+	}
 });
 
 test("resolveWorkerPiTimeoutMs honors SPINE_WORKER_PI_TIMEOUT_MS override", () => {

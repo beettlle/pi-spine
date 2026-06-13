@@ -7,9 +7,14 @@ import test from "node:test";
 import {
 	COVERAGE_THRESHOLD,
 	COVERAGE_INCLUDES,
+	FILE_COVERAGE_THRESHOLDS,
 	TEST_GLOBS,
 } from "../../scripts/coverage-policy.mjs";
-import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
+import {
+	parseAggregateLineCoverage,
+	parsePerFileLineCoverage,
+	findFileCoverageFailures,
+} from "../../scripts/coverage-parse.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -23,6 +28,10 @@ test("COVERAGE_INCLUDES scopes src, bin, and extensions", () => {
 		"bin/**/*.mjs",
 		"extensions/**/*.ts",
 	]);
+});
+
+test("FILE_COVERAGE_THRESHOLDS enforces slash-commands.ts floor", () => {
+	assert.equal(FILE_COVERAGE_THRESHOLDS["extensions/spine/slash-commands.ts"], 70);
 });
 
 function extractTestGlobsFromScript(testScript) {
@@ -59,4 +68,37 @@ test("parseAggregateLineCoverage reads coverage:check summary line", () => {
 		parseAggregateLineCoverage("Line coverage (in-scope): 83.64% (threshold: 77%)"),
 		83.64,
 	);
+});
+
+test("parsePerFileLineCoverage reads per-file rows", () => {
+	const sample = `
+ℹ   slash-commands.ts                 |  71.42 |    80.00 |   50.00 |
+ℹ   spine-orchestrator.ts             | 100.00 |   100.00 |  100.00 |
+ℹ all files                           |  81.11 |    66.23 |   88.14 |
+`;
+	const byFile = parsePerFileLineCoverage(sample);
+	assert.equal(byFile.get("slash-commands.ts"), 71.42);
+	assert.equal(byFile.get("spine-orchestrator.ts"), 100);
+	assert.equal(byFile.has("all"), false);
+});
+
+test("findFileCoverageFailures reports missing and below-threshold files", () => {
+	const sample = `
+ℹ   slash-commands.ts                 |  65.00 |    80.00 |   50.00 |
+`;
+	const failures = findFileCoverageFailures(sample, {
+		"extensions/spine/slash-commands.ts": 70,
+		"extensions/spine/missing.ts": 50,
+	});
+	assert.equal(failures.length, 2);
+	assert.deepEqual(failures[0], {
+		path: "extensions/spine/slash-commands.ts",
+		actual: 65,
+		required: 70,
+	});
+	assert.deepEqual(failures[1], {
+		path: "extensions/spine/missing.ts",
+		actual: null,
+		required: 50,
+	});
 });

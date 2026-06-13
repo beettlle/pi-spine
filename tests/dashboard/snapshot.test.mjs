@@ -5,6 +5,7 @@ import test from "node:test";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	buildDashboardSnapshot,
+	buildDefaultViewStatus,
 	buildWaveProgress,
 	classifyLaneStatus,
 	formatLaneHeartbeatDisplay,
@@ -106,6 +107,21 @@ test("dashboard snapshot exposes launching heartbeat display from journal", asyn
 	}
 });
 
+test("buildDefaultViewStatus exposes gate missing affordance for needs_integrate", () => {
+	const reconciliation = {
+		diagnosis: "needs_integrate",
+		headline: "Batch ready to integrate",
+		suggestedCommand: "spine integrate",
+		alternatives: ["spine gate status"],
+	};
+	const defaultView = buildDefaultViewStatus(reconciliation, null);
+	assert.equal(defaultView.diagnosis, "needs_integrate");
+	assert.equal(defaultView.headline, reconciliation.headline);
+	assert.equal(defaultView.suggestedCommand, "spine integrate");
+	assert.ok(defaultView.gateApplicable);
+	assert.equal(defaultView.gate?.status, "missing");
+});
+
 test("idle snapshot diagnosis null matches reconcile", async () => {
 	const projectRoot = await initGitRepo("spine-dash-idle-");
 	try {
@@ -114,7 +130,10 @@ test("idle snapshot diagnosis null matches reconcile", async () => {
 		assert.equal(snapshot.diagnosis, reconcile.diagnosis);
 		assert.equal(snapshot.headline, reconcile.headline);
 		assert.equal(snapshot.suggestedCommand, reconcile.suggestedCommand);
+		assert.equal(snapshot.defaultView.headline, reconcile.headline);
+		assert.equal(snapshot.defaultView.suggestedCommand, reconcile.suggestedCommand);
 		assert.equal(snapshot.diagnosis, null);
+		assert.equal(snapshot.defaultView.gate, null);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

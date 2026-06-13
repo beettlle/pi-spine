@@ -185,6 +185,17 @@ export function recordHandoffWritten(projectRoot, batchId, payload) {
 /**
  * @param {string} projectRoot
  * @param {string} batchId
+ * @returns {string|null} Raw jsonl journal content, or null when the file is missing.
+ */
+export function exportJournalJsonl(projectRoot, batchId) {
+	const filePath = journalPath(projectRoot, batchId);
+	if (!fs.existsSync(filePath)) return null;
+	return fs.readFileSync(filePath, "utf-8");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
  * @returns {object[]}
  */
 export function readJournalEvents(projectRoot, batchId) {

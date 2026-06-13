@@ -6,6 +6,14 @@
 /** Minimum line coverage (percent) for src/, bin/, and extensions/. */
 export const COVERAGE_THRESHOLD = 77;
 
+/**
+ * Per-file line coverage floors (FR-SHIP-06).
+ * Keys are repo-relative POSIX paths matched against coverage report rows.
+ */
+export const FILE_COVERAGE_THRESHOLDS = Object.freeze({
+	"extensions/spine/slash-commands.ts": 70,
+});
+
 /** Globs passed to Node --test-coverage-include (in-scope production code). */
 export const COVERAGE_INCLUDES = [
 	"src/**/*.mjs",
@@ -30,4 +38,5 @@ export const TEST_GLOBS = [
 	"tests/migrate/*.test.mjs",
 	"tests/worker-tools/*.test.mjs",
 	"tests/coverage/*.test.mjs",
+	"tests/extensions/*.test.mjs",
 ];
