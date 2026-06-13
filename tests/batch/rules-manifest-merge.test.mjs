@@ -130,6 +130,34 @@ test("fingerprintRulesManifest ignores generatedAt", () => {
 	assert.equal(fingerprintRulesManifest(left), fingerprintRulesManifest(right));
 });
 
+test("mergeLaneToOrch clears generatedAt-only dirty rules-manifest before merge", async () => {
+	const projectRoot = await initGitRepo("spine-rules-manifest-pre-merge-drift-");
+	try {
+		const { batchId, orchBranch, taskBranch } = setupManifestMergeFixture(projectRoot, {
+			orchGeneratedAt: "2026-06-05T21:00:00.000Z",
+			laneGeneratedAt: "2026-06-05T22:30:00.000Z",
+		});
+
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		const headManifest = JSON.parse(
+			fs.readFileSync(path.join(projectRoot, RULES_MANIFEST_REL_PATH), "utf-8"),
+		);
+		writeRulesManifest(projectRoot, "2026-06-05T23:59:59.000Z", headManifest.rules);
+
+		const merge = mergeLaneToOrch({
+			projectRoot,
+			baseBranch: "main",
+			orchBranch,
+			taskBranch,
+			batchId,
+		});
+
+		assert.equal(merge.ok, true, merge.error);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("mergeLaneToOrch auto-resolves generatedAt-only rules-manifest conflict", async () => {
 	const projectRoot = await initGitRepo("spine-rules-manifest-merge-");
 	try {

@@ -179,9 +179,14 @@ function readRulesManifestMergeStage(projectRoot, stage) {
 export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
 	const unmerged = listUnmergedPaths(projectRoot);
 	if (unmerged.length === 0) {
+		const dirtyPaths = listDirtyPaths(projectRoot);
+		const dirtyHint =
+			dirtyPaths.length > 0
+				? ` (dirty: ${dirtyPaths.join(", ")})`
+				: "";
 		return {
 			ok: false,
-			error: "merge failed without unmerged paths",
+			error: `merge failed without unmerged paths${dirtyHint}`,
 		};
 	}
 	if (unmerged.length !== 1 || unmerged[0] !== RULES_MANIFEST_REL_PATH) {
@@ -231,6 +236,56 @@ function gitStrict(projectRoot, args) {
  * @param {object} params
  * @param {boolean} [params.requireLaneCommits] When true, task branch must be ahead of orch before merge (post lane auto-commit).
  */
+/**
+ * Clear generatedAt-only rules-manifest drift on the working tree before lane→orch merge.
+ * Workers refresh the manifest during pi sessions; an uncommitted copy blocks `git merge`.
+ *
+ * @param {string} projectRoot
+ */
+function resolveRulesManifestPreMergeDrift(projectRoot) {
+	const dirtyPaths = listDirtyPaths(projectRoot);
+	if (dirtyPaths.length === 0) {
+		return { ok: true, resolved: false };
+	}
+	if (dirtyPaths.length !== 1 || dirtyPaths[0] !== RULES_MANIFEST_REL_PATH) {
+		return { ok: true, resolved: false };
+	}
+
+	const headRef = gitStrict(projectRoot, ["rev-parse", "HEAD"]);
+	const headResult = readRulesManifestFromRef(projectRoot, headRef);
+	const working = loadRulesManifest(projectRoot);
+	if (!working) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error: `${RULES_MANIFEST_REL_PATH} is dirty but unreadable`,
+		};
+	}
+	if (!headResult.ok) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error: `unable to read ${RULES_MANIFEST_REL_PATH} at HEAD`,
+		};
+	}
+
+	if (fingerprintRulesManifest(working) !== fingerprintRulesManifest(headResult.manifest)) {
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error:
+				`${RULES_MANIFEST_REL_PATH} has uncommitted content changes beyond generatedAt — commit or stash before merge`,
+		};
+	}
+
+	gitExec(
+		projectRoot,
+		["restore", "--source=HEAD", "--staged", "--worktree", RULES_MANIFEST_REL_PATH],
+		{ projectRoot },
+	);
+	return { ok: true, resolved: true, action: "restored_head_for_lane_merge" };
+}
+
 export function mergeLaneToOrch({
 	projectRoot,
 	baseBranch,
@@ -242,6 +297,15 @@ export function mergeLaneToOrch({
 	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	let mergeInProgress = false;
 	try {
+		const drift = resolveRulesManifestPreMergeDrift(projectRoot);
+		if (!drift.ok) {
+			return {
+				ok: false,
+				failureClass: drift.failureClass ?? "DirtyWorktree",
+				error: drift.error ?? "dirty worktree blocks lane merge",
+			};
+		}
+
 		const orchHeadBefore = gitStrict(projectRoot, ["rev-parse", orchBranch]);
 		const commitsAhead = countCommitsAhead(projectRoot, orchBranch, taskBranch);
 
