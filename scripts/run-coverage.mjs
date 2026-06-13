@@ -9,9 +9,13 @@ import { fileURLToPath } from "node:url";
 import {
 	COVERAGE_THRESHOLD,
 	COVERAGE_INCLUDES,
+	FILE_COVERAGE_THRESHOLDS,
 	TEST_GLOBS,
 } from "./coverage-policy.mjs";
-import { parseAggregateLineCoverage } from "./coverage-parse.mjs";
+import {
+	parseAggregateLineCoverage,
+	findFileCoverageFailures,
+} from "./coverage-parse.mjs";
 
 const reportOnly = process.argv.includes("--report-only");
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -66,8 +70,21 @@ console.error(
 	`Line coverage (in-scope): ${linePct.toFixed(2)}% (threshold: ${COVERAGE_THRESHOLD}%)`,
 );
 
+const fileFailures = findFileCoverageFailures(combined, FILE_COVERAGE_THRESHOLDS);
+for (const failure of fileFailures) {
+	const actualText =
+		failure.actual === null ? "missing" : `${failure.actual.toFixed(2)}%`;
+	console.error(
+		`Per-file coverage failed: ${failure.path} ${actualText} < ${failure.required}% minimum.`,
+	);
+}
+
 if (reportOnly) {
 	process.exit(result.status ?? 1);
+}
+
+if (fileFailures.length > 0) {
+	process.exit(1);
 }
 
 if (linePct < COVERAGE_THRESHOLD) {
