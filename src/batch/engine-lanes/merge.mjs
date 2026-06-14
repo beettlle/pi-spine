@@ -12,9 +12,11 @@ import {
 	loadRulesManifest,
 	fingerprintRulesManifest,
 } from "../../config/cursor-rules/discover.mjs";
+import { matchesContractPattern } from "../contract-verify.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
 import { saveSpineBatchState } from "../state.mjs";
+import { loadTaskFileScopePaths } from "./queue.mjs";
 import { laneTaskBranch } from "../worktree.mjs";
 
 /**
@@ -174,30 +176,39 @@ function readRulesManifestMergeStage(projectRoot, stage) {
 }
 
 /**
+ * @param {string} filePath
+ * @param {string[]} laneFileScopePaths
+ */
+function pathInLaneFileScope(filePath, laneFileScopePaths) {
+	if (!Array.isArray(laneFileScopePaths) || laneFileScopePaths.length === 0) {
+		return false;
+	}
+	return laneFileScopePaths.some((pattern) => matchesContractPattern(filePath, pattern));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} mergeBase
+ * @param {string} taskBranch
+ * @returns {Set<string>}
+ */
+function listBranchChangedFiles(projectRoot, mergeBase, taskBranch) {
+	const output = git(projectRoot, ["diff", "--name-only", `${mergeBase}..${taskBranch}`], {
+		throwOnError: false,
+	});
+	if (!output) return new Set();
+	return new Set(
+		output
+			.split("\n")
+			.map((line) => line.trim())
+			.filter(Boolean),
+	);
+}
+
+/**
  * @param {string} projectRoot
  */
-export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
-	const unmerged = listUnmergedPaths(projectRoot);
-	if (unmerged.length === 0) {
-		const dirtyPaths = listDirtyPaths(projectRoot);
-		const dirtyHint =
-			dirtyPaths.length > 0
-				? ` (dirty: ${dirtyPaths.join(", ")})`
-				: "";
-		return {
-			ok: false,
-			error: `merge failed without unmerged paths${dirtyHint}`,
-		};
-	}
-	if (unmerged.length !== 1 || unmerged[0] !== RULES_MANIFEST_REL_PATH) {
-		return {
-			ok: false,
-			failureClass: "MergeConflict",
-			error:
-				`merge conflict on ${unmerged.join(", ")}; automatic resolution only supports ${RULES_MANIFEST_REL_PATH}`,
-		};
-	}
-
+function resolveRulesManifestMergeConflict(projectRoot) {
 	const oursResult = readRulesManifestMergeStage(projectRoot, 2);
 	const theirsResult = readRulesManifestMergeStage(projectRoot, 3);
 	if (!oursResult.ok || !theirsResult.ok) {
@@ -222,6 +233,156 @@ export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
 		autoResolved: true,
 		generatedAt: resolved.manifest.generatedAt,
 	};
+}
+
+/**
+ * Prefer orch (merge --ours) for stale dependency artifacts outside lane file scope.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.filePath
+ * @param {string[]} params.laneFileScopePaths
+ * @param {Set<string>} params.laneChangedFiles
+ */
+function tryAutoResolveOutOfScopeMergeConflict({
+	projectRoot,
+	filePath,
+	laneFileScopePaths,
+	laneChangedFiles,
+}) {
+	if (pathInLaneFileScope(filePath, laneFileScopePaths)) {
+		return { ok: false, reason: "in_lane_file_scope" };
+	}
+	if (laneChangedFiles.has(filePath)) {
+		return { ok: false, reason: "lane_committed_change" };
+	}
+
+	gitExec(projectRoot, ["checkout", "--ours", "--", filePath], { projectRoot });
+	gitExec(projectRoot, ["add", "--", filePath], { projectRoot });
+	return { ok: true, strategy: "prefer_orch_out_of_scope" };
+}
+
+/**
+ * @param {object} state
+ * @param {number} laneNumber
+ * @param {string[]} waveTaskIds
+ */
+function collectLaneWaveFileScope(state, laneNumber, waveTaskIds) {
+	/** @type {Set<string>} */
+	const patterns = new Set();
+	for (const taskId of waveTaskIds) {
+		const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+		if (!task || task.laneNumber !== laneNumber) continue;
+		const folder = task.taskFolder;
+		if (!folder) continue;
+		const scope = loadTaskFileScopePaths(folder);
+		if (scope.ok) {
+			for (const pattern of scope.fileScopePaths) {
+				patterns.add(pattern);
+			}
+		}
+	}
+	return [...patterns];
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object} [options]
+ * @param {string[]} [options.laneFileScopePaths]
+ * @param {string} [options.taskBranch]
+ * @param {string} [options.orchBranch]
+ */
+export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
+	const { laneFileScopePaths = [], taskBranch, orchBranch } = options;
+	const unmerged = listUnmergedPaths(projectRoot);
+	if (unmerged.length === 0) {
+		const dirtyPaths = listDirtyPaths(projectRoot);
+		const dirtyHint =
+			dirtyPaths.length > 0
+				? ` (dirty: ${dirtyPaths.join(", ")})`
+				: "";
+		return {
+			ok: false,
+			error: `merge failed without unmerged paths${dirtyHint}`,
+		};
+	}
+
+	const canResolveOutOfScope =
+		Array.isArray(laneFileScopePaths) &&
+		laneFileScopePaths.length > 0 &&
+		Boolean(taskBranch) &&
+		Boolean(orchBranch);
+
+	/** @type {Set<string>} */
+	let laneChangedFiles = new Set();
+	if (canResolveOutOfScope) {
+		const mergeBase = git(projectRoot, ["merge-base", orchBranch, taskBranch], {
+			throwOnError: false,
+		});
+		if (mergeBase) {
+			laneChangedFiles = listBranchChangedFiles(projectRoot, mergeBase, taskBranch);
+		}
+	}
+
+	/** @type {string[]} */
+	const resolvedOutOfScope = [];
+	/** @type {string[]} */
+	const remaining = [];
+
+	for (const filePath of unmerged) {
+		if (filePath === RULES_MANIFEST_REL_PATH) {
+			remaining.push(filePath);
+			continue;
+		}
+		if (!canResolveOutOfScope) {
+			remaining.push(filePath);
+			continue;
+		}
+		const resolved = tryAutoResolveOutOfScopeMergeConflict({
+			projectRoot,
+			filePath,
+			laneFileScopePaths,
+			laneChangedFiles,
+		});
+		if (resolved.ok) {
+			resolvedOutOfScope.push(filePath);
+		} else {
+			remaining.push(filePath);
+		}
+	}
+
+	if (remaining.length === 1 && remaining[0] === RULES_MANIFEST_REL_PATH) {
+		const manifestResult = resolveRulesManifestMergeConflict(projectRoot);
+		if (!manifestResult.ok) {
+			return manifestResult;
+		}
+		return {
+			...manifestResult,
+			outOfScopePaths: resolvedOutOfScope,
+		};
+	}
+
+	if (remaining.length === 0) {
+		return {
+			ok: true,
+			autoResolved: true,
+			outOfScopePaths: resolvedOutOfScope,
+		};
+	}
+
+	return {
+		ok: false,
+		failureClass: "MergeConflict",
+		error:
+			`merge conflict on ${remaining.join(", ")}; automatic resolution supports ${RULES_MANIFEST_REL_PATH} ` +
+			"and out-of-scope dependency drift (prefer orch when the lane did not commit the path)",
+		outOfScopePaths: resolvedOutOfScope,
+	};
+}
+
+/** @deprecated use tryAutoResolveMergeConflicts */
+export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
+	return tryAutoResolveMergeConflicts(projectRoot, {});
 }
 
 /**
@@ -293,6 +454,7 @@ export function mergeLaneToOrch({
 	taskBranch,
 	batchId,
 	requireLaneCommits = false,
+	laneFileScopePaths = [],
 }) {
 	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	let mergeInProgress = false;
@@ -330,13 +492,18 @@ export function mergeLaneToOrch({
 			]);
 		} catch {
 			mergeInProgress = true;
-			const autoResolved = tryAutoResolveRulesManifestMergeConflict(projectRoot);
+			const autoResolved = tryAutoResolveMergeConflicts(projectRoot, {
+				laneFileScopePaths,
+				taskBranch,
+				orchBranch,
+			});
 			if (!autoResolved.ok) {
 				abortInProgressMerge(projectRoot);
 				return {
 					ok: false,
 					failureClass: autoResolved.failureClass ?? "MergeConflict",
 					error: autoResolved.error ?? "merge conflict",
+					outOfScopePaths: autoResolved.outOfScopePaths ?? [],
 				};
 			}
 			gitStrict(projectRoot, ["commit", "--no-edit"]);
@@ -410,11 +577,13 @@ export async function mergeWaveLanesToOrch({
 		if (!laneSucceeded) continue;
 
 		const taskBranch = lane.branch ?? laneTaskBranch(batchId, laneNumber);
+		const laneFileScopePaths = collectLaneWaveFileScope(state, laneNumber, waveTaskIds);
 		appendJournalEvent(projectRoot, batchId, "batch.merge_started", {
 			taskBranch,
 			orchBranch,
 			laneNumber,
 			waveIndex,
+			laneFileScopePaths,
 		});
 
 		const merge = mergeLaneToOrch({
@@ -424,6 +593,7 @@ export async function mergeWaveLanesToOrch({
 			taskBranch,
 			batchId,
 			requireLaneCommits: false,
+			laneFileScopePaths,
 		});
 		if (!merge.ok) {
 			return { ok: false, error: merge.error ?? "merge_failed", laneNumber };

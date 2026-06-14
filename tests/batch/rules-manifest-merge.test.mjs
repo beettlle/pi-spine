@@ -230,7 +230,7 @@ test("mergeLaneToOrch does not auto-resolve when other paths conflict", async ()
 
 		assert.equal(merge.ok, false);
 		assert.equal(merge.failureClass, "MergeConflict");
-		assert.match(merge.error, /automatic resolution only supports/);
+		assert.match(merge.error, /automatic resolution supports/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

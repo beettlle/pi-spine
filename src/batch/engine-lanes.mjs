@@ -47,6 +47,7 @@ export {
 	mergeLaneToOrch,
 	mergeWaveLanesToOrch,
 	resolveRulesManifestIntegrateDrift,
+	tryAutoResolveMergeConflicts,
 	tryAutoResolveRulesManifestMergeConflict,
 } from "./engine-lanes/merge.mjs";
 
