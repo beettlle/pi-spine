@@ -114,6 +114,27 @@ See `docs/PRD.md` for the full specification.
 
 ---
 
+## Honest limits (v2.2)
+
+pi-spine v2.2 ships operator-driven batch monitoring, not Taskplane-style autonomous supervision.
+
+| Out of v2.2 | What to use instead |
+|-------------|---------------------|
+| **Supervisor mail** — conversational nudges between orchestrator and workers | `spine status --diagnose`, dashboard diagnosis banner, runbook recovery paths |
+| **Autonomous monitor agent** — background Pi session polling batch health | Same CLI + dashboard surfaces; human operator runs suggested commands |
+
+**Primary monitor surfaces:**
+
+- **`spine status --diagnose`** — diagnosis, headline, `suggestedCommand`, lane health (use daily after detached start/resume)
+- **Dashboard** — `spine dashboard` / `/spine-dashboard`; diagnosis banner and action chips match `--diagnose` reconciliation (default port 8109)
+- **[Operator runbook](docs/adoption/operator-runbook.md)** — stall recovery, orphan handling, land loop, gate races
+
+The `.spine/agents/supervisor.md` template (from `spine init`) documents this no-agent reality; the batch engine does not spawn it.
+
+**Optional stretch (not blocking v2.2 publish):** a minimal supervisor session journaling `supervisor.nudge` events — deferred unless consumer pilot feedback shows dashboard + diagnose are insufficient ([FR-SHIP-11](docs/PRD-v2.2-ship-readiness-handoff.md#fr-ship-11-design-decision)).
+
+---
+
 ## Prerequisites
 
 | Dependency | Required |
