@@ -1,8 +1,8 @@
 # SP-241: Worker manual gate inventory — Status
 
-**Current Step:** Step 1 (complete) → Step 2
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-06-13
+**Current Step:** Step 3 (complete)
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-14
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -27,18 +27,18 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (when applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing — 828/828 (`env -u SPINE_WORKER_PI_TIMEOUT_MS`)
+- [x] Coverage gate passes (when applicable) — N/A (doc-only task; `testCommand: true`)
+- [x] All failures fixed — harness env leak only; clean env per project pattern
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -46,7 +46,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
-| 1 | plan | 1 | pending | — |
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260614T210451.md` |
 
 ---
 
@@ -66,6 +66,9 @@
 | 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
 | 2026-06-13 | Step 0 preflight | Read `registerSpineWorkerTools`, PRD §12.1 kinds, runbook land-loop |
 | 2026-06-13 | Step 1 inventory | Created `docs/design/worker-gate-inventory.md`; SP-224 Amendment 2 |
+| 2026-06-14 | Step 1 plan review | APPROVE (stub) |
+| 2026-06-14 | Step 2 verification | 828/828 pass with `env -u SPINE_WORKER_PI_TIMEOUT_MS` |
+| 2026-06-14 | Step 3 delivery | `.DONE` created |
 
 ---
 
