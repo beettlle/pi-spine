@@ -21,9 +21,16 @@
   </section>
 
   <section id="default-status-panels" class="default-status-panels" hidden>
-    <section class="panel" aria-labelledby="gate-heading">
+    <section id="gate-panel-section" class="panel" aria-labelledby="gate-heading" hidden>
       <h3 id="gate-heading">Integrate gate</h3>
       <div id="gate-panel" class="gate-panel"></div>
+    </section>
+    <section id="default-journal-section" class="panel panel-wide" aria-labelledby="default-journal-heading" hidden>
+      <h3 id="default-journal-heading">Journal tail</h3>
+      <ol id="default-journal-list" class="journal-list"></ol>
+      <p id="default-journal-deep-link" class="journal-deep-link" hidden>
+        <a href="#journal-heading">View full journal</a>
+      </p>
     </section>
   </section>
 

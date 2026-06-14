@@ -14,8 +14,8 @@
     "testWithCoverage": "npm run coverage:check"
   },
   "agents": {
-    "worker": { "model": "inherit", "thinking": "high" },
-    "reviewer": { "model": "inherit", "thinking": "medium" },
+    "worker": { "model": "cursor/auto", "thinking": "high" },
+    "reviewer": { "model": "cursor/auto", "thinking": "medium" },
     "supervisor": { "model": "inherit", "thinking": "off" }
   },
   "lanes": {

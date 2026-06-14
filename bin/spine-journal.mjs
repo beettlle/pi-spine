@@ -17,6 +17,47 @@ function formatReplayTime(timestamp) {
 }
 
 /**
+ * @param {string} value
+ */
+function escapeMarkdownTableCell(value) {
+	return String(value).replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+/**
+ * @param {string} batchId
+ * @param {object[]} events
+ */
+export function formatJournalMarkdownTimeline(batchId, events) {
+	const lines = [`# Batch journal timeline — ${batchId}`, ""];
+	lines.push("| Time (UTC) | Event | Lane | Task | Summary |");
+	lines.push("|------------|-------|------|------|---------|");
+
+	for (const event of events) {
+		const time = escapeMarkdownTableCell(formatReplayTime(event.timestamp));
+		const type = escapeMarkdownTableCell(event.type ?? "");
+		const lane = escapeMarkdownTableCell(event.laneId ?? "—");
+		const task = escapeMarkdownTableCell(event.taskId ?? "—");
+		const summary = escapeMarkdownTableCell(summarizeJournalEvent(event));
+		lines.push(`| ${time} | ${type} | ${lane} | ${task} | ${summary} |`);
+	}
+
+	lines.push("");
+	return lines.join("\n");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {string|null}
+ */
+export function exportJournalMarkdown(projectRoot, batchId) {
+	const filePath = journalPath(projectRoot, batchId);
+	if (!fs.existsSync(filePath)) return null;
+	const events = readJournalEvents(projectRoot, batchId);
+	return formatJournalMarkdownTimeline(batchId, events);
+}
+
+/**
  * @param {object[]} events
  */
 export function formatJournalReplayTable(events) {
@@ -40,7 +81,7 @@ export function formatJournalReplayTable(events) {
 const JOURNAL_USAGE =
 	"Usage:\n" +
 	"  spine journal replay --batch {id} [--json]\n" +
-	"  spine journal export --batch {id} --format jsonl [--output path]\n";
+	"  spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 
 /**
  * @param {string} projectRoot
@@ -85,7 +126,8 @@ function runJournalReplay(projectRoot, args) {
  * @param {string[]} args
  */
 function runJournalExport(projectRoot, args) {
-	const exportUsage = "Usage: spine journal export --batch {id} --format jsonl [--output path]\n";
+	const exportUsage =
+		"Usage: spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 	const batchIdx = args.indexOf("--batch");
 	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
 	const formatIdx = args.indexOf("--format");
@@ -100,14 +142,17 @@ function runJournalExport(projectRoot, args) {
 		};
 	}
 
-	if (format !== "jsonl") {
+	if (format !== "jsonl" && format !== "markdown") {
 		return {
 			exitCode: 1,
-			output: `Missing or unsupported --format (expected jsonl)\n${exportUsage}`,
+			output: `Missing or unsupported --format (expected markdown or jsonl)\n${exportUsage}`,
 		};
 	}
 
-	const content = exportJournalJsonl(projectRoot, batchId);
+	const content =
+		format === "jsonl"
+			? exportJournalJsonl(projectRoot, batchId)
+			: exportJournalMarkdown(projectRoot, batchId);
 	if (content === null) {
 		const filePath = journalPath(projectRoot, batchId);
 		return {
@@ -125,7 +170,7 @@ function runJournalExport(projectRoot, args) {
 		return { exitCode: 0, output: "" };
 	}
 
-	return { exitCode: 0, output: content };
+	return { exitCode: 0, output: content.endsWith("\n") ? content : `${content}\n` };
 }
 
 /**
