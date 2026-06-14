@@ -1,7 +1,7 @@
 # SP-222: Supervisor defer documentation — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -27,17 +27,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Fix all failures
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Fix all failures — 828/828 pass (2 failures only when `SPINE_WORKER_PI_TIMEOUT_MS` leaked from harness env; not doc-related)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -60,6 +60,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-12 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-13 | Step 1 | Runbook § supervisor deferred + README honest limits |
+| 2026-06-13 | Step 2 | typecheck + 828 tests pass (clean env) |
+| 2026-06-13 | Complete | `.DONE` created |
 
 ---
 
