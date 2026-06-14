@@ -357,6 +357,13 @@ spine review step --step 1 --type code     # level >= 2 (optional --baseline <sh
 
 Reviewer model is configured separately in `.spine/spine-config.json` (`agents.reviewer`).
 
+### Worker Pi tools (PRD §14.5)
+
+Lane workers register three spine tools via `registerSpineWorkerTools`: `spine_review_step`, `spine_report_progress`, and `spine_request_gate`.
+
+**`spine_request_gate` limitation (v2.2):** Permanent `not_supported` for all gate kinds (`integrate`, `manual`, `conflict`). Workers cannot open or refresh human gates; the tool returns structured JSON with `suggestedCommand: spine gate approve` so models do not invent host commands. **Operator workaround:** run `spine gate status` and `spine gate approve` from a **host shell** — not from inside a worker session. Integrate gates still open automatically when the batch engine completes a wave.
+
+See [operator runbook §5.1](docs/adoption/operator-runbook.md#51-worker-spine_request_gate-fr-ship-13--v22) and [worker-gate-inventory.md](docs/design/worker-gate-inventory.md).
 
 ### Pause and resume (Phase 3 — single and multi lane)
 

@@ -255,11 +255,11 @@ export const spineRequestGateTool = defineTool({
 	name: "spine_request_gate",
 	label: "Spine Request Gate",
 	description:
-		"Request a manual human gate (rare). v1.1 limitation: integrate gates are automatic; returns not_supported with suggestedCommand spine gate.",
+		"Request a human gate (rare). v2.2: permanent not_supported for all gate kinds; operator runs spine gate approve from host.",
 	promptSnippet: "Request operator attention via a human gate (integrate gates are automatic)",
 	promptGuidelines: [
-		"Integrate gates open automatically at batch completion — use spine gate status/approve via operator.",
-		"Worker manual gate requests are not supported in v1.1; this tool returns structured not_supported.",
+		"Integrate gates open automatically at batch completion — operator runs spine gate status/approve from host.",
+		"Worker gate requests are permanently not_supported in v2.2 (integrate, manual, conflict); returns structured JSON with suggestedCommand.",
 	],
 	parameters: Type.Object({
 		reason: Type.Optional(

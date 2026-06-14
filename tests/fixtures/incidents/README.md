@@ -10,6 +10,7 @@ Bounded batch-state + journal tail snapshots for regression tests. Pattern mirro
 | `lane-worktree-devcontainer.json` | `20260605T160800` | Lane worktree launch failure (container-absolute gitdir, missing `PI_SPINE_ROOT`) | [`tests/batch/diagnosis-launch-failed.test.mjs`](../../batch/diagnosis-launch-failed.test.mjs) |
 | `retry-clears-failed-classification.json` | `20260605T191325` | Retry success with journal `task.completed` but stale failed batch-state / `prompt_parse_failed` | [`tests/batch/retry-state-drift.test.mjs`](../../batch/retry-state-drift.test.mjs) |
 | `pidless-ghost-running.json` | `20260603T224829` | `phase: running` with no `workerPid`/`enginePid`; post-resume journal stall | [`tests/batch/orphan-pidless-ghost.test.mjs`](../../batch/orphan-pidless-ghost.test.mjs) |
+| `retry-clears-failed-classification.json`, `resume-parallel-lane-orphan.json`, `orphan-running-resume.json`, `pidless-ghost-running.json`, `resume-orphan-historical-failure.json` | various | Journal structural rebuild + lifecycle parity (FR-SHIP-10 phase 2) | [`tests/batch/journal-rebuild-incidents.test.mjs`](../../batch/journal-rebuild-incidents.test.mjs) |
 
 ## Incident narratives
 
