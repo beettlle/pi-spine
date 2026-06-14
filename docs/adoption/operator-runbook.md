@@ -266,6 +266,35 @@ spine batch start <task-id>
 
 `spine doctor` reports the effective worker backend (subprocess default or opt-in agentSession with peer check). `spine preflight` includes doctor — confirm the worker backend line before starting a batch.
 
+### Agent model pins (pi inheritance vs spine-config)
+
+Spine passes `pi --model` and `pi --thinking` from `.spine/spine-config.json` when `agents.worker.model` / `agents.reviewer.model` are set and **not** `inherit` (SP-232). Reviewers already honored pins; workers now do too.
+
+| `agents.*.model` | Worker/reviewer behavior |
+|------------------|--------------------------|
+| `cursor/auto` (greenfield default after `spine init`) | Explicit pin — batch agents use Cursor auto, not pi's global default |
+| `inherit` | Opt-in — pi uses global `defaultProvider` / `defaultModel` from `~/.pi/agent/settings.json` (project `.pi/settings.json` overrides) |
+| Other provider/id | Passed verbatim to `pi --model` |
+
+**Why pin by default:** Real-pi stress batches (2026-06-12) used `inherit` while pi's global default was **lmstudio** (`pi-lmstudio` → `http://127.0.0.1:1234`). `spine doctor` "model provider configured" showed the first listed model (`cursor/auto`), but lane workers inherited LM Studio and failed with unloaded models or missing MLX backends.
+
+**Operator checklist before real-pi batches:**
+
+```bash
+spine settings show agents.worker.model
+spine settings show agents.reviewer.model
+spine doctor   # warns when inherit + pi defaultProvider lmstudio
+```
+
+**Opt into inheritance** (interactive pi session parity):
+
+```bash
+spine settings set agents.worker.model inherit
+spine settings set agents.reviewer.model inherit
+```
+
+Only use `inherit` when you intentionally want batch workers to follow your pi TUI model selection.
+
 ### Monitor
 
 ```bash

@@ -1,8 +1,8 @@
 # SP-238: Worker model pin template and runbook — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-12
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-13
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,14 +11,14 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-232 worker `--model` pin landed
+- [x] Confirm SP-232 worker `--model` pin landed
 
 ---
 
 ### Step 1: Defaults and docs
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Update template defaults to `cursor/auto` for worker + reviewer (document inherit in runbook)
 - [ ] Runbook subsection: pi model inheritance vs spine pins

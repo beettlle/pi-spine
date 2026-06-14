@@ -33,6 +33,7 @@ import {
 import { buildRulesManifestDoctorCheck } from "../src/doctor/rules-manifest.mjs";
 import { buildWorktreeHealthDoctorCheck } from "../src/doctor/worktree-health.mjs";
 import { buildWorkerBackendDoctorCheck } from "../src/config/worker-backend.mjs";
+import { buildAgentModelInheritDoctorCheck } from "../src/doctor/agent-model-inherit.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../src/config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../src/config/cursor-rules/profile.mjs";
 import {
@@ -317,6 +318,10 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
 		checks.push(buildPiWorkerTimeoutDoctorCheck({ config: configResult.config }));
+		checks.push(buildAgentModelInheritDoctorCheck({
+			config: configResult.config,
+			projectRoot,
+		}));
 		const worktreeHealthCheck = buildWorktreeHealthDoctorCheck({
 			projectRoot,
 			config: configResult.config,

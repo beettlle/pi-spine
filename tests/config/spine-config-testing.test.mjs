@@ -17,6 +17,9 @@ test("spine-config template defaults mirror package.json script patterns", () =>
 	assert.equal(template.testing.build, SPINE_INIT_TESTING_COMMAND);
 	assert.equal(template.testing.test, SPINE_INIT_TESTING_COMMAND);
 	assert.equal(template.testing.testWithCoverage, SPINE_INIT_COVERAGE_COMMAND);
+	assert.equal(template.agents.worker.model, "cursor/auto");
+	assert.equal(template.agents.reviewer.model, "cursor/auto");
+	assert.equal(template.agents.supervisor.model, "inherit");
 });
 
 test("init applies testing defaults including coverage command", async () => {
