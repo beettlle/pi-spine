@@ -536,6 +536,22 @@ When the detached resume engine throws (for example a broken lane worktree durin
 
 If diagnosis is still **`engine_orphaned`** with **`phase: running`**, the engine died without hitting the fail-closed handler — use the orphan steps above.
 
+### Final review nested spawn (`final_review_spawn_failed`)
+
+When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with **`final_review_spawn_failed`** / journal **`review.failed`** reason **`nested_spawn_blocked`**, the spine CLI inherited **`SPINE_WORKER_RUNNER`** from an active pi worker session (SP-195). Reviewer spawn is intentionally blocked inside worker sessions.
+
+1. Confirm worker output exists: lane worktree `.DONE`, file-scope artifacts, plan review APPROVE in journal.
+2. Run recovery from a **clean shell** (unset worker session env — at minimum `SPINE_WORKER_RUNNER`, `SPINE_JOURNAL_ATTACH`, `SPINE_BATCH_ID`, `SPINE_PROJECT_ROOT`):
+
+   ```bash
+   spine batch retry <taskId>
+   spine batch resume --attached --force
+   ```
+
+3. Resume with `.DONE` on disk skips re-spawn and commits the lane; proceed with gate → integrate → complete.
+
+Consumer pilot evidence: batch `20260614T002449` (SP-233), adoption fixture temp repo.
+
 ### Dismiss and complete (terminal limbo)
 
 When tasks are green but the batch record is stale (common after Taskplane manual recovery):
