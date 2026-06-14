@@ -13,6 +13,12 @@ export const WORKER_BACKENDS = Object.freeze(["subprocess", "agentSession"]);
 
 export const DEFAULT_WORKER_BACKEND = /** @type {const} */ ("subprocess");
 
+/** Doctor check label — subprocess is the production default (FR-SHIP-09 / SP-219). */
+export const WORKER_BACKEND_DOCTOR_LABEL = "worker backend (lanes.workerBackend)";
+
+const SUBPROCESS_DETAIL =
+	"subprocess — pi -p via spine-worker-runner (production default per FR-SHIP-09)";
+
 /**
  * @param {unknown} value
  * @returns {value is WorkerBackend}
@@ -40,23 +46,21 @@ export function resolveWorkerBackend(config = {}) {
 }
 
 /**
- * Validate optional lanes.workerBackend for spine-config schema.
- *
- * @param {object} config
- * @returns {{ code: string, message: string, suggestedCommand: string } | null}
- */
-/**
- * Doctor check when lanes.workerBackend is agentSession.
+ * Doctor/preflight check for lanes.workerBackend.
+ * Subprocess is the default; agentSession is opt-in and requires the pi-coding-agent peer.
  *
  * @param {object} [config]
  */
-export function buildAgentSessionDoctorCheck(config = {}) {
+export function buildWorkerBackendDoctorCheck(config = {}) {
 	const backend = resolveWorkerBackend(config);
+	const configuredRaw = config.lanes?.workerBackend;
+
 	if (backend !== "agentSession") {
+		const unset = configuredRaw == null || configuredRaw === "";
 		return {
-			label: "agentSession worker backend",
+			label: WORKER_BACKEND_DOCTOR_LABEL,
 			ok: true,
-			detail: `effective backend: ${backend}`,
+			detail: unset ? `${SUBPROCESS_DETAIL}; config unset (falls back to default)` : SUBPROCESS_DETAIL,
 		};
 	}
 
@@ -70,20 +74,32 @@ export function buildAgentSessionDoctorCheck(config = {}) {
 
 	if (issues.length === 0) {
 		return {
-			label: "agentSession worker backend",
+			label: WORKER_BACKEND_DOCTOR_LABEL,
 			ok: true,
-			detail: "pi-coding-agent peer available",
+			warning: true,
+			detail:
+				"agentSession (opt-in) — pi-coding-agent peer available; subprocess remains default until land-loop dogfood passes",
+			suggestedCommand: "./scripts/stub-free-dogfood.sh --agent-session",
 		};
 	}
 
 	return {
-		label: "agentSession worker backend",
+		label: WORKER_BACKEND_DOCTOR_LABEL,
 		ok: false,
-		detail: issues.join("; "),
-		suggestion: "npm install @earendil-works/pi-coding-agent",
+		detail: `agentSession (opt-in): ${issues.join("; ")}`,
+		suggestedCommand: "npm install @earendil-works/pi-coding-agent",
 	};
 }
 
+/** @deprecated Use buildWorkerBackendDoctorCheck */
+export const buildAgentSessionDoctorCheck = buildWorkerBackendDoctorCheck;
+
+/**
+ * Validate optional lanes.workerBackend for spine-config schema.
+ *
+ * @param {object} config
+ * @returns {{ code: string, message: string, suggestedCommand: string } | null}
+ */
 export function validateWorkerBackendConfig(config) {
 	const raw = config.lanes?.workerBackend;
 	if (raw == null || raw === "") {
