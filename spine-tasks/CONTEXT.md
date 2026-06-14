@@ -600,7 +600,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|------|--------|------|
 | SP-221 | Journal structural rebuild (core) | M | **Pending** | SP-220 |
 | SP-240 | Journal rebuild incident fixtures | S | **Pending** | SP-221 |
-| SP-222 | Supervisor defer documentation | S | **Pending** | SP-220 |
+| SP-222 | Supervisor defer documentation | S | **In progress** | SP-220 |
 | SP-223 | Merger conflict UX spike | S | **Pending** | SP-220 |
 | SP-241 | Worker gate inventory | S | **Pending** | SP-220 |
 | SP-224 | Worker manual gate execution | S | **Pending** | SP-241 |

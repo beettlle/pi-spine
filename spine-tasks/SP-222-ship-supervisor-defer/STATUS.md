@@ -1,8 +1,8 @@
 # SP-222: Supervisor defer documentation — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-12
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-13
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,18 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read FR-SHIP-11 design decision (default lower scope)
+- [x] Read FR-SHIP-11 design decision (default lower scope)
 
 ---
 
 ### Step 1: Document defer
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook § supervisor deferred; primary monitor surfaces listed
-- [ ] README honest limits section
-- [ ] Note optional stretch task out of v2.2 scope
+- [x] Runbook § supervisor deferred; primary monitor surfaces listed
+- [x] README honest limits section
+- [x] Note optional stretch task out of v2.2 scope
 
 ---
 

@@ -347,6 +347,22 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 In pi: `/spine-status` mirrors reconciliation.
 
+### Supervisor deferred (FR-SHIP-11)
+
+pi-spine v2.2 **does not** ship Taskplane-style **supervisor mail** or an **autonomous monitor agent** that polls batch health and nudges workers. FR-SHIP-11 records an explicit defer: operators monitor batches themselves using CLI diagnosis, the dashboard banner, and the recovery paths in this runbook.
+
+**Primary monitor surfaces:**
+
+| Surface | Entry | Role |
+|---------|-------|------|
+| CLI diagnosis | `spine status --diagnose` | Daily signal — `diagnosis`, headline, `suggestedCommand`, lane health |
+| Dashboard banner | `spine dashboard` or `/spine-dashboard` | Same reconciliation fields as `--diagnose`; diagnosis badge and copyable action chips (§7) |
+| Runbook recovery | §6 Resume/dismiss/complete, §9 Troubleshooting, [Stall diagnosis](#stall-diagnosis-5-minute-path) | Operator-driven recovery when workers stall, engine orphans, or integrate gates block |
+
+The supervisor agent template (`.spine/agents/supervisor.md`, copied on `spine init`) documents v1 no-agent behavior and optional project notes. The batch engine **does not** spawn a supervisor Pi session in v2.2.
+
+**Optional stretch (out of v2.2 scope):** a minimal supervisor session that polls batch health and journals `supervisor.nudge` events — only if consumer pilot feedback shows dashboard + `--diagnose` are insufficient. See [PRD v2.2 §2.1 FR-SHIP-11](../PRD-v2.2-ship-readiness-handoff.md#fr-ship-11-design-decision).
+
 ---
 
 ## 4. Land loop
