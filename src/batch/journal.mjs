@@ -9,6 +9,39 @@ import path from "node:path";
 export const JOURNAL_SCHEMA_VERSION = 1;
 export const MAX_PAYLOAD_BYTES = 32 * 1024;
 
+/**
+ * Batch-state fields rebuildable from journal without cache seed (FR-SHIP-10, PRD §11.4 v2.2).
+ * Other schema fields (e.g. taskFolder, resilience) may still fall back to cache or filesystem.
+ */
+export const JOURNAL_DERIVED_STRUCTURAL_FIELDS = Object.freeze([
+	"batchId",
+	"baseBranch",
+	"orchBranch",
+	"startedAt",
+	"wavePlan",
+	"totalWaves",
+	"lanes",
+	"tasks",
+	"segments",
+	"totalTasks",
+	"mergeResults",
+]);
+
+/** Journal event types scanned when deriving structural batch-state rows. */
+export const STRUCTURAL_JOURNAL_EVENT_TYPES = Object.freeze(
+	new Set([
+		"batch.started",
+		"batch.resumed",
+		"lane.provisioned",
+		"lane.tasks_serialized",
+		"task.started",
+		"task.skipped_done_on_disk",
+		"batch.merge_started",
+		"batch.merge_completed",
+		"lane.committed",
+	]),
+);
+
 const META_KEYS = new Set(["correlationId", "laneId", "laneNumber", "taskId", "payload"]);
 
 const REDACT_KEY_PATTERN = /key|token|secret|password/i;
