@@ -549,6 +549,20 @@ Emergency bypass (journaled, not for routine use):
 SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
 ```
 
+### 5.1 Worker `spine_request_gate` (FR-SHIP-13 — v2.2)
+
+Lane workers register `spine_request_gate`, but **cannot open or refresh any human gate** in v2.2. All gate kinds return structured `not_supported` (`integrate`, `manual`, `conflict`). Workers must not approve integrate gates or create gate records — that stays operator/host CLI.
+
+| Worker need | Operator workaround |
+|-------------|-------------------|
+| Batch ready to land on `main` | From **host shell** (not inside a worker session): `spine gate status` → review `.spine/runtime/<batchId>/evidence/` → `spine gate approve` → `spine integrate` |
+| Worker blocked mid-step | Update task `STATUS.md`, commit step work, call `spine_report_progress`; monitor with `spine status --diagnose` or dashboard stall signals |
+| Worker called `spine_request_gate` | Expect `notSupported: true` and `suggestedCommand: spine gate approve` — do not retry in a loop; operator acts from host |
+
+In pi (operator session): `/spine-gate approve` delegates to `spine gate approve`.
+
+Design reference: [worker-gate-inventory.md](../design/worker-gate-inventory.md).
+
 ---
 
 ## 6. Resume, dismiss, complete
