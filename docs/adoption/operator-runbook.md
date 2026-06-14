@@ -264,7 +264,36 @@ spine batch start <task-id>
 - Before first agentSession batch: `npm install @earendil-works/pi-coding-agent`, `spine doctor`, then `./scripts/stub-free-dogfood.sh --agent-session`.
 - Promotion to default requires land-loop dogfood sign-off — see [agent-session dogfood report](../compatibility/agent-session-dogfood-report.md) (SP-219 decision: **subprocess remains default**).
 
-Doctor/preflight messaging for the configured backend: SP-237.
+`spine doctor` reports the effective worker backend (subprocess default or opt-in agentSession with peer check). `spine preflight` includes doctor — confirm the worker backend line before starting a batch.
+
+### Agent model pins (pi inheritance vs spine-config)
+
+Spine passes `pi --model` and `pi --thinking` from `.spine/spine-config.json` when `agents.worker.model` / `agents.reviewer.model` are set and **not** `inherit` (SP-232). Reviewers already honored pins; workers now do too.
+
+| `agents.*.model` | Worker/reviewer behavior |
+|------------------|--------------------------|
+| `cursor/auto` (greenfield default after `spine init`) | Explicit pin — batch agents use Cursor auto, not pi's global default |
+| `inherit` | Opt-in — pi uses global `defaultProvider` / `defaultModel` from `~/.pi/agent/settings.json` (project `.pi/settings.json` overrides) |
+| Other provider/id | Passed verbatim to `pi --model` |
+
+**Why pin by default:** Real-pi stress batches (2026-06-12) used `inherit` while pi's global default was **lmstudio** (`pi-lmstudio` → `http://127.0.0.1:1234`). `spine doctor` "model provider configured" showed the first listed model (`cursor/auto`), but lane workers inherited LM Studio and failed with unloaded models or missing MLX backends.
+
+**Operator checklist before real-pi batches:**
+
+```bash
+spine settings show agents.worker.model
+spine settings show agents.reviewer.model
+spine doctor   # warns when inherit + pi defaultProvider lmstudio
+```
+
+**Opt into inheritance** (interactive pi session parity):
+
+```bash
+spine settings set agents.worker.model inherit
+spine settings set agents.reviewer.model inherit
+```
+
+Only use `inherit` when you intentionally want batch workers to follow your pi TUI model selection.
 
 ### Monitor
 
@@ -286,6 +315,21 @@ Journal tail:
 ```bash
 spine journal replay --batch <batchId>
 ```
+
+**Journal export (FR-SHIP-08):** attach a human-readable timeline or raw jsonl to incident reports and consumer pilot evidence.
+
+```bash
+# Markdown timeline table (default for post-mortems)
+spine journal export --batch <batchId> --format markdown
+
+# Raw jsonl (machine-readable audit trail)
+spine journal export --batch <batchId> --format jsonl
+
+# Write to file instead of stdout
+spine journal export --batch <batchId> --format markdown --output ./journal-timeline.md
+```
+
+Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-zero when the journal is missing.
 
 **Diagnosis quick map** (full taxonomy: PRD §18.3):
 

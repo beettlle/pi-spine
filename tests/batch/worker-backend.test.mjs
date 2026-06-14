@@ -9,6 +9,8 @@ import { validateSpineConfig } from "../../bin/spine-config.mjs";
 import { validateSettingValue } from "../../src/config/settings-fields.mjs";
 import {
 	DEFAULT_WORKER_BACKEND,
+	buildWorkerBackendDoctorCheck,
+	WORKER_BACKEND_DOCTOR_LABEL,
 	resolveWorkerBackend,
 	validateWorkerBackendConfig,
 	WORKER_BACKENDS,
@@ -169,4 +171,38 @@ test("runWorker keeps subprocess default when workerBackend unset", async () => 
 
 test("WORKER_BACKENDS lists supported values", () => {
 	assert.deepEqual(WORKER_BACKENDS, ["subprocess", "agentSession"]);
+});
+
+test("buildWorkerBackendDoctorCheck reports subprocess as production default", () => {
+	const unset = buildWorkerBackendDoctorCheck({});
+	assert.equal(unset.label, WORKER_BACKEND_DOCTOR_LABEL);
+	assert.equal(unset.ok, true);
+	assert.match(unset.detail, /subprocess/);
+	assert.match(unset.detail, /production default/);
+	assert.match(unset.detail, /config unset/);
+
+	const explicit = buildWorkerBackendDoctorCheck({ lanes: { workerBackend: "subprocess" } });
+	assert.equal(explicit.ok, true);
+	assert.match(explicit.detail, /subprocess/);
+	assert.doesNotMatch(explicit.detail, /config unset/);
+});
+
+test("buildWorkerBackendDoctorCheck warns or fails on opt-in agentSession", () => {
+	const check = buildWorkerBackendDoctorCheck({ lanes: { workerBackend: "agentSession" } });
+	assert.equal(check.label, WORKER_BACKEND_DOCTOR_LABEL);
+	assert.match(check.detail, /agentSession \(opt-in\)/);
+	if (check.ok) {
+		assert.equal(check.warning, true);
+		assert.match(check.detail, /subprocess remains default/);
+		assert.equal(check.suggestedCommand, "./scripts/stub-free-dogfood.sh --agent-session");
+	} else {
+		assert.match(check.detail, /pi-coding-agent not installed/);
+		assert.equal(check.suggestedCommand, "npm install @earendil-works/pi-coding-agent");
+	}
+});
+
+test("buildWorkerBackendDoctorCheck falls back to subprocess for invalid config", () => {
+	const fallback = buildWorkerBackendDoctorCheck({ lanes: { workerBackend: "bogus" } });
+	assert.equal(fallback.ok, true);
+	assert.match(fallback.detail, /subprocess/);
 });
