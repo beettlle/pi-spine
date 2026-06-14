@@ -105,3 +105,9 @@ FR-SHIP-13 (phase 2): Execute the decision from SP-241 — either wire `spine_re
 ### Amendment 1 — 2026-06-12
 **Issue:** Original M packet combined inventory spike and execution.
 **Resolution:** Inventory/decision moved to SP-241; SP-224 executes chosen path (Size S).
+
+### Amendment 2 — 2026-06-13 (from SP-241)
+**Decision:** Document permanent `not_supported` for all gate kinds in `spine_request_gate` (v2.2).
+**Inventory:** See [docs/design/worker-gate-inventory.md](../../docs/design/worker-gate-inventory.md).
+**Supported worker gate kinds:** none (`integrate`, `manual`, `conflict` all return structured `not_supported`).
+**SP-224 scope:** Keep `request-gate.mjs` behavior; add runbook + README operator workaround (`spine gate approve` from host); confirm worker-tools.ts descriptions align. Do not implement `openManualGate` or conflict gate FSM.
