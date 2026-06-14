@@ -404,6 +404,103 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 
+### 4.1 Integrate merge conflicts (FR-SHIP-12)
+
+When `spine integrate` merges `orch/spine-<batchId>` into `main` and git reports a conflict, pi-spine **aborts the merge** and restores your previous checkout. `main` is left unchanged. The CLI prints a `MergeConflict` headline and journals `integrate.failed` with `conflict: true`.
+
+**Automatic resolution (only one case):** `.spine/rules-manifest.json` when both sides have identical `rules[]` and only `generatedAt` differs (lane merge and integrate). If `rules[]` differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry.
+
+**Not shipped in v2.2:** Taskplane-style **merger LLM agent** for conflict resolution ([PRD §4.2](../PRD.md#42-non-goals-v1)). Operators resolve conflicts with git, then re-run the land loop. Spike rationale: [integrate-conflict-recovery.md](../design/integrate-conflict-recovery.md).
+
+#### Recognize
+
+| Signal | Meaning |
+|--------|---------|
+| `spine integrate` exit code 1 | Integrate refused or merge failed |
+| Headline contains `Merge conflict integrating` | Orch → `main` conflict after gate approval |
+| Journal `integrate.failed` with `conflict: true` | Auditable failure — export with `spine journal export` |
+| `git status` on `main` without `MERGING` | Fail-closed abort succeeded (expected after failed integrate) |
+
+```bash
+spine status --diagnose
+spine journal export --batch <batchId> --format markdown
+git status
+git branch --show-current   # expect main (or branch you were on before integrate)
+```
+
+#### Manual recovery (orch-first — preferred)
+
+Use when batch lane work on the orch branch is correct but `main` moved during the batch (another operator merged, hotfix, etc.).
+
+1. Note the orch branch from `--diagnose` (e.g. `orch/spine-20260614T004041`).
+2. Check out the orch branch and bring in `main`:
+
+   ```bash
+   git checkout orch/spine-<batchId>
+   git merge main    # or: git rebase main
+   ```
+
+3. Resolve conflict markers in your editor; run tests if the touched paths are critical.
+4. Commit on the orch branch.
+5. Return to the land loop on `main`:
+
+   ```bash
+   git checkout main
+   spine integrate
+   spine batch complete
+   git push origin main
+   ```
+
+Gate approval from before the failed integrate attempt remains valid unless you rejected it or changed orch content materially — if unsure, run `spine gate status` before re-integrating.
+
+#### Manual recovery (merge on main)
+
+Use when you prefer a single merge commit on `main` or orch history is messy.
+
+1. Confirm no merge in progress: `git status` (no `MERGING` state).
+2. Check out `main` and merge orch manually:
+
+   ```bash
+   git checkout main
+   git merge --no-ff orch/spine-<batchId>
+   ```
+
+3. Resolve conflicts, commit, then complete the batch without re-running integrate:
+
+   ```bash
+   spine batch complete
+   git push origin main
+   ```
+
+Only use this path when the resulting `main` tip matches what integrate would have produced. If `spine batch complete` refuses (orch still ahead), run `spine integrate` after your manual merge or use `--detect-manual-merge` per §6.
+
+#### Lane merge conflicts (before integrate)
+
+Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed wave merge — not during `spine integrate`. Typical causes: overlapping File Scope across parallel lanes, or editing the same file on `main` and in a lane.
+
+| Diagnosis | Action |
+|-----------|--------|
+| `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
+| rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
+| Other files | Resolve in the lane worktree under `.worktrees/spine-<batchId>/lane-N`, commit on lane branch, then resume batch |
+
+Lane worktrees: [Worktree layout](#worktree-layout) (§9).
+
+#### Reject and rework
+
+When conflicts indicate bad batch scope or unacceptable merge risk:
+
+```bash
+spine gate reject --reason "integrate conflict — rework scope"
+# Edit tasks, new batch, or manual git recovery per PRD §18.6
+```
+
+Emergency bypass (journaled, not for routine conflict resolution):
+
+```bash
+SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
+```
+
 ---
 
 ## 5. Gate races
@@ -736,6 +833,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
 | Post-merge limbo (`running`, merges done, no gate) | `spine status --diagnose` → `needs_integrate`; run `spine batch resume` to open gate (SP-204). Do not call `integrate` until gate exists |
+| Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | `spine batch resume` terminates stale detached engine PID; check journal `engine.orphan_terminated` (SP-203) |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
@@ -782,3 +880,4 @@ spine next --execute       # run suggested dismiss/preflight (careful)
 | [README § Batch lifecycle](../../README.md) | Full CLI reference |
 | [PRD](../PRD.md) | Normative requirements |
 | [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md) | Stall epic (SAT-020), FR-STALL-* |
+| [integrate-conflict-recovery.md](../design/integrate-conflict-recovery.md) | FR-SHIP-12 spike — merger-agent defer, manual integrate conflicts |

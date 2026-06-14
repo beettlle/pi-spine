@@ -1,8 +1,8 @@
 # SP: Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-12
+**Current Step:** Step 0 — Preflight
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-13
 **Review Level:** (see PROMPT.md)
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,23 +11,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review integrate conflict scenarios
-- [ ] Read merger-agent gap notes
+- [x] Review integrate conflict scenarios
+- [x] Read merger-agent gap notes
 
 ---
 
 ### Step 1: Spike or runbook
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document operator workflow
-- [ ] State merger-agent non-goal for v2.2
+- [x] Document operator workflow
+- [x] State merger-agent non-goal for v2.2
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run FULL test suite
 
