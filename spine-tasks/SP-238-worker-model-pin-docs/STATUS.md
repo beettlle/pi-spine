@@ -1,7 +1,7 @@
 # SP-238: Worker model pin template and runbook — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -18,27 +18,27 @@
 ---
 
 ### Step 1: Defaults and docs
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Update template defaults to `cursor/auto` for worker + reviewer (document inherit in runbook)
-- [ ] Runbook subsection: pi model inheritance vs spine pins
-- [ ] Optional doctor warning for inherit + pi-lmstudio
+- [x] Update template defaults to `cursor/auto` for worker + reviewer (document inherit in runbook)
+- [x] Runbook subsection: pi model inheritance vs spine pins
+- [x] Optional doctor warning for inherit + pi-lmstudio
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (when applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate passes (when applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -46,6 +46,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260614T001032.md` |
 
 ---
 
@@ -60,7 +61,8 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-12 | Task staged | PROMPT.md and STATUS.md created (size decomposition) |
+| 2026-06-13 | Step 0 preflight | SP-232 worker `--model` pin confirmed in spine-worker-runner.mjs + tests |
+| 2026-06-13 | Step 2 verification | 824/824 tests pass; coverage 85.77% (≥77%) |
 
 ---
 
