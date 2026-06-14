@@ -98,6 +98,21 @@ export function journalEventsSinceResume(events, raw) {
 }
 
 /**
+ * Worker exited (post-done grace or natural exit) but engine still owns code/final review.
+ *
+ * @param {object[]} journalEvents
+ * @param {string} taskId
+ */
+export function journalIndicatesEngineOwnedContinuation(journalEvents, taskId) {
+	if (!Array.isArray(journalEvents) || !taskId) return false;
+	return journalEvents.some(
+		(event) =>
+			String(event?.taskId ?? "") === taskId &&
+			String(event?.type ?? "") === "lane.completed",
+	);
+}
+
+/**
  * @param {unknown[]} lanes
  * @param {Array<{ laneNumber?: number|null }>} runningTasks
  */
@@ -146,10 +161,15 @@ export function detectOrphanRunning(ctx) {
 		return null;
 	}
 
+	const scopedJournalEvents = journalEventsSinceResume(ctx.journalEvents ?? [], ctx.raw);
+
 	for (const task of runningTasks) {
 		const lane = findLane(ctx.lanes, task.laneNumber);
 		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane)?.workerPid);
 		if (Number.isFinite(workerPid) && workerPid > 0 && !isProcessAlive(workerPid)) {
+			if (journalIndicatesEngineOwnedContinuation(scopedJournalEvents, task.taskId)) {
+				continue;
+			}
 			/** @type {OrphanRunningSignal} */
 			return {
 				kind: "lane",
@@ -160,7 +180,6 @@ export function detectOrphanRunning(ctx) {
 	}
 
 	const enginePid = readBatchEnginePid(ctx.raw);
-	const scopedJournalEvents = journalEventsSinceResume(ctx.journalEvents ?? [], ctx.raw);
 	if (enginePid && !isProcessAlive(enginePid) && !journalHasTerminalBatchEvent(scopedJournalEvents)) {
 		/** @type {OrphanRunningSignal} */
 		return {

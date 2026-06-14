@@ -228,6 +228,11 @@ export async function runTaskOnLane({
 		}
 	}
 
+	if (lane.workerPid) {
+		delete lane.workerPid;
+		saveSpineBatchState(projectRoot, state);
+	}
+
 	appendJournalEvent(projectRoot, batchId, "lane.completed", {
 		laneNumber,
 		laneId: lane.laneId,

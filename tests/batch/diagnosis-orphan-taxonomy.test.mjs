@@ -111,6 +111,64 @@ test("dead lane workerPid diagnoses worker_orphaned not needs_retry", async () =
 	}
 });
 
+test("dead workerPid after lane.completed does not diagnose worker_orphaned", async () => {
+	const projectRoot = await initGitRepo("spine-worker-post-done-continuation-");
+	try {
+		const batchId = "20260613T234821";
+		const taskId = "SP-234";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "running",
+					taskFolder: `spine-tasks/${taskId}-post-done`,
+					startedAt: Date.now(),
+					endedAt: null,
+					doneFileFound: false,
+					exitReason: null,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: laneWorktreePath(projectRoot, batchId, 1),
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: [taskId],
+					lastHeartbeatAt: Date.now() - 60_000,
+					workerPid: DEAD_PID,
+				},
+			],
+		});
+		state.phase = "running";
+		recordBatchEnginePid(state, process.pid);
+		saveSpineBatchState(projectRoot, state);
+
+		appendJournalEvent(projectRoot, batchId, "task.started", { taskId, laneNumber: 1 });
+		appendJournalEvent(projectRoot, batchId, "worker.post_done_terminated", {
+			taskId,
+			laneNumber: 1,
+			childPid: DEAD_PID,
+		});
+		appendJournalEvent(projectRoot, batchId, "lane.completed", { taskId, laneNumber: 1 });
+		appendJournalEvent(projectRoot, batchId, "review.started", {
+			taskId,
+			laneNumber: 1,
+			reviewType: "code",
+		});
+
+		const result = reconcileBatch({ projectRoot, verbose: true });
+		assert.notEqual(result.diagnosis, "worker_orphaned");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("worker_orphaned enriches launch headline from worker output log without task.failed", async () => {
 	const projectRoot = await initGitRepo("spine-worker-orphan-launch-log-");
 	try {
