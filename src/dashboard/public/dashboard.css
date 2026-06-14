@@ -19,7 +19,7 @@
 
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 14px; }
 .page-header, .page-footer, .diagnosis-banner, .default-status-panels, .panels { max-width: 1100px; margin: 0 auto; padding: 1rem 1.25rem; }
-.default-status-panels { padding-top: 0; margin-bottom: 1rem; }
+.default-status-panels { padding-top: 0; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .default-status-panels .panel { margin: 0; }
 .connection-status { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .connection-status[data-state="live"] { color: var(--running); }
