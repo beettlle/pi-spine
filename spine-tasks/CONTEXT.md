@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-06-13 (Phase 24 exit — SP-220)
+**Last Updated:** 2026-06-14 (Phase 25 exit — SP-225)
 **Status:** Active
 **Next Task ID:** SP-243
 
@@ -526,7 +526,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 ### Phase 23–26 — Ship readiness epic (SP-SHIP / SP-205–226)
 
-**Status:** **In progress** — Phases 23–24 complete on `main`; Phases 25–26 pending. Spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+**Status:** **In progress** — Phases 23–25 complete on `main`; Phase 26 publish pending (human-gated). Spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
 
 **Incident (2026-06-12):** Batch `20260612T225744` (SP-215–226) landed stub-only `.DONE` files (`Task: stub`) with no product code. Integrate gate approved; operator reset invalidated all 21 false completions (removed `.DONE` + stub `.reviews/`). Re-run with **real pi** (`unset SPINE_WORKER_STUB`) starting SP-232.
 
@@ -598,15 +598,24 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-221 | Journal structural rebuild (core) | M | **Pending** | SP-220 |
-| SP-240 | Journal rebuild incident fixtures | S | **Pending** | SP-221 |
+| SP-221 | Journal structural rebuild (core) | M | **Done** | SP-220 |
+| SP-240 | Journal rebuild incident fixtures | S | **Done** | SP-221 |
 | SP-222 | Supervisor defer documentation | S | **Done** | SP-220 |
-| SP-223 | Merger conflict UX spike | S | **Pending** | SP-220 |
-| SP-241 | Worker gate inventory | S | **Pending** | SP-220 |
-| SP-224 | Worker manual gate execution | S | **Pending** | SP-241 |
-| SP-225 | Phase 25 exit verification | S | **Pending** | SP-240, SP-222, SP-223, SP-224 |
+| SP-223 | Merger conflict UX spike | S | **Done** | SP-220 |
+| SP-241 | Worker gate inventory | S | **Done** | SP-220 |
+| SP-224 | Worker manual gate execution | S | **Done** | SP-241 |
+| SP-225 | Phase 25 exit verification | S | **Done** | SP-240, SP-222, SP-223, SP-224 |
 
-**Suggested batches (Phase 25):** (SP-221 + SP-222 + SP-241 parallel) → (SP-240 + SP-223 + SP-224 parallel) → SP-225.
+**Phase 25 exit criteria (PRD §8):**
+
+- [x] FR-SHIP-10 implemented — `journal-rebuild.mjs` structural derivation (SP-221); incident fixture regression + runbook limits vs Babysitter replay (SP-240); not deferred to v2.3
+- [x] Supervisor defer documented — runbook §Supervisor deferred (FR-SHIP-11), README honest limits (SP-222)
+- [x] Merger/conflict path documented — `docs/design/integrate-conflict-recovery.md`, runbook §4.1; merger-agent explicit non-goal (SP-223)
+- [x] Worker gate story resolved — permanent `not_supported` for all gate kinds; runbook §5.1 + README workaround via host `spine gate approve` (SP-241/224)
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — zero failures (838 tests, 2026-06-14; unset `SPINE_WORKER_PI_TIMEOUT_MS` in shell)
+- [x] `npm run coverage:check` — 85.92% line (threshold 77%)
+
+**Suggested batches (Phase 25):** Complete — Phase 26 unblocked (human-gated publish).
 
 #### Phase 26 — Publish (human-gated)
 
