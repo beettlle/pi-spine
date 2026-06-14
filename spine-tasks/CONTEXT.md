@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-06-12 (Phase 24–26 stub reset)
+**Last Updated:** 2026-06-13 (Phase 24 exit — SP-220)
 **Status:** Active
 **Next Task ID:** SP-243
 
@@ -502,8 +502,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | SP-229 | Worker orphan final-review recovery | **Done** | SP-203, SP-193, SP-115 |
 | SP-230 | Exit verification stub guard | **Done** | SP-199, SP-115 |
 | SP-231 | Phase 23 exit audit helper | **Done** | SP-213, SP-211, SP-212 |
-| SP-232 | Pin agent models (worker `--model` pin) | **Pending** | SP-212, SP-088 |
-| SP-238 | Worker model pin template + runbook | **Pending** | SP-232 |
+| SP-232 | Pin agent models (worker `--model` pin) | **Done** | SP-212, SP-088 |
+| SP-238 | Worker model pin template + runbook | **Done** | SP-232 |
 
 **Suggested batches (hotfixes before SP-214 retry):** SP-227 → SP-228 → SP-229 → (SP-230 + SP-231 parallel) → re-run SP-214 (real pi).
 
@@ -526,7 +526,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 ### Phase 23–26 — Ship readiness epic (SP-SHIP / SP-205–226)
 
-**Status:** **In progress** — Phase 23 complete on `main`; Phases 24–26 pending real work. Spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
+**Status:** **In progress** — Phases 23–24 complete on `main`; Phases 25–26 pending. Spec at [`docs/PRD-v2.2-ship-readiness-handoff.md`](../docs/PRD-v2.2-ship-readiness-handoff.md).
 
 **Incident (2026-06-12):** Batch `20260612T225744` (SP-215–226) landed stub-only `.DONE` files (`Task: stub`) with no product code. Integrate gate approved; operator reset invalidated all 21 false completions (removed `.DONE` + stub `.reviews/`). Re-run with **real pi** (`unset SPINE_WORKER_STUB`) starting SP-232.
 
@@ -568,21 +568,31 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-232 | Worker `--model` pin | S | **Pending** | SP-212, SP-088 |
-| SP-238 | Model pin template + runbook | S | **Pending** | SP-232 |
-| SP-215 | Consumer pilot stub + skeleton | S | **Pending** | SP-214 |
-| SP-233 | Consumer pilot real-pi + recovery | M | **Pending** | SP-215 |
-| SP-216 | Extension slash-command tests ≥70% | M | **Pending** | SP-214 |
-| SP-217 | Dashboard gate + diagnosis | S | **Pending** | SP-214 |
-| SP-234 | Dashboard journal tail panel | S | **Pending** | SP-217 |
-| SP-235 | Journal export jsonl CLI | S | **Pending** | SP-214 |
-| SP-236 | Journal export markdown timeline | S | **Pending** | SP-235 |
-| SP-219 | agentSession decision (report) | S | **Pending** | SP-214 |
-| SP-237 | agentSession doctor alignment | S | **Pending** | SP-219 |
+| SP-232 | Worker `--model` pin | S | **Done** | SP-212, SP-088 |
+| SP-238 | Model pin template + runbook | S | **Done** | SP-232 |
+| SP-215 | Consumer pilot stub + skeleton | S | **Done** | SP-214 |
+| SP-233 | Consumer pilot real-pi + recovery | M | **Done** | SP-215 |
+| SP-216 | Extension slash-command tests ≥70% | M | **Done** | SP-214 |
+| SP-217 | Dashboard gate + diagnosis | S | **Done** | SP-214 |
+| SP-234 | Dashboard journal tail panel | S | **Done** | SP-217 |
+| SP-235 | Journal export jsonl CLI | S | **Done** | SP-214 |
+| SP-236 | Journal export markdown timeline | S | **Done** | SP-235 |
+| SP-219 | agentSession decision (report) | S | **Done** | SP-214 |
+| SP-237 | agentSession doctor alignment | S | **Done** | SP-219 |
 | SP-218 | Journal export CLI (superseded) | — | **Done** | → SP-235/236 |
-| SP-220 | Phase 24 exit verification | S | **Pending** | SP-233, SP-216, SP-234, SP-236, SP-237 |
+| SP-220 | Phase 24 exit verification | S | **Done** | SP-233, SP-216, SP-234, SP-236, SP-237 |
 
-**Suggested batches (Phase 24):** (SP-232 → SP-238) → (SP-215 → SP-233) → (SP-216 + SP-217) → (SP-234 + SP-235) → (SP-236 + SP-219 → SP-237) → SP-220.
+**Phase 24 exit criteria (PRD §8):**
+
+- [x] Filled consumer pilot report committed under `docs/adoption/` (`consumer-pilot-report-2026-06-12.md`, SP-233)
+- [x] `extensions/spine/slash-commands.ts` line coverage ≥70% (92%+; gate in `scripts/coverage-policy.mjs`, SP-216)
+- [x] Dashboard default view shows gate + diagnosis + journal affordance (`tests/dashboard/ui-contract.test.mjs`, SP-217/234)
+- [x] `spine journal export` documented and tested (`journal-export-*.test.mjs`, operator runbook, SP-235/236)
+- [x] agentSession decision recorded in dogfood report + runbook (subprocess default; SP-219/237)
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — zero failures (828 tests, 2026-06-13)
+- [x] `npm run coverage:check` — 85.77% line (threshold 77%)
+
+**Suggested batches (Phase 24):** Complete — Phase 25 unblocked.
 
 #### Phase 25 — P2 Differentiation
 
