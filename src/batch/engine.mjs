@@ -402,13 +402,17 @@ export async function startBatch({
 		}
 
 		state.endedAt = Date.now();
+		openIntegrateGateAfterBatchComplete({
+			projectRoot,
+			batchId,
+			batchState: { ...state, phase: "completed" },
+		});
 		transitionPhase(state, "completed", {
 			projectRoot,
 			batchId,
 			extra: { taskIds, mergeCommit: state.mergeResults.at(-1)?.mergeCommit },
 		});
 		saveSpineBatchState(projectRoot, state);
-		openIntegrateGateAfterBatchComplete({ projectRoot, batchId, batchState: state });
 
 		const summaryTask =
 			taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
