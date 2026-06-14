@@ -121,10 +121,10 @@ test("spine_request_gate tool returns structured not_supported shape", async () 
 		const result = await spineRequestGateTool.execute("tc-gate", { reason: "blocked" });
 		assert.equal(result.isError, true);
 		assert.equal(result.details.notSupported, true);
-		assert.equal(result.details.suggestedCommand, "spine gate");
+		assert.equal(result.details.suggestedCommand, "spine gate approve");
 		const parsed = JSON.parse(result.content[0].text);
 		assert.equal(parsed.notSupported, true);
-		assert.equal(parsed.suggestedCommand, "spine gate");
+		assert.equal(parsed.suggestedCommand, "spine gate approve");
 	} finally {
 		if (prev.projectRoot === undefined) delete process.env.SPINE_PROJECT_ROOT;
 		else process.env.SPINE_PROJECT_ROOT = prev.projectRoot;

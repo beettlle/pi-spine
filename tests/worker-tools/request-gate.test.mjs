@@ -43,7 +43,9 @@ test("requestWorkerGate returns not_supported when no gate record (manual deferr
 	assert.equal(result.ok, false);
 	assert.equal(result.notSupported, true);
 	assert.equal(result.limitation, "manual-gate-deferred");
-	assert.equal(result.suggestedCommand, "spine gate");
+	assert.equal(result.suggestedCommand, "spine gate approve");
+	assert.ok(Array.isArray(result.alternatives));
+	assert.ok(result.alternatives.includes("spine gate status"));
 
 	fs.rmSync(projectRoot, { recursive: true, force: true });
 });

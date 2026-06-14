@@ -1,7 +1,8 @@
 /**
- * Worker gate request — minimal v1.1 (PRD §14.5, §12).
+ * Worker gate request — v2.2 permanent not_supported (FR-SHIP-13 / SP-241).
  * Integrate gates are operator-managed and open automatically at batch completion.
- * Manual gate open/refresh is deferred; workers receive structured not_supported.
+ * Manual and conflict gate kinds have no worker-initiated open path in v2.2.
+ * Operators approve integrate gates from the host: `spine gate approve`.
  */
 
 import { loadGateRecord } from "../batch/gate.mjs";
@@ -37,17 +38,17 @@ export function requestWorkerGate({ projectRoot, batchId, reason }) {
 		};
 	}
 
-	// v1.1: manual gate open via gate record APIs is not wired; direct operators to CLI.
+	// v2.2: no worker-initiated gate open for manual/conflict kinds; direct operators to host CLI.
 	return {
 		ok: false,
 		notSupported: true,
 		limitation: "manual-gate-deferred",
 		reason:
 			reason ??
-			"Manual gate open from worker tools is not supported in v1.1; use operator spine gate commands.",
-		headline: "Worker manual gate requests not supported",
-		suggestedCommand: "spine gate",
-		alternatives: ["/spine-gate"],
+			"Worker gate requests are permanently not_supported in v2.2; operator runs spine gate commands from the host.",
+		headline: "Worker gate requests permanently not supported (v2.2)",
+		suggestedCommand: "spine gate approve",
+		alternatives: ["spine gate status", "/spine-gate"],
 		gate: existing ?? null,
 	};
 }

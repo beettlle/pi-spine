@@ -331,6 +331,22 @@ spine journal export --batch <batchId> --format markdown --output ./journal-time
 
 Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-zero when the journal is missing.
 
+**Journal structural rebuild vs Babysitter replay (FR-SHIP-10):** pi-spine rebuilds **orchestration control-plane state** from the append-only journal — not agent work. `spine status --diagnose` compares cached `.spine/batch-state.json` against a journal rebuild and surfaces `state_drift` when they disagree.
+
+| Capability | pi-spine (v2.2) | Babysitter |
+|------------|-----------------|------------|
+| Timeline audit | `spine journal replay` / `export` | Full event log |
+| Task status / batch phase | Rebuilt from lifecycle events (`task.started`, `task.completed`, …) | Full state reconstruction |
+| Lanes, wave plan, branches | Derived from structural events (`batch.started`, `lane.provisioned`, `task.started`, …) when present | Process-definition driven |
+| Agent / worker re-execution | **Not supported** — journal records boundaries only | `run:iterate` deterministic replay |
+| Runtime-only fields | `resilience.*`, PIDs, `taskFolder`, segments may require cache seed or filesystem | N/A (harness-owned) |
+
+**Operator implications:**
+
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success or crash). Run `spine batch retry <id>` or `spine batch resume --force` after inspecting `spine journal tail`.
+- **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
+- **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
+
 **Diagnosis quick map** (full taxonomy: PRD §18.3):
 
 | `diagnosis` | Meaning | Typical next step |
@@ -548,6 +564,20 @@ Emergency bypass (journaled, not for routine use):
 ```bash
 SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
 ```
+
+### 5.1 Worker `spine_request_gate` (FR-SHIP-13 — v2.2)
+
+Lane workers register `spine_request_gate`, but **cannot open or refresh any human gate** in v2.2. All gate kinds return structured `not_supported` (`integrate`, `manual`, `conflict`). Workers must not approve integrate gates or create gate records — that stays operator/host CLI.
+
+| Worker need | Operator workaround |
+|-------------|-------------------|
+| Batch ready to land on `main` | From **host shell** (not inside a worker session): `spine gate status` → review `.spine/runtime/<batchId>/evidence/` → `spine gate approve` → `spine integrate` |
+| Worker blocked mid-step | Update task `STATUS.md`, commit step work, call `spine_report_progress`; monitor with `spine status --diagnose` or dashboard stall signals |
+| Worker called `spine_request_gate` | Expect `notSupported: true` and `suggestedCommand: spine gate approve` — do not retry in a loop; operator acts from host |
+
+In pi (operator session): `/spine-gate approve` delegates to `spine gate approve`.
+
+Design reference: [worker-gate-inventory.md](../design/worker-gate-inventory.md).
 
 ---
 
