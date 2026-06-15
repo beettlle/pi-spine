@@ -16,6 +16,15 @@ export const RULES_PROFILE_REL_PATH = ".spine/rules-profile.json";
  */
 
 /**
+ * @typedef {object} RulesProfileReviewer
+ * @property {boolean} enabled When false, reviewer rule selection is skipped (SP-247+)
+ * @property {string[]} alwaysInclude Paths relative to `.cursor/rules/`
+ * @property {string[]} neverInclude Paths relative to `.cursor/rules/`
+ * @property {boolean} globMatch When true, glob-triggered rules may match review context
+ * @property {number} maxRules Upper bound on rules selected for reviewer context
+ */
+
+/**
  * @typedef {object} RulesProfileDiscovery
  * @property {string[]} excludePatterns Micromatch patterns against rule `relPath`
  * @property {string[]} excludeRelPaths Paths under `.cursor/rules/` excluded from discovery
@@ -25,6 +34,7 @@ export const RULES_PROFILE_REL_PATH = ".spine/rules-profile.json";
  * @typedef {object} RulesProfile
  * @property {number} profileVersion
  * @property {RulesProfileWorker} worker
+ * @property {RulesProfileReviewer} reviewer
  * @property {RulesProfileDiscovery} discovery
  */
 
@@ -35,6 +45,16 @@ export const DEFAULT_RULES_PROFILE = Object.freeze({
 		alwaysInclude: Object.freeze(["taskplane-worker-cursor.mdc"]),
 		neverInclude: Object.freeze([]),
 		globMatch: true,
+	}),
+	reviewer: Object.freeze({
+		enabled: true,
+		alwaysInclude: Object.freeze([]),
+		neverInclude: Object.freeze([
+			"taskplane-worker-cursor.mdc",
+			"taskplane-task-authoring.mdc",
+		]),
+		globMatch: true,
+		maxRules: 32,
 	}),
 	discovery: Object.freeze({
 		excludePatterns: Object.freeze(["*-brutal-audit"]),
@@ -126,9 +146,16 @@ export function validateRulesProfile(profile) {
 	}
 
 	if (profile.worker != null) {
-		const workerError = validateWorkerSection(profile.worker, "worker");
+		const workerError = validateWorkerSection(profile.worker);
 		if (workerError) {
 			return workerError;
+		}
+	}
+
+	if (profile.reviewer != null) {
+		const reviewerError = validateReviewerSection(profile.reviewer);
+		if (reviewerError) {
+			return reviewerError;
 		}
 	}
 
@@ -144,32 +171,73 @@ export function validateRulesProfile(profile) {
 
 /**
  * @param {unknown} worker
+ * @returns {{ code: string, message: string } | null}
+ */
+function validateWorkerSection(worker) {
+	return validateRuleSelectionSection(worker, "worker");
+}
+
+/**
+ * @param {unknown} reviewer
+ * @returns {{ code: string, message: string } | null}
+ */
+function validateReviewerSection(reviewer) {
+	const selectionError = validateRuleSelectionSection(reviewer, "reviewer");
+	if (selectionError) {
+		return selectionError;
+	}
+
+	if (reviewer.enabled != null && typeof reviewer.enabled !== "boolean") {
+		return {
+			code: "RULES_PROFILE_INVALID",
+			message: "reviewer.enabled must be a boolean",
+		};
+	}
+
+	if (reviewer.maxRules != null) {
+		if (
+			typeof reviewer.maxRules !== "number" ||
+			!Number.isInteger(reviewer.maxRules) ||
+			reviewer.maxRules < 1
+		) {
+			return {
+				code: "RULES_PROFILE_INVALID",
+				message: "reviewer.maxRules must be a positive integer",
+			};
+		}
+	}
+
+	return null;
+}
+
+/**
+ * @param {unknown} section
  * @param {string} label
  * @returns {{ code: string, message: string } | null}
  */
-function validateWorkerSection(worker, label) {
-	if (typeof worker !== "object" || worker === null || Array.isArray(worker)) {
+function validateRuleSelectionSection(section, label) {
+	if (typeof section !== "object" || section === null || Array.isArray(section)) {
 		return {
 			code: "RULES_PROFILE_INVALID",
 			message: `${label} must be an object`,
 		};
 	}
 
-	const alwaysError = validateStringArray(worker.alwaysInclude, `${label}.alwaysInclude`, {
+	const alwaysError = validateStringArray(section.alwaysInclude, `${label}.alwaysInclude`, {
 		allowEmpty: true,
 	});
 	if (alwaysError) {
 		return alwaysError;
 	}
 
-	const neverError = validateStringArray(worker.neverInclude, `${label}.neverInclude`, {
+	const neverError = validateStringArray(section.neverInclude, `${label}.neverInclude`, {
 		allowEmpty: true,
 	});
 	if (neverError) {
 		return neverError;
 	}
 
-	if (worker.globMatch != null && typeof worker.globMatch !== "boolean") {
+	if (section.globMatch != null && typeof section.globMatch !== "boolean") {
 		return {
 			code: "RULES_PROFILE_INVALID",
 			message: `${label}.globMatch must be a boolean`,
@@ -261,12 +329,29 @@ export function mergeRulesProfile(defaults, fileProfile) {
 	]);
 	const neverSet = new Set(neverInclude);
 
+	const reviewerAlwaysInclude = normalizeRulePaths([
+		...defaults.reviewer.alwaysInclude,
+		...(fileProfile.reviewer?.alwaysInclude ?? []),
+	]);
+	const reviewerNeverInclude = normalizeRulePaths([
+		...defaults.reviewer.neverInclude,
+		...(fileProfile.reviewer?.neverInclude ?? []),
+	]);
+	const reviewerNeverSet = new Set(reviewerNeverInclude);
+
 	return {
 		profileVersion: 1,
 		worker: {
 			alwaysInclude: alwaysInclude.filter((entry) => !neverSet.has(entry)),
 			neverInclude,
 			globMatch: fileProfile.worker?.globMatch ?? defaults.worker.globMatch,
+		},
+		reviewer: {
+			enabled: fileProfile.reviewer?.enabled ?? defaults.reviewer.enabled,
+			alwaysInclude: reviewerAlwaysInclude.filter((entry) => !reviewerNeverSet.has(entry)),
+			neverInclude: reviewerNeverInclude,
+			globMatch: fileProfile.reviewer?.globMatch ?? defaults.reviewer.globMatch,
+			maxRules: fileProfile.reviewer?.maxRules ?? defaults.reviewer.maxRules,
 		},
 		discovery: {
 			excludePatterns: normalizeRulePaths([
@@ -306,6 +391,13 @@ function cloneProfile(profile) {
 	return mergeRulesProfile(profile, {
 		profileVersion: 1,
 		worker: { alwaysInclude: [], neverInclude: [], globMatch: profile.worker.globMatch },
+		reviewer: {
+			alwaysInclude: [],
+			neverInclude: [],
+			globMatch: profile.reviewer.globMatch,
+			enabled: profile.reviewer.enabled,
+			maxRules: profile.reviewer.maxRules,
+		},
 		discovery: { excludePatterns: [], excludeRelPaths: [] },
 	});
 }
