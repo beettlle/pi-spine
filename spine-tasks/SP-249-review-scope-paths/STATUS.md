@@ -1,8 +1,8 @@
 # SP-249: Review scope path resolver — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-14
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-15
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,27 +11,27 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm parsePrompt File Scope API
-- [ ] Confirm baseline threading in code review
+- [x] Confirm parsePrompt File Scope API — `parsePrompt(markdown).fileScope` from `parse-prompt.mjs`
+- [x] Confirm baseline threading in code review — `buildReviewRequest` uses `git diff ${baseline}..HEAD --name-only` with fallback `git diff --name-only`
 
 ---
 
 ### Step 1: Scope resolver
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `resolveReviewScopePaths` implemented
-- [ ] plan / code / final behavior
-- [ ] Noise path filtering
+- [x] `resolveReviewScopePaths` implemented
+- [x] plan / code / final behavior
+- [x] Noise path filtering
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Per review-type tests
-- [ ] Noise filtering tests
+- [x] Per review-type tests
+- [x] Noise filtering tests
 
 ---
 
