@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-14 (Phase 25 exit — SP-225)
+**Last Updated:** 2026-06-14 (Phase 27 staged — reviewer Cursor rules FR-REV-08)
 **Status:** Active
-**Next Task ID:** SP-243
+**Next Task ID:** SP-254
 
 ---
 
@@ -623,6 +623,28 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 |------|---------|------|--------|------|
 | SP-242 | npm pre-release checklist + dry-run | S | **Pending** | SP-225 |
 | SP-226 | npm publish execution (human-gated) | S | **Pending** | SP-242 |
+
+#### Phase 27 — Reviewer Cursor rules (FR-REV-08)
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-246 | Reviewer rules profile section | S | **Pending** | — |
+| SP-249 | Review scope path resolver | S | **Pending** | — |
+| SP-247 | Shared selection core refactor | M | **Pending** | SP-246 |
+| SP-248 | `selectRulesForReviewer` | S | **Pending** | SP-247 |
+| SP-250 | Reviewer context builder + journal | M | **Pending** | SP-248, SP-249 |
+| SP-251 | Review spawn rules injection | S | **Pending** | SP-250 |
+| SP-252 | CLI reviewer rules preview | S | **Pending** | SP-248, SP-249 |
+| SP-253 | Reviewer rules docs + FR-REV-08 | S | **Pending** | SP-251, SP-252 |
+
+**Suggested batches (Phase 27):**
+
+1. **Wave 1 (parallel):** `SP-246` + `SP-249`
+2. **Wave 2:** `SP-247`
+3. **Wave 3:** `SP-248`
+4. **Wave 4:** `SP-250`
+5. **Wave 5 (parallel):** `SP-251` + `SP-252`
+6. **Wave 6:** `SP-253`
 
 **Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check`
 
