@@ -1,8 +1,8 @@
 # SP-246: Reviewer rules profile section — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-14
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-15
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,28 +11,28 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read `profile.mjs` worker section patterns
-- [ ] Confirm `DEFAULT_RULES_PROFILE` structure
+- [x] Read `profile.mjs` worker section patterns
+- [x] Confirm `DEFAULT_RULES_PROFILE` structure
 
 ---
 
 ### Step 1: Reviewer profile schema
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add `RulesProfileReviewer` typedef and defaults
-- [ ] Validation + merge for `reviewer` section
-- [ ] Update `templates/rules-profile.json`
+- [x] Add `RulesProfileReviewer` typedef and defaults
+- [x] Validation + merge for `reviewer` section
+- [x] Update `templates/rules-profile.json`
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Defaults merge tests
-- [ ] Invalid reviewer rejected
-- [ ] neverInclude wins over alwaysInclude
+- [x] Defaults merge tests
+- [x] Invalid reviewer rejected
+- [x] neverInclude wins over alwaysInclude
 
 ---
 

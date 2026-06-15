@@ -15,6 +15,14 @@ import {
 test("DEFAULT_RULES_PROFILE seeds worker include and discovery excludes", () => {
 	assert.equal(DEFAULT_RULES_PROFILE.profileVersion, 1);
 	assert.ok(DEFAULT_RULES_PROFILE.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
+	assert.equal(DEFAULT_RULES_PROFILE.reviewer.enabled, true);
+	assert.equal(DEFAULT_RULES_PROFILE.reviewer.maxRules, 32);
+	assert.ok(
+		DEFAULT_RULES_PROFILE.reviewer.neverInclude.includes("taskplane-worker-cursor.mdc"),
+	);
+	assert.ok(
+		DEFAULT_RULES_PROFILE.reviewer.neverInclude.includes("taskplane-task-authoring.mdc"),
+	);
 	assert.ok(DEFAULT_RULES_PROFILE.discovery.excludePatterns.includes("*-brutal-audit"));
 	assert.ok(
 		DEFAULT_RULES_PROFILE.discovery.excludeRelPaths.includes("audit-workflow.mdc"),
@@ -30,6 +38,11 @@ test("loadRulesProfile returns built-in defaults when file missing", async () =>
 			assert.equal(result.source, "default");
 			assert.ok(result.profile.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
 			assert.equal(result.profile.worker.globMatch, true);
+			assert.equal(result.profile.reviewer.enabled, true);
+			assert.equal(result.profile.reviewer.maxRules, 32);
+			assert.ok(
+				result.profile.reviewer.neverInclude.includes("taskplane-worker-cursor.mdc"),
+			);
 		}
 	} finally {
 		await rm(root, { recursive: true, force: true });
@@ -49,6 +62,34 @@ test("mergeRulesProfile applies neverInclude over alwaysInclude", () => {
 	assert.ok(merged.worker.alwaysInclude.includes("extra-rule.mdc"));
 	assert.ok(!merged.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
 	assert.ok(merged.worker.neverInclude.includes("taskplane-worker-cursor.mdc"));
+});
+
+test("mergeRulesProfile applies reviewer defaults when file omits reviewer", () => {
+	const merged = mergeRulesProfile(DEFAULT_RULES_PROFILE, {
+		profileVersion: 1,
+		worker: { alwaysInclude: [], neverInclude: [], globMatch: true },
+		discovery: { excludePatterns: [], excludeRelPaths: [] },
+	});
+	assert.equal(merged.reviewer.enabled, true);
+	assert.equal(merged.reviewer.maxRules, 32);
+	assert.ok(merged.reviewer.neverInclude.includes("taskplane-worker-cursor.mdc"));
+	assert.ok(merged.reviewer.neverInclude.includes("taskplane-task-authoring.mdc"));
+});
+
+test("mergeRulesProfile applies reviewer neverInclude over alwaysInclude", () => {
+	const merged = mergeRulesProfile(DEFAULT_RULES_PROFILE, {
+		profileVersion: 1,
+		worker: { alwaysInclude: [], neverInclude: [], globMatch: true },
+		reviewer: {
+			alwaysInclude: ["taskplane-worker-cursor.mdc", "reviewer-extra.mdc"],
+			neverInclude: ["taskplane-worker-cursor.mdc"],
+			globMatch: true,
+		},
+		discovery: { excludePatterns: [], excludeRelPaths: [] },
+	});
+	assert.ok(merged.reviewer.alwaysInclude.includes("reviewer-extra.mdc"));
+	assert.ok(!merged.reviewer.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
+	assert.ok(merged.reviewer.neverInclude.includes("taskplane-worker-cursor.mdc"));
 });
 
 test("loadRulesProfile rejects invalid JSON with RULES_PROFILE_INVALID", async () => {
@@ -125,6 +166,24 @@ test("validateRulesProfile rejects schema and path traversal errors", () => {
 		discovery: { excludePatterns: 42 },
 	});
 	assert.match(badDiscovery?.message ?? "", /excludePatterns must be an array/);
+
+	const badReviewerEnabled = validateRulesProfile({
+		profileVersion: 1,
+		reviewer: { enabled: "yes" },
+	});
+	assert.match(badReviewerEnabled?.message ?? "", /reviewer\.enabled must be a boolean/);
+
+	const badReviewerMaxRules = validateRulesProfile({
+		profileVersion: 1,
+		reviewer: { maxRules: 0 },
+	});
+	assert.match(badReviewerMaxRules?.message ?? "", /reviewer\.maxRules must be a positive integer/);
+
+	const badReviewerNeverInclude = validateRulesProfile({
+		profileVersion: 1,
+		reviewer: { neverInclude: [123] },
+	});
+	assert.match(badReviewerNeverInclude?.message ?? "", /reviewer\.neverInclude must contain non-empty strings/);
 });
 
 test("loadRulesProfile rejects validated file errors", async () => {
