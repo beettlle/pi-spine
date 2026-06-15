@@ -1,6 +1,6 @@
 # SP-249: Review scope path resolver — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-15
 **Review Level:** 2
