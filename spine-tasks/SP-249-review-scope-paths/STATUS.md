@@ -1,7 +1,7 @@
 # SP-249: Review scope path resolver — Status
 
 **Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-15
 **Review Level:** 2
@@ -48,7 +48,7 @@
 **Status:** ✅ Complete
 
 - [x] Export shape in Discoveries
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
