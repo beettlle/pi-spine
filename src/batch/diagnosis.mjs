@@ -25,6 +25,11 @@ const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_in
 
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
 
+const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
+	"code_review_spawn_failed",
+	"final_review_spawn_failed",
+]);
+
 /**
  * @param {object[]} [journalEvents]
  * @param {string|null} [taskId]
@@ -245,6 +250,13 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return ctx.failedTaskId
 					? `${batchLabel} task ${ctx.failedTaskId} completed but lane commit failed`
 					: `${batchLabel} completed but lane commit failed`;
+			}
+			if (REVIEW_SPAWN_FAILURE_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				const reviewKind =
+					ctx.exitReason === "final_review_spawn_failed" ? "final review" : "code review";
+				return ctx.failedTaskId
+					? `${batchLabel} ${reviewKind} timed out for task ${ctx.failedTaskId} — retry or increase SPINE_REVIEW_TIMEOUT_MS`
+					: `${batchLabel} reviewer spawn timed out — retry`;
 			}
 			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;

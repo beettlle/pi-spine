@@ -12,6 +12,12 @@ import { loadSpineBatchState } from "./state.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
+/** Exit code from `spawnSync` when `timeout` elapses (SP-221/SP-249). */
+export const REVIEW_SPAWN_TIMEOUT_EXIT_CODE = 124;
+
+/** Default reviewer `pi` spawn timeout (90m); override with `SPINE_REVIEW_TIMEOUT_MS`. */
+export const DEFAULT_REVIEW_SPAWN_TIMEOUT_MS = 90 * 60 * 1000;
+
 export const REVIEW_LEVEL_RE = /^##\s+Review Level:\s*(\d+)/m;
 
 /**
@@ -598,7 +604,7 @@ function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt,
 	const result = spawnSync("pi", piArgs, {
 		cwd: worktreePath || path.dirname(taskFolder),
 		encoding: "utf-8",
-		timeout: Number(process.env.SPINE_REVIEW_TIMEOUT_MS || 30 * 60 * 1000),
+		timeout: Number(process.env.SPINE_REVIEW_TIMEOUT_MS || DEFAULT_REVIEW_SPAWN_TIMEOUT_MS),
 		env: {
 			...process.env,
 			SPINE_TASK_FOLDER: taskFolder,
@@ -617,6 +623,78 @@ function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt,
 		};
 	}
 	return { spawnFailed: false, exitCode: 0, error: "" };
+}
+
+/**
+ * When reviewer `pi` times out but the worker already left `.DONE` (and contract
+ * passed for final review), honor the verdict instead of failing the task.
+ *
+ * @param {object} params
+ * @returns {ReturnType<typeof runStepReview> | null}
+ */
+export function honorReviewSpawnFailureWhenEligible({
+	spawnResult,
+	reviewType,
+	taskFolder,
+	contractVerifyResult,
+	journal,
+	stepNumber,
+	reviewLevel,
+}) {
+	if (!spawnResult?.spawnFailed) return null;
+	if (spawnResult.exitCode !== REVIEW_SPAWN_TIMEOUT_EXIT_CODE) return null;
+	if (!fs.existsSync(path.join(taskFolder, ".DONE"))) return null;
+
+	if (reviewType === "final" && contractVerifyResult && !contractVerifyResult.ok) {
+		return null;
+	}
+
+	const artifactPath =
+		reviewType === "final"
+			? buildFinalReviewArtifactPath(taskFolder)
+			: buildReviewArtifactPath(taskFolder, stepNumber);
+	const verdict =
+		reviewType === "final"
+			? contractVerifyResult?.ok === false
+				? "REVISE"
+				: "PASS"
+			: "APPROVE";
+	const feedback =
+		reviewType === "final"
+			? "Reviewer spawn timed out; honoring contract verification and worker .DONE."
+			: "Reviewer spawn timed out; honoring worker .DONE and proceeding.";
+
+	writeStubReviewArtifact({
+		artifactPath,
+		reviewType,
+		verdict,
+		feedback,
+	});
+
+	journalReviewEvent("review.completed", journal, {
+		stepNumber,
+		reviewType,
+		reviewLevel,
+		verdict,
+		artifactPath,
+		stub: true,
+		honored: true,
+		honorReason: "spawn_timeout_with_done",
+	});
+
+	const ok = reviewType === "final" ? verdict === "PASS" : verdict === "APPROVE";
+	return {
+		ok,
+		skipped: false,
+		honored: true,
+		honorReason: "spawn_timeout_with_done",
+		reviewLevel,
+		verdict,
+		feedback,
+		artifactPath,
+		spawnFailed: false,
+		exitCode: ok ? 0 : 2,
+	};
 }
 
 /**
@@ -784,6 +862,19 @@ export function runStepReview({
 	});
 
 	if (spawnResult.spawnFailed) {
+		const honored = honorReviewSpawnFailureWhenEligible({
+			spawnResult,
+			reviewType,
+			taskFolder,
+			contractVerifyResult,
+			journal,
+			stepNumber,
+			reviewLevel,
+		});
+		if (honored) {
+			return honored;
+		}
+
 		journalReviewEvent("review.failed", journal, {
 			stepNumber,
 			reviewType,
