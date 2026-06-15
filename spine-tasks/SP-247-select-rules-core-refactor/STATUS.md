@@ -1,8 +1,8 @@
 # SP-247: Shared selection core refactor — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-14
+**Current Step:** Step 1 — Extract core
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-15
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-246 complete
-- [ ] Baseline select tests pass
+- [x] SP-246 complete
+- [x] Baseline select tests pass
 
 ---
 

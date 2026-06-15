@@ -86,24 +86,31 @@ function normalizeBlocklist(paths) {
 }
 
 /**
+ * Shared manifest-driven rule selection (SP-247). Worker and reviewer wrappers
+ * supply profile-specific always/never lists and scope paths.
+ *
  * @param {import("./discover.mjs").CursorRulesManifest} manifest
- * @param {import("./profile.mjs").RulesProfile} profile
- * @param {string[]} fileScope PROMPT File Scope paths
+ * @param {string[]} alwaysInclude Paths relative to `.cursor/rules/`
+ * @param {string[]} neverInclude Paths relative to `.cursor/rules/`
+ * @param {boolean} globMatch When true, glob-triggered rules may match scope paths
+ * @param {string[]} scopePaths File-scope paths for glob matching (worker File Scope or review scope)
  * @param {string[]} [standards] `config.standards` paths (appended after auto-selection)
  * @param {string[]} [neverLoad] `config.neverLoad` paths
  * @param {number} [maxRules]
  * @returns {RulesSelectionResult}
  */
-export function selectRulesForWorker({
+export function selectRulesFromManifest({
 	manifest,
-	profile,
-	fileScope = [],
+	alwaysInclude,
+	neverInclude,
+	globMatch,
+	scopePaths = [],
 	standards = [],
 	neverLoad = [],
 	maxRules = DEFAULT_SELECT_MAX_RULES,
 }) {
-	const globMatchEnabled = profile.worker.globMatch !== false;
-	const fileScopeProbeCount = expandFileScopeProbes(fileScope).length;
+	const globMatchEnabled = globMatch !== false;
+	const fileScopeProbeCount = expandFileScopeProbes(scopePaths).length;
 
 	/** @type {Map<string, RuleSelectionEntry>} */
 	const byRelPath = new Map();
@@ -123,7 +130,7 @@ export function selectRulesForWorker({
 		});
 	};
 
-	for (const relPath of profile.worker.alwaysInclude) {
+	for (const relPath of alwaysInclude) {
 		addEntry(relPath, "alwaysInclude");
 	}
 
@@ -138,7 +145,7 @@ export function selectRulesForWorker({
 			if (rule.spineClass !== "glob" || rule.globs.length === 0) {
 				continue;
 			}
-			if (ruleGlobsMatchFileScope(rule.globs, fileScope)) {
+			if (ruleGlobsMatchFileScope(rule.globs, scopePaths)) {
 				addEntry(rule.relPath, "glob");
 			}
 		}
@@ -152,7 +159,7 @@ export function selectRulesForWorker({
 	}
 
 	const blocked = normalizeBlocklist([
-		...profile.worker.neverInclude.map((rel) => ruleRelPathToContextPath(rel)),
+		...neverInclude.map((rel) => ruleRelPathToContextPath(rel)),
 		...neverLoad,
 	]);
 
@@ -179,4 +186,33 @@ export function selectRulesForWorker({
 		globMatchEnabled,
 		fileScopeProbeCount,
 	};
+}
+
+/**
+ * @param {import("./discover.mjs").CursorRulesManifest} manifest
+ * @param {import("./profile.mjs").RulesProfile} profile
+ * @param {string[]} fileScope PROMPT File Scope paths
+ * @param {string[]} [standards] `config.standards` paths (appended after auto-selection)
+ * @param {string[]} [neverLoad] `config.neverLoad` paths
+ * @param {number} [maxRules]
+ * @returns {RulesSelectionResult}
+ */
+export function selectRulesForWorker({
+	manifest,
+	profile,
+	fileScope = [],
+	standards = [],
+	neverLoad = [],
+	maxRules = DEFAULT_SELECT_MAX_RULES,
+}) {
+	return selectRulesFromManifest({
+		manifest,
+		alwaysInclude: profile.worker.alwaysInclude,
+		neverInclude: profile.worker.neverInclude,
+		globMatch: profile.worker.globMatch,
+		scopePaths: fileScope,
+		standards,
+		neverLoad,
+		maxRules,
+	});
 }
