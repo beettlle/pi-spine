@@ -1,7 +1,7 @@
 # SP-247: Shared selection core refactor — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-15
 **Review Level:** 2
 **Review Counter:** 0
@@ -35,18 +35,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate ≥77%
+- [x] FULL test suite passing (`npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 853 pass)
+- [x] Coverage gate ≥77% (`npm run coverage:check` — 86.63% line coverage)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Core API in Discoveries
-- [ ] `.DONE` created
+- [x] Core API in Discoveries
+- [x] `.DONE` created
 
 ---
 
@@ -73,6 +73,8 @@
 | 2026-06-14 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-15 | Step 0 preflight | SP-246 complete; baseline select tests pass |
 | 2026-06-15 | Step 1 plan review | APPROVE via `spine review step --step 1 --type plan --stub` |
+| 2026-06-15 | Step 3 verification | typecheck + 853 tests pass; coverage 86.63% |
+| 2026-06-15 | Step 4 delivery | STATUS updated; `.DONE` created |
 
 ---
 
