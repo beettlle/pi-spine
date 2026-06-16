@@ -1,7 +1,7 @@
 # SP-253: Reviewer rules docs + FR-REV-08 — Status
 
-**Current Step:** 3 (Testing & Verification)
-**Status:** 🟡 In Progress
+**Current Step:** 4 (Documentation & Delivery)
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-16
 **Review Level:** 0
 **Review Counter:** 0
@@ -36,17 +36,17 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Doc consistency check
+- [x] FULL test suite passing (874/874; `unset SPINE_WORKER_PI_TIMEOUT_MS` — parent env override caused 2 unrelated timeout test failures)
+- [x] Doc consistency check (FR-REV-08, FR-WORK-05, `reviewer.rules_selected` aligned across PRD, design doc, skill)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -71,7 +71,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-14 | Task staged | PROMPT.md and STATUS.md created |
-| 2026-06-16 | Step 0 preflight | SP-251 complete; reviewer runtime read |
+| 2026-06-16 | Step 3 verification | typecheck pass; 874/874 tests |
+| 2026-06-16 | Step 4 delivery | `.DONE` created |
 
 ---
 
