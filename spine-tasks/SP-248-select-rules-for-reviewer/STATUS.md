@@ -1,8 +1,8 @@
 # SP-248: selectRulesForReviewer — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-14
+**Current Step:** Step 1 — Reviewer selection API
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-16
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-247 complete
-- [ ] Reviewer profile defaults available
+- [x] SP-247 complete
+- [x] Reviewer profile defaults available
 
 ---
 
