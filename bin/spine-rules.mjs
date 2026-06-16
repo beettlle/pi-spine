@@ -4,7 +4,7 @@
  *
  * Usage:
  *   spine rules discover [--json]
- *   spine rules select --task <task-id> [--json]
+ *   spine rules select --task <task-id> [--role worker|reviewer] [--review-type plan|code|final] [--baseline <sha>] [--json]
  *   spine rules sync [--json]
  */
 
