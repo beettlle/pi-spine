@@ -1,6 +1,6 @@
 # SP-250: Reviewer context builder + journal — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-16
 **Review Level:** 2
@@ -19,7 +19,7 @@
 ---
 
 ### Step 1: Reviewer context module
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] `buildReviewerContext` sync API
 - [x] 16 KiB byte cap
@@ -28,10 +28,10 @@
 ---
 
 ### Step 2: Journal + tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] `reviewer.rules_selected` journal event
-- [ ] Byte cap and skip tests
+- [x] `reviewer.rules_selected` journal event
+- [x] Byte cap and skip tests
 
 ---
 
