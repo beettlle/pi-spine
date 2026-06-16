@@ -1,8 +1,8 @@
 # SP-250: Reviewer context builder + journal — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-14
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-16
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-248 + SP-249 complete
-- [ ] Worker context patterns read
+- [x] SP-248 + SP-249 complete
+- [x] Worker context patterns read
 
 ---
 
 ### Step 1: Reviewer context module
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] `buildReviewerContext` sync API
-- [ ] 16 KiB byte cap
-- [ ] Degrade on errors; no referenceDocs
+- [x] `buildReviewerContext` sync API
+- [x] 16 KiB byte cap
+- [x] Degrade on errors; no referenceDocs
 
 ---
 
