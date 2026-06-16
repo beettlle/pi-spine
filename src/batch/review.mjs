@@ -8,6 +8,8 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
+import { buildReviewerContext } from "../config/reviewer-context.mjs";
+import { resolveReviewScopePaths } from "./review-scope.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -350,6 +352,45 @@ export function loadReviewerPrompt(worktreePath) {
 		return raw.trim();
 	}
 	return "You are a code reviewer. Write your review to the specified output file.";
+}
+
+/**
+ * Base reviewer agent prompt plus auto-selected Cursor rules (system prompt only).
+ *
+ * @param {object} params
+ * @param {string} params.worktreePath
+ * @param {string} params.taskFolder
+ * @param {"plan"|"code"|"final"} params.reviewType
+ * @param {string} [params.baseline]
+ * @param {object} [params.config]
+ * @param {object} [params.journal]
+ */
+export function buildReviewerSystemPrompt({
+	worktreePath,
+	taskFolder,
+	reviewType,
+	baseline,
+	config = {},
+	journal,
+}) {
+	let systemPrompt = loadReviewerPrompt(worktreePath);
+	const { scopePaths } = resolveReviewScopePaths({
+		worktreePath,
+		baseline,
+		reviewType,
+		taskFolder,
+	});
+	const reviewerContext = buildReviewerContext({
+		projectRoot: journal?.projectRoot ?? worktreePath ?? process.cwd(),
+		config,
+		reviewType,
+		scopePaths,
+		journal,
+	});
+	if (reviewerContext.text) {
+		systemPrompt = `${systemPrompt}${reviewerContext.text}`;
+	}
+	return systemPrompt;
 }
 
 /**
@@ -852,7 +893,14 @@ export function runStepReview({
 		};
 	}
 
-	const systemPrompt = loadReviewerPrompt(worktreePath);
+	const systemPrompt = buildReviewerSystemPrompt({
+		worktreePath,
+		taskFolder,
+		reviewType,
+		baseline,
+		config,
+		journal,
+	});
 	const spawnResult = spawnReviewerPi({
 		worktreePath,
 		taskFolder,
