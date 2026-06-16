@@ -256,11 +256,11 @@ Individual steps can override the task-level review:
 | **1** | PROMPT.md + STATUS.md | Always |
 | **2** | `{tasksRoot}/CONTEXT.md` | When listed in "Context to Read First" |
 | **3** | Specific reference docs | Only what the task needs |
-| **4** | Cursor rules (when `.cursor/rules/` exists) | Auto-selected per task: profile always-includes (`taskplane-worker-cursor.mdc`), `alwaysApply` rules, glob rules matching **File Scope** (micromatch), then `config.standards` append |
+| **4** | Cursor rules (when `.cursor/rules/` exists) | **Workers:** auto-selected per task via profile `worker.*`, PROMPT File Scope globs, `config.standards` append (FR-WORK-05). **Reviewers:** separate `profile.reviewer.*` selection with review-type scope — plan uses File Scope, code uses git diff paths, final uses always-only rules; 16 KiB cap, no `referenceDocs` (FR-REV-08) |
 
 Populate "Context to Read First" from `referenceDocs` in spine config. Never list docs in `neverLoad`.
 
-When authoring tasks for Cursor-based repos, **File Scope drives glob-matched worker rules** — include concrete paths (e.g. `src/**/*.mjs`, not only `src/`) so language packs activate. Preview with `spine rules select --task <id>`. See [docs/design/cursor-rules-discovery.md](../../docs/design/cursor-rules-discovery.md).
+When authoring tasks for Cursor-based repos, **File Scope drives glob-matched worker rules** — include concrete paths (e.g. `src/**/*.mjs`, not only `src/`) so language packs activate. The same File Scope applies to **plan review** rule matching; code reviews match globs against changed diff paths instead. Preview worker selection with `spine rules select --task <id>`; preview reviewer selection with `spine rules select --role reviewer --review-type plan|code|final --task <id>`. See [docs/design/cursor-rules-discovery.md](../../docs/design/cursor-rules-discovery.md).
 
 ---
 
@@ -314,6 +314,8 @@ Task IDs in JSON use the **folder slug** (full `SP-011-api-handlers`) or bare ID
 When decomposing a PRD, assign non-overlapping file scopes to tasks that should run in parallel.
 
 **Worker rules:** File Scope also drives **glob-matched Cursor rules** injected into batch workers (FR-WORK-05). Tasks touching `**/*.{js,mjs}` activate JS standards; Swift/Python tasks need scope paths that match those rule globs. Keep scope precise — wide scope pulls more rules and increases prompt byte usage.
+
+**Reviewer rules (FR-REV-08):** Plan reviews use the same File Scope for glob matching; code reviews use changed paths from `git diff`. Final reviews load always-on rules only. Worker-only packs (`taskplane-worker-cursor.mdc`) are excluded from reviewer context by default.
 
 ---
 
