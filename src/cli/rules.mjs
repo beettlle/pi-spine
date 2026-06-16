@@ -10,7 +10,8 @@ import {
 	RULES_MANIFEST_REL_PATH,
 } from "../config/cursor-rules/discover.mjs";
 import { loadRulesProfile, RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
-import { selectRulesForWorker } from "../config/cursor-rules/select.mjs";
+import { selectRulesForReviewer, selectRulesForWorker } from "../config/cursor-rules/select.mjs";
+import { resolveReviewScopePaths } from "../batch/review-scope.mjs";
 import { discoverTasks } from "../tasks/packet/discover.mjs";
 import { loadTaskPacket } from "../tasks/packet/index.mjs";
 
@@ -24,7 +25,54 @@ export function parseRulesArgv(argv) {
 	if (taskIdx !== -1 && (!taskId || taskId.startsWith("--"))) {
 		throw new Error("Missing value for --task <task-id>.");
 	}
-	return { json, taskId };
+
+	const roleIdx = argv.indexOf("--role");
+	let role = "worker";
+	if (roleIdx !== -1) {
+		const roleValue = argv[roleIdx + 1];
+		if (!roleValue || roleValue.startsWith("--")) {
+			throw new Error("Missing value for --role <worker|reviewer>.");
+		}
+		if (roleValue !== "worker" && roleValue !== "reviewer") {
+			throw new Error(`Invalid --role: ${roleValue}. Use worker or reviewer.`);
+		}
+		role = roleValue;
+	}
+
+	const reviewTypeIdx = argv.indexOf("--review-type");
+	let reviewType;
+	if (reviewTypeIdx !== -1) {
+		const reviewTypeValue = argv[reviewTypeIdx + 1];
+		if (!reviewTypeValue || reviewTypeValue.startsWith("--")) {
+			throw new Error("Missing value for --review-type <plan|code|final>.");
+		}
+		if (!["plan", "code", "final"].includes(reviewTypeValue)) {
+			throw new Error(`Invalid --review-type: ${reviewTypeValue}. Use plan, code, or final.`);
+		}
+		reviewType = reviewTypeValue;
+	}
+
+	const baselineIdx = argv.indexOf("--baseline");
+	let baseline;
+	if (baselineIdx !== -1) {
+		const baselineValue = argv[baselineIdx + 1];
+		if (!baselineValue || baselineValue.startsWith("--")) {
+			throw new Error("Missing value for --baseline <sha>.");
+		}
+		baseline = baselineValue;
+	}
+
+	if (role === "reviewer" && !reviewType) {
+		throw new Error("spine rules select --role reviewer requires --review-type <plan|code|final>.");
+	}
+	if (role === "worker" && reviewType) {
+		throw new Error("spine rules select --review-type is only valid with --role reviewer.");
+	}
+	if (baseline && role !== "reviewer") {
+		throw new Error("spine rules select --baseline is only valid with --role reviewer.");
+	}
+
+	return { json, taskId, role, reviewType, baseline };
 }
 
 /**
@@ -124,6 +172,7 @@ export function resolveTaskPromptFileScope(tasksRoot, taskId) {
 		ok: true,
 		taskId: prompt.taskId,
 		folderName: match.folderName,
+		folderPath: match.folderPath,
 		fileScope: prompt.fileScope,
 	};
 }
@@ -135,9 +184,14 @@ export function resolveTaskPromptFileScope(tasksRoot, taskId) {
 export function formatRulesSelectHuman(selection, meta) {
 	const lines = [
 		`Task ${meta.taskId} (${meta.folderName})`,
-		`  file scope: ${meta.fileScope.length} path(s)`,
-		`  selected: ${selection.paths.length} rule(s)`,
 	];
+	if (meta.role === "reviewer") {
+		lines.push(`  role: reviewer (${meta.reviewType})`);
+		lines.push(`  scope paths: ${meta.scopePaths.length} path(s)`);
+	} else {
+		lines.push(`  file scope: ${meta.fileScope.length} path(s)`);
+	}
+	lines.push(`  selected: ${selection.paths.length} rule(s)`);
 	if (selection.capped && selection.dropped?.length) {
 		lines.push(`  capped: dropped ${selection.dropped.length} lower-priority rule(s)`);
 	}
@@ -152,8 +206,18 @@ export function formatRulesSelectHuman(selection, meta) {
  * @param {string} params.projectRoot
  * @param {string} params.taskId
  * @param {boolean} [params.json]
+ * @param {"worker"|"reviewer"} [params.role]
+ * @param {"plan"|"code"|"final"} [params.reviewType]
+ * @param {string} [params.baseline]
  */
-export function runRulesSelect({ projectRoot, taskId, json = false }) {
+export function runRulesSelect({
+	projectRoot,
+	taskId,
+	json = false,
+	role = "worker",
+	reviewType,
+	baseline,
+}) {
 	const configResult = loadSpineConfig(projectRoot);
 	if (configResult.error) {
 		const message = configResult.error.message;
@@ -214,21 +278,54 @@ export function runRulesSelect({ projectRoot, taskId, json = false }) {
 	const standards = Array.isArray(configResult.config.standards) ? configResult.config.standards : [];
 	const neverLoad = Array.isArray(configResult.config.neverLoad) ? configResult.config.neverLoad : [];
 
-	const selection = selectRulesForWorker({
-		manifest,
-		profile: profileResult.profile,
-		fileScope: scopeResult.fileScope,
-		standards,
-		neverLoad,
-	});
+	/** @type {import("../config/cursor-rules/select.mjs").RulesSelectionResult} */
+	let selection;
+	/** @type {string[]} */
+	let scopePaths = scopeResult.fileScope;
 
-	const payload = {
-		ok: true,
-		taskId: scopeResult.taskId,
-		folderName: scopeResult.folderName,
-		fileScope: scopeResult.fileScope,
-		selection,
-	};
+	if (role === "reviewer") {
+		const scopeResolution = resolveReviewScopePaths({
+			worktreePath: projectRoot,
+			baseline,
+			reviewType: /** @type {"plan"|"code"|"final"} */ (reviewType),
+			taskFolder: scopeResult.folderPath,
+		});
+		scopePaths = scopeResolution.scopePaths;
+		selection = selectRulesForReviewer({
+			manifest,
+			profile: profileResult.profile,
+			scopePaths,
+			standards,
+			neverLoad,
+		});
+	} else {
+		selection = selectRulesForWorker({
+			manifest,
+			profile: profileResult.profile,
+			fileScope: scopeResult.fileScope,
+			standards,
+			neverLoad,
+		});
+	}
+
+	const payload =
+		role === "reviewer"
+			? {
+					ok: true,
+					role: "reviewer",
+					reviewType,
+					taskId: scopeResult.taskId,
+					folderName: scopeResult.folderName,
+					scopePaths,
+					selection,
+				}
+			: {
+					ok: true,
+					taskId: scopeResult.taskId,
+					folderName: scopeResult.folderName,
+					fileScope: scopeResult.fileScope,
+					selection,
+				};
 
 	if (json) {
 		return {
@@ -238,9 +335,20 @@ export function runRulesSelect({ projectRoot, taskId, json = false }) {
 		};
 	}
 
+	const meta =
+		role === "reviewer"
+			? {
+					taskId: scopeResult.taskId,
+					folderName: scopeResult.folderName,
+					role: "reviewer",
+					reviewType,
+					scopePaths,
+				}
+			: scopeResult;
+
 	return {
 		exitCode: 0,
-		output: formatRulesSelectHuman(selection, scopeResult),
+		output: formatRulesSelectHuman(selection, meta),
 		selection,
 	};
 }
@@ -249,11 +357,12 @@ export function printRulesHelp() {
 	return `
 Usage:
   spine rules discover [--json]
-  spine rules select --task <task-id> [--json]
+  spine rules select --task <task-id> [--role worker|reviewer] [--review-type plan|code|final] [--baseline <sha>] [--json]
   spine rules sync [--json]
 
 Discover scans .cursor/rules and writes .spine/rules-manifest.json (committed to git).
-Select previews worker rule selection for a task PROMPT File Scope (append semantics for config.standards).
+Select previews rule selection for a task. Default role is worker (PROMPT File Scope).
+Reviewer role resolves review-type-specific scope paths and uses profile.reviewer.
 Sync re-runs discovery and updates the committed manifest.
 
 Files:
@@ -264,6 +373,9 @@ Examples:
   spine rules discover
   spine rules discover --json
   spine rules select --task SP-093
+  spine rules select --task SP-093 --role reviewer --review-type plan
+  spine rules select --task SP-093 --role reviewer --review-type code --baseline abc1234
+  spine rules select --task SP-093 --role reviewer --review-type final --json
   spine rules sync
 `;
 }
@@ -282,7 +394,7 @@ export function runSpineRules({ projectRoot, args }) {
 	const rest = args.slice(1);
 
 	try {
-		const { json, taskId } = parseRulesArgv(rest);
+		const { json, taskId, role, reviewType, baseline } = parseRulesArgv(rest);
 
 		if (sub === "discover") {
 			return runRulesDiscover({ projectRoot, json, writeManifest: true });
@@ -297,7 +409,7 @@ export function runSpineRules({ projectRoot, args }) {
 					output: "Error: spine rules select requires --task <task-id>\n",
 				};
 			}
-			return runRulesSelect({ projectRoot, taskId, json });
+			return runRulesSelect({ projectRoot, taskId, json, role, reviewType, baseline });
 		}
 
 		return {

@@ -216,3 +216,45 @@ export function selectRulesForWorker({
 		maxRules,
 	});
 }
+
+/**
+ * @param {import("./discover.mjs").CursorRulesManifest} manifest
+ * @param {import("./profile.mjs").RulesProfile} profile
+ * @param {string[]} scopePaths Review-type-specific scope for glob matching
+ * @param {string[]} [standards] `config.standards` paths (appended after auto-selection)
+ * @param {string[]} [neverLoad] `config.neverLoad` paths
+ * @returns {RulesSelectionResult}
+ */
+export function selectRulesForReviewer({
+	manifest,
+	profile,
+	scopePaths = [],
+	standards = [],
+	neverLoad = [],
+}) {
+	const reviewer = profile.reviewer;
+	const globMatchEnabled = reviewer.globMatch !== false;
+	const fileScopeProbeCount = expandFileScopeProbes(scopePaths).length;
+
+	if (!reviewer.enabled) {
+		return {
+			ok: true,
+			paths: [],
+			entries: [],
+			capped: false,
+			globMatchEnabled,
+			fileScopeProbeCount,
+		};
+	}
+
+	return selectRulesFromManifest({
+		manifest,
+		alwaysInclude: reviewer.alwaysInclude,
+		neverInclude: reviewer.neverInclude,
+		globMatch: reviewer.globMatch,
+		scopePaths,
+		standards,
+		neverLoad,
+		maxRules: reviewer.maxRules,
+	});
+}
