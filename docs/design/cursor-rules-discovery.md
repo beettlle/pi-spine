@@ -2,7 +2,7 @@
 
 **Document type:** Explanation + reference  
 **Audience:** Operators and contributors adopting pi-spine on Cursor-based projects  
-**Related:** FR-WORK-05 (PRD §7.5), SP-089–094
+**Related:** FR-WORK-05 (PRD §7.5), FR-REV-08 (PRD §7.6), SP-089–094, SP-248–253
 
 ---
 
@@ -122,6 +122,72 @@ spine rules select --task SP-042 --json
 
 ---
 
+## Reviewer injection (FR-REV-08)
+
+Cross-model reviewers spawned by the batch engine receive a **bounded subset** of Cursor rules in the **system prompt** only (not the user review request). Selection mirrors worker discovery (same committed manifest and profile file) but uses `profile.reviewer.*` and review-type-specific scope paths.
+
+**Symmetry with workers (FR-WORK-05):** Same manifest, micromatch glob matching, `config.standards` append, and `config.neverLoad` blocklist. **Differences:** reviewer profile excludes worker execution rules (`taskplane-worker-cursor.mdc`, `taskplane-task-authoring.mdc` by default); **16 KiB** byte cap (`DEFAULT_REVIEWER_CONTEXT_BYTE_CAP`); **no** `referenceDocs` injection; rules cap defaults to **32** (`profile.reviewer.maxRules`).
+
+### Reviewer profile
+
+`templates/rules-profile.json` includes a `reviewer` block (merged on load):
+
+| Field | Role |
+|-------|------|
+| `enabled` | When `false`, selection returns empty paths (journal `mode: auto`, zero bytes) |
+| `alwaysInclude` | Paths relative to `.cursor/rules/` (prepended before manifest `always` rules) |
+| `neverInclude` | Blocklist relative to `.cursor/rules/` (default excludes worker/task-authoring packs) |
+| `globMatch` | When `true`, glob rules match review scope paths via micromatch |
+| `maxRules` | Upper bound before byte cap (default **32**) |
+
+Set `"enabled": false` in `.spine/rules-profile.json` to disable reviewer rule injection project-wide.
+
+### Review-type scope table
+
+`resolveReviewScopePaths` supplies scope paths to `selectRulesForReviewer` before load:
+
+| Review type | Scope paths for glob matching | Notes |
+|-------------|------------------------------|-------|
+| `plan` | PROMPT **File Scope** | Same paths workers use for the task packet |
+| `code` | `git diff --name-only` changed paths | Optional baseline: `git diff --name-only <baseline>..HEAD` |
+| `final` | **Empty** | Only `alwaysInclude`, manifest `alwaysApply`, and `standards` apply |
+
+Noise paths (`.DONE`, `.reviews/`, `.spine/runtime/`) are filtered from scope.
+
+**Selection priority** (same shared core as workers): `alwaysInclude` → manifest `always` → glob (when scope non-empty and `globMatch` enabled) → `config.standards` append. Apply `neverInclude` and `config.neverLoad`, sort, cap at `maxRules`.
+
+### Reviewer context build
+
+`buildReviewerContext` (SP-250) is called from `buildReviewerSystemPrompt` during review spawn (SP-251):
+
+1. Skip when `.cursor/rules/` absent (`mode: skipped`)
+2. Load profile; on error return empty text (`mode: degraded`)
+3. Load committed manifest or discover in-memory if missing
+4. `selectRulesForReviewer` with resolved scope paths
+5. `loadContextDocEntries` with **16 KiB** cap — may truncate tail; journal lists full `selection.paths`
+6. Append `## Project standards for review` block to system prompt
+
+**Stub safety:** `SPINE_REVIEW_STUB=1` exits before `buildReviewerSystemPrompt` — no rules loaded on stub path.
+
+**Journal:** Each build emits `reviewer.rules_selected` with `reviewType`, `scopePaths`, `paths`, `capped`, `bytesUsed`, `mode` (`skipped` \| `degraded` \| `auto`), `manifestSource`, `profileSource`, `entries`, and optional `truncated` / error fields.
+
+### CLI preview (reviewer role)
+
+Operator preview mirrors worker `spine rules select --task <id>` with reviewer flags (SP-252):
+
+```bash
+spine rules select --task SP-042                              # worker (default)
+spine rules select --role reviewer --review-type plan --task SP-042
+spine rules select --role reviewer --review-type code --task SP-042
+spine rules select --role reviewer --review-type code --task SP-042 --baseline abc1234
+spine rules select --role reviewer --review-type final --task SP-042
+spine rules select --role reviewer --review-type code --task SP-042 --json
+```
+
+JSON output includes `reviewType`, `scopePaths`, and `selection` (same shape as worker preview).
+
+---
+
 ## Worker injection
 
 `buildWorkerContextAsync` (SP-092) runs when `.cursor/rules/` exists:
@@ -145,7 +211,8 @@ When `.cursor/rules/` is absent, fall back to static `buildWorkerContext` (refer
 ```bash
 spine rules discover [--json]   # Scan + write manifest
 spine rules sync [--json]       # Alias: discover with write
-spine rules select --task <id> [--json]   # Preview worker selection
+spine rules select --task <id> [--json]   # Preview worker selection (default --role worker)
+spine rules select --role reviewer --review-type plan|code|final --task <id> [--baseline <sha>] [--json]
 spine rules --help
 ```
 
@@ -192,6 +259,16 @@ Warnings are advisory (`warning: true`) — they do not block batch start.
     "neverInclude": [],
     "globMatch": true
   },
+  "reviewer": {
+    "enabled": true,
+    "alwaysInclude": [],
+    "neverInclude": [
+      "taskplane-worker-cursor.mdc",
+      "taskplane-task-authoring.mdc"
+    ],
+    "globMatch": true,
+    "maxRules": 32
+  },
   "discovery": {
     "excludePatterns": ["*-brutal-audit"],
     "excludeRelPaths": [
@@ -214,7 +291,8 @@ Customize per project: add language-specific always-includes, exclude noisy pack
 2. **Before debugging worker context:** `spine rules select --task <id>`
 3. **When workers miss a language pack:** ensure PROMPT File Scope includes paths that match the rule's globs, or add the rule path to `config.standards`
 4. **When prompts truncate:** large always-on rules consume the 32 KiB cap first — narrow `alwaysInclude`, use `neverLoad`, or split tasks with smaller File Scope
-5. **Audit selection in batch:** inspect journal `worker.rules_selected` events
+5. **Audit selection in batch:** inspect journal `worker.rules_selected` and `reviewer.rules_selected` events
+6. **When reviewers miss language packs:** for plan reviews, ensure PROMPT File Scope matches rule globs; for code reviews, changed paths must match globs (or add paths to `config.standards`)
 
 ---
 
@@ -225,4 +303,4 @@ Customize per project: add language-specific always-includes, exclude noisy pack
 | [bootstrap-checklist.md](../adoption/bootstrap-checklist.md) | First-time init including rules manifest |
 | [operator-runbook.md](../adoption/operator-runbook.md) | Day-2 rules maintenance |
 | [README.md](../../README.md) | Contributor Cursor rules overview |
-| [PRD.md](../PRD.md) | FR-WORK-05 requirement |
+| [PRD.md](../PRD.md) | FR-WORK-05 (workers), FR-REV-08 (reviewers) |

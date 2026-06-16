@@ -432,6 +432,18 @@ Design reference: `docs/design/cursor-rules-discovery.md`.
 | FR-REV-05 | Review levels 0–3 (see Appendix C) | 0 |
 | FR-REV-06 | When review level > 0 and review spawn fails, worker stops (fail closed); journal `review.failed` | 4 |
 | FR-REV-07 | Code reviews verify **≥77% line coverage** on changed in-scope paths; **REVISE** when coverage or tests are insufficient | 12 |
+| FR-REV-08 | Reviewer receives bounded Cursor rules in **system prompt** when `.cursor/rules/` exists: `profile.reviewer.*` selection, review-type scope (plan = PROMPT File Scope, code = git diff paths, final = empty), `config.standards` append, `config.neverLoad` blocklist; excludes worker execution rules by default; **16 KiB** byte cap; no `referenceDocs`; journal `reviewer.rules_selected` | 0 |
+
+#### 7.6.1 Reviewer Cursor rules (FR-REV-08 detail)
+
+When `.cursor/rules/` exists and `profile.reviewer.enabled` is true:
+
+1. **Scope** resolves per review phase: plan → PROMPT File Scope; code → `git diff --name-only` (optional baseline); final → empty (always-only rules).
+2. **Selection** uses the same manifest as workers but `profile.reviewer` always/never lists and `maxRules` (default 32).
+3. **Injection** appends `## Project standards for review` to the reviewer system prompt only; user review request unchanged.
+4. **Journal** emits `reviewer.rules_selected` with `reviewType`, `scopePaths`, `paths`, `bytesUsed`, and cap metadata.
+
+CLI preview: `spine rules select --role reviewer --review-type plan|code|final --task <id>` (optional `--baseline` for code). Design reference: `docs/design/cursor-rules-discovery.md` (Reviewer injection). Worker symmetry: FR-WORK-05.
 
 ### 7.7 Orchestration journal (FR-JRN)
 
