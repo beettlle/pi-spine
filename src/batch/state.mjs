@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { appendJournalEvent } from "./journal.mjs";
 import { loadBatchStateFile } from "./batch-state-io.mjs";
+import { isProcessAlive } from "../process/liveness.mjs";
 
 export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
 
@@ -57,9 +58,57 @@ export function loadSpineBatchState(projectRoot) {
 
 /**
  * @param {string} projectRoot
- * @param {object} state
+ * @param {string} batchId
  */
-export function saveSpineBatchState(projectRoot, state) {
+function archivedBatchStatePath(projectRoot, batchId) {
+	return path.join(projectRoot, ".spine", "runtime", batchId, "archive", "batch-state.json");
+}
+
+/**
+ * Reject cache writes from non-owner engines or post-archive resurrection (SP-254).
+ *
+ * @param {string} projectRoot
+ * @param {object} state
+ * @returns {{ allowed: boolean, reason?: string }}
+ */
+export function evaluateBatchStateWriteGuard(projectRoot, state) {
+	const filePath = spineBatchStatePath(projectRoot);
+	const batchId = String(state.batchId ?? "");
+	const incomingPhase = String(state.phase ?? "");
+
+	if (fs.existsSync(filePath)) {
+		try {
+			const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+			const ownerPid = readBatchEnginePid(onDisk);
+			if (ownerPid && ownerPid !== process.pid && isProcessAlive(ownerPid)) {
+				return { allowed: false, reason: "stale_engine_pid" };
+			}
+		} catch {
+			/* corrupt on-disk state — allow overwrite */
+		}
+	} else if (batchId && ACTIVE_PHASES.has(incomingPhase)) {
+		if (fs.existsSync(archivedBatchStatePath(projectRoot, batchId))) {
+			return { allowed: false, reason: "archived_batch_resurrection" };
+		}
+	}
+
+	return { allowed: true };
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object} state
+ * @param {{ bypassWriteGuard?: boolean }} [options]
+ */
+export function saveSpineBatchState(projectRoot, state, options = {}) {
+	const guard = options.bypassWriteGuard
+		? { allowed: true }
+		: evaluateBatchStateWriteGuard(projectRoot, state);
+	if (!guard.allowed) {
+		const loaded = loadSpineBatchState(projectRoot);
+		return loaded.raw ?? state;
+	}
+
 	const filePath = spineBatchStatePath(projectRoot);
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 	if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {

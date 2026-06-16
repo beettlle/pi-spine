@@ -11,6 +11,7 @@ import { loadGateRecord } from "./gate.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
+import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import {
 	ACTIVE_PHASES,
 	loadSpineBatchState,
@@ -329,6 +330,32 @@ function persistDetachedEnginePid(projectRoot, enginePid) {
 	if (!raw) return;
 	recordBatchEnginePid(raw, pid);
 	saveSpineBatchState(projectRoot, raw);
+}
+
+/**
+ * Kill a stale detached engine and persist cleared PID before spawning resume engine (SP-254).
+ * Resume child records its own PID after terminateStaleDetachedEngine runs in-process.
+ *
+ * @param {string} projectRoot
+ */
+export function prepareDetachedResumeEngineHandoff(projectRoot) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw) {
+		return { ok: false, reason: "no_active_batch" };
+	}
+
+	const state = loaded.raw;
+	const batchId = String(state.batchId ?? "");
+	const fromPhase = String(state.phase ?? "");
+	const terminateResult = terminateStaleDetachedEngine({
+		projectRoot,
+		state,
+		batchId,
+		fromPhase,
+	});
+	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+
+	return { ok: true, batchId, fromPhase, terminateResult };
 }
 
 /**
@@ -692,9 +719,9 @@ export async function resumeBatchDetached({
 	}
 
 	const { batchId, updatedAt, taskId } = resumeCheck;
+	prepareDetachedResumeEngineHandoff(projectRoot);
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
-	persistDetachedEnginePid(projectRoot, enginePid);
 	const wait = await waitForDetachedBatchResume({
 		projectRoot,
 		batchId,

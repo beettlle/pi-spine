@@ -151,6 +151,16 @@ pi-spine orchestration logic is sound (699 stub tests, Phase 21 remediation land
 
 **Tests:** `tests/batch/post-merge-limbo.test.mjs`.
 
+## Resolved (SP-254)
+
+**Incident:** Batch `20260615T210231` — first detached engine (stuck SP-247) survived `pause`/`resume`; parent CLI wrote new `enginePid` before child could call `terminateStaleDetachedEngine`, so stale engine kept writing `running` cache after successful land loop → dashboard `state_drift`.
+
+**Fix:**
+1. **`prepareDetachedResumeEngineHandoff`** — terminate stale PID and persist cleared state before detached resume spawn (`detached-start.mjs`).
+2. **`evaluateBatchStateWriteGuard`** — reject cache writes from non-owner live engines and post-archive resurrection (`state.mjs`).
+
+**Tests:** `tests/batch/detached-resume-orphan-pid.test.mjs`, `tests/batch/batch-state-stale-writer.test.mjs`.
+
 ## Open — Stress test hotfixes (SP-205–225 epic, 2026-06-12)
 
 **Outcome:** Waves 0–5 landed (SP-205–211). Wave 6 (SP-214) **blocked**; batch `20260612T204048` force-dismissed (gate rejected — stub `.DONE` only).

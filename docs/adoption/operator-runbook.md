@@ -343,7 +343,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 **Operator implications:**
 
-- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success or crash). Run `spine batch retry <id>` or `spine batch resume --force` after inspecting `spine journal tail`.
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal tail` for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise `spine batch retry <id>` or `spine batch resume --force`.
 - **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
 - **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
 
@@ -864,7 +864,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
 | Post-merge limbo (`running`, merges done, no gate) | `spine status --diagnose` → `needs_integrate`; run `spine batch resume` to open gate (SP-204). Do not call `integrate` until gate exists |
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
-| Orphaned engine after resume wedge | `spine batch resume` terminates stale detached engine PID; check journal `engine.orphan_terminated` (SP-203) |
+| Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
 
