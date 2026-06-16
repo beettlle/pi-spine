@@ -33,6 +33,7 @@ export {
 	contextPathToRuleRelPath,
 	DEFAULT_SELECT_MAX_RULES,
 	ruleRelPathToContextPath,
+	selectRulesForReviewer,
 	selectRulesForWorker,
 	selectRulesFromManifest,
 } from "./select.mjs";
