@@ -253,9 +253,6 @@ function tryAutoResolveOutOfScopeMergeConflict({
 	if (pathInLaneFileScope(filePath, laneFileScopePaths)) {
 		return { ok: false, reason: "in_lane_file_scope" };
 	}
-	if (laneChangedFiles.has(filePath)) {
-		return { ok: false, reason: "lane_committed_change" };
-	}
 
 	gitExec(projectRoot, ["checkout", "--ours", "--", filePath], { projectRoot });
 	gitExec(projectRoot, ["add", "--", filePath], { projectRoot });
@@ -348,6 +345,22 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			resolvedOutOfScope.push(filePath);
 		} else {
 			remaining.push(filePath);
+		}
+	}
+
+	if (remaining.includes(RULES_MANIFEST_REL_PATH)) {
+		const manifestResult = resolveRulesManifestMergeConflict(projectRoot);
+		if (manifestResult.ok) {
+			resolvedOutOfScope.push(RULES_MANIFEST_REL_PATH);
+			const withoutManifest = remaining.filter((filePath) => filePath !== RULES_MANIFEST_REL_PATH);
+			if (withoutManifest.length === 0) {
+				return {
+					...manifestResult,
+					outOfScopePaths: resolvedOutOfScope,
+				};
+			}
+			remaining.length = 0;
+			remaining.push(...withoutManifest);
 		}
 	}
 
