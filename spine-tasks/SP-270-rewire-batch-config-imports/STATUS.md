@@ -1,7 +1,7 @@
 # SP-270: Rewire batch imports off bin — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 0
@@ -26,17 +26,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Suite green
-- [ ] Coverage gate ≥77%
+- [x] Suite green — `npm run typecheck && SPINE_WORKER_STUB=1 npm test` (895 pass; unset SPINE_WORKER_PI_TIMEOUT_MS)
+- [x] Coverage gate — `npm run coverage:check` — 86.73% line coverage (≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] .DONE created
+- [x] .DONE created
 
 ---
 
@@ -54,6 +54,8 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | Plan review spawn blocked in pi worker (SP-195) | Expected | Step 1 |
+| SPINE_WORKER_PI_TIMEOUT_MS in shell polluted worker-pi-timeout tests | Unset for verify | Step 2 |
+| stall-sat020-integration flaky on first run | Passed on retry | Step 2 |
 
 ---
 
@@ -64,6 +66,8 @@
 | 2026-06-17 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-17 | Step 0 | SP-269 verified |
 | 2026-06-17 | Step 1 | Rewired 11 files from bin/* to src/config/* |
+| 2026-06-17 | Step 2 | typecheck + 895 tests pass, coverage 86.73% |
+| 2026-06-17 | Step 3 | .DONE created |
 
 ---
 
