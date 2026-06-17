@@ -200,12 +200,22 @@ async function runWorkerRunner() {
 			// Separate poll epochs: checkpoint progress first, then file-scope activity only.
 			spawnSync("sleep", ["4"], { stdio: "ignore" });
 			const scopeRel = process.env.SPINE_WORKER_STUB_FILE_SCOPE;
+			const postScopeMs = Number(process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS || 10_000);
+			const scopeBumpMs = Math.min(5_000, Math.max(0, postScopeMs));
+			const postScopeRemainderMs = Math.max(0, postScopeMs - scopeBumpMs);
 			if (scopeRel && worktreePath) {
 				const scopePath = path.join(worktreePath, scopeRel);
 				fs.mkdirSync(path.dirname(scopePath), { recursive: true });
 				fs.writeFileSync(scopePath, `sat020 scope touch ${new Date().toISOString()}\n`, "utf-8");
+				if (scopeBumpMs > 0) {
+					spawnSync("sleep", [String(scopeBumpMs / 1000)], { stdio: "ignore" });
+					// Second touch gives the host a fresh activity epoch after step_completed settles.
+					fs.writeFileSync(scopePath, `sat020 scope touch ${new Date().toISOString()}\n`, "utf-8");
+				}
 			}
-			spawnSync("sleep", ["10"], { stdio: "ignore" });
+			if (postScopeRemainderMs > 0) {
+				spawnSync("sleep", [String(postScopeRemainderMs / 1000)], { stdio: "ignore" });
+			}
 		}
 
 		const delayMs = Number(process.env.SPINE_WORKER_STUB_DELAY_MS || 0);
