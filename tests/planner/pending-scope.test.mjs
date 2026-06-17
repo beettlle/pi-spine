@@ -131,6 +131,28 @@ test("buildPlan pending scope preserves dependency waves", async () => {
 	}
 });
 
+test("filterPendingTaskIds excludes tasks with .SUPERSEDED marker", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-superseded-"));
+	const tasksRoot = path.join(root, "spine-tasks");
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	const folder = path.join(tasksRoot, "TP-099-superseded");
+	fs.mkdirSync(folder, { recursive: true });
+	fs.writeFileSync(
+		path.join(folder, "PROMPT.md"),
+		minimalValidPromptMarkdown("TP-099", { title: "Superseded", fileScope: "src/tp-099.mjs" }),
+		"utf-8",
+	);
+	fs.writeFileSync(path.join(folder, ".SUPERSEDED"), "Superseded by TP-100\n", "utf-8");
+
+	try {
+		const discovered = discoverTasks(tasksRoot);
+		const pending = filterPendingTaskIds(discovered, tasksRoot);
+		assert.deepEqual(pending, []);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("summarizePendingScope counts excluded tasks", async () => {
 	const { root, tasksRoot } = await createPendingFixture();
 	try {

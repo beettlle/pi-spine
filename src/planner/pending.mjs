@@ -16,7 +16,8 @@ export function filterPendingTaskIds(discoveredTasks, tasksRoot) {
 	for (const task of discoveredTasks) {
 		const folderPath = task.folderPath ?? path.join(tasksRoot, `${task.taskId}-unknown`);
 		const donePath = path.join(folderPath, ".DONE");
-		if (!fs.existsSync(donePath)) {
+		const supersededPath = path.join(folderPath, ".SUPERSEDED");
+		if (!fs.existsSync(donePath) && !fs.existsSync(supersededPath)) {
 			pending.push(task.taskId);
 		}
 	}

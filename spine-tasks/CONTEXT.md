@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-17 (Phase 26 complete — npm publish; Phase 27 complete — reviewer Cursor rules FR-REV-08)
+**Last Updated:** 2026-06-17 (Phase 28 decomposed — SP-263–277 staged)
 **Status:** Active
-**Next Task ID:** SP-256
+**Next Task ID:** SP-278
 
 ---
 
@@ -648,6 +648,44 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 6. **Wave 6:** `SP-253`
 
 **Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run coverage:check`
+
+#### Phase 28 — Post-publish hardening (Best-of-N audit 2026-06-17)
+
+**Source:** Headless Best-of-N audit (`scripts/best-of-n.mjs`). Original M packets **SP-257–262 superseded** by S children **SP-263–275** (2026-06-17).
+
+**Agent models (all Phase 28 tasks):** worker `cursor/auto`, reviewer `google/gemini-3.1-pro-preview` (set via `spine settings` before batch).
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-256 | Fix `commandExists` pi availability check | S | **Staged** | — |
+| SP-263 | SAT-020 coverage flake diagnosis | S | **Staged** | — |
+| SP-264 | SAT-020 coverage stabilization fix | S | **Staged** | SP-263 |
+| SP-265 | Extract review-shared pure helpers | S | **Staged** | — |
+| SP-266 | Wire review dedup imports | S | **Staged** | SP-265 |
+| SP-267 | Extract review-spawn module | S | **Staged** | SP-266 |
+| SP-268 | Review-spawn tests and guard regression | S | **Staged** | SP-267 |
+| SP-269 | Move config loaders to src/config | S | **Staged** | — |
+| SP-270 | Rewire batch imports off bin | S | **Staged** | SP-269 |
+| SP-271 | Rewire cli/migrate + layer inversion test | S | **Staged** | SP-269 |
+| SP-272 | ESLint flat config and npm script | S | **Staged** | — |
+| SP-273 | Wire lint into CI and runbook | S | **Staged** | SP-272 |
+| SP-274 | Add tsconfig.batch and typecheck script | S | **Staged** | SP-271 |
+| SP-275 | JSDoc checkJs for batch hot paths | S | **Staged** | SP-274 |
+| SP-276 | Best-of-N README documentation | S | **Staged** | — |
+| SP-277 | CI-first publish doc sync | S | **Staged** | — |
+
+**Superseded (`.SUPERSEDED`):** SP-257→263–264, SP-258→265–266, SP-259→267–268, SP-260→269–271, SP-261→272–273, SP-262→274–275
+
+**Suggested batches:**
+
+1. **Wave 0 (parallel, ≤4 lanes):** `SP-256`, `SP-263`, `SP-269`, `SP-272`, `SP-276`, `SP-277`
+2. **Wave 1:** `SP-264`, `SP-270`, `SP-273`
+3. **Wave 2:** `SP-271`, `SP-265`
+4. **Wave 3:** `SP-266`
+5. **Wave 4:** `SP-267`
+6. **Wave 5:** `SP-268`
+7. **Wave 6:** `SP-274`
+8. **Wave 7:** `SP-275`
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 
