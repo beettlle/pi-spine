@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { readAbortSignal } from "./abort.mjs";
 import {
@@ -28,6 +28,7 @@ import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { finalizeWorkerOutput } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
+import { commandExists } from "../util/command-exists.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../config/worker-launch-script.mjs";
 
@@ -36,18 +37,6 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 const POST_DONE_KILL_BACKOFF_MS = 5_000;
-
-/**
- * @param {string} cmd
- */
-function commandExists(cmd) {
-	try {
-		spawnSync("which", [cmd], { stdio: "ignore" });
-		return true;
-	} catch {
-		return false;
-	}
-}
 
 /**
  * @param {number} ms

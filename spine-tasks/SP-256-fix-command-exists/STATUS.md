@@ -1,7 +1,7 @@
 # SP-256: Fix commandExists pi availability check — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,28 +11,28 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduce bug with nonexistent command
-- [ ] Confirm correct pattern in `bin/get-version.mjs`
+- [x] Reproduce bug with nonexistent command
+- [x] Confirm correct pattern in `bin/get-version.mjs`
 
 ---
 
 ### Step 1: Shared commandExists module
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Add `src/util/command-exists.mjs`
-- [ ] Wire review.mjs and worker-host.mjs
-- [ ] Re-export from bin/get-version.mjs
+- [x] Add `src/util/command-exists.mjs`
+- [x] Wire review.mjs and worker-host.mjs
+- [x] Re-export from bin/get-version.mjs
 - [ ] Plan review complete
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Unit tests for commandExists
-- [ ] Review spawn regression test
+- [x] Unit tests for commandExists
+- [x] Review spawn regression test
 - [ ] Code review complete
 
 ---
