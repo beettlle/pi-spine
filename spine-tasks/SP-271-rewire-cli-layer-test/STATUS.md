@@ -1,7 +1,7 @@
 # SP-271: Rewire cli/migrate and layer inversion test — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Rewire + test
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,17 +11,17 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-269 verified
+- [x] SP-269 verified
 
 ---
 
 ### Step 1: Rewire + test
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] cli/migrate updated
-- [ ] layer test added
+- [x] cli/migrate updated
+- [x] layer test added
 
 ---
 

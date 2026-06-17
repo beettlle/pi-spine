@@ -7,7 +7,7 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 
 import { parseSettingPath, validateSettingValue } from "../config/settings-fields.mjs";
-import { validateSpineConfig } from "../../bin/spine-config.mjs";
+import { validateSpineConfig } from "../config/spine-config-load.mjs";
 import { getValueAtPath } from "./settings-show.mjs";
 
 /**
