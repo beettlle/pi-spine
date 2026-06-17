@@ -1,7 +1,7 @@
 # SP-266: Wire review dedup imports — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,32 +11,32 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-265 verified
+- [x] SP-265 verified
 
 ---
 
 ### Step 1: Rewire imports
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Both files import review-shared
-- [ ] Duplicates removed
+- [x] Both files import review-shared
+- [x] Duplicates removed
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] engine-code-review tests pass
-- [ ] Coverage green
+- [x] engine-code-review tests pass
+- [x] Coverage green (86.72% line, threshold 77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] .DONE created
+- [x] .DONE created
 
 ---
 
@@ -45,6 +45,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | APPROVE | `.reviews/1-20260617T232033.md` |
 
 ---
 
@@ -59,7 +60,8 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-17 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-17 | Step 1 rewire | review.mjs + engine-lanes/review.mjs import review-shared; 191 lines removed |
+| 2026-06-17 | Step 1 plan review | APPROVE (stub; nested spawn blocked without stub) |
 
 ---
 
