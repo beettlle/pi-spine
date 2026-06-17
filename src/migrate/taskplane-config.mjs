@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { loadSpineConfigTemplate } from "../../bin/spine-init.mjs";
+import { loadSpineConfigTemplate } from "../config/spine-init-constants.mjs";
 
 export const DEFAULT_TASKPLANE_SOURCE_PATH = ".pi/taskplane-config.json";
 export const defaultTaskplaneSourcePath = DEFAULT_TASKPLANE_SOURCE_PATH;

@@ -2,7 +2,7 @@
  * spine rules discover | select | sync (SP-093).
  */
 
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import {
 	discoverCursorRules,
