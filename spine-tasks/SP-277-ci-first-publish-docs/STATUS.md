@@ -1,7 +1,7 @@
 # SP-277: CI-first publish doc sync — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-17
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,14 +11,14 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] publish.yml reviewed
+- [x] publish.yml reviewed
 
 ---
 
 ### Step 1: Update release docs
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] CI-first docs synced
 - [ ] README version updated
@@ -51,6 +51,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| package.json version is `1.0.2`; README still says `1.0.1` | Sync in Step 1 | README.md |
 
 ---
 
@@ -59,6 +60,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-17 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-17 | Step 0 preflight | publish.yml: CI success on main → publish; skip-if-exists via `npm view`; workflow_dispatch fallback |
 
 ---
 

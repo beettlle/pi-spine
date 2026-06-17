@@ -578,11 +578,13 @@ Do **not** run Taskplane and pi-spine batches on the same repo at the same time.
 
 ## Project status
 
-**v1.0.1 published** on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine). Install with `npm install -g pi-spine` or `pi install npm:pi-spine`. API may still evolve in patch releases; see release notes in git tags and `docs/release/`.
+**v1.0.2** on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine). Install with `npm install -g pi-spine` or `pi install npm:pi-spine`. API may still evolve in patch releases; see release notes in git tags and [`docs/release/`](docs/release/).
 
 ## Continuous integration
 
 Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows/ci.yml): `npm ci`, `npm run typecheck`, `npm test` (when defined), **`npm run coverage:check`** (≥77% line coverage on `src/`, `bin/`, `extensions/`), and CLI smoke checks (`spine version`, `help`, `doctor`). `spine init` sets `testing.testWithCoverage` to the same command by default.
+
+After CI succeeds on `main`, [`.github/workflows/publish.yml`](.github/workflows/publish.yml) publishes new versions to npm when `package.json` has a version not yet on the registry (skips if already published). Operators can also trigger publish manually via `workflow_dispatch`. See [`docs/release/npm-publish.md`](docs/release/npm-publish.md) for the CI-first release flow.
 
 ---
 
