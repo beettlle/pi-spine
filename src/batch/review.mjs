@@ -11,6 +11,24 @@ import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
+import {
+	REVIEW_LEVEL_RE,
+	buildFinalReviewArtifactPath,
+	buildReviewArtifactPath,
+	isReviewTypeRequired,
+	normalizeVerdict,
+	parseReviewLevel,
+	parseReviewVerdict,
+} from "./review-shared.mjs";
+
+export {
+	REVIEW_LEVEL_RE,
+	buildFinalReviewArtifactPath,
+	buildReviewArtifactPath,
+	isReviewTypeRequired,
+	parseReviewLevel,
+	parseReviewVerdict,
+} from "./review-shared.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -21,16 +39,6 @@ export const REVIEW_SPAWN_TIMEOUT_EXIT_CODE = 124;
 /** Default reviewer `pi` spawn timeout (90m); override with `SPINE_REVIEW_TIMEOUT_MS`. */
 export const DEFAULT_REVIEW_SPAWN_TIMEOUT_MS = 90 * 60 * 1000;
 
-export const REVIEW_LEVEL_RE = /^##\s+Review Level:\s*(\d+)/m;
-
-/**
- * @param {string} markdown
- */
-export function parseReviewLevel(markdown) {
-	const match = REVIEW_LEVEL_RE.exec(markdown);
-	return match ? Number.parseInt(match[1], 10) : 0;
-}
-
 /**
  * @param {string} taskFolder
  */
@@ -38,41 +46,6 @@ export function readReviewLevel(taskFolder) {
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	if (!fs.existsSync(promptPath)) return 0;
 	return parseReviewLevel(fs.readFileSync(promptPath, "utf-8"));
-}
-
-/**
- * @param {number} reviewLevel
- * @param {"plan"|"code"|"final"} reviewType
- */
-export function isReviewTypeRequired(reviewLevel, reviewType) {
-	if (reviewLevel <= 0) return false;
-	if (reviewType === "final") return reviewLevel >= 1;
-	if (reviewType === "plan") return reviewLevel >= 1;
-	return reviewLevel >= 2;
-}
-
-/**
- * @param {Date} [date]
- */
-export function formatReviewTimestamp(date = new Date()) {
-	return date.toISOString().replace(/[-:]/g, "").replace(/\..+$/, "");
-}
-
-/**
- * @param {string} taskFolder
- * @param {number} stepNumber
- * @param {Date} [date]
- */
-export function buildReviewArtifactPath(taskFolder, stepNumber, date = new Date()) {
-	return path.join(taskFolder, ".reviews", `${stepNumber}-${formatReviewTimestamp(date)}.md`);
-}
-
-/**
- * @param {string} taskFolder
- * @param {Date} [date]
- */
-export function buildFinalReviewArtifactPath(taskFolder, date = new Date()) {
-	return path.join(taskFolder, ".reviews", `final-${formatReviewTimestamp(date)}.md`);
 }
 
 /**
@@ -257,84 +230,6 @@ export function findCompletedFinalReview({ taskFolder, journalEvents = [], taskI
 	if (!journalMatch) return null;
 	const { seq: _seq, ...result } = journalMatch;
 	return result;
-}
-
-/**
- * @param {string} reviewContent
- * @param {{ reviewType?: "plan"|"code"|"final" }} [options]
- * @returns {{ verdict: "APPROVE"|"REVISE"|"PASS"|"REPLAN"|null, feedback: string }}
- */
-export function parseReviewVerdict(reviewContent, options = {}) {
-	const reviewType = options.reviewType ?? "code";
-	const isFinal = reviewType === "final";
-
-	const jsonMatch = reviewContent.match(/```json\s*\n([\s\S]*?)\n```/i);
-	if (jsonMatch) {
-		try {
-			const parsed = JSON.parse(jsonMatch[1]);
-			const verdict = normalizeVerdict(parsed.verdict, reviewType);
-			if (verdict) {
-				return {
-					verdict,
-					feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
-				};
-			}
-		} catch {
-			/* fall through */
-		}
-	}
-
-	const headingPattern = isFinal
-		? /###?\s*Verdict[:\s]*(PASS|REVISE|REPLAN)/i
-		: /###?\s*Verdict[:\s]*(APPROVE|REVISE)/i;
-	const headingMatch = reviewContent.match(headingPattern);
-	if (headingMatch) {
-		return {
-			verdict: normalizeVerdict(headingMatch[1], reviewType),
-			feedback: extractSummary(reviewContent),
-		};
-	}
-
-	const lower = reviewContent.toLowerCase();
-	if (
-		lower.includes("changes requested") ||
-		lower.includes("request changes") ||
-		lower.includes("needs revision")
-	) {
-		return { verdict: "REVISE", feedback: extractSummary(reviewContent) };
-	}
-	if (isFinal && (lower.includes("replan") || lower.includes("re-plan"))) {
-		return { verdict: "REPLAN", feedback: extractSummary(reviewContent) };
-	}
-	if (isFinal && lower.includes("pass") && !lower.includes("cannot pass") && !lower.includes("do not pass")) {
-		return { verdict: "PASS", feedback: extractSummary(reviewContent) };
-	}
-	if (lower.includes("approve") && !lower.includes("do not approve") && !lower.includes("cannot approve")) {
-		return { verdict: "APPROVE", feedback: extractSummary(reviewContent) };
-	}
-
-	return { verdict: null, feedback: extractSummary(reviewContent) };
-}
-
-/**
- * @param {unknown} value
- * @param {"plan"|"code"|"final"} [reviewType]
- */
-function normalizeVerdict(value, reviewType = "code") {
-	if (typeof value !== "string") return null;
-	const upper = value.trim().toUpperCase();
-	if (reviewType === "final") {
-		return upper === "PASS" || upper === "REVISE" || upper === "REPLAN" ? upper : null;
-	}
-	return upper === "APPROVE" || upper === "REVISE" ? upper : null;
-}
-
-/**
- * @param {string} reviewContent
- */
-function extractSummary(reviewContent) {
-	const summaryMatch = reviewContent.match(/###?\s*Summary[:\s]*([\s\S]*?)(?=###|$)/i);
-	return summaryMatch ? summaryMatch[1].trim().slice(0, 500) : "";
 }
 
 /**

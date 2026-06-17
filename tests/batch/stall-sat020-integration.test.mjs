@@ -63,8 +63,10 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 		...cfg.lanes,
 		checkpointWarningMinutes: 0.02,
 		extendGraceOnFileScope: false,
-		stallTimeoutMinutes: 0.5,
-		stallGraceAfterProgressMinutes: 0.4,
+		// Wider headroom than production defaults so coverage instrumentation
+		// cannot skip lane.checkpoint_warning before hard stall (SP-263/SP-264).
+		stallTimeoutMinutes: 1.0,
+		stallGraceAfterProgressMinutes: 0.8,
 		heartbeatIntervalMinutes: 60,
 	};
 	fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf-8");
@@ -74,11 +76,15 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 	const prevScope = process.env.SPINE_WORKER_STUB_FILE_SCOPE;
 	const prevOutput = process.env.SPINE_WORKER_STUB_OUTPUT;
 	const prevHang = process.env.SPINE_WORKER_STUB_SAT020_HANG_MS;
+	const prevPostScope = process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS;
 	process.env.SPINE_WORKER_STUB = "1";
 	process.env.SPINE_WORKER_STUB_SAT020 = "1";
 	process.env.SPINE_WORKER_STUB_FILE_SCOPE = FILE_SCOPE;
 	process.env.SPINE_WORKER_STUB_OUTPUT = "SAT-020 hung after file-scope touch";
-	process.env.SPINE_WORKER_STUB_SAT020_HANG_MS = "15000";
+	// Extra post-scope window so host polls can emit checkpoint_warning under coverage load.
+	process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS = "25000";
+	// Hang past hard stall (1.0 min) so host kills for stall_timeout, not stub exit.
+	process.env.SPINE_WORKER_STUB_SAT020_HANG_MS = "50000";
 
 	try {
 		const result = await startBatch({ projectRoot, scope: TASK_ID, skipPreflight: true });
@@ -127,6 +133,8 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 		else process.env.SPINE_WORKER_STUB_OUTPUT = prevOutput;
 		if (prevHang === undefined) delete process.env.SPINE_WORKER_STUB_SAT020_HANG_MS;
 		else process.env.SPINE_WORKER_STUB_SAT020_HANG_MS = prevHang;
+		if (prevPostScope === undefined) delete process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS;
+		else process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS = prevPostScope;
 		await destroyGitRepo(projectRoot);
 	}
 });

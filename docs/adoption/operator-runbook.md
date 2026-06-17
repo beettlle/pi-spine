@@ -789,6 +789,18 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 ## 9. Troubleshooting
 
+### Dev verification (pi-spine repo)
+
+When developing or contributing to **pi-spine itself**, run these from the repo root after `npm ci`:
+
+```bash
+npm run lint
+npm run typecheck && SPINE_WORKER_STUB=1 npm test
+npm run coverage:check
+```
+
+`npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
+
 ### `node bin/spine.mjs` vs global `spine`
 
 | Symptom | Fix |

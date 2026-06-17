@@ -18,6 +18,13 @@ import { runWorker } from "../worker-host.mjs";
 import {
 	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
+	normalizeCodeVerdict,
+	normalizeFinalVerdict,
+	parseFinalReviewVerdict,
+	shouldRunCodeReview,
+	shouldRunFinalReview,
+} from "../review-shared.mjs";
+import {
 	findCodeReviewStepNumber,
 	findCompletedCodeReview,
 	findCompletedFinalReview,
@@ -26,70 +33,12 @@ import {
 	runStepReview,
 } from "../review.mjs";
 
-export { buildFinalReviewArtifactPath };
-
-export function parseFinalReviewVerdict(reviewContent) {
-	const jsonMatch = reviewContent.match(/```json\s*\n([\s\S]*?)\n```/i);
-	if (jsonMatch) {
-		try {
-			const parsed = JSON.parse(jsonMatch[1]);
-			const verdict = normalizeFinalVerdict(parsed.verdict);
-			if (verdict) {
-				return {
-					verdict,
-					feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
-				};
-			}
-		} catch {
-			/* fall through */
-		}
-	}
-
-	const headingMatch = reviewContent.match(/###?\s*Verdict[:\s]*(PASS|REVISE|REPLAN)/i);
-	if (headingMatch) {
-		return {
-			verdict: normalizeFinalVerdict(headingMatch[1]),
-			feedback: "",
-		};
-	}
-
-	return { verdict: null, feedback: "" };
-}
-
-/**
- * @param {unknown} value
- * @returns {"PASS"|"REVISE"|"REPLAN"|null}
- */
-function normalizeFinalVerdict(value) {
-	if (typeof value !== "string") return null;
-	const upper = value.trim().toUpperCase();
-	return upper === "PASS" || upper === "REVISE" || upper === "REPLAN" ? upper : null;
-}
-
-/**
- * @param {unknown} value
- * @returns {"APPROVE"|"REVISE"|null}
- */
-function normalizeCodeVerdict(value) {
-	if (typeof value !== "string") return null;
-	const upper = value.trim().toUpperCase();
-	return upper === "APPROVE" || upper === "REVISE" ? upper : null;
-}
-
-/**
- * @param {object} params
- */
-export function shouldRunCodeReview({ reviewLevel }) {
-	return reviewLevel >= 2;
-}
-
-/**
- * @param {object} params
- */
-export function shouldRunFinalReview({ config, reviewLevel }) {
-	const requireFinal = config?.review?.requireFinalVerdict ?? REVIEW_DEFAULTS.requireFinalVerdict;
-	return requireFinal && reviewLevel >= 1;
-}
+export {
+	buildFinalReviewArtifactPath,
+	parseFinalReviewVerdict,
+	shouldRunCodeReview,
+	shouldRunFinalReview,
+} from "../review-shared.mjs";
 
 /**
  * @returns {"PASS"|"REVISE"|"REPLAN"}

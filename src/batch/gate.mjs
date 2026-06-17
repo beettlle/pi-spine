@@ -5,7 +5,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { collectEvidenceBundle } from "./evidence.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
@@ -65,7 +65,7 @@ export function formatGateSummary(gate) {
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
  * @param {object|null} [ctx.batchState]
- * @param {import("../../bin/spine-config.mjs").SpineConfig|null} [ctx.config]
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
  */
 export function openIntegrateGate(ctx) {
 	const { projectRoot, batchId, batchState = null, config = null } = ctx;
@@ -277,7 +277,7 @@ export function getIntegrateGateStatus(ctx) {
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
- * @param {import("../../bin/spine-config.mjs").SpineConfig|null} [ctx.config]
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
  * @param {boolean} [ctx.forceIntegrate]
  * @param {boolean} [ctx.dryRun]
  */

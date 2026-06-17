@@ -2,9 +2,9 @@
  * /spine-settings menu formatter and handler (FR-CFG-03).
  */
 
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { runSpineSettingsSet } from "../../bin/spine-settings.mjs";
+import { loadSpineConfig, loadSpineConfigFile } from "../config/spine-config-load.mjs";
 import { buildSettingsShowFields } from "./settings-show.mjs";
+import { runSettingsSetOperation, writeSpineConfigAtomic } from "./settings-set.mjs";
 
 /**
  * @param {unknown} value
@@ -77,10 +77,32 @@ export async function runSpineSettingsSlash(args, ui, cwd = process.cwd()) {
 			return;
 		}
 
-		const result = runSpineSettingsSet({
-			projectRoot: cwd,
-			args: [parsed.path, parsed.rawValue],
+		const configResult = loadSpineConfigFile(cwd);
+		if (configResult.error) {
+			const suggested = configResult.error.suggestedCommand ?? "spine init";
+			ui.notify(
+				`${configResult.error.message}
+
+→ ${suggested}`,
+				"error",
+			);
+			return;
+		}
+
+		const result = runSettingsSetOperation(configResult.config, {
+			path: parsed.path,
+			rawValue: parsed.rawValue,
 		});
+
+		if (result.exitCode === 0 && result.config) {
+			try {
+				writeSpineConfigAtomic(cwd, result.config);
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				ui.notify(`Failed to write spine config: ${message}`, "error");
+				return;
+			}
+		}
 
 		if (result.exitCode !== 0) {
 			ui.notify(result.output.trim() || "spine settings set failed", "error");
