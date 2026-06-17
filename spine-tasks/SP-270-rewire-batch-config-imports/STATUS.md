@@ -2,7 +2,7 @@
 
 **Current Step:** Complete
 **Status:** ✅ Complete
-**Last Updated:** 2026-06-17
+**Last Updated:** 2026-06-17 (re-verified)
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -67,7 +67,9 @@
 | 2026-06-17 | Step 0 | SP-269 verified |
 | 2026-06-17 | Step 1 | Rewired 11 files from bin/* to src/config/* |
 | 2026-06-17 | Step 2 | typecheck + 895 tests pass, coverage 86.73% |
-| 2026-06-17 | Step 3 | .DONE created |
+| 2026-06-17 | Step 1 follow-up | JSDoc bin refs → ReturnType<typeof loadSpineConfig> |
+| 2026-06-17 | Step 2 re-verify | 895 pass, coverage gate green (unset SPINE_WORKER_PI_TIMEOUT_MS) |
+| 2026-06-17 | Step 3 | .DONE recreated |
 
 ---
 
