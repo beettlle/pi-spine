@@ -9,6 +9,7 @@ import { runEvidenceCommand } from "./evidence-command.mjs";
 import { readJournalEvents, readJournalTail } from "./journal.mjs";
 import { generateBatchPostMortem } from "./postmortem.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 
 const TASKPLANE_CONFIG_PATH = ".pi/taskplane-config.json";
 
@@ -36,7 +37,7 @@ function readTaskplaneTestingCommands(projectRoot) {
 }
 
 /**
- * @param {import("../../bin/spine-config.mjs").SpineConfig|null} config
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} config
  * @param {string} projectRoot
  */
 export function resolveTestingCommands(config, projectRoot) {
@@ -121,7 +122,7 @@ export function buildTaskScorecard(batchState) {
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
  * @param {object|null} [ctx.batchState]
- * @param {import("../../bin/spine-config.mjs").SpineConfig|null} [ctx.config]
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
  */
 export function collectEvidenceBundle(ctx) {
 	const { projectRoot, batchId, batchState = null, config = null } = ctx;
