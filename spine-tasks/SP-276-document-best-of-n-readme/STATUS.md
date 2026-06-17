@@ -1,7 +1,7 @@
 # SP-276: Best-of-N README documentation — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-17
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,9 +11,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Script HELP read
+- [x] Script HELP read — section after dashboard / before Migrating from Taskplane
 
 ---
 

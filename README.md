@@ -109,6 +109,7 @@ pi-spine targets the upper-right: **batch orchestration with strong audit trail 
 - **Human gates** — approve or reject integrate with test/build evidence
 - **Local dashboard** — batch, lane, and gate visibility (SSE)
 - **`create-spine-tasks` skill** — decompose PRDs into `spine-tasks/` packets (local install; no npm publish)
+- **Best-of-N dev script** — parallel pi runs across models in isolated worktrees (`scripts/best-of-n.mjs`; git checkout only)
 
 See `docs/PRD.md` for the full specification.
 
@@ -519,6 +520,46 @@ Set `dashboard.port` in `.spine/spine-config.json` (default **8109**, avoids Tas
 ```
 
 The browser UI streams reconciled snapshots over SSE (`/api/events`, **2s** poll interval per NFR-OBS-02). Panels: batch summary, **diagnosis banner** (badge color from `diagnosis`, not raw `phase`), copyable CLI action chips (primary + `alternatives[]` — run commands in your terminal; no HTTP mutations), wave progress (with a lane ≠ wave reminder), lane table (**Active tasks** vs **Batch assignment**), integrate gate, and journal tail. Diagnosis fields match `spine status --json` and `buildDashboardSnapshot()` (NFR-OBS-04 / GAP-UX-03).
+
+---
+
+## Best-of-N (dev script)
+
+`scripts/best-of-n.mjs` runs the **same prompt** through **multiple pi models in parallel**, each in its own git worktree. Use it to compare model outputs on a one-off task before you pick a winner — not for production batch orchestration.
+
+| Best-of-N | `spine batch start` |
+|-----------|---------------------|
+| One prompt, N models side-by-side | Task packets (`PROMPT.md` / `STATUS.md`), dependency waves, lane scheduling |
+| Manual compare diffs in `.worktrees/bon-<runId>/` | Lane merge → orch branch, journal, integrate gates |
+| No batch state, `.DONE`, or review pipeline | Step checkpoints, cross-model review, auto-commit on `.DONE` |
+
+**Availability:** The script ships in the **git repo only** (development / local checkout). It is **not** included in the npm package `files` whitelist — use a git clone or path install, not `npm install -g pi-spine`.
+
+**Prerequisites:** Node.js ≥ 22, [pi](https://pi.dev), and git worktree support (same as pi-spine). Models resolve via `pi --list-models` (same catalog as `/model` in pi).
+
+```bash
+# List models (optional search filter)
+node scripts/best-of-n.mjs --list-models [search]
+
+# Comma-separated models + prompt
+node scripts/best-of-n.mjs sonnet,composer-2.5,codex-5.3 "Fix the flaky logout test"
+
+# Repeatable -m flag; @file prompts supported
+node scripts/best-of-n.mjs -m sonnet -m composer-2.5 @spine-tasks/SP-001/PROMPT.md
+
+# Provision worktrees and print pi argv without running
+node scripts/best-of-n.mjs --dry-run sonnet,codex-5.3 @task/PROMPT.md
+```
+
+**Worktrees:** Created under `.worktrees/bon-<runId>/<model-slug>/` on branch `bon/<runId>/<slug>`. When `.cursor/worktrees.json` exists, setup runs with `ROOT_WORKTREE_PATH` set to the project root.
+
+**Options:** `--base-branch <ref>` (default: current `HEAD`), `--thinking <level>` (passed to pi), `--keep` (default — retain worktrees), `--cleanup` (remove worktrees after runs finish), `--cleanup-run <runId>` (remove a previous run).
+
+**After a run (default `--keep`):** Compare changes with `git -C .worktrees/bon-<runId>/<model-slug> diff HEAD`. Remove when done:
+
+```bash
+node scripts/best-of-n.mjs --cleanup-run <runId>
+```
 
 ---
 
