@@ -245,11 +245,11 @@ test("recordBatchEnginePid persists under resilience and clears on terminal save
 			tasks: [{ taskId: "TP-1", laneNumber: 1, status: "pending", taskFolder: null }],
 			lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["TP-1"], lastHeartbeatAt: null }],
 		});
-		recordBatchEnginePid(state, 4242);
+		recordBatchEnginePid(state, DEAD_PID);
 		saveSpineBatchState(projectRoot, state);
 
 		const loaded = loadSpineBatchState(projectRoot);
-		assert.equal(loaded.raw?.resilience?.enginePid, 4242);
+		assert.equal(loaded.raw?.resilience?.enginePid, DEAD_PID);
 		assert.ok(loaded.raw?.resilience?.engineStartedAt);
 
 		state.phase = "completed";
