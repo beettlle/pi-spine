@@ -1,7 +1,7 @@
 # SP-265: Extract review-shared pure helpers — Status
 
-**Current Step:** Step 2 (Testing & Verification)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 1
@@ -24,7 +24,7 @@
 | Review level | `parseReviewLevel`, `isReviewTypeRequired` | uses `readReviewLevel` from review.mjs |
 | Gate helpers | `isReviewTypeRequired` | `shouldRunCodeReview`, `shouldRunFinalReview` |
 
-Baseline: `engine-code-review.test.mjs` cases passed (full `npm test` also hit 2 pre-existing failures in `worker-pi-timeout.test.mjs`).
+Baseline: `engine-code-review.test.mjs` cases passed.
 
 ---
 
@@ -41,16 +41,21 @@ Plan review Step 1: APPROVE (stub).
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Suite + coverage green
+- [x] Suite + coverage green
+
+Verification:
+- `npm run typecheck` — pass
+- `SPINE_WORKER_STUB=1 npm test` — 895 pass (requires `SPINE_WORKER_PI_TIMEOUT_MS` unset in parent env; pi harness sets 120m override)
+- `npm run coverage:check` — 86.18% line coverage (threshold 77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] .DONE created
+- [x] .DONE created
 
 ---
 
@@ -67,7 +72,7 @@ Plan review Step 1: APPROVE (stub).
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
-| `worker-pi-timeout.test.mjs` 2 failures unrelated to SP-265 | Note for full suite | tests/batch/worker-pi-timeout.test.mjs |
+| `worker-pi-timeout.test.mjs` fails when parent sets `SPINE_WORKER_PI_TIMEOUT_MS` | Documented; unset for verification | tests/batch/worker-pi-timeout.test.mjs |
 
 ---
 
@@ -78,6 +83,8 @@ Plan review Step 1: APPROVE (stub).
 | 2026-06-17 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-17 | Step 0 preflight | Duplication inventory logged |
 | 2026-06-17 | Step 1 extract | review-shared.mjs + tests created; plan review APPROVE |
+| 2026-06-17 | Step 2 verify | typecheck + 895 tests + 86.18% coverage |
+| 2026-06-17 | Step 3 delivery | .DONE created |
 
 ---
 
