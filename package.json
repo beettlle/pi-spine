@@ -28,6 +28,7 @@
   },
   "scripts": {
     "doctor": "node bin/spine.mjs doctor",
+    "lint": "eslint src bin tests scripts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "test": "SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/*.test.mjs tests/cli/*.test.mjs tests/compat/*.test.mjs tests/tasks/*.test.mjs tests/config/*.test.mjs tests/config/cursor-rules/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/agents/*.test.mjs tests/adoption/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs tests/migrate/*.test.mjs tests/worker-tools/*.test.mjs tests/coverage/*.test.mjs tests/extensions/*.test.mjs",
     "test:batch": "SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/*.test.mjs",
@@ -67,6 +68,8 @@
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.78.0",
     "@types/node": "^22.19.18",
+    "eslint": "^9.28.0",
+    "globals": "^16.2.0",
     "typebox": "1.1.38",
     "typescript": "5.6.3"
   },
