@@ -58,7 +58,9 @@ Regression test task.
 
 	const prevStub = process.env.SPINE_REVIEW_STUB;
 	const prevNoPi = process.env.SPINE_REVIEW_TEST_NO_PI;
+	const prevWorkerRunner = process.env.SPINE_WORKER_RUNNER;
 	delete process.env.SPINE_REVIEW_STUB;
+	delete process.env.SPINE_WORKER_RUNNER;
 	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
 	try {
 		const result = runStepReview({
@@ -74,6 +76,8 @@ Regression test task.
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prevNoPi;
 		if (prevStub === undefined) delete process.env.SPINE_REVIEW_STUB;
 		else process.env.SPINE_REVIEW_STUB = prevStub;
+		if (prevWorkerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+		else process.env.SPINE_WORKER_RUNNER = prevWorkerRunner;
 		await rm(root, { recursive: true, force: true });
 	}
 });
