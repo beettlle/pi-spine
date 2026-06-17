@@ -2,9 +2,9 @@
  * Multi-task batch resume validation (TP-039) and execution (TP-040).
  */
 
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
-import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
+import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { assessWaveMergeEligibility } from "./engine-scope.mjs";
 import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";

@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";

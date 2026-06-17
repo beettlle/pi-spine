@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
+import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { recomputeTaskCounters } from "./state.mjs";
 import { loadTaskFileScopePaths } from "./engine-lanes.mjs";
