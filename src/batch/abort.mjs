@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { archiveBatchStatePath } from "./lifecycle.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";

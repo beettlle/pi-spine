@@ -15,7 +15,7 @@ import {
 	summarizeJournalEvent,
 } from "../batch/journal.mjs";
 import { resolveStallConfig } from "../batch/heartbeat.mjs";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 
 /**
  * @param {string|null|undefined} worktreePath

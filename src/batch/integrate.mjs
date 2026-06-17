@@ -4,7 +4,7 @@
 
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import {
 	resolveRulesManifestIntegrateDrift,
 	tryAutoResolveRulesManifestMergeConflict,

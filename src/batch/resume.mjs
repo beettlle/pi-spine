@@ -5,9 +5,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { DEFAULT_TASKS_ROOT } from "../../bin/spine-init.mjs";
-import { resolveTasksRoot } from "../../bin/spine-preflight.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
+import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";

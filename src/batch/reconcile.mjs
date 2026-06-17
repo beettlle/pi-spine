@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import {
 	buildDiagnosisOutput,

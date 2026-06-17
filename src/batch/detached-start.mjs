@@ -5,8 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { runBatchPreflight } from "../../bin/spine-preflight.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { runBatchPreflight } from "../config/spine-preflight-lib.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";

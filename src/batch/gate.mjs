@@ -5,7 +5,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { loadSpineConfig } from "../../bin/spine-config.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { collectEvidenceBundle } from "./evidence.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
