@@ -1,7 +1,7 @@
 # SP-266: Wire review dedup imports — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Rewire imports
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-17
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,9 +11,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-265 verified
+- [x] SP-265 verified
 
 ---
 
