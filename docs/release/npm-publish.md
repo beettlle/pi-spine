@@ -1,16 +1,17 @@
 # npm publish checklist (Phase 22 / Phase 26)
 
-Pre-publish validation before `npm publish` (operator-triggered). SP-242 completed pre-release + dry-run; execution is SP-226 (human-gated).
+Pre-publish validation before `npm publish` (operator-triggered). SP-242 completed pre-release + dry-run; execution completed SP-226 (2026-06-17).
 
 ## Checklist
 
-- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green — SP-225 baseline 838/838; SP-242 re-verifies in Step 2
-- [x] `npm run coverage:check` green — SP-225: 85.92% line (threshold 77%)
-- [x] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/` — verified SP-242
-- [x] Version bump decision documented — **`1.0.0`** (see [v1.0-checklist.md §Version bump decision](v1.0-checklist.md#version-bump-decision))
-- [ ] `package.json` version set to `1.0.0` — SP-226 (before publish)
-- [x] README install section lists `npm install -g pi-spine` path
-- [ ] `spine doctor` passes on clean consumer fixture after global install — post-publish smoke (SP-226)
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green — 880/880 (2026-06-17)
+- [x] `npm run coverage:check` green — ~86.75% line (threshold 77%)
+- [x] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
+- [x] Version bump decision documented — **`1.0.0`** initial; **`1.0.1`** hotfix for missing `coverage-parse.mjs` in tarball
+- [x] `package.json` version set to `1.0.1` on `main`
+- [x] README install section lists `npm install -g pi-spine` and `pi install npm:pi-spine`
+- [x] `spine doctor` passes after global install of `pi-spine@1.0.1` (2026-06-17)
+- [x] CI publish workflow (`.github/workflows/publish.yml`) uses `NPMSECRET` after green CI on `main`
 - [ ] Real-pi adoption E2E report filed (optional but recommended)
 
 ## Dry-run pack (SP-242, 2026-06-14)
@@ -19,26 +20,14 @@ Pre-publish validation before `npm publish` (operator-triggered). SP-242 complet
 npm pack --dry-run
 ```
 
-| Field | Value |
-|-------|-------|
-| version | `0.0.1` (pre-bump) |
-| total files | 154 |
-| package size | 223.5 kB |
-| shasum | `927119b9db9ffd42705e057816cdc9a89b874503` |
+## Publish (SP-226, 2026-06-17)
 
-Full verification recorded in [v1.0-checklist.md §Dry-run pack](v1.0-checklist.md#dry-run-pack).
+- Operator approval recorded in release docs
+- `pi-spine@1.0.0` published manually (browser 2FA); broken global install (missing `scripts/coverage-parse.mjs`)
+- `pi-spine@1.0.1` published via GitHub Actions (`publish.yml`, `--ignore-scripts` after CI gate)
+- Post-publish smoke: `npm install -g pi-spine@1.0.1`, `spine version`, `spine doctor` — pass
 
-## Commands
+## pi.dev
 
-```bash
-npm pack --dry-run
-npm publish --access public
-```
-
-**Do not run `npm publish` without explicit human approval (SP-226).**
-
-## Post-publish
-
-- [ ] Tag release in git (`v1.0.0`)
-- [ ] Update pi.dev package listing (fields in [v1.0-checklist.md §pi.dev listing](v1.0-checklist.md#pidev-listing))
-- [ ] Post-publish smoke per v1.0-checklist §Post-publish smoke
+- Package page: https://pi.dev/packages/pi-spine
+- Install: `pi install npm:pi-spine`

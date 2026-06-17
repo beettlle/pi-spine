@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-06-14 (Phase 27 staged — reviewer Cursor rules FR-REV-08)
+**Last Updated:** 2026-06-17 (Phase 26 complete — npm publish; Phase 27 complete — reviewer Cursor rules FR-REV-08)
 **Status:** Active
 **Next Task ID:** SP-256
 
@@ -622,8 +622,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
 | SP-242 | npm pre-release checklist + dry-run | S | **Done** | SP-225 |
-| SP-226 | npm publish execution (human-gated) | S | **Pending** | SP-242 |
-| SP-255 | pi.dev listing + post-publish doc sync | M | **Pending** | SP-226 |
+| SP-226 | npm publish execution (human-gated) | S | **Done** | SP-242 |
+| SP-255 | pi.dev listing + post-publish doc sync | M | **Done** | SP-226 |
 
 #### Phase 27 — Reviewer Cursor rules (FR-REV-08)
 

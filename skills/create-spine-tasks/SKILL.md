@@ -8,7 +8,7 @@ description: Decomposes PRDs and feature briefs into spine task packets (PROMPT.
 
 Creates structured task packets (`PROMPT.md` + `STATUS.md`) for autonomous execution via **pi-spine** (`spine batch start`, `/spine`). The spine engine handles waves, worktree lanes, checkpoint discipline, cross-model review, integrate gates, and the dashboard — so `PROMPT.md` stays focused on **what** to build, not **how** the orchestrator runs.
 
-Works from a local pi-spine checkout (`pi install /path/to/pi-spine -l`). No npm publish required.
+Works from a local pi-spine checkout (`pi install /path/to/pi-spine -l`) or after `pi install npm:pi-spine`.
 
 ## Architecture
 

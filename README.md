@@ -145,13 +145,21 @@ The `.spine/agents/supervisor.md` template (from `spine init`) documents this no
 
 ---
 
-## Adoption (pre-publish)
+## Adoption
 
-pi-spine is not on npm yet. To use it on a real project from a git checkout or local path (slash commands, `spine` CLI, file dependency), see **[docs/adoption/local-install.md](docs/adoption/local-install.md)**. After install, `spine doctor` warns when a stale global `spine` on PATH does not match your checkout.
+pi-spine is published on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine).
+
+```bash
+npm install -g pi-spine
+# or from pi:
+pi install npm:pi-spine
+```
+
+For development from a git checkout or local path (slash commands, `spine` CLI without publishing), see **[docs/adoption/local-install.md](docs/adoption/local-install.md)**. After install, `spine doctor` warns when a stale global `spine` on PATH does not match your checkout.
 
 | Doc | Purpose |
 |-----|---------|
-| [local-install.md](docs/adoption/local-install.md) | Git/path install before npm publish |
+| [local-install.md](docs/adoption/local-install.md) | Git/path install for development |
 | [bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) | First-time consumer setup |
 | [operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures (preflight, land loop, recovery) |
 | [real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |
@@ -192,7 +200,7 @@ The repo ships [`.cursor/rules/`](.cursor/rules/) for Cursor IDE sessions. Rules
 
 **Spine batch workers:** When `.cursor/rules/` exists, pi-spine auto-selects rules per task (PROMPT File Scope + committed manifest) and injects them into worker prompts (FR-WORK-05). Glob-triggered language packs (Swift, Python, Java, Go, Rust, AWS, iOS, Obsidian) load when File Scope matches their frontmatter globs. **`taskplane-worker-cursor.mdc`** is always included via the default rules profile. Explicit `config.standards` paths **append** after auto-selection. See [docs/design/cursor-rules-discovery.md](docs/design/cursor-rules-discovery.md).
 
-**CLI:** `spine rules discover`, `spine rules sync`, `spine rules select --task <id>` — run `sync` after rule changes and commit `.spine/rules-manifest.json`.
+**CLI:** `spine rules discover`, `spine rules sync`, `spine rules select --task <id> [--role worker|reviewer]` — run `sync` after rule changes and commit `.spine/rules-manifest.json`. Reviewer selection (FR-REV-08): `spine rules select --task <id> --role reviewer --review-type plan|code|final`.
 
 ---
 
@@ -472,13 +480,17 @@ In a pi session (`/spine` runs preflight before batch guidance; `/spine-plan` in
 | `/spine-pause` | `spine batch pause` — stop scheduling |
 | `/spine-resume` | `spine batch resume` — continue paused or failed batch |
 | `/spine-abort` | `spine batch abort` — archive-first abort (`--hard` kills workers) |
-| `/spine-gate` | Stub — gate inspection and resolution |
-| `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; gate stub in Phase 3) |
+| `/spine-retry-task` | `spine batch retry <taskId>` — retry failed task |
+| `/spine-skip-task` | `spine batch skip <taskId>` — skip failed task |
+| `/spine-gate` | Gate inspection and resolution (`spine gate status`, `approve`, `reject`) |
+| `/spine-integrate` | Merge orch branch → `main` (`spine integrate`; requires gate approval) |
 | `/spine-settings` | Editable config menu + inline `set` (delegates to `spine settings`) |
 | `/spine-deps` | Show dependency graph (`spine deps`; usage: `/spine-deps <all\|paths>`) |
 | `/spine-dashboard` | Start local SSE dashboard (`spine dashboard` in background) |
+| `/spine-validate` | `spine tasks validate` — PROMPT packet validation |
+| `/spine-handoff` | `spine handoff` — session handoff artifact |
 
-Most slash commands remain stubs; **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, **`/spine-next`**, **`/spine-deps`**, **`/spine-settings`**, and **`/spine-dashboard`** are implemented. **`/spine <task-id>`** starts a Phase 2 single-task batch when preflight passes (stub worker unless `SPINE_WORKER_STUB=0` and `pi` is on PATH). Stubs reply with a notification pointing to `spine help` and a future phase. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
+Implemented slash commands include **`/spine`**, **`/spine-plan`**, **`/spine-status`**, **`/spine-dismiss`**, **`/spine-next`**, **`/spine-pause`**, **`/spine-resume`**, **`/spine-abort`**, **`/spine-retry-task`**, **`/spine-skip-task`**, **`/spine-gate`**, **`/spine-integrate`**, **`/spine-settings`**, **`/spine-deps`**, **`/spine-dashboard`**, **`/spine-validate`**, and **`/spine-handoff`**. **`/spine <task-id>`** starts a single-task batch when preflight passes. **`/spine`** runs `spine preflight` first and blocks batch guidance when preflight fails. Example flow:
 
 ```text
 spine preflight   # required before batch (FR-BATCH-11)
@@ -525,7 +537,7 @@ Do **not** run Taskplane and pi-spine batches on the same repo at the same time.
 
 ## Project status
 
-**Early development.** pi-spine is designed as a personal orchestration spine first, publishable as `npm:pi-spine` when stable. API and behavior may change before v1.0.
+**v1.0.1 published** on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine). Install with `npm install -g pi-spine` or `pi install npm:pi-spine`. API may still evolve in patch releases; see release notes in git tags and `docs/release/`.
 
 ## Continuous integration
 
@@ -540,7 +552,7 @@ Every push and pull request to `main` runs [GitHub Actions CI](.github/workflows
 | [docs/PRD.md](docs/PRD.md) | Product requirements and implementation contract (v1.2) |
 | [docs/PRD-v1.3-upstream-execution-bridge.md](docs/PRD-v1.3-upstream-execution-bridge.md) | v1.3 addendum: validate, explore, final verdict, handoff, metrics |
 | [docs/adoption/upstream-execution-workflow.md](docs/adoption/upstream-execution-workflow.md) | Authoring → validation → batch (optional zero-pi upstream) |
-| [docs/adoption/local-install.md](docs/adoption/local-install.md) | Git/path install before npm publish |
+| [docs/adoption/local-install.md](docs/adoption/local-install.md) | Git/path install for development |
 | [docs/adoption/operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures |
 | [docs/adoption/real-project-readiness.md](docs/adoption/real-project-readiness.md) | Phase 9 adoption plan |
 | pi.dev package page | Install and package manifest (when published) |
