@@ -1,33 +1,73 @@
-# npm publish checklist (Phase 22 / Phase 26)
+# npm publish (CI-first)
 
-Pre-publish validation before `npm publish` (operator-triggered). SP-242 completed pre-release + dry-run; execution completed SP-226 (2026-06-17).
+Release flow: bump version on `main` → green CI → [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) publishes to npm. Manual `npm publish` is an emergency fallback only (see [Emergency manual publish](#emergency-manual-publish)).
 
-## Checklist
+## CI-first release flow
 
-- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green — 880/880 (2026-06-17)
-- [x] `npm run coverage:check` green — ~86.75% line (threshold 77%)
-- [x] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
-- [x] Version bump decision documented — **`1.0.0`** initial; **`1.0.1`** hotfix for missing `coverage-parse.mjs` in tarball
-- [x] `package.json` version set to `1.0.1` on `main`
-- [x] README install section lists `npm install -g pi-spine` and `pi install npm:pi-spine`
-- [x] `spine doctor` passes after global install of `pi-spine@1.0.1` (2026-06-17)
-- [x] CI publish workflow (`.github/workflows/publish.yml`) uses `NPMSECRET` after green CI on `main`
+1. **Pre-release checks** — run locally or rely on CI:
+   ```bash
+   npm run typecheck && SPINE_WORKER_STUB=1 npm test
+   npm run coverage:check
+   ```
+2. **Bump version** — set `package.json` `version` on `main` (semver patch/minor/major as appropriate).
+3. **Merge to `main`** — push triggers [CI](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml) (`typecheck`, full test suite, coverage ≥77%, CLI smoke).
+4. **Automatic publish** — when CI completes successfully on `main`, `publish.yml` runs:
+   - Checks npm for `pi-spine@<version>`; **skips** if that version already exists (idempotent re-runs).
+   - Otherwise runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
+5. **Post-publish smoke** — verify install and CLI:
+   ```bash
+   npm install -g pi-spine@<version>
+   spine version
+   spine doctor
+   pi install npm:pi-spine
+   ```
+
+**Manual trigger:** Operators can run the **Publish to npm** workflow via GitHub Actions `workflow_dispatch` (same skip-if-exists logic).
+
+## Pre-publish checklist
+
+- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green
+- [ ] `npm run coverage:check` green (≥77% line on `src/`, `bin/`, `extensions/`)
+- [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
+- [ ] Version bump merged to `main`
+- [ ] CI green on the release commit
+- [ ] `publish.yml` succeeded (or version already on npm from prior run)
+- [ ] Post-publish smoke: global install + `spine doctor`
 - [ ] Real-pi adoption E2E report filed (optional but recommended)
 
-## Dry-run pack (SP-242, 2026-06-14)
+## Dry-run pack (local inspection)
+
+Preview tarball contents before bumping:
 
 ```bash
 npm pack --dry-run
+npm pack
+tar -tzf pi-spine-*.tgz | head -50
+rm pi-spine-*.tgz
 ```
 
-## Publish (SP-226, 2026-06-17)
+Recorded dry-run (SP-242, 2026-06-14): 154 files, 223.5 kB package size.
 
-- Operator approval recorded in release docs
-- `pi-spine@1.0.0` published manually (browser 2FA); broken global install (missing `scripts/coverage-parse.mjs`)
-- `pi-spine@1.0.1` published via GitHub Actions (`publish.yml`, `--ignore-scripts` after CI gate)
-- Post-publish smoke: `npm install -g pi-spine@1.0.1`, `spine version`, `spine doctor` — pass
+## Publish history
+
+| Version | Method | Notes |
+|---------|--------|-------|
+| `1.0.0` | Manual (browser 2FA) | Initial publish; missing `scripts/coverage-parse.mjs` in tarball |
+| `1.0.1` | GitHub Actions (`publish.yml`) | Hotfix for tarball `files` whitelist |
+| `1.0.2+` | CI-first (`publish.yml` after green CI on `main`) | Default path |
+
+## Emergency manual publish
+
+Use only when CI publish is broken and operators need an urgent patch **after** explicit approval:
+
+```bash
+npm login
+npm publish --access public
+```
+
+Prefer fixing `publish.yml` / secrets and re-running the workflow. Do not bypass CI gates for routine releases.
 
 ## pi.dev
 
 - Package page: https://pi.dev/packages/pi-spine
-- Install: `pi install npm:pi-spine`
+- Install: `pi install npm:pi-spine` (auto-synced from npm registry)

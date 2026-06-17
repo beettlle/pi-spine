@@ -10,6 +10,7 @@ import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
+import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -398,12 +399,7 @@ export function buildReviewerSystemPrompt({
  */
 export function commandExists(cmd) {
 	if (process.env.SPINE_REVIEW_TEST_NO_PI === "1") return false;
-	try {
-		spawnSync("which", [cmd], { stdio: "ignore" });
-		return true;
-	} catch {
-		return false;
-	}
+	return pathCommandExists(cmd);
 }
 
 /**

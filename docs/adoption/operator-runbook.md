@@ -15,10 +15,14 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 | [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional zero-pi upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
 
-**CLI choice:** Until npm publish, prefer a pinned binary so PATH drift does not bite you:
+**CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:
 
 ```bash
-# Replace with your pi-spine checkout path
+# Recommended — published release (re-install after version bumps)
+npm install -g pi-spine
+# or: pi install npm:pi-spine
+
+# Development — replace with your pi-spine checkout path
 export SPINE="/absolute/path/to/pi-spine/bin/spine.mjs"
 alias spine="node $SPINE"
 
@@ -26,7 +30,7 @@ alias spine="node $SPINE"
 # alias spine="spine"   # global on PATH — re-link after git pull
 ```
 
-Throughout this doc, `spine` means whichever invocation you chose (`node …/bin/spine.mjs` or global `spine`).
+Throughout this doc, `spine` means whichever invocation you chose (global `npm install -g`, `node …/bin/spine.mjs`, or linked checkout).
 
 ### Attached-first policy (Phase 22)
 
