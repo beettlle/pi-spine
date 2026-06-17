@@ -1,6 +1,6 @@
 {
   "name": "pi-spine",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "Orchestration spine for long-running pi development",
   "keywords": [
     "pi-package",
@@ -48,6 +48,7 @@
     "bin/",
     "extensions/",
     "skills/",
+    "scripts/coverage-parse.mjs",
     "src/",
     "templates/"
   ],
