@@ -4,13 +4,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
+import { parseTaskSizeFromFolder, resolveReviewSpawnTimeoutMs } from "./task-stall-budget.mjs";
 import {
 	REVIEW_LEVEL_RE,
 	buildFinalReviewArtifactPath,
@@ -33,11 +34,17 @@ export {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
-/** Exit code from `spawnSync` when `timeout` elapses (SP-221/SP-249). */
+/** Exit code from reviewer spawn when `timeout` elapses (SP-221/SP-249/SP-279). */
 export const REVIEW_SPAWN_TIMEOUT_EXIT_CODE = 124;
+
+/** Journal `review.failed` payload reason when reviewer spawn exceeds budget. */
+export const REVIEW_TIMEOUT_REASON = "review_timeout";
 
 /** Default reviewer `pi` spawn timeout (90m); override with `SPINE_REVIEW_TIMEOUT_MS`. */
 export const DEFAULT_REVIEW_SPAWN_TIMEOUT_MS = 90 * 60 * 1000;
+
+/** Grace period after SIGTERM before SIGKILL on hung reviewer children. */
+const REVIEW_SPAWN_KILL_GRACE_MS = 5_000;
 
 /**
  * @param {string} taskFolder
@@ -466,7 +473,7 @@ export function isActiveWorkerSession() {
 }
 
 export const NESTED_REVIEW_SPAWN_BLOCKED =
-	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker code review — the batch engine runs code review after worker success (SP-195).";
+	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker plan/code review — the batch engine runs reviews after worker success (SP-195).";
 
 export const NESTED_REVIEW_SPAWN_REASON = "nested_spawn_blocked";
 
@@ -496,7 +503,14 @@ export function resolveBatchJournalContext() {
 /**
  * @param {object} params
  */
-function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt, config = {} }) {
+async function spawnReviewerPi({
+	worktreePath,
+	taskFolder,
+	reviewPrompt,
+	systemPrompt,
+	config = {},
+	timeoutMs,
+}) {
 	if (isActiveWorkerSession()) {
 		return {
 			spawnFailed: true,
@@ -533,28 +547,82 @@ function spawnReviewerPi({ worktreePath, taskFolder, reviewPrompt, systemPrompt,
 	}
 	piArgs.push(reviewPrompt);
 
-	const result = spawnSync("pi", piArgs, {
-		cwd: worktreePath || path.dirname(taskFolder),
-		encoding: "utf-8",
-		timeout: Number(process.env.SPINE_REVIEW_TIMEOUT_MS || DEFAULT_REVIEW_SPAWN_TIMEOUT_MS),
-		env: {
-			...process.env,
-			SPINE_TASK_FOLDER: taskFolder,
-			SPINE_WORKTREE: worktreePath,
-		},
-	});
+	const taskSize = parseTaskSizeFromFolder(taskFolder);
+	const spawnTimeoutMs =
+		timeoutMs ??
+		resolveReviewSpawnTimeoutMs({
+			config,
+			taskSize,
+		});
 
-	if (result.error?.code === "ETIMEDOUT") {
-		return { spawnFailed: true, exitCode: 124, error: "reviewer spawn timed out" };
-	}
-	if (result.status !== 0) {
-		return {
-			spawnFailed: true,
-			exitCode: result.status ?? 1,
-			error: result.stderr?.trim() || `reviewer exited with code ${result.status ?? 1}`,
+	return new Promise((resolve) => {
+		const child = spawn("pi", piArgs, {
+			cwd: worktreePath || path.dirname(taskFolder),
+			env: {
+				...process.env,
+				SPINE_TASK_FOLDER: taskFolder,
+				SPINE_WORKTREE: worktreePath,
+			},
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+
+		let stderr = "";
+		let timedOut = false;
+		let settled = false;
+
+		/** @param {object} result */
+		const finish = (result) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			clearTimeout(killTimer);
+			resolve(result);
 		};
-	}
-	return { spawnFailed: false, exitCode: 0, error: "" };
+
+		child.stderr?.on("data", (chunk) => {
+			stderr += String(chunk);
+		});
+
+		const timer = setTimeout(() => {
+			timedOut = true;
+			child.kill("SIGTERM");
+			killTimer = setTimeout(() => {
+				if (!child.killed) {
+					child.kill("SIGKILL");
+				}
+			}, REVIEW_SPAWN_KILL_GRACE_MS);
+		}, spawnTimeoutMs);
+		let killTimer = /** @type {NodeJS.Timeout|undefined} */ (undefined);
+
+		child.on("error", (error) => {
+			finish({
+				spawnFailed: true,
+				exitCode: 1,
+				error: error.message,
+			});
+		});
+
+		child.on("close", (code) => {
+			if (timedOut) {
+				finish({
+					spawnFailed: true,
+					exitCode: REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
+					error: "reviewer spawn timed out",
+					reason: REVIEW_TIMEOUT_REASON,
+				});
+				return;
+			}
+			if (code !== 0) {
+				finish({
+					spawnFailed: true,
+					exitCode: code ?? 1,
+					error: stderr.trim() || `reviewer exited with code ${code ?? 1}`,
+				});
+				return;
+			}
+			finish({ spawnFailed: false, exitCode: 0, error: "" });
+		});
+	});
 }
 
 /**
@@ -632,7 +700,7 @@ export function honorReviewSpawnFailureWhenEligible({
 /**
  * @param {object} params
  */
-export function runStepReview({
+export async function runStepReview({
 	taskFolder,
 	worktreePath,
 	stepNumber,
@@ -792,7 +860,7 @@ export function runStepReview({
 		config,
 		journal,
 	});
-	const spawnResult = spawnReviewerPi({
+	const spawnResult = await spawnReviewerPi({
 		worktreePath,
 		taskFolder,
 		reviewPrompt,
@@ -801,6 +869,27 @@ export function runStepReview({
 	});
 
 	if (spawnResult.spawnFailed) {
+		if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) {
+			const feedback = spawnResult.error ?? NESTED_REVIEW_SPAWN_BLOCKED;
+			journalReviewEvent("review.skipped", journal, {
+				stepNumber,
+				reviewType,
+				reviewLevel,
+				reason: NESTED_REVIEW_SPAWN_REASON,
+				message: feedback,
+			});
+			return {
+				ok: true,
+				skipped: true,
+				reviewLevel,
+				verdict: null,
+				feedback,
+				artifactPath,
+				spawnFailed: false,
+				exitCode: 0,
+			};
+		}
+
 		const honored = honorReviewSpawnFailureWhenEligible({
 			spawnResult,
 			reviewType,
@@ -833,6 +922,7 @@ export function runStepReview({
 			spawnFailed: true,
 			error: spawnResult.error,
 			exitCode: spawnResult.exitCode ?? 1,
+			reason: spawnResult.reason,
 		};
 	}
 

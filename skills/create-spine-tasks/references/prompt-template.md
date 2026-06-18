@@ -18,6 +18,8 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 **Assessment:** [1-2 sentences explaining the score]
 **Score:** [N]/8 — Blast radius: [N], Pattern novelty: [N], Security: [N], Reversibility: [N]
 
+> **Real-pi batches (SP-195/SP-278):** Do **not** add per-step "Call `spine_review_step`" checkboxes for Review Level ≥ 1. The batch engine runs plan, code, and final reviews after worker `.DONE`. Stub batches (`SPINE_WORKER_STUB=1`) may still use in-worker stub plan review via the tool when a checkpoint marker requires it.
+
 ## Canonical Task Folder
 
 ```

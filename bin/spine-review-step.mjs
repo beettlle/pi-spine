@@ -32,7 +32,7 @@ export function parseReviewStepArgs(argv) {
 /**
  * @param {object} options
  */
-export function runSpineReviewStep(options) {
+export async function runSpineReviewStep(options) {
 	const taskFolder = options.taskFolder ?? process.env.SPINE_TASK_FOLDER;
 	const worktreePath = options.worktreePath ?? process.env.SPINE_WORKTREE ?? process.cwd();
 	if (!taskFolder) {
@@ -63,7 +63,7 @@ export function runSpineReviewStep(options) {
 
 	const journal = options.journal ?? resolveBatchJournalContext();
 
-	const result = runStepReview({
+	const result = await runStepReview({
 		taskFolder,
 		worktreePath,
 		stepNumber: args.step,
@@ -91,7 +91,9 @@ export function runSpineReviewStep(options) {
 	} else if (result.spawnFailed) {
 		output = `REVIEW FAILED: ${result.error}\n`;
 	} else if (result.skipped) {
-		output = "SKIPPED (review level does not require this review type)\n";
+		output = result.feedback
+			? `SKIPPED: ${result.feedback}\n`
+			: "SKIPPED (review level does not require this review type)\n";
 	} else {
 		output = `${result.verdict ?? "UNKNOWN"}: ${result.feedback || ""}\n`;
 	}
@@ -118,7 +120,7 @@ function findProjectRoot(startPath) {
 }
 
 if (isCliEntrypoint(import.meta.url)) {
-	const { exitCode, output } = runSpineReviewStep({});
+	const { exitCode, output } = await runSpineReviewStep({});
 	process.stdout.write(output ?? "");
 	process.exit(exitCode);
 }

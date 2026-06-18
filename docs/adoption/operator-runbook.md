@@ -683,9 +683,29 @@ When the detached resume engine throws (for example a broken lane worktree durin
 
 If diagnosis is still **`engine_orphaned`** with **`phase: running`**, the engine died without hitting the fail-closed handler — use the orphan steps above.
 
+### Final review spawn timeout (`final_review_timeout`)
+
+When the journal shows **`review.started`** (final or code) with **no** matching **`review.completed`** / **`review.failed`**, and lane `pi` reviewer children stay alive past the stall budget, the engine was blocked on a hung reviewer spawn (batch `20260617T164948`, SP-279).
+
+**Symptoms:** `phase: running`, multiple tasks stuck `running` with `.DONE` in lane worktrees, pending wave tasks never scheduled, engine PID alive, last journal line is `review.started` for final review.
+
+**Recovery:**
+
+1. Inspect journal tail: `.spine/runtime/<batchId>/journal/events.jsonl` — look for `review.failed` with `reason: review_timeout` after SP-279 (fail-closed terminal event).
+2. If still hung on pre-fix engine: `spine batch resume --force` after confirming reviewer PIDs are stale, or wait for reviewer timeout (`SPINE_REVIEW_TIMEOUT_MS` / per-task stall budget).
+3. Retry failed lane: `spine batch retry <taskId>` then `spine batch resume --attached --force`.
+
+Reviewer spawn uses **async** `pi` with timeout aligned to **`resolveReviewSpawnTimeoutMs`** (same stall budget as workers). Override for tests or emergencies: `SPINE_REVIEW_TIMEOUT_MS`.
+
 ### Final review nested spawn (`final_review_spawn_failed`)
 
 When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with **`final_review_spawn_failed`** / journal **`review.failed`** reason **`nested_spawn_blocked`**, the spine CLI inherited **`SPINE_WORKER_RUNNER`** from an active pi worker session (SP-195). Reviewer spawn is intentionally blocked inside worker sessions.
+
+### In-worker `spine_review_step` skip (SP-278)
+
+When workers call **`spine_review_step`** inside a pi worker session, the tool returns **`skipped: true`** with exit 0 (not `isError`). Journal records **`review.skipped`** with `reason: nested_spawn_blocked` instead of **`review.failed`**. This is expected — the batch engine runs plan/code/final review after worker `.DONE`.
+
+Workers should **not** retry or treat the skip as failure. Task PROMPTs for real-pi batches should not require in-worker review calls (see `skills/create-spine-tasks/references/prompt-template.md`).
 
 1. Confirm worker output exists: lane worktree `.DONE`, file-scope artifacts, plan review APPROVE in journal.
 2. Run recovery from a **clean shell** (unset worker session env — at minimum `SPINE_WORKER_RUNNER`, `SPINE_JOURNAL_ATTACH`, `SPINE_BATCH_ID`, `SPINE_PROJECT_ROOT`):
@@ -878,7 +898,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
-| Post-merge limbo (`running`, merges done, no gate) | `spine status --diagnose` → `needs_integrate`; run `spine batch resume` to open gate (SP-204). Do not call `integrate` until gate exists |
+| Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate after the last wave merge (SP-280). If diagnose still shows limbo, `spine batch resume` is a one-shot finalize (SP-204). Do not call `integrate` until gate exists |
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |

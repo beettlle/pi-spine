@@ -339,7 +339,7 @@ test("I-10 runStepReview fail-closed when review tool unavailable at level > 0",
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-incident-i10-"));
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,

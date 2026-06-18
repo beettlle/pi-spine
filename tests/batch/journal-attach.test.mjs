@@ -61,7 +61,7 @@ test("runStepReview with worker attach env does not journal when attach suppress
 	process.env.SPINE_PROJECT_ROOT = root;
 	process.env.SPINE_BATCH_ID = batchId;
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -104,7 +104,7 @@ test("runSpineReviewStep with worker attach env does not journal when attach sup
 	process.env.SPINE_BATCH_ID = batchId;
 	process.env.SPINE_REVIEW_STUB = "1";
 	try {
-		const { exitCode } = runSpineReviewStep({
+		const { exitCode } = await runSpineReviewStep({
 			taskFolder,
 			worktreePath: root,
 			args: ["--step", "1", "--type", "plan", "--stub"],

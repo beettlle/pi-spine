@@ -125,11 +125,11 @@ function resolveTaskFileScope(taskFolder) {
 	return parsePrompt(fs.readFileSync(promptPath, "utf-8")).fileScope ?? [];
 }
 
-function enforceStubReviewIfConfigured(taskFolder, worktreePath) {
+async function enforceStubReviewIfConfigured(taskFolder, worktreePath) {
 	if (process.env.SPINE_WORKER_STUB_ENFORCE_REVIEW !== "1") return;
 	if (readReviewLevel(taskFolder) <= 0) return;
 
-	const reviewResult = runStepReview({
+	const reviewResult = await runStepReview({
 		taskFolder,
 		worktreePath: worktreePath || process.cwd(),
 		stepNumber: Number(process.env.SPINE_WORKER_STUB_REVIEW_STEP || 1),
@@ -254,7 +254,7 @@ async function runWorkerRunner() {
 			);
 		}
 
-		enforceStubReviewIfConfigured(taskFolder, worktreePath);
+		await enforceStubReviewIfConfigured(taskFolder, worktreePath);
 
 		const donePath = path.join(taskFolder, ".DONE");
 		fs.writeFileSync(

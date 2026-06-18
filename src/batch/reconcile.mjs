@@ -7,6 +7,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
+import { loadGateRecord } from "./gate.mjs";
 import {
 	buildDiagnosisOutput,
 	inferLaunchFailureFromWorkerOutputTail,
@@ -688,6 +689,11 @@ export function reconcileBatch(ctx) {
 				? `spine batch retry ${signals.orphanRunning.taskId}`
 				: null;
 
+	const integrateGateOpen =
+		signals.postMergeLimbo === true && batch.batchId
+			? Boolean(loadGateRecord(projectRoot, batch.batchId))
+			: false;
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -701,6 +707,7 @@ export function reconcileBatch(ctx) {
 		salvageRetryCommand,
 		ghostRunningCluster,
 		postMergeLimbo: signals.postMergeLimbo === true,
+		integrateGateOpen,
 	});
 
 	if (diagnosis === "git_unavailable") {

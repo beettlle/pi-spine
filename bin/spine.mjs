@@ -91,7 +91,7 @@ async function cmdReview(args) {
 		die(`Unknown review subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine review step --step N${c.reset} for usage.`);
 	}
 	const { runSpineReviewStep } = await import("./spine-review-step.mjs");
-	const result = runSpineReviewStep({ projectRoot: process.cwd(), args: args.slice(1) });
+	const result = await runSpineReviewStep({ projectRoot: process.cwd(), args: args.slice(1) });
 	process.stdout.write(result.output ?? "");
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
