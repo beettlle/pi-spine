@@ -90,6 +90,42 @@ See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-
 2. `{tasksRoot}/CONTEXT.md` — current phase, **Next Task ID**, execution policy
 3. Existing `{tasksRoot}/dependencies.json` and open task folders (avoid duplicate work)
 
+### Step A.5: Clarify (optional — ambiguity pass before slice)
+
+Run **after** Step A when the PRD/brief needs ambiguity resolution before decomposition. Authoring-only — `spine tasks validate` does **not** require clarify artifacts.
+
+External equivalent: [spec-kit `/speckit.clarify`](https://github.com/github/spec-kit) — see [Path 4](../../docs/adoption/upstream-execution-workflow.md#path-4--spec-kit-optional-upstream).
+
+**When to run:**
+
+| Signal | Why clarify helps |
+|--------|-------------------|
+| Ambiguous PRD / brief | Scope, acceptance criteria, or deps unclear before slicing |
+| L/XL epic | Must split anyway; resolved decisions drive wave boundaries |
+| Conflicting requirements | Multiple sources or stakeholders need reconciliation |
+| Post-explore open questions | Step 0 findings left decomposition blockers |
+| Full authoring pipeline | Operator wants clarify → checklist → slice before packets |
+
+**When to skip:**
+
+- Greenfield with unambiguous PRD and concrete paths
+- Single S/M task with no open requirements questions
+- Migrating existing Taskplane packets unchanged
+- Prior `{tasksRoot}/_authoring/{slug}/clarify.md` still `Status: complete`
+
+**Constraints (read-only on sources):**
+
+- No commits; no file edits outside read targets and the clarify artifact
+- Output path: `{tasksRoot}/_authoring/{slug}/clarify.md` (git-tracked by default)
+- Clarify informs Step B slicing — not batch engine input
+
+**Workflow:**
+
+1. Read-only review — PRD/brief, explore findings (if any), CONTEXT.md.
+2. Write `{tasksRoot}/_authoring/{slug}/clarify.md` using [references/clarify-template.md](references/clarify-template.md) (Summary, Open questions, Assumptions, Resolved decisions, Blockers for decomposition).
+3. Link the slug in `{tasksRoot}/CONTEXT.md` — clarify table row or `Clarify complete: {slug}` with date and path.
+4. Use **Resolved decisions** and resolved **Open questions** when slicing tasks in Step B.
+
 ### Step B: Slice into spine tasks
 
 When requirements change after packets exist, follow the team's **spec persistence model** ([docs/adoption/spec-persistence.md](../../docs/adoption/spec-persistence.md)): **flow-forward** (new `SP-*` folders + `.SUPERSEDED` on obsolete parents — pi-spine default), **living spec** (edit the PRD or upstream spec first, then re-run this skill), or **flow-back** (amend `PROMPT.md` below `---`, or operator `spine batch retry` after `needs_replan`). Large pivots should flow-forward; in-flight scope fixes may flow-back.
@@ -340,6 +376,7 @@ Before reporting launch commands:
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
 - [ ] CONTEXT.md phase table updated for PRD decompositions
+- [ ] Clarify artifact written when Step A.5 ran (`{tasksRoot}/_authoring/{slug}/clarify.md` linked in CONTEXT.md)
 - [ ] Launch: `spine tasks validate pending` → `spine plan pending` → `spine preflight` → `spine batch start <id>`
 
 ---
@@ -371,6 +408,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - [references/prompt-template.md](references/prompt-template.md) — PROMPT.md and STATUS.md templates
 - [references/contract-template.md](references/contract-template.md) — `## Contract` field guidance and examples (v2.0 §4)
 - [references/explore-template.md](references/explore-template.md) — Step 0 `findings.md` schema (v1.3 §6.3)
+- [references/clarify-template.md](references/clarify-template.md) — Step A.5 `clarify.md` schema (spec-kit `/speckit.clarify` equivalent)
 - [references/context-template.md](references/context-template.md) — `{tasksRoot}/CONTEXT.md` scaffold
 - [docs/PRD.md](../../docs/PRD.md) — task format spec (§13)
 - [docs/adoption/bootstrap-checklist.md](../../docs/adoption/bootstrap-checklist.md) — greenfield setup
