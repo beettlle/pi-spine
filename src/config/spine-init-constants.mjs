@@ -14,6 +14,7 @@ export const TEMPLATE_PATHS = {
 	spineConfig: path.join(PACKAGE_ROOT, "templates", "spine-config.json"),
 	rulesProfile: path.join(PACKAGE_ROOT, "templates", "rules-profile.json"),
 	tasksContext: path.join(PACKAGE_ROOT, "templates", "tasks", "CONTEXT.md"),
+	constitution: path.join(PACKAGE_ROOT, "templates", "docs", "constitution.md"),
 	agents: {
 		worker: path.join(PACKAGE_ROOT, "templates", "agents", "worker.md"),
 		reviewer: path.join(PACKAGE_ROOT, "templates", "agents", "reviewer.md"),
@@ -52,6 +53,7 @@ export function getTemplatePaths() {
 		TEMPLATE_PATHS.spineConfig,
 		TEMPLATE_PATHS.rulesProfile,
 		TEMPLATE_PATHS.tasksContext,
+		TEMPLATE_PATHS.constitution,
 		...Object.values(TEMPLATE_PATHS.agents),
 	]) {
 		if (!fs.existsSync(templatePath)) {
@@ -74,6 +76,20 @@ export function loadRulesProfileTemplate() {
 export function loadTasksContextTemplate() {
 	const templatePath = getTemplatePaths().tasksContext;
 	return fs.readFileSync(templatePath, "utf-8");
+}
+
+export function loadConstitutionTemplate() {
+	const templatePath = getTemplatePaths().constitution;
+	return fs.readFileSync(templatePath, "utf-8");
+}
+
+export function buildConstitutionMd(projectRoot) {
+	const template = loadConstitutionTemplate();
+	const projectTitle = path.basename(projectRoot);
+	const lastUpdated = new Date().toISOString().slice(0, 10);
+	return template
+		.replaceAll("{{PROJECT_TITLE}}", projectTitle)
+		.replaceAll("{{LAST_UPDATED}}", lastUpdated);
 }
 
 export function buildContextMd(projectRoot, { nextTaskId = DEFAULT_NEXT_TASK_ID } = {}) {
@@ -329,6 +345,15 @@ export function runInit(projectRoot, args = []) {
 		{ force, dryRun },
 	);
 	actions.push(contextResult);
+
+	const constitutionContent = buildConstitutionMd(projectRoot);
+	const constitutionResult = writeFileIfAllowed(
+		projectRoot,
+		"docs/constitution.md",
+		constitutionContent,
+		{ force, dryRun },
+	);
+	actions.push(constitutionResult);
 
 	const gitignoreResult = ensureGitignoreEntries(projectRoot, { dryRun });
 	if (gitignoreResult.added.length > 0) {

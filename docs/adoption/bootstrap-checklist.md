@@ -73,7 +73,9 @@ See [local-install.md](./local-install.md) for `file:` dependencies and PATH tro
 spine init
 ```
 
-This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, and spine gitignore entries (testing commands, gates, dashboard port, lane defaults). When `.cursor/rules/` exists, init also copies `.spine/rules-profile.json`, runs `spine rules discover`, and writes `.spine/rules-manifest.json` — **commit the manifest** to git.
+This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, `docs/constitution.md` (editable principles scaffold listed in `referenceDocs`), and spine gitignore entries (testing commands, gates, dashboard port, lane defaults). When `.cursor/rules/` exists, init also copies `.spine/rules-profile.json`, runs `spine rules discover`, and writes `.spine/rules-manifest.json` — **commit the manifest** to git.
+
+Edit `docs/constitution.md` before your first task packets so Mission and non-negotiable rules reflect your project.
 
 ### 3. Add your first task
 
