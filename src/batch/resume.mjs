@@ -178,14 +178,15 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const resumeForced = Boolean(force);
 
 	const fromPhase = phase;
-	terminateStaleDetachedEngine({
-		projectRoot,
-		state,
-		batchId,
-		fromPhase: phase,
-	});
 
 	if (isPostMergeLimbo(state) && task.status === "succeeded") {
+		terminateStaleDetachedEngine({
+			projectRoot,
+			state,
+			batchId,
+			fromPhase: phase,
+		});
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 		return finalizeResumedBatchForIntegrate({
 			projectRoot,
 			state,
@@ -194,6 +195,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			resumeForced: Boolean(force),
 		});
 	}
+
+	terminateStaleDetachedEngine({
+		projectRoot,
+		state,
+		batchId,
+		fromPhase: phase,
+	});
 
 	if (phase === "failed" && force) {
 		state.resilience = state.resilience ?? {};

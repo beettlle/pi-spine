@@ -391,15 +391,8 @@ export async function startBatch({
 				};
 			}
 
-			const isLastWave = wave.index >= (state.totalWaves ?? plan.waves.length) - 1;
-			if (isLastWave) {
-				return finalizeBatchForIntegrate({
-					projectRoot,
-					state,
-					batchId,
-					orchBranch,
-					resumed: false,
-				});
+			if (mergeResult.finalized && mergeResult.finalizeResult) {
+				return mergeResult.finalizeResult;
 			}
 
 			if (

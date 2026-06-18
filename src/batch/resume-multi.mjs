@@ -8,7 +8,6 @@ import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { assessWaveMergeEligibility } from "./engine-scope.mjs";
 import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
-import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
@@ -54,14 +53,14 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		resetFailedTasksForForceResume({ state, pendingTasks: check.pendingTasks });
 	}
 
-	terminateStaleDetachedEngine({
-		projectRoot,
-		state,
-		batchId,
-		fromPhase: phase,
-	});
-
-	if (isPostMergeLimbo(state) && check.pendingTasks.length === 0) {
+	if (check.postMergeLimbo) {
+		terminateStaleDetachedEngine({
+			projectRoot,
+			state,
+			batchId,
+			fromPhase: phase,
+		});
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 		return finalizeResumedBatchForIntegrate({
 			projectRoot,
 			state,
@@ -70,6 +69,13 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 			resumeForced: resumeForced,
 		});
 	}
+
+	terminateStaleDetachedEngine({
+		projectRoot,
+		state,
+		batchId,
+		fromPhase: phase,
+	});
 
 	const pendingSegments = countPendingSegments(state);
 
@@ -185,6 +191,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 				baseBranch,
 				orchBranch,
 				waveIndex,
+				resumed: true,
 			});
 			if (!mergeResult.ok) {
 				state.endedAt = Date.now();
@@ -199,37 +206,19 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 					output: mergeResult.error,
 				};
 			}
+
+			if (mergeResult.finalized && mergeResult.finalizeResult) {
+				return mergeResult.finalizeResult;
+			}
 		}
 
-		state.endedAt = Date.now();
-		openIntegrateGateAfterBatchComplete({
+		return finalizeResumedBatchForIntegrate({
 			projectRoot,
+			state,
 			batchId,
-			batchState: { ...state, phase: "completed" },
+			orchBranch,
+			resumeForced: resumeForced,
 		});
-		state.phase = "completed";
-		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "batch.completed", {
-			taskIds: (state.tasks ?? []).map((task) => task.taskId),
-			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-			resumed: true,
-		});
-
-		const taskIds = (state.tasks ?? []).map((task) => task.taskId);
-		const summaryTask =
-			taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
-
-		return {
-			ok: true,
-			exitCode: 0,
-			batchId,
-			taskIds,
-			taskId: taskIds.length === 1 ? taskIds[0] : undefined,
-			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-			output:
-				`Batch ${batchId} resumed and completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
-				`  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
-		};
 	} catch (err) {
 		/** @type {{ taskId?: string, laneNumber?: number }} */
 		const ctx = err && typeof err === "object" ? err : {};
