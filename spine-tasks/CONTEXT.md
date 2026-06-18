@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-18 (Phase 30 — GitHub issue follow-ups SP-281–282 staged)
+**Last Updated:** 2026-06-18 (Phase 31 — GitHub issue tasks SP-283–285 staged)
 **Status:** Active
-**Next Task ID:** SP-283
+**Next Task ID:** SP-286
 
 ---
 
@@ -696,19 +696,30 @@ Completed Phase 28 slices (`.DONE`): SP-256, SP-263–266, SP-269–273, SP-276�
 
 #### Phase 30 — GitHub issue follow-ups (2026-06-18)
 
-**Source:** Open issues [#4](https://github.com/beettlle/pi-spine/issues/4), [#5](https://github.com/beettlle/pi-spine/issues/5) filed after batch `20260618T000943` land loop (gate limbo recurrence + 90min reviewer hang).
+**Source:** Issues [#4](https://github.com/beettlle/pi-spine/issues/4), [#5](https://github.com/beettlle/pi-spine/issues/5). Batch `20260618T000943` and `20260618T191236` landed on `main`.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-281 | Attached batch integrate gate limbo (SP-280 follow-up) | M | **Done** | — | #4 |
+| SP-282 | Reviewer early artifact honor (hung pi follow-up) | M | **Staged** | SP-285 | #5 |
+
+#### Phase 31 — GitHub issue follow-ups (2026-06-18, batch 20260618T191236)
+
+**Source:** Open issues [#6](https://github.com/beettlle/pi-spine/issues/6), [#7](https://github.com/beettlle/pi-spine/issues/7), [#8](https://github.com/beettlle/pi-spine/issues/8) filed during batch `20260618T191236` operations.
 
 Each task **closes its issue** in Documentation & Delivery via `gh issue close`.
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-281 | Attached batch integrate gate limbo (SP-280 follow-up) | M | **Staged** | — | #4 |
-| SP-282 | Reviewer early artifact honor (hung pi follow-up) | M | **Staged** | SP-268 | #5 |
+| SP-283 | Batch start rejects `.SUPERSEDED` task IDs | S | **Staged** | — | #6 |
+| SP-284 | Engine orphan resume without manual pause | M | **Staged** | — | #7 |
+| SP-285 | Engine reviewer nested spawn env fix | S | **Staged** | SP-268 | #8 |
 
-**Suggested batches (with Phase 28 remainder):**
+**Suggested batches (6 pending reliability + typecheck tasks):**
 
-1. **Wave 0 (parallel):** `SP-267`, `SP-274`, `SP-281`
-2. **Wave 1 (parallel):** `SP-268`, `SP-275`, `SP-282`
+1. **Wave 0 (parallel):** `SP-268`, `SP-275`, `SP-283`, `SP-284`
+2. **Wave 1:** `SP-285` (closes #8)
+3. **Wave 2:** `SP-282` (closes #5)
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 

@@ -22,7 +22,7 @@ Fix **GitHub issue #5**: during batch `20260618T000943`, SP-279 **code review** 
 
 ## Dependencies
 
-- **Task:** SP-268 (review-spawn module + tests landed — avoids conflict with SP-267 extract)
+- **Task:** SP-285 (engine reviewer spawn env stable before early-artifact honor)
 
 ## Agent Models (operator — set before batch)
 
