@@ -1,7 +1,7 @@
 # SP-281: Attached batch integrate gate limbo — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 (complete)
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,36 +11,34 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #4 timeline reconstructed from archived journal
-- [ ] Attached engine finalize gap identified
+- [x] Issue #4 timeline reconstructed from archived journal
+- [x] Attached engine finalize gap identified
 
 ---
 
 ### Step 1: Fix attached last-wave finalize
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-> ⚠️ Hydrate: Expand after Step 0 identifies whether finalize is skipped vs deferred during review
-
-- [ ] Last-wave attached path opens integrate gate without resume
+- [x] Last-wave attached path opens integrate gate without resume
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `attached-gate-limbo.test.mjs` added
-- [ ] Full suite + coverage gate pass
+- [x] `attached-gate-limbo.test.mjs` added
+- [x] Full suite + coverage gate pass
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated
-- [ ] Issue #4 closed
-- [ ] `.DONE` created
+- [x] Runbook updated
+- [x] Issue #4 closed
+- [x] `.DONE` created
 
 ---
 
@@ -55,3 +53,7 @@
 
 | Finding | Impact |
 |---------|--------|
+| Batch `20260618T000943`: wave-1 `batch.merge_completed` @ 02:17:02Z, `engine.orphan_terminated` @ 02:17:33Z, no gate until resume @ 02:20:40Z | Post-merge limbo window + stale `enginePid` write guard blocked finalize on resume |
+| `mergeWaveLanesToOrch` returned before `finalizeBatchForIntegrate` in engine loop | Fixed: `maybeFinalizeAfterWaveMerge` at merge choke point |
+| Resume required `pendingTasks.length === 0` but segment drift left resumable tasks | Fixed: finalize on `check.postMergeLimbo` alone |
+| Stale alive `enginePid` blocked `saveSpineBatchState` during resume finalize | Fixed: `bypassWriteGuard` on finalize saves + terminate stale engine before resume finalize |
