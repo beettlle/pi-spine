@@ -17,11 +17,17 @@ import {
 	loadSpineBatchState,
 	recordBatchEnginePid,
 	saveSpineBatchState,
+	clearBatchEnginePid,
 } from "./state.mjs";
 import { executeResumeWave, resetFailedTasksForForceResume } from "./resume-multi-lanes.mjs";
 import { validateMultiTaskResume } from "./resume-multi-validate.mjs";
 
-export { computePendingTasks, findResumableWave, validateMultiTaskResume } from "./resume-multi-validate.mjs";
+export {
+	assessRunningPhaseResumeEligibility,
+	computePendingTasks,
+	findResumableWave,
+	validateMultiTaskResume,
+} from "./resume-multi-validate.mjs";
 
 /**
  * @param {object} params
@@ -68,6 +74,10 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 			orchBranch,
 			resumeForced: resumeForced,
 		});
+	}
+
+	if (check.orphanResume && check.engineConfirmedDead) {
+		clearBatchEnginePid(state);
 	}
 
 	terminateStaleDetachedEngine({

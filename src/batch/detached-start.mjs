@@ -10,10 +10,12 @@ import { runBatchPreflight } from "../config/spine-preflight-lib.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";
+import { assessRunningPhaseResumeEligibility } from "./resume-multi-validate.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import {
 	ACTIVE_PHASES,
+	clearBatchEnginePid,
 	loadSpineBatchState,
 	recordBatchEnginePid,
 	saveSpineBatchState,
@@ -337,6 +339,7 @@ function persistDetachedEnginePid(projectRoot, enginePid) {
 /**
  * Kill a stale detached engine and persist cleared PID before spawning resume engine (SP-254).
  * Resume child records its own PID after terminateStaleDetachedEngine runs in-process.
+ * Running-phase orphan resume (SP-296) clears a dead engine PID without requiring pause first.
  *
  * @param {string} projectRoot
  */
@@ -349,6 +352,13 @@ export function prepareDetachedResumeEngineHandoff(projectRoot) {
 	const state = loaded.raw;
 	const batchId = String(state.batchId ?? "");
 	const fromPhase = String(state.phase ?? "");
+	const orphanEligibility =
+		fromPhase === "running"
+			? assessRunningPhaseResumeEligibility({ projectRoot, state })
+			: { engineConfirmedDead: false, allowOrphanResume: false };
+	if (orphanEligibility.allowOrphanResume && orphanEligibility.engineConfirmedDead) {
+		clearBatchEnginePid(state);
+	}
 	const terminateResult = terminateStaleDetachedEngine({
 		projectRoot,
 		state,
@@ -357,7 +367,13 @@ export function prepareDetachedResumeEngineHandoff(projectRoot) {
 	});
 	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
-	return { ok: true, batchId, fromPhase, terminateResult };
+	return {
+		ok: true,
+		batchId,
+		fromPhase,
+		terminateResult,
+		orphanResume: orphanEligibility.allowOrphanResume,
+	};
 }
 
 /**
