@@ -1,7 +1,7 @@
 # SP-296: Engine orphan resume core — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,30 +11,30 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Resume rejection path traced
+- [x] Resume rejection path traced
 
 ---
 
 ### Step 1: Dead-engine resume path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Orphan resume without pause
+- [x] Orphan resume without pause
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Typecheck + stub tests pass
+- [x] Typecheck + stub tests pass
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] .DONE created
+- [x] .DONE created
 
 ---
 
@@ -57,4 +57,6 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 1 complete | Dead-engine orphan resume path implemented |
+| 2026-06-18 | Verification | typecheck + 912 tests pass; coverage 86.92% |
+| 2026-06-18 | Delivery | .DONE created |
