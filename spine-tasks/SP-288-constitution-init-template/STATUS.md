@@ -1,7 +1,7 @@
 # SP-288: Constitution init template — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,19 +28,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Extend `tests/spine-init.test.mjs`: constitution file created; referenceDocs populated
-- [ ] Run: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run: `npm run coverage:check` — ≥77%
+- [x] Run: `npm run typecheck && SPINE_WORKER_STUB=1 npm test` (922/922 pass; unset `SPINE_WORKER_PI_TIMEOUT_MS` in worker env)
+- [x] Run: `npm run coverage:check` — 86.91% ≥ 77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Bootstrap checklist: mention constitution scaffold
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -57,6 +57,7 @@
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-18 | Step 0–1 | Constitution template, init wiring, tests drafted |
+| 2026-06-18 | Step 2–3 | Tests/coverage green; bootstrap checklist updated |
 
 ---
 
