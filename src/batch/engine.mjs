@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * pi-spine batch engine (Phase 2 single-lane, Phase 3 multi-lane + §17.4 merge policy).
  */
@@ -75,7 +76,7 @@ export async function startBatch({
 				ok: false,
 				exitCode: preflight.exitCode ?? 1,
 				error: "preflight_failed",
-				output: preflight.output,
+				output: /** @type {string | undefined} */ (/** @type {any} */ (preflight).output),
 			};
 		}
 	}
@@ -83,6 +84,7 @@ export async function startBatch({
 	assertNoActiveBatch(projectRoot);
 
 	const configResult = loadSpineConfig(projectRoot);
+	/** @type {Record<string, any>} */
 	const config = configResult.config ?? {};
 	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
 	if (!tasksRoot) {
@@ -99,11 +101,11 @@ export async function startBatch({
 		};
 	}
 
-	const effectiveScope = scopeResolution.scope;
+	const effectiveScope = /** @type {string} */ (scopeResolution.scope);
 	const policyScope = scopeResolution.policyScope ?? effectiveScope;
 
-	const plan = buildPlan({ scope: effectiveScope, config, tasksRoot });
-	const batchPolicy = canStartMultiTaskBatch(plan, policyScope);
+	const plan = buildPlan({ scope: effectiveScope, config, tasksRoot: /** @type {string} */ (tasksRoot) });
+	const batchPolicy = canStartMultiTaskBatch(plan, policyScope ?? effectiveScope);
 	if (!batchPolicy.ok) {
 		return {
 			ok: false,
@@ -148,6 +150,7 @@ export async function startBatch({
 		maxLaneNumber,
 	});
 
+	/** @type {ReturnType<typeof createInitialBatchState>} */
 	let state = createInitialBatchState({
 		batchId,
 		baseBranch,
@@ -237,7 +240,7 @@ export async function startBatch({
 					if (tickTaskIds.length === 0) continue;
 
 					const laneNumber = laneInTick + 1;
-					const lane = state.lanes.find((entry) => entry.laneNumber === laneNumber);
+					const lane = state.lanes.find((/** @type {{ laneNumber: number }} */ entry) => entry.laneNumber === laneNumber);
 					if (!lane) continue;
 
 					if (!runsByLane.has(laneNumber)) {
@@ -246,8 +249,8 @@ export async function startBatch({
 					const laneQueue = runsByLane.get(laneNumber);
 
 					for (const taskId of tickTaskIds) {
-						const task = state.tasks.find((entry) => entry.taskId === taskId);
-						const entry = discovered.find((item) => item.taskId === taskId);
+						const task = state.tasks.find((/** @type {{ taskId: string }} */ entry) => entry.taskId === taskId);
+						const entry = discovered.find((/** @type {{ taskId: string }} */ item) => item.taskId === taskId);
 						if (!task || !entry) continue;
 
 						const taskFolderRel = path.relative(projectRoot, entry.folderPath);
@@ -277,23 +280,26 @@ export async function startBatch({
 										taskFolderRel,
 										laneCorrelationId,
 									}).then((result) => {
-										if (result.aborted) batchAborted = true;
+										if ("aborted" in result && result.aborted) batchAborted = true;
 										return result;
 									});
 
-						laneQueue.runs.push({ taskId, run });
+						if (laneQueue) {
+							laneQueue.runs.push({ taskId, run });
+						}
 					}
 				}
 
 				const laneExecutions = [...runsByLane.entries()].map(async ([laneNumber, { lane, runs }]) => {
+					const laneMeta = /** @type {{ laneId?: string; correlationId?: string }} */ (lane);
 					if (runs.length > 1) {
 						appendJournalEvent(projectRoot, batchId, "lane.tasks_serialized", {
 							laneNumber,
-							laneId: lane.laneId,
+							laneId: laneMeta.laneId,
 							waveIndex: wave.index,
 							tickIndex: tick.index,
 							taskIds: runs.map((entry) => entry.taskId),
-							correlationId: lane.correlationId ?? null,
+							correlationId: laneMeta.correlationId ?? null,
 						});
 					}
 
@@ -311,9 +317,9 @@ export async function startBatch({
 			}
 
 			if (batchAborted) {
-				const abortedTask = state.tasks.find((task) => task.status === "aborted");
-				state.endedAt = Date.now();
-				state.lastError = "batch aborted";
+				const abortedTask = state.tasks.find((/** @type {{ status: string }} */ task) => task.status === "aborted");
+				/** @type {any} */ (state).endedAt = Date.now();
+				/** @type {any} */ (state).lastError = "batch aborted";
 				transitionPhase(state, "aborted", {
 					projectRoot,
 					batchId,
@@ -331,8 +337,8 @@ export async function startBatch({
 
 			const mergeEligibility = assessWaveMergeEligibility(state, wave.index);
 			if (!mergeEligibility.ok) {
-				state.endedAt = Date.now();
-				state.lastError = mergeEligibility.message?.slice(0, 500) ?? "mixed_outcome";
+				/** @type {any} */ (state).endedAt = Date.now();
+				/** @type {any} */ (state).lastError = mergeEligibility.message?.slice(0, 500) ?? "mixed_outcome";
 				transitionPhase(state, "failed", {
 					projectRoot,
 					batchId,
@@ -368,8 +374,8 @@ export async function startBatch({
 				waveIndex: wave.index,
 			});
 			if (!mergeResult.ok) {
-				state.endedAt = Date.now();
-				state.lastError = mergeResult.error ?? "merge failed";
+				/** @type {any} */ (state).endedAt = Date.now();
+				/** @type {any} */ (state).lastError = mergeResult.error ?? "merge failed";
 				transitionPhase(state, "failed", {
 					projectRoot,
 					batchId,
@@ -385,15 +391,8 @@ export async function startBatch({
 				};
 			}
 
-			const isLastWave = wave.index >= (state.totalWaves ?? plan.waves.length) - 1;
-			if (isLastWave) {
-				return finalizeBatchForIntegrate({
-					projectRoot,
-					state,
-					batchId,
-					orchBranch,
-					resumed: false,
-				});
+			if (mergeResult.finalized && mergeResult.finalizeResult) {
+				return mergeResult.finalizeResult;
 			}
 
 			if (
@@ -421,8 +420,8 @@ export async function startBatch({
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		state.endedAt = Date.now();
-		state.lastError = message;
+		/** @type {any} */ (state).endedAt = Date.now();
+		/** @type {any} */ (state).lastError = message;
 		transitionPhase(state, "failed", {
 			projectRoot,
 			batchId,

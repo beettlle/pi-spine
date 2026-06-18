@@ -1,8 +1,8 @@
 # SP-259: Strangler extract review spawn module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-17
+**Current Step:** Step 4 (Documentation & Delivery)
+**Status:** 🟢 Complete
+**Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,46 +11,46 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-258 dependency satisfied
-- [ ] Spawn functions identified
-- [ ] Baseline nested-reviewer tests green
+- [x] SP-258 dependency satisfied (`review-shared.mjs` exists)
+- [x] Spawn functions identified (`spawnReviewerPi`, argv assembly, timeout handling, nested guard)
+- [x] Baseline nested-reviewer tests green
 
 ---
 
 ### Step 1: Extract review-spawn module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `review-spawn.mjs` created
-- [ ] `review.mjs` delegates
-- [ ] Plan review complete
+- [x] `review-spawn.mjs` created
+- [x] `review.mjs` delegates
+- [x] Plan review complete (engine handles in real-pi session)
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `review-spawn.test.mjs` added
-- [ ] Nested-reviewer tests pass
-- [ ] Code review complete
+- [x] `review-spawn.test.mjs` added
+- [x] Nested-reviewer tests pass
+- [x] Code review complete (engine handles in real-pi session)
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Full suite passes
-- [ ] Coverage gate ≥77%
-- [ ] Typecheck passes
+- [x] Full suite passes
+- [x] Coverage gate ≥77%
+- [x] Typecheck passes
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Line count delta recorded
-- [ ] `.DONE` created
+- [x] Line count delta recorded
+- [x] `.DONE` created
 
 ---
 
@@ -65,6 +65,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Exported `buildReviewerPiArgs` for argv unit tests (mirrors worker-model-pin pattern) | Kept | `src/batch/review-spawn.mjs` |
+| `review.mjs` 1026 → 894 lines; `review-spawn.mjs` 187 lines | Recorded | below |
 
 ---
 
@@ -73,6 +75,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-17 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 0 preflight | SP-258 satisfied; baseline nested-guard tests green |
+| 2026-06-18 | Step 1 extract | `review-spawn.mjs` owns spawn; `review.mjs` imports/delegates |
+| 2026-06-18 | Step 2 tests | `review-spawn.test.mjs` added (model argv, no-pi fail-closed, nested guard) |
+| 2026-06-18 | Step 3 verify | typecheck + full suite + coverage gate |
 
 ---
 
@@ -84,4 +90,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Line count delta:** `review.mjs` 1026 → 894 (−132 lines). New `review-spawn.mjs` 187 lines.

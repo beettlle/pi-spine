@@ -14,6 +14,7 @@ Use with stub worker env (see `tests/batch/stall-sat020-integration.test.mjs`):
 | `SPINE_WORKER_STUB_SAT020=1` | SAT-020 replay sequence |
 | `SPINE_WORKER_STUB_FILE_SCOPE` | Scoped file to touch (e.g. `src/sat020-health.ts`) |
 | `SPINE_WORKER_STUB_OUTPUT` | stderr tail captured on stall |
+| `SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS` | Post file-scope sleep (default 10s; integration test uses 25s under coverage) |
 | `SPINE_WORKER_STUB_SAT020_HANG_MS` | Hang duration before exit without `.DONE` |
 
 Lane config in tests uses sub-minute `checkpointWarningMinutes`, `stallTimeoutMinutes`, and `stallGraceAfterProgressMinutes` so the suite finishes quickly.

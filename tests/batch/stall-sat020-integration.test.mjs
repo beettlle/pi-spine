@@ -17,6 +17,19 @@ import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 const TASK_ID = "SAT-020";
 const FILE_SCOPE = "src/sat020-health.ts";
 
+/** Test-only lane margins: coverage instrumentation slows polls; keep headroom (SP-263/SP-257). */
+const SAT020_LANE_CONFIG = {
+	checkpointWarningMinutes: 0.02,
+	extendGraceOnFileScope: false,
+	stallTimeoutMinutes: 1.0,
+	stallGraceAfterProgressMinutes: 0.8,
+	heartbeatIntervalMinutes: 60,
+};
+
+/** Stub wall-clock windows sized so checkpoint_warning precedes stall_killed under coverage load. */
+const SAT020_STUB_POST_SCOPE_MS = "25000";
+const SAT020_STUB_HANG_MS = "50000";
+
 function writeSat020Task(projectRoot) {
 	const folder = path.join(projectRoot, "spine-tasks", `${TASK_ID}-health-endpoint`);
 	fs.mkdirSync(folder, { recursive: true });
@@ -61,13 +74,7 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 	const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8"));
 	cfg.lanes = {
 		...cfg.lanes,
-		checkpointWarningMinutes: 0.02,
-		extendGraceOnFileScope: false,
-		// Wider headroom than production defaults so coverage instrumentation
-		// cannot skip lane.checkpoint_warning before hard stall (SP-263/SP-264).
-		stallTimeoutMinutes: 1.0,
-		stallGraceAfterProgressMinutes: 0.8,
-		heartbeatIntervalMinutes: 60,
+		...SAT020_LANE_CONFIG,
 	};
 	fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf-8");
 
@@ -81,10 +88,8 @@ test("SAT-020 replay: checkpoint_warning → stall_killed → salvage_inspection
 	process.env.SPINE_WORKER_STUB_SAT020 = "1";
 	process.env.SPINE_WORKER_STUB_FILE_SCOPE = FILE_SCOPE;
 	process.env.SPINE_WORKER_STUB_OUTPUT = "SAT-020 hung after file-scope touch";
-	// Extra post-scope window so host polls can emit checkpoint_warning under coverage load.
-	process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS = "25000";
-	// Hang past hard stall (1.0 min) so host kills for stall_timeout, not stub exit.
-	process.env.SPINE_WORKER_STUB_SAT020_HANG_MS = "50000";
+	process.env.SPINE_WORKER_STUB_SAT020_POST_SCOPE_MS = SAT020_STUB_POST_SCOPE_MS;
+	process.env.SPINE_WORKER_STUB_SAT020_HANG_MS = SAT020_STUB_HANG_MS;
 
 	try {
 		const result = await startBatch({ projectRoot, scope: TASK_ID, skipPreflight: true });
