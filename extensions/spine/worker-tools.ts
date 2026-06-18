@@ -83,15 +83,14 @@ export function executeSpineReviewStep(params: SpineReviewStepParams): SpineRevi
 		};
 	}
 
-	const fallbackText =
-		details.spawnFailed && details.error?.includes("Nested reviewer spawn blocked")
-			? `${details.error}\nUse stub plan review in CI or let the batch engine run code review (SP-195).`
-			: details.error || "review step failed";
+	const fallbackText = details.skipped
+		? details.feedback || "review skipped (engine-owned)"
+		: details.error || "review step failed";
 
 	return {
 		content: [{ type: "text" as const, text: output.trim() || fallbackText }],
 		details,
-		isError: exitCode !== 0,
+		isError: exitCode !== 0 && !details.skipped,
 	};
 }
 
@@ -99,11 +98,12 @@ export const spineReviewStepTool = defineTool({
 	name: "spine_review_step",
 	label: "Spine Review Step",
 	description:
-		"Spawn a reviewer for the current task step (plan or code). Call after completing a step when the task review level requires it.",
-	promptSnippet: "Run plan or code review for a worker task step",
+		"Request plan or code review for a task step. In real-pi worker sessions the tool returns skipped (exit 0) — the batch engine runs reviews after .DONE (SP-195/SP-278). Stub batches may receive APPROVE via --stub.",
+	promptSnippet: "Request plan or code review for a worker task step (engine-owned in real-pi sessions)",
 	promptGuidelines: [
-		"After finishing a PROMPT step with review level > 0, call spine_review_step with the step number before continuing.",
-		"On REVISE verdict, address feedback and re-run the review for that step.",
+		"In real-pi worker sessions, do not rely on spine_review_step for plan or code review — the batch engine runs those after worker success.",
+		"Stub batches (SPINE_WORKER_STUB=1) may call spine_review_step for stub APPROVE at plan checkpoints.",
+		"On REVISE verdict from engine-owned review, address feedback before continuing.",
 	],
 	parameters: Type.Object({
 		step: Type.Integer({ minimum: 0, description: "Step number from PROMPT.md." }),
