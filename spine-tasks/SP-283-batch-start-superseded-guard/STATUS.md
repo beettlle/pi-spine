@@ -1,7 +1,7 @@
 # SP-283: Batch start superseded task guard — Status
 
 **Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -35,8 +35,8 @@
 **Status:** 🟡 In Progress
 
 - [x] Runbook updated
-- [ ] Issue #6 closed
-- [ ] `.DONE` created
+- [x] Issue #6 closed
+- [x] `.DONE` created
 
 ---
 
@@ -51,3 +51,5 @@
 
 | Finding | Impact |
 |---------|--------|
+| SP-257 accepted on explicit batch start despite `.SUPERSEDED` | Reproduced pre-fix; guard rejects with child IDs |
+| Full suite: 3 unrelated failures (review timeout / stall budget) | Pre-existing; SP-283 tests 8/8 pass |
