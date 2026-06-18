@@ -70,17 +70,17 @@ Operators hit preventable failures at two boundaries:
 
 4. **Model tuning:** Worker and reviewer models are static in [`templates/spine-config.json`](../templates/spine-config.json). No project-local history informs which models succeed on which task shapes.
 
-### 2.2 Relationship to zero-pi
+### 2.2 Relationship to zero-pi and spec-kit
 
-| Aspect | zero-pi | pi-spine v1.3 |
-|--------|---------|---------------|
-| Primary loop | `/forge` single-run SDD | `spine batch start` multi-task parallel |
-| Spec store | `.sdd/` canonical specs | Task packets + optional `_explore/` findings |
-| Verdict | `pasa` / `corregir` / `replantear` | `PASS` / `REVISE` / `REPLAN` (English CLI) |
-| Dependency | Requires `pi-subagents` for phases | Optional `pi-subagents` in v1.4+; not required for v1.3 |
-| GitHub | `/zero-pr`, `/zero-issue` | **Explicitly out of scope** |
+| Aspect | zero-pi | spec-kit | pi-spine v1.3 |
+|--------|---------|----------|---------------|
+| Primary loop | `/forge` single-run SDD | `/speckit.*` constitution → spec → plan → tasks | `spine batch start` multi-task parallel |
+| Spec store | `.sdd/` canonical specs | `.specify/`, `specs/<feature>/` | Task packets + optional `_explore/` findings |
+| Verdict | `pasa` / `corregir` / `replantear` | (authoring-phase checklists; no batch verdict) | `PASS` / `REVISE` / `REPLAN` (English CLI) |
+| Dependency | Requires `pi-subagents` for phases | `specify` CLI (separate install) | Optional `pi-subagents` in v1.4+; not required for v1.3 |
+| GitHub | `/zero-pr`, `/zero-issue` | **Explicitly out of scope** for pi-spine | **Explicitly out of scope** |
 
-**Composition model:** zero-pi (optional) → task packets → pi-spine. Documented in [upstream-execution-workflow.md](adoption/upstream-execution-workflow.md).
+**Composition model:** zero-pi or spec-kit (optional) → task packets → pi-spine. Documented in [upstream-execution-workflow.md](adoption/upstream-execution-workflow.md) (Path 2 and Path 4).
 
 ### 2.3 Relationship to base PRD v1.2
 

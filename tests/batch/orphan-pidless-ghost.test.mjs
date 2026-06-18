@@ -79,7 +79,7 @@ test("pidless ghost fixture reconcile is engine_orphaned, not running", async ()
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, "spine batch retry SAT-040");
+		assert.equal(result.suggestedCommand, "spine batch resume --attached");
 		assert.match(result.headline, /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);

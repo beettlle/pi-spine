@@ -17,7 +17,7 @@ Greenfield and Taskplane migration paths intentionally use different default fol
 
 Both roots use the same packet format (`PROMPT.md`, `STATUS.md`, `dependencies.json`). Completion markers live at `<tasksRoot>/<task-id>/.DONE`. `spine doctor` and `spine plan` read the configured root — mixing folders without updating config will hide tasks.
 
-**Upstream authoring (v1.3):** Before your first batch, read [upstream-execution-workflow.md](./upstream-execution-workflow.md) — how PRDs (or optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) explore/plan) become task packets, then `spine tasks validate` → `spine batch start`. pi-spine does not depend on zero-pi.
+**Upstream authoring (v1.3):** Before your first batch, read [upstream-execution-workflow.md](./upstream-execution-workflow.md) — how PRDs (or optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) explore/plan, or [spec-kit](https://github.com/github/spec-kit) constitution → spec → plan → tasks) become task packets, then `spine tasks validate` → `spine batch start`. pi-spine does not depend on zero-pi or spec-kit.
 
 ---
 
@@ -73,7 +73,9 @@ See [local-install.md](./local-install.md) for `file:` dependencies and PATH tro
 spine init
 ```
 
-This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, and spine gitignore entries (testing commands, gates, dashboard port, lane defaults). When `.cursor/rules/` exists, init also copies `.spine/rules-profile.json`, runs `spine rules discover`, and writes `.spine/rules-manifest.json` — **commit the manifest** to git.
+This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `spine-tasks/`, `docs/constitution.md` (editable principles scaffold listed in `referenceDocs`), and spine gitignore entries (testing commands, gates, dashboard port, lane defaults). When `.cursor/rules/` exists, init also copies `.spine/rules-profile.json`, runs `spine rules discover`, and writes `.spine/rules-manifest.json` — **commit the manifest** to git.
+
+Edit `docs/constitution.md` before your first task packets so Mission and non-negotiable rules reflect your project.
 
 ### 3. Add your first task
 

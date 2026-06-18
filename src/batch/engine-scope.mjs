@@ -3,8 +3,11 @@
  */
 
 import { discoverTasks } from "../tasks/packet/discover.mjs";
-import { filterPendingTaskIds } from "../planner/pending.mjs";
-import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
+import {
+	assertBatchStartTasksNotSuperseded,
+	filterPendingTaskIds,
+} from "../planner/pending.mjs";
+import { NO_PENDING_TASKS_ERROR, parseScope } from "../planner/scope.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	loadSpineBatchState,
@@ -51,13 +54,14 @@ export function isExplicitBatchScope(scope) {
  *
  * @param {string} scope
  * @param {string} tasksRoot
+ * @param {{ forceSuperseded?: boolean }} [options]
  */
-export function resolveBatchStartScope(scope, tasksRoot) {
+export function resolveBatchStartScope(scope, tasksRoot, options = {}) {
 	const trimmed = String(scope ?? "").trim();
 	const normalized = trimmed.toLowerCase();
+	const discovered = discoverTasks(tasksRoot);
 
 	if (!trimmed || normalized === "all") {
-		const discovered = discoverTasks(tasksRoot);
 		const pendingIds = filterPendingTaskIds(discovered, tasksRoot);
 		if (pendingIds.length === 0) {
 			return {
@@ -75,6 +79,29 @@ export function resolveBatchStartScope(scope, tasksRoot) {
 
 	if (normalized === "pending") {
 		return { ok: true, scope: "pending", policyScope: "pending" };
+	}
+
+	let resolvedTaskIds = [];
+	try {
+		const scopeResult = parseScope(trimmed, { tasksRoot, discoveredTasks: discovered });
+		resolvedTaskIds = scopeResult.taskIds;
+	} catch {
+		// Scope parsing errors surface again during buildPlan; still guard bare task ID tokens.
+		resolvedTaskIds = trimmed.split(/\s+/).filter((token) => /^[A-Z][A-Z0-9]*-\d{3,}$/.test(token));
+	}
+
+	const supersededGuard = assertBatchStartTasksNotSuperseded(
+		resolvedTaskIds,
+		tasksRoot,
+		discovered,
+		options,
+	);
+	if (!supersededGuard.ok) {
+		return {
+			ok: false,
+			error: supersededGuard.error,
+			output: supersededGuard.output,
+		};
 	}
 
 	return { ok: true, scope: trimmed, policyScope: trimmed };

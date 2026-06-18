@@ -58,7 +58,7 @@
   },
   "worktreeSetupHook": "",
   "worktreeSetupIgnorePaths": [],
-  "referenceDocs": [],
+  "referenceDocs": ["docs/constitution.md"],
   "standards": [],
   "neverLoad": []
 }

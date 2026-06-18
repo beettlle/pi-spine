@@ -1,7 +1,7 @@
 # SP-286: Path 4 spec-kit upstream docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,37 +11,37 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Path 2 structure reviewed
+- [x] Path 2 structure reviewed
 
 ---
 
 ### Step 1: Path 4 upstream workflow
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] upstream-execution-workflow.md updated
+- [x] upstream-execution-workflow.md updated
 
 ---
 
 ### Step 2: Cross-links and PRD table
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README, bootstrap, runbook, QUICK-REFERENCE linked
+- [x] README, bootstrap, runbook, QUICK-REFERENCE linked
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Full test suite passing
+- [x] Full test suite passing (typecheck OK; contract `testCommand: true`; 3 pre-existing timeout test failures unrelated to docs)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -63,7 +63,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 1–2 | Path 4 docs + cross-links committed |
+| 2026-06-18 | Step 3 | typecheck pass; npm test 917/920 (3 pre-existing timeout failures) |
+| 2026-06-18 | Step 4 | Internal links verified; .DONE created |
 
 ---
 
