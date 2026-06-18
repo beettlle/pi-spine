@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-17 (Phase 28 decomposed — SP-263–277 staged)
+**Last Updated:** 2026-06-17 (Phase 29 — GitHub issue fix tasks SP-278–280 staged)
 **Status:** Active
-**Next Task ID:** SP-278
+**Next Task ID:** SP-281
 
 ---
 
@@ -686,6 +686,23 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 6. **Wave 5:** `SP-268`
 7. **Wave 6:** `SP-274`
 8. **Wave 7:** `SP-275`
+
+#### Phase 29 — GitHub issue fixes (2026-06-17)
+
+**Source:** Open issues [#1](https://github.com/beettlle/pi-spine/issues/1), [#2](https://github.com/beettlle/pi-spine/issues/2), [#3](https://github.com/beettlle/pi-spine/issues/3) from Wave 0/1 batch operations.
+
+Each task **closes its issue** in Documentation & Delivery via `gh issue close`.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-278 | Worker review-step delegate (skip nested spawn) | M | **Staged** | — | #1 |
+| SP-279 | Engine final-review stall recovery | M | **Staged** | SP-278 | #2 |
+| SP-280 | Post-merge integrate gate auto-open | S | **Staged** | — | #3 |
+
+**Suggested batches:**
+
+1. **Wave 0 (parallel):** `SP-278`, `SP-280`
+2. **Wave 1:** `SP-279`
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 
