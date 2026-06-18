@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * pi-spine worker host — spawn worker in lane worktree with heartbeat polling.
  */
@@ -38,6 +39,20 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 const POST_DONE_KILL_BACKOFF_MS = 5_000;
 
+/** @typedef {"launching" | "pi" | "verify" | "unknown"} WorkerPhase */
+
+/**
+ * @typedef {import("node:child_process").ChildProcess | {
+ *   pid: number;
+ *   exitCode: number | null;
+ *   kill: (signal?: NodeJS.Signals) => boolean;
+ *   wait?: () => Promise<{ exitCode: number; output: string }>;
+ *   stdout?: NodeJS.ReadableStream | null;
+ *   stderr?: NodeJS.ReadableStream | null;
+ *   on?: import("node:events").EventEmitter["on"];
+ * }} WorkerChildHandle
+ */
+
 /**
  * @param {number} ms
  */
@@ -57,6 +72,16 @@ function resolveWorkerLaunchScript(projectRoot, config = {}) {
 
 /**
  * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} params.worktreePath
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneCorrelationId]
+ * @param {string[]} [params.fileScopePaths]
+ * @param {object} [params.config]
+ * @param {number} [params.piTimeoutMs]
  */
 export function buildWorkerChildEnv({
 	taskFolder,
@@ -71,6 +96,7 @@ export function buildWorkerChildEnv({
 	piTimeoutMs,
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
+	/** @type {NodeJS.ProcessEnv} */
 	const env = {
 		...process.env,
 		SPINE_TASK_FOLDER: taskFolder,
@@ -103,6 +129,18 @@ export function buildWorkerChildEnv({
 
 /**
  * @param {object} params
+ * @param {string} params.worktreePath
+ * @param {string} params.taskFolder
+ * @param {boolean} params.useStub
+ * @param {number} params.timeoutMs
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneCorrelationId]
+ * @param {string[]} [params.fileScopePaths]
+ * @param {object} [params.config]
+ * @param {number} [params.piTimeoutMs]
  */
 function spawnWorkerChild({
 	worktreePath,
@@ -151,6 +189,19 @@ function spawnWorkerChild({
 
 /**
  * @param {object} params
+ * @param {string} params.rawOutput
+ * @param {string} params.classification
+ * @param {number} params.exitCode
+ * @param {string} params.mode
+ * @param {boolean} params.doneFound
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneCorrelationId]
+ * @param {object} [params.config]
+ * @param {number} [params.stallDeadline]
+ * @param {object} [params.signals]
  */
 function buildWorkerFailureResult({
 	rawOutput,
@@ -194,7 +245,8 @@ function buildWorkerFailureResult({
 }
 
 /**
- * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
+ * @param {WorkerChildHandle} child
+ * @param {() => void} onPreflightComplete
  */
 function markChildPastPreflight(child, onPreflightComplete) {
 	if (typeof child.stdout?.on === "function") {
@@ -207,6 +259,10 @@ function markChildPastPreflight(child, onPreflightComplete) {
 
 /**
  * @param {object} params
+ * @param {boolean} params.childPastPreflight
+ * @param {boolean} params.useStub
+ * @param {string} params.workerBackend
+ * @returns {WorkerPhase}
  */
 function resolveWorkerPhase({
 	childPastPreflight,
@@ -221,7 +277,7 @@ function resolveWorkerPhase({
 /**
  * SIGTERM then SIGKILL when a worker stays alive after post-.DONE grace.
  *
- * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
+ * @param {WorkerChildHandle} child
  * @param {Promise<{ exitCode: number; output: string }>} childDone
  */
 async function terminateHungWorkerChild(child, childDone) {
@@ -237,22 +293,22 @@ async function terminateHungWorkerChild(child, childDone) {
 }
 
 /**
- * @param {import("node:child_process").ChildProcess | ReturnType<typeof startAgentSessionWorker>} child
+ * @param {WorkerChildHandle} child
  */
 function collectChildOutput(child) {
-	if (typeof child.wait === "function") {
+	if ("wait" in child && typeof child.wait === "function") {
 		return child.wait();
 	}
 	return new Promise((resolve) => {
 		let stdout = "";
 		let stderr = "";
-		child.stdout?.on("data", (chunk) => {
+		child.stdout?.on("data", (/** @type {Buffer | string} */ chunk) => {
 			stdout += chunk.toString();
 		});
-		child.stderr?.on("data", (chunk) => {
+		child.stderr?.on("data", (/** @type {Buffer | string} */ chunk) => {
 			stderr += chunk.toString();
 		});
-		child.on("close", (code) => {
+		child.on?.("close", (/** @type {number | null} */ code) => {
 			resolve({ exitCode: code ?? 1, output: `${stdout}${stderr}` });
 		});
 	});
@@ -260,6 +316,18 @@ function collectChildOutput(child) {
 
 /**
  * @param {object} params
+ * @param {string} params.worktreePath
+ * @param {string} params.taskFolder
+ * @param {boolean} params.useStub
+ * @param {number} params.timeoutMs
+ * @param {number} [params.piTimeoutMs]
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneCorrelationId]
+ * @param {string[]} [params.fileScopePaths]
+ * @param {object} [params.config]
  * @param {object} [params.workerBackendDeps]
  */
 function spawnWorkerHandle({
@@ -290,14 +358,14 @@ function spawnWorkerHandle({
 
 	if (!useStub && resolveWorkerBackend(config) === "agentSession") {
 		return startAgentSessionWorker(
-			{
+			/** @type {{ worktreePath: string; taskFolder: string; config?: object; taskFileScope?: string[]; journal?: import("../config/worker-context.mjs").WorkerRulesJournalContext; projectRoot?: string }} */ ({
 				worktreePath,
 				taskFolder,
 				config,
 				taskFileScope: fileScopePaths,
 				journal,
 				projectRoot,
-			},
+			}),
 			workerBackendDeps ?? {},
 		);
 	}
@@ -331,6 +399,7 @@ function spawnWorkerHandle({
  * @param {object} [params.config]
  * @param {(timestamp: number) => void} [params.onHeartbeat]
  * @param {(pid: number) => void} [params.onWorkerPid]
+ * @param {string[]} [params.fileScopePaths]
  * @param {number} [params.timeoutMs]
  * @param {object} [params.workerBackendDeps] Test-only injectables for agentSession backend
  */
@@ -417,13 +486,15 @@ export async function runWorker({
 		config,
 		workerBackendDeps,
 	});
+	const workerChild = /** @type {WorkerChildHandle} */ (child);
 	let childPastPreflight = !useLaunchScript;
+	/** @type {WorkerPhase} */
 	let workerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
-	markChildPastPreflight(child, () => {
+	markChildPastPreflight(workerChild, () => {
 		childPastPreflight = true;
 	});
-	onWorkerPid?.(child.pid ?? 0);
-	const childDone = collectChildOutput(child);
+	onWorkerPid?.(workerChild.pid ?? 0);
+	const childDone = collectChildOutput(workerChild);
 
 	while (true) {
 		const doneOnDisk = fs.existsSync(donePath);
@@ -437,7 +508,7 @@ export async function runWorker({
 			const abortSignal = readAbortSignal(projectRoot, batchId);
 			if (abortSignal) {
 				const hard = Boolean(abortSignal.hard);
-				child.kill(hard ? "SIGKILL" : "SIGTERM");
+				workerChild.kill(hard ? "SIGKILL" : "SIGTERM");
 				const { output } = await childDone;
 				return buildWorkerFailureResult({
 					rawOutput: output,
@@ -456,7 +527,7 @@ export async function runWorker({
 		}
 
 		if (doneOnDisk) {
-			if (child.exitCode !== null) {
+			if (workerChild.exitCode !== null) {
 				break;
 			}
 			const graceElapsed = now - (postDoneStartedAt ?? now);
@@ -468,18 +539,18 @@ export async function runWorker({
 						correlationId: laneCorrelationId,
 						graceElapsedMs: graceElapsed,
 						postDoneGraceMs: stallConfig.postDoneGraceMs,
-						childPid: child.pid ?? null,
+						childPid: workerChild.pid ?? null,
 					});
 				}
 				postDoneTerminated = true;
-				await terminateHungWorkerChild(child, childDone);
+				await terminateHungWorkerChild(workerChild, childDone);
 				break;
 			}
 			await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
 			continue;
 		}
 
-		const signals = collectProgressSignals({
+		const signals = collectProgressSignals(/** @type {any} */ ({
 			worktreePath,
 			taskFolder,
 			laneBranch,
@@ -488,7 +559,7 @@ export async function runWorker({
 				projectRoot && batchId
 					? { projectRoot, batchId, laneNumber, taskId }
 					: undefined,
-		});
+		}));
 		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
 			lastCheckpointAt = now;
@@ -546,12 +617,12 @@ export async function runWorker({
 			batchId &&
 			now - lastHeartbeatAt >= stallConfig.heartbeatIntervalMs
 		) {
-			const heartbeatKind = resolveHeartbeatKind({
+			const heartbeatKind = resolveHeartbeatKind(/** @type {any} */ ({
 				workerPhase,
 				checkpointChanged,
 				activityChanged,
-			});
-			recordLaneHeartbeat({
+			}));
+			recordLaneHeartbeat(/** @type {any} */ ({
 				projectRoot,
 				batchId,
 				laneNumber,
@@ -560,7 +631,7 @@ export async function runWorker({
 				correlationId: laneCorrelationId,
 				workerPhase,
 				heartbeatKind,
-			});
+			}));
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;
 		}
@@ -584,7 +655,7 @@ export async function runWorker({
 				});
 				stallWarningSent = true;
 			}
-			child.kill("SIGTERM");
+			workerChild.kill("SIGTERM");
 			const { output } = await childDone;
 			return buildWorkerFailureResult({
 				rawOutput: output,
@@ -603,7 +674,7 @@ export async function runWorker({
 			});
 		}
 
-		if (child.exitCode !== null) {
+		if (workerChild.exitCode !== null) {
 			break;
 		}
 

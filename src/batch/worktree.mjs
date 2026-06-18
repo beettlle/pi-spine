@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Git worktree provisioning for pi-spine lanes (PRD §9.4).
  */
@@ -177,6 +178,10 @@ export function ensureOrchBranch(projectRoot, baseBranch, orchBranch) {
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {number} [params.laneNumber]
+ * @param {string} params.orchBranch
  */
 export function provisionLaneWorktree({
 	projectRoot,
@@ -227,6 +232,11 @@ export function removeLaneWorktrees(projectRoot, batchId, maxLaneNumber) {
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.worktreePath
+ * @param {string} params.batchId
+ * @param {number} [params.laneNumber]
+ * @param {object} [params.config]
  */
 export function runWorktreeSetupHook({
 	projectRoot,
