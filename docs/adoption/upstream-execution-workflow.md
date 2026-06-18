@@ -4,9 +4,9 @@
 **Normative spec:** [PRD v1.3 addendum](../PRD-v1.3-upstream-execution-bridge.md) (FR-UXB-01)  
 **Related:** [bootstrap-checklist.md](./bootstrap-checklist.md), [operator-runbook.md](./operator-runbook.md), [create-spine-tasks skill](../../skills/create-spine-tasks/SKILL.md)
 
-pi-spine runs **batches** from task packets. This guide explains how work gets **into** those packets — with or without [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) upstream — and how to hand off to `spine batch start` safely.
+pi-spine runs **batches** from task packets. This guide explains how work gets **into** those packets — with or without optional upstream tools ([zero-pi](https://pi.dev/packages/@gonrocca/zero-pi), [GitHub spec-kit](https://github.com/github/spec-kit)) — and how to hand off to `spine batch start` safely.
 
-**pi-spine does not invoke zero-pi.** Both packages may be installed on the same machine; they do not share state (`.spine/` vs `.sdd/`).
+**pi-spine does not invoke zero-pi or spec-kit.** Upstream tools may be installed separately; they do not share state with pi-spine (`.spine/` vs `.sdd/` vs `.specify/`).
 
 ---
 
@@ -17,6 +17,7 @@ pi-spine runs **batches** from task packets. This guide explains how work gets *
 | **Spine-native** | You have a PRD, brief, or clear feature scope | `create-spine-tasks` skill | `spine-tasks/` (greenfield) |
 | **zero-pi optional** | You want SDD explore/plan before packets | zero-pi `/forge` then manual/skill conversion | Same as spine-native |
 | **Taskplane migrant** | Existing `taskplane-tasks/` folders | None (reuse packets) | `taskplane-tasks/` |
+| **spec-kit optional** | You want constitution → spec → plan → tasks before packets | [spec-kit](https://github.com/github/spec-kit) `/speckit.*` then manual/skill conversion | Same as spine-native |
 
 ### Decision tree
 
@@ -28,6 +29,8 @@ Do you already have PROMPT.md / STATUS.md packets?
     │   └── Optional explore (Step 0) → create-spine-tasks → validate → batch
     ├── Using zero-pi for this feature?
     │   └── /forge explore+plan → copy tasks/design into PROMPT packets → validate → batch
+    ├── Using spec-kit for this feature?
+    │   └── /speckit.constitution → specify → clarify → plan → tasks → convert to PROMPT packets → validate → batch
     └── Greenfield / small scope?
         └── create-spine-tasks from PRD → validate → batch
 ```
@@ -36,15 +39,17 @@ Do you already have PROMPT.md / STATUS.md packets?
 
 ## Artifact handoff map
 
-| Stage | zero-pi (optional) | pi-spine (required) |
-|-------|-------------------|---------------------|
-| Exploration | `.sdd/` run explore findings | `{tasksRoot}/_explore/{slug}/findings.md` |
-| Plan / tasks list | `.sdd/` plan, tasks artifacts | `PROMPT.md` steps + `dependencies.json` |
-| Execution state | Run slug under `.sdd/` | `STATUS.md`, `.DONE`, `.reviews/` |
-| Orchestration | (none — zero-pi is single-run) | `.spine/batch-state.json`, journal, gates |
-| Operator continuity | `.pi/zero-resume.md` (pi session) | `.spine/handoff.md` (batch operator) |
+| Stage | zero-pi (optional) | spec-kit (optional) | pi-spine (required) |
+|-------|-------------------|---------------------|---------------------|
+| Principles / constitution | (none — use project docs) | `.specify/memory/constitution.md` | `docs/constitution.md` (optional `spine init` template) |
+| Exploration | `.sdd/` run explore findings | `specs/<feature>/spec.md` (after `/speckit.specify`) | `{tasksRoot}/_explore/{slug}/findings.md` |
+| Clarify / plan | `.sdd/` plan artifacts | `specs/<feature>/plan.md` (after `/speckit.clarify`, `/speckit.plan`) | `PROMPT.md` Mission + Context to Read First |
+| Plan / tasks list | `.sdd/` tasks artifacts | `specs/<feature>/tasks.md` (after `/speckit.tasks`) | `PROMPT.md` steps + `dependencies.json` |
+| Execution state | Run slug under `.sdd/` | `.specify/` session state (authoring only) | `STATUS.md`, `.DONE`, `.reviews/` |
+| Orchestration | (none — zero-pi is single-run) | (none — spec-kit is single-feature authoring) | `.spine/batch-state.json`, journal, gates |
+| Operator continuity | `.pi/zero-resume.md` (pi session) | Feature branch + spec-kit artifacts on disk | `.spine/handoff.md` (batch operator) |
 
-**Conversion rule:** zero-pi outputs are **inputs to authoring**, not auto-imported. A human or the `create-spine-tasks` skill turns plan/tasks into spine packets.
+**Conversion rule:** zero-pi and spec-kit outputs are **inputs to authoring**, not auto-imported. A human or the `create-spine-tasks` skill turns plan/tasks into spine packets.
 
 ---
 
@@ -122,6 +127,64 @@ Install zero-pi separately (`pi install npm:@gonrocca/zero-pi`); pi-spine does n
 
 ---
 
+## Path 4 — spec-kit optional upstream
+
+Install [spec-kit](https://github.com/github/spec-kit) separately (`specify init` or project bootstrap per spec-kit docs); pi-spine does not depend on the `specify` CLI or `.specify/` state.
+
+### Steps
+
+1. **Constitution** (spec-kit) — establish project principles:
+   ```text
+   /speckit.constitution
+   ```
+   Output: `.specify/memory/constitution.md` (or project-adapted path). Optionally align with `docs/constitution.md` from `spine init`.
+2. **Specify** — draft the feature spec:
+   ```text
+   /speckit.specify "feature description"
+   ```
+   Output: `specs/<feature>/spec.md`
+3. **Clarify** — resolve ambiguities before planning:
+   ```text
+   /speckit.clarify
+   ```
+4. **Plan** — technical plan from the spec:
+   ```text
+   /speckit.plan
+   ```
+   Output: `specs/<feature>/plan.md`
+5. **Tasks** — ordered work breakdown:
+   ```text
+   /speckit.tasks
+   ```
+   Output: `specs/<feature>/tasks.md`
+6. **Convert** — from spec-kit artifacts, author spine packets:
+   - Constitution + spec → task Mission and Context to Read First
+   - `plan.md` → File Scope hints and technical constraints per task
+   - `tasks.md` → multiple `SP-*` folders via `create-spine-tasks` (manual mapping or skill-assisted)
+7. **Spine-only from here:**
+   ```bash
+   spine tasks validate pending
+   spine preflight
+   spine batch start pending
+   ```
+
+### Feature-branch handoff during authoring
+
+Spec-kit authoring often happens on a feature branch while batch execution targets the same branch or a follow-up integration branch. Before `spine batch start`:
+
+- Commit or stash spec-kit artifacts (`specs/`, `.specify/`) so workers see stable inputs listed in `## Context to Read First`.
+- Do not assume pi-spine workers run `/speckit.*` commands — packets must be self-contained.
+
+### What not to do
+
+- Do not add `specify` or spec-kit as a pi-spine npm dependency.
+- Do not auto-import `specs/<feature>/tasks.md` into spine packets — conversion is manual or skill-assisted.
+- Do not run `/speckit.implement` and `spine batch start` on the same checkout concurrently.
+- Do not expect pi-spine to read `.specify/` or `specs/` automatically.
+- Do not treat spec-kit task IDs as spine task IDs — author `SP-*` packets with explicit File Scope.
+
+---
+
 ## Validation before every batch (v1.3)
 
 `spine tasks validate` catches PROMPT errors that otherwise surface as `prompt_parse_failed` at worker launch.
@@ -184,15 +247,16 @@ Use metrics to compare models and task outcomes over time. v1.3 collects data on
 
 ---
 
-## Coexistence with zero-pi and Taskplane
+## Coexistence with zero-pi, spec-kit, and Taskplane
 
 | Tool | State location | Concurrent batch? |
 |------|----------------|-------------------|
 | pi-spine | `.spine/` | One active spine batch per repo |
 | Taskplane | `.pi/batch-state.json` | **No** — mutual exclusion |
 | zero-pi | `.sdd/`, `~/.pi/zero.json` | Independent; avoid parallel edits to same files |
+| spec-kit | `.specify/`, `specs/<feature>/` | Independent; avoid `/speckit.implement` during `spine batch start` |
 
-`spine doctor` and `spine preflight` warn when Taskplane has an active batch.
+`spine doctor` and `spine preflight` warn when Taskplane has an active batch. Spec-kit and zero-pi state are invisible to pi-spine — reference artifact paths explicitly in task packets.
 
 ---
 
@@ -229,3 +293,4 @@ spine batch complete
 - [operator-runbook.md](./operator-runbook.md) — daily procedures
 - [bootstrap-checklist.md](./bootstrap-checklist.md) — first-time setup
 - [zero-pi package](https://pi.dev/packages/@gonrocca/zero-pi) — upstream SDD (optional)
+- [GitHub spec-kit](https://github.com/github/spec-kit) — constitution → spec → plan → tasks (optional)

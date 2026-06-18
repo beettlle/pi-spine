@@ -12,7 +12,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 |-----|------|
 | [local-install.md](./local-install.md) | First install from git checkout |
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
-| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional zero-pi upstream) |
+| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) or [spec-kit](https://github.com/github/spec-kit) upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
 
 **CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:

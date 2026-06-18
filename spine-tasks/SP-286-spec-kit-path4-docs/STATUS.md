@@ -1,7 +1,7 @@
 # SP-286: Path 4 spec-kit upstream docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,28 +11,28 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Path 2 structure reviewed
+- [x] Path 2 structure reviewed
 
 ---
 
 ### Step 1: Path 4 upstream workflow
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] upstream-execution-workflow.md updated
+- [x] upstream-execution-workflow.md updated
 
 ---
 
 ### Step 2: Cross-links and PRD table
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README, bootstrap, runbook, QUICK-REFERENCE linked
+- [x] README, bootstrap, runbook, QUICK-REFERENCE linked
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Full test suite passing
 
