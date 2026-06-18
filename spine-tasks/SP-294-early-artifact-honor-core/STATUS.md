@@ -1,7 +1,7 @@
 # SP-294: Early artifact honor core — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,26 +11,26 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #5 timeline reviewed
-- [ ] SP-285 merged
+- [x] Issue #5 timeline reviewed
+- [x] SP-285 merged
 
 ---
 
 ### Step 1: Early artifact honor loop
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Poll + honor implemented
-- [ ] Final-review guard intact
+- [x] Poll + honor implemented
+- [x] Final-review guard intact
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Typecheck + stub tests pass
-- [ ] Coverage ≥77%
+- [x] Typecheck + stub tests pass
+- [x] Coverage ≥77%
 
 ---
 
