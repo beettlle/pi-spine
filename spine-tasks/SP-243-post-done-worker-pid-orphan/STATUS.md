@@ -1,31 +1,40 @@
-# SP-243: Post-done workerPid orphan false positive — Status
+# Status: SP-243 — Post-done workerPid orphan false positive
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-06-13
-**Review Level:** 2
-**Size:** S
+**Task:** SP-243-post-done-worker-pid-orphan
+**Started:** 2026-06-13
+**Completed:** 2026-06-14
 
----
+## Progress
 
 ### Step 0: Preflight
+
 **Status:** ✅ Complete
+
+- [x] Reconstructed batch `20260613T234821` journal ordering
 
 ### Step 1: Fix workerPid lifecycle
+
 **Status:** ✅ Complete
 
-### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+- [x] Clear `lane.workerPid` on successful worker return before `lane.completed`
+- [x] Skip `worker_orphaned` when scoped journal has `lane.completed` for running task
 
-- [ ] FULL test suite passing
+### Step 2: Testing & Verification
+
+**Status:** ✅ Complete
+
+- [x] Regression test: dead workerPid + lane.completed → not worker_orphaned
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 902 pass (2026-06-18)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
 
----
+**Status:** ✅ Complete
+
+- [x] `.DONE` created
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-13 | Incident triage | Batch 20260613T234821 worker_orphaned during SP-234 code review after post_done_terminated |
+| 2026-06-14 | Landed | workerPid cleared; orphan detect honors lane.completed |

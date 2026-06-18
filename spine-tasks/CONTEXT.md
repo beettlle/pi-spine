@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-17 (Phase 29 — GitHub issue fix tasks SP-278–280 staged)
+**Last Updated:** 2026-06-18 (Phase 30 — GitHub issue follow-ups SP-281–282 staged)
 **Status:** Active
-**Next Task ID:** SP-281
+**Next Task ID:** SP-283
 
 ---
 
@@ -657,52 +657,58 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-256 | Fix `commandExists` pi availability check | S | **Staged** | — |
-| SP-263 | SAT-020 coverage flake diagnosis | S | **Staged** | — |
-| SP-264 | SAT-020 coverage stabilization fix | S | **Staged** | SP-263 |
-| SP-265 | Extract review-shared pure helpers | S | **Staged** | — |
-| SP-266 | Wire review dedup imports | S | **Staged** | SP-265 |
+| SP-256 | Fix `commandExists` pi availability check | S | **Done** | — |
+| SP-263 | SAT-020 coverage flake diagnosis | S | **Done** | — |
+| SP-264 | SAT-020 coverage stabilization fix | S | **Done** | SP-263 |
+| SP-265 | Extract review-shared pure helpers | S | **Done** | — |
+| SP-266 | Wire review dedup imports | S | **Done** | SP-265 |
 | SP-267 | Extract review-spawn module | S | **Staged** | SP-266 |
 | SP-268 | Review-spawn tests and guard regression | S | **Staged** | SP-267 |
-| SP-269 | Move config loaders to src/config | S | **Staged** | — |
-| SP-270 | Rewire batch imports off bin | S | **Staged** | SP-269 |
-| SP-271 | Rewire cli/migrate + layer inversion test | S | **Staged** | SP-269 |
-| SP-272 | ESLint flat config and npm script | S | **Staged** | — |
-| SP-273 | Wire lint into CI and runbook | S | **Staged** | SP-272 |
+| SP-269 | Move config loaders to src/config | S | **Done** | — |
+| SP-270 | Rewire batch imports off bin | S | **Done** | SP-269 |
+| SP-271 | Rewire cli/migrate + layer inversion test | S | **Done** | SP-269 |
+| SP-272 | ESLint flat config and npm script | S | **Done** | — |
+| SP-273 | Wire lint into CI and runbook | S | **Done** | SP-272 |
 | SP-274 | Add tsconfig.batch and typecheck script | S | **Staged** | SP-271 |
 | SP-275 | JSDoc checkJs for batch hot paths | S | **Staged** | SP-274 |
-| SP-276 | Best-of-N README documentation | S | **Staged** | — |
-| SP-277 | CI-first publish doc sync | S | **Staged** | — |
+| SP-276 | Best-of-N README documentation | S | **Done** | — |
+| SP-277 | CI-first publish doc sync | S | **Done** | — |
 
 **Superseded (`.SUPERSEDED`):** SP-257→263–264, SP-258→265–266, SP-259→267–268, SP-260→269–271, SP-261→272–273, SP-262→274–275
 
-**Suggested batches:**
+**Suggested batches (remaining — 6 pending):**
 
-1. **Wave 0 (parallel, ≤4 lanes):** `SP-256`, `SP-263`, `SP-269`, `SP-272`, `SP-276`, `SP-277`
-2. **Wave 1:** `SP-264`, `SP-270`, `SP-273`
-3. **Wave 2:** `SP-271`, `SP-265`
-4. **Wave 3:** `SP-266`
-5. **Wave 4:** `SP-267`
-6. **Wave 5:** `SP-268`
-7. **Wave 6:** `SP-274`
-8. **Wave 7:** `SP-275`
+1. **Wave 0 (parallel):** `SP-267`, `SP-274`, `SP-281`
+2. **Wave 1 (parallel):** `SP-268`, `SP-275`
+3. **Wave 2:** `SP-282` (closes #5)
+
+Completed Phase 28 slices (`.DONE`): SP-256, SP-263–266, SP-269–273, SP-276–277.
 
 #### Phase 29 — GitHub issue fixes (2026-06-17)
 
-**Source:** Open issues [#1](https://github.com/beettlle/pi-spine/issues/1), [#2](https://github.com/beettlle/pi-spine/issues/2), [#3](https://github.com/beettlle/pi-spine/issues/3) from Wave 0/1 batch operations.
+**Source:** Issues [#1](https://github.com/beettlle/pi-spine/issues/1), [#2](https://github.com/beettlle/pi-spine/issues/2), [#3](https://github.com/beettlle/pi-spine/issues/3). Batch `20260618T000943` landed on `main`.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-278 | Worker review-step delegate (skip nested spawn) | M | **Done** | — | #1 |
+| SP-279 | Engine final-review stall recovery | M | **Done** | SP-278 | #2 |
+| SP-280 | Post-merge integrate gate auto-open | S | **Done** | — | #3 |
+
+#### Phase 30 — GitHub issue follow-ups (2026-06-18)
+
+**Source:** Open issues [#4](https://github.com/beettlle/pi-spine/issues/4), [#5](https://github.com/beettlle/pi-spine/issues/5) filed after batch `20260618T000943` land loop (gate limbo recurrence + 90min reviewer hang).
 
 Each task **closes its issue** in Documentation & Delivery via `gh issue close`.
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-278 | Worker review-step delegate (skip nested spawn) | M | **Staged** | — | #1 |
-| SP-279 | Engine final-review stall recovery | M | **Staged** | SP-278 | #2 |
-| SP-280 | Post-merge integrate gate auto-open | S | **Staged** | — | #3 |
+| SP-281 | Attached batch integrate gate limbo (SP-280 follow-up) | M | **Staged** | — | #4 |
+| SP-282 | Reviewer early artifact honor (hung pi follow-up) | M | **Staged** | SP-268 | #5 |
 
-**Suggested batches:**
+**Suggested batches (with Phase 28 remainder):**
 
-1. **Wave 0 (parallel):** `SP-278`, `SP-280`
-2. **Wave 1:** `SP-279`
+1. **Wave 0 (parallel):** `SP-267`, `SP-274`, `SP-281`
+2. **Wave 1 (parallel):** `SP-268`, `SP-275`, `SP-282`
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 
