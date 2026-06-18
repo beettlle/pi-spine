@@ -1,7 +1,7 @@
 # SP-287: Spec persistence models doc — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -36,17 +36,17 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Verify links resolve
-- [ ] `.DONE` created
+- [x] Verify links resolve
+- [x] `.DONE` created
 
 ---
 
@@ -63,6 +63,7 @@
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-18 | Step 0–2 | spec-persistence.md + cross-links written |
+| 2026-06-18 | Step 3–4 | 920 tests pass; .DONE created |
 
 ---
 
