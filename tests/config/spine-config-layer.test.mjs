@@ -7,21 +7,6 @@ import test from "node:test";
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SRC_ROOT = path.join(REPO_ROOT, "src");
 
-/** Parallel lane SP-270 — remove when batch/dashboard rewires land. */
-const PENDING_SP270_PREFIXES = ["src/batch/"];
-const PENDING_SP270_FILES = new Set(["src/dashboard/snapshot.mjs"]);
-
-/**
- * Preflight orchestration calls CLI doctor/plan formatters; not config-loader shims.
- * @type {Map<string, Set<string>>}
- */
-const ALLOWED_BIN_IMPORTS = new Map([
-	[
-		"src/config/spine-preflight-lib.mjs",
-		new Set(["../../bin/spine.mjs", "../../bin/spine-plan.mjs"]),
-	],
-]);
-
 const IMPORT_FROM_BIN_PATTERN =
 	/(?:import\s+[\s\S]*?\sfrom\s+|export\s+[\s\S]*?\sfrom\s+|import\s*\(\s*)['"]([^'"]*\/bin\/[^'"]+)['"]/g;
 
@@ -60,16 +45,6 @@ function findBinImportSpecifiers(filePath) {
 }
 
 /**
- * @param {string} repoRelativePath
- */
-function isPendingSp270(repoRelativePath) {
-	if (PENDING_SP270_FILES.has(repoRelativePath)) {
-		return true;
-	}
-	return PENDING_SP270_PREFIXES.some((prefix) => repoRelativePath.startsWith(prefix));
-}
-
-/**
  * @returns {{ file: string, specifier: string }[]}
  */
 export function collectSrcBinImportViolations() {
@@ -78,15 +53,7 @@ export function collectSrcBinImportViolations() {
 
 	for (const absolutePath of listSrcMjsFiles(SRC_ROOT)) {
 		const repoRelative = path.relative(REPO_ROOT, absolutePath).split(path.sep).join("/");
-		if (isPendingSp270(repoRelative)) {
-			continue;
-		}
-
-		const allowed = ALLOWED_BIN_IMPORTS.get(repoRelative);
 		for (const specifier of findBinImportSpecifiers(absolutePath)) {
-			if (allowed?.has(specifier)) {
-				continue;
-			}
 			violations.push({ file: repoRelative, specifier });
 		}
 	}
@@ -105,7 +72,7 @@ test("src/cli and src/migrate do not import from bin/", () => {
 	);
 });
 
-test("src/** has no disallowed bin/ imports (SP-270 batch paths pending)", () => {
+test("src/** has no bin/ imports", () => {
 	const violations = collectSrcBinImportViolations();
 	assert.deepEqual(
 		violations,
