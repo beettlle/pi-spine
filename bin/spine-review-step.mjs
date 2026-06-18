@@ -91,7 +91,9 @@ export function runSpineReviewStep(options) {
 	} else if (result.spawnFailed) {
 		output = `REVIEW FAILED: ${result.error}\n`;
 	} else if (result.skipped) {
-		output = "SKIPPED (review level does not require this review type)\n";
+		output = result.feedback
+			? `SKIPPED: ${result.feedback}\n`
+			: "SKIPPED (review level does not require this review type)\n";
 	} else {
 		output = `${result.verdict ?? "UNKNOWN"}: ${result.feedback || ""}\n`;
 	}

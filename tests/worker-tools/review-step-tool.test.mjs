@@ -146,7 +146,7 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 	}
 });
 
-test("spine_review_step blocks nested reviewer spawn inside worker session", async () => {
+test("spine_review_step skips nested reviewer spawn inside worker session", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-tool-nested-"));
 	const taskFolder = writeReviewTask(root, 2);
 	const prev = {
@@ -163,8 +163,10 @@ test("spine_review_step blocks nested reviewer spawn inside worker session", asy
 	delete process.env.SPINE_WORKER_STUB;
 	try {
 		const result = await spineReviewStepTool.execute("tc-3", { step: 1, type: "code" });
-		assert.equal(result.isError, true);
-		assert.equal(result.details.spawnFailed, true);
+		assert.equal(result.isError, false);
+		assert.equal(result.details.skipped, true);
+		assert.equal(result.details.spawnFailed, false);
+		assert.equal(result.details.exitCode, 0);
 		assert.match(result.content[0].text, /Nested reviewer spawn blocked/i);
 		assert.match(result.content[0].text, /SP-195/i);
 	} finally {

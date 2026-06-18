@@ -72,7 +72,7 @@ test("isActiveWorkerSession false outside worker context", () => {
 	}
 });
 
-test("runStepReview blocks nested reviewer spawn when worker env is set", async () => {
+test("runStepReview skips nested reviewer spawn when worker env is set", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-nested-guard-block-"));
 	const batchId = "20260611T194000";
 	const taskFolder = writeReviewTask(root, 2);
@@ -92,21 +92,54 @@ test("runStepReview blocks nested reviewer spawn when worker env is set", async 
 			reviewType: "code",
 			journal: { projectRoot: root, batchId, taskId: "TP-194", laneNumber: 1 },
 		});
-		assert.equal(result.ok, false);
-		assert.equal(result.spawnFailed, true);
-		assert.equal(result.error, NESTED_REVIEW_SPAWN_BLOCKED);
-		assert.equal(result.exitCode, 1);
+		assert.equal(result.ok, true);
+		assert.equal(result.skipped, true);
+		assert.equal(result.spawnFailed, false);
+		assert.equal(result.feedback, NESTED_REVIEW_SPAWN_BLOCKED);
+		assert.equal(result.exitCode, 0);
 
 		const events = readJournalEvents(root, batchId);
-		const failed = events.find((event) => event.type === "review.failed");
-		assert.ok(failed);
-		assert.equal(failed.payload?.reason, NESTED_REVIEW_SPAWN_REASON);
-		assert.equal(failed.payload?.spawnFailed, true);
+		const skipped = events.find((event) => event.type === "review.skipped");
+		assert.ok(skipped);
+		assert.equal(skipped.payload?.reason, NESTED_REVIEW_SPAWN_REASON);
+		assert.equal(events.some((event) => event.type === "review.failed"), false);
 	} finally {
 		if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
 		else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
 		if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
+		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.stub;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runStepReview skips nested plan review spawn when worker env is set", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-nested-guard-plan-"));
+	const batchId = "20260617T180000";
+	const taskFolder = writeReviewTask(root, 2);
+	const prev = {
+		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		stub: process.env.SPINE_REVIEW_STUB,
+	};
+	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	delete process.env.SPINE_REVIEW_STUB;
+	try {
+		const result = runStepReview({
+			taskFolder,
+			worktreePath: root,
+			stepNumber: 1,
+			reviewType: "plan",
+			journal: { projectRoot: root, batchId, taskId: "TP-194", laneNumber: 1 },
+		});
+		assert.equal(result.ok, true);
+		assert.equal(result.skipped, true);
+		assert.equal(result.exitCode, 0);
+		const events = readJournalEvents(root, batchId);
+		assert.ok(events.some((event) => event.type === "review.skipped"));
+	} finally {
+		if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+		else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
 		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
 		else process.env.SPINE_REVIEW_STUB = prev.stub;
 		await rm(root, { recursive: true, force: true });

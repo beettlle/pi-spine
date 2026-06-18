@@ -687,6 +687,12 @@ If diagnosis is still **`engine_orphaned`** with **`phase: running`**, the engin
 
 When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with **`final_review_spawn_failed`** / journal **`review.failed`** reason **`nested_spawn_blocked`**, the spine CLI inherited **`SPINE_WORKER_RUNNER`** from an active pi worker session (SP-195). Reviewer spawn is intentionally blocked inside worker sessions.
 
+### In-worker `spine_review_step` skip (SP-278)
+
+When workers call **`spine_review_step`** inside a pi worker session, the tool returns **`skipped: true`** with exit 0 (not `isError`). Journal records **`review.skipped`** with `reason: nested_spawn_blocked` instead of **`review.failed`**. This is expected — the batch engine runs plan/code/final review after worker `.DONE`.
+
+Workers should **not** retry or treat the skip as failure. Task PROMPTs for real-pi batches should not require in-worker review calls (see `skills/create-spine-tasks/references/prompt-template.md`).
+
 1. Confirm worker output exists: lane worktree `.DONE`, file-scope artifacts, plan review APPROVE in journal.
 2. Run recovery from a **clean shell** (unset worker session env — at minimum `SPINE_WORKER_RUNNER`, `SPINE_JOURNAL_ATTACH`, `SPINE_BATCH_ID`, `SPINE_PROJECT_ROOT`):
 

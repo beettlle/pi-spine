@@ -124,7 +124,9 @@ test("runStepReview skips review.failed journal when batch already completed", a
 	saveSpineBatchState(projectRoot, state);
 
 	const prevPi = process.env.PATH;
+	const prevWorkerRunner = process.env.SPINE_WORKER_RUNNER;
 	process.env.PATH = "/nonexistent";
+	delete process.env.SPINE_WORKER_RUNNER;
 
 	try {
 		const result = runStepReview({
@@ -141,6 +143,8 @@ test("runStepReview skips review.failed journal when batch already completed", a
 		assert.ok(!events.some((event) => event.type === "review.failed"));
 	} finally {
 		process.env.PATH = prevPi;
+		if (prevWorkerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+		else process.env.SPINE_WORKER_RUNNER = prevWorkerRunner;
 		await rm(projectRoot, { recursive: true, force: true });
 	}
 });

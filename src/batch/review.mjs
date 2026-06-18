@@ -466,7 +466,7 @@ export function isActiveWorkerSession() {
 }
 
 export const NESTED_REVIEW_SPAWN_BLOCKED =
-	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker code review — the batch engine runs code review after worker success (SP-195).";
+	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker plan/code review — the batch engine runs reviews after worker success (SP-195).";
 
 export const NESTED_REVIEW_SPAWN_REASON = "nested_spawn_blocked";
 
@@ -801,6 +801,27 @@ export function runStepReview({
 	});
 
 	if (spawnResult.spawnFailed) {
+		if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) {
+			const feedback = spawnResult.error ?? NESTED_REVIEW_SPAWN_BLOCKED;
+			journalReviewEvent("review.skipped", journal, {
+				stepNumber,
+				reviewType,
+				reviewLevel,
+				reason: NESTED_REVIEW_SPAWN_REASON,
+				message: feedback,
+			});
+			return {
+				ok: true,
+				skipped: true,
+				reviewLevel,
+				verdict: null,
+				feedback,
+				artifactPath,
+				spawnFailed: false,
+				exitCode: 0,
+			};
+		}
+
 		const honored = honorReviewSpawnFailureWhenEligible({
 			spawnResult,
 			reviewType,
