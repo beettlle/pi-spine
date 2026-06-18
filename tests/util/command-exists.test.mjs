@@ -63,7 +63,7 @@ Regression test task.
 	delete process.env.SPINE_WORKER_RUNNER;
 	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,

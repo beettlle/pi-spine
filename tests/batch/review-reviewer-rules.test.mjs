@@ -105,7 +105,7 @@ Stub path test.
 	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "# Status\n", "utf-8");
 
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: PROJECT_ROOT,
 			stepNumber: 1,

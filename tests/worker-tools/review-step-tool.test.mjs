@@ -64,11 +64,11 @@ test("buildReviewStepCliArgs maps params and adds --stub when SPINE_WORKER_STUB=
 	}
 });
 
-test("executeSpineReviewStep fails closed without SPINE_TASK_FOLDER", () => {
+test("executeSpineReviewStep fails closed without SPINE_TASK_FOLDER", async () => {
 	const prev = process.env.SPINE_TASK_FOLDER;
 	delete process.env.SPINE_TASK_FOLDER;
 	try {
-		const result = executeSpineReviewStep({ step: 1, type: "plan" });
+		const result = await executeSpineReviewStep({ step: 1, type: "plan" });
 		assert.equal(result.isError, true);
 		assert.match(result.content[0].text, /SPINE_TASK_FOLDER/i);
 		assert.equal(result.details.exitCode, 1);

@@ -245,7 +245,7 @@ test("runStepReview ignores SPINE_REVIEW_STUB_FAIL without stub mode", async () 
 	process.env.SPINE_REVIEW_STUB_FAIL = "1";
 	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -271,7 +271,7 @@ test("runStepReview stub APPROVE writes artifact and journal events", async () =
 	const batchId = "20260601T150000";
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -295,7 +295,7 @@ test("runStepReview stub REVISE returns exitCode 2", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-revise-"));
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -316,7 +316,7 @@ test("runStepReview fail-closed on stub spawn failure", async () => {
 	const batchId = "20260601T151000";
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -339,7 +339,7 @@ test("runStepReview skips when review level does not require type", async () => 
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-skip-"));
 	const taskFolder = writeReviewTask(root, 1);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -357,7 +357,7 @@ test("runStepReview final stub PASS writes final artifact path", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-final-"));
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -378,7 +378,7 @@ test("runStepReview final spawn failure exits non-zero at review level >= 1", as
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-final-fail-"));
 	const taskFolder = writeReviewTask(root, 2);
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -406,7 +406,7 @@ test("runSpineReviewStep CLI --type final emits JSON verdict", async () => {
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	try {
-		const { exitCode, output, result } = runSpineReviewStep({
+		const { exitCode, output, result } = await runSpineReviewStep({
 			taskFolder,
 			worktreePath: root,
 			args: ["--step", "1", "--type", "final", "--stub"],
@@ -442,7 +442,7 @@ test("runSpineReviewStep CLI emits JSON verdict", async () => {
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	try {
-		const { exitCode, output, result } = runSpineReviewStep({
+		const { exitCode, output, result } = await runSpineReviewStep({
 			taskFolder,
 			worktreePath: root,
 			args: ["--step", "1", "--type", "plan", "--stub"],

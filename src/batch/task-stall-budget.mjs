@@ -86,3 +86,22 @@ export function resolveWorkerPiTimeoutMs({ config = {}, taskSize = null }) {
 	const stallMinutes = resolveTaskStallMinutes(taskSize, config);
 	return stallMinutes * 60 * 1000;
 }
+
+/**
+ * Reviewer `pi` spawn timeout aligned with per-task stall budget (SP-279).
+ * Honors `SPINE_REVIEW_TIMEOUT_MS` when set in the parent environment.
+ *
+ * @param {object} params
+ * @param {object} [params.config]
+ * @param {"S"|"M"|"L"|"XL"|null} [params.taskSize]
+ */
+export function resolveReviewSpawnTimeoutMs({ config = {}, taskSize = null }) {
+	const envRaw = process.env.SPINE_REVIEW_TIMEOUT_MS;
+	if (envRaw) {
+		const parsed = Number(envRaw);
+		if (Number.isFinite(parsed) && parsed > 0) {
+			return parsed;
+		}
+	}
+	return resolveWorkerPiTimeoutMs({ config, taskSize });
+}

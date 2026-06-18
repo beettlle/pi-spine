@@ -32,7 +32,7 @@ export function parseReviewStepArgs(argv) {
 /**
  * @param {object} options
  */
-export function runSpineReviewStep(options) {
+export async function runSpineReviewStep(options) {
 	const taskFolder = options.taskFolder ?? process.env.SPINE_TASK_FOLDER;
 	const worktreePath = options.worktreePath ?? process.env.SPINE_WORKTREE ?? process.cwd();
 	if (!taskFolder) {
@@ -63,7 +63,7 @@ export function runSpineReviewStep(options) {
 
 	const journal = options.journal ?? resolveBatchJournalContext();
 
-	const result = runStepReview({
+	const result = await runStepReview({
 		taskFolder,
 		worktreePath,
 		stepNumber: args.step,
@@ -120,7 +120,7 @@ function findProjectRoot(startPath) {
 }
 
 if (isCliEntrypoint(import.meta.url)) {
-	const { exitCode, output } = runSpineReviewStep({});
+	const { exitCode, output } = await runSpineReviewStep({});
 	process.stdout.write(output ?? "");
 	process.exit(exitCode);
 }

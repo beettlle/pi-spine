@@ -36,7 +36,9 @@ export function buildReviewStepCliArgs(params: SpineReviewStepParams): string[] 
 type SpineReviewStepToolResult = AgentToolResult<SpineReviewStepDetails> & { isError?: boolean };
 
 /** Run review step logic shared by the Pi tool handler. */
-export function executeSpineReviewStep(params: SpineReviewStepParams): SpineReviewStepToolResult {
+export async function executeSpineReviewStep(
+	params: SpineReviewStepParams,
+): Promise<SpineReviewStepToolResult> {
 	const taskFolder = process.env.SPINE_TASK_FOLDER;
 	if (!taskFolder) {
 		return {
@@ -60,7 +62,7 @@ export function executeSpineReviewStep(params: SpineReviewStepParams): SpineRevi
 		};
 	}
 
-	const { exitCode, output, result } = runSpineReviewStep({
+	const { exitCode, output, result } = await runSpineReviewStep({
 		taskFolder,
 		worktreePath: process.env.SPINE_WORKTREE ?? process.cwd(),
 		args: buildReviewStepCliArgs(params),
@@ -117,7 +119,7 @@ export const spineReviewStepTool = defineTool({
 		),
 	}),
 	async execute(_toolCallId, params): Promise<SpineReviewStepToolResult> {
-		return executeSpineReviewStep(params);
+		return await executeSpineReviewStep(params);
 	},
 });
 
