@@ -1,6 +1,6 @@
 # SP-286: Path 4 spec-kit upstream docs — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 0
@@ -32,16 +32,16 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Full test suite passing
+- [x] Full test suite passing (typecheck OK; contract `testCommand: true`; 3 pre-existing timeout test failures unrelated to docs)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -63,7 +63,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 1–2 | Path 4 docs + cross-links committed |
+| 2026-06-18 | Step 3 | typecheck pass; npm test 917/920 (3 pre-existing timeout failures) |
+| 2026-06-18 | Step 4 | Internal links verified; .DONE created |
 
 ---
 
