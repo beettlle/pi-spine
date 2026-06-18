@@ -35,6 +35,54 @@ export function isPostMergeLimbo(state, git = {}) {
 }
 
 /**
+ * @param {object|null|undefined} state
+ * @param {number} waveIndex
+ */
+export function isLastWaveIndex(state, waveIndex) {
+	if (!state || typeof state !== "object") return false;
+	const totalWaves = Number(state.totalWaves ?? state.wavePlan?.length ?? 0);
+	if (!Number.isFinite(totalWaves) || totalWaves <= 0) return false;
+	return waveIndex >= totalWaves - 1;
+}
+
+/**
+ * Finalize immediately after the last wave merge so post-merge limbo never opens
+ * (SP-280, SP-281 — attached engine + resume orphan race).
+ *
+ * @param {object} params
+ * @param {boolean} [params.resumed]
+ * @param {boolean} [params.resumeForced]
+ * @returns {ReturnType<typeof finalizeBatchForIntegrate>|null}
+ */
+export function maybeFinalizeAfterWaveMerge({
+	projectRoot,
+	state,
+	batchId,
+	orchBranch,
+	waveIndex,
+	resumed = false,
+	resumeForced = false,
+}) {
+	if (String(state.phase ?? "") === "completed") {
+		return null;
+	}
+	if (!isLastWaveIndex(state, waveIndex)) {
+		return null;
+	}
+	if (!isPostMergeLimbo(state)) {
+		return null;
+	}
+	return finalizeBatchForIntegrate({
+		projectRoot,
+		state,
+		batchId,
+		orchBranch,
+		resumed,
+		resumeForced,
+	});
+}
+
+/**
  * Open integrate gate and mark batch completed (idempotent gate open).
  * Shared by engine completion and resume post-merge limbo fast path (SP-204, SP-280).
  *
@@ -65,7 +113,7 @@ export function finalizeBatchForIntegrate({
 
 	if (!alreadyCompleted) {
 		state.phase = "completed";
-		saveSpineBatchState(projectRoot, state);
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 		appendJournalEvent(projectRoot, batchId, "batch.completed", {
 			taskIds,
 			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
@@ -74,7 +122,7 @@ export function finalizeBatchForIntegrate({
 			resumeForced,
 		});
 	} else {
-		saveSpineBatchState(projectRoot, state);
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 	}
 
 	const completionLabel = resumed ? "resumed and completed" : "completed";

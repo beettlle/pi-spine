@@ -15,6 +15,7 @@ import {
 import { matchesContractPattern } from "../contract-verify.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
+import { maybeFinalizeAfterWaveMerge } from "../post-merge-limbo.mjs";
 import { saveSpineBatchState } from "../state.mjs";
 import { loadTaskFileScopePaths } from "./queue.mjs";
 import { laneTaskBranch } from "../worktree.mjs";
@@ -562,6 +563,7 @@ export async function mergeWaveLanesToOrch({
 	baseBranch,
 	orchBranch,
 	waveIndex,
+	resumed = false,
 }) {
 	const waveTaskIds = state.wavePlan?.[waveIndex] ?? [];
 	const needsReplanTask = (state.tasks ?? []).find(
@@ -628,5 +630,19 @@ export async function mergeWaveLanesToOrch({
 	});
 	saveSpineBatchState(projectRoot, state);
 
-	return { ok: true, mergeCommit: lastMergeCommit };
+	const finalizeResult = maybeFinalizeAfterWaveMerge({
+		projectRoot,
+		state,
+		batchId,
+		orchBranch,
+		waveIndex,
+		resumed,
+	});
+
+	return {
+		ok: true,
+		mergeCommit: lastMergeCommit,
+		finalized: finalizeResult != null,
+		finalizeResult,
+	};
 }

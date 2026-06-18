@@ -1,3 +1,4 @@
+// @ts-check
 import fs from "node:fs";
 import path from "node:path";
 
@@ -23,6 +24,8 @@ const REQUIRED_TOP_LEVEL = [
 /**
  * Load spine-config.json from disk only (no FR-CFG-04 env overrides).
  * Use for persistence paths (e.g. settings set) so env values are not written to file.
+ *
+ * @param {string} projectRoot
  */
 export function loadSpineConfigFile(projectRoot) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
@@ -43,12 +46,13 @@ export function loadSpineConfigFile(projectRoot) {
 	try {
 		parsed = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
 		return {
 			configPath,
 			config: null,
 			error: {
 				code: "CONFIG_PARSE_ERROR",
-				message: `Cannot parse spine config: ${err.message}`,
+				message: `Cannot parse spine config: ${message}`,
 				suggestedCommand: "spine init --force",
 			},
 		};
@@ -72,6 +76,8 @@ export function loadSpineConfigFile(projectRoot) {
 
 /**
  * Load config with FR-CFG-04 env overrides applied (precedence: env > file).
+ *
+ * @param {string} projectRoot
  */
 export function loadSpineConfig(projectRoot) {
 	const fileResult = loadSpineConfigFile(projectRoot);
@@ -110,6 +116,9 @@ export function loadSpineConfig(projectRoot) {
 	};
 }
 
+/**
+ * @param {Record<string, any>} config
+ */
 export function validateSpineConfig(config) {
 	if (typeof config !== "object" || config === null || Array.isArray(config)) {
 		return {

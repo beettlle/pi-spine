@@ -199,6 +199,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				if (ctx.integrateGateOpen) {
 					return "spine gate approve";
 				}
+				if (ctx.stalePathSpine) {
+					return "node bin/spine.mjs batch resume --attached";
+				}
 				return "spine batch resume";
 			}
 			return "spine integrate";
@@ -301,6 +304,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
 				if (ctx.integrateGateOpen) {
 					return `${batchLabel} gate opened — approve to continue land loop`;
+				}
+				if (ctx.stalePathSpine) {
+					return `${batchLabel} merged but gate not opened — use node bin/spine.mjs batch resume --attached (PATH spine may be stale)`;
 				}
 				return `${batchLabel} merged but gate not opened — resume to complete land loop`;
 			}

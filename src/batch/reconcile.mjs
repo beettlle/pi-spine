@@ -6,7 +6,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { PACKAGE_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
+import { buildStalePathDoctorCheck } from "../doctor/stale-path.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import {
 	buildDiagnosisOutput,
@@ -694,6 +696,12 @@ export function reconcileBatch(ctx) {
 			? Boolean(loadGateRecord(projectRoot, batch.batchId))
 			: false;
 
+	const stalePathCheck = buildStalePathDoctorCheck({
+		packageRoot: PACKAGE_ROOT,
+		runningSpinePath: path.join(PACKAGE_ROOT, "bin", "spine.mjs"),
+	});
+	const stalePathSpine = stalePathCheck.warning === true;
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -708,6 +716,7 @@ export function reconcileBatch(ctx) {
 		ghostRunningCluster,
 		postMergeLimbo: signals.postMergeLimbo === true,
 		integrateGateOpen,
+		stalePathSpine,
 	});
 
 	if (diagnosis === "git_unavailable") {

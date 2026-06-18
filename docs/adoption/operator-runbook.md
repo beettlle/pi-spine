@@ -821,6 +821,8 @@ npm run coverage:check
 
 `npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
+`npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
+
 ### `node bin/spine.mjs` vs global `spine`
 
 | Symptom | Fix |
@@ -898,7 +900,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
-| Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate after the last wave merge (SP-280). If diagnose still shows limbo, `spine batch resume` is a one-shot finalize (SP-204). Do not call `integrate` until gate exists |
+| Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate immediately after the last wave merge (SP-280, SP-281). If diagnose still shows limbo, run **`node bin/spine.mjs batch resume --attached`** from the repo root when global `spine` on PATH may be stale (`spine doctor` → “spine on PATH (stale)”). Detached `spine batch resume` also finalizes via post-merge limbo fast path |
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
