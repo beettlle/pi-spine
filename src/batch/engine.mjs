@@ -62,12 +62,14 @@ export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
  * @param {string} [options.scope]
  * @param {boolean} [options.dryRun]
  * @param {boolean} [options.skipPreflight]
+ * @param {boolean} [options.forceSuperseded]
  */
 export async function startBatch({
 	projectRoot,
 	scope = "all",
 	dryRun = false,
 	skipPreflight = false,
+	forceSuperseded = false,
 }) {
 	if (!skipPreflight) {
 		const preflight = runBatchPreflight({ projectRoot, skipDoctor: false });
@@ -91,7 +93,7 @@ export async function startBatch({
 		return { ok: false, exitCode: 1, error: "tasks_root_missing" };
 	}
 
-	const scopeResolution = resolveBatchStartScope(scope, tasksRoot);
+	const scopeResolution = resolveBatchStartScope(scope, tasksRoot, { forceSuperseded });
 	if (!scopeResolution.ok) {
 		return {
 			ok: false,

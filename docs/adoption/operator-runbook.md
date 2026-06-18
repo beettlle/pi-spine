@@ -226,7 +226,8 @@ spine preflight
 # Single task (recommended for implementation work)
 spine batch start TP-012
 
-# Pending backlog (tasks without .DONE)
+# Pending backlog (tasks without .DONE or .SUPERSEDED) — prefer IDs from plan output
+spine plan pending
 spine batch start pending
 
 # Multi-task (one wave, disjoint file scopes)
@@ -237,6 +238,10 @@ spine batch start TP-012 --dry-run
 
 # Foreground engine (blocks until batch ends)
 spine batch start TP-012 --attached
+
+# Do not paste stale plan IDs for superseded parent tasks (.SUPERSEDED marker).
+# Batch start rejects them; use child replacement IDs from the marker or `spine plan pending`.
+# Deliberate rerun only: spine batch start SP-257 --force-superseded
 ```
 
 **Stub workers** (CI, no real `pi`):

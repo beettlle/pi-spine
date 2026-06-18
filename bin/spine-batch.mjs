@@ -76,6 +76,7 @@ export function parseBatchArgs(args) {
 
 	const dryRun = flags.has("--dry-run");
 	const skipPreflight = flags.has("--skip-preflight");
+	const forceSuperseded = flags.has("--force-superseded");
 
 	const subcommand =
 		args.find(
@@ -103,6 +104,7 @@ export function parseBatchArgs(args) {
 		noWaitTerminal: flags.has("--no-wait-terminal"),
 		dryRun,
 		skipPreflight,
+		forceSuperseded,
 		batchId,
 		reason,
 		waveIndex,
@@ -318,6 +320,7 @@ export async function runSpineBatch(options) {
 				spineBin: path.join(__dirname, "spine.mjs"),
 				scope: parsed.scope,
 				skipPreflight: parsed.skipPreflight,
+				forceSuperseded: parsed.forceSuperseded,
 				waitTerminal: parsed.waitTerminal,
 				json: parsed.json,
 			});
@@ -333,6 +336,7 @@ export async function runSpineBatch(options) {
 			scope: parsed.scope,
 			dryRun: parsed.dryRun,
 			skipPreflight: parsed.skipPreflight,
+			forceSuperseded: parsed.forceSuperseded,
 		});
 		if (parsed.json) {
 			return {
@@ -360,7 +364,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--attached] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

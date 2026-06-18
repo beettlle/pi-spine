@@ -271,14 +271,16 @@ export function detachedEngineLogPath(projectRoot) {
  * @param {object} params
  * @param {string} params.scope
  * @param {boolean} [params.skipPreflight]
+ * @param {boolean} [params.forceSuperseded]
  */
-export function buildAttachedBatchStartArgv({ scope, skipPreflight = false }) {
+export function buildAttachedBatchStartArgv({ scope, skipPreflight = false, forceSuperseded = false }) {
 	const tokens = String(scope ?? "")
 		.trim()
 		.split(/\s+/)
 		.filter(Boolean);
 	const args = ["batch", "start", ...tokens, "--attached"];
 	if (skipPreflight) args.push("--skip-preflight");
+	if (forceSuperseded) args.push("--force-superseded");
 	return args;
 }
 
@@ -598,6 +600,7 @@ export function formatDetachedBatchStartOutput(result, json = false) {
  * @param {string} params.spineBin
  * @param {string} params.scope
  * @param {boolean} [params.skipPreflight]
+ * @param {boolean} [params.forceSuperseded]
  * @param {boolean} [params.waitTerminal]
  * @param {boolean} [params.json]
  */
@@ -606,6 +609,7 @@ export async function startBatchDetached({
 	spineBin,
 	scope,
 	skipPreflight = false,
+	forceSuperseded = false,
 	waitTerminal = false,
 	json = false,
 }) {
@@ -628,7 +632,7 @@ export async function startBatchDetached({
 
 	const before = loadSpineBatchState(projectRoot);
 	const previousBatchId = before.raw?.batchId ?? null;
-	const argv = buildAttachedBatchStartArgv({ scope, skipPreflight: true });
+	const argv = buildAttachedBatchStartArgv({ scope, skipPreflight: true, forceSuperseded });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
 	persistDetachedEnginePid(projectRoot, enginePid);
 	const wait = await waitForDetachedBatchStart({ projectRoot, previousBatchId, waitTerminal });
