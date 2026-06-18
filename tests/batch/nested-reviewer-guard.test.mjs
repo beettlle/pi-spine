@@ -85,7 +85,7 @@ test("runStepReview skips nested reviewer spawn when worker env is set", async (
 	delete process.env.SPINE_REVIEW_STUB;
 	delete process.env.SPINE_REVIEW_TEST_NO_PI;
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -125,7 +125,7 @@ test("runStepReview skips nested plan review spawn when worker env is set", asyn
 	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
 	delete process.env.SPINE_REVIEW_STUB;
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -156,7 +156,7 @@ test("runStepReview stub path still works inside worker session", async () => {
 	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
 	process.env.SPINE_REVIEW_STUB = "1";
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,
@@ -187,7 +187,7 @@ test("runStepReview reaches pi availability check when worker env absent", async
 	delete process.env.SPINE_REVIEW_STUB;
 	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: root,
 			stepNumber: 1,

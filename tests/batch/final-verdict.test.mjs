@@ -468,7 +468,7 @@ test("mergeWaveLanesToOrch blocks when a wave task has exitReason needs_replan",
 	assert.match(merge.error ?? "", /needs_replan/);
 });
 
-test("runEngineFinalReview stub writes final artifact path", () => {
+test("runEngineFinalReview stub writes final artifact path", async () => {
 	const prev = {
 		reviewStub: process.env.SPINE_REVIEW_STUB,
 		finalVerdict: process.env.SPINE_ENGINE_FINAL_STUB_VERDICT,
@@ -487,7 +487,7 @@ test("runEngineFinalReview stub writes final artifact path", () => {
 		"utf-8",
 	);
 	try {
-		const result = runEngineFinalReview({
+		const result = await runEngineFinalReview({
 			taskFolder,
 			worktreePath: root,
 			config: {},

@@ -79,7 +79,7 @@ test("runStepReview honors existing final PASS without re-spawn", async () => {
 	saveSpineBatchState(projectRoot, state);
 
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: projectRoot,
 			stepNumber: 1,
@@ -129,7 +129,7 @@ test("runStepReview skips review.failed journal when batch already completed", a
 	delete process.env.SPINE_WORKER_RUNNER;
 
 	try {
-		const result = runStepReview({
+		const result = await runStepReview({
 			taskFolder,
 			worktreePath: projectRoot,
 			stepNumber: 1,
