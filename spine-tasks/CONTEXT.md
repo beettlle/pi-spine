@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-18 (Phase 31 — GitHub issue tasks SP-283–285 staged)
+**Last Updated:** 2026-06-18 (Phase 32 — Spec-kit upstream adoption SP-286–293 staged)
 **Status:** Active
-**Next Task ID:** SP-286
+**Next Task ID:** SP-294
 
 ---
 
@@ -722,6 +722,29 @@ Each task **closes its issue** in Documentation & Delivery via `gh issue close`.
 3. **Wave 2:** `SP-282` (closes #5)
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
+
+#### Phase 32 — Spec-kit upstream adoption (compose, don't merge)
+
+**Source:** Spec-kit pattern study — adopt pre-execution authoring gates without integrating `specify` CLI or `.specify/` state. Compose spec-kit (or skill equivalents) upstream; execute with pi-spine batches.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-286 | Path 4 spec-kit upstream docs | S | **Staged** | — |
+| SP-287 | Spec persistence models doc | S | **Staged** | — |
+| SP-288 | Constitution init template | S | **Staged** | — |
+| SP-289 | Skill clarify step (Step A.5) | M | **Staged** | — |
+| SP-290 | Skill requirements checklist (Step A.6) | M | **Staged** | SP-289 |
+| SP-291 | Skill lean vs full authoring modes | S | **Staged** | SP-289, SP-290 |
+| SP-292 | `spine tasks analyze` CLI | M | **Staged** | — |
+| SP-293 | Operator authoring approval checklist | S | **Staged** | SP-286, SP-287, SP-291, SP-292 |
+
+**Suggested batches (8 tasks):**
+
+1. **Wave 0 (parallel):** `SP-286`, `SP-287`, `SP-288`, `SP-292`
+2. **Wave 1:** `SP-289` → `SP-290` → `SP-291` (skill chain, serial)
+3. **Wave 2:** `SP-293` (closes authoring loop)
+
+**Non-goals:** No `specify` CLI dependency, no auto-import of spec-kit `tasks.md`, no `.specify/` state in spine engine.
 
 ---
 
