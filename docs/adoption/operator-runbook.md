@@ -126,6 +126,8 @@ Glob-triggered language packs match PROMPT **File Scope** via micromatch. Empty 
 
 ## 2. Task validation and preflight
 
+**Human pre-batch gates:** Before your first batch (or after major decomposition), walk the [authoring approval checklist](./authoring-approval-checklist.md) — approve upstream spec/plan conversion, then run validate → analyze → plan → preflight. Authoring gates are operator habits; execution gates (`spine gate approve` after the wave) are separate — see the checklist comparison table.
+
 ### 2.1 Validate task packets (v1.3 — FR-UXB-02)
 
 Run **before** `spine batch start` when authoring or editing `PROMPT.md` files. This is the same gate as upstream authoring — see [upstream-execution-workflow.md](./upstream-execution-workflow.md) Path 1 step 3.

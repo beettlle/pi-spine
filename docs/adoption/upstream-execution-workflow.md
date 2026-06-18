@@ -73,9 +73,10 @@ Do you already have PROMPT.md / STATUS.md packets?
    Use create-spine-tasks to break docs/PRD.md into M-sized SP-* tasks
    under spine-tasks/. Update CONTEXT.md and dependencies.json.
    ```
-3. **Validate** (v1.3):
+3. **Validate** (v1.3) — complete the [authoring approval checklist](./authoring-approval-checklist.md) before batch start:
    ```bash
    spine tasks validate pending
+   spine tasks analyze pending
    spine plan pending
    ```
 4. **Preflight and run:**
@@ -301,6 +302,7 @@ spine batch complete
 
 ## Further reading
 
+- [authoring-approval-checklist.md](./authoring-approval-checklist.md) — human pre-batch gates (authoring vs execution)
 - [spec-persistence.md](./spec-persistence.md) — flow-forward, living spec, flow-back models
 - [PRD v1.3 addendum](../PRD-v1.3-upstream-execution-bridge.md) — full FR-UXB specs
 - [operator-runbook.md](./operator-runbook.md) — daily procedures
