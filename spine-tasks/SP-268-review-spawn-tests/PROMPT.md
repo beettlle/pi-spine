@@ -12,6 +12,10 @@
 
 Add `tests/batch/review-spawn.test.mjs` covering argv/model and fail-closed missing pi. Confirm nested-reviewer guard tests still pass.
 
+**Follow-up:** Retry after batch `20260618T213001` skipped SP-268 (`review_exhausted` from plan `nested_spawn_blocked` before SP-285 landed). SP-285 is now on `main`.
+
+**Closes:** [#9](https://github.com/beettlle/pi-spine/issues/9)
+
 ## Dependencies
 
 - **Task:** SP-267
@@ -74,6 +78,7 @@ spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
 ### Step 4: Documentation & Delivery
 
 - [ ] Log discoveries in STATUS.md if needed
+- [ ] Close GitHub issue #9: `gh issue close 9 --comment "Fixed in SP-268: review-spawn tests and nested-reviewer guard regression after SP-285 on main."`
 - [ ] Create `.DONE`
 
 ## Documentation Requirements
@@ -88,6 +93,7 @@ spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
 
 - [ ] All steps complete
 - [ ] Tests passing per contract
+- [ ] Issue #9 closed with comment referencing SP-268
 - [ ] `.DONE` created
 
 ## Git Commit Convention

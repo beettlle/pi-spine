@@ -10,9 +10,11 @@
 
 ## Mission
 
-Complete delivery slice for `spine tasks analyze` (parent SP-292).
+Complete delivery slice for `spine tasks analyze` (parent SP-292). Re-land after batch `20260618T213001`: `src/tasks/analyze/index.mjs` is on `main` but `bin/spine-tasks.mjs` analyze subcommand and tests did not integrate.
 
 Wire CLI with `--json`, implement warning-only checks (wave M-count, explore refs, deps/PROMPT drift), add tests and docs.
+
+**Closes:** [#11](https://github.com/beettlle/pi-spine/issues/11)
 
 ## Dependencies
 
@@ -78,6 +80,7 @@ spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
 ### Step 3: Documentation & Delivery
 
 - [ ] QUICK-REFERENCE + upstream-execution-workflow entries
+- [ ] Close GitHub issue #11: `gh issue close 11 --comment "Fixed in SP-299: spine tasks analyze CLI wired on main with tests and docs."`
 - [ ] Create `.DONE`
 
 ## Documentation Requirements
@@ -93,6 +96,7 @@ spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
 
 - [ ] All steps complete
 - [ ] Tests passing per contract
+- [ ] Issue #11 closed with comment referencing SP-299
 - [ ] `.DONE` created
 
 ## Git Commit Convention
