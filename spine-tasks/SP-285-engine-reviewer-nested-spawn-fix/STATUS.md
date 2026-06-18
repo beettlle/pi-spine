@@ -1,7 +1,7 @@
 # SP-285: Engine reviewer nested spawn env fix — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,23 +11,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SPINE_WORKER_RUNNER leak path confirmed in review-spawn.mjs
+- [x] SPINE_WORKER_RUNNER leak path confirmed in review-spawn.mjs
 
 ---
 
 ### Step 1: Strip worker marker from reviewer child env
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reviewer spawn env strips worker marker
+- [x] Reviewer spawn env strips worker marker
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] nested-reviewer-guard regression extended
+- [x] nested-reviewer-guard regression extended
 
 ---
 
@@ -50,3 +50,4 @@
 
 | Finding | Impact |
 |---------|--------|
+| Nested guard moved to `shouldBlockNestedReviewerSpawn()` (RUNNER + TASK_FOLDER) in `runStepReview`; `spawnReviewerPi` strips RUNNER from child env only | Engine with leaked RUNNER alone can spawn reviewers |

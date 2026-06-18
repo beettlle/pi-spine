@@ -17,6 +17,7 @@ import {
 	NESTED_REVIEW_SPAWN_REASON,
 	REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
 	REVIEW_TIMEOUT_REASON,
+	shouldBlockNestedReviewerSpawn,
 	spawnReviewerPi,
 } from "./review-spawn.mjs";
 import {
@@ -48,6 +49,7 @@ export {
 	NESTED_REVIEW_SPAWN_REASON,
 	REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
 	REVIEW_TIMEOUT_REASON,
+	shouldBlockNestedReviewerSpawn,
 } from "./review-spawn.mjs";
 
 /**
@@ -728,6 +730,28 @@ export async function runStepReview({
 		config,
 		journal,
 	});
+
+	if (shouldBlockNestedReviewerSpawn()) {
+		const feedback = NESTED_REVIEW_SPAWN_BLOCKED;
+		journalReviewEvent("review.skipped", journal, {
+			stepNumber,
+			reviewType,
+			reviewLevel,
+			reason: NESTED_REVIEW_SPAWN_REASON,
+			message: feedback,
+		});
+		return {
+			ok: true,
+			skipped: true,
+			reviewLevel,
+			verdict: null,
+			feedback,
+			artifactPath,
+			spawnFailed: false,
+			exitCode: 0,
+		};
+	}
+
 	const spawnResult = await spawnReviewerPi({
 		worktreePath,
 		taskFolder,

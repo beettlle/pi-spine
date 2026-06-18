@@ -27,6 +27,38 @@ export function isActiveWorkerSession() {
 	return typeof marker === "string" && marker.length > 0;
 }
 
+/**
+ * True when this process is a live pi worker child that must not spawn nested reviewers.
+ * Requires {@link isActiveWorkerSession} plus `SPINE_TASK_FOLDER` from
+ * {@link buildWorkerChildEnv} so engine processes that only inherited `SPINE_WORKER_RUNNER`
+ * can still spawn engine-owned reviewers (SP-285 / issue #8).
+ */
+export function shouldBlockNestedReviewerSpawn() {
+	if (!isActiveWorkerSession()) return false;
+	const taskFolder = process.env.SPINE_TASK_FOLDER;
+	return typeof taskFolder === "string" && taskFolder.length > 0;
+}
+
+/**
+ * Reviewer `pi` child env: inherit parent env but strip the worker session marker so
+ * reviewer subprocesses are not treated as nested worker sessions.
+ *
+ * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} params.worktreePath
+ * @returns {NodeJS.ProcessEnv}
+ */
+export function buildReviewerChildEnv({ taskFolder, worktreePath }) {
+	/** @type {NodeJS.ProcessEnv} */
+	const env = {
+		...process.env,
+		SPINE_TASK_FOLDER: taskFolder,
+		SPINE_WORKTREE: worktreePath,
+	};
+	delete env.SPINE_WORKER_RUNNER;
+	return env;
+}
+
 export const NESTED_REVIEW_SPAWN_BLOCKED =
 	"Nested reviewer spawn blocked inside pi worker session. Skip in-worker plan/code review — the batch engine runs reviews after worker success (SP-195).";
 
@@ -83,15 +115,6 @@ export async function spawnReviewerPi({
 	config = {},
 	timeoutMs,
 }) {
-	if (isActiveWorkerSession()) {
-		return {
-			spawnFailed: true,
-			exitCode: 1,
-			error: NESTED_REVIEW_SPAWN_BLOCKED,
-			reason: NESTED_REVIEW_SPAWN_REASON,
-		};
-	}
-
 	if (!reviewerPiCommandExists("pi")) {
 		return {
 			spawnFailed: true,
@@ -119,11 +142,7 @@ export async function spawnReviewerPi({
 	return new Promise((resolve) => {
 		const child = spawn("pi", piArgs, {
 			cwd: worktreePath || path.dirname(taskFolder),
-			env: {
-				...process.env,
-				SPINE_TASK_FOLDER: taskFolder,
-				SPINE_WORKTREE: worktreePath,
-			},
+			env: buildReviewerChildEnv({ taskFolder, worktreePath }),
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 
