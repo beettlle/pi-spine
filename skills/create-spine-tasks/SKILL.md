@@ -90,6 +90,40 @@ See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-
 2. `{tasksRoot}/CONTEXT.md` — current phase, **Next Task ID**, execution policy
 3. Existing `{tasksRoot}/dependencies.json` and open task folders (avoid duplicate work)
 
+### Step A.6 — Requirements checklist (optional)
+
+Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-only — `spine tasks validate` does **not** require checklist artifacts.
+
+**Purpose:** Validate requirement quality ("unit tests for requirements") before decomposition — inspired by spec-kit `/speckit.checklist`. Checks whether the PRD/brief is complete, measurable, and slice-ready; does **not** verify implementation.
+
+**Output path:** `{tasksRoot}/_authoring/{slug}/checklist.md` using [references/requirements-checklist-template.md](references/requirements-checklist-template.md).
+
+**When to run:**
+
+| Signal | Why checklist helps |
+|--------|---------------------|
+| After clarify with open assumptions | Surfaces requirement gaps before slicing |
+| L/XL epic or multi-task decomposition | Catches missing NFRs and edge cases early |
+| Security- or compliance-touching work | Forces explicit auth/data handling in requirements |
+| Vague acceptance language | Converts ambiguity into measurable criteria |
+| Parallel wave planning | Ensures disjoint scopes are justified by clear requirements |
+
+**When to skip:**
+
+- Single S/M task with concrete File Scope and measurable acceptance criteria
+- Greenfield with a short, unambiguous brief and no security surface
+- Migrating existing spine packets unchanged
+- Requirements already validated; no open items in `clarify.md`
+
+**Workflow:**
+
+1. Read PRD/brief, `clarify.md` (if present), and project standards referenced in the brief.
+2. Write `{tasksRoot}/_authoring/{slug}/checklist.md` — cover acceptance criteria quality, security, edge cases, testability, and non-functional requirements (see template).
+3. Resolve or explicitly defer `[Gap]` items before Step B; do **not** duplicate Step 0 explore `findings.md` (explore maps codebase; checklist validates requirements).
+4. Link the slug in `{tasksRoot}/CONTEXT.md` when checklist informs decomposition.
+
+**Authoring order:** clarify → checklist → slice (Step A.5 → A.6 → B).
+
 ### Step B: Slice into spine tasks
 
 | Rule | Guidance |
@@ -369,6 +403,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - [references/prompt-template.md](references/prompt-template.md) — PROMPT.md and STATUS.md templates
 - [references/contract-template.md](references/contract-template.md) — `## Contract` field guidance and examples (v2.0 §4)
 - [references/explore-template.md](references/explore-template.md) — Step 0 `findings.md` schema (v1.3 §6.3)
+- [references/requirements-checklist-template.md](references/requirements-checklist-template.md) — Step A.6 `checklist.md` schema (spec-kit `/speckit.checklist` equivalent)
 - [references/context-template.md](references/context-template.md) — `{tasksRoot}/CONTEXT.md` scaffold
 - [docs/PRD.md](../../docs/PRD.md) — task format spec (§13)
 - [docs/adoption/bootstrap-checklist.md](../../docs/adoption/bootstrap-checklist.md) — greenfield setup
