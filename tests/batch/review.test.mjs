@@ -239,7 +239,9 @@ test("runStepReview ignores SPINE_REVIEW_STUB_FAIL without stub mode", async () 
 	const prevFail = process.env.SPINE_REVIEW_STUB_FAIL;
 	const prevStub = process.env.SPINE_REVIEW_STUB;
 	const prevNoPi = process.env.SPINE_REVIEW_TEST_NO_PI;
+	const prevWorkerRunner = process.env.SPINE_WORKER_RUNNER;
 	delete process.env.SPINE_REVIEW_STUB;
+	delete process.env.SPINE_WORKER_RUNNER;
 	process.env.SPINE_REVIEW_STUB_FAIL = "1";
 	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
 	try {
@@ -258,6 +260,8 @@ test("runStepReview ignores SPINE_REVIEW_STUB_FAIL without stub mode", async () 
 		else process.env.SPINE_REVIEW_STUB = prevStub;
 		if (prevNoPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prevNoPi;
+		if (prevWorkerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+		else process.env.SPINE_WORKER_RUNNER = prevWorkerRunner;
 		await rm(root, { recursive: true, force: true });
 	}
 });
