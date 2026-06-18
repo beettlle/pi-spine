@@ -218,6 +218,18 @@ When Review Level ≥ 1, workers run a **final** review before `.DONE`:
 
 `spine status` shows `needs_replan` when replan is required.
 
+### Spec persistence when requirements change
+
+pi-spine does not auto-sync upstream specs with in-flight packets. Teams choose how to handle scope changes:
+
+| Model | Summary | Typical pi-spine action |
+|-------|---------|-------------------------|
+| **Flow-forward** (default) | New task folder per change; parents get `.SUPERSEDED` | New `SP-*` folders; update `CONTEXT.md` / `dependencies.json` |
+| **Living spec** | Edit PRD or spec-kit `spec.md`; regenerate packets | `create-spine-tasks` → `spine tasks validate pending` |
+| **Flow-back** | Any artifact may lead; reconcile manually | `PROMPT.md` amendments, `needs_replan` → edit PROMPT → `spine batch retry` |
+
+See [spec-persistence.md](./spec-persistence.md) for when-to-use guidance and the operator decision table.
+
 ---
 
 ## Operator handoff (v1.3)
@@ -289,6 +301,7 @@ spine batch complete
 
 ## Further reading
 
+- [spec-persistence.md](./spec-persistence.md) — flow-forward, living spec, flow-back models
 - [PRD v1.3 addendum](../PRD-v1.3-upstream-execution-bridge.md) — full FR-UXB specs
 - [operator-runbook.md](./operator-runbook.md) — daily procedures
 - [bootstrap-checklist.md](./bootstrap-checklist.md) — first-time setup

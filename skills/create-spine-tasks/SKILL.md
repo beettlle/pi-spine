@@ -92,6 +92,8 @@ See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-
 
 ### Step B: Slice into spine tasks
 
+When requirements change after packets exist, follow the team's **spec persistence model** ([docs/adoption/spec-persistence.md](../../docs/adoption/spec-persistence.md)): **flow-forward** (new `SP-*` folders + `.SUPERSEDED` on obsolete parents — pi-spine default), **living spec** (edit the PRD or upstream spec first, then re-run this skill), or **flow-back** (amend `PROMPT.md` below `---`, or operator `spine batch retry` after `needs_replan`). Large pivots should flow-forward; in-flight scope fixes may flow-back.
+
 | Rule | Guidance |
 |------|----------|
 | **Size** | Target **M** (2–4 h). **L** → split when possible. **XL** → **must** split into multiple S/M tasks with dependencies. |
