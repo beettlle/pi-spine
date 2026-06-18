@@ -12,6 +12,7 @@ import { resolveReviewScopePaths } from "./review-scope.mjs";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
 import {
 	DEFAULT_REVIEW_SPAWN_TIMEOUT_MS,
+	ARTIFACT_READY_HONOR_REASON,
 	isActiveWorkerSession,
 	NESTED_REVIEW_SPAWN_BLOCKED,
 	NESTED_REVIEW_SPAWN_REASON,
@@ -43,6 +44,7 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 export {
 	DEFAULT_REVIEW_SPAWN_TIMEOUT_MS,
+	ARTIFACT_READY_HONOR_REASON,
 	isActiveWorkerSession,
 	NESTED_REVIEW_SPAWN_BLOCKED,
 	NESTED_REVIEW_SPAWN_REASON,
@@ -566,6 +568,71 @@ export function honorReviewSpawnFailureWhenEligible({
 }
 
 /**
+ * Complete review from an on-disk artifact honored while reviewer pi is still running.
+ *
+ * @param {object} params
+ * @returns {ReturnType<typeof runStepReview>}
+ */
+export function completeReviewFromHonoredArtifact({
+	artifactPath,
+	reviewType,
+	journal,
+	stepNumber,
+	reviewLevel,
+	honorReason = ARTIFACT_READY_HONOR_REASON,
+}) {
+	const reviewContent = fs.readFileSync(artifactPath, "utf-8");
+	const { verdict, feedback } = parseReviewVerdict(reviewContent, { reviewType });
+	if (!verdict) {
+		const error = "honored review artifact missing structured verdict";
+		journalReviewEvent("review.failed", journal, {
+			stepNumber,
+			reviewType,
+			reviewLevel,
+			error,
+			artifactPath,
+			spawnFailed: true,
+		});
+		return {
+			ok: false,
+			skipped: false,
+			reviewLevel,
+			verdict: null,
+			feedback,
+			artifactPath,
+			spawnFailed: true,
+			error,
+			exitCode: 1,
+		};
+	}
+
+	const ok = reviewType === "final" ? verdict === "PASS" : verdict === "APPROVE";
+	journalReviewEvent("review.completed", journal, {
+		stepNumber,
+		reviewType,
+		reviewLevel,
+		verdict,
+		artifactPath,
+		feedback,
+		honored: true,
+		honorReason,
+	});
+
+	return {
+		ok,
+		skipped: false,
+		honored: true,
+		honorReason,
+		reviewLevel,
+		verdict,
+		feedback,
+		artifactPath,
+		spawnFailed: false,
+		exitCode: ok ? 0 : 2,
+	};
+}
+
+/**
  * @param {object} params
  */
 export async function runStepReview({
@@ -734,7 +801,20 @@ export async function runStepReview({
 		reviewPrompt,
 		systemPrompt,
 		config,
+		artifactPath,
+		reviewType,
+		contractVerifyResult,
 	});
+
+	if (spawnResult.honored && spawnResult.honorReason === ARTIFACT_READY_HONOR_REASON) {
+		return completeReviewFromHonoredArtifact({
+			artifactPath: spawnResult.artifactPath ?? artifactPath,
+			reviewType,
+			journal,
+			stepNumber,
+			reviewLevel,
+		});
+	}
 
 	if (spawnResult.spawnFailed) {
 		if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) {

@@ -105,3 +105,56 @@ export function resolveReviewSpawnTimeoutMs({ config = {}, taskSize = null }) {
 	}
 	return resolveWorkerPiTimeoutMs({ config, taskSize });
 }
+
+/** Default poll interval while awaiting reviewer artifact (SP-294). */
+export const DEFAULT_REVIEW_ARTIFACT_POLL_INTERVAL_MS = 5_000;
+
+/** Upper bound for reviewer artifact poll interval. */
+export const MAX_REVIEW_ARTIFACT_POLL_INTERVAL_MS = 30_000;
+
+/** Default mtime quiescence before honoring an on-disk review artifact. */
+export const DEFAULT_REVIEW_ARTIFACT_QUIESCENCE_MS = 2_000;
+
+/**
+ * Poll interval for early reviewer artifact honor (SP-294).
+ * Honors `SPINE_REVIEW_ARTIFACT_POLL_MS` when set; capped at 30s.
+ *
+ * @param {object} [params]
+ * @param {object} [params.config]
+ */
+export function resolveReviewArtifactPollIntervalMs({ config = {} } = {}) {
+	const envRaw = process.env.SPINE_REVIEW_ARTIFACT_POLL_MS;
+	if (envRaw) {
+		const parsed = Number(envRaw);
+		if (Number.isFinite(parsed) && parsed > 0) {
+			return Math.min(parsed, MAX_REVIEW_ARTIFACT_POLL_INTERVAL_MS);
+		}
+	}
+	const configured = Number(config.review?.artifactPollIntervalMs);
+	if (Number.isFinite(configured) && configured > 0) {
+		return Math.min(configured, MAX_REVIEW_ARTIFACT_POLL_INTERVAL_MS);
+	}
+	return DEFAULT_REVIEW_ARTIFACT_POLL_INTERVAL_MS;
+}
+
+/**
+ * Mtime quiescence window before honoring reviewer artifact (SP-294).
+ * Honors `SPINE_REVIEW_ARTIFACT_QUIESCENCE_MS` when set.
+ *
+ * @param {object} [params]
+ * @param {object} [params.config]
+ */
+export function resolveReviewArtifactQuiescenceMs({ config = {} } = {}) {
+	const envRaw = process.env.SPINE_REVIEW_ARTIFACT_QUIESCENCE_MS;
+	if (envRaw) {
+		const parsed = Number(envRaw);
+		if (Number.isFinite(parsed) && parsed > 0) {
+			return parsed;
+		}
+	}
+	const configured = Number(config.review?.artifactQuiescenceMs);
+	if (Number.isFinite(configured) && configured > 0) {
+		return configured;
+	}
+	return DEFAULT_REVIEW_ARTIFACT_QUIESCENCE_MS;
+}
