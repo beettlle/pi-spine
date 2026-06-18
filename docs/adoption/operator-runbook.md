@@ -821,6 +821,8 @@ npm run coverage:check
 
 `npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
+`npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
+
 ### `node bin/spine.mjs` vs global `spine`
 
 | Symptom | Fix |
