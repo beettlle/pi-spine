@@ -194,6 +194,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return "/spine-resume --force";
 		case "needs_integrate":
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
+				if (ctx.integrateGateOpen) {
+					return "spine gate approve";
+				}
 				return "spine batch resume";
 			}
 			return "spine integrate";
@@ -291,6 +294,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return `${batchLabel} tasks done — lane merges pending`;
 		case "needs_integrate":
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
+				if (ctx.integrateGateOpen) {
+					return `${batchLabel} gate opened — approve to continue land loop`;
+				}
 				return `${batchLabel} merged but gate not opened — resume to complete land loop`;
 			}
 			return `${batchLabel} ready to integrate orch branch to main`;

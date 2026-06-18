@@ -9,8 +9,8 @@ import { discoverTasks } from "../tasks/packet/discover.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
+import { finalizeBatchForIntegrate } from "./post-merge-limbo.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	assertNoActiveBatch,
@@ -385,6 +385,17 @@ export async function startBatch({
 				};
 			}
 
+			const isLastWave = wave.index >= (state.totalWaves ?? plan.waves.length) - 1;
+			if (isLastWave) {
+				return finalizeBatchForIntegrate({
+					projectRoot,
+					state,
+					batchId,
+					orchBranch,
+					resumed: false,
+				});
+			}
+
 			if (
 				shouldAutoIntegrateAfterWave({
 					config,
@@ -401,33 +412,13 @@ export async function startBatch({
 			}
 		}
 
-		state.endedAt = Date.now();
-		openIntegrateGateAfterBatchComplete({
+		return finalizeBatchForIntegrate({
 			projectRoot,
+			state,
 			batchId,
-			batchState: { ...state, phase: "completed" },
-		});
-		transitionPhase(state, "completed", {
-			projectRoot,
-			batchId,
-			extra: { taskIds, mergeCommit: state.mergeResults.at(-1)?.mergeCommit },
-		});
-		saveSpineBatchState(projectRoot, state);
-
-		const summaryTask =
-			taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
-		return {
-			ok: true,
-			exitCode: 0,
-			batchId,
-			taskId: taskIds.length === 1 ? taskIds[0] : undefined,
-			taskIds,
 			orchBranch,
-			mergeCommit: state.mergeResults.at(-1)?.mergeCommit,
-			output:
-				`Batch ${batchId} completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
-				`  → spine gate status\n  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
-		};
+			resumed: false,
+		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		state.endedAt = Date.now();

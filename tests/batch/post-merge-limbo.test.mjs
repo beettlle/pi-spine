@@ -7,7 +7,10 @@ import { initGitRepo } from "../helpers/git-fixture.mjs";
 import { buildSuggestedCommand } from "../../src/batch/diagnosis.mjs";
 import { gateRecordPath } from "../../src/batch/gate.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
-import { isPostMergeLimbo } from "../../src/batch/post-merge-limbo.mjs";
+import {
+	finalizeBatchForIntegrate,
+	isPostMergeLimbo,
+} from "../../src/batch/post-merge-limbo.mjs";
 import { deriveDiagnosis } from "../../src/batch/reconcile.mjs";
 import { resumeMultiTaskBatch } from "../../src/batch/resume-multi.mjs";
 import {
@@ -49,6 +52,72 @@ test("deriveDiagnosis returns needs_integrate for post-merge limbo", () => {
 		buildSuggestedCommand("needs_integrate", { postMergeLimbo: true, phase: "running" }),
 		"spine batch resume",
 	);
+	assert.equal(
+		buildSuggestedCommand("needs_integrate", {
+			postMergeLimbo: true,
+			phase: "running",
+			integrateGateOpen: true,
+		}),
+		"spine gate approve",
+	);
+});
+
+test("finalizeBatchForIntegrate opens gate from post-merge limbo without resume", async () => {
+	const projectRoot = await initGitRepo("spine-post-merge-finalize-");
+	const batchId = "20260617T231658";
+	const taskId = "SP-280";
+	const orchBranch = `orch/spine-${batchId}`;
+
+	try {
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder: path.join("spine-tasks", `${taskId}-limbo`),
+					doneFileFound: true,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: projectRoot,
+					branch: `task/spine-lane-1-${batchId}`,
+					taskIds: [taskId],
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "cafebabe" }];
+		saveSpineBatchState(projectRoot, state);
+
+		assert.equal(isPostMergeLimbo(loadSpineBatchState(projectRoot).raw), true);
+
+		const result = finalizeBatchForIntegrate({
+			projectRoot,
+			state: loadSpineBatchState(projectRoot).raw,
+			batchId,
+			orchBranch,
+			resumed: false,
+		});
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
+		assert.ok(fs.existsSync(gateRecordPath(projectRoot, batchId)));
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const completed = events.filter((event) => event.type === "batch.completed");
+		assert.equal(completed.length, 1);
+		assert.equal(completed[0]?.payload?.resumed, false);
+		assert.equal(completed[0]?.payload?.postMergeLimbo, true);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
 });
 
 test("resumeMultiTaskBatch opens gate from post-merge limbo without re-running tasks", async () => {

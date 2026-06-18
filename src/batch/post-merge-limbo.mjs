@@ -36,35 +36,51 @@ export function isPostMergeLimbo(state, git = {}) {
 
 /**
  * Open integrate gate and mark batch completed (idempotent gate open).
+ * Shared by engine completion and resume post-merge limbo fast path (SP-204, SP-280).
  *
  * @param {object} params
  */
-export function finalizeResumedBatchForIntegrate({
+export function finalizeBatchForIntegrate({
 	projectRoot,
 	state,
 	batchId,
 	orchBranch,
+	resumed = false,
 	resumeForced = false,
 }) {
-	state.endedAt = Date.now();
+	const taskIds = (state.tasks ?? []).map((task) => task.taskId);
+	const summaryTask =
+		taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
+	const alreadyCompleted = String(state.phase ?? "") === "completed";
+
+	if (!alreadyCompleted) {
+		state.endedAt = Date.now();
+	}
+
 	openIntegrateGateAfterBatchComplete({
 		projectRoot,
 		batchId,
 		batchState: { ...state, phase: "completed" },
 	});
-	state.phase = "completed";
-	saveSpineBatchState(projectRoot, state);
-	appendJournalEvent(projectRoot, batchId, "batch.completed", {
-		taskIds: (state.tasks ?? []).map((task) => task.taskId),
-		mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-		resumed: true,
-		postMergeLimbo: true,
-		resumeForced,
-	});
 
-	const taskIds = (state.tasks ?? []).map((task) => task.taskId);
-	const summaryTask =
-		taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
+	if (!alreadyCompleted) {
+		state.phase = "completed";
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "batch.completed", {
+			taskIds,
+			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+			resumed,
+			postMergeLimbo: !resumed,
+			resumeForced,
+		});
+	} else {
+		saveSpineBatchState(projectRoot, state);
+	}
+
+	const completionLabel = resumed ? "resumed and completed" : "completed";
+	const nextSteps = resumed
+		? "  → spine gate approve\n  → spine integrate\n  → spine batch complete\n"
+		: "  → spine gate status\n  → spine gate approve\n  → spine integrate\n  → spine batch complete\n";
 
 	return {
 		ok: true,
@@ -72,9 +88,17 @@ export function finalizeResumedBatchForIntegrate({
 		batchId,
 		taskIds,
 		taskId: taskIds.length === 1 ? taskIds[0] : undefined,
+		orchBranch,
 		mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
 		output:
-			`Batch ${batchId} resumed and completed: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
-			`  → spine gate approve\n  → spine integrate\n  → spine batch complete\n`,
+			`Batch ${batchId} ${completionLabel}: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
+			nextSteps,
 	};
+}
+
+/**
+ * @param {object} params
+ */
+export function finalizeResumedBatchForIntegrate(params) {
+	return finalizeBatchForIntegrate({ ...params, resumed: true });
 }
