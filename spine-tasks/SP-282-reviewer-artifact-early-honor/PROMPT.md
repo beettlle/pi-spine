@@ -123,6 +123,9 @@ Fix **GitHub issue #5**: during batch `20260618T000943`, SP-279 **code review** 
 - Skip contract verification on final reviews
 - Remove SP-279 timeout backstop entirely
 
----
-
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-18
+**Issue:** Original M packet too large for reliable pi workers.
+**Resolution:** Superseded — execution moved to SP-294, SP-295.
+

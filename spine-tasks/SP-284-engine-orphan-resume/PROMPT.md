@@ -115,6 +115,9 @@ Fix **GitHub issue #7**: batch `20260618T191236` attached engine exited while `p
 - Auto-resume while engine PID is alive and batch is intentionally paused
 - Skip integrate gate approval on recovery
 
----
-
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-18
+**Issue:** Original M packet too large for reliable pi workers.
+**Resolution:** Superseded — execution moved to SP-296, SP-297.
+

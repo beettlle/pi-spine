@@ -1,7 +1,7 @@
 # Task: SP-290 — Skill checklist step
 
 **Created:** 2026-06-18
-**Size:** M
+**Size:** S
 
 ## Review Level: 1 (Plan Only)
 

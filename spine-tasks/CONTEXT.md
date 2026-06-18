@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-18 (Phase 32 — Spec-kit upstream adoption SP-286–293 staged)
+**Last Updated:** 2026-06-18 (M/L decomposition — SP-282/284/292 → SP-294–299; SP-289/290 resized to S)
 **Status:** Active
-**Next Task ID:** SP-294
+**Next Task ID:** SP-300
 
 ---
 
@@ -701,7 +701,7 @@ Completed Phase 28 slices (`.DONE`): SP-256, SP-263–266, SP-269–273, SP-276�
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
 | SP-281 | Attached batch integrate gate limbo (SP-280 follow-up) | M | **Done** | — | #4 |
-| SP-282 | Reviewer early artifact honor (hung pi follow-up) | M | **Staged** | SP-285 | #5 |
+| ~~SP-282~~ | Reviewer early artifact honor | M | **Superseded** | — | #5 → SP-294–295 |
 
 #### Phase 31 — GitHub issue follow-ups (2026-06-18, batch 20260618T191236)
 
@@ -712,14 +712,20 @@ Each task **closes its issue** in Documentation & Delivery via `gh issue close`.
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
 | SP-283 | Batch start rejects `.SUPERSEDED` task IDs | S | **Staged** | — | #6 |
-| SP-284 | Engine orphan resume without manual pause | M | **Staged** | — | #7 |
+| ~~SP-284~~ | Engine orphan resume without manual pause | M | **Superseded** | — | #7 → SP-296–297 |
 | SP-285 | Engine reviewer nested spawn env fix | S | **Staged** | SP-268 | #8 |
+| SP-294 | Early artifact honor core | S | **Staged** | SP-285 | — |
+| SP-295 | Early artifact honor delivery | S | **Staged** | SP-294 | #5 |
+| SP-296 | Engine orphan resume core | S | **Staged** | — | — |
+| SP-297 | Engine orphan resume delivery | S | **Staged** | SP-296 | #7 |
 
-**Suggested batches (6 pending reliability + typecheck tasks):**
+**Superseded (`.SUPERSEDED`):** SP-282→294–295, SP-284→296–297
 
-1. **Wave 0 (parallel):** `SP-268`, `SP-275`, `SP-283`, `SP-284`
-2. **Wave 1:** `SP-285` (closes #8)
-3. **Wave 2:** `SP-282` (closes #5)
+**Suggested batches (reliability):**
+
+1. **Wave 0 (parallel):** `SP-268`, `SP-275`, `SP-283`, `SP-296`
+2. **Wave 1:** `SP-285`, `SP-297`
+3. **Wave 2:** `SP-294`, `SP-295`
 
 FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backlog.
 
@@ -732,17 +738,21 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-286 | Path 4 spec-kit upstream docs | S | **Staged** | — |
 | SP-287 | Spec persistence models doc | S | **Staged** | — |
 | SP-288 | Constitution init template | S | **Staged** | — |
-| SP-289 | Skill clarify step (Step A.5) | M | **Staged** | — |
-| SP-290 | Skill requirements checklist (Step A.6) | M | **Staged** | SP-289 |
+| SP-289 | Skill clarify step (Step A.5) | S | **Staged** | — |
+| SP-290 | Skill requirements checklist (Step A.6) | S | **Staged** | SP-289 |
 | SP-291 | Skill lean vs full authoring modes | S | **Staged** | SP-289, SP-290 |
-| SP-292 | `spine tasks analyze` CLI | M | **Staged** | — |
-| SP-293 | Operator authoring approval checklist | S | **Staged** | SP-286, SP-287, SP-291, SP-292 |
+| ~~SP-292~~ | `spine tasks analyze` CLI | M | **Superseded** | — | → SP-298–299 |
+| SP-293 | Operator authoring approval checklist | S | **Staged** | SP-286, SP-287, SP-291, SP-299 |
+| SP-298 | tasks analyze module | S | **Staged** | — |
+| SP-299 | tasks analyze CLI delivery | S | **Staged** | SP-298 |
 
-**Suggested batches (8 tasks):**
+**Superseded (`.SUPERSEDED`):** SP-292→298–299
 
-1. **Wave 0 (parallel):** `SP-286`, `SP-287`, `SP-288`, `SP-292`
-2. **Wave 1:** `SP-289` → `SP-290` → `SP-291` (skill chain, serial)
-3. **Wave 2:** `SP-293` (closes authoring loop)
+**Suggested batches (spec-kit):**
+
+1. **Wave 0 (parallel):** `SP-286`, `SP-287`, `SP-288`, `SP-298`
+2. **Wave 1:** `SP-289`, `SP-290`, `SP-299`
+3. **Wave 2:** `SP-291`, `SP-293`
 
 **Non-goals:** No `specify` CLI dependency, no auto-import of spec-kit `tasks.md`, no `.specify/` state in spine engine.
 

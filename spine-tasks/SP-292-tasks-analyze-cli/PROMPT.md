@@ -121,6 +121,9 @@ Add **`spine tasks analyze <scope>`** — deterministic, read-only structural ch
 - Invoke LLM or external APIs in analyze CLI
 - Block batch start automatically (analyze is operator-opt-in preflight)
 
----
-
 ## Amendments (Added During Execution)
+
+### Amendment 1 — 2026-06-18
+**Issue:** Original M packet too large for reliable pi workers.
+**Resolution:** Superseded — execution moved to SP-298, SP-299.
+
