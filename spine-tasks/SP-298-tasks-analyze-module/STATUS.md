@@ -1,7 +1,7 @@
 # SP-298: tasks analyze module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,16 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Validate CLI patterns reviewed
+- [x] Validate CLI patterns reviewed
+
+**Notes:** `runSpineTasksValidate` resolves scope via `parseScope` + `discoverTasks`; blocking checks from SP-292: parallel file-scope overlap, deps cycles, orphan task IDs. Warnings deferred to SP-299.
 
 ---
 
 ### Step 1: Analyze module
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] index.mjs with blocking checks
+- [x] index.mjs with blocking checks
 
 ---
 
@@ -50,6 +52,8 @@
 
 | Finding | Impact |
 |---------|--------|
+| Overlap uses same path normalization as `lanes.mjs` | Consistent parallel-eligible detection |
+| Orphan IDs checked against all discovered tasks, not scope subset | Matches dependencies.json integrity check |
 
 ---
 
@@ -58,3 +62,5 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 0 | Reviewed validate scope resolution and SP-292 blocking table |
+| 2026-06-18 | Step 1 | Created `src/tasks/analyze/index.mjs` |
