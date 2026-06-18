@@ -542,6 +542,7 @@ export SPINE_REVIEW_STUB=1
 
 ## 📖 Further Reading
 
+- [Upstream execution workflow](./adoption/upstream-execution-workflow.md) — PRD or optional zero-pi / spec-kit → task packets → batch
 - [Execution Flow](./EXECUTION-FLOW.md) - Detailed execution explanation
 - [Execution Flow Diagrams](./EXECUTION-FLOW-DIAGRAMS.md) - Visual diagrams
 - [Product Requirements](./PRD.md) - Full specification

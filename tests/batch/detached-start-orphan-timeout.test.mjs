@@ -60,7 +60,7 @@ test("timeout_waiting_for_batch with dead enginePid reconciles as engine_orphane
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, `spine batch retry ${taskId}`);
+		assert.equal(result.suggestedCommand, "spine batch resume --attached");
 		assert.match(result.headline, /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);

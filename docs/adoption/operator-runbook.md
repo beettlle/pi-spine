@@ -12,7 +12,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 |-----|------|
 | [local-install.md](./local-install.md) | First install from git checkout |
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
-| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional zero-pi upstream) |
+| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) or [spec-kit](https://github.com/github/spec-kit) upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
 
 **CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:
@@ -49,7 +49,7 @@ After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` 
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` / `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
+3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -125,6 +125,8 @@ Glob-triggered language packs match PROMPT **File Scope** via micromatch. Empty 
 ---
 
 ## 2. Task validation and preflight
+
+**Human pre-batch gates:** Before your first batch (or after major decomposition), walk the [authoring approval checklist](./authoring-approval-checklist.md) — approve upstream spec/plan conversion, then run validate → analyze → plan → preflight. Authoring gates are operator habits; execution gates (`spine gate approve` after the wave) are separate — see the checklist comparison table.
 
 ### 2.1 Validate task packets (v1.3 — FR-UXB-02)
 
@@ -226,7 +228,8 @@ spine preflight
 # Single task (recommended for implementation work)
 spine batch start TP-012
 
-# Pending backlog (tasks without .DONE)
+# Pending backlog (tasks without .DONE or .SUPERSEDED) — prefer IDs from plan output
+spine plan pending
 spine batch start pending
 
 # Multi-task (one wave, disjoint file scopes)
@@ -237,6 +240,10 @@ spine batch start TP-012 --dry-run
 
 # Foreground engine (blocks until batch ends)
 spine batch start TP-012 --attached
+
+# Do not paste stale plan IDs for superseded parent tasks (.SUPERSEDED marker).
+# Batch start rejects them; use child replacement IDs from the marker or `spine plan pending`.
+# Deliberate rerun only: spine batch start SP-257 --force-superseded
 ```
 
 **Stub workers** (CI, no real `pi`):
@@ -358,7 +365,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
-| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` or `spine batch abort` |
+| `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
@@ -661,9 +668,10 @@ When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a *
 2. Inspect journal tail: `spine journal tail` — expect `task.started` / `lane.heartbeat` then silence.
 3. Check detached engine log: `.spine/runtime/detached-engine.log`.
 4. Recover:
-   - `spine batch retry <taskId>` when a running task is named in the headline.
+   - **`engine_orphaned`:** `spine batch resume --attached` — dead engine with `phase: running` no longer requires `batch pause` first (SP-284/SP-297).
+   - `spine batch retry <taskId>` when a running task needs a clean retry before resume.
    - `spine batch abort` when no task is active or work should be discarded.
-   - `spine batch resume --force` only after retry/abort clears stale running records.
+   - `spine batch resume --force` when retry/abort cleared stale running records but phase is still `running`.
 
 Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
@@ -696,6 +704,16 @@ When the journal shows **`review.started`** (final or code) with **no** matching
 3. Retry failed lane: `spine batch retry <taskId>` then `spine batch resume --attached --force`.
 
 Reviewer spawn uses **async** `pi` with timeout aligned to **`resolveReviewSpawnTimeoutMs`** (same stall budget as workers). Override for tests or emergencies: `SPINE_REVIEW_TIMEOUT_MS`.
+
+### Hung reviewer with on-disk artifact (`artifact_ready`)
+
+When the journal shows **`review.started`** followed by **`review.completed`** with **`honorReason: artifact_ready`**, the engine honored a terminal on-disk review artifact while the reviewer `pi` child was still running (batch `20260618T000943`, SP-282/SP-294, issue #5).
+
+**Symptoms (pre-fix):** reviewer wrote APPROVE to `{taskFolder}/.reviews/{step}-*.md` within minutes, but the engine waited the full **`resolveReviewSpawnTimeoutMs`** (~90 minutes for S tasks) before **`spawn_timeout_with_done`** honor.
+
+**Expected (post-fix):** completion within poll interval plus mtime quiescence (typically seconds with defaults), hung child terminated, journal **`review.completed`** with **`honorReason: artifact_ready`**.
+
+**Operator action:** Usually none — the batch proceeds. If an artifact exists but honor did not trigger, confirm the file contains a parseable terminal verdict (APPROVE/PASS) and is not still being written. Diagnostic overrides only: `SPINE_REVIEW_ARTIFACT_POLL_MS`, `SPINE_REVIEW_ARTIFACT_QUIESCENCE_MS`.
 
 ### Final review nested spawn (`final_review_spawn_failed`)
 

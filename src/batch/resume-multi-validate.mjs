@@ -3,9 +3,12 @@
  */
 
 import fs from "node:fs";
+import { isProcessAlive } from "../process/liveness.mjs";
+import { readJournalEvents } from "./journal.mjs";
+import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
-import { loadSpineBatchState, validateBatchState } from "./state.mjs";
+import { loadSpineBatchState, readBatchEnginePid, validateBatchState } from "./state.mjs";
 import {
 	assertLaneWorktreeGitHealthy,
 	laneWorktreePath,
@@ -53,6 +56,60 @@ export function findResumableWave(state, pendingTasks) {
 }
 
 /**
+ * Classify tasks for orphan detection during resume validation (status-only).
+ *
+ * @param {object[]} tasks
+ */
+function classifyTasksForOrphanDetect(tasks) {
+	return (tasks ?? []).map((task) => {
+		const status = String(task?.status ?? "").toLowerCase();
+		return {
+			taskId: task.taskId,
+			laneNumber: task.laneNumber,
+			classification: status === "running" ? "running" : status,
+		};
+	});
+}
+
+/**
+ * Assess whether a running-phase batch may resume after a dead detached engine (SP-296).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ */
+export function assessRunningPhaseResumeEligibility({ projectRoot, state }) {
+	const classifiedTasks = classifyTasksForOrphanDetect(state.tasks);
+	const hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
+	const journalEvents = readJournalEvents(projectRoot, state.batchId);
+	const scopedJournalEvents = journalEventsSinceResume(journalEvents, state);
+	const orphanRunning = detectOrphanRunning({
+		phase: String(state.phase ?? ""),
+		hasRunningTasks,
+		tasks: classifiedTasks,
+		lanes: state.lanes ?? [],
+		raw: state,
+		journalEvents: scopedJournalEvents,
+	});
+
+	const enginePid = readBatchEnginePid(state);
+	const enginePidDead = enginePid != null && !isProcessAlive(enginePid);
+	const pidlessEngineOrphan = enginePid == null && orphanRunning?.kind === "engine";
+	const engineConfirmedDead = enginePidDead || pidlessEngineOrphan;
+
+	const allowOrphanResume =
+		engineConfirmedDead &&
+		orphanRunning != null &&
+		(orphanRunning.kind === "engine" || orphanRunning.kind === "lane");
+
+	return {
+		engineConfirmedDead,
+		allowOrphanResume,
+		orphanKind: orphanRunning?.kind ?? null,
+	};
+}
+
+/**
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {boolean} [params.force]
@@ -66,8 +123,16 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 	const state = loaded.raw;
 	const phase = String(state.phase ?? "");
 	const postMergeLimbo = isPostMergeLimbo(state);
+	const orphanEligibility =
+		phase === "running"
+			? assessRunningPhaseResumeEligibility({ projectRoot, state })
+			: { engineConfirmedDead: false, allowOrphanResume: false, orphanKind: null };
 	const resumable =
-		phase === "paused" || (phase === "failed" && force) || (phase === "running" && postMergeLimbo);
+		phase === "paused" ||
+		(phase === "failed" && force) ||
+		(phase === "running" && postMergeLimbo) ||
+		(phase === "running" && orphanEligibility.allowOrphanResume) ||
+		(phase === "running" && force && orphanEligibility.engineConfirmedDead);
 	if (!resumable) {
 		return {
 			ok: false,
@@ -183,5 +248,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 		lanes,
 		resumableWave,
 		postMergeLimbo,
+		orphanResume: orphanEligibility.allowOrphanResume,
+		engineConfirmedDead: orphanEligibility.engineConfirmedDead,
 	};
 }

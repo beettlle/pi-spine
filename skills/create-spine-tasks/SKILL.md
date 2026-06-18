@@ -1,6 +1,6 @@
 ---
 name: create-spine-tasks
-version: 1.0.0
+version: 1.1.0
 description: Decomposes PRDs and feature briefs into spine task packets (PROMPT.md, STATUS.md) under spine-tasks/ for autonomous execution via spine batch. Use when asked to "create a spine task", "decompose a PRD", "stage tasks for spine", "write PROMPT.md for spine", "create SP-* tasks", or queue work for spine workers.
 ---
 
@@ -13,15 +13,24 @@ Works from a local pi-spine checkout (`pi install /path/to/pi-spine -l`) or afte
 ## Architecture
 
 ```
-create-spine-tasks skill     → Creates PROMPT.md + STATUS.md (+ dependencies.json edits)
+PRD / brief
+    │
+    ├─ Lean authoring ─────────────────────────────────────────────┐
+    │   Step 0? → Step A → Step B → Step C                       │
+    │                                                             │
+    └─ Full authoring ───────────────────────────────────────────┤
+        Step 0? → A.5 clarify → A.6 checklist → B slice → C.5 analyze? → C
+                                                                  │
+create-spine-tasks skill     → PROMPT.md + STATUS.md (+ dependencies.json edits)
+                             → optional _explore/ and _authoring/ artifacts
 spine-orchestrator extension → Slash commands, batch guidance
-spine CLI                      → batch start, plan, preflight, integrate, gates
+spine CLI                      → tasks validate, tasks analyze, plan, batch start, gates
   ├─ .spine/agents/worker.md   → Worker standing orders (checkpoint discipline)
   ├─ .spine/agents/reviewer.md → Reviewer rubric
   └─ .spine/spine-config.json  → tasks root, testing commands, lanes, gates
 ```
 
-The skill only creates and updates task files. Execution behavior lives in pi-spine and the worker/reviewer agent prompts.
+The skill only creates and updates task files. Execution behavior lives in pi-spine and the worker/reviewer agent prompts. Authoring artifacts under `{tasksRoot}/_explore/` and `{tasksRoot}/_authoring/` inform decomposition — they are not batch engine input.
 
 ## Prerequisites
 
@@ -48,6 +57,19 @@ Override tasks root at runtime with `SPINE_TASKS_ROOT` (env > file).
 ## PRD → Task Decomposition
 
 Use this workflow when the user supplies a PRD, epic brief, or feature spec instead of a single task description.
+
+### Authoring modes
+
+Pick **lean** or **full** before decomposition. Terminology aligns with [spec-kit presets](https://github.com/github/spec-kit): lean skips pre-slice quality gates; full runs clarify, checklist, and optional LLM analyze before slicing.
+
+| Mode | Pipeline | When to use |
+|------|----------|-------------|
+| **Lean** | Optional Step 0 explore → Step A read → Step B slice → Step C track | Greenfield or brownfield with clear PRD paths; single S/M task; quick experiments; operator already validated requirements |
+| **Full** | Step 0 (if brownfield) → Step A.5 clarify → Step A.6 checklist → Step B slice → optional Step C.5 analyze → Step C track | L/XL epics; ambiguous or conflicting requirements; security/compliance surface; parallel wave planning; production-grade decomposition |
+
+**Lean** mirrors spec-kit's lean preset (Specify → Plan → Tasks): move from sources to packets with minimal upstream gates. **Full** mirrors the standard spec-kit path (adds Clarify, Checklist, and Analyze before implementation) — use skill Steps A.5/A.6/C.5 or external [Path 4 spec-kit](../../docs/adoption/upstream-execution-workflow.md#path-4--spec-kit-optional-upstream) upstream, then convert artifacts into spine packets.
+
+Default to **lean** when the operator does not specify a mode and signals are weak. Switch to **full** when any row in the full-mode table applies.
 
 ### Step 0: Explore (optional — brownfield / large epics)
 
@@ -90,6 +112,76 @@ See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-
 2. `{tasksRoot}/CONTEXT.md` — current phase, **Next Task ID**, execution policy
 3. Existing `{tasksRoot}/dependencies.json` and open task folders (avoid duplicate work)
 
+### Step A.5: Clarify (optional — ambiguity pass before slice)
+
+Run **after** Step A when using **full** authoring mode or when the PRD/brief needs ambiguity resolution before decomposition. Authoring-only — `spine tasks validate` does **not** require clarify artifacts.
+
+External equivalent: [spec-kit `/speckit.clarify`](https://github.com/github/spec-kit) — see [Path 4](../../docs/adoption/upstream-execution-workflow.md#path-4--spec-kit-optional-upstream).
+
+**When to run:**
+
+| Signal | Why clarify helps |
+|--------|-------------------|
+| Ambiguous PRD / brief | Scope, acceptance criteria, or deps unclear before slicing |
+| L/XL epic | Must split anyway; resolved decisions drive wave boundaries |
+| Conflicting requirements | Multiple sources or stakeholders need reconciliation |
+| Post-explore open questions | Step 0 findings left decomposition blockers |
+| Full authoring pipeline | Operator wants clarify → checklist → slice before packets |
+
+**When to skip:**
+
+- **Lean** mode with unambiguous PRD and concrete paths
+- Single S/M task with no open requirements questions
+- Migrating existing Taskplane packets unchanged
+- Prior `{tasksRoot}/_authoring/{slug}/clarify.md` still `Status: complete`
+
+**Constraints (read-only on sources):**
+
+- No commits; no file edits outside read targets and the clarify artifact
+- Output path: `{tasksRoot}/_authoring/{slug}/clarify.md` (git-tracked by default)
+- Clarify informs Step B slicing — not batch engine input
+
+**Workflow:**
+
+1. Read-only review — PRD/brief, explore findings (if any), CONTEXT.md.
+2. Write `{tasksRoot}/_authoring/{slug}/clarify.md` using [references/clarify-template.md](references/clarify-template.md) (Summary, Open questions, Assumptions, Resolved decisions, Blockers for decomposition).
+3. Link the slug in `{tasksRoot}/CONTEXT.md` — clarify table row or `Clarify complete: {slug}` with date and path.
+4. Use **Resolved decisions** and resolved **Open questions** when slicing tasks in Step B.
+
+### Step A.6 — Requirements checklist (optional)
+
+Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-only — `spine tasks validate` does **not** require checklist artifacts.
+
+**Purpose:** Validate requirement quality ("unit tests for requirements") before decomposition — inspired by spec-kit `/speckit.checklist`. Checks whether the PRD/brief is complete, measurable, and slice-ready; does **not** verify implementation.
+
+**Output path:** `{tasksRoot}/_authoring/{slug}/checklist.md` using [references/requirements-checklist-template.md](references/requirements-checklist-template.md).
+
+**When to run:**
+
+| Signal | Why checklist helps |
+|--------|---------------------|
+| After clarify with open assumptions | Surfaces requirement gaps before slicing |
+| L/XL epic or multi-task decomposition | Catches missing NFRs and edge cases early |
+| Security- or compliance-touching work | Forces explicit auth/data handling in requirements |
+| Vague acceptance language | Converts ambiguity into measurable criteria |
+| Parallel wave planning | Ensures disjoint scopes are justified by clear requirements |
+
+**When to skip:**
+
+- Single S/M task with concrete File Scope and measurable acceptance criteria
+- Greenfield with a short, unambiguous brief and no security surface
+- Migrating existing spine packets unchanged
+- Requirements already validated; no open items in `clarify.md`
+
+**Workflow:**
+
+1. Read PRD/brief, `clarify.md` (if present), and project standards referenced in the brief.
+2. Write `{tasksRoot}/_authoring/{slug}/checklist.md` — cover acceptance criteria quality, security, edge cases, testability, and non-functional requirements (see template).
+3. Resolve or explicitly defer `[Gap]` items before Step B; do **not** duplicate Step 0 explore `findings.md` (explore maps codebase; checklist validates requirements).
+4. Link the slug in `{tasksRoot}/CONTEXT.md` when checklist informs decomposition.
+
+**Authoring order:** clarify → checklist → slice (Step A.5 → A.6 → B).
+
 ### Step B: Slice into spine tasks
 
 | Rule | Guidance |
@@ -102,13 +194,45 @@ See [docs/adoption/upstream-execution-workflow.md](../../docs/adoption/upstream-
 | **Waves** | Order via `## Dependencies` and `{tasksRoot}/dependencies.json`. |
 | **Review** | Score complexity (below). Do not default to Level 0 for implementation work. |
 
+### Step C.5: Analyze (optional — LLM structural review after slice)
+
+Run **after** Step B and **before** Step C when using **full** authoring mode and the operator wants an LLM-authored structural review of drafted packets. Authoring-only — `spine tasks validate` does **not** require analyze artifacts.
+
+External equivalent: [spec-kit `/speckit.analyze`](https://github.com/github/spec-kit) — cross-artifact consistency check before implementation.
+
+**Purpose:** Read-only review of drafted PROMPT/STATUS packets and dependency graph — wave sizing, scope overlap, missing deps, explore/authoring refs. Complements deterministic **`spine tasks analyze`** (CLI structural checks after decomposition).
+
+**Output path:** `{tasksRoot}/_authoring/{slug}/analyze.md` — LLM-authored, read-only report (not batch engine input).
+
+**When to run:**
+
+| Signal | Why LLM analyze helps |
+|--------|----------------------|
+| Multi-task wave with ≥4 M-sized tasks | Catch scope overlap and wave stall risk before batch |
+| First decomposition on a new epic slug | Sanity-check packet quality before operator approval |
+| Full authoring pipeline | Close the loop after clarify → checklist → slice |
+| Operator requests pre-batch review | Human gate before `spine batch start` |
+
+**When to skip:**
+
+- **Lean** mode or single S/M packet
+- Operator will run only `spine tasks analyze pending` (deterministic CLI suffices)
+- Packets already reviewed in a prior batch iteration
+
+**Workflow:**
+
+1. Read drafted task folders, `dependencies.json`, and any `_authoring/{slug}/clarify.md` or `checklist.md`.
+2. Write `{tasksRoot}/_authoring/{slug}/analyze.md` — structural findings, wave recommendations, blocking issues for operator (resolve before batch).
+3. Fix packet issues identified in analyze.md before Step C tracking updates.
+4. After Step C, run **`spine tasks analyze pending`** for deterministic structural checks (wave M-count, explore refs, PROMPT/JSON deps drift).
+
 ### Step C: Update tracking
 
 After creating packets:
 
 1. **`{tasksRoot}/CONTEXT.md`** — increment `Next Task ID`; add rows to the phase table for new tasks
 2. **`{tasksRoot}/dependencies.json`** — add edges for every dependency (machine-parseable)
-3. Report launch commands: `spine tasks validate pending` (fix contract/PROMPT errors first), `spine plan pending`, then `spine batch start <id>`
+3. Report launch commands: `spine tasks validate pending` (fix contract/PROMPT errors first), `spine tasks analyze pending` (structural checks — wave sizing, deps drift, explore refs), `spine plan pending`, then `spine batch start <id>`
 
 **Example decomposition** (feature brief → three tasks):
 
@@ -179,6 +303,7 @@ If the task depends on others, update **both**:
 
 ```bash
 spine tasks validate pending
+spine tasks analyze pending
 spine plan pending
 spine preflight
 SPINE_WORKER_STUB=1 spine batch start SP-042   # stub / CI
@@ -329,6 +454,7 @@ Do **not** generate Taskplane polyrepo **`#### Segment: <repoId>`** markers — 
 
 Before reporting launch commands:
 
+- [ ] Authoring mode chosen (lean default; full when ambiguity, L/XL epic, or security surface)
 - [ ] `Next Task ID` read from CONTEXT.md and incremented
 - [ ] Folder at `{tasksRoot}/{PREFIX-###-slug}/`
 - [ ] Complexity scored; review level assigned (0–3)
@@ -338,7 +464,8 @@ Before reporting launch commands:
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
 - [ ] CONTEXT.md phase table updated for PRD decompositions
-- [ ] Launch: `spine tasks validate pending` → `spine plan pending` → `spine preflight` → `spine batch start <id>`
+- [ ] Full mode: clarify/checklist/analyze artifacts complete or explicitly skipped with rationale
+- [ ] Launch: `spine tasks validate pending` → `spine tasks analyze pending` → `spine plan pending` → `spine preflight` → `spine batch start <id>`
 
 ---
 
@@ -369,6 +496,8 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - [references/prompt-template.md](references/prompt-template.md) — PROMPT.md and STATUS.md templates
 - [references/contract-template.md](references/contract-template.md) — `## Contract` field guidance and examples (v2.0 §4)
 - [references/explore-template.md](references/explore-template.md) — Step 0 `findings.md` schema (v1.3 §6.3)
+- [references/clarify-template.md](references/clarify-template.md) — Step A.5 `clarify.md` schema (spec-kit `/speckit.clarify` equivalent)
+- [references/requirements-checklist-template.md](references/requirements-checklist-template.md) — Step A.6 `checklist.md` schema (spec-kit `/speckit.checklist` equivalent)
 - [references/context-template.md](references/context-template.md) — `{tasksRoot}/CONTEXT.md` scaffold
 - [docs/PRD.md](../../docs/PRD.md) — task format spec (§13)
 - [docs/adoption/bootstrap-checklist.md](../../docs/adoption/bootstrap-checklist.md) — greenfield setup

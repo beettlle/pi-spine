@@ -5,6 +5,7 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import {
+	buildConstitutionMd,
 	buildContextMd,
 	DEFAULT_NEXT_TASK_ID,
 	DEFAULT_TASKS_ROOT,
@@ -40,7 +41,15 @@ test("fresh init creates config, agents, tasks root, and gitignore entries", asy
 		assert.equal(config.gates.requireBeforeIntegrate, true);
 		assert.equal(config.lanes.maxParallel, 3);
 		assert.equal(config.dashboard.port, 8109);
+		assert.deepEqual(config.referenceDocs, ["docs/constitution.md"]);
 		assert.equal(validateSpineConfig(config), null);
+
+		const constitutionPath = path.join(projectRoot, "docs", "constitution.md");
+		assert.ok(fs.existsSync(constitutionPath));
+		const constitutionMd = fs.readFileSync(constitutionPath, "utf-8");
+		assert.match(constitutionMd, /# .+ — Constitution/);
+		assert.match(constitutionMd, /## Guiding principles/);
+		assert.match(constitutionMd, /## Non-negotiable rules/);
 
 		for (const agentFile of ["worker.md", "reviewer.md", "supervisor.md"]) {
 			assert.ok(fs.existsSync(path.join(projectRoot, ".spine", "agents", agentFile)));
@@ -63,6 +72,28 @@ test("fresh init creates config, agents, tasks root, and gitignore entries", asy
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}
+});
+
+test("init skips constitution.md when it already exists without --force", async () => {
+	const projectRoot = await createFixture();
+	try {
+		fs.mkdirSync(path.join(projectRoot, "docs"), { recursive: true });
+		const constitutionPath = path.join(projectRoot, "docs", "constitution.md");
+		fs.writeFileSync(constitutionPath, "# Custom constitution\n", "utf-8");
+
+		const result = runInit(projectRoot, []);
+		assert.equal(result.ok, true);
+		assert.equal(fs.readFileSync(constitutionPath, "utf-8"), "# Custom constitution\n");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("buildConstitutionMd substitutes project title from directory name", () => {
+	const projectRoot = path.join(os.tmpdir(), "my-consumer-app");
+	const constitutionMd = buildConstitutionMd(projectRoot);
+	assert.match(constitutionMd, /# my-consumer-app — Constitution/);
+	assert.match(constitutionMd, /## Guiding principles/);
 });
 
 test("init without --force refuses when spine-config.json exists", async () => {

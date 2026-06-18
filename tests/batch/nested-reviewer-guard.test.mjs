@@ -11,6 +11,7 @@ import {
 	NESTED_REVIEW_SPAWN_REASON,
 	runStepReview,
 } from "../../src/batch/review.mjs";
+import { spawnReviewerPi } from "../../src/batch/review-spawn.mjs";
 
 /**
  * @param {string} root
@@ -78,10 +79,12 @@ test("runStepReview skips nested reviewer spawn when worker env is set", async (
 	const taskFolder = writeReviewTask(root, 2);
 	const prev = {
 		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		taskFolderEnv: process.env.SPINE_TASK_FOLDER,
 		noPi: process.env.SPINE_REVIEW_TEST_NO_PI,
 		stub: process.env.SPINE_REVIEW_STUB,
 	};
 	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	process.env.SPINE_TASK_FOLDER = taskFolder;
 	delete process.env.SPINE_REVIEW_STUB;
 	delete process.env.SPINE_REVIEW_TEST_NO_PI;
 	try {
@@ -106,6 +109,8 @@ test("runStepReview skips nested reviewer spawn when worker env is set", async (
 	} finally {
 		if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
 		else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
+		if (prev.taskFolderEnv === undefined) delete process.env.SPINE_TASK_FOLDER;
+		else process.env.SPINE_TASK_FOLDER = prev.taskFolderEnv;
 		if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
 		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
@@ -120,9 +125,11 @@ test("runStepReview skips nested plan review spawn when worker env is set", asyn
 	const taskFolder = writeReviewTask(root, 2);
 	const prev = {
 		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		taskFolderEnv: process.env.SPINE_TASK_FOLDER,
 		stub: process.env.SPINE_REVIEW_STUB,
 	};
 	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	process.env.SPINE_TASK_FOLDER = taskFolder;
 	delete process.env.SPINE_REVIEW_STUB;
 	try {
 		const result = await runStepReview({
@@ -140,6 +147,8 @@ test("runStepReview skips nested plan review spawn when worker env is set", asyn
 	} finally {
 		if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
 		else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
+		if (prev.taskFolderEnv === undefined) delete process.env.SPINE_TASK_FOLDER;
+		else process.env.SPINE_TASK_FOLDER = prev.taskFolderEnv;
 		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
 		else process.env.SPINE_REVIEW_STUB = prev.stub;
 		await rm(root, { recursive: true, force: true });
@@ -203,6 +212,48 @@ test("runStepReview reaches pi availability check when worker env absent", async
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
 		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
 		else process.env.SPINE_REVIEW_STUB = prev.stub;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("engine parent with leaked worker runner reaches reviewer spawn", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-nested-guard-engine-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const prev = {
+		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		taskFolderEnv: process.env.SPINE_TASK_FOLDER,
+		noPi: process.env.SPINE_REVIEW_TEST_NO_PI,
+	};
+	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	delete process.env.SPINE_TASK_FOLDER;
+	process.env.SPINE_REVIEW_TEST_NO_PI = "1";
+	try {
+		const spawnResult = await spawnReviewerPi({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt: path.join(taskFolder, "review-request.md"),
+			systemPrompt: "",
+		});
+		assert.equal(spawnResult.spawnFailed, true);
+		assert.notEqual(spawnResult.reason, NESTED_REVIEW_SPAWN_REASON);
+		assert.match(spawnResult.error ?? "", /pi not available/i);
+
+		const reviewResult = await runStepReview({
+			taskFolder,
+			worktreePath: root,
+			stepNumber: 1,
+			reviewType: "plan",
+		});
+		assert.equal(reviewResult.spawnFailed, true);
+		assert.notEqual(reviewResult.error, NESTED_REVIEW_SPAWN_BLOCKED);
+		assert.match(reviewResult.error ?? "", /pi not available/i);
+	} finally {
+		if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+		else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
+		if (prev.taskFolderEnv === undefined) delete process.env.SPINE_TASK_FOLDER;
+		else process.env.SPINE_TASK_FOLDER = prev.taskFolderEnv;
+		if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
+		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
 		await rm(root, { recursive: true, force: true });
 	}
 });
