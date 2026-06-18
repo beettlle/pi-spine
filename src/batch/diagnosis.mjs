@@ -21,7 +21,12 @@ export const DIAGNOSIS_TAXONOMY = [
 	"aborted",
 ];
 
-const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_integrate"]);
+const NO_PAUSE_DIAGNOSES = new Set([
+	"limbo_stale",
+	"completed_manual",
+	"needs_integrate",
+	"engine_orphaned",
+]);
 
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
 
@@ -189,9 +194,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch abort";
 		case "engine_orphaned":
-			return ctx.failedTaskId
-				? `spine batch retry ${ctx.failedTaskId}`
-				: "spine batch abort";
+			return "spine batch resume --attached";
 		case "needs_merge":
 			return "/spine-resume --force";
 		case "needs_integrate":
@@ -353,7 +356,9 @@ export function buildAlternatives(diagnosis, ctx = {}) {
 		case "worker_orphaned":
 			return ["spine batch abort", "spine batch resume --force", ...common];
 		case "engine_orphaned":
-			return ["spine batch abort", "spine batch resume --force", ...common];
+			return ctx.failedTaskId
+				? [`spine batch retry ${ctx.failedTaskId}`, "spine batch abort", ...common]
+				: ["spine batch abort", "spine batch resume --force", ...common];
 		case "needs_merge":
 			return ["/spine-status --diagnose", ...common];
 		case "needs_integrate":

@@ -68,11 +68,12 @@ test("resume parallel lane orphan fixture: reconcile is actionable after scoped 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
 		assert.ok(["engine_orphaned", "worker_orphaned"].includes(result.diagnosis));
-		assert.match(result.suggestedCommand, /^(spine batch retry |spine batch abort)/);
 		assert.equal(result.batchId, "20260603T224829");
 		if (result.diagnosis === "engine_orphaned") {
+			assert.equal(result.suggestedCommand, "spine batch resume --attached");
 			assert.match(result.headline, /engine died/i);
 		} else {
+			assert.match(result.suggestedCommand, /^(spine batch retry |spine batch abort)/);
 			assert.match(result.headline, /lane worker orphaned/i);
 		}
 	} finally {
@@ -191,7 +192,7 @@ test("dead enginePid mid-resume without terminal journal is engine_orphaned", as
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, `spine batch retry ${taskId}`);
+		assert.equal(result.suggestedCommand, "spine batch resume --attached");
 		assert.match(result.headline, /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);

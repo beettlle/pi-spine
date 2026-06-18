@@ -49,7 +49,7 @@ After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` 
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` / `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
+3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -363,7 +363,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
-| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` or `spine batch abort` |
+| `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
@@ -666,9 +666,10 @@ When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a *
 2. Inspect journal tail: `spine journal tail` — expect `task.started` / `lane.heartbeat` then silence.
 3. Check detached engine log: `.spine/runtime/detached-engine.log`.
 4. Recover:
-   - `spine batch retry <taskId>` when a running task is named in the headline.
+   - **`engine_orphaned`:** `spine batch resume --attached` — dead engine with `phase: running` no longer requires `batch pause` first (SP-284/SP-297).
+   - `spine batch retry <taskId>` when a running task needs a clean retry before resume.
    - `spine batch abort` when no task is active or work should be discarded.
-   - `spine batch resume --force` only after retry/abort clears stale running records.
+   - `spine batch resume --force` when retry/abort cleared stale running records but phase is still `running`.
 
 Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
