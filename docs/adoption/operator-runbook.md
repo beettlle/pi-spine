@@ -705,6 +705,16 @@ When the journal shows **`review.started`** (final or code) with **no** matching
 
 Reviewer spawn uses **async** `pi` with timeout aligned to **`resolveReviewSpawnTimeoutMs`** (same stall budget as workers). Override for tests or emergencies: `SPINE_REVIEW_TIMEOUT_MS`.
 
+### Hung reviewer with on-disk artifact (`artifact_ready`)
+
+When the journal shows **`review.started`** followed by **`review.completed`** with **`honorReason: artifact_ready`**, the engine honored a terminal on-disk review artifact while the reviewer `pi` child was still running (batch `20260618T000943`, SP-282/SP-294, issue #5).
+
+**Symptoms (pre-fix):** reviewer wrote APPROVE to `{taskFolder}/.reviews/{step}-*.md` within minutes, but the engine waited the full **`resolveReviewSpawnTimeoutMs`** (~90 minutes for S tasks) before **`spawn_timeout_with_done`** honor.
+
+**Expected (post-fix):** completion within poll interval plus mtime quiescence (typically seconds with defaults), hung child terminated, journal **`review.completed`** with **`honorReason: artifact_ready`**.
+
+**Operator action:** Usually none — the batch proceeds. If an artifact exists but honor did not trigger, confirm the file contains a parseable terminal verdict (APPROVE/PASS) and is not still being written. Diagnostic overrides only: `SPINE_REVIEW_ARTIFACT_POLL_MS`, `SPINE_REVIEW_ARTIFACT_QUIESCENCE_MS`.
+
 ### Final review nested spawn (`final_review_spawn_failed`)
 
 When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with **`final_review_spawn_failed`** / journal **`review.failed`** reason **`nested_spawn_blocked`**, the spine CLI inherited **`SPINE_WORKER_RUNNER`** from an active pi worker session (SP-195). Reviewer spawn is intentionally blocked inside worker sessions.
