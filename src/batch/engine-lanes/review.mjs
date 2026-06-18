@@ -30,6 +30,7 @@ import {
 	findCompletedFinalReview,
 	findFinalReviewStepNumber,
 	readReviewLevel,
+	REVIEW_TIMEOUT_REASON,
 	runStepReview,
 } from "../review.mjs";
 
@@ -94,7 +95,7 @@ function writeFinalStubReviewArtifact({ artifactPath, verdict, feedback }) {
 /**
  * @param {object} params
  */
-export function runEngineFinalReview({
+export async function runEngineFinalReview({
 	taskFolder,
 	worktreePath,
 	config = {},
@@ -145,7 +146,7 @@ export function runEngineFinalReview({
 	}
 
 	const stepNumber = findFinalReviewStepNumber(taskFolder);
-	return runStepReview({
+	return await runStepReview({
 		taskFolder,
 		worktreePath,
 		stepNumber,
@@ -159,7 +160,7 @@ export function runEngineFinalReview({
 /**
  * @param {object} params
  */
-export function runEngineCodeReview({
+export async function runEngineCodeReview({
 	taskFolder,
 	worktreePath,
 	config = {},
@@ -243,7 +244,7 @@ export function runEngineCodeReview({
 		};
 	}
 
-	return runStepReview({
+	return await runStepReview({
 		taskFolder,
 		worktreePath,
 		stepNumber,
@@ -410,7 +411,7 @@ async function runCodeReviewPhase({
 	};
 
 	while (true) {
-		const reviewResult = runEngineCodeReview({
+		const reviewResult = await runEngineCodeReview({
 			taskFolder: taskFolderInWorktree,
 			worktreePath: wt,
 			config,
@@ -419,6 +420,10 @@ async function runCodeReviewPhase({
 		});
 
 		if (reviewResult.spawnFailed) {
+			const spawnExitReason =
+				reviewResult.reason === REVIEW_TIMEOUT_REASON
+					? "code_review_timeout"
+					: "code_review_spawn_failed";
 			recordCodeReviewTaskFailure({
 				projectRoot,
 				state,
@@ -426,7 +431,7 @@ async function runCodeReviewPhase({
 				task,
 				lane,
 				laneCorrelationId,
-				exitReason: "code_review_spawn_failed",
+				exitReason: spawnExitReason,
 				verdict: null,
 				codeReviewAttempt,
 				config,
@@ -434,7 +439,7 @@ async function runCodeReviewPhase({
 			});
 			return {
 				ok: false,
-				error: "code_review_spawn_failed",
+				error: spawnExitReason,
 				output: reviewResult.error ?? "code review spawn failed",
 			};
 		}
@@ -742,7 +747,7 @@ async function runFinalReviewPhase({
 			}
 		}
 
-		const reviewResult = runEngineFinalReview({
+		const reviewResult = await runEngineFinalReview({
 			taskFolder: taskFolderInWorktree,
 			worktreePath: wt,
 			config,
@@ -752,6 +757,10 @@ async function runFinalReviewPhase({
 		});
 
 		if (reviewResult.spawnFailed) {
+			const spawnExitReason =
+				reviewResult.reason === REVIEW_TIMEOUT_REASON
+					? "final_review_timeout"
+					: "final_review_spawn_failed";
 			recordFinalReviewTaskFailure({
 				projectRoot,
 				state,
@@ -759,7 +768,7 @@ async function runFinalReviewPhase({
 				task,
 				lane,
 				laneCorrelationId,
-				exitReason: "final_review_spawn_failed",
+				exitReason: spawnExitReason,
 				verdict: null,
 				finalAttempt,
 				config,
@@ -767,7 +776,7 @@ async function runFinalReviewPhase({
 			});
 			return {
 				ok: false,
-				error: "final_review_spawn_failed",
+				error: spawnExitReason,
 				output: reviewResult.error ?? "final review spawn failed",
 			};
 		}
