@@ -127,7 +127,7 @@ Do **not** run Taskplane and pi-spine batches on the same repo concurrently. See
 
 ## Project status
 
-**v1.0.2** on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine). API may still evolve in patch releases; see git tags and **[docs/release/](docs/release/)**.
+**v1.1.0** on [npm](https://www.npmjs.com/package/pi-spine) and [pi.dev](https://pi.dev/packages/pi-spine). API may still evolve in patch releases; see git tags and **[docs/release/](docs/release/)**.
 
 CI runs on every push and PR: typecheck, tests, coverage, and CLI smoke checks — see **[.github/workflows/ci.yml](.github/workflows/ci.yml)** and **[npm-publish.md](docs/release/npm-publish.md)**.
 
