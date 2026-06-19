@@ -4,6 +4,10 @@
 
 import fs from "node:fs";
 import { isProcessAlive } from "../process/liveness.mjs";
+import {
+	findFirstWaveNeedingMerge,
+	hasPendingWaveMerge,
+} from "./merge/wave-merge-state.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
@@ -37,25 +41,7 @@ export function computePendingTasks(state) {
 	return (state.tasks ?? []).filter((task) => task && isTaskResumable(state, task));
 }
 
-/**
- * Wave merge still required when every task is terminal but mergeResults is empty.
- *
- * @param {object} state
- */
-function hasPendingWaveMerge(state) {
-	const mergeResults = state.mergeResults ?? [];
-	if (mergeResults.length > 0) {
-		return false;
-	}
-	const tasks = state.tasks ?? [];
-	if (tasks.length < 1) {
-		return false;
-	}
-	return tasks.every((task) => {
-		const status = String(task?.status ?? "");
-		return status === "succeeded" || status === "skipped";
-	});
-}
+export { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
 
 /**
  * @param {object} state
@@ -70,6 +56,11 @@ export function findResumableWave(state, pendingTasks) {
 		if (waveTaskIds.some((taskId) => pendingIds.has(taskId))) {
 			return waveIndex;
 		}
+	}
+
+	const pendingMergeWave = findFirstWaveNeedingMerge(state);
+	if (pendingMergeWave != null) {
+		return pendingMergeWave;
 	}
 
 	return Number(state.currentWaveIndex ?? 0);

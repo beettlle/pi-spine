@@ -60,6 +60,23 @@ test("buildHeadline surfaces worker_orphaned launch failure from worker output c
 	assert.match(headline, /PI_SPINE_ROOT\/devcontainer/);
 });
 
+test("worker_orphaned after plan review nested_spawn_blocked suggests batch retry", () => {
+	const headline = buildHeadline("worker_orphaned", {
+		batchId: "20260619T020951",
+		failedTaskId: "SP-306",
+		planReviewNestedSpawnBlocked: true,
+	});
+	assert.match(headline, /plan review nested_spawn_blocked/i);
+	assert.match(headline, /SP-306/);
+
+	const suggested = buildSuggestedCommand("worker_orphaned", {
+		failedTaskId: "SP-306",
+		planReviewNestedSpawnBlocked: true,
+		stalePathSpine: true,
+	});
+	assert.equal(suggested, "node bin/spine.mjs batch retry SP-306");
+});
+
 test("dead lane workerPid diagnoses worker_orphaned not needs_retry", async () => {
 	const projectRoot = await initGitRepo("spine-worker-orphan-taxonomy-");
 	try {

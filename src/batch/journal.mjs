@@ -371,3 +371,25 @@ export function extractJournalDiagnosisHints(events) {
 
 	return hints;
 }
+
+/**
+ * True when journal shows plan `review.failed` with `nested_spawn_blocked` for a task.
+ * Stale PATH spine pre-SP-278 behavior (batch 20260619T020951 / issue #12).
+ *
+ * @param {object[]} journalEvents
+ * @param {string|null} [taskId]
+ */
+export function findPlanReviewNestedSpawnBlockedFailure(journalEvents, taskId) {
+	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return false;
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event.type !== "review.failed") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (payload.reason !== "nested_spawn_blocked") continue;
+		if (payload.reviewType !== "plan") continue;
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (taskId && eventTaskId && eventTaskId !== taskId) continue;
+		return true;
+	}
+	return false;
+}
