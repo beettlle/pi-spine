@@ -1,8 +1,8 @@
 # SP-306: Remove duplicate dashboard journal panel — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-06-18
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-19
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -19,27 +19,27 @@
 ---
 
 ### Step 1: Remove duplicate UI
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `default-journal-section` removed from index.html
-- [ ] `renderDefaultJournalTail` removed; `renderDefaultStatusPanels` simplified
+- [x] `default-journal-section` removed from index.html
+- [x] `renderDefaultJournalTail` removed; `renderDefaultStatusPanels` simplified
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] ui-contract tests updated
-- [ ] Full test suite passing
-- [ ] Coverage gate passing
+- [x] ui-contract tests updated
+- [x] Full test suite passing (947/947; `env -u SPINE_WORKER_PI_TIMEOUT_MS` required in worker sessions)
+- [x] Coverage gate passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook checked
-- [ ] `.DONE` created
+- [x] Runbook checked — §7 already documents journal in active batch panels only
+- [x] `.DONE` created
 
 ---
 
@@ -54,6 +54,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Full suite fails when `SPINE_WORKER_PI_TIMEOUT_MS` inherited from worker runner | Environmental — unset for verification | worker-pi-timeout tests |
 
 ---
 
@@ -62,6 +63,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 1 | Removed duplicate journal panel (d3883e8) |
+| 2026-06-18 | Step 2 | Updated ui-contract tests (475d6d6) |
+| 2026-06-19 | Verification | 947 tests pass, coverage gate OK |
 
 ---
 
@@ -73,4 +77,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Runbook §7 (lines 773–774) already states journal tail is in active batch panels; no doc edit required.
