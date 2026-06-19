@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-19 (Phase 35 — SP-308/SP-309 staged for GitHub #12/#13)
+**Last Updated:** 2026-06-19 (Phase 36 — SP-310 staged for GitHub #14; batch 20260619T020951 landed)
 **Status:** Active
-**Next Task ID:** SP-310
+**Next Task ID:** SP-311
 
 ---
 
@@ -812,6 +812,16 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-309 | Batch resume orphan recovery | S | **Staged** | SP-296 |
 
 **Suggested batch:** `SP-308` `SP-309` after current wave-0 batch lands (disjoint file scope — may run in parallel).
+
+#### Phase 36 — Wave merge reliability
+
+**Source:** GitHub #14 — wave 3 merge conflict on `docs/adoption/operator-runbook.md` in batch `20260619T020951`.
+
+| ID | Title | Size | Status | Depends |
+|----|-------|------|--------|---------|
+| SP-310 | Wave merge adoption docs conflict resolution | M | **Staged** | SP-305 |
+
+**Suggested batch:** `SP-310` after `SP-308` `SP-309` (depends on SP-305 — landed).
 
 ---
 
