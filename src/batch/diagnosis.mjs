@@ -192,6 +192,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 					return `spine batch retry ${ctx.failedTaskId}`;
 				}
 			}
+			if (ctx.engineDead) {
+				return "spine batch resume --attached --force";
+			}
 			if (ctx.ghostRunningCluster) return "spine batch abort";
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return "spine doctor";
@@ -297,6 +300,11 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return ctx.failedTaskId
 					? `${batchLabel} plan review nested_spawn_blocked (stale PATH spine or pre-SP-278) — retry task ${ctx.failedTaskId}`
 					: `${batchLabel} plan review nested_spawn_blocked — retry after npm link or use node bin/spine.mjs`;
+			}
+			if (ctx.engineDead) {
+				return ctx.failedTaskId
+					? `${batchLabel} engine and worker died while task ${ctx.failedTaskId} was running — resume attached with --force`
+					: `${batchLabel} engine and worker died while running — resume attached with --force`;
 			}
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return `${batchLabel} lane worker orphaned during launch — fix PI_SPINE_ROOT/devcontainer, then retry`;

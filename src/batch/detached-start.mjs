@@ -12,10 +12,9 @@ import { reconcileBatch } from "./reconcile.mjs";
 import { validateResumeBatch } from "./resume.mjs";
 import { assessRunningPhaseResumeEligibility } from "./resume-multi-validate.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
-import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
+import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
 import {
 	ACTIVE_PHASES,
-	clearBatchEnginePid,
 	loadSpineBatchState,
 	recordBatchEnginePid,
 	saveSpineBatchState,
@@ -57,6 +56,20 @@ export function resolveDefaultResumeWaitTerminal(
 const TERMINAL_TASK_STATUSES = new Set(["succeeded", "failed", "skipped", "aborted"]);
 
 const FAILURE_LOG_TAIL_LINES = 20;
+
+/** Default wait when --wait-terminal blocks on orphan/drift resume (real workers exceed 30s). */
+const DETACHED_WAIT_TERMINAL_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * @param {boolean} waitTerminal
+ * @param {number} [explicitTimeoutMs]
+ */
+export function resolveDetachedWaitTimeoutMs(waitTerminal, explicitTimeoutMs) {
+	if (Number.isFinite(explicitTimeoutMs) && explicitTimeoutMs > 0) {
+		return explicitTimeoutMs;
+	}
+	return waitTerminal ? DETACHED_WAIT_TERMINAL_TIMEOUT_MS : 30_000;
+}
 
 /**
  * @param {string} filePath
@@ -356,14 +369,13 @@ export function prepareDetachedResumeEngineHandoff(projectRoot) {
 		fromPhase === "running"
 			? assessRunningPhaseResumeEligibility({ projectRoot, state })
 			: { engineConfirmedDead: false, allowOrphanResume: false };
-	if (orphanEligibility.allowOrphanResume && orphanEligibility.engineConfirmedDead) {
-		clearBatchEnginePid(state);
-	}
-	const terminateResult = terminateStaleDetachedEngine({
+	const handoff = prepareOrphanResumeHandoff({
 		projectRoot,
 		state,
 		batchId,
 		fromPhase,
+		orphanResume: orphanEligibility.allowOrphanResume,
+		engineConfirmedDead: orphanEligibility.engineConfirmedDead,
 	});
 	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
@@ -371,7 +383,7 @@ export function prepareDetachedResumeEngineHandoff(projectRoot) {
 		ok: true,
 		batchId,
 		fromPhase,
-		terminateResult,
+		terminateResult: handoff.terminateResult,
 		orphanResume: orphanEligibility.allowOrphanResume,
 	};
 }
@@ -742,12 +754,14 @@ export async function resumeBatchDetached({
 	prepareDetachedResumeEngineHandoff(projectRoot);
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
+	const waitTimeoutMs = resolveDetachedWaitTimeoutMs(waitTerminal);
 	const wait = await waitForDetachedBatchResume({
 		projectRoot,
 		batchId,
 		updatedAtBefore: updatedAt,
 		taskId,
 		waitTerminal,
+		timeoutMs: waitTimeoutMs,
 	});
 
 	if (!wait.ok) {

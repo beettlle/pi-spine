@@ -26,11 +26,13 @@ import {
 import { extractJournalDiagnosisHints, findPlanReviewNestedSpawnBlockedFailure, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
+import { isProcessAlive } from "../process/liveness.mjs";
 import {
 	loadBatchStateFile,
 	parseBatchState,
 	resolveBatchStatePath,
 } from "./batch-state-io.mjs";
+import { readBatchEnginePid } from "./state.mjs";
 
 export { loadBatchStateFile, parseBatchState, resolveBatchStatePath } from "./batch-state-io.mjs";
 
@@ -402,6 +404,22 @@ function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null)
 }
 
 /**
+ * @param {object[]} journalEvents
+ * @param {Record<string, unknown>|null|undefined} raw
+ * @param {string|null} taskId
+ */
+function journalIndicatesResumeRulesStall(journalEvents, raw, taskId) {
+	const scoped = journalEventsSinceResume(journalEvents, raw);
+	const hasRulesSelected = scoped.some((event) => {
+		if (event.type !== "worker.rules_selected") return false;
+		const eventTaskId = event.taskId ?? event.payload?.taskId;
+		return !taskId || !eventTaskId || eventTaskId === taskId;
+	});
+	const hasBatchResumed = scoped.some((event) => event.type === "batch.resumed");
+	return hasRulesSelected && hasBatchResumed;
+}
+
+/**
  * @param {object} signals
  */
 function findNeedsReplanTask(signals) {
@@ -444,6 +462,16 @@ export function deriveDiagnosis(signals) {
 
 	if (orphanRunning) {
 		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
+			const enginePid = readBatchEnginePid(signals.raw);
+			const engineDead = enginePid == null || !isProcessAlive(enginePid);
+			const resumeRulesStall = journalIndicatesResumeRulesStall(
+				signals.journalEvents ?? [],
+				signals.raw,
+				orphanRunning.taskId,
+			);
+			if (engineDead && resumeRulesStall) {
+				return withFailureContext("engine_orphaned", orphanRunning.taskId, signals);
+			}
 			return withFailureContext("worker_orphaned", orphanRunning.taskId, signals);
 		}
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
