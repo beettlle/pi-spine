@@ -159,6 +159,84 @@ test("validateMultiTaskResume rejects missing worktree per lane", async () => {
 	}
 });
 
+test("validateMultiTaskResume allows force resume when wave merge is pending", async () => {
+	const projectRoot = await initGitRepo("spine-resume-force-merge-");
+	try {
+		const batchId = "20260618T235804";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const lane1 = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+		const lane2 = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 2, orchBranch });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [["TP-268", "TP-299"]],
+			tasks: [
+				{
+					taskId: "TP-268",
+					laneNumber: 1,
+					status: "skipped",
+					taskFolder: "spine-tasks/TP-268-smoke",
+					startedAt: Date.now(),
+					endedAt: Date.now(),
+					doneFileFound: false,
+					exitReason: "skipped",
+				},
+				{
+					taskId: "TP-299",
+					laneNumber: 2,
+					status: "succeeded",
+					taskFolder: "spine-tasks/TP-299-smoke",
+					startedAt: Date.now(),
+					endedAt: Date.now(),
+					doneFileFound: true,
+					exitReason: null,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: lane1.worktreePath,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: ["TP-268"],
+					lastHeartbeatAt: null,
+				},
+				{
+					laneNumber: 2,
+					laneId: "lane-2",
+					worktreePath: lane2.worktreePath,
+					branch: laneTaskBranch(batchId, 2),
+					taskIds: ["TP-299"],
+					lastHeartbeatAt: null,
+				},
+			],
+		});
+		state.phase = "failed";
+		state.mergeResults = [];
+		state.segments = [
+			{ segmentId: "TP-268::default", taskId: "TP-268", status: "skipped", repoId: "default" },
+			{ segmentId: "TP-299::default", taskId: "TP-299", status: "succeeded", repoId: "default" },
+		];
+		state.resilience = { forceMergedWaves: [0] };
+		saveSpineBatchState(projectRoot, state);
+
+		const blocked = validateMultiTaskResume({ projectRoot, force: false });
+		assert.equal(blocked.ok, false);
+		assert.match(blocked.output ?? "", /--force/);
+
+		const result = validateMultiTaskResume({ projectRoot, force: true });
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.equal(result.pendingTasks.length, 0);
+		assert.equal(result.resumableWave, 0);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("validateResumeBatch delegates to multi validator for single-task batch", async () => {
 	const projectRoot = await initGitRepo("spine-resume-delegate-");
 	try {

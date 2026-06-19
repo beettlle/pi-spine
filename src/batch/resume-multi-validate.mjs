@@ -38,6 +38,26 @@ export function computePendingTasks(state) {
 }
 
 /**
+ * Wave merge still required when every task is terminal but mergeResults is empty.
+ *
+ * @param {object} state
+ */
+function hasPendingWaveMerge(state) {
+	const mergeResults = state.mergeResults ?? [];
+	if (mergeResults.length > 0) {
+		return false;
+	}
+	const tasks = state.tasks ?? [];
+	if (tasks.length < 1) {
+		return false;
+	}
+	return tasks.every((task) => {
+		const status = String(task?.status ?? "");
+		return status === "succeeded" || status === "skipped";
+	});
+}
+
+/**
  * @param {object} state
  * @param {object[]} pendingTasks
  */
@@ -227,7 +247,8 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 	}
 
 	const pendingTasks = computePendingTasks(state);
-	if (pendingTasks.length < 1 && !postMergeLimbo) {
+	const pendingWaveMerge = force && hasPendingWaveMerge(state);
+	if (pendingTasks.length < 1 && !postMergeLimbo && !pendingWaveMerge) {
 		return {
 			ok: false,
 			exitCode: 1,
