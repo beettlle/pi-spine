@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-18 (M/L decomposition — SP-282/284/292 → SP-294–299; SP-289/290 resized to S)
+**Last Updated:** 2026-06-18 (Phase 34 — SP-306, SP-307 staged)
 **Status:** Active
-**Next Task ID:** SP-300
+**Next Task ID:** SP-308
 
 ---
 
@@ -755,6 +755,51 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 3. **Wave 2:** `SP-291`, `SP-293`
 
 **Non-goals:** No `specify` CLI dependency, no auto-import of spec-kit `tasks.md`, no `.specify/` state in spine engine.
+
+#### Phase 33 — README trim (pre-release)
+
+**Source:** README slim-down plan (Taskplane-style onboarding; ≤180 lines). **Explore:** `readme-trim` — SP-300 writes `spine-tasks/_explore/readme-trim/findings.md`.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-300 | README trim inventory (explore findings) | S | **Staged** | — |
+| SP-301 | Positioning doc extract (`why-pi-spine.md`) | S | **Staged** | SP-300 |
+| SP-302 | README slim rewrite | M | **Staged** | SP-301 |
+| SP-303 | Doc absorption gap-fill | M | **Staged** | SP-302 |
+| SP-304 | Doc index and adoption sync | S | **Staged** | SP-302 |
+| SP-305 | README release verification | S | **Staged** | SP-303, SP-304 |
+
+**Exit criteria (SP-305):**
+
+- [ ] `wc -l README.md` ≤ 180
+- [ ] No `FR-` / `GAP-` / `NFR-` / `§` in README
+- [ ] New-user quickstart in README; operator depth in `docs/`
+- [ ] Version line aligned with `package.json`
+
+**Suggested batches:**
+
+1. **Wave 0:** `SP-300`
+2. **Wave 1:** `SP-301`
+3. **Wave 2:** `SP-302`
+4. **Wave 3 (parallel):** `SP-303` + `SP-304`
+5. **Wave 4:** `SP-305`
+
+**Regression gate (every batch):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+
+#### Phase 34 — Dashboard UX
+
+**Source:** Operator feedback — duplicate journal tail (SP-306); lane phase visibility (SP-307).
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-306 | Remove duplicate dashboard Journal tail panel | S | **Staged** | — |
+| SP-307 | Lane activity phase column (journal inference) | M | **Staged** | — |
+
+**Acceptance (SP-306):** No `#default-journal-section`; journal only in `#active-panels`.
+
+**Acceptance (SP-307):** Lanes table **Phase** column; labels from journal + active task (no batch-state schema change).
+
+**Suggested batches:** `SP-306` and `SP-307` are disjoint scope — may run in parallel after preflight.
 
 ---
 
