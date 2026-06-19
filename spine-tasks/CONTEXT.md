@@ -758,7 +758,8 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 
 #### Phase 33 — README trim (pre-release)
 
-**Source:** README slim-down plan (Taskplane-style onboarding; ≤180 lines). **Explore:** `readme-trim` — SP-300 writes `spine-tasks/_explore/readme-trim/findings.md`.
+**Source:** README slim-down plan (Taskplane-style onboarding; ≤180 lines).  
+**Explore:** [`spine-tasks/_explore/readme-trim/findings.md`](_explore/readme-trim/findings.md) (2026-06-18, complete)
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
