@@ -158,7 +158,7 @@ function renderLanes(lanes) {
 	if (!lanes.length) {
 		const tr = document.createElement("tr");
 		const td = document.createElement("td");
-		td.colSpan = 6;
+		td.colSpan = 7;
 		td.className = "empty-hint";
 		td.textContent = "No lanes";
 		tr.appendChild(td);
@@ -176,6 +176,7 @@ function renderLanes(lanes) {
 		const values = [
 			lane.laneId,
 			statusLabel,
+			lane.activityPhaseLabel ?? "—",
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
 			formatHeartbeat(lane.heartbeatDisplay ?? lane.heartbeatAgeSeconds),

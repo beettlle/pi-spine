@@ -1,8 +1,8 @@
 # SP-307: Dashboard lane activity phase column — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-18
+**Current Step:** Step 1 — Resolver + snapshot wire-up
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-19
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,15 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lane resolver patterns reviewed
-- [ ] Journal review payload shape confirmed
+- [x] Lane resolver patterns reviewed
+- [x] Journal review payload shape confirmed
 
 ---
 
 ### Step 1: Resolver + snapshot wire-up
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `resolveLaneActivityPhase` implemented
 - [ ] `buildLaneRows` exposes `activityPhase` / `activityPhaseLabel`
@@ -62,6 +62,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Plan review may show as `worker` until `review.started` journal event | Documented in Notes | PROMPT Do NOT |
 
 ---
 
@@ -70,6 +71,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-19 | Step 0 preflight | laneEventMatches pattern + review payload confirmed |
 
 ---
 
@@ -81,4 +83,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+*Plan (Step 1): `resolveLaneActivityPhase` in snapshot.mjs with precedence open review → failed → rework → heartbeat → pending. Extract `laneEventMatches` shared with heartbeat resolver. No engine/schema changes.*

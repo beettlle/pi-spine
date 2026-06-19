@@ -171,6 +171,7 @@ test("dashboard server GET / returns HTML shell", async () => {
 		assert.match(body.data, /default-status-panels/);
 		assert.match(body.data, /journal-heading/);
 		assert.match(body.data, /journal-list/);
+		assert.match(body.data, /<th scope="col">Phase<\/th>/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {

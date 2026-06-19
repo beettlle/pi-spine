@@ -125,6 +125,166 @@ export function computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWave
  */
 const LANE_ALERT_RECENT_MS = 30 * 60 * 1000;
 
+/** @type {Record<string, string>} */
+const REVIEW_TYPE_TO_ACTIVITY_PHASE = {
+	plan: "plan_review",
+	code: "code_review",
+	final: "final_review",
+};
+
+/** @type {Record<string, string>} */
+const ACTIVITY_PHASE_LABELS = {
+	idle: "—",
+	queued: "queued",
+	launching: "launching",
+	worker: "worker",
+	verifying: "verifying",
+	plan_review: "plan review",
+	code_review: "code review",
+	final_review: "final review",
+	rework: "rework",
+	failed: "failed",
+};
+
+/**
+ * @param {number} laneNumber
+ * @param {object} event
+ */
+export function laneEventMatches(laneNumber, event) {
+	const laneId = `lane-${laneNumber}`;
+	const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+	if (payload.laneNumber != null && payload.laneNumber !== laneNumber) return false;
+	if (event.laneId && event.laneId !== laneId) return false;
+	return true;
+}
+
+/**
+ * @param {object} event
+ */
+function journalEventTaskId(event) {
+	if (typeof event.taskId === "string" && event.taskId) return event.taskId;
+	const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+	return typeof payload.taskId === "string" ? payload.taskId : null;
+}
+
+/**
+ * @param {object[]} journalEvents
+ * @param {string} taskId
+ * @param {unknown} stepNumber
+ */
+function isReviewClosedForTaskStep(journalEvents, taskId, stepNumber) {
+	return journalEvents.some((event) => {
+		if (journalEventTaskId(event) !== taskId) return false;
+		if (event.type !== "review.completed" && event.type !== "review.failed") return false;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		return payload.stepNumber === stepNumber;
+	});
+}
+
+/**
+ * @param {object[]} journalEvents
+ * @param {string} taskId
+ */
+function taskFailedWithoutRestart(journalEvents, taskId) {
+	let lastFailedIdx = -1;
+	let lastStartedIdx = -1;
+	for (let i = 0; i < journalEvents.length; i += 1) {
+		const event = journalEvents[i];
+		if (journalEventTaskId(event) !== taskId) continue;
+		if (event.type === "task.failed") lastFailedIdx = i;
+		if (event.type === "task.started") lastStartedIdx = i;
+	}
+	return lastFailedIdx >= 0 && lastFailedIdx > lastStartedIdx;
+}
+
+/**
+ * @param {number} laneNumber
+ * @param {string} taskId
+ * @param {object[]} journalEvents
+ */
+function taskHasReworkMarker(laneNumber, taskId, journalEvents) {
+	for (let i = journalEvents.length - 1; i >= 0; i -= 1) {
+		const event = journalEvents[i];
+		if (event.type !== "lane.completed") continue;
+		if (!laneEventMatches(laneNumber, event)) continue;
+		if (journalEventTaskId(event) !== taskId) continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const phase = payload.phase;
+		if (phase === "code_rework" || phase === "final_rework") return true;
+	}
+	return false;
+}
+
+/**
+ * @param {object} params
+ * @param {number} params.laneNumber
+ * @param {string[]} params.activeTaskIds
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {object[]} params.journalEvents
+ */
+export function resolveLaneActivityPhase({
+	laneNumber,
+	activeTaskIds = [],
+	classifiedTasks = [],
+	journalEvents = [],
+}) {
+	const activeIds = new Set((activeTaskIds ?? []).map(String));
+	if (activeIds.size === 0) {
+		return { activityPhase: "idle", activityPhaseLabel: ACTIVITY_PHASE_LABELS.idle };
+	}
+
+	const events = journalEvents ?? [];
+
+	for (let i = events.length - 1; i >= 0; i -= 1) {
+		const event = events[i];
+		if (event.type !== "review.started") continue;
+		if (!laneEventMatches(laneNumber, event)) continue;
+		const taskId = journalEventTaskId(event);
+		if (!taskId || !activeIds.has(String(taskId))) continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const reviewType = payload.reviewType;
+		const stepNumber = payload.stepNumber;
+		if (typeof reviewType !== "string") continue;
+		if (isReviewClosedForTaskStep(events, taskId, stepNumber)) continue;
+		const activityPhase = REVIEW_TYPE_TO_ACTIVITY_PHASE[reviewType];
+		if (!activityPhase) continue;
+		return {
+			activityPhase,
+			activityPhaseLabel: ACTIVITY_PHASE_LABELS[activityPhase],
+		};
+	}
+
+	for (const taskId of activeIds) {
+		if (taskFailedWithoutRestart(events, String(taskId))) {
+			return { activityPhase: "failed", activityPhaseLabel: ACTIVITY_PHASE_LABELS.failed };
+		}
+	}
+
+	for (const taskId of activeIds) {
+		if (taskHasReworkMarker(laneNumber, String(taskId), events)) {
+			return { activityPhase: "rework", activityPhaseLabel: ACTIVITY_PHASE_LABELS.rework };
+		}
+	}
+
+	const heartbeatMeta = resolveLaneHeartbeatMeta(laneNumber, events);
+	if (heartbeatMeta.workerPhase === "launching") {
+		return { activityPhase: "launching", activityPhaseLabel: ACTIVITY_PHASE_LABELS.launching };
+	}
+	if (heartbeatMeta.workerPhase === "pi") {
+		return { activityPhase: "worker", activityPhaseLabel: ACTIVITY_PHASE_LABELS.worker };
+	}
+	if (heartbeatMeta.workerPhase === "verify") {
+		return { activityPhase: "verifying", activityPhaseLabel: ACTIVITY_PHASE_LABELS.verifying };
+	}
+
+	const activeTasks = (classifiedTasks ?? []).filter((task) => activeIds.has(String(task.taskId)));
+	if (activeTasks.some((task) => task.classification === "pending")) {
+		return { activityPhase: "queued", activityPhaseLabel: ACTIVITY_PHASE_LABELS.queued };
+	}
+
+	return { activityPhase: "worker", activityPhaseLabel: ACTIVITY_PHASE_LABELS.worker };
+}
+
 /**
  * @param {number} laneNumber
  * @param {ReturnType<typeof formatJournalTailEntry>[]} journalTail
@@ -148,13 +308,11 @@ export function resolveLaneAlert(laneNumber, journalTail, now = Date.now()) {
  * @param {object[]} journalEvents
  */
 export function resolveLaneHeartbeatMeta(laneNumber, journalEvents) {
-	const laneId = `lane-${laneNumber}`;
 	for (let i = journalEvents.length - 1; i >= 0; i -= 1) {
 		const event = journalEvents[i];
 		if (event.type !== "lane.heartbeat") continue;
+		if (!laneEventMatches(laneNumber, event)) continue;
 		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
-		if (payload.laneNumber != null && payload.laneNumber !== laneNumber) continue;
-		if (event.laneId && event.laneId !== laneId) continue;
 		return {
 			heartbeatKind:
 				typeof payload.heartbeatKind === "string" ? payload.heartbeatKind : null,
@@ -196,11 +354,20 @@ export function buildLaneRows({
 	return (lanes ?? []).map((lane) => {
 		const heartbeatMeta = resolveLaneHeartbeatMeta(lane.laneNumber, journalEvents);
 		const heartbeatAgeSecondsValue = heartbeatAgeSeconds(lane.lastHeartbeatAt, now);
+		const activeTaskIds = computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds });
+		const activity = resolveLaneActivityPhase({
+			laneNumber: lane.laneNumber,
+			activeTaskIds,
+			classifiedTasks,
+			journalEvents,
+		});
 		return {
 			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 			laneNumber: lane.laneNumber,
 			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
-			activeTaskIds: computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }),
+			activeTaskIds,
+			activityPhase: activity.activityPhase,
+			activityPhaseLabel: activity.activityPhaseLabel,
 			taskIds: lane.taskIds ?? [],
 			heartbeatAgeSeconds: heartbeatAgeSecondsValue,
 			heartbeatKind: heartbeatMeta.heartbeatKind,
