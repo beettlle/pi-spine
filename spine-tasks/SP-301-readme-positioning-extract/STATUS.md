@@ -1,7 +1,7 @@
 # SP-301: README positioning extract — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-19
 **Review Level:** 0
 **Review Counter:** 0
@@ -28,17 +28,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
+- [x] FULL test suite passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Links verified
-- [ ] `.DONE` created
+- [x] Links verified
+- [x] `.DONE` created
 
 ---
 
@@ -54,6 +54,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | README pi-conductor section says "actively developed"; PROMPT requires archived note | Applied archived wording in why-pi-spine.md | `docs/adoption/why-pi-spine.md` |
+| Worker parent sets `SPINE_WORKER_PI_TIMEOUT_MS=7200000`; 3 timeout tests fail unless unset | Harness env pollution; tests pass 947/947 with `env -u SPINE_WORKER_PI_TIMEOUT_MS` | N/A (not SP-301 scope) |
 
 ---
 
@@ -63,6 +64,7 @@
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-19 | Step 0–1 | Preflight complete; positioning doc and nav entries created |
+| 2026-06-19 | Step 2–3 | Tests 947/947 (clean env); links verified; `.DONE` created |
 
 ---
 
