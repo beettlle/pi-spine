@@ -7,15 +7,15 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 ## 📚 Quick Navigation
 
 ### For New Users
-- **[../README.md](../README.md)** - Project overview and quick start
+- **[../README.md](../README.md)** - Project overview (includes quick start)
+- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor
 - **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** - Common commands reference
 - **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** - Understanding execution flow
-- **[docs/README.md](./docs/README.md)** - Documentation navigation guide
 
 ### For Operators
-- **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** - Detailed execution explanation
 - **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** - Command lookup
-- **[docs/adoption/operator-runbook.md](adoption/operator-runbook.md)** - Daily procedures
+- **[adoption/operator-runbook.md](adoption/operator-runbook.md)** - Daily procedures
+- **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** - Detailed execution explanation
 
 ### For Developers
 - **[PRD.md](./PRD.md)** - Full product requirements
@@ -48,6 +48,7 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 - **[PRD-v2.0-implementation-handoff.md](./PRD-v2.0-implementation-handoff.md)** - Implementation details (45KB)
 
 ### User Guides
+- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor
 - **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** - First-time setup (10KB)
 - **[adoption/local-install.md](adoption/local-install.md)** - Git/path installation (4KB)
 - **[adoption/operator-runbook.md](adoption/operator-runbook.md)** - Daily procedures (30KB)
@@ -62,12 +63,13 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 ## 🔍 Documentation by Purpose
 
 ### Understanding How pi-spine Works
-1. Start with **[../README.md](../README.md)** (project overview)
-2. Read **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** (detailed flow)
-3. Reference **[EXECUTION-FLOW-DIAGRAMS.md](./EXECUTION-FLOW-DIAGRAMS.md)** (visual diagrams)
+1. Start with **[../README.md](../README.md)** (project overview and quick start)
+2. Read **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** (positioning vs related tools)
+3. Read **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** (detailed flow)
+4. Reference **[EXECUTION-FLOW-DIAGRAMS.md](./EXECUTION-FLOW-DIAGRAMS.md)** (visual diagrams)
 
 ### Running a Batch
-1. Follow **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** (setup)
+1. Follow **[../README.md#quick-start](../README.md#quick-start)** (overview path), then **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** (setup detail)
 2. Use **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** (commands)
 3. Check **[adoption/operator-runbook.md](adoption/operator-runbook.md)** (procedures)
 

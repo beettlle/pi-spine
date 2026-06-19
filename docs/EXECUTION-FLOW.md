@@ -47,6 +47,10 @@ The core philosophy: **"A batch interpreter that always answers: what state am I
 | **Journal** | Append-only event log for auditability and recovery |
 | **`.DONE` file** | Marker indicating a task has successfully completed |
 
+### Scheduling model (waves, lanes, ticks)
+
+A **wave** is a dependency group — tasks in wave *N* start only after wave *N−1* merges. Within a wave, the planner assigns **virtual lanes** from file-scope overlap: disjoint scopes get separate lanes (parallel up to `lanes.maxParallel`); overlapping scopes share one lane (serialized on one worktree). A **tick** queues virtual lanes when there are more lanes than `maxParallel` (tick 0 runs lanes 0…`maxParallel−1`, tick 1 runs the rest, and so on). The batch engine runs **one worker at a time per physical lane/worktree** and parallelizes only across distinct lane numbers in the same tick. The dashboard **Lanes** table shows **Active tasks** (running/pending in the current wave on that lane) separately from **Batch assignment** (all tasks ever bound to the lane).
+
 ---
 
 ## System Architecture

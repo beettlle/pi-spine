@@ -158,7 +158,7 @@ function renderLanes(lanes) {
 	if (!lanes.length) {
 		const tr = document.createElement("tr");
 		const td = document.createElement("td");
-		td.colSpan = 6;
+		td.colSpan = 7;
 		td.className = "empty-hint";
 		td.textContent = "No lanes";
 		tr.appendChild(td);
@@ -176,6 +176,7 @@ function renderLanes(lanes) {
 		const values = [
 			lane.laneId,
 			statusLabel,
+			lane.activityPhaseLabel ?? "—",
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
 			formatHeartbeat(lane.heartbeatDisplay ?? lane.heartbeatAgeSeconds),
@@ -249,43 +250,21 @@ function renderGatePanel(gateAffordance) {
 }
 
 /**
- * FR-SHIP-07 phase 2: journal tail on default dashboard view (above active batch panels).
- *
- * @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal
- * @param {boolean} showFullJournalLink
- */
-function renderDefaultJournalTail(journal, showFullJournalLink) {
-	const section = $("default-journal-section");
-	const deepLink = $("default-journal-deep-link");
-
-	section.hidden = false;
-	renderJournalList($("default-journal-list"), journal);
-	deepLink.hidden = !showFullJournalLink;
-}
-
-/**
- * Default view panels: integrate gate (when applicable) and journal tail for active batches.
+ * Default view panels: integrate gate when applicable.
  *
  * @param {ReturnType<typeof buildDashboardViewModel>} vm
  */
 function renderDefaultStatusPanels(vm) {
 	const section = $("default-status-panels");
 	const showGate = vm.gateAffordance?.visible;
-	const showJournal = !vm.idle;
 
-	if (!showGate && !showJournal) {
+	if (!showGate) {
 		section.hidden = true;
 		return;
 	}
 
 	section.hidden = false;
 	renderGatePanel(vm.gateAffordance);
-	if (showJournal) {
-		renderDefaultJournalTail(vm.journal, true);
-	} else {
-		$("default-journal-section").hidden = true;
-		$("default-journal-deep-link").hidden = true;
-	}
 }
 
 /** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal */
