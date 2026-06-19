@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-18 (Phase 34 — SP-306, SP-307 staged)
+**Last Updated:** 2026-06-19 (Phase 35 — SP-308 staged for GitHub #12)
 **Status:** Active
-**Next Task ID:** SP-308
+**Next Task ID:** SP-309
 
 ---
 
@@ -800,6 +800,16 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 **Acceptance (SP-307):** Lanes table **Phase** column; labels from journal + active task (no batch-state schema change).
 
 **Suggested batches:** `SP-306` and `SP-307` are disjoint scope — may run in parallel after preflight.
+
+#### Phase 35 — Review spawn reliability (follow-up)
+
+**Source:** GitHub #12 — SP-306 plan `nested_spawn_blocked` orphaned worker in batch `20260619T020951`.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-308 | Plan review nested_spawn recurrence fix | S | **Staged** | SP-285 |
+
+**Suggested batch:** `SP-308` after current wave-0 batch lands (or parallel if no file-scope overlap).
 
 ---
 
