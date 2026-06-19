@@ -67,6 +67,7 @@
 | 2026-06-18 | Verify tests | review-spawn + nested-reviewer-guard 10/10 pass |
 | 2026-06-18 | Full suite + coverage | 912 pass, 86.90% coverage |
 | 2026-06-18 | Re-verify + delivery | 947 pass, 86.55% coverage; issue #9 closed; .DONE created |
+| 2026-06-19 | Re-verify after .DONE loss | 14 scoped + 947 full pass; 87.05% coverage; .DONE restored |
 
 ---
 
