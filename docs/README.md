@@ -48,6 +48,7 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 - **[PRD-v2.0-implementation-handoff.md](./PRD-v2.0-implementation-handoff.md)** - Implementation details (45KB)
 
 ### User Guides
+- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor
 - **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** - First-time setup (10KB)
 - **[adoption/local-install.md](adoption/local-install.md)** - Git/path installation (4KB)
 - **[adoption/operator-runbook.md](adoption/operator-runbook.md)** - Daily procedures (30KB)
