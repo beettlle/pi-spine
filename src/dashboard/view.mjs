@@ -179,6 +179,8 @@ export function buildLaneTableModel(snapshot) {
 		heartbeatKind: lane.heartbeatKind ?? null,
 		workerPhase: lane.workerPhase ?? null,
 		heartbeatDisplay: lane.heartbeatDisplay ?? formatLaneHeartbeatDisplay(lane),
+		activityPhase: lane.activityPhase ?? "idle",
+		activityPhaseLabel: lane.activityPhaseLabel ?? "—",
 		worktree: lane.worktree,
 	}));
 }
