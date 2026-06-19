@@ -182,6 +182,16 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine status --diagnose";
 		case "worker_orphaned":
+			if (ctx.planReviewNestedSpawnBlocked) {
+				if (ctx.stalePathSpine) {
+					return ctx.failedTaskId
+						? `node bin/spine.mjs batch retry ${ctx.failedTaskId}`
+						: "npm link && spine batch resume --attached";
+				}
+				if (ctx.failedTaskId) {
+					return `spine batch retry ${ctx.failedTaskId}`;
+				}
+			}
 			if (ctx.ghostRunningCluster) return "spine batch abort";
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return "spine doctor";
@@ -283,6 +293,11 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				? `${batchLabel} batch-state drift for task ${ctx.failedTaskId} — journal disagrees with cache`
 				: `${batchLabel} batch-state drift — journal disagrees with cache`;
 		case "worker_orphaned":
+			if (ctx.planReviewNestedSpawnBlocked) {
+				return ctx.failedTaskId
+					? `${batchLabel} plan review nested_spawn_blocked (stale PATH spine or pre-SP-278) — retry task ${ctx.failedTaskId}`
+					: `${batchLabel} plan review nested_spawn_blocked — retry after npm link or use node bin/spine.mjs`;
+			}
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return `${batchLabel} lane worker orphaned during launch — fix PI_SPINE_ROOT/devcontainer, then retry`;
 			}

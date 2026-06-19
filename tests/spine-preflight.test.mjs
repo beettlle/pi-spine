@@ -16,6 +16,7 @@ import {
 	checkDoctor,
 	checkGitClean,
 	checkNoActiveBatch,
+	checkStalePathSpine,
 	checkTasksRoot,
 	checkTasksValidate,
 	discoverTaskIds,
@@ -125,6 +126,37 @@ test("checkDoctor fails when doctor reports issues", () => {
 	assert.equal(result.ok, false);
 	assert.equal(result.id, "doctor");
 	assert.equal(result.suggestedCommand, "spine doctor");
+});
+
+test("checkStalePathSpine fails when PATH spine version is stale", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-preflight-stale-"));
+	try {
+		const staleBin = path.join(tmp, "stale-spine.mjs");
+		fs.writeFileSync(staleBin, "#!/usr/bin/env node\n", "utf-8");
+		const result = checkStalePathSpine(
+			{},
+			{
+				stalePathCheckArgs: {
+					which: () => staleBin,
+					spawn: () => ({
+						status: 0,
+						stdout: "pi-spine v0.0.0\n",
+						stderr: "",
+					}),
+					stat: (p) => ({
+						mtimeMs: p === staleBin ? Date.now() - 1000 : Date.now(),
+					}),
+					realpath: (p) => path.resolve(p),
+				},
+			},
+		);
+		assert.equal(result.ok, false);
+		assert.equal(result.id, "stale-path-spine");
+		assert.match(result.message, /PATH v0\.0\.0/);
+		assert.ok(result.suggestedCommand?.includes("npm link"));
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
 });
 
 test("checkGitClean lists up to 20 dirty paths", () => {

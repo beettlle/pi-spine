@@ -23,7 +23,7 @@ import {
 	detectBatchStateDrift,
 	rebuildBatchStateFromJournal,
 } from "./journal-rebuild.mjs";
-import { extractJournalDiagnosisHints, journalPath, readJournalEvents } from "./journal.mjs";
+import { extractJournalDiagnosisHints, findPlanReviewNestedSpawnBlockedFailure, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import {
@@ -701,6 +701,9 @@ export function reconcileBatch(ctx) {
 		runningSpinePath: path.join(PACKAGE_ROOT, "bin", "spine.mjs"),
 	});
 	const stalePathSpine = stalePathCheck.warning === true;
+	const planReviewNestedSpawnBlocked =
+		diagnosis === "worker_orphaned" &&
+		findPlanReviewNestedSpawnBlockedFailure(journalEvents, failedTaskId);
 
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
@@ -717,6 +720,7 @@ export function reconcileBatch(ctx) {
 		postMergeLimbo: signals.postMergeLimbo === true,
 		integrateGateOpen,
 		stalePathSpine,
+		planReviewNestedSpawnBlocked,
 	});
 
 	if (diagnosis === "git_unavailable") {

@@ -154,3 +154,25 @@ export function buildStalePathDoctorCheck({
 		suggestedCommand: `cd ${packageRoot} && npm link`,
 	};
 }
+
+/**
+ * True when PATH `spine` exists but is not the checkout binary (version or mtime drift).
+ * Used by batch preflight to fail closed before a stale global CLI reproduces SP-306.
+ *
+ * @param {ReturnType<typeof buildStalePathDoctorCheck>} check
+ */
+export function isStalePathSpineBlocking(check) {
+	return check.warning === true && String(check.label ?? "").includes("stale");
+}
+
+/**
+ * Preflight blocks only on PATH vs package **version** mismatch (issue #12 / SP-308).
+ * Mtime-only drift remains a doctor warning so linked checkouts are not blocked.
+ *
+ * @param {ReturnType<typeof buildStalePathDoctorCheck>} check
+ */
+export function isStalePathSpinePreflightBlocking(check) {
+	return (
+		check.warning === true && String(check.detail ?? "").includes("vs package")
+	);
+}

@@ -467,6 +467,40 @@ function journalReviewEvent(type, journal, payload) {
 }
 
 /**
+ * In-worker plan/code checkpoints must journal `review.skipped` (SP-278/SP-308), never
+ * `review.failed`, when nested reviewer spawn is blocked inside a pi worker session.
+ *
+ * @param {object} params
+ */
+function completeNestedReviewSpawnSkipped({
+	stepNumber,
+	reviewType,
+	reviewLevel,
+	journal,
+	artifactPath,
+	feedback,
+}) {
+	const message = feedback ?? NESTED_REVIEW_SPAWN_BLOCKED;
+	journalReviewEvent("review.skipped", journal, {
+		stepNumber,
+		reviewType,
+		reviewLevel,
+		reason: NESTED_REVIEW_SPAWN_REASON,
+		message,
+	});
+	return {
+		ok: true,
+		skipped: true,
+		reviewLevel,
+		verdict: null,
+		feedback: message,
+		artifactPath,
+		spawnFailed: false,
+		exitCode: 0,
+	};
+}
+
+/**
  * True when inherited worker batch env must not write to the live journal
  * (e.g. npm test subprocess with SPINE_JOURNAL_ATTACH=1).
  */
@@ -799,24 +833,13 @@ export async function runStepReview({
 	});
 
 	if (shouldBlockNestedReviewerSpawn()) {
-		const feedback = NESTED_REVIEW_SPAWN_BLOCKED;
-		journalReviewEvent("review.skipped", journal, {
+		return completeNestedReviewSpawnSkipped({
 			stepNumber,
 			reviewType,
 			reviewLevel,
-			reason: NESTED_REVIEW_SPAWN_REASON,
-			message: feedback,
-		});
-		return {
-			ok: true,
-			skipped: true,
-			reviewLevel,
-			verdict: null,
-			feedback,
+			journal,
 			artifactPath,
-			spawnFailed: false,
-			exitCode: 0,
-		};
+		});
 	}
 
 	const spawnResult = await spawnReviewerPi({
@@ -842,24 +865,14 @@ export async function runStepReview({
 
 	if (spawnResult.spawnFailed) {
 		if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) {
-			const feedback = spawnResult.error ?? NESTED_REVIEW_SPAWN_BLOCKED;
-			journalReviewEvent("review.skipped", journal, {
+			return completeNestedReviewSpawnSkipped({
 				stepNumber,
 				reviewType,
 				reviewLevel,
-				reason: NESTED_REVIEW_SPAWN_REASON,
-				message: feedback,
-			});
-			return {
-				ok: true,
-				skipped: true,
-				reviewLevel,
-				verdict: null,
-				feedback,
+				journal,
 				artifactPath,
-				spawnFailed: false,
-				exitCode: 0,
-			};
+				feedback: spawnResult.error,
+			});
 		}
 
 		const honored = honorReviewSpawnFailureWhenEligible({
