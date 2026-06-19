@@ -33,7 +33,7 @@ This is the main navigation page for pi-spine documentation.
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [**../README.md**](../README.md) | Project README, quick start, features | Everyone |
+| [**../README.md**](../README.md) | Project overview (includes quick start) | Everyone |
 | [**adoption/why-pi-spine.md**](adoption/why-pi-spine.md) | Positioning vs Taskplane, Babysitter, pi-conductor | Everyone |
 | [**adoption/bootstrap-checklist.md**](adoption/bootstrap-checklist.md) | First-time setup checklist | New Users |
 | [**adoption/local-install.md**](adoption/local-install.md) | Git/path installation guide | Developers |
@@ -62,13 +62,13 @@ This is the main navigation page for pi-spine documentation.
 ## 🔍 Documentation by Use Case
 
 ### I want to understand what pi-spine does
-- Start with **[../README.md](../README.md)** (project overview)
+- Start with **[../README.md](../README.md)** (project overview and quick start)
 - Read **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** (how pi-spine compares to related tools)
 - Then read **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** (detailed flow)
 - Reference **[EXECUTION-FLOW-DIAGRAMS.md](./EXECUTION-FLOW-DIAGRAMS.md)** (visual diagrams)
 
 ### I want to run a batch
-- Follow **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** (setup)
+- Follow **[../README.md#quick-start](../README.md#quick-start)** (overview path), then **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** (setup detail)
 - Use **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** (commands)
 - Check **[adoption/operator-runbook.md](adoption/operator-runbook.md)** (procedures)
 
