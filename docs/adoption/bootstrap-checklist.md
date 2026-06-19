@@ -51,7 +51,13 @@ Use this fixture to validate install and batch wiring before pointing spine at y
 
 In a **new or spine-free** application repository:
 
-### 1. Install pi-spine
+### 1. Read the quick start (README)
+
+Follow the **[README quick start](../../README.md#quick-start)** for the high-level path: install → preflight/plan → batch → monitor → land.
+
+For command detail and daily procedures, use **[QUICK-REFERENCE.md](../QUICK-REFERENCE.md)**, **[EXECUTION-FLOW.md](../EXECUTION-FLOW.md)**, and **[operator-runbook.md](./operator-runbook.md)**.
+
+### 2. Install pi-spine
 
 From your consumer repo (replace with your checkout path):
 
@@ -67,7 +73,7 @@ See [local-install.md](./local-install.md) for `file:` dependencies and PATH tro
 
 **Spine batch workers (FR-WORK-05):** When `.cursor/rules/` exists, `spine init` copies `.spine/rules-profile.json`, runs discovery, and writes **`.spine/rules-manifest.json`** (committed to git). Workers auto-select rules per task using PROMPT File Scope (micromatch glob match) plus profile always-includes (`taskplane-worker-cursor.mdc` by default). Non-empty `config.standards` **append** after auto-selection. See [cursor-rules-discovery.md](../design/cursor-rules-discovery.md).
 
-### 2. Initialize spine
+### 3. Initialize spine
 
 ```bash
 spine init
@@ -77,7 +83,7 @@ This creates `.spine/spine-config.json`, agent stubs under `.spine/agents/`, `sp
 
 Edit `docs/constitution.md` before your first task packets so Mission and non-negotiable rules reflect your project.
 
-### 3. Add your first task
+### 4. Add your first task
 
 **Option A — authoring skill (recommended for PRD/epic work):**
 
@@ -97,7 +103,7 @@ Create `spine-tasks/<ID>-<slug>/PROMPT.md` (spine task packet format; Taskplane-
 
 Register dependencies in `spine-tasks/dependencies.json` when you have more than one task.
 
-### 4. Doctor
+### 5. Doctor
 
 ```bash
 spine doctor
@@ -105,7 +111,7 @@ spine doctor
 
 Fix any ❌ failures before starting a batch. ⚠️ warnings (for example stale global `spine` on PATH) are documented in [local-install.md](./local-install.md).
 
-### 5. Plan and preflight
+### 6. Plan and preflight
 
 ```bash
 spine plan pending
@@ -123,7 +129,7 @@ Inspect effective values and source with `spine settings show` or `spine doctor`
 
 Resolve reconcile hints (stale batch state, limbo worktrees) before `batch start`.
 
-### 6. First batch (stub, then real pi)
+### 7. First batch (stub, then real pi)
 
 **Stub (CI-safe, no real pi workers):**
 
@@ -152,7 +158,7 @@ Do **not** run Taskplane `/orch` and `spine batch start` concurrently on the sam
 
 ### 2. Install pi-spine
 
-Same as greenfield step 1 — `pi install /path/to/pi-spine -l`.
+Same as greenfield step 2 — `pi install /path/to/pi-spine -l`.
 
 ### 3. Preview config migration
 
@@ -180,7 +186,7 @@ Agent stubs are copied on init; re-run init with `--force` only if you intend to
 
 ### 5. Doctor, plan, first batch
 
-Same as greenfield steps 4–6. Existing `taskplane-tasks/` folders and `dependencies.json` are reused.
+Same as greenfield steps 5–7. Existing `taskplane-tasks/` folders and `dependencies.json` are reused.
 
 ### 6. Retire Taskplane orchestration
 
@@ -222,7 +228,7 @@ Use `npm run test:batch` or `npm run test:core` instead of appending directory p
 | Preflight | `spine preflight` |
 | Stub batch | `SPINE_WORKER_STUB=1 spine batch start <id>` |
 | Adoption smoke | `./scripts/adoption-smoke.sh` |
-| Task authoring | `create-spine-tasks` skill in pi (see step 3) |
+| Task authoring | `create-spine-tasks` skill in pi (see step 4) |
 
 ## Related docs
 
@@ -231,5 +237,7 @@ Use `npm run test:batch` or `npm run test:core` instead of appending directory p
 | [local-install.md](./local-install.md) | Git/path install before npm publish |
 | [operator-runbook.md](./operator-runbook.md) | Daily operator procedures |
 | [real-project-readiness.md](./real-project-readiness.md) | Phase 9 adoption tiers and task map |
-| [README](../../README.md) | Full CLI reference |
+| [README](../../README.md) | Project overview and quick start |
+| [QUICK-REFERENCE.md](../QUICK-REFERENCE.md) | Operator command reference |
+| [EXECUTION-FLOW.md](../EXECUTION-FLOW.md) | Batch lifecycle and scheduling |
 | [cursor-rules-discovery.md](../design/cursor-rules-discovery.md) | Cursor rules auto-discovery for workers |
