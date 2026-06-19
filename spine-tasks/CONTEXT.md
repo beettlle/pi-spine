@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-19 (Phase 35 — SP-308 staged for GitHub #12)
+**Last Updated:** 2026-06-19 (Phase 35 — SP-308/SP-309 staged for GitHub #12/#13)
 **Status:** Active
-**Next Task ID:** SP-309
+**Next Task ID:** SP-310
 
 ---
 
@@ -808,8 +808,9 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
 | SP-308 | Plan review nested_spawn recurrence fix | S | **Staged** | SP-285 |
+| SP-309 | Batch resume orphan recovery | S | **Staged** | SP-296 |
 
-**Suggested batch:** `SP-308` after current wave-0 batch lands (or parallel if no file-scope overlap).
+**Suggested batch:** `SP-308` `SP-309` after current wave-0 batch lands (disjoint file scope — may run in parallel).
 
 ---
 
