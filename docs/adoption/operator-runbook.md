@@ -49,7 +49,7 @@ After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` 
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume
+3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume. When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -509,6 +509,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 |-----------|--------|
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
+| `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
 | Other files | Resolve in the lane worktree under `.worktrees/spine-<batchId>/lane-N`, commit on lane branch, then resume batch |
 
 Lane worktrees: [Worktree layout](#worktree-layout) (§9).
@@ -725,6 +726,35 @@ When workers call **`spine_review_step`** inside a pi worker session, the tool r
 
 Workers should **not** retry or treat the skip as failure. Task PROMPTs for real-pi batches should not require in-worker review calls (see `skills/create-spine-tasks/references/prompt-template.md`).
 
+### Resume stall after `worker.rules_selected` (SP-309 / issue #13)
+
+**Symptoms:** `batch resume --attached --force` restarts the worker (`task.started` with `resumed: true`, `worker.rules_selected`), then journal freezes and both `enginePid` and `workerPid` are dead. Diagnosis may show `engine_orphaned` when the journal tail includes `batch.resumed` + `worker.rules_selected`.
+
+**Recovery:**
+
+1. `spine status --diagnose` — prefer `spine batch resume --attached --force` when headline cites engine death after resume stall.
+2. Detached `spine batch resume --force` (without `--attached`) defaults to `--wait-terminal` for orphan diagnoses and blocks up to **2 hours** while the attached child engine runs.
+3. If plan `review.failed` with `nested_spawn_blocked` is still in the journal (pre-SP-278 PATH), retry the task first: `spine batch retry <taskId>`.
+
+### Plan review `review.failed` + `worker_orphaned` (SP-308 / batch 20260619T020951)
+
+**Symptoms:** Journal shows **`review.started`** (plan, step 0) then **`review.failed`** with `reason: nested_spawn_blocked` (not **`review.skipped`**). Dashboard later reports **`worker_orphaned`** for the same task (~14h stall in batch `20260619T020951` / SP-306).
+
+**Cause:** Stale global **`spine` on PATH** (e.g. v1.0.1) running pre-SP-278 behavior, or operator invoked review from a worker session before skip semantics landed.
+
+**Recovery:**
+
+1. `spine doctor` — if **stale PATH spine** is reported, run `npm link` from the checkout or use `node bin/spine.mjs` for all batch commands.
+2. `spine status --diagnose` — headline should cite plan `nested_spawn_blocked` and suggest **`spine batch retry <taskId>`** (or `node bin/spine.mjs batch retry …` when PATH is stale).
+3. Retry and resume:
+
+   ```bash
+   spine batch retry SP-306
+   spine batch resume --attached --force
+   ```
+
+**Prevention:** `spine preflight` fails when PATH `spine` version ≠ package (SP-308). Prefer `node bin/spine.mjs batch start …` when developing pi-spine itself.
+
 1. Confirm worker output exists: lane worktree `.DONE`, file-scope artifacts, plan review APPROVE in journal.
 2. Run recovery from a **clean shell** (unset worker session env — at minimum `SPINE_WORKER_RUNNER`, `SPINE_JOURNAL_ATTACH`, `SPINE_BATCH_ID`, `SPINE_PROJECT_ROOT`):
 
@@ -847,7 +877,7 @@ npm run coverage:check
 |---------|-----|
 | `spine: command not found` | `npm link` from checkout, or `node /path/to/pi-spine/bin/spine.mjs …` |
 | Global `spine` exits 0 with no output | Fixed in SP-099 — upgrade and run `spine version`; should print package info |
-| Doctor warns **stale global spine** | `which spine` points at old build — re-`npm link` or use `node …/bin/spine.mjs` |
+| Doctor warns **stale global spine** | `which spine` points at old build — re-`npm link` or use `node …/bin/spine.mjs`; **`spine preflight` fails** when PATH version ≠ package (SP-308) |
 | Slash commands work, CLI wrong version | Pi uses linked package; shell uses stale PATH binary |
 | CI / scripts | `SPINE_BIN="node ../pi-spine/bin/spine.mjs"` (see `./scripts/adoption-smoke.sh`) |
 

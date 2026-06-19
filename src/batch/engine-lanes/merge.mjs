@@ -13,6 +13,12 @@ import {
 	fingerprintRulesManifest,
 } from "../../config/cursor-rules/discover.mjs";
 import { matchesContractPattern } from "../contract-verify.mjs";
+import {
+	formatAdoptionDocMergeFailure,
+	isAdoptionDocPath,
+	tryResolveAdoptionDocMergeConflict,
+} from "../merge/adoption-doc-merge.mjs";
+import { recordWaveMergeResult } from "../merge/wave-merge-state.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
 import { maybeFinalizeAfterWaveMerge } from "../post-merge-limbo.mjs";
@@ -289,9 +295,10 @@ function collectLaneWaveFileScope(state, laneNumber, waveTaskIds) {
  * @param {string[]} [options.laneFileScopePaths]
  * @param {string} [options.taskBranch]
  * @param {string} [options.orchBranch]
+ * @param {number} [options.waveIndex]
  */
 export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
-	const { laneFileScopePaths = [], taskBranch, orchBranch } = options;
+	const { laneFileScopePaths = [], taskBranch, orchBranch, waveIndex } = options;
 	const unmerged = listUnmergedPaths(projectRoot);
 	if (unmerged.length === 0) {
 		const dirtyPaths = listDirtyPaths(projectRoot);
@@ -327,9 +334,25 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	/** @type {string[]} */
 	const remaining = [];
 
+	/** @type {string[]} */
+	const resolvedAdoptionDocs = [];
+
 	for (const filePath of unmerged) {
 		if (filePath === RULES_MANIFEST_REL_PATH) {
 			remaining.push(filePath);
+			continue;
+		}
+		if (isAdoptionDocPath(filePath)) {
+			const adoptionResult = tryResolveAdoptionDocMergeConflict({
+				projectRoot,
+				filePath,
+				waveIndex,
+			});
+			if (adoptionResult.ok) {
+				resolvedAdoptionDocs.push(filePath);
+			} else {
+				remaining.push(filePath);
+			}
 			continue;
 		}
 		if (!canResolveOutOfScope) {
@@ -381,6 +404,19 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			ok: true,
 			autoResolved: true,
 			outOfScopePaths: resolvedOutOfScope,
+			adoptionDocPaths: resolvedAdoptionDocs,
+		};
+	}
+
+	const adoptionRemaining = remaining.filter((filePath) => isAdoptionDocPath(filePath));
+	if (adoptionRemaining.length > 0) {
+		const firstAdoption = adoptionRemaining[0];
+		return {
+			ok: false,
+			failureClass: "MergeConflict",
+			error: formatAdoptionDocMergeFailure({ filePath: firstAdoption, waveIndex }),
+			outOfScopePaths: resolvedOutOfScope,
+			adoptionDocPaths: resolvedAdoptionDocs,
 		};
 	}
 
@@ -388,9 +424,10 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		ok: false,
 		failureClass: "MergeConflict",
 		error:
-			`merge conflict on ${remaining.join(", ")}; automatic resolution supports ${RULES_MANIFEST_REL_PATH} ` +
-			"and out-of-scope dependency drift (prefer orch when the lane did not commit the path)",
+			`merge conflict on ${remaining.join(", ")}; automatic resolution supports docs/adoption/*, ` +
+			`${RULES_MANIFEST_REL_PATH}, and out-of-scope dependency drift (prefer orch when the lane did not commit the path)`,
 		outOfScopePaths: resolvedOutOfScope,
+		adoptionDocPaths: resolvedAdoptionDocs,
 	};
 }
 
@@ -469,6 +506,7 @@ export function mergeLaneToOrch({
 	batchId,
 	requireLaneCommits = false,
 	laneFileScopePaths = [],
+	waveIndex,
 }) {
 	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	let mergeInProgress = false;
@@ -510,6 +548,7 @@ export function mergeLaneToOrch({
 				laneFileScopePaths,
 				taskBranch,
 				orchBranch,
+				waveIndex,
 			});
 			if (!autoResolved.ok) {
 				abortInProgressMerge(projectRoot);
@@ -609,8 +648,17 @@ export async function mergeWaveLanesToOrch({
 			batchId,
 			requireLaneCommits: false,
 			laneFileScopePaths,
+			waveIndex,
 		});
 		if (!merge.ok) {
+			recordWaveMergeResult({
+				state,
+				waveIndex,
+				status: "failed",
+				failedLane: laneNumber,
+				failureReason: merge.error ?? "merge_failed",
+			});
+			saveSpineBatchState(projectRoot, state);
 			return { ok: false, error: merge.error ?? "merge_failed", laneNumber };
 		}
 		lastMergeCommit = merge.mergeCommit;
@@ -621,11 +669,10 @@ export async function mergeWaveLanesToOrch({
 		});
 	}
 
-	state.mergeResults.push({
+	recordWaveMergeResult({
+		state,
 		waveIndex,
 		status: "succeeded",
-		failedLane: null,
-		failureReason: null,
 		mergeCommit: lastMergeCommit,
 	});
 	saveSpineBatchState(projectRoot, state);

@@ -4,6 +4,8 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "./spine-config-load.mjs";
 import { resolveTasksRootPath } from "./env-overrides.mjs";
 import { runDoctorChecks } from "../doctor/run-doctor-checks.mjs";
+import { buildStalePathDoctorCheck, isStalePathSpinePreflightBlocking } from "../doctor/stale-path.mjs";
+import { PACKAGE_ROOT } from "./spine-init-constants.mjs";
 import { runReconciliationCheck } from "../batch/reconcile.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { formatPlanHuman } from "../planner/format-plan.mjs";
@@ -118,6 +120,27 @@ export function checkDoctor(ctx) {
 		details: { failedChecks: failed, checks: doctor.checks },
 		suggestedCommand: "spine doctor",
 	});
+}
+
+/**
+ * Fail preflight when PATH `spine` is an older global build (batch 20260619T020951 / SP-308).
+ *
+ * @param {object} [_ctx]
+ * @param {{ stalePathCheckArgs?: object }} [options]
+ */
+export function checkStalePathSpine(_ctx = {}, options = {}) {
+	const check = buildStalePathDoctorCheck({
+		packageRoot: PACKAGE_ROOT,
+		runningSpinePath: path.join(PACKAGE_ROOT, "bin", "spine.mjs"),
+		...options.stalePathCheckArgs,
+	});
+	if (isStalePathSpinePreflightBlocking(check)) {
+		return makeCheck("stale-path-spine", false, check.detail, {
+			suggestedCommand:
+				check.suggestedCommand ?? `cd ${PACKAGE_ROOT} && npm link`,
+		});
+	}
+	return makeCheck("stale-path-spine", true, check.detail, check.warning ? { warning: true } : {});
 }
 
 /**
@@ -646,6 +669,8 @@ export function runBatchPreflight(options) {
 			}),
 		);
 	}
+
+	checks.push(checkStalePathSpine(ctx));
 
 	checks.push(checkGitClean(ctx));
 	checks.push(

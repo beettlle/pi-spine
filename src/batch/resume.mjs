@@ -10,7 +10,7 @@ import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
-import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
+import { prepareOrphanResumeHandoff, terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { mergeLaneToOrch } from "./engine-lanes.mjs";
@@ -196,11 +196,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		});
 	}
 
-	terminateStaleDetachedEngine({
+	prepareOrphanResumeHandoff({
 		projectRoot,
 		state,
 		batchId,
 		fromPhase: phase,
+		orphanResume: resumeCheck.orphanResume,
+		engineConfirmedDead: resumeCheck.engineConfirmedDead,
 	});
 
 	if (phase === "failed" && force) {

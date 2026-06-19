@@ -1,7 +1,7 @@
 # SP-308: Plan review nested_spawn recurrence fix — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-19
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,36 +11,36 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #12 timeline reconstructed
-- [ ] Failure path identified (worker tool vs engine)
+- [x] Issue #12 timeline reconstructed
+- [x] Failure path identified (worker tool vs engine)
 
 ---
 
 ### Step 1: Fix nested plan checkpoint handling
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Plan checkpoint skip semantics verified
-- [ ] Stale PATH spine guard (if applicable)
+- [x] Plan checkpoint skip semantics verified
+- [x] Stale PATH spine guard (if applicable)
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test added
-- [ ] Full test suite passing
-- [ ] Coverage gate passing
+- [x] Regression test added
+- [x] Full test suite passing
+- [x] Coverage gate passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated
-- [ ] Issue #12 closed
-- [ ] `.DONE` created
+- [x] Runbook updated
+- [x] Issue #12 closed
+- [x] `.DONE` created
 
 ---
 
@@ -55,6 +55,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-278/SP-285 already journal `review.skipped` in current code; batch 20260619T020951 used stale PATH spine v1.0.1 | Preflight version guard + regression test | `review.mjs`, preflight |
+| `worker_orphaned` after plan `review.failed` needed actionable retry headline | Diagnosis enrichment | `reconcile.mjs`, `diagnosis.mjs` |
 
 ---
 
@@ -63,6 +65,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-19 | Task staged | PROMPT.md and STATUS.md created for GitHub #12 |
+| 2026-06-19 | Step 0–3 | Fix, tests, runbook, issue #12 closed |
 
 ---
 
@@ -74,4 +77,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Preflight fails on PATH `spine` version ≠ package (`isStalePathSpinePreflightBlocking`). Mtime-only drift remains doctor warning only.

@@ -10,14 +10,13 @@ import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
-import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
+import { prepareOrphanResumeHandoff, terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import {
 	countPendingSegments,
 	failBatchFromEngineError,
 	loadSpineBatchState,
 	recordBatchEnginePid,
 	saveSpineBatchState,
-	clearBatchEnginePid,
 } from "./state.mjs";
 import { executeResumeWave, resetFailedTasksForForceResume } from "./resume-multi-lanes.mjs";
 import { validateMultiTaskResume } from "./resume-multi-validate.mjs";
@@ -76,15 +75,13 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		});
 	}
 
-	if (check.orphanResume && check.engineConfirmedDead) {
-		clearBatchEnginePid(state);
-	}
-
-	terminateStaleDetachedEngine({
+	prepareOrphanResumeHandoff({
 		projectRoot,
 		state,
 		batchId,
 		fromPhase: phase,
+		orphanResume: check.orphanResume,
+		engineConfirmedDead: check.engineConfirmedDead,
 	});
 
 	const pendingSegments = countPendingSegments(state);

@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 
 import {
 	buildStalePathDoctorCheck,
+	isStalePathSpineBlocking,
+	isStalePathSpinePreflightBlocking,
 	readPackageVersion,
 	readSpineCliVersion,
 	resolveSpineOnPath,
@@ -105,6 +107,40 @@ test("buildStalePathDoctorCheck warns on mtime mismatch only", () => {
 	} finally {
 		fs.rmSync(tmp, { recursive: true, force: true });
 	}
+});
+
+test("isStalePathSpineBlocking true only for stale PATH label", () => {
+	const stale = {
+		label: "spine on PATH (stale)",
+		ok: true,
+		warning: true,
+		detail: "stale binary",
+	};
+	const missing = {
+		label: "spine on PATH",
+		ok: true,
+		warning: true,
+		detail: "not found",
+	};
+	assert.equal(isStalePathSpineBlocking(stale), true);
+	assert.equal(isStalePathSpineBlocking(missing), false);
+});
+
+test("isStalePathSpinePreflightBlocking requires version mismatch detail", () => {
+	const versionStale = {
+		label: "spine on PATH (stale)",
+		ok: true,
+		warning: true,
+		detail: "/opt/homebrew/bin/spine — PATH v1.0.1 vs package v1.0.2",
+	};
+	const mtimeOnly = {
+		label: "spine on PATH (stale)",
+		ok: true,
+		warning: true,
+		detail: "/other/spine — binary mtime differs from checkout",
+	};
+	assert.equal(isStalePathSpinePreflightBlocking(versionStale), true);
+	assert.equal(isStalePathSpinePreflightBlocking(mtimeOnly), false);
 });
 
 test("readSpineCliVersion parses spine --version output", () => {

@@ -11,6 +11,7 @@ import {
 	NESTED_REVIEW_SPAWN_REASON,
 	runStepReview,
 } from "../../src/batch/review.mjs";
+import { runSpineReviewStep } from "../../bin/spine-review-step.mjs";
 import { spawnReviewerPi } from "../../src/batch/review-spawn.mjs";
 
 /**
@@ -37,6 +38,46 @@ Guard test task.
 
 ## Steps
 ### Step 1: Work
+- [ ] one
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- nothing
+`,
+		"utf-8",
+	);
+	fs.writeFileSync(path.join(folder, "STATUS.md"), "# Status\n", "utf-8");
+	return folder;
+}
+
+/**
+ * SP-306 / batch 20260619T020951 — plan review at step 0 inside worker session.
+ * @param {string} root
+ */
+function writeSp306PlanReviewTask(root) {
+	const folder = path.join(root, "spine-tasks", "SP-306-plan-review");
+	fs.mkdirSync(folder, { recursive: true });
+	fs.writeFileSync(
+		path.join(folder, "PROMPT.md"),
+		`# Task: SP-306 — Plan review nested guard
+
+## Review Level: 2 (Plan + Code)
+
+## Mission
+Regression fixture for batch 20260619T020951.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/sp-306.txt\`
+
+## Steps
+### Step 0: Preflight
+> **Plan-review checkpoint**
+
 - [ ] one
 
 ## Completion Criteria
@@ -254,6 +295,78 @@ test("engine parent with leaked worker runner reaches reviewer spawn", async () 
 		else process.env.SPINE_TASK_FOLDER = prev.taskFolderEnv;
 		if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("batch 20260619T020951 SP-306 plan step 0 journals review.skipped not review.failed", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-nested-guard-sp306-"));
+	const batchId = "20260619T020951";
+	const taskId = "SP-306";
+	const taskFolder = writeSp306PlanReviewTask(root);
+	const prev = {
+		workerRunner: process.env.SPINE_WORKER_RUNNER,
+		taskFolderEnv: process.env.SPINE_TASK_FOLDER,
+		journalAttach: process.env.SPINE_JOURNAL_ATTACH,
+		projectRoot: process.env.SPINE_PROJECT_ROOT,
+		batchIdEnv: process.env.SPINE_BATCH_ID,
+		taskIdEnv: process.env.SPINE_TASK_ID,
+		laneNumber: process.env.SPINE_LANE_NUMBER,
+		suppressAttach: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
+		stub: process.env.SPINE_REVIEW_STUB,
+	};
+	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
+	process.env.SPINE_TASK_FOLDER = taskFolder;
+	process.env.SPINE_JOURNAL_ATTACH = "1";
+	process.env.SPINE_PROJECT_ROOT = root;
+	process.env.SPINE_BATCH_ID = batchId;
+	process.env.SPINE_TASK_ID = taskId;
+	process.env.SPINE_LANE_NUMBER = "2";
+	delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+	delete process.env.SPINE_REVIEW_STUB;
+	try {
+		const { exitCode, result } = await runSpineReviewStep({
+			taskFolder,
+			worktreePath: root,
+			args: ["--step", "0", "--type", "plan"],
+			journal: {
+				projectRoot: root,
+				batchId,
+				taskId,
+				laneNumber: 2,
+			},
+		});
+		assert.equal(exitCode, 0);
+		assert.equal(result?.ok, true);
+		assert.equal(result?.skipped, true);
+		assert.equal(result?.spawnFailed, false);
+		assert.match(result?.feedback ?? "", /SP-195/i);
+
+		const events = readJournalEvents(root, batchId);
+		const started = events.find((event) => event.type === "review.started");
+		assert.ok(started);
+		assert.equal(started.payload?.reviewType, "plan");
+		assert.equal(started.payload?.stepNumber, 0);
+		const skipped = events.find((event) => event.type === "review.skipped");
+		assert.ok(skipped);
+		assert.equal(skipped.payload?.reason, NESTED_REVIEW_SPAWN_REASON);
+		assert.equal(events.some((event) => event.type === "review.failed"), false);
+	} finally {
+		for (const [key, envKey] of [
+			["workerRunner", "SPINE_WORKER_RUNNER"],
+			["taskFolderEnv", "SPINE_TASK_FOLDER"],
+			["journalAttach", "SPINE_JOURNAL_ATTACH"],
+			["projectRoot", "SPINE_PROJECT_ROOT"],
+			["batchIdEnv", "SPINE_BATCH_ID"],
+			["taskIdEnv", "SPINE_TASK_ID"],
+			["laneNumber", "SPINE_LANE_NUMBER"],
+			["suppressAttach", "SPINE_SUPPRESS_JOURNAL_ATTACH"],
+			["stub", "SPINE_REVIEW_STUB"],
+		]) {
+			const value = prev[key];
+			if (value === undefined) delete process.env[envKey];
+			else process.env[envKey] = value;
+		}
 		await rm(root, { recursive: true, force: true });
 	}
 });
