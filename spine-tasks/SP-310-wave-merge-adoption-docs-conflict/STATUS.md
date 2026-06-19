@@ -1,7 +1,7 @@
 # SP-310: Wave merge adoption docs conflict resolution — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-19
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,38 +11,38 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #14 timeline reconstructed
-- [ ] Merge module for adoption docs identified
-- [ ] Auto-resolution paths documented
+- [x] Issue #14 timeline reconstructed
+- [x] Merge module for adoption docs identified
+- [x] Auto-resolution paths documented
 
 ---
 
 ### Step 1: Implement adoption-doc merge resolution
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Additive `docs/adoption/*` auto-merge implemented
-- [ ] `mergeResults` records force-merged waves
-- [ ] Actionable `lastError` for unsafe conflicts
+- [x] Additive `docs/adoption/*` auto-merge implemented
+- [x] `mergeResults` records force-merged waves
+- [x] Actionable `lastError` for unsafe conflicts
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test added
-- [ ] Full test suite passing
-- [ ] Coverage gate passing
+- [x] Regression test added
+- [x] Full test suite passing
+- [x] Coverage gate passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated if needed
-- [ ] Issue #14 closed
-- [ ] `.DONE` created
+- [x] Runbook updated if needed
+- [x] Issue #14 closed
+- [x] `.DONE` created
 
 ---
 
@@ -57,6 +57,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `hasPendingWaveMerge` treated any non-empty mergeResults as complete — skipped intermediate waves | Fixed in `wave-merge-state.mjs` | `src/batch/resume-multi-validate.mjs` |
+| git merge-file 3-way merge handles disjoint adoption doc hunks | Used as auto-resolve strategy | `src/batch/merge/adoption-doc-merge.mjs` |
 
 ---
 
@@ -65,6 +67,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-19 | Task staged | PROMPT.md and STATUS.md created for GitHub #14 |
+| 2026-06-19 | Step 0 preflight | Issue #14 + `engine-lanes/merge.mjs` conflict path mapped |
+| 2026-06-19 | Step 1–3 | Adoption merge + mergeResults fix + tests + runbook |
 
 ---
 
@@ -76,4 +80,5 @@
 
 ## Notes
 
-*Reserved for execution notes*
+- Auto-resolve: `docs/adoption/*` via `git merge-file` on merge stages; unsafe overlaps get `force-merge` / manual recovery hints in `lastError`.
+- `recordWaveMergeResult` adds `forceMerged` flag and updates per-wave rows (no silent skip).
