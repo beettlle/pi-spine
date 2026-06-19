@@ -66,6 +66,8 @@ spine migrate-from-taskplane --source .pi/taskplane-config.json
 
 ### Preflight Checks
 
+Run **before every batch**. Exit code is non-zero when any check fails.
+
 ```bash
 # Run preflight validation (required before batch start)
 spine preflight
@@ -73,6 +75,18 @@ spine preflight
 # JSON output for automation
 spine preflight --json
 ```
+
+| Check | Requirement |
+|-------|-------------|
+| Doctor | `spine doctor` passes (Node, git, pi, config, agents) |
+| Git clean | No uncommitted changes in the working tree |
+| No active batch | No healthy active batch in `.spine/batch-state.json` (or Taskplane `.pi/batch-state.json`) |
+| Tasks root | Configured tasks folder exists with discoverable `PROMPT.md` task folders |
+| Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
+| Tasks validate | Pending `PROMPT.md` packets pass structural validation (v1.3+) |
+| Wave plan | Dependency waves and lane assignment (same output as `spine plan`) |
+
+`spine doctor` also prints an advisory **lanes.maxParallel** sizing line when config is valid (configured vs CPU-based suggestion). The hint never fails doctor; it may warn when configured parallelism looks high for your machine.
 
 ### Plan Visualization
 
@@ -269,6 +283,8 @@ SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
 
 ### Status and Diagnosis
 
+Reconciled diagnosis derives state from task records, git, `.DONE` files, and batch-state — not from raw `phase` alone. Output includes `diagnosis`, `headline`, `suggestedCommand`, and optional `alternatives[]`.
+
 ```bash
 # Reconciled batch diagnosis
 spine status
@@ -279,12 +295,36 @@ spine status --diagnose
 # JSON output
 spine status --json
 
+# Include segment frontier
+spine status --verbose
+
 # Next suggested command (dry-run)
 spine next
 
 # Execute next command
 spine next --execute
 ```
+
+**Diagnosis taxonomy:**
+
+| `diagnosis` | Meaning |
+|-------------|---------|
+| `running` | Workers active |
+| `paused` | Batch suspended |
+| `needs_retry` | Failed or dead worker task |
+| `engine_orphaned` | Batch engine died mid-run |
+| `worker_orphaned` | Worker running but engine died |
+| `needs_merge` | Wave done, lane merge blocked |
+| `needs_integrate` | Orch ahead of `main` — land loop |
+| `needs_replan` | Final review REPLAN — edit PROMPT |
+| `completed` | Batch terminal, merged |
+| `completed_manual` | Work on `main`, batch record stale |
+| `limbo_stale` | Tasks green, batch record stale |
+| `failed` | Terminal error |
+| `aborted` | Batch manually aborted |
+| `state_drift` | Journal rebuild disagrees with cache |
+
+When no batch exists, status reports idle with `spine preflight` or `spine plan all` as the suggested next action.
 
 ### Journal Replay
 
@@ -422,6 +462,50 @@ spine dashboard --port 8110
 spine dashboard --json
 ```
 
+Default port **8109** (avoids Taskplane 8099). Configure in `.spine/spine-config.json` → `dashboard.port`. The UI streams reconciled snapshots over SSE (`/api/events`). Panels: diagnosis banner (badge from `diagnosis`, not raw `phase`), copyable CLI action chips, wave progress, lane table (**Active tasks** vs **Batch assignment**), integrate gate, journal tail. Read-only — run commands from your terminal. See [operator-runbook.md](./adoption/operator-runbook.md) §7.
+
+---
+
+## 🧪 Dev scripts
+
+### Best-of-N (`scripts/best-of-n.mjs`)
+
+Runs the **same prompt** through **multiple pi models in parallel**, each in its own git worktree. Use to compare model outputs on a one-off task — **not** for production batch orchestration.
+
+| Best-of-N | `spine batch start` |
+|-----------|---------------------|
+| One prompt, N models side-by-side | Task packets, dependency waves, lane scheduling |
+| Manual compare diffs in `.worktrees/bon-<runId>/` | Lane merge → orch branch, journal, integrate gates |
+| No batch state, `.DONE`, or review pipeline | Step checkpoints, cross-model review, auto-commit on `.DONE` |
+
+**Availability:** Git checkout only — **not** shipped in the npm package `files` whitelist. Use a git clone or path install.
+
+**Prerequisites:** Node.js ≥ 22, [pi](https://pi.dev), git worktree support. Models resolve via `pi --list-models` (same catalog as `/model` in pi).
+
+```bash
+# List models (optional search filter)
+node scripts/best-of-n.mjs --list-models [search]
+
+# Comma-separated models + prompt
+node scripts/best-of-n.mjs sonnet,composer-2.5,codex-5.3 "Fix the flaky logout test"
+
+# Repeatable -m flag; @file prompts supported
+node scripts/best-of-n.mjs -m sonnet -m composer-2.5 @spine-tasks/SP-001/PROMPT.md
+
+# Provision worktrees and print pi argv without running
+node scripts/best-of-n.mjs --dry-run sonnet,codex-5.3 @task/PROMPT.md
+```
+
+**Worktrees:** `.worktrees/bon-<runId>/<model-slug>/` on branch `bon/<runId>/<slug>`. When `.cursor/worktrees.json` exists, setup runs with `ROOT_WORKTREE_PATH` set to the project root.
+
+**Options:** `--base-branch <ref>` (default: current `HEAD`), `--thinking <level>` (passed to pi), `--keep` (default — retain worktrees), `--cleanup` (remove worktrees after runs finish), `--cleanup-run <runId>` (remove a previous run).
+
+**After a run (default `--keep`):** Compare with `git -C .worktrees/bon-<runId>/<model-slug> diff HEAD`. Remove when done:
+
+```bash
+node scripts/best-of-n.mjs --cleanup-run <runId>
+```
+
 ---
 
 ## 🎯 Common Workflows
@@ -512,17 +596,25 @@ spine batch complete
 |---------|--------|
 | `/spine` | Preflight + batch start for single task |
 | `/spine <task-id>` | Start batch for specific task |
+| `/spine pending` | Start batch for pending tasks |
 | `/spine-plan <all\|paths>` | Preview waves and lanes |
-| `/spine-status` | Reconciled batch diagnosis |
+| `/spine-status` | Reconciled batch diagnosis + lane health |
 | `/spine-dismiss` | `spine batch dismiss` |
 | `/spine-next` | `spine next` |
 | `/spine-pause` | `spine batch pause` |
 | `/spine-resume` | `spine batch resume` |
-| `/spine-abort` | `spine batch abort` |
-| `/spine-gate` | Gate inspection |
-| `/spine-integrate` | Merge orch to main |
+| `/spine-abort` | `spine batch abort` (`--hard` kills workers) |
+| `/spine-retry-task <id>` | `spine batch retry` |
+| `/spine-skip-task <id>` | `spine batch skip` |
+| `/spine-gate` | Gate inspection and resolution |
+| `/spine-integrate` | Merge orch to main (after gate approval) |
 | `/spine-settings` | Config menu |
 | `/spine-deps <all\|paths>` | Show dependency graph |
+| `/spine-dashboard` | Start local SSE dashboard in background |
+| `/spine-validate` | `spine tasks validate` |
+| `/spine-handoff` | `spine handoff` — session handoff artifact |
+
+`/spine` runs `spine preflight` first and blocks batch guidance when preflight fails.
 
 ---
 
@@ -546,12 +638,32 @@ spine batch complete
 # Enable verbose output
 export SPINE_DEBUG=1
 
-# Use stub worker (no pi required)
+# Use stub worker (no pi required) — CI and tests
 export SPINE_WORKER_STUB=1
+
+# Simulate task failure for mixed-outcome tests
+export SPINE_WORKER_STUB_FAIL_TASKS=TP-998
 
 # Force review stub
 export SPINE_REVIEW_STUB=1
+
+# Disable pi agent spawn (worker host only)
+export SPINE_WORKER_PI_AGENT=0
 ```
+
+### Heartbeat and stall
+
+During a batch, the engine polls lane progress (STATUS.md mtime, lane-branch commits) and appends `lane.heartbeat` to the journal on an interval (default 10 minutes). Stall kill uses grace after progress. Configure in `.spine/spine-config.json`:
+
+```json
+"lanes": {
+  "stallTimeoutMinutes": 120,
+  "stallGraceAfterProgressMinutes": 30,
+  "heartbeatIntervalMinutes": 10
+}
+```
+
+Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook.md](./adoption/operator-runbook.md) §9.
 
 ---
 
@@ -565,4 +677,4 @@ export SPINE_REVIEW_STUB=1
 
 ---
 
-*Last updated: 2026-06-12*
+*Last updated: 2026-06-19*

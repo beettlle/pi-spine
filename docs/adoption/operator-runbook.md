@@ -366,8 +366,11 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
 | `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
+| `worker_orphaned` | Worker running but engine died | `spine batch abort` or `spine batch retry <id>` then resume |
+| `state_drift` | Journal rebuild disagrees with cache | Retry task or `resume --force`; kill stale engine PIDs if batch landed |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
+| `needs_replan` | Final review REPLAN | Edit `PROMPT.md`, validate, `batch retry` |
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
 | `limbo_stale` / `completed_manual` | Tasks green, batch record stale | `dismiss` or `complete --detect-manual-merge` |
 | `failed` / `aborted` | Terminal error | `retry`, `resume --force`, or `dismiss` |
@@ -771,7 +774,8 @@ In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
 - **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required)
-- **Active batch panels** (when a batch is reconciled): wave progress, lane table, journal tail
+- **Active batch panels** (when a batch is reconciled): wave progress (lane ≠ wave reminder), lane table (**Active tasks** vs **Batch assignment**), journal tail
+- **SSE:** browser UI streams reconciled snapshots over `/api/events` (2s poll interval). Diagnosis badge color follows `diagnosis`, not raw `phase`. Action chips copy `suggestedCommand` and `alternatives[]` — run commands in your terminal; the dashboard is read-only (no HTTP mutations)
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
 - Keep the dashboard terminal open while it runs
 
