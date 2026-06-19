@@ -1,7 +1,7 @@
 # SP-303: README doc absorption — Status
 
-**Current Step:** Step 2 (Testing & Verification)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-19
 **Review Level:** 0
 **Review Counter:** 0
@@ -42,17 +42,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
+- [x] FULL test suite passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Deferred topics logged if any
-- [ ] `.DONE` created
+- [x] Deferred topics logged if any
+- [x] `.DONE` created
 
 ---
 
@@ -78,7 +78,8 @@
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-19 | Step 0 preflight | Gap table drafted |
-| 2026-06-19 | Step 1 gap-fill | QUICK-REFERENCE, EXECUTION-FLOW, runbook updated |
+| 2026-06-19 | Step 2 tests | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 947 pass |
+| 2026-06-19 | Step 3 delivery | `.DONE` created |
 
 ---
 
