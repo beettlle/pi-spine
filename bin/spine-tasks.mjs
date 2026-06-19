@@ -8,6 +8,7 @@
 import { c, isCliEntrypoint, writeCommandResult } from './spine-cli/shared.mjs';
 import { loadSpineConfig } from './spine-config.mjs';
 import { resolveTasksRootPath } from '../src/config/env-overrides.mjs';
+import { analyzeTasksScope } from '../src/tasks/analyze/index.mjs';
 import {
 	collectPromptValidationFailure,
 	discoverTasks,
@@ -105,28 +106,40 @@ export function buildTasksValidateResult({ scope, tasks }) {
 
 export function printTasksHelp() {
 	console.log(`
-${c.bold}spine tasks${c.reset} — validate task PROMPT packets (FR-UXB-02)
+${c.bold}spine tasks${c.reset} — validate and analyze task PROMPT packets (FR-UXB-02)
 
 ${c.bold}Usage:${c.reset}
   spine tasks validate <scope> [--json] [--warnings-only]
+  spine tasks analyze <scope> [--json]
 
 ${c.bold}Scope:${c.reset}
   Same resolution as ${c.cyan}spine plan${c.reset}: all, pending, task IDs, globs.
 
-${c.bold}Options:${c.reset}
+${c.bold}Validate options:${c.reset}
   --json            Emit TasksValidateResult JSON (handoff §6.4)
   --warnings-only   Include non-blocking P1 checks as warnings:
                     folder name ≠ heading ID, missing STATUS.md, deps mismatch
 
-${c.bold}Exit codes:${c.reset}
+${c.bold}Analyze:${c.reset}
+  Deterministic structural checks: parallel file-scope overlap, dependency cycles,
+  orphan task IDs (blocking); wave M-count, explore refs, PROMPT/JSON deps drift (warnings).
+
+${c.bold}Exit codes (validate):${c.reset}
   0  all selected tasks pass
   1  one or more PROMPT validation failures
+  2  config, tasksRoot, or scope resolution error
+
+${c.bold}Exit codes (analyze):${c.reset}
+  0  no blocking findings (warnings alone exit 0)
+  1  one or more blocking findings
   2  config, tasksRoot, or scope resolution error
 
 ${c.bold}Examples:${c.reset}
   spine tasks validate all
   spine tasks validate pending --warnings-only
   spine tasks validate FX-101 --json
+  spine tasks analyze pending
+  spine tasks analyze all --json
 `);
 }
 
@@ -254,17 +267,44 @@ export async function runSpineTasksValidate({
 }
 
 /**
+ * @param {string} message
+ * @param {{ suggestedCommand?: string, exitCode?: number }} [options]
+ */
+function throwTasksAnalyzeError(message, { suggestedCommand, exitCode = 2 } = {}) {
+	const err = new Error(message);
+	if (suggestedCommand) err.suggestedCommand = suggestedCommand;
+	err.exitCode = exitCode;
+	throw err;
+}
+
+/**
+ * @param {{ projectRoot?: string, scope?: string, json?: boolean }} [args]
+ */
+export async function runSpineTasksAnalyze({
+	projectRoot = process.cwd(),
+	scope = 'all',
+	json = false,
+} = {}) {
+	try {
+		const analyzeResult = await analyzeTasksScope({ projectRoot, scope });
+		const output = json
+			? JSON.stringify(analyzeResult.result, null, 2) + '\n'
+			: analyzeResult.output;
+
+		return {
+			...analyzeResult,
+			output,
+		};
+	} catch (err) {
+		if (err?.exitCode != null) throw err;
+		throwTasksAnalyzeError(err?.message ?? String(err));
+	}
+}
+
+/**
  * @param {string[]} args
  */
-export async function handleTasks(args) {
-	const sub = args[0];
-	if (sub !== 'validate') {
-		const { die } = await import('./spine-cli/shared.mjs');
-		die(
-			`Unknown tasks subcommand: ${sub ?? '(none)'}\nRun ${c.cyan}spine help tasks${c.reset} for usage.`,
-		);
-	}
-
+async function handleTasksValidate(args) {
 	const json = args.includes('--json');
 	const warningsOnly = args.includes('--warnings-only');
 	const scope = args.filter((a) => !a.startsWith('--')).slice(1).join(' ') || 'all';
@@ -286,6 +326,51 @@ export async function handleTasks(args) {
 		}
 		process.exit(err?.exitCode ?? 2);
 	}
+}
+
+/**
+ * @param {string[]} args
+ */
+async function handleTasksAnalyze(args) {
+	const json = args.includes('--json');
+	const scope = args.filter((a) => !a.startsWith('--')).slice(1).join(' ') || 'all';
+
+	try {
+		const result = await runSpineTasksAnalyze({
+			projectRoot: process.cwd(),
+			scope,
+			json,
+		});
+		writeCommandResult(result);
+	} catch (err) {
+		const msg = err?.message ?? String(err);
+		if (err?.suggestedCommand) {
+			console.error(`Error: ${msg}\nSuggested: ${err.suggestedCommand}`);
+		} else {
+			console.error(`Error: ${msg}`);
+		}
+		process.exit(err?.exitCode ?? 2);
+	}
+}
+
+/**
+ * @param {string[]} args
+ */
+export async function handleTasks(args) {
+	const sub = args[0];
+	if (sub === 'validate') {
+		await handleTasksValidate(args);
+		return;
+	}
+	if (sub === 'analyze') {
+		await handleTasksAnalyze(args);
+		return;
+	}
+
+	const { die } = await import('./spine-cli/shared.mjs');
+	die(
+		`Unknown tasks subcommand: ${sub ?? '(none)'}\nRun ${c.cyan}spine help tasks${c.reset} for usage.`,
+	);
 }
 
 if (isCliEntrypoint(import.meta.url)) {

@@ -298,6 +298,8 @@ ${c.bold}Examples:${c.reset}
   spine dashboard --json                        # one-shot snapshot JSON
   spine tasks validate pending                  # validate pending task PROMPTs
   spine tasks validate all --json               # structured TasksValidateResult
+  spine tasks analyze pending                   # structural checks (overlap, cycles, warnings)
+  spine tasks analyze pending --json            # structured AnalyzeTasksResult
   spine help tasks                              # tasks subcommand usage
   spine version                                 # show package and environment info
 `);
