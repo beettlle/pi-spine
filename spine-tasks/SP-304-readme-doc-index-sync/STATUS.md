@@ -1,7 +1,7 @@
 # SP-304: README doc index sync — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-19
 **Review Level:** 0
 **Review Counter:** 0
@@ -30,16 +30,16 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
+- [x] FULL test suite passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -61,7 +61,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-19 | Step 1 complete | Doc indexes synced; commit d86490b |
+| 2026-06-19 | Step 2 complete | 947 tests pass (typecheck + SPINE_WORKER_STUB=1 npm test) |
+| 2026-06-19 | Task complete | .DONE created |
 
 ---
 
