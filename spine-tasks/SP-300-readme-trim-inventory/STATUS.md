@@ -1,7 +1,7 @@
 # SP-300: README trim inventory — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3
+**Status:** 🟢 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Baseline line count recorded
-- [ ] PRD ID grep inventory recorded
-- [ ] Heading map drafted
+- [x] Baseline line count recorded (618 lines)
+- [x] PRD ID grep inventory recorded (32 hits)
+- [x] Heading map drafted (16 `##`, 19 `###`)
 
 ---
 
 ### Step 1: Write findings
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `findings.md` created with section map
-- [ ] Version drift noted
-- [ ] Target ≤180 lines documented
+- [x] `findings.md` created with section map
+- [x] Version drift noted (v2.2 vs v1.0.2 vs package.json)
+- [x] Target ≤180 lines documented
 
 ---
 
@@ -54,6 +54,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Best-of-N has no QUICK-REFERENCE home yet | SP-303 gap-fill | findings.md |
+| PRD doc link says v1.2 while package is v1.0.2 | SP-304 index sync | findings.md version drift |
 
 ---
 
@@ -62,6 +64,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-18 | Step 0 preflight | 618 lines; 32 PRD grep hits; heading map complete |
+| 2026-06-18 | Step 1 findings | `spine-tasks/_explore/readme-trim/findings.md` written |
 
 ---
 
