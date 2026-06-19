@@ -169,9 +169,8 @@ test("dashboard server GET / returns HTML shell", async () => {
 		assert.match(body.data, /diagnosis-banner/);
 		assert.match(body.data, /banner-actions/);
 		assert.match(body.data, /default-status-panels/);
-		assert.match(body.data, /default-journal-section/);
-		assert.match(body.data, /default-journal-list/);
-		assert.match(body.data, /View full journal/);
+		assert.match(body.data, /journal-heading/);
+		assert.match(body.data, /journal-list/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {
@@ -180,7 +179,7 @@ test("dashboard server GET / returns HTML shell", async () => {
 	}
 });
 
-test("running batch view model exposes journal for default tail panel", () => {
+test("running batch view model exposes journal for bottom panel", () => {
 	const snapshot = {
 		diagnosis: "running",
 		batchId: "b1",
@@ -197,7 +196,7 @@ test("running batch view model exposes journal for default tail panel", () => {
 	assert.equal(vm.journal[0].type, "batch.started");
 });
 
-test("idle snapshot hides default journal tail affordance via idle flag", () => {
+test("idle snapshot has empty journal via idle flag", () => {
 	const snapshot = {
 		diagnosis: null,
 		batchId: null,

@@ -1,7 +1,7 @@
 # SP-306: Remove duplicate dashboard journal panel — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Duplicate render path confirmed
-- [ ] HTML structure reviewed
+- [x] Duplicate render path confirmed (`renderDefaultStatusPanels` → `renderDefaultJournalTail`; `renderSnapshot` → `renderJournal` when `!vm.idle`)
+- [x] HTML structure reviewed (`#default-journal-section` in `#default-status-panels` vs `#journal-heading` in `#active-panels`)
 
 ---
 
