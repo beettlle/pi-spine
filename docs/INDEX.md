@@ -34,6 +34,7 @@ This is the main navigation page for pi-spine documentation.
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [**../README.md**](../README.md) | Project README, quick start, features | Everyone |
+| [**adoption/why-pi-spine.md**](adoption/why-pi-spine.md) | Positioning vs Taskplane, Babysitter, pi-conductor | Everyone |
 | [**adoption/bootstrap-checklist.md**](adoption/bootstrap-checklist.md) | First-time setup checklist | New Users |
 | [**adoption/local-install.md**](adoption/local-install.md) | Git/path installation guide | Developers |
 | [**adoption/operator-runbook.md**](adoption/operator-runbook.md) | Daily operational procedures | Operators |
@@ -62,6 +63,7 @@ This is the main navigation page for pi-spine documentation.
 
 ### I want to understand what pi-spine does
 - Start with **[../README.md](../README.md)** (project overview)
+- Read **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** (how pi-spine compares to related tools)
 - Then read **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** (detailed flow)
 - Reference **[EXECUTION-FLOW-DIAGRAMS.md](./EXECUTION-FLOW-DIAGRAMS.md)** (visual diagrams)
 
