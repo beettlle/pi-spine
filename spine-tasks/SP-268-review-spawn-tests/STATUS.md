@@ -1,6 +1,6 @@
 # SP-268: Review-spawn tests and guard regression — Status
 
-**Current Step:** Step 3 (Documentation & Delivery)
+**Current Step:** Step 4 (Documentation & Delivery)
 **Status:** 🟢 Complete
 **Last Updated:** 2026-06-18
 **Review Level:** 2
@@ -25,17 +25,19 @@
 
 ---
 
-### Step 2: Testing & Verification
+### Step 3: Testing & Verification
 **Status:** ✅ Complete
 
-- [x] Full suite green (`npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 912 pass; unset `SPINE_WORKER_PI_TIMEOUT_MS` in worker env to avoid polluting stall-budget tests)
-- [x] Coverage gate (`npm run coverage:check` — 86.90% line coverage, threshold 77%)
+- [x] Full suite green (`npm run typecheck && SPINE_WORKER_STUB=1 npm test` — 947 pass; unset `SPINE_WORKER_PI_TIMEOUT_MS` in worker env to avoid polluting stall-budget tests)
+- [x] Coverage gate (`npm run coverage:check` — 86.55% line coverage, threshold 77%)
+- [x] Build passes (`npm run typecheck`)
 
 ---
 
-### Step 3: Documentation & Delivery
+### Step 4: Documentation & Delivery
 **Status:** ✅ Complete
 
+- [x] Issue #9 closed with SP-268 comment
 - [x] .DONE created
 
 ---
@@ -64,6 +66,8 @@
 | 2026-06-18 | Preflight | SP-267 .DONE confirmed |
 | 2026-06-18 | Verify tests | review-spawn + nested-reviewer-guard 10/10 pass |
 | 2026-06-18 | Full suite + coverage | 912 pass, 86.90% coverage |
+| 2026-06-18 | Re-verify + delivery | 947 pass, 86.55% coverage; issue #9 closed; .DONE created |
+| 2026-06-19 | Re-verify after .DONE loss | 14 scoped + 947 full pass; 87.05% coverage; .DONE restored |
 
 ---
 
