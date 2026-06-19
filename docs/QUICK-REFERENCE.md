@@ -342,6 +342,21 @@ spine tasks validate all
 spine tasks validate all --json
 ```
 
+### Analyze Tasks
+
+```bash
+# Structural checks on pending tasks (blocking vs warnings)
+spine tasks analyze pending
+
+# Analyze all tasks
+spine tasks analyze all
+
+# JSON output (AnalyzeTasksResult)
+spine tasks analyze pending --json
+```
+
+Exit codes: `0` when no blocking findings (warnings alone exit 0); `1` when blocking issues exist.
+
 ### Task Discovery
 
 ```bash

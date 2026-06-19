@@ -1,10 +1,18 @@
 /**
- * Deterministic structural checks for task packets in a planner scope (SP-292/SP-298).
+ * Deterministic structural checks for task packets in a planner scope (SP-292/SP-298/SP-299).
  *
- * Blocking checks (warnings are added in SP-299):
+ * Blocking checks:
  * - Parallel-eligible tasks (same wave) with overlapping ## File Scope
  * - dependencies.json cycles or orphan task IDs
+ *
+ * Warning checks (SP-299):
+ * - Wave with more than four M-sized tasks
+ * - CONTEXT.md references explore findings.md that is missing
+ * - PROMPT ## Dependencies drift from dependencies.json
  */
+
+import fs from 'node:fs';
+import path from 'node:path';
 
 import { resolveTasksRootPath } from '../../config/env-overrides.mjs';
 import { loadSpineConfig } from '../../config/spine-config-load.mjs';
@@ -170,6 +178,117 @@ export function collectDependencyCycleFindings(graph) {
 	];
 }
 
+const WAVE_M_COUNT_THRESHOLD = 4;
+
+const EXPLORE_FINDINGS_PATH_RE = /_explore\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/findings\.md/g;
+
+/**
+ * @param {string} contextMarkdown
+ * @returns {string[]}
+ */
+export function extractExploreSlugsFromContext(contextMarkdown) {
+	/** @type {Set<string>} */
+	const slugs = new Set();
+	let match = EXPLORE_FINDINGS_PATH_RE.exec(contextMarkdown);
+	while (match) {
+		slugs.add(match[1]);
+		match = EXPLORE_FINDINGS_PATH_RE.exec(contextMarkdown);
+	}
+	return [...slugs].sort();
+}
+
+/**
+ * @param {string[][]} waves
+ * @param {Record<string, { size?: string | null }>} tasksById
+ * @returns {AnalyzeFinding[]}
+ */
+export function collectWaveMCountFindings(waves, tasksById) {
+	/** @type {AnalyzeFinding[]} */
+	const findings = [];
+
+	for (let waveIndex = 0; waveIndex < waves.length; waveIndex++) {
+		const mTaskIds = waves[waveIndex].filter((taskId) => tasksById[taskId]?.size === 'M');
+		if (mTaskIds.length <= WAVE_M_COUNT_THRESHOLD) continue;
+
+		findings.push({
+			severity: 'warning',
+			code: 'wave_m_count',
+			message:
+				`Wave ${waveIndex} includes ${mTaskIds.length} M-sized tasks (>4) — ` +
+				'consider smaller parallel waves',
+			taskIds: mTaskIds,
+		});
+	}
+
+	return findings;
+}
+
+/**
+ * @param {string} tasksRoot
+ * @param {string} contextMarkdown
+ * @returns {AnalyzeFinding[]}
+ */
+export function collectExploreReferenceFindings(tasksRoot, contextMarkdown) {
+	if (!contextMarkdown) return [];
+
+	/** @type {AnalyzeFinding[]} */
+	const findings = [];
+
+	for (const slug of extractExploreSlugsFromContext(contextMarkdown)) {
+		const relPath = `_explore/${slug}/findings.md`;
+		const findingsPath = path.join(tasksRoot, '_explore', slug, 'findings.md');
+		if (fs.existsSync(findingsPath)) continue;
+
+		findings.push({
+			severity: 'warning',
+			code: 'explore_findings_missing',
+			message: `CONTEXT references ${relPath} but file is missing`,
+			paths: [relPath],
+		});
+	}
+
+	return findings;
+}
+
+/**
+ * @param {Record<string, { promptDependencies?: string[] }>} tasksById
+ * @param {{ tasks?: Record<string, string[]> }} depsJson
+ * @returns {AnalyzeFinding[]}
+ */
+export function collectPromptJsonDepsDriftFindings(tasksById, depsJson) {
+	/** @type {AnalyzeFinding[]} */
+	const findings = [];
+
+	for (const [taskId, task] of Object.entries(tasksById)) {
+		const promptDeps = task.promptDependencies ?? [];
+		if (promptDeps.length === 0) continue;
+
+		const jsonDeps = depsJson?.tasks?.[taskId];
+		if (!jsonDeps) {
+			findings.push({
+				severity: 'warning',
+				code: 'prompt_deps_json_missing',
+				message: `PROMPT lists dependencies but ${taskId} is missing from dependencies.json`,
+				taskIds: [taskId],
+			});
+			continue;
+		}
+
+		const missing = promptDeps.filter((depId) => !jsonDeps.includes(depId));
+		if (missing.length === 0) continue;
+
+		findings.push({
+			severity: 'warning',
+			code: 'prompt_deps_json_drift',
+			message:
+				`PROMPT dependencies not in dependencies.json for ${taskId}: ${missing.join(', ')}`,
+			taskIds: [taskId],
+		});
+	}
+
+	return findings;
+}
+
 /**
  * @param {{ findings: AnalyzeFinding[], scope: ReturnType<typeof parseScope> }} args
  */
@@ -257,7 +376,7 @@ export async function analyzeTasksScope({ projectRoot = process.cwd(), scope = '
 	const discoveredTaskIds = discovered.map((task) => task.taskId);
 	const selectedTaskIds = new Set(scopeResult.taskIds);
 
-	/** @type {Record<string, { taskId: string, fileScope: string[], dependencies: string[] }>} */
+	/** @type {Record<string, { taskId: string, fileScope: string[], dependencies: string[], size: string | null, promptDependencies: string[] }>} */
 	const tasksById = {};
 
 	for (const discoveredTask of discovered) {
@@ -274,6 +393,8 @@ export async function analyzeTasksScope({ projectRoot = process.cwd(), scope = '
 			taskId,
 			fileScope: Array.isArray(prompt.fileScope) ? prompt.fileScope : [],
 			dependencies: mergedDeps,
+			size: prompt.size ?? null,
+			promptDependencies: Array.isArray(prompt.dependencies) ? prompt.dependencies : [],
 		};
 	}
 
@@ -309,6 +430,17 @@ export async function analyzeTasksScope({ projectRoot = process.cwd(), scope = '
 			findings.push(...collectParallelFileScopeOverlapFindings(waves, tasksById));
 		}
 	}
+
+	const contextPath = path.join(tasksRoot, 'CONTEXT.md');
+	const contextMarkdown = fs.existsSync(contextPath)
+		? fs.readFileSync(contextPath, 'utf-8')
+		: '';
+
+	findings.push(
+		...collectWaveMCountFindings(waves, tasksById),
+		...collectExploreReferenceFindings(tasksRoot, contextMarkdown),
+		...collectPromptJsonDepsDriftFindings(tasksById, depsJson),
+	);
 
 	const result = buildAnalyzeTasksResult({ findings, scope: scopeResult });
 
