@@ -1,8 +1,8 @@
 # SP-302: README slim rewrite — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-18
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-19
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,47 +11,47 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Findings and why-pi-spine.md read
-- [ ] Target outline drafted
+- [x] Findings and why-pi-spine.md read
+- [x] Target outline drafted (intro → features → inspired-by → limits → install → quickstart → commands → diagram → migrate → status → docs → license)
 
 ---
 
 ### Step 1: Collapse intro and positioning
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Intro condensed
-- [ ] Inspired-by link added
-- [ ] Feature summary trimmed
+- [x] Intro condensed (merged why/what into opening + table)
+- [x] Inspired-by link added
+- [x] Feature summary trimmed
 
 ---
 
 ### Step 2: Replace quickstart and remove depth
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Numbered quickstart in place
-- [ ] Commands at a glance added
-- [ ] Cursor rules / Best-of-N / PRD IDs removed
-- [ ] How-it-works diagram added
-- [ ] Version labels aligned
+- [x] Numbered quickstart in place
+- [x] Commands at a glance added (CLI + pi slash, 16 rows)
+- [x] Cursor rules / Best-of-N / PRD IDs removed
+- [x] How-it-works diagram added
+- [x] Version labels aligned (v1.0.2)
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Line count ≤180
-- [ ] PRD ID grep clean
-- [ ] FULL test suite passing
+- [x] Line count ≤180 (`wc -l` → 147)
+- [x] PRD ID grep clean (`rg 'FR-|GAP-|NFR-|§'` → no matches)
+- [x] FULL test suite passing (947 pass, 0 fail)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Links spot-checked
-- [ ] `.DONE` created
+- [x] Links spot-checked (all targets exist)
+- [x] `.DONE` created
 
 ---
 
@@ -74,6 +74,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-19 | Steps 0–2 | README slim rewrite drafted |
+| 2026-06-19 | Step 3 | wc -l 147; grep clean; 947 tests pass |
+| 2026-06-19 | Step 4 | Links verified; .DONE created |
 
 ---
 
@@ -85,4 +88,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Outline: title → is/is-not table → features → inspired-by → honest limits → prerequisites → install → numbered quickstart → commands tables → how-it-works diagram → best-of-N → migrate → status/CI → docs → license.
