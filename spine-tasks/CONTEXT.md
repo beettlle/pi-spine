@@ -756,26 +756,26 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 
 **Non-goals:** No `specify` CLI dependency, no auto-import of spec-kit `tasks.md`, no `.specify/` state in spine engine.
 
-#### Phase 33 — README trim (pre-release)
+#### Phase 33 — README trim (pre-release) — **complete**
 
 **Source:** README slim-down plan (Taskplane-style onboarding; ≤180 lines).  
 **Explore:** [`spine-tasks/_explore/readme-trim/findings.md`](_explore/readme-trim/findings.md) (2026-06-18, complete)
 
 | Task | Summary | Size | Status | Deps |
 |------|---------|------|--------|------|
-| SP-300 | README trim inventory (explore findings) | S | **Staged** | — |
-| SP-301 | Positioning doc extract (`why-pi-spine.md`) | S | **Staged** | SP-300 |
-| SP-302 | README slim rewrite | M | **Staged** | SP-301 |
-| SP-303 | Doc absorption gap-fill | M | **Staged** | SP-302 |
-| SP-304 | Doc index and adoption sync | S | **Staged** | SP-302 |
-| SP-305 | README release verification | S | **Staged** | SP-303, SP-304 |
+| SP-300 | README trim inventory (explore findings) | S | **Done** | — |
+| SP-301 | Positioning doc extract (`why-pi-spine.md`) | S | **Done** | SP-300 |
+| SP-302 | README slim rewrite | M | **Done** | SP-301 |
+| SP-303 | Doc absorption gap-fill | M | **Done** | SP-302 |
+| SP-304 | Doc index and adoption sync | S | **Done** | SP-302 |
+| SP-305 | README release verification | S | **Done** | SP-303, SP-304 |
 
 **Exit criteria (SP-305):**
 
-- [ ] `wc -l README.md` ≤ 180
-- [ ] No `FR-` / `GAP-` / `NFR-` / `§` in README
-- [ ] New-user quickstart in README; operator depth in `docs/`
-- [ ] Version line aligned with `package.json`
+- [x] `wc -l README.md` ≤ 180 (147 lines)
+- [x] No `FR-` / `GAP-` / `NFR-` / `§` in README
+- [x] New-user quickstart in README; operator depth in `docs/`
+- [x] Version line aligned with `package.json` (v1.0.2)
 
 **Suggested batches:**
 
