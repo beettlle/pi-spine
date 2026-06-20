@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-20 (Phase 38 — SP-313/SP-314 staged for GitHub #18/#19)
+**Last Updated:** 2026-06-20 (Phase 39 — SP-315/SP-316/SP-317 staged for GitHub #20/#21/#22)
 **Status:** Active
-**Next Task ID:** SP-315
+**Next Task ID:** SP-318
 
 ---
 
@@ -829,8 +829,8 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-311 | Merge gitignored path filter | M | **Staged** | — | #15 |
-| SP-312 | run-metrics.jsonl init gitignore | S | **Staged** | — | #16 |
+| SP-311 | Merge gitignored path filter | M | **Done** | — | #15 |
+| SP-312 | run-metrics.jsonl init gitignore | S | **Done** | — | #16 |
 
 **Suggested batch:** `SP-311` and `SP-312` are disjoint scope — may run in parallel after preflight.
 
@@ -840,10 +840,22 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-313 | Worker exit without .DONE diagnosis | M | **Staged** | — | #18 |
-| SP-314 | Contract stall timeout override | M | **Staged** | — | #19 |
+| SP-313 | Worker exit without .DONE diagnosis | M | **Done** | — | #18 |
+| SP-314 | Contract stall timeout override | M | **Done** | — | #19 |
 
 **Suggested batch:** `SP-313` and `SP-314` are disjoint scope — may run in parallel after preflight.
+
+#### Phase 39 — GitHub issue fixes (#20, #21, #22)
+
+**Source:** Open issues [#20](https://github.com/beettlle/pi-spine/issues/20) (engine_orphaned retry limbo), [#21](https://github.com/beettlle/pi-spine/issues/21) (attached SIGTERM post-merge land loop), [#22](https://github.com/beettlle/pi-spine/issues/22) (integrate blocked by rules-manifest drift).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-315 | Engine orphan retry recovery | M | **Staged** | — | #20 |
+| SP-316 | Attached post-merge SIGTERM land loop | M | **Staged** | — | #21 |
+| SP-317 | Integrate rules-manifest drift handling | S | **Staged** | — | #22 |
+
+**Suggested batch:** `SP-315`, `SP-316`, `SP-317` overlap `src/batch/` — plan serializes in lane 1; SP-317 may run after SP-315/316 or in parallel if scope stays disjoint.
 
 ---
 
