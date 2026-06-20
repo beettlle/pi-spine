@@ -916,8 +916,25 @@ Oversized task packets and wide parallel waves are the main cause of **stall_tim
 | Run **≤4** parallel M tasks per wave; land between waves | Batch `20260603T225112` stalled 5/8 tasks at once |
 | Set `lanes.stallTimeoutMinutes` ≥ **120** for real `pi` | Template default; doctor warns if unset/low |
 | Use PROMPT **Size:** S/M/L | Engine applies per-task floor (SP-088): M→180m, L→300m |
+| Operator matrix / 2h+ external jobs | Add `stallTimeoutMinutes: 240` (or higher) to task `## Contract` (SP-314); optional `extendGraceOnFileScope: true` when only `STATUS.md` changes during the run |
 
 `spine doctor` warns on oversized **pending** packets (XL, >4 steps, wide file scope). `skills/create-spine-tasks` documents decomposition rules.
+
+#### Contract stall override (SP-314)
+
+When a single task runs a long external job (matrix arms, remote CI) with little lane git/STATUS checkpoint progress, raise the **per-task** stall budget in `## Contract` instead of the global `lanes.stallTimeoutMinutes`:
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| stallTimeoutMinutes | 240 |
+| extendGraceOnFileScope | true |
+```
+
+The engine applies `max(global, size floor, contract.stallTimeoutMinutes)` for both the worker stall loop and `SPINE_WORKER_PI_TIMEOUT_MS`. Set `extendGraceOnFileScope: true` when the worker only touches in-scope `STATUS.md` during the external phase (batch `20260620T043504` / SP-029 pattern).
 
 ### Stall diagnosis (5-minute path)
 

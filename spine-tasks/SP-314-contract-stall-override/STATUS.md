@@ -1,7 +1,7 @@
 # SP-314: Contract stall timeout override — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #19 stall timeline confirmed
-- [ ] resolveStallConfigForTask call chain traced
-- [ ] Contract parse schema reviewed
+- [x] Issue #19 stall timeline confirmed
+- [x] resolveStallConfigForTask call chain traced
+- [x] Contract parse schema reviewed
 
 ---
 

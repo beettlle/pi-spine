@@ -37,30 +37,41 @@ export function parseTaskSizeFromFolder(taskFolder) {
 /**
  * @param {"S"|"M"|"L"|"XL"|null} size
  * @param {object} [config]
+ * @param {{ stallTimeoutMinutes?: number | null }} [contract]
  */
-export function resolveTaskStallMinutes(size, config = {}) {
+export function resolveTaskStallMinutes(size, config = {}, contract = {}) {
 	const configured = Number(config.lanes?.stallTimeoutMinutes);
 	const configMinutes = Number.isFinite(configured) && configured > 0 ? configured : 60;
 	const sizeMinutes =
 		size && size in STALL_MINUTES_BY_SIZE
 			? STALL_MINUTES_BY_SIZE[/** @type {keyof typeof STALL_MINUTES_BY_SIZE} */ (size)]
 			: null;
-	return sizeMinutes ? Math.max(configMinutes, sizeMinutes) : configMinutes;
+	const baseMinutes = sizeMinutes ? Math.max(configMinutes, sizeMinutes) : configMinutes;
+	const contractMinutes = Number(contract.stallTimeoutMinutes);
+	if (Number.isFinite(contractMinutes) && contractMinutes > 0) {
+		return Math.max(baseMinutes, contractMinutes);
+	}
+	return baseMinutes;
 }
 
 /**
  * @param {object} params
  * @param {object} [params.config]
  * @param {string|null} [params.taskSize]
+ * @param {{ stallTimeoutMinutes?: number | null, extendGraceOnFileScope?: boolean | null }} [params.contract]
  */
-export function resolveStallConfigForTask({ config = {}, taskSize = null }) {
-	const stallTimeoutMinutes = resolveTaskStallMinutes(taskSize, config);
+export function resolveStallConfigForTask({ config = {}, taskSize = null, contract = {} }) {
+	const stallTimeoutMinutes = resolveTaskStallMinutes(taskSize, config, contract);
+	const lanes = {
+		...(config.lanes ?? {}),
+		stallTimeoutMinutes,
+	};
+	if (contract.extendGraceOnFileScope === true) {
+		lanes.extendGraceOnFileScope = true;
+	}
 	return resolveStallConfig({
 		...config,
-		lanes: {
-			...(config.lanes ?? {}),
-			stallTimeoutMinutes,
-		},
+		lanes,
 	});
 }
 
@@ -74,8 +85,9 @@ export const DEFAULT_PI_WORKER_TIMEOUT_MS = 60 * 60 * 1000;
  * @param {object} params
  * @param {object} [params.config]
  * @param {"S"|"M"|"L"|"XL"|null} [params.taskSize]
+ * @param {{ stallTimeoutMinutes?: number | null }} [params.contract]
  */
-export function resolveWorkerPiTimeoutMs({ config = {}, taskSize = null }) {
+export function resolveWorkerPiTimeoutMs({ config = {}, taskSize = null, contract = {} }) {
 	const envRaw = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
 	if (envRaw) {
 		const parsed = Number(envRaw);
@@ -83,7 +95,7 @@ export function resolveWorkerPiTimeoutMs({ config = {}, taskSize = null }) {
 			return parsed;
 		}
 	}
-	const stallMinutes = resolveTaskStallMinutes(taskSize, config);
+	const stallMinutes = resolveTaskStallMinutes(taskSize, config, contract);
 	return stallMinutes * 60 * 1000;
 }
 
