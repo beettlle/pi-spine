@@ -30,6 +30,11 @@ const NO_PAUSE_DIAGNOSES = new Set([
 
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
 
+const GITIGNORED_MERGE_FAILURE_CLASSES = new Set([
+	"merge_failed_gitignored",
+	"GitignoredDirtyWorktree",
+]);
+
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
 	"code_review_timeout",
@@ -115,6 +120,54 @@ export function inferLaunchFailureFromWorkerOutputTail(outputText) {
 }
 
 /**
+ * @param {object} [ctx]
+ * @param {string|null} [ctx.exitReason]
+ * @param {string|null} [ctx.failureClass]
+ * @param {string|null} [ctx.lastError]
+ * @param {object[]} [ctx.journalEvents]
+ * @returns {boolean}
+ */
+export function inferMergeGitignoredFailure(ctx = {}) {
+	const { exitReason, failureClass, lastError, journalEvents } = ctx;
+	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(exitReason ?? "")) return true;
+	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(failureClass ?? "")) return true;
+
+	const haystackParts = [exitReason, failureClass, lastError];
+	if (Array.isArray(journalEvents)) {
+		for (const event of journalEvents) {
+			if (event.type !== "batch.merge_failed" && event.type !== "task.failed") continue;
+			const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+			haystackParts.push(
+				payload.failureClass,
+				payload.classification,
+				payload.error,
+				payload.output,
+			);
+		}
+	}
+	const haystack = haystackParts.filter(Boolean).join("\n").toLowerCase();
+	return (
+		haystack.includes("gitignored dirty files only") ||
+		haystack.includes("merge_failed_gitignored") ||
+		haystack.includes("gitignoreddirtyworktree") ||
+		(haystack.includes("git add") && haystack.includes("ignored"))
+	);
+}
+
+/**
+ * @param {string|null|undefined} taskBranch
+ * @param {string[]|null|undefined} gitignoredPaths
+ */
+export function buildGitignoredMergeRepairCommand(taskBranch, gitignoredPaths) {
+	const branchHint = taskBranch ? `git checkout ${taskBranch}` : "git checkout <task-branch>";
+	const pathHint =
+		Array.isArray(gitignoredPaths) && gitignoredPaths.length > 0
+			? `git rm -r --cached -- ${gitignoredPaths.slice(0, 5).join(" ")}`
+			: "git rm -r --cached -- <gitignored-paths>";
+	return `${branchHint} && ${pathHint} && spine batch resume --force`;
+}
+
+/**
  * @param {object} ctx
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
@@ -162,8 +215,15 @@ export function inferLaunchFailureKind(ctx = {}) {
  * @param {string|null} [ctx.salvageRetryCommand]
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
+ * @param {boolean} [ctx.mergeGitignoredFailure]
+ * @param {string|null} [ctx.taskBranch]
+ * @param {string[]|null} [ctx.gitignoredPaths]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
+	if (ctx.mergeGitignoredFailure) {
+		return buildGitignoredMergeRepairCommand(ctx.taskBranch, ctx.gitignoredPaths);
+	}
+
 	switch (diagnosis) {
 		case "limbo_stale":
 		case "completed_manual":
@@ -254,9 +314,14 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {number} [ctx.salvageChangedFileCount]
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
+ * @param {boolean} [ctx.mergeGitignoredFailure]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
+
+	if (ctx.mergeGitignoredFailure) {
+		return `${batchLabel} merge blocked by gitignored paths on a lane branch — drop cached ignored files, then resume`;
+	}
 
 	switch (diagnosis) {
 		case "limbo_stale":
@@ -271,6 +336,11 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return `${batchLabel} failed at worker launch — repair lane worktree git, then retry`;
 			}
 			if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				if (ctx.exitReason === "GitignoredDirtyWorktree" || ctx.mergeGitignoredFailure) {
+					return ctx.failedTaskId
+						? `${batchLabel} task ${ctx.failedTaskId} left gitignored dirty files on the lane branch`
+						: `${batchLabel} lane commit refused gitignored-only dirty files`;
+				}
 				return ctx.failedTaskId
 					? `${batchLabel} task ${ctx.failedTaskId} completed but lane commit failed`
 					: `${batchLabel} completed but lane commit failed`;
@@ -325,6 +395,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
 				: `${batchLabel} batch engine died while running — retry or abort`;
 		case "needs_merge":
+			if (ctx.mergeGitignoredFailure) {
+				return `${batchLabel} merge blocked by gitignored paths committed on a lane branch`;
+			}
 			return `${batchLabel} tasks done — lane merges pending`;
 		case "needs_integrate":
 			if (ctx.postMergeLimbo && ctx.phase === "running") {

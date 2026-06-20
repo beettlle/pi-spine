@@ -14,6 +14,7 @@ import {
 	buildDiagnosisOutput,
 	inferLaunchFailureFromWorkerOutputTail,
 	inferLaunchFailureKind,
+	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
 import { workerOutputLogPath } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
@@ -388,6 +389,40 @@ function hasGhostRunningCluster(tasks, failedTaskId) {
 }
 
 /**
+ * @param {object[]} journalEvents
+ * @param {string|null} failedTaskId
+ * @returns {string[]}
+ */
+function extractGitignoredPathsFromJournal(journalEvents, failedTaskId) {
+	if (!Array.isArray(journalEvents)) return [];
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event.type !== "task.failed") continue;
+		const eventTaskId = event.taskId ?? event.payload?.taskId;
+		if (failedTaskId && eventTaskId && eventTaskId !== failedTaskId) continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (Array.isArray(payload.gitignoredPaths)) {
+			return payload.gitignoredPaths.filter((entry) => typeof entry === "string");
+		}
+	}
+	return [];
+}
+
+/**
+ * @param {Record<string, unknown>|null|undefined} raw
+ * @param {string} batchId
+ * @param {string} taskId
+ * @returns {string|null}
+ */
+function laneTaskBranchForDiagnosis(raw, batchId, taskId) {
+	const tasks = raw?.tasks;
+	if (!Array.isArray(tasks)) return null;
+	const task = tasks.find((entry) => entry?.taskId === taskId);
+	if (!task || task.laneNumber == null) return null;
+	return `task/spine-lane-${task.laneNumber}-${batchId}`;
+}
+
+/**
  * @param {string} diagnosis
  * @param {string|null} failedTaskId
  * @param {object} signals
@@ -733,6 +768,18 @@ export function reconcileBatch(ctx) {
 		diagnosis === "worker_orphaned" &&
 		findPlanReviewNestedSpawnBlockedFailure(journalEvents, failedTaskId);
 
+	const mergeGitignoredFailure = inferMergeGitignoredFailure({
+		exitReason,
+		failureClass: batch.raw?.mergeResults?.find((entry) => entry?.failureClass)?.failureClass ?? null,
+		lastError: batch.raw?.lastError ?? null,
+		journalEvents,
+	});
+	const gitignoredPaths = extractGitignoredPathsFromJournal(journalEvents, failedTaskId);
+	const taskBranch =
+		failedTaskId != null
+			? laneTaskBranchForDiagnosis(batch.raw, batch.batchId, failedTaskId)
+			: null;
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -749,6 +796,9 @@ export function reconcileBatch(ctx) {
 		integrateGateOpen,
 		stalePathSpine,
 		planReviewNestedSpawnBlocked,
+		mergeGitignoredFailure,
+		taskBranch,
+		gitignoredPaths,
 	});
 
 	if (diagnosis === "git_unavailable") {
