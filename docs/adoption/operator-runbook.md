@@ -43,13 +43,13 @@ spine batch resume --attached
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
-After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
+After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
 
 **Orphan recovery tree:**
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume. When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
+3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume; `worker_done_missing` → `spine batch retry <id>` (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -365,6 +365,8 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
+| `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
+| `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
 | `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
@@ -736,6 +738,25 @@ Workers should **not** retry or treat the skip as failure. Task PROMPTs for real
 1. `spine status --diagnose` — prefer `spine batch resume --attached --force` when headline cites engine death after resume stall.
 2. Detached `spine batch resume --force` (without `--attached`) defaults to `--wait-terminal` for orphan diagnoses and blocks up to **2 hours** while the attached child engine runs.
 3. If plan `review.failed` with `nested_spawn_blocked` is still in the journal (pre-SP-278 PATH), retry the task first: `spine batch retry <taskId>`.
+
+### Worker exited without `.DONE` (SP-313 / issue #18)
+
+**Symptoms:** Task fails in seconds with journal `lane.died` → `task.failed`, output `pi exited but .DONE was not created`, `doneFound: false`, `changedFileCount: 0`. `spine status --diagnose` reports **`worker_done_missing`** (not `worker_orphaned` or generic `needs_retry`). Headline cites `.spine/runtime/<batchId>/lanes/lane-<N>/worker-output-<taskId>.log` and the last worker output lines.
+
+**Cause:** pi or agent session exited before writing `.DONE` — launch/config error, prompt rejection, or early tool failure. This is **not** an orphan stall (worker PID already exited and batch-state marks the task failed).
+
+**Recovery:**
+
+1. Read the worker output log path from `--diagnose` headline (or `spine journal tail` → `task.failed` → `workerOutputLogRef`).
+2. Fix the underlying blocker (config, PROMPT, credentials, model error) in the lane worktree if needed.
+3. Retry in place:
+
+   ```bash
+   spine batch retry <taskId>
+   spine batch resume --attached
+   ```
+
+**Do not** use `spine batch resume --attached --force` orphan recovery — the worker already terminated cleanly without completing the task.
 
 ### Plan review `review.failed` + `worker_orphaned` (SP-308 / batch 20260619T020951)
 
