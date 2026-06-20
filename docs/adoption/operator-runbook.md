@@ -831,7 +831,7 @@ spine metrics show --last 20
 | `finalAttempts` | Final review attempt count (capped by `review.maxFinalAttempts`) |
 | `outcome` | `completed`, `failed`, or `skipped` |
 
-Data appends to `.spine/run-metrics.jsonl` when `metrics.enabled` is true (default). Disable with `"metrics": { "enabled": false }` in `.spine/spine-config.json`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4. `spine doctor` hints when the metrics file exists.
+Data appends to `.spine/run-metrics.jsonl` when `metrics.enabled` is true (default). The path is added to `.gitignore` by `spine init`. If the file was committed before upgrading, `spine doctor` warns with `git rm --cached .spine/run-metrics.jsonl`; until then, preflight ignores append-only changes to that path. Disable collection with `"metrics": { "enabled": false }` in `.spine/spine-config.json`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4. `spine doctor` hints when the metrics file exists.
 
 ---
 
