@@ -2,6 +2,12 @@
  * FR-BATCH-13 diagnosis taxonomy and operator messaging (§18.3).
  */
 
+import {
+	buildWorkerDoneMissingAlternatives,
+	buildWorkerDoneMissingHeadline,
+	buildWorkerDoneMissingSuggestedCommand,
+} from "./diagnosis-worker-done-missing.mjs";
+
 /** @typedef {import("./reconcile.mjs").ReconciliationResult} ReconciliationResult */
 
 export const DIAGNOSIS_TAXONOMY = [
@@ -10,6 +16,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"needs_retry",
 	"state_drift",
 	"worker_orphaned",
+	"worker_done_missing",
 	"engine_orphaned",
 	"needs_merge",
 	"needs_integrate",
@@ -41,23 +48,6 @@ const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"final_review_spawn_failed",
 	"final_review_timeout",
 ]);
-
-/**
- * @param {object[]} [journalEvents]
- * @param {string|null} [taskId]
- * @returns {object|null}
- */
-function findLatestTaskFailedEvent(journalEvents, taskId) {
-	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return null;
-	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
-		const event = journalEvents[index];
-		if (event.type !== "task.failed") continue;
-		const eventTaskId = event.taskId ?? event.payload?.taskId;
-		if (taskId && eventTaskId && eventTaskId !== taskId) continue;
-		return event;
-	}
-	return null;
-}
 
 /**
  * @param {string} haystack
@@ -266,6 +256,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch abort";
+		case "worker_done_missing":
+			return buildWorkerDoneMissingSuggestedCommand(ctx);
 		case "engine_orphaned":
 			return "spine batch resume --attached";
 		case "needs_merge":
@@ -390,6 +382,8 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `${batchLabel} lane worker orphaned while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} lane worker orphaned — retry or abort`;
+		case "worker_done_missing":
+			return buildWorkerDoneMissingHeadline(batchLabel, ctx);
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
@@ -451,6 +445,8 @@ export function buildAlternatives(diagnosis, ctx = {}) {
 			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
 		case "worker_orphaned":
 			return ["spine batch abort", "spine batch resume --force", ...common];
+		case "worker_done_missing":
+			return buildWorkerDoneMissingAlternatives(ctx, common);
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? [`spine batch retry ${ctx.failedTaskId}`, "spine batch abort", ...common]

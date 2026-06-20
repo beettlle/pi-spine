@@ -16,7 +16,8 @@ import {
 	inferLaunchFailureKind,
 	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
-import { workerOutputLogPath } from "./worker-output.mjs";
+import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
+import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
@@ -371,6 +372,53 @@ function enrichLaunchFailureFromWorkerOutput(projectRoot, batchId, failedTaskId,
 }
 
 /**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string|null} failedTaskId
+ * @param {Array<{ taskId: string, laneNumber?: number|null }>} tasks
+ * @param {object|null} doneMissingHint
+ * @returns {{ workerOutputLogRef: string|null, workerOutputLogPath: string|null, workerOutputTail: string|null, workerOutputSnippet: string|null, changedFileCount: number|null }}
+ */
+function enrichWorkerDoneMissingContext(
+	projectRoot,
+	batchId,
+	failedTaskId,
+	tasks,
+	doneMissingHint,
+) {
+	const task = tasks.find((entry) => entry.taskId === failedTaskId);
+	const laneNumber = task?.laneNumber;
+	const logRef =
+		doneMissingHint?.workerOutputLogRef ??
+		(failedTaskId && laneNumber != null
+			? workerOutputLogRef(batchId, laneNumber, failedTaskId)
+			: null);
+	const logPath =
+		doneMissingHint?.workerOutputLogPath ??
+		(failedTaskId && laneNumber != null
+			? workerOutputLogPath(projectRoot, batchId, laneNumber, failedTaskId)
+			: null);
+	const tailFromDisk = logPath ? readWorkerOutputLogTail(logPath) : null;
+	const outputText = [doneMissingHint?.output, tailFromDisk].filter(Boolean).join("\n");
+	const snippet = outputText
+		? outputText
+				.split("\n")
+				.filter(Boolean)
+				.slice(-3)
+				.join(" | ")
+		: null;
+
+	return {
+		workerOutputLogRef: logRef,
+		workerOutputLogPath: logPath,
+		workerOutputTail: tailFromDisk,
+		workerOutputSnippet: snippet,
+		changedFileCount:
+			doneMissingHint?.changedFileCount != null ? doneMissingHint.changedFileCount : null,
+	};
+}
+
+/**
  * @param {Array<{ taskId: string, classification: string, laneNumber?: number|null }>} tasks
  * @param {string|null} failedTaskId
  * @returns {boolean}
@@ -556,6 +604,13 @@ export function deriveDiagnosis(signals) {
 				"needs_replan",
 			);
 		}
+		const doneMissing = inferWorkerDoneMissingFailure({
+			journalEvents: signals.journalEvents,
+			failedTaskId,
+		});
+		if (doneMissing) {
+			return withFailureContext("worker_done_missing", failedTaskId, signals);
+		}
 		return withFailureContext("needs_retry", failedTaskId, signals);
 	}
 
@@ -733,6 +788,23 @@ export function reconcileBatch(ctx) {
 	signals.pendingTaskCount = pendingTaskCount;
 
 	const { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	const doneMissingHint =
+		diagnosis === "worker_done_missing"
+			? inferWorkerDoneMissingFailure({
+					journalEvents,
+					failedTaskId,
+				})
+			: null;
+	const doneMissingContext =
+		diagnosis === "worker_done_missing"
+			? enrichWorkerDoneMissingContext(
+					projectRoot,
+					batch.batchId,
+					failedTaskId,
+					classifiedTasks,
+					doneMissingHint,
+				)
+			: null;
 	const resolvedLaunchFailureKind =
 		diagnosis === "worker_orphaned"
 			? enrichLaunchFailureFromWorkerOutput(
@@ -799,6 +871,7 @@ export function reconcileBatch(ctx) {
 		mergeGitignoredFailure,
 		taskBranch,
 		gitignoredPaths,
+		...(doneMissingContext ?? {}),
 	});
 
 	if (diagnosis === "git_unavailable") {
