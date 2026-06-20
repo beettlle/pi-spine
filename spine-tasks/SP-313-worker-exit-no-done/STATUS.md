@@ -1,7 +1,7 @@
 # SP-313: Worker exit without .DONE diagnosis — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -39,11 +39,11 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Operator-runbook updated
-- [ ] Issue #18 closed
-- [ ] `.DONE` created
+- [x] Issue #18 closed
+- [x] `.DONE` created
 
 ---
 
@@ -67,7 +67,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-20 | Task staged | PROMPT.md and STATUS.md created for GitHub #18 |
+| 2026-06-20 | Step 1–3 complete | worker_done_missing taxonomy, tests 986/986, coverage 86.86%, issue #18 closed |
 
 ---
 
