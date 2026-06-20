@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-19 (Phase 37 — SP-311/SP-312 staged for GitHub #15/#16)
+**Last Updated:** 2026-06-20 (Phase 38 — SP-313/SP-314 staged for GitHub #18/#19)
 **Status:** Active
-**Next Task ID:** SP-313
+**Next Task ID:** SP-315
 
 ---
 
@@ -833,6 +833,17 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-312 | run-metrics.jsonl init gitignore | S | **Staged** | — | #16 |
 
 **Suggested batch:** `SP-311` and `SP-312` are disjoint scope — may run in parallel after preflight.
+
+#### Phase 38 — GitHub issue fixes (#18, #19)
+
+**Source:** Open issues [#18](https://github.com/beettlle/pi-spine/issues/18) (worker exit without `.DONE` misdiagnosed as orphan), [#19](https://github.com/beettlle/pi-spine/issues/19) (stall_timeout on long operator matrix tasks).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-313 | Worker exit without .DONE diagnosis | M | **Staged** | — | #18 |
+| SP-314 | Contract stall timeout override | M | **Staged** | — | #19 |
+
+**Suggested batch:** `SP-313` and `SP-314` are disjoint scope — may run in parallel after preflight.
 
 ---
 
