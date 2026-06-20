@@ -2,6 +2,12 @@
  * FR-BATCH-13 diagnosis taxonomy and operator messaging (§18.3).
  */
 
+import {
+	buildWorkerDoneMissingAlternatives,
+	buildWorkerDoneMissingHeadline,
+	buildWorkerDoneMissingSuggestedCommand,
+} from "./diagnosis-worker-done-missing.mjs";
+
 /** @typedef {import("./reconcile.mjs").ReconciliationResult} ReconciliationResult */
 
 export const DIAGNOSIS_TAXONOMY = [
@@ -10,6 +16,7 @@ export const DIAGNOSIS_TAXONOMY = [
 	"needs_retry",
 	"state_drift",
 	"worker_orphaned",
+	"worker_done_missing",
 	"engine_orphaned",
 	"needs_merge",
 	"needs_integrate",
@@ -30,29 +37,17 @@ const NO_PAUSE_DIAGNOSES = new Set([
 
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
 
+const GITIGNORED_MERGE_FAILURE_CLASSES = new Set([
+	"merge_failed_gitignored",
+	"GitignoredDirtyWorktree",
+]);
+
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
 	"code_review_timeout",
 	"final_review_spawn_failed",
 	"final_review_timeout",
 ]);
-
-/**
- * @param {object[]} [journalEvents]
- * @param {string|null} [taskId]
- * @returns {object|null}
- */
-function findLatestTaskFailedEvent(journalEvents, taskId) {
-	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return null;
-	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
-		const event = journalEvents[index];
-		if (event.type !== "task.failed") continue;
-		const eventTaskId = event.taskId ?? event.payload?.taskId;
-		if (taskId && eventTaskId && eventTaskId !== taskId) continue;
-		return event;
-	}
-	return null;
-}
 
 /**
  * @param {string} haystack
@@ -115,6 +110,54 @@ export function inferLaunchFailureFromWorkerOutputTail(outputText) {
 }
 
 /**
+ * @param {object} [ctx]
+ * @param {string|null} [ctx.exitReason]
+ * @param {string|null} [ctx.failureClass]
+ * @param {string|null} [ctx.lastError]
+ * @param {object[]} [ctx.journalEvents]
+ * @returns {boolean}
+ */
+export function inferMergeGitignoredFailure(ctx = {}) {
+	const { exitReason, failureClass, lastError, journalEvents } = ctx;
+	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(exitReason ?? "")) return true;
+	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(failureClass ?? "")) return true;
+
+	const haystackParts = [exitReason, failureClass, lastError];
+	if (Array.isArray(journalEvents)) {
+		for (const event of journalEvents) {
+			if (event.type !== "batch.merge_failed" && event.type !== "task.failed") continue;
+			const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+			haystackParts.push(
+				payload.failureClass,
+				payload.classification,
+				payload.error,
+				payload.output,
+			);
+		}
+	}
+	const haystack = haystackParts.filter(Boolean).join("\n").toLowerCase();
+	return (
+		haystack.includes("gitignored dirty files only") ||
+		haystack.includes("merge_failed_gitignored") ||
+		haystack.includes("gitignoreddirtyworktree") ||
+		(haystack.includes("git add") && haystack.includes("ignored"))
+	);
+}
+
+/**
+ * @param {string|null|undefined} taskBranch
+ * @param {string[]|null|undefined} gitignoredPaths
+ */
+export function buildGitignoredMergeRepairCommand(taskBranch, gitignoredPaths) {
+	const branchHint = taskBranch ? `git checkout ${taskBranch}` : "git checkout <task-branch>";
+	const pathHint =
+		Array.isArray(gitignoredPaths) && gitignoredPaths.length > 0
+			? `git rm -r --cached -- ${gitignoredPaths.slice(0, 5).join(" ")}`
+			: "git rm -r --cached -- <gitignored-paths>";
+	return `${branchHint} && ${pathHint} && spine batch resume --force`;
+}
+
+/**
  * @param {object} ctx
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
@@ -162,8 +205,15 @@ export function inferLaunchFailureKind(ctx = {}) {
  * @param {string|null} [ctx.salvageRetryCommand]
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
+ * @param {boolean} [ctx.mergeGitignoredFailure]
+ * @param {string|null} [ctx.taskBranch]
+ * @param {string[]|null} [ctx.gitignoredPaths]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
+	if (ctx.mergeGitignoredFailure) {
+		return buildGitignoredMergeRepairCommand(ctx.taskBranch, ctx.gitignoredPaths);
+	}
+
 	switch (diagnosis) {
 		case "limbo_stale":
 		case "completed_manual":
@@ -206,6 +256,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch abort";
+		case "worker_done_missing":
+			return buildWorkerDoneMissingSuggestedCommand(ctx);
 		case "engine_orphaned":
 			return "spine batch resume --attached";
 		case "needs_merge":
@@ -254,9 +306,14 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {number} [ctx.salvageChangedFileCount]
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
+ * @param {boolean} [ctx.mergeGitignoredFailure]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
+
+	if (ctx.mergeGitignoredFailure) {
+		return `${batchLabel} merge blocked by gitignored paths on a lane branch — drop cached ignored files, then resume`;
+	}
 
 	switch (diagnosis) {
 		case "limbo_stale":
@@ -271,6 +328,11 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return `${batchLabel} failed at worker launch — repair lane worktree git, then retry`;
 			}
 			if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				if (ctx.exitReason === "GitignoredDirtyWorktree" || ctx.mergeGitignoredFailure) {
+					return ctx.failedTaskId
+						? `${batchLabel} task ${ctx.failedTaskId} left gitignored dirty files on the lane branch`
+						: `${batchLabel} lane commit refused gitignored-only dirty files`;
+				}
 				return ctx.failedTaskId
 					? `${batchLabel} task ${ctx.failedTaskId} completed but lane commit failed`
 					: `${batchLabel} completed but lane commit failed`;
@@ -320,11 +382,16 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `${batchLabel} lane worker orphaned while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} lane worker orphaned — retry or abort`;
+		case "worker_done_missing":
+			return buildWorkerDoneMissingHeadline(batchLabel, ctx);
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
 				: `${batchLabel} batch engine died while running — retry or abort`;
 		case "needs_merge":
+			if (ctx.mergeGitignoredFailure) {
+				return `${batchLabel} merge blocked by gitignored paths committed on a lane branch`;
+			}
 			return `${batchLabel} tasks done — lane merges pending`;
 		case "needs_integrate":
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
@@ -378,6 +445,8 @@ export function buildAlternatives(diagnosis, ctx = {}) {
 			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
 		case "worker_orphaned":
 			return ["spine batch abort", "spine batch resume --force", ...common];
+		case "worker_done_missing":
+			return buildWorkerDoneMissingAlternatives(ctx, common);
 		case "engine_orphaned":
 			return ctx.failedTaskId
 				? [`spine batch retry ${ctx.failedTaskId}`, "spine batch abort", ...common]

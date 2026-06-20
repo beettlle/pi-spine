@@ -43,6 +43,7 @@ export const SPINE_GITIGNORE_ENTRIES = [
 	".spine/runtime/",
 	".spine/batch-state.json",
 	".spine/batch-history.json",
+	".spine/run-metrics.jsonl",
 	".worktrees/",
 ];
 

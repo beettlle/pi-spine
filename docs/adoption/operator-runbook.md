@@ -43,13 +43,13 @@ spine batch resume --attached
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
-After `engine_orphaned`, `worker_orphaned`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
+After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
 
 **Orphan recovery tree:**
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume. When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
+3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume; `worker_done_missing` → `spine batch retry <id>` (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -365,6 +365,8 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
+| `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
+| `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
 | `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
@@ -508,6 +510,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | Diagnosis | Action |
 |-----------|--------|
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
+| `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
 | Other files | Resolve in the lane worktree under `.worktrees/spine-<batchId>/lane-N`, commit on lane branch, then resume batch |
@@ -736,6 +739,25 @@ Workers should **not** retry or treat the skip as failure. Task PROMPTs for real
 2. Detached `spine batch resume --force` (without `--attached`) defaults to `--wait-terminal` for orphan diagnoses and blocks up to **2 hours** while the attached child engine runs.
 3. If plan `review.failed` with `nested_spawn_blocked` is still in the journal (pre-SP-278 PATH), retry the task first: `spine batch retry <taskId>`.
 
+### Worker exited without `.DONE` (SP-313 / issue #18)
+
+**Symptoms:** Task fails in seconds with journal `lane.died` → `task.failed`, output `pi exited but .DONE was not created`, `doneFound: false`, `changedFileCount: 0`. `spine status --diagnose` reports **`worker_done_missing`** (not `worker_orphaned` or generic `needs_retry`). Headline cites `.spine/runtime/<batchId>/lanes/lane-<N>/worker-output-<taskId>.log` and the last worker output lines.
+
+**Cause:** pi or agent session exited before writing `.DONE` — launch/config error, prompt rejection, or early tool failure. This is **not** an orphan stall (worker PID already exited and batch-state marks the task failed).
+
+**Recovery:**
+
+1. Read the worker output log path from `--diagnose` headline (or `spine journal tail` → `task.failed` → `workerOutputLogRef`).
+2. Fix the underlying blocker (config, PROMPT, credentials, model error) in the lane worktree if needed.
+3. Retry in place:
+
+   ```bash
+   spine batch retry <taskId>
+   spine batch resume --attached
+   ```
+
+**Do not** use `spine batch resume --attached --force` orphan recovery — the worker already terminated cleanly without completing the task.
+
 ### Plan review `review.failed` + `worker_orphaned` (SP-308 / batch 20260619T020951)
 
 **Symptoms:** Journal shows **`review.started`** (plan, step 0) then **`review.failed`** with `reason: nested_spawn_blocked` (not **`review.skipped`**). Dashboard later reports **`worker_orphaned`** for the same task (~14h stall in batch `20260619T020951` / SP-306).
@@ -831,7 +853,7 @@ spine metrics show --last 20
 | `finalAttempts` | Final review attempt count (capped by `review.maxFinalAttempts`) |
 | `outcome` | `completed`, `failed`, or `skipped` |
 
-Data appends to `.spine/run-metrics.jsonl` when `metrics.enabled` is true (default). Disable with `"metrics": { "enabled": false }` in `.spine/spine-config.json`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4. `spine doctor` hints when the metrics file exists.
+Data appends to `.spine/run-metrics.jsonl` when `metrics.enabled` is true (default). The path is added to `.gitignore` by `spine init`. If the file was committed before upgrading, `spine doctor` warns with `git rm --cached .spine/run-metrics.jsonl`; until then, preflight ignores append-only changes to that path. Disable collection with `"metrics": { "enabled": false }` in `.spine/spine-config.json`. v1.3 collects metrics only; `spine settings suggest-models` is deferred to v1.4. `spine doctor` hints when the metrics file exists.
 
 ---
 
@@ -894,8 +916,25 @@ Oversized task packets and wide parallel waves are the main cause of **stall_tim
 | Run **≤4** parallel M tasks per wave; land between waves | Batch `20260603T225112` stalled 5/8 tasks at once |
 | Set `lanes.stallTimeoutMinutes` ≥ **120** for real `pi` | Template default; doctor warns if unset/low |
 | Use PROMPT **Size:** S/M/L | Engine applies per-task floor (SP-088): M→180m, L→300m |
+| Operator matrix / 2h+ external jobs | Add `stallTimeoutMinutes: 240` (or higher) to task `## Contract` (SP-314); optional `extendGraceOnFileScope: true` when only `STATUS.md` changes during the run |
 
 `spine doctor` warns on oversized **pending** packets (XL, >4 steps, wide file scope). `skills/create-spine-tasks` documents decomposition rules.
+
+#### Contract stall override (SP-314)
+
+When a single task runs a long external job (matrix arms, remote CI) with little lane git/STATUS checkpoint progress, raise the **per-task** stall budget in `## Contract` instead of the global `lanes.stallTimeoutMinutes`:
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| stallTimeoutMinutes | 240 |
+| extendGraceOnFileScope | true |
+```
+
+The engine applies `max(global, size floor, contract.stallTimeoutMinutes)` for both the worker stall loop and `SPINE_WORKER_PI_TIMEOUT_MS`. Set `extendGraceOnFileScope: true` when the worker only touches in-scope `STATUS.md` during the external phase (batch `20260620T043504` / SP-029 pattern).
 
 ### Stall diagnosis (5-minute path)
 

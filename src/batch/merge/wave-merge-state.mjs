@@ -77,6 +77,7 @@ export function isWaveForceMerged(state, waveIndex) {
  * @param {string | null} [params.mergeCommit]
  * @param {number | null} [params.failedLane]
  * @param {string | null} [params.failureReason]
+ * @param {string | null} [params.failureClass]
  */
 export function recordWaveMergeResult({
 	state,
@@ -85,6 +86,7 @@ export function recordWaveMergeResult({
 	mergeCommit = null,
 	failedLane = null,
 	failureReason = null,
+	failureClass = null,
 }) {
 	state.mergeResults = state.mergeResults ?? [];
 	const existingIndex = state.mergeResults.findIndex((entry) => entry?.waveIndex === waveIndex);
@@ -94,6 +96,7 @@ export function recordWaveMergeResult({
 		forceMerged: isWaveForceMerged(state, waveIndex),
 		failedLane,
 		failureReason,
+		failureClass,
 		mergeCommit,
 	};
 	if (existingIndex >= 0) {

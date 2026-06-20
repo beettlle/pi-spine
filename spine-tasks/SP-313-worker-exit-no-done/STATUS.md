@@ -1,7 +1,7 @@
 # SP-313: Worker exit without .DONE diagnosis — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,39 +11,39 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #18 journal timeline reconstructed
-- [ ] Runner → journal output path confirmed
-- [ ] Orphan vs early-exit conflation points listed
+- [x] Issue #18 journal timeline reconstructed
+- [x] Runner → journal output path confirmed
+- [x] Orphan vs early-exit conflation points listed
 
 ---
 
 ### Step 1: Taxonomy and diagnosis surfacing
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Distinct diagnosis kind for done-missing exit
-- [ ] Reconcile/diagnosis mapping for task.failed payload
-- [ ] Headline + suggestedCommand cite worker log
+- [x] Distinct diagnosis kind for done-missing exit
+- [x] Reconcile/diagnosis mapping for task.failed payload
+- [x] Headline + suggestedCommand cite worker log
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test from issue #18 pattern
-- [ ] Diagnosis ≠ worker_orphaned assertion
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] Regression test from issue #18 pattern
+- [x] Diagnosis ≠ worker_orphaned assertion
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator-runbook updated
-- [ ] Issue #18 closed
-- [ ] `.DONE` created
+- [x] Operator-runbook updated
+- [x] Issue #18 closed
+- [x] `.DONE` created
 
 ---
 
@@ -58,6 +58,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Fast done-missing exits land as `needs_retry` via `hasFailedTasks` branch; orphan path only when task still `running` with dead PID | Fix in deriveDiagnosis | `reconcile.mjs` |
+| Output string originates in `bin/spine-worker-runner.mjs` stderr → worker-host output → `task.failed` payload | No runner change | `engine-lanes.mjs` |
 
 ---
 
@@ -65,7 +67,7 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-20 | Task staged | PROMPT.md and STATUS.md created for GitHub #18 |
+| 2026-06-20 | Step 1–3 complete | worker_done_missing taxonomy, tests 986/986, coverage 86.86%, issue #18 closed |
 
 ---
 

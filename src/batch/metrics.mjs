@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { METRICS_DEFAULTS } from "../config/defaults.mjs";
 import { readReviewLevel } from "./review.mjs";
 
@@ -23,6 +24,57 @@ export function isMetricsEnabled(config = {}) {
 export function metricsFilePath(projectRoot, config = {}) {
 	const relPath = config?.metrics?.path ?? METRICS_DEFAULTS.path;
 	return path.join(projectRoot, relPath);
+}
+
+/**
+ * True when the only dirty path is the configured metrics file and working tree is append-only vs HEAD.
+ *
+ * @param {string} projectRoot
+ * @param {string[]} dirtyPaths Trimmed paths from `git status --porcelain` (no status prefix).
+ * @param {string} [metricsRelPath]
+ * @returns {{ ok: boolean, reason?: string, metricsPath?: string }}
+ */
+export function isRunMetricsAppendOnlyDrift(
+	projectRoot,
+	dirtyPaths,
+	metricsRelPath = METRICS_DEFAULTS.path,
+) {
+	const normalizedDirty = (dirtyPaths ?? [])
+		.map((entry) => String(entry).trim().replace(/\\/g, "/"))
+		.filter(Boolean);
+	if (normalizedDirty.length !== 1) {
+		return { ok: false, reason: "not_metrics_only" };
+	}
+
+	const normalizedMetrics = String(metricsRelPath).trim().replace(/\\/g, "/");
+	const dirtyPath = normalizedDirty[0].replace(/\\/g, "/");
+	if (dirtyPath !== normalizedMetrics) {
+		return { ok: false, reason: "not_metrics_path" };
+	}
+
+	const filePath = path.join(projectRoot, normalizedMetrics);
+	if (!fs.existsSync(filePath)) {
+		return { ok: false, reason: "metrics_missing" };
+	}
+
+	let headText = "";
+	try {
+		headText = execFileSync("git", ["show", `HEAD:${normalizedMetrics}`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+	} catch {
+		return { ok: false, reason: "no_head_metrics" };
+	}
+
+	const workText = fs.readFileSync(filePath, "utf-8");
+	if (!workText.startsWith(headText)) {
+		return { ok: false, reason: "non_append_change" };
+	}
+
+	return { ok: true, metricsPath: normalizedMetrics };
 }
 
 /**

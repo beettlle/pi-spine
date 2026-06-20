@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { filterGitignoredPaths, gitAddFilteredPaths } from "./git-helpers.mjs";
 import { gitExec } from "./git-exec.mjs";
 
 /**
@@ -105,6 +106,31 @@ export function countCommitsAhead(projectRoot, baseRef, headRef) {
 }
 
 /**
+ * @param {string} worktreePath
+ */
+function listIgnoredUntrackedPaths(worktreePath) {
+	const output = execFileSync("git", ["ls-files", "-o", "-i", "--exclude-standard"], {
+		cwd: worktreePath,
+		encoding: "utf-8",
+		stdio: ["ignore", "pipe", "pipe"],
+	}).trim();
+	if (!output) return [];
+	return output.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * @param {string} porcelain
+ * @returns {string[]}
+ */
+function listPorcelainPaths(porcelain) {
+	if (!porcelain?.trim()) return [];
+	return porcelain
+		.split("\n")
+		.map((line) => extractPorcelainPath(line))
+		.filter((entry) => Boolean(entry));
+}
+
+/**
  * Stage and commit uncommitted lane work when the worker left a `.DONE` marker.
  *
  * @param {object} params
@@ -114,13 +140,15 @@ export function countCommitsAhead(projectRoot, baseRef, headRef) {
  * @param {string} params.batchId
  * @param {string} params.taskFolder Absolute path to task folder (for `.DONE` check)
  * @param {string} [params.projectRoot] Main repo root for git identity resolution
- * @returns {{ ok: true, committed: boolean, commitSha?: string } | { ok: false, error: string, failureClass: string }}
+ * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
  */
 export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, taskFolder, projectRoot }) {
 	const identityRoot = projectRoot ?? worktreePath;
 	try {
 		const porcelain = gitPorcelain(worktreePath);
-		if (!porcelain) {
+		const dirtyPaths = listPorcelainPaths(porcelain);
+		const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
+		if (dirtyPaths.length === 0 && ignoredUntrackedPaths.length === 0) {
 			return { ok: true, committed: false };
 		}
 
@@ -133,15 +161,35 @@ export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, 
 			};
 		}
 
+		const { stageable, skipped: gitignoredDirtyPaths } = filterGitignoredPaths(worktreePath, dirtyPaths);
+		const gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
+		if (stageable.length === 0 && gitignoredPaths.length > 0) {
+			const preview = gitignoredPaths.slice(0, 20).join(", ");
+			const suffix = gitignoredPaths.length > 20 ? "…" : "";
+			return {
+				ok: false,
+				error:
+					`Lane worktree has gitignored dirty files only (${preview}${suffix}) — ` +
+					"remove from the index with git rm --cached on the task branch before resume",
+				failureClass: "GitignoredDirtyWorktree",
+				gitignoredPaths,
+			};
+		}
+
 		const currentBranch = git(worktreePath, ["rev-parse", "--abbrev-ref", "HEAD"], identityRoot);
 		if (currentBranch !== taskBranch) {
 			git(worktreePath, ["checkout", taskBranch], identityRoot);
 		}
-		git(worktreePath, ["add", "-A"], identityRoot);
+		const addResult = gitAddFilteredPaths(worktreePath, stageable, { projectRoot: identityRoot });
 		const message = `feat(${taskId}): batch ${batchId} worker completion`;
 		git(worktreePath, ["commit", "-m", message], identityRoot);
 		const commitSha = git(worktreePath, ["rev-parse", "HEAD"], identityRoot);
-		return { ok: true, committed: true, commitSha };
+		return {
+			ok: true,
+			committed: true,
+			commitSha,
+			skippedGitignoredPaths: [...addResult.skipped, ...gitignoredPaths],
+		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		return {
