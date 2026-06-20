@@ -1,7 +1,7 @@
 # SP-312: run-metrics.jsonl init gitignore — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,22 +29,22 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Init gitignore test
 - [x] Preflight metrics-only dirty test
 - [x] Doctor tracked-metrics test
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Runbook updated (if needed)
-- [ ] Issue #16 closed
-- [ ] `.DONE` created
+- [x] Issue #16 closed
+- [x] `.DONE` created
 
 ---
 
@@ -69,6 +69,7 @@
 |-----------|--------|---------|
 | 2026-06-19 | Task staged | PROMPT.md and STATUS.md created for GitHub #16 |
 | 2026-06-20 | Step 0–1 | Init gitignore, preflight drift, doctor tracked-metrics |
+| 2026-06-20 | Step 2–3 | Tests pass (977/977), coverage 86.84%, runbook updated |
 
 ---
 
@@ -80,4 +81,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Full suite: `env -u SPINE_WORKER_PI_TIMEOUT_MS SPINE_WORKER_STUB=1 npm test` — 977 pass. Issue #16 was already closed on GitHub.
