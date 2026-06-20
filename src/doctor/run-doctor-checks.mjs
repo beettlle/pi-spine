@@ -442,6 +442,27 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 				suggestedCommand: missing.length > 0 ? "spine init" : undefined,
 			});
 		}
+
+		const metricsRelPath = configResult.config?.metrics?.path ?? ".spine/run-metrics.jsonl";
+		try {
+			const tracked = execFileSync("git", ["ls-files", "--", metricsRelPath], {
+				cwd: projectRoot,
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				timeout: 5000,
+			}).trim();
+			if (tracked) {
+				checks.push({
+					label: "run-metrics.jsonl not git-tracked",
+					ok: true,
+					warning: true,
+					detail: `${metricsRelPath} is tracked by git — runtime appends break preflight until untracked`,
+					suggestedCommand: `git rm --cached -- ${metricsRelPath}`,
+				});
+			}
+		} catch {
+			// Git ls-files unavailable; skip tracked-metrics advisory.
+		}
 	}
 
 	const rulesRootPath = path.join(projectRoot, CURSOR_RULES_ROOT_REL);
