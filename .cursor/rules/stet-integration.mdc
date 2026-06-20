@@ -1,6 +1,6 @@
 ---
 description: "Stet CLI usage - commands and dismiss reasons for Cursor and stet-assisted review"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Stet integration

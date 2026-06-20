@@ -405,7 +405,7 @@ If project has convention keep it. New projects: kebab-case for most files; Pasc
 ✅ Good: `test('should fetch user data', async () => { const user = await fetchUser(id); expect(user).toBeDefined(); });` (async/await in tests), `await expect(fetchUser(id)).resolves.toBeDefined();` (promise assertions), proper async test handling
 ⚠️ Why: Tests that don't wait for async operations give false positives; `setTimeout` is flaky; not awaiting promises causes race conditions
 🔧 Fix: Use `async/await` in async tests; use promise assertions; wait for all async operations; avoid `setTimeout` for async testing
-📍 See: `general-llm-anti-patterns.mdc` section 6.5
+📍 See: `general-llm-anti-patterns.mdc` section 6.4
 **Detect:** Tests that don't wait for async operations, `setTimeout` for async testing, not awaiting promises in tests, flaky async tests
 
 ---
@@ -418,7 +418,7 @@ If project has convention keep it. New projects: kebab-case for most files; Pasc
 ✅ Good: Each test is independent, mock external dependencies, `jest.mock('./api');` (mock modules), `const mockFetch = jest.fn();` (mock functions), use test fixtures for data, clean up after tests
 ⚠️ Why: Tests that depend on each other are brittle; shared state causes test interference; hitting real APIs/databases makes tests slow and unreliable; no mocking makes tests depend on external systems
 🔧 Fix: Make tests independent; mock external dependencies; use test fixtures; clean up after tests; avoid shared state
-📍 See: `general-llm-anti-patterns.mdc` section 6.1, 6.5
+📍 See: `general-llm-anti-patterns.mdc` section 6.1, 6.4
 **Detect:** Tests that depend on each other, tests that modify shared state, tests that hit real APIs/databases, no mocking of external dependencies, shared test data
 
 ---

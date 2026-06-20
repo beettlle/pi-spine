@@ -131,7 +131,7 @@ This file contains AI/ML-specific development standards for PyTorch, TensorFlow,
 ✅ Good: `torch.use_deterministic_algorithms(True)` or accept non-determinism explicitly
 ⚠️ Why: Results vary between runs, breaks reproducibility, cannot compare experiments
 🔧 Fix: Enable deterministic mode or document non-deterministic choices, check algorithm determinism
-📍 See: PyTorch deterministic algorithms, `general-llm-anti-patterns.mdc` section 6.5
+📍 See: PyTorch deterministic algorithms, `general-llm-anti-patterns.mdc` section 6.4
 
 **Detect:** Dropout without deterministic mode, non-deterministic algorithms, missing deterministic flags
 

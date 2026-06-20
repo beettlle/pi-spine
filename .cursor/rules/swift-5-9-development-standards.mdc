@@ -165,7 +165,7 @@ To prevent "God Objects" and "Smart UI", strict layer separation is enforced:
 ✅ Good: Wait for actual condition or use proper async/await
 ⚠️ Why: Task.sleep creates race conditions, unreliable timing
 🔧 Fix: Use async streams, asyncPublisher.values, or proper async/await
-📍 See: `general-llm-anti-patterns.mdc` section 6.5
+📍 See: `general-llm-anti-patterns.mdc` section 6.4
 
 **Detect:** Task.sleep for synchronization, sleep instead of proper async wait
 

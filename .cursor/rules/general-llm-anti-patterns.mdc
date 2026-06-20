@@ -643,7 +643,7 @@ This file contains universal, language-agnostic rules to prevent common LLM-indu
 🔧 Fix: Mocks must match real API signatures and behavior; test both success and failure cases; verify mocks against real API documentation; use contract testing
 📍 See: Examples in `critical-rules-quick-reference.mdc` section 10
 
-**Detect:** Mocks that don't match real API behavior, tests pass but integration fails, mock returns different shape, mock doesn't throw errors that real API throws
+**Detect:** Mocks that don't match real API behavior, mock behavior differs from production, tests pass but integration fails, mock returns different shape or types, mock doesn't throw errors that real API throws, mock has different method signatures
 
 ---
 
@@ -674,20 +674,7 @@ This file contains universal, language-agnostic rules to prevent common LLM-indu
 
 ---
 
-### 6.4 Mock Mismatches
-
-**CRITICAL:** Mocks must accurately reflect real implementation. Mismatched mocks lead to false confidence.
-
-❌ Bad: Mock behavior differs from production, mock doesn't throw errors that real implementation throws, mock returns different types
-✅ Good: Mocks match real API behavior exactly, test both success and failure cases in mocks, verify mocks against real implementation
-⚠️ Why: False confidence (tests pass but production fails), integration failures, production bugs, wasted debugging time
-🔧 Fix: Mocks must match real API behavior exactly; test both success and failure cases; verify mocks against real implementation; use contract testing
-
-**Detect:** Mock behavior differs from production, mock doesn't throw errors that real implementation throws, mock returns different types, mock has different method signatures
-
----
-
-### 6.5 Flaky Tests
+### 6.4 Flaky Tests
 
 **CRITICAL:** Tests must be deterministic. Tests that depend on timing or external state are unreliable.
 

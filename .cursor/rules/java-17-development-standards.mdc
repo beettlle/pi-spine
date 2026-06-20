@@ -507,7 +507,7 @@ One public class per file; filename = PascalCase class name + `.java` (case-sens
 ✅ Good: `when(mockRepo.findById("123")).thenReturn(Optional.of(expected)); Optional<User> r = service.getUser("123"); assertThat(r).contains(expected); verify(mockRepo).findById("123");`
 ⚠️ Why: Tests fast, deterministic, isolated; mocks give control; test your code, not frameworks
 🔧 Fix: Mockito at boundaries (repo, clients); verify when important
-📍 See: `general-llm-anti-patterns.mdc` section 6.1, 6.4
+📍 See: `general-llm-anti-patterns.mdc` section 6.1
 **Detect:** Real DB/API in tests, slow/flaky tests, tests requiring external setup
 
 ---

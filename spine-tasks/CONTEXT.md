@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-19 (Phase 36 — SP-310 staged for GitHub #14; batch 20260619T020951 landed)
+**Last Updated:** 2026-06-19 (Phase 37 — SP-311/SP-312 staged for GitHub #15/#16)
 **Status:** Active
-**Next Task ID:** SP-311
+**Next Task ID:** SP-313
 
 ---
 
@@ -822,6 +822,17 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-310 | Wave merge adoption docs conflict resolution | M | **Staged** | SP-305 |
 
 **Suggested batch:** `SP-310` after `SP-308` `SP-309` (depends on SP-305 — landed).
+
+#### Phase 37 — GitHub issue fixes (#15, #16)
+
+**Source:** Open issues [#15](https://github.com/beettlle/pi-spine/issues/15) (merge `git add` on gitignored paths), [#16](https://github.com/beettlle/pi-spine/issues/16) (run-metrics.jsonl breaks preflight git-clean).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-311 | Merge gitignored path filter | M | **Staged** | — | #15 |
+| SP-312 | run-metrics.jsonl init gitignore | S | **Staged** | — | #16 |
+
+**Suggested batch:** `SP-311` and `SP-312` are disjoint scope — may run in parallel after preflight.
 
 ---
 

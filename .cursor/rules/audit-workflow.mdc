@@ -71,18 +71,23 @@ The repository includes comprehensive brutal audit workflows:
    - "check for anti-patterns"
    - "verify phase completion"
    - "run the Swift audit", "run the Python audit", "run the Java audit", "run the Go audit", "run the Rust audit", or "run the JavaScript audit"
-3. **Review the audit results** - The audit will provide:
-   - Critical violations with file locations
-   - Severity ratings (CRITICAL/HIGH/MEDIUM/LOW)
-   - Recommended fixes
-   - Effort estimates
-   - Overall cleanliness score
-   - Top 10 files requiring refactoring
-   - Technical debt tracker
-4. **Address blockers** - Before proceeding to the next phase:
+3. **Review the audit results** — output depends on scope:
+
+   **Full phase-completion audit** (default when the user says "run the audit" or "verify phase completion" without naming a section):
+   - Per-violation report: severity (CRITICAL/HIGH/MEDIUM/LOW), file, lines, recommended fix, effort estimate
+   - **Section G** from the invoked language audit: cleanliness score table (G1), Top 10 files (G2), technical debt tracker (G3)
+   - Exit line: `Ready for Phase [X+1]? YES/NO`
+
+   **Section-specific audit** (e.g. "Run Section A"):
+   - Output only for the requested section(s)
+   - Section G deliverables are not required unless Section G is explicitly requested or a full audit is run
+
+   All `*-brutal-audit.mdc` files share Section G structure; see the invoked audit file for the exact template.
+
+4. **Address blockers** — before proceeding to the next phase (applies to **full** audits, not sectional spot-checks):
    - Fix all CRITICAL and HIGH severity issues
    - Document any acceptable technical debt
-   - Ensure the audit concludes with "Ready for Phase [X+1]? YES"
+   - Ensure the full audit concludes with "Ready for Phase [X+1]? YES"
 
 ## Integration with Development Standards
 

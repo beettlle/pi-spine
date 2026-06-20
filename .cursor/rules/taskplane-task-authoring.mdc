@@ -1,6 +1,6 @@
 ---
 description: "Create Taskplane-style task packets (PROMPT.md, STATUS.md, CONTEXT.md) for autonomous execution outside Cursor. Use when asked to create, stage, queue, or plan tasks—not when implementing code."
-globs: "**/PROMPT.md, **/STATUS.md, **/taskplane-tasks/**, **/docs/task-management/**"
+globs: ["**/PROMPT.md", "**/STATUS.md", "**/taskplane-tasks/**", "**/docs/task-management/**"]
 alwaysApply: false
 ---
 

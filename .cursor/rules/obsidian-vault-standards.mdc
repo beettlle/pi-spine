@@ -1,6 +1,6 @@
 ---
 description: "Obsidian vault anti-patterns for OFM notes, Bases, and JSON Canvas"
-globs: ["**/*.md", "**/*.base", "**/*.canvas"]
+globs: ["**/*.base", "**/*.canvas"]
 alwaysApply: false
 ---
 

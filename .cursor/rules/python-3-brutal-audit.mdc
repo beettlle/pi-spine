@@ -24,7 +24,7 @@ You are the **Lead Architectural Auditor**. Your goal is to be critical, rigorou
 
 **Role:** Lead Architectural Auditor  
 **Context:** Phase [X] Implementation Review  
-**Version:** 2.0 (Updated for Python 3.13, Tornado, pytest)
+**Version:** 2.1 (Updated for Python 3.13+, asyncio, pytest)
 
 We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/python-3-development-standards.mdc`, `.cursor/rules/general-llm-anti-patterns.mdc`, and `PRODUCT_SPECIFICATION.md` (if present).
 
@@ -67,11 +67,11 @@ Search for this exact anti-pattern in async functions:
 - Methods that wrap >80% of their body in synchronous work
 
 **Violation:** Async function that declares async but doesn't actually benefit from async/await.
-**Fix:** Use proper async I/O (`await asyncio.sleep()`, `tornado.httpclient.AsyncHTTPClient`), or make it synchronous.
+**Fix:** Use proper async I/O (`await asyncio.sleep()`, `httpx.AsyncClient`, `aiohttp`, or framework-native async clients), or make it synchronous.
 
 ### A2. Pass-Through "Ghost Layer" Services
 
-Check services in `searchaton/api/`, `searchaton/crawler/`, `searchaton/indexer/`:
+Check services in `src/services/`, `src/api/`, `src/domain/`, or project-equivalent layers:
 
 - If >80% of methods are single-line `return await repository.method()`, it's a ghost layer.
 - If a service wraps only ONE dependency with no coordination or logic, flag it.
@@ -97,17 +97,17 @@ for item in items:
     await process_item(item)  # ❌ Each call fetches/saves
 ```
 
-**Check:** `add_posts()`, `index_posts()`, bulk import methods - are they batch optimized?
+**Check:** Bulk import, indexing, and batch persistence methods — are they batch optimized?
 
 ### A5. "Hallucination-Implementation" API Workarounds
 
 Search for:
 
-- Using custom implementations when Tornado/Whoosh/SQLite provides the feature
+- Using custom implementations when stdlib or the project's framework/ORM provides the feature
 - Multi-step searches to find something by ID when direct lookup exists
-- Comments saying "Tornado doesn't provide X" or "Whoosh doesn't support Y" (did anyone actually check the docs?)
-- Custom URL construction that Tornado's routing already provides
-- Using `requests` when `tornado.httpclient.AsyncHTTPClient` should be used
+- Comments saying "Python doesn't provide X" or "Framework Y doesn't support Z" without checking docs
+- Custom URL construction when the web framework's routing already provides it
+- Using blocking `requests` in async code when `httpx.AsyncClient` or `aiohttp` should be used
 
 ### A6. AI-Apologetic Defensive Comments
 
@@ -126,17 +126,17 @@ Flag comments that:
 
 ### B1. Model Layer Purity Check
 
-Scan `searchaton/models/`:
+Scan `src/models/` or `**/models/`:
 
 ```bash
-grep -r "import tornado\|import whoosh\|import sqlite3" searchaton/models/
+grep -r "import fastapi\|import django\|import sqlalchemy\|import httpx" src/models/
 ```
 
-**Result should be minimal** - only for type hints if needed. Any framework imports in models = immediate fix required.
+**Result should be minimal** — only for type hints if needed. Any framework/HTTP/DB driver imports in domain models = immediate fix required.
 
 ### B2. Business Logic Location
 
-Flag any Repository/DAO method in `searchaton/models/database.py` that:
+Flag any Repository/DAO method in `repositories/` or `**/repositories/` that:
 
 - Contains business rules (validation beyond data integrity)
 - Calculates derived values (should be in domain/service layer)
@@ -145,7 +145,7 @@ Flag any Repository/DAO method in `searchaton/models/database.py` that:
 
 ### B3. Data Boundary Verification
 
-In `searchaton/api/handlers.py` and `searchaton/search/`:
+In `api/handlers/`, `src/api/`, or `services/`:
 
 - Are database models returned directly to templates?
 - Is every database object mapped to a clean DTO/dict before crossing boundaries?
@@ -160,7 +160,7 @@ In `searchaton/api/handlers.py` and `searchaton/search/`:
 Check all async functions:
 
 - ✅ Using `await` for all I/O operations
-- ✅ Using `tornado.httpclient.AsyncHTTPClient` (not `requests`)
+- ✅ Using async HTTP clients (`httpx.AsyncClient`, `aiohttp`) — not blocking `requests`
 - ✅ Using `await asyncio.sleep()` (not `time.sleep()`)
 - ❌ Using `time.sleep()` in async functions (should be `await asyncio.sleep()`)
 - ❌ Blocking database operations in async functions (should use async DB drivers or thread pool)
@@ -168,12 +168,12 @@ Check all async functions:
 
 ### C2. Hot Path Performance
 
-For search, indexing, and crawling operations:
+For search, indexing, and data-heavy operations:
 
 - Does removing 1 item require fetching ALL items?
 - Does finding an item by ID convert EVERY item to DTO?
 - Are database queries using proper indexes?
-- Are Whoosh queries optimized with limits?
+- Are search/full-text queries optimized with limits?
 - Are batch operations used instead of loops?
 
 ### C3. State Management Separation
@@ -237,22 +237,22 @@ Check for proper Python 3.13 patterns:
 
 ---
 
-## 🟣 SECTION F: Web/Template Compliance
+## 🟣 SECTION F: Web Framework Compliance
 
-### F1. Tornado Template Best Practices
+### F1. Web Framework Patterns
 
-- Are templates using base template inheritance?
-- Are static files properly configured with Tornado's `StaticFileHandler`?
+- Are templates using base template inheritance (Jinja2, Django templates, etc.)?
+- Are static files served via framework static handling (not ad-hoc file reads)?
 - Are template variables properly escaped to prevent XSS?
-- Are error templates (404, 500) implemented?
+- Are error pages (404, 500) implemented?
 
 ### F2. Web Anti-Patterns
 
-- ❌ Custom error handling when Tornado provides it (use `write_error()`)
+- ❌ Custom error handling when the framework provides middleware/handlers
 - ❌ `time.sleep()` for waiting on data (use async/await)
-- ❌ Custom routing when Tornado's routing works
+- ❌ Custom routing when the framework's router/blueprint system works
 - ❌ Inline styles/scripts in templates (use static files)
-- ❌ Hardcoded URLs instead of `reverse_url()` or `RequestHandler.reverse_url()`
+- ❌ Hardcoded URLs instead of framework URL helpers (`url_for`, `reverse`, named routes)
 
 ---
 
@@ -373,7 +373,7 @@ For each violation found, provide:
 
 ```
 🚨 [CRITICAL/HIGH/MEDIUM/LOW] - Category A1: Fake Async Pattern
-📍 File: searchaton/crawler/worker.py
+📍 File: src/crawler/worker.py
 📝 Lines: 45-120
 ❌ Issue: Async function uses time.sleep() instead of await asyncio.sleep()
 ✅ Fix: Replace time.sleep() with await asyncio.sleep()
@@ -391,7 +391,7 @@ End with: **"Ready for Phase [X+1]? YES/NO - If NO, list blockers."**
 3. **No Dead Code** - No placeholder methods, no discarded results
 4. **Batch Operations** - No O(N²) loops on collections
 5. **Business Logic in Domain** - Repositories are CRUD only
-6. **Use Proper Tornado/Whoosh APIs** - No fragile workarounds
+6. **Use Proper Framework/Stdlib APIs** - No fragile workarounds
 7. **Extract Repeated Patterns** - DRY (Don't Repeat Yourself)
 8. **No Defensive Commenting** - Refactor instead of justify
 9. **Optimize Hot Paths** - No full collection fetches for single ops
