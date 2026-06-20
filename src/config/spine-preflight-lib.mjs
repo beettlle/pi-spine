@@ -21,6 +21,8 @@ import { discoverTasks } from "../tasks/packet/discover.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
 import { summarizePendingScope } from "../planner/pending.mjs";
 import { validatePrompt } from "../tasks/packet/validate-prompt.mjs";
+import { isRunMetricsAppendOnlyDrift } from "../batch/metrics.mjs";
+import { METRICS_DEFAULTS } from "./defaults.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
@@ -186,6 +188,23 @@ export function checkGitClean(ctx) {
 				details: {
 					manifestGeneratedAtDrift: true,
 					manifestPath: manifestDrift.manifestPath,
+				},
+			},
+		);
+	}
+
+	const configResult = loadSpineConfig(ctx.projectRoot);
+	const metricsRelPath = configResult?.config?.metrics?.path ?? METRICS_DEFAULTS.path;
+	const metricsDrift = isRunMetricsAppendOnlyDrift(ctx.projectRoot, dirtyPaths, metricsRelPath);
+	if (metricsDrift.ok) {
+		return makeCheck(
+			"git-clean",
+			true,
+			`working tree clean (${metricsRelPath} append-only drift ignored)`,
+			{
+				details: {
+					metricsAppendOnlyDrift: true,
+					metricsPath: metricsDrift.metricsPath,
 				},
 			},
 		);

@@ -1,8 +1,8 @@
 # SP-312: run-metrics.jsonl init gitignore — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-19
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-20
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,40 +11,40 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `SPINE_GITIGNORE_ENTRIES` gap confirmed
-- [ ] Repo `.gitignore` baseline noted
-- [ ] Rules-manifest drift pattern reviewed
+- [x] `SPINE_GITIGNORE_ENTRIES` gap confirmed
+- [x] Repo `.gitignore` baseline noted
+- [x] Rules-manifest drift pattern reviewed
 
 ---
 
 ### Step 1: Init gitignore + preflight + doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `run-metrics.jsonl` added to `SPINE_GITIGNORE_ENTRIES`
-- [ ] `checkGitClean` ignores metrics-only dirty
-- [ ] Doctor warns on git-tracked metrics file
+- [x] `run-metrics.jsonl` added to `SPINE_GITIGNORE_ENTRIES`
+- [x] `checkGitClean` ignores metrics-only dirty
+- [x] Doctor warns on git-tracked metrics file
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Init gitignore test
-- [ ] Preflight metrics-only dirty test
-- [ ] Doctor tracked-metrics test
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] Init gitignore test
+- [x] Preflight metrics-only dirty test
+- [x] Doctor tracked-metrics test
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated (if needed)
-- [ ] Issue #16 closed
-- [ ] `.DONE` created
+- [x] Runbook updated (if needed)
+- [x] Issue #16 closed
+- [x] `.DONE` created
 
 ---
 
@@ -59,6 +59,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Metrics written to `projectRoot`, not lane worktrees — integrate/lane-commit `git add -A` does not stage metrics | Verified, no change needed | `src/batch/metrics.mjs` |
 
 ---
 
@@ -67,6 +68,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-19 | Task staged | PROMPT.md and STATUS.md created for GitHub #16 |
+| 2026-06-20 | Step 0–1 | Init gitignore, preflight drift, doctor tracked-metrics |
+| 2026-06-20 | Step 2–3 | Tests pass (977/977), coverage 86.84%, runbook updated |
 
 ---
 
@@ -78,4 +81,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Full suite: `env -u SPINE_WORKER_PI_TIMEOUT_MS SPINE_WORKER_STUB=1 npm test` — 977 pass. Issue #16 was already closed on GitHub.
