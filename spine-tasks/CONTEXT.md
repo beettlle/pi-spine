@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-20 (Phase 39 — SP-315/SP-316/SP-317 staged for GitHub #20/#21/#22)
+**Last Updated:** 2026-06-20 (Phase 40–43 — SP-318/SP-333 Gemma-inspired observability and fixtures)
 **Status:** Active
-**Next Task ID:** SP-318
+**Next Task ID:** SP-334
 
 ---
 
@@ -856,6 +856,60 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-317 | Integrate rules-manifest drift handling | S | **Staged** | — | #22 |
 
 **Suggested batch:** `SP-315`, `SP-316`, `SP-317` overlap `src/batch/` — plan serializes in lane 1; SP-317 may run after SP-315/316 or in parallel if scope stays disjoint.
+
+#### Phase 40 — Atomic artifact writes (Gemma import #4)
+
+**Source:** Gemma concurrent demo research — crash-safe tmp+rename for orchestration truth files.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-318 | Shared atomic write utility | S | **Staged** | — |
+| SP-319 | Atomic batch-state and gate writes | S | **Staged** | SP-318 |
+| SP-320 | Atomic evidence and salvage writes | S | **Staged** | SP-318 |
+| SP-321 | Atomic worker-output and .DONE | S | **Staged** | SP-318 |
+
+**Suggested batch:** `SP-318` first, then `SP-319`/`SP-320`/`SP-321` in parallel if scopes stay disjoint.
+
+#### Phase 41 — Macro-phase labeling (Gemma import #3)
+
+**Source:** Operator UX — single lifecycle macro-phase distinct from diagnosis and lane activityPhase.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-322 | deriveMacroPhase module | S | **Staged** | — |
+| SP-323 | Macro-phase in reconcile and CLI | S | **Staged** | SP-322 |
+| SP-324 | Dashboard macro-phase in batch summary | S | **Staged** | SP-322 |
+
+**Suggested batch:** `SP-322` then `SP-323`/`SP-324` in parallel.
+
+#### Phase 42 — Per-lane throughput dashboard (Gemma import #2)
+
+**Source:** Task-based lane productivity (elapsed, done count, tasks/hr) — not LLM token/tps.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-325 | Task metrics laneNumber and durationMs | S | **Staged** | — |
+| SP-326 | Per-lane stats derivation module | S | **Staged** | SP-325 |
+| SP-327 | Dashboard lane throughput columns | S | **Staged** | SP-326 |
+| SP-328 | Dashboard throughput contract tests | S | **Staged** | SP-327 |
+
+**Suggested batch:** serial chain `SP-325` → `SP-326` → `SP-327` → `SP-328`.
+
+#### Phase 43 — Scenario/recipe registry (Gemma import #1)
+
+**Source:** Centralize incident/stub/adoption fixtures; operator `spine scenarios` CLI.
+
+| Task | Summary | Size | Status | Deps |
+|------|---------|------|--------|------|
+| SP-329 | Scenario registry schema and module | S | **Staged** | — |
+| SP-330 | Populate scenario registry entries | S | **Staged** | SP-329 |
+| SP-331 | Centralize scenario materialize helpers | S | **Staged** | SP-329, SP-330 |
+| SP-332 | spine scenarios CLI | S | **Staged** | SP-329 |
+| SP-333 | Adoption smoke recipe and registry docs | S | **Staged** | SP-332 |
+
+**Suggested batch:** `SP-329` → `SP-330`/`SP-332` → `SP-331`/`SP-333`.
+
+**Serial constraint:** Phase 40–42 overlap `src/batch/` with Phase 39 (`SP-315`–`SP-317`) — interleave carefully or finish Phase 39 first.
 
 ---
 
