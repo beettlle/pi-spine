@@ -150,6 +150,8 @@ test("CONTRACT_FIELD_NAMES lists all normative contract fields", () => {
 		"fileScopeMustNotChange",
 		"minLineCoverage",
 		"artifactsMustExist",
+		"stallTimeoutMinutes",
+		"extendGraceOnFileScope",
 	]);
 });
 

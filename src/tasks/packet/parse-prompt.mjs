@@ -23,6 +23,8 @@ export const CONTRACT_FIELD_NAMES = Object.freeze([
 	"fileScopeMustNotChange",
 	"minLineCoverage",
 	"artifactsMustExist",
+	"stallTimeoutMinutes",
+	"extendGraceOnFileScope",
 ]);
 
 const CONTRACT_KNOWN_FIELDS = new Set(CONTRACT_FIELD_NAMES);
@@ -113,6 +115,8 @@ export function validatePrompt(markdown) {
  *   fileScopeMustNotChange: string[],
  *   minLineCoverage: number | null,
  *   artifactsMustExist: string[],
+ *   stallTimeoutMinutes: number | null,
+ *   extendGraceOnFileScope: boolean | null,
  *   rawTableValid: boolean,
  *   errors: string[],
  *   unknownFields: string[],
@@ -133,6 +137,8 @@ export function parseContract(markdown) {
 		fileScopeMustNotChange: [],
 		minLineCoverage: null,
 		artifactsMustExist: [],
+		stallTimeoutMinutes: null,
+		extendGraceOnFileScope: null,
 		rawTableValid: false,
 		errors: [],
 		unknownFields: [],
@@ -274,6 +280,33 @@ function applyContractField(parsed, field, rawValue) {
 				return;
 			}
 			parsed.minLineCoverage = numeric;
+			return;
+		}
+		case "stallTimeoutMinutes": {
+			const minutes = parseContractScalar(value);
+			if (!/^\d+(\.\d+)?$/.test(minutes)) {
+				parsed.errors.push("Contract stallTimeoutMinutes must be a positive number");
+				return;
+			}
+			const numeric = Number(minutes);
+			if (numeric <= 0) {
+				parsed.errors.push("Contract stallTimeoutMinutes must be a positive number");
+				return;
+			}
+			parsed.stallTimeoutMinutes = numeric;
+			return;
+		}
+		case "extendGraceOnFileScope": {
+			const flag = parseContractScalar(value).toLowerCase();
+			if (flag === "true") {
+				parsed.extendGraceOnFileScope = true;
+				return;
+			}
+			if (flag === "false") {
+				parsed.extendGraceOnFileScope = false;
+				return;
+			}
+			parsed.errors.push("Contract extendGraceOnFileScope must be true or false");
 			return;
 		}
 		default:

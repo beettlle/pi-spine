@@ -309,6 +309,7 @@ export async function runTaskOnLane({
 			classification: laneCommit.failureClass ?? "lane_commit_failed",
 			exitCode: 1,
 			output: laneCommit.error,
+			gitignoredPaths: laneCommit.gitignoredPaths ?? null,
 		});
 		recordLaneTaskMetric({
 			projectRoot,

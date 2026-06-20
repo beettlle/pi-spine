@@ -33,6 +33,8 @@ Normative schema: [PRD v2.0 implementation handoff §4](../../docs/PRD-v2.0-impl
 | `fileScopeMustNotChange` | When parallel tasks must not collide | Comma-separated paths/globs |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
 | `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths |
+| `stallTimeoutMinutes` | Long external jobs (operator matrix, CI arms) exceeding global/size stall budget | Positive integer minutes; engine uses `max(global, size floor, contract)` |
+| `extendGraceOnFileScope` | STATUS-only progress during long external work | `true` or `false`; when `true`, file-scope mtime extends stall grace for this task |
 
 Unknown field names produce **warnings** at validate time (not errors). Duplicate rows are errors.
 
@@ -84,6 +86,23 @@ Unknown field names produce **warnings** at validate time (not errors). Duplicat
 | fileScopeMustNotChange | `src/planner/**`, `src/batch/journal.mjs` |
 | artifactsMustExist | `tests/batch/final-verdict.test.mjs` |
 ```
+
+### Operator matrix / long external job (SP-314)
+
+Use when a task runs a multi-hour external matrix or CI arm with little in-repo checkpoint progress (only `STATUS.md` edits). Per-task override avoids raising global `lanes.stallTimeoutMinutes` for the whole batch.
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| stallTimeoutMinutes | 240 |
+| extendGraceOnFileScope | true |
+| fileScopeMustChange | `spine-tasks/SP-029-*/STATUS.md` |
+```
+
+Recommended: **240** minutes for jobs expected to run 2+ hours. Size S floor (90m) and global default (120m) are additive floors; contract value wins when higher.
 
 ---
 

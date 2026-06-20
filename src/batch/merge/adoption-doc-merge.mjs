@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { gitAddFilteredPaths } from "../git-helpers.mjs";
 import { gitExec } from "../git-exec.mjs";
 
 export const ADOPTION_DOC_PREFIX = "docs/adoption/";
@@ -150,7 +151,7 @@ export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, wave
 	const absPath = path.join(projectRoot, filePath);
 	fs.mkdirSync(path.dirname(absPath), { recursive: true });
 	fs.writeFileSync(absPath, merged, "utf-8");
-	gitExec(projectRoot, ["add", "--", filePath], { projectRoot });
+	gitAddFilteredPaths(projectRoot, [filePath], { projectRoot });
 	return {
 		ok: true,
 		autoResolved: true,

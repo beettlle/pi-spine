@@ -1,7 +1,7 @@
 # SP-314: Contract stall timeout override — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,47 +11,47 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #19 stall timeline confirmed
-- [ ] resolveStallConfigForTask call chain traced
-- [ ] Contract parse schema reviewed
+- [x] Issue #19 stall timeline confirmed
+- [x] resolveStallConfigForTask call chain traced
+- [x] Contract parse schema reviewed
 
 ---
 
 ### Step 1: Parse and apply contract stall override
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract stallTimeoutMinutes parsed from PROMPT
-- [ ] resolveTaskStallMinutes uses max(global, size, contract)
-- [ ] Worker-host and pi timeout wired
+- [x] Contract stallTimeoutMinutes parsed from PROMPT
+- [x] resolveTaskStallMinutes uses max(global, size, contract)
+- [x] Worker-host and pi timeout wired
 
 ---
 
 ### Step 2: Operator guidance + optional grace
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator-runbook matrix packet guidance
-- [ ] extendGraceOnFileScope option documented or wired
+- [x] Operator-runbook matrix packet guidance
+- [x] extendGraceOnFileScope option documented or wired
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract override unit tests
-- [ ] Pi timeout alignment test
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] Contract override unit tests
+- [x] Pi timeout alignment test
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract template updated (if needed)
-- [ ] Issue #19 closed
-- [ ] `.DONE` created
+- [x] Contract template updated (if needed)
+- [x] Issue #19 closed
+- [x] `.DONE` created
 
 ---
 

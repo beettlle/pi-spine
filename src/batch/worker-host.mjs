@@ -24,6 +24,7 @@ import {
 	resolveWorkerPiTimeoutMs,
 	parseTaskSizeFromFolder,
 } from "./task-stall-budget.mjs";
+import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
@@ -459,8 +460,12 @@ export async function runWorker({
 	}
 
 	const taskSize = parseTaskSizeFromFolder(taskFolder);
-	const stallConfig = resolveStallConfigForTask({ config, taskSize });
-	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize });
+	const promptPath = path.join(taskFolder, "PROMPT.md");
+	const contract = fs.existsSync(promptPath)
+		? parseContract(fs.readFileSync(promptPath, "utf-8"))
+		: { stallTimeoutMinutes: null, extendGraceOnFileScope: null };
+	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
+	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;

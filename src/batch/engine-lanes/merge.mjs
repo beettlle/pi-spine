@@ -3,6 +3,7 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { gitAddFilteredPaths, filterGitignoredPaths, isGitignoredAddError } from "../git-helpers.mjs";
 import { gitExec } from "../git-exec.mjs";
 import {
 	parseRulesManifestJson,
@@ -234,7 +235,7 @@ function resolveRulesManifestMergeConflict(projectRoot) {
 	}
 
 	writeRulesManifestAtomic(projectRoot, resolved.manifest);
-	gitExec(projectRoot, ["add", RULES_MANIFEST_REL_PATH], { projectRoot });
+	gitAddFilteredPaths(projectRoot, [RULES_MANIFEST_REL_PATH], { projectRoot });
 	return {
 		ok: true,
 		autoResolved: true,
@@ -262,8 +263,20 @@ function tryAutoResolveOutOfScopeMergeConflict({
 	}
 
 	gitExec(projectRoot, ["checkout", "--ours", "--", filePath], { projectRoot });
-	gitExec(projectRoot, ["add", "--", filePath], { projectRoot });
-	return { ok: true, strategy: "prefer_orch_out_of_scope" };
+	const { stageable, skipped } = filterGitignoredPaths(projectRoot, [filePath]);
+	if (stageable.length > 0) {
+		gitAddFilteredPaths(projectRoot, stageable, { projectRoot });
+	} else if (skipped.includes(filePath)) {
+		gitExec(projectRoot, ["rm", "--cached", "-f", "--", filePath], {
+			projectRoot,
+			throwOnError: false,
+		});
+	}
+	return {
+		ok: true,
+		strategy: "prefer_orch_out_of_scope",
+		skippedGitignoredPaths: skipped,
+	};
 }
 
 /**
@@ -333,6 +346,8 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	const resolvedOutOfScope = [];
 	/** @type {string[]} */
 	const remaining = [];
+	/** @type {string[]} */
+	const skippedGitignoredPaths = [];
 
 	/** @type {string[]} */
 	const resolvedAdoptionDocs = [];
@@ -367,6 +382,9 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		});
 		if (resolved.ok) {
 			resolvedOutOfScope.push(filePath);
+			if (Array.isArray(resolved.skippedGitignoredPaths) && resolved.skippedGitignoredPaths.length > 0) {
+				skippedGitignoredPaths.push(...resolved.skippedGitignoredPaths);
+			}
 		} else {
 			remaining.push(filePath);
 		}
@@ -381,6 +399,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 				return {
 					...manifestResult,
 					outOfScopePaths: resolvedOutOfScope,
+					skippedGitignoredPaths,
 				};
 			}
 			remaining.length = 0;
@@ -396,6 +415,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		return {
 			...manifestResult,
 			outOfScopePaths: resolvedOutOfScope,
+			skippedGitignoredPaths,
 		};
 	}
 
@@ -405,6 +425,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			autoResolved: true,
 			outOfScopePaths: resolvedOutOfScope,
 			adoptionDocPaths: resolvedAdoptionDocs,
+			skippedGitignoredPaths,
 		};
 	}
 
@@ -559,6 +580,15 @@ export function mergeLaneToOrch({
 					outOfScopePaths: autoResolved.outOfScopePaths ?? [],
 				};
 			}
+			if (
+				Array.isArray(autoResolved.skippedGitignoredPaths) &&
+				autoResolved.skippedGitignoredPaths.length > 0
+			) {
+				appendJournalEvent(projectRoot, batchId, "batch.merge_gitignored_skipped", {
+					taskBranch,
+					skippedPaths: autoResolved.skippedGitignoredPaths,
+				});
+			}
 			gitStrict(projectRoot, ["commit", "--no-edit"]);
 		}
 
@@ -578,6 +608,13 @@ export function mergeLaneToOrch({
 	} catch (err) {
 		if (mergeInProgress) {
 			abortInProgressMerge(projectRoot);
+		}
+		if (isGitignoredAddError(err)) {
+			return {
+				ok: false,
+				failureClass: "merge_failed_gitignored",
+				error: err instanceof Error ? err.message : String(err),
+			};
 		}
 		return {
 			ok: false,
@@ -651,15 +688,39 @@ export async function mergeWaveLanesToOrch({
 			waveIndex,
 		});
 		if (!merge.ok) {
+			const failureReason = merge.error ?? "merge_failed";
 			recordWaveMergeResult({
 				state,
 				waveIndex,
 				status: "failed",
 				failedLane: laneNumber,
-				failureReason: merge.error ?? "merge_failed",
+				failureReason,
+				failureClass: merge.failureClass ?? null,
 			});
+			if (Array.isArray(merge.skippedGitignoredPaths) && merge.skippedGitignoredPaths.length > 0) {
+				appendJournalEvent(projectRoot, batchId, "batch.merge_gitignored_skipped", {
+					laneNumber,
+					waveIndex,
+					taskBranch,
+					skippedPaths: merge.skippedGitignoredPaths,
+				});
+			}
+			if (merge.failureClass === "merge_failed_gitignored") {
+				appendJournalEvent(projectRoot, batchId, "batch.merge_failed", {
+					laneNumber,
+					waveIndex,
+					taskBranch,
+					failureClass: merge.failureClass,
+					error: failureReason,
+				});
+			}
 			saveSpineBatchState(projectRoot, state);
-			return { ok: false, error: merge.error ?? "merge_failed", laneNumber };
+			return {
+				ok: false,
+				error: failureReason,
+				laneNumber,
+				failureClass: merge.failureClass ?? null,
+			};
 		}
 		lastMergeCommit = merge.mergeCommit;
 		appendJournalEvent(projectRoot, batchId, "batch.merge_completed", {
