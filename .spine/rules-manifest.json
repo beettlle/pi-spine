@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19T22:30:00.303Z",
+  "generatedAt": "2026-06-20T20:07:34.729Z",
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
@@ -199,7 +199,6 @@
       "alwaysApply": false,
       "description": "Obsidian vault anti-patterns for OFM notes, Bases, and JSON Canvas",
       "globs": [
-        "**/*.md",
         "**/*.base",
         "**/*.canvas"
       ],
@@ -247,9 +246,37 @@
       "parseStatus": "ok"
     },
     {
+      "relPath": "spine-operator-cursor.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Operate pi-spine batches in Cursor: spine CLI commands, diagnosis, recovery, gates, and integrate. Use when user asks to start/pause/resume spine batch, run spine doctor/preflight/plan, check batch status, approve gate, or recover from orphans—not when authoring packets or implementing task code.",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "spine-task-authoring.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "Create pi-spine task packets (PROMPT.md, STATUS.md, dependencies.json) under the configured tasks root. Use when asked to create spine tasks, decompose PRDs for spine batch, or stage SP-* work—not when operating batches or implementing code.",
+      "globs": [
+        "**/.spine/**",
+        "**/spine-tasks/**",
+        "**/dependencies.json"
+      ],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "spine-worker-cursor.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Manually execute a pi-spine task packet in Cursor when no spine batch is active: honor Contract, Testing step, File Scope, STATUS discipline. Use when user @PROMPT.md under spine tasks root and asks to implement—not when spine batch is running or user wants packet authoring.",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
       "relPath": "stet-integration.mdc",
-      "spineClass": "always",
-      "alwaysApply": true,
+      "spineClass": "manual",
+      "alwaysApply": false,
       "description": "Stet CLI usage - commands and dismiss reasons for Cursor and stet-assisted review",
       "globs": [],
       "parseStatus": "ok"
