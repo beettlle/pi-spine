@@ -848,6 +848,8 @@ spine metrics show --last 20
 
 | Field | Meaning |
 |-------|---------|
+| `laneNumber` | Lane that executed the task (1-based) |
+| `durationMs` | Wall-clock task duration from `startedAt` to `endedAt` (milliseconds) |
 | `finalVerdict` | `PASS`, `REVISE`, or `REPLAN` from final review |
 | `contractOk` | Machine contract verifier result |
 | `finalAttempts` | Final review attempt count (capped by `review.maxFinalAttempts`) |

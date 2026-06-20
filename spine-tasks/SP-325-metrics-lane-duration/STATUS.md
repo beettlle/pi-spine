@@ -1,7 +1,7 @@
 # SP-325: Task metrics laneNumber and durationMs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review current task metric record shape
-- [ ] Identify laneNumber source at metric write time
+- [x] Review current task metric record shape
+- [x] Identify laneNumber source at metric write time
 
 ---
 
 ### Step 1: Add laneNumber and durationMs to task metrics
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Extend buildTaskMetricRecord with optional laneNumber, durationMs
-- [ ] Pass laneNumber from engine-lanes call sites
-- [ ] Compute durationMs from startedAt/endedAt
+- [x] Extend buildTaskMetricRecord with optional laneNumber, durationMs
+- [x] Pass laneNumber from engine-lanes call sites
+- [x] Compute durationMs from startedAt/endedAt
 
 ---
 

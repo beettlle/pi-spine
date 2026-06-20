@@ -64,7 +64,43 @@ test("appendTaskMetric writes TaskMetricRecord JSONL line", async () => {
 		assert.equal(parsed.agentRole, "worker");
 		assert.equal(parsed.outcome, "completed");
 		assert.equal(parsed.exitReason, "done");
+		assert.equal(parsed.laneNumber, undefined);
+		assert.equal(parsed.durationMs, 5 * 60 * 1000);
 	});
+});
+
+test("buildTaskMetricRecord includes laneNumber and durationMs when available", () => {
+	const startedAt = Date.parse("2026-06-11T12:00:00.000Z");
+	const endedAt = Date.parse("2026-06-11T12:07:30.000Z");
+	const record = buildTaskMetricRecord({
+		batchId: "20260611T120000",
+		task: {
+			taskId: "SP-325",
+			laneNumber: 3,
+			status: "succeeded",
+			startedAt,
+			endedAt,
+			exitReason: "done",
+		},
+		config: {
+			agents: { worker: { model: "inherit", thinking: "high" } },
+		},
+	});
+
+	assert.equal(record.laneNumber, 3);
+	assert.equal(record.durationMs, endedAt - startedAt);
+	assert.equal(record.schemaVersion, 1);
+});
+
+test("buildTaskMetricRecord omits laneNumber when not a positive lane", () => {
+	const record = buildTaskMetricRecord({
+		batchId: "20260611T120000",
+		task: { taskId: "SP-001", status: "failed", exitReason: "worker_failed" },
+		config: {},
+	});
+
+	assert.equal(record.laneNumber, undefined);
+	assert.ok(Number.isFinite(record.durationMs));
 });
 
 test("metrics.enabled false skips append without error", async () => {
@@ -163,6 +199,8 @@ test("skipTaskDoneOnDisk records skipped task metric", async () => {
 		);
 		assert.equal(parsed.outcome, "skipped");
 		assert.equal(parsed.exitReason, "skipped_done_on_disk");
+		assert.equal(parsed.laneNumber, 1);
+		assert.ok(Number.isFinite(parsed.durationMs));
 	});
 });
 

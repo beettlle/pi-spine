@@ -20,13 +20,14 @@ import { laneTaskBranch, laneWorktreePath } from "../worktree.mjs";
 /**
  * @param {object} params
  */
-export function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskFolder }) {
+export function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskFolder, lane }) {
 	recordTaskTerminalMetric({
 		projectRoot,
 		batchId,
 		task,
 		config,
 		taskFolder,
+		laneNumber: lane?.laneNumber ?? task?.laneNumber,
 	});
 }
 
@@ -102,6 +103,7 @@ export function recordPromptParseFailure({
 		projectRoot,
 		batchId,
 		task,
+		lane,
 		config,
 		taskFolder: taskFolderPath,
 	});
@@ -201,6 +203,7 @@ export async function skipTaskDoneOnDisk({
 		projectRoot,
 		batchId,
 		task,
+		lane,
 		config,
 		taskFolder: taskFolderPath,
 	});
