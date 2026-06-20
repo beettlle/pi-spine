@@ -44,6 +44,10 @@ test("resolveTaskStallMinutes uses max of global, size floor, and contract overr
 	);
 	assert.equal(
 		resolveTaskStallMinutes("M", config, { stallTimeoutMinutes: 200 }),
+		200,
+	);
+	assert.equal(
+		resolveTaskStallMinutes("M", config, { stallTimeoutMinutes: 150 }),
 		STALL_MINUTES_BY_SIZE.M,
 	);
 	assert.equal(resolveTaskStallMinutes(null, config, { stallTimeoutMinutes: 180 }), 180);
@@ -94,10 +98,10 @@ test("runWorker with contract stall override survives beyond global stall budget
 	const taskFolder = path.join(worktreePath, "spine-tasks", "SP-314-test");
 	fs.mkdirSync(taskFolder, { recursive: true });
 
-	// Scaled timings: global 0.04 min (~2.4s) represents 120m; contract 0.08 min (~4.8s) represents 240m.
+	// Scaled timings: global 0.04 min (~2.4s); contract 0.1 min (~6s, above 5s poll cap).
 	const scaledGlobal = 0.04;
-	const scaledContract = 0.08;
-	const hangMs = 3_500;
+	const scaledContract = 0.1;
+	const hangMs = 3_000;
 
 	fs.writeFileSync(
 		path.join(taskFolder, "PROMPT.md"),
@@ -173,7 +177,7 @@ test("runWorker without contract override stalls at scaled global budget", async
 	fs.mkdirSync(taskFolder, { recursive: true });
 
 	const scaledGlobal = 0.04;
-	const hangMs = 3_500;
+	const hangMs = 3_000;
 
 	fs.writeFileSync(
 		path.join(taskFolder, "PROMPT.md"),

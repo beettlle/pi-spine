@@ -1,6 +1,6 @@
 # SP-314: Contract stall timeout override — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 2
@@ -20,24 +20,24 @@
 ---
 
 ### Step 1: Parse and apply contract stall override
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract stallTimeoutMinutes parsed from PROMPT
-- [ ] resolveTaskStallMinutes uses max(global, size, contract)
-- [ ] Worker-host and pi timeout wired
+- [x] Contract stallTimeoutMinutes parsed from PROMPT
+- [x] resolveTaskStallMinutes uses max(global, size, contract)
+- [x] Worker-host and pi timeout wired
 
 ---
 
 ### Step 2: Operator guidance + optional grace
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator-runbook matrix packet guidance
-- [ ] extendGraceOnFileScope option documented or wired
+- [x] Operator-runbook matrix packet guidance
+- [x] extendGraceOnFileScope option documented or wired
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Contract override unit tests
 - [ ] Pi timeout alignment test
