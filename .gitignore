@@ -16,6 +16,7 @@
 .pi/verification/
 .pi/taskplane.json
 .pi/agents/
+.pi/loops/
 .worktrees/
 .taskplane-tasks/
 
