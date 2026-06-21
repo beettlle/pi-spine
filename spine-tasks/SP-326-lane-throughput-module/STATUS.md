@@ -1,7 +1,7 @@
 # SP-326: Per-lane stats derivation module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,33 +11,33 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review journal event types for task lifecycle
-- [ ] Identify batch-state lane shape
+- [x] Review journal event types for task lifecycle
+- [x] Identify batch-state lane shape
 
 ---
 
 ### Step 1: Implement lane-throughput derivation
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create src/dashboard/lane-throughput.mjs
-- [ ] Derive per-lane stats from journal + batch-state
-- [ ] Fall back gracefully when metrics missing
+- [x] Create src/dashboard/lane-throughput.mjs
+- [x] Derive per-lane stats from journal + batch-state
+- [x] Fall back gracefully when metrics missing
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add tests/dashboard/lane-throughput.test.mjs
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Add tests/dashboard/lane-throughput.test.mjs
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Create .DONE
 
@@ -62,6 +62,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 42) |
+| 2026-06-20 | Step 1 complete | lane-throughput.mjs derives task-based per-lane stats |
+| 2026-06-20 | Step 2 verified | 1041 tests pass; lane-throughput.mjs 100% line coverage |
 
 ---
 
