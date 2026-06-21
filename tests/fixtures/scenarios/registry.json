@@ -23,6 +23,29 @@
       ]
     },
     {
+      "id": "adoption-smoke",
+      "kind": "recipe",
+      "title": "Adoption smoke recipe",
+      "description": "Operator smoke: typecheck plus stub adoption fixture batch and REPLAN diagnosis tests. No network or real pi required.",
+      "tests": [
+        "tests/adoption/fixture-batch.test.mjs",
+        "tests/adoption/replan-needs-replan.test.mjs"
+      ],
+      "docs": [
+        "docs/adoption/bootstrap-checklist.md",
+        "docs/adoption/operator-runbook.md"
+      ],
+      "relatedTasks": [
+        "AD-001",
+        "TP-044"
+      ],
+      "tags": [
+        "adoption",
+        "smoke",
+        "recipe"
+      ]
+    },
+    {
       "id": "integration-abc",
       "kind": "recipe",
       "title": "PRD §20.2 ABC integration fixture",
