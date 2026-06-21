@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T01:53:55.429Z",
+  "generatedAt": "2026-06-21T04:07:14.190Z",
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
@@ -249,7 +249,7 @@
       "relPath": "spine-operator-cursor.mdc",
       "spineClass": "manual",
       "alwaysApply": false,
-      "description": "Operate pi-spine batches in Cursor: spine CLI commands, diagnosis, recovery, gates, and integrate. Use when user asks to start/pause/resume spine batch, run spine doctor/preflight/plan, check batch status, approve gate, or recover from orphans—not when authoring packets or implementing task code.",
+      "description": "Operate pi-spine batches in Cursor: spine CLI commands, diagnosis, recovery, gates, integrate, and report upstream engine bugs. Use when user asks to start/pause/resume spine batch, run spine doctor/preflight/plan, check batch status, approve gate, recover from orphans, or report spine bugs—not when authoring packets or implementing task code.",
       "globs": [],
       "parseStatus": "ok"
     },
