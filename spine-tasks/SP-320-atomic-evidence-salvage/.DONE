@@ -1,1 +1,1 @@
-SP-320 complete: evidence bundle and salvage JSON use atomic writes; evidence/.complete marker written last.
+SP-320 complete: evidence bundle and salvage JSON use writeTextAtomic/writeJsonAtomic; .complete marker written last.
