@@ -44,7 +44,7 @@ Update incidents README to point at registry.json as source of truth.
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/fixtures/scenario-registry.test.mjs` |
 | fileScopeMustChange | `tests/fixtures/scenarios/registry.json` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 
