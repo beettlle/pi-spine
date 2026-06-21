@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { writeJsonAtomic, writeTextAtomic } from "../fs/atomic-write.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
 const DEFAULT_MAX_BYTES = 262_144;
@@ -150,8 +151,7 @@ export function persistWorkerOutputLog({
 	if (!captured.trim()) return null;
 
 	const logPath = workerOutputLogPath(projectRoot, batchId, laneNumber, taskId);
-	fs.mkdirSync(path.dirname(logPath), { recursive: true });
-	fs.writeFileSync(logPath, captured, "utf-8");
+	writeTextAtomic(logPath, captured);
 
 	return {
 		logPath,
@@ -248,6 +248,74 @@ export function finalizeWorkerOutput({
 		logPath: persisted?.logPath ?? null,
 		logRef: persisted?.logRef ?? null,
 	};
+}
+
+/**
+ * Parse a `.DONE` marker body. Legacy empty/text markers remain valid (SP-321).
+ *
+ * @param {string} content
+ */
+export function parseWorkerDoneMarker(content) {
+	const trimmed = String(content ?? "").trim();
+	if (!trimmed) {
+		return { valid: true, legacy: true, kind: "empty" };
+	}
+
+	if (trimmed.startsWith("{")) {
+		try {
+			const data = JSON.parse(trimmed);
+			if (
+				typeof data?.taskId === "string" &&
+				data.taskId.length > 0 &&
+				typeof data?.completedAt === "string" &&
+				data.completedAt.length > 0
+			) {
+				return {
+					valid: true,
+					legacy: false,
+					kind: "json",
+					taskId: data.taskId,
+					completedAt: data.completedAt,
+				};
+			}
+			return { valid: false, legacy: false, kind: "json_partial", reason: "missing_fields" };
+		} catch {
+			return { valid: false, legacy: false, kind: "json_partial", reason: "parse_error" };
+		}
+	}
+
+	return { valid: true, legacy: true, kind: "text" };
+}
+
+/**
+ * @param {string} content
+ */
+export function isWorkerDoneMarkerValid(content) {
+	return parseWorkerDoneMarker(content).valid;
+}
+
+/**
+ * @param {string} donePath
+ */
+export function readWorkerDoneMarker(donePath) {
+	if (!fs.existsSync(donePath)) {
+		return { present: false, valid: false };
+	}
+	const parsed = parseWorkerDoneMarker(fs.readFileSync(donePath, "utf-8"));
+	return { present: true, ...parsed };
+}
+
+/**
+ * Atomically write a structured `.DONE` marker for engine validation.
+ *
+ * @param {string} donePath
+ * @param {{ taskId: string }} params
+ */
+export function writeWorkerDoneMarker(donePath, { taskId }) {
+	writeJsonAtomic(donePath, {
+		taskId,
+		completedAt: new Date().toISOString(),
+	});
 }
 
 export { TRUNCATION_MARKER, DEFAULT_MAX_BYTES, DEFAULT_TAIL_LINES };

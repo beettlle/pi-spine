@@ -1006,6 +1006,21 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
 
+### Atomic orchestration writes (SP-318+)
+
+pi-spine persists orchestration artifacts with **temp file + rename** so crash mid-write does not leave torn JSON on disk:
+
+| Artifact | Path |
+|----------|------|
+| Spine config | `.spine/spine-config.json` |
+| Rules manifest | `.spine/rules-manifest.json` |
+| Batch state / gate | `.spine/batch-state.json`, gate records |
+| Evidence / salvage | `.spine/runtime/<batchId>/evidence/`, salvage bundles |
+| Worker output log | `.spine/runtime/<batchId>/lanes/lane-N/worker-output-<taskId>.log` |
+| Task completion | `<tasksRoot>/<id>/.DONE` |
+
+Stub and agent-session workers write structured `.DONE` JSON (`{ "taskId", "completedAt" }`). Legacy empty or text `.DONE` markers remain valid for pending-task filtering. Partial JSON bodies are invalid and should not appear when workers use atomic writes.
+
 ### Worktree layout
 
 | Path | Purpose |
@@ -1013,7 +1028,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | `.worktrees/spine-<batchId>/lane-N` | Lane worktrees |
 | `.spine/runtime/<batchId>/journal/events.jsonl` | Audit trail |
 | `.spine/runtime/<batchId>/evidence/` | Gate evidence bundle |
-| `<tasksRoot>/<id>/.DONE` | Task completion marker (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
+| `<tasksRoot>/<id>/.DONE` | Task completion marker — structured JSON from spine workers; legacy empty/text still accepted (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
 
 ### Get help from reconciliation
 
