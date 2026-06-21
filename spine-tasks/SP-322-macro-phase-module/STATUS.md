@@ -1,7 +1,7 @@
 # SP-322: deriveMacroPhase module — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -28,18 +28,18 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Add tests/batch/macro-phase.test.mjs using batch-state fixtures
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
