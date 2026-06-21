@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { loadBatchStateFile } from "./batch-state-io.mjs";
 import { isProcessAlive } from "../process/liveness.mjs";
@@ -115,7 +116,7 @@ export function saveSpineBatchState(projectRoot, state, options = {}) {
 		clearBatchEnginePid(state);
 	}
 	const next = { ...state, updatedAt: Date.now() };
-	fs.writeFileSync(filePath, `${JSON.stringify(next, null, 2)}\n`, "utf-8");
+	writeJsonAtomic(filePath, next);
 	return next;
 }
 

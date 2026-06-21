@@ -1,6 +1,10 @@
 # Incident replay fixtures
 
-Bounded batch-state + journal tail snapshots for regression tests. Pattern mirrors SearchATon SAT-020 stall fixture (`tests/fixtures/stall-sat020/`).
+Bounded batch-state + journal tail snapshots for regression tests.
+
+**Catalog source of truth:** [`../scenarios/registry.json`](../scenarios/registry.json) — all incident entries use `kind: "incident"`. Registry metadata (batch IDs, tests, docs, related tasks) is authoritative; the tables below summarize local layout for quick reference.
+
+Pattern mirrors SearchATon SAT-020 stall fixture (`tests/fixtures/stall-sat020/`); see registry entry `stall-sat020`.
 
 | Fixture | Batch | Pattern | Test |
 |---------|-------|---------|------|

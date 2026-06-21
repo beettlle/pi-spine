@@ -23,7 +23,7 @@ Both roots use the same packet format (`PROMPT.md`, `STATUS.md`, `dependencies.j
 
 ## Adoption fixture (smoke target)
 
-The pi-spine repo ships a minimal consumer layout at **`tests/fixtures/adoption-repo/`**:
+The pi-spine repo ships a minimal consumer layout at **`tests/fixtures/adoption-repo/`** (registry id `adoption-repo`, kind `adoption`):
 
 | Path | Role |
 |------|------|
@@ -33,13 +33,17 @@ The pi-spine repo ships a minimal consumer layout at **`tests/fixtures/adoption-
 
 No `.spine/` config is checked in — bootstrap runs `spine init` on first use. Stub batch completion is marked by **`taskplane-tasks/AD-001-smoke/.DONE`** (worker also touches `DONE.txt` when using real pi).
 
-Run the automated smoke (no network, stub workers):
+**Operator smoke recipe** (registry id `adoption-smoke`, kind `recipe`): typecheck plus stub adoption integration tests — no network, stub workers only.
+
+Run the automated smoke:
 
 ```bash
 ./scripts/adoption-smoke.sh
 # or from pi-spine repo root:
-SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs
+SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs tests/adoption/replan-needs-replan.test.mjs
 ```
+
+List all scenarios (including `adoption-smoke` and `adoption-repo`): `spine scenarios list` — see [operator-runbook § Scenario fixture registry](./operator-runbook.md#scenario-fixture-registry).
 
 Use this fixture to validate install and batch wiring before pointing spine at your real project.
 
@@ -227,7 +231,8 @@ Use `npm run test:batch` or `npm run test:core` instead of appending directory p
 | Preview work | `spine plan pending` |
 | Preflight | `spine preflight` |
 | Stub batch | `SPINE_WORKER_STUB=1 spine batch start <id>` |
-| Adoption smoke | `./scripts/adoption-smoke.sh` |
+| Adoption smoke | `./scripts/adoption-smoke.sh` (registry: `adoption-smoke`) |
+| Scenario catalog | `spine scenarios list` / `spine scenarios show <id>` |
 | Task authoring | `create-spine-tasks` skill in pi (see step 4) |
 
 ## Related docs

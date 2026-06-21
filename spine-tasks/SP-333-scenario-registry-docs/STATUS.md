@@ -1,7 +1,7 @@
 # SP-333: Adoption smoke recipe and registry docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,33 +11,33 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review SP-332 CLI output format
-- [ ] Review adoption-smoke.sh script
+- [x] Review SP-332 CLI output format
+- [x] Review adoption-smoke.sh script
 
 ---
 
 ### Step 1: Register adoption-smoke and write docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add adoption-smoke registry entry
-- [ ] Write operator-runbook scenario registry section
-- [ ] Update bootstrap-checklist
+- [x] Add adoption-smoke registry entry
+- [x] Write operator-runbook scenario registry section
+- [x] Update bootstrap-checklist
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: npm run typecheck && SPINE_WORKER_STUB=1 npm test
+- [x] Run FULL test suite: npm run typecheck && SPINE_WORKER_STUB=1 npm test
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -60,6 +60,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
+| 2026-06-20 | Step 1 | adoption-smoke registry entry + operator docs |
+| 2026-06-20 | Step 2 | typecheck + 1038 tests pass |
+| 2026-06-20 | Step 3 | .DONE created |
 
 ---
 

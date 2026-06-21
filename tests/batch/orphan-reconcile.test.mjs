@@ -15,31 +15,9 @@ import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { isProcessAlive } from "../../src/process/liveness.mjs";
 import { detectOrphanRunning } from "../../src/batch/orphan-detect.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { loadScenario, materializeScenario } from "../helpers/scenario-fixture.mjs";
 
 const DEAD_PID = 999_999_999;
-const INCIDENT_FIXTURES = path.join(process.cwd(), "tests/fixtures/incidents");
-
-/**
- * @param {string} name
- */
-function loadIncidentFixture(name) {
-	return JSON.parse(fs.readFileSync(path.join(INCIDENT_FIXTURES, name), "utf-8"));
-}
-
-/**
- * @param {string} projectRoot
- * @param {{ batchState: object, journalTail?: object[], meta?: { batchId?: string } }} fixture
- */
-function materializeIncidentFixture(projectRoot, fixture) {
-	const batchId = fixture.meta?.batchId ?? fixture.batchState.batchId;
-	saveSpineBatchState(projectRoot, fixture.batchState);
-
-	const journalFile = journalPath(projectRoot, batchId);
-	fs.mkdirSync(path.dirname(journalFile), { recursive: true });
-	for (const event of fixture.journalTail ?? []) {
-		fs.appendFileSync(journalFile, `${JSON.stringify(event)}\n`, "utf-8");
-	}
-}
 
 test("isProcessAlive returns false for absent pid", () => {
 	assert.equal(isProcessAlive(DEAD_PID), false);
@@ -48,7 +26,7 @@ test("isProcessAlive returns false for absent pid", () => {
 });
 
 test("resume parallel lane orphan fixture: multiple running on lane 1", () => {
-	const fixture = loadIncidentFixture("resume-parallel-lane-orphan.json");
+	const fixture = loadScenario("resume-parallel-lane-orphan");
 	const runningLane1 = fixture.batchState.tasks.filter(
 		(task) => task.laneNumber === 1 && task.status === "running",
 	);
@@ -62,8 +40,7 @@ test("resume parallel lane orphan fixture: multiple running on lane 1", () => {
 test("resume parallel lane orphan fixture: reconcile is actionable after scoped orphan detect", async () => {
 	const projectRoot = await initGitRepo("spine-resume-parallel-lane-orphan-");
 	try {
-		const fixture = loadIncidentFixture("resume-parallel-lane-orphan.json");
-		materializeIncidentFixture(projectRoot, fixture);
+		materializeScenario(projectRoot, "resume-parallel-lane-orphan");
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
@@ -84,8 +61,7 @@ test("resume parallel lane orphan fixture: reconcile is actionable after scoped 
 test("searchATon orphan incident fixture: dead workerPid is not diagnosed as running", async () => {
 	const projectRoot = await initGitRepo("spine-orphan-incident-");
 	try {
-		const fixture = loadIncidentFixture("orphan-running-resume.json");
-		materializeIncidentFixture(projectRoot, fixture);
+		materializeScenario(projectRoot, "orphan-running-resume");
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");

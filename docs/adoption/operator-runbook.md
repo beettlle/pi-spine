@@ -374,6 +374,16 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `limbo_stale` / `completed_manual` | Tasks green, batch record stale | `dismiss` or `complete --detect-manual-merge` |
 | `failed` / `aborted` | Terminal error | `retry`, `resume --force`, or `dismiss` |
 
+**Phase vs diagnosis vs macro phase** — three distinct operator labels:
+
+| Field | Source | Role | Example |
+|-------|--------|------|---------|
+| `phase` | Batch-state cache (`batch-state.json`) | Raw engine phase string | `running`, `merging`, `completed` |
+| `diagnosis` | Reconciliation (`deriveDiagnosis`) | Actionable next step | `needs_retry`, `needs_integrate`, `limbo_stale` |
+| `macroPhase` / `macroPhaseLabel` | Lifecycle rollup (`deriveMacroPhase`) | Stable high-level batch lifecycle | `Executing`, `Gating`, `Integrating`, `Completed` |
+
+`spine status` prints all three when a batch is active (macro phase always, including `Idle` when no batch). `spine status --diagnose` adds `macroPhase` inside verbose signals. Diagnosis headline and `suggestedCommand` remain driven by `diagnosis` only — macro phase does not replace them.
+
 In pi: `/spine-status` mirrors reconciliation.
 
 ### Supervisor deferred (FR-SHIP-11)
@@ -817,6 +827,8 @@ spine batch complete
 
 **Never** edit `.pi/batch-state.json` or `.spine/batch-state.json` by hand. pi-spine archives to `.spine/runtime/<batchId>/archive/` first.
 
+**Crash-safe persistence:** `.spine/batch-state.json` and `.spine/runtime/<batchId>/gate.json` are written atomically (temp file + rename). A crash mid-write should leave the previous file intact or the new complete file — never torn partial JSON. The append-only journal and run-metrics paths are unchanged.
+
 ---
 
 ## 7. Dashboard
@@ -831,8 +843,8 @@ spine dashboard --port 8110
 In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
-- **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required)
-- **Active batch panels** (when a batch is reconciled): wave progress, lane table (includes **Phase** column — worker/review activity inferred from journal events), journal tail
+- **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required). Banner badge color follows **`diagnosis`**, not macro phase.
+- **Active batch panels** (when a batch is reconciled): batch summary (raw `phase` + **macro phase** label), wave progress (wave index + macro phase), lane table (includes **Phase** column — worker/review activity inferred from journal events; **Elapsed**, **Done**, and **Rate** throughput columns — task-based elapsed time, completed task count, and tasks/hr derived from journal and run-metrics), journal tail
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
 - Keep the dashboard terminal open while it runs
 
@@ -903,6 +915,52 @@ npm run coverage:check
 `npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
 `npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
+
+### Scenario fixture registry
+
+Central catalog for incident replays, stub batches, adoption fixtures, and test recipes. **Source of truth:** `tests/fixtures/scenarios/registry.json` (schema version 1). Module API: `src/fixtures/scenario-registry.mjs`.
+
+| `kind` | Meaning | `fixturePath` |
+|--------|---------|---------------|
+| `incident` | Batch-state + journal tail for orphan/retry/resume regression | Required — JSON under `tests/fixtures/incidents/` |
+| `stub` | Generated or README-only stub replay (e.g. SAT-020 stall) | Required |
+| `adoption` | Git-backed consumer layout for install/batch drills | Required — directory under `tests/fixtures/` |
+| `recipe` | Test-driven scenario without a dedicated fixture dir | Optional |
+
+**Inspect the catalog** (pi-spine repo root; requires SP-332 `spine scenarios` CLI):
+
+```bash
+spine scenarios list
+spine scenarios list --json
+spine scenarios show adoption-smoke
+spine scenarios show adoption-smoke --json
+```
+
+`list` prints one line per scenario: `id`, `kind`, and `title` (sorted by id). `show` prints all registry fields for one id (`description`, `fixturePath`, `batchId`, `tests`, `docs`, `relatedTasks`, `tags`). `--json` emits a single object or array for automation.
+
+**Materialize incident/stub fixtures** (dev/dogfood only — writes `.spine/batch-state.json` and journal tail into the target repo):
+
+```bash
+spine scenarios materialize orphan-running-resume
+spine scenarios materialize orphan-running-resume --force   # when active batch present
+```
+
+Materialize does **not** start a batch. Refuses when `.spine/batch-state.json` shows an active batch unless `--force` is passed.
+
+**Adoption smoke recipe** (`adoption-smoke` in the registry): operator entry point for pre-publish validation — typecheck plus stub adoption tests (no network, no real `pi`):
+
+```bash
+./scripts/adoption-smoke.sh
+```
+
+Equivalent targeted run:
+
+```bash
+npm run typecheck
+SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs tests/adoption/replan-needs-replan.test.mjs
+```
+
+Related registry entry `adoption-repo` points at the consumer fixture under `tests/fixtures/adoption-repo/` (AD-001 stub batch, AD-002 real-pi). See [bootstrap checklist](./bootstrap-checklist.md#adoption-fixture-smoke-target).
 
 ### `node bin/spine.mjs` vs global `spine`
 
@@ -1004,6 +1062,21 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
 
+### Atomic orchestration writes (SP-318+)
+
+pi-spine persists orchestration artifacts with **temp file + rename** so crash mid-write does not leave torn JSON on disk:
+
+| Artifact | Path |
+|----------|------|
+| Spine config | `.spine/spine-config.json` |
+| Rules manifest | `.spine/rules-manifest.json` |
+| Batch state / gate | `.spine/batch-state.json`, gate records |
+| Evidence / salvage | `.spine/runtime/<batchId>/evidence/`, salvage bundles |
+| Worker output log | `.spine/runtime/<batchId>/lanes/lane-N/worker-output-<taskId>.log` |
+| Task completion | `<tasksRoot>/<id>/.DONE` |
+
+Stub and agent-session workers write structured `.DONE` JSON (`{ "taskId", "completedAt" }`). Legacy empty or text `.DONE` markers remain valid for pending-task filtering. Partial JSON bodies are invalid and should not appear when workers use atomic writes.
+
 ### Worktree layout
 
 | Path | Purpose |
@@ -1011,7 +1084,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | `.worktrees/spine-<batchId>/lane-N` | Lane worktrees |
 | `.spine/runtime/<batchId>/journal/events.jsonl` | Audit trail |
 | `.spine/runtime/<batchId>/evidence/` | Gate evidence bundle |
-| `<tasksRoot>/<id>/.DONE` | Task completion marker (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
+| `<tasksRoot>/<id>/.DONE` | Task completion marker — structured JSON from spine workers; legacy empty/text still accepted (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
 
 ### Get help from reconciliation
 

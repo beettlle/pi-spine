@@ -7,7 +7,19 @@ import path from "node:path";
 import { appendJournalEvent } from "./journal.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { readReviewLevel } from "./review.mjs";
+import { writeWorkerDoneMarker } from "./worker-output.mjs";
 import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
+
+/**
+ * @param {string} taskFolder
+ */
+function resolveTaskIdFromFolder(taskFolder) {
+	return (
+		process.env.SPINE_TASK_ID ||
+		path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ||
+		"unknown"
+	);
+}
 
 /**
  * @param {object} params
@@ -74,11 +86,7 @@ export function createStubAgentSession({ worktreePath, taskFolder, fail = false 
 					"utf-8",
 				);
 			}
-			fs.writeFileSync(
-				donePath,
-				`Completed: ${new Date().toISOString()}\nTask: agent-session-stub\n`,
-				"utf-8",
-			);
+			writeWorkerDoneMarker(donePath, { taskId: resolveTaskIdFromFolder(taskFolder) });
 			streaming = false;
 		},
 		subscribe: () => () => {},

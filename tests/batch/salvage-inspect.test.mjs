@@ -10,6 +10,7 @@ import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	inspectLaneSalvage,
 	recordTaskFailureSalvage,
+	writeSalvageEvidence,
 } from "../../src/batch/salvage.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { laneWorktreePath } from "../../src/batch/worktree.mjs";
@@ -145,6 +146,42 @@ test("recordTaskFailureSalvage journals inspection and writes evidence without c
 	assert.equal(fs.existsSync(path.join(taskFolder, ".DONE")), false);
 
 	await destroyGitRepo(projectRoot);
+});
+
+test("writeSalvageEvidence writes pretty JSON atomically without temp files", async () => {
+	const projectRoot = await initGitRepo("salvage-atomic-");
+	const batchId = "testbatch002";
+	const taskId = "TP-903";
+	try {
+		const inspection = {
+			salvageable: true,
+			changedFileCount: 1,
+			dirtyPaths: ["src/salvage.txt"],
+			diffStat: " src/salvage.txt | 1 +\n",
+		};
+		const rel = writeSalvageEvidence({
+			projectRoot,
+			batchId,
+			taskId,
+			inspection,
+			recommendedAction: "spine batch retry TP-903",
+			classification: "stall_timeout",
+			salvageCommit: null,
+		});
+
+		assert.equal(rel, `evidence/salvage-${taskId}.json`);
+		const abs = path.join(evidenceDir(projectRoot, batchId), `salvage-${taskId}.json`);
+		assert.ok(fs.existsSync(abs));
+		const text = fs.readFileSync(abs, "utf-8");
+		assert.equal(text, `${JSON.stringify(JSON.parse(text), null, 2)}\n`);
+		assert.equal(JSON.parse(text).taskId, taskId);
+
+		const dir = evidenceDir(projectRoot, batchId);
+		const entries = fs.readdirSync(dir, { recursive: true }).map(String);
+		assert.equal(entries.some((name) => name.includes(".tmp")), false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("startBatch worker failure with dirty scoped file emits salvage and diagnose hint", async () => {

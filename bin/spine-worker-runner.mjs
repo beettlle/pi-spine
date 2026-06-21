@@ -29,6 +29,7 @@ import {
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
+import { writeWorkerDoneMarker } from "../src/batch/worker-output.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
 import { parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
 
@@ -259,11 +260,8 @@ async function runWorkerRunner() {
 		await enforceStubReviewIfConfigured(taskFolder, worktreePath);
 
 		const donePath = path.join(taskFolder, ".DONE");
-		fs.writeFileSync(
-			donePath,
-			`Completed: ${new Date().toISOString()}\nTask: stub\n`,
-			"utf-8",
-		);
+		const stubTaskId = process.env.SPINE_TASK_ID || taskIdFromFolder(taskFolder) || "stub";
+		writeWorkerDoneMarker(donePath, { taskId: stubTaskId });
 		process.exit(0);
 	}
 

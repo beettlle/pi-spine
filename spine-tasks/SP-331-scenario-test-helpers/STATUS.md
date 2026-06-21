@@ -1,7 +1,7 @@
 # SP-331: Centralize scenario materialize helpers — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,35 +11,35 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Identify duplicated loadFixture patterns
-- [ ] Confirm registry entries from SP-330
+- [x] Identify duplicated loadFixture patterns
+- [x] Confirm registry entries from SP-330
 
 ---
 
 ### Step 1: Create shared helper and refactor tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create tests/helpers/scenario-fixture.mjs
-- [ ] Refactor orphan-reconcile, journal-rebuild-incidents, orphan-detect-scope
-- [ ] Verify identical test outcomes
+- [x] Create tests/helpers/scenario-fixture.mjs
+- [x] Refactor orphan-reconcile, journal-rebuild-incidents, orphan-detect-scope
+- [x] Verify identical test outcomes
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run refactored test files
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run refactored test files
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -54,6 +54,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-330 registry not on lane-2 branch | Cherry-picked SP-330 commits (669c753, 3d9109d) | tests/fixtures/scenarios/registry.json |
+| Duplicated helpers: loadIncidentFixture/materializeIncidentFixture vs loadFixture/materializeFixture | Centralized in scenario-fixture.mjs | tests/batch/*.test.mjs |
 
 ---
 
@@ -62,6 +64,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
+| 2026-06-20 | Step 0 preflight | Identified duplicated helpers; cherry-picked SP-330 registry |
+| 2026-06-20 | Step 1 | Created scenario-fixture.mjs; refactored 3 test files |
+| 2026-06-20 | Step 2 verification | typecheck + 1041 tests pass; line coverage 87.01% |
+| 2026-06-20 | Step 3 delivery | .DONE created |
 
 ---
 
@@ -73,4 +79,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Helper API: `loadScenario(id)` resolves fixture via registry; `materializeScenario(projectRoot, id)` writes batch-state + journal.

@@ -1,4 +1,226 @@
 {
   "schemaVersion": 1,
-  "scenarios": []
+  "scenarios": [
+    {
+      "id": "adoption-repo",
+      "kind": "adoption",
+      "title": "Adoption consumer fixture",
+      "description": "Minimal git-backed consumer project for adoption smoke tests and operator drills.",
+      "fixturePath": "tests/fixtures/adoption-repo",
+      "tests": [
+        "tests/adoption/fixture-batch.test.mjs"
+      ],
+      "docs": [
+        "docs/adoption/bootstrap-checklist.md"
+      ],
+      "relatedTasks": [
+        "AD-001",
+        "AD-002"
+      ],
+      "tags": [
+        "adoption",
+        "smoke"
+      ]
+    },
+    {
+      "id": "adoption-smoke",
+      "kind": "recipe",
+      "title": "Adoption smoke recipe",
+      "description": "Operator smoke: typecheck plus stub adoption fixture batch and REPLAN diagnosis tests. No network or real pi required.",
+      "tests": [
+        "tests/adoption/fixture-batch.test.mjs",
+        "tests/adoption/replan-needs-replan.test.mjs"
+      ],
+      "docs": [
+        "docs/adoption/bootstrap-checklist.md",
+        "docs/adoption/operator-runbook.md"
+      ],
+      "relatedTasks": [
+        "AD-001",
+        "TP-044"
+      ],
+      "tags": [
+        "adoption",
+        "smoke",
+        "recipe"
+      ]
+    },
+    {
+      "id": "integration-abc",
+      "kind": "recipe",
+      "title": "PRD §20.2 ABC integration fixture",
+      "description": "Two-lane stub batch with tasks A, B (depends on A), and independent C; mixed-outcome and retry/resume smoke.",
+      "tests": [
+        "tests/batch/integration-abc.test.mjs"
+      ],
+      "relatedTasks": [
+        "TP-901",
+        "TP-902",
+        "TP-903"
+      ],
+      "tags": [
+        "integration",
+        "abc"
+      ]
+    },
+    {
+      "id": "lane-worktree-devcontainer",
+      "kind": "incident",
+      "title": "Lane worktree devcontainer launch failure",
+      "description": "Lane worktree launch failure with container-absolute gitdir and missing PI_SPINE_ROOT.",
+      "fixturePath": "tests/fixtures/incidents/lane-worktree-devcontainer.json",
+      "batchId": "20260605T160800",
+      "tests": [
+        "tests/batch/diagnosis-launch-failed.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260605-lane-worktree-devcontainer.md"
+      ],
+      "tags": [
+        "launch-failed",
+        "worktree"
+      ]
+    },
+    {
+      "id": "orphan-running-resume",
+      "kind": "incident",
+      "title": "Orphan running resume",
+      "description": "task.started → lane.heartbeat → silence with dead workerPid.",
+      "fixturePath": "tests/fixtures/incidents/orphan-running-resume.json",
+      "batchId": "20260603T185308",
+      "tests": [
+        "tests/batch/orphan-reconcile.test.mjs",
+        "tests/batch/journal-rebuild-incidents.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260603-orphan-running-resume.md"
+      ],
+      "relatedTasks": [
+        "SP-082",
+        "SP-085"
+      ],
+      "tags": [
+        "orphan",
+        "resume"
+      ]
+    },
+    {
+      "id": "pidless-ghost-running",
+      "kind": "incident",
+      "title": "Pidless ghost running",
+      "description": "phase: running with no workerPid/enginePid; post-resume journal stall.",
+      "fixturePath": "tests/fixtures/incidents/pidless-ghost-running.json",
+      "batchId": "20260603T224829",
+      "tests": [
+        "tests/batch/orphan-pidless-ghost.test.mjs",
+        "tests/batch/journal-rebuild-incidents.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260604-resume-parallel-lane-orphan.md"
+      ],
+      "relatedTasks": [
+        "SP-082",
+        "SP-095",
+        "SP-111"
+      ],
+      "tags": [
+        "orphan",
+        "pidless"
+      ]
+    },
+    {
+      "id": "resume-orphan-historical-failure",
+      "kind": "incident",
+      "title": "Resume orphan historical failure",
+      "description": "Historical task.failed before batch.resumed; post-resume silence; dead enginePid.",
+      "fixturePath": "tests/fixtures/incidents/resume-orphan-historical-failure.json",
+      "batchId": "20260603T224829",
+      "tests": [
+        "tests/batch/orphan-detect-scope.test.mjs",
+        "tests/batch/journal-rebuild-incidents.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260604-resume-parallel-lane-orphan.md"
+      ],
+      "relatedTasks": [
+        "SP-082",
+        "SP-095"
+      ],
+      "tags": [
+        "orphan",
+        "resume"
+      ]
+    },
+    {
+      "id": "resume-parallel-lane-orphan",
+      "kind": "incident",
+      "title": "Resume parallel lane orphan",
+      "description": "Forced multi-task resume; parallel lane-1 task.started; engine died in commitLaneWorktree; post-resume silence.",
+      "fixturePath": "tests/fixtures/incidents/resume-parallel-lane-orphan.json",
+      "batchId": "20260603T224829",
+      "tests": [
+        "tests/batch/orphan-reconcile.test.mjs",
+        "tests/batch/journal-rebuild-incidents.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260604-resume-parallel-lane-orphan.md"
+      ],
+      "relatedTasks": [
+        "SP-082",
+        "SP-095",
+        "SP-096",
+        "SP-097",
+        "SP-098"
+      ],
+      "tags": [
+        "orphan",
+        "resume",
+        "parallel"
+      ]
+    },
+    {
+      "id": "retry-clears-failed-classification",
+      "kind": "incident",
+      "title": "Retry clears failed classification",
+      "description": "Retry success with journal task.completed but stale failed batch-state / prompt_parse_failed.",
+      "fixturePath": "tests/fixtures/incidents/retry-clears-failed-classification.json",
+      "batchId": "20260605T191325",
+      "tests": [
+        "tests/batch/retry-state-drift.test.mjs",
+        "tests/batch/journal-rebuild-incidents.test.mjs"
+      ],
+      "docs": [
+        "docs/incidents/20260605-retry-state-drift.md"
+      ],
+      "relatedTasks": [
+        "SP-118",
+        "SP-120"
+      ],
+      "tags": [
+        "retry",
+        "state-drift"
+      ]
+    },
+    {
+      "id": "stall-sat020",
+      "kind": "stub",
+      "title": "SAT-020 stall replay",
+      "description": "SearchATon batch stall: checkpoint progress then file-scope touch without commit; worker silence until progress-aware stall.",
+      "fixturePath": "tests/fixtures/stall-sat020/README.md",
+      "batchId": "20260603T002945",
+      "tests": [
+        "tests/batch/stall-sat020-integration.test.mjs"
+      ],
+      "docs": [
+        "docs/features/stall-recovery-improvements-brief.md"
+      ],
+      "relatedTasks": [
+        "SAT-020"
+      ],
+      "tags": [
+        "stall",
+        "SAT-020"
+      ]
+    }
+  ]
 }

@@ -198,13 +198,8 @@ test("fixture running-batch.json reconciles to executing macro-phase", async () 
 		writePiBatchState(projectRoot, loadFixture("running-batch.json"));
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, "running");
-		assert.equal(
-			deriveMacroPhase({
-				diagnosis: result.diagnosis,
-				batchPhase: result.phase,
-			}),
-			"executing",
-		);
+		assert.equal(result.macroPhase, "executing");
+		assert.equal(result.macroPhaseLabel, "Executing");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -224,13 +219,8 @@ test("fixture needs-retry-batch.json maps to failed macro-phase", async () => {
 		writePiBatchState(projectRoot, loadFixture("needs-retry-batch.json"));
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, "needs_retry");
-		assert.equal(
-			deriveMacroPhase({
-				diagnosis: result.diagnosis,
-				batchPhase: result.phase,
-			}),
-			"failed",
-		);
+		assert.equal(result.macroPhase, "failed");
+		assert.equal(result.macroPhaseLabel, "Failed");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -242,13 +232,8 @@ test("fixture limbo-stale maps to completed macro-phase", async () => {
 		writePiBatchState(projectRoot, loadFixture("limbo-stale-20260531T165700.json"));
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, "limbo_stale");
-		assert.equal(
-			deriveMacroPhase({
-				diagnosis: result.diagnosis,
-				batchPhase: result.phase,
-			}),
-			"completed",
-		);
+		assert.equal(result.macroPhase, "completed");
+		assert.equal(result.macroPhaseLabel, "Completed");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

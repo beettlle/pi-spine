@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
 import {
 	detectOrphanRunning,
@@ -8,44 +6,14 @@ import {
 	journalHasTerminalBatchEvent,
 } from "../../src/batch/orphan-detect.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
-import { saveSpineBatchState } from "../../src/batch/state.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+import { loadScenario, materializeScenario } from "../helpers/scenario-fixture.mjs";
 
 const DEAD_PID = 999_999_999;
-const INCIDENT_FIXTURES = path.join(process.cwd(), "tests/fixtures/incidents");
-
-/**
- * @param {string} name
- */
-function loadIncidentFixture(name) {
-	return JSON.parse(fs.readFileSync(path.join(INCIDENT_FIXTURES, name), "utf-8"));
-}
-
-/**
- * @param {string} projectRoot
- * @param {{ batchState: object, journalTail?: object[], meta?: { batchId?: string } }} fixture
- */
-function materializeIncidentFixture(projectRoot, fixture) {
-	const batchId = fixture.meta?.batchId ?? fixture.batchState.batchId;
-	saveSpineBatchState(projectRoot, fixture.batchState);
-
-	const journalFile = path.join(
-		projectRoot,
-		".spine",
-		"runtime",
-		batchId,
-		"journal",
-		"events.jsonl",
-	);
-	fs.mkdirSync(path.dirname(journalFile), { recursive: true });
-	for (const event of fixture.journalTail ?? []) {
-		fs.appendFileSync(journalFile, `${JSON.stringify(event)}\n`, "utf-8");
-	}
-}
 
 test("journalEventsSinceResume excludes pre-resume terminal events", () => {
-	const events = loadIncidentFixture("resume-orphan-historical-failure.json").journalTail;
-	const raw = loadIncidentFixture("resume-orphan-historical-failure.json").batchState;
+	const events = loadScenario("resume-orphan-historical-failure").journalTail;
+	const raw = loadScenario("resume-orphan-historical-failure").batchState;
 
 	assert.equal(journalHasTerminalBatchEvent(events), true);
 
@@ -56,7 +24,7 @@ test("journalEventsSinceResume excludes pre-resume terminal events", () => {
 });
 
 test("detectOrphanRunning: historical task.failed + post-resume silence + dead engine", () => {
-	const fixture = loadIncidentFixture("resume-orphan-historical-failure.json");
+	const fixture = loadScenario("resume-orphan-historical-failure");
 	const orphan = detectOrphanRunning({
 		phase: "running",
 		hasRunningTasks: true,
@@ -74,8 +42,7 @@ test("detectOrphanRunning: historical task.failed + post-resume silence + dead e
 test("resume orphan with historical failure fixture is not diagnosed as running", async () => {
 	const projectRoot = await initGitRepo("spine-resume-orphan-historical-");
 	try {
-		const fixture = loadIncidentFixture("resume-orphan-historical-failure.json");
-		materializeIncidentFixture(projectRoot, fixture);
+		materializeScenario(projectRoot, "resume-orphan-historical-failure");
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
@@ -88,7 +55,7 @@ test("resume orphan with historical failure fixture is not diagnosed as running"
 });
 
 test("terminal event within scoped window still suppresses engine orphan", () => {
-	const fixture = loadIncidentFixture("resume-orphan-historical-failure.json");
+	const fixture = loadScenario("resume-orphan-historical-failure");
 	const events = [
 		...fixture.journalTail,
 		{

@@ -2,6 +2,13 @@
  * Dashboard view model (PRD §16.1) — pure functions for browser + tests.
  */
 
+import {
+	computeThroughputTasksPerHour,
+	emptyLaneThroughputStats,
+	formatElapsedMs,
+	formatThroughputRate,
+} from "./lane-throughput.mjs";
+
 const DIAGNOSIS_BADGE_CLASS = {
 	running: "badge-running",
 	paused: "badge-paused",
@@ -129,6 +136,8 @@ export function buildBatchSummaryModel(batch) {
 	return {
 		batchId: batch.batchId,
 		phase: batch.phase,
+		macroPhase: batch.macroPhase ?? null,
+		macroPhaseLabel: batch.macroPhaseLabel ?? null,
 		baseBranch: batch.baseBranch,
 		orchBranch: batch.orchBranch,
 		startedAt: batch.startedAt,
@@ -149,6 +158,7 @@ export function buildWaveModel(snapshot) {
 	return {
 		currentWaveIndex: waves.currentWaveIndex ?? 0,
 		totalWaves: waves.totalWaves ?? 0,
+		macroPhaseLabel: snapshot?.macroPhaseLabel ?? snapshot?.batch?.macroPhaseLabel ?? null,
 		waves: (waves.waves ?? []).map((wave) => ({
 			index: wave.index,
 			taskIds: wave.taskIds ?? [],
@@ -167,6 +177,40 @@ export function formatLaneHeartbeatDisplay(lane) {
 }
 
 /**
+ * @param {object} lane
+ */
+export function buildLaneThroughputModel(lane) {
+	const throughput = lane?.throughput ?? emptyLaneThroughputStats();
+	return {
+		activeElapsedMs: throughput.activeElapsedMs,
+		completedCount: throughput.completedCount,
+		failedCount: throughput.failedCount,
+		throughputTasksPerHour: throughput.throughputTasksPerHour,
+		elapsedDisplay: formatElapsedMs(throughput.activeElapsedMs),
+		doneDisplay: throughput.completedCount > 0 ? String(throughput.completedCount) : "—",
+		rateDisplay:
+			throughput.throughputTasksPerHour == null
+				? "—"
+				: `${formatThroughputRate(throughput.throughputTasksPerHour)} tasks/hr`,
+	};
+}
+
+/**
+ * @param {object|null|undefined} summary
+ */
+export function buildLaneThroughputSummaryModel(summary) {
+	const throughput = summary ?? emptyLaneThroughputStats();
+	return {
+		elapsedDisplay: formatElapsedMs(throughput.activeElapsedMs),
+		doneDisplay: throughput.completedCount > 0 ? String(throughput.completedCount) : "—",
+		rateDisplay:
+			throughput.throughputTasksPerHour == null
+				? "—"
+				: `${formatThroughputRate(throughput.throughputTasksPerHour)} tasks/hr`,
+	};
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildLaneTableModel(snapshot) {
@@ -182,7 +226,38 @@ export function buildLaneTableModel(snapshot) {
 		activityPhase: lane.activityPhase ?? "idle",
 		activityPhaseLabel: lane.activityPhaseLabel ?? "—",
 		worktree: lane.worktree,
+		laneAlert: lane.laneAlert ?? null,
+		throughput: buildLaneThroughputModel(lane),
 	}));
+}
+
+/**
+ * @param {object} snapshot
+ */
+export function buildLaneTableSummaryModel(snapshot) {
+	const lanes = snapshot?.lanes ?? [];
+	if (lanes.length < 2) return null;
+
+	if (snapshot?.laneThroughputSummary) {
+		return buildLaneThroughputSummaryModel(snapshot.laneThroughputSummary);
+	}
+
+	let activeElapsedMs = 0;
+	let completedCount = 0;
+	let failedCount = 0;
+	for (const lane of lanes) {
+		const throughput = lane.throughput ?? emptyLaneThroughputStats();
+		activeElapsedMs += throughput.activeElapsedMs;
+		completedCount += throughput.completedCount;
+		failedCount += throughput.failedCount;
+	}
+
+	return buildLaneThroughputSummaryModel({
+		activeElapsedMs,
+		completedCount,
+		failedCount,
+		throughputTasksPerHour: computeThroughputTasksPerHour(completedCount, activeElapsedMs),
+	});
 }
 
 /**
@@ -268,6 +343,7 @@ export function buildDashboardViewModel(snapshot) {
 		batch: buildBatchSummaryModel(snapshot?.batch),
 		waves: buildWaveModel(snapshot),
 		lanes: buildLaneTableModel(snapshot),
+		laneTableSummary: buildLaneTableSummaryModel(snapshot),
 		gate: buildGateModel(snapshot?.gate),
 		gateAffordance: buildGateAffordanceModel(snapshot),
 		showGateAffordance: shouldShowGateAffordance(snapshot),

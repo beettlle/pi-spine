@@ -32,6 +32,9 @@ export function runSpineStatus(options) {
 	if (result.diagnosis) {
 		lines.push(`  Diagnosis: ${result.diagnosis}`);
 	}
+	if (result.macroPhase) {
+		lines.push(`  Macro phase: ${result.macroPhaseLabel ?? result.macroPhase}`);
+	}
 
 	lines.push("", `  ${result.headline}`, "");
 	lines.push(`  → ${result.suggestedCommand}`);

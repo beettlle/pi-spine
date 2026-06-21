@@ -2,6 +2,7 @@
  * Dashboard snapshot builder (PRD §16, NFR-OBS-04).
  */
 
+import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
 	loadBatchStateFile,
@@ -16,6 +17,16 @@ import {
 } from "../batch/journal.mjs";
 import { resolveStallConfig } from "../batch/heartbeat.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import {
+	deriveLaneThroughputStats,
+	emptyLaneThroughputStats,
+	summarizeLaneThroughput,
+} from "./lane-throughput.mjs";
+import {
+	filterMetricsLines,
+	metricsFilePath,
+	readMetricsLines,
+} from "../batch/metrics.mjs";
 
 /**
  * @param {string|null|undefined} worktreePath
@@ -341,6 +352,7 @@ export function formatLaneHeartbeatDisplay({ workerPhase, heartbeatAgeSeconds })
  * @param {string[]} [params.currentWaveTaskIds]
  * @param {number} [params.now]
  * @param {object[]} [params.journalEvents]
+ * @param {object[]} [params.metricsLines]
  */
 export function buildLaneRows({
 	lanes,
@@ -349,8 +361,16 @@ export function buildLaneRows({
 	currentWaveTaskIds = [],
 	journalTail = [],
 	journalEvents = [],
+	metricsLines = [],
 	now = Date.now(),
 }) {
+	const throughputByLane = deriveLaneThroughputStats({
+		lanes,
+		journalEvents,
+		metricsLines,
+		now,
+	});
+
 	return (lanes ?? []).map((lane) => {
 		const heartbeatMeta = resolveLaneHeartbeatMeta(lane.laneNumber, journalEvents);
 		const heartbeatAgeSecondsValue = heartbeatAgeSeconds(lane.lastHeartbeatAt, now);
@@ -361,6 +381,8 @@ export function buildLaneRows({
 			classifiedTasks,
 			journalEvents,
 		});
+		const throughput =
+			throughputByLane.get(lane.laneNumber) ?? emptyLaneThroughputStats();
 		return {
 			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 			laneNumber: lane.laneNumber,
@@ -378,6 +400,7 @@ export function buildLaneRows({
 			}),
 			worktree: truncateWorktreePath(lane.worktreePath),
 			laneAlert: resolveLaneAlert(lane.laneNumber, journalTail, now),
+			throughput,
 		};
 	});
 }
@@ -549,6 +572,15 @@ export function buildDashboardSnapshot(projectRoot) {
 		? wavePlan[currentWaveIndex].map(String)
 		: [];
 
+	const config = configResult.config ?? {};
+	let metricsLines = [];
+	if (reconciliation.batchId) {
+		const metricsPath = metricsFilePath(projectRoot, config);
+		metricsLines = filterMetricsLines(readMetricsLines(metricsPath), {
+			batchId: reconciliation.batchId,
+		});
+	}
+
 	const lanes = buildLaneRows({
 		lanes: batch?.lanes ?? [],
 		classifiedTasks,
@@ -556,10 +588,34 @@ export function buildDashboardSnapshot(projectRoot) {
 		currentWaveTaskIds,
 		journalTail,
 		journalEvents,
+		metricsLines,
 		now,
 	});
+	const laneThroughputSummary = summarizeLaneThroughput(
+		deriveLaneThroughputStats({
+			lanes: batch?.lanes ?? [],
+			journalEvents,
+			metricsLines,
+			now,
+		}),
+	);
 	const waves = buildWaveProgress(batch);
 	const defaultView = buildDefaultViewStatus(reconciliation, gate);
+
+	const macroPhase = deriveMacroPhase({
+		diagnosis: reconciliation.diagnosis,
+		batchPhase: batch?.phase ?? reconciliation.phase,
+		currentWaveIndex,
+		mergeResults: Array.isArray(rawBatch.mergeResults) ? rawBatch.mergeResults : [],
+		gateRecord: gate,
+		postMergeLimbo: reconciliation.signals?.postMergeLimbo === true,
+		journalEvents,
+	});
+	const batchSummary = summarizeBatch(batch);
+	if (batchSummary) {
+		batchSummary.macroPhase = macroPhase;
+		batchSummary.macroPhaseLabel = macroPhaseLabel(macroPhase);
+	}
 
 	return {
 		generatedAt: new Date(now).toISOString(),
@@ -572,8 +628,11 @@ export function buildDashboardSnapshot(projectRoot) {
 		phase: reconciliation.phase,
 		batchStatePath: reconciliation.batchStatePath,
 		reconciliation,
-		batch: summarizeBatch(batch),
+		batch: batchSummary,
+		macroPhase,
+		macroPhaseLabel: macroPhaseLabel(macroPhase),
 		lanes,
+		laneThroughputSummary,
 		gate,
 		journalTail,
 		waves,

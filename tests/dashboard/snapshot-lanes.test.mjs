@@ -6,6 +6,8 @@ import {
 } from "../../src/dashboard/snapshot.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";
 
+const BASE_TS = Date.parse("2026-06-20T12:00:00.000Z");
+
 test("computeActiveTaskIdsForLane returns running/pending tasks in current wave only", () => {
 	const classifiedTasks = [
 		{ taskId: "TP-001", laneNumber: 1, status: "succeeded", classification: "terminal-success" },
@@ -43,4 +45,34 @@ test("buildLaneRows exposes activeTaskIds separate from batch assignment", () =>
 	assert.deepEqual(rows[0].activeTaskIds, ["TP-002"]);
 	assert.deepEqual(rows[0].taskIds, ["TP-001", "TP-002"]);
 	assert.deepEqual(rows[1].activeTaskIds, ["TP-003"]);
+});
+
+test("buildLaneRows attaches per-lane throughput stats from journal", () => {
+	const stallConfig = resolveStallConfig({});
+	const rows = buildLaneRows({
+		lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["TP-001"], lastHeartbeatAt: Date.now() }],
+		classifiedTasks: [
+			{ taskId: "TP-001", laneNumber: 1, status: "succeeded", classification: "terminal-success" },
+		],
+		stallConfig,
+		currentWaveTaskIds: [],
+		journalEvents: [
+			{
+				type: "task.started",
+				laneId: "lane-1",
+				taskId: "TP-001",
+				timestamp: new Date(BASE_TS).toISOString(),
+			},
+			{
+				type: "task.completed",
+				laneId: "lane-1",
+				taskId: "TP-001",
+				timestamp: new Date(BASE_TS + 60 * 60 * 1000).toISOString(),
+			},
+		],
+	});
+
+	assert.equal(rows[0].throughput.completedCount, 1);
+	assert.equal(rows[0].throughput.activeElapsedMs, 60 * 60 * 1000);
+	assert.equal(rows[0].throughput.throughputTasksPerHour, 1);
 });
