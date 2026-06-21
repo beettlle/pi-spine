@@ -17,8 +17,8 @@ import {
 
 const packageRoot = scenarioRegistryPackageRoot();
 
-/** Shipped registry entry count (6 incidents + SAT-020 stub + adoption + ABC recipe). */
-const SHIPPED_SCENARIO_COUNT = 9;
+/** Shipped registry entry count (6 incidents + SAT-020 stub + adoption + 2 recipes). */
+const SHIPPED_SCENARIO_COUNT = 10;
 
 test("resolveRegistryPath points at tests/fixtures/scenarios/registry.json", () => {
 	const registryPath = resolveRegistryPath(packageRoot);

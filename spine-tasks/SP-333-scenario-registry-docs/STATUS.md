@@ -1,7 +1,7 @@
 # SP-333: Adoption smoke recipe and registry docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review SP-332 CLI output format
-- [ ] Review adoption-smoke.sh script
+- [x] Review SP-332 CLI output format
+- [x] Review adoption-smoke.sh script
 
 ---
 
 ### Step 1: Register adoption-smoke and write docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add adoption-smoke registry entry
-- [ ] Write operator-runbook scenario registry section
-- [ ] Update bootstrap-checklist
+- [x] Add adoption-smoke registry entry
+- [x] Write operator-runbook scenario registry section
+- [x] Update bootstrap-checklist
 
 ---
 

@@ -904,6 +904,52 @@ npm run coverage:check
 
 `npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
 
+### Scenario fixture registry
+
+Central catalog for incident replays, stub batches, adoption fixtures, and test recipes. **Source of truth:** `tests/fixtures/scenarios/registry.json` (schema version 1). Module API: `src/fixtures/scenario-registry.mjs`.
+
+| `kind` | Meaning | `fixturePath` |
+|--------|---------|---------------|
+| `incident` | Batch-state + journal tail for orphan/retry/resume regression | Required — JSON under `tests/fixtures/incidents/` |
+| `stub` | Generated or README-only stub replay (e.g. SAT-020 stall) | Required |
+| `adoption` | Git-backed consumer layout for install/batch drills | Required — directory under `tests/fixtures/` |
+| `recipe` | Test-driven scenario without a dedicated fixture dir | Optional |
+
+**Inspect the catalog** (pi-spine repo root; requires SP-332 `spine scenarios` CLI):
+
+```bash
+spine scenarios list
+spine scenarios list --json
+spine scenarios show adoption-smoke
+spine scenarios show adoption-smoke --json
+```
+
+`list` prints one line per scenario: `id`, `kind`, and `title` (sorted by id). `show` prints all registry fields for one id (`description`, `fixturePath`, `batchId`, `tests`, `docs`, `relatedTasks`, `tags`). `--json` emits a single object or array for automation.
+
+**Materialize incident/stub fixtures** (dev/dogfood only — writes `.spine/batch-state.json` and journal tail into the target repo):
+
+```bash
+spine scenarios materialize orphan-running-resume
+spine scenarios materialize orphan-running-resume --force   # when active batch present
+```
+
+Materialize does **not** start a batch. Refuses when `.spine/batch-state.json` shows an active batch unless `--force` is passed.
+
+**Adoption smoke recipe** (`adoption-smoke` in the registry): operator entry point for pre-publish validation — typecheck plus stub adoption tests (no network, no real `pi`):
+
+```bash
+./scripts/adoption-smoke.sh
+```
+
+Equivalent targeted run:
+
+```bash
+npm run typecheck
+SPINE_WORKER_STUB=1 node --test tests/adoption/fixture-batch.test.mjs tests/adoption/replan-needs-replan.test.mjs
+```
+
+Related registry entry `adoption-repo` points at the consumer fixture under `tests/fixtures/adoption-repo/` (AD-001 stub batch, AD-002 real-pi). See [bootstrap checklist](./bootstrap-checklist.md#adoption-fixture-smoke-target).
+
 ### `node bin/spine.mjs` vs global `spine`
 
 | Symptom | Fix |
