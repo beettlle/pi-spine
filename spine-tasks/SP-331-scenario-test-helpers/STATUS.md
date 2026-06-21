@@ -1,7 +1,7 @@
 # SP-331: Centralize scenario materialize helpers — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,18 +28,18 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run refactored test files
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run refactored test files
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -66,6 +66,8 @@
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
 | 2026-06-20 | Step 0 preflight | Identified duplicated helpers; cherry-picked SP-330 registry |
 | 2026-06-20 | Step 1 | Created scenario-fixture.mjs; refactored 3 test files |
+| 2026-06-20 | Step 2 verification | typecheck + 1041 tests pass; line coverage 87.01% |
+| 2026-06-20 | Step 3 delivery | .DONE created |
 
 ---
 
