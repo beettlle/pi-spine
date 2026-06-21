@@ -817,6 +817,8 @@ spine batch complete
 
 **Never** edit `.pi/batch-state.json` or `.spine/batch-state.json` by hand. pi-spine archives to `.spine/runtime/<batchId>/archive/` first.
 
+**Crash-safe persistence:** `.spine/batch-state.json` and `.spine/runtime/<batchId>/gate.json` are written atomically (temp file + rename). A crash mid-write should leave the previous file intact or the new complete file — never torn partial JSON. The append-only journal and run-metrics paths are unchanged.
+
 ---
 
 ## 7. Dashboard
