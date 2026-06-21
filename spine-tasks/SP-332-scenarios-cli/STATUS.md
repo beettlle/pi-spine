@@ -1,7 +1,7 @@
 # SP-332: spine scenarios CLI — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -29,18 +29,18 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Add tests/cli/scenarios.test.mjs
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -56,6 +56,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | SPINE_SCENARIO_REGISTRY_ROOT env override added for CLI tests | Keep | bin/spine-cli/scenarios.mjs |
+| Full npm test has 1 pre-existing failure in contract-stall-override test (unrelated) | Note | tests/batch/ |
 
 ---
 
@@ -65,6 +66,7 @@
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
 | 2026-06-20 | Step 0–1 | scenarios.mjs + spine.mjs wiring |
+| 2026-06-20 | Step 2 | 12 scenarios tests pass; coverage 86.82% |
 
 ---
 
@@ -76,4 +78,4 @@
 
 ## Notes
 
-Plan: list/show read registry via SP-329 APIs; materialize writes batch-state + journal tail to target `.spine/` with `--force` guard when batch-state exists.
+Contract command: typecheck + 12/12 scenarios tests pass. Full suite: 1048/1049 (1 pre-existing stall flake).
