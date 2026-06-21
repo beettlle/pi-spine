@@ -129,9 +129,13 @@ export function resolveTaskMetricOutcome(task) {
  * @param {object} [params.config]
  * @param {string} [params.taskFolder]
  */
-export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder }) {
+export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, laneNumber }) {
 	const worker = config?.agents?.worker ?? {};
 	const reviewLevel = taskFolder ? readReviewLevel(taskFolder) : Number(task.reviewLevel ?? 0);
+	const startedMs = Number(task.startedAt ?? Date.now());
+	const endedMs = Number(task.endedAt ?? Date.now());
+	const resolvedLaneNumber =
+		laneNumber ?? (Number.isFinite(task.laneNumber) ? task.laneNumber : undefined);
 
 	/** @type {Record<string, unknown>} */
 	const record = {
@@ -148,11 +152,17 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder }
 			worker.thinking === "high"
 				? worker.thinking
 				: "high",
-		startedAt: new Date(task.startedAt ?? Date.now()).toISOString(),
-		endedAt: new Date(task.endedAt ?? Date.now()).toISOString(),
+		startedAt: new Date(startedMs).toISOString(),
+		endedAt: new Date(endedMs).toISOString(),
 		outcome: resolveTaskMetricOutcome(task),
 	};
 
+	if (Number.isFinite(resolvedLaneNumber) && resolvedLaneNumber > 0) {
+		record.laneNumber = resolvedLaneNumber;
+	}
+	if (Number.isFinite(startedMs) && Number.isFinite(endedMs)) {
+		record.durationMs = Math.max(0, endedMs - startedMs);
+	}
 	if (task.exitReason) record.exitReason = task.exitReason;
 	if (reviewLevel > 0) record.reviewLevel = reviewLevel;
 	if (task.finalVerdict != null) record.finalVerdict = task.finalVerdict;
@@ -186,9 +196,16 @@ export function appendTaskMetric(projectRoot, record, config = {}) {
  * @param {object} [params.config]
  * @param {string} [params.taskFolder]
  */
-export function recordTaskTerminalMetric({ projectRoot, batchId, task, config = {}, taskFolder }) {
+export function recordTaskTerminalMetric({
+	projectRoot,
+	batchId,
+	task,
+	config = {},
+	taskFolder,
+	laneNumber,
+}) {
 	if (!isMetricsEnabled(config)) return null;
-	const record = buildTaskMetricRecord({ batchId, task, config, taskFolder });
+	const record = buildTaskMetricRecord({ batchId, task, config, taskFolder, laneNumber });
 	return appendTaskMetric(projectRoot, record, config);
 }
 
