@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { writeTextAtomic } from "../fs/atomic-write.mjs";
 import { runEvidenceCommand } from "./evidence-command.mjs";
 import { readJournalEvents, readJournalTail } from "./journal.mjs";
 import { generateBatchPostMortem } from "./postmortem.mjs";
@@ -135,14 +136,14 @@ export function collectEvidenceBundle(ctx) {
 	const reconciliation = reconcileBatch({ projectRoot, batchState, verbose: true });
 	const journalTail = readJournalTail(readJournalEvents(projectRoot, batchId));
 	const summary = generateBatchPostMortem(batchState, journalTail, reconciliation, projectRoot);
-	fs.writeFileSync(path.join(dir, "summary.md"), summary, "utf-8");
+	writeTextAtomic(path.join(dir, "summary.md"), summary);
 	evidenceRefs.push("evidence/summary.md");
 
 	const baseBranch = batchState?.baseBranch ?? config?.baseBranch ?? "main";
 	const orchBranch = batchState?.orchBranch ?? null;
 	if (orchBranch) {
 		const diffStat = collectDiffStat(projectRoot, baseBranch, orchBranch);
-		fs.writeFileSync(path.join(dir, "diff-stat.txt"), `${diffStat}\n`, "utf-8");
+		writeTextAtomic(path.join(dir, "diff-stat.txt"), `${diffStat}\n`);
 		evidenceRefs.push("evidence/diff-stat.txt");
 	}
 
@@ -153,19 +154,19 @@ export function collectEvidenceBundle(ctx) {
 
 	if (collectTest && testing.test) {
 		const result = runEvidenceCommand(projectRoot, testing.test);
-		fs.writeFileSync(path.join(dir, "test-output.txt"), `${result.output}\n`, "utf-8");
+		writeTextAtomic(path.join(dir, "test-output.txt"), `${result.output}\n`);
 		evidenceRefs.push("evidence/test-output.txt");
 	}
 
 	if (collectBuild && testing.build) {
 		const result = runEvidenceCommand(projectRoot, testing.build);
-		fs.writeFileSync(path.join(dir, "build-output.txt"), `${result.output}\n`, "utf-8");
+		writeTextAtomic(path.join(dir, "build-output.txt"), `${result.output}\n`);
 		evidenceRefs.push("evidence/build-output.txt");
 	}
 
 	if (testing.testWithCoverage) {
 		const result = runEvidenceCommand(projectRoot, testing.testWithCoverage);
-		fs.writeFileSync(path.join(dir, "coverage-output.txt"), `${result.output}\n`, "utf-8");
+		writeTextAtomic(path.join(dir, "coverage-output.txt"), `${result.output}\n`);
 		evidenceRefs.push("evidence/coverage-output.txt");
 	}
 
@@ -178,6 +179,12 @@ export function collectEvidenceBundle(ctx) {
 			evidenceRefs.push(`evidence/${name}`);
 		}
 	}
+
+	const completePayload = `${JSON.stringify({
+		completedAt: new Date().toISOString(),
+		evidenceRefs,
+	})}\n`;
+	writeTextAtomic(path.join(dir, ".complete"), completePayload);
 
 	return { evidenceDir: dir, evidenceRefs };
 }

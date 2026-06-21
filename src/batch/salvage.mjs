@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { resolveScopedDirtyPaths } from "./heartbeat.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { evidenceDir } from "./evidence.mjs";
@@ -216,7 +217,7 @@ export function writeSalvageEvidence({
 		salvageCommit: salvageCommit ?? null,
 		recordedAt: new Date().toISOString(),
 	};
-	fs.writeFileSync(abs, `${JSON.stringify(payload, null, 2)}\n`, "utf-8");
+	writeJsonAtomic(abs, payload);
 	return rel;
 }
 
