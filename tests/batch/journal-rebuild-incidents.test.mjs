@@ -1,36 +1,17 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { journalPath, readJournalEvents } from "../../src/batch/journal.mjs";
+import { readJournalEvents } from "../../src/batch/journal.mjs";
 import {
 	deriveStructuralBatchStateFromJournal,
 	detectBatchStateDrift,
 	rebuildBatchStateFromJournal,
 	rebuildBatchStateFromDisk,
 } from "../../src/batch/journal-rebuild.mjs";
-import { saveSpineBatchState } from "../../src/batch/state.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
-
-const INCIDENT_FIXTURES = path.join(process.cwd(), "tests/fixtures/incidents");
-
-function loadFixture(name) {
-	return JSON.parse(fs.readFileSync(path.join(INCIDENT_FIXTURES, name), "utf-8"));
-}
+import { loadScenario, materializeScenario } from "../helpers/scenario-fixture.mjs";
 
 function fixtureJournalEvents(fixture) {
 	return fixture.journalTail ?? fixture.journalEvents ?? [];
-}
-
-function materializeFixture(projectRoot, fixture) {
-	const batchId = fixture.meta?.batchId ?? fixture.batchId ?? fixture.batchState.batchId;
-	saveSpineBatchState(projectRoot, fixture.batchState);
-	const journalFile = journalPath(projectRoot, batchId);
-	fs.mkdirSync(path.dirname(journalFile), { recursive: true });
-	for (const event of fixtureJournalEvents(fixture)) {
-		fs.appendFileSync(journalFile, `${JSON.stringify(event)}\n`, "utf-8");
-	}
-	return batchId;
 }
 
 function staleFailedSeed(fixture, taskId) {
@@ -49,7 +30,7 @@ function staleFailedSeed(fixture, taskId) {
 }
 
 test("deriveStructuralBatchStateFromJournal rebuilds multi-lane skeleton without cache seed", () => {
-	const fixture = loadFixture("resume-parallel-lane-orphan.json");
+	const fixture = loadScenario("resume-parallel-lane-orphan");
 	const events = fixtureJournalEvents(fixture);
 	const structural = deriveStructuralBatchStateFromJournal(events, null);
 
@@ -70,7 +51,7 @@ test("deriveStructuralBatchStateFromJournal rebuilds multi-lane skeleton without
 });
 
 test("resume-parallel-lane-orphan fixture: journal-only rebuild marks resumed tasks running", () => {
-	const fixture = loadFixture("resume-parallel-lane-orphan.json");
+	const fixture = loadScenario("resume-parallel-lane-orphan");
 	const events = fixtureJournalEvents(fixture);
 	const rebuilt = rebuildBatchStateFromJournal(null, events);
 
@@ -83,7 +64,7 @@ test("resume-parallel-lane-orphan fixture: journal-only rebuild marks resumed ta
 });
 
 test("orphan-running-resume fixture: structural + lifecycle rebuild without seed", () => {
-	const fixture = loadFixture("orphan-running-resume.json");
+	const fixture = loadScenario("orphan-running-resume");
 	const events = fixtureJournalEvents(fixture);
 	const structural = deriveStructuralBatchStateFromJournal(events, null);
 	const rebuilt = rebuildBatchStateFromJournal(null, events);
@@ -96,7 +77,7 @@ test("orphan-running-resume fixture: structural + lifecycle rebuild without seed
 });
 
 test("pidless-ghost-running fixture: post-resume task.started wins over historical failure", () => {
-	const fixture = loadFixture("pidless-ghost-running.json");
+	const fixture = loadScenario("pidless-ghost-running");
 	const events = fixtureJournalEvents(fixture);
 	const rebuilt = rebuildBatchStateFromJournal(null, events);
 	const task = rebuilt.tasks.find((entry) => entry.taskId === "SAT-040");
@@ -106,7 +87,7 @@ test("pidless-ghost-running fixture: post-resume task.started wins over historic
 });
 
 test("resume-orphan-historical-failure fixture: rebuild ignores pre-resume failure for active task", () => {
-	const fixture = loadFixture("resume-orphan-historical-failure.json");
+	const fixture = loadScenario("resume-orphan-historical-failure");
 	const events = fixtureJournalEvents(fixture);
 	const rebuilt = rebuildBatchStateFromJournal(null, events);
 	const task = rebuilt.tasks.find((entry) => entry.taskId === "SAT-040");
@@ -116,7 +97,7 @@ test("resume-orphan-historical-failure fixture: rebuild ignores pre-resume failu
 });
 
 test("retry-clears-failed-classification fixture: rebuild fixes stale failed cache", () => {
-	const fixture = loadFixture("retry-clears-failed-classification.json");
+	const fixture = loadScenario("retry-clears-failed-classification");
 	const events = fixtureJournalEvents(fixture);
 	const seed = staleFailedSeed(fixture, "SP-118");
 	const rebuilt = rebuildBatchStateFromJournal(seed, events);
@@ -129,7 +110,7 @@ test("retry-clears-failed-classification fixture: rebuild fixes stale failed cac
 });
 
 test("retry-clears-failed-classification fixture: detectBatchStateDrift flags cache vs journal", () => {
-	const fixture = loadFixture("retry-clears-failed-classification.json");
+	const fixture = loadScenario("retry-clears-failed-classification");
 	const events = fixtureJournalEvents(fixture);
 	const cached = staleFailedSeed(fixture, "SP-118");
 	const rebuilt = rebuildBatchStateFromJournal(cached, events);
@@ -142,8 +123,7 @@ test("retry-clears-failed-classification fixture: detectBatchStateDrift flags ca
 test("incident fixtures rebuild from disk matches in-memory journal rebuild", async () => {
 	const projectRoot = await initGitRepo("spine-journal-rebuild-incident-disk-");
 	try {
-		const fixture = loadFixture("orphan-running-resume.json");
-		const batchId = materializeFixture(projectRoot, fixture);
+		const batchId = materializeScenario(projectRoot, "orphan-running-resume");
 		const events = readJournalEvents(projectRoot, batchId);
 		const fromDisk = rebuildBatchStateFromDisk(projectRoot, batchId, null);
 		const fromEvents = rebuildBatchStateFromJournal(null, events);
