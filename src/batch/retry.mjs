@@ -2,6 +2,7 @@
  * Atomic task retry and skip (TP-017, PRD §18.5, FR-BATCH-09/10).
  */
 
+import { reconcileOrphanRunningState } from "./reconcile.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
@@ -51,7 +52,13 @@ export function retryTask({ projectRoot, taskId }) {
 		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
 	}
 
-	const state = loaded.raw;
+	reconcileOrphanRunningState({ projectRoot, state: loaded.raw });
+
+	const reloaded = loadSpineBatchState(projectRoot);
+	const state = reloaded.raw;
+	if (!state) {
+		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+	}
 	const phase = String(state.phase ?? "");
 
 	if (RETRY_BLOCKED_PHASES.has(phase)) {

@@ -5,10 +5,8 @@
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import {
-	resolveRulesManifestIntegrateDrift,
-	tryAutoResolveRulesManifestMergeConflict,
-} from "./engine-lanes.mjs";
+import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes.mjs";
+import { resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";

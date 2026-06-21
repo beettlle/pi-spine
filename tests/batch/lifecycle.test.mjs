@@ -38,6 +38,15 @@ function writePiBatchState(projectRoot, fixture) {
 	);
 }
 
+function writeSpineBatchState(projectRoot, fixture) {
+	fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+	fs.writeFileSync(
+		path.join(projectRoot, ".spine", "batch-state.json"),
+		JSON.stringify(fixture, null, 2),
+		"utf-8",
+	);
+}
+
 test("dismiss archives batch-state before clearing active file", async () => {
 	const projectRoot = await createProjectFixture();
 	try {
@@ -114,7 +123,7 @@ test("complete refused when mergeResults succeeded but orch not on main", async 
 				},
 			],
 		};
-		writePiBatchState(projectRoot, batchFixture);
+		writeSpineBatchState(projectRoot, batchFixture);
 
 		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
 		fs.writeFileSync(path.join(projectRoot, "orch-only.txt"), "not on main yet", "utf-8");

@@ -49,7 +49,7 @@ After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_dri
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
 2. `state_drift` → retry affected task, then `spine batch resume --force`
-3. `engine_orphaned` → `spine batch resume --attached` (no `batch pause` first); `worker_orphaned` → `spine batch abort` or `spine batch retry <id>` then resume; `worker_done_missing` → `spine batch retry <id>` (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — use `spine batch resume --attached --force` (detached resume waits up to 2h by default).
+3. `engine_orphaned` or `worker_orphaned` with dead PIDs → run the **`suggestedCommand`** (usually `spine batch retry <id>`). **No `batch pause` first** — retry reconciles orphan `running` tasks to `failed` and journals `task.failed` / `lane.died` when missing (SP-315). Then `spine batch resume --attached` or `--force` as diagnose suggests. `worker_done_missing` → `spine batch retry <id>` only (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — `spine batch retry <id>` or `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -367,7 +367,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
 | `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
 | `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
-| `engine_orphaned` | Batch engine died mid-run | `spine batch resume --attached` (no pause first) |
+| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` when task still `running`, else `spine batch resume --attached` |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
@@ -430,6 +430,15 @@ spine integrate --dry-run
 ```
 
 When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine integrate` **refuses** until the gate is approved.
+
+**Rules-manifest drift on `main` before integrate:** Lane workers may refresh `.spine/rules-manifest.json` on the base worktree (e.g. after `spine rules sync` or new `.cursor/rules/` entries). If the gate is approved and the **only** dirty path is the manifest:
+
+| Drift kind | Integrate behavior |
+|------------|-------------------|
+| `generatedAt` only (rules[] fingerprint matches `main` HEAD) | Auto-restores HEAD; merge applies orch manifest |
+| Worker entries on `main` matching orch fingerprint | Auto-restores HEAD; merge lands orch manifest (no manual commit — [#22](https://github.com/beettlle/pi-spine/issues/22)) |
+| Manifest differs from both `main` HEAD and orch | Refused — commit or stash, then re-run |
+| Any other dirty file on `main` | Refused — commit or stash unrelated changes first |
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 
@@ -671,11 +680,11 @@ When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a *
 1. Confirm diagnosis: `spine status --diagnose` (never trust plain `running` when PIDs are dead).
 2. Inspect journal tail: `spine journal tail` — expect `task.started` / `lane.heartbeat` then silence.
 3. Check detached engine log: `.spine/runtime/detached-engine.log`.
-4. Recover:
-   - **`engine_orphaned`:** `spine batch resume --attached` — dead engine with `phase: running` no longer requires `batch pause` first (SP-284/SP-297).
-   - `spine batch retry <taskId>` when a running task needs a clean retry before resume.
+4. Recover (follow **`suggestedCommand`** from step 1):
+   - **`engine_orphaned` / `worker_orphaned`:** `spine batch retry <taskId>` — reconciles orphan `running` → `failed` automatically; **no `batch pause` first** (SP-315).
+   - **`engine_orphaned` (no named task):** `spine batch resume --attached` (SP-284/SP-297).
    - `spine batch abort` when no task is active or work should be discarded.
-   - `spine batch resume --force` when retry/abort cleared stale running records but phase is still `running`.
+   - `spine batch resume --force` after retry when phase is `failed`, or when diagnose suggests resume with dead engine PID.
 
 Batch-state records `resilience.enginePid` and lane `workerPid` for liveness checks during reconciliation.
 
@@ -987,7 +996,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |
 | Review fail-closed | Fix reviewer feedback; re-run `spine review step` |
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
-| Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate immediately after the last wave merge (SP-280, SP-281). If diagnose still shows limbo, run **`node bin/spine.mjs batch resume --attached`** from the repo root when global `spine` on PATH may be stale (`spine doctor` → “spine on PATH (stale)”). Detached `spine batch resume` also finalizes via post-merge limbo fast path |
+| Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate immediately after the last wave merge (SP-280, SP-281). Attached engines also finalize on `SIGTERM`/`SIGINT` when merges are done but the land loop has not finished (SP-316); if that fails, a detached resume engine is spawned automatically. If diagnose still shows limbo, run **`node bin/spine.mjs batch resume --attached`** from the repo root when global `spine` on PATH may be stale (`spine doctor` → “spine on PATH (stale)”). Detached `spine batch resume` also finalizes via post-merge limbo fast path |
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |

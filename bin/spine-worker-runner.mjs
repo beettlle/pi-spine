@@ -8,6 +8,7 @@
  *   SPINE_TASK_FOLDER   — absolute path to taskplane-tasks/TP-NNN-…/
  *   SPINE_WORKTREE      — lane git worktree root
  *   SPINE_PROJECT_ROOT  — pi-spine project root (journal + gate paths)
+ *   SPINE_RULES_PROJECT_ROOT — lane worktree for rules manifest reads (SP-317)
  *   SPINE_BATCH_ID      — active batch id
  *   SPINE_TASK_ID       — e.g. TP-038
  *   SPINE_LANE_NUMBER   — 1-based lane index
@@ -83,7 +84,8 @@ export async function buildWorkerPiArgs({
 		piArgs.push(`@${promptPath}`);
 	}
 	appendWorkerAgentModelArgs(piArgs, spineConfig);
-	const projectRoot = process.env.SPINE_PROJECT_ROOT || worktreePath || process.cwd();
+	const projectRoot =
+		process.env.SPINE_RULES_PROJECT_ROOT || worktreePath || process.env.SPINE_PROJECT_ROOT || process.cwd();
 	const taskFileScope = resolveTaskFileScope(taskFolder);
 	const tailPrompt = await buildWorkerTailPrompt({
 		worktreePath,

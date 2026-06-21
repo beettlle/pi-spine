@@ -1,7 +1,7 @@
 # SP-315: Engine orphan retry recovery — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,40 +11,40 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #20 timeline reconstructed
-- [ ] Orphan detect → diagnosis path traced
-- [ ] Retry/resume guard points listed
+- [x] Issue #20 timeline reconstructed (batch 20260620T175645: dead engine/worker, task SP-311 still `running`, retry/resume blocked)
+- [x] Orphan detect → diagnosis path traced (`detectOrphanRunning` read-only; `deriveDiagnosis` surfaces orphan without state mutation)
+- [x] Retry/resume guard points listed (`retry.mjs` phase running + task running; `validateMultiTaskResume` running phase without orphan eligibility)
 
 ---
 
 ### Step 1: Reconcile orphan running tasks to retryable state
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Dead PID reconciles task from running to failed
-- [ ] batch retry allowed on orphan diagnosis
-- [ ] resume --force allowed when engine dead
-- [ ] suggestedCommand aligned
+- [x] Dead PID reconciles task from running to failed
+- [x] batch retry allowed on orphan diagnosis
+- [x] resume --force allowed when engine dead
+- [x] suggestedCommand aligned
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test from issue #20
-- [ ] Retry without pause assertion
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] Regression test from issue #20
+- [x] Retry without pause assertion
+- [x] FULL test suite passing (1004/1004)
+- [x] Coverage gate passes (87.52% ≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator-runbook updated
-- [ ] Issue #20 closed
-- [ ] `.DONE` created
+- [x] Operator-runbook updated
+- [x] Issue #20 closed
+- [x] `.DONE` created
 
 ---
 
@@ -59,6 +59,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `detectOrphanRunning` diagnoses correctly but never mutates batch state | Fixed: `reconcileOrphanRunningState` | `reconcile.mjs` |
+| `worker_orphaned` with live engine blocks `resume --force`; retry is the correct path | Document + reconcile on retry | `retry.mjs`, runbook |
 
 ---
 
@@ -67,6 +69,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created for GitHub #20 |
+| 2026-06-20 | Step 0 preflight | Issue #20 guards traced |
+| 2026-06-20 | Step 1–3 | reconcileOrphanRunningState, retry hook, tests, runbook |
 
 ---
 
@@ -78,4 +82,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+`reconcileOrphanRunningState` is invoked from `retryTask` only (not `validateMultiTaskResume`) to preserve SP-297 non-force orphan resume on `phase: running`.

@@ -106,6 +106,7 @@ export function buildWorkerChildEnv({
 		PI_SPINE_ROOT: resolvePiSpineRoot(config, projectRoot ?? process.cwd()),
 	};
 	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;
+	if (worktreePath) env.SPINE_RULES_PROJECT_ROOT = worktreePath;
 	if (batchId) {
 		env.SPINE_BATCH_ID = batchId;
 		env.SPINE_JOURNAL_ATTACH = "1";
