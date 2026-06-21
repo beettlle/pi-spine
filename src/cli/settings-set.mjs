@@ -2,10 +2,9 @@
  * spine settings set — validate, merge, and persist editable spine-config fields (FR-CFG-03).
  */
 
-import fs from "node:fs";
 import path from "node:path";
-import { randomBytes } from "node:crypto";
 
+import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { parseSettingPath, validateSettingValue } from "../config/settings-fields.mjs";
 import { validateSpineConfig } from "../config/spine-config-load.mjs";
 import { getValueAtPath } from "./settings-show.mjs";
@@ -40,25 +39,7 @@ export function applySetting(config, dottedPath, value) {
  */
 export function writeSpineConfigAtomic(projectRoot, config) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
-	const dir = path.dirname(configPath);
-	fs.mkdirSync(dir, { recursive: true });
-
-	const tmpPath = `${configPath}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
-	const content = `${JSON.stringify(config, null, 2)}\n`;
-
-	try {
-		fs.writeFileSync(tmpPath, content, "utf-8");
-		fs.renameSync(tmpPath, configPath);
-	} catch (err) {
-		try {
-			if (fs.existsSync(tmpPath)) {
-				fs.unlinkSync(tmpPath);
-			}
-		} catch {
-			// ignore cleanup failure
-		}
-		throw err;
-	}
+	writeJsonAtomic(configPath, config);
 }
 
 /**
