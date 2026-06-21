@@ -10,6 +10,8 @@ import {
 	buildBannerModel,
 	buildDashboardViewModel,
 	buildGateAffordanceModel,
+	buildLaneTableModel,
+	buildLaneTableSummaryModel,
 	diagnosisBadgeClass,
 	isIdleSnapshot,
 	primaryActionLabel,
@@ -143,6 +145,71 @@ test("buildDashboardViewModel includes all §16.1 panels", () => {
 	assert.equal(vm.journal.length, 1);
 });
 
+test("buildLaneTableModel exposes throughput columns for lanes", () => {
+	const snapshot = {
+		lanes: [
+			{
+				laneId: "lane-1",
+				status: "completed",
+				throughput: {
+					activeElapsedMs: 90 * 60 * 1000,
+					completedCount: 2,
+					failedCount: 0,
+					throughputTasksPerHour: 1.3,
+				},
+			},
+		],
+	};
+	const rows = buildLaneTableModel(snapshot);
+	assert.equal(rows[0].throughput.elapsedDisplay, "1h 30m");
+	assert.equal(rows[0].throughput.doneDisplay, "2");
+	assert.equal(rows[0].throughput.rateDisplay, "1.3 tasks/hr");
+});
+
+test("buildLaneTableSummaryModel aggregates when multiple lanes present", () => {
+	const snapshot = {
+		lanes: [
+			{
+				laneId: "lane-1",
+				throughput: {
+					activeElapsedMs: 60 * 60 * 1000,
+					completedCount: 1,
+					failedCount: 0,
+					throughputTasksPerHour: 1,
+				},
+			},
+			{
+				laneId: "lane-2",
+				throughput: {
+					activeElapsedMs: 30 * 60 * 1000,
+					completedCount: 1,
+					failedCount: 0,
+					throughputTasksPerHour: 2,
+				},
+			},
+		],
+		laneThroughputSummary: {
+			activeElapsedMs: 90 * 60 * 1000,
+			completedCount: 2,
+			failedCount: 0,
+			throughputTasksPerHour: 1.3,
+		},
+	};
+	const summary = buildLaneTableSummaryModel(snapshot);
+	assert.ok(summary);
+	assert.equal(summary.doneDisplay, "2");
+	assert.equal(summary.rateDisplay, "1.3 tasks/hr");
+});
+
+test("buildLaneTableSummaryModel is null for single lane", () => {
+	assert.equal(
+		buildLaneTableSummaryModel({
+			lanes: [{ laneId: "lane-1", throughput: { completedCount: 1, activeElapsedMs: 1000 } }],
+		}),
+		null,
+	);
+});
+
 test("banner uses diagnosis badge class, not macro phase", () => {
 	const snapshot = {
 		diagnosis: "needs_integrate",
@@ -198,6 +265,9 @@ test("dashboard server GET / returns HTML shell", async () => {
 		assert.match(body.data, /journal-heading/);
 		assert.match(body.data, /journal-list/);
 		assert.match(body.data, /<th scope="col">Phase<\/th>/);
+		assert.match(body.data, /<th scope="col">Elapsed<\/th>/);
+		assert.match(body.data, /<th scope="col">Done<\/th>/);
+		assert.match(body.data, /<th scope="col">Rate<\/th>/);
 		assert.match(body.data, /dashboard\.css/);
 		assert.ok(fs.existsSync(path.join(PUBLIC_DIR, "dashboard.css")));
 	} finally {
