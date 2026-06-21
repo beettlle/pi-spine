@@ -72,6 +72,39 @@ test("parseEvidenceCommandArgv rejects subshell injection", () => {
 	);
 });
 
+test("collectEvidenceBundle writes summary and .complete marker atomically", async () => {
+	const fs = await import("node:fs");
+	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
+	const { collectEvidenceBundle, evidenceDir } = await import("../../src/batch/evidence.mjs");
+
+	const projectRoot = await initGitRepo("spine-evidence-atomic-");
+	const batchId = "20260620T120000";
+	try {
+		const { evidenceRefs } = collectEvidenceBundle({
+			projectRoot,
+			batchId,
+			batchState: { batchId, phase: "completed", baseBranch: "main" },
+			config: { baseBranch: "main", gates: {} },
+		});
+
+		const dir = evidenceDir(projectRoot, batchId);
+		const completePath = path.join(dir, ".complete");
+		assert.ok(fs.existsSync(completePath), "expected evidence/.complete marker");
+		const complete = JSON.parse(fs.readFileSync(completePath, "utf-8"));
+		assert.ok(complete.completedAt);
+		assert.deepEqual(complete.evidenceRefs, evidenceRefs);
+
+		const summaryPath = path.join(dir, "summary.md");
+		assert.ok(fs.existsSync(summaryPath));
+		assert.ok(evidenceRefs.includes("evidence/summary.md"));
+
+		const entries = fs.readdirSync(dir, { recursive: true }).map(String);
+		assert.equal(entries.some((name) => name.includes(".tmp")), false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("collectEvidenceBundle writes rejected output for unsafe testing.test", async () => {
 	const fs = await import("node:fs");
 	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
