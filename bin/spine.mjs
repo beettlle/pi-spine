@@ -33,6 +33,7 @@ import {
 	WARN,
 } from "./spine-cli/shared.mjs";
 import { handleStatus } from "./spine-cli/status.mjs";
+import { handleScenarios } from "./spine-cli/scenarios.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
 import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
@@ -246,6 +247,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}next${c.reset}            Print or execute suggested next command (dry-run default)
  ${c.cyan}dashboard${c.reset}       Local SSE dashboard (default http://127.0.0.1:8109)
   ${c.cyan}tasks${c.reset}           Validate task PROMPT packets (FR-UXB-02)
+  ${c.cyan}scenarios${c.reset}       List, show, and materialize scenario fixtures
   ${c.cyan}version${c.reset}        Show version information
   ${c.cyan}help${c.reset}           Show this help message
 
@@ -301,6 +303,9 @@ ${c.bold}Examples:${c.reset}
   spine tasks analyze pending                   # structural checks (overlap, cycles, warnings)
   spine tasks analyze pending --json            # structured AnalyzeTasksResult
   spine help tasks                              # tasks subcommand usage
+  spine scenarios list                          # list registered scenario fixtures
+  spine scenarios show orphan-running-resume    # show one scenario entry
+  spine scenarios materialize orphan-running-resume --target .  # write batch-state + journal
   spine version                                 # show package and environment info
 `);
 }
@@ -336,6 +341,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "tasks":
 				await cmdTasks(args);
+				break;
+			case "scenarios":
+				await handleScenarios(args);
 				break;
 			case "status":
 				await handleStatus(args);

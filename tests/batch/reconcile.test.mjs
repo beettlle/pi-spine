@@ -4,6 +4,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { reconcileBatch, runReconciliationCheck } from "../../src/batch/reconcile.mjs";
+import { macroPhaseLabel } from "../../src/batch/macro-phase.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
@@ -26,6 +27,8 @@ test("idle-no-batch returns healthy idle state", async () => {
 	try {
 		const result = reconcileBatch({ projectRoot });
 		assert.equal(result.diagnosis, null);
+		assert.equal(result.macroPhase, "idle");
+		assert.equal(result.macroPhaseLabel, macroPhaseLabel("idle"));
 		assert.match(result.headline, /No active batch/i);
 		assert.equal(result.suggestedCommand, "spine preflight");
 		assert.ok(result.alternatives?.includes("spine plan all"));
@@ -131,6 +134,39 @@ test("reconcileBatch includes journal hints when journal exists", async () => {
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.ok(result.signals?.journalHints?.length);
 		assert.equal(result.signals.journalHints[0].type, "task.failed");
+		assert.equal(result.macroPhase, "failed");
+		assert.equal(result.signals.macroPhase, "failed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reconcileBatch exposes macroPhase for running batch", async () => {
+	const projectRoot = await initGitRepo("spine-reconcile-macro-");
+	try {
+		const fixture = loadFixture("running-batch.json");
+		writePiBatchState(projectRoot, fixture);
+
+		const result = reconcileBatch({ projectRoot, verbose: true });
+		assert.equal(result.diagnosis, "running");
+		assert.equal(result.macroPhase, "executing");
+		assert.equal(result.macroPhaseLabel, "Executing");
+		assert.equal(result.signals?.macroPhase, "executing");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reconcileBatch exposes macroPhase for limbo_stale", async () => {
+	const projectRoot = await initGitRepo("spine-reconcile-macro-");
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		writePiBatchState(projectRoot, fixture);
+
+		const result = reconcileBatch({ projectRoot });
+		assert.equal(result.diagnosis, "limbo_stale");
+		assert.equal(result.macroPhase, "completed");
+		assert.equal(result.macroPhaseLabel, "Completed");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
