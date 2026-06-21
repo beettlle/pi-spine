@@ -98,10 +98,12 @@ test("runWorker with contract stall override survives beyond global stall budget
 	const taskFolder = path.join(worktreePath, "spine-tasks", "SP-314-test");
 	fs.mkdirSync(taskFolder, { recursive: true });
 
-	// Scaled timings: global 0.04 min (~2.4s); contract 0.1 min (~6s, above 5s poll cap).
-	const scaledGlobal = 0.04;
-	const scaledContract = 0.1;
-	const hangMs = 3_000;
+	// Scaled timings: global ~1.8s stall; contract ~12s (well above 5s poll cap).
+	// Margins are intentionally wide so the case stays stable when multiple batch
+	// lanes run the full npm test suite concurrently on a loaded host.
+	const scaledGlobal = 0.03;
+	const scaledContract = 0.2;
+	const hangMs = 2_500;
 
 	fs.writeFileSync(
 		path.join(taskFolder, "PROMPT.md"),
