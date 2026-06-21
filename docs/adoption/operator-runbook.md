@@ -374,6 +374,16 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `limbo_stale` / `completed_manual` | Tasks green, batch record stale | `dismiss` or `complete --detect-manual-merge` |
 | `failed` / `aborted` | Terminal error | `retry`, `resume --force`, or `dismiss` |
 
+**Phase vs diagnosis vs macro phase** — three distinct operator labels:
+
+| Field | Source | Role | Example |
+|-------|--------|------|---------|
+| `phase` | Batch-state cache (`batch-state.json`) | Raw engine phase string | `running`, `merging`, `completed` |
+| `diagnosis` | Reconciliation (`deriveDiagnosis`) | Actionable next step | `needs_retry`, `needs_integrate`, `limbo_stale` |
+| `macroPhase` / `macroPhaseLabel` | Lifecycle rollup (`deriveMacroPhase`) | Stable high-level batch lifecycle | `Executing`, `Gating`, `Integrating`, `Completed` |
+
+`spine status` prints all three when a batch is active (macro phase always, including `Idle` when no batch). `spine status --diagnose` adds `macroPhase` inside verbose signals. Diagnosis headline and `suggestedCommand` remain driven by `diagnosis` only — macro phase does not replace them.
+
 In pi: `/spine-status` mirrors reconciliation.
 
 ### Supervisor deferred (FR-SHIP-11)
