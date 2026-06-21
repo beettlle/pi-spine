@@ -13,6 +13,7 @@ import {
 	loadRulesManifest,
 	fingerprintRulesManifest,
 } from "../../config/cursor-rules/discover.mjs";
+import { resolveRulesManifestIntegrateDrift } from "../rules-manifest-drift.mjs";
 import { matchesContractPattern } from "../contract-verify.mjs";
 import {
 	formatAdoptionDocMergeFailure,
@@ -102,72 +103,7 @@ function listDirtyPaths(projectRoot) {
 		.filter((entry) => Boolean(entry));
 }
 
-/**
- * Before orch→main integrate, auto-resolve uncommitted generatedAt-only drift on rules-manifest.
- *
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {string} params.baseBranch
- * @param {string} params.orchBranch
- */
-export function resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, orchBranch }) {
-	const dirtyPaths = listDirtyPaths(projectRoot);
-	if (dirtyPaths.length === 0) {
-		return { ok: true, resolved: false };
-	}
-	if (dirtyPaths.length !== 1 || dirtyPaths[0] !== RULES_MANIFEST_REL_PATH) {
-		return { ok: true, resolved: false };
-	}
-
-	const working = loadRulesManifest(projectRoot);
-	if (!working) {
-		return {
-			ok: false,
-			failureClass: "DirtyWorktree",
-			error: `${RULES_MANIFEST_REL_PATH} is dirty but unreadable`,
-		};
-	}
-
-	const headResult = readRulesManifestFromRef(projectRoot, baseBranch);
-	const orchResult = readRulesManifestFromRef(projectRoot, orchBranch);
-	if (!headResult.ok || !orchResult.ok) {
-		return {
-			ok: false,
-			failureClass: "DirtyWorktree",
-			error: "unable to read rules-manifest from base or orch branch",
-		};
-	}
-
-	if (fingerprintRulesManifest(working) !== fingerprintRulesManifest(headResult.manifest)) {
-		return {
-			ok: false,
-			failureClass: "DirtyWorktree",
-			error:
-				`${RULES_MANIFEST_REL_PATH} has uncommitted content changes beyond generatedAt — commit or stash before integrate`,
-		};
-	}
-
-	if (fingerprintRulesManifest(headResult.manifest) !== fingerprintRulesManifest(orchResult.manifest)) {
-		const contentMerge = resolveRulesManifestGeneratedAtMerge({
-			ours: headResult.manifest,
-			theirs: orchResult.manifest,
-		});
-		if (!contentMerge.ok) {
-			return contentMerge;
-		}
-	}
-
-	gitExec(
-		projectRoot,
-		["restore", "--source=HEAD", "--staged", "--worktree", RULES_MANIFEST_REL_PATH],
-		{ projectRoot },
-	);
-	return {
-		ok: true,
-		resolved: true,
-		action: "restored_head_for_merge",
-	};
-}
+export { resolveRulesManifestIntegrateDrift } from "../rules-manifest-drift.mjs";
 
 /**
  * @param {string} projectRoot

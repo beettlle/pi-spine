@@ -431,6 +431,15 @@ spine integrate --dry-run
 
 When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine integrate` **refuses** until the gate is approved.
 
+**Rules-manifest drift on `main` before integrate:** Lane workers may refresh `.spine/rules-manifest.json` on the base worktree (e.g. after `spine rules sync` or new `.cursor/rules/` entries). If the gate is approved and the **only** dirty path is the manifest:
+
+| Drift kind | Integrate behavior |
+|------------|-------------------|
+| `generatedAt` only (rules[] fingerprint matches `main` HEAD) | Auto-restores HEAD; merge applies orch manifest |
+| Worker entries on `main` matching orch fingerprint | Auto-restores HEAD; merge lands orch manifest (no manual commit — [#22](https://github.com/beettlle/pi-spine/issues/22)) |
+| Manifest differs from both `main` HEAD and orch | Refused — commit or stash, then re-run |
+| Any other dirty file on `main` | Refused — commit or stash unrelated changes first |
+
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
