@@ -10,6 +10,7 @@ import { PACKAGE_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { buildStalePathDoctorCheck } from "../doctor/stale-path.mjs";
 import { loadGateRecord } from "./gate.mjs";
+import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
 import {
 	buildDiagnosisOutput,
 	inferLaunchFailureFromWorkerOutputTail,
@@ -85,6 +86,8 @@ const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
  * @property {string|null} [batchId]
  * @property {string|null} [batchStatePath]
  * @property {string|null} [phase]
+ * @property {import("./macro-phase.mjs").MacroPhase} [macroPhase]
+ * @property {string} [macroPhaseLabel]
  * @property {object} [signals]
  */
 
@@ -689,7 +692,9 @@ export function reconcileBatch(ctx) {
 			batchId: null,
 			batchStatePath: null,
 			phase: null,
-			signals: { idle: true },
+			macroPhase: "idle",
+			macroPhaseLabel: macroPhaseLabel("idle"),
+			signals: { idle: true, macroPhase: "idle" },
 		};
 	}
 
@@ -702,7 +707,9 @@ export function reconcileBatch(ctx) {
 			batchId: null,
 			batchStatePath: loaded.path,
 			phase: null,
-			signals: { parseError: loaded.parseError },
+			macroPhase: "failed",
+			macroPhaseLabel: macroPhaseLabel("failed"),
+			signals: { parseError: loaded.parseError, macroPhase: "failed" },
 		};
 	}
 
@@ -715,7 +722,9 @@ export function reconcileBatch(ctx) {
 			batchId: null,
 			batchStatePath: loaded.path,
 			phase: null,
-			signals: { unreadable: true },
+			macroPhase: "failed",
+			macroPhaseLabel: macroPhaseLabel("failed"),
+			signals: { unreadable: true, macroPhase: "failed" },
 		};
 	}
 
@@ -832,10 +841,21 @@ export function reconcileBatch(ctx) {
 				? `spine batch retry ${signals.orphanRunning.taskId}`
 				: null;
 
-	const integrateGateOpen =
-		signals.postMergeLimbo === true && batch.batchId
-			? Boolean(loadGateRecord(projectRoot, batch.batchId))
-			: false;
+	const gateRecord = batch.batchId ? loadGateRecord(projectRoot, batch.batchId) : null;
+	const integrateGateOpen = signals.postMergeLimbo === true && Boolean(gateRecord);
+
+	const macroPhase = deriveMacroPhase({
+		diagnosis,
+		batchPhase: batch.phase,
+		gateRecord,
+		postMergeLimbo: signals.postMergeLimbo === true,
+		journalEvents,
+		mergeResults: batch.mergeResults,
+	});
+	const resolvedMacroPhaseLabel = macroPhaseLabel(macroPhase);
+	if (ctx.verbose) {
+		signals.macroPhase = macroPhase;
+	}
 
 	const stalePathCheck = buildStalePathDoctorCheck({
 		packageRoot: PACKAGE_ROOT,
@@ -891,6 +911,8 @@ export function reconcileBatch(ctx) {
 		batchId: batch.batchId,
 		batchStatePath: loaded.path ?? ctx.batchStatePath ?? null,
 		phase: batch.phase,
+		macroPhase,
+		macroPhaseLabel: resolvedMacroPhaseLabel,
 		signals: ctx.verbose ? signals : undefined,
 	};
 }
