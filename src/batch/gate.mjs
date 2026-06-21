@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { collectEvidenceBundle } from "./evidence.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
@@ -39,15 +40,7 @@ export function loadGateRecord(projectRoot, batchId) {
  */
 export function saveGateRecord(projectRoot, gate) {
 	const filePath = gateRecordPath(projectRoot, gate.batchId);
-	fs.mkdirSync(path.dirname(filePath), { recursive: true });
-	fs.writeFileSync(filePath, `${JSON.stringify(gate, null, 2)}\n`, "utf-8");
-
-	const fd = fs.openSync(filePath, "r");
-	try {
-		fs.fsyncSync(fd);
-	} finally {
-		fs.closeSync(fd);
-	}
+	writeJsonAtomic(filePath, gate);
 }
 
 /**

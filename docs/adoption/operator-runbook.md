@@ -817,6 +817,8 @@ spine batch complete
 
 **Never** edit `.pi/batch-state.json` or `.spine/batch-state.json` by hand. pi-spine archives to `.spine/runtime/<batchId>/archive/` first.
 
+**Crash-safe persistence:** `.spine/batch-state.json` and `.spine/runtime/<batchId>/gate.json` are written atomically (temp file + rename). A crash mid-write should leave the previous file intact or the new complete file — never torn partial JSON. The append-only journal and run-metrics paths are unchanged.
+
 ---
 
 ## 7. Dashboard
@@ -831,8 +833,8 @@ spine dashboard --port 8110
 In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
-- **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required)
-- **Active batch panels** (when a batch is reconciled): wave progress, lane table (includes **Phase** column — worker/review activity inferred from journal events), journal tail
+- **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required). Banner badge color follows **`diagnosis`**, not macro phase.
+- **Active batch panels** (when a batch is reconciled): batch summary (raw `phase` + **macro phase** label), wave progress (wave index + macro phase), lane table (includes **Phase** column — worker/review activity inferred from journal events), journal tail
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
 - Keep the dashboard terminal open while it runs
 

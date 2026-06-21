@@ -1049,8 +1049,8 @@ Default dashboard port **8109** (avoid Taskplane 8099 collision when both instal
 
 - URL: `http://localhost:8109`
 - Transport: SSE
-- Panels: batch summary, **diagnosis banner** (headline + primary action), wave progress, lane table, active gate, last 20 journal events
-- Diagnosis banner primary actions: `Dismiss`, `Complete`, `Integrate`, `Retry`, `Resume` — badge color from **`diagnosis`**, not raw `phase`
+- Panels: batch summary (includes **macro phase** lifecycle label), **diagnosis banner** (headline + primary action), wave progress (wave index + macro phase), lane table, active gate, last 20 journal events
+- Diagnosis banner primary actions: `Dismiss`, `Complete`, `Integrate`, `Retry`, `Resume` — badge color from **`diagnosis`**, not raw `phase` or macro phase
 
 ### 16.2 Lane table columns
 

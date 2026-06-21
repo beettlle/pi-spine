@@ -47,7 +47,7 @@ Extend state-transition tests to assert no partial JSON on interrupted writes.
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/state-transition.test.mjs` |
 | fileScopeMustChange | `src/batch/state.mjs` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 
