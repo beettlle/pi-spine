@@ -11,6 +11,7 @@ import { buildPlan } from "../planner/index.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
+import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { finalizeBatchForIntegrate } from "./post-merge-limbo.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
@@ -168,6 +169,7 @@ export async function startBatch({
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
 		transitionPhase(state, "running", { projectRoot, batchId });
 		recordBatchEnginePid(state, process.pid);
+		installAttachedEngineShutdownHandlers({ projectRoot });
 		saveSpineBatchState(projectRoot, state);
 
 		for (const lane of state.lanes) {
