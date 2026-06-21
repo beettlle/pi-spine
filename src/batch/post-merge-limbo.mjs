@@ -72,6 +72,35 @@ export function maybeFinalizeAfterWaveMerge({
 	if (!isPostMergeLimbo(state)) {
 		return null;
 	}
+	return tryFinalizePostMergeLimbo({
+		projectRoot,
+		state,
+		batchId,
+		orchBranch,
+		resumed,
+		resumeForced,
+	});
+}
+
+/**
+ * Idempotent finalize when batch is in post-merge limbo (SP-280, SP-316).
+ *
+ * @param {object} params
+ */
+export function tryFinalizePostMergeLimbo({
+	projectRoot,
+	state,
+	batchId,
+	orchBranch,
+	resumed = false,
+	resumeForced = false,
+}) {
+	if (String(state.phase ?? "") === "completed") {
+		return null;
+	}
+	if (!isPostMergeLimbo(state)) {
+		return null;
+	}
 	return finalizeBatchForIntegrate({
 		projectRoot,
 		state,

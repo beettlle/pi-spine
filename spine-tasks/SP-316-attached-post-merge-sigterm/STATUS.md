@@ -1,8 +1,8 @@
 # SP-316: Attached post-merge SIGTERM land loop — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-20
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-21
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,39 +11,39 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #21 timeline reconstructed
-- [ ] SP-281 coverage gap identified
-- [ ] Gate-missing-until-resume confirmed
+- [x] Issue #21 timeline reconstructed
+- [x] SP-281 coverage gap identified (SIGTERM before finalize; no in-process survival)
+- [x] Gate-missing-until-resume confirmed
 
 ---
 
 ### Step 1: Fix attached post-merge finalize / SIGTERM handoff
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] finalizeBatchForIntegrate on attached last merge
-- [ ] SIGTERM handoff to detached engine
-- [ ] Gate opens without manual resume
+- [x] finalizeBatchForIntegrate on attached last merge (`tryFinalizePostMergeLimbo`)
+- [x] SIGTERM handoff to detached engine (`attemptPostMergeLandLoopHandoff`)
+- [x] Gate opens without manual resume (in-process finalize on SIGTERM)
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test from batch 20260620T194352
-- [ ] post-merge-limbo tests updated if needed
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] Regression test from batch 20260620T194352
+- [x] post-merge-limbo tests updated if needed (no helper changes required)
+- [x] FULL test suite passing (1010 tests)
+- [x] Coverage gate passes (87.45% ≥77%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator-runbook updated
-- [ ] Issue #21 closed
-- [ ] `.DONE` created
+- [x] Operator-runbook updated
+- [x] Issue #21 closed
+- [x] `.DONE` created
 
 ---
 
@@ -58,6 +58,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-281 finalized after merge but attached engine could still receive parent SIGTERM before exit | Fixed via `installAttachedEngineShutdownHandlers` | `src/batch/attached-engine-handoff.mjs` |
 
 ---
 
@@ -66,6 +67,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created for GitHub #21 |
+| 2026-06-21 | Steps 0–3 complete | SIGTERM handoff, tests, runbook, issue closed |
 
 ---
 
@@ -77,4 +79,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Issue #21 timeline: `batch.merge_completed` (20:58:27) → `engine.orphan_terminated` SIGTERM (20:59:28) → gate missing until `batch resume --attached`. Fix: attached engines install SIGTERM/SIGINT handlers that finalize post-merge limbo in-process or spawn detached resume.

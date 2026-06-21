@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
+import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff, terminateStaleDetachedEngine } from "./resume-engine.mjs";
@@ -98,6 +99,8 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	if (!resumeCheck.ok) {
 		return resumeCheck;
 	}
+
+	installAttachedEngineShutdownHandlers({ projectRoot });
 
 	const loaded = loadSpineBatchState(projectRoot);
 	const state = loaded.raw;

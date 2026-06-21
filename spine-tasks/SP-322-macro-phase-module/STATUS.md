@@ -1,7 +1,7 @@
 # SP-322: deriveMacroPhase module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,35 +11,35 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review diagnosis taxonomy and batch.phase values
-- [ ] Identify fixture snapshots covering each macro-phase
+- [x] Review diagnosis taxonomy and batch.phase values
+- [x] Identify fixture snapshots covering each macro-phase
 
 ---
 
 ### Step 1: Implement deriveMacroPhase
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create src/batch/macro-phase.mjs with enum and deriveMacroPhase()
-- [ ] Document mapping table in module header
-- [ ] Export macroPhaseLabel helper
+- [x] Create src/batch/macro-phase.mjs with enum and deriveMacroPhase()
+- [x] Document mapping table in module header
+- [x] Export macroPhaseLabel helper
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add tests/batch/macro-phase.test.mjs using batch-state fixtures
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Add tests/batch/macro-phase.test.mjs using batch-state fixtures
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
