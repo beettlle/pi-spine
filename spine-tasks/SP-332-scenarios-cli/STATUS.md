@@ -1,7 +1,7 @@
 # SP-332: spine scenarios CLI — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,27 +11,27 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review existing CLI subcommand patterns in bin/spine-cli/
-- [ ] Confirm registry API from SP-329
+- [x] Review existing CLI subcommand patterns in bin/spine-cli/
+- [x] Confirm registry API from SP-329
 
 ---
 
 ### Step 1: Implement spine scenarios CLI
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add scenarios.mjs subcommand module
-- [ ] Implement list, show, materialize
-- [ ] Wire into bin/spine.mjs
-- [ ] Add active-batch guard for materialize
+- [x] Add scenarios.mjs subcommand module
+- [x] Implement list, show, materialize
+- [x] Wire into bin/spine.mjs
+- [x] Add active-batch guard for materialize
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Add tests/cli/scenarios.test.mjs
+- [x] Add tests/cli/scenarios.test.mjs
 - [ ] Run FULL test suite
 - [ ] Run coverage gate — ≥77%
 
@@ -55,6 +55,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SPINE_SCENARIO_REGISTRY_ROOT env override added for CLI tests | Keep | bin/spine-cli/scenarios.mjs |
 
 ---
 
@@ -63,6 +64,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
+| 2026-06-20 | Step 0–1 | scenarios.mjs + spine.mjs wiring |
 
 ---
 
@@ -74,4 +76,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Plan: list/show read registry via SP-329 APIs; materialize writes batch-state + journal tail to target `.spine/` with `--force` guard when batch-state exists.
