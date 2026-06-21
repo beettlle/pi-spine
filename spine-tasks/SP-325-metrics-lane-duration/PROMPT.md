@@ -44,7 +44,7 @@ Fields are optional and backward compatible (schemaVersion 1).
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/metrics` |
 | fileScopeMustChange | `src/batch/metrics.mjs` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | — |
 
 ## Steps
 

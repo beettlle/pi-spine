@@ -34,7 +34,15 @@ const CONTRACT_TABLE_ROW_RE = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/;
 const TEST_COMMAND_MAX_LENGTH = 500;
 export const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
 const CONTRACT_EM_DASH_PLACEHOLDER_RE = /^[—\-]$/;
-const CONTRACT_NONE_VALUES = new Set(["—", "-", "none", "n/a", "na"]);
+const CONTRACT_NONE_VALUES = new Set([
+	"—",
+	"-",
+	"none",
+	"n/a",
+	"na",
+	"(none beyond tests)",
+	"none beyond tests",
+]);
 
 /**
  * @param {string} markdown PROMPT.md contents
