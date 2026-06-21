@@ -198,7 +198,7 @@ test("dual-dead lane+engine orphan reconciles as engine_orphaned with attached r
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, "spine batch resume --attached");
+		assert.equal(result.suggestedCommand, `spine batch retry ${TASK_STUCK}`);
 		assert.match(result.headline, /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);

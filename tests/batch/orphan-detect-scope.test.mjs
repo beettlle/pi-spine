@@ -80,7 +80,7 @@ test("resume orphan with historical failure fixture is not diagnosed as running"
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(result.diagnosis, "running");
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, "spine batch resume --attached");
+		assert.equal(result.suggestedCommand, "spine batch retry SAT-040");
 		assert.match(result.headline, /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);

@@ -69,9 +69,13 @@ function seedEngineOrphanRunningState(projectRoot, worktreePath) {
 	appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: TASK_ID, laneNumber: 1 });
 }
 
-test("engine_orphaned diagnosis suggests attached resume without pause", () => {
+test("engine_orphaned diagnosis suggests retry when task id known, attached resume otherwise", () => {
 	assert.equal(shouldNeverSuggestPause("engine_orphaned"), true);
-	assert.equal(buildSuggestedCommand("engine_orphaned", { failedTaskId: TASK_ID }), "spine batch resume --attached");
+	assert.equal(
+		buildSuggestedCommand("engine_orphaned", { failedTaskId: TASK_ID }),
+		`spine batch retry ${TASK_ID}`,
+	);
+	assert.equal(buildSuggestedCommand("engine_orphaned", {}), "spine batch resume --attached");
 });
 
 test("dead engine with phase running passes validateMultiTaskResume without pause", async () => {
@@ -141,7 +145,7 @@ test("reconcile engine_orphaned recommends attached resume for batch 20260618T19
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
 		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, "spine batch resume --attached");
+		assert.equal(result.suggestedCommand, `spine batch retry ${TASK_ID}`);
 		assert.match(result.headline, /engine died/i);
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "running");
 	} finally {

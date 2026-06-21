@@ -259,7 +259,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "worker_done_missing":
 			return buildWorkerDoneMissingSuggestedCommand(ctx);
 		case "engine_orphaned":
-			return "spine batch resume --attached";
+			return ctx.failedTaskId
+				? `spine batch retry ${ctx.failedTaskId}`
+				: "spine batch resume --attached";
 		case "needs_merge":
 			return "/spine-resume --force";
 		case "needs_integrate":
