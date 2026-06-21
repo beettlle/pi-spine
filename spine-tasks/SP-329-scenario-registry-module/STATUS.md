@@ -1,7 +1,7 @@
 # SP-329: Scenario registry schema and module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,24 +11,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review existing incident README catalog
-- [ ] Review duplicated loadFixture helpers in tests
+- [x] Review existing incident README catalog
+- [x] Review duplicated loadFixture helpers in tests
 
 ---
 
 ### Step 1: Implement scenario registry module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Define registry.json schema and initial minimal file
-- [ ] Create scenario-registry.mjs with list/get/validate API
-- [ ] Add unit tests
+- [x] Define registry.json schema and initial minimal file
+- [x] Create scenario-registry.mjs with list/get/validate API
+- [x] Add unit tests
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run FULL test suite
 - [ ] Run coverage gate — ≥77%
@@ -53,6 +53,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| loadFixture duplicated across ~15 test files with per-directory paths | Deferred to SP-331 | tests/batch/, tests/cli/, tests/dashboard/ |
+| Incident catalog in README maps fixture → batch → pattern → test | Informs registry schema (kind, fixturePath, tests) | tests/fixtures/incidents/README.md |
 
 ---
 
@@ -61,6 +63,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
+| 2026-06-20 | Step 0 preflight | Reviewed incident README and loadFixture patterns |
+| 2026-06-20 | Step 1 implementation | Added registry module, minimal registry.json, unit tests |
 
 ---
 
@@ -72,4 +76,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Registry schema v1 fields: `id`, `kind` (incident|stub|adoption|recipe), `title`, optional `description`, `fixturePath`, `batchId`, `tests`, `docs`, `relatedTasks`, `tags`. SP-330 populates entries.
