@@ -1,7 +1,7 @@
 # SP-329: Scenario registry schema and module — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -28,17 +28,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -65,6 +65,8 @@
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 43) |
 | 2026-06-20 | Step 0 preflight | Reviewed incident README and loadFixture patterns |
 | 2026-06-20 | Step 1 implementation | Added registry module, minimal registry.json, unit tests |
+| 2026-06-20 | Step 2 verification | typecheck + 1023 tests pass; scenario-registry.mjs 90.21% line coverage; aggregate 87.00% |
+| 2026-06-20 | Step 3 delivery | .DONE created |
 
 ---
 
