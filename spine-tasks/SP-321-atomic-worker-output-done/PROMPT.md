@@ -46,7 +46,7 @@ Update src/batch/worker-output.mjs, bin/spine-worker-runner.mjs, and src/batch/a
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/` |
 | fileScopeMustChange | `src/batch/worker-output.mjs` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 
