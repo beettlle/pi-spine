@@ -42,7 +42,7 @@ Update docs/adoption/operator-runbook.md and docs/adoption/bootstrap-checklist.m
 | testCommand | `true` |
 | fileScopeMustChange | `docs/adoption/operator-runbook.md` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 
