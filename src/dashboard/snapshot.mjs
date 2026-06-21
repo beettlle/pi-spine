@@ -2,6 +2,7 @@
  * Dashboard snapshot builder (PRD §16, NFR-OBS-04).
  */
 
+import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
 	loadBatchStateFile,
@@ -561,6 +562,21 @@ export function buildDashboardSnapshot(projectRoot) {
 	const waves = buildWaveProgress(batch);
 	const defaultView = buildDefaultViewStatus(reconciliation, gate);
 
+	const macroPhase = deriveMacroPhase({
+		diagnosis: reconciliation.diagnosis,
+		batchPhase: batch?.phase ?? reconciliation.phase,
+		currentWaveIndex,
+		mergeResults: Array.isArray(rawBatch.mergeResults) ? rawBatch.mergeResults : [],
+		gateRecord: gate,
+		postMergeLimbo: reconciliation.signals?.postMergeLimbo === true,
+		journalEvents,
+	});
+	const batchSummary = summarizeBatch(batch);
+	if (batchSummary) {
+		batchSummary.macroPhase = macroPhase;
+		batchSummary.macroPhaseLabel = macroPhaseLabel(macroPhase);
+	}
+
 	return {
 		generatedAt: new Date(now).toISOString(),
 		defaultView,
@@ -572,7 +588,9 @@ export function buildDashboardSnapshot(projectRoot) {
 		phase: reconciliation.phase,
 		batchStatePath: reconciliation.batchStatePath,
 		reconciliation,
-		batch: summarizeBatch(batch),
+		batch: batchSummary,
+		macroPhase,
+		macroPhaseLabel: macroPhaseLabel(macroPhase),
 		lanes,
 		gate,
 		journalTail,

@@ -129,6 +129,8 @@ export function buildBatchSummaryModel(batch) {
 	return {
 		batchId: batch.batchId,
 		phase: batch.phase,
+		macroPhase: batch.macroPhase ?? null,
+		macroPhaseLabel: batch.macroPhaseLabel ?? null,
 		baseBranch: batch.baseBranch,
 		orchBranch: batch.orchBranch,
 		startedAt: batch.startedAt,
@@ -149,6 +151,7 @@ export function buildWaveModel(snapshot) {
 	return {
 		currentWaveIndex: waves.currentWaveIndex ?? 0,
 		totalWaves: waves.totalWaves ?? 0,
+		macroPhaseLabel: snapshot?.macroPhaseLabel ?? snapshot?.batch?.macroPhaseLabel ?? null,
 		waves: (waves.waves ?? []).map((wave) => ({
 			index: wave.index,
 			taskIds: wave.taskIds ?? [],

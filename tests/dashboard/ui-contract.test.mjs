@@ -107,9 +107,13 @@ test("buildDashboardViewModel includes all §16.1 panels", () => {
 		batchId: "b1",
 		headline: "Batch b1 is running",
 		suggestedCommand: "/spine-status --diagnose",
+		macroPhase: "executing",
+		macroPhaseLabel: "Executing",
 		batch: {
 			batchId: "b1",
 			phase: "running",
+			macroPhase: "executing",
+			macroPhaseLabel: "Executing",
 			succeededTasks: 1,
 			failedTasks: 0,
 			totalTasks: 2,
@@ -129,12 +133,34 @@ test("buildDashboardViewModel includes all §16.1 panels", () => {
 	};
 	const vm = buildDashboardViewModel(snapshot);
 	assert.equal(vm.batch?.batchId, "b1");
+	assert.equal(vm.batch?.macroPhaseLabel, "Executing");
+	assert.equal(vm.waves.macroPhaseLabel, "Executing");
 	assert.equal(vm.waves.totalWaves, 2);
 	assert.equal(vm.lanes.length, 1);
 	assert.equal(vm.gate?.status, "open");
 	assert.equal(vm.gateAffordance?.status, "open");
 	assert.ok(vm.showGateAffordance);
 	assert.equal(vm.journal.length, 1);
+});
+
+test("banner uses diagnosis badge class, not macro phase", () => {
+	const snapshot = {
+		diagnosis: "needs_integrate",
+		headline: "Batch ready to integrate",
+		suggestedCommand: "spine integrate",
+		macroPhase: "integrating",
+		macroPhaseLabel: "Integrating",
+		batch: {
+			batchId: "b1",
+			phase: "completed",
+			macroPhase: "integrating",
+			macroPhaseLabel: "Integrating",
+		},
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeClass, "badge-integrate");
+	assert.equal(banner.diagnosis, "needs_integrate");
+	assert.notEqual(banner.badgeClass, "badge-running");
 });
 
 test("resolveStaticAsset serves dashboard public files and view.mjs", () => {

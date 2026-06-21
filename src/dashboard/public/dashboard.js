@@ -124,6 +124,7 @@ function renderBatch(batch) {
 	if (!batch) return;
 	appendKv(dl, "Batch ID", batch.batchId);
 	appendKv(dl, "Phase", batch.phase);
+	appendKv(dl, "Macro phase", batch.macroPhaseLabel);
 	appendKv(dl, "Base", batch.baseBranch);
 	appendKv(dl, "Orch", batch.orchBranch);
 	appendKv(dl, "Started", formatTs(batch.startedAt));
@@ -137,10 +138,13 @@ function renderBatch(batch) {
 
 /** @param {ReturnType<typeof buildDashboardViewModel>["waves"]} waves */
 function renderWaves(waves) {
+	const macroSuffix = waves.macroPhaseLabel ? ` · ${waves.macroPhaseLabel}` : "";
 	$("wave-progress-summary").textContent =
 		waves.totalWaves > 0
-			? `Wave ${waves.currentWaveIndex + 1} of ${waves.totalWaves} — lane ≠ wave (see Lanes table)`
-			: "No waves";
+			? `Wave ${waves.currentWaveIndex + 1} of ${waves.totalWaves}${macroSuffix} — lane ≠ wave (see Lanes table)`
+			: waves.macroPhaseLabel
+				? `${waves.macroPhaseLabel} — no waves`
+				: "No waves";
 	const list = $("wave-list");
 	list.replaceChildren();
 	for (const wave of waves.waves) {
