@@ -91,3 +91,4 @@ Report: changed paths, Contract fields satisfied, test evidence or verification 
 - Implementing while spine batch owns the task
 - Calling pi-only review tools from Cursor
 - False "all tests pass" claims
+- Spine CLI/tooling defects during manual work → defer to `@spine-operator-cursor.mdc` upstream reporting; do not workaround in task code

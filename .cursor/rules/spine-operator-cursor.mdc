@@ -1,5 +1,5 @@
 ---
-description: "Operate pi-spine batches in Cursor: spine CLI commands, diagnosis, recovery, gates, and integrate. Use when user asks to start/pause/resume spine batch, run spine doctor/preflight/plan, check batch status, approve gate, or recover from orphans—not when authoring packets or implementing task code."
+description: "Operate pi-spine batches in Cursor: spine CLI commands, diagnosis, recovery, gates, integrate, and report upstream engine bugs. Use when user asks to start/pause/resume spine batch, run spine doctor/preflight/plan, check batch status, approve gate, recover from orphans, or report spine bugs—not when authoring packets or implementing task code."
 alwaysApply: false
 ---
 
@@ -65,6 +65,30 @@ Recovery entry point: **`spine status --diagnose`** — read headline + `suggest
 
 Full procedures: [pi-spine operator runbook](https://github.com/beettlle/pi-spine/blob/main/docs/adoption/operator-runbook.md).
 
+## Upstream bug reports
+
+When recovery fails or the same diagnosis repeats after following `suggestedCommand`, triage before filing at [pi-spine issues](https://github.com/beettlle/pi-spine/issues). Search existing issues first.
+
+| Situation | Action |
+|-----------|--------|
+| `suggestedCommand` fixes it | Follow diagnose; not upstream |
+| Misconfig, preflight, task packet, or consumer code | Fix locally; not upstream |
+| Documented v1 limit (no supervisor mail, pi-only workers) | Expected; not upstream |
+| Repeatable fault after correct operator steps | Report upstream |
+
+**Issue checklist** (sanitize secrets; minimal consumer repro):
+
+| Field | Source |
+|-------|--------|
+| pi-spine version | `spine --version` or `npm list -g pi-spine` |
+| Environment | `spine doctor` output |
+| Commands run | Exact sequence |
+| Diagnosis | `spine status --diagnose` full output |
+| Journal excerpt | `spine journal` or relevant runtime journal lines |
+| Expected vs actual | One line each |
+
+If triage is ambiguous, ask the user once before filing. See `general-llm-anti-patterns.mdc` §7.3.
+
 ## v1 boundaries
 
 - **Workers:** pi only—Cursor does not replace `spine batch start` workers
@@ -124,6 +148,17 @@ Full procedures: [pi-spine operator runbook](https://github.com/beettlle/pi-spin
 ⚠️ Why: Worktree/lane collisions, STATUS drift, merge conflicts
 🔧 Fix: `spine batch pause` or wait; use `@spine-worker-cursor.mdc` only when batch idle
 **Detect:** code edits in active task folders during running batch
+
+### Workaround spine engine bugs locally (CRIT)
+
+**CRITICAL:** Suspected pi-spine engine defects go upstream—not patched in consumer repos.
+
+❌ Bad: Work around unexplained `engine_orphaned`, gate FSM bugs, or contract verifier false positives in task PROMPT or local hacks
+✅ Good: Triage → search [pi-spine issues](https://github.com/beettlle/pi-spine/issues) → file with `spine doctor` + `spine status --diagnose` + journal excerpt
+⚠️ Why: Engine bugs need upstream fixes; workarounds drift and hide root cause
+🔧 Fix: Collect checklist from **Upstream bug reports**; ask user if triage unclear
+📍 See: **Upstream bug reports** above; `general-llm-anti-patterns.mdc` §7.3
+**Detect:** repeated recovery loop, same diagnosis after `suggestedCommand`, unexplained spine CLI crash
 
 ## Taskplane coexistence
 
