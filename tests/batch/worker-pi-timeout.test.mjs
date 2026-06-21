@@ -55,20 +55,29 @@ test("resolveWorkerPiTimeoutMs honors SPINE_WORKER_PI_TIMEOUT_MS override", () =
 });
 
 test("buildWorkerChildEnv sets SPINE_WORKER_PI_TIMEOUT_MS from stall budget", () => {
-	const env = buildWorkerChildEnv({
-		taskFolder: "/tmp/task",
-		worktreePath: "/tmp/wt",
-		piTimeoutMs: STALL_MINUTES_BY_SIZE.M * 60 * 1000,
-	});
-	assert.equal(
-		env.SPINE_WORKER_PI_TIMEOUT_MS,
-		String(STALL_MINUTES_BY_SIZE.M * 60 * 1000),
-	);
+	const prev = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	try {
+		const env = buildWorkerChildEnv({
+			taskFolder: "/tmp/task",
+			worktreePath: "/tmp/wt",
+			piTimeoutMs: STALL_MINUTES_BY_SIZE.M * 60 * 1000,
+		});
+		assert.equal(
+			env.SPINE_WORKER_PI_TIMEOUT_MS,
+			String(STALL_MINUTES_BY_SIZE.M * 60 * 1000),
+		);
+	} finally {
+		if (prev === undefined) delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+		else process.env.SPINE_WORKER_PI_TIMEOUT_MS = prev;
+	}
 });
 
 test("buildPiWorkerTimeoutDoctorCheck reports stall-aligned timeout for M floor", () => {
 	const prevStub = process.env.SPINE_WORKER_STUB;
+	const prevTimeout = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
 	delete process.env.SPINE_WORKER_STUB;
+	delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
 	try {
 		const check = buildPiWorkerTimeoutDoctorCheck({
 			config: { lanes: { stallTimeoutMinutes: 120 } },
@@ -78,5 +87,7 @@ test("buildPiWorkerTimeoutDoctorCheck reports stall-aligned timeout for M floor"
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;
+		if (prevTimeout === undefined) delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+		else process.env.SPINE_WORKER_PI_TIMEOUT_MS = prevTimeout;
 	}
 });

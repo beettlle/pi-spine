@@ -65,11 +65,22 @@ async function installHangingPiShim(dir) {
 }
 
 test("resolveReviewSpawnTimeoutMs aligns with stall budget for M tasks", () => {
-	const timeoutMs = resolveReviewSpawnTimeoutMs({
-		config: { lanes: { stallTimeoutMinutes: 120 } },
-		taskSize: "M",
-	});
-	assert.equal(timeoutMs, 180 * 60 * 1000);
+	const prev = process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	const prevReview = process.env.SPINE_REVIEW_TIMEOUT_MS;
+	delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+	delete process.env.SPINE_REVIEW_TIMEOUT_MS;
+	try {
+		const timeoutMs = resolveReviewSpawnTimeoutMs({
+			config: { lanes: { stallTimeoutMinutes: 120 } },
+			taskSize: "M",
+		});
+		assert.equal(timeoutMs, 180 * 60 * 1000);
+	} finally {
+		if (prev === undefined) delete process.env.SPINE_WORKER_PI_TIMEOUT_MS;
+		else process.env.SPINE_WORKER_PI_TIMEOUT_MS = prev;
+		if (prevReview === undefined) delete process.env.SPINE_REVIEW_TIMEOUT_MS;
+		else process.env.SPINE_REVIEW_TIMEOUT_MS = prevReview;
+	}
 });
 
 test("runStepReview journals review.failed with review_timeout on hung spawn", async () => {
