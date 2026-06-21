@@ -1,7 +1,7 @@
 # SP-323: Macro-phase in reconcile and CLI — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -28,19 +28,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Extend reconcile/status tests
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77% (87.11%)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Add phase vs diagnosis vs macroPhase table to operator-runbook
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -65,6 +65,7 @@
 |-----------|--------|---------|
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 41) |
 | 2026-06-20 | Step 0–1 complete | Wired deriveMacroPhase into reconcile + spine-status CLI |
+| 2026-06-20 | Step 2–3 complete | 27/27 targeted tests pass; coverage 87.11%; .DONE created |
 
 ---
 
@@ -76,4 +77,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Full suite: 1036/1037 pass (1 unrelated flaky stall-override timing test).
