@@ -155,14 +155,14 @@ function renderWaves(waves) {
 	}
 }
 
-/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes */
-function renderLanes(lanes) {
+/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary */
+function renderLanes(lanes, laneTableSummary) {
 	const tbody = $("lane-table-body");
 	tbody.replaceChildren();
 	if (!lanes.length) {
 		const tr = document.createElement("tr");
 		const td = document.createElement("td");
-		td.colSpan = 7;
+		td.colSpan = 10;
 		td.className = "empty-hint";
 		td.textContent = "No lanes";
 		tr.appendChild(td);
@@ -177,6 +177,7 @@ function renderLanes(lanes) {
 				: lane.laneAlert === "stall-killed"
 					? `${lane.status} · stall killed`
 					: lane.status;
+		const throughput = lane.throughput ?? {};
 		const values = [
 			lane.laneId,
 			statusLabel,
@@ -184,6 +185,9 @@ function renderLanes(lanes) {
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
 			formatHeartbeat(lane.heartbeatDisplay ?? lane.heartbeatAgeSeconds),
+			throughput.elapsedDisplay ?? "—",
+			throughput.doneDisplay ?? "—",
+			throughput.rateDisplay ?? "—",
 			lane.worktree ?? "—",
 		];
 		values.forEach((text, index) => {
@@ -194,6 +198,28 @@ function renderLanes(lanes) {
 				if (lane.laneAlert === "checkpoint-warning") td.classList.add("lane-alert-checkpoint");
 				if (lane.laneAlert === "stall-killed") td.classList.add("lane-alert-stall");
 			}
+			tr.appendChild(td);
+		});
+		tbody.appendChild(tr);
+	}
+	if (laneTableSummary) {
+		const tr = document.createElement("tr");
+		tr.className = "lane-table-summary";
+		const values = [
+			"All lanes",
+			"—",
+			"—",
+			"—",
+			"—",
+			"—",
+			laneTableSummary.elapsedDisplay ?? "—",
+			laneTableSummary.doneDisplay ?? "—",
+			laneTableSummary.rateDisplay ?? "—",
+			"—",
+		];
+		values.forEach((text) => {
+			const td = document.createElement("td");
+			td.textContent = text;
 			tr.appendChild(td);
 		});
 		tbody.appendChild(tr);
@@ -285,7 +311,7 @@ export function renderSnapshot(snapshot) {
 	if (!vm.idle) {
 		renderBatch(vm.batch);
 		renderWaves(vm.waves);
-		renderLanes(vm.lanes);
+		renderLanes(vm.lanes, vm.laneTableSummary);
 		renderJournal(vm.journal);
 	}
 	$("snapshot-time").textContent = vm.generatedAt ? `Snapshot: ${vm.generatedAt}` : "";
