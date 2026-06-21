@@ -17,6 +17,9 @@ import {
 
 const packageRoot = scenarioRegistryPackageRoot();
 
+/** Shipped registry entry count (6 incidents + SAT-020 stub + adoption + ABC recipe). */
+const SHIPPED_SCENARIO_COUNT = 9;
+
 test("resolveRegistryPath points at tests/fixtures/scenarios/registry.json", () => {
 	const registryPath = resolveRegistryPath(packageRoot);
 	assert.equal(
@@ -26,10 +29,10 @@ test("resolveRegistryPath points at tests/fixtures/scenarios/registry.json", () 
 	assert.ok(fs.existsSync(registryPath));
 });
 
-test("loadRegistry reads minimal registry", () => {
+test("loadRegistry reads shipped registry", () => {
 	const registry = loadRegistry({ packageRoot });
 	assert.equal(registry.schemaVersion, REGISTRY_SCHEMA_VERSION);
-	assert.deepEqual(registry.scenarios, []);
+	assert.equal(registry.scenarios.length, SHIPPED_SCENARIO_COUNT);
 });
 
 test("listScenarios returns sorted scenario entries", () => {
@@ -73,10 +76,28 @@ test("getScenario returns entry or null", () => {
 	assert.equal(getScenario("missing", { packageRoot: tempRoot }), null);
 });
 
-test("validateRegistry passes for shipped minimal registry", () => {
-	const result = validateRegistry(loadRegistry({ packageRoot }), { packageRoot });
+test("validateRegistry passes for shipped registry with expected entry count", () => {
+	const registry = loadRegistry({ packageRoot });
+	assert.equal(registry.scenarios.length, SHIPPED_SCENARIO_COUNT);
+	const result = validateRegistry(registry, { packageRoot });
 	assert.equal(result.ok, true, result.errors.join("; "));
 	assert.deepEqual(result.errors, []);
+});
+
+test("shipped registry catalogs all incident fixtures from incidents README", () => {
+	const registry = loadRegistry({ packageRoot });
+	const incidentIds = registry.scenarios
+		.filter((entry) => entry.kind === "incident")
+		.map((entry) => entry.id)
+		.sort();
+	assert.deepEqual(incidentIds, [
+		"lane-worktree-devcontainer",
+		"orphan-running-resume",
+		"pidless-ghost-running",
+		"resume-orphan-historical-failure",
+		"resume-parallel-lane-orphan",
+		"retry-clears-failed-classification",
+	]);
 });
 
 test("validateRegistry rejects invalid schema and entries", () => {
