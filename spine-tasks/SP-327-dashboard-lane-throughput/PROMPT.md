@@ -45,7 +45,7 @@ New columns: Elapsed, Done, Rate (tasks/hr).
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/` |
 | fileScopeMustChange | `src/dashboard/snapshot.mjs` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 

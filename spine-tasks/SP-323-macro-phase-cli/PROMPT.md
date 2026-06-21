@@ -47,7 +47,7 @@ Include macroPhase in --diagnose verbose signals.
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/macro-phase.test.mjs tests/cli/` |
 | fileScopeMustChange | `src/batch/reconcile.mjs` |
 | minLineCoverage | 77 |
-| artifactsMustExist | `(none beyond tests)` |
+| artifactsMustExist | `—` |
 
 ## Steps
 

@@ -974,7 +974,7 @@ function promptMd(t) {
 	const docsMust = t.docs.length
 		? `**Must Update:**\n\n${t.docs.map((d) => `- \`${d}\``).join("\n")}\n`
 		: "**Must Update:**\n\n- None\n";
-	const artifacts = t.contract.artifactsMustExist || "(none beyond tests)";
+	const artifacts = t.contract.artifactsMustExist || "—";
 	const steps = t.steps
 		.map((s, i) => {
 			const items = s.items.map((it) => `- [ ] ${it}`).join("\n");
