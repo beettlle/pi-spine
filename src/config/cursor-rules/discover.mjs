@@ -5,9 +5,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
 
 import micromatch from "micromatch";
+
+import { writeJsonAtomic } from "../../fs/atomic-write.mjs";
 
 import { parseCursorRuleFrontmatter } from "./parse-frontmatter.mjs";
 import { DEFAULT_RULES_PROFILE, loadRulesProfile } from "./profile.mjs";
@@ -175,26 +176,7 @@ function collectRuleFiles(rulesRootAbs, currentAbs = rulesRootAbs) {
  */
 export function writeRulesManifestAtomic(projectRoot, manifest) {
 	const manifestPath = path.join(projectRoot, RULES_MANIFEST_REL_PATH);
-	const dir = path.dirname(manifestPath);
-	fs.mkdirSync(dir, { recursive: true });
-
-	const tmpPath = `${manifestPath}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
-	const content = `${JSON.stringify(manifest, null, 2)}\n`;
-
-	try {
-		fs.writeFileSync(tmpPath, content, "utf-8");
-		fs.renameSync(tmpPath, manifestPath);
-	} catch (err) {
-		try {
-			if (fs.existsSync(tmpPath)) {
-				fs.unlinkSync(tmpPath);
-			}
-		} catch {
-			// ignore cleanup failure
-		}
-		throw err;
-	}
-
+	writeJsonAtomic(manifestPath, manifest);
 	return manifestPath;
 }
 
