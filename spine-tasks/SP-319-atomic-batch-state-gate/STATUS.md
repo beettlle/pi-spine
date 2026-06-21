@@ -1,7 +1,7 @@
 # SP-319: Atomic batch-state and gate writes — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-20
 **Review Level:** 2
 **Review Counter:** 0
@@ -28,19 +28,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Extend state-transition tests for atomic write behavior
-- [ ] Run FULL test suite
-- [ ] Run coverage gate — ≥77%
+- [x] Run FULL test suite
+- [x] Run coverage gate — ≥77%
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Add atomic writes note to docs/adoption/operator-runbook.md
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
@@ -68,7 +68,8 @@
 | 2026-06-20 | Task staged | PROMPT.md and STATUS.md created (Phase 40) |
 | 2026-06-20 | Step 0 preflight | Call sites identified; SP-318 util confirmed |
 | 2026-06-20 | Step 1 | writeJsonAtomic applied to batch-state and gate |
-| 2026-06-20 | Step 2 partial | Extended state-transition tests; verification pending |
+| 2026-06-20 | Step 2 | 1033 tests pass; coverage 87.66% (≥77%) |
+| 2026-06-20 | Step 3 | Operator runbook updated; .DONE created |
 
 ---
 
