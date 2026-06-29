@@ -1,7 +1,7 @@
 # SP-348: Post-merge limbo regression fix — Status
 
-**Current Step:** Step 3 (Delivery)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-29
 **Review Level:** 1
 **Size:** S
@@ -25,10 +25,10 @@
 - [x] FULL suite + coverage gate
 
 ### Step 3: Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Close issue #39
-- [ ] Create `.DONE`
+- [x] Close issue #39
+- [x] Create `.DONE`
 
 ---
 
