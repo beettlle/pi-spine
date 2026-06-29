@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-28 (Phase 45 — SP-350/SP-357 decomposition; SP-342 superseded)
 **Status:** Active
-**Next Task ID:** SP-358
+**Next Task ID:** SP-359
 
 ---
 
@@ -945,9 +945,10 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-355 | Preflight orch conflict warn | S | **Staged** | SP-310 | #37 |
 | SP-356 | Merge blocked phase FSM | S | **Staged** | SP-338 | #38 (partial) |
 | SP-357 | Attached merge failure exit | S | **Staged** | SP-356 | #38 |
-| SP-348 | Post-merge limbo regression fix | S | **Staged** | SP-316 | #39 |
+| SP-348 | Post-merge limbo regression fix | S | **Done** | SP-316 | #39 |
+| SP-358 | Detached start land loop finalize | M | **Staged** | SP-348 | #41 |
 
-**Suggested batch:** `spine batch start SP-349` first, then pending S tasks in planner waves.
+**Suggested batch:** Run `SP-358` before large pending batches if detached limbo blocks land loop.
 
 ---
 
