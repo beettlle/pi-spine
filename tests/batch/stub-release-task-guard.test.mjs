@@ -9,6 +9,7 @@ import {
 } from "../../src/batch/diagnosis.mjs";
 import { inferStubExitReasonFromDoneMarker } from "../../src/batch/diagnosis-stub.mjs";
 import { commitLaneWorktree } from "../../src/batch/lane-commit.mjs";
+import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { checkStubReleaseCritical } from "../../src/config/spine-preflight-lib.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -160,4 +161,54 @@ test("diagnosis surfaces exitReason stub for M/L legacy stub .DONE markers", () 
 	});
 	assert.match(command, /unset SPINE_WORKER_STUB/);
 	assert.match(command, /retry SP-334/);
+});
+
+test("reconcileBatch surfaces exitReason stub for succeeded M/L tasks with legacy stub .DONE", async () => {
+	const projectRoot = await initGitRepo("spine-stub-reconcile-");
+	try {
+		writeReleaseTask(projectRoot);
+		const donePath = path.join(projectRoot, "spine-tasks", "SP-140-version-bump", ".DONE");
+		fs.writeFileSync(
+			donePath,
+			"Completed: 2026-06-28T05:12:28.871Z\nTask: stub\n",
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "stub succeeded task fixture"], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+
+		const batchState = {
+			batchId: "20260628T051158",
+			phase: "completed",
+			baseBranch: "main",
+			orchBranch: "orch/spine-20260628T051158",
+			startedAt: Date.now(),
+			endedAt: Date.now(),
+			failedTasks: 0,
+			succeededTasks: 1,
+			totalTasks: 1,
+			mergeResults: [],
+			tasks: [
+				{
+					taskId: "SP-140",
+					status: "succeeded",
+					taskFolder: "SP-140-version-bump",
+					doneFileFound: true,
+					exitReason: "done",
+				},
+			],
+			segments: [],
+			lanes: [],
+		};
+
+		const result = reconcileBatch({ projectRoot, batchState });
+		assert.equal(result.diagnosis, "needs_retry");
+		assert.equal(result.signals?.failedTaskId ?? batchState.tasks[0].taskId, "SP-140");
+		assert.match(result.headline, /stub-completed without file-scope changes/);
+		assert.match(result.suggestedCommand, /unset SPINE_WORKER_STUB/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });

@@ -18,6 +18,10 @@ import {
 	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
+import {
+	findStubMarkedSucceededTask,
+	inferStubExitReasonForTask,
+} from "./diagnosis-stub.mjs";
 import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
@@ -337,8 +341,16 @@ function resolveFailedExitReason(rawTasks, failedTaskId) {
  * @returns {{ exitReason: string|null, launchFailureKind: string|null }}
  */
 function deriveFailureContext(failedTaskId, exitReason, signals) {
-	const resolvedExitReason =
+	let resolvedExitReason =
 		exitReason ?? resolveFailedExitReason(signals.raw?.tasks, failedTaskId);
+	if (failedTaskId && signals.tasksRoot) {
+		const taskFolder =
+			signals.tasks?.find((entry) => entry.taskId === failedTaskId)?.taskFolder ?? null;
+		const stubReason = inferStubExitReasonForTask(signals.tasksRoot, failedTaskId, taskFolder);
+		if (stubReason) {
+			resolvedExitReason = stubReason;
+		}
+	}
 	const launchFailureKind = inferLaunchFailureKind({
 		exitReason: resolvedExitReason,
 		journalEvents: signals.journalEvents,
@@ -767,6 +779,7 @@ export function reconcileBatch(ctx) {
 		mergeResultsEmpty: batch.mergeResults.length === 0,
 		git,
 		tasks: classifiedTasks,
+		tasksRoot,
 		segments: batch.segments,
 		lanes: batch.lanes,
 		raw: batch.raw,
@@ -802,7 +815,19 @@ export function reconcileBatch(ctx) {
 	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
 	signals.pendingTaskCount = pendingTaskCount;
 
-	const { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	let { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	const stubSucceededTaskId = findStubMarkedSucceededTask(tasksRoot, classifiedTasks);
+	if (
+		stubSucceededTaskId &&
+		(diagnosis === "completed" ||
+			diagnosis === "needs_integrate" ||
+			diagnosis === "limbo_stale" ||
+			diagnosis === "completed_manual")
+	) {
+		diagnosis = "needs_retry";
+		failedTaskId = stubSucceededTaskId;
+		exitReason = "stub";
+	}
 	const doneMissingHint =
 		diagnosis === "worker_done_missing"
 			? inferWorkerDoneMissingFailure({
