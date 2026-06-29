@@ -13,6 +13,7 @@ import { validateResumeBatch } from "./resume.mjs";
 import { assessRunningPhaseResumeEligibility } from "./resume-multi-validate.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
+import { finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import {
 	ACTIVE_PHASES,
 	loadSpineBatchState,
@@ -28,6 +29,7 @@ const RESUME_WAIT_TERMINAL_DIAGNOSES = new Set([
 	"engine_orphaned",
 	"worker_orphaned",
 	"state_drift",
+	"needs_integrate",
 ]);
 
 /**
@@ -751,6 +753,54 @@ export async function resumeBatchDetached({
 	}
 
 	const { batchId, updatedAt, taskId } = resumeCheck;
+
+	if (resumeCheck.postMergeLimbo) {
+		const loaded = loadSpineBatchState(projectRoot);
+		const state = loaded.raw;
+		const finalizeResult = finalizeResumePostMergeLimbo({
+			projectRoot,
+			state,
+			batchId,
+			orchBranch: state.orchBranch,
+			fromPhase: String(state.phase ?? "running"),
+			resumeForced: force,
+		});
+		if (!finalizeResult?.ok) {
+			const payload = {
+				ok: false,
+				detached: true,
+				operation: "resume",
+				batchId,
+				taskId,
+				error: "post_merge_limbo_finalize_failed",
+				output: finalizeResult?.output ?? "Failed to finalize post-merge limbo.\n",
+			};
+			return {
+				ok: false,
+				exitCode: 1,
+				output: formatDetachedEngineOutput(payload, json),
+				result: payload,
+			};
+		}
+
+		const payload = {
+			ok: true,
+			detached: true,
+			operation: "resume",
+			status: "resume_completed",
+			batchId,
+			taskId,
+			phase: "completed",
+			output: finalizeResult.output,
+		};
+		return {
+			ok: true,
+			exitCode: 0,
+			output: formatDetachedEngineOutput(payload, json),
+			result: payload,
+		};
+	}
+
 	prepareDetachedResumeEngineHandoff(projectRoot);
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });

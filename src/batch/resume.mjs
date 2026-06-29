@@ -9,9 +9,10 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
+import { finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
-import { prepareOrphanResumeHandoff, terminateStaleDetachedEngine } from "./resume-engine.mjs";
+import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { mergeLaneToOrch } from "./engine-lanes.mjs";
@@ -183,20 +184,17 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const fromPhase = phase;
 
 	if (isPostMergeLimbo(state) && task.status === "succeeded") {
-		terminateStaleDetachedEngine({
-			projectRoot,
-			state,
-			batchId,
-			fromPhase: phase,
-		});
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
-		return finalizeResumedBatchForIntegrate({
+		const finalizeResult = finalizeResumePostMergeLimbo({
 			projectRoot,
 			state,
 			batchId,
 			orchBranch,
+			fromPhase: phase,
 			resumeForced: Boolean(force),
 		});
+		if (finalizeResult) {
+			return finalizeResult;
+		}
 	}
 
 	prepareOrphanResumeHandoff({
