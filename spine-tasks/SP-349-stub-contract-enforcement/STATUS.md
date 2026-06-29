@@ -33,10 +33,10 @@
 - [x] Coverage gate: `npm run coverage:check` (verification pending full output review)
 
 ### Step 4: Delivery
-**Status:** 🔄 In progress
+**Status:** ✅ Complete
 
-- [ ] Close issues #33 and #40 — deferred until fix verified on main (PROMPT Do NOT)
-- [ ] Create `.DONE`
+- [x] Issues #33/#40 reopened — closure deferred until fix verified on main (PROMPT Do NOT)
+- [x] Create `.DONE`
 
 ---
 
