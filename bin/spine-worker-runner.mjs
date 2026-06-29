@@ -164,25 +164,25 @@ async function runWorkerRunner() {
 	const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 	if (mode === "stub") {
-		const taskIdFromFolder = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "";
+		const parsedTaskId = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "";
 		const failTasks = String(process.env.SPINE_WORKER_STUB_FAIL_TASKS ?? "")
 			.split(/[,\s]+/)
 			.filter(Boolean);
-		if (failTasks.includes(taskIdFromFolder)) {
+		if (failTasks.includes(parsedTaskId)) {
 			const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
 			if (dirtyRel && worktreePath) {
 				const dirtyPath = path.join(worktreePath, dirtyRel);
 				fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
 				fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
 			}
-			console.error(`stub worker forced failure for ${taskIdFromFolder}`);
+			console.error(`stub worker forced failure for ${parsedTaskId}`);
 			process.exit(1);
 		}
 
 		if (process.env.SPINE_WORKER_STUB_SAT020 === "1") {
 			const journal = buildReviewJournal();
 			const laneNumber = Number(process.env.SPINE_LANE_NUMBER || 1);
-			const taskId = process.env.SPINE_TASK_ID || taskIdFromFolder;
+			const taskId = process.env.SPINE_TASK_ID || parsedTaskId;
 			const correlationId = process.env.SPINE_LANE_CORRELATION_ID;
 			// Let the host poll once before checkpoint signals land.
 			spawnSync("sleep", ["1"], { stdio: "ignore" });

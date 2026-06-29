@@ -40,7 +40,7 @@ Fix **GitHub issues #33 and #40**: enforce `fileScopeMustChange` at lane commit 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/stub-contract-enforcement.test.mjs tests/batch/stub-release-task-guard.test.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/stub-contract-enforcement.test.mjs tests/batch/stub-release-task-guard.test.mjs` |
 | fileScopeMustChange | `src/batch/lane-commit.mjs` |
 | minLineCoverage | 77 |
 | artifactsMustExist | `tests/batch/stub-contract-enforcement.test.mjs` |
