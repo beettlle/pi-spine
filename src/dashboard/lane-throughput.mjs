@@ -275,3 +275,77 @@ export function deriveLanesThroughput({
 
 	return statsByLane;
 }
+
+/**
+ * @param {number} value
+ * @returns {number}
+ */
+export function roundThroughputRate(value) {
+	const num = Number(value);
+	if (!Number.isFinite(num)) {
+		return 0;
+	}
+	return Math.round(num * 10) / 10;
+}
+
+/**
+ * @param {number} ms
+ * @returns {string}
+ */
+export function formatElapsedMs(ms) {
+	const value = Number(ms);
+	if (!Number.isFinite(value) || value <= 0) {
+		return "—";
+	}
+
+	const totalMinutes = Math.floor(value / 60000);
+	const hours = Math.floor(totalMinutes / 60);
+	const minutes = totalMinutes % 60;
+
+	if (hours === 0) {
+		return `${minutes}m`;
+	}
+	if (minutes === 0) {
+		return `${hours}h`;
+	}
+	return `${hours}h ${minutes}m`;
+}
+
+/**
+ * @param {number} rate
+ * @returns {string}
+ */
+export function formatThroughputRate(rate) {
+	const value = Number(rate);
+	if (!Number.isFinite(value) || value < 0) {
+		return "—";
+	}
+	return value.toFixed(1);
+}
+
+/**
+ * Aggregate per-lane throughput stats into a batch-level summary row.
+ *
+ * @param {Map<number, LaneThroughputStats>} statsByLane
+ * @returns {LaneThroughputStats}
+ */
+export function summarizeLaneThroughput(statsByLane) {
+	let activeElapsedMs = 0;
+	let completedCount = 0;
+	let failedCount = 0;
+
+	for (const stats of statsByLane?.values?.() ?? []) {
+		activeElapsedMs += stats.activeElapsedMs ?? 0;
+		completedCount += stats.completedCount ?? 0;
+		failedCount += stats.failedCount ?? 0;
+	}
+
+	return {
+		activeElapsedMs,
+		completedCount,
+		failedCount,
+		throughputTasksPerHour: roundThroughputRate(
+			computeThroughputTasksPerHour(completedCount, activeElapsedMs),
+		),
+	};
+}

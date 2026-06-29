@@ -18,6 +18,7 @@ import {
 import { resolveStallConfig } from "../batch/heartbeat.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import {
+	deriveLanesThroughput,
 	deriveLaneThroughputStats,
 	emptyLaneThroughputStats,
 	summarizeLaneThroughput,
@@ -364,7 +365,7 @@ export function buildLaneRows({
 	metricsLines = [],
 	now = Date.now(),
 }) {
-	const throughputByLane = deriveLaneThroughputStats({
+	const throughputByLane = deriveLanesThroughput({
 		lanes,
 		journalEvents,
 		metricsLines,
@@ -592,10 +593,11 @@ export function buildDashboardSnapshot(projectRoot) {
 		now,
 	});
 	const laneThroughputSummary = summarizeLaneThroughput(
-		deriveLaneThroughputStats({
+		deriveLanesThroughput({
 			lanes: batch?.lanes ?? [],
 			journalEvents,
 			metricsLines,
+			tasks: batch?.tasks,
 			now,
 		}),
 	);

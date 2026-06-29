@@ -5,6 +5,7 @@ import {
 	deriveLaneThroughputStats,
 	deriveLanesThroughput,
 	emptyLaneThroughputStats,
+	summarizeLaneThroughput,
 } from "../../src/dashboard/lane-throughput.mjs";
 
 const T0 = Date.parse("2026-06-20T12:00:00.000Z");
@@ -145,4 +146,34 @@ test("deriveLanesThroughput returns isolated stats per lane", () => {
 	assert.equal(statsByLane.get(2)?.completedCount, 1);
 	assert.equal(statsByLane.get(2)?.failedCount, 1);
 	assert.equal(statsByLane.get(2)?.activeElapsedMs, 3 * MIN);
+});
+
+test("summarizeLaneThroughput aggregates counts and recomputes rate from totals", () => {
+	const statsByLane = new Map([
+		[
+			1,
+			{
+				activeElapsedMs: 60 * MIN,
+				completedCount: 1,
+				failedCount: 0,
+				throughputTasksPerHour: 1,
+			},
+		],
+		[
+			2,
+			{
+				activeElapsedMs: 30 * MIN,
+				completedCount: 1,
+				failedCount: 0,
+				throughputTasksPerHour: 2,
+			},
+		],
+	]);
+
+	const summary = summarizeLaneThroughput(statsByLane);
+
+	assert.equal(summary.activeElapsedMs, 90 * MIN);
+	assert.equal(summary.completedCount, 2);
+	assert.equal(summary.failedCount, 0);
+	assert.equal(summary.throughputTasksPerHour, 1.3);
 });

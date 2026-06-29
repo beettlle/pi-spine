@@ -24,6 +24,7 @@ import {
 } from "../../src/dashboard/server.mjs";
 import { buildLaneRows } from "../../src/dashboard/snapshot.mjs";
 import {
+	deriveLanesThroughput,
 	deriveLaneThroughputStats,
 	summarizeLaneThroughput,
 } from "../../src/dashboard/lane-throughput.mjs";
@@ -283,7 +284,7 @@ test("lane-throughput-multi-lane fixture drives throughput column values", () =>
 		now,
 	});
 	const laneThroughputSummary = summarizeLaneThroughput(
-		deriveLaneThroughputStats({
+		deriveLanesThroughput({
 			lanes: fixture.lanes,
 			journalEvents,
 			now,

@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-20 (Phase 40–43 — SP-318/SP-333 Gemma-inspired observability and fixtures)
+**Last Updated:** 2026-06-28 (Phase 44 — SP-334/SP-347 GitHub #25–#38)
 **Status:** Active
-**Next Task ID:** SP-334
+**Next Task ID:** SP-348
 
 ---
 
@@ -910,6 +910,29 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 **Suggested batch:** `SP-329` → `SP-330`/`SP-332` → `SP-331`/`SP-333`.
 
 **Serial constraint:** Phase 40–42 overlap `src/batch/` with Phase 39 (`SP-315`–`SP-317`) — interleave carefully or finish Phase 39 first.
+
+#### Phase 44 — GitHub issue fixes (#25–#38)
+
+**Source:** Open issues [#25](https://github.com/beettlle/pi-spine/issues/25) through [#38](https://github.com/beettlle/pi-spine/issues/38).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-334 | Batch retry failed-phase recovery | M | **Staged** | — | #25 |
+| SP-335 | Batch complete worktree cleanup | M | **Staged** | — | #26 |
+| SP-336 | Dashboard heartbeat display fix | S | **Staged** | — | #27 |
+| SP-337 | Dismiss orphan worker kill | M | **Staged** | — | #28 |
+| SP-338 | Merge failure diagnosis | M | **Staged** | — | #29 |
+| SP-339 | Status JSON task progress | M | **Staged** | — | #30 |
+| SP-340 | Planner file-scope overlap guard | M | **Staged** | — | #31 |
+| SP-341 | Worker timeout heartbeat slide | M | **Staged** | — | #32 |
+| SP-342 | Stub release task guard | M | **Staged** | — | #33 |
+| SP-343 | Attached batch exit after complete | M | **Staged** | — | #34 |
+| SP-344 | doneOnDisk semantics alignment | S | **Staged** | SP-338 | #35 |
+| SP-345 | Transient orphan debounce | M | **Staged** | — | #36 |
+| SP-346 | Merge PRD conflict resolution | M | **Staged** | SP-310 | #37 |
+| SP-347 | Merge blocked terminal phase | M | **Staged** | SP-338 | #38 |
+
+**Suggested batch:** `spine batch start pending` — planner serializes overlapping file-scope lanes.
 
 ---
 
