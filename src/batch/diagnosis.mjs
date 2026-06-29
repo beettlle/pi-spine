@@ -267,7 +267,7 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				if (ctx.stalePathSpine) {
 					return "node bin/spine.mjs batch resume --attached";
 				}
-				return "spine batch resume";
+				return "spine batch resume --force";
 			}
 			return "spine integrate";
 		case "needs_replan": {

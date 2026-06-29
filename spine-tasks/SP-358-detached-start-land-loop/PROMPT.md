@@ -23,7 +23,7 @@ Fix **GitHub issue #41**: batch `20260629T210738` — detached engine completed 
 
 ## Dependencies
 
-- **Task:** SP-348
+- **Task:** SP-348, SP-359
 
 ## Context to Read First
 
@@ -53,7 +53,7 @@ Fix **GitHub issue #41**: batch `20260629T210738` — detached engine completed 
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/detached-start-land-loop.test.mjs tests/batch/post-merge-limbo-regression.test.mjs` |
-| fileScopeMustChange | `src/batch/detached-start.mjs` |
+| fileScopeMustChange | `src/batch/engine.mjs`, `src/batch/post-merge-limbo.mjs` |
 | minLineCoverage | 77 |
 | artifactsMustExist | `tests/batch/detached-start-land-loop.test.mjs` |
 

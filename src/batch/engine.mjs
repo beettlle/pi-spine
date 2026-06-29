@@ -12,7 +12,8 @@ import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-l
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
-import { finalizeBatchForIntegrate } from "./post-merge-limbo.mjs";
+import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
+import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	assertNoActiveBatch,
@@ -412,6 +413,18 @@ export async function startBatch({
 					mode: "auto_between_waves",
 					ok: integrateResult.ok,
 				});
+			}
+		}
+
+		if (detectPostMergeLimboForResume({ projectRoot, state })) {
+			const limboResult = tryFinalizePostMergeLimbo({
+				projectRoot,
+				state,
+				batchId,
+				orchBranch,
+			});
+			if (limboResult) {
+				return limboResult;
 			}
 		}
 

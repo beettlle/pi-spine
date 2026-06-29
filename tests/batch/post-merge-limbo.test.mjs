@@ -50,7 +50,7 @@ test("deriveDiagnosis returns needs_integrate for post-merge limbo", () => {
 	assert.equal(diagnosis.diagnosis, "needs_integrate");
 	assert.equal(
 		buildSuggestedCommand("needs_integrate", { postMergeLimbo: true, phase: "running" }),
-		"spine batch resume",
+		"spine batch resume --force",
 	);
 	assert.equal(
 		buildSuggestedCommand("needs_integrate", {

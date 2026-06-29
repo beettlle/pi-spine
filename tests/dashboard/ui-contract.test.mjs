@@ -390,6 +390,11 @@ test("resolveStaticAsset serves dashboard public files and view.mjs", () => {
 	assert.ok(view);
 	assert.ok(fs.existsSync(view.filePath));
 	assert.match(fs.readFileSync(view.filePath, "utf-8"), /diagnosisBadgeClass/);
+
+	const laneThroughput = resolveStaticAsset("/lane-throughput.mjs");
+	assert.ok(laneThroughput);
+	assert.ok(fs.existsSync(laneThroughput.filePath));
+	assert.match(fs.readFileSync(laneThroughput.filePath, "utf-8"), /deriveLaneThroughputStats/);
 });
 
 test("dashboard server GET / returns HTML shell", async () => {

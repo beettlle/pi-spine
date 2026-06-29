@@ -27,11 +27,15 @@ export function journalHasTaskCompleted(events, taskId) {
  * @param {object} params
  */
 export function taskAlreadyComplete({ taskFolder, events, task }) {
+	const status = String(task?.status ?? "");
+	if (status === "pending" || status === "failed" || status === "running") {
+		return false;
+	}
 	const doneOnDisk = fs.existsSync(path.join(taskFolder, ".DONE"));
 	return (
 		doneOnDisk ||
 		task.doneFileFound ||
-		task.status === "succeeded" ||
+		status === "succeeded" ||
 		journalHasTaskCompleted(events, task.taskId)
 	);
 }

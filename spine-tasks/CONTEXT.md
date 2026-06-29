@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-28 (Phase 45 — SP-350/SP-357 decomposition; SP-342 superseded)
 **Status:** Active
-**Next Task ID:** SP-359
+**Next Task ID:** SP-360
 
 ---
 
@@ -946,9 +946,10 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-356 | Merge blocked phase FSM | S | **Staged** | SP-338 | #38 (partial) |
 | SP-357 | Attached merge failure exit | S | **Staged** | SP-356 | #38 |
 | SP-348 | Post-merge limbo regression fix | S | **Done** | SP-316 | #39 |
-| SP-358 | Detached start land loop finalize | M | **Staged** | SP-348 | #41 |
+| SP-358 | Detached start land loop finalize | M | **Staged** | SP-348, SP-359 | #41 |
+| SP-359 | Resume contract review before commit | M | **Staged** | — | #42 |
 
-**Execution order (updated 2026-06-29):** `dependencies.json` gates all pending issue-fix tasks on **SP-358** so detached land-loop finalize runs first.
+**Execution order (updated 2026-06-29):** **SP-359** (#42 resume review bypass) must land before re-running **SP-358**; then wave-1 tasks gated on SP-358.
 
 | Wave | Tasks | Rationale |
 |------|-------|-----------|

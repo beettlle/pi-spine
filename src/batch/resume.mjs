@@ -32,6 +32,7 @@ import {
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
+import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 
@@ -234,8 +235,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const laneCorrelationId = crypto.randomUUID();
 	let workerResult = { ok: true, mode: "skipped" };
 	let workerSucceeded = false;
+	const skippedWorkerBecauseComplete = taskAlreadyComplete({
+		taskFolder: taskFolderInWorktree,
+		events,
+		task,
+	});
 
-	if (taskAlreadyComplete({ taskFolder: taskFolderInWorktree, events, task })) {
+	if (skippedWorkerBecauseComplete) {
 		workerSucceeded = true;
 	} else {
 		task.status = "running";
@@ -327,6 +333,40 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	}
 
 	if (workerSucceeded) {
+		const lane =
+			(state.lanes ?? []).find((entry) => entry.laneNumber === 1) ??
+			{
+				laneNumber: 1,
+				laneId: "lane-1",
+				worktreePath: wt,
+				branch: taskBranch,
+			};
+
+		const reviewResult = await runLaneReviewPhasesBeforeCommit({
+			projectRoot,
+			state,
+			batchId,
+			config,
+			task,
+			lane,
+			taskFolderInWorktree,
+			wt,
+			taskBranch,
+			laneCorrelationId,
+			fileScopePaths,
+			baseBranch,
+		});
+		if (!reviewResult.ok) {
+			return {
+				ok: false,
+				exitCode: reviewResult.exitCode ?? 1,
+				batchId,
+				taskId,
+				error: reviewResult.error ?? "review_failed",
+				output: reviewResult.output,
+			};
+		}
+
 		const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
 			? config.worktreeSetupIgnorePaths
 			: [];

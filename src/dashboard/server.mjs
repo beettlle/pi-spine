@@ -21,6 +21,10 @@ const STATIC_ROUTES = {
 	"/dashboard.css": { file: "dashboard.css", contentType: "text/css; charset=utf-8" },
 	"/dashboard.js": { file: "dashboard.js", contentType: "text/javascript; charset=utf-8" },
 	"/view.mjs": { file: path.join("..", "view.mjs"), contentType: "text/javascript; charset=utf-8" },
+	"/lane-throughput.mjs": {
+		file: path.join("..", "lane-throughput.mjs"),
+		contentType: "text/javascript; charset=utf-8",
+	},
 };
 
 /**

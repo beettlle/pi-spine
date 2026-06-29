@@ -18,6 +18,7 @@ import { saveSpineBatchState, updateSegmentForTask } from "./state.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { isTaskResumable } from "./resume-multi-validate.mjs";
+import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
 
 /**
  * @param {object} params
@@ -55,13 +56,42 @@ async function markTaskCompleteFromDisk({
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
 	const wt = lane.worktreePath;
+	const taskBranchResolved = taskBranch ?? laneTaskBranch(batchId, laneNumber);
+	const scopeResult = loadResumeFileScopePaths(taskFolderInWorktree);
+	const fileScopePaths = scopeResult.ok ? scopeResult.fileScopePaths : [];
+
+	const reviewResult = await runLaneReviewPhasesBeforeCommit({
+		projectRoot,
+		state,
+		batchId,
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch: taskBranchResolved,
+		laneCorrelationId,
+		fileScopePaths,
+		baseBranch: state.baseBranch ?? "main",
+	});
+	if (!reviewResult.ok) {
+		return {
+			ok: false,
+			error: reviewResult.error ?? "review_failed",
+			output: reviewResult.output,
+			taskId,
+			laneNumber,
+			exitCode: reviewResult.exitCode ?? 1,
+		};
+	}
+
 	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
 		? config.worktreeSetupIgnorePaths
 		: [];
 
 	const laneCommit = commitLaneWorktree({
 		worktreePath: wt,
-		taskBranch,
+		taskBranch: taskBranchResolved,
 		taskId,
 		batchId,
 		taskFolder: taskFolderInWorktree,
@@ -257,6 +287,31 @@ async function runResumedTaskOnLane({
 		taskId,
 		correlationId: laneCorrelationId,
 	});
+
+	const reviewResult = await runLaneReviewPhasesBeforeCommit({
+		projectRoot,
+		state,
+		batchId,
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+		baseBranch: state.baseBranch ?? "main",
+	});
+	if (!reviewResult.ok) {
+		return {
+			ok: false,
+			error: reviewResult.error ?? "review_failed",
+			output: reviewResult.output,
+			taskId,
+			laneNumber,
+			exitCode: reviewResult.exitCode ?? 1,
+		};
+	}
 
 	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
 		? config.worktreeSetupIgnorePaths

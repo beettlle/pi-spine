@@ -3,6 +3,7 @@
  */
 
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { saveSpineBatchState } from "./state.mjs";
 
@@ -29,7 +30,7 @@ export function finalizeResumePostMergeLimbo({
 	if (String(state.phase ?? "") === "completed") {
 		return null;
 	}
-	if (!isPostMergeLimbo(state)) {
+	if (!detectPostMergeLimboForResume({ projectRoot, state }) && !isPostMergeLimbo(state)) {
 		return null;
 	}
 

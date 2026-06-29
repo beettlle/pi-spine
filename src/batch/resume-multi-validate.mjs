@@ -8,9 +8,11 @@ import {
 	findFirstWaveNeedingMerge,
 	hasPendingWaveMerge,
 } from "./merge/wave-merge-state.mjs";
+import { loadGateRecord } from "./gate.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { inspectGitState } from "./reconcile.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
 import { loadSpineBatchState, readBatchEnginePid, validateBatchState } from "./state.mjs";
 import {
@@ -18,6 +20,50 @@ import {
 	laneWorktreePath,
 	repairLaneWorktreeGitMetadata,
 } from "./worktree.mjs";
+
+/**
+ * Resume-time limbo detection — state file, git signals, and journal merge events (SP-358, GitHub #41).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ */
+export function detectPostMergeLimboForResume({ projectRoot, state }) {
+	if (!state || typeof state !== "object") return false;
+	if (String(state.phase ?? "") === "completed") return false;
+
+	if (isPostMergeLimbo(state)) return true;
+
+	const batchId = String(state.batchId ?? "");
+	const git = inspectGitState({
+		projectRoot,
+		batchId,
+		baseBranch: state.baseBranch ?? "main",
+		orchBranch: state.orchBranch ?? null,
+	});
+	if (isPostMergeLimbo(state, git)) return true;
+
+	const phase = String(state.phase ?? "");
+	if (phase !== "running" && phase !== "merging") return false;
+	if (state.endedAt != null) return false;
+	if (!git.orchBranchExists || git.orchMergedToBase) return false;
+	if (!batchId || loadGateRecord(projectRoot, batchId)) return false;
+
+	const tasks = state.tasks ?? [];
+	if (tasks.length === 0) return false;
+	const allSucceeded = tasks.every((task) => String(task?.status ?? "") === "succeeded");
+	if (!allSucceeded) return false;
+
+	const totalWaves = Number(state.totalWaves ?? state.wavePlan?.length ?? 0);
+	if (!Number.isFinite(totalWaves) || totalWaves <= 0) return false;
+
+	const events = readJournalEvents(projectRoot, batchId);
+	const mergeCompleted = events.filter((event) => event.type === "batch.merge_completed");
+	if (mergeCompleted.length < 1) return false;
+
+	const lastWaveIndex = totalWaves - 1;
+	return mergeCompleted.some((event) => Number(event.payload?.waveIndex ?? -1) === lastWaveIndex);
+}
 
 /**
  * @param {object} state
@@ -133,7 +179,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 
 	const state = loaded.raw;
 	const phase = String(state.phase ?? "");
-	const postMergeLimbo = isPostMergeLimbo(state);
+	const postMergeLimbo = detectPostMergeLimboForResume({ projectRoot, state });
 	const orphanEligibility =
 		phase === "running"
 			? assessRunningPhaseResumeEligibility({ projectRoot, state })

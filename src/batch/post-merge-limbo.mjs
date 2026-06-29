@@ -2,9 +2,9 @@
  * Post-merge limbo detection — merges done, tasks succeeded, phase still running (SP-204).
  */
 
-import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
+import { loadGateRecord, openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
-import { saveSpineBatchState } from "./state.mjs";
+import { clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 
 /**
  * @param {object|null|undefined} state
@@ -145,7 +145,7 @@ export function finalizeBatchForIntegrate({
 		state.endedAt = Date.now();
 	}
 
-	openIntegrateGateAfterBatchComplete({
+	const gateResult = openIntegrateGateAfterBatchComplete({
 		projectRoot,
 		batchId,
 		batchState: { ...state, phase: "completed" },
@@ -153,7 +153,6 @@ export function finalizeBatchForIntegrate({
 
 	if (!alreadyCompleted) {
 		state.phase = "completed";
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 		appendJournalEvent(projectRoot, batchId, "batch.completed", {
 			taskIds,
 			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
@@ -161,9 +160,21 @@ export function finalizeBatchForIntegrate({
 			postMergeLimbo: !resumed,
 			resumeForced,
 		});
-	} else {
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 	}
+
+	clearBatchEnginePid(state);
+
+	const gateRecord = loadGateRecord(projectRoot, batchId);
+	if (gateRecord) {
+		appendJournalEvent(projectRoot, batchId, "batch.land_loop_finalized", {
+			resumed,
+			resumeForced,
+			gateId: gateRecord.gateId ?? gateResult?.gate?.gateId ?? null,
+			source: resumed ? "resume_fast_path" : "engine_land_loop",
+		});
+	}
+
+	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
 	const completionLabel = resumed ? "resumed and completed" : "completed";
 	const nextSteps = resumed
