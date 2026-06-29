@@ -83,6 +83,17 @@ export function maybeFinalizeAfterWaveMerge({
 }
 
 /**
+ * Whether resume should take the post-merge limbo fast path (no worker re-run).
+ *
+ * @param {object|null|undefined} state
+ */
+export function shouldResumePostMergeLimbo(state) {
+	if (!state || typeof state !== "object") return false;
+	if (String(state.phase ?? "") === "completed") return false;
+	return isPostMergeLimbo(state);
+}
+
+/**
  * Idempotent finalize when batch is in post-merge limbo (SP-280, SP-316).
  *
  * @param {object} params
