@@ -1,8 +1,8 @@
 # SP-349: Stub contract enforcement — Status
 
 **Current Step:** Step 4 (Delivery)
-**Status:** 🟢 Implementation complete — verification pending merge to main
-**Last Updated:** 2026-06-29
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-29 (delivery re-verified)
 **Review Level:** 2
 **Size:** M
 
@@ -30,7 +30,7 @@
 
 - [x] Regression tests (contract + release guard)
 - [x] Contract testCommand: typecheck + scoped tests (1086 pass, 0 fail)
-- [x] Coverage gate: `npm run coverage:check` (verification pending full output review)
+- [x] Coverage gate: `npm run coverage:check` (87.09% >= 77% threshold)
 
 ### Step 4: Delivery
 **Status:** ✅ Complete
@@ -47,6 +47,7 @@
 | 2026-06-28 | Task staged | GitHub #40 |
 | 2026-06-29 | Cherry-pick Steps 1–3 from prior lane work | b806e68 |
 | 2026-06-29 | Wire stub diagnosis into reconcile.mjs | REVISE feedback addressed |
+| 2026-06-29 | Re-verify tests + coverage; restore `.DONE` | 1086 pass, coverage 87.09% |
 
 ## Discoveries
 
