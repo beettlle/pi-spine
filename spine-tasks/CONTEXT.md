@@ -948,7 +948,26 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | SP-348 | Post-merge limbo regression fix | S | **Done** | SP-316 | #39 |
 | SP-358 | Detached start land loop finalize | M | **Staged** | SP-348 | #41 |
 
-**Suggested batch:** Run `SP-358` before large pending batches if detached limbo blocks land loop.
+**Execution order (updated 2026-06-29):** `dependencies.json` gates all pending issue-fix tasks on **SP-358** so detached land-loop finalize runs first.
+
+| Wave | Tasks | Rationale |
+|------|-------|-----------|
+| 0 | **SP-358** | Gatekeeper — detached start must open integrate gate without manual finalize |
+| 1 | SP-352, SP-355, SP-336, SP-343, SP-354 + lifecycle cluster (SP-334, SP-337, SP-338, SP-339, SP-341, SP-345, SP-350) | Prevention (planner/preflight/merge PRD) + batch recovery; SP-343 after SP-358 (`attached-runner.mjs`) |
+| 2 | SP-353, SP-351, SP-344, SP-356 | Planner warnings, worktree doctor, diagnosis/FSM |
+| 3 | SP-357 | Attached merge-failure exit (needs SP-356 + SP-358) |
+
+**Suggested commands:**
+```bash
+spine batch start SP-358                    # wave 0 — run first, real pi
+spine batch start SP-352 SP-355 SP-336      # wave 1 subset — merge prevention (parallel)
+spine batch start SP-343                    # attached land-loop UX
+spine batch start pending                   # remainder after wave 0 lands
+```
+
+**Superseded (skip):** SP-335, SP-340, SP-342, SP-346, SP-347 — replaced by SP-350–357 / SP-349.
+
+**Done:** SP-348, SP-349.
 
 ---
 
