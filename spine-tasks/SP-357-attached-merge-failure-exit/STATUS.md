@@ -1,15 +1,11 @@
-# SP-348: Post-merge limbo regression fix — Status
+# SP-357: Attached merge failure exit — Status
 
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-06-28
 **Review Level:** 1
 **Size:** S
-
----
-
-### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Split from:** SP-347
 
 ---
 
@@ -17,4 +13,6 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-28 | Task staged | GitHub #39 |
+| 2026-06-28 | Task staged | Split from SP-347 for issue #38 |
+
+---

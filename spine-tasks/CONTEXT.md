@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-28 (Phase 44 — SP-334/SP-347 GitHub #25–#38)
+**Last Updated:** 2026-06-28 (Phase 45 — SP-350/SP-357 decomposition; SP-342 superseded)
 **Status:** Active
-**Next Task ID:** SP-350
+**Next Task ID:** SP-358
 
 ---
 
@@ -917,22 +917,37 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-334 | Batch retry failed-phase recovery | M | **Staged** | — | #25 |
-| SP-335 | Batch complete worktree cleanup | M | **Staged** | — | #26 |
+| SP-334 | Batch retry failed-phase recovery | S | **Staged** | — | #25 |
+| SP-335 | Batch complete worktree cleanup | M | **Superseded** → SP-350/351 | — | #26 |
 | SP-336 | Dashboard heartbeat display fix | S | **Staged** | — | #27 |
-| SP-337 | Dismiss orphan worker kill | M | **Staged** | — | #28 |
-| SP-338 | Merge failure diagnosis | M | **Staged** | — | #29 |
-| SP-339 | Status JSON task progress | M | **Staged** | — | #30 |
-| SP-340 | Planner file-scope overlap guard | M | **Staged** | — | #31 |
-| SP-341 | Worker timeout heartbeat slide | M | **Staged** | — | #32 |
-| SP-342 | Stub release task guard | M | **Staged** | — | #33 |
-| SP-343 | Attached batch exit after complete | M | **Staged** | — | #34 |
+| SP-337 | Dismiss orphan worker kill | S | **Staged** | — | #28 |
+| SP-338 | Merge failure diagnosis | S | **Staged** | — | #29 |
+| SP-339 | Status JSON task progress | S | **Staged** | — | #30 |
+| SP-340 | Planner file-scope overlap guard | M | **Superseded** → SP-352/353 | — | #31 |
+| SP-341 | Worker timeout heartbeat slide | S | **Staged** | — | #32 |
+| SP-342 | Stub release task guard | M | **Superseded** → SP-349 | — | #33 |
+| SP-343 | Attached batch exit after complete | S | **Staged** | — | #34 |
 | SP-344 | doneOnDisk semantics alignment | S | **Staged** | SP-338 | #35 |
-| SP-345 | Transient orphan debounce | M | **Staged** | — | #36 |
-| SP-346 | Merge PRD conflict resolution | M | **Staged** | SP-310 | #37 |
-| SP-347 | Merge blocked terminal phase | M | **Staged** | SP-338 | #38 |
+| SP-345 | Transient orphan debounce | S | **Staged** | — | #36 |
+| SP-346 | Merge PRD conflict resolution | M | **Superseded** → SP-354/355 | SP-310 | #37 |
+| SP-347 | Merge blocked terminal phase | M | **Superseded** → SP-356/357 | SP-338 | #38 |
 
-**Suggested batch:** `spine batch start pending` — planner serializes overlapping file-scope lanes.
+#### Phase 45 — Issue-fix decomposition (#26/#31/#37/#38 splits + #33/#39/#40)
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-349 | Stub contract enforcement | M | **Staged** | — | #33, #40 |
+| SP-350 | Worktree cleanup on complete/dismiss | S | **Staged** | — | #26 (partial) |
+| SP-351 | Doctor stale-worktrees check | S | **Staged** | SP-350 | #26 |
+| SP-352 | Planner overlap detection module | S | **Staged** | — | #31 (partial) |
+| SP-353 | Planner overlap plan warnings | S | **Staged** | SP-352 | #31 |
+| SP-354 | Merge PRD auto-resolution | S | **Staged** | SP-310 | #37 (partial) |
+| SP-355 | Preflight orch conflict warn | S | **Staged** | SP-310 | #37 |
+| SP-356 | Merge blocked phase FSM | S | **Staged** | SP-338 | #38 (partial) |
+| SP-357 | Attached merge failure exit | S | **Staged** | SP-356 | #38 |
+| SP-348 | Post-merge limbo regression fix | S | **Staged** | SP-316 | #39 |
+
+**Suggested batch:** `spine batch start SP-349` first, then pending S tasks in planner waves.
 
 ---
 

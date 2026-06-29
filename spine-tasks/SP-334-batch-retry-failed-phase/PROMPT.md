@@ -1,9 +1,9 @@
 # Task: SP-334 — Batch retry failed-phase recovery
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** `batch retry` leaves batch in `failed` phase with pending tasks; preflight and `resume --force` both blocked.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

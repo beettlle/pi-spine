@@ -1,9 +1,9 @@
 # Task: SP-345 — Transient orphan debounce
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** `worker_orphaned` diagnosis appears while task still `running` and later succeeds without retry.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

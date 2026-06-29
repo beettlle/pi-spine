@@ -1,9 +1,9 @@
 # Task: SP-339 — Status JSON task progress
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** `spine status --json` omits task/wave progress fields needed for automated monitoring.
 **Score:** 3/8 — Blast radius: 1, Pattern novelty: 1, Security: 0, Reversibility: 1

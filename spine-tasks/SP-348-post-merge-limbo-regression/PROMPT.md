@@ -1,9 +1,9 @@
 # Task: SP-348 — Post-merge limbo regression fix
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** SP-316 regression — attached engine SIGTERM orphan after last merge; gate not opened without manual finalize.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

@@ -1,9 +1,9 @@
 # Task: SP-337 — Dismiss orphan worker kill
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** `batch dismiss` archives state but worker subprocesses keep running after batch archived.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

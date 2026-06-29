@@ -1,9 +1,9 @@
 # Task: SP-338 — Merge failure diagnosis
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** Wave merge failures report `phase: failed` with `failedTasks: 0` — headline misleading for operators and monitors.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

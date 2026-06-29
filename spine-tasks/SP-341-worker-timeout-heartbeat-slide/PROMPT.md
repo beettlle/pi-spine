@@ -1,9 +1,9 @@
 # Task: SP-341 — Worker timeout heartbeat slide
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** Pi worker hard timeout does not extend on `worker_alive` heartbeats — M-tasks killed at wall clock despite active work.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1

@@ -1,9 +1,9 @@
 # Task: SP-343 — Attached batch exit after complete
 
 **Created:** 2026-06-28
-**Size:** M
+**Size:** S
 
-## Review Level: 2 (Plan + Code)
+## Review Level: 1 (Plan Only)
 
 **Assessment:** Attached batch CLI hangs silently after `batch.completed` with zero stdout.
 **Score:** 4/8 — Blast radius: 2, Pattern novelty: 1, Security: 0, Reversibility: 1
