@@ -69,6 +69,116 @@ export function shouldRunContractVerifyForWorker(promptMarkdown, parsedContract,
 }
 
 /**
+ * @returns {boolean}
+ */
+export function isStubWorkerMode() {
+	return process.env.SPINE_WORKER_STUB === "1" || process.env.SPINE_WORKER_STUB === "true";
+}
+
+/**
+ * Legacy stub workers write "Task: stub" in `.DONE` body.
+ *
+ * @param {string} doneContent
+ */
+export function isLegacyStubDoneMarker(doneContent) {
+	return /Task:\s*stub/i.test(String(doneContent ?? ""));
+}
+
+/**
+ * @param {string} donePath
+ */
+export function isLegacyStubDoneFile(donePath) {
+	if (!fs.existsSync(donePath)) {
+		return false;
+	}
+	return isLegacyStubDoneMarker(fs.readFileSync(donePath, "utf-8"));
+}
+
+/**
+ * Lane commit enforces `fileScopeMustChange` when stub mode is active or `.DONE` is legacy stub.
+ *
+ * @param {string} donePath
+ */
+export function shouldEnforceStubContractAtLaneCommit(donePath) {
+	if (isStubWorkerMode()) {
+		return true;
+	}
+	return isLegacyStubDoneFile(donePath);
+}
+
+/**
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ */
+export function hasReleaseCriticalContract(parsedContract) {
+	return (parsedContract?.fileScopeMustChange?.length ?? 0) > 0;
+}
+
+/**
+ * @param {string} worktreePath
+ */
+function listUntrackedFiles(worktreePath) {
+	try {
+		const output = execFileSync("git", ["ls-files", "-o", "--exclude-standard"], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 30_000,
+		});
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} baseBranch
+ * @param {string[]} [pendingPaths]
+ */
+export function listEffectiveChangedFiles(worktreePath, baseBranch = "main", pendingPaths = []) {
+	return [
+		...new Set([
+			...listChangedFiles(worktreePath, baseBranch),
+			...pendingPaths,
+			...listUntrackedFiles(worktreePath),
+		]),
+	];
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {string} [baseBranch]
+ * @param {string[]} [pendingPaths] Uncommitted paths about to be lane-committed
+ * @returns {{ ok: boolean, failures: string[] }}
+ */
+export function verifyStubFileScopeMustChange(
+	worktreePath,
+	parsedContract,
+	baseBranch = "main",
+	pendingPaths = [],
+) {
+	const patterns = parsedContract?.fileScopeMustChange ?? [];
+	if (patterns.length === 0) {
+		return { ok: true, failures: [] };
+	}
+
+	const changedFiles = listEffectiveChangedFiles(worktreePath, baseBranch, pendingPaths);
+	/** @type {string[]} */
+	const failures = [];
+	for (const pattern of patterns) {
+		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
+		if (!matched) {
+			failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
+		}
+	}
+	return { ok: failures.length === 0, failures };
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} [baseBranch]
  */

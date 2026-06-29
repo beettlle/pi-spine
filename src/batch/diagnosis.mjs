@@ -1,13 +1,16 @@
 /**
  * FR-BATCH-13 diagnosis taxonomy and operator messaging (§18.3).
  */
-
 import {
 	buildWorkerDoneMissingAlternatives,
 	buildWorkerDoneMissingHeadline,
 	buildWorkerDoneMissingSuggestedCommand,
 } from "./diagnosis-worker-done-missing.mjs";
-
+import {
+	buildStubFailureHeadline,
+	buildStubFailureSuggestedCommand,
+	STUB_EXIT_REASONS,
+} from "./diagnosis-stub.mjs";
 /** @typedef {import("./reconcile.mjs").ReconciliationResult} ReconciliationResult */
 
 export const DIAGNOSIS_TAXONOMY = [
@@ -28,20 +31,9 @@ export const DIAGNOSIS_TAXONOMY = [
 	"aborted",
 ];
 
-const NO_PAUSE_DIAGNOSES = new Set([
-	"limbo_stale",
-	"completed_manual",
-	"needs_integrate",
-	"engine_orphaned",
-]);
-
+const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_integrate", "engine_orphaned"]);
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
-
-const GITIGNORED_MERGE_FAILURE_CLASSES = new Set([
-	"merge_failed_gitignored",
-	"GitignoredDirtyWorktree",
-]);
-
+const GITIGNORED_MERGE_FAILURE_CLASSES = new Set(["merge_failed_gitignored", "GitignoredDirtyWorktree"]);
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
 	"code_review_timeout",
@@ -221,6 +213,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "state_drift":
 			return "spine batch retry --force";
 		case "needs_retry":
+			if (STUB_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				return buildStubFailureSuggestedCommand(ctx);
+			}
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return "spine doctor";
 			}
@@ -323,6 +318,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return `${batchLabel} work is on main but batch record is still active`;
 		case "needs_retry":
+			if (STUB_EXIT_REASONS.has(ctx.exitReason ?? "")) {
+				return buildStubFailureHeadline(batchLabel, ctx);
+			}
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return `${batchLabel} failed at worker launch — fix PI_SPINE_ROOT/devcontainer, then retry`;
 			}

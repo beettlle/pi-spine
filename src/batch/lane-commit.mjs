@@ -7,6 +7,12 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { filterGitignoredPaths, gitAddFilteredPaths } from "./git-helpers.mjs";
 import { gitExec } from "./git-exec.mjs";
+import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import {
+	hasReleaseCriticalContract,
+	shouldEnforceStubContractAtLaneCommit,
+	verifyStubFileScopeMustChange,
+} from "./contract-verify.mjs";
 
 /**
  * @param {string} worktreePath
@@ -140,9 +146,18 @@ function listPorcelainPaths(porcelain) {
  * @param {string} params.batchId
  * @param {string} params.taskFolder Absolute path to task folder (for `.DONE` check)
  * @param {string} [params.projectRoot] Main repo root for git identity resolution
+ * @param {string} [params.baseBranch] Base branch for stub contract diff (default main)
  * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
  */
-export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, taskFolder, projectRoot }) {
+export function commitLaneWorktree({
+	worktreePath,
+	taskBranch,
+	taskId,
+	batchId,
+	taskFolder,
+	projectRoot,
+	baseBranch = "main",
+}) {
 	const identityRoot = projectRoot ?? worktreePath;
 	try {
 		const porcelain = gitPorcelain(worktreePath);
@@ -159,6 +174,28 @@ export function commitLaneWorktree({ worktreePath, taskBranch, taskId, batchId, 
 				error: `Lane worktree has uncommitted changes but ${path.basename(taskFolder)}/.DONE is missing — worker did not finish cleanly`,
 				failureClass: "DirtyWorktree",
 			};
+		}
+
+		if (shouldEnforceStubContractAtLaneCommit(donePath)) {
+			const promptPath = path.join(taskFolder, "PROMPT.md");
+			const parsedContract = fs.existsSync(promptPath)
+				? parseContract(fs.readFileSync(promptPath, "utf-8"))
+				: { fileScopeMustChange: [] };
+			if (hasReleaseCriticalContract(parsedContract)) {
+				const scopeCheck = verifyStubFileScopeMustChange(
+					worktreePath,
+					parsedContract,
+					baseBranch,
+					dirtyPaths,
+				);
+				if (!scopeCheck.ok) {
+					return {
+						ok: false,
+						error: `Stub worker completed without required file-scope changes: ${scopeCheck.failures.join("; ")}`,
+						failureClass: "stub",
+					};
+				}
+			}
 		}
 
 		const { stageable, skipped: gitignoredDirtyPaths } = filterGitignoredPaths(worktreePath, dirtyPaths);

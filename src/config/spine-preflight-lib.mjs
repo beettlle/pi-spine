@@ -23,6 +23,8 @@ import { summarizePendingScope } from "../planner/pending.mjs";
 import { validatePrompt } from "../tasks/packet/validate-prompt.mjs";
 import { isRunMetricsAppendOnlyDrift } from "../batch/metrics.mjs";
 import { METRICS_DEFAULTS } from "./defaults.mjs";
+import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
@@ -602,6 +604,73 @@ export function checkTasksValidate(ctx) {
 }
 
 /**
+ * Warn when stub workers are about to run tasks with release-critical `fileScopeMustChange` contracts.
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function checkStubReleaseCritical(ctx) {
+	if (!isStubWorkerMode()) {
+		return makeCheck("stub-release-critical", true, "stub worker mode not active");
+	}
+
+	const configResult = ctx.configResult ?? loadSpineConfig(ctx.projectRoot);
+	const tasksRootPath = resolveTasksRoot(ctx.projectRoot, configResult);
+	if (!tasksRootPath) {
+		return makeCheck("stub-release-critical", true, "stub release-critical check skipped (no tasks root)");
+	}
+
+	try {
+		const discovered = discoverTasks(tasksRootPath);
+		const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
+		/** @type {string[]} */
+		const criticalTaskIds = [];
+
+		for (const discoveredTask of discovered) {
+			if (!pendingIds.includes(discoveredTask.taskId)) continue;
+			const promptMarkdown = fs.readFileSync(
+				path.join(discoveredTask.folderPath, "PROMPT.md"),
+				"utf-8",
+			);
+			const parsedContract = parseContract(promptMarkdown);
+			if (hasReleaseCriticalContract(parsedContract)) {
+				criticalTaskIds.push(discoveredTask.taskId);
+			}
+		}
+
+		if (criticalTaskIds.length === 0) {
+			return makeCheck(
+				"stub-release-critical",
+				true,
+				"no pending tasks with fileScopeMustChange contracts",
+			);
+		}
+
+		const preview = criticalTaskIds.slice(0, 8).join(", ");
+		const suffix =
+			criticalTaskIds.length > 8 ? ` (+${criticalTaskIds.length - 8} more)` : "";
+		return makeCheck(
+			"stub-release-critical",
+			true,
+			`SPINE_WORKER_STUB=1 with ${criticalTaskIds.length} pending task(s) requiring file-scope changes (${preview}${suffix})`,
+			{
+				warning: true,
+				details: { taskIds: criticalTaskIds },
+				suggestedCommand: "unset SPINE_WORKER_STUB",
+			},
+		);
+	} catch (err) {
+		const message = err?.message ?? String(err);
+		return makeCheck(
+			"stub-release-critical",
+			true,
+			`stub release-critical check skipped: ${message}`,
+		);
+	}
+}
+
+/**
  * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
@@ -709,6 +778,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkDependenciesJson(ctx));
 	checks.push(checkWorktreeSetupHook(ctx));
 	checks.push(checkTasksValidate(ctx));
+	checks.push(checkStubReleaseCritical(ctx));
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(
