@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-06-28 (Phase 44 — SP-334/SP-347 GitHub #25–#38)
 **Status:** Active
-**Next Task ID:** SP-348
+**Next Task ID:** SP-350
 
 ---
 
