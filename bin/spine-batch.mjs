@@ -12,6 +12,11 @@ import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
+import {
+	finishAttachedBatchCli,
+	formatAttachedBatchCliResult,
+	runAttachedBatchEngine,
+} from "../src/batch/attached-runner.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -118,9 +123,10 @@ export function parseBatchArgs(args) {
  * @param {object} options
  * @param {string} options.projectRoot
  * @param {string[]} options.args
+ * @param {boolean} [options.deferAttachedExit] When true, skip process.exit (unit tests).
  */
 export async function runSpineBatch(options) {
-	const { projectRoot, args } = options;
+	const { projectRoot, args, deferAttachedExit = false } = options;
 	const parsed = parseBatchArgs(args);
 
 	if (parsed.subcommand === "dismiss") {
@@ -288,28 +294,18 @@ export async function runSpineBatch(options) {
 			};
 		}
 
-		const result = await resumeBatch({ projectRoot, force: parsed.force });
-		if (parsed.json) {
-			return {
-				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
-				output: `${JSON.stringify(result, null, 2)}\n`,
-				result,
-			};
-		}
-		const lines = [
-			"",
-			result.ok ? "Batch resumed" : "Batch resume failed",
-			"",
-			result.output ?? result.error ?? "",
-		];
-		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
-		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
-		lines.push("");
-		return {
-			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
-			output: lines.join("\n"),
+		const result = await runAttachedBatchEngine({
+			projectRoot,
+			runEngine: () => resumeBatch({ projectRoot, force: parsed.force }),
+		});
+		const cli = formatAttachedBatchCliResult({
+			projectRoot,
+			operation: "resume",
 			result,
-		};
+			json: parsed.json,
+		});
+		finishAttachedBatchCli(cli, { deferExit: deferAttachedExit });
+		return { ...cli, result };
 	}
 
 	if (parsed.subcommand === "start") {
@@ -331,34 +327,56 @@ export async function runSpineBatch(options) {
 			};
 		}
 
-		const result = await startBatch({
-			projectRoot,
-			scope: parsed.scope,
-			dryRun: parsed.dryRun,
-			skipPreflight: parsed.skipPreflight,
-			forceSuperseded: parsed.forceSuperseded,
-		});
-		if (parsed.json) {
+		if (parsed.dryRun) {
+			const result = await startBatch({
+				projectRoot,
+				scope: parsed.scope,
+				dryRun: true,
+				skipPreflight: parsed.skipPreflight,
+				forceSuperseded: parsed.forceSuperseded,
+			});
+			if (parsed.json) {
+				return {
+					exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+					output: `${JSON.stringify(result, null, 2)}\n`,
+					result,
+				};
+			}
+			const lines = [
+				"",
+				result.ok ? "Batch started" : "Batch start failed",
+				"",
+				result.output ?? result.error ?? "",
+			];
+			if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
+			if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+			lines.push("");
 			return {
 				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
-				output: `${JSON.stringify(result, null, 2)}\n`,
+				output: lines.join("\n"),
 				result,
 			};
 		}
-		const lines = [
-			"",
-			result.ok ? "Batch started" : "Batch start failed",
-			"",
-			result.output ?? result.error ?? "",
-		];
-		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
-		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
-		lines.push("");
-		return {
-			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
-			output: lines.join("\n"),
+
+		const result = await runAttachedBatchEngine({
+			projectRoot,
+			runEngine: () =>
+				startBatch({
+					projectRoot,
+					scope: parsed.scope,
+					dryRun: false,
+					skipPreflight: parsed.skipPreflight,
+					forceSuperseded: parsed.forceSuperseded,
+				}),
+		});
+		const cli = formatAttachedBatchCliResult({
+			projectRoot,
+			operation: "start",
 			result,
-		};
+			json: parsed.json,
+		});
+		finishAttachedBatchCli(cli, { deferExit: deferAttachedExit });
+		return { ...cli, result };
 	}
 
 	return {
