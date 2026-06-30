@@ -201,10 +201,6 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 				resumed: true,
 			});
 			if (!mergeResult.ok) {
-				state.endedAt = Date.now();
-				state.lastError = mergeResult.error ?? "merge failed";
-				state.phase = "failed";
-				saveSpineBatchState(projectRoot, state);
 				return {
 					ok: false,
 					exitCode: 1,

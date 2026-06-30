@@ -10,12 +10,71 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
-import { appendBatchHistoryEntry } from "./state.mjs";
+import {
+	appendBatchHistoryEntry,
+	clearBatchEnginePid,
+	saveSpineBatchState,
+} from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 import { removeLaneWorktrees } from "./worktree.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
+
+/**
+ * Terminal merge-blocked state when the engine exits after a wave merge failure (GitHub #38).
+ * Clears stale enginePid so status does not imply an in-progress merge.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.batchId
+ * @param {string} params.error
+ * @param {number|null} [params.waveIndex]
+ * @param {number|null} [params.laneNumber]
+ * @param {string|null} [params.failureClass]
+ * @param {string[]} [params.failedTaskIds]
+ * @param {string[]} [params.pendingTaskIds]
+ * @param {string} [params.reason]
+ */
+export function recordMergeBlocked({
+	projectRoot,
+	state,
+	batchId,
+	error,
+	waveIndex = null,
+	laneNumber = null,
+	failureClass = null,
+	failedTaskIds = null,
+	pendingTaskIds = null,
+	reason = "merge_failed",
+}) {
+	const fromPhase = String(state.phase ?? "running");
+	const message = String(error ?? "merge blocked").slice(0, 500);
+	state.endedAt = Date.now();
+	state.lastError = message;
+	state.phase = "merge_blocked";
+	clearBatchEnginePid(state);
+
+	appendJournalEvent(projectRoot, batchId, "batch.merge_blocked", {
+		fromPhase,
+		reason,
+		waveIndex,
+		laneNumber,
+		failureClass,
+		failedTaskIds,
+		pendingTaskIds,
+		error: message,
+	});
+
+	saveSpineBatchState(projectRoot, state);
+
+	return {
+		phase: "merge_blocked",
+		fromPhase,
+		lastError: message,
+	};
+}
 
 /**
  * @param {string} projectRoot

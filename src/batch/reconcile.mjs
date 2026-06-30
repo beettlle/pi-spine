@@ -629,6 +629,19 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("needs_integrate", null, signals);
 	}
 
+	if (phase === "merge_blocked") {
+		return withFailureContext("failed", null, signals);
+	}
+
+	if (
+		phase === "merging" &&
+		endedAt != null &&
+		Array.isArray(signals.raw?.mergeResults) &&
+		signals.raw.mergeResults.some((entry) => String(entry?.status ?? "").toLowerCase() === "failed")
+	) {
+		return withFailureContext("failed", null, signals);
+	}
+
 	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {
 		if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && !mergeResultsEmpty) {
 			return withFailureContext("needs_integrate", null, signals);
