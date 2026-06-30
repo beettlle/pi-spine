@@ -974,6 +974,8 @@ spine batch start pending                   # remainder after wave 0 lands
 
 **Source:** [Epic #43](https://github.com/beettlle/pi-spine/issues/43) — replace ad-hoc monitor scripts with first-class CLI surfaces (NFR-OBS-04).
 
+**Explore:** [`spine-tasks/_explore/operator-observability-stream/findings.md`](_explore/operator-observability-stream/findings.md) (2026-06-29, complete — deferred Tier 3 agent stream per #52)
+
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
 | SP-339 | Status JSON task progress | S | **Staged** | — | #30 |
@@ -985,7 +987,7 @@ spine batch start pending                   # remainder after wave 0 lands
 | SP-365 | Live lane worker log | M | **Staged** | — | #49 |
 | SP-366 | `spine lane logs` CLI | S | **Staged** | SP-365 | #50 |
 | SP-367 | Dashboard lane detail panel | M | **Staged** | SP-364, SP-365 | #51 |
-| SP-368 | Deferred observability stream explore | L | **Staged** | — | #52 |
+| SP-368 | Deferred observability stream explore | L | **Done** | — | #52 |
 
 **Suggested batch waves:**
 
