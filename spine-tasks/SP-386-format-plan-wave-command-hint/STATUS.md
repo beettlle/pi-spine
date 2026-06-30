@@ -1,7 +1,7 @@
 # SP-386: Format plan wave command hint — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-30
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,17 +11,17 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read format-plan multi-wave Then block
+- [x] Read format-plan multi-wave Then block
 
 ---
 
 ### Step 1: Plan hint
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Append wave-scoped start hint for multi-wave plans
-- [ ] Update format-plan tests
+- [x] Append wave-scoped start hint for multi-wave plans
+- [x] Update format-plan tests
 
 ---
 
@@ -50,6 +50,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Multi-wave hints use scope mode + `--wave N`; single-wave keeps task ID list | Implemented | `format-plan.mjs` |
 
 ---
 
@@ -58,6 +59,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0 preflight | Read multi-wave Then block in format-plan.mjs |
+| 2026-06-30 | Step 1 implementation | Wave-scoped start hints added |
 
 ---
 
