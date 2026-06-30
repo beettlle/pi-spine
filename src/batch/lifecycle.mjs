@@ -12,6 +12,7 @@ import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
+import { terminateLaneWorkers } from "./worker-host.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
@@ -160,6 +161,16 @@ export function dismissBatch(ctx) {
 		};
 	}
 
+	const terminatedWorkers = terminateLaneWorkers(loaded.raw.lanes, { hard: true });
+	for (const entry of terminatedWorkers) {
+		appendJournalEvent(projectRoot, batchId, "lane.worker_terminated", {
+			laneNumber: entry.laneNumber,
+			workerPid: entry.workerPid,
+			signal: entry.signal,
+			reason: "batch_dismiss",
+			force,
+		});
+	}
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
 	const postMortemPath = writeBatchPostMortem({
 		projectRoot,

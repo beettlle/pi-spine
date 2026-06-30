@@ -44,6 +44,34 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 const POST_DONE_KILL_BACKOFF_MS = 5_000;
 
+/**
+ * Force-terminate lane worker processes tracked in batch state.
+ *
+ * @param {unknown[]} lanes
+ * @param {{ hard?: boolean }} [options]
+ * @returns {Array<{ laneNumber: number, workerPid: number, signal: NodeJS.Signals }>}
+ */
+export function terminateLaneWorkers(lanes, { hard = true } = {}) {
+	const signal = hard ? "SIGKILL" : "SIGTERM";
+	/** @type {Array<{ laneNumber: number, workerPid: number, signal: NodeJS.Signals }>} */
+	const terminated = [];
+	for (const lane of lanes ?? []) {
+		if (!lane || typeof lane !== "object") continue;
+		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane).workerPid);
+		if (!Number.isFinite(workerPid) || workerPid <= 0) continue;
+		const laneNumber = Number(
+			/** @type {{ laneNumber?: number }} */ (lane).laneNumber ?? 1,
+		);
+		try {
+			process.kill(workerPid, signal);
+			terminated.push({ laneNumber, workerPid, signal });
+		} catch {
+			// process may already be gone
+		}
+	}
+	return terminated;
+}
+
 /** @typedef {"launching" | "pi" | "verify" | "unknown"} WorkerPhase */
 
 /**
