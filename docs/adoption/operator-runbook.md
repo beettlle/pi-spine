@@ -315,6 +315,8 @@ spine status --json
 spine watch                     # compact one-line reconcile poll (default 5s)
 spine watch --json --once       # single NDJSON snapshot for scripts/monitors
 spine watch --interval 10       # slower poll interval in seconds
+spine wait --until completed,needs_integrate,failed,aborted --timeout 2h  # CI: block until terminal diagnosis
+spine wait --until completed,failed --json --timeout 30m  # emit final reconcile snapshot on match or timeout
 spine next                      # print suggestedCommand only
 ```
 
@@ -331,6 +333,8 @@ spine next                      # print suggestedCommand only
 Idle repos omit these fields. `spine watch --json` wraps the same reconcile fields and may nest them under `progress` when present.
 
 `spine watch` wraps the same `reconcileBatch` path as `spine status` without `--diagnose` verbosity. Human mode refreshes one line (diagnosis, batchId, macro phase, headline). `--json` emits newline-delimited snapshots with `observedAt`, reconcile fields, and a `progress` block when SP-339 / issue #30 fields are present on the reconcile result.
+
+`spine wait` reuses the same reconcile poll interval as `spine watch` (default 5s, overridable with `--interval`). It blocks until `diagnosis` is in the `--until` set, exits **0** on match and **1** on `--timeout`. With `--json`, stdout receives one final reconcile snapshot (match or timeout) for CI parsers — no continuous NDJSON stream.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 

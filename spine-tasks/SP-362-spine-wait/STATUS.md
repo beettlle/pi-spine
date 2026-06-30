@@ -1,8 +1,8 @@
 # SP-362: spine wait — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-29
+**Current Step:** Step 3 (Testing & Verification)
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,30 +11,30 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-360 poll helper available
+- [x] SP-360 poll helper available (`runSpineWatch`, `DEFAULT_WATCH_INTERVAL_SEC`, `buildWatchSnapshot` in `src/cli/watch.mjs`)
 
 ---
 
 ### Step 1: Implement wait command
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `src/cli/wait.mjs`
-- [ ] CLI router wired
+- [x] `src/cli/wait.mjs`
+- [x] CLI router wired
 
 ---
 
 ### Step 2: Tests and runbook
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/cli/wait.test.mjs`
-- [ ] Runbook CI example
+- [x] `tests/cli/wait.test.mjs`
+- [x] Runbook CI example
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate passes
@@ -54,3 +54,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0–2 | wait command, tests, runbook implemented |
+
+## Notes (Plan — Review Level 1)
+
+Reuse SP-360 watch poll loop: `reconcileBatch` + `DEFAULT_WATCH_INTERVAL_SEC` + `buildWatchSnapshot` for `--json` final snapshot. `runSpineWait` blocks until `diagnosis` ∈ `--until` set; exit 0 on match, 1 on timeout.
