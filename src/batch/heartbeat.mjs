@@ -301,13 +301,13 @@ export function shouldEmitCheckpointWarning({
 	return now - lastCheckpointAt >= stallConfig.checkpointWarningMs;
 }
 
-/**
- * @param {object} params
- */
-export function computeStallDeadline({ startedAt, lastProgressAt, stallConfig }) {
-	const hardDeadline = startedAt + stallConfig.stallTimeoutMs;
-	const progressDeadline = lastProgressAt + stallConfig.graceAfterProgressMs;
-	return Math.max(hardDeadline, progressDeadline);
+/** @param {object} params @param {number} params.startedAt @param {number} params.lastProgressAt @param {number} [params.lastAliveAt] @param {ReturnType<typeof resolveStallConfig>} params.stallConfig */
+export function computeStallDeadline({ startedAt, lastProgressAt, lastAliveAt, stallConfig }) {
+	const stallAnchorAt = lastAliveAt ?? startedAt;
+	return Math.max(
+		stallAnchorAt + stallConfig.stallTimeoutMs,
+		lastProgressAt + stallConfig.graceAfterProgressMs,
+	);
 }
 
 /**

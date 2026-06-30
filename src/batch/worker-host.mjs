@@ -33,6 +33,7 @@ import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
+import { nextStallAnchorAt } from "./engine-lanes/watch.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
@@ -505,6 +506,7 @@ export async function runWorker({
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
+	let stallAnchorAt = startedAt;
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
 	let lastProgressSnapshotAt = 0;
@@ -614,6 +616,7 @@ export async function runWorker({
 		}));
 		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
+			stallAnchorAt = now;
 			lastCheckpointAt = now;
 			activitySinceCheckpoint = false;
 			checkpointWarningSent = false;
@@ -710,6 +713,12 @@ export async function runWorker({
 				workerPhase,
 				heartbeatKind,
 			}));
+			stallAnchorAt = nextStallAnchorAt({
+				stallAnchorAt,
+				now,
+				workerPhase,
+				heartbeatKind,
+			});
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;
 		}
@@ -717,6 +726,7 @@ export async function runWorker({
 		const stallDeadline = computeStallDeadline({
 			startedAt,
 			lastProgressAt: lastCheckpointAt,
+			lastAliveAt: stallAnchorAt,
 			stallConfig,
 		});
 
