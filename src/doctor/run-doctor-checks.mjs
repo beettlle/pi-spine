@@ -22,6 +22,7 @@ import {
 } from "./stall-config.mjs";
 import { buildRulesManifestDoctorCheck } from "./rules-manifest.mjs";
 import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
+import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
 import { buildWorkerBackendDoctorCheck } from "../config/worker-backend.mjs";
 import { buildAgentModelInheritDoctorCheck } from "./agent-model-inherit.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
@@ -418,6 +419,8 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	}
 
 	if (isInsideGitRepo(projectRoot)) {
+		checks.push(buildStaleWorktreesDoctorCheck({ projectRoot }));
+
 		const gitignorePath = path.join(projectRoot, ".gitignore");
 		if (!fs.existsSync(gitignorePath)) {
 			checks.push({
