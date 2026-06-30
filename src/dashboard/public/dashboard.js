@@ -161,8 +161,8 @@ function renderWaves(waves) {
 	}
 }
 
-/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary */
-function renderLanes(lanes, laneTableSummary) {
+/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary @param {string|null} expandedLaneId */
+function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 	const tbody = $("lane-table-body");
 	tbody.replaceChildren();
 	if (!lanes.length) {
@@ -177,6 +177,12 @@ function renderLanes(lanes, laneTableSummary) {
 	}
 	for (const lane of lanes) {
 		const tr = document.createElement("tr");
+		tr.className = "lane-row";
+		if (lane.laneId === expandedLaneId) {
+			tr.classList.add("lane-row-expanded");
+		}
+		tr.dataset.laneId = lane.laneId;
+		tr.setAttribute("aria-expanded", lane.laneId === expandedLaneId ? "true" : "false");
 		const statusLabel =
 			lane.laneAlert === "checkpoint-warning"
 				? `${lane.status} · checkpoint warning`
@@ -206,7 +212,21 @@ function renderLanes(lanes, laneTableSummary) {
 			}
 			tr.appendChild(td);
 		});
+		tr.addEventListener("click", () => {
+			expandedLaneIdState = expandedLaneIdState === lane.laneId ? null : lane.laneId;
+			if (lastSnapshot) renderSnapshot(lastSnapshot);
+		});
 		tbody.appendChild(tr);
+
+		if (lane.laneId === expandedLaneId) {
+			const detailRow = document.createElement("tr");
+			detailRow.className = "lane-detail-row";
+			const detailCell = document.createElement("td");
+			detailCell.colSpan = 10;
+			detailCell.appendChild(renderLaneDetailPanel(lane));
+			detailRow.appendChild(detailCell);
+			tbody.appendChild(detailRow);
+		}
 	}
 	if (laneTableSummary) {
 		const tr = document.createElement("tr");
@@ -230,6 +250,60 @@ function renderLanes(lanes, laneTableSummary) {
 		});
 		tbody.appendChild(tr);
 	}
+}
+
+/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"][number]} lane */
+function renderLaneDetailPanel(lane) {
+	const panel = document.createElement("div");
+	panel.className = "lane-detail-panel";
+
+	const eventsSection = document.createElement("section");
+	eventsSection.className = "lane-detail-section";
+	const eventsHeading = document.createElement("h4");
+	eventsHeading.textContent = "Recent journal (5)";
+	eventsSection.appendChild(eventsHeading);
+	const eventsList = document.createElement("ol");
+	eventsList.className = "lane-detail-events";
+	const recentEvents = lane.detail?.recentEvents ?? [];
+	if (!recentEvents.length) {
+		const li = document.createElement("li");
+		li.className = "empty-hint";
+		li.textContent = "No lane events";
+		eventsList.appendChild(li);
+	} else {
+		for (const entry of recentEvents) {
+			const li = document.createElement("li");
+			li.textContent = `${formatTs(entry.timestamp)} · ${entry.type}: ${entry.summary}`;
+			eventsList.appendChild(li);
+		}
+	}
+	eventsSection.appendChild(eventsList);
+
+	const logSection = document.createElement("section");
+	logSection.className = "lane-detail-section";
+	const logHeading = document.createElement("h4");
+	logHeading.textContent = "Worker log (10 lines)";
+	logSection.appendChild(logHeading);
+	if (lane.detail?.workerLogRef) {
+		const logRef = document.createElement("p");
+		logRef.className = "lane-detail-log-ref";
+		logRef.textContent = lane.detail.workerLogRef;
+		logSection.appendChild(logRef);
+	}
+	const logLines = lane.detail?.logTail ?? [];
+	if (!logLines.length) {
+		const empty = document.createElement("p");
+		empty.className = "empty-hint";
+		empty.textContent = "No log output";
+		logSection.appendChild(empty);
+	} else {
+		const pre = document.createElement("pre");
+		pre.textContent = logLines.join("\n");
+		logSection.appendChild(pre);
+	}
+
+	panel.append(eventsSection, logSection);
+	return panel;
 }
 
 /** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal @param {HTMLElement} listEl */
@@ -303,21 +377,55 @@ function renderDefaultStatusPanels(vm) {
 	renderGatePanel(vm.gateAffordance);
 }
 
+/** @param {ReturnType<typeof buildDashboardViewModel>["journalLaneFilterOptions"]} options */
+function renderJournalLaneFilter(options) {
+	const select = $("journal-lane-filter");
+	const current = journalLaneFilterState;
+	select.replaceChildren();
+	const allOption = document.createElement("option");
+	allOption.value = "";
+	allOption.textContent = "All lanes";
+	select.appendChild(allOption);
+	for (const option of options ?? []) {
+		const el = document.createElement("option");
+		el.value = option.laneId;
+		el.textContent = option.label;
+		select.appendChild(el);
+	}
+	select.value = current ?? "";
+	if (!select.dataset.bound) {
+		select.dataset.bound = "1";
+		select.addEventListener("change", () => {
+			journalLaneFilterState = select.value || null;
+			if (lastSnapshot) renderSnapshot(lastSnapshot);
+		});
+	}
+}
+
 /** @param {ReturnType<typeof buildDashboardViewModel>["journal"]} journal */
 function renderJournal(journal) {
 	renderJournalList($("journal-list"), journal);
 }
 
+/** @type {object|null} */
+let lastSnapshot = null;
+/** @type {string|null} */
+let expandedLaneIdState = null;
+/** @type {string|null} */
+let journalLaneFilterState = null;
+
 /** @param {object} snapshot */
 export function renderSnapshot(snapshot) {
-	const vm = buildDashboardViewModel(snapshot);
+	lastSnapshot = snapshot;
+	const vm = buildDashboardViewModel(snapshot, { journalLaneFilter: journalLaneFilterState });
 	$("active-panels").hidden = vm.idle;
 	renderBanner(vm);
 	renderDefaultStatusPanels(vm);
 	if (!vm.idle) {
 		renderBatch(vm.batch);
 		renderWaves(vm.waves);
-		renderLanes(vm.lanes, vm.laneTableSummary);
+		renderLanes(vm.lanes, vm.laneTableSummary, expandedLaneIdState);
+		renderJournalLaneFilter(vm.journalLaneFilterOptions);
 		renderJournal(vm.journal);
 	}
 	$("snapshot-time").textContent = vm.generatedAt ? `Snapshot: ${vm.generatedAt}` : "";
