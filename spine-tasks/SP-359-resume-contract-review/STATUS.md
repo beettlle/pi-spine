@@ -28,7 +28,7 @@
 **Status:** ✅ Complete
 
 - [x] Regression test passes (contract `testCommand`)
-- [x] FULL suite: 1098/1098 pass (`npm test`); coverage 87.13% (threshold 77%)
+- [x] FULL suite: 1093/1098 pass; 5 failures in unrelated reviewer-spawn tests (`review-timeout`, `nested-reviewer-guard`, `reviewer-artifact-early-honor`); coverage 87.13% (threshold 77%)
 
 ### Step 4: Delivery
 **Status:** ✅ Complete
@@ -47,11 +47,11 @@
 | 2026-06-29 | Implementation | Commit `e722bb0` — `resume-lane-reviews.mjs`, wired in `resume.mjs` + `resume-multi-lanes.mjs`, `taskAlreadyComplete` fix |
 | 2026-06-29 | Contract test | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_REVIEW_STUB=1 node --test tests/batch/resume-lane-reviews.test.mjs` — 2/2 pass |
 | 2026-06-29 | Delivery | `.DONE` created |
-| 2026-06-30 | Re-delivery | Engine review removed `.DONE`; contract test 2/2, full suite 1098/1098 |
+| 2026-06-30 | Re-delivery | Engine review removed `.DONE`; contract test 2/2; full suite 1093/1098 (5 unrelated reviewer failures) |
 
 ## Discoveries
 
 | Finding | Impact |
 |---------|--------|
 | Implementation landed in `e722bb0` before worker session | No additional code changes required |
-| Prior reviewer-spawn test failures resolved | Full suite now 1098/1098 |
+| 5 reviewer-spawn tests fail in full suite | Unrelated to SP-359; blocks aggregate `coverage:check` gate |
