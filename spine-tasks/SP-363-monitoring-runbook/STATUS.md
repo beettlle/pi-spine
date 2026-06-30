@@ -1,7 +1,7 @@
 # SP-363: Operator monitoring runbook — Status
 
-**Current Step:** Step 1 — Write monitoring cookbook
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-30
 **Review Level:** 0
 **Review Counter:** 0
@@ -18,25 +18,25 @@
 ---
 
 ### Step 1: Write monitoring cookbook
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook §3 monitoring section
-- [ ] QUICK-REFERENCE pointer
+- [x] Runbook §3 monitoring section
+- [x] QUICK-REFERENCE pointer
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
+- [x] FULL test suite passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #47 closed
-- [ ] `.DONE` created
+- [x] Issue #47 closed
+- [x] `.DONE` created
 
 ---
 
@@ -45,6 +45,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0 preflight | Verified watch, journal follow, wait CLI |
+| 2026-06-30 | Step 1 | Monitoring cookbook + journal follow refs |
+| 2026-06-30 | Step 2 | typecheck + 1242 tests pass |
+| 2026-06-30 | Step 3 | Issue #47 closed, .DONE created |
 
 ---
 
