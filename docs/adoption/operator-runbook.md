@@ -315,10 +315,26 @@ spine status --json
 spine watch                     # compact one-line reconcile poll (default 5s)
 spine watch --json --once       # single NDJSON snapshot for scripts/monitors
 spine watch --interval 10       # slower poll interval in seconds
+spine wait --until completed,needs_integrate,failed,aborted --timeout 2h  # CI: block until terminal diagnosis
+spine wait --until completed,failed --json --timeout 30m  # emit final reconcile snapshot on match or timeout
 spine next                      # print suggestedCommand only
 ```
 
+**`spine status --json` progress fields (issue #30):** when a batch is active, JSON output includes task and wave progress at the top level:
+
+| Field | Meaning |
+|-------|---------|
+| `succeededTasks` | Tasks in terminal success state |
+| `pendingTasks` | Tasks still resumable (`pending` / `running` or matching segment status) |
+| `totalTasks` | Tasks in the batch plan |
+| `currentWaveIndex` | Zero-based wave index from batch state |
+| `waveCount` | Total waves (`totalWaves` or `wavePlan.length`) |
+
+Idle repos omit these fields. `spine watch --json` wraps the same reconcile fields and may nest them under `progress` when present.
+
 `spine watch` wraps the same `reconcileBatch` path as `spine status` without `--diagnose` verbosity. Human mode refreshes one line (diagnosis, batchId, macro phase, headline). `--json` emits newline-delimited snapshots with `observedAt`, reconcile fields, and a `progress` block when SP-339 / issue #30 fields are present on the reconcile result.
+
+`spine wait` reuses the same reconcile poll interval as `spine watch` (default 5s, overridable with `--interval`). It blocks until `diagnosis` is in the `--until` set, exits **0** on match and **1** on `--timeout`. With `--json`, stdout receives one final reconcile snapshot (match or timeout) for CI parsers — no continuous NDJSON stream.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 
@@ -545,6 +561,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
+| `docs/PRD.md` (release-recovery / merge-origin-main) | Engine auto-merges disjoint additive PRD edits (e.g. lane merged `origin/main` while orch advanced earlier waves); overlapping hunks fail with `lastError` recovery commands |
 | Other files | Resolve in the lane worktree under `.worktrees/spine-<batchId>/lane-N`, commit on lane branch, then resume batch |
 
 Lane worktrees: [Worktree layout](#worktree-layout) (§9).
@@ -652,6 +669,8 @@ spine batch force-merge --wave 0    # mixed-outcome override, then resume --forc
 ```
 
 In pi: `/spine-retry-task TP-012`, `/spine-skip-task TP-012`.
+
+When `spine batch retry` clears the last failed task, the batch transitions from `failed` to **`paused`**, journals `batch.retry_unblocked`, and clears batch-level failure markers (`lastError`, `endedAt`, `resilience.lastFailureClass`). Run `spine batch resume` (or `--force` if batch-state still shows `phase: failed` with only pending tasks). Do not dismiss and cold-start unless you intend to abandon the batch.
 
 ### Replan (v1.3 — FR-UXB-04)
 
@@ -1073,6 +1092,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
+| `docs/PRD.md` merge conflict (lane→orch) | Engine auto-merges disjoint additive PRD hunks (common after merge-origin-main tasks); overlapping edits fail with recovery commands in `lastError` — resolve in lane worktree, commit, `spine batch resume` |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
 
 ### Atomic orchestration writes (SP-318+)

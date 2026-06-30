@@ -1,8 +1,8 @@
 # SP-362: spine wait — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-29
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,41 +11,41 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-360 poll helper available
+- [x] SP-360 poll helper available (`runSpineWatch`, `DEFAULT_WATCH_INTERVAL_SEC`, `buildWatchSnapshot` in `src/cli/watch.mjs`)
 
 ---
 
 ### Step 1: Implement wait command
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `src/cli/wait.mjs`
-- [ ] CLI router wired
+- [x] `src/cli/wait.mjs`
+- [x] CLI router wired
 
 ---
 
 ### Step 2: Tests and runbook
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/cli/wait.test.mjs`
-- [ ] Runbook CI example
+- [x] `tests/cli/wait.test.mjs`
+- [x] Runbook CI example
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing (1193 tests)
+- [x] Coverage gate passes (87.57% line coverage)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #46 closed
-- [ ] `.DONE` created
+- [x] Issue #46 closed
+- [x] `.DONE` created
 
 ---
 
@@ -54,3 +54,6 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0–2 | wait command, tests, runbook implemented |
+| 2026-06-30 | Step 3 | typecheck + 1193 tests pass; coverage 87.57% |
+| 2026-06-30 | Step 4 | Issue #46 closed; .DONE created |

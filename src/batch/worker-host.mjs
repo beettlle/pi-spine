@@ -33,6 +33,7 @@ import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
+import { nextStallAnchorAt } from "./engine-lanes/watch.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
@@ -43,6 +44,34 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 const POST_DONE_KILL_BACKOFF_MS = 5_000;
+
+/**
+ * Force-terminate lane worker processes tracked in batch state.
+ *
+ * @param {unknown[]} lanes
+ * @param {{ hard?: boolean }} [options]
+ * @returns {Array<{ laneNumber: number, workerPid: number, signal: NodeJS.Signals }>}
+ */
+export function terminateLaneWorkers(lanes, { hard = true } = {}) {
+	const signal = hard ? "SIGKILL" : "SIGTERM";
+	/** @type {Array<{ laneNumber: number, workerPid: number, signal: NodeJS.Signals }>} */
+	const terminated = [];
+	for (const lane of lanes ?? []) {
+		if (!lane || typeof lane !== "object") continue;
+		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane).workerPid);
+		if (!Number.isFinite(workerPid) || workerPid <= 0) continue;
+		const laneNumber = Number(
+			/** @type {{ laneNumber?: number }} */ (lane).laneNumber ?? 1,
+		);
+		try {
+			process.kill(workerPid, signal);
+			terminated.push({ laneNumber, workerPid, signal });
+		} catch {
+			// process may already be gone
+		}
+	}
+	return terminated;
+}
 
 /** @typedef {"launching" | "pi" | "verify" | "unknown"} WorkerPhase */
 
@@ -477,6 +506,7 @@ export async function runWorker({
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
+	let stallAnchorAt = startedAt;
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
 	let lastProgressSnapshotAt = 0;
@@ -586,6 +616,7 @@ export async function runWorker({
 		}));
 		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
+			stallAnchorAt = now;
 			lastCheckpointAt = now;
 			activitySinceCheckpoint = false;
 			checkpointWarningSent = false;
@@ -682,6 +713,12 @@ export async function runWorker({
 				workerPhase,
 				heartbeatKind,
 			}));
+			stallAnchorAt = nextStallAnchorAt({
+				stallAnchorAt,
+				now,
+				workerPhase,
+				heartbeatKind,
+			});
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;
 		}
@@ -689,6 +726,7 @@ export async function runWorker({
 		const stallDeadline = computeStallDeadline({
 			startedAt,
 			lastProgressAt: lastCheckpointAt,
+			lastAliveAt: stallAnchorAt,
 			stallConfig,
 		});
 

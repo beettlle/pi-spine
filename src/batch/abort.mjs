@@ -10,6 +10,7 @@ import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } f
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
 import { removeLaneWorktree } from "./worktree.mjs";
+import { terminateLaneWorkers } from "./worker-host.mjs";
 
 /**
  * @param {string} projectRoot
@@ -79,17 +80,7 @@ function clearActiveBatchState(batchStatePath) {
  * @param {boolean} hard
  */
 function killLaneWorkers(lanes, hard) {
-	const signal = hard ? "SIGKILL" : "SIGTERM";
-	for (const lane of lanes ?? []) {
-		if (!lane || typeof lane !== "object") continue;
-		const pid = Number(/** @type {{ workerPid?: number }} */ (lane).workerPid);
-		if (!Number.isFinite(pid) || pid <= 0) continue;
-		try {
-			process.kill(pid, signal);
-		} catch {
-			// process may already be gone
-		}
-	}
+	terminateLaneWorkers(lanes, { hard });
 }
 
 /**

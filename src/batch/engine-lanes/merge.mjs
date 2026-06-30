@@ -17,8 +17,11 @@ import { resolveRulesManifestIntegrateDrift } from "../rules-manifest-drift.mjs"
 import { matchesContractPattern } from "../contract-verify.mjs";
 import {
 	formatAdoptionDocMergeFailure,
+	formatPrdDocMergeFailure,
 	isAdoptionDocPath,
+	isPrdDocPath,
 	tryResolveAdoptionDocMergeConflict,
+	tryResolvePrdDocMergeConflict,
 } from "../merge/adoption-doc-merge.mjs";
 import { recordWaveMergeResult } from "../merge/wave-merge-state.mjs";
 import { appendJournalEvent } from "../journal.mjs";
@@ -286,7 +289,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	const skippedGitignoredPaths = [];
 
 	/** @type {string[]} */
-	const resolvedAdoptionDocs = [];
+	const resolvedAutoMergeDocs = [];
 
 	for (const filePath of unmerged) {
 		if (filePath === RULES_MANIFEST_REL_PATH) {
@@ -300,7 +303,20 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 				waveIndex,
 			});
 			if (adoptionResult.ok) {
-				resolvedAdoptionDocs.push(filePath);
+				resolvedAutoMergeDocs.push(filePath);
+			} else {
+				remaining.push(filePath);
+			}
+			continue;
+		}
+		if (isPrdDocPath(filePath)) {
+			const prdResult = tryResolvePrdDocMergeConflict({
+				projectRoot,
+				filePath,
+				waveIndex,
+			});
+			if (prdResult.ok) {
+				resolvedAutoMergeDocs.push(filePath);
 			} else {
 				remaining.push(filePath);
 			}
@@ -360,20 +376,25 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			ok: true,
 			autoResolved: true,
 			outOfScopePaths: resolvedOutOfScope,
-			adoptionDocPaths: resolvedAdoptionDocs,
+			adoptionDocPaths: resolvedAutoMergeDocs,
 			skippedGitignoredPaths,
 		};
 	}
 
-	const adoptionRemaining = remaining.filter((filePath) => isAdoptionDocPath(filePath));
-	if (adoptionRemaining.length > 0) {
-		const firstAdoption = adoptionRemaining[0];
+	const autoMergeRemaining = remaining.filter(
+		(filePath) => isAdoptionDocPath(filePath) || isPrdDocPath(filePath),
+	);
+	if (autoMergeRemaining.length > 0) {
+		const firstAutoMerge = autoMergeRemaining[0];
+		const error = isPrdDocPath(firstAutoMerge)
+			? formatPrdDocMergeFailure({ filePath: firstAutoMerge, waveIndex })
+			: formatAdoptionDocMergeFailure({ filePath: firstAutoMerge, waveIndex });
 		return {
 			ok: false,
 			failureClass: "MergeConflict",
-			error: formatAdoptionDocMergeFailure({ filePath: firstAdoption, waveIndex }),
+			error,
 			outOfScopePaths: resolvedOutOfScope,
-			adoptionDocPaths: resolvedAdoptionDocs,
+			adoptionDocPaths: resolvedAutoMergeDocs,
 		};
 	}
 
@@ -382,9 +403,10 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		failureClass: "MergeConflict",
 		error:
 			`merge conflict on ${remaining.join(", ")}; automatic resolution supports docs/adoption/*, ` +
-			`${RULES_MANIFEST_REL_PATH}, and out-of-scope dependency drift (prefer orch when the lane did not commit the path)`,
+			`docs/PRD.md, ${RULES_MANIFEST_REL_PATH}, and out-of-scope dependency drift ` +
+			"(prefer orch when the lane did not commit the path)",
 		outOfScopePaths: resolvedOutOfScope,
-		adoptionDocPaths: resolvedAdoptionDocs,
+		adoptionDocPaths: resolvedAutoMergeDocs,
 	};
 }
 

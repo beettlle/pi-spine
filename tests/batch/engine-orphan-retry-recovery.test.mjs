@@ -135,7 +135,7 @@ test("retryTask succeeds on orphan without manual pause (issue #20 trap)", async
 		const after = loadSpineBatchState(projectRoot).raw;
 		const task = after?.tasks?.find((entry) => entry.taskId === TASK_ORPHAN);
 		assert.equal(task?.status, "pending");
-		assert.equal(after?.phase, "failed");
+		assert.equal(after?.phase, "paused");
 
 		const events = readJournalEvents(projectRoot, BATCH_ID);
 		assert.ok(events.some((event) => event.type === "task.retry_requested"));

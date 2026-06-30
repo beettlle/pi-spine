@@ -2,6 +2,7 @@ import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
 import { generateBatchPostMortem } from "../src/batch/postmortem.mjs";
 import { readJournalEvents, readJournalTail } from "../src/batch/journal.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
+import { formatStatusJson } from "../src/batch/status-json.mjs";
 
 /**
  * @param {object} options
@@ -17,7 +18,7 @@ export function runSpineStatus(options) {
 	if (json) {
 		return {
 			exitCode: 0,
-			output: `${JSON.stringify(result, null, 2)}\n`,
+			output: formatStatusJson(result),
 		};
 	}
 
@@ -38,6 +39,20 @@ export function runSpineStatus(options) {
 
 	lines.push("", `  ${result.headline}`, "");
 	lines.push(`  → ${result.suggestedCommand}`);
+
+	if (diagnose && result.mergeFailed) {
+		lines.push("");
+		lines.push(`  Merge failed: ${result.failedMerges} wave(s)`);
+		if (result.failedWaveIndex != null) {
+			lines.push(`  Failed wave: ${Number(result.failedWaveIndex) + 1} (index ${result.failedWaveIndex})`);
+		}
+		if (result.failedLane != null) {
+			lines.push(`  Failed lane: ${result.failedLane}`);
+		}
+		if (result.lastError) {
+			lines.push(`  Last error: ${result.lastError}`);
+		}
+	}
 
 	if (result.alternatives?.length) {
 		lines.push("", "  Alternatives:");

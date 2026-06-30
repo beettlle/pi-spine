@@ -60,7 +60,7 @@ test("retryTask atomically resets task and segment records", async () => {
 		assert.equal(result.pendingSegments, 1);
 
 		const saved = loadSpineBatchState(projectRoot).raw;
-		assert.equal(saved?.phase, "failed");
+		assert.equal(saved?.phase, "paused");
 		assert.equal(saved?.failedTasks, 0);
 		assert.equal(saved?.tasks[0].status, "pending");
 		assert.equal(saved?.tasks[0].startedAt, null);

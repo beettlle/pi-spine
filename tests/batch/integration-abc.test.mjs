@@ -169,7 +169,7 @@ test("PRD §20.2 mixed-outcome blocks merge; retry resets wave B for resume", as
 		const retry = retryTask({ projectRoot, taskId: TASK_B });
 		assert.equal(retry.ok, true, retry.output ?? retry.error);
 		assert.equal(retry.pendingSegments, 1);
-		assert.match(retry.output ?? "", /resume --force/);
+		assert.match(retry.output ?? "", /spine batch resume/);
 
 		const afterRetry = loadSpineBatchState(projectRoot).raw;
 		const taskB = afterRetry?.tasks?.find((task) => task.taskId === TASK_B);
