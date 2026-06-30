@@ -13,6 +13,7 @@ import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
+import { removeLaneWorktrees } from "./worktree.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
@@ -51,6 +52,48 @@ function clearActiveBatchState(batchStatePath) {
 	if (batchStatePath && fs.existsSync(batchStatePath)) {
 		fs.unlinkSync(batchStatePath);
 	}
+}
+
+/**
+ * @param {unknown} raw
+ */
+function maxLaneNumberFromBatchState(raw) {
+	const lanes = /** @type {{ lanes?: unknown }} */ (raw)?.lanes;
+	if (!Array.isArray(lanes) || lanes.length === 0) return 1;
+	let max = 1;
+	for (const lane of lanes) {
+		if (!lane || typeof lane !== "object") continue;
+		const laneNumber = Number(/** @type {{ laneNumber?: number }} */ (lane).laneNumber);
+		if (Number.isFinite(laneNumber) && laneNumber > max) {
+			max = laneNumber;
+		}
+	}
+	return max;
+}
+
+/**
+ * @param {object|null|undefined} config
+ */
+function shouldCleanupWorktreesOnComplete(config) {
+	if (config?.lanes?.cleanupWorktreesOnComplete === false) return false;
+	return true;
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {unknown} params.batchState
+ * @param {object} params.config
+ */
+function cleanupBatchLaneWorktrees({ projectRoot, batchId, batchState, config }) {
+	if (!shouldCleanupWorktreesOnComplete(config)) return;
+	const laneCount = maxLaneNumberFromBatchState(batchState);
+	removeLaneWorktrees(projectRoot, batchId, laneCount);
+	appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
+		batchId,
+		laneCount,
+	});
 }
 
 /**
@@ -193,12 +236,19 @@ export function dismissBatch(ctx) {
 		archivePath: path.relative(projectRoot, archivePath),
 	});
 	const configResult = loadSpineConfig(projectRoot);
+	const config = configResult.config ?? {};
 	recordBatchTerminalMetric({
 		projectRoot,
 		batchId,
 		batchState: { ...loaded.raw, endedAt },
 		diagnosis: diagnosis ?? "dismissed",
-		config: configResult.config ?? {},
+		config,
+	});
+	cleanupBatchLaneWorktrees({
+		projectRoot,
+		batchId,
+		batchState: loaded.raw,
+		config,
 	});
 	clearActiveBatchState(loaded.path);
 
@@ -353,12 +403,19 @@ export function completeBatch(ctx) {
 		lifecycle: "complete",
 	});
 	const configResult = loadSpineConfig(projectRoot);
+	const config = configResult.config ?? {};
 	recordBatchTerminalMetric({
 		projectRoot,
 		batchId,
 		batchState: { ...loaded.raw, endedAt },
 		diagnosis: "completed",
-		config: configResult.config ?? {},
+		config,
+	});
+	cleanupBatchLaneWorktrees({
+		projectRoot,
+		batchId,
+		batchState: loaded.raw,
+		config,
 	});
 	clearActiveBatchState(loaded.path);
 
