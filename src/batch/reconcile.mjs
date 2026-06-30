@@ -17,6 +17,7 @@ import {
 	inferLaunchFailureKind,
 	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
+import { summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
 import {
 	findStubMarkedSucceededTask,
@@ -26,6 +27,7 @@ import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
+import { computeStatusProgress } from "./status-json.mjs";
 import {
 	detectBatchStateDrift,
 	rebuildBatchStateFromJournal,
@@ -93,6 +95,9 @@ const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
  * @property {import("./macro-phase.mjs").MacroPhase} [macroPhase]
  * @property {string} [macroPhaseLabel]
  * @property {object} [signals]
+ * @property {number} [pendingTasks]
+ * @property {number} [currentWaveIndex]
+ * @property {number} [waveCount]
  */
 
 /**
@@ -663,6 +668,15 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("needs_integrate", null, signals);
 	}
 
+	if (
+		phase === "failed" &&
+		!hasFailedTasks &&
+		!hasSegmentDrift &&
+		hasPendingTasks
+	) {
+		return withFailureContext("needs_retry", null, signals);
+	}
+
 	if (phase === "failed" || (failedTasks > 0 && !hasPendingTasks && !hasRunningTasks)) {
 		return withFailureContext("failed", failedTaskId, signals);
 	}
@@ -897,6 +911,15 @@ export function reconcileBatch(ctx) {
 		lastError: batch.raw?.lastError ?? null,
 		journalEvents,
 	});
+	const mergeFailureSummary = summarizeMergeFailures(
+		batch.mergeResults,
+		batch.raw?.lastError ?? null,
+	);
+	signals.mergeFailed = mergeFailureSummary.mergeFailed;
+	signals.failedMerges = mergeFailureSummary.failedMerges;
+	signals.failedWaveIndex = mergeFailureSummary.failedWaveIndex;
+	signals.failedLane = mergeFailureSummary.failedLane;
+	signals.lastError = mergeFailureSummary.lastError;
 	const gitignoredPaths = extractGitignoredPathsFromJournal(journalEvents, failedTaskId);
 	const taskBranch =
 		failedTaskId != null
@@ -920,6 +943,12 @@ export function reconcileBatch(ctx) {
 		stalePathSpine,
 		planReviewNestedSpawnBlocked,
 		mergeGitignoredFailure,
+		mergeFailed: mergeFailureSummary.mergeFailed,
+		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
+		failedLane: mergeFailureSummary.failedLane,
+		lastError: mergeFailureSummary.lastError,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
 		taskBranch,
 		gitignoredPaths,
 		...(doneMissingContext ?? {}),
@@ -931,6 +960,13 @@ export function reconcileBatch(ctx) {
 		output.alternatives = ["spine status --diagnose"];
 	}
 
+	const progress = computeStatusProgress({
+		batchRaw: batch.raw,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
+		pendingTasks: pendingTaskCount,
+	});
+
 	return {
 		...output,
 		batchId: batch.batchId,
@@ -938,6 +974,17 @@ export function reconcileBatch(ctx) {
 		phase: batch.phase,
 		macroPhase,
 		macroPhaseLabel: resolvedMacroPhaseLabel,
+		failedTasks: signals.failedTasks,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
+		pendingTasks: progress?.pendingTasks,
+		currentWaveIndex: progress?.currentWaveIndex,
+		waveCount: progress?.waveCount,
+		mergeFailed: mergeFailureSummary.mergeFailed,
+		failedMerges: mergeFailureSummary.failedMerges,
+		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
+		failedLane: mergeFailureSummary.failedLane,
+		lastError: mergeFailureSummary.lastError,
 		signals: ctx.verbose ? signals : undefined,
 	};
 }

@@ -23,10 +23,16 @@ import { summarizePendingScope } from "../planner/pending.mjs";
 import { validatePrompt } from "../tasks/packet/validate-prompt.mjs";
 import { isRunMetricsAppendOnlyDrift } from "../batch/metrics.mjs";
 import { METRICS_DEFAULTS } from "./defaults.mjs";
-import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";
 
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
+/** High-risk paths that together block lane→orch auto-resolution (issue #37). */
+export const PRD_REL_PATH = "docs/PRD.md";
+export const ORCH_MULTI_FILE_MERGE_RISK_PATHS = Object.freeze([
+	PRD_REL_PATH,
+	RULES_MANIFEST_REL_PATH,
+]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
 const DEPENDENCIES_SCHEMA_VERSION = 1;
 const TASK_ID_PATTERN = /^[A-Z]{2,}-\d{3,}$/;
@@ -671,6 +677,234 @@ export function checkStubReleaseCritical(ctx) {
 }
 
 /**
+ * @param {{ title?: string | null, missionText?: string, folderName?: string }} task
+ */
+export function isMergeOriginMainTask(task) {
+	const haystack = `${task.title ?? ""}\n${task.missionText ?? ""}\n${task.folderName ?? ""}`.toLowerCase();
+	if (/merge[-_\s]+origin[-_\s]+main/.test(haystack)) {
+		return true;
+	}
+	return haystack.includes("origin/main") && /\bmerge\b/.test(haystack);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ref
+ */
+function gitRefExists(projectRoot, ref) {
+	try {
+		execFileSync("git", ["rev-parse", "--verify", ref], {
+			cwd: projectRoot,
+			stdio: ["ignore", "ignore", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ */
+function resolveOriginMainRef(projectRoot) {
+	for (const ref of ["origin/main", "refs/remotes/origin/main"]) {
+		if (gitRefExists(projectRoot, ref)) {
+			return ref;
+		}
+	}
+	return null;
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ref
+ * @param {string} filePath
+ */
+function pathExistsAtRef(projectRoot, ref, filePath) {
+	try {
+		execFileSync("git", ["cat-file", "-e", `${ref}:${filePath}`], {
+			cwd: projectRoot,
+			stdio: "ignore",
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} refA
+ * @param {string} refB
+ * @param {string} filePath
+ */
+function refsDifferOnPath(projectRoot, refA, refB, filePath) {
+	const aExists = pathExistsAtRef(projectRoot, refA, filePath);
+	const bExists = pathExistsAtRef(projectRoot, refB, filePath);
+	if (!aExists && !bExists) {
+		return false;
+	}
+	if (aExists !== bExists) {
+		return true;
+	}
+	try {
+		execFileSync("git", ["diff", "--quiet", refA, refB, "--", filePath], {
+			cwd: projectRoot,
+			stdio: "ignore",
+			timeout: 5000,
+		});
+		return false;
+	} catch {
+		return true;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} headRef
+ * @param {string} originMainRef
+ */
+export function listDivergentOrchMergeRiskPaths(projectRoot, headRef, originMainRef) {
+	return ORCH_MULTI_FILE_MERGE_RISK_PATHS.filter((filePath) =>
+		refsDifferOnPath(projectRoot, headRef, originMainRef, filePath),
+	);
+}
+
+/**
+ * Predict multi-file lane→orch merge conflicts when a pending task merges origin/main.
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function predictOrchMergeConflictRisk(ctx) {
+	const { projectRoot, configResult } = ctx;
+	const loaded = configResult ?? loadSpineConfig(projectRoot);
+	const tasksRootPath = resolveTasksRoot(projectRoot, loaded);
+	if (!tasksRootPath) {
+		return { risky: false, reason: "no_tasks_root" };
+	}
+
+	const originMainRef = resolveOriginMainRef(projectRoot);
+	if (!originMainRef) {
+		return { risky: false, reason: "no_origin_main" };
+	}
+
+	const headRef = "HEAD";
+	if (!gitRefExists(projectRoot, headRef)) {
+		return { risky: false, reason: "no_head" };
+	}
+
+	const divergentPaths = listDivergentOrchMergeRiskPaths(projectRoot, headRef, originMainRef);
+	const hasPrdDivergence = divergentPaths.includes(PRD_REL_PATH);
+	const hasManifestDivergence = divergentPaths.includes(RULES_MANIFEST_REL_PATH);
+	if (!hasPrdDivergence || !hasManifestDivergence) {
+		return {
+			risky: false,
+			reason: "paths_not_divergent",
+			divergentPaths,
+			originMainRef,
+			headRef,
+		};
+	}
+
+	try {
+		const discovered = discoverTasks(tasksRootPath);
+		const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
+		/** @type {string[]} */
+		const mergeOriginTaskIds = [];
+
+		for (const discoveredTask of discovered) {
+			if (!pendingIds.includes(discoveredTask.taskId)) continue;
+			const promptMarkdown = fs.readFileSync(
+				path.join(discoveredTask.folderPath, "PROMPT.md"),
+				"utf-8",
+			);
+			const parsed = parsePrompt(promptMarkdown);
+			if (
+				isMergeOriginMainTask({
+					title: parsed.title,
+					missionText: parsed.sections.Mission ?? "",
+					folderName: path.basename(discoveredTask.folderPath),
+				})
+			) {
+				mergeOriginTaskIds.push(discoveredTask.taskId);
+			}
+		}
+
+		if (mergeOriginTaskIds.length === 0) {
+			return {
+				risky: false,
+				reason: "no_merge_origin_main_task",
+				divergentPaths,
+				originMainRef,
+				headRef,
+			};
+		}
+
+		return {
+			risky: true,
+			mergeOriginTaskIds,
+			divergentPaths,
+			originMainRef,
+			headRef,
+		};
+	} catch (err) {
+		return {
+			risky: false,
+			reason: "error",
+			message: err?.message ?? String(err),
+		};
+	}
+}
+
+/**
+ * Warn when pending merge-origin-main tasks predict PRD + rules-manifest orch merge conflicts.
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function checkOrchMergeConflictWarn(ctx) {
+	const risk = predictOrchMergeConflictRisk(ctx);
+	if (!risk.risky) {
+		const skipMessage =
+			risk.reason === "no_merge_origin_main_task"
+				? "no pending merge-origin-main tasks"
+				: risk.reason === "no_origin_main"
+					? "orch merge conflict check skipped (origin/main unavailable)"
+					: "no predictable multi-file orch merge conflicts";
+		return makeCheck("orch-merge-conflict", true, skipMessage);
+	}
+
+	const taskPreview = risk.mergeOriginTaskIds.slice(0, 5).join(", ");
+	const pathList = risk.divergentPaths.join(", ");
+	return makeCheck(
+		"orch-merge-conflict",
+		true,
+		`pending merge-origin-main task(s) (${taskPreview}) with ${pathList} divergent between HEAD and ${risk.originMainRef} — wave merge may fail on multi-file conflicts`,
+		{
+			warning: true,
+			details: risk,
+			suggestedCommand:
+				"merge origin/main into main before batch or resolve docs/PRD.md + rules-manifest drift manually",
+		},
+	);
+}
+
+function formatOrchMergeConflictPlanWarning(risk) {
+	const taskPreview = risk.mergeOriginTaskIds.slice(0, 5).join(", ");
+	const pathList = risk.divergentPaths.join(", ");
+	return [
+		"⚠️ Orch merge risk: pending merge-origin-main task(s)",
+		`(${taskPreview}) with ${pathList} divergent between HEAD and ${risk.originMainRef}.`,
+		"Wave merge may fail when automatic resolution cannot handle PRD + manifest together.",
+	].join(" ");
+}
+
+/**
  * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
@@ -696,38 +930,51 @@ export function runPreflightPlanCheck(ctx) {
 	try {
 		const discovered = discoverTasks(tasksRootPath);
 		const { pendingIds, excludedCount } = summarizePendingScope(discovered, tasksRootPath);
+		const orchMergeRisk = predictOrchMergeConflictRisk(ctx);
 		if (pendingIds.length === 0) {
 			const maxParallel = config.lanes?.maxParallel ?? 1;
+			const lines = [
+				"Spine plan — pending",
+				`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
+				`${excludedCount} excluded (.DONE on disk)`,
+			];
+			if (orchMergeRisk.risky) {
+				lines.push(formatOrchMergeConflictPlanWarning(orchMergeRisk));
+			}
 			return {
 				status: "ok",
-				message: [
-					"Spine plan — pending",
-					`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
-					`${excludedCount} excluded (.DONE on disk)`,
-				].join("\n"),
-				details: { waves: 0, pendingCount: 0, excludedCount },
+				message: lines.join("\n"),
+				details: { waves: 0, pendingCount: 0, excludedCount, orchMergeConflictRisk: orchMergeRisk },
 			};
 		}
 
 		const plan = buildPlan({ scope: "pending", config, tasksRoot: tasksRootPath });
 		const waveCount = plan.waves?.length ?? 0;
+		const planText = formatPlanHuman(plan).trimEnd();
 		return {
 			status: "ok",
-			message: `${formatPlanHuman(plan).trimEnd()}`,
-			details: { waves: waveCount },
+			message: orchMergeRisk.risky
+				? `${planText}\n\n${formatOrchMergeConflictPlanWarning(orchMergeRisk)}`
+				: planText,
+			details: { waves: waveCount, orchMergeConflictRisk: orchMergeRisk },
 		};
 	} catch (err) {
 		const msg = err?.message ?? String(err);
 		if (msg === NO_PENDING_TASKS_ERROR) {
 			const maxParallel = config.lanes?.maxParallel ?? 1;
+			const orchMergeRisk = predictOrchMergeConflictRisk(ctx);
+			const lines = [
+				"Spine plan — pending",
+				`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
+				"All discovered tasks have .DONE on disk",
+			];
+			if (orchMergeRisk.risky) {
+				lines.push(formatOrchMergeConflictPlanWarning(orchMergeRisk));
+			}
 			return {
 				status: "ok",
-				message: [
-					"Spine plan — pending",
-					`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
-					"All discovered tasks have .DONE on disk",
-				].join("\n"),
-				details: { waves: 0, pendingCount: 0 },
+				message: lines.join("\n"),
+				details: { waves: 0, pendingCount: 0, orchMergeConflictRisk: orchMergeRisk },
 			};
 		}
 		return {
@@ -779,6 +1026,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkWorktreeSetupHook(ctx));
 	checks.push(checkTasksValidate(ctx));
 	checks.push(checkStubReleaseCritical(ctx));
+	checks.push(checkOrchMergeConflictWarn(ctx));
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(
@@ -798,9 +1046,11 @@ export function runBatchPreflight(options) {
 export function formatPreflightHuman(result) {
 	const lines = ["\nBatch preflight\n"];
 	for (const check of result.checks) {
-		const icon = check.ok ? "✅" : "❌";
+		const icon = !check.ok ? "❌" : check.warning ? "⚠️" : "✅";
 		lines.push(`  ${icon} ${check.id}: ${check.message}`);
 		if (!check.ok && check.suggestedCommand) {
+			lines.push(`     → ${check.suggestedCommand}`);
+		} else if (check.warning && check.suggestedCommand) {
 			lines.push(`     → ${check.suggestedCommand}`);
 		}
 	}

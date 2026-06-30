@@ -11,6 +11,7 @@ import { gitAddFilteredPaths } from "../git-helpers.mjs";
 import { gitExec } from "../git-exec.mjs";
 
 export const ADOPTION_DOC_PREFIX = "docs/adoption/";
+export const PRD_DOC_REL_PATH = "docs/PRD.md";
 
 /**
  * @param {string} filePath
@@ -18,6 +19,14 @@ export const ADOPTION_DOC_PREFIX = "docs/adoption/";
 export function isAdoptionDocPath(filePath) {
 	const normalized = String(filePath ?? "").replace(/\\/g, "/");
 	return normalized.startsWith(ADOPTION_DOC_PREFIX);
+}
+
+/**
+ * @param {string} filePath
+ */
+export function isPrdDocPath(filePath) {
+	const normalized = String(filePath ?? "").replace(/\\/g, "/");
+	return normalized === PRD_DOC_REL_PATH;
 }
 
 /**
@@ -110,18 +119,47 @@ export function formatAdoptionDocMergeFailure({ filePath, waveIndex, conflictHun
 }
 
 /**
- * Attempt 3-way merge for docs/adoption/* using git merge-file (non-overlapping additive edits).
- *
+ * @param {object} params
+ * @param {string} params.filePath
+ * @param {number} [params.waveIndex]
+ * @param {string[]} [params.conflictHunks]
+ */
+export function formatPrdDocMergeFailure({ filePath, waveIndex, conflictHunks = [] }) {
+	const lines = [
+		`merge conflict on ${filePath} — release-recovery PRD hunks could not be auto-merged safely`,
+	];
+	if (conflictHunks.length > 0) {
+		lines.push(`Conflicting hunks: ${conflictHunks.join(", ")}`);
+	}
+	lines.push(
+		"Recovery: in the lane worktree resolve docs/PRD.md, commit on the lane branch, then `spine batch resume`",
+	);
+	if (waveIndex != null && Number.isFinite(waveIndex)) {
+		lines.push(
+			`Mixed-outcome override only: \`spine batch force-merge --wave ${waveIndex}\` then \`spine batch resume --force\``,
+		);
+	}
+	lines.push(
+		"Manual merge path: docs/adoption/operator-runbook.md § Lane merge conflicts; design: docs/design/integrate-conflict-recovery.md",
+	);
+	return lines.join("\n");
+}
+
+/**
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.filePath
  * @param {number} [params.waveIndex]
+ * @param {(failure: { filePath: string, waveIndex?: number, conflictHunks?: string[] }) => string} params.formatFailure
+ * @param {string} params.strategy
  */
-export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, waveIndex }) {
-	if (!isAdoptionDocPath(filePath)) {
-		return { ok: false, reason: "not_adoption_doc" };
-	}
-
+function tryResolveAdditiveDocMergeConflict({
+	projectRoot,
+	filePath,
+	waveIndex,
+	formatFailure,
+	strategy,
+}) {
 	const base = readMergeStageContent(projectRoot, filePath, 1);
 	const ours = readMergeStageContent(projectRoot, filePath, 2);
 	const theirs = readMergeStageContent(projectRoot, filePath, 3);
@@ -129,7 +167,7 @@ export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, wave
 		return {
 			ok: false,
 			failureClass: "MergeConflict",
-			error: formatAdoptionDocMergeFailure({
+			error: formatFailure({
 				filePath,
 				waveIndex,
 				conflictHunks: ["missing merge stages"],
@@ -143,7 +181,7 @@ export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, wave
 		return {
 			ok: false,
 			failureClass: "MergeConflict",
-			error: formatAdoptionDocMergeFailure({ filePath, waveIndex, conflictHunks }),
+			error: formatFailure({ filePath, waveIndex, conflictHunks }),
 			conflictHunks,
 		};
 	}
@@ -155,7 +193,51 @@ export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, wave
 	return {
 		ok: true,
 		autoResolved: true,
-		strategy: "adoption_doc_merge_file",
+		strategy,
 		filePath,
 	};
+}
+
+/**
+ * Attempt 3-way merge for docs/adoption/* using git merge-file (non-overlapping additive edits).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.filePath
+ * @param {number} [params.waveIndex]
+ */
+export function tryResolveAdoptionDocMergeConflict({ projectRoot, filePath, waveIndex }) {
+	if (!isAdoptionDocPath(filePath)) {
+		return { ok: false, reason: "not_adoption_doc" };
+	}
+
+	return tryResolveAdditiveDocMergeConflict({
+		projectRoot,
+		filePath,
+		waveIndex,
+		formatFailure: formatAdoptionDocMergeFailure,
+		strategy: "adoption_doc_merge_file",
+	});
+}
+
+/**
+ * Attempt 3-way merge for docs/PRD.md (release-recovery origin/main merges).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.filePath
+ * @param {number} [params.waveIndex]
+ */
+export function tryResolvePrdDocMergeConflict({ projectRoot, filePath, waveIndex }) {
+	if (!isPrdDocPath(filePath)) {
+		return { ok: false, reason: "not_prd_doc" };
+	}
+
+	return tryResolveAdditiveDocMergeConflict({
+		projectRoot,
+		filePath,
+		waveIndex,
+		formatFailure: formatPrdDocMergeFailure,
+		strategy: "prd_doc_merge_file",
+	});
 }

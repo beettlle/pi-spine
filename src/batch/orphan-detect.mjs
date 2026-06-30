@@ -98,6 +98,68 @@ export function journalEventsSinceResume(events, raw) {
 }
 
 /**
+ * @param {unknown} event
+ * @returns {string|null}
+ */
+function eventTaskId(event) {
+	if (!event || typeof event !== "object") return null;
+	const direct = /** @type {{ taskId?: unknown }} */ (event).taskId;
+	if (typeof direct === "string" && direct) return direct;
+	const payload = /** @type {{ payload?: { taskId?: unknown } }} */ (event).payload;
+	const nested = payload?.taskId;
+	return typeof nested === "string" && nested ? nested : null;
+}
+
+/**
+ * @param {unknown} event
+ * @returns {number|null}
+ */
+function eventLaneNumber(event) {
+	if (!event || typeof event !== "object") return null;
+	const direct = /** @type {{ laneNumber?: unknown, payload?: { laneNumber?: unknown } }} */ (
+		event
+	).laneNumber;
+	if (direct != null && Number.isFinite(Number(direct))) return Number(direct);
+	const payload = /** @type {{ payload?: { laneNumber?: unknown } }} */ (event).payload?.laneNumber;
+	return payload != null && Number.isFinite(Number(payload)) ? Number(payload) : null;
+}
+
+/**
+ * Running task is inside task.started → first lane.heartbeat debounce (SP-345 / #36).
+ * Stale workerPid from a prior lane handoff must not trigger worker_orphaned mid-start.
+ *
+ * @param {object[]} journalEvents
+ * @param {string} taskId
+ * @param {number|null|undefined} laneNumber
+ */
+export function journalTaskAwaitingFirstHeartbeat(journalEvents, taskId, laneNumber) {
+	if (!Array.isArray(journalEvents) || !taskId) return false;
+
+	let lastStartedIndex = -1;
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (String(event?.type ?? "") !== "task.started") continue;
+		if (eventTaskId(event) !== taskId) continue;
+		if (laneNumber != null) {
+			const eventLane = eventLaneNumber(event);
+			if (eventLane != null && eventLane !== Number(laneNumber)) continue;
+		}
+		lastStartedIndex = index;
+		break;
+	}
+
+	if (lastStartedIndex < 0) return false;
+
+	for (let index = lastStartedIndex + 1; index < journalEvents.length; index += 1) {
+		const event = journalEvents[index];
+		if (String(event?.type ?? "") !== "lane.heartbeat") continue;
+		if (eventTaskId(event) === taskId) return false;
+	}
+
+	return true;
+}
+
+/**
  * Worker exited (post-done grace or natural exit) but engine still owns code/final review.
  *
  * @param {object[]} journalEvents
@@ -169,6 +231,18 @@ export function detectOrphanRunning(ctx) {
 		if (Number.isFinite(workerPid) && workerPid > 0 && !isProcessAlive(workerPid)) {
 			if (journalIndicatesEngineOwnedContinuation(scopedJournalEvents, task.taskId)) {
 				continue;
+			}
+			if (
+				journalTaskAwaitingFirstHeartbeat(
+					scopedJournalEvents,
+					task.taskId,
+					task.laneNumber,
+				)
+			) {
+				const enginePid = readBatchEnginePid(ctx.raw);
+				if (enginePid != null && isProcessAlive(enginePid)) {
+					continue;
+				}
 			}
 			/** @type {OrphanRunningSignal} */
 			return {

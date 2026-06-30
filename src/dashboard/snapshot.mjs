@@ -2,6 +2,8 @@
  * Dashboard snapshot builder (PRD §16, NFR-OBS-04).
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
@@ -28,6 +30,15 @@ import {
 	metricsFilePath,
 	readMetricsLines,
 } from "../batch/metrics.mjs";
+import {
+	workerLiveLogPath,
+	workerLiveLogRef,
+	workerOutputLogPath,
+	workerOutputLogRef,
+} from "../batch/worker-output.mjs";
+
+const LANE_RECENT_EVENTS_LIMIT = 5;
+const LANE_LOG_TAIL_LINES = 10;
 
 /**
  * @param {string|null|undefined} worktreePath
@@ -354,6 +365,8 @@ export function formatLaneHeartbeatDisplay({ workerPhase, heartbeatAgeSeconds })
  * @param {number} [params.now]
  * @param {object[]} [params.journalEvents]
  * @param {object[]} [params.metricsLines]
+ * @param {string|null} [params.projectRoot]
+ * @param {string|null} [params.batchId]
  */
 export function buildLaneRows({
 	lanes,
@@ -363,6 +376,8 @@ export function buildLaneRows({
 	journalTail = [],
 	journalEvents = [],
 	metricsLines = [],
+	projectRoot = null,
+	batchId = null,
 	now = Date.now(),
 }) {
 	const throughputByLane = deriveLanesThroughput({
@@ -384,6 +399,17 @@ export function buildLaneRows({
 		});
 		const throughput =
 			throughputByLane.get(lane.laneNumber) ?? emptyLaneThroughputStats();
+		const recentEvents = buildLaneRecentEvents(lane.laneNumber, journalEvents);
+		const logDetail =
+			projectRoot && batchId
+				? buildLaneLogTail(
+						projectRoot,
+						batchId,
+						lane.laneNumber,
+						activeTaskIds,
+						lane.taskIds ?? [],
+					)
+				: { logTail: [], workerLogRef: null };
 		return {
 			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 			laneNumber: lane.laneNumber,
@@ -402,6 +428,9 @@ export function buildLaneRows({
 			worktree: truncateWorktreePath(lane.worktreePath),
 			laneAlert: resolveLaneAlert(lane.laneNumber, journalTail, now),
 			throughput,
+			recentEvents,
+			logTail: logDetail.logTail,
+			workerLogRef: logDetail.workerLogRef,
 		};
 	});
 }
@@ -442,6 +471,128 @@ export function formatJournalTailEntry(event) {
 		laneId: event.laneId ?? null,
 		taskId: event.taskId ?? null,
 		summary: summarizeJournalEvent(event),
+	};
+}
+
+/**
+ * @param {number} laneNumber
+ * @param {object} event
+ */
+function journalEventScopedToLane(laneNumber, event) {
+	const laneId = `lane-${laneNumber}`;
+	const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+	if (event.laneId) return event.laneId === laneId;
+	if (payload.laneNumber != null) return payload.laneNumber === laneNumber;
+	return false;
+}
+
+/**
+ * Last N journal events scoped to a physical lane.
+ *
+ * @param {number} laneNumber
+ * @param {object[]} journalEvents
+ * @param {number} [limit]
+ */
+export function buildLaneRecentEvents(laneNumber, journalEvents, limit = LANE_RECENT_EVENTS_LIMIT) {
+	const matching = (journalEvents ?? []).filter(
+		(event) => journalEventScopedToLane(laneNumber, event) && laneEventMatches(laneNumber, event),
+	);
+	return readJournalTail(matching, limit).map(formatJournalTailEntry);
+}
+
+/**
+ * @param {string|null|undefined} filePath
+ * @param {number} [lineCount]
+ * @returns {string[]}
+ */
+export function readLogFileTailLines(filePath, lineCount = LANE_LOG_TAIL_LINES) {
+	if (!filePath || !fs.existsSync(filePath)) return [];
+	const content = fs.readFileSync(filePath, "utf-8");
+	const lines = content.split("\n");
+	if (lines.at(-1) === "") lines.pop();
+	if (lines.length === 0) return [];
+	return lines.slice(-lineCount);
+}
+
+/**
+ * Prefer live worker log for active tasks, then terminal output log, then newest in lane dir.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string[]} activeTaskIds
+ * @param {string[]} taskIds
+ * @returns {{ path: string, ref: string } | null}
+ */
+export function resolveLaneWorkerLog(projectRoot, batchId, laneNumber, activeTaskIds, taskIds) {
+	/** @type {string[]} */
+	const orderedTaskIds = [];
+	const seen = new Set();
+	for (const taskId of [...(activeTaskIds ?? []), ...(taskIds ?? [])]) {
+		if (!taskId || seen.has(taskId)) continue;
+		seen.add(taskId);
+		orderedTaskIds.push(String(taskId));
+	}
+
+	for (const taskId of orderedTaskIds) {
+		const livePath = workerLiveLogPath(projectRoot, batchId, laneNumber, taskId);
+		if (fs.existsSync(livePath)) {
+			return { path: livePath, ref: workerLiveLogRef(batchId, laneNumber, taskId) };
+		}
+		const outputPath = workerOutputLogPath(projectRoot, batchId, laneNumber, taskId);
+		if (fs.existsSync(outputPath)) {
+			return { path: outputPath, ref: workerOutputLogRef(batchId, laneNumber, taskId) };
+		}
+	}
+
+	const laneDir = path.join(
+		projectRoot,
+		".spine",
+		"runtime",
+		batchId,
+		"lanes",
+		`lane-${laneNumber}`,
+	);
+	if (!fs.existsSync(laneDir)) return null;
+
+	/** @type {{ path: string, ref: string, mtime: number } | null} */
+	let newest = null;
+	for (const name of fs.readdirSync(laneDir)) {
+		const isLive = name.startsWith("worker-live-") && name.endsWith(".log");
+		const isOutput = name.startsWith("worker-output-") && name.endsWith(".log");
+		if (!isLive && !isOutput) continue;
+		const candidate = path.join(laneDir, name);
+		const mtime = fs.statSync(candidate).mtimeMs;
+		if (!newest || mtime >= newest.mtime) {
+			const taskId = name.replace(/^worker-(?:live|output)-/, "").replace(/\.log$/, "");
+			newest = {
+				path: candidate,
+				ref: isLive
+					? workerLiveLogRef(batchId, laneNumber, taskId)
+					: workerOutputLogRef(batchId, laneNumber, taskId),
+				mtime,
+			};
+		}
+	}
+
+	return newest ? { path: newest.path, ref: newest.ref } : null;
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string[]} activeTaskIds
+ * @param {string[]} taskIds
+ */
+export function buildLaneLogTail(projectRoot, batchId, laneNumber, activeTaskIds, taskIds) {
+	const resolved = resolveLaneWorkerLog(projectRoot, batchId, laneNumber, activeTaskIds, taskIds);
+	if (!resolved) {
+		return { logTail: [], workerLogRef: null };
+	}
+	return {
+		logTail: readLogFileTailLines(resolved.path, LANE_LOG_TAIL_LINES),
+		workerLogRef: resolved.ref,
 	};
 }
 
@@ -590,6 +741,8 @@ export function buildDashboardSnapshot(projectRoot) {
 		journalTail,
 		journalEvents,
 		metricsLines,
+		projectRoot,
+		batchId: reconciliation.batchId,
 		now,
 	});
 	const laneThroughputSummary = summarizeLaneThroughput(

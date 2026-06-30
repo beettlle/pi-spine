@@ -27,6 +27,29 @@ function findTask(state, taskId) {
 }
 
 /**
+ * When retry clears the last failed task, leave failed-phase limbo (GitHub #25).
+ *
+ * @param {object} state
+ * @returns {boolean}
+ */
+export function unblockBatchAfterRetry(state) {
+	if (Number(state.failedTasks ?? 0) > 0) return false;
+
+	const hasPending = (state.tasks ?? []).some((task) => {
+		const status = String(task?.status ?? "").toLowerCase();
+		return status === "pending" || status === "running";
+	});
+	if (!hasPending) return false;
+
+	state.phase = "paused";
+	state.endedAt = null;
+	state.lastError = null;
+	state.resilience = state.resilience ?? {};
+	state.resilience.lastFailureClass = null;
+	return true;
+}
+
+/**
  * @param {object} state
  */
 export function detectSegmentDrift(state) {
@@ -131,14 +154,19 @@ export function retryTask({ projectRoot, taskId }) {
 		};
 	}
 
-	state.phase = "failed";
-	state.endedAt = null;
-	state.lastError = null;
+	const unblocked = unblockBatchAfterRetry(state);
+	if (!unblocked) {
+		state.phase = "failed";
+		state.endedAt = null;
+		state.lastError = null;
+	}
+
 	state.resilience = state.resilience ?? {};
 	state.resilience.retryCountByScope = state.resilience.retryCountByScope ?? {};
 	state.resilience.retryCountByScope[taskId] = (state.resilience.retryCountByScope[taskId] ?? 0) + 1;
 
 	const pendingSegments = countPendingSegments(state, taskId);
+	const previousPhase = String(reloaded.raw?.phase ?? phase);
 	recordTaskTransition({
 		projectRoot,
 		state,
@@ -150,13 +178,29 @@ export function retryTask({ projectRoot, taskId }) {
 		},
 	});
 
+	if (unblocked) {
+		recordTaskTransition({
+			projectRoot,
+			state,
+			journalType: "batch.retry_unblocked",
+			journalPayload: {
+				taskId,
+				pendingSegments,
+				fromPhase: previousPhase,
+			},
+		});
+	}
+
+	const resumeHint = unblocked ? "spine batch resume" : "spine batch resume --force";
+
 	return {
 		ok: true,
 		exitCode: 0,
 		batchId: state.batchId,
 		taskId,
 		pendingSegments,
-		output: `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).\n  → spine batch resume --force\n`,
+		unblocked,
+		output: `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).\n  → ${resumeHint}\n`,
 	};
 }
 

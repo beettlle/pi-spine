@@ -1,8 +1,8 @@
 # SP-366: spine lane logs CLI — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-29
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,46 +11,46 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-365 complete
+- [x] SP-365 complete — `workerLiveLogPath`, `workerOutputLogPath` exported from `src/batch/worker-output.mjs`
 
 ---
 
 ### Step 1: Implement lane logs command
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `src/cli/lane-logs.mjs`
-- [ ] CLI router wired
+- [x] `src/cli/lane-logs.mjs`
+- [x] CLI router wired (`bin/spine-cli/lane-logs.mjs`, `bin/spine.mjs`)
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/cli/lane-logs.test.mjs`
+- [x] `tests/cli/lane-logs.test.mjs`
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing (1206 tests)
+- [x] Coverage gate passes (87.52% line coverage)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #50 closed
-- [ ] `.DONE` created
+- [x] Issue #50 closed
+- [x] `.DONE` created
 
 ---
 
 ## Blockers
 
-- Depends on SP-365
+- None
 
 ---
 
@@ -59,3 +59,5 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 3 | typecheck + 1206 tests pass; coverage 87.52% |
+| 2026-06-30 | Step 4 | Issue #50 closed; .DONE created |
