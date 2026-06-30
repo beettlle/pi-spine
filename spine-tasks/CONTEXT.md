@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-28 (Phase 45 — SP-350/SP-357 decomposition; SP-342 superseded)
+**Last Updated:** 2026-06-29 (Phase 46 — operator monitoring toolkit; GitHub #43–#52)
 **Status:** Active
-**Next Task ID:** SP-360
+**Next Task ID:** SP-369
 
 ---
 
@@ -969,6 +969,42 @@ spine batch start pending                   # remainder after wave 0 lands
 **Superseded (skip):** SP-335, SP-340, SP-342, SP-346, SP-347 — replaced by SP-350–357 / SP-349.
 
 **Done:** SP-348, SP-349.
+
+#### Phase 46 — Operator monitoring toolkit (#43)
+
+**Source:** [Epic #43](https://github.com/beettlle/pi-spine/issues/43) — replace ad-hoc monitor scripts with first-class CLI surfaces (NFR-OBS-04).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-339 | Status JSON task progress | S | **Staged** | — | #30 |
+| SP-360 | `spine watch` | S | **Staged** | — | #44 |
+| SP-361 | `spine journal follow` | S | **Staged** | — | #45 |
+| SP-362 | `spine wait` | S | **Staged** | SP-360 | #46 |
+| SP-363 | Operator monitoring runbook | S | **Staged** | SP-339, SP-360, SP-361, SP-362 | #47 |
+| SP-364 | `lane.progress_snapshot` events | M | **Staged** | — | #48 |
+| SP-365 | Live lane worker log | M | **Staged** | — | #49 |
+| SP-366 | `spine lane logs` CLI | S | **Staged** | SP-365 | #50 |
+| SP-367 | Dashboard lane detail panel | M | **Staged** | SP-364, SP-365 | #51 |
+| SP-368 | Deferred observability stream explore | L | **Staged** | — | #52 |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | GitHub |
+|------|-------|--------|
+| 0 | SP-339, SP-360, SP-361 | #30, #44, #45 |
+| 1 | SP-362, SP-363 | #46, #47 |
+| 2 | SP-364, SP-365 | #48, #49 |
+| 3 | SP-366, SP-367 | #50, #51 |
+| Explore | SP-368 | #52 |
+
+```bash
+spine tasks validate SP-360 SP-361 SP-362 SP-363 SP-364 SP-365 SP-366 SP-367 SP-368
+spine batch start SP-339 SP-360 SP-361    # wave 0
+spine batch start SP-362 SP-363           # wave 1
+spine batch start SP-364 SP-365           # wave 2
+spine batch start SP-366 SP-367           # wave 3
+spine batch start SP-368                  # explore doc (parallel anytime)
+```
 
 ---
 
