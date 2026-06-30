@@ -18,6 +18,7 @@ export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
 	"task.failed",
 	"batch.merge_started",
 	"batch.merge_completed",
+	"batch.merge_blocked",
 	"gate.opened",
 	"batch.land_loop_finalized",
 	"batch.completed",
@@ -55,7 +56,8 @@ export function formatAttachedMilestoneLine(event) {
 		event.payload && typeof event.payload === "object" ? /** @type {Record<string, unknown>} */ (event.payload) : {};
 	const waveIndex = payload.waveIndex;
 	const waveSuffix =
-		typeof waveIndex === "number" && (type === "batch.merge_started" || type === "batch.merge_completed")
+		typeof waveIndex === "number" &&
+		(type === "batch.merge_started" || type === "batch.merge_completed" || type === "batch.merge_blocked")
 			? ` wave=${waveIndex}`
 			: "";
 	return `[spine] ${type}${taskId}${waveSuffix}\n`;
@@ -131,6 +133,17 @@ export async function runAttachedBatchEngine({ projectRoot, runEngine, write }) 
 }
 
 /**
+ * @param {object} result
+ * @param {import("./reconcile.mjs").ReconciliationResult} reconciliation
+ */
+function resolveAttachedBatchExitCode(result, reconciliation) {
+	if (reconciliation.phase === "merge_blocked") {
+		return result.exitCode ?? 1;
+	}
+	return result.exitCode ?? (result.ok ? 0 : 1);
+}
+
+/**
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {"start"|"resume"} params.operation
@@ -138,32 +151,35 @@ export async function runAttachedBatchEngine({ projectRoot, runEngine, write }) 
  * @param {boolean} [params.json]
  */
 export function formatAttachedBatchCliResult({ projectRoot, operation, result, json = false }) {
+	const reconciliation = reconcileBatch({ projectRoot });
+	const mergeBlocked = reconciliation.phase === "merge_blocked";
+
 	if (json) {
-		const reconciliation = reconcileBatch({ projectRoot });
 		return {
-			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			exitCode: resolveAttachedBatchExitCode(result, reconciliation),
 			output: `${JSON.stringify({ ...result, reconciliation }, null, 2)}\n`,
 		};
 	}
 
-	const reconciliation = reconcileBatch({ projectRoot });
 	const operationLabel = operation === "resume" ? "resumed" : "started";
 	const headline = result.ok
 		? `Batch ${operationLabel}`
-		: operation === "resume"
-			? "Batch resume failed"
-			: "Batch start failed";
+		: mergeBlocked && reconciliation.headline
+			? reconciliation.headline
+			: operation === "resume"
+				? "Batch resume failed"
+				: "Batch start failed";
 
 	/** @type {string[]} */
 	const lines = ["", headline, ""];
 
 	if (result.output) {
 		lines.push(result.output.trimEnd());
-	} else if (result.error) {
+	} else if (result.error && !mergeBlocked) {
 		lines.push(String(result.error));
 	}
 
-	if (reconciliation.headline) {
+	if (reconciliation.headline && reconciliation.headline !== headline) {
 		lines.push("", reconciliation.headline);
 	}
 	if (reconciliation.suggestedCommand) {
@@ -185,7 +201,7 @@ export function formatAttachedBatchCliResult({ projectRoot, operation, result, j
 
 	lines.push("");
 	return {
-		exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+		exitCode: resolveAttachedBatchExitCode(result, reconciliation),
 		output: lines.join("\n"),
 	};
 }
