@@ -33,6 +33,7 @@ import {
 	WARN,
 } from "./spine-cli/shared.mjs";
 import { handleStatus } from "./spine-cli/status.mjs";
+import { handleWatch } from "./spine-cli/watch.mjs";
 import { handleScenarios } from "./spine-cli/scenarios.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
@@ -233,6 +234,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}settings${c.reset}        Show or set editable spine-config fields (FR-CFG-03)
   ${c.cyan}rules${c.reset}           Discover, select, and sync Cursor rules manifest
   ${c.cyan}status${c.reset}          Reconciled batch diagnosis and lane health (FR-BATCH-14)
+  ${c.cyan}watch${c.reset}           Poll reconcile loop for live batch monitoring (#44)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
  ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
@@ -272,6 +274,8 @@ ${c.bold}Examples:${c.reset}
   spine doctor                                  # check installation health
   spine preflight                               # verify batch readiness
   spine status --diagnose                       # reconciled batch diagnosis
+  spine watch                                   # compact live reconcile poll (5s default)
+  spine watch --json --once                     # one NDJSON snapshot for scripts
   spine deps all                                # show dependency graph
   spine deps TP-031 --json                      # JSON graph for one task scope
   spine settings show                           # list editable config fields
@@ -347,6 +351,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "status":
 				await handleStatus(args);
+				break;
+			case "watch":
+				await handleWatch(args);
 				break;
 			case "batch":
 				await handleBatch(args);

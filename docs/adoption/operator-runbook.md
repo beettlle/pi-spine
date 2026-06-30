@@ -312,8 +312,13 @@ Only use `inherit` when you intentionally want batch workers to follow your pi T
 spine status                    # headline + suggested next command
 spine status --diagnose         # verbose signals (use this daily)
 spine status --json
+spine watch                     # compact one-line reconcile poll (default 5s)
+spine watch --json --once       # single NDJSON snapshot for scripts/monitors
+spine watch --interval 10       # slower poll interval in seconds
 spine next                      # print suggestedCommand only
 ```
+
+`spine watch` wraps the same `reconcileBatch` path as `spine status` without `--diagnose` verbosity. Human mode refreshes one line (diagnosis, batchId, macro phase, headline). `--json` emits newline-delimited snapshots with `observedAt`, reconcile fields, and a `progress` block when SP-339 / issue #30 fields are present on the reconcile result.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 
@@ -401,6 +406,14 @@ pi-spine v2.2 **does not** ship Taskplane-style **supervisor mail** or an **auto
 The supervisor agent template (`.spine/agents/supervisor.md`, copied on `spine init`) documents v1 no-agent behavior and optional project notes. The batch engine **does not** spawn a supervisor Pi session in v2.2.
 
 **Optional stretch (out of v2.2 scope):** a minimal supervisor session that polls batch health and journals `supervisor.nudge` events — only if consumer pilot feedback shows dashboard + `--diagnose` are insufficient. See [PRD v2.2 §2.1 FR-SHIP-11](../PRD-v2.2-ship-readiness-handoff.md#fr-ship-11-design-decision).
+
+### Agent observability stream deferred (#52)
+
+pi-spine v2.2 and Phase 46 deliver **orchestration-tier** monitoring (`spine watch`, `spine journal follow`, `lane.progress_snapshot`, live lane worker logs). They do **not** stream structured pi agent events (tool calls, assistant messages, step boundaries) in real time.
+
+That **Tier 3** capability is deferred per [GitHub #52](https://github.com/beettlle/pi-spine/issues/52) and PRD §4.2 (deterministic LLM/tool replay remains a non-goal). Explore findings — journal vs per-lane SSE options, redaction, and phasing after SP-360–367 — live in [`spine-tasks/_explore/operator-observability-stream/findings.md`](../../spine-tasks/_explore/operator-observability-stream/findings.md).
+
+**Operator workaround today:** `spine journal follow` for control-plane events; `spine lane logs --follow` (when enabled) for redacted worker output; attach to the pi TUI session in the lane worktree for full transcript visibility.
 
 ---
 
