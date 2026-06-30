@@ -10,6 +10,9 @@ import {
 	buildBannerModel,
 	buildDashboardViewModel,
 	buildGateAffordanceModel,
+	buildJournalLaneFilterOptions,
+	buildJournalModel,
+	buildLaneDetailModel,
 	buildLaneTableModel,
 	buildLaneTableSummaryModel,
 	diagnosisBadgeClass,
@@ -22,7 +25,11 @@ import {
 	listenDashboardServer,
 	resolveStaticAsset,
 } from "../../src/dashboard/server.mjs";
-import { buildLaneRows } from "../../src/dashboard/snapshot.mjs";
+import {
+	buildLaneRecentEvents,
+	buildLaneRows,
+	resolveLaneWorkerLog,
+} from "../../src/dashboard/snapshot.mjs";
 import {
 	deriveLanesThroughput,
 	deriveLaneThroughputStats,
@@ -360,6 +367,27 @@ test("lane-throughput-multi-lane fixture documents SP-327 throughput field contr
 	}
 });
 
+test("buildLaneTableModel exposes heartbeatDisplay for launching lanes", () => {
+	const rows = buildLaneTableModel({
+		lanes: [
+			{
+				laneId: "lane-1",
+				status: "running",
+				workerPhase: "launching",
+				heartbeatAgeSeconds: 12,
+			},
+		],
+	});
+	assert.equal(rows[0].heartbeatDisplay, "launching");
+});
+
+test("dashboard.js uses heartbeatDisplay without double-formatting", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /function displayHeartbeat\(lane\)/);
+	assert.doesNotMatch(dashboardJs, /formatHeartbeat\(lane\.heartbeatDisplay/);
+	assert.match(dashboardJs, /displayHeartbeat\(lane\)/);
+});
+
 test("banner uses diagnosis badge class, not macro phase", () => {
 	const snapshot = {
 		diagnosis: "needs_integrate",
@@ -458,4 +486,173 @@ test("idle snapshot has empty journal via idle flag", () => {
 	const vm = buildDashboardViewModel(snapshot);
 	assert.ok(vm.idle);
 	assert.equal(vm.journal.length, 0);
+});
+
+test("buildLaneDetailModel exposes recent events and log tail", () => {
+	const detail = buildLaneDetailModel({
+		recentEvents: [
+			{
+				eventId: "e1",
+				type: "lane.heartbeat",
+				timestamp: "2026-06-13T00:00:01.000Z",
+				summary: "heartbeat",
+			},
+		],
+		logTail: ["line one", "line two"],
+		workerLogRef: ".spine/runtime/b1/lanes/lane-1/worker-live-TP-1.log",
+	});
+	assert.equal(detail.recentEvents.length, 1);
+	assert.equal(detail.logTail.length, 2);
+	assert.match(detail.workerLogRef ?? "", /worker-live-TP-1\.log/);
+});
+
+test("buildLaneTableModel includes lane detail on each row", () => {
+	const rows = buildLaneTableModel({
+		lanes: [
+			{
+				laneId: "lane-1",
+				laneNumber: 1,
+				status: "running",
+				recentEvents: [{ eventId: "e1", type: "task.started", timestamp: 1, summary: "started" }],
+				logTail: ["worker output"],
+				workerLogRef: ".spine/runtime/b1/lanes/lane-1/worker-live-TP-1.log",
+			},
+		],
+	});
+	assert.ok(rows[0].detail);
+	assert.equal(rows[0].detail.recentEvents.length, 1);
+	assert.equal(rows[0].detail.logTail.length, 1);
+});
+
+test("buildLaneRecentEvents returns last five lane-scoped journal entries", () => {
+	const events = [
+		{ type: "batch.started", timestamp: "1" },
+		{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "2" },
+		{ type: "lane.heartbeat", laneId: "lane-2", timestamp: "3" },
+		{ type: "task.started", laneId: "lane-1", payload: { laneNumber: 1 }, timestamp: "4" },
+		{ type: "lane.progress_snapshot", laneId: "lane-1", timestamp: "5" },
+		{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "6" },
+		{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "7" },
+		{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "8" },
+		{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "9" },
+	];
+	const recent = buildLaneRecentEvents(1, events, 5);
+	assert.equal(recent.length, 5);
+	assert.ok(recent.every((entry) => entry.type !== "batch.started"));
+	assert.equal(recent.at(-1)?.timestamp, "9");
+});
+
+test("buildJournalModel filters by lane id", () => {
+	const snapshot = {
+		journalTail: [
+			{ eventId: "e1", type: "batch.started", timestamp: 1, laneId: null, summary: "started" },
+			{ eventId: "e2", type: "lane.heartbeat", timestamp: 2, laneId: "lane-1", summary: "hb1" },
+			{ eventId: "e3", type: "lane.heartbeat", timestamp: 3, laneId: "lane-2", summary: "hb2" },
+		],
+	};
+	const filtered = buildJournalModel(snapshot, { laneFilter: "lane-1" });
+	assert.equal(filtered.length, 1);
+	assert.equal(filtered[0].laneId, "lane-1");
+});
+
+test("buildJournalLaneFilterOptions lists lane ids", () => {
+	const options = buildJournalLaneFilterOptions({
+		lanes: [
+			{ laneId: "lane-1", laneNumber: 1 },
+			{ laneId: "lane-2", laneNumber: 2 },
+		],
+	});
+	assert.deepEqual(options.map((entry) => entry.laneId), ["lane-1", "lane-2"]);
+});
+
+test("buildLaneRows attaches recentEvents and logTail from snapshot inputs", async () => {
+	const projectRoot = await initGitRepo("spine-dash-lane-detail-");
+	try {
+		const batchId = "batch-lane-detail";
+		const laneDir = path.join(projectRoot, ".spine", "runtime", batchId, "lanes", "lane-1");
+		fs.mkdirSync(laneDir, { recursive: true });
+		const logPath = path.join(laneDir, "worker-live-TP-1.log");
+		fs.writeFileSync(logPath, Array.from({ length: 12 }, (_, i) => `line-${i + 1}`).join("\n"), "utf-8");
+
+		const journalEvents = [
+			{ type: "batch.started", timestamp: "1" },
+			{ type: "lane.heartbeat", laneId: "lane-1", timestamp: "2" },
+			{ type: "task.started", laneId: "lane-1", taskId: "TP-1", timestamp: "3" },
+		];
+		const stallConfig = resolveStallConfig({});
+		const rows = buildLaneRows({
+			lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["TP-1"], lastHeartbeatAt: Date.now() }],
+			classifiedTasks: [
+				{
+					taskId: "TP-1",
+					laneNumber: 1,
+					status: "running",
+					classification: "running",
+				},
+			],
+			stallConfig,
+			currentWaveTaskIds: ["TP-1"],
+			journalEvents,
+			projectRoot,
+			batchId,
+		});
+		assert.equal(rows[0].recentEvents.length, 2);
+		assert.equal(rows[0].logTail.length, 10);
+		assert.equal(rows[0].logTail[0], "line-3");
+		assert.equal(rows[0].logTail.at(-1), "line-12");
+		assert.match(rows[0].workerLogRef ?? "", /worker-live-TP-1\.log/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("resolveLaneWorkerLog prefers live log over terminal output", async () => {
+	const projectRoot = await initGitRepo("spine-dash-log-pref-");
+	try {
+		const batchId = "batch-log-pref";
+		const laneDir = path.join(projectRoot, ".spine", "runtime", batchId, "lanes", "lane-1");
+		fs.mkdirSync(laneDir, { recursive: true });
+		fs.writeFileSync(path.join(laneDir, "worker-output-TP-1.log"), "terminal\n", "utf-8");
+		fs.writeFileSync(path.join(laneDir, "worker-live-TP-1.log"), "live\n", "utf-8");
+		const resolved = resolveLaneWorkerLog(projectRoot, batchId, 1, ["TP-1"], ["TP-1"]);
+		assert.ok(resolved);
+		assert.match(resolved.path, /worker-live-TP-1\.log$/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("dashboard HTML exposes lane detail and journal lane filter hooks", () => {
+	const indexHtml = fs.readFileSync(path.join(PUBLIC_DIR, "index.html"), "utf-8");
+	assert.match(indexHtml, /id="journal-lane-filter"/);
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /renderLaneDetailPanel/);
+	assert.match(dashboardJs, /lane-row-expanded/);
+	assert.match(dashboardJs, /journalLaneFilterState/);
+	const dashboardCss = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.css"), "utf-8");
+	assert.match(dashboardCss, /\.lane-detail-panel/);
+});
+
+test("dashboard server HTML includes journal lane filter", async () => {
+	const projectRoot = await initGitRepo("spine-dash-lane-filter-");
+	const server = createDashboardServer({ projectRoot });
+	try {
+		const { host, port } = await listenDashboardServer({ server, port: 0 });
+		const body = await new Promise((resolve, reject) => {
+			http
+				.get(`http://${host}:${port}/`, (res) => {
+					let data = "";
+					res.on("data", (chunk) => {
+						data += chunk;
+					});
+					res.on("end", () => resolve({ status: res.statusCode, data }));
+				})
+				.on("error", reject);
+		});
+		assert.equal(body.status, 200);
+		assert.match(body.data, /journal-lane-filter/);
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+		await destroyGitRepo(projectRoot);
+	}
 });

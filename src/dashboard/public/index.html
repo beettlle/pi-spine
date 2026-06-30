@@ -63,7 +63,15 @@
     </section>
 
     <section class="panel panel-wide" aria-labelledby="journal-heading">
-      <h3 id="journal-heading">Journal (last 20)</h3>
+      <div class="journal-header">
+        <h3 id="journal-heading">Journal (last 20)</h3>
+        <label class="journal-filter-label" for="journal-lane-filter">
+          Lane
+          <select id="journal-lane-filter" class="journal-lane-filter" aria-label="Filter journal by lane">
+            <option value="">All lanes</option>
+          </select>
+        </label>
+      </div>
       <ol id="journal-list" class="journal-list"></ol>
     </section>
   </main>

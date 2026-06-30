@@ -211,11 +211,28 @@ export function buildLaneThroughputSummaryModel(summary) {
 }
 
 /**
+ * @param {object} lane
+ */
+export function buildLaneDetailModel(lane) {
+	return {
+		recentEvents: (lane?.recentEvents ?? []).map((entry) => ({
+			eventId: entry.eventId,
+			type: entry.type,
+			timestamp: entry.timestamp,
+			summary: entry.summary,
+		})),
+		logTail: lane?.logTail ?? [],
+		workerLogRef: lane?.workerLogRef ?? null,
+	};
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildLaneTableModel(snapshot) {
 	return (snapshot?.lanes ?? []).map((lane) => ({
 		laneId: lane.laneId,
+		laneNumber: lane.laneNumber,
 		status: lane.status,
 		activeTaskIds: lane.activeTaskIds ?? [],
 		taskIds: lane.taskIds ?? [],
@@ -228,6 +245,7 @@ export function buildLaneTableModel(snapshot) {
 		worktree: lane.worktree,
 		laneAlert: lane.laneAlert ?? null,
 		throughput: buildLaneThroughputModel(lane),
+		detail: buildLaneDetailModel(lane),
 	}));
 }
 
@@ -322,20 +340,39 @@ export function shouldShowGateAffordance(snapshot) {
 
 /**
  * @param {object} snapshot
+ * @param {{ laneFilter?: string|null }} [options]
  */
-export function buildJournalModel(snapshot) {
-	return (snapshot?.journalTail ?? []).map((entry) => ({
+export function buildJournalModel(snapshot, { laneFilter = null } = {}) {
+	let entries = snapshot?.journalTail ?? [];
+	if (laneFilter) {
+		entries = entries.filter((entry) => entry.laneId === laneFilter);
+	}
+	return entries.map((entry) => ({
 		eventId: entry.eventId,
 		type: entry.type,
 		timestamp: entry.timestamp,
+		laneId: entry.laneId ?? null,
 		summary: entry.summary,
 	}));
 }
 
 /**
+ * Lane ids for the optional journal panel filter.
+ *
  * @param {object} snapshot
  */
-export function buildDashboardViewModel(snapshot) {
+export function buildJournalLaneFilterOptions(snapshot) {
+	return (snapshot?.lanes ?? []).map((lane) => ({
+		laneId: lane.laneId,
+		label: lane.laneId ?? `lane-${lane.laneNumber}`,
+	}));
+}
+
+/**
+ * @param {object} snapshot
+ * @param {{ journalLaneFilter?: string|null }} [options]
+ */
+export function buildDashboardViewModel(snapshot, { journalLaneFilter = null } = {}) {
 	return {
 		generatedAt: snapshot?.generatedAt ?? null,
 		idle: isIdleSnapshot(snapshot),
@@ -347,7 +384,8 @@ export function buildDashboardViewModel(snapshot) {
 		gate: buildGateModel(snapshot?.gate),
 		gateAffordance: buildGateAffordanceModel(snapshot),
 		showGateAffordance: shouldShowGateAffordance(snapshot),
-		journal: buildJournalModel(snapshot),
+		journal: buildJournalModel(snapshot, { laneFilter: journalLaneFilter }),
+		journalLaneFilterOptions: buildJournalLaneFilterOptions(snapshot),
 	};
 }
 
