@@ -743,6 +743,10 @@ spine batch abort                   # graceful — worker may finish step
 spine batch abort --hard            # SIGKILL + worktree cleanup
 ```
 
+When a **live attached engine** (foreground `spine batch start --attached` / `resume --attached`) is running, `spine batch pause` writes `batch.paused` and waits briefly for batch-state `phase: paused` to persist. If the engine does not confirm within the grace window, the CLI **fails loud** with `pause_not_confirmed`, journals `batch.pause_failed`, and leaves phase as the engine reported (usually `running`). Do not assume pause succeeded from journal alone — check `grep phase .spine/batch-state.json` or `spine status --diagnose`.
+
+**Recovery when pause fails:** stop the attached engine (Ctrl+C or kill the engine PID), confirm `phase: paused` or run `spine batch pause` again, then `spine batch retry <taskId>` when you need to reset a failed task. `spine batch retry` is allowed when phase is **`paused`** or **`failed`**, not while phase is **`running`**.
+
 ### Orphan running (zombie batch)
 
 When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume).

@@ -9,7 +9,8 @@ import {
 } from "../src/batch/detached-start.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
-import { pauseBatch, resumeBatch } from "../src/batch/resume.mjs";
+import { pauseBatch } from "../src/batch/pause.mjs";
+import { resumeBatch } from "../src/batch/resume.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 import {
@@ -171,7 +172,7 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "pause") {
-		const result = pauseBatch({ projectRoot });
+		const result = await pauseBatch({ projectRoot });
 		if (parsed.json) {
 			return {
 				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
