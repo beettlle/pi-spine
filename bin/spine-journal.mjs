@@ -179,18 +179,13 @@ function runJournalExport(projectRoot, args) {
  * @param {string} options.projectRoot
  * @param {string[]} options.args
  */
-export async function runSpineJournal(options) {
+export function runSpineJournal(options) {
 	const { projectRoot, args } = options;
 	const subcommand = args[0];
 	const subArgs = args.slice(1);
 
 	if (subcommand === "replay") {
 		return runJournalReplay(projectRoot, subArgs);
-	}
-
-	if (subcommand === "follow") {
-		const { runJournalFollow } = await import("../src/cli/journal-follow.mjs");
-		return runJournalFollow({ projectRoot, args: subArgs });
 	}
 
 	if (subcommand === "export") {

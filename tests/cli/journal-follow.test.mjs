@@ -1,11 +1,12 @@
+import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 
-import { runSpineJournal } from "../../bin/spine-journal.mjs";
 import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import {
 	formatJournalFollowLine,
@@ -180,15 +181,22 @@ test("runJournalFollow defaults batch from batch-state", async () => {
 	}
 });
 
-test("runSpineJournal follow exits non-zero when journal missing", async () => {
+test("spine journal follow exits non-zero when journal missing", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-follow-cli-"));
+	const spineBin = path.join(
+		path.dirname(fileURLToPath(import.meta.url)),
+		"..",
+		"..",
+		"bin",
+		"spine.mjs",
+	);
 	try {
-		const result = await runSpineJournal({
-			projectRoot: root,
-			args: ["follow", "--batch", "20260601T220000"],
+		const result = spawnSync(process.execPath, [spineBin, "journal", "follow", "--batch", "20260601T220000"], {
+			cwd: root,
+			encoding: "utf-8",
 		});
-		assert.equal(result.exitCode, 1);
-		assert.match(result.output, /Journal not found/);
+		assert.notEqual(result.status, 0);
+		assert.match(result.stderr + result.stdout, /Journal not found/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
