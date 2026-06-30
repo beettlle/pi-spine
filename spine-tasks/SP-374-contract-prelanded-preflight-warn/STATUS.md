@@ -1,7 +1,7 @@
 # SP-374: Preflight warn stale fileScopeMustChange — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
@@ -18,27 +18,27 @@
 ---
 
 ### Step 1: Validate and preflight warnings
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Add warning (not hard fail) for stale fileScopeMustChange vs main
-- [ ] Suggest PROMPT amendment workflow in message
+- [x] Add warning (not hard fail) for stale fileScopeMustChange vs main
+- [x] Suggest PROMPT amendment workflow in message
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document warning in operator runbook § Contract
-- [ ] Close issue #56
-- [ ] Create `.DONE`
+- [x] Document warning in operator runbook § Contract
+- [x] Close issue #56
+- [x] Create `.DONE`
 
 ---
 
