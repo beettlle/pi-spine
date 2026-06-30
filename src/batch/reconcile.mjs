@@ -17,6 +17,7 @@ import {
 	inferLaunchFailureKind,
 	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
+import { summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
 import {
 	findStubMarkedSucceededTask,
@@ -906,6 +907,15 @@ export function reconcileBatch(ctx) {
 		lastError: batch.raw?.lastError ?? null,
 		journalEvents,
 	});
+	const mergeFailureSummary = summarizeMergeFailures(
+		batch.mergeResults,
+		batch.raw?.lastError ?? null,
+	);
+	signals.mergeFailed = mergeFailureSummary.mergeFailed;
+	signals.failedMerges = mergeFailureSummary.failedMerges;
+	signals.failedWaveIndex = mergeFailureSummary.failedWaveIndex;
+	signals.failedLane = mergeFailureSummary.failedLane;
+	signals.lastError = mergeFailureSummary.lastError;
 	const gitignoredPaths = extractGitignoredPathsFromJournal(journalEvents, failedTaskId);
 	const taskBranch =
 		failedTaskId != null
@@ -929,6 +939,12 @@ export function reconcileBatch(ctx) {
 		stalePathSpine,
 		planReviewNestedSpawnBlocked,
 		mergeGitignoredFailure,
+		mergeFailed: mergeFailureSummary.mergeFailed,
+		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
+		failedLane: mergeFailureSummary.failedLane,
+		lastError: mergeFailureSummary.lastError,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
 		taskBranch,
 		gitignoredPaths,
 		...(doneMissingContext ?? {}),
@@ -947,6 +963,14 @@ export function reconcileBatch(ctx) {
 		phase: batch.phase,
 		macroPhase,
 		macroPhaseLabel: resolvedMacroPhaseLabel,
+		failedTasks: signals.failedTasks,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
+		mergeFailed: mergeFailureSummary.mergeFailed,
+		failedMerges: mergeFailureSummary.failedMerges,
+		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
+		failedLane: mergeFailureSummary.failedLane,
+		lastError: mergeFailureSummary.lastError,
 		signals: ctx.verbose ? signals : undefined,
 	};
 }

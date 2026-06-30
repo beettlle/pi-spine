@@ -39,6 +39,20 @@ export function runSpineStatus(options) {
 	lines.push("", `  ${result.headline}`, "");
 	lines.push(`  → ${result.suggestedCommand}`);
 
+	if (diagnose && result.mergeFailed) {
+		lines.push("");
+		lines.push(`  Merge failed: ${result.failedMerges} wave(s)`);
+		if (result.failedWaveIndex != null) {
+			lines.push(`  Failed wave: ${Number(result.failedWaveIndex) + 1} (index ${result.failedWaveIndex})`);
+		}
+		if (result.failedLane != null) {
+			lines.push(`  Failed lane: ${result.failedLane}`);
+		}
+		if (result.lastError) {
+			lines.push(`  Last error: ${result.lastError}`);
+		}
+	}
+
 	if (result.alternatives?.length) {
 		lines.push("", "  Alternatives:");
 		for (const alt of result.alternatives) {

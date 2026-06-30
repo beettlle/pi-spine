@@ -13,6 +13,11 @@ import {
 import { buildAlternatives } from "./diagnosis-alternatives.mjs";
 export { buildAlternatives } from "./diagnosis-alternatives.mjs";
 import {
+	buildMergeFailureHeadline,
+	summarizeMergeFailures,
+} from "./diagnosis-merge-failure.mjs";
+export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
+import {
 	buildStubFailureHeadline,
 	buildStubFailureSuggestedCommand,
 	STUB_EXIT_REASONS,
@@ -204,12 +209,16 @@ export function inferLaunchFailureKind(ctx = {}) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
  * @param {boolean} [ctx.mergeGitignoredFailure]
+ * @param {boolean} [ctx.mergeFailed]
  * @param {string|null} [ctx.taskBranch]
  * @param {string[]|null} [ctx.gitignoredPaths]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	if (ctx.mergeGitignoredFailure) {
 		return buildGitignoredMergeRepairCommand(ctx.taskBranch, ctx.gitignoredPaths);
+	}
+	if (ctx.mergeFailed && (diagnosis === "failed" || diagnosis === "needs_retry")) {
+		return "spine batch resume --force";
 	}
 
 	switch (diagnosis) {
@@ -313,12 +322,22 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.launchFailureKind]
  * @param {boolean} [ctx.mergeGitignoredFailure]
+ * @param {boolean} [ctx.mergeFailed]
+ * @param {number|null} [ctx.failedWaveIndex]
+ * @param {number|null} [ctx.failedLane]
+ * @param {string|null} [ctx.lastError]
+ * @param {number} [ctx.succeededTasks]
+ * @param {number} [ctx.totalTasks]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
 
 	if (ctx.mergeGitignoredFailure) {
 		return `${batchLabel} merge blocked by gitignored paths on a lane branch — drop cached ignored files, then resume`;
+	}
+
+	if (ctx.mergeFailed && (diagnosis === "failed" || diagnosis === "needs_retry")) {
+		return buildMergeFailureHeadline(batchLabel, ctx);
 	}
 
 	switch (diagnosis) {
