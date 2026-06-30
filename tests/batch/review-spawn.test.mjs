@@ -77,6 +77,116 @@ test("buildReviewerPiArgs omits --model when reviewer model is inherit", async (
 	}
 });
 
+test("buildReviewerPiArgs uses per-type model override for matching reviewType", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-spawn-per-type-"));
+	try {
+		const taskFolder = path.join(root, "spine-tasks", "SP-370-per-type");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const config = {
+			agents: {
+				reviewer: {
+					model: "google/gemini-3.1-pro-preview",
+					thinking: "medium",
+					plan: { model: "google/gemini-flash-latest", thinking: "low" },
+					code: { model: "google/gemini-3.1-pro-preview", thinking: "high" },
+				},
+			},
+		};
+
+		const planArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt: path.join(taskFolder, "review-request.md"),
+			systemPrompt: "",
+			config,
+			reviewType: "plan",
+		});
+		const planModelIdx = modelIndex(planArgs);
+		assert.ok(planModelIdx >= 0);
+		assert.equal(planArgs[planModelIdx + 1], "google/gemini-flash-latest");
+		assert.equal(planArgs[thinkingIndex(planArgs) + 1], "low");
+
+		const codeArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt: path.join(taskFolder, "review-request.md"),
+			systemPrompt: "",
+			config,
+			reviewType: "code",
+		});
+		const codeModelIdx = modelIndex(codeArgs);
+		assert.ok(codeModelIdx >= 0);
+		assert.equal(codeArgs[codeModelIdx + 1], "google/gemini-3.1-pro-preview");
+		assert.equal(codeArgs[thinkingIndex(codeArgs) + 1], "high");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs falls back to top-level reviewer pin when per-type block missing", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-spawn-fallback-"));
+	try {
+		const taskFolder = path.join(root, "spine-tasks", "SP-370-fallback");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const config = {
+			agents: {
+				reviewer: {
+					model: "google/gemini-3.1-pro-preview",
+					thinking: "medium",
+					plan: { model: "google/gemini-flash-latest", thinking: "low" },
+				},
+			},
+		};
+
+		const finalArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt: path.join(taskFolder, "review-request.md"),
+			systemPrompt: "",
+			config,
+			reviewType: "final",
+		});
+		const finalModelIdx = modelIndex(finalArgs);
+		assert.ok(finalModelIdx >= 0);
+		assert.equal(finalArgs[finalModelIdx + 1], "google/gemini-3.1-pro-preview");
+		assert.equal(finalArgs[thinkingIndex(finalArgs) + 1], "medium");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs cascades per-type inherit to top-level reviewer pin", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-spawn-inherit-cascade-"));
+	try {
+		const taskFolder = path.join(root, "spine-tasks", "SP-370-inherit-cascade");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const config = {
+			agents: {
+				reviewer: {
+					model: "google/gemini-3.1-pro-preview",
+					thinking: "medium",
+					plan: { model: "inherit", thinking: "inherit" },
+				},
+			},
+		};
+
+		const planArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt: path.join(taskFolder, "review-request.md"),
+			systemPrompt: "",
+			config,
+			reviewType: "plan",
+		});
+		const planModelIdx = modelIndex(planArgs);
+		assert.ok(planModelIdx >= 0);
+		assert.equal(planArgs[planModelIdx + 1], "google/gemini-3.1-pro-preview");
+		assert.equal(planArgs[thinkingIndex(planArgs) + 1], "medium");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("spawnReviewerPi fails closed when pi unavailable via SPINE_REVIEW_TEST_NO_PI", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-spawn-no-pi-"));
 	const taskFolder = path.join(root, "spine-tasks", "SP-259");
