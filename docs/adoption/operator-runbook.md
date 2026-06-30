@@ -557,6 +557,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
+| `docs/PRD.md` (release-recovery / merge-origin-main) | Engine auto-merges disjoint additive PRD edits (e.g. lane merged `origin/main` while orch advanced earlier waves); overlapping hunks fail with `lastError` recovery commands |
 | Other files | Resolve in the lane worktree under `.worktrees/spine-<batchId>/lane-N`, commit on lane branch, then resume batch |
 
 Lane worktrees: [Worktree layout](#worktree-layout) (§9).
@@ -1087,6 +1088,7 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
+| `docs/PRD.md` merge conflict (lane→orch) | Engine auto-merges disjoint additive PRD hunks (common after merge-origin-main tasks); overlapping edits fail with recovery commands in `lastError` — resolve in lane worktree, commit, `spine batch resume` |
 | Port 8109 in use | `spine dashboard --port 8110` or stop other dashboard |
 
 ### Atomic orchestration writes (SP-318+)

@@ -1,8 +1,8 @@
 # SP-354: Merge PRD auto-resolution — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-28
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-30
 **Review Level:** 2
 **Size:** S
 **Split from:** SP-346
@@ -14,5 +14,29 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-28 | Task staged | Split from SP-346 for issue #37 |
+| 2026-06-30 | Step 0 preflight | Read issue #37 and SP-346 PROMPT |
+| 2026-06-30 | Step 1 implementation | PRD additive merge + runbook updated |
 
 ---
+
+## Steps
+
+### Step 0: Preflight
+- [x] Read issue #37 and superseded SP-346 PROMPT
+
+### Step 1: Implementation
+- [x] Implement required behavior
+
+### Step 2: Testing & Verification
+- [ ] Contract test passes
+- [ ] FULL suite + coverage gate
+
+### Step 3: Delivery
+- [ ] Create `.DONE`
+
+---
+
+## Completion Criteria
+
+- [ ] Required behavior implemented
+- [ ] Tests pass with coverage gate
