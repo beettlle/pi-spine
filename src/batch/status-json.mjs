@@ -2,7 +2,11 @@
  * Structured JSON output for `spine status --json` (issue #30, SP-339).
  */
 
+import { TASK_DONE_FLAG_FIELD_NAMES } from "./diagnosis.mjs";
+
 /** @typedef {import("./reconcile.mjs").ReconciliationResult & Record<string, unknown>} StatusJsonInput */
+
+export { TASK_DONE_FLAG_FIELD_NAMES };
 
 export const STATUS_JSON_PROGRESS_FIELD_NAMES = [
 	"succeededTasks",
@@ -43,6 +47,11 @@ export function computeStatusProgress(ctx) {
 
 /**
  * Build the JSON-serializable payload for `spine status --json`.
+ *
+ * Task entries under `signals.tasks` (when `--diagnose`) expose:
+ * - `doneFileFound` — journal/batch-state worker completion
+ * - `doneOnMain` — `.DONE` on integration checkout tasks root
+ * - `doneInLane` — `.DONE` in lane worktree (pre-merge)
  *
  * @param {StatusJsonInput} reconcileResult
  */
