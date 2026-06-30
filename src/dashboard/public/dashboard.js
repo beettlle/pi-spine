@@ -16,6 +16,12 @@ function formatHeartbeat(age) {
 	return `${age}s`;
 }
 
+/** @param {{ heartbeatDisplay?: string|null, heartbeatAgeSeconds?: number|null }} lane */
+function displayHeartbeat(lane) {
+	if (lane.heartbeatDisplay != null) return lane.heartbeatDisplay;
+	return formatHeartbeat(lane.heartbeatAgeSeconds);
+}
+
 /** @param {"connecting"|"live"|"error"} state @param {string} text */
 function setConnection(state, text) {
 	const el = $("connection-status");
@@ -184,7 +190,7 @@ function renderLanes(lanes, laneTableSummary) {
 			lane.activityPhaseLabel ?? "—",
 			(lane.activeTaskIds ?? []).join(", ") || "—",
 			(lane.taskIds ?? []).join(", ") || "—",
-			formatHeartbeat(lane.heartbeatDisplay ?? lane.heartbeatAgeSeconds),
+			displayHeartbeat(lane),
 			throughput.elapsedDisplay ?? "—",
 			throughput.doneDisplay ?? "—",
 			throughput.rateDisplay ?? "—",

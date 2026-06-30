@@ -317,7 +317,27 @@ test("lane-throughput-multi-lane fixture drives throughput column values", () =>
 	assert.equal(vm.laneTableSummary.rateDisplay, "1.3 tasks/hr");
 });
 
-test("lane-throughput-multi-lane fixture documents SP-327 throughput field contract", () => {
+test("buildLaneTableModel exposes heartbeatDisplay for launching lanes", () => {
+	const rows = buildLaneTableModel({
+		lanes: [
+			{
+				laneId: "lane-1",
+				status: "running",
+				workerPhase: "launching",
+				heartbeatAgeSeconds: 12,
+			},
+		],
+	});
+	assert.equal(rows[0].heartbeatDisplay, "launching");
+});
+
+test("dashboard.js uses heartbeatDisplay without double-formatting", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /function displayHeartbeat\(lane\)/);
+	assert.doesNotMatch(dashboardJs, /formatHeartbeat\(lane\.heartbeatDisplay/);
+	assert.match(dashboardJs, /displayHeartbeat\(lane\)/);
+});
+
 	const fixture = loadBatchStateFixture(THROUGHPUT_MULTI_LANE_FIXTURE);
 	const throughputFields = ["elapsedDisplay", "doneDisplay", "rateDisplay"];
 	const columnLabels = ["Elapsed", "Done", "Rate"];
