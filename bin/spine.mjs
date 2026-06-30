@@ -60,6 +60,15 @@ async function cmdPreflight(args) {
 }
 
 async function cmdJournal(args) {
+	const subcommand = args[0];
+	if (subcommand === "follow") {
+		const { runJournalFollow } = await import("../src/cli/journal-follow.mjs");
+		const result = await runJournalFollow({ projectRoot: process.cwd(), args: args.slice(1) });
+		process.stdout.write(result.output);
+		if (result.exitCode !== 0) process.exit(result.exitCode);
+		return;
+	}
+
 	const { runSpineJournal } = await import("./spine-journal.mjs");
 	const result = runSpineJournal({ projectRoot: process.cwd(), args });
 	process.stdout.write(result.output);

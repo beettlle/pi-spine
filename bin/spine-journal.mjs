@@ -81,6 +81,7 @@ export function formatJournalReplayTable(events) {
 const JOURNAL_USAGE =
 	"Usage:\n" +
 	"  spine journal replay --batch {id} [--json]\n" +
+	"  spine journal follow [--batch {id}] [--lane lane-N] [--json]\n" +
 	"  spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 
 /**
