@@ -1,7 +1,7 @@
 # SP-357: Attached merge failure exit — Status
 
-**Current Step:** Step 1 — Implementation
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Size:** S
@@ -16,7 +16,7 @@
 | 2026-06-28 | Task staged | Split from SP-347 for issue #38 |
 | 2026-06-30 | Step 0 preflight | Read issue #38 and SP-347 PROMPT |
 | 2026-06-30 | Step 1 implementation | merge_blocked attached CLI headline + exit |
-| 2026-06-30 | Step 2 verification | Contract + full suite (1254) + coverage gate pass |
+| 2026-06-30 | Step 3 delivery | Issue #38 closed, .DONE created |
 
 ---
 
@@ -31,10 +31,10 @@
 - [x] FULL suite + coverage gate
 
 ## Step 3: Delivery
-- [ ] Close issue #38
-- [ ] Create `.DONE`
+- [x] Close issue #38
+- [x] Create `.DONE`
 
 ## Completion Criteria
 - [x] Required behavior implemented
 - [x] Tests pass with coverage gate
-- [ ] Issue #38 closed
+- [x] Issue #38 closed
