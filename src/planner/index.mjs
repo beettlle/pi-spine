@@ -15,8 +15,8 @@ import {
 
 import { buildGraph, topoWaves } from './graph.mjs';
 import { findCyclePath } from './cycles.mjs';
-import { assignLanesToWaves } from './lanes.mjs';
 import { parseScope } from './scope.mjs';
+import { formatFileScopeOverlapWarnings, planWaves } from './waves.mjs';
 
 /**
  * @param {{ scope?: any, config: { lanes?: { maxParallel?: number, queueExcess?: boolean } }, tasksRoot: string }} args
@@ -87,12 +87,14 @@ export function buildPlan({ scope, config, tasksRoot }) {
 	const maxParallel = config.lanes?.maxParallel ?? 1;
 	const queueExcess = config.lanes?.queueExcess ?? true;
 
-	const wavesWithLanes = assignLanesToWaves({
+	const { waves: wavesWithLanes, fileScopeOverlaps } = planWaves({
 		waves,
 		tasksById,
 		maxParallel,
 		queueExcess,
 	});
+
+	const overlapWarnings = formatFileScopeOverlapWarnings(fileScopeOverlaps);
 
 	return {
 		generatedAt: new Date().toISOString(),
@@ -120,6 +122,8 @@ export function buildPlan({ scope, config, tasksRoot }) {
 			...(scopeResult.mode === 'pending'
 				? { tasksExcluded: scopeResult.excludedCount ?? 0 }
 				: {}),
+			...(fileScopeOverlaps.length > 0 ? { fileScopeOverlaps } : {}),
 		},
+		...(overlapWarnings.length > 0 ? { overlapWarnings } : {}),
 	};
 }
