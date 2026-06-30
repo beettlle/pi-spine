@@ -20,7 +20,7 @@ import {
 import { discoverTasks } from "../tasks/packet/discover.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
 import { summarizePendingScope } from "../planner/pending.mjs";
-import { validatePrompt } from "../tasks/packet/validate-prompt.mjs";
+import { validatePrompt, collectStaleFileScopeMustChangeWarnings } from "../tasks/packet/validate-prompt.mjs";
 import { isRunMetricsAppendOnlyDrift } from "../batch/metrics.mjs";
 import { METRICS_DEFAULTS } from "./defaults.mjs";
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
@@ -905,6 +905,94 @@ function formatOrchMergeConflictPlanWarning(risk) {
 }
 
 /**
+ * List pending tasks whose fileScopeMustChange paths already changed on main since PROMPT intro.
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function listPrelandedFileScopeStaleTasks(ctx) {
+	const configResult = ctx.configResult ?? loadSpineConfig(ctx.projectRoot);
+	const tasksRootPath = resolveTasksRoot(ctx.projectRoot, configResult);
+	if (!tasksRootPath) {
+		return [];
+	}
+
+	const discovered = discoverTasks(tasksRootPath);
+	const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
+	/** @type {Array<{ taskId: string, warnings: string[] }>} */
+	const staleTasks = [];
+
+	for (const discoveredTask of discovered) {
+		if (!pendingIds.includes(discoveredTask.taskId)) continue;
+		const promptPath = path.join(discoveredTask.folderPath, "PROMPT.md");
+		const promptMarkdown = fs.readFileSync(promptPath, "utf-8");
+		const parsedContract = parseContract(promptMarkdown);
+		const promptRelPath = path.relative(ctx.projectRoot, promptPath);
+		const warnings = collectStaleFileScopeMustChangeWarnings(
+			ctx.projectRoot,
+			parsedContract,
+			promptRelPath,
+		);
+		if (warnings.length > 0) {
+			staleTasks.push({ taskId: discoveredTask.taskId, warnings });
+		}
+	}
+
+	return staleTasks;
+}
+
+/**
+ * Warn when pending tasks have fileScopeMustChange paths already changed on main (issue #56).
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
+ */
+export function checkPrelandedFileScopeWarn(ctx) {
+	try {
+		const staleTasks = listPrelandedFileScopeStaleTasks(ctx);
+		if (staleTasks.length === 0) {
+			return makeCheck(
+				"prelanded-file-scope",
+				true,
+				"no pending tasks with stale fileScopeMustChange vs main",
+			);
+		}
+
+		const preview = staleTasks.map((entry) => entry.taskId).slice(0, 5).join(", ");
+		const suffix = staleTasks.length > 5 ? ` (+${staleTasks.length - 5} more)` : "";
+		return makeCheck(
+			"prelanded-file-scope",
+			true,
+			`${staleTasks.length} pending task(s) with fileScopeMustChange already changed on main (${preview}${suffix})`,
+			{
+				warning: true,
+				details: { staleTasks },
+				suggestedCommand:
+					"spine tasks validate pending --warnings-only; amend PROMPT ## Contract before batch start",
+			},
+		);
+	} catch (err) {
+		const message = err?.message ?? String(err);
+		return makeCheck(
+			"prelanded-file-scope",
+			true,
+			`prelanded file-scope check skipped: ${message}`,
+		);
+	}
+}
+
+function formatPrelandedFileScopePlanWarning(staleTasks) {
+	const preview = staleTasks.map((entry) => entry.taskId).slice(0, 5).join(", ");
+	return [
+		"⚠️ Pre-landed contract risk: pending task(s)",
+		`(${preview}) have fileScopeMustChange paths already changed on main.`,
+		"Amend PROMPT ## Contract before batch start or expect contract rework loops.",
+	].join(" ");
+}
+
+/**
  * @param {object} ctx
  */
 export function runPreflightPlanCheck(ctx) {
@@ -931,6 +1019,7 @@ export function runPreflightPlanCheck(ctx) {
 		const discovered = discoverTasks(tasksRootPath);
 		const { pendingIds, excludedCount } = summarizePendingScope(discovered, tasksRootPath);
 		const orchMergeRisk = predictOrchMergeConflictRisk(ctx);
+		const prelandedFileScopeTasks = listPrelandedFileScopeStaleTasks(ctx);
 		if (pendingIds.length === 0) {
 			const maxParallel = config.lanes?.maxParallel ?? 1;
 			const lines = [
@@ -941,28 +1030,46 @@ export function runPreflightPlanCheck(ctx) {
 			if (orchMergeRisk.risky) {
 				lines.push(formatOrchMergeConflictPlanWarning(orchMergeRisk));
 			}
+			if (prelandedFileScopeTasks.length > 0) {
+				lines.push(formatPrelandedFileScopePlanWarning(prelandedFileScopeTasks));
+			}
 			return {
 				status: "ok",
 				message: lines.join("\n"),
-				details: { waves: 0, pendingCount: 0, excludedCount, orchMergeConflictRisk: orchMergeRisk },
+				details: {
+					waves: 0,
+					pendingCount: 0,
+					excludedCount,
+					orchMergeConflictRisk: orchMergeRisk,
+					prelandedFileScopeTasks,
+				},
 			};
 		}
 
 		const plan = buildPlan({ scope: "pending", config, tasksRoot: tasksRootPath });
 		const waveCount = plan.waves?.length ?? 0;
 		const planText = formatPlanHuman(plan).trimEnd();
+		const planWarnings = [];
+		if (orchMergeRisk.risky) {
+			planWarnings.push(formatOrchMergeConflictPlanWarning(orchMergeRisk));
+		}
+		if (prelandedFileScopeTasks.length > 0) {
+			planWarnings.push(formatPrelandedFileScopePlanWarning(prelandedFileScopeTasks));
+		}
 		return {
 			status: "ok",
-			message: orchMergeRisk.risky
-				? `${planText}\n\n${formatOrchMergeConflictPlanWarning(orchMergeRisk)}`
-				: planText,
-			details: { waves: waveCount, orchMergeConflictRisk: orchMergeRisk },
+			message:
+				planWarnings.length > 0
+					? `${planText}\n\n${planWarnings.join("\n\n")}`
+					: planText,
+			details: { waves: waveCount, orchMergeConflictRisk: orchMergeRisk, prelandedFileScopeTasks },
 		};
 	} catch (err) {
 		const msg = err?.message ?? String(err);
 		if (msg === NO_PENDING_TASKS_ERROR) {
 			const maxParallel = config.lanes?.maxParallel ?? 1;
 			const orchMergeRisk = predictOrchMergeConflictRisk(ctx);
+			const prelandedFileScopeTasks = listPrelandedFileScopeStaleTasks(ctx);
 			const lines = [
 				"Spine plan — pending",
 				`0 task(s) · 0 wave(s) · maxParallel ${maxParallel}`,
@@ -971,10 +1078,18 @@ export function runPreflightPlanCheck(ctx) {
 			if (orchMergeRisk.risky) {
 				lines.push(formatOrchMergeConflictPlanWarning(orchMergeRisk));
 			}
+			if (prelandedFileScopeTasks.length > 0) {
+				lines.push(formatPrelandedFileScopePlanWarning(prelandedFileScopeTasks));
+			}
 			return {
 				status: "ok",
 				message: lines.join("\n"),
-				details: { waves: 0, pendingCount: 0, orchMergeConflictRisk: orchMergeRisk },
+				details: {
+					waves: 0,
+					pendingCount: 0,
+					orchMergeConflictRisk: orchMergeRisk,
+					prelandedFileScopeTasks,
+				},
 			};
 		}
 		return {
@@ -1027,6 +1142,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkTasksValidate(ctx));
 	checks.push(checkStubReleaseCritical(ctx));
 	checks.push(checkOrchMergeConflictWarn(ctx));
+	checks.push(checkPrelandedFileScopeWarn(ctx));
 
 	const plan = runPreflightPlanCheck(ctx);
 	checks.push(

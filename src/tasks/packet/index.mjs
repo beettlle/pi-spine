@@ -46,6 +46,7 @@ export { mergeDeps, mergeTaskDeps, loadDependenciesJson } from "./merge-deps.mjs
 export {
 	assertValidTaskPacket,
 	collectPromptValidationFailure,
+	collectStaleFileScopeMustChangeWarnings,
 	formatPromptValidationFailures,
 	validatePrompt,
 } from "./validate-prompt.mjs";

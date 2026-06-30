@@ -1,7 +1,7 @@
 # SP-374: Preflight warn stale fileScopeMustChange — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,14 +11,14 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #56 suggested validate/preflight fix
+- [x] Read issue #56 suggested validate/preflight fix
 
 ---
 
 ### Step 1: Validate and preflight warnings
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Add warning (not hard fail) for stale fileScopeMustChange vs main
 - [ ] Suggest PROMPT amendment workflow in message
@@ -53,6 +53,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Heuristic: warn when fileScopeMustChange paths changed on main since task PROMPT first landed | Implemented | validate-prompt.mjs |
 
 ---
 
@@ -61,6 +62,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0 | Read issue #56 — preflight/validate warn before batch |
 
 ---
 
@@ -72,4 +74,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Plan (Review Level 1):** Add `collectStaleFileScopeMustChangeWarnings` in `validate-prompt.mjs` — compare `git diff <first PROMPT commit>..main` for each `fileScopeMustChange` pattern. Wire into `spine tasks validate --warnings-only` and new preflight check `prelanded-file-scope`. Surface amendment guidance in warning text.
