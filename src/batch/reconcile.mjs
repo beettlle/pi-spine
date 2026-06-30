@@ -13,6 +13,7 @@ import { loadGateRecord } from "./gate.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
 import {
 	buildDiagnosisOutput,
+	classifyTaskDoneSemantics,
 	inferLaunchFailureFromWorkerOutputTail,
 	inferLaunchFailureKind,
 	inferMergeGitignoredFailure,
@@ -61,7 +62,8 @@ const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
  * @property {string|null} taskFolder
  * @property {boolean} doneFileFound
  * @property {string} classification
- * @property {boolean} [doneOnDisk]
+ * @property {boolean} doneOnMain
+ * @property {boolean} doneInLane
  */
 
 /**
@@ -113,49 +115,19 @@ export function resolveTasksRoot(projectRoot, configResult) {
 }
 
 /**
- * @param {string} tasksRoot
- * @param {string} taskId
- * @param {string|null} taskFolder
- */
-function resolveTaskFolder(tasksRoot, taskId, taskFolder) {
-	if (taskFolder) {
-		const direct = path.join(tasksRoot, taskFolder);
-		if (fs.existsSync(direct)) return direct;
-	}
-
-	if (!tasksRoot || !fs.existsSync(tasksRoot)) return null;
-
-	const match = fs
-		.readdirSync(tasksRoot, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory() && entry.name.startsWith(`${taskId}-`))
-		.map((entry) => path.join(tasksRoot, entry.name))[0];
-
-	return match ?? null;
-}
-
-/**
  * @param {NormalizedBatchState} batch
  * @param {string|null} tasksRoot
+ * @param {string} [projectRoot]
  */
-export function classifyTasks(batch, tasksRoot) {
-	return batch.tasks.map((task) => {
-		const folderPath =
-			tasksRoot && task.taskId
-				? resolveTaskFolder(tasksRoot, task.taskId, task.taskFolder)
-				: null;
-		const doneOnDisk = folderPath ? fs.existsSync(path.join(folderPath, ".DONE")) : false;
-
-		let classification = task.classification;
-		if (doneOnDisk || task.doneFileFound) {
-			classification = "terminal-success";
-		}
-
-		return {
-			...task,
-			doneOnDisk,
-			classification,
-		};
-	});
+export function classifyTasks(batch, tasksRoot, projectRoot = "") {
+	return batch.tasks.map((task) =>
+		classifyTaskDoneSemantics(task, {
+			tasksRoot,
+			projectRoot,
+			batchId: batch.batchId,
+			lanes: batch.lanes,
+		}),
+	);
 }
 
 /**
@@ -657,6 +629,19 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("needs_integrate", null, signals);
 	}
 
+	if (phase === "merge_blocked") {
+		return withFailureContext("failed", null, signals);
+	}
+
+	if (
+		phase === "merging" &&
+		endedAt != null &&
+		Array.isArray(signals.raw?.mergeResults) &&
+		signals.raw.mergeResults.some((entry) => String(entry?.status ?? "").toLowerCase() === "failed")
+	) {
+		return withFailureContext("failed", null, signals);
+	}
+
 	if (phase === "merging" || (allTasksTerminalSuccess && mergeResultsEmpty && git.orchBranchExists && !git.orchMergedToBase)) {
 		if (allTasksTerminalSuccess && git.orchBranchExists && !git.orchMergedToBase && !mergeResultsEmpty) {
 			return withFailureContext("needs_integrate", null, signals);
@@ -755,7 +740,7 @@ export function reconcileBatch(ctx) {
 	}
 
 	const tasksRoot = resolveTasksRoot(projectRoot);
-	const classifiedTasks = classifyTasks(batch, tasksRoot);
+	const classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
 	const git = inspectGitState({
 		projectRoot,
 		batchId: batch.batchId,

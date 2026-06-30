@@ -4,11 +4,13 @@ import path from "node:path";
 import test from "node:test";
 
 import { runSpineStatus } from "../../bin/spine-status.mjs";
+import { classifyTaskDoneSemantics } from "../../src/batch/diagnosis.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	computeStatusProgress,
 	formatStatusJson,
 	STATUS_JSON_PROGRESS_FIELD_NAMES,
+	TASK_DONE_FLAG_FIELD_NAMES,
 } from "../../src/batch/status-json.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -127,6 +129,114 @@ test("reconcileBatch exposes progress fields for spine watch consumers", async (
 		assert.equal(result.pendingTasks, 1);
 		assert.equal(result.currentWaveIndex, 1);
 		assert.equal(result.waveCount, 2);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("classifyTaskDoneSemantics distinguishes lane vs main .DONE (issue #35)", async () => {
+	const projectRoot = await initGitRepo("spine-done-semantics-");
+	try {
+		const batchId = "20260628T051158";
+		const taskFolder = "SP-136-release-preflight-hold";
+		const tasksRoot = path.join(projectRoot, "spine-tasks");
+		const laneWorktree = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
+		const laneTaskFolder = path.join(laneWorktree, "spine-tasks", taskFolder);
+		fs.mkdirSync(laneTaskFolder, { recursive: true });
+		fs.writeFileSync(path.join(laneTaskFolder, ".DONE"), "", "utf-8");
+
+		const task = {
+			taskId: "SP-136",
+			status: "succeeded",
+			taskFolder,
+			doneFileFound: true,
+			classification: "succeeded",
+			laneNumber: 1,
+		};
+
+		const semantics = classifyTaskDoneSemantics(task, {
+			tasksRoot,
+			projectRoot,
+			batchId,
+			lanes: [{ laneNumber: 1, worktreePath: laneWorktree }],
+		});
+
+		assert.equal(semantics.doneFileFound, true);
+		assert.equal(semantics.doneOnMain, false);
+		assert.equal(semantics.doneInLane, true);
+		assert.equal(semantics.classification, "terminal-success");
+		assert.equal(semantics.doneOnDisk, undefined);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("spine status --diagnose --json exposes explicit done flags mid-batch", async () => {
+	const projectRoot = await initGitRepo("spine-status-json-done-flags-");
+	try {
+		const batchId = "20260628T051158";
+		const taskFolder = "SP-136-release-preflight-hold";
+		const fixture = {
+			batchId,
+			phase: "running",
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			startedAt: Date.now(),
+			endedAt: null,
+			failedTasks: 0,
+			succeededTasks: 1,
+			totalTasks: 2,
+			mergeResults: [],
+			currentWaveIndex: 0,
+			totalWaves: 1,
+			wavePlan: [["SP-136"], ["SP-137"]],
+			tasks: [
+				{
+					taskId: "SP-136",
+					status: "succeeded",
+					taskFolder,
+					doneFileFound: true,
+					laneNumber: 1,
+				},
+				{
+					taskId: "SP-137",
+					status: "running",
+					taskFolder: "SP-137-follow-up",
+					doneFileFound: false,
+					laneNumber: 1,
+				},
+			],
+			segments: [],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: path.join(".worktrees", `spine-${batchId}`, "lane-1"),
+					branch: `task/spine-lane-1-${batchId}`,
+					taskIds: ["SP-136", "SP-137"],
+				},
+			],
+		};
+		writeSpineBatchState(projectRoot, fixture);
+
+		const laneWorktree = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
+		const laneTaskFolder = path.join(laneWorktree, "spine-tasks", taskFolder);
+		fs.mkdirSync(laneTaskFolder, { recursive: true });
+		fs.writeFileSync(path.join(laneTaskFolder, ".DONE"), "", "utf-8");
+
+		const { output } = runSpineStatus({ projectRoot, json: true, diagnose: true });
+		const parsed = JSON.parse(output);
+		const sp136 = parsed.signals?.tasks?.find((entry) => entry.taskId === "SP-136");
+		assert.ok(sp136, "expected SP-136 in diagnose task signals");
+
+		for (const field of TASK_DONE_FLAG_FIELD_NAMES) {
+			assert.ok(field in sp136, `expected ${field} on task entry`);
+		}
+		assert.equal(sp136.doneFileFound, true);
+		assert.equal(sp136.doneOnMain, false);
+		assert.equal(sp136.doneInLane, true);
+		assert.equal(sp136.classification, "terminal-success");
+		assert.equal(sp136.doneOnDisk, undefined);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
