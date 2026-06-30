@@ -1,7 +1,7 @@
 # SP-356: Merge blocked phase FSM — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-30
 **Review Level:** 2
 **Size:** S
@@ -16,6 +16,8 @@
 | 2026-06-28 | Task staged | Split from SP-347 for issue #38 |
 | 2026-06-30 | Step 0 preflight | Read issue #38 and SP-347 PROMPT |
 | 2026-06-30 | Step 1 implementation | recordMergeBlocked + wiring |
+| 2026-06-30 | Step 2 verification | Contract + full suite + coverage 88.19% |
+| 2026-06-30 | Step 3 delivery | .DONE created |
 
 ---
 
@@ -26,12 +28,12 @@
 - [x] Implement required behavior
 
 ## Step 2: Testing & Verification
-- [ ] Contract test passes
-- [ ] FULL suite + coverage gate
+- [x] Contract test passes
+- [x] FULL suite + coverage gate
 
 ## Step 3: Delivery
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Completion Criteria
-- [ ] Required behavior implemented
-- [ ] Tests pass with coverage gate
+- [x] Required behavior implemented
+- [x] Tests pass with coverage gate
