@@ -1,8 +1,8 @@
 # SP-336: Dashboard heartbeat display fix — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-06-28
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -27,17 +27,23 @@
 - [x] UI contract test + delivery — launching lane + source contract tests added
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Contract test passes
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Contract test passes — 18/18 ui-contract tests
+- [x] Run FULL test suite — 1142/1142 pass
+- [x] Run coverage gate — 87.27% line coverage (threshold 77%)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #27 (`gh issue close 27`)
-- [ ] Create `.DONE`
+- [x] Close issue #27 (`gh issue close 27`)
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] Issue #27 behavior fixed
+- [x] Tests pass with coverage gate
+- [x] Issue closed
 
 ---
 
@@ -60,6 +66,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-28 | Task staged | PROMPT.md and STATUS.md created for GitHub #27 |
+| 2026-06-30 | Implementation | displayHeartbeat() fix + regression tests |
+| 2026-06-30 | Verification | 1142 tests pass, 87.27% coverage |
+| 2026-06-30 | Delivery | Issue #27 closed, .DONE created |
 
 ---
 
