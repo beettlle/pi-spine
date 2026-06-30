@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-29 (Phase 46 — operator monitoring toolkit; GitHub #43–#52)
+**Last Updated:** 2026-06-30 (Phase 48 — GitHub #60 upstream issue filing)
 **Status:** Active
-**Next Task ID:** SP-369
+**Next Task ID:** SP-398
 
 ---
 
@@ -1006,6 +1006,82 @@ spine batch start SP-362 SP-363           # wave 1
 spine batch start SP-364 SP-365           # wave 2
 spine batch start SP-366 SP-367           # wave 3
 spine batch start SP-368                  # explore doc (parallel anytime)
+```
+
+#### Phase 47 — GitHub open issues (#53–#59)
+
+**Source:** Open issues on [beettlle/pi-spine](https://github.com/beettlle/pi-spine/issues) as of 2026-06-30. Epic **#43** already tracked by Phase 46 (SP-339–SP-368).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-369 | Reviewer per-type model resolution helpers | S | **Staged** | — | — |
+| SP-370 | Wire per-type reviewer model into spawn | S | **Staged** | SP-369 | — |
+| SP-371 | Reviewer model settings and doctor | S | **Staged** | SP-370 | — |
+| SP-372 | Reviewer model observability and docs | S | **Staged** | SP-371 | #53 |
+| SP-373 | Contract verify pre-landed scope satisfaction | S | **Staged** | — | — |
+| SP-374 | Preflight warn stale fileScopeMustChange | S | **Staged** | SP-373 | #56 |
+| SP-375 | Attached engine honors pause signal | S | **Staged** | — | — |
+| SP-376 | Pause fail-loud and retry guard | S | **Staged** | SP-375 | #57 |
+| SP-377 | Post-merge limbo regression fixture | S | **Staged** | SP-358 | — |
+| SP-378 | Attached merge finalize before engine exit | S | **Staged** | SP-377, SP-348 | #59 |
+| SP-379 | Lane queue snapshot helpers | S | **Staged** | — | — |
+| SP-380 | Dashboard Running and Queued columns | S | **Staged** | SP-379 | — |
+| SP-381 | Dashboard batch assignment task states | S | **Staged** | SP-379 | — |
+| SP-382 | Dashboard batch summary task counts | S | **Staged** | SP-379 | — |
+| SP-383 | Lane queue dashboard tests and docs | S | **Staged** | SP-380–382 | — |
+| SP-384 | Status JSON lane queue parity | S | **Staged** | SP-379, SP-383 | #58 |
+| SP-385 | Batch start `--wave` filter | S | **Staged** | — | — |
+| SP-386 | Format plan wave command hint | S | **Staged** | SP-385 | — |
+| SP-387 | Sequence runner core loop | S | **Staged** | SP-385 | — |
+| SP-388 | `spine run sequence` CLI | S | **Staged** | SP-387 | — |
+| SP-389 | Sequence state persistence and resume | S | **Staged** | SP-388 | — |
+| SP-390 | Sequence auto-approve gate safety | S | **Staged** | SP-387 | — |
+| SP-391 | Sequence journal events | S | **Staged** | SP-387 | — |
+| SP-392 | Sequence diagnose and dashboard surfaces | S | **Staged** | SP-389, SP-391 | #54 |
+| SP-393 | Sequence supervisor daemon explore | L | **Staged** | SP-392 | — |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | GitHub | Notes |
+|------|-------|--------|-------|
+| A (parallel) | SP-369, SP-373, SP-375, SP-379, SP-385 | #53, #56, #57, #58, #54 | Disjoint roots |
+| B (serial) | SP-370 → SP-374 → SP-376; SP-380 → SP-381 → SP-382; SP-386; SP-387 | | Dashboard/sequence file-scope chains |
+| C (parallel) | SP-371, SP-377, SP-383, SP-388, SP-390 | | |
+| D (parallel) | SP-372, SP-378, SP-384, SP-389, SP-391, SP-392 | #53, #59, #58, #54 | SP-391 after SP-390 |
+| Explore | SP-393 | #54 Tier 3 | After SP-392 |
+
+```bash
+spine tasks validate pending
+spine tasks analyze pending
+spine plan SP-369 SP-373 SP-375 SP-379 SP-385   # wave A
+spine batch start SP-369 SP-373 SP-375 SP-379 SP-385
+```
+
+#### Phase 48 — Upstream issue filing (#60)
+
+**Source:** [GitHub #60](https://github.com/beettlle/pi-spine/issues/60) — GitHub issue templates + `spine issue draft` CLI for labeled upstream bug/feature reports. Parallel to Phase 47; does not block #53–#59.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-394 | GitHub issue templates (`bug` / `enhancement` labels) | S | **Staged** | — | partial #60 |
+| SP-395 | Issue draft body assembly module | S | **Staged** | — | — |
+| SP-396 | `spine issue draft` CLI + optional `--create` | S | **Staged** | SP-395 | — |
+| SP-397 | Operator runbook + operator rule docs | S | **Staged** | SP-394, SP-396 | #60 |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | Notes |
+|------|-------|-------|
+| 0 (parallel) | SP-394, SP-395 | Disjoint roots; no spine code in SP-394 |
+| 1 | SP-396 | After SP-395 |
+| 2 | SP-397 | Docs + close #60 |
+
+```bash
+spine tasks validate SP-394 SP-395 SP-396 SP-397
+spine plan SP-394 SP-395                    # wave 0 — parallel
+spine batch start SP-394 SP-395
+spine batch start SP-396
+spine batch start SP-397
 ```
 
 ---
