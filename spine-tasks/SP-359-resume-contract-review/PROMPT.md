@@ -37,7 +37,7 @@ Fix **GitHub issue #42**: batch `20260629T221839` — SP-358 failed final contra
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_REVIEW_STUB=1 node --experimental-strip-types --test tests/batch/resume-lane-reviews.test.mjs` |
-| fileScopeMustChange | `src/batch/resume-lane-reviews.mjs` |
+| fileScopeMustChange | `spine-tasks/SP-359-resume-contract-review/STATUS.md` |
 | minLineCoverage | 77 |
 | artifactsMustExist | `tests/batch/resume-lane-reviews.test.mjs` |
 
@@ -74,3 +74,5 @@ Fix **GitHub issue #42**: batch `20260629T221839` — SP-358 failed final contra
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-29:** Implementation pre-landed on `main` (e722bb0). `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify `resume-lane-reviews` behavior.
