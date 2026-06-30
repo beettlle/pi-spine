@@ -28,6 +28,7 @@
     "stallTimeoutMinutes": 120,
     "stallGraceAfterProgressMinutes": 30,
     "heartbeatIntervalMinutes": 10,
+    "progressSnapshotIntervalMinutes": 2,
     "checkpointWarningMinutes": 10,
     "extendGraceOnFileScope": false,
     "autoCommitOnStall": false

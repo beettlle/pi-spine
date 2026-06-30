@@ -15,9 +15,13 @@ import {
 	computeStallDeadline,
 	recordCheckpointWarning,
 	recordLaneHeartbeat,
+	recordLaneProgressSnapshot,
 	recordStallWarning,
 	resolveHeartbeatKind,
 	shouldEmitCheckpointWarning,
+	shouldEmitProgressSnapshot,
+	buildProgressSnapshotPayload,
+	progressSnapshotPayloadChanged,
 } from "./heartbeat.mjs";
 import {
 	resolveStallConfigForTask,
@@ -470,6 +474,8 @@ export async function runWorker({
 	const startedAt = Date.now();
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
+	let lastProgressSnapshotAt = 0;
+	let lastSnapshotPayload = null;
 	let lastSignals = null;
 	let activitySinceCheckpoint = false;
 	let checkpointWarningSent = false;
@@ -572,6 +578,7 @@ export async function runWorker({
 			activitySinceCheckpoint = false;
 			checkpointWarningSent = false;
 			lastSignals = null;
+			lastSnapshotPayload = null;
 		}
 		workerPhase = nextWorkerPhase;
 
@@ -617,6 +624,31 @@ export async function runWorker({
 		}
 
 		lastSignals = signals;
+
+		if (
+			projectRoot &&
+			batchId &&
+			shouldEmitProgressSnapshot({
+				now,
+				lastEmittedAt: lastProgressSnapshotAt,
+				intervalMs: stallConfig.progressSnapshotIntervalMs,
+			})
+		) {
+			const snapshotPayload = buildProgressSnapshotPayload(signals, workerPhase);
+			if (progressSnapshotPayloadChanged(lastSnapshotPayload, snapshotPayload)) {
+				recordLaneProgressSnapshot({
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					signals,
+					correlationId: laneCorrelationId,
+					workerPhase,
+				});
+				lastSnapshotPayload = snapshotPayload;
+			}
+			lastProgressSnapshotAt = now;
+		}
 
 		if (
 			projectRoot &&

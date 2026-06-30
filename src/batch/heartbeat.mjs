@@ -12,6 +12,7 @@ const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
 const DEFAULT_HEARTBEAT_INTERVAL_MIN = 10;
 const DEFAULT_CHECKPOINT_WARNING_MIN = 10;
 const DEFAULT_POST_DONE_GRACE_MIN = 4;
+const DEFAULT_PROGRESS_SNAPSHOT_INTERVAL_MIN = 2;
 const POLL_INTERVAL_MS = 30_000;
 
 const CHECKPOINT_WARNING_SUGGESTION =
@@ -44,6 +45,8 @@ export function resolveStallConfig(config = {}) {
 		Number(lanes.checkpointWarningMinutes) || DEFAULT_CHECKPOINT_WARNING_MIN;
 	const postDoneGraceMinutes =
 		Number(lanes.postDoneGraceMinutes) || DEFAULT_POST_DONE_GRACE_MIN;
+	const progressSnapshotIntervalMinutes =
+		Number(lanes.progressSnapshotIntervalMinutes) || DEFAULT_PROGRESS_SNAPSHOT_INTERVAL_MIN;
 
 	return {
 		stallTimeoutMs: stallTimeoutMinutes * 60 * 1000,
@@ -51,6 +54,7 @@ export function resolveStallConfig(config = {}) {
 		heartbeatIntervalMs: heartbeatIntervalMinutes * 60 * 1000,
 		checkpointWarningMs: checkpointWarningMinutes * 60 * 1000,
 		postDoneGraceMs: postDoneGraceMinutes * 60 * 1000,
+		progressSnapshotIntervalMs: progressSnapshotIntervalMinutes * 60 * 1000,
 		extendGraceOnFileScope: lanes.extendGraceOnFileScope === true,
 		pollIntervalMs: POLL_INTERVAL_MS,
 	};
@@ -350,6 +354,68 @@ export function buildHeartbeatPayloadFields(signals, workerPhase, heartbeatKind)
 		fileScopeMtimeMs: signals.fileScopeMtimeMs,
 		dirtyPathCount: signals.dirtyPaths?.length ?? 0,
 	};
+}
+
+/**
+ * Bounded lane.progress_snapshot payload (issue #48).
+ *
+ * @param {object} signals
+ * @param {WorkerPhase} workerPhase
+ */
+export function buildProgressSnapshotPayload(signals, workerPhase) {
+	return {
+		workerPhase,
+		dirtyPathCount: signals.dirtyPaths?.length ?? 0,
+		lastCommitAtMs: signals.lastCommitAtMs ?? null,
+		statusMtimeMs: signals.statusMtimeMs ?? null,
+		stepCompletedAtMs: signals.stepCompletedAtMs ?? null,
+	};
+}
+
+/**
+ * @param {object | null} prev
+ * @param {object} next
+ */
+export function progressSnapshotPayloadChanged(prev, next) {
+	if (!prev) return true;
+	if (prev.workerPhase !== next.workerPhase) return true;
+	if (prev.dirtyPathCount !== next.dirtyPathCount) return true;
+	if (prev.lastCommitAtMs !== next.lastCommitAtMs) return true;
+	if (prev.statusMtimeMs !== next.statusMtimeMs) return true;
+	if (prev.stepCompletedAtMs !== next.stepCompletedAtMs) return true;
+	return false;
+}
+
+/**
+ * @param {object} params
+ * @param {number} params.now
+ * @param {number} params.lastEmittedAt
+ * @param {number} params.intervalMs
+ */
+export function shouldEmitProgressSnapshot({ now, lastEmittedAt, intervalMs }) {
+	if (!intervalMs || intervalMs <= 0) return false;
+	return now - lastEmittedAt >= intervalMs;
+}
+
+/**
+ * @param {object} params
+ */
+export function recordLaneProgressSnapshot({
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	signals,
+	correlationId,
+	workerPhase = "unknown",
+}) {
+	const snapshot = buildProgressSnapshotPayload(signals, workerPhase);
+	appendJournalEvent(projectRoot, batchId, "lane.progress_snapshot", {
+		laneNumber,
+		taskId,
+		correlationId,
+		...snapshot,
+	});
 }
 
 /**
