@@ -81,6 +81,7 @@ export function formatJournalReplayTable(events) {
 const JOURNAL_USAGE =
 	"Usage:\n" +
 	"  spine journal replay --batch {id} [--json]\n" +
+	"  spine journal follow [--batch {id}] [--lane lane-N] [--json]\n" +
 	"  spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 
 /**
@@ -178,13 +179,18 @@ function runJournalExport(projectRoot, args) {
  * @param {string} options.projectRoot
  * @param {string[]} options.args
  */
-export function runSpineJournal(options) {
+export async function runSpineJournal(options) {
 	const { projectRoot, args } = options;
 	const subcommand = args[0];
 	const subArgs = args.slice(1);
 
 	if (subcommand === "replay") {
 		return runJournalReplay(projectRoot, subArgs);
+	}
+
+	if (subcommand === "follow") {
+		const { runJournalFollow } = await import("../src/cli/journal-follow.mjs");
+		return runJournalFollow({ projectRoot, args: subArgs });
 	}
 
 	if (subcommand === "export") {

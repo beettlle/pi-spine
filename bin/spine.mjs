@@ -60,7 +60,7 @@ async function cmdPreflight(args) {
 
 async function cmdJournal(args) {
 	const { runSpineJournal } = await import("./spine-journal.mjs");
-	const result = runSpineJournal({ projectRoot: process.cwd(), args });
+	const result = await runSpineJournal({ projectRoot: process.cwd(), args });
 	process.stdout.write(result.output);
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }

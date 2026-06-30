@@ -1,7 +1,7 @@
 # SP-361: spine journal follow — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-29
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,24 +11,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #45 reviewed
+- [x] Issue #45 reviewed
 
 ---
 
 ### Step 1: Implement journal follow
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] `src/cli/journal-follow.mjs`
-- [ ] Subcommand wired in `bin/spine-journal.mjs`
+- [x] `src/cli/journal-follow.mjs`
+- [x] Subcommand wired in `bin/spine-journal.mjs`
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] `tests/cli/journal-follow.test.mjs`
+- [x] `tests/cli/journal-follow.test.mjs`
 
 ---
 
@@ -53,3 +53,5 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-29 | Step 0 preflight | Issue #45 reviewed; replay formatting in bin/spine-journal.mjs |
+| 2026-06-29 | Step 1 | journal-follow.mjs + spine-journal routing |
