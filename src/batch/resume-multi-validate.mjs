@@ -179,6 +179,10 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 
 	const state = loaded.raw;
 	const phase = String(state.phase ?? "");
+	const pendingTasksForResume = computePendingTasks(state);
+	const failedTasksCount = Number(state.failedTasks ?? 0);
+	const failedPhaseRetryLimbo =
+		phase === "failed" && failedTasksCount === 0 && pendingTasksForResume.length > 0;
 	const postMergeLimbo = detectPostMergeLimboForResume({ projectRoot, state });
 	const orphanEligibility =
 		phase === "running"
@@ -186,6 +190,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 			: { engineConfirmedDead: false, allowOrphanResume: false, orphanKind: null };
 	const resumable =
 		phase === "paused" ||
+		failedPhaseRetryLimbo ||
 		(phase === "failed" && force) ||
 		(phase === "running" && postMergeLimbo) ||
 		(phase === "running" && orphanEligibility.allowOrphanResume) ||
@@ -283,7 +288,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 		}
 	}
 
-	const pendingTasks = computePendingTasks(state);
+	const pendingTasks = pendingTasksForResume;
 	const pendingWaveMerge = force && hasPendingWaveMerge(state);
 	if (pendingTasks.length < 1 && !postMergeLimbo && !pendingWaveMerge) {
 		return {

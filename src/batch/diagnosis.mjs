@@ -2,10 +2,16 @@
  * FR-BATCH-13 diagnosis taxonomy and operator messaging (§18.3).
  */
 import {
-	buildWorkerDoneMissingAlternatives,
 	buildWorkerDoneMissingHeadline,
 	buildWorkerDoneMissingSuggestedCommand,
 } from "./diagnosis-worker-done-missing.mjs";
+import {
+	buildFailedPhasePendingOnlyHeadline,
+	buildFailedPhasePendingOnlySuggestedCommand,
+	isFailedPhasePendingOnlyLimbo,
+} from "./diagnosis-retry-limbo.mjs";
+import { buildAlternatives } from "./diagnosis-alternatives.mjs";
+export { buildAlternatives } from "./diagnosis-alternatives.mjs";
 import {
 	buildStubFailureHeadline,
 	buildStubFailureSuggestedCommand,
@@ -223,6 +229,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				return "spine doctor";
 			}
 			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
+			if (isFailedPhasePendingOnlyLimbo(ctx)) {
+				return buildFailedPhasePendingOnlySuggestedCommand(ctx);
+			}
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine status --diagnose";
@@ -350,6 +359,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
 			}
+			if (isFailedPhasePendingOnlyLimbo(ctx)) {
+				return buildFailedPhasePendingOnlyHeadline(batchLabel, ctx);
+			}
 			return ctx.failedTaskId
 				? `${batchLabel} worker died while task ${ctx.failedTaskId} was running — retry or abort`
 				: `${batchLabel} has failed tasks — retry before resume`;
@@ -425,48 +437,6 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return `${batchLabel} completed successfully`;
 		default:
 			return `${batchLabel} requires attention (phase: ${ctx.phase ?? "unknown"})`;
-	}
-}
-
-/**
- * @param {string} diagnosis
- * @param {object} [ctx]
- * @param {string|null} [ctx.failedTaskId]
- */
-export function buildAlternatives(diagnosis, ctx = {}) {
-	const common = ["spine status --diagnose"];
-
-	switch (diagnosis) {
-		case "limbo_stale":
-			return ["spine batch complete --detect-manual-merge", ...common];
-		case "completed_manual":
-			return ["spine batch complete --detect-manual-merge", "spine batch dismiss", ...common];
-		case "needs_retry":
-			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
-		case "worker_orphaned":
-			return ["spine batch abort", "spine batch resume --force", ...common];
-		case "worker_done_missing":
-			return buildWorkerDoneMissingAlternatives(ctx, common);
-		case "engine_orphaned":
-			return ctx.failedTaskId
-				? [`spine batch retry ${ctx.failedTaskId}`, "spine batch abort", ...common]
-				: ["spine batch abort", "spine batch resume --force", ...common];
-		case "needs_merge":
-			return ["/spine-status --diagnose", ...common];
-		case "needs_integrate":
-			return ["/spine-integrate", "/spine-gate", ...common];
-		case "needs_replan":
-			return ctx.failedTaskId
-				? [`spine batch skip ${ctx.failedTaskId}`, "spine handoff", ...common]
-				: ["spine handoff", ...common];
-		case "running":
-			return ["/spine-pause", "/spine-abort", ...common];
-		case "paused":
-			return ["spine batch resume --force", "spine status --diagnose", ...common];
-		case "failed":
-			return ["/spine-retry-task", ...common];
-		default:
-			return common;
 	}
 }
 

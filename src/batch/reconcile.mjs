@@ -663,6 +663,15 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("needs_integrate", null, signals);
 	}
 
+	if (
+		phase === "failed" &&
+		!hasFailedTasks &&
+		!hasSegmentDrift &&
+		hasPendingTasks
+	) {
+		return withFailureContext("needs_retry", null, signals);
+	}
+
 	if (phase === "failed" || (failedTasks > 0 && !hasPendingTasks && !hasRunningTasks)) {
 		return withFailureContext("failed", failedTaskId, signals);
 	}

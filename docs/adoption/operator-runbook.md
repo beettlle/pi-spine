@@ -653,6 +653,8 @@ spine batch force-merge --wave 0    # mixed-outcome override, then resume --forc
 
 In pi: `/spine-retry-task TP-012`, `/spine-skip-task TP-012`.
 
+When `spine batch retry` clears the last failed task, the batch transitions from `failed` to **`paused`**, journals `batch.retry_unblocked`, and clears batch-level failure markers (`lastError`, `endedAt`, `resilience.lastFailureClass`). Run `spine batch resume` (or `--force` if batch-state still shows `phase: failed` with only pending tasks). Do not dismiss and cold-start unless you intend to abandon the batch.
+
 ### Replan (v1.3 — FR-UXB-04)
 
 When final review returns `REPLAN` (wrong scope in `PROMPT.md`), `spine status --diagnose` reports `diagnosis: needs_replan`. REPLAN blocks wave merge until the packet is fixed.
