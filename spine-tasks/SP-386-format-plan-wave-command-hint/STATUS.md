@@ -1,7 +1,7 @@
 # SP-386: Format plan wave command hint — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-30
 **Review Level:** 0
 **Review Counter:** 0
@@ -18,7 +18,7 @@
 ---
 
 ### Step 1: Plan hint
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Append wave-scoped start hint for multi-wave plans
 - [x] Update format-plan tests
@@ -26,16 +26,16 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update QUICK-REFERENCE if needed
+- [x] Update QUICK-REFERENCE if needed (not affected)
 
 ---
 
@@ -51,6 +51,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | Multi-wave hints use scope mode + `--wave N`; single-wave keeps task ID list | Implemented | `format-plan.mjs` |
+| QUICK-REFERENCE does not document plan output hints | No update needed | — |
 
 ---
 
@@ -61,6 +62,8 @@
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-30 | Step 0 preflight | Read multi-wave Then block in format-plan.mjs |
 | 2026-06-30 | Step 1 implementation | Wave-scoped start hints added |
+| 2026-06-30 | Step 2 verification | typecheck clean; 1254/1254 tests pass |
+| 2026-06-30 | Step 3 delivery | QUICK-REFERENCE unchanged; .DONE created |
 
 ---
 
