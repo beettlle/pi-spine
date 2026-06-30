@@ -379,14 +379,6 @@ export async function startBatch({
 				waveIndex: wave.index,
 			});
 			if (!mergeResult.ok) {
-				/** @type {any} */ (state).endedAt = Date.now();
-				/** @type {any} */ (state).lastError = mergeResult.error ?? "merge failed";
-				transitionPhase(state, "failed", {
-					projectRoot,
-					batchId,
-					extra: { reason: "merge", waveIndex: wave.index },
-				});
-				saveSpineBatchState(projectRoot, state);
 				return {
 					ok: false,
 					exitCode: 1,

@@ -190,7 +190,7 @@ export function deriveMacroPhase(input) {
 		return "aborted";
 	}
 
-	if (batchPhase === "failed" || (diagnosis != null && FAILED_DIAGNOSES.has(diagnosis))) {
+	if (batchPhase === "failed" || batchPhase === "merge_blocked" || (diagnosis != null && FAILED_DIAGNOSES.has(diagnosis))) {
 		return "failed";
 	}
 

@@ -22,6 +22,12 @@ import {
 	buildStubFailureSuggestedCommand,
 	STUB_EXIT_REASONS,
 } from "./diagnosis-stub.mjs";
+export {
+	classifyTaskDoneSemantics,
+	resolveTaskFolderPath,
+	resolveTaskLaneWorktreePath,
+	TASK_DONE_FLAG_FIELD_NAMES,
+} from "./diagnosis-task-done.mjs";
 /** @typedef {import("./reconcile.mjs").ReconciliationResult} ReconciliationResult */
 
 export const DIAGNOSIS_TAXONOMY = [

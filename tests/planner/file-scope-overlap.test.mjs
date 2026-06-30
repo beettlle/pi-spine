@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
 import test from 'node:test';
 
+import { buildPlan } from '../../src/planner/index.mjs';
+import { formatPlanHuman } from '../../src/planner/format-plan.mjs';
 import {
 	expandFileScopeProbes,
 	fileScopePatternsOverlap,
@@ -9,6 +15,12 @@ import {
 	normalizeFileScopePath,
 	pathsOverlap,
 } from '../../src/planner/file-scope.mjs';
+import {
+	assignLanesToWaves,
+	formatFileScopeOverlapWarnings,
+	planWaves,
+} from '../../src/planner/waves.mjs';
+import { minimalValidPromptMarkdown } from '../helpers/smoke-task-prompt.mjs';
 
 test('normalizeFileScopePath strips trailing globs and normalizes separators', () => {
 	assert.equal(normalizeFileScopePath('src/a/**'), 'src/a');
@@ -96,4 +108,100 @@ test('findWaveFileScopeOverlaps ignores single-task waves', () => {
 		ONLY: { fileScope: ['src/a/**', 'src/b/**'] },
 	});
 	assert.deepEqual(overlaps, []);
+});
+
+test('planWaves serializes two tasks with the same file to one virtual lane', () => {
+	const waves = [['A', 'B']];
+	const tasksById = {
+		A: { fileScope: ['bin/spine.mjs'] },
+		B: { fileScope: ['bin/spine.mjs'] },
+	};
+
+	const { waves: planned, fileScopeOverlaps } = planWaves({
+		waves,
+		tasksById,
+		maxParallel: 4,
+		queueExcess: true,
+	});
+
+	assert.equal(fileScopeOverlaps.length, 1);
+	assert.equal(planned[0].virtualLaneCount, 1);
+	assert.deepEqual(planned[0].ticks[0].lanes[0], ['A', 'B']);
+});
+
+test('assignLanesToWaves uses glob-aware overlap for wildcard scopes', () => {
+	const waves = [['A', 'B']];
+	const tasksById = {
+		A: { fileScope: ['bin/*.mjs'] },
+		B: { fileScope: ['bin/spine.mjs'] },
+	};
+
+	const planned = assignLanesToWaves({ waves, tasksById, maxParallel: 4, queueExcess: true });
+	assert.equal(planned[0].virtualLaneCount, 1);
+	assert.deepEqual(planned[0].ticks[0].lanes[0], ['A', 'B']);
+});
+
+test('formatFileScopeOverlapWarnings lists wave and task pairs', () => {
+	const lines = formatFileScopeOverlapWarnings([
+		{
+			waveIndex: 0,
+			taskA: 'A',
+			taskB: 'B',
+			scopesA: ['src/a/**'],
+			scopesB: ['src/a/b/**'],
+		},
+	]);
+
+	assert.match(lines.join('\n'), /Wave 0: A ↔ B/);
+	assert.match(lines.join('\n'), /serialized to the same lane/);
+});
+
+const PLAN_CONFIG = { lanes: { maxParallel: 4, queueExcess: true } };
+
+async function createOverlapPlanFixture() {
+	const root = await mkdtemp(path.join(os.tmpdir(), 'spine-overlap-plan-'));
+	const tasksRoot = path.join(root, 'spine-tasks');
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	fs.writeFileSync(
+		path.join(tasksRoot, 'dependencies.json'),
+		JSON.stringify({ version: 1, tasks: {} }, null, 2),
+		'utf-8',
+	);
+
+	for (const [taskId, fileScope] of [
+		['OL-001', 'bin/spine.mjs'],
+		['OL-002', 'bin/spine.mjs'],
+	]) {
+		const folder = path.join(tasksRoot, `${taskId}-overlap-fixture`);
+		fs.mkdirSync(folder, { recursive: true });
+		const body = minimalValidPromptMarkdown(taskId, {
+			title: `${taskId} overlap fixture`,
+			fileScope,
+		});
+		fs.writeFileSync(path.join(folder, 'PROMPT.md'), body, 'utf-8');
+	}
+
+	return { root, tasksRoot };
+}
+
+test('buildPlan reports file-scope overlaps and serializes conflicting tasks', async () => {
+	const { root, tasksRoot } = await createOverlapPlanFixture();
+	try {
+		const plan = buildPlan({
+			scope: ['OL-001', 'OL-002'],
+			config: PLAN_CONFIG,
+			tasksRoot,
+		});
+
+		assert.equal(plan.metadata.fileScopeOverlaps?.length, 1);
+		assert.ok(Array.isArray(plan.overlapWarnings));
+		assert.match(plan.overlapWarnings.join('\n'), /OL-001/);
+		assert.match(plan.overlapWarnings.join('\n'), /OL-002/);
+		assert.equal(plan.waves[0].virtualLaneCount, 1);
+
+		const human = formatPlanHuman(plan);
+		assert.match(human, /serial · 2 tasks \(overlapping file scope\)/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
 });

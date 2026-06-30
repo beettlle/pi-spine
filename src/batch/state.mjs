@@ -15,7 +15,12 @@ export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
 export const ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 
 /** @type {ReadonlySet<string>} */
-export const TERMINAL_BATCH_PHASES = new Set(["completed", "failed", "aborted"]);
+export const TERMINAL_BATCH_PHASES = new Set([
+	"completed",
+	"failed",
+	"aborted",
+	"merge_blocked",
+]);
 
 /**
  * @returns {string} batchId `{YYYYMMDD}T{HHmmss}` UTC

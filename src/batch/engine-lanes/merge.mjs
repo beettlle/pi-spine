@@ -24,6 +24,7 @@ import {
 	tryResolvePrdDocMergeConflict,
 } from "../merge/adoption-doc-merge.mjs";
 import { recordWaveMergeResult } from "../merge/wave-merge-state.mjs";
+import { recordMergeBlocked } from "../lifecycle.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
 import { maybeFinalizeAfterWaveMerge } from "../post-merge-limbo.mjs";
@@ -672,7 +673,15 @@ export async function mergeWaveLanesToOrch({
 					error: failureReason,
 				});
 			}
-			saveSpineBatchState(projectRoot, state);
+			recordMergeBlocked({
+				projectRoot,
+				state,
+				batchId,
+				error: failureReason,
+				waveIndex,
+				laneNumber,
+				failureClass: merge.failureClass ?? null,
+			});
 			return {
 				ok: false,
 				error: failureReason,
