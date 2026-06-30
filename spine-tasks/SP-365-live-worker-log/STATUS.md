@@ -1,7 +1,7 @@
 # SP-365: Live lane worker log — Status
 
-**Current Step:** Step 4 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-29
 **Review Level:** 2
 **Review Counter:** 0
@@ -42,18 +42,18 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing (1115/1115)
+- [x] Coverage gate passes (87.26% line coverage)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #49 closed
-- [ ] `.DONE` created
+- [x] Issue #49 closed
+- [x] `.DONE` created
 
 ---
 
@@ -63,3 +63,4 @@
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-29 | Step 0–3 | Live log writer, backend wiring, tests implemented |
+| 2026-06-29 | Step 4–5 | Full suite + coverage verified; issue #49 closed |
