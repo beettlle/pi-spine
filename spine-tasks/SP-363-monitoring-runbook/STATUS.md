@@ -1,8 +1,8 @@
 # SP-363: Operator monitoring runbook — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-29
+**Current Step:** Step 1 — Write monitoring cookbook
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-06-30
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,9 +11,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-339, SP-360, SP-361, SP-362 complete
+- [x] SP-339, SP-360, SP-361, SP-362 complete
 
 ---
 

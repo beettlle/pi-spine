@@ -172,6 +172,8 @@ spine batch start TP-012 --json
 
 ### Monitor Progress
 
+For a decision table mapping operator questions to `watch`, `journal follow`, `wait`, dashboard, and engine logs, see [operator-runbook.md §3 Monitoring cookbook](./adoption/operator-runbook.md#monitoring-cookbook).
+
 ```bash
 # Status with diagnosis
 spine status
@@ -184,6 +186,16 @@ spine status --json
 
 # Include segment frontier
 spine status --verbose
+
+# Live reconcile poll (default 5s)
+spine watch
+spine watch --json --once
+
+# Block until terminal diagnosis (CI)
+spine wait --until completed,failed --json --timeout 30m
+
+# Live journal events
+spine journal follow [--lane lane-1]
 ```
 
 ### Pause and Resume
@@ -677,4 +689,4 @@ Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook
 
 ---
 
-*Last updated: 2026-06-19*
+*Last updated: 2026-06-30*

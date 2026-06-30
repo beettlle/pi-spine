@@ -320,6 +320,33 @@ spine wait --until completed,failed --json --timeout 30m  # emit final reconcile
 spine next                      # print suggestedCommand only
 ```
 
+### Monitoring cookbook
+
+Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle/pi-spine/issues/43). First-class CLI surfaces: [#30](https://github.com/beettlle/pi-spine/issues/30) (`status --json` progress), [#44](https://github.com/beettlle/pi-spine/issues/44) (`watch`), [#45](https://github.com/beettlle/pi-spine/issues/45) (`journal follow`), [#46](https://github.com/beettlle/pi-spine/issues/46) (`wait`). All call the same `reconcileBatch` / journal helpers as the dashboard (NFR-OBS-04) — do not fork parallel monitor scripts.
+
+| Question | Command |
+|----------|---------|
+| What is the headline diagnosis and suggested next step? | `spine status --diagnose` |
+| What is the one-line suggested command only? | `spine next` |
+| Live compact reconcile poll in the terminal (default 5s)? | `spine watch` |
+| Single reconcile snapshot for scripts or CI? | `spine watch --json --once` or `spine status --json` |
+| Block until diagnosis reaches a target set (CI/automation)? | `spine wait --until completed,needs_integrate,failed,aborted --timeout 2h` |
+| Live control-plane journal events as they append? | `spine journal follow` |
+| Journal follow scoped to one lane? | `spine journal follow --lane lane-1` |
+| Raw jsonl journal lines for parsers? | `spine journal follow --json` |
+| Visual multi-panel view (lanes, gate, journal)? | `spine dashboard` (§7) |
+| Detached engine stderr or crash mid-run? | `.spine/runtime/detached-engine.log` |
+| Post-mortem timeline table or jsonl export? | `spine journal export --batch <batchId> --format markdown` |
+| Ordered replay of a completed batch (not live)? | `spine journal replay --batch <batchId>` |
+
+**Typical combinations:**
+
+- **Daily attached-first:** `spine batch start … --attached` — engine blocks; use a second terminal for `spine journal follow` or `spine dashboard` if you want live context.
+- **Detached batch:** after start/resume returns, run `spine watch` or `spine status --diagnose` until diagnosis changes; add `spine journal follow` when you need event-level detail (stall, orphan, review).
+- **CI pipeline:** `spine batch start pending --json` then `spine wait --until completed,failed --json --timeout 30m`; parse the final snapshot stdout.
+
+Tier 2 surfaces (`lane.progress_snapshot`, `spine lane logs --follow`, dashboard lane detail) are tracked under epic #43 ([#48](https://github.com/beettlle/pi-spine/issues/48)–[#51](https://github.com/beettlle/pi-spine/issues/51)). Tier 3 agent event streaming remains deferred ([#52](https://github.com/beettlle/pi-spine/issues/52)).
+
 **`spine status --json` progress fields (issue #30):** when a batch is active, JSON output includes task and wave progress at the top level:
 
 | Field | Meaning |
@@ -342,9 +369,10 @@ Detached engine logs: `.spine/runtime/detached-engine.log`
 
 Optional `--wait-terminal` on start or resume blocks until the batch reaches a terminal phase (`completed` / `failed` / `aborted`), pauses, or (on resume) the resumed task reaches a terminal task status — then returns `status: start_completed` or `resume_completed`.
 
-Journal tail:
+Live journal follow and replay:
 
 ```bash
+spine journal follow [--batch <batchId>] [--lane lane-N]
 spine journal replay --batch <batchId>
 ```
 
@@ -375,7 +403,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 **Operator implications:**
 
-- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal tail` for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise `spine batch retry <id>` or `spine batch resume --force`.
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise `spine batch retry <id>` or `spine batch resume --force`.
 - **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
 - **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
 
@@ -678,7 +706,7 @@ When final review returns `REPLAN` (wrong scope in `PROMPT.md`), `spine status -
 
 ```bash
 spine status --diagnose    # expect diagnosis: needs_replan
-spine journal tail         # look for task.verdict_recorded verdict: REPLAN
+spine journal follow       # look for task.verdict_recorded verdict: REPLAN
 ```
 
 **Retry flow:**
@@ -720,7 +748,7 @@ spine batch abort --hard            # SIGKILL + worktree cleanup
 When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume).
 
 1. Confirm diagnosis: `spine status --diagnose` (never trust plain `running` when PIDs are dead).
-2. Inspect journal tail: `spine journal tail` — expect `task.started` / `lane.heartbeat` then silence.
+2. Inspect journal: `spine journal follow` — expect `task.started` / `lane.heartbeat` then silence.
 3. Check detached engine log: `.spine/runtime/detached-engine.log`.
 4. Recover (follow **`suggestedCommand`** from step 1):
    - **`engine_orphaned` / `worker_orphaned`:** `spine batch retry <taskId>` — reconciles orphan `running` → `failed` automatically; **no `batch pause` first** (SP-315).
@@ -737,7 +765,7 @@ Incident narratives: [`20260603-orphan-running-resume.md`](../incidents/20260603
 When the detached resume engine throws (for example a broken lane worktree during `commitLaneWorktree`), pi-spine should leave **`phase: failed`**, append **`batch.failed`** to the journal, mark ghost **`running`** tasks as **`failed`**, and clear **`resilience.enginePid`**. This is the fail-closed path — not the orphan/zombie case above where the process exits without writing terminal state.
 
 1. Confirm: `spine status --diagnose` — expect **`failed`**, not **`running`**.
-2. Inspect journal: `spine journal tail` — look for **`batch.failed`** with `reason: engine_error` and the git/worktree message.
+2. Inspect journal: `spine journal follow` — look for **`batch.failed`** with `reason: engine_error` and the git/worktree message.
 3. Check detached engine log: `.spine/runtime/detached-engine.log`.
 4. Recover:
    - `spine batch retry <taskId>` when a failed task is named in the headline.
@@ -798,7 +826,7 @@ Workers should **not** retry or treat the skip as failure. Task PROMPTs for real
 
 **Recovery:**
 
-1. Read the worker output log path from `--diagnose` headline (or `spine journal tail` → `task.failed` → `workerOutputLogRef`).
+1. Read the worker output log path from `--diagnose` headline (or `spine journal follow` → `task.failed` → `workerOutputLogRef`).
 2. Fix the underlying blocker (config, PROMPT, credentials, model error) in the lane worktree if needed.
 3. Retry in place:
 
