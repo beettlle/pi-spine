@@ -1,7 +1,7 @@
 # SP-361: spine journal follow — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-29
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,40 +11,40 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #45 reviewed
+- [x] Issue #45 reviewed
 
 ---
 
 ### Step 1: Implement journal follow
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `src/cli/journal-follow.mjs`
-- [ ] Subcommand wired in `bin/spine-journal.mjs`
+- [x] `src/cli/journal-follow.mjs`
+- [x] Subcommand wired in `bin/spine-journal.mjs`
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/cli/journal-follow.test.mjs`
+- [x] `tests/cli/journal-follow.test.mjs`
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing
+- [x] Coverage gate passes
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #45 closed
-- [ ] `.DONE` created
+- [x] Issue #45 closed
+- [x] `.DONE` created
 
 ---
 
@@ -53,3 +53,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-29 | Step 0 preflight | Issue #45 reviewed; replay formatting in bin/spine-journal.mjs |
+| 2026-06-29 | Step 1 | journal-follow.mjs + spine-journal routing |
+| 2026-06-29 | Step 2 | journal-follow.test.mjs (10 tests) |
+| 2026-06-29 | Step 3 | typecheck OK; 1108/1108 tests; coverage:check EXIT:0 |
+| 2026-06-29 | Step 4 | Issue #45 closed; .DONE created |

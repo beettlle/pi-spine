@@ -1,7 +1,7 @@
 # SP-364: lane progress snapshot events — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4
+**Status:** 🟢 Complete
 **Last Updated:** 2026-06-29
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,42 +11,42 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #48 reviewed
-- [ ] worker-host poll path audited
+- [x] Issue #48 reviewed
+- [x] worker-host poll path audited
 
 ---
 
 ### Step 1: Emit progress_snapshot
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Journal event type and dedupe
-- [ ] summarizeJournalEvent updated
+- [x] Journal event type and dedupe
+- [x] summarizeJournalEvent updated
 
 ---
 
 ### Step 2: Tests and template config
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Integration tests
-- [ ] Template config key
+- [x] Integration tests
+- [x] Template config key
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing
+- [x] Coverage gate passes
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #48 closed
-- [ ] `.DONE` created
+- [x] Issue #48 closed
+- [x] `.DONE` created
 
 ---
 

@@ -275,6 +275,9 @@ export function summarizeJournalEvent(event) {
 	if (payload.error) parts.push(String(payload.error).slice(0, 80));
 	if (payload.classification) parts.push(String(payload.classification));
 	if (payload.workerPhase) parts.push(`phase ${payload.workerPhase}`);
+	if (payload.dirtyPathCount != null && event.type === "lane.progress_snapshot") {
+		parts.push(`${payload.dirtyPathCount} dirty path(s)`);
+	}
 	if (payload.workerOutputLogRef) parts.push(`→ ${payload.workerOutputLogRef}`);
 	if (payload.exitReason) parts.push(String(payload.exitReason));
 	if (payload.mergeCommit) parts.push(`merge ${String(payload.mergeCommit).slice(0, 8)}`);
