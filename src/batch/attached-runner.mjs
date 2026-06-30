@@ -3,7 +3,11 @@
  * Post-merge limbo resume fast path (SP-348, GitHub #39).
  */
 
-import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import {
+	finalizeAttachedLandLoopBeforeExit,
+	finalizeResumedBatchForIntegrate,
+	isPostMergeLimbo,
+} from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
@@ -25,6 +29,31 @@ export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
 ]);
 
 const ATTACHED_MILESTONE_POLL_MS = 200;
+
+/** @type {boolean} */
+let attachedExitHandlersInstalled = false;
+
+/**
+ * Install journal-aware SIGTERM/SIGINT handlers before attached engine exit (SP-378).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} [params.spineBin]
+ */
+export function installAttachedExitFinalizeHandlers({ projectRoot, spineBin }) {
+	if (attachedExitHandlersInstalled) return;
+	attachedExitHandlersInstalled = true;
+
+	const onShutdown = (signal) => {
+		const handoff = finalizeAttachedLandLoopBeforeExit({ projectRoot, spineBin, signal });
+		if (handoff.handled) {
+			process.exit(0);
+		}
+	};
+
+	process.once("SIGTERM", () => onShutdown("SIGTERM"));
+	process.once("SIGINT", () => onShutdown("SIGINT"));
+}
 
 /**
  * @param {number} ms
@@ -123,10 +152,16 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
  * @param {() => Promise<object>} params.runEngine
  * @param {(line: string) => void} [params.write]
  */
-export async function runAttachedBatchEngine({ projectRoot, runEngine, write }) {
+export async function runAttachedBatchEngine({ projectRoot, runEngine, write, spineBin }) {
+	installAttachedExitFinalizeHandlers({ projectRoot, spineBin });
 	const reporter = await startAttachedMilestoneReporter({ projectRoot, write });
 	try {
-		return await runEngine();
+		const result = await runEngine();
+		const handoff = finalizeAttachedLandLoopBeforeExit({ projectRoot, spineBin, signal: "exit" });
+		if (handoff.handled && handoff.action === "finalized_in_process" && handoff.result) {
+			return handoff.result;
+		}
+		return result;
 	} finally {
 		await reporter.stop();
 	}
@@ -213,13 +248,16 @@ export function formatAttachedBatchCliResult({ projectRoot, operation, result, j
  * @param {object} [options]
  * @param {boolean} [options.deferExit]
  */
-export function finishAttachedBatchCli(cli, { deferExit = false } = {}) {
+export function finishAttachedBatchCli(cli, { deferExit = false, projectRoot, spineBin } = {}) {
 	const exitCode = cli.exitCode ?? 1;
 	if (cli.output) {
 		process.stdout.write(cli.output);
 	}
 	if (deferExit) {
 		return;
+	}
+	if (projectRoot) {
+		finalizeAttachedLandLoopBeforeExit({ projectRoot, spineBin, signal: "cli_exit" });
 	}
 	process.exit(exitCode);
 }
