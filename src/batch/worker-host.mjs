@@ -32,7 +32,7 @@ import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
-import { finalizeWorkerOutput } from "./worker-output.mjs";
+import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
@@ -300,8 +300,9 @@ async function terminateHungWorkerChild(child, childDone) {
 
 /**
  * @param {WorkerChildHandle} child
+ * @param {{ append: (rawChunk: string) => void } | null} [liveLogWriter]
  */
-function collectChildOutput(child) {
+function collectChildOutput(child, liveLogWriter) {
 	if ("wait" in child && typeof child.wait === "function") {
 		return child.wait();
 	}
@@ -309,10 +310,14 @@ function collectChildOutput(child) {
 		let stdout = "";
 		let stderr = "";
 		child.stdout?.on("data", (/** @type {Buffer | string} */ chunk) => {
-			stdout += chunk.toString();
+			const text = chunk.toString();
+			stdout += text;
+			liveLogWriter?.append(text);
 		});
 		child.stderr?.on("data", (/** @type {Buffer | string} */ chunk) => {
-			stderr += chunk.toString();
+			const text = chunk.toString();
+			stderr += text;
+			liveLogWriter?.append(text);
 		});
 		child.on?.("close", (/** @type {number | null} */ code) => {
 			resolve({ exitCode: code ?? 1, output: `${stdout}${stderr}` });
@@ -506,7 +511,14 @@ export async function runWorker({
 		childPastPreflight = true;
 	});
 	onWorkerPid?.(workerChild.pid ?? 0);
-	const childDone = collectChildOutput(workerChild);
+	const liveLogWriter = createWorkerLiveLogWriter({
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		config,
+	});
+	const childDone = collectChildOutput(workerChild, liveLogWriter);
 
 	while (true) {
 		const doneOnDisk = fs.existsSync(donePath);

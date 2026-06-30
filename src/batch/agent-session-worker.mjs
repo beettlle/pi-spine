@@ -7,8 +7,10 @@ import path from "node:path";
 import { appendJournalEvent } from "./journal.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { readReviewLevel } from "./review.mjs";
-import { writeWorkerDoneMarker } from "./worker-output.mjs";
+import { writeWorkerDoneMarker, createWorkerLiveLogWriter } from "./worker-output.mjs";
 import { buildWorkerTailPrompt } from "./worker-prompt.mjs";
+
+const LIVE_LOG_FLUSH_INTERVAL_MS = 2_000;
 
 /**
  * @param {string} taskFolder
@@ -192,6 +194,31 @@ export function startAgentSessionWorker(
 	const piSpineRoot = resolvePiSpineRoot(config, projectRoot ?? process.cwd());
 	process.env.PI_SPINE_ROOT = piSpineRoot;
 
+	const liveLogWriter = createWorkerLiveLogWriter({
+		projectRoot: journal?.projectRoot ?? projectRoot,
+		batchId: journal?.batchId ?? process.env.SPINE_BATCH_ID,
+		laneNumber:
+			journal?.laneNumber ??
+			(process.env.SPINE_LANE_NUMBER ? Number(process.env.SPINE_LANE_NUMBER) : undefined),
+		taskId: journal?.taskId ?? process.env.SPINE_TASK_ID ?? resolveTaskIdFromFolder(taskFolder),
+		config,
+	});
+	let lastFlushedTranscriptLength = 0;
+	/** @type {ReturnType<typeof setInterval> | null} */
+	let liveLogFlushTimer = null;
+
+	const flushTranscriptToLiveLog = () => {
+		if (!liveLogWriter) return;
+		const delta = state.transcript.slice(lastFlushedTranscriptLength);
+		if (!delta) return;
+		liveLogWriter.append(delta);
+		lastFlushedTranscriptLength = state.transcript.length;
+	};
+
+	if (liveLogWriter) {
+		liveLogFlushTimer = setInterval(flushTranscriptToLiveLog, LIVE_LOG_FLUSH_INTERVAL_MS);
+	}
+
 	const donePromise = (async () => {
 		try {
 			const createAgentSession = await loadCreateAgentSession(deps);
@@ -266,6 +293,11 @@ export function startAgentSessionWorker(
 				err instanceof Error ? err.message : String(err),
 			);
 		} finally {
+			if (liveLogFlushTimer) {
+				clearInterval(liveLogFlushTimer);
+				liveLogFlushTimer = null;
+			}
+			flushTranscriptToLiveLog();
 			state.session?.dispose?.();
 			state.session = null;
 		}
