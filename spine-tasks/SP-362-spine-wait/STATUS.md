@@ -1,7 +1,7 @@
 # SP-362: spine wait — Status
 
-**Current Step:** Step 3 (Testing & Verification)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
@@ -34,18 +34,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing (1193 tests)
+- [x] Coverage gate passes (87.57% line coverage)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #46 closed
-- [ ] `.DONE` created
+- [x] Issue #46 closed
+- [x] `.DONE` created
 
 ---
 
@@ -55,7 +55,5 @@
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-06-30 | Step 0–2 | wait command, tests, runbook implemented |
-
-## Notes (Plan — Review Level 1)
-
-Reuse SP-360 watch poll loop: `reconcileBatch` + `DEFAULT_WATCH_INTERVAL_SEC` + `buildWatchSnapshot` for `--json` final snapshot. `runSpineWait` blocks until `diagnosis` ∈ `--until` set; exit 0 on match, 1 on timeout.
+| 2026-06-30 | Step 3 | typecheck + 1193 tests pass; coverage 87.57% |
+| 2026-06-30 | Step 4 | Issue #46 closed; .DONE created |
