@@ -33,6 +33,7 @@ import {
 	WARN,
 } from "./spine-cli/shared.mjs";
 import { handleStatus } from "./spine-cli/status.mjs";
+import { handleLane } from "./spine-cli/lane-logs.mjs";
 import { handleWatch } from "./spine-cli/watch.mjs";
 import { handleWait } from "./spine-cli/wait.mjs";
 import { handleScenarios } from "./spine-cli/scenarios.mjs";
@@ -378,6 +379,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "journal":
 				await cmdJournal(args);
+				break;
+			case "lane":
+				await handleLane(args);
 				break;
 			case "state":
 				await cmdState(args);
