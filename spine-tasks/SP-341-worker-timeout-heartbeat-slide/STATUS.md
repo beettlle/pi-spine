@@ -1,7 +1,7 @@
 # SP-341: Worker timeout heartbeat slide — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
@@ -16,40 +16,36 @@
 - [x] Issue #32 reviewed
 - [x] File scope modules read
 
-**Notes:** Stall deadline used fixed `startedAt + stallTimeoutMs`; `worker_alive` in `pi` phase did not slide anchor. Fix: `lastAliveAt` / `stallAnchorAt` in `computeStallDeadline` + slide on `worker_alive`.
-
 ---
 
 ### Step 1: Slide timeout on worker_alive
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [x] `computeStallDeadline` accepts `lastAliveAt` for silent-stall anchor
-- [x] `engine-lanes/watch.mjs` slide helpers
-- [x] `worker-host.mjs` updates `stallAnchorAt` on pi `worker_alive`
+- [x] Slide timeout on worker_alive
 
 ---
 
 ### Step 2: Tests + delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression test file created
+- [x] Tests + delivery
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract test passes
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Contract test passes
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — **≥77% line coverage** (87.47%)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #32 (`gh issue close 32`)
-- [ ] Create `.DONE`
+- [x] Close issue #32 (`gh issue close 32`)
+- [x] Create `.DONE`
 
 ---
 
@@ -75,6 +71,7 @@
 | 2026-06-28 | Task staged | PROMPT.md and STATUS.md created for GitHub #32 |
 | 2026-06-30 | Step 0 preflight | Traced stall vs heartbeat; identified fixed `startedAt` anchor |
 | 2026-06-30 | Step 1 implementation | Slide on pi `worker_alive`; `computeStallDeadline` uses `lastAliveAt` |
+| 2026-06-30 | Steps 2–4 | Tests pass; coverage 87.47%; issue #32 closed |
 
 ---
 
@@ -86,4 +83,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Silent-stall anchor (`stallAnchorAt`) slides on `worker_alive` when `workerPhase === "pi"`. Checkpoint grace (`lastCheckpointAt` + `graceAfterProgressMs`) unchanged.
