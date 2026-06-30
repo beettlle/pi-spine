@@ -8,6 +8,7 @@ import { writeJsonAtomic, writeTextAtomic } from "../fs/atomic-write.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
 const DEFAULT_MAX_BYTES = 262_144;
+const DEFAULT_LIVE_LOG_MAX_BYTES = 262_144;
 const DEFAULT_TAIL_LINES = 200;
 const TRUNCATION_MARKER = "\n...[worker output truncated]...\n";
 
@@ -39,10 +40,17 @@ export function resolveWorkerOutputConfig(config = {}) {
 		}
 	}
 
+	const liveMaxBytes = Number(lanes.workerLiveLogMaxBytes);
+
 	return {
 		maxBytes: Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : DEFAULT_MAX_BYTES,
 		tailLines: Number.isFinite(tailLines) && tailLines > 0 ? tailLines : DEFAULT_TAIL_LINES,
 		retainOnSuccess: lanes.retainWorkerOutputOnSuccess === true,
+		streamWorkerOutputLive: lanes.streamWorkerOutputLive === true,
+		workerLiveLogMaxBytes:
+			Number.isFinite(liveMaxBytes) && liveMaxBytes > 0
+				? liveMaxBytes
+				: DEFAULT_LIVE_LOG_MAX_BYTES,
 		denyPatterns,
 	};
 }
@@ -133,6 +141,118 @@ export function workerOutputLogRef(batchId, laneNumber, taskId) {
 		`lane-${laneNumber}`,
 		`worker-output-${taskId}.log`,
 	);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string} taskId
+ */
+export function workerLiveLogPath(projectRoot, batchId, laneNumber, taskId) {
+	return path.join(
+		projectRoot,
+		".spine",
+		"runtime",
+		batchId,
+		"lanes",
+		`lane-${laneNumber}`,
+		`worker-live-${taskId}.log`,
+	);
+}
+
+/**
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string} taskId
+ */
+export function workerLiveLogRef(batchId, laneNumber, taskId) {
+	return path.join(
+		".spine",
+		"runtime",
+		batchId,
+		"lanes",
+		`lane-${laneNumber}`,
+		`worker-live-${taskId}.log`,
+	);
+}
+
+/**
+ * Byte-cap live log content with the same truncation marker as terminal capture.
+ *
+ * @param {string} text
+ * @param {number} maxBytes
+ */
+export function truncateLiveLogBytes(text, maxBytes) {
+	if (!text) return "";
+
+	const encoded = Buffer.from(text, "utf-8");
+	if (encoded.byteLength <= maxBytes) {
+		return text;
+	}
+
+	const markerBytes = Buffer.byteLength(TRUNCATION_MARKER, "utf-8");
+	const budget = Math.max(0, maxBytes - markerBytes);
+	let slice = encoded.subarray(encoded.byteLength - budget).toString("utf-8");
+	const newline = slice.indexOf("\n");
+	if (newline >= 0 && newline < slice.length - 1) {
+		slice = slice.slice(newline + 1);
+	}
+	return `${TRUNCATION_MARKER}${slice}`;
+}
+
+/**
+ * Append redacted worker output to the live log with a rolling byte cap.
+ *
+ * @param {object} params
+ * @param {string} params.logPath
+ * @param {string} params.rawChunk
+ * @param {ReturnType<typeof resolveWorkerOutputConfig>} params.outputConfig
+ */
+export function appendWorkerLiveLogChunk({ logPath, rawChunk, outputConfig }) {
+	if (!rawChunk) return;
+
+	const redacted = redactWorkerOutput(String(rawChunk), outputConfig);
+	if (!redacted) return;
+
+	const prior = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf-8") : "";
+	const combined = `${prior}${redacted}`;
+	const capped = truncateLiveLogBytes(combined, outputConfig.workerLiveLogMaxBytes);
+	if (!capped) return;
+
+	fs.mkdirSync(path.dirname(logPath), { recursive: true });
+	writeTextAtomic(logPath, capped);
+}
+
+/**
+ * Create an append-only live log writer when `lanes.streamWorkerOutputLive` is enabled.
+ *
+ * @param {object} params
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {object} [params.config]
+ * @returns {{ append: (rawChunk: string) => void; logPath: string } | null}
+ */
+export function createWorkerLiveLogWriter({
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	config = {},
+}) {
+	const outputConfig = resolveWorkerOutputConfig(config);
+	if (!outputConfig.streamWorkerOutputLive) return null;
+	if (!projectRoot || !batchId || laneNumber == null || !taskId) return null;
+
+	const logPath = workerLiveLogPath(projectRoot, batchId, laneNumber, taskId);
+	return {
+		logPath,
+		append(rawChunk) {
+			appendWorkerLiveLogChunk({ logPath, rawChunk, outputConfig });
+		},
+	};
 }
 
 /**
@@ -318,4 +438,9 @@ export function writeWorkerDoneMarker(donePath, { taskId }) {
 	});
 }
 
-export { TRUNCATION_MARKER, DEFAULT_MAX_BYTES, DEFAULT_TAIL_LINES };
+export {
+	TRUNCATION_MARKER,
+	DEFAULT_MAX_BYTES,
+	DEFAULT_LIVE_LOG_MAX_BYTES,
+	DEFAULT_TAIL_LINES,
+};

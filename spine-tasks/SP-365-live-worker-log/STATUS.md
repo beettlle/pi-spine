@@ -1,7 +1,7 @@
 # SP-365: Live lane worker log — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-06-29
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,49 +11,49 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #49 reviewed
-- [ ] worker-output paths audited
+- [x] Issue #49 reviewed
+- [x] worker-output paths audited
 
 ---
 
 ### Step 1: Live log writer
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Append-with-cap helper
-- [ ] Config keys
+- [x] Append-with-cap helper
+- [x] Config keys
 
 ---
 
 ### Step 2: Wire backends
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] worker-host streaming
-- [ ] agentSession flush
+- [x] worker-host streaming
+- [x] agentSession flush
 
 ---
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/batch/live-worker-log.test.mjs`
+- [x] `tests/batch/live-worker-log.test.mjs`
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes
+- [x] FULL test suite passing (1115/1115)
+- [x] Coverage gate passes (87.26% line coverage)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #49 closed
-- [ ] `.DONE` created
+- [x] Issue #49 closed
+- [x] `.DONE` created
 
 ---
 
@@ -62,3 +62,5 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-29 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-29 | Step 0–3 | Live log writer, backend wiring, tests implemented |
+| 2026-06-29 | Step 4–5 | Full suite + coverage verified; issue #49 closed |

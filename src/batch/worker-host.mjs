@@ -15,9 +15,13 @@ import {
 	computeStallDeadline,
 	recordCheckpointWarning,
 	recordLaneHeartbeat,
+	recordLaneProgressSnapshot,
 	recordStallWarning,
 	resolveHeartbeatKind,
 	shouldEmitCheckpointWarning,
+	shouldEmitProgressSnapshot,
+	buildProgressSnapshotPayload,
+	progressSnapshotPayloadChanged,
 } from "./heartbeat.mjs";
 import {
 	resolveStallConfigForTask,
@@ -28,7 +32,7 @@ import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
-import { finalizeWorkerOutput } from "./worker-output.mjs";
+import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
@@ -296,8 +300,9 @@ async function terminateHungWorkerChild(child, childDone) {
 
 /**
  * @param {WorkerChildHandle} child
+ * @param {{ append: (rawChunk: string) => void } | null} [liveLogWriter]
  */
-function collectChildOutput(child) {
+function collectChildOutput(child, liveLogWriter) {
 	if ("wait" in child && typeof child.wait === "function") {
 		return child.wait();
 	}
@@ -305,10 +310,14 @@ function collectChildOutput(child) {
 		let stdout = "";
 		let stderr = "";
 		child.stdout?.on("data", (/** @type {Buffer | string} */ chunk) => {
-			stdout += chunk.toString();
+			const text = chunk.toString();
+			stdout += text;
+			liveLogWriter?.append(text);
 		});
 		child.stderr?.on("data", (/** @type {Buffer | string} */ chunk) => {
-			stderr += chunk.toString();
+			const text = chunk.toString();
+			stderr += text;
+			liveLogWriter?.append(text);
 		});
 		child.on?.("close", (/** @type {number | null} */ code) => {
 			resolve({ exitCode: code ?? 1, output: `${stdout}${stderr}` });
@@ -470,6 +479,8 @@ export async function runWorker({
 	const startedAt = Date.now();
 	let lastCheckpointAt = startedAt;
 	let lastHeartbeatAt = 0;
+	let lastProgressSnapshotAt = 0;
+	let lastSnapshotPayload = null;
 	let lastSignals = null;
 	let activitySinceCheckpoint = false;
 	let checkpointWarningSent = false;
@@ -500,7 +511,14 @@ export async function runWorker({
 		childPastPreflight = true;
 	});
 	onWorkerPid?.(workerChild.pid ?? 0);
-	const childDone = collectChildOutput(workerChild);
+	const liveLogWriter = createWorkerLiveLogWriter({
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		config,
+	});
+	const childDone = collectChildOutput(workerChild, liveLogWriter);
 
 	while (true) {
 		const doneOnDisk = fs.existsSync(donePath);
@@ -572,6 +590,7 @@ export async function runWorker({
 			activitySinceCheckpoint = false;
 			checkpointWarningSent = false;
 			lastSignals = null;
+			lastSnapshotPayload = null;
 		}
 		workerPhase = nextWorkerPhase;
 
@@ -617,6 +636,31 @@ export async function runWorker({
 		}
 
 		lastSignals = signals;
+
+		if (
+			projectRoot &&
+			batchId &&
+			shouldEmitProgressSnapshot({
+				now,
+				lastEmittedAt: lastProgressSnapshotAt,
+				intervalMs: stallConfig.progressSnapshotIntervalMs,
+			})
+		) {
+			const snapshotPayload = buildProgressSnapshotPayload(signals, workerPhase);
+			if (progressSnapshotPayloadChanged(lastSnapshotPayload, snapshotPayload)) {
+				recordLaneProgressSnapshot({
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					signals,
+					correlationId: laneCorrelationId,
+					workerPhase,
+				});
+				lastSnapshotPayload = snapshotPayload;
+			}
+			lastProgressSnapshotAt = now;
+		}
 
 		if (
 			projectRoot &&
