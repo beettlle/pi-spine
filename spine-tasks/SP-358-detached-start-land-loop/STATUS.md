@@ -2,7 +2,7 @@
 
 **Current Step:** Complete
 **Status:** ✅ Done
-**Last Updated:** 2026-06-29
+**Last Updated:** 2026-06-30
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 1
@@ -80,6 +80,7 @@
 | 2026-06-29 | Step 0 preflight | Engine calls `tryFinalizePostMergeLimbo` then `finalizeBatchForIntegrate` before exit; `detectPostMergeLimboForResume` uses journal/git when `mergeResults` empty |
 | 2026-06-29 | Step 3 verification | Contract tests 10/10; full suite 1098/109; coverage 87.14% (threshold 77%) |
 | 2026-06-29 | Step 4 delivery | Issue #41 closed; `.DONE` created |
+| 2026-06-30 | Re-verification | Contract tests 10/10; coverage 87.15%; `.DONE` restored after re-stage |
 
 ---
 

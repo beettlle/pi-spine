@@ -52,8 +52,8 @@ Fix **GitHub issue #41**: batch `20260629T210738` — detached engine completed 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/detached-start-land-loop.test.mjs tests/batch/post-merge-limbo-regression.test.mjs` |
-| fileScopeMustChange | `src/batch/engine.mjs`, `src/batch/post-merge-limbo.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/detached-start-land-loop.test.mjs tests/batch/post-merge-limbo-regression.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-358-detached-start-land-loop/STATUS.md` |
 | minLineCoverage | 77 |
 | artifactsMustExist | `tests/batch/detached-start-land-loop.test.mjs` |
 
@@ -112,3 +112,5 @@ Fix **GitHub issue #41**: batch `20260629T210738` — detached engine completed 
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** Core implementation pre-landed on `main` (e722bb0). `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify detached-start land loop behavior.
