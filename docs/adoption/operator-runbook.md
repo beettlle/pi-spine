@@ -1119,6 +1119,20 @@ Stub and agent-session workers write structured `.DONE` JSON (`{ "taskId", "comp
 | `.spine/runtime/<batchId>/evidence/` | Gate evidence bundle |
 | `<tasksRoot>/<id>/.DONE` | Task completion marker — structured JSON from spine workers; legacy empty/text still accepted (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
 
+**Cleanup after complete/dismiss:** When `lanes.cleanupWorktreesOnComplete` is true (default), `spine batch complete` and `spine batch dismiss` call `removeLaneWorktrees` and journal `batch.worktrees_cleaned`. Legacy batches completed before this behavior may leave `.worktrees/spine-<batchId>/` on disk.
+
+**Stale worktree warning:** `spine doctor` (and preflight via doctor) reports **stale worktrees** when `.worktrees/spine-*` directories exist for batch IDs other than the in-progress batch in `.spine/batch-state.json`. To clean up manually after confirming no active batch (`spine status --diagnose`):
+
+```bash
+# One completed batch (repeat per stale batchId)
+git worktree remove --force .worktrees/spine-<batchId>/lane-1
+# ... lanes 2-N ...
+rm -rf .worktrees/spine-<batchId>
+git branch -D task/spine-lane-<N>-<batchId>   # when merged
+```
+
+To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktreesOnComplete` to `false` in spine-config — expect doctor stale-worktree warnings until you remove dirs yourself.
+
 ### Get help from reconciliation
 
 ```bash
