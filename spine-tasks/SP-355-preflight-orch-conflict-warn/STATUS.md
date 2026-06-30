@@ -1,7 +1,7 @@
 # SP-355: Preflight orch conflict warn — Status
 
-**Current Step:** Step 3 (Delivery)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Size:** S
@@ -16,7 +16,8 @@
 | 2026-06-28 | Task staged | Split from SP-346 for issue #37 |
 | 2026-06-30 | Step 0 | Read issue #37 + SP-346 PROMPT |
 | 2026-06-30 | Step 1 | `checkOrchMergeConflictWarn` + plan warning in `spine-preflight-lib.mjs` |
-| 2026-06-30 | Step 2 | Contract tests pass; full suite pending |
+| 2026-06-30 | Step 2 | 1144/1144 tests pass; coverage 87.74% (≥77%) |
+| 2026-06-30 | Step 3 | Closed #37; `.DONE` created |
 
 ---
 
@@ -31,15 +32,15 @@
 ## Step 2: Testing & Verification
 
 - [x] Contract test passes
-- [ ] FULL suite + coverage gate
+- [x] FULL suite + coverage gate
 
 ## Step 3: Delivery
 
-- [ ] Close issue #37
-- [ ] Create `.DONE`
+- [x] Close issue #37
+- [x] Create `.DONE`
 
 ## Completion Criteria
 
 - [x] Required behavior implemented
-- [ ] Tests pass with coverage gate
-- [ ] Issue #37 closed
+- [x] Tests pass with coverage gate
+- [x] Issue #37 closed
