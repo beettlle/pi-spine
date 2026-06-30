@@ -2,6 +2,7 @@ import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
 import { generateBatchPostMortem } from "../src/batch/postmortem.mjs";
 import { readJournalEvents, readJournalTail } from "../src/batch/journal.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
+import { formatStatusJson } from "../src/batch/status-json.mjs";
 
 /**
  * @param {object} options
@@ -17,7 +18,7 @@ export function runSpineStatus(options) {
 	if (json) {
 		return {
 			exitCode: 0,
-			output: `${JSON.stringify(result, null, 2)}\n`,
+			output: formatStatusJson(result),
 		};
 	}
 

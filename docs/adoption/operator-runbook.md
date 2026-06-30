@@ -318,6 +318,18 @@ spine watch --interval 10       # slower poll interval in seconds
 spine next                      # print suggestedCommand only
 ```
 
+**`spine status --json` progress fields (issue #30):** when a batch is active, JSON output includes task and wave progress at the top level:
+
+| Field | Meaning |
+|-------|---------|
+| `succeededTasks` | Tasks in terminal success state |
+| `pendingTasks` | Tasks still resumable (`pending` / `running` or matching segment status) |
+| `totalTasks` | Tasks in the batch plan |
+| `currentWaveIndex` | Zero-based wave index from batch state |
+| `waveCount` | Total waves (`totalWaves` or `wavePlan.length`) |
+
+Idle repos omit these fields. `spine watch --json` wraps the same reconcile fields and may nest them under `progress` when present.
+
 `spine watch` wraps the same `reconcileBatch` path as `spine status` without `--diagnose` verbosity. Human mode refreshes one line (diagnosis, batchId, macro phase, headline). `--json` emits newline-delimited snapshots with `observedAt`, reconcile fields, and a `progress` block when SP-339 / issue #30 fields are present on the reconcile result.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`

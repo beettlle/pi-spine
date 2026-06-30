@@ -27,6 +27,7 @@ import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
+import { computeStatusProgress } from "./status-json.mjs";
 import {
 	detectBatchStateDrift,
 	rebuildBatchStateFromJournal,
@@ -94,6 +95,9 @@ const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
  * @property {import("./macro-phase.mjs").MacroPhase} [macroPhase]
  * @property {string} [macroPhaseLabel]
  * @property {object} [signals]
+ * @property {number} [pendingTasks]
+ * @property {number} [currentWaveIndex]
+ * @property {number} [waveCount]
  */
 
 /**
@@ -956,6 +960,13 @@ export function reconcileBatch(ctx) {
 		output.alternatives = ["spine status --diagnose"];
 	}
 
+	const progress = computeStatusProgress({
+		batchRaw: batch.raw,
+		succeededTasks: batch.succeededTasks,
+		totalTasks: batch.totalTasks,
+		pendingTasks: pendingTaskCount,
+	});
+
 	return {
 		...output,
 		batchId: batch.batchId,
@@ -966,6 +977,9 @@ export function reconcileBatch(ctx) {
 		failedTasks: signals.failedTasks,
 		succeededTasks: batch.succeededTasks,
 		totalTasks: batch.totalTasks,
+		pendingTasks: progress?.pendingTasks,
+		currentWaveIndex: progress?.currentWaveIndex,
+		waveCount: progress?.waveCount,
 		mergeFailed: mergeFailureSummary.mergeFailed,
 		failedMerges: mergeFailureSummary.failedMerges,
 		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
