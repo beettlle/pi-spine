@@ -1,7 +1,7 @@
 # SP-399: Batch CLI --help routing — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,35 +11,35 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduce `batch start --help` accidental batch start
-- [ ] Inventory help invocation patterns
+- [x] Reproduce `batch start --help` accidental batch start
+- [x] Inventory help invocation patterns
 
 ---
 
 ### Step 1: Help routing
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `printBatchHelp()` + early exit in `runSpineBatch`
-- [ ] Optional `spine.mjs` guard for `batch help`
+- [x] `printBatchHelp()` + early exit in `runSpineBatch`
+- [x] Optional `spine.mjs` guard for `batch help`
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/cli/batch-help.test.mjs`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] `tests/cli/batch-help.test.mjs`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #64
-- [ ] Create `.DONE`
+- [x] Close issue #64
+- [x] Create `.DONE`
 
 ---
 
