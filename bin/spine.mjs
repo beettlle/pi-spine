@@ -255,7 +255,7 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}watch${c.reset}           Poll reconcile loop for live batch monitoring (#44)
   ${c.cyan}wait${c.reset}            Block until diagnosis reaches target set (#46)
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
- ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
+ ${c.cyan}run${c.reset}             Start batch or planner wave sequence (PRD §15.2, #54)
  ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
  ${c.cyan}issue draft${c.reset}     Build GitHub issue draft from project state (#60)
  ${c.cyan}metrics${c.reset}         Show run metrics JSONL (FR-UXB-06)
@@ -309,6 +309,8 @@ ${c.bold}Examples:${c.reset}
   spine batch start TP-012                      # detached batch engine (default)
   spine batch start TP-012 --attached           # foreground batch engine
   spine run pending --dry-run                   # run unfinished tasks (alias for batch start)
+  spine run sequence pending --dry-run          # print wave-by-wave land loop commands (#54)
+  spine run sequence pending --from-wave 1      # resume sequence from planner wave 1
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine handoff [--batch ID] [--json]          # operator handoff note
