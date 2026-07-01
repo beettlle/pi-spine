@@ -22,6 +22,14 @@ Normative schema: [PRD v2.0 implementation handoff §4](../../docs/PRD-v2.0-impl
 | artifactsMustExist | `tests/batch/final-verdict.test.mjs` |
 ```
 
+**Path list formatting:** wrap each path in its own backticks. Do **not** put multiple comma-separated paths inside one pair:
+
+```markdown
+| fileScopeMustChange | `bin/a.mjs`, `bin/b.mjs` |
+```
+
+Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in required mode) and the parser must recover for legacy packets.
+
 ---
 
 ## Field guidance
@@ -29,10 +37,10 @@ Normative schema: [PRD v2.0 implementation handoff §4](../../docs/PRD-v2.0-impl
 | Field | When to include | Value format |
 |-------|-----------------|--------------|
 | `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. |
-| `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root |
+| `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``) |
 | `fileScopeMustNotChange` | When parallel tasks must not collide | Comma-separated paths/globs |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
-| `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths |
+| `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths; **one backtick per path** |
 | `stallTimeoutMinutes` | Long external jobs (operator matrix, CI arms) exceeding global/size stall budget | Positive integer minutes; engine uses `max(global, size floor, contract)` |
 | `extendGraceOnFileScope` | STATUS-only progress during long external work | `true` or `false`; when `true`, file-scope mtime extends stall grace for this task |
 

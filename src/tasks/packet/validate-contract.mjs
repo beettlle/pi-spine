@@ -4,6 +4,8 @@
 
 import micromatch from "micromatch";
 
+import { detectCommaInSingleBacktickPathLists } from "./parse-prompt.mjs";
+
 const GLOB_PROBE = "__probe__.mjs";
 
 /**
@@ -67,6 +69,17 @@ export function validateContract(parsed, options = {}) {
 			errors.push(placeholderIssue);
 		} else {
 			warnings.push(placeholderIssue);
+		}
+	}
+
+	for (const authoringIssue of detectCommaInSingleBacktickPathLists(parsed.rawFieldValues ?? {}, [
+		"fileScopeMustChange",
+		"artifactsMustExist",
+	])) {
+		if (mode === "required") {
+			errors.push(authoringIssue);
+		} else {
+			warnings.push(authoringIssue);
 		}
 	}
 
