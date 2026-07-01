@@ -1,8 +1,8 @@
 # SP-381: Dashboard batch assignment task states — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-30
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,32 +11,33 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review issue #58 batch assignment mockup
+- [x] Review issue #58 batch assignment mockup
 
 ---
 
 ### Step 1: Assignment styling
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Map lane.taskIds to classification badges in view model
-- [ ] CSS for muted/strikethrough done, emphasis running, error failed
+- [x] Map lane.taskIds to classification badges in view model
+- [x] CSS for muted/strikethrough done, emphasis running, error failed
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] See PROMPT.md
+- [x] See PROMPT.md
+- [ ] Create `.DONE` (deferred to stub worker on batch resume)
 
 ---
 
@@ -59,6 +60,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-01 | Manual delivery | Merged main for latest PROMPT; contract testCommand passed (coverage 87.68% in-scope) |
+| 2026-07-01 | Operator recovery | Committed delivery STATUS; `.DONE` left for stub worker on resume |
 
 ---
 
