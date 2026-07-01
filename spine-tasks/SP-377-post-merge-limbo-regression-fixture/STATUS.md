@@ -1,7 +1,7 @@
 # SP-377: Post-merge limbo regression fixture — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -27,17 +27,17 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run targeted tests
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run targeted tests
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Link fixture path in STATUS.md
+- [x] Link fixture path in STATUS.md
 
 ---
 
@@ -64,6 +64,7 @@
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-07-01 | Step 0 preflight | Issue #59 timeline: merge_completed lanes 1–3, orphan SIGTERM ~2m later, no gate until resume --force |
 | 2026-07-01 | Step 1 fixture | `tests/fixtures/batch-20260630T212050/orphan-after-merge.json` + materializer helper |
+| 2026-07-01 | Step 2 verification | Contract tests 5/5 pass; full suite exit 0; coverage 88.21% (threshold 77%) |
 
 ---
 
