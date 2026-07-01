@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-01 (Phase 49 — pre-1.2.0 release blockers #64–#66)
+**Last Updated:** 2026-07-01 (Phase 50 — pre-1.2.0 #70 attached evidence gate)
 **Status:** Active
-**Next Task ID:** SP-402
+**Next Task ID:** SP-403
 
 ---
 
@@ -1109,6 +1109,19 @@ spine tasks validate SP-399 SP-400 SP-401
 spine plan SP-399 SP-400 SP-401
 spine batch start SP-399 SP-400   # wave 0 (or serial: SP-399 then SP-400)
 spine batch start SP-401          # wave 1
+```
+
+#### Phase 50 — Pre-1.2.0 attached evidence gate (#70)
+
+**Source:** GitHub #70 — gate not opened when attached CLI killed during evidence test collection (batch `20260701T170610`).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-402 | Attached evidence gate resilience | M | **Staged** | — | #70 |
+
+```bash
+spine tasks validate SP-402
+spine batch start SP-402 --attached
 ```
 
 ---

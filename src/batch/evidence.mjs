@@ -119,13 +119,29 @@ export function buildTaskScorecard(batchState) {
 }
 
 /**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function evidenceCompletePath(projectRoot, batchId) {
+	return path.join(evidenceDir(projectRoot, batchId), ".complete");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function isEvidenceBundleComplete(projectRoot, batchId) {
+	return fs.existsSync(evidenceCompletePath(projectRoot, batchId));
+}
+
+/**
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
  * @param {object|null} [ctx.batchState]
  * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
  */
-export function collectEvidenceBundle(ctx) {
+export function collectCoreEvidenceBundle(ctx) {
 	const { projectRoot, batchId, batchState = null, config = null } = ctx;
 	const dir = evidenceDir(projectRoot, batchId);
 	fs.mkdirSync(dir, { recursive: true });
@@ -146,6 +162,35 @@ export function collectEvidenceBundle(ctx) {
 		writeTextAtomic(path.join(dir, "diff-stat.txt"), `${diffStat}\n`);
 		evidenceRefs.push("evidence/diff-stat.txt");
 	}
+
+	for (const ref of collectWorkerOutputEvidenceRefs(projectRoot, batchId)) {
+		evidenceRefs.push(ref);
+	}
+
+	for (const name of fs.readdirSync(dir)) {
+		if (name.startsWith("salvage-") && name.endsWith(".json")) {
+			evidenceRefs.push(`evidence/${name}`);
+		}
+	}
+
+	return { evidenceDir: dir, evidenceRefs };
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {string} ctx.batchId
+ * @param {object|null} [ctx.batchState]
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
+ * @param {string[]} [ctx.evidenceRefs]
+ */
+export function collectExtendedEvidenceBundle(ctx) {
+	const { projectRoot, batchId, batchState = null, config = null } = ctx;
+	const dir = evidenceDir(projectRoot, batchId);
+	fs.mkdirSync(dir, { recursive: true });
+
+	/** @type {string[]} */
+	const evidenceRefs = [...(ctx.evidenceRefs ?? [])];
 
 	const gates = config?.gates ?? {};
 	const testing = resolveTestingCommands(config, projectRoot);
@@ -170,23 +215,34 @@ export function collectEvidenceBundle(ctx) {
 		evidenceRefs.push("evidence/coverage-output.txt");
 	}
 
-	for (const ref of collectWorkerOutputEvidenceRefs(projectRoot, batchId)) {
-		evidenceRefs.push(ref);
-	}
+	return { evidenceDir: dir, evidenceRefs };
+}
 
-	for (const name of fs.readdirSync(dir)) {
-		if (name.startsWith("salvage-") && name.endsWith(".json")) {
-			evidenceRefs.push(`evidence/${name}`);
-		}
-	}
-
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string[]} evidenceRefs
+ */
+export function finalizeEvidenceBundleComplete(projectRoot, batchId, evidenceRefs) {
 	const completePayload = `${JSON.stringify({
 		completedAt: new Date().toISOString(),
 		evidenceRefs,
 	})}\n`;
-	writeTextAtomic(path.join(dir, ".complete"), completePayload);
+	writeTextAtomic(evidenceCompletePath(projectRoot, batchId), completePayload);
+}
 
-	return { evidenceDir: dir, evidenceRefs };
+/**
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {string} ctx.batchId
+ * @param {object|null} [ctx.batchState]
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
+ */
+export function collectEvidenceBundle(ctx) {
+	const core = collectCoreEvidenceBundle(ctx);
+	const extended = collectExtendedEvidenceBundle({ ...ctx, evidenceRefs: core.evidenceRefs });
+	finalizeEvidenceBundleComplete(ctx.projectRoot, ctx.batchId, extended.evidenceRefs);
+	return { evidenceDir: extended.evidenceDir, evidenceRefs: extended.evidenceRefs };
 }
 
 /**

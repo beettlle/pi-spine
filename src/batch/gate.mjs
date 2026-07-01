@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
-import { collectEvidenceBundle } from "./evidence.mjs";
+import { collectCoreEvidenceBundle, collectExtendedEvidenceBundle, finalizeEvidenceBundleComplete } from "./evidence.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
 /**
@@ -67,15 +67,18 @@ export function openIntegrateGate(ctx) {
 		return { gate: existing, opened: false, evidenceRefs: existing.evidenceRefs ?? [] };
 	}
 
-	const evidence = collectEvidenceBundle({ projectRoot, batchId, batchState, config });
+	const core = collectCoreEvidenceBundle({ projectRoot, batchId, batchState, config });
+	/** @type {string[]} */
+	let evidenceRefs = [...core.evidenceRefs];
+
 	const gate = {
 		gateId: crypto.randomUUID(),
 		batchId,
 		kind: "integrate",
 		status: "pending",
 		openedAt: new Date().toISOString(),
-		evidenceRefs: evidence.evidenceRefs,
-		summary: formatGateSummary({ kind: "integrate", status: "pending", evidenceRefs: evidence.evidenceRefs }),
+		evidenceRefs,
+		summary: formatGateSummary({ kind: "integrate", status: "pending", evidenceRefs }),
 	};
 
 	saveGateRecord(projectRoot, gate);
@@ -86,7 +89,40 @@ export function openIntegrateGate(ctx) {
 		evidenceRefs: gate.evidenceRefs,
 	});
 
-	return { gate, opened: true, evidenceRefs: evidence.evidenceRefs };
+	appendJournalEvent(projectRoot, batchId, "gate.evidence_collecting", {
+		stage: "extended",
+	});
+
+	/** @type {string | null} */
+	let extendedError = null;
+	try {
+		const extended = collectExtendedEvidenceBundle({
+			projectRoot,
+			batchId,
+			batchState,
+			config,
+			evidenceRefs,
+		});
+		evidenceRefs = extended.evidenceRefs;
+		appendJournalEvent(projectRoot, batchId, "gate.evidence_completed", {
+			evidenceRefCount: evidenceRefs.length,
+		});
+	} catch (err) {
+		extendedError = err instanceof Error ? err.message : String(err);
+		appendJournalEvent(projectRoot, batchId, "gate.evidence_failed", {
+			message: extendedError.slice(0, 500),
+		});
+	}
+
+	gate.evidenceRefs = evidenceRefs;
+	gate.summary = formatGateSummary({ kind: "integrate", status: "pending", evidenceRefs: gate.evidenceRefs });
+	saveGateRecord(projectRoot, gate);
+
+	if (!extendedError) {
+		finalizeEvidenceBundleComplete(projectRoot, batchId, evidenceRefs);
+	}
+
+	return { gate, opened: true, evidenceRefs: gate.evidenceRefs, extendedError };
 }
 
 /**

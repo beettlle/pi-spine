@@ -25,6 +25,9 @@ export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
 	"batch.merge_completed",
 	"batch.merge_blocked",
 	"gate.opened",
+	"gate.evidence_collecting",
+	"gate.evidence_completed",
+	"gate.evidence_failed",
 	"batch.land_loop_finalized",
 	"batch.completed",
 ]);
