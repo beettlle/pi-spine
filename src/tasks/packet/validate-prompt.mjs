@@ -2,6 +2,9 @@
  * Shared fail-loud PROMPT validation helpers (planner, preflight, rules CLI, batch engine).
  */
 
+import { execFileSync } from "node:child_process";
+
+import { matchesContractPattern } from "../../batch/contract-verify.mjs";
 import { CONTRACT_DEFAULTS } from "../../config/defaults.mjs";
 import {
 	parseContract,
@@ -9,6 +12,10 @@ import {
 	validatePrompt as validatePromptStructure,
 } from "./parse-prompt.mjs";
 import { validateContract } from "./validate-contract.mjs";
+
+/** Operator-facing hint when fileScopeMustChange may already be satisfied on main. */
+export const STALE_FILE_SCOPE_AMENDMENT_HINT =
+	"Amend PROMPT.md ## Contract before batch start (e.g. point fileScopeMustChange at delivery artifacts such as STATUS.md, or add an ## Amendments note documenting pre-landed implementation)";
 
 /**
  * Validate PROMPT.md structure and ## Contract per contract.mode (handoff §3.1, §4.4).
@@ -96,4 +103,121 @@ export function assertValidTaskPacket(packet, taskId) {
  */
 function formatErrorLines(errors) {
 	return errors.map((error) => `  - ${error}`).join("\n");
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} relPath
+ */
+function gitFirstCommitTouchingPath(projectRoot, relPath) {
+	try {
+		const output = execFileSync("git", ["log", "--reverse", "--format=%H", "--", relPath], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 10_000,
+		}).trim();
+		return output.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} [baseRef]
+ */
+function resolveComparisonBaseRef(projectRoot, baseRef = "main") {
+	try {
+		execFileSync("git", ["rev-parse", "--verify", baseRef], {
+			cwd: projectRoot,
+			stdio: "ignore",
+			timeout: 5000,
+		});
+		return baseRef;
+	} catch {
+		return "HEAD";
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} sinceCommit
+ * @param {string} baseRef
+ * @param {string} pattern
+ */
+function listPathsChangedSinceCommit(projectRoot, sinceCommit, baseRef, pattern) {
+	try {
+		const output = execFileSync(
+			"git",
+			["diff", "--name-only", `${sinceCommit}..${baseRef}`, "--", pattern],
+			{
+				cwd: projectRoot,
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				timeout: 10_000,
+			},
+		);
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Warn when fileScopeMustChange paths were already modified on main after the task PROMPT was introduced.
+ *
+ * @param {string} projectRoot
+ * @param {ReturnType<typeof parseContract>} parsedContract
+ * @param {string} promptRelPath Path to PROMPT.md relative to projectRoot
+ * @param {{ baseRef?: string }} [options]
+ * @returns {string[]}
+ */
+export function collectStaleFileScopeMustChangeWarnings(
+	projectRoot,
+	parsedContract,
+	promptRelPath,
+	options = {},
+) {
+	const patterns = parsedContract?.fileScopeMustChange ?? [];
+	if (patterns.length === 0) {
+		return [];
+	}
+
+	const introCommit = gitFirstCommitTouchingPath(projectRoot, promptRelPath);
+	if (!introCommit) {
+		return [];
+	}
+
+	const baseRef = resolveComparisonBaseRef(projectRoot, options.baseRef ?? "main");
+	/** @type {string[]} */
+	const stalePatterns = [];
+
+	for (const pattern of patterns) {
+		const changedPaths = listPathsChangedSinceCommit(
+			projectRoot,
+			introCommit,
+			baseRef,
+			pattern,
+		);
+		const matching = changedPaths.filter((filePath) =>
+			matchesContractPattern(filePath, pattern),
+		);
+		if (matching.length > 0) {
+			stalePatterns.push(pattern);
+		}
+	}
+
+	if (stalePatterns.length === 0) {
+		return [];
+	}
+
+	const preview = stalePatterns.slice(0, 5).join(", ");
+	const suffix = stalePatterns.length > 5 ? ` (+${stalePatterns.length - 5} more)` : "";
+	return [
+		`Contract fileScopeMustChange path(s) (${preview}${suffix}) already changed on ${baseRef} since task was added — implementation may be pre-landed and will not diff in a new lane. ${STALE_FILE_SCOPE_AMENDMENT_HINT}`,
+	];
 }
