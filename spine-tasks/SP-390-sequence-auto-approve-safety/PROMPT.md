@@ -36,8 +36,8 @@ Implement **GitHub issue #54** Tier 2 safety: refuse `--auto-approve-gate` for r
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-auto-approve.test.mjs` |
-| fileScopeMustChange | `src/batch/sequence.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-auto-approve.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-390-sequence-auto-approve-safety/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps
@@ -88,3 +88,5 @@ Implement **GitHub issue #54** Tier 2 safety: refuse `--auto-approve-gate` for r
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** `src/batch/sequence.mjs` partially pre-landed on `main`. `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` verifies auto-approve safety gates.

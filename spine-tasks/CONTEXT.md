@@ -1039,12 +1039,13 @@ spine batch start SP-368                  # explore doc (parallel anytime)
 | SP-391 | Sequence journal events | S | **Staged** | SP-387 | — |
 | SP-392 | Sequence diagnose and dashboard surfaces | S | **Staged** | SP-389, SP-391 | #54 |
 | SP-393 | Sequence supervisor daemon explore | L | **Staged** | SP-392 | — |
+| SP-398 | Contract comma-in-backtick path parse fix | S | **Staged** | — | #61 |
 
 **Suggested batch waves:**
 
 | Wave | Tasks | GitHub | Notes |
 |------|-------|--------|-------|
-| A (parallel) | SP-369, SP-373, SP-375, SP-379, SP-385 | #53, #56, #57, #58, #54 | Disjoint roots |
+| A (parallel) | SP-369, SP-373, SP-375, SP-379, SP-385, SP-398 | #53, #56, #57, #58, #54, #61 | Disjoint roots |
 | B (serial) | SP-370 → SP-374 → SP-376; SP-380 → SP-381 → SP-382; SP-386; SP-387 | | Dashboard/sequence file-scope chains |
 | C (parallel) | SP-371, SP-377, SP-383, SP-388, SP-390 | | |
 | D (parallel) | SP-372, SP-378, SP-384, SP-389, SP-391, SP-392 | #53, #59, #58, #54 | SP-391 after SP-390 |

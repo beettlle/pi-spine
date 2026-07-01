@@ -53,8 +53,8 @@ None
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/issue-draft.test.mjs` |
-| fileScopeMustChange | `src/cli/issue-draft.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/issue-draft.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-395-issue-draft-body-assembly/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/cli/issue-draft.test.mjs` |
 
@@ -109,3 +109,5 @@ None
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** `src/cli/issue-draft.mjs` pre-landed on `main`. `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify draft body assembly.

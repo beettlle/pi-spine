@@ -36,8 +36,8 @@ None
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/reviewer-model-resolve.test.mjs` |
-| fileScopeMustChange | `src/config/agent-model-resolve.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/reviewer-model-resolve.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-369-reviewer-model-resolve-helpers/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/batch/reviewer-model-resolve.test.mjs` |
 
@@ -92,3 +92,5 @@ None
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** `src/config/agent-model-resolve.mjs` pre-landed on `main`. `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify reviewer model resolution helpers.

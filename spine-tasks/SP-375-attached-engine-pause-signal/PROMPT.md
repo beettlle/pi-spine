@@ -37,8 +37,8 @@ None
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/attached-pause-persist.test.mjs` |
-| fileScopeMustChange | `src/batch/attached-runner.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/attached-pause-persist.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-375-attached-engine-pause-signal/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/batch/attached-pause-persist.test.mjs` |
 
@@ -91,3 +91,5 @@ None
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** Pause propagation partially pre-landed on `main` (`src/batch/attached-runner.mjs`). `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify attached pause persistence.

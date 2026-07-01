@@ -35,8 +35,8 @@ Address **GitHub issue #59** (partial): add regression fixture reproducing batch
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/post-merge-limbo-20260630.test.mjs` |
-| fileScopeMustChange | `tests/batch/post-merge-limbo-20260630.test.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/post-merge-limbo-20260630.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-377-post-merge-limbo-regression-fixture/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/batch/post-merge-limbo-20260630.test.mjs` |
 
@@ -89,3 +89,5 @@ Address **GitHub issue #59** (partial): add regression fixture reproducing batch
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-06-30:** Fixture test pre-landed on `main` (`tests/batch/post-merge-limbo-20260630.test.mjs`). `fileScopeMustChange` targets delivery `STATUS.md`; `testCommand` + `artifactsMustExist` verify regression fixture.
