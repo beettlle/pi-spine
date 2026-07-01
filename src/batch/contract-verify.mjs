@@ -7,6 +7,7 @@ import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import micromatch from "micromatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
+import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveContractMode } from "../tasks/packet/validate-contract.mjs";
 
 /**
@@ -150,9 +151,167 @@ export function listEffectiveChangedFiles(worktreePath, baseBranch = "main", pen
 
 /**
  * @param {string} worktreePath
+ * @param {string} relPath
+ */
+function gitFirstCommitTouchingPath(worktreePath, relPath) {
+	try {
+		const output = execFileSync("git", ["log", "--reverse", "--format=%H", "--", relPath], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 10_000,
+		}).trim();
+		return output.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} sinceCommit
+ * @param {string} baseRef
+ * @param {string} pattern
+ */
+function listPathsChangedSinceCommit(worktreePath, sinceCommit, baseRef, pattern) {
+	try {
+		const output = execFileSync(
+			"git",
+			["diff", "--name-only", `${sinceCommit}..${baseRef}`, "--", pattern],
+			{
+				cwd: worktreePath,
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				timeout: 10_000,
+			},
+		);
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Resolve PROMPT.md path relative to worktree from lane delivery changes or config.
+ *
+ * @param {string} worktreePath
+ * @param {string[]} changedFiles
+ * @param {object} [config]
+ * @returns {string | null}
+ */
+export function resolvePromptRelPath(worktreePath, changedFiles, config = {}) {
+	if (typeof config.promptRelPath === "string" && config.promptRelPath.trim()) {
+		return config.promptRelPath.replace(/\\/g, "/");
+	}
+	if (typeof config.taskFolder === "string" && config.taskFolder.trim()) {
+		const rel = path.relative(worktreePath, config.taskFolder).replace(/\\/g, "/");
+		if (rel && !rel.startsWith("..")) {
+			return `${rel}/PROMPT.md`;
+		}
+	}
+
+	const tasksRoot = String(config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT).replace(/\\/g, "/");
+	/** @type {Set<string>} */
+	const taskDirs = new Set();
+	for (const file of changedFiles) {
+		const normalized = String(file).replace(/\\/g, "/");
+		const match = normalized.match(new RegExp(`^${tasksRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/([^/]+)/`));
+		if (match?.[1]) {
+			taskDirs.add(match[1]);
+		}
+	}
+	if (taskDirs.size === 1) {
+		return `${tasksRoot}/${[...taskDirs][0]}/PROMPT.md`;
+	}
+	return null;
+}
+
+/**
+ * True when scope path changed on baseRef after the task PROMPT first landed (issue #56).
+ *
+ * @param {string} worktreePath
+ * @param {string} pattern
+ * @param {string | null} promptRelPath
+ * @param {string} baseRef
+ */
+export function isFileScopePatternPrelanded(worktreePath, pattern, promptRelPath, baseRef = "main") {
+	if (!promptRelPath) {
+		return false;
+	}
+	const introCommit = gitFirstCommitTouchingPath(worktreePath, promptRelPath);
+	if (!introCommit) {
+		return false;
+	}
+	const changedPaths = listPathsChangedSinceCommit(worktreePath, introCommit, baseRef, pattern);
+	return changedPaths.some((filePath) => matchesContractPattern(filePath, pattern));
+}
+
+/**
+ * @param {string[]} changedFiles
+ * @param {string} [tasksRoot]
+ */
+export function hasSpineTaskDeliveryChanges(changedFiles, tasksRoot = DEFAULT_TASKS_ROOT) {
+	const prefix = `${String(tasksRoot).replace(/\\/g, "/")}/`;
+	return changedFiles.some((file) => String(file).replace(/\\/g, "/").startsWith(prefix));
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ */
+function artifactsAllExist(worktreePath, parsedContract) {
+	for (const artifactPath of parsedContract.artifactsMustExist ?? []) {
+		if (!findArtifactMatch(worktreePath, artifactPath).ok) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} pattern
+ * @param {string[]} changedFiles
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {object} config
+ * @param {string} baseBranch
+ * @param {{ testCommandOk: boolean }} delivery
+ */
+function isPrelandedFileScopeSatisfied(
+	worktreePath,
+	pattern,
+	changedFiles,
+	parsedContract,
+	config,
+	baseBranch,
+	delivery,
+) {
+	const matchedInLane = changedFiles.some((file) => matchesContractPattern(file, pattern));
+	if (matchedInLane) {
+		return false;
+	}
+	const promptRelPath = resolvePromptRelPath(worktreePath, changedFiles, config);
+	if (!isFileScopePatternPrelanded(worktreePath, pattern, promptRelPath, baseBranch)) {
+		return false;
+	}
+	if (parsedContract.testCommand && !delivery.testCommandOk) {
+		return false;
+	}
+	if ((parsedContract.artifactsMustExist?.length ?? 0) > 0 && !artifactsAllExist(worktreePath, parsedContract)) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {string} [baseBranch]
  * @param {string[]} [pendingPaths] Uncommitted paths about to be lane-committed
+ * @param {object} [config]
  * @returns {{ ok: boolean, failures: string[] }}
  */
 export function verifyStubFileScopeMustChange(
@@ -160,6 +319,7 @@ export function verifyStubFileScopeMustChange(
 	parsedContract,
 	baseBranch = "main",
 	pendingPaths = [],
+	config = {},
 ) {
 	const patterns = parsedContract?.fileScopeMustChange ?? [];
 	if (patterns.length === 0) {
@@ -167,13 +327,27 @@ export function verifyStubFileScopeMustChange(
 	}
 
 	const changedFiles = listEffectiveChangedFiles(worktreePath, baseBranch, pendingPaths);
+	const tasksRoot = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
+	const hasDelivery = hasSpineTaskDeliveryChanges(changedFiles, tasksRoot);
 	/** @type {string[]} */
 	const failures = [];
 	for (const pattern of patterns) {
 		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
-		if (!matched) {
-			failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
+		if (matched) {
+			continue;
 		}
+		if (
+			hasDelivery &&
+			isFileScopePatternPrelanded(
+				worktreePath,
+				pattern,
+				resolvePromptRelPath(worktreePath, changedFiles, config),
+				baseBranch,
+			)
+		) {
+			continue;
+		}
+		failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
 	}
 	return { ok: failures.length === 0, failures };
 }
@@ -339,9 +513,11 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	const changedFiles = listChangedFiles(worktreePath, baseBranch);
 
 	let testCommandOutput = "";
+	let testCommandOk = true;
 	if (parsedContract.testCommand) {
 		const result = runContractTestCommand(worktreePath, parsedContract.testCommand);
 		testCommandOutput = result.output;
+		testCommandOk = result.ok;
 		checks.push({
 			field: "testCommand",
 			ok: result.ok,
@@ -353,12 +529,25 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 
 	for (const pattern of parsedContract.fileScopeMustChange ?? []) {
 		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
+		const prelanded = !matched &&
+			isPrelandedFileScopeSatisfied(
+				worktreePath,
+				pattern,
+				changedFiles,
+				parsedContract,
+				config,
+				baseBranch,
+				{ testCommandOk },
+			);
+		const ok = matched || prelanded;
 		checks.push({
 			field: "fileScopeMustChange",
-			ok: matched,
+			ok,
 			message: matched
 				? `fileScopeMustChange matched: ${pattern}`
-				: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
+				: prelanded
+					? `fileScopeMustChange pre-landed on ${baseBranch}: ${pattern}`
+					: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
 		});
 	}
 
