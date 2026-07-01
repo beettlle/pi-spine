@@ -38,8 +38,8 @@ Finish **GitHub issue #53**: include resolved model/thinking in review journal e
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/review-spawn.test.mjs` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/review-spawn.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-372-reviewer-model-observability-docs/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps
