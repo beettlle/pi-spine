@@ -1,7 +1,7 @@
 # SP-407: Stub delivery-only scope detector — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 4 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,39 +11,39 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #67
-- [ ] Dependencies satisfied
+- [x] Read GitHub issue #67
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #67 reproduction (batch 20260701T031142)
-- [ ] List delivery artifact patterns from SP-349 stub verify
+- [x] Read issue #67 reproduction (batch 20260701T031142)
+- [x] List delivery artifact patterns from SP-349 stub verify
 
 ---
 
 ### Step 2: Detector module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `contract-stub-delivery.mjs` with `isStubDeliveryOnlyScope` and `isDeliveryArtifactPath`
-- [ ] Reject patterns that include implementation paths (src/**, etc.)
+- [x] Create `contract-stub-delivery.mjs` with `isStubDeliveryOnlyScope` and `isDeliveryArtifactPath`
+- [x] Reject patterns that include implementation paths (src/**, etc.)
 
 ---
 
 ### Step 3: Unit tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Positive: STATUS.md-only, .DONE-only, spine-tasks/<id>/** delivery
-- [ ] Negative: mixed implementation + STATUS patterns
+- [x] Positive: STATUS.md-only, .DONE-only, spine-tasks/<id>/** delivery
+- [x] Negative: mixed implementation + STATUS patterns
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate passes (≥77%)
@@ -53,7 +53,7 @@
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Docs updated
+- [x] Docs updated (none required)
 
 
 ---
@@ -69,6 +69,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-349 stub verify enforces fileScopeMustChange at lane commit; delivery patterns are STATUS.md, .DONE, task-folder paths | Used for detector allow-list | `src/batch/contract-verify.mjs`, issue #67 |
+| Area-level `spine-tasks/CONTEXT.md` is not a per-task delivery artifact | Rejected in `isDeliveryArtifactPath` | `contract-stub-delivery.mjs` |
 
 ---
 
@@ -77,6 +79,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #67 |
+| 2026-07-01 | Steps 0–1 preflight | Issue #67 + SP-349 patterns catalogued |
+| 2026-07-01 | Steps 2–3 | Detector module and unit tests added |
 
 ---
 
@@ -88,4 +92,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Step 2 plan:** Add `contract-stub-delivery.mjs` with `isDeliveryArtifactPath` (allow STATUS.md, .DONE, paths under one task folder; reject `src/**`, `bin/**`, `tests/**`, tasks-root files) and `isStubDeliveryOnlyScope` (every pattern passes). SP-408 will consume the helper in the stub runner.
