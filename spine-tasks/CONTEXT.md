@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-01 (Phase 50 — pre-1.2.0 #70 attached evidence gate)
+**Last Updated:** 2026-07-01 (Phase 51 — GitHub open issues #62, #63, #67, #68)
 **Status:** Active
-**Next Task ID:** SP-403
+**Next Task ID:** SP-418
 
 ---
 
@@ -1122,6 +1122,44 @@ spine batch start SP-401          # wave 1
 ```bash
 spine tasks validate SP-402
 spine batch start SP-402 --attached
+```
+
+#### Phase 51 — GitHub open issues (#62, #63, #67, #68)
+
+**Source:** Open issues on [beettlle/pi-spine](https://github.com/beettlle/pi-spine/issues) as of 2026-07-01. Epic **#43** already tracked by Phase 46 (SP-339–SP-368); child issues #30, #44–#52 are closed — finish remaining Phase 46 staged tasks, then close epic #43 manually.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-403 | Tail-state diagnosis headline | S | **Staged** | — | #68 (partial) |
+| SP-404 | Dashboard banner tail macro-phase | S | **Staged** | SP-403 | #68 (partial) |
+| SP-405 | Wave panel terminal completed | S | **Staged** | SP-379 | #68 (partial) |
+| SP-406 | Dashboard tail activity subline | S | **Staged** | SP-403–405 | #68 |
+| SP-407 | Stub delivery-only scope detector | S | **Staged** | — | #67 (partial) |
+| SP-408 | Stub runner STATUS.md delivery | S | **Staged** | SP-407 | #67 (partial) |
+| SP-409 | Stub delivery runbook | S | **Staged** | SP-408 | #67 |
+| SP-410 | Contract template parallel semantics | S | **Staged** | SP-398 | #63 (partial) |
+| SP-411 | Skill must-not-change guidance | S | **Staged** | SP-410 | #63 (partial) |
+| SP-412 | Runbook must-not-change failures | S | **Staged** | SP-410, SP-409 | #63 (partial) |
+| SP-413 | Validate spine-tasks must-not warn | S | **Staged** | SP-410–412 | #63 |
+| SP-414 | Contract verify scoped diff API | S | **Staged** | — | #62 (partial) |
+| SP-415 | Resolve task start commit | S | **Staged** | — | #62 (partial) |
+| SP-416 | Serialized lane scoped verify | M | **Staged** | SP-414, SP-415 | #62 (partial) |
+| SP-417 | Close #62 serialized lane verify | S | **Staged** | SP-416, SP-409, SP-412 | #62 |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | GitHub | Notes |
+|------|-------|--------|-------|
+| A (parallel) | SP-403, SP-405, SP-407, SP-410, SP-414, SP-415 | #68, #67, #63, #62 | Disjoint roots |
+| B (parallel) | SP-404, SP-408, SP-411, SP-412 | | Docs chains after wave A |
+| C | SP-416 | #62 | Scoped verify wiring |
+| D (parallel) | SP-406, SP-409, SP-413, SP-417 | #68, #67, #63, #62 | Issue close capstones |
+
+```bash
+spine tasks validate SP-403 SP-404 SP-405 SP-406 SP-407 SP-408 SP-409 SP-410 SP-411 SP-412 SP-413 SP-414 SP-415 SP-416 SP-417
+spine tasks analyze pending
+spine plan SP-403 SP-405 SP-407 SP-410 SP-414 SP-415   # wave A
+spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 ```
 
 ---
