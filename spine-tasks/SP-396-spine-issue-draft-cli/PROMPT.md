@@ -56,8 +56,8 @@ Human-readable default: print title + body to stdout; write `--out` unless `--js
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/spine-issue.test.mjs` |
-| fileScopeMustChange | `bin/spine-issue.mjs,bin/spine.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/spine-issue.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `bin/spine-issue.mjs`, `bin/spine.mjs` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/cli/spine-issue.test.mjs` |
 
@@ -110,3 +110,5 @@ Human-readable default: print title + body to stdout; write `--out` unless `--js
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-07-01:** Fix `fileScopeMustChange` comma-in-backtick parse bug (batch `20260630T232548`); per-path backticks; add `coverage:check` to `testCommand`.
