@@ -1,8 +1,8 @@
 # SP-382: Dashboard batch summary task counts — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-30
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,32 +11,32 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read buildDashboardViewModel
+- [x] Read buildDashboardViewModel
 
 ---
 
 ### Step 1: Summary counts
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add aggregate task counts to view model
-- [ ] Render in batch summary panel with wave index when available
+- [x] Add aggregate task counts to view model
+- [x] Render in batch summary panel with wave index when available
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] See PROMPT.md
+- [x] See PROMPT.md
 
 ---
 

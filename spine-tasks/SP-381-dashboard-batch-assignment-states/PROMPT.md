@@ -38,8 +38,8 @@ Implement **GitHub issue #58** Tier 1b: render batch assignment column with per-
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/ui-contract.test.mjs` |
-| fileScopeMustChange | `src/dashboard/public/dashboard.js` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/ui-contract.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-381-dashboard-batch-assignment-states/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps

@@ -38,8 +38,8 @@ Implement **GitHub issue #58** Tier 2: batch summary line `N running · M queued
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/ui-contract.test.mjs` |
-| fileScopeMustChange | `src/dashboard/view.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/ui-contract.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-382-dashboard-batch-summary-task-counts/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps

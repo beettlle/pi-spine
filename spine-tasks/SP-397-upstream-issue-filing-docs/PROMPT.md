@@ -47,7 +47,7 @@ Complete **GitHub issue #60** delivery docs: document GitHub templates (SP-394) 
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md,.cursor/rules/spine-operator-cursor.mdc` |
+| fileScopeMustChange | `spine-tasks/SP-397-upstream-issue-filing-docs/STATUS.md` |
 
 ## Steps
 

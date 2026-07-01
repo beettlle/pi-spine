@@ -37,8 +37,8 @@ Implement **GitHub issue #54** observability: journal events `sequence.wave_star
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-journal.test.mjs` |
-| fileScopeMustChange | `src/batch/sequence.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-journal.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-391-sequence-journal-events/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps
