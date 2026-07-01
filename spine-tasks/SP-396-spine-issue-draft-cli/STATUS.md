@@ -2,7 +2,7 @@
 
 **Current Step:** Step 3 (complete)
 **Status:** 🟢 Complete
-**Last Updated:** 2026-06-30 (verified, .DONE recreated)
+**Last Updated:** 2026-07-01 (verified, .DONE recreated after SP-374 batch commit removed marker)
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
