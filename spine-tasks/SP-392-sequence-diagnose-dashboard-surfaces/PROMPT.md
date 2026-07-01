@@ -42,8 +42,8 @@ Implement **GitHub issue #54** Tier 2 SP-F: `spine status --diagnose` shows acti
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-diagnose.test.mjs` |
-| fileScopeMustChange | `src/batch/diagnose.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-diagnose.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-392-sequence-diagnose-dashboard-surfaces/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps

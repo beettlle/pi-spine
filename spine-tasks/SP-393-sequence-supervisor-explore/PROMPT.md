@@ -37,7 +37,7 @@ Explore **GitHub issue #54** Tier 3 (SP-G deferred): document detached superviso
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `spine-tasks/_explore/sequence-supervisor/findings.md` |
+| fileScopeMustChange | `spine-tasks/SP-393-sequence-supervisor-explore/STATUS.md` |
 
 ## Steps
 
