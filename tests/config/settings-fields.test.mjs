@@ -8,21 +8,28 @@ import {
 	validateSettingValue,
 } from "../../src/config/settings-fields.mjs";
 
-test("SETTINGS_FIELDS lists at least five editable paths", () => {
+const EXPECTED_PATHS = [
+	"agents.reviewer.code.model",
+	"agents.reviewer.code.thinking",
+	"agents.reviewer.final.model",
+	"agents.reviewer.final.thinking",
+	"agents.reviewer.model",
+	"agents.reviewer.plan.model",
+	"agents.reviewer.plan.thinking",
+	"agents.reviewer.thinking",
+	"agents.worker.model",
+	"agents.worker.thinking",
+	"dashboard.port",
+	"gates.requireBeforeIntegrate",
+	"lanes.autoIntegrateBetweenWaves",
+	"lanes.maxParallel",
+	"lanes.workerBackend",
+];
+
+test("SETTINGS_FIELDS lists editable paths including reviewer per-type pins", () => {
 	assert.ok(SETTINGS_FIELDS.length >= 5);
 	const paths = SETTINGS_FIELDS.map((f) => f.path);
-	assert.deepEqual(
-		paths.sort(),
-		[
-			"agents.worker.model",
-			"agents.worker.thinking",
-			"dashboard.port",
-			"gates.requireBeforeIntegrate",
-			"lanes.autoIntegrateBetweenWaves",
-			"lanes.maxParallel",
-			"lanes.workerBackend",
-		].sort(),
-	);
+	assert.deepEqual(paths.sort(), EXPECTED_PATHS.sort());
 });
 
 test("listEditableFields returns shallow copies", () => {
@@ -107,6 +114,43 @@ test("agents.worker.thinking accepts enum values case-insensitively", () => {
 	const invalid = validateSettingValue("agents.worker.thinking", "turbo");
 	assert.equal(invalid.ok, false);
 	if (!invalid.ok) assert.match(invalid.error, /off, low, medium, high/);
+});
+
+test("agents.reviewer.model accepts inherit and optional empty", () => {
+	const inherit = validateSettingValue("agents.reviewer.model", "inherit");
+	assert.equal(inherit.ok, true);
+	if (inherit.ok) assert.equal(inherit.normalizedValue, "inherit");
+
+	const empty = validateSettingValue("agents.reviewer.model", "");
+	assert.equal(empty.ok, true);
+	if (empty.ok) assert.equal(empty.normalizedValue, "");
+});
+
+test("agents.reviewer.thinking accepts inherit and enum values", () => {
+	const inherit = validateSettingValue("agents.reviewer.thinking", "inherit");
+	assert.equal(inherit.ok, true);
+	if (inherit.ok) assert.equal(inherit.normalizedValue, "inherit");
+
+	const high = validateSettingValue("agents.reviewer.thinking", "HIGH");
+	assert.equal(high.ok, true);
+	if (high.ok) assert.equal(high.normalizedValue, "high");
+});
+
+test("agents.reviewer.plan.model accepts per-type override values", () => {
+	const result = validateSettingValue(
+		"agents.reviewer.plan.model",
+		"google/gemini-flash-latest",
+	);
+	assert.equal(result.ok, true);
+	if (result.ok) {
+		assert.equal(result.normalizedValue, "google/gemini-flash-latest");
+	}
+});
+
+test("agents.reviewer.code.thinking accepts per-type inherit", () => {
+	const result = validateSettingValue("agents.reviewer.code.thinking", "inherit");
+	assert.equal(result.ok, true);
+	if (result.ok) assert.equal(result.normalizedValue, "inherit");
 });
 
 test("dashboard.port accepts valid port range", () => {
