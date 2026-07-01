@@ -6,6 +6,9 @@
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { buildPlan } from "../planner/index.mjs";
+import { resolveWaveTaskIds } from "../planner/wave-scope.mjs";
+
+export { resolveWaveTaskIds };
 import { startBatch } from "./engine.mjs";
 import { startBatchDetached } from "./detached-start.mjs";
 import { approveIntegrateGate, loadGateRecord } from "./gate.mjs";
@@ -84,36 +87,6 @@ export async function waitForSequenceBatchTerminal({
 		reconciliation,
 		batchId: reconciliation.batchId ?? null,
 	};
-}
-
-/**
- * @param {object} plan
- * @param {number} waveIndex
- */
-export function resolveWaveTaskIds(plan, waveIndex) {
-	const waves = plan?.waves ?? [];
-	if (!Number.isInteger(waveIndex) || waveIndex < 0 || waveIndex >= waves.length) {
-		return {
-			ok: false,
-			error: "wave_out_of_range",
-			waveIndex,
-			waveCount: waves.length,
-			output: `Wave index ${waveIndex} is out of range (plan has ${waves.length} wave(s)).`,
-		};
-	}
-
-	const taskIds = [...(waves[waveIndex]?.taskIds ?? [])];
-	if (taskIds.length === 0) {
-		return {
-			ok: false,
-			error: "wave_empty",
-			waveIndex,
-			waveCount: waves.length,
-			output: `Planner wave ${waveIndex} has no tasks.`,
-		};
-	}
-
-	return { ok: true, waveIndex, taskIds, waveCount: waves.length };
 }
 
 /**

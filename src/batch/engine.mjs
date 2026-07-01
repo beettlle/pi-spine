@@ -37,6 +37,7 @@ import {
 	resolveBatchStartScope,
 	shouldAutoIntegrateAfterWave,
 } from "./engine-scope.mjs";
+import { filterPlanToWave } from "../planner/wave-scope.mjs";
 import {
 	buildTasksAndLanesFromPlan,
 	mergeWaveLanesToOrch,
@@ -65,6 +66,7 @@ export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
  * @param {boolean} [options.dryRun]
  * @param {boolean} [options.skipPreflight]
  * @param {boolean} [options.forceSuperseded]
+ * @param {number|null} [options.waveFilter]
  */
 export async function startBatch({
 	projectRoot,
@@ -72,6 +74,7 @@ export async function startBatch({
 	dryRun = false,
 	skipPreflight = false,
 	forceSuperseded = false,
+	waveFilter = null,
 }) {
 	if (!skipPreflight) {
 		const preflight = runBatchPreflight({ projectRoot, skipDoctor: false });
@@ -109,7 +112,22 @@ export async function startBatch({
 	const policyScope = scopeResolution.policyScope ?? effectiveScope;
 
 	const plan = buildPlan({ scope: effectiveScope, config, tasksRoot: /** @type {string} */ (tasksRoot) });
-	const batchPolicy = canStartMultiTaskBatch(plan, policyScope ?? effectiveScope);
+	let effectivePlan = plan;
+	let plannerWaveCount = plan.waves?.length ?? 0;
+	if (waveFilter != null) {
+		const filtered = filterPlanToWave(plan, waveFilter);
+		if (filtered.ok !== true) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: filtered.error,
+				output: `${filtered.output}\n`,
+			};
+		}
+		effectivePlan = /** @type {typeof plan} */ (filtered.plan);
+		plannerWaveCount = filtered.waveCount;
+	}
+	const batchPolicy = canStartMultiTaskBatch(effectivePlan, policyScope ?? effectiveScope);
 	if (!batchPolicy.ok) {
 		return {
 			ok: false,
@@ -120,17 +138,20 @@ export async function startBatch({
 	}
 
 	const taskIds = batchPolicy.taskIds;
-	const maxLaneNumber = maxLaneNumberForPlan(plan);
+	const maxLaneNumber = maxLaneNumberForPlan(effectivePlan);
 
 	if (dryRun) {
+		const waveHint =
+			waveFilter != null ? ` (planner wave ${waveFilter} of ${plannerWaveCount})` : "";
 		return {
 			ok: true,
 			exitCode: 0,
 			dryRun: true,
 			taskIds,
-			plan,
+			plan: effectivePlan,
+			waveFilter,
 			output:
-				`Dry run: would start batch for ${taskIds.length} task(s) across ${plan.waves.length} wave(s), ` +
+				`Dry run: would start batch for ${taskIds.length} task(s) across ${effectivePlan.waves.length} wave(s)${waveHint}, ` +
 				`up to ${maxLaneNumber} lane(s), maxParallel=${config.lanes?.maxParallel ?? 1}.\n`,
 		};
 	}
@@ -147,7 +168,7 @@ export async function startBatch({
 	}
 
 	const { tasks, lanes } = buildTasksAndLanesFromPlan({
-		plan,
+		plan: effectivePlan,
 		discovered,
 		projectRoot,
 		batchId,
@@ -159,7 +180,7 @@ export async function startBatch({
 		batchId,
 		baseBranch,
 		orchBranch,
-		wavePlan: plan.waves.map((wave) => wave.taskIds),
+		wavePlan: effectivePlan.waves.map((/** @type {{ taskIds: string[] }} */ wave) => wave.taskIds),
 		tasks,
 		lanes,
 	});
@@ -232,7 +253,7 @@ export async function startBatch({
 
 		let batchAborted = false;
 
-		for (const wave of plan.waves) {
+		for (const wave of effectivePlan.waves) {
 			state.currentWaveIndex = wave.index;
 			saveSpineBatchState(projectRoot, state);
 
