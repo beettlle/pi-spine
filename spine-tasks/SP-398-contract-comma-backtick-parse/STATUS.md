@@ -1,7 +1,7 @@
 # SP-398: Contract comma-in-backtick path parse fix — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Step 4
+**Status:** 🟢 Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 2
 **Size:** S
@@ -27,10 +27,17 @@
 - [x] Updated `contract-template.md` with per-path backtick guidance
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+
+- [x] Regression tests for comma-in-backtick and SP-396 paths
+- [x] Full suite: 1354/1354 pass (`npm run typecheck && SPINE_WORKER_STUB=1 npm test`)
+- [x] Coverage gate: 87.83% line (`npm run coverage:check`)
 
 ### Step 4: Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+
+- [x] Close GitHub issue #61
+- [x] Create `.DONE`
 
 ---
 
