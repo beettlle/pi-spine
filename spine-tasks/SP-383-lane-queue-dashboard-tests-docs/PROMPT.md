@@ -40,8 +40,8 @@ Complete **GitHub issue #58** test/doc slice: extend snapshot-lanes and ui-contr
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/snapshot-lanes.test.mjs tests/dashboard/ui-contract.test.mjs` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/snapshot-lanes.test.mjs tests/dashboard/ui-contract.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-383-lane-queue-dashboard-tests-docs/STATUS.md` |
 | minLineCoverage | `77` |
 
 ## Steps

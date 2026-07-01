@@ -39,8 +39,8 @@ Implement **GitHub issue #58** Tier 4: expose `runningTaskId`, `queuedTaskIds`, 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/status-json-lanes.test.mjs` |
-| fileScopeMustChange | `src/cli/status.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/status-json-lanes.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `spine-tasks/SP-384-status-json-lane-queue-parity/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/cli/status-json-lanes.test.mjs` |
 
