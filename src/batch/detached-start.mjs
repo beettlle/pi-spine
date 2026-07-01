@@ -289,8 +289,14 @@ export function detachedEngineLogPath(projectRoot) {
  * @param {string} params.scope
  * @param {boolean} [params.skipPreflight]
  * @param {boolean} [params.forceSuperseded]
+ * @param {number|null} [params.waveFilter]
  */
-export function buildAttachedBatchStartArgv({ scope, skipPreflight = false, forceSuperseded = false }) {
+export function buildAttachedBatchStartArgv({
+	scope,
+	skipPreflight = false,
+	forceSuperseded = false,
+	waveFilter = null,
+}) {
 	const tokens = String(scope ?? "")
 		.trim()
 		.split(/\s+/)
@@ -298,6 +304,7 @@ export function buildAttachedBatchStartArgv({ scope, skipPreflight = false, forc
 	const args = ["batch", "start", ...tokens, "--attached"];
 	if (skipPreflight) args.push("--skip-preflight");
 	if (forceSuperseded) args.push("--force-superseded");
+	if (waveFilter != null) args.push("--wave", String(waveFilter));
 	return args;
 }
 
@@ -631,6 +638,7 @@ export function formatDetachedBatchStartOutput(result, json = false) {
  * @param {string} params.scope
  * @param {boolean} [params.skipPreflight]
  * @param {boolean} [params.forceSuperseded]
+ * @param {number|null} [params.waveFilter]
  * @param {boolean} [params.waitTerminal]
  * @param {boolean} [params.json]
  */
@@ -640,6 +648,7 @@ export async function startBatchDetached({
 	scope,
 	skipPreflight = false,
 	forceSuperseded = false,
+	waveFilter = null,
 	waitTerminal = false,
 	json = false,
 }) {
@@ -662,7 +671,12 @@ export async function startBatchDetached({
 
 	const before = loadSpineBatchState(projectRoot);
 	const previousBatchId = before.raw?.batchId ?? null;
-	const argv = buildAttachedBatchStartArgv({ scope, skipPreflight: true, forceSuperseded });
+	const argv = buildAttachedBatchStartArgv({
+		scope,
+		skipPreflight: true,
+		forceSuperseded,
+		waveFilter,
+	});
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
 	persistDetachedEnginePid(projectRoot, enginePid);
 	const wait = await waitForDetachedBatchStart({ projectRoot, previousBatchId, waitTerminal });
