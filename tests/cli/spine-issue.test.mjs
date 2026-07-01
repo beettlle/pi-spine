@@ -113,7 +113,8 @@ test("runSpineIssueDraft --create fails clearly when gh is missing", async () =>
 	const projectRoot = await initGitRepo("spine-issue-create-");
 	const originalPath = process.env.PATH ?? "";
 	try {
-		process.env.PATH = "/usr/bin:/bin";
+		// Empty PATH: gh is installed at /usr/bin on GitHub Actions runners.
+		process.env.PATH = "";
 		const { exitCode, output } = runSpineIssueDraft({
 			projectRoot,
 			args: ["--create", "--title", "Upstream bug"],
