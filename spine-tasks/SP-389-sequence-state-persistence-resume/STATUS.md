@@ -1,7 +1,7 @@
 # SP-389: Sequence state persistence and resume — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -29,15 +29,15 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] See PROMPT.md (no doc updates required)
 
@@ -66,6 +66,7 @@
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-07-01 | Step 0 preflight | Chose `.spine/runtime/sequence/state.json` artifact |
 | 2026-07-01 | Step 1 implementation | sequence-state.mjs + --resume CLI + tests |
+| 2026-07-01 | Step 2 verification | 1353 tests pass; coverage:check exit 0 |
 
 ---
 
