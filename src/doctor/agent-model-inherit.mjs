@@ -1,12 +1,21 @@
 /**
  * Doctor warning when spine agents inherit pi's global model and pi defaults to LM Studio (SP-238).
+ * Per-type reviewer effective pins (issue #53 / SP-371).
  */
 
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import {
+	resolveReviewerModelPin,
+	resolveReviewerThinkingPin,
+} from "../config/agent-model-resolve.mjs";
+
 const LMSTUDIO_PROVIDER = "lmstudio";
+
+/** @type {readonly ("plan"|"code"|"final")[]} */
+const REVIEW_TYPES = ["plan", "code", "final"];
 
 /**
  * @param {string} settingsPath
@@ -49,14 +58,56 @@ export function resolvePiDefaultProvider(
 }
 
 /**
+ * @param {unknown} model
+ * @returns {boolean}
+ */
+function modelUsesInherit(model) {
+	return !model || model === "inherit";
+}
+
+/**
  * @param {object} [config]
  * @returns {boolean}
  */
 export function spineAgentsUseInherit(config = {}) {
 	const workerModel = config.agents?.worker?.model;
-	const reviewerModel = config.agents?.reviewer?.model;
-	const inherits = (model) => !model || model === "inherit";
-	return inherits(workerModel) || inherits(reviewerModel);
+	if (modelUsesInherit(workerModel)) {
+		return true;
+	}
+
+	for (const reviewType of REVIEW_TYPES) {
+		if (resolveReviewerModelPin(config, reviewType) === null) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * @param {object} [config]
+ * @returns {string}
+ */
+export function formatReviewerEffectivePins(config = {}) {
+	return REVIEW_TYPES.map((reviewType) => {
+		const modelPin = resolveReviewerModelPin(config, reviewType);
+		const thinkingPin = resolveReviewerThinkingPin(config, reviewType);
+		const modelLabel = modelPin ?? "inherit";
+		const thinkingLabel = thinkingPin ?? "inherit";
+		return `${reviewType}=${modelLabel}/${thinkingLabel}`;
+	}).join(", ");
+}
+
+/**
+ * @param {object} params
+ * @param {object} [params.config]
+ */
+export function buildReviewerPerTypePinsDoctorCheck({ config = {} } = {}) {
+	return {
+		label: "reviewer model pins (per-type)",
+		ok: true,
+		detail: formatReviewerEffectivePins(config),
+	};
 }
 
 /**
@@ -70,11 +121,13 @@ export function buildAgentModelInheritDoctorCheck({
 	projectRoot = process.cwd(),
 	resolveProvider,
 } = {}) {
+	const perTypeDetail = formatReviewerEffectivePins(config);
+
 	if (!spineAgentsUseInherit(config)) {
 		return {
 			label: "agents model inherit (pi-lmstudio)",
 			ok: true,
-			detail: "worker/reviewer pinned or inherit not used",
+			detail: `pinned — ${perTypeDetail}`,
 		};
 	}
 
@@ -85,7 +138,9 @@ export function buildAgentModelInheritDoctorCheck({
 		return {
 			label: "agents model inherit (pi-lmstudio)",
 			ok: true,
-			detail: provider ? `pi default provider ${provider}` : "pi default provider unset",
+			detail: provider
+				? `pi default provider ${provider} — ${perTypeDetail}`
+				: `pi default provider unset — ${perTypeDetail}`,
 		};
 	}
 
@@ -94,7 +149,7 @@ export function buildAgentModelInheritDoctorCheck({
 		ok: true,
 		warning: true,
 		detail:
-			"inherit + pi defaultProvider lmstudio — batch workers/reviewers may use local LM Studio; pin cursor/auto in spine-config",
+			`inherit + pi defaultProvider lmstudio — batch workers/reviewers may use local LM Studio; pin cursor/auto in spine-config — ${perTypeDetail}`,
 		suggestedCommand:
 			"spine settings set agents.worker.model cursor/auto && spine settings set agents.reviewer.model cursor/auto",
 	};

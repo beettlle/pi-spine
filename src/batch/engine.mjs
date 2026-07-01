@@ -15,12 +15,12 @@ import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff
 import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { adoptPauseIfRequested, saveEngineBatchState } from "./pause.mjs";
 import {
 	assertNoActiveBatch,
 	createInitialBatchState,
 	generateBatchId,
 	recordBatchEnginePid,
-	saveSpineBatchState,
 } from "./state.mjs";
 import {
 	ensureOrchBranch,
@@ -37,6 +37,7 @@ import {
 	resolveBatchStartScope,
 	shouldAutoIntegrateAfterWave,
 } from "./engine-scope.mjs";
+import { filterPlanToWave } from "../planner/wave-scope.mjs";
 import {
 	buildTasksAndLanesFromPlan,
 	mergeWaveLanesToOrch,
@@ -44,6 +45,19 @@ import {
 	skipTaskDoneOnDisk,
 	transitionPhase,
 } from "./engine-lanes.mjs";
+
+/**
+ * @param {string} batchId
+ */
+function buildEnginePausedResult(batchId) {
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		paused: true,
+		output: "Batch paused.\n",
+	};
+}
 
 export {
 	assessWaveMergeEligibility,
@@ -65,6 +79,7 @@ export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
  * @param {boolean} [options.dryRun]
  * @param {boolean} [options.skipPreflight]
  * @param {boolean} [options.forceSuperseded]
+ * @param {number|null} [options.waveFilter]
  */
 export async function startBatch({
 	projectRoot,
@@ -72,6 +87,7 @@ export async function startBatch({
 	dryRun = false,
 	skipPreflight = false,
 	forceSuperseded = false,
+	waveFilter = null,
 }) {
 	if (!skipPreflight) {
 		const preflight = runBatchPreflight({ projectRoot, skipDoctor: false });
@@ -109,7 +125,22 @@ export async function startBatch({
 	const policyScope = scopeResolution.policyScope ?? effectiveScope;
 
 	const plan = buildPlan({ scope: effectiveScope, config, tasksRoot: /** @type {string} */ (tasksRoot) });
-	const batchPolicy = canStartMultiTaskBatch(plan, policyScope ?? effectiveScope);
+	let effectivePlan = plan;
+	let plannerWaveCount = plan.waves?.length ?? 0;
+	if (waveFilter != null) {
+		const filtered = filterPlanToWave(plan, waveFilter);
+		if (filtered.ok !== true) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: filtered.error,
+				output: `${filtered.output}\n`,
+			};
+		}
+		effectivePlan = /** @type {typeof plan} */ (filtered.plan);
+		plannerWaveCount = filtered.waveCount;
+	}
+	const batchPolicy = canStartMultiTaskBatch(effectivePlan, policyScope ?? effectiveScope);
 	if (!batchPolicy.ok) {
 		return {
 			ok: false,
@@ -120,17 +151,20 @@ export async function startBatch({
 	}
 
 	const taskIds = batchPolicy.taskIds;
-	const maxLaneNumber = maxLaneNumberForPlan(plan);
+	const maxLaneNumber = maxLaneNumberForPlan(effectivePlan);
 
 	if (dryRun) {
+		const waveHint =
+			waveFilter != null ? ` (planner wave ${waveFilter} of ${plannerWaveCount})` : "";
 		return {
 			ok: true,
 			exitCode: 0,
 			dryRun: true,
 			taskIds,
-			plan,
+			plan: effectivePlan,
+			waveFilter,
 			output:
-				`Dry run: would start batch for ${taskIds.length} task(s) across ${plan.waves.length} wave(s), ` +
+				`Dry run: would start batch for ${taskIds.length} task(s) across ${effectivePlan.waves.length} wave(s)${waveHint}, ` +
 				`up to ${maxLaneNumber} lane(s), maxParallel=${config.lanes?.maxParallel ?? 1}.\n`,
 		};
 	}
@@ -147,7 +181,7 @@ export async function startBatch({
 	}
 
 	const { tasks, lanes } = buildTasksAndLanesFromPlan({
-		plan,
+		plan: effectivePlan,
 		discovered,
 		projectRoot,
 		batchId,
@@ -159,19 +193,19 @@ export async function startBatch({
 		batchId,
 		baseBranch,
 		orchBranch,
-		wavePlan: plan.waves.map((wave) => wave.taskIds),
+		wavePlan: effectivePlan.waves.map((/** @type {{ taskIds: string[] }} */ wave) => wave.taskIds),
 		tasks,
 		lanes,
 	});
 
-	saveSpineBatchState(projectRoot, state);
+	saveEngineBatchState(projectRoot, state);
 
 	try {
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
 		transitionPhase(state, "running", { projectRoot, batchId });
 		recordBatchEnginePid(state, process.pid);
 		installAttachedEngineShutdownHandlers({ projectRoot });
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 
 		for (const lane of state.lanes) {
 			lane.correlationId = crypto.randomUUID();
@@ -228,15 +262,24 @@ export async function startBatch({
 				correlationId: lane.correlationId,
 			});
 		}
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 
 		let batchAborted = false;
 
-		for (const wave of plan.waves) {
+		for (const wave of effectivePlan.waves) {
+			const pauseAtWave = adoptPauseIfRequested({ projectRoot, state, batchId });
+			if (pauseAtWave.stop) {
+				return buildEnginePausedResult(batchId);
+			}
+
 			state.currentWaveIndex = wave.index;
-			saveSpineBatchState(projectRoot, state);
+			saveEngineBatchState(projectRoot, state);
 
 			for (const tick of wave.ticks ?? []) {
+				const pauseAtTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				if (pauseAtTick.stop) {
+					return buildEnginePausedResult(batchId);
+				}
 				/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean }> }> }>} */
 				const runsByLane = new Map();
 
@@ -319,6 +362,11 @@ export async function startBatch({
 
 				await Promise.all(laneExecutions);
 				if (batchAborted) break;
+
+				const pauseAfterTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				if (pauseAfterTick.stop) {
+					return buildEnginePausedResult(batchId);
+				}
 			}
 
 			if (batchAborted) {
@@ -330,7 +378,7 @@ export async function startBatch({
 					batchId,
 					extra: { taskId: abortedTask?.taskId },
 				});
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 				return {
 					ok: false,
 					exitCode: 1,
@@ -354,7 +402,7 @@ export async function startBatch({
 						reason: "mixed_outcome",
 					},
 				});
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 				appendJournalEvent(projectRoot, batchId, "batch.merge_blocked", {
 					waveIndex: wave.index,
 					failedTaskIds: mergeEligibility.failedTaskIds,
@@ -436,7 +484,7 @@ export async function startBatch({
 			batchId,
 			extra: { error: message },
 		});
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 		removeLaneWorktrees(projectRoot, batchId, maxLaneNumber);
 		return { ok: false, exitCode: 1, batchId, error: message };
 	}

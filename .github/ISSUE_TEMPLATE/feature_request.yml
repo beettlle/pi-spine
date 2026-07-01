@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an enhancement to pi-spine operator ergonomics or engine behavior.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an enhancement. Search [existing issues](https://github.com/beettlle/pi-spine/issues) first.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line summary of the proposed feature.
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve? Who benefits?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution
+      description: How should pi-spine address this?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other approaches you considered, or why existing workflows are insufficient.
+    validations:
+      required: false

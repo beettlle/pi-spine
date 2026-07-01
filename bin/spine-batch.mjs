@@ -9,6 +9,7 @@ import {
 } from "../src/batch/detached-start.mjs";
 import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
+import { parseBatchStartWaveFilter } from "../src/planner/wave-scope.mjs";
 import { pauseBatch } from "../src/batch/pause.mjs";
 import { resumeBatch } from "../src/batch/resume.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
@@ -80,10 +81,6 @@ export function parseBatchArgs(args) {
 		waveIndex = Number(args[waveIdx + 1]);
 	}
 
-	const dryRun = flags.has("--dry-run");
-	const skipPreflight = flags.has("--skip-preflight");
-	const forceSuperseded = flags.has("--force-superseded");
-
 	const subcommand =
 		args.find(
 			(t) =>
@@ -98,7 +95,22 @@ export function parseBatchArgs(args) {
 				t === "force-merge",
 		) ?? null;
 
+	let waveFilter = null;
+	let waveFilterError = null;
+	if (subcommand === "start") {
+		const parsedWave = parseBatchStartWaveFilter(args);
+		if (parsedWave.error) {
+			waveFilterError = parsedWave;
+		} else {
+			waveFilter = parsedWave.waveFilter;
+		}
+	}
+
 	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
+
+	const dryRun = flags.has("--dry-run");
+	const skipPreflight = flags.has("--skip-preflight");
+	const forceSuperseded = flags.has("--force-superseded");
 
 	return {
 		json: flags.has("--json"),
@@ -114,6 +126,8 @@ export function parseBatchArgs(args) {
 		batchId,
 		reason,
 		waveIndex,
+		waveFilter,
+		waveFilterError,
 		subcommand,
 		taskId: subcommand === "retry" || subcommand === "skip" ? positional[0] ?? null : null,
 		scope: positional.join(" ") || "all",
@@ -310,6 +324,13 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "start") {
+		if (parsed.waveFilterError) {
+			return {
+				exitCode: 1,
+				output: parsed.waveFilterError.output ?? "Invalid --wave flag.\n",
+			};
+		}
+
 		const useAttached = parsed.attached || parsed.dryRun;
 		if (!useAttached) {
 			const detached = await startBatchDetached({
@@ -318,6 +339,7 @@ export async function runSpineBatch(options) {
 				scope: parsed.scope,
 				skipPreflight: parsed.skipPreflight,
 				forceSuperseded: parsed.forceSuperseded,
+				waveFilter: parsed.waveFilter,
 				waitTerminal: parsed.waitTerminal,
 				json: parsed.json,
 			});
@@ -335,6 +357,7 @@ export async function runSpineBatch(options) {
 				dryRun: true,
 				skipPreflight: parsed.skipPreflight,
 				forceSuperseded: parsed.forceSuperseded,
+				waveFilter: parsed.waveFilter,
 			});
 			if (parsed.json) {
 				return {
@@ -368,6 +391,7 @@ export async function runSpineBatch(options) {
 					dryRun: false,
 					skipPreflight: parsed.skipPreflight,
 					forceSuperseded: parsed.forceSuperseded,
+					waveFilter: parsed.waveFilter,
 				}),
 		});
 		const cli = formatAttachedBatchCliResult({
@@ -383,7 +407,7 @@ export async function runSpineBatch(options) {
 	return {
 		exitCode: 1,
 		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n",
 	};
 }
 

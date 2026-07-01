@@ -8,6 +8,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import micromatch from "micromatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import { resolveContractMode } from "../tasks/packet/validate-contract.mjs";
+import {
+	isPrelandedFileScopeSatisfied,
+	isStubPrelandedFileScopeSatisfied,
+} from "./contract-prelanded.mjs";
+
+export { resolvePromptRelPath, isFileScopePatternPrelanded, hasSpineTaskDeliveryChanges } from "./contract-prelanded.mjs";
 
 /**
  * @param {string} taskId
@@ -153,6 +159,7 @@ export function listEffectiveChangedFiles(worktreePath, baseBranch = "main", pen
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {string} [baseBranch]
  * @param {string[]} [pendingPaths] Uncommitted paths about to be lane-committed
+ * @param {object} [config]
  * @returns {{ ok: boolean, failures: string[] }}
  */
 export function verifyStubFileScopeMustChange(
@@ -160,6 +167,7 @@ export function verifyStubFileScopeMustChange(
 	parsedContract,
 	baseBranch = "main",
 	pendingPaths = [],
+	config = {},
 ) {
 	const patterns = parsedContract?.fileScopeMustChange ?? [];
 	if (patterns.length === 0) {
@@ -171,9 +179,13 @@ export function verifyStubFileScopeMustChange(
 	const failures = [];
 	for (const pattern of patterns) {
 		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
-		if (!matched) {
-			failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
+		if (matched) {
+			continue;
 		}
+		if (isStubPrelandedFileScopeSatisfied(worktreePath, pattern, changedFiles, config, baseBranch)) {
+			continue;
+		}
+		failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
 	}
 	return { ok: failures.length === 0, failures };
 }
@@ -339,9 +351,11 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	const changedFiles = listChangedFiles(worktreePath, baseBranch);
 
 	let testCommandOutput = "";
+	let testCommandOk = true;
 	if (parsedContract.testCommand) {
 		const result = runContractTestCommand(worktreePath, parsedContract.testCommand);
 		testCommandOutput = result.output;
+		testCommandOk = result.ok;
 		checks.push({
 			field: "testCommand",
 			ok: result.ok,
@@ -353,12 +367,26 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 
 	for (const pattern of parsedContract.fileScopeMustChange ?? []) {
 		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
+		const prelanded = !matched &&
+			isPrelandedFileScopeSatisfied(
+				worktreePath,
+				pattern,
+				changedFiles,
+				parsedContract,
+				config,
+				baseBranch,
+				{ testCommandOk },
+				(worktree, artifactPath) => findArtifactMatch(worktree, artifactPath).ok,
+			);
+		const ok = matched || prelanded;
 		checks.push({
 			field: "fileScopeMustChange",
-			ok: matched,
+			ok,
 			message: matched
 				? `fileScopeMustChange matched: ${pattern}`
-				: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
+				: prelanded
+					? `fileScopeMustChange pre-landed on ${baseBranch}: ${pattern}`
+					: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
 		});
 	}
 

@@ -15,7 +15,11 @@
   },
   "agents": {
     "worker": { "model": "cursor/auto", "thinking": "high" },
-    "reviewer": { "model": "cursor/auto", "thinking": "medium" },
+    "reviewer": {
+      "model": "cursor/auto",
+      "thinking": "medium",
+      "plan": { "model": "google/gemini-flash-latest", "thinking": "low" }
+    },
     "supervisor": { "model": "inherit", "thinking": "off" }
   },
   "lanes": {

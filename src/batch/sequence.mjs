@@ -6,6 +6,9 @@
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { buildPlan } from "../planner/index.mjs";
+import { resolveWaveTaskIds } from "../planner/wave-scope.mjs";
+
+export { resolveWaveTaskIds };
 import { startBatch } from "./engine.mjs";
 import { startBatchDetached } from "./detached-start.mjs";
 import { approveIntegrateGate, loadGateRecord } from "./gate.mjs";
@@ -13,6 +16,7 @@ import { integrateOrchToBase } from "./integrate.mjs";
 import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { loadSpineBatchState } from "./state.mjs";
+import { validateSequenceAutoApproveGate } from "../doctor/sequence-safety.mjs";
 
 const WAVE_BATCH_SETTLED_DIAGNOSES = new Set([
 	"completed",
@@ -84,36 +88,6 @@ export async function waitForSequenceBatchTerminal({
 		reconciliation,
 		batchId: reconciliation.batchId ?? null,
 	};
-}
-
-/**
- * @param {object} plan
- * @param {number} waveIndex
- */
-export function resolveWaveTaskIds(plan, waveIndex) {
-	const waves = plan?.waves ?? [];
-	if (!Number.isInteger(waveIndex) || waveIndex < 0 || waveIndex >= waves.length) {
-		return {
-			ok: false,
-			error: "wave_out_of_range",
-			waveIndex,
-			waveCount: waves.length,
-			output: `Wave index ${waveIndex} is out of range (plan has ${waves.length} wave(s)).`,
-		};
-	}
-
-	const taskIds = [...(waves[waveIndex]?.taskIds ?? [])];
-	if (taskIds.length === 0) {
-		return {
-			ok: false,
-			error: "wave_empty",
-			waveIndex,
-			waveCount: waves.length,
-			output: `Planner wave ${waveIndex} has no tasks.`,
-		};
-	}
-
-	return { ok: true, waveIndex, taskIds, waveCount: waves.length };
 }
 
 /**
@@ -323,6 +297,7 @@ export async function runSequence(ctx) {
 		throughWave = null,
 		attached = false,
 		autoApproveGate = false,
+		force = false,
 		stopOnFailure = true,
 		dryRun = false,
 		skipPreflight = false,
@@ -335,6 +310,17 @@ export async function runSequence(ctx) {
 	const wavePlan = resolveSequenceWaves(plan, { fromWave, throughWave });
 	if (!wavePlan.ok) {
 		return { ok: false, exitCode: 1, error: wavePlan.error, output: wavePlan.output };
+	}
+
+	const autoApproveCheck = validateSequenceAutoApproveGate({ autoApproveGate, force });
+	if (!autoApproveCheck.ok) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: autoApproveCheck.error,
+			output: autoApproveCheck.output,
+			suggestedCommand: autoApproveCheck.suggestedCommand,
+		};
 	}
 
 	if (dryRun) {

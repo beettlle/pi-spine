@@ -17,10 +17,10 @@ export async function handleBatch(args) {
  * @param {string[]} args
  */
 export async function handleRun(args) {
-	const { runSpineBatch } = await import("../spine-batch.mjs");
-	const result = await runSpineBatch({
+	const { runSpineRun } = await import("../spine-run.mjs");
+	const result = await runSpineRun({
 		projectRoot: process.cwd(),
-		args: ["start", ...args],
+		args,
 	});
 	writeCommandResult(result);
 }

@@ -8,6 +8,7 @@ import {
 	filterPendingTaskIds,
 } from "../planner/pending.mjs";
 import { NO_PENDING_TASKS_ERROR, parseScope } from "../planner/scope.mjs";
+import { filterPlanToWave } from "../planner/wave-scope.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	loadSpineBatchState,
@@ -109,8 +110,17 @@ export function resolveBatchStartScope(scope, tasksRoot, options = {}) {
 
 /**
  * @param {object} plan
- * @param {string} scope
+ * @param {number|null|undefined} waveFilter
  */
+export function applyBatchStartWaveFilter(plan, waveFilter) {
+	if (waveFilter == null) {
+		return { ok: /** @type {const} */ (true), plan };
+	}
+	return filterPlanToWave(plan, waveFilter);
+}
+
+export { filterPlanToWave };
+
 export function canStartMultiTaskBatch(plan, scope) {
 	const taskIds = countPlanTasks(plan);
 	if (taskIds.length <= 1) {

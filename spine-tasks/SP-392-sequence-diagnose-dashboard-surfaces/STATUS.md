@@ -1,8 +1,8 @@
 # SP-392: Sequence diagnose and dashboard surfaces — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-30
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,34 +11,34 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #54 SP-F and config comparison table
+- [x] Read issue #54 SP-F and config comparison table
 
 ---
 
 ### Step 1: Diagnose and docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Surface sequence state in diagnose output and suggestedCommand
-- [ ] Document sequence runner in runbook §4 and EXECUTION-FLOW
-- [ ] Note Tier 3 supervisor deferred to SP-393 explore
+- [x] Surface sequence state in diagnose output and suggestedCommand
+- [x] Document sequence runner in runbook §4 and EXECUTION-FLOW
+- [x] Note Tier 3 supervisor deferred to SP-393 explore
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #54
-- [ ] Create `.DONE`
+- [x] Close issue #54
+- [x] Create `.DONE`
 
 ---
 
