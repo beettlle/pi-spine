@@ -10,19 +10,25 @@ Release flow: bump version on `main` → green CI → [`.github/workflows/publis
    npm run coverage:check
    ```
 2. **Bump version** — set `package.json` `version` on `main` (semver patch/minor/major as appropriate).
-3. **Merge to `main`** — push triggers [CI](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml) (`typecheck`, full test suite, coverage ≥77%, CLI smoke).
-4. **Automatic publish** — when CI completes successfully on `main`, `publish.yml` runs:
+3. **Push to `main`** — triggers [CI](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml) (`typecheck`, full test suite, coverage ≥77%, CLI smoke).
+4. **Wait for CI green** — do not tag or create a GitHub Release until CI succeeds on the release commit.
+5. **Tag and GitHub Release** (after CI green):
+   ```bash
+   git tag v<version>
+   git push origin v<version>
+   gh release create v<version> --title "pi-spine <version>" --notes "..."
+   ```
+6. **Automatic publish** — when CI completes successfully on `main`, `publish.yml` runs (no manual `workflow_dispatch`):
+   - Verifies the triggering CI run concluded `success`.
    - Checks npm for `pi-spine@<version>`; **skips** if that version already exists (idempotent re-runs).
    - Otherwise runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
-5. **Post-publish smoke** — verify install and CLI:
+7. **Post-publish smoke** — verify install and CLI:
    ```bash
    npm install -g pi-spine@<version>
    spine version
    spine doctor
    pi install npm:pi-spine
    ```
-
-**Manual trigger:** Operators can run the **Publish to npm** workflow via GitHub Actions `workflow_dispatch` (same skip-if-exists logic).
 
 ## Pre-publish checklist
 
@@ -55,6 +61,7 @@ Recorded dry-run (SP-242, 2026-06-14): 154 files, 223.5 kB package size.
 | `1.0.0` | Manual (browser 2FA) | Initial publish; missing `scripts/coverage-parse.mjs` in tarball |
 | `1.0.1` | GitHub Actions (`publish.yml`) | Hotfix for tarball `files` whitelist |
 | `1.0.2+` | CI-first (`publish.yml` after green CI on `main`) | Default path |
+| `1.2.0` | CI-first (`publish.yml` after green CI on `main`) | Tag retagged to `36cb251` after initial tag pointed at failed CI commit |
 
 ## Emergency manual publish
 
