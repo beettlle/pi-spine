@@ -204,6 +204,13 @@ New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.m
 
 **Migration tip:** Dogfood repos with 100+ legacy packets can start with `contract.mode: "optional"`, add Contract to new `SP-*` tasks, then flip to `"required"` when backlog is updated. Taskplane migrants keep `TP-*` on legacy behavior regardless of global mode.
 
+**Pre-landed implementation warning (issue #56):** When implementation for a pending task was already merged to `main` before the batch runs, `fileScopeMustChange` paths may not diff in a new lane — final contract verification can fail repeatedly. Before batch start:
+
+- `spine preflight` and `spine plan` emit a **⚠️ Pre-landed contract risk** warning when pending tasks have `fileScopeMustChange` paths that changed on `main` since the task PROMPT was first added.
+- `spine tasks validate pending --warnings-only` lists the same advisory per task.
+
+**Recovery:** Amend `PROMPT.md` **## Contract** before batch start — e.g. point `fileScopeMustChange` at delivery artifacts (`STATUS.md`, `.DONE`) when source code is already on `main`, and document the pre-land in **## Amendments** (see SP-358/SP-359). Do not start the batch until the contract matches how the task will actually land.
+
 Authoring guidance: [create-spine-tasks skill](../../skills/create-spine-tasks/SKILL.md) and [upstream-execution-workflow.md](./upstream-execution-workflow.md).
 
 **Environment overrides** (optional, FR-CFG-04):
@@ -742,6 +749,10 @@ spine batch pause
 spine batch abort                   # graceful — worker may finish step
 spine batch abort --hard            # SIGKILL + worktree cleanup
 ```
+
+When a **live attached engine** (foreground `spine batch start --attached` / `resume --attached`) is running, `spine batch pause` writes `batch.paused` and waits briefly for batch-state `phase: paused` to persist. If the engine does not confirm within the grace window, the CLI **fails loud** with `pause_not_confirmed`, journals `batch.pause_failed`, and leaves phase as the engine reported (usually `running`). Do not assume pause succeeded from journal alone — check `grep phase .spine/batch-state.json` or `spine status --diagnose`.
+
+**Recovery when pause fails:** stop the attached engine (Ctrl+C or kill the engine PID), confirm `phase: paused` or run `spine batch pause` again, then `spine batch retry <taskId>` when you need to reset a failed task. `spine batch retry` is allowed when phase is **`paused`** or **`failed`**, not while phase is **`running`**.
 
 ### Orphan running (zombie batch)
 

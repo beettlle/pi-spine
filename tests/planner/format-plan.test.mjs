@@ -70,6 +70,7 @@ test("formatPlanHuman includes start hints for multi-wave plans", () => {
 	};
 
 	const output = formatPlanHuman(plan);
-	assert.match(output, /Start: spine batch start TP-043/);
-	assert.match(output, /Wave 1: spine batch start TP-044/);
+	assert.match(output, /Start: spine batch start pending --wave 0/);
+	assert.match(output, /Wave 1: spine batch start pending --wave 1/);
+	assert.doesNotMatch(output, /Start: spine batch start TP-043/);
 });

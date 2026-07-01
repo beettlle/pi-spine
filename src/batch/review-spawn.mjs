@@ -9,6 +9,10 @@ import { spawn } from "node:child_process";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
 import { parseReviewVerdict } from "./review-shared.mjs";
 import {
+	resolveReviewerModelPin,
+	resolveReviewerThinkingPin,
+} from "../config/agent-model-resolve.mjs";
+import {
 	parseTaskSizeFromFolder,
 	resolveReviewArtifactPollIntervalMs,
 	resolveReviewArtifactQuiescenceMs,
@@ -90,10 +94,11 @@ export function buildReviewerPiArgs({
 	reviewPrompt,
 	systemPrompt,
 	config = {},
+	reviewType = "code",
 }) {
 	const reviewerAgentPath = path.join(worktreePath, ".spine", "agents", "reviewer.md");
-	const reviewerModel = config?.agents?.reviewer?.model;
-	const reviewerThinking = config?.agents?.reviewer?.thinking;
+	const reviewerModel = resolveReviewerModelPin(config, reviewType);
+	const reviewerThinking = resolveReviewerThinkingPin(config, reviewType);
 
 	const piArgs = ["-p", "--no-session"];
 	if (reviewerAgentPath && fs.existsSync(reviewerAgentPath)) {
@@ -201,6 +206,7 @@ export async function spawnReviewerPi({
 		reviewPrompt,
 		systemPrompt,
 		config,
+		reviewType,
 	});
 
 	const taskSize = parseTaskSizeFromFolder(taskFolder);

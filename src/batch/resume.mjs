@@ -36,41 +36,7 @@ import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 
-/**
- * @param {string} projectRoot
- */
-export function pauseBatch({ projectRoot }) {
-	const loaded = loadSpineBatchState(projectRoot);
-	if (!loaded.raw) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
-	}
-
-	const state = loaded.raw;
-	const phase = String(state.phase ?? "");
-	if (phase !== "running" && phase !== "planning") {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "cannot_pause",
-			output: `Cannot pause batch in phase ${phase}. Only running or planning batches can be paused.\n`,
-			batchId: state.batchId,
-			phase,
-		};
-	}
-
-	const fromPhase = phase;
-	state.phase = "paused";
-	saveSpineBatchState(projectRoot, state);
-	recordResumePhaseTransition(projectRoot, state.batchId, fromPhase, "paused");
-
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId: state.batchId,
-		phase: "paused",
-		output: `Batch ${state.batchId} paused. No new tasks will be scheduled.\n  → spine batch resume\n`,
-	};
-}
+export { pauseBatch } from "./pause.mjs";
 
 /**
  * @param {object} params

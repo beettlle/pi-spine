@@ -68,7 +68,7 @@ test("pauseBatch sets phase paused and journals batch.paused", async () => {
 		state.phase = "running";
 		saveSpineBatchState(projectRoot, state);
 
-		const result = pauseBatch({ projectRoot });
+		const result = await pauseBatch({ projectRoot });
 		assert.equal(result.ok, true);
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "paused");
 

@@ -116,16 +116,18 @@ export function formatPlanHuman(plan) {
 		lines.push("");
 	}
 
-	const firstWave = plan.waves?.[0];
-	if (firstWave?.taskIds?.length) {
-		lines.push(`Start: spine batch start ${firstWave.taskIds.join(" ")}`);
-	}
+	const waves = plan.waves ?? [];
+	const firstWave = waves[0];
+	const multiWave = waves.length > 1;
 
-	if ((plan.waves?.length ?? 0) > 1) {
+	if (multiWave && firstWave != null) {
+		lines.push(`Start: spine batch start ${mode} --wave ${firstWave.index}`);
 		lines.push("Then (after each wave lands):");
-		for (const wave of plan.waves.slice(1)) {
-			lines.push(`  Wave ${wave.index}: spine batch start ${wave.taskIds.join(" ")}`);
+		for (const wave of waves.slice(1)) {
+			lines.push(`  Wave ${wave.index}: spine batch start ${mode} --wave ${wave.index}`);
 		}
+	} else if (firstWave?.taskIds?.length) {
+		lines.push(`Start: spine batch start ${firstWave.taskIds.join(" ")}`);
 	}
 
 	return appendBatchSizeGuidanceToPlanOutput(`${lines.join("\n").trimEnd()}\n`, plan);

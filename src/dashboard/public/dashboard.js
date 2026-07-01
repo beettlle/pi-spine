@@ -161,14 +161,57 @@ function renderWaves(waves) {
 	}
 }
 
+/** @param {string|null|undefined} taskId */
+function formatRunningCell(taskId) {
+	if (!taskId) return "—";
+	return `▶ ${taskId}`;
+}
+
+/** @param {string[]} taskIds */
+function formatQueuedCell(taskIds) {
+	if (!taskIds?.length) return "—";
+	return taskIds.map((id) => `○ ${id}`).join(", ");
+}
+
+/** @param {string|null|undefined} taskId */
+function runningCellAriaLabel(taskId) {
+	if (!taskId) return "No running task";
+	return `Running task ${taskId}`;
+}
+
+/** @param {string[]} taskIds */
+function queuedCellAriaLabel(taskIds) {
+	const count = taskIds?.length ?? 0;
+	if (count === 0) return "No tasks waiting in lane queue";
+	if (count === 1) return "1 task waiting in lane queue";
+	return `${count} tasks waiting in lane queue`;
+}
+
+/** @param {HTMLElement} td @param {string} text @param {string} className @param {string} ariaLabel */
+function appendLaneTextCell(td, text, className, ariaLabel) {
+	td.textContent = text;
+	td.className = className;
+	td.setAttribute("aria-label", ariaLabel);
+}
+
 /** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary @param {string|null} expandedLaneId */
 function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 	const tbody = $("lane-table-body");
 	tbody.replaceChildren();
+	const columnCount = 11;
+	const maxQueuedCount = lanes.reduce(
+		(max, lane) => Math.max(max, lane.queuedCount ?? lane.queuedTaskIds?.length ?? 0),
+		0,
+	);
+	const queuedHeading = $("lane-queued-heading");
+	if (queuedHeading) {
+		queuedHeading.textContent =
+			maxQueuedCount > 0 ? `Queued (${maxQueuedCount})` : "Queued";
+	}
 	if (!lanes.length) {
 		const tr = document.createElement("tr");
 		const td = document.createElement("td");
-		td.colSpan = 10;
+		td.colSpan = columnCount;
 		td.className = "empty-hint";
 		td.textContent = "No lanes";
 		tr.appendChild(td);
@@ -190,26 +233,43 @@ function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 					? `${lane.status} · stall killed`
 					: lane.status;
 		const throughput = lane.throughput ?? {};
-		const values = [
-			lane.laneId,
-			statusLabel,
-			lane.activityPhaseLabel ?? "—",
-			(lane.activeTaskIds ?? []).join(", ") || "—",
-			(lane.taskIds ?? []).join(", ") || "—",
-			displayHeartbeat(lane),
-			throughput.elapsedDisplay ?? "—",
-			throughput.doneDisplay ?? "—",
-			throughput.rateDisplay ?? "—",
-			lane.worktree ?? "—",
+		const runningText = formatRunningCell(lane.runningTaskId);
+		const queuedText = formatQueuedCell(lane.queuedTaskIds ?? []);
+		const cellSpecs = [
+			{ text: lane.laneId, className: "", ariaLabel: null },
+			{ text: statusLabel, className: `lane-status-${lane.status}`, ariaLabel: null, statusCell: true },
+			{ text: lane.activityPhaseLabel ?? "—", className: "", ariaLabel: null },
+			{
+				text: runningText,
+				className: "lane-task-running",
+				ariaLabel: runningCellAriaLabel(lane.runningTaskId),
+			},
+			{
+				text: queuedText,
+				className: "lane-task-queued",
+				ariaLabel: queuedCellAriaLabel(lane.queuedTaskIds ?? []),
+			},
+			{ text: (lane.taskIds ?? []).join(", ") || "—", className: "", ariaLabel: null },
+			{ text: displayHeartbeat(lane), className: "", ariaLabel: null },
+			{ text: throughput.elapsedDisplay ?? "—", className: "", ariaLabel: null },
+			{ text: throughput.doneDisplay ?? "—", className: "", ariaLabel: null },
+			{ text: throughput.rateDisplay ?? "—", className: "", ariaLabel: null },
+			{ text: lane.worktree ?? "—", className: "", ariaLabel: null },
 		];
-		values.forEach((text, index) => {
+		cellSpecs.forEach((spec, index) => {
 			const td = document.createElement("td");
-			td.textContent = text;
+			if (spec.ariaLabel) {
+				appendLaneTextCell(td, spec.text, spec.className, spec.ariaLabel);
+			} else {
+				td.textContent = spec.text;
+				if (spec.className) td.className = spec.className;
+			}
 			if (index === 1) {
-				td.className = `lane-status-${lane.status}`;
 				if (lane.laneAlert === "checkpoint-warning") td.classList.add("lane-alert-checkpoint");
 				if (lane.laneAlert === "stall-killed") td.classList.add("lane-alert-stall");
 			}
+			if (index === 3) td.classList.add("col-running");
+			if (index === 4) td.classList.add("col-queued");
 			tr.appendChild(td);
 		});
 		tr.addEventListener("click", () => {
@@ -222,7 +282,7 @@ function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 			const detailRow = document.createElement("tr");
 			detailRow.className = "lane-detail-row";
 			const detailCell = document.createElement("td");
-			detailCell.colSpan = 10;
+			detailCell.colSpan = columnCount;
 			detailCell.appendChild(renderLaneDetailPanel(lane));
 			detailRow.appendChild(detailCell);
 			tbody.appendChild(detailRow);
@@ -233,6 +293,7 @@ function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 		tr.className = "lane-table-summary";
 		const values = [
 			"All lanes",
+			"—",
 			"—",
 			"—",
 			"—",

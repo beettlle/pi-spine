@@ -5,6 +5,7 @@
  * FR-UXB-02: validate task PROMPT packets for a planner scope.
  */
 
+import path from 'node:path';
 import { c, isCliEntrypoint, writeCommandResult } from './spine-cli/shared.mjs';
 import { loadSpineConfig } from './spine-config.mjs';
 import { resolveTasksRootPath } from '../src/config/env-overrides.mjs';
@@ -16,6 +17,7 @@ import {
 	loadDependenciesJson,
 	loadTaskPacket,
 } from '../src/tasks/packet/index.mjs';
+import { collectStaleFileScopeMustChangeWarnings } from '../src/tasks/packet/validate-prompt.mjs';
 import { parseScope } from '../src/planner/scope.mjs';
 
 /**
@@ -50,9 +52,10 @@ export function formatTasksValidateHuman({
  * @param {object} packet
  * @param {{ taskId: string, folderName: string }} discoveredTask
  * @param {{ tasks?: Record<string, string[]> }} depsJson
+ * @param {string} [projectRoot]
  * @returns {string[]}
  */
-export function collectTaskAdvisoryWarnings(packet, discoveredTask, depsJson) {
+export function collectTaskAdvisoryWarnings(packet, discoveredTask, depsJson, projectRoot) {
 	/** @type {string[]} */
 	const warnings = [];
 
@@ -82,6 +85,17 @@ export function collectTaskAdvisoryWarnings(packet, discoveredTask, depsJson) {
 				);
 			}
 		}
+	}
+
+	if (projectRoot && packet.promptPath && packet.validation?.contract) {
+		const promptRelPath = path.relative(projectRoot, packet.promptPath);
+		warnings.push(
+			...collectStaleFileScopeMustChangeWarnings(
+				projectRoot,
+				packet.validation.contract,
+				promptRelPath,
+			),
+		);
 	}
 
 	return warnings;
@@ -207,7 +221,7 @@ export async function runSpineTasksValidate({
 		/** @type {string[]} */
 		const warnings = warningsOnly
 			? [
-					...collectTaskAdvisoryWarnings(packet, discoveredTask, depsJson),
+					...collectTaskAdvisoryWarnings(packet, discoveredTask, depsJson, projectRoot),
 					...(packet.validation?.warnings ?? []),
 				]
 			: [];
