@@ -144,6 +144,13 @@ async function cmdHandoff(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdIssue(args) {
+	const { runSpineIssue } = await import("./spine-issue.mjs");
+	const result = runSpineIssue({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdMetrics(args) {
 	const sub = args[0];
 	if (sub !== "show") {
@@ -250,6 +257,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}batch${c.reset}           Start, dismiss, or complete batch (Phase 2 start)
  ${c.cyan}run${c.reset}             Start batch (alias for batch start; PRD §15.2)
  ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
+ ${c.cyan}issue draft${c.reset}     Build GitHub issue draft from project state (#60)
  ${c.cyan}metrics${c.reset}         Show run metrics JSONL (FR-UXB-06)
  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
@@ -304,6 +312,7 @@ ${c.bold}Examples:${c.reset}
   spine batch dismiss --reason limbo-recovery   # archive and clear stale batch
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine handoff [--batch ID] [--json]          # operator handoff note
+  spine issue draft [--type bug] [--json]      # GitHub issue draft from diagnose state
   spine metrics show [--batch ID] [--last N]   # read run-metrics.jsonl
   spine review step --step N [--type plan|code|final] # step or final review
   spine report progress --step N               # journal step progress (worker shell-out)
@@ -394,6 +403,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "handoff":
 				await cmdHandoff(args);
+				break;
+			case "issue":
+				await cmdIssue(args);
 				break;
 			case "metrics":
 				await cmdMetrics(args);
