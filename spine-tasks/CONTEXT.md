@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-06-30 (Phase 48 — GitHub #60 upstream issue filing)
+**Last Updated:** 2026-07-01 (Phase 49 — pre-1.2.0 release blockers #64–#66)
 **Status:** Active
-**Next Task ID:** SP-398
+**Next Task ID:** SP-402
 
 ---
 
@@ -1083,6 +1083,32 @@ spine plan SP-394 SP-395                    # wave 0 — parallel
 spine batch start SP-394 SP-395
 spine batch start SP-396
 spine batch start SP-397
+```
+
+#### Phase 49 — Pre-1.2.0 release blockers (#64–#66)
+
+**Source:** Open GitHub bugs filed during batch `20260701T031142` operator session. Target: ship in **1.2.0** before npm publish.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-399 | Batch CLI `--help` routing | S | **Staged** | — | #64 |
+| SP-400 | Batch start `--wave` positional parse fix | S | **Staged** | — | #65 |
+| SP-401 | Merge blocked resume + skip succeeded waves | M | **Staged** | SP-356 | #66 |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | Notes |
+|------|-------|-------|
+| 0 (parallel) | SP-399, SP-400 | Disjoint CLI roots (`bin/spine-batch.mjs`) — serialize if same file conflicts |
+| 1 | SP-401 | Resume/merge recovery; run after wave 0 lands |
+
+**Effort estimate (from code paths):** ~5–8 h total — SP-399 ~1–2 h, SP-400 ~1–2 h, SP-401 ~3–5 h.
+
+```bash
+spine tasks validate SP-399 SP-400 SP-401
+spine plan SP-399 SP-400 SP-401
+spine batch start SP-399 SP-400   # wave 0 (or serial: SP-399 then SP-400)
+spine batch start SP-401          # wave 1
 ```
 
 ---
