@@ -1,7 +1,7 @@
 # SP-371: Reviewer model settings and doctor — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-06-30
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,18 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Audit FR-CFG-03 settings-fields patterns
-- [ ] List reviewer paths from issue #53
+- [x] Audit FR-CFG-03 settings-fields patterns
+- [x] List reviewer paths from issue #53
 
 ---
 
 ### Step 1: Settings and doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Register reviewer + plan/code/final model/thinking paths
-- [ ] Doctor output shows effective per-type pins and inherit warnings
+- [x] Register reviewer + plan/code/final model/thinking paths
+- [x] Doctor output shows effective per-type pins and inherit warnings
 
 ---
 
@@ -59,7 +59,8 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-06-30 | Step 0 preflight | Issue #53 paths: reviewer + plan/code/final model/thinking (8 new settings paths) |
+| 2026-06-30 | Step 1 implementation | settings-fields, doctor per-type pins, template plan block |
 
 ---
 

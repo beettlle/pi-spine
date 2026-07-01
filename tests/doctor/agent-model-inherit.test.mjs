@@ -6,12 +6,26 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import test from "node:test";
 import {
 	buildAgentModelInheritDoctorCheck,
+	buildReviewerPerTypePinsDoctorCheck,
+	formatReviewerEffectivePins,
 	readPiSettingsFile,
 	resolvePiDefaultProvider,
 	spineAgentsUseInherit,
 } from "../../src/doctor/agent-model-inherit.mjs";
 
-test("spineAgentsUseInherit is true when worker or reviewer uses inherit", () => {
+const PER_TYPE_CONFIG = {
+	agents: {
+		worker: { model: "cursor/auto", thinking: "high" },
+		reviewer: {
+			model: "google/gemini-3.1-pro-preview",
+			thinking: "medium",
+			plan: { model: "google/gemini-flash-latest", thinking: "low" },
+			code: { model: "inherit", thinking: "inherit" },
+		},
+	},
+};
+
+test("spineAgentsUseInherit is true when worker or reviewer effective pin inherits", () => {
 	assert.equal(
 		spineAgentsUseInherit({ agents: { worker: { model: "inherit" }, reviewer: { model: "cursor/auto" } } }),
 		true,
@@ -21,9 +35,32 @@ test("spineAgentsUseInherit is true when worker or reviewer uses inherit", () =>
 		true,
 	);
 	assert.equal(
-		spineAgentsUseInherit({ agents: { worker: { model: "cursor/auto" }, reviewer: { model: "cursor/auto" } } }),
+		spineAgentsUseInherit(PER_TYPE_CONFIG),
 		false,
 	);
+	assert.equal(
+		spineAgentsUseInherit({
+			agents: {
+				worker: { model: "cursor/auto" },
+				reviewer: { model: "inherit", plan: { model: "google/gemini-flash-latest" } },
+			},
+		}),
+		true,
+	);
+});
+
+test("formatReviewerEffectivePins shows resolved per-type model and thinking", () => {
+	const detail = formatReviewerEffectivePins(PER_TYPE_CONFIG);
+	assert.match(detail, /plan=google\/gemini-flash-latest\/low/);
+	assert.match(detail, /code=google\/gemini-3\.1-pro-preview\/medium/);
+	assert.match(detail, /final=google\/gemini-3\.1-pro-preview\/medium/);
+});
+
+test("buildReviewerPerTypePinsDoctorCheck reports effective per-type pins", () => {
+	const check = buildReviewerPerTypePinsDoctorCheck({ config: PER_TYPE_CONFIG });
+	assert.equal(check.ok, true);
+	assert.match(check.detail, /plan=google\/gemini-flash-latest\/low/);
+	assert.match(check.label, /per-type/);
 });
 
 test("resolvePiDefaultProvider prefers project settings over global", async () => {
@@ -68,21 +105,18 @@ test("buildAgentModelInheritDoctorCheck warns on inherit + lmstudio", () => {
 	});
 	assert.equal(check.warning, true);
 	assert.match(check.detail, /lmstudio/i);
+	assert.match(check.detail, /plan=inherit\/medium/);
 	assert.ok(check.suggestedCommand?.includes("agents.worker.model"));
 });
 
 test("buildAgentModelInheritDoctorCheck passes when models pinned", () => {
 	const check = buildAgentModelInheritDoctorCheck({
-		config: {
-			agents: {
-				worker: { model: "cursor/auto", thinking: "high" },
-				reviewer: { model: "cursor/auto", thinking: "medium" },
-			},
-		},
+		config: PER_TYPE_CONFIG,
 		resolveProvider: () => "lmstudio",
 	});
 	assert.equal(check.warning, undefined);
-	assert.match(check.detail, /pinned|inherit not used/);
+	assert.match(check.detail, /pinned/);
+	assert.match(check.detail, /plan=google\/gemini-flash-latest\/low/);
 });
 
 test("buildAgentModelInheritDoctorCheck passes when inherit but pi not lmstudio", () => {
