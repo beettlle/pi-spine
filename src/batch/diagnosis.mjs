@@ -226,6 +226,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	if (ctx.mergeFailed && (diagnosis === "failed" || diagnosis === "needs_retry")) {
 		return "spine batch resume --force";
 	}
+	if (ctx.phase === "merge_blocked") {
+		return "spine batch resume --force";
+	}
 
 	switch (diagnosis) {
 		case "limbo_stale":

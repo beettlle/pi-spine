@@ -43,7 +43,7 @@ None
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/batch-start-wave.test.mjs` |
-| fileScopeMustChange | `bin/spine-batch.mjs` |
+| fileScopeMustChange | `spine-tasks/SP-400-batch-wave-positional-parse/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/batch/batch-start-wave.test.mjs` |
 

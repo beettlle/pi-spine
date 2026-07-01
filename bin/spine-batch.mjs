@@ -22,6 +22,66 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const BATCH_FLAG_VALUE_TAKERS = new Set([
+	"--wave",
+	"--through-wave",
+	"--batch",
+	"--reason",
+]);
+
+/**
+ * @returns {string}
+ */
+export function printBatchHelp() {
+	return (
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
+	);
+}
+
+/**
+ * @param {string[]} args
+ */
+export function isBatchHelpRequest(args) {
+	if (args.includes("--help") || args.includes("-h")) {
+		return true;
+	}
+	if (args.length === 1 && args[0] === "help") {
+		return true;
+	}
+	const subcommand = args.find((token) =>
+		["dismiss", "complete", "abort", "start", "pause", "resume", "retry", "skip", "force-merge"].includes(
+			token,
+		),
+	);
+	if (subcommand && args.includes("help")) {
+		const helpIdx = args.indexOf("help");
+		const subIdx = args.indexOf(subcommand);
+		return helpIdx === subIdx + 1 || (subIdx < 0 && helpIdx === 0);
+	}
+	return false;
+}
+
+/**
+ * Remove argv tokens consumed as flag values so they are not parsed as scope.
+ *
+ * @param {string[]} args
+ */
+export function stripBatchFlagValueTokens(args) {
+	/** @type {Set<number>} */
+	const skipIndices = new Set();
+	for (let index = 0; index < args.length; index++) {
+		const token = args[index];
+		if (!BATCH_FLAG_VALUE_TAKERS.has(token)) {
+			continue;
+		}
+		const valueIndex = index + 1;
+		if (valueIndex < args.length && !args[valueIndex].startsWith("--")) {
+			skipIndices.add(valueIndex);
+		}
+	}
+	return args.filter((_, index) => !skipIndices.has(index));
+}
+
 /**
  * @param {object} result
  * @param {boolean} json
@@ -106,7 +166,9 @@ export function parseBatchArgs(args) {
 		}
 	}
 
-	const positional = args.filter((a) => !a.startsWith("--") && a !== subcommand);
+	const positional = stripBatchFlagValueTokens(args).filter(
+		(a) => !a.startsWith("--") && a !== subcommand && a !== "help",
+	);
 
 	const dryRun = flags.has("--dry-run");
 	const skipPreflight = flags.has("--skip-preflight");
@@ -142,6 +204,9 @@ export function parseBatchArgs(args) {
  */
 export async function runSpineBatch(options) {
 	const { projectRoot, args, deferAttachedExit = false } = options;
+	if (isBatchHelpRequest(args)) {
+		return { exitCode: 0, output: printBatchHelp() };
+	}
 	const parsed = parseBatchArgs(args);
 
 	if (parsed.subcommand === "dismiss") {
@@ -406,8 +471,7 @@ export async function runSpineBatch(options) {
 
 	return {
 		exitCode: 1,
-		output:
-			"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n",
+		output: printBatchHelp(),
 	};
 }
 

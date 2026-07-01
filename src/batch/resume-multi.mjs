@@ -10,6 +10,10 @@ import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import {
+	succeededWaveMergeIndices,
+	waveTasksAllTerminal,
+} from "./merge/wave-merge-state.mjs";
 import { prepareOrphanResumeHandoff, terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import {
 	countPendingSegments,
@@ -105,10 +109,15 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		const startWave = check.resumableWave ?? 0;
 		const wavePlan = state.wavePlan ?? [];
 		state.mergeResults = state.mergeResults ?? [];
+		const succeededMerges = succeededWaveMergeIndices(state);
 
 		for (let waveIndex = startWave; waveIndex < wavePlan.length; waveIndex++) {
 			state.currentWaveIndex = waveIndex;
 			saveSpineBatchState(projectRoot, state);
+
+			if (succeededMerges.has(waveIndex) && waveTasksAllTerminal(state, waveIndex)) {
+				continue;
+			}
 
 			const waveTaskIds = wavePlan[waveIndex] ?? [];
 			const waveOutcome = await executeResumeWave({

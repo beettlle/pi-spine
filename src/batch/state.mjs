@@ -297,7 +297,16 @@ export function validateBatchState(state) {
 	if (!batchId) errors.push("batchId is required");
 
 	const phase = String(raw.phase ?? "").trim();
-	const validPhases = new Set(["planning", "running", "paused", "completed", "failed", "aborted"]);
+	const validPhases = new Set([
+		"planning",
+		"running",
+		"paused",
+		"merging",
+		"completed",
+		"failed",
+		"aborted",
+		"merge_blocked",
+	]);
 	if (!validPhases.has(phase)) {
 		errors.push(`phase must be one of ${[...validPhases].join(", ")} (found ${phase || "missing"})`);
 	}

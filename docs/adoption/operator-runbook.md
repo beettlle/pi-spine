@@ -429,6 +429,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `completed` | Batch terminal, merged | `spine batch complete` if not archived |
 | `limbo_stale` / `completed_manual` | Tasks green, batch record stale | `dismiss` or `complete --detect-manual-merge` |
 | `failed` / `aborted` | Terminal error | `retry`, `resume --force`, or `dismiss` |
+| `merge_blocked` phase | Lane→orch merge failed; batch halted | Resolve conflicts on `orch/spine-<batchId>`, then `spine batch resume --force` |
 
 **Phase vs diagnosis vs macro phase** — three distinct operator labels:
 
@@ -592,6 +593,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 
 | Diagnosis | Action |
 |-----------|--------|
+| `merge_blocked` phase | Resolve conflicts on `orch/spine-<batchId>` in git; `spine batch resume --force`. Resume skips waves that already have `mergeResults.status=succeeded`. |
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |

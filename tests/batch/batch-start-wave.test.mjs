@@ -72,6 +72,15 @@ test("parseBatchArgs maps --wave on start to waveFilter", () => {
 	const parsed = parseBatchArgs(["start", "pending", "--wave", "1", "--dry-run"]);
 	assert.equal(parsed.subcommand, "start");
 	assert.equal(parsed.waveFilter, 1);
+	assert.equal(parsed.scope, "pending");
+	assert.equal(parsed.dryRun, true);
+});
+
+test("parseBatchArgs strips --wave value from scope for wave 0", () => {
+	const parsed = parseBatchArgs(["start", "pending", "--wave", "0", "--dry-run"]);
+	assert.equal(parsed.subcommand, "start");
+	assert.equal(parsed.waveFilter, 0);
+	assert.equal(parsed.scope, "pending");
 	assert.equal(parsed.dryRun, true);
 });
 
@@ -82,6 +91,27 @@ test("buildAttachedBatchStartArgv forwards waveFilter to detached engine", () =>
 		waveFilter: 0,
 	});
 	assert.deepEqual(argv, ["batch", "start", "pending", "--attached", "--skip-preflight", "--wave", "0"]);
+});
+
+test("startBatch dry-run with pending scope and --wave 0 selects planner wave 0", async () => {
+	const projectRoot = await initGitRepo("spine-batch-pending-wave0-");
+	try {
+		writeWaveFixture(projectRoot);
+		execCommit(projectRoot, "pending wave0 fixture");
+
+		const result = await startBatch({
+			projectRoot,
+			scope: "pending",
+			dryRun: true,
+			skipPreflight: true,
+			waveFilter: 0,
+		});
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.taskIds.sort(), [TASK_W0A, TASK_W0B].sort());
+		assert.match(result.output, /planner wave 0/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("startBatch dry-run with --wave selects planner wave task IDs", async () => {

@@ -7,6 +7,8 @@ import { isProcessAlive } from "../process/liveness.mjs";
 import {
 	findFirstWaveNeedingMerge,
 	hasPendingWaveMerge,
+	succeededWaveMergeIndices,
+	waveTasksAllTerminal,
 } from "./merge/wave-merge-state.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { readJournalEvents } from "./journal.mjs";
@@ -96,8 +98,12 @@ export { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
 export function findResumableWave(state, pendingTasks) {
 	const pendingIds = new Set(pendingTasks.map((task) => task.taskId));
 	const wavePlan = state.wavePlan ?? [];
+	const succeededMerges = succeededWaveMergeIndices(state);
 
 	for (let waveIndex = 0; waveIndex < wavePlan.length; waveIndex++) {
+		if (succeededMerges.has(waveIndex) && waveTasksAllTerminal(state, waveIndex)) {
+			continue;
+		}
 		const waveTaskIds = wavePlan[waveIndex] ?? [];
 		if (waveTaskIds.some((taskId) => pendingIds.has(taskId))) {
 			return waveIndex;
@@ -192,6 +198,7 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 		phase === "paused" ||
 		failedPhaseRetryLimbo ||
 		(phase === "failed" && force) ||
+		(phase === "merge_blocked" && force) ||
 		(phase === "running" && postMergeLimbo) ||
 		(phase === "running" && orphanEligibility.allowOrphanResume) ||
 		(phase === "running" && force && orphanEligibility.engineConfirmedDead);
@@ -201,9 +208,11 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 			exitCode: 1,
 			error: "cannot_resume",
 			output:
-				phase === "failed" && !force
-					? `Batch ${state.batchId} failed. Use spine batch resume --force to continue.\n`
-					: `Cannot resume batch in phase ${phase}.\n`,
+				phase === "merge_blocked" && !force
+					? `Batch ${state.batchId} merge blocked. Resolve conflicts on ${state.orchBranch ?? "orch/spine-*"}, then spine batch resume --force.\n`
+					: phase === "failed" && !force
+						? `Batch ${state.batchId} failed. Use spine batch resume --force to continue.\n`
+						: `Cannot resume batch in phase ${phase}.\n`,
 			batchId: state.batchId,
 			phase,
 		};
@@ -289,7 +298,8 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 	}
 
 	const pendingTasks = pendingTasksForResume;
-	const pendingWaveMerge = force && hasPendingWaveMerge(state);
+	const pendingWaveMerge =
+		force && (phase === "merge_blocked" || hasPendingWaveMerge(state));
 	if (pendingTasks.length < 1 && !postMergeLimbo && !pendingWaveMerge) {
 		return {
 			ok: false,

@@ -57,7 +57,7 @@ Fix **GitHub issue #66**: after a lane→orch merge conflict, operators can reco
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/merge-blocked-resume.test.mjs tests/batch/merge-blocked-phase.test.mjs` |
-| fileScopeMustChange | `src/batch/resume-multi.mjs` |
+| fileScopeMustChange | `spine-tasks/SP-401-merge-blocked-resume-recovery/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/batch/merge-blocked-resume.test.mjs` |
 

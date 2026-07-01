@@ -42,7 +42,7 @@ None
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/batch-help.test.mjs` |
-| fileScopeMustChange | `bin/spine-batch.mjs` |
+| fileScopeMustChange | `spine-tasks/SP-399-batch-cli-help-routing/STATUS.md` |
 | minLineCoverage | `77` |
 | artifactsMustExist | `tests/cli/batch-help.test.mjs` |
 
