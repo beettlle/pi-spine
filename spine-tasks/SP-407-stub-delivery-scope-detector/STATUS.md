@@ -1,7 +1,7 @@
 # SP-407: Stub delivery-only scope detector — Status
 
-**Current Step:** 4 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -43,15 +43,15 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] FULL test suite passing (1359/1359)
+- [x] Coverage gate passes (88.25%, threshold ≥77%)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Docs updated (none required)
 
@@ -62,6 +62,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 2 | skipped | `.reviews/2-20260701T213736.md` |
 
 ---
 
@@ -80,7 +81,8 @@
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #67 |
 | 2026-07-01 | Steps 0–1 preflight | Issue #67 + SP-349 patterns catalogued |
-| 2026-07-01 | Steps 2–3 | Detector module and unit tests added |
+| 2026-07-01 | Steps 2–3 | Detector module and unit tests added (`c6bb36f`) |
+| 2026-07-01 | Step 4 verification | typecheck + 1359 tests pass; coverage 88.25% |
 
 ---
 
