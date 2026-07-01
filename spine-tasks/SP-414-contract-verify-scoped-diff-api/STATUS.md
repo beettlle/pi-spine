@@ -1,7 +1,7 @@
 # SP-414: Contract verify scoped diff API — Status
 
-**Current Step:** 4
-**Status:** 🟡 In Progress
+**Current Step:** 5
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -43,10 +43,10 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] FULL test suite passing
+- [x] Coverage gate passes (≥77%)
 
 ---
 
@@ -77,7 +77,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #62 |
-| 2026-07-01 | Step 0–3 | sinceCommit API + scoped tests implemented |
+| 2026-07-01 | Step 4 | typecheck + full test suite + coverage:check (87.82%) pass |
 
 ---
 
