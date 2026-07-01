@@ -25,6 +25,7 @@ import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
 import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
 import { buildWorkerBackendDoctorCheck } from "../config/worker-backend.mjs";
 import { buildAgentModelInheritDoctorCheck } from "./agent-model-inherit.mjs";
+import { buildSequenceAutoApproveDoctorCheck } from "./sequence-safety.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import {
@@ -347,6 +348,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
 		checks.push(buildPiWorkerTimeoutDoctorCheck({ config: configResult.config }));
+		checks.push(buildSequenceAutoApproveDoctorCheck());
 		checks.push(buildAgentModelInheritDoctorCheck({
 			config: configResult.config,
 			projectRoot,
