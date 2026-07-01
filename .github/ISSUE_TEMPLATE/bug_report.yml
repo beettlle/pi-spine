@@ -1,0 +1,70 @@
+name: Bug report
+description: Report a repeatable pi-spine engine or CLI fault after correct operator steps.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing an upstream bug. Search [existing issues](https://github.com/beettlle/pi-spine/issues) first.
+        Sanitize secrets; include a minimal consumer repro when possible.
+        See the [operator upstream bug checklist](https://github.com/beettlle/pi-spine/blob/main/.cursor/rules/spine-operator-cursor.mdc).
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the bug.
+      placeholder: e.g. spine batch resume leaves orphaned lane after gate timeout
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: pi-spine version and `spine doctor` output.
+      placeholder: |
+        pi-spine version: (from `spine --version` or `npm list -g pi-spine`)
+        `spine doctor` output:
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: Exact command sequence that reproduces the issue.
+      placeholder: |
+        1. spine batch start SP-123
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: diagnosis
+    attributes:
+      label: Diagnosis
+      description: Full output of `spine status --diagnose`.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: journal_excerpt
+    attributes:
+      label: Journal excerpt
+      description: Relevant lines from `spine journal` or runtime journal files.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: What actually happened.
+    validations:
+      required: true

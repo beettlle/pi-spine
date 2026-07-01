@@ -12,6 +12,7 @@ import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { readJournalEvents } from "./journal.mjs";
+import { enforceOperatorPauseOnDisk } from "./pause.mjs";
 import { loadSpineBatchState, saveSpineBatchState } from "./state.mjs";
 
 /** Journal types surfaced on attached stdout during the land loop. */
@@ -106,6 +107,7 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
 
 	const loop = async () => {
 		while (!stopped) {
+			enforceOperatorPauseOnDisk(projectRoot);
 			if (!batchId) {
 				const loaded = loadSpineBatchState(projectRoot);
 				batchId = loaded.raw?.batchId ? String(loaded.raw.batchId) : null;

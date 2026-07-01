@@ -1,9 +1,10 @@
 /**
  * Batch pause CLI with attached-engine confirmation (SP-376, GitHub #57).
+ * Engine pause propagation helpers (SP-375).
  */
 
 import { isProcessAlive } from "../process/liveness.mjs";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import {
 	loadSpineBatchState,
@@ -16,6 +17,92 @@ export const PAUSE_CONFIRM_GRACE_MS = 3_000;
 
 /** Poll interval while waiting for pause confirmation. */
 export const PAUSE_CONFIRM_POLL_MS = 100;
+
+/**
+ * True when the latest batch.paused journal event is newer than the latest batch.resumed.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function isOperatorPauseActive(projectRoot, batchId) {
+	const events = readJournalEvents(projectRoot, batchId);
+	let lastPauseIdx = -1;
+	let lastResumeIdx = -1;
+	for (let i = 0; i < events.length; i++) {
+		const type = String(events[i].type ?? "");
+		if (type === "batch.paused") lastPauseIdx = i;
+		if (type === "batch.resumed") lastResumeIdx = i;
+	}
+	return lastPauseIdx >= 0 && lastPauseIdx > lastResumeIdx;
+}
+
+/**
+ * Adopt operator pause from disk or journal so engine saves do not clobber phase: paused.
+ *
+ * @param {string} projectRoot
+ * @param {object} state
+ * @returns {boolean}
+ */
+export function mergeEngineStateWithDiskPause(projectRoot, state) {
+	const loaded = loadSpineBatchState(projectRoot);
+	const diskPhase = String(loaded.raw?.phase ?? "");
+	const batchId = String(state.batchId ?? loaded.raw?.batchId ?? "");
+	if (diskPhase === "paused") {
+		state.phase = "paused";
+		return true;
+	}
+	if (batchId && isOperatorPauseActive(projectRoot, batchId)) {
+		state.phase = "paused";
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Persist engine state while honoring an operator pause already on disk or in the journal.
+ *
+ * @param {string} projectRoot
+ * @param {object} state
+ * @param {{ bypassWriteGuard?: boolean }} [options]
+ */
+export function saveEngineBatchState(projectRoot, state, options = {}) {
+	mergeEngineStateWithDiskPause(projectRoot, state);
+	return saveSpineBatchState(projectRoot, state, options);
+}
+
+/**
+ * Re-assert phase: paused on disk when the operator paused but a running engine overwrote it.
+ *
+ * @param {string} projectRoot
+ * @returns {boolean}
+ */
+export function enforceOperatorPauseOnDisk(projectRoot) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw) return false;
+	const batchId = String(loaded.raw.batchId ?? "");
+	if (!batchId || !isOperatorPauseActive(projectRoot, batchId)) return false;
+	if (loaded.raw.phase === "paused") return true;
+	loaded.raw.phase = "paused";
+	saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
+	return true;
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.batchId
+ * @returns {{ stop: boolean }}
+ */
+export function adoptPauseIfRequested({ projectRoot, state, batchId }) {
+	const paused = mergeEngineStateWithDiskPause(projectRoot, state);
+	if (!paused) return { stop: false };
+	saveEngineBatchState(projectRoot, state);
+	appendJournalEvent(projectRoot, batchId, "engine.pause_observed", {
+		enginePid: process.pid,
+	});
+	return { stop: true };
+}
 
 /**
  * @param {number} ms
