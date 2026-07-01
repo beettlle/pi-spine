@@ -16,6 +16,7 @@ import { integrateOrchToBase } from "./integrate.mjs";
 import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { loadSpineBatchState } from "./state.mjs";
+import { validateSequenceAutoApproveGate } from "../doctor/sequence-safety.mjs";
 
 const WAVE_BATCH_SETTLED_DIAGNOSES = new Set([
 	"completed",
@@ -296,6 +297,7 @@ export async function runSequence(ctx) {
 		throughWave = null,
 		attached = false,
 		autoApproveGate = false,
+		force = false,
 		stopOnFailure = true,
 		dryRun = false,
 		skipPreflight = false,
@@ -308,6 +310,17 @@ export async function runSequence(ctx) {
 	const wavePlan = resolveSequenceWaves(plan, { fromWave, throughWave });
 	if (!wavePlan.ok) {
 		return { ok: false, exitCode: 1, error: wavePlan.error, output: wavePlan.output };
+	}
+
+	const autoApproveCheck = validateSequenceAutoApproveGate({ autoApproveGate, force });
+	if (!autoApproveCheck.ok) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: autoApproveCheck.error,
+			output: autoApproveCheck.output,
+			suggestedCommand: autoApproveCheck.suggestedCommand,
+		};
 	}
 
 	if (dryRun) {
