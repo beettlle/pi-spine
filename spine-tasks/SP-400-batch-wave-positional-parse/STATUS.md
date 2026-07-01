@@ -1,7 +1,7 @@
 # SP-400: Batch start wave flag positional parse fix — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,33 +11,33 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm `scope: "pending 0"` bug in `parseBatchArgs`
+- [x] Confirm `scope: "pending 0"` bug in `parseBatchArgs`
 
 ---
 
 ### Step 1: Exclude flag values from positional scope
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Strip `--wave` / `--through-wave` / `--batch` / `--reason` values from positional tokens
+- [x] Strip `--wave` / `--through-wave` / `--batch` / `--reason` values from positional tokens
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression tests in `batch-start-wave.test.mjs`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] Regression tests in `batch-start-wave.test.mjs`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #65
-- [ ] Create `.DONE`
+- [x] Close issue #65
+- [x] Create `.DONE`
 
 ---
 
