@@ -1,7 +1,7 @@
 # SP-401: Merge blocked resume and wave skip recovery — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #66 and recovery timeline
-- [ ] Trace resume validation and wave loop
+- [x] Read issue #66 and recovery timeline
+- [x] Trace resume validation and wave loop
 
 ---
 
 ### Step 1: merge_blocked resume path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Allow `--force` resume from `merge_blocked` after orch resolution
-- [ ] Diagnose `suggestedCommand` for merge_blocked
+- [x] Allow `--force` resume from `merge_blocked` after orch resolution
+- [x] Diagnose `suggestedCommand` for merge_blocked
 
 ---
 
 ### Step 2: Skip succeeded waves on resume
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Skip `executeResumeWave` for succeeded merges
-- [ ] Advance `startWave` past terminal succeeded waves
+- [x] Skip `executeResumeWave` for succeeded merges
+- [x] Advance `startWave` past terminal succeeded waves
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `tests/batch/merge-blocked-resume.test.mjs`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] `tests/batch/merge-blocked-resume.test.mjs`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator runbook merge_blocked recovery
-- [ ] Close issue #66
-- [ ] Create `.DONE`
+- [x] Operator runbook merge_blocked recovery
+- [x] Close issue #66
+- [x] Create `.DONE`
 
 ---
 
