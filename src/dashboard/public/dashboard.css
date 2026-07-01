@@ -74,7 +74,18 @@ body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); 
 .lane-detail-log-ref { margin: 0 0 0.35rem; color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
 .lane-detail-log pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
 .wave-list li[data-status="active"] { color: var(--accent); }
-.lane-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.lane-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 920px; }
+.table-wrap { overflow-x: auto; }
+.lane-task-running { color: var(--running); font-weight: 600; }
+.lane-task-queued { color: var(--text); }
+@media (max-width: 720px) {
+  .lane-table th.col-running,
+  .lane-table th.col-queued,
+  .lane-table td.col-running,
+  .lane-table td.col-queued {
+    font-size: 0.8rem;
+  }
+}
 .lane-table th, .lane-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
 .lane-table th { color: var(--muted); }
 .lane-table td { font-family: var(--font-mono); }
