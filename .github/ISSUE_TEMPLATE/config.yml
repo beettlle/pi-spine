@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Operator runbook
+    url: https://github.com/beettlle/pi-spine/blob/main/docs/adoption/operator-runbook.md
+    about: Read the operator runbook before filing upstream bugs or feature requests.
+  - name: Upstream bug triage
+    url: https://github.com/beettlle/pi-spine/blob/main/.cursor/rules/spine-operator-cursor.mdc
+    about: Check when to file upstream vs fix locally (operator rule checklist).
