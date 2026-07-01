@@ -1,8 +1,8 @@
 # SP-389: Sequence state persistence and resume — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-06-30
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-01
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,23 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #54 SP-D open questions on state artifact
+- [x] Read issue #54 SP-D open questions on state artifact
+
+**Decision:** First-class artifact at `.spine/runtime/sequence/state.json` (issue Q3); scope + fromWave/completedWaves/lastBatchId persisted; cleared only when all plan waves complete.
 
 ---
 
 ### Step 1: State + resume
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Persist fromWave, completedWaves, lastBatchId
-- [ ] Resume after interrupted wave 0 integrate
-- [ ] Test halt on failure with --stop-on-failure
+- [x] Persist fromWave, completedWaves, lastBatchId
+- [x] Resume after interrupted wave 0 integrate
+- [x] Test halt on failure with --stop-on-failure
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
@@ -37,7 +39,7 @@
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] See PROMPT.md
+- [x] See PROMPT.md (no doc updates required)
 
 ---
 
@@ -52,6 +54,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| State kept active (not cleared) when throughWave stops before plan end | By design for --resume | `sequence-state.mjs` finalizeSequenceState |
+| sequence.mjs LOC refactor required for phase23 policy | Extracted helpers to sequence-state.mjs | `src/batch/sequence-state.mjs` |
 
 ---
 
@@ -60,6 +64,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-06-30 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-01 | Step 0 preflight | Chose `.spine/runtime/sequence/state.json` artifact |
+| 2026-07-01 | Step 1 implementation | sequence-state.mjs + --resume CLI + tests |
 
 ---
 
