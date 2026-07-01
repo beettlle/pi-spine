@@ -15,12 +15,12 @@ import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff
 import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { adoptPauseIfRequested, saveEngineBatchState } from "./pause.mjs";
 import {
 	assertNoActiveBatch,
 	createInitialBatchState,
 	generateBatchId,
 	recordBatchEnginePid,
-	saveSpineBatchState,
 } from "./state.mjs";
 import {
 	ensureOrchBranch,
@@ -44,6 +44,19 @@ import {
 	skipTaskDoneOnDisk,
 	transitionPhase,
 } from "./engine-lanes.mjs";
+
+/**
+ * @param {string} batchId
+ */
+function buildEnginePausedResult(batchId) {
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		paused: true,
+		output: "Batch paused.\n",
+	};
+}
 
 export {
 	assessWaveMergeEligibility,
@@ -164,14 +177,14 @@ export async function startBatch({
 		lanes,
 	});
 
-	saveSpineBatchState(projectRoot, state);
+	saveEngineBatchState(projectRoot, state);
 
 	try {
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
 		transitionPhase(state, "running", { projectRoot, batchId });
 		recordBatchEnginePid(state, process.pid);
 		installAttachedEngineShutdownHandlers({ projectRoot });
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 
 		for (const lane of state.lanes) {
 			lane.correlationId = crypto.randomUUID();
@@ -228,15 +241,24 @@ export async function startBatch({
 				correlationId: lane.correlationId,
 			});
 		}
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 
 		let batchAborted = false;
 
 		for (const wave of plan.waves) {
+			const pauseAtWave = adoptPauseIfRequested({ projectRoot, state, batchId });
+			if (pauseAtWave.stop) {
+				return buildEnginePausedResult(batchId);
+			}
+
 			state.currentWaveIndex = wave.index;
-			saveSpineBatchState(projectRoot, state);
+			saveEngineBatchState(projectRoot, state);
 
 			for (const tick of wave.ticks ?? []) {
+				const pauseAtTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				if (pauseAtTick.stop) {
+					return buildEnginePausedResult(batchId);
+				}
 				/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean }> }> }>} */
 				const runsByLane = new Map();
 
@@ -319,6 +341,11 @@ export async function startBatch({
 
 				await Promise.all(laneExecutions);
 				if (batchAborted) break;
+
+				const pauseAfterTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				if (pauseAfterTick.stop) {
+					return buildEnginePausedResult(batchId);
+				}
 			}
 
 			if (batchAborted) {
@@ -330,7 +357,7 @@ export async function startBatch({
 					batchId,
 					extra: { taskId: abortedTask?.taskId },
 				});
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 				return {
 					ok: false,
 					exitCode: 1,
@@ -354,7 +381,7 @@ export async function startBatch({
 						reason: "mixed_outcome",
 					},
 				});
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 				appendJournalEvent(projectRoot, batchId, "batch.merge_blocked", {
 					waveIndex: wave.index,
 					failedTaskIds: mergeEligibility.failedTaskIds,
@@ -436,7 +463,7 @@ export async function startBatch({
 			batchId,
 			extra: { error: message },
 		});
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 		removeLaneWorktrees(projectRoot, batchId, maxLaneNumber);
 		return { ok: false, exitCode: 1, batchId, error: message };
 	}
