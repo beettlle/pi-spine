@@ -227,26 +227,65 @@ export function buildLaneDetailModel(lane) {
 }
 
 /**
+ * Resolve running vs queued task projection for the lane table.
+ * Prefers SP-379 snapshot fields; falls back to deprecated activeTaskIds.
+ *
+ * @param {object} lane
+ */
+export function resolveLaneQueueProjection(lane) {
+	const runningTaskId = lane?.runningTaskId ?? null;
+	const queuedTaskIds = lane?.queuedTaskIds ?? null;
+
+	if (runningTaskId != null || (queuedTaskIds != null && queuedTaskIds.length > 0)) {
+		return {
+			runningTaskId: runningTaskId ?? null,
+			queuedTaskIds: queuedTaskIds ?? [],
+		};
+	}
+
+	const activeTaskIds = lane?.activeTaskIds ?? [];
+	if (activeTaskIds.length === 0) {
+		return { runningTaskId: null, queuedTaskIds: [] };
+	}
+
+	// Degraded fallback until snapshot exposes explicit queue fields (SP-379).
+	if (lane?.status === "running" && activeTaskIds.length >= 1) {
+		return {
+			runningTaskId: activeTaskIds[0] ?? null,
+			queuedTaskIds: activeTaskIds.slice(1),
+		};
+	}
+
+	return { runningTaskId: null, queuedTaskIds: [...activeTaskIds] };
+}
+
+/**
  * @param {object} snapshot
  */
 export function buildLaneTableModel(snapshot) {
-	return (snapshot?.lanes ?? []).map((lane) => ({
-		laneId: lane.laneId,
-		laneNumber: lane.laneNumber,
-		status: lane.status,
-		activeTaskIds: lane.activeTaskIds ?? [],
-		taskIds: lane.taskIds ?? [],
-		heartbeatAgeSeconds: lane.heartbeatAgeSeconds,
-		heartbeatKind: lane.heartbeatKind ?? null,
-		workerPhase: lane.workerPhase ?? null,
-		heartbeatDisplay: lane.heartbeatDisplay ?? formatLaneHeartbeatDisplay(lane),
-		activityPhase: lane.activityPhase ?? "idle",
-		activityPhaseLabel: lane.activityPhaseLabel ?? "—",
-		worktree: lane.worktree,
-		laneAlert: lane.laneAlert ?? null,
-		throughput: buildLaneThroughputModel(lane),
-		detail: buildLaneDetailModel(lane),
-	}));
+	return (snapshot?.lanes ?? []).map((lane) => {
+		const queue = resolveLaneQueueProjection(lane);
+		return {
+			laneId: lane.laneId,
+			laneNumber: lane.laneNumber,
+			status: lane.status,
+			activeTaskIds: lane.activeTaskIds ?? [],
+			runningTaskId: queue.runningTaskId,
+			queuedTaskIds: queue.queuedTaskIds,
+			queuedCount: queue.queuedTaskIds.length,
+			taskIds: lane.taskIds ?? [],
+			heartbeatAgeSeconds: lane.heartbeatAgeSeconds,
+			heartbeatKind: lane.heartbeatKind ?? null,
+			workerPhase: lane.workerPhase ?? null,
+			heartbeatDisplay: lane.heartbeatDisplay ?? formatLaneHeartbeatDisplay(lane),
+			activityPhase: lane.activityPhase ?? "idle",
+			activityPhaseLabel: lane.activityPhaseLabel ?? "—",
+			worktree: lane.worktree,
+			laneAlert: lane.laneAlert ?? null,
+			throughput: buildLaneThroughputModel(lane),
+			detail: buildLaneDetailModel(lane),
+		};
+	});
 }
 
 /**
