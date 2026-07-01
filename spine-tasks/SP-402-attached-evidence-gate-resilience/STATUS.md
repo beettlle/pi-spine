@@ -1,7 +1,7 @@
 # SP-402: Attached evidence gate resilience — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,42 +11,42 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Re-read issue #70 and partial evidence recovery path
-- [ ] Trace gate open vs evidence collection order
+- [x] Re-read issue #70 and partial evidence recovery path
+- [x] Trace gate open vs evidence collection order
 
 ---
 
 ### Step 1: Split evidence collection
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `collectCoreEvidenceBundle` / `collectExtendedEvidenceBundle` / `finalizeEvidenceBundleComplete`
+- [x] `collectCoreEvidenceBundle` / `collectExtendedEvidenceBundle` / `finalizeEvidenceBundleComplete`
 
 ---
 
 ### Step 2: Gate opens before extended evidence
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Persist gate after core evidence; extended collection non-blocking for gate open
-- [ ] Evidence journal milestones on attached land loop
+- [x] Persist gate after core evidence; extended collection non-blocking for gate open
+- [x] Evidence journal milestones on attached land loop
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `evidence-gate-resilience.test.mjs`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [x] `evidence-gate-resilience.test.mjs`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #70
-- [ ] Create `.DONE`
+- [x] Close issue #70
+- [x] Create `.DONE`
 
 ---
 
