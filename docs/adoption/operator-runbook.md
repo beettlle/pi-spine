@@ -1152,23 +1152,34 @@ Contract fileScopeMustNotChange: forbidden change spine-tasks/SP-001/STATUS.md
 Contract fileScopeMustNotChange: forbidden change spine-tasks/SP-001/.DONE
 ```
 
-Later tasks on a **serialized same-lane** queue may fail on **prior tasks'** `spine-tasks/<id>/` paths even when the current worker behaved correctly.
+#### Serialized lane scoped verify (issue #62, SP-416)
 
-**Cause:**
+When the planner serializes multiple tasks on one lane (`lane.tasks_serialized`), final contract verify scopes `fileScopeMustChange` and `fileScopeMustNotChange` to **this task only**:
+
+| Mechanism | Behavior |
+|-----------|----------|
+| `resolveTaskStartCommit` | Reads journal `task.started` / prior `lane.committed` to find the lane HEAD at task start |
+| Scoped diff | `taskStartCommit..HEAD` via `verifyContract` `sinceCommit` — excludes prior same-lane task commits |
+| First task on lane | No prior anchor — falls back to cumulative `main...HEAD` (same as single-task lanes) |
+| Parallel lanes | Unchanged — each lane branch typically has one active task per wave |
+
+Regression coverage: `tests/batch/contract-verify-serialized.test.mjs` (task 2 passes `fileScopeMustNotChange` for paths only task 1 committed when `sinceCommit` is set).
+
+**Cause (remaining failure patterns):**
 
 | Pattern | Why it fails |
 |---------|--------------|
 | `spine-tasks/**` in `fileScopeMustNotChange` | Workers must update `STATUS.md`, write `.DONE`, and may write `.reviews/` — orchestration artifacts, not product scope violations |
 | Current task folder in must-not-change | Same — blocks required delivery paths for the running task |
-| Prior task paths on serialized lane | Verify compares cumulative `main...HEAD` lane diff today; earlier task commits remain until per-task scoping ships ([SP-416](https://github.com/beettlle/pi-spine/issues/416)) |
+| True scope violation on this task | Scoped diff still flags files the **current** worker changed in forbidden paths |
 
-`fileScopeMustNotChange` is for **parallel lane** collision detection (concurrent lanes editing the same product path), not for isolating serialized tasks on one lane. When `spine plan` reports file-scope overlap serialized to one lane, use disjoint `fileScopeMustChange` paths — do not rely on must-not-change for queue ordering.
+`fileScopeMustNotChange` is for **parallel lane** collision detection (concurrent lanes editing the same product path). On serialized lanes, scoped verify (SP-416) prevents false failures from prior same-lane commits; use disjoint `fileScopeMustChange` paths when `spine plan` reports overlap — do not rely on must-not-change for queue ordering.
 
 **Fix:**
 
 1. Edit `PROMPT.md` **## Contract** — remove `spine-tasks/**` and the current task folder from `fileScopeMustNotChange`.
 2. Keep only product paths that parallel lanes must not touch, e.g. `extension/**`, `.spine/**` (not `spine-tasks/**`).
-3. For false failures on **prior** same-lane task paths, remove the conflicting must-not-change patterns or split batches until SP-416 per-task verify lands.
+3. For failures on paths the **current** task legitimately touched, narrow must-not-change patterns or fix the worker scope — prior same-lane task paths should not fail after SP-416 when journal resolution succeeds.
 4. `spine tasks validate <taskId>` then `spine batch retry <taskId>` and `spine batch resume`.
 
 Authoring reference: [contract-template.md](../../skills/create-spine-tasks/references/contract-template.md#filescopemustnotchange-semantics).
@@ -1177,7 +1188,7 @@ Authoring reference: [contract-template.md](../../skills/create-spine-tasks/refe
 
 | Problem | Command / fix |
 |---------|----------------|
-| `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` or prior lane tasks | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
+| `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
 | Preflight git dirty | Commit or stash; lanes need clean tree |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
 | Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); `spine status --diagnose` → worker log + `lane.salvage_inspection`; ensure `spine_report_progress` after steps |
