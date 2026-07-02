@@ -293,3 +293,60 @@ test("parseContract treats em dash contract cells as empty path lists", () => {
 	assert.deepEqual(parsed.fileScopeMustNotChange, []);
 	assert.deepEqual(parsed.artifactsMustExist, []);
 });
+
+test("parseContract splits comma-separated paths inside a single backtick wrapper (SP-396)", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`true\` |
+| fileScopeMustChange | \`bin/spine-issue.mjs,bin/spine.mjs\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.deepEqual(parsed.fileScopeMustChange, ["bin/spine-issue.mjs", "bin/spine.mjs"]);
+});
+
+test("parseContract splits comma-separated artifacts inside a single backtick wrapper", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| artifactsMustExist | \`tests/a.test.mjs,tests/b.test.mjs\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.deepEqual(parsed.artifactsMustExist, ["tests/a.test.mjs", "tests/b.test.mjs"]);
+});
+
+test("validateContract warns on comma-in-single-backtick path lists in optional mode", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | \`bin/spine-issue.mjs,bin/spine.mjs\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+	const result = validateContract(parsed, { mode: "optional" });
+
+	assert.equal(result.ok, true);
+	assert.match(result.warnings.join("\n"), /comma-separated paths inside one backtick pair/);
+});
+
+test("validateContract errors on comma-in-single-backtick path lists in required mode", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| artifactsMustExist | \`tests/a.test.mjs,tests/b.test.mjs\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+	const result = validateContract(parsed, { mode: "required" });
+
+	assert.equal(result.ok, false);
+	assert.match(result.errors.join("\n"), /comma-separated paths inside one backtick pair/);
+});

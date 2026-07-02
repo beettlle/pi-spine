@@ -382,12 +382,42 @@ function parseContractScalar(raw) {
 	return raw;
 }
 
+/** Comma-separated paths inside one backtick pair (authoring anti-pattern). */
+const CONTRACT_COMMA_IN_SINGLE_BACKTICK_RE = /^`[^`,]+,[^`]+`$/;
+
+/**
+ * Detect contract path-list cells that comma-separate paths inside one backtick wrapper.
+ *
+ * @param {Record<string, string>} rawFieldValues
+ * @param {string[]} fields
+ * @returns {string[]}
+ */
+export function detectCommaInSingleBacktickPathLists(rawFieldValues, fields) {
+	/** @type {string[]} */
+	const issues = [];
+	for (const field of fields) {
+		const value = String(rawFieldValues?.[field] ?? "").trim();
+		if (!value) {
+			continue;
+		}
+		if (CONTRACT_COMMA_IN_SINGLE_BACKTICK_RE.test(value)) {
+			issues.push(
+				`Contract ${field}: comma-separated paths inside one backtick pair; use per-path backticks (e.g. \`path-a\`, \`path-b\`)`,
+			);
+		}
+	}
+	return issues;
+}
+
 /**
  * @param {string} raw
  * @returns {string[]}
  */
 function parseContractPathList(raw) {
-	return raw
+	const trimmed = raw.trim();
+	const singleBacktick = trimmed.match(/^`([^`]+)`$/);
+	const source = singleBacktick ? singleBacktick[1] : trimmed;
+	return source
 		.split(",")
 		.map((part) => parseContractScalar(part.trim()))
 		.filter((part) => part && !isContractNoneValue(part));

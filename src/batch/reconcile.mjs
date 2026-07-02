@@ -875,6 +875,9 @@ export function reconcileBatch(ctx) {
 		postMergeLimbo: signals.postMergeLimbo === true,
 		journalEvents,
 		mergeResults: batch.mergeResults,
+		hasActiveWorkerTasks: hasRunningTasks || hasPendingTasks,
+		allTasksTerminalSuccess: signals.allTasksTerminalSuccess,
+		mergeResultsEmpty: signals.mergeResultsEmpty,
 	});
 	const resolvedMacroPhaseLabel = macroPhaseLabel(macroPhase);
 	if (ctx.verbose) {
@@ -936,6 +939,10 @@ export function reconcileBatch(ctx) {
 		totalTasks: batch.totalTasks,
 		taskBranch,
 		gitignoredPaths,
+		hasRunningTasks,
+		hasPendingTasks,
+		allTasksTerminalSuccess: signals.allTasksTerminalSuccess,
+		macroPhase,
 		...(doneMissingContext ?? {}),
 	});
 
