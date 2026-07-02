@@ -40,6 +40,7 @@ export const SPINE_INIT_TESTING_COMMAND = "npm run typecheck && npm test";
 export const SPINE_INIT_COVERAGE_COMMAND = "npm run coverage:check";
 
 export const SPINE_GITIGNORE_ENTRIES = [
+	".pi/",
 	".spine/runtime/",
 	".spine/batch-state.json",
 	".spine/batch-history.json",
