@@ -1,8 +1,8 @@
 # SP-411: Skill must-not-change guidance — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-01
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,33 +11,41 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #63
-- [ ] Dependencies satisfied
+- [x] Read GitHub issue #63
+- [x] Dependencies satisfied (SP-410 `.DONE` present; contract-template.md updated)
 
 ---
 
 ### Step 1: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read SP-410 template changes
+- [x] Read SP-410 template changes
 
 ---
 
 ### Step 2: Update SKILL.md
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add must-not-change parallel-only note in File Scope section
-- [ ] Cross-link contract-template.md
-- [ ] Warn against spine-tasks/** in must-not-change when authoring packets
+- [x] Add must-not-change parallel-only note in File Scope section
+- [x] Cross-link contract-template.md
+- [x] Warn against spine-tasks/** in must-not-change when authoring packets
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test` (1407 pass, 0 fail)
+
+---
+
+## Completion Criteria
+
+- [x] All steps complete
+- [x] All tests passing
+- [x] Acceptance criteria met (parallel-only note, contract-template cross-link, spine-tasks/** warning)
 
 ---
 
@@ -59,7 +67,8 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #63 |
+| 2026-07-02 | Step 2 complete | SKILL.md File Scope section updated |
+| 2026-07-02 | Step 3 verification | typecheck + 1407 tests pass |
 
 ---
 
