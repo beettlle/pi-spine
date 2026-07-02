@@ -1,7 +1,7 @@
 # SP-434: Attached engine single-owner lock — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4 (complete)
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,50 +11,50 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #89
-- [ ] Dependencies satisfied
+- [x] Read issue #89
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Lock check
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Store/check resilience.enginePid before attached spawn
-- [ ] Fail fast with clear error when PID alive
+- [x] Store/check resilience.enginePid before attached spawn
+- [x] Fail fast with clear error when PID alive
 
 ---
 
 ### Step 1: Handoff path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Optional --force orphans prior engine with journal event
+- [x] Optional --force orphans prior engine with journal event
 
 ---
 
 ### Step 2: Regression
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Test: attached start → attached resume → expect fail-fast or clean handoff
+- [x] Test: attached start → attached resume → expect fail-fast or clean handoff
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1438 tests)
+- [x] Coverage gate (88.50% line coverage, threshold 77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated (`docs/adoption/operator-runbook.md`)
+- [x] Issue closed (#89)
+- [x] .DONE created
 
 ---
 
@@ -69,6 +69,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Engine lock must run before `validateResumeBatch` to fail fast before worktree checks | Fixed in implementation | `resume.mjs`, `detached-start.mjs` |
 
 ---
 
@@ -77,6 +78,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#89) |
+| 2026-07-02 | Steps 0–2 | `enforceAttachedEngineSingleOwner` + wiring + tests |
+| 2026-07-02 | Steps 3–4 | Full suite + coverage gate + runbook + issue close |
 
 ---
 
@@ -88,4 +91,6 @@
 
 ## Notes
 
-*Reserved for execution notes*
+- `enforceAttachedEngineSingleOwner` in `attached-runner.mjs` checks `resilience.enginePid` via `readBatchEnginePid`.
+- Without `--force`: returns `attached_engine_already_running` when PID is alive.
+- With `--force`: calls `terminateStaleDetachedEngine` with `allowRunningOrphanTerminate: true` and journals `engine.orphan_terminated`.
