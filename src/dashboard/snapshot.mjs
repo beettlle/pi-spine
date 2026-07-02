@@ -489,9 +489,35 @@ export function buildLaneRows({
 }
 
 /**
- * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
+ * @param {string[]} taskIds
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} classifiedTasks
  */
-export function buildWaveProgress(batchState) {
+function waveTasksAllTerminalSuccess(taskIds, classifiedTasks) {
+	if (!taskIds.length) return false;
+	const byId = new Map((classifiedTasks ?? []).map((task) => [String(task.taskId), task]));
+	return taskIds.every((taskId) => byId.get(String(taskId))?.classification === "terminal-success");
+}
+
+/**
+ * @param {number} index
+ * @param {number} currentWaveIndex
+ * @param {string[]} taskIds
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ */
+function resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks) {
+	if (classifiedTasks?.length && waveTasksAllTerminalSuccess(taskIds, classifiedTasks)) {
+		return "completed";
+	}
+	if (index < currentWaveIndex) return "completed";
+	if (index === currentWaveIndex) return "active";
+	return "pending";
+}
+
+/**
+ * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ */
+export function buildWaveProgress(batchState, classifiedTasks) {
 	const raw =
 		batchState && typeof batchState === "object" && "raw" in batchState
 			? /** @type {Record<string, unknown>} */ (batchState.raw)
@@ -504,12 +530,14 @@ export function buildWaveProgress(batchState) {
 	return {
 		currentWaveIndex,
 		totalWaves,
-		waves: wavePlan.map((entry, index) => ({
-			index,
-			taskIds: Array.isArray(entry) ? entry.map(String) : [],
-			status:
-				index < currentWaveIndex ? "completed" : index === currentWaveIndex ? "active" : "pending",
-		})),
+		waves: wavePlan.map((entry, index) => {
+			const taskIds = Array.isArray(entry) ? entry.map(String) : [];
+			return {
+				index,
+				taskIds,
+				status: resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks),
+			};
+		}),
 	};
 }
 
@@ -807,7 +835,7 @@ export function buildDashboardSnapshot(projectRoot) {
 			now,
 		}),
 	);
-	const waves = buildWaveProgress(batch);
+	const waves = buildWaveProgress(batch, classifiedTasks);
 	const defaultView = buildDefaultViewStatus(reconciliation, gate);
 
 	const macroPhase = deriveMacroPhase({
