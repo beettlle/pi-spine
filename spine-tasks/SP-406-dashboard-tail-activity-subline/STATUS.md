@@ -1,7 +1,7 @@
 # SP-406: Dashboard tail activity subline — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,17 +11,17 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #68
-- [ ] Dependencies satisfied
+- [x] Read GitHub issue #68
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-403/404/405 landed; identify best subline source (macroPhase vs journal tail)
+- [x] Confirm SP-403/404/405 landed; identify best subline source (macroPhase vs journal tail)
 
 ---
 

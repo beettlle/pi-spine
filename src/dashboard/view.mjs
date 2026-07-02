@@ -374,6 +374,28 @@ export function buildLaneTableModel(snapshot) {
 /**
  * @param {object} snapshot
  */
+export function buildTailActivityModel(snapshot) {
+	const label = snapshot?.tailActivityLabel ?? null;
+	if (!label) {
+		return { tailActivityLabel: null, visible: false };
+	}
+	for (const lane of snapshot?.lanes ?? []) {
+		if (lane.runningTaskId) {
+			return { tailActivityLabel: null, visible: false };
+		}
+		if (Array.isArray(lane.queuedTaskIds) && lane.queuedTaskIds.length > 0) {
+			return { tailActivityLabel: null, visible: false };
+		}
+	}
+	return {
+		tailActivityLabel: label,
+		visible: true,
+	};
+}
+
+/**
+ * @param {object} snapshot
+ */
 export function buildLaneTableSummaryModel(snapshot) {
 	const lanes = snapshot?.lanes ?? [];
 	if (lanes.length < 2) return null;
@@ -503,6 +525,7 @@ export function buildDashboardViewModel(snapshot, { journalLaneFilter = null } =
 		waves: buildWaveModel(snapshot),
 		lanes: buildLaneTableModel(snapshot),
 		laneTableSummary: buildLaneTableSummaryModel(snapshot),
+		tailActivity: buildTailActivityModel(snapshot),
 		gate: buildGateModel(snapshot?.gate),
 		gateAffordance: buildGateAffordanceModel(snapshot),
 		showGateAffordance: shouldShowGateAffordance(snapshot),
