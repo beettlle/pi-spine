@@ -1174,7 +1174,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-421 | Diagnosis primary failure class | S | **Staged** | — | #74 |
 | SP-422 | Doctor canonical model ids | S | **Staged** | — | #76 |
 | SP-423 | Sequence preflight `.pi/` + errors | S | **Staged** | — | #81 |
-| SP-424 | Limbo-detect leaf (#83-A) | S | **Staged** | — | — |
+| SP-424 | Limbo-detect leaf (#83-A) | S | **Done** | — | — |
 | SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
 | SP-426 | Contract verify maxBuffer | S | **Staged** | — | #86 |
 | SP-427 | Dirty worktree coverage hygiene | M | **Staged** | — | #73 |

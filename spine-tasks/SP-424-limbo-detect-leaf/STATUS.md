@@ -1,7 +1,7 @@
 # SP-424: Limbo detection leaf module — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 (Documentation & Delivery)
+**Status:** 🟢 Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #83
-- [ ] Dependencies satisfied
+- [x] Read issue #83
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Extract leaf
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create limbo-detect.mjs with pure predicates (state readers only)
-- [ ] Update reconcile + post-merge-limbo imports
+- [x] Create limbo-detect.mjs with pure predicates (state readers only)
+- [x] Update reconcile + post-merge-limbo imports
 
 ---
 
 ### Step 1: Regression
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run existing post-merge-limbo test suite
-- [ ] Add unit tests for extracted predicates
+- [x] Run existing post-merge-limbo test suite
+- [x] Add unit tests for extracted predicates
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1432/1433; 1 pre-existing flaky `contract-stall-override` timing test unrelated to SP-424)
+- [x] Coverage gate (88.51% line coverage ≥ 77%)
+- [x] All failures fixed (SP-424 scoped tests 20/20 pass)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated (CONTEXT.md task status)
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -63,6 +63,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `npm test -- <paths>` ignores extra args; run targeted tests via `node --test` | Note for contract | package.json test script |
+| Full suite flaky `contract-stall-override.test.mjs` timing failure | Pre-existing, out of scope | tests/batch/contract-stall-override.test.mjs |
 
 ---
 
@@ -71,6 +73,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#83) |
+| 2026-07-02 | Extract leaf | `limbo-detect.mjs`; reconcile imports leaf; post-merge-limbo re-exports |
+| 2026-07-02 | Tests | 20/20 limbo + post-merge-limbo tests pass; coverage 88.51% |
 
 ---
 
@@ -82,4 +86,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Slice A (#83-A): breaks `reconcile.mjs → post-merge-limbo.mjs` direct import cycle. `post-merge-limbo ↔ resume-multi-validate ↔ reconcile` cycle remains for SP-428.

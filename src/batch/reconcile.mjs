@@ -26,7 +26,7 @@ import {
 } from "./diagnosis-stub.mjs";
 import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
-import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { isPostMergeLimbo } from "./limbo-detect.mjs";
 import { computePendingTasks } from "./resume-multi.mjs";
 import { computeStatusProgress } from "./status-json.mjs";
 import {

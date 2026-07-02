@@ -12,6 +12,7 @@ import { loadGateRecord, openIntegrateGateAfterBatchComplete } from "./gate.mjs"
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordWaveMergeResult } from "./merge/wave-merge-state.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
+import { isPostMergeLimbo } from "./limbo-detect.mjs";
 import {
 	clearBatchEnginePid,
 	loadSpineBatchState,
@@ -19,38 +20,12 @@ import {
 	saveSpineBatchState,
 } from "./state.mjs";
 
+export { isPostMergeLimbo } from "./limbo-detect.mjs";
+
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /** @type {boolean} */
 let attachedExitFinalizeInFlight = false;
-
-/**
- * @param {object|null|undefined} state
- * @param {object} [git]
- */
-export function isPostMergeLimbo(state, git = {}) {
-	if (!state || typeof state !== "object") return false;
-	const phase = String(state.phase ?? "");
-	if (phase !== "running" || state.endedAt != null) return false;
-
-	const tasks = state.tasks ?? [];
-	if (tasks.length === 0) return false;
-	const allSucceeded = tasks.every((task) => String(task?.status ?? "") === "succeeded");
-	if (!allSucceeded) return false;
-
-	const mergeResults = state.mergeResults ?? [];
-	if (
-		mergeResults.length === 0 ||
-		!mergeResults.every((entry) => String(entry?.status ?? "") === "succeeded")
-	) {
-		return false;
-	}
-
-	if (git.orchMergedToBase) return false;
-	if (git.orchBranchExists === false) return false;
-
-	return true;
-}
 
 /**
  * @param {string} [spineBin]
