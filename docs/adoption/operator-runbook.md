@@ -43,6 +43,8 @@ spine batch resume --attached
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
+**Single attached engine:** only one foreground `--attached` engine may own a batch at a time. `resilience.enginePid` is checked before attached `start`/`resume`. If that PID is still alive, the CLI fails fast with `attached_engine_already_running`. Use `spine batch resume --attached --force` to orphan the prior engine (`engine.orphan_terminated` in the journal) before handoff — do not run two `spine.mjs batch … --attached` processes for the same batch.
+
 After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
 
 **Orphan recovery tree:**
@@ -445,6 +447,9 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
+| `needs_retry` + `DirtyWorktree` | Lane worktree dirty after worker completion (often `extension/coverage/`) | `git checkout -- extension/coverage && spine batch retry <id>` |
+| `needs_retry` + `review_exhausted` | Final review REVISE cap reached | Fix implementation or packet scope, then `spine batch retry <id>` |
+| `needs_retry` + `contract_failed` | Final `contract.verified` failed | Edit `PROMPT.md` scope, then `spine batch retry <id>` |
 | `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
 | `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
 | `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` when task still `running`, else `spine batch resume --attached` |

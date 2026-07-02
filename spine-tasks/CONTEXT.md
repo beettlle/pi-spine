@@ -1174,7 +1174,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-421 | Diagnosis primary failure class | S | **Staged** | — | #74 |
 | SP-422 | Doctor canonical model ids | S | **Staged** | — | #76 |
 | SP-423 | Sequence preflight `.pi/` + errors | S | **Staged** | — | #81 |
-| SP-424 | Limbo-detect leaf (#83-A) | S | **Staged** | — | — |
+| SP-424 | Limbo-detect leaf (#83-A) | S | **Done** | — | — |
 | SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
 | SP-426 | Contract verify maxBuffer | S | **Complete** | — | #86 |
 | SP-427 | Dirty worktree coverage hygiene | M | **Complete** | — | #73 |
@@ -1184,7 +1184,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-431 | Sequence `--auto-approve-gate` flag | S | **Complete** | SP-390 | #79 |
 | SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-428 | #83 |
 | SP-433 | Resume force skip succeeded tasks | M | **Staged** | — | #88 |
-| SP-434 | Attached engine single-owner lock | M | **Staged** | — | #89 |
+| SP-434 | Attached engine single-owner lock | M | **Done** | — | #89 |
 | SP-435 | Sequence detached false failure exit | M | **Staged** | SP-388 | #72 |
 | SP-436 | Isolated base integrate core (#91 slice 1) | M | **Staged** | — | — |
 | SP-437 | Sequence continue after merge_blocked | M | **Staged** | SP-387 | #82 |

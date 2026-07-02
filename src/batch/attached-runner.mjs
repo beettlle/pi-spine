@@ -9,11 +9,12 @@ import {
 	isPostMergeLimbo,
 } from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
+import { isProcessAlive } from "../process/liveness.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { enforceOperatorPauseOnDisk } from "./pause.mjs";
-import { loadSpineBatchState, saveSpineBatchState } from "./state.mjs";
+import { loadSpineBatchState, readBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 
 /** Journal types surfaced on attached stdout during the land loop. */
 export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
@@ -150,14 +151,89 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
 }
 
 /**
+ * Reject a second attached engine when resilience.enginePid is alive (SP-434, GitHub #89).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {boolean} [params.force] Orphan-terminate prior engine before handoff
+ * @param {"start"|"resume"} [params.operation]
+ */
+export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, operation = "resume" }) {
+	const loaded = loadSpineBatchState(projectRoot);
+	const state = loaded.raw;
+	if (!state) {
+		return { ok: true };
+	}
+
+	const batchId = String(state.batchId ?? "");
+	const enginePid = readBatchEnginePid(state);
+	if (enginePid == null || enginePid === process.pid || !isProcessAlive(enginePid)) {
+		return { ok: true };
+	}
+
+	const fromPhase = String(state.phase ?? "");
+	if (force) {
+		const terminateResult = terminateStaleDetachedEngine({
+			projectRoot,
+			state,
+			batchId,
+			fromPhase,
+			allowRunningOrphanTerminate: true,
+		});
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		return {
+			ok: true,
+			handoff: true,
+			terminated: terminateResult.terminated,
+			stalePid: terminateResult.stalePid ?? enginePid,
+		};
+	}
+
+	const operationLabel = operation === "start" ? "start" : "resume";
+	const output =
+		`Attached batch engine already running (PID ${enginePid}, batch ${batchId}).\n` +
+		`Stop the existing engine or run spine batch ${operationLabel} --attached --force to orphan it first.\n`;
+	return {
+		ok: false,
+		exitCode: 1,
+		error: "attached_engine_already_running",
+		output,
+		batchId,
+		enginePid,
+	};
+}
+
+/**
  * Run an attached foreground engine while streaming land-loop journal milestones to stdout.
  *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {() => Promise<object>} params.runEngine
  * @param {(line: string) => void} [params.write]
+ * @param {boolean} [params.force]
+ * @param {"start"|"resume"} [params.operation]
  */
-export async function runAttachedBatchEngine({ projectRoot, runEngine, write, spineBin }) {
+export async function runAttachedBatchEngine({
+	projectRoot,
+	runEngine,
+	write,
+	spineBin,
+	force = false,
+	operation = "resume",
+}) {
+	if (operation === "start") {
+		const lock = enforceAttachedEngineSingleOwner({ projectRoot, force: false, operation: "start" });
+		if (!lock.ok) {
+			return {
+				ok: false,
+				exitCode: lock.exitCode ?? 1,
+				error: lock.error,
+				output: lock.output,
+				batchId: lock.batchId,
+			};
+		}
+	}
+
 	installAttachedExitFinalizeHandlers({ projectRoot, spineBin });
 	const reporter = await startAttachedMilestoneReporter({ projectRoot, write });
 	try {

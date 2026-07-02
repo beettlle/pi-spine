@@ -9,7 +9,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
-import { finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
+import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
@@ -63,6 +63,11 @@ export function validateResumeBatch({ projectRoot, force = false }) {
  * @param {boolean} [params.force]
  */
 export async function resumeBatch({ projectRoot, force = false }) {
+	const engineLock = enforceAttachedEngineSingleOwner({ projectRoot, force, operation: "resume" });
+	if (!engineLock.ok) {
+		return engineLock;
+	}
+
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
 		return resumeCheck;

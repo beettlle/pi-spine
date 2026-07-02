@@ -13,7 +13,7 @@ import { validateResumeBatch } from "./resume.mjs";
 import { assessRunningPhaseResumeEligibility } from "./resume-multi-validate.mjs";
 import { readLastTaskFailedEvent } from "./journal.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
-import { finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
+import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import {
 	ACTIVE_PHASES,
 	loadSpineBatchState,
@@ -671,6 +671,25 @@ export async function startBatchDetached({
 
 	const before = loadSpineBatchState(projectRoot);
 	const previousBatchId = before.raw?.batchId ?? null;
+	const engineLock = enforceAttachedEngineSingleOwner({ projectRoot, force: false, operation: "start" });
+	if (!engineLock.ok) {
+		const payload = {
+			ok: false,
+			detached: true,
+			operation: "start",
+			batchId: engineLock.batchId,
+			error: engineLock.error,
+			output: engineLock.output,
+			enginePid: engineLock.enginePid,
+			suggestedCommand: "spine batch resume --attached --force",
+		};
+		return {
+			ok: false,
+			exitCode: engineLock.exitCode ?? 1,
+			output: formatDetachedEngineOutput(payload, json),
+			result: payload,
+		};
+	}
 	const argv = buildAttachedBatchStartArgv({
 		scope,
 		skipPreflight: true,
@@ -747,6 +766,26 @@ export async function resumeBatchDetached({
 	waitTerminal = false,
 	json = false,
 }) {
+	const engineLock = enforceAttachedEngineSingleOwner({ projectRoot, force, operation: "resume" });
+	if (!engineLock.ok) {
+		const payload = {
+			ok: false,
+			detached: true,
+			operation: "resume",
+			batchId: engineLock.batchId,
+			error: engineLock.error,
+			output: engineLock.output,
+			enginePid: engineLock.enginePid,
+			suggestedCommand: "spine batch resume --attached --force",
+		};
+		return {
+			ok: false,
+			exitCode: engineLock.exitCode ?? 1,
+			output: formatDetachedEngineOutput(payload, json),
+			result: payload,
+		};
+	}
+
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
 		const payload = {
