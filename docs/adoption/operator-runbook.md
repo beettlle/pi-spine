@@ -174,7 +174,7 @@ spine preflight --json        # automation / CI
 | Check | What it catches |
 |-------|-----------------|
 | Doctor | Node, git, pi, config, agents, coexistence |
-| Git clean | Uncommitted changes in working tree |
+| Git clean | Uncommitted changes in working tree (`.pi/` session metadata ignored — same treatment as `.spine/runtime/` via `spine init` gitignore) |
 | No active batch | Stale `.spine/batch-state.json` or Taskplane `.pi/batch-state.json` |
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
 | Tasks validate (v1.3) | Invalid PROMPT packets for pending scope |

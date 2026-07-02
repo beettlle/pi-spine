@@ -1,7 +1,7 @@
 # SP-423: Sequence preflight .pi/ and error propagation — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4 — Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,39 +11,39 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #81
-- [ ] Dependencies satisfied
+- [x] Read issue #81
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Preflight git-clean
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Exclude `.pi/` from git-clean dirty paths
-- [ ] Document in spine init gitignore guidance if needed
+- [x] Exclude `.pi/` from git-clean dirty paths
+- [x] Document in spine init gitignore guidance if needed
 
 ---
 
 ### Step 1: Sequence error surfacing
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Propagate preflight failure reason to sequence CLI stderr
-- [ ] Exit non-zero with actionable message
+- [x] Propagate preflight failure reason to sequence CLI stderr
+- [x] Exit non-zero with actionable message
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Test sequence with only `?? .pi/` succeeds or warns
-- [ ] Test preflight failure prints message
+- [x] Test sequence with only `?? .pi/` succeeds or warns
+- [x] Test preflight failure prints message
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate (if applicable)
@@ -52,9 +52,9 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Docs updated
+- [x] Docs updated
 - [ ] Issue closed
 - [ ] .DONE created
 
@@ -71,6 +71,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `npm test -- file` still runs full suite via package.json script | Use direct `node --test` for targeted runs | tests/batch/sequence-preflight.test.mjs |
 
 ---
 
@@ -79,6 +80,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#81) |
+| 2026-07-02 | Steps 0–2 | `.pi/` git-clean filter, sequence error surfacing, tests |
 
 ---
 
