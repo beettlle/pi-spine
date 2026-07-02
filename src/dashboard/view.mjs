@@ -2,12 +2,15 @@
  * Dashboard view model (PRD §16.1) — pure functions for browser + tests.
  */
 
+import { isRunningWithoutActiveWorkers } from "../batch/diagnosis-tail-state.mjs";
 import {
 	computeThroughputTasksPerHour,
 	emptyLaneThroughputStats,
 	formatElapsedMs,
 	formatThroughputRate,
 } from "./lane-throughput.mjs";
+
+const BADGE_FINALIZING = "badge-finalizing";
 
 const DIAGNOSIS_BADGE_CLASS = {
 	running: "badge-running",
@@ -113,15 +116,95 @@ export function buildActionChips(snapshot) {
 
 /**
  * @param {object} snapshot
+ * @returns {boolean}
+ */
+function snapshotHasRunningLaneTasks(snapshot) {
+	for (const lane of snapshot?.lanes ?? []) {
+		if (lane?.runningTaskId) return true;
+		if (Array.isArray(lane?.queuedTaskIds) && lane.queuedTaskIds.length > 0) return true;
+	}
+	return false;
+}
+
+/**
+ * @param {object} snapshot
+ */
+function buildBannerTailContext(snapshot) {
+	const signals = snapshot?.reconciliation?.signals ?? {};
+	const batch = snapshot?.batch ?? {};
+	return {
+		phase: snapshot?.phase ?? batch.phase ?? signals.phase ?? null,
+		hasRunningTasks:
+			signals.hasRunningTasks === true || snapshotHasRunningLaneTasks(snapshot),
+		hasPendingTasks: signals.hasPendingTasks === true,
+		pendingTaskCount:
+			snapshot?.reconciliation?.pendingTasks ??
+			signals.pendingTasks ??
+			signals.pendingTaskCount ??
+			0,
+		succeededTasks: batch.succeededTasks ?? snapshot?.reconciliation?.succeededTasks ?? 0,
+		failedTasks: batch.failedTasks ?? snapshot?.reconciliation?.failedTasks ?? 0,
+		totalTasks: batch.totalTasks ?? snapshot?.reconciliation?.totalTasks ?? 0,
+		macroPhase:
+			snapshot?.macroPhase ?? batch.macroPhase ?? snapshot?.reconciliation?.macroPhase ?? null,
+		postMergeLimbo: signals.postMergeLimbo === true,
+		integrateGateOpen: signals.integrateGateOpen === true,
+		stalePathSpine: signals.stalePathSpine === true,
+		gitMerged: signals.git?.orchMergedToBase,
+		allTasksTerminalSuccess: signals.allTasksTerminalSuccess === true,
+	};
+}
+
+/**
+ * @param {object} snapshot
+ * @param {string|null|undefined} diagnosis
+ */
+function resolveBannerBadge(snapshot, diagnosis) {
+	const baseClass = diagnosisBadgeClass(diagnosis);
+	const baseLabel = diagnosis ? String(diagnosis).replace(/_/g, " ") : "";
+
+	if (diagnosis !== "running") {
+		return { badgeClass: baseClass, badgeLabel: baseLabel, subline: null, tailState: false };
+	}
+
+	const tailCtx = buildBannerTailContext(snapshot);
+	if (tailCtx.hasRunningTasks || tailCtx.hasPendingTasks) {
+		return { badgeClass: "badge-running", badgeLabel: "running", subline: null, tailState: false };
+	}
+
+	if (!isRunningWithoutActiveWorkers(tailCtx)) {
+		return { badgeClass: baseClass, badgeLabel: baseLabel, subline: null, tailState: false };
+	}
+
+	const phaseLabel =
+		snapshot?.macroPhaseLabel ??
+		snapshot?.batch?.macroPhaseLabel ??
+		snapshot?.reconciliation?.macroPhaseLabel ??
+		null;
+
+	return {
+		badgeClass: BADGE_FINALIZING,
+		badgeLabel: phaseLabel ?? "finalizing",
+		subline: phaseLabel,
+		tailState: true,
+	};
+}
+
+/**
+ * @param {object} snapshot
  */
 export function buildBannerModel(snapshot) {
 	const diagnosis = snapshot?.diagnosis ?? null;
+	const badge = resolveBannerBadge(snapshot, diagnosis);
 	return {
 		headline: snapshot?.headline ?? "",
 		suggestedCommand: snapshot?.suggestedCommand ?? "",
 		alternatives: snapshot?.alternatives ?? [],
 		diagnosis,
-		badgeClass: diagnosisBadgeClass(diagnosis),
+		badgeClass: badge.badgeClass,
+		badgeLabel: badge.badgeLabel,
+		subline: badge.subline,
+		tailState: badge.tailState,
 		primaryAction: primaryActionLabel(diagnosis),
 		actionChips: buildActionChips(snapshot),
 		idle: isIdleSnapshot(snapshot),
@@ -441,7 +524,11 @@ export function bannerUsesDiagnosisNotPhase(snapshot) {
 		return diagnosisBadgeClass(diagnosis) === "badge-integrate";
 	}
 	if (diagnosis === "running") {
-		return diagnosisBadgeClass(diagnosis) === "badge-running";
+		const badge = resolveBannerBadge(snapshot, diagnosis);
+		if (badge.tailState) {
+			return badge.badgeClass === BADGE_FINALIZING;
+		}
+		return badge.badgeClass === "badge-running";
 	}
 	return diagnosisBadgeClass(diagnosis) !== "badge-running" || diagnosis === "running";
 }
