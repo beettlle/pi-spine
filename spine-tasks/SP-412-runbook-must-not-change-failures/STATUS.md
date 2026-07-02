@@ -1,7 +1,7 @@
 # SP-412: Runbook must-not-change failures — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -35,9 +35,9 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ---
 
@@ -62,6 +62,7 @@
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #63 |
 | 2026-07-02 | Step 0–2 | Issue #63 read; runbook section added to `docs/adoption/operator-runbook.md` |
+| 2026-07-02 | Step 3 | typecheck + 1411 tests pass |
 
 ---
 
