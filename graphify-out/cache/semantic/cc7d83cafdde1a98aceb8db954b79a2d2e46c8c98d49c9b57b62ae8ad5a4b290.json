@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [], "hyperedges": [{"id": "cli_entrypoint_hardening", "label": "CLI Entrypoint & Symlink Detection", "nodes": ["bin_spine_cli_shared", "src_tasks_packet_validate_prompt", "src_planner_index"], "relation": "participate_in", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "spine-tasks/SP-099-cli-symlink-entrypoint/PROMPT.md"}]}

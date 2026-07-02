@@ -106,6 +106,64 @@ test("verifyStubFileScopeMustChange passes when contract path changed", async ()
 	}
 });
 
+const COMMA_IN_BACKTICK_PROMPT = `# Task: SP-903 — Comma-in-backtick contract fixture
+
+**Size:** S
+
+## Mission
+Change spine CLI files.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`bin/spine-issue.mjs\`
+- \`bin/spine.mjs\`
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`true\` |
+| fileScopeMustChange | \`bin/spine-issue.mjs,bin/spine.mjs\` |
+
+## Steps
+### Step 1: Work
+- [ ] change files
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- skip contract
+`;
+
+test("verifyStubFileScopeMustChange passes for comma-in-single-backtick fileScopeMustChange (SP-396)", async () => {
+	const projectRoot = await initGitRepo("spine-stub-comma-backtick-");
+	try {
+		const { worktreePath } = provisionLaneWorktree(projectRoot, "20260630T232548", "SP-903");
+		const issueCli = path.join(worktreePath, "bin/spine-issue.mjs");
+		const spineCli = path.join(worktreePath, "bin/spine.mjs");
+		fs.mkdirSync(path.dirname(issueCli), { recursive: true });
+		fs.writeFileSync(issueCli, "// new issue cli\n", "utf-8");
+		fs.writeFileSync(spineCli, "// spine cli change\n", "utf-8");
+		execFileSync("git", ["add", issueCli, spineCli], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "implement SP-396 paths"], {
+			cwd: worktreePath,
+			stdio: "ignore",
+		});
+
+		const parsed = parseContract(COMMA_IN_BACKTICK_PROMPT);
+		assert.deepEqual(parsed.fileScopeMustChange, ["bin/spine-issue.mjs", "bin/spine.mjs"]);
+
+		const result = verifyStubFileScopeMustChange(worktreePath, parsed, "main");
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.failures, []);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("commitLaneWorktree rejects stub completion without fileScopeMustChange diffs", async () => {
 	const projectRoot = await initGitRepo("spine-stub-lane-commit-");
 	const prevStub = process.env.SPINE_WORKER_STUB;

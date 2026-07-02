@@ -15,6 +15,7 @@ import {
 	buildLaneDetailModel,
 	buildLaneTableModel,
 	buildLaneTableSummaryModel,
+	buildTailActivityModel,
 	diagnosisBadgeClass,
 	isIdleSnapshot,
 	primaryActionLabel,
@@ -28,7 +29,10 @@ import {
 import {
 	buildLaneRecentEvents,
 	buildLaneRows,
+	lanesHaveActiveTasks,
 	resolveLaneWorkerLog,
+	resolveTailActivityFromJournal,
+	resolveTailActivityLabel,
 } from "../../src/dashboard/snapshot.mjs";
 import {
 	deriveLanesThroughput,
@@ -388,6 +392,177 @@ test("dashboard.js uses heartbeatDisplay without double-formatting", () => {
 	assert.match(dashboardJs, /displayHeartbeat\(lane\)/);
 });
 
+test("buildBannerModel uses finalizing badge and macro phase during tail state", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch 20260701T031142 tasks done — merging lane branches…",
+		suggestedCommand: "/spine-status --diagnose",
+		macroPhase: "merging",
+		macroPhaseLabel: "Merging",
+		phase: "running",
+		batch: {
+			batchId: "20260701T031142",
+			phase: "running",
+			macroPhase: "merging",
+			macroPhaseLabel: "Merging",
+			succeededTasks: 2,
+			failedTasks: 0,
+			totalTasks: 2,
+		},
+		reconciliation: {
+			signals: {
+				phase: "running",
+				hasRunningTasks: false,
+				hasPendingTasks: false,
+				allTasksTerminalSuccess: true,
+				mergeResultsEmpty: true,
+			},
+		},
+		lanes: [
+			{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+			{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+		],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeClass, "badge-finalizing");
+	assert.equal(banner.badgeLabel, "Merging");
+	assert.equal(banner.subline, "Merging");
+	assert.equal(banner.tailState, true);
+	assert.notEqual(banner.badgeClass, "badge-running");
+	assert.match(banner.headline, /merging/i);
+	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
+});
+
+test("buildBannerModel reflects gating macro phase during post-merge tail", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch b1 finalizing land loop — opening integrate gate…",
+		suggestedCommand: "/spine-status --diagnose",
+		macroPhase: "gating",
+		macroPhaseLabel: "Gating",
+		batch: {
+			batchId: "b1",
+			phase: "running",
+			succeededTasks: 2,
+			failedTasks: 0,
+			totalTasks: 2,
+		},
+		reconciliation: {
+			signals: {
+				phase: "running",
+				hasRunningTasks: false,
+				hasPendingTasks: false,
+				allTasksTerminalSuccess: true,
+				postMergeLimbo: true,
+			},
+		},
+		lanes: [{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] }],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeLabel, "Gating");
+	assert.equal(banner.badgeClass, "badge-finalizing");
+	assert.match(banner.headline, /gate/i);
+});
+
+test("buildBannerModel keeps running badge when workers are active", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch b1 is running",
+		macroPhase: "executing",
+		macroPhaseLabel: "Executing",
+		batch: { phase: "running", succeededTasks: 1, totalTasks: 2 },
+		reconciliation: {
+			signals: { hasRunningTasks: true, hasPendingTasks: false, phase: "running" },
+		},
+		lanes: [{ laneId: "lane-1", runningTaskId: "TP-1", queuedTaskIds: [] }],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeClass, "badge-running");
+	assert.equal(banner.badgeLabel, "running");
+	assert.equal(banner.tailState, false);
+	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
+});
+
+test("resolveTailActivityLabel prefers recent journal over macro phase during tail", () => {
+	const lanes = [
+		{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+		{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+	];
+	const reconciliation = {
+		diagnosis: "running",
+		signals: {
+			phase: "running",
+			hasRunningTasks: false,
+			hasPendingTasks: false,
+			allTasksTerminalSuccess: true,
+		},
+	};
+	const batch = {
+		phase: "running",
+		succeededTasks: 2,
+		failedTasks: 0,
+		totalTasks: 2,
+	};
+	const journalEvents = [
+		{ type: "batch.merge_started", timestamp: "1" },
+		{ type: "gate.opened", timestamp: "2" },
+	];
+
+	assert.equal(
+		resolveTailActivityLabel({
+			reconciliation,
+			batch,
+			lanes,
+			macroPhase: "merging",
+			macroPhaseLabel: "Merging",
+			journalEvents,
+		}),
+		"Integrate gate opened — awaiting approval",
+	);
+	assert.equal(resolveTailActivityFromJournal(journalEvents), "Integrate gate opened — awaiting approval");
+	assert.equal(lanesHaveActiveTasks(lanes), false);
+});
+
+test("buildTailActivityModel exposes lane table subline when lanes are idle during tail", () => {
+	const snapshot = {
+		diagnosis: "running",
+		tailActivityLabel: "Merging lane branches…",
+		lanes: [
+			{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+			{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+		],
+	};
+	const tail = buildTailActivityModel(snapshot);
+	assert.equal(tail.tailActivityLabel, "Merging lane branches…");
+	assert.equal(tail.visible, true);
+
+	const vm = buildDashboardViewModel(snapshot);
+	assert.equal(vm.tailActivity?.tailActivityLabel, "Merging lane branches…");
+	assert.equal(vm.tailActivity?.visible, true);
+});
+
+test("resolveTailActivityLabel returns null when running task is active", () => {
+	const lanes = [{ laneId: "lane-1", runningTaskId: "TP-1", queuedTaskIds: [] }];
+	assert.equal(
+		resolveTailActivityLabel({
+			reconciliation: { diagnosis: "running", signals: { hasRunningTasks: true } },
+			batch: { phase: "running", totalTasks: 2, succeededTasks: 1, failedTasks: 0 },
+			lanes,
+			macroPhase: "executing",
+			macroPhaseLabel: "Executing",
+			journalEvents: [],
+		}),
+		null,
+	);
+});
+
+test("dashboard.js renders lane table tail activity footer row", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /lane-table-tail-activity/);
+	assert.match(dashboardJs, /tailActivity\.tailActivityLabel/);
+	assert.match(dashboardJs, /vm\.tailActivity/);
+});
+
 test("banner uses diagnosis badge class, not macro phase", () => {
 	const snapshot = {
 		diagnosis: "needs_integrate",
@@ -423,6 +598,11 @@ test("resolveStaticAsset serves dashboard public files and view.mjs", () => {
 	assert.ok(laneThroughput);
 	assert.ok(fs.existsSync(laneThroughput.filePath));
 	assert.match(fs.readFileSync(laneThroughput.filePath, "utf-8"), /deriveLaneThroughputStats/);
+
+	const runningTailState = resolveStaticAsset("/running-tail-state.mjs");
+	assert.ok(runningTailState);
+	assert.ok(fs.existsSync(runningTailState.filePath));
+	assert.match(fs.readFileSync(runningTailState.filePath, "utf-8"), /isRunningWithoutActiveWorkers/);
 });
 
 test("dashboard server GET / returns HTML shell", async () => {

@@ -148,6 +148,37 @@ function hasOpenIntegrate(journalEvents) {
 	return lastIntegrateIdx >= 0 && lastIntegrateType === "integrate.started";
 }
 
+const MERGE_JOURNAL_TYPES = new Set([
+	"batch.merge_started",
+	"batch.merge_completed",
+	"batch.merge_blocked",
+]);
+
+const LAND_LOOP_JOURNAL_TYPES = new Set([
+	"gate.opened",
+	"gate.evidence_collecting",
+	"gate.evidence_completed",
+	"batch.land_loop_finalized",
+]);
+
+/**
+ * @param {object[]} journalEvents
+ * @returns {boolean}
+ */
+function hasJournalMergeActivity(journalEvents) {
+	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return false;
+	return journalEvents.some((event) => MERGE_JOURNAL_TYPES.has(event.type));
+}
+
+/**
+ * @param {object[]} journalEvents
+ * @returns {boolean}
+ */
+function hasJournalLandLoopActivity(journalEvents) {
+	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return false;
+	return journalEvents.some((event) => LAND_LOOP_JOURNAL_TYPES.has(event.type));
+}
+
 /**
  * @param {object|null|undefined} gateRecord
  * @param {boolean} postMergeLimbo
@@ -157,7 +188,44 @@ function hasOpenIntegrate(journalEvents) {
 function isGatingState(gateRecord, postMergeLimbo, diagnosis) {
 	if (gateRecord && gateRecord.status === "pending") return true;
 	if (postMergeLimbo && diagnosis === "needs_integrate") return true;
+	if (postMergeLimbo && diagnosis === "running") return true;
 	return false;
+}
+
+/**
+ * @param {DeriveMacroPhaseInput} input
+ * @returns {MacroPhase|null}
+ */
+function deriveRunningTailMacroPhase(input) {
+	const diagnosis = input.diagnosis ?? null;
+	const batchPhase = input.batchPhase ?? null;
+	if (diagnosis !== "running") return null;
+	if (batchPhase !== "running" && batchPhase !== "merging") return null;
+	if (input.hasActiveWorkerTasks === true) return null;
+
+	const journalEvents = input.journalEvents ?? [];
+	if (hasJournalLandLoopActivity(journalEvents)) {
+		return "gating";
+	}
+
+	const mergeResults = input.mergeResults;
+	if (Array.isArray(mergeResults) && mergeResults.length > 0) {
+		return "merging";
+	}
+
+	if (hasJournalMergeActivity(journalEvents)) {
+		return "merging";
+	}
+
+	if (input.postMergeLimbo === true) {
+		return "gating";
+	}
+
+	if (input.allTasksTerminalSuccess === true && input.mergeResultsEmpty !== false) {
+		return "merging";
+	}
+
+	return null;
 }
 
 /**
@@ -169,6 +237,9 @@ function isGatingState(gateRecord, postMergeLimbo, diagnosis) {
  * @property {object|null|undefined} [gateRecord]
  * @property {boolean} [postMergeLimbo]
  * @property {object[]} [journalEvents]
+ * @property {boolean} [hasActiveWorkerTasks]
+ * @property {boolean} [allTasksTerminalSuccess]
+ * @property {boolean} [mergeResultsEmpty]
  */
 
 /**
@@ -220,6 +291,11 @@ export function deriveMacroPhase(input) {
 
 	if (batchPhase === "planning") {
 		return "planning";
+	}
+
+	const runningTailPhase = deriveRunningTailMacroPhase(input);
+	if (runningTailPhase != null) {
+		return runningTailPhase;
 	}
 
 	return "executing";

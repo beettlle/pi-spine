@@ -235,3 +235,43 @@ test("buildWaveProgress marks prior waves completed", () => {
 	assert.equal(waves.waves[0].status, "completed");
 	assert.equal(waves.waves[1].status, "active");
 });
+
+test("buildWaveProgress marks last wave completed when all tasks terminal-success", () => {
+	const classifiedTasks = [
+		{ taskId: "A", classification: "terminal-success" },
+		{ taskId: "B", classification: "terminal-success" },
+		{ taskId: "C", classification: "terminal-success" },
+	];
+	const waves = buildWaveProgress(
+		{
+			raw: {
+				wavePlan: [["A"], ["B", "C"]],
+				currentWaveIndex: 1,
+				totalWaves: 2,
+			},
+		},
+		classifiedTasks,
+	);
+	assert.equal(waves.waves[0].status, "completed");
+	assert.equal(waves.waves[1].status, "completed");
+});
+
+test("buildWaveProgress keeps in-flight current wave active", () => {
+	const classifiedTasks = [
+		{ taskId: "A", classification: "terminal-success" },
+		{ taskId: "B", classification: "running" },
+		{ taskId: "C", classification: "pending" },
+	];
+	const waves = buildWaveProgress(
+		{
+			raw: {
+				wavePlan: [["A"], ["B", "C"]],
+				currentWaveIndex: 1,
+				totalWaves: 2,
+			},
+		},
+		classifiedTasks,
+	);
+	assert.equal(waves.waves[0].status, "completed");
+	assert.equal(waves.waves[1].status, "active");
+});

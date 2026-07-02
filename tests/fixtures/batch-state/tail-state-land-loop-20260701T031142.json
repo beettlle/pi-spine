@@ -1,0 +1,51 @@
+{
+  "batchId": "20260701T031142",
+  "phase": "running",
+  "baseBranch": "main",
+  "orchBranch": "orch/spine-20260701T031142",
+  "startedAt": 1748734302000,
+  "endedAt": null,
+  "failedTasks": 0,
+  "succeededTasks": 2,
+  "totalTasks": 2,
+  "totalWaves": 1,
+  "currentWaveIndex": 0,
+  "mergeResults": [],
+  "wavePlan": [["SP-392", "SP-393"]],
+  "tasks": [
+    {
+      "taskId": "SP-392",
+      "status": "succeeded",
+      "laneNumber": 1,
+      "taskFolder": "spine-tasks/SP-392",
+      "doneFileFound": true
+    },
+    {
+      "taskId": "SP-393",
+      "status": "succeeded",
+      "laneNumber": 2,
+      "taskFolder": "spine-tasks/SP-393",
+      "doneFileFound": true
+    }
+  ],
+  "segments": [
+    { "segmentId": "SP-392::default", "taskId": "SP-392", "status": "succeeded" },
+    { "segmentId": "SP-393::default", "taskId": "SP-393", "status": "succeeded" }
+  ],
+  "lanes": [
+    {
+      "laneNumber": 1,
+      "laneId": "lane-1",
+      "worktreePath": ".worktrees/spine-20260701T031142/lane-1",
+      "branch": "task/spine-lane-1-20260701T031142",
+      "taskIds": ["SP-392"]
+    },
+    {
+      "laneNumber": 2,
+      "laneId": "lane-2",
+      "worktreePath": ".worktrees/spine-20260701T031142/lane-2",
+      "branch": "task/spine-lane-2-20260701T031142",
+      "taskIds": ["SP-393"]
+    }
+  ]
+}

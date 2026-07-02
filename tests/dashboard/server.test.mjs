@@ -20,6 +20,31 @@ test("formatSseDataFrame valid data: line", () => {
 	assert.doesNotThrow(() => JSON.parse(frame.slice(6).trim()));
 });
 
+test("dashboard server serves browser view-model dependency graph", async () => {
+	const projectRoot = await initGitRepo("spine-dash-browser-deps-");
+	const server = createDashboardServer({ projectRoot });
+
+	try {
+		const { host, port } = await listenDashboardServer({ server, port: 0 });
+		const paths = ["/view.mjs", "/running-tail-state.mjs", "/lane-throughput.mjs"];
+
+		for (const routePath of paths) {
+			const status = await new Promise((resolve, reject) => {
+				http
+					.get(`http://${host}:${port}${routePath}`, (res) => {
+						res.resume();
+						res.on("end", () => resolve(res.statusCode));
+					})
+					.on("error", reject);
+			});
+			assert.equal(status, 200, routePath);
+		}
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("dashboard server serves snapshot and one SSE frame", async () => {
 	const projectRoot = await initGitRepo("spine-dash-server-");
 	const server = createDashboardServer({ projectRoot, pollIntervalMs: 50_000 });

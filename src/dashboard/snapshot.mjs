@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { isRunningWithoutActiveWorkers } from "./running-tail-state.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
@@ -123,19 +124,63 @@ export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = D
  * @param {string[]} [params.currentWaveTaskIds]
  */
 export function computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }) {
+	const runningTaskId = computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds });
+	const queuedTaskIds = computeQueuedTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds });
+	if (runningTaskId) return [runningTaskId, ...queuedTaskIds];
+	return [...queuedTaskIds];
+}
+
+/**
+ * Single running task in the current wave on this physical lane (engine: ≤1 per lane).
+ *
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {string[]} [params.currentWaveTaskIds]
+ */
+export function computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds }) {
+	if (!currentWaveTaskIds?.length) return null;
+	const waveSet = new Set(currentWaveTaskIds.map(String));
+	const running = classifiedTasks.find(
+		(task) =>
+			task.laneNumber === lane.laneNumber &&
+			waveSet.has(task.taskId) &&
+			(task.classification === "running" || task.status === "running"),
+	);
+	return running?.taskId ?? null;
+}
+
+/**
+ * Pending tasks in the current wave on this lane, ordered by lane assignment queue.
+ *
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {string[]} [params.currentWaveTaskIds]
+ * @param {string[]} [params.laneTaskIds]
+ */
+export function computeQueuedTaskIdsForLane({
+	lane,
+	classifiedTasks,
+	currentWaveTaskIds,
+	laneTaskIds,
+}) {
 	if (!currentWaveTaskIds?.length) return [];
 	const waveSet = new Set(currentWaveTaskIds.map(String));
-	return classifiedTasks
-		.filter((task) => task.laneNumber === lane.laneNumber)
-		.filter((task) => waveSet.has(task.taskId))
-		.filter(
-			(task) =>
-				task.classification === "running" ||
-				task.classification === "pending" ||
-				task.status === "running" ||
-				task.status === "pending",
-		)
-		.map((task) => task.taskId);
+	const assignmentOrder = laneTaskIds ?? lane.taskIds ?? [];
+
+	const pendingIds = new Set(
+		classifiedTasks
+			.filter(
+				(task) =>
+					task.laneNumber === lane.laneNumber &&
+					waveSet.has(task.taskId) &&
+					(task.classification === "pending" || task.status === "pending"),
+			)
+			.map((task) => String(task.taskId)),
+	);
+
+	return assignmentOrder.filter((taskId) => pendingIds.has(String(taskId))).map(String);
 }
 
 /**
@@ -390,6 +435,13 @@ export function buildLaneRows({
 	return (lanes ?? []).map((lane) => {
 		const heartbeatMeta = resolveLaneHeartbeatMeta(lane.laneNumber, journalEvents);
 		const heartbeatAgeSecondsValue = heartbeatAgeSeconds(lane.lastHeartbeatAt, now);
+		const runningTaskId = computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds });
+		const queuedTaskIds = computeQueuedTaskIdsForLane({
+			lane,
+			classifiedTasks,
+			currentWaveTaskIds,
+			laneTaskIds: lane.taskIds ?? [],
+		});
 		const activeTaskIds = computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds });
 		const activity = resolveLaneActivityPhase({
 			laneNumber: lane.laneNumber,
@@ -415,6 +467,8 @@ export function buildLaneRows({
 			laneNumber: lane.laneNumber,
 			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
 			activeTaskIds,
+			runningTaskId,
+			queuedTaskIds,
 			activityPhase: activity.activityPhase,
 			activityPhaseLabel: activity.activityPhaseLabel,
 			taskIds: lane.taskIds ?? [],
@@ -436,9 +490,35 @@ export function buildLaneRows({
 }
 
 /**
- * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
+ * @param {string[]} taskIds
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} classifiedTasks
  */
-export function buildWaveProgress(batchState) {
+function waveTasksAllTerminalSuccess(taskIds, classifiedTasks) {
+	if (!taskIds.length) return false;
+	const byId = new Map((classifiedTasks ?? []).map((task) => [String(task.taskId), task]));
+	return taskIds.every((taskId) => byId.get(String(taskId))?.classification === "terminal-success");
+}
+
+/**
+ * @param {number} index
+ * @param {number} currentWaveIndex
+ * @param {string[]} taskIds
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ */
+function resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks) {
+	if (classifiedTasks?.length && waveTasksAllTerminalSuccess(taskIds, classifiedTasks)) {
+		return "completed";
+	}
+	if (index < currentWaveIndex) return "completed";
+	if (index === currentWaveIndex) return "active";
+	return "pending";
+}
+
+/**
+ * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ */
+export function buildWaveProgress(batchState, classifiedTasks) {
 	const raw =
 		batchState && typeof batchState === "object" && "raw" in batchState
 			? /** @type {Record<string, unknown>} */ (batchState.raw)
@@ -451,12 +531,14 @@ export function buildWaveProgress(batchState) {
 	return {
 		currentWaveIndex,
 		totalWaves,
-		waves: wavePlan.map((entry, index) => ({
-			index,
-			taskIds: Array.isArray(entry) ? entry.map(String) : [],
-			status:
-				index < currentWaveIndex ? "completed" : index === currentWaveIndex ? "active" : "pending",
-		})),
+		waves: wavePlan.map((entry, index) => {
+			const taskIds = Array.isArray(entry) ? entry.map(String) : [];
+			return {
+				index,
+				taskIds,
+				status: resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks),
+			};
+		}),
 	};
 }
 
@@ -594,6 +676,130 @@ export function buildLaneLogTail(projectRoot, batchId, laneNumber, activeTaskIds
 		logTail: readLogFileTailLines(resolved.path, LANE_LOG_TAIL_LINES),
 		workerLogRef: resolved.ref,
 	};
+}
+
+const TERMINAL_DIAGNOSES = new Set([
+	"completed",
+	"completed_manual",
+	"limbo_stale",
+	"failed",
+	"aborted",
+]);
+
+/** @type {Record<string, string>} */
+const TAIL_JOURNAL_ACTIVITY_LABELS = {
+	"batch.merge_started": "Merging lane branches…",
+	"batch.merge_completed": "Merge completed — finalizing batch…",
+	"batch.merge_blocked": "Merge blocked — retry or resume",
+	"gate.opened": "Integrate gate opened — awaiting approval",
+	"gate.evidence_collecting": "Collecting gate evidence…",
+	"engine.attached_post_merge_handoff": "Finalizing land loop…",
+	"integrate.started": "Integrating to main…",
+};
+
+/** @type {Record<string, string>} */
+const TAIL_MACRO_ACTIVITY_LABELS = {
+	merging: "Merging lane branches…",
+	gating: "Opening integrate gate…",
+	integrating: "Integrating to main…",
+	reviewing: "Running reviews — no workers scheduled",
+	planning: "Planning — no workers scheduled",
+};
+
+/**
+ * @param {object[]} [lanes]
+ * @returns {boolean}
+ */
+export function lanesHaveActiveTasks(lanes) {
+	for (const lane of lanes ?? []) {
+		if (lane.runningTaskId) return true;
+		if (Array.isArray(lane.queuedTaskIds) && lane.queuedTaskIds.length > 0) return true;
+	}
+	return false;
+}
+
+/**
+ * @param {object} params
+ * @param {string|null|undefined} params.diagnosis
+ * @param {object|null|undefined} params.batch
+ * @returns {boolean}
+ */
+function isBatchNonTerminal({ diagnosis, batch }) {
+	if (!diagnosis) return false;
+	if (TERMINAL_DIAGNOSES.has(diagnosis)) return false;
+	if (batch?.endedAt) return false;
+	return true;
+}
+
+/**
+ * @param {object[]} [journalEvents]
+ * @returns {string|null}
+ */
+export function resolveTailActivityFromJournal(journalEvents) {
+	const events = journalEvents ?? [];
+	for (let i = events.length - 1; i >= 0; i -= 1) {
+		const label = TAIL_JOURNAL_ACTIVITY_LABELS[events[i].type];
+		if (label) return label;
+	}
+	return null;
+}
+
+/**
+ * Lane-agnostic activity subline when Running/Queued are empty but batch is still open (GitHub #68 Tier 3).
+ *
+ * @param {object} params
+ * @param {object|null|undefined} params.reconciliation
+ * @param {object|null|undefined} params.batch
+ * @param {object[]} [params.lanes]
+ * @param {import("../batch/macro-phase.mjs").MacroPhase|null|undefined} [params.macroPhase]
+ * @param {string|null|undefined} [params.macroPhaseLabel]
+ * @param {object[]} [params.journalEvents]
+ * @returns {string|null}
+ */
+export function resolveTailActivityLabel({
+	reconciliation,
+	batch,
+	lanes = [],
+	macroPhase = null,
+	macroPhaseLabel: phaseLabel = null,
+	journalEvents = [],
+}) {
+	if (lanesHaveActiveTasks(lanes)) return null;
+
+	const diagnosis = reconciliation?.diagnosis ?? null;
+	if (!isBatchNonTerminal({ diagnosis, batch })) return null;
+
+	const signals = reconciliation?.signals ?? {};
+	const tailCtx = {
+		phase: batch?.phase ?? reconciliation?.phase ?? signals.phase ?? null,
+		hasRunningTasks: signals.hasRunningTasks === true,
+		hasPendingTasks: signals.hasPendingTasks === true,
+		pendingTaskCount:
+			reconciliation?.pendingTasks ?? signals.pendingTasks ?? signals.pendingTaskCount ?? 0,
+		succeededTasks: batch?.succeededTasks ?? reconciliation?.succeededTasks ?? 0,
+		failedTasks: batch?.failedTasks ?? reconciliation?.failedTasks ?? 0,
+		totalTasks: batch?.totalTasks ?? reconciliation?.totalTasks ?? 0,
+		macroPhase,
+		postMergeLimbo: signals.postMergeLimbo === true,
+		integrateGateOpen: signals.integrateGateOpen === true,
+		allTasksTerminalSuccess: signals.allTasksTerminalSuccess === true,
+	};
+
+	const inRunningTail = isRunningWithoutActiveWorkers(tailCtx);
+	const inActionableTail =
+		diagnosis === "needs_merge" || diagnosis === "needs_integrate" || diagnosis === "running";
+	if (!inRunningTail && !inActionableTail) return null;
+
+	const fromJournal = resolveTailActivityFromJournal(journalEvents);
+	if (fromJournal) return fromJournal;
+
+	if (macroPhase && TAIL_MACRO_ACTIVITY_LABELS[macroPhase]) {
+		return TAIL_MACRO_ACTIVITY_LABELS[macroPhase];
+	}
+
+	if (phaseLabel) return phaseLabel;
+
+	return null;
 }
 
 /**
@@ -754,7 +960,7 @@ export function buildDashboardSnapshot(projectRoot) {
 			now,
 		}),
 	);
-	const waves = buildWaveProgress(batch);
+	const waves = buildWaveProgress(batch, classifiedTasks);
 	const defaultView = buildDefaultViewStatus(reconciliation, gate);
 
 	const macroPhase = deriveMacroPhase({
@@ -766,11 +972,21 @@ export function buildDashboardSnapshot(projectRoot) {
 		postMergeLimbo: reconciliation.signals?.postMergeLimbo === true,
 		journalEvents,
 	});
+	const resolvedMacroPhaseLabel = macroPhaseLabel(macroPhase);
 	const batchSummary = summarizeBatch(batch);
 	if (batchSummary) {
 		batchSummary.macroPhase = macroPhase;
-		batchSummary.macroPhaseLabel = macroPhaseLabel(macroPhase);
+		batchSummary.macroPhaseLabel = resolvedMacroPhaseLabel;
 	}
+
+	const tailActivityLabel = resolveTailActivityLabel({
+		reconciliation,
+		batch: batchSummary,
+		lanes,
+		macroPhase,
+		macroPhaseLabel: resolvedMacroPhaseLabel,
+		journalEvents,
+	});
 
 	return {
 		generatedAt: new Date(now).toISOString(),
@@ -785,7 +1001,8 @@ export function buildDashboardSnapshot(projectRoot) {
 		reconciliation,
 		batch: batchSummary,
 		macroPhase,
-		macroPhaseLabel: macroPhaseLabel(macroPhase),
+		macroPhaseLabel: resolvedMacroPhaseLabel,
+		tailActivityLabel,
 		lanes,
 		laneThroughputSummary,
 		gate,

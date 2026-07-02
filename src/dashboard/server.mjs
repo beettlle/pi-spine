@@ -25,6 +25,10 @@ const STATIC_ROUTES = {
 		file: path.join("..", "lane-throughput.mjs"),
 		contentType: "text/javascript; charset=utf-8",
 	},
+	"/running-tail-state.mjs": {
+		file: path.join("..", "running-tail-state.mjs"),
+		contentType: "text/javascript; charset=utf-8",
+	},
 };
 
 /**

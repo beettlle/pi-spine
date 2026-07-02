@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "incidentId": "20260630-post-merge-limbo",
+    "source": "pi-spine batch 20260630T212050 (GitHub #59)",
+    "batchId": "20260630T212050",
+    "pattern": "batch.merge_completed for all lanes, state.mergeResults still empty, engine SIGTERM orphan before gate.opened",
+    "relatedTasks": ["SP-377", "SP-378", "SP-348"],
+    "githubIssue": 59
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "phase": "running",
+    "batchId": "20260630T212050",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260630T212050",
+    "startedAt": 1782857099000,
+    "updatedAt": 1782857101000,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [
+      ["SP-344", "SP-351", "SP-353", "SP-356", "SP-363"]
+    ],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260630T212050/lane-1",
+        "branch": "task/spine-lane-1-20260630T212050",
+        "taskIds": ["SP-344", "SP-351"],
+        "lastHeartbeatAt": null
+      },
+      {
+        "laneNumber": 2,
+        "laneId": "lane-2",
+        "worktreePath": ".worktrees/spine-20260630T212050/lane-2",
+        "branch": "task/spine-lane-2-20260630T212050",
+        "taskIds": ["SP-353"],
+        "lastHeartbeatAt": null
+      },
+      {
+        "laneNumber": 3,
+        "laneId": "lane-3",
+        "worktreePath": ".worktrees/spine-20260630T212050/lane-3",
+        "branch": "task/spine-lane-3-20260630T212050",
+        "taskIds": ["SP-356", "SP-363"],
+        "lastHeartbeatAt": null
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SP-344",
+        "laneNumber": 1,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-344-limbo-20260630",
+        "doneFileFound": true
+      },
+      {
+        "taskId": "SP-351",
+        "laneNumber": 1,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-351-limbo-20260630",
+        "doneFileFound": true
+      },
+      {
+        "taskId": "SP-353",
+        "laneNumber": 2,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-353-limbo-20260630",
+        "doneFileFound": true
+      },
+      {
+        "taskId": "SP-356",
+        "laneNumber": 3,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-356-limbo-20260630",
+        "doneFileFound": true
+      },
+      {
+        "taskId": "SP-363",
+        "laneNumber": 3,
+        "status": "succeeded",
+        "taskFolder": "spine-tasks/SP-363-limbo-20260630",
+        "doneFileFound": true
+      }
+    ],
+    "segments": [
+      { "segmentId": "SP-344::default", "taskId": "SP-344", "status": "succeeded", "repoId": "default" },
+      { "segmentId": "SP-351::default", "taskId": "SP-351", "status": "succeeded", "repoId": "default" },
+      { "segmentId": "SP-353::default", "taskId": "SP-353", "status": "succeeded", "repoId": "default" },
+      { "segmentId": "SP-356::default", "taskId": "SP-356", "status": "succeeded", "repoId": "default" },
+      { "segmentId": "SP-363::default", "taskId": "SP-363", "status": "succeeded", "repoId": "default" }
+    ],
+    "mergeResults": [],
+    "totalTasks": 5,
+    "succeededTasks": 5,
+    "failedTasks": 0,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": false,
+      "retryCountByScope": {},
+      "lastFailureClass": null,
+      "repairHistory": [],
+      "enginePid": 16530
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "limbo-20260630-merge-lane-1",
+      "type": "batch.merge_completed",
+      "timestamp": "2026-06-30T22:04:59.000Z",
+      "batchId": "20260630T212050",
+      "payload": {
+        "mergeCommit": "aff02cacf6da0ac115bfa35a298b1b1c611cbb19",
+        "laneNumber": 1,
+        "waveIndex": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "limbo-20260630-merge-lane-2",
+      "type": "batch.merge_completed",
+      "timestamp": "2026-06-30T22:05:00.000Z",
+      "batchId": "20260630T212050",
+      "payload": {
+        "mergeCommit": "aff02cacf6da0ac115bfa35a298b1b1c611cbb19",
+        "laneNumber": 2,
+        "waveIndex": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "limbo-20260630-merge-lane-3",
+      "type": "batch.merge_completed",
+      "timestamp": "2026-06-30T22:05:01.000Z",
+      "batchId": "20260630T212050",
+      "payload": {
+        "mergeCommit": "aff02cacf6da0ac115bfa35a298b1b1c611cbb19",
+        "laneNumber": 3,
+        "waveIndex": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "limbo-20260630-orphan-terminated",
+      "type": "engine.orphan_terminated",
+      "timestamp": "2026-06-30T22:07:23.000Z",
+      "batchId": "20260630T212050",
+      "payload": {
+        "stalePid": 16530,
+        "fromPhase": "running",
+        "signal": "SIGTERM"
+      }
+    }
+  ]
+}

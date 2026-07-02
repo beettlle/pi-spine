@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-01 (Phase 50 — pre-1.2.0 #70 attached evidence gate)
+**Last Updated:** 2026-07-02 (Phase 52 — GitHub open issues #71–#96)
 **Status:** Active
-**Next Task ID:** SP-403
+**Next Task ID:** SP-445
 
 ---
 
@@ -1122,6 +1122,101 @@ spine batch start SP-401          # wave 1
 ```bash
 spine tasks validate SP-402
 spine batch start SP-402 --attached
+```
+
+#### Phase 51 — GitHub open issues (#62, #63, #67, #68)
+
+**Source:** Open issues on [beettlle/pi-spine](https://github.com/beettlle/pi-spine/issues) as of 2026-07-01. Epic **#43** already tracked by Phase 46 (SP-339–SP-368); child issues #30, #44–#52 are closed — finish remaining Phase 46 staged tasks, then close epic #43 manually.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-403 | Tail-state diagnosis headline | S | **Staged** | — | #68 (partial) |
+| SP-404 | Dashboard banner tail macro-phase | S | **Staged** | SP-403 | #68 (partial) |
+| SP-405 | Wave panel terminal completed | S | **Staged** | SP-379 | #68 (partial) |
+| SP-406 | Dashboard tail activity subline | S | **Staged** | SP-403–405 | #68 |
+| SP-407 | Stub delivery-only scope detector | S | **Staged** | — | #67 (partial) |
+| SP-408 | Stub runner STATUS.md delivery | S | **Staged** | SP-407 | #67 (partial) |
+| SP-409 | Stub delivery runbook | S | **Staged** | SP-408 | #67 |
+| SP-410 | Contract template parallel semantics | S | **Staged** | SP-398 | #63 (partial) |
+| SP-411 | Skill must-not-change guidance | S | **Staged** | SP-410 | #63 (partial) |
+| SP-412 | Runbook must-not-change failures | S | **Staged** | SP-410, SP-409 | #63 (partial) |
+| SP-413 | Validate spine-tasks must-not warn | S | **Staged** | SP-410–412 | #63 |
+| SP-414 | Contract verify scoped diff API | S | **Staged** | — | #62 (partial) |
+| SP-415 | Resolve task start commit | S | **Staged** | — | #62 (partial) |
+| SP-416 | Serialized lane scoped verify | M | **Staged** | SP-414, SP-415 | #62 (partial) |
+| SP-417 | Close #62 serialized lane verify | S | **Staged** | SP-416, SP-409, SP-412 | #62 |
+
+**Suggested batch waves:**
+
+| Wave | Tasks | GitHub | Notes |
+|------|-------|--------|-------|
+| A (parallel) | SP-403, SP-405, SP-407, SP-410, SP-414, SP-415 | #68, #67, #63, #62 | Disjoint roots |
+| B (parallel) | SP-404, SP-408, SP-411, SP-412 | | Docs chains after wave A |
+| C | SP-416 | #62 | Scoped verify wiring |
+| D (parallel) | SP-406, SP-409, SP-413, SP-417 | #68, #67, #63, #62 | Issue close capstones |
+
+```bash
+spine tasks validate SP-403 SP-404 SP-405 SP-406 SP-407 SP-408 SP-409 SP-410 SP-411 SP-412 SP-413 SP-414 SP-415 SP-416 SP-417
+spine tasks analyze pending
+spine plan SP-403 SP-405 SP-407 SP-410 SP-414 SP-415   # wave A
+spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
+```
+
+#### Phase 52 — GitHub open issues (#71–#96)
+
+**Source:** Open issues on [beettlle/pi-spine](https://github.com/beettlle/pi-spine/issues) as of 2026-07-02. **Policy:** documentation first; then **1 enhancement per 3 bugs** in suggested waves. Epic **#43** remains Phase 46 (SP-339–SP-368 staged). **#92** is a tracking summary — no implementation task. **#79** flag exposure is SP-431 (safety gates remain SP-390).
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-418 | Agent outer loop how-to doc | S | **Staged** | — | #90 (partial) |
+| SP-419 | Spine-orchestrate skill + slash | M | **Staged** | SP-418 | #90 |
+| SP-420 | Cross-model PROMPT authoring docs | M | **Staged** | — | #84 |
+| SP-421 | Diagnosis primary failure class | S | **Staged** | — | #74 |
+| SP-422 | Doctor canonical model ids | S | **Staged** | — | #76 |
+| SP-423 | Sequence preflight `.pi/` + errors | S | **Staged** | — | #81 |
+| SP-424 | Limbo-detect leaf (#83-A) | S | **Staged** | — | — |
+| SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
+| SP-426 | Contract verify maxBuffer | S | **Staged** | — | #86 |
+| SP-427 | Dirty worktree coverage hygiene | M | **Complete** | — | #73 |
+| SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Staged** | SP-424 | — |
+| SP-429 | Dirty worktree symlink drift | S | **Complete** | — | #87 |
+| SP-430 | Gitignored dirty worktree fix | M | **Staged** | SP-427 | #95 |
+| SP-431 | Sequence `--auto-approve-gate` flag | S | **Staged** | SP-390 | #79 |
+| SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-428 | #83 |
+| SP-433 | Resume force skip succeeded tasks | M | **Staged** | — | #88 |
+| SP-434 | Attached engine single-owner lock | M | **Staged** | — | #89 |
+| SP-435 | Sequence detached false failure exit | M | **Staged** | SP-388 | #72 |
+| SP-436 | Isolated base integrate core (#91 slice 1) | M | **Staged** | — | — |
+| SP-437 | Sequence continue after merge_blocked | M | **Staged** | SP-387 | #82 |
+| SP-438 | Flutter worktree adoption docs | M | **Staged** | SP-420 | #78/#80 (partial) |
+| SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
+| SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
+| SP-441 | Batch complete stale batch-state | M | **Staged** | — | #94 |
+| SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
+| SP-443 | Isolated integrate sync-base + doctor | M | **Staged** | SP-436 | #91 |
+| SP-444 | Supervisor config doctor + docs | S | **Staged** | SP-440 | #71 |
+
+**Suggested batch waves (docs first; 3 bugs : 1 enhancement):**
+
+| Wave | Tasks | Mix |
+|------|-------|-----|
+| **0 (docs)** | SP-418 → SP-420 (serial: shared `operator-runbook.md`) | 2 documentation |
+| **1 (docs)** | SP-419, SP-438 | 1 doc delivery + 1 adoption doc (deps SP-418, SP-420) |
+| **2** | SP-421, SP-422, SP-423, SP-424 | 3 bugs + 1 enhancement (#83) |
+| **3** | SP-425, SP-426, SP-427, SP-428 | 3 bugs + 1 enhancement (#83) |
+| **4** | SP-429, SP-430, SP-431, SP-432 | 3 bugs + 1 enhancement (#83 close) |
+| **5** | SP-433, SP-434, SP-435, SP-436 | 3 bugs + 1 enhancement (#91) |
+| **6** | SP-437, SP-439, SP-441, SP-440 | 3 bugs + 1 enhancement (#71) |
+| **7** | SP-442, SP-443, SP-444 | 1 bug + 2 enhancement closeouts |
+
+```bash
+spine tasks validate SP-418 SP-419 SP-420 SP-421 SP-422 SP-423 SP-424
+spine tasks analyze pending
+spine plan SP-418                    # wave 0a — doc first
+spine batch start SP-418
+spine batch start SP-420               # wave 0b — cross-model docs (after SP-418)
+spine batch start SP-419 SP-438               # wave 1 — docs delivery
+spine batch start SP-421 SP-422 SP-423 SP-424  # wave 2
 ```
 
 ---

@@ -4,6 +4,24 @@
 
 import micromatch from "micromatch";
 
+import { matchesContractPattern } from "../../batch/contract-verify.mjs";
+import { detectCommaInSingleBacktickPathLists } from "./parse-prompt.mjs";
+
+/** Operator-facing hint when must-not-change blocks worker orchestration artifacts. */
+export const FILE_SCOPE_MUST_NOT_SPINE_TASKS_FIX_HINT =
+	"Remove spine-tasks paths from fileScopeMustNotChange; workers must update STATUS.md, create .DONE, and may write .reviews/. See skills/create-spine-tasks/references/contract-template.md#filescopemustnotchange-semantics";
+
+const DEFAULT_TASKS_ROOT = "spine-tasks";
+
+/** Probe paths for any task folder orchestration outputs (not the current task id). */
+const SPINE_TASKS_ORCHESTRATION_PROBES = [
+	`${DEFAULT_TASKS_ROOT}/SP-999-example-slug/STATUS.md`,
+	`${DEFAULT_TASKS_ROOT}/SP-999-example-slug/.DONE`,
+	`${DEFAULT_TASKS_ROOT}/SP-999-example-slug/.reviews/1.md`,
+];
+
+const CURRENT_TASK_ORCHESTRATION_SUFFIXES = ["STATUS.md", ".DONE", ".reviews/1.md"];
+
 const GLOB_PROBE = "__probe__.mjs";
 
 /**
@@ -70,6 +88,17 @@ export function validateContract(parsed, options = {}) {
 		}
 	}
 
+	for (const authoringIssue of detectCommaInSingleBacktickPathLists(parsed.rawFieldValues ?? {}, [
+		"fileScopeMustChange",
+		"artifactsMustExist",
+	])) {
+		if (mode === "required") {
+			errors.push(authoringIssue);
+		} else {
+			warnings.push(authoringIssue);
+		}
+	}
+
 	for (const field of ["fileScopeMustChange", "fileScopeMustNotChange", "artifactsMustExist"]) {
 		for (const pattern of parsed[field] ?? []) {
 			if (!isValidContractGlob(pattern)) {
@@ -78,7 +107,86 @@ export function validateContract(parsed, options = {}) {
 		}
 	}
 
+	warnings.push(
+		...collectFileScopeMustNotChangeWarnings(parsed, {
+			taskId: options.taskId ?? null,
+			tasksRoot: options.tasksRoot ?? DEFAULT_TASKS_ROOT,
+		}),
+	);
+
 	return { ok: errors.length === 0, errors, warnings, mode };
+}
+
+/**
+ * Warn when fileScopeMustNotChange blocks spine-tasks orchestration artifacts (issue #63).
+ *
+ * @param {ReturnType<import("./parse-prompt.mjs").parseContract>} parsed
+ * @param {{ taskId?: string | null, tasksRoot?: string }} [options]
+ * @returns {string[]}
+ */
+export function collectFileScopeMustNotChangeWarnings(parsed, options = {}) {
+	const patterns = parsed?.fileScopeMustNotChange ?? [];
+	if (patterns.length === 0) {
+		return [];
+	}
+
+	const tasksRoot = options.tasksRoot ?? DEFAULT_TASKS_ROOT;
+	const taskId = options.taskId ?? null;
+	/** @type {string[]} */
+	const warnings = [];
+
+	for (const pattern of patterns) {
+		const bansSpineTasksRoot = patternBlocksSpineTasksOrchestration(pattern, tasksRoot);
+		const bansCurrentTaskFolder =
+			!bansSpineTasksRoot && patternBlocksCurrentTaskFolder(pattern, taskId, tasksRoot);
+
+		if (bansSpineTasksRoot) {
+			warnings.push(
+				`Contract fileScopeMustNotChange: "${pattern}" blocks required worker orchestration artifacts under ${tasksRoot}/. ${FILE_SCOPE_MUST_NOT_SPINE_TASKS_FIX_HINT}`,
+			);
+			continue;
+		}
+
+		if (bansCurrentTaskFolder) {
+			warnings.push(
+				`Contract fileScopeMustNotChange: "${pattern}" blocks required worker outputs for this task folder. ${FILE_SCOPE_MUST_NOT_SPINE_TASKS_FIX_HINT}`,
+			);
+		}
+	}
+
+	return warnings;
+}
+
+/**
+ * @param {string} pattern
+ * @param {string} tasksRoot
+ */
+function patternBlocksSpineTasksOrchestration(pattern, tasksRoot) {
+	const probes = SPINE_TASKS_ORCHESTRATION_PROBES.map((probe) =>
+		probe.replace(DEFAULT_TASKS_ROOT, tasksRoot),
+	);
+	return probes.some((probe) => matchesContractPattern(probe, pattern));
+}
+
+/**
+ * @param {string} pattern
+ * @param {string | null} taskId
+ * @param {string} tasksRoot
+ */
+function patternBlocksCurrentTaskFolder(pattern, taskId, tasksRoot) {
+	if (!taskId) {
+		return false;
+	}
+
+	const slugPrefix = `${tasksRoot}/${taskId}-`;
+	const exactPrefix = `${tasksRoot}/${taskId}/`;
+	if (!pattern.startsWith(slugPrefix) && !pattern.startsWith(exactPrefix)) {
+		return false;
+	}
+
+	const folderBase = pattern.replace(/\/(\*\*|\*)(\/(\*\*|\*))?$/, "");
+	const probes = CURRENT_TASK_ORCHESTRATION_SUFFIXES.map((suffix) => `${folderBase}/${suffix}`);
+	return probes.some((probe) => matchesContractPattern(probe, pattern));
 }
 
 /**
