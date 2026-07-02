@@ -1179,7 +1179,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-426 | Contract verify maxBuffer | S | **Staged** | — | #86 |
 | SP-427 | Dirty worktree coverage hygiene | M | **Complete** | — | #73 |
 | SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Staged** | SP-424 | — |
-| SP-429 | Dirty worktree symlink drift | S | **Staged** | — | #87 |
+| SP-429 | Dirty worktree symlink drift | S | **Complete** | — | #87 |
 | SP-430 | Gitignored dirty worktree fix | M | **Staged** | SP-427 | #95 |
 | SP-431 | Sequence `--auto-approve-gate` flag | S | **Staged** | SP-390 | #79 |
 | SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-428 | #83 |
