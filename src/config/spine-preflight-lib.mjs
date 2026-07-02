@@ -36,6 +36,24 @@ export const ORCH_MULTI_FILE_MERGE_RISK_PATHS = Object.freeze([
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
 const DEPENDENCIES_SCHEMA_VERSION = 1;
 const TASK_ID_PATTERN = /^[A-Z]{2,}-\d{3,}$/;
+const PI_SESSION_METADATA_PREFIX = ".pi/";
+
+/**
+ * Pi session metadata under `.pi/` is not project source (issue #81).
+ *
+ * @param {string} relPath
+ */
+export function isPiSessionMetadataPath(relPath) {
+	const normalized = String(relPath).replace(/\\/g, "/").replace(/^\.\/+/, "");
+	return normalized === ".pi" || normalized.startsWith(PI_SESSION_METADATA_PREFIX);
+}
+
+/**
+ * @param {string[]} dirtyPaths
+ */
+export function filterPiSessionDirtyPaths(dirtyPaths) {
+	return dirtyPaths.filter((relPath) => !isPiSessionMetadataPath(relPath));
+}
 
 /**
  * @param {object} ctx
@@ -177,12 +195,16 @@ export function checkGitClean(ctx) {
 		});
 	}
 
-	const dirtyPaths = output
+	const allDirtyPaths = output
 		.split(/\r?\n/)
 		.filter(Boolean)
 		.map((line) => line.slice(3).trim() || line.trim());
+	const dirtyPaths = filterPiSessionDirtyPaths(allDirtyPaths);
 
 	if (dirtyPaths.length === 0) {
+		if (allDirtyPaths.length > 0) {
+			return makeCheck("git-clean", true, "working tree clean (.pi/ session metadata ignored)");
+		}
 		return makeCheck("git-clean", true, "working tree clean");
 	}
 

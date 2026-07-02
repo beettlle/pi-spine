@@ -1181,7 +1181,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Staged** | SP-424 | — |
 | SP-429 | Dirty worktree symlink drift | S | **Complete** | — | #87 |
 | SP-430 | Gitignored dirty worktree fix | M | **Staged** | SP-427 | #95 |
-| SP-431 | Sequence `--auto-approve-gate` flag | S | **Staged** | SP-390 | #79 |
+| SP-431 | Sequence `--auto-approve-gate` flag | S | **Complete** | SP-390 | #79 |
 | SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-428 | #83 |
 | SP-433 | Resume force skip succeeded tasks | M | **Staged** | — | #88 |
 | SP-434 | Attached engine single-owner lock | M | **Staged** | — | #89 |

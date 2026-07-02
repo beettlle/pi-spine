@@ -174,7 +174,7 @@ spine preflight --json        # automation / CI
 | Check | What it catches |
 |-------|-----------------|
 | Doctor | Node, git, pi, config, agents, coexistence |
-| Git clean | Uncommitted changes in working tree |
+| Git clean | Uncommitted changes in working tree (`.pi/` session metadata ignored — same treatment as `.spine/runtime/` via `spine init` gitignore) |
 | No active batch | Stale `.spine/batch-state.json` or Taskplane `.pi/batch-state.json` |
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
 | Tasks validate (v1.3) | Invalid PROMPT packets for pending scope |
@@ -540,6 +540,23 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 | Any other dirty file on `main` | Refused — commit or stash unrelated changes first |
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
+
+#### Planner wave sequences (`spine run sequence`)
+
+For multi-wave **planner sequences** (chained `batch start` → land loop per wave), use:
+
+```bash
+# Dry-run the operator command script per wave
+spine run sequence pending --dry-run
+
+# Unattended land loop between waves (stub/CI only)
+SPINE_WORKER_STUB=1 spine run sequence pending --auto-approve-gate
+
+# Real pi workers: manual gate approval between waves (default)
+spine run sequence pending
+```
+
+`--auto-approve-gate` calls `spine gate approve` automatically in the inter-wave land loop. Safety gates (SP-390) **block** the flag for real pi workers unless you also pass `--force` after reviewing the risk. Stub mode (`SPINE_WORKER_STUB=1`) is the supported path for CI and unattended test sequences.
 
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
 
