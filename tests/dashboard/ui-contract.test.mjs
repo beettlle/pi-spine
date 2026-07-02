@@ -598,6 +598,11 @@ test("resolveStaticAsset serves dashboard public files and view.mjs", () => {
 	assert.ok(laneThroughput);
 	assert.ok(fs.existsSync(laneThroughput.filePath));
 	assert.match(fs.readFileSync(laneThroughput.filePath, "utf-8"), /deriveLaneThroughputStats/);
+
+	const runningTailState = resolveStaticAsset("/running-tail-state.mjs");
+	assert.ok(runningTailState);
+	assert.ok(fs.existsSync(runningTailState.filePath));
+	assert.match(fs.readFileSync(runningTailState.filePath, "utf-8"), /isRunningWithoutActiveWorkers/);
 });
 
 test("dashboard server GET / returns HTML shell", async () => {

@@ -2,7 +2,7 @@
  * Dashboard view model (PRD §16.1) — pure functions for browser + tests.
  */
 
-import { isRunningWithoutActiveWorkers } from "../batch/diagnosis-tail-state.mjs";
+import { isRunningWithoutActiveWorkers } from "./running-tail-state.mjs";
 import {
 	computeThroughputTasksPerHour,
 	emptyLaneThroughputStats,

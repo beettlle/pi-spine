@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isRunningWithoutActiveWorkers } from "../batch/diagnosis-tail-state.mjs";
+import { isRunningWithoutActiveWorkers } from "./running-tail-state.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
