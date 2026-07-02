@@ -1,7 +1,7 @@
 # SP-426: Contract verify maxBuffer fix — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,35 +11,35 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #86
-- [ ] Dependencies satisfied
+- [x] Read issue #86
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Buffer fix
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Raise maxBuffer or use spawn+stream aggregation
-- [ ] Detect buffer overflow → explicit error text
+- [x] Raise maxBuffer or use spawn+stream aggregation
+- [x] Detect buffer overflow → explicit error text
 
 ---
 
 ### Step 1: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Simulate large stdout without killing child
-- [ ] Assert overflow message mentions scoped testCommand
+- [x] Simulate large stdout without killing child
+- [x] Assert overflow message mentions scoped testCommand
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
