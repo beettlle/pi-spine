@@ -1,7 +1,7 @@
 # SP-404: Dashboard banner tail macro-phase — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -26,7 +26,7 @@
 ---
 
 ### Step 2: Banner model tail states
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Update `buildBannerModel` to use macro-phase label when no active lane tasks
 - [x] Use neutral/finalizing badge instead of green running when appropriate
@@ -35,7 +35,7 @@
 ---
 
 ### Step 3: UI contract tests
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Add snapshot fixture for tail state banner model
 - [x] Assert banner subline or badge reflects merge/gate activity
@@ -43,15 +43,15 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] FULL test suite passing (retry; 1 flaky stall-override failure on first run)
+- [x] Coverage gate passes (87.99% ≥ 77%)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Docs updated (none required)
 
@@ -68,7 +68,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
-| `badge-finalizing` class added to model; dashboard.js/CSS rendering deferred to SP-406 | Noted | `src/dashboard/view.mjs` |
+| `badge-finalizing` class in model; dashboard.js/CSS rendering deferred to SP-406 | Noted | `src/dashboard/view.mjs` |
 
 ---
 
@@ -78,6 +78,7 @@
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #68 |
 | 2026-07-01 | Step 2–3 implementation | `resolveBannerBadge`, tail-state ui-contract tests |
+| 2026-07-01 | Step 4 verification | typecheck pass; ui-contract 30/30; coverage 87.99% |
 
 ---
 
