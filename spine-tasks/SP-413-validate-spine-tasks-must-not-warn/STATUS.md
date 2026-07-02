@@ -1,7 +1,7 @@
 # SP-413: Validate spine-tasks must-not warn — Status
 
-**Current Step:** Step 2 — Validate warning
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -26,34 +26,35 @@
 ---
 
 ### Step 2: Validate warning
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Emit warning (not error) when must-not-change includes spine-tasks/**
-- [ ] Emit warning when pattern matches current task folder
-- [ ] Include fix hint in warning message
+- [x] Emit warning (not error) when must-not-change includes spine-tasks/**
+- [x] Emit warning when pattern matches current task folder
+- [x] Include fix hint in warning message
 
 ---
 
 ### Step 3: Warn-path unit tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Unit tests for warn paths
+- [x] Unit tests for warn paths
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
+- [x] FULL test suite passing (1418 tests)
+- [x] Coverage gate passes (88.06% ≥ 77%)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Issue #63 closed
-- [ ] .DONE created
+- [x] Operator runbook reviewed — no change needed (SP-412 already documents symptom)
+- [x] Issue #63 closed
+- [x] .DONE created
 
 ---
 
@@ -69,6 +70,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | SP-411 complete without `.DONE` in worktree; SKILL.md has must-not guidance | Dependency satisfied | `skills/create-spine-tasks/SKILL.md` |
+| operator-runbook.md already covers #63 failure symptom | No doc update | `docs/adoption/operator-runbook.md` |
 
 ---
 
@@ -78,6 +80,9 @@
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #63 |
 | 2026-07-02 | Preflight | Issue #63 read; SP-410/411/412 docs confirmed |
+| 2026-07-02 | Implementation | collectFileScopeMustNotChangeWarnings in validate-contract.mjs |
+| 2026-07-02 | Verification | 1418 tests pass; coverage 88.06% |
+| 2026-07-02 | Delivery | Issue #63 closed |
 
 ---
 
@@ -89,4 +94,4 @@
 
 ## Notes
 
-Plan (Step 2): Add `collectFileScopeMustNotChangeWarnings` in `validate-contract.mjs` using `matchesContractPattern` probes for `spine-tasks/**` and current-task folder (`{taskId}-*/STATUS.md` etc.). Warnings only — no errors. Fix hint links contract-template semantics.
+Warnings surface via `packet.validation.warnings` when running `spine tasks validate --warnings-only`.
