@@ -17,6 +17,8 @@ import {
 	summarizeMergeFailures,
 } from "./diagnosis-merge-failure.mjs";
 export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
+import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";
+export { buildRunningTailHeadline, isRunningWithoutActiveWorkers } from "./diagnosis-tail-state.mjs";
 import {
 	buildStubFailureHeadline,
 	buildStubFailureSuggestedCommand,
@@ -448,8 +450,13 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return ctx.failedTaskId
 				? `Task ${ctx.failedTaskId} needs replan — edit PROMPT.md before retry`
 				: `${batchLabel} has tasks needing replan — edit PROMPT.md before retry`;
-		case "running":
+		case "running": {
+			const tailHeadline = buildRunningTailHeadline(batchLabel, ctx);
+			if (tailHeadline) {
+				return tailHeadline;
+			}
 			return `${batchLabel} is running`;
+		}
 		case "paused": {
 			const pending = ctx.pendingTaskCount ?? 0;
 			if (pending > 1) {
