@@ -15,11 +15,11 @@
   },
   "agents": {
     "worker": {
-      "model": "inherit",
+      "model": "cursor/auto",
       "thinking": "high"
     },
     "reviewer": {
-      "model": "inherit",
+      "model": "cursor/auto",
       "thinking": "medium"
     },
     "supervisor": {
@@ -46,7 +46,9 @@
   },
   "handoff": {
     "path": ".spine/handoff.md",
-    "autoWriteOn": ["session_start"]
+    "autoWriteOn": [
+      "session_start"
+    ]
   },
   "metrics": {
     "enabled": true,
@@ -54,7 +56,9 @@
   },
   "contract": {
     "mode": "required",
-    "legacyTaskIdPrefixes": ["TP-"]
+    "legacyTaskIdPrefixes": [
+      "TP-"
+    ]
   },
   "worktreeSetupHook": "",
   "referenceDocs": [],
