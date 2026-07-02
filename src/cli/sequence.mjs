@@ -10,7 +10,7 @@ import { resolveDefaultSpineBin } from "../batch/post-merge-limbo.mjs";
  * @param {string[]} argv
  */
 export function parseSequenceArgs(argv) {
-	/** @type {{ scope: string, fromWave: number, throughWave: number|null, attached: boolean, stopOnFailure: boolean, dryRun: boolean, json: boolean, skipPreflight: boolean, resume: boolean }} */
+	/** @type {{ scope: string, fromWave: number, throughWave: number|null, attached: boolean, stopOnFailure: boolean, dryRun: boolean, json: boolean, skipPreflight: boolean, resume: boolean, autoApproveGate: boolean, force: boolean }} */
 	const parsed = {
 		scope: "pending",
 		fromWave: 0,
@@ -21,6 +21,8 @@ export function parseSequenceArgs(argv) {
 		json: false,
 		skipPreflight: false,
 		resume: false,
+		autoApproveGate: false,
+		force: false,
 	};
 
 	/** @type {string[]} */
@@ -45,6 +47,10 @@ export function parseSequenceArgs(argv) {
 			parsed.skipPreflight = true;
 		} else if (arg === "--resume") {
 			parsed.resume = true;
+		} else if (arg === "--auto-approve-gate") {
+			parsed.autoApproveGate = true;
+		} else if (arg === "--force") {
+			parsed.force = true;
 		} else if (!arg.startsWith("--")) {
 			positional.push(arg);
 		}
@@ -99,6 +105,8 @@ export async function runSpineSequence({ projectRoot, args = [], spineBin = null
 		throughWave: parsed.throughWave,
 		resume: parsed.resume,
 		attached: parsed.attached,
+		autoApproveGate: parsed.autoApproveGate,
+		force: parsed.force,
 		stopOnFailure: parsed.stopOnFailure,
 		dryRun: parsed.dryRun,
 		skipPreflight: parsed.skipPreflight,

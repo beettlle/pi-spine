@@ -539,6 +539,23 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 
+#### Planner wave sequences (`spine run sequence`)
+
+For multi-wave **planner sequences** (chained `batch start` → land loop per wave), use:
+
+```bash
+# Dry-run the operator command script per wave
+spine run sequence pending --dry-run
+
+# Unattended land loop between waves (stub/CI only)
+SPINE_WORKER_STUB=1 spine run sequence pending --auto-approve-gate
+
+# Real pi workers: manual gate approval between waves (default)
+spine run sequence pending
+```
+
+`--auto-approve-gate` calls `spine gate approve` automatically in the inter-wave land loop. Safety gates (SP-390) **block** the flag for real pi workers unless you also pass `--force` after reviewing the risk. Stub mode (`SPINE_WORKER_STUB=1`) is the supported path for CI and unattended test sequences.
+
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
 
 When `spine integrate` merges `orch/spine-<batchId>` into `main` and git reports a conflict, pi-spine **aborts the merge** and restores your previous checkout. `main` is left unchanged. The CLI prints a `MergeConflict` headline and journals `integrate.failed` with `conflict: true`.
