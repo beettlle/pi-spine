@@ -194,8 +194,8 @@ function appendLaneTextCell(td, text, className, ariaLabel) {
 	td.setAttribute("aria-label", ariaLabel);
 }
 
-/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary @param {string|null} expandedLaneId */
-function renderLanes(lanes, laneTableSummary, expandedLaneId) {
+/** @param {ReturnType<typeof buildDashboardViewModel>["lanes"]} lanes @param {ReturnType<typeof buildDashboardViewModel>["laneTableSummary"]} laneTableSummary @param {ReturnType<typeof buildDashboardViewModel>["tailActivity"]} tailActivity @param {string|null} expandedLaneId */
+function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 	const tbody = $("lane-table-body");
 	tbody.replaceChildren();
 	const columnCount = 11;
@@ -309,6 +309,17 @@ function renderLanes(lanes, laneTableSummary, expandedLaneId) {
 			td.textContent = text;
 			tr.appendChild(td);
 		});
+		tbody.appendChild(tr);
+	}
+	if (tailActivity?.visible && tailActivity.tailActivityLabel) {
+		const tr = document.createElement("tr");
+		tr.className = "lane-table-tail-activity";
+		const td = document.createElement("td");
+		td.colSpan = columnCount;
+		td.className = "empty-hint lane-tail-activity";
+		td.textContent = tailActivity.tailActivityLabel;
+		td.setAttribute("aria-label", `Batch activity: ${tailActivity.tailActivityLabel}`);
+		tr.appendChild(td);
 		tbody.appendChild(tr);
 	}
 }
@@ -485,7 +496,7 @@ export function renderSnapshot(snapshot) {
 	if (!vm.idle) {
 		renderBatch(vm.batch);
 		renderWaves(vm.waves);
-		renderLanes(vm.lanes, vm.laneTableSummary, expandedLaneIdState);
+		renderLanes(vm.lanes, vm.laneTableSummary, vm.tailActivity, expandedLaneIdState);
 		renderJournalLaneFilter(vm.journalLaneFilterOptions);
 		renderJournal(vm.journal);
 	}

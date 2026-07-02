@@ -15,6 +15,7 @@ import {
 	buildLaneDetailModel,
 	buildLaneTableModel,
 	buildLaneTableSummaryModel,
+	buildTailActivityModel,
 	diagnosisBadgeClass,
 	isIdleSnapshot,
 	primaryActionLabel,
@@ -28,7 +29,10 @@ import {
 import {
 	buildLaneRecentEvents,
 	buildLaneRows,
+	lanesHaveActiveTasks,
 	resolveLaneWorkerLog,
+	resolveTailActivityFromJournal,
+	resolveTailActivityLabel,
 } from "../../src/dashboard/snapshot.mjs";
 import {
 	deriveLanesThroughput,
@@ -477,6 +481,86 @@ test("buildBannerModel keeps running badge when workers are active", () => {
 	assert.equal(banner.badgeLabel, "running");
 	assert.equal(banner.tailState, false);
 	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
+});
+
+test("resolveTailActivityLabel prefers recent journal over macro phase during tail", () => {
+	const lanes = [
+		{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+		{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+	];
+	const reconciliation = {
+		diagnosis: "running",
+		signals: {
+			phase: "running",
+			hasRunningTasks: false,
+			hasPendingTasks: false,
+			allTasksTerminalSuccess: true,
+		},
+	};
+	const batch = {
+		phase: "running",
+		succeededTasks: 2,
+		failedTasks: 0,
+		totalTasks: 2,
+	};
+	const journalEvents = [
+		{ type: "batch.merge_started", timestamp: "1" },
+		{ type: "gate.opened", timestamp: "2" },
+	];
+
+	assert.equal(
+		resolveTailActivityLabel({
+			reconciliation,
+			batch,
+			lanes,
+			macroPhase: "merging",
+			macroPhaseLabel: "Merging",
+			journalEvents,
+		}),
+		"Integrate gate opened — awaiting approval",
+	);
+	assert.equal(resolveTailActivityFromJournal(journalEvents), "Integrate gate opened — awaiting approval");
+	assert.equal(lanesHaveActiveTasks(lanes), false);
+});
+
+test("buildTailActivityModel exposes lane table subline when lanes are idle during tail", () => {
+	const snapshot = {
+		diagnosis: "running",
+		tailActivityLabel: "Merging lane branches…",
+		lanes: [
+			{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+			{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+		],
+	};
+	const tail = buildTailActivityModel(snapshot);
+	assert.equal(tail.tailActivityLabel, "Merging lane branches…");
+	assert.equal(tail.visible, true);
+
+	const vm = buildDashboardViewModel(snapshot);
+	assert.equal(vm.tailActivity?.tailActivityLabel, "Merging lane branches…");
+	assert.equal(vm.tailActivity?.visible, true);
+});
+
+test("resolveTailActivityLabel returns null when running task is active", () => {
+	const lanes = [{ laneId: "lane-1", runningTaskId: "TP-1", queuedTaskIds: [] }];
+	assert.equal(
+		resolveTailActivityLabel({
+			reconciliation: { diagnosis: "running", signals: { hasRunningTasks: true } },
+			batch: { phase: "running", totalTasks: 2, succeededTasks: 1, failedTasks: 0 },
+			lanes,
+			macroPhase: "executing",
+			macroPhaseLabel: "Executing",
+			journalEvents: [],
+		}),
+		null,
+	);
+});
+
+test("dashboard.js renders lane table tail activity footer row", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /lane-table-tail-activity/);
+	assert.match(dashboardJs, /tailActivity\.tailActivityLabel/);
+	assert.match(dashboardJs, /vm\.tailActivity/);
 });
 
 test("banner uses diagnosis badge class, not macro phase", () => {
