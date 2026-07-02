@@ -388,6 +388,97 @@ test("dashboard.js uses heartbeatDisplay without double-formatting", () => {
 	assert.match(dashboardJs, /displayHeartbeat\(lane\)/);
 });
 
+test("buildBannerModel uses finalizing badge and macro phase during tail state", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch 20260701T031142 tasks done — merging lane branches…",
+		suggestedCommand: "/spine-status --diagnose",
+		macroPhase: "merging",
+		macroPhaseLabel: "Merging",
+		phase: "running",
+		batch: {
+			batchId: "20260701T031142",
+			phase: "running",
+			macroPhase: "merging",
+			macroPhaseLabel: "Merging",
+			succeededTasks: 2,
+			failedTasks: 0,
+			totalTasks: 2,
+		},
+		reconciliation: {
+			signals: {
+				phase: "running",
+				hasRunningTasks: false,
+				hasPendingTasks: false,
+				allTasksTerminalSuccess: true,
+				mergeResultsEmpty: true,
+			},
+		},
+		lanes: [
+			{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] },
+			{ laneId: "lane-2", runningTaskId: null, queuedTaskIds: [] },
+		],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeClass, "badge-finalizing");
+	assert.equal(banner.badgeLabel, "Merging");
+	assert.equal(banner.subline, "Merging");
+	assert.equal(banner.tailState, true);
+	assert.notEqual(banner.badgeClass, "badge-running");
+	assert.match(banner.headline, /merging/i);
+	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
+});
+
+test("buildBannerModel reflects gating macro phase during post-merge tail", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch b1 finalizing land loop — opening integrate gate…",
+		suggestedCommand: "/spine-status --diagnose",
+		macroPhase: "gating",
+		macroPhaseLabel: "Gating",
+		batch: {
+			batchId: "b1",
+			phase: "running",
+			succeededTasks: 2,
+			failedTasks: 0,
+			totalTasks: 2,
+		},
+		reconciliation: {
+			signals: {
+				phase: "running",
+				hasRunningTasks: false,
+				hasPendingTasks: false,
+				allTasksTerminalSuccess: true,
+				postMergeLimbo: true,
+			},
+		},
+		lanes: [{ laneId: "lane-1", runningTaskId: null, queuedTaskIds: [] }],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeLabel, "Gating");
+	assert.equal(banner.badgeClass, "badge-finalizing");
+	assert.match(banner.headline, /gate/i);
+});
+
+test("buildBannerModel keeps running badge when workers are active", () => {
+	const snapshot = {
+		diagnosis: "running",
+		headline: "Batch b1 is running",
+		macroPhase: "executing",
+		macroPhaseLabel: "Executing",
+		batch: { phase: "running", succeededTasks: 1, totalTasks: 2 },
+		reconciliation: {
+			signals: { hasRunningTasks: true, hasPendingTasks: false, phase: "running" },
+		},
+		lanes: [{ laneId: "lane-1", runningTaskId: "TP-1", queuedTaskIds: [] }],
+	};
+	const banner = buildBannerModel(snapshot);
+	assert.equal(banner.badgeClass, "badge-running");
+	assert.equal(banner.badgeLabel, "running");
+	assert.equal(banner.tailState, false);
+	assert.ok(bannerUsesDiagnosisNotPhase(snapshot));
+});
+
 test("banner uses diagnosis badge class, not macro phase", () => {
 	const snapshot = {
 		diagnosis: "needs_integrate",

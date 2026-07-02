@@ -350,13 +350,17 @@ function findArtifactMatch(worktreePath, artifactPattern) {
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {object} [config]
+ * @param {string} [config.baseBranch]
+ * @param {string} [config.sinceCommit] When set, scope file-scope checks to `sinceCommit..HEAD` (serialized lanes).
+ * @param {string} [config.taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution).
  * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }> }}
  */
 export function verifyContract(worktreePath, parsedContract, config = {}) {
 	/** @type {Array<{ field: string, ok: boolean, message: string }>} */
 	const checks = [];
 	const baseBranch = config?.baseBranch ?? "main";
-	const changedFiles = listChangedFiles(worktreePath, baseBranch);
+	const sinceCommit = config?.sinceCommit ?? config?.taskStartCommit ?? undefined;
+	const changedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
 
 	let testCommandOutput = "";
 	let testCommandOk = true;
