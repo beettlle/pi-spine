@@ -24,6 +24,33 @@ export function journalHasTaskCompleted(events, taskId) {
 }
 
 /**
+ * @param {object[]} events
+ * @param {string} taskId
+ */
+export function journalHasLaneCommitted(events, taskId) {
+	return events.some((event) => event.type === "lane.committed" && event.taskId === taskId);
+}
+
+/**
+ * Task finished the full resume pipeline (journal + batch-state) — safe to skip on resume.
+ *
+ * @param {object} params
+ */
+export function taskTerminalSuccessInBatch({ events, task, taskFolder }) {
+	const taskId = task?.taskId;
+	if (!taskId) return false;
+
+	const status = String(task?.status ?? "").toLowerCase();
+	if (status !== "succeeded" && status !== "skipped") return false;
+	if (!journalHasTaskCompleted(events, taskId)) return false;
+
+	if (journalHasLaneCommitted(events, taskId)) return true;
+	if (task.doneFileFound) return true;
+
+	return fs.existsSync(path.join(taskFolder, ".DONE"));
+}
+
+/**
  * @param {object} params
  */
 export function taskAlreadyComplete({ taskFolder, events, task }) {

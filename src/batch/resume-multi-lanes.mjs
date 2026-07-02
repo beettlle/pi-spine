@@ -10,6 +10,7 @@ import {
 	recomputeTaskCounters,
 	resolveTaskFolderInWorktree,
 	taskAlreadyComplete,
+	taskTerminalSuccessInBatch,
 } from "./resume-common.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
@@ -462,6 +463,16 @@ export async function executeResumeWave({
 			runsByLane.set(laneNumber, { lane, runs: [] });
 		}
 		const laneQueue = runsByLane.get(laneNumber);
+
+		if (
+			taskTerminalSuccessInBatch({
+				events,
+				task,
+				taskFolder: taskFolderInWorktree,
+			})
+		) {
+			continue;
+		}
 
 		if (taskAlreadyComplete({ taskFolder: taskFolderInWorktree, events, task })) {
 			laneQueue.runs.push({
