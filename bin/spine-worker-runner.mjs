@@ -29,9 +29,11 @@ import {
 import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
+import { isStubDeliveryOnlyScope } from "../src/batch/contract-stub-delivery.mjs";
 import { writeWorkerDoneMarker } from "../src/batch/worker-output.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
-import { parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
+import { DEFAULT_TASKS_ROOT } from "../src/config/spine-init-constants.mjs";
+import { parseContract, parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
 
 function buildReviewJournal() {
 	return resolveBatchJournalContext();
@@ -108,6 +110,105 @@ export async function buildWorkerPiArgs({
  * @param {string} taskFolder
  * @returns {string[]}
  */
+const STUB_DELIVERY_CURRENT_STEP = "Complete";
+const STUB_DELIVERY_STATUS = "✅ Complete";
+
+/**
+ * Update STATUS.md header lines or append a minimal stub delivery block.
+ *
+ * @param {string} [existingContent]
+ * @returns {string}
+ */
+export function applyStubDeliveryStatusBlock(existingContent = "") {
+	const lines = String(existingContent ?? "").split("\n");
+	let foundCurrentStep = false;
+	let foundStatus = false;
+	const updated = lines.map((line) => {
+		if (/^\*\*Current Step:\*\*/.test(line)) {
+			foundCurrentStep = true;
+			return `**Current Step:** ${STUB_DELIVERY_CURRENT_STEP}`;
+		}
+		if (/^\*\*Status:\*\*/.test(line)) {
+			foundStatus = true;
+			return `**Status:** ${STUB_DELIVERY_STATUS}`;
+		}
+		return line;
+	});
+
+	const additions = [];
+	if (!foundCurrentStep) {
+		additions.push(`**Current Step:** ${STUB_DELIVERY_CURRENT_STEP}`);
+	}
+	if (!foundStatus) {
+		additions.push(`**Status:** ${STUB_DELIVERY_STATUS}`);
+	}
+
+	if (additions.length === 0) {
+		return updated.join("\n");
+	}
+
+	const titleIdx = updated.findIndex((line) => /^#\s/.test(line));
+	if (titleIdx >= 0) {
+		let insertAt = titleIdx + 1;
+		if (insertAt < updated.length && updated[insertAt].trim() === "") {
+			insertAt += 1;
+		}
+		updated.splice(insertAt, 0, ...additions, "");
+		return updated.join("\n");
+	}
+
+	if (updated.length > 0 && updated[updated.length - 1].trim() !== "") {
+		updated.push("");
+	}
+	updated.push(...additions, "");
+	return updated.join("\n");
+}
+
+/**
+ * @param {string[]} patterns
+ */
+function stubDeliveryRequiresStatusTouch(patterns) {
+	return patterns.some((pattern) => {
+		const normalized = String(pattern ?? "").replace(/\\/g, "/").trim();
+		if (normalized.includes("STATUS.md")) {
+			return true;
+		}
+		if (normalized.endsWith("/**")) {
+			return true;
+		}
+		return false;
+	});
+}
+
+/**
+ * When stub mode has delivery-only fileScopeMustChange, write STATUS.md before .DONE.
+ *
+ * @param {object} options
+ * @param {string} options.taskFolder
+ * @param {string} [options.tasksRoot]
+ * @returns {boolean} Whether STATUS.md was updated
+ */
+export function writeStubDeliveryStatusIfNeeded({ taskFolder, tasksRoot = DEFAULT_TASKS_ROOT }) {
+	const promptPath = path.join(taskFolder, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) {
+		return false;
+	}
+
+	const parsed = parseContract(fs.readFileSync(promptPath, "utf-8"));
+	const patterns = parsed.fileScopeMustChange ?? [];
+	if (!isStubDeliveryOnlyScope(patterns, tasksRoot)) {
+		return false;
+	}
+	if (!stubDeliveryRequiresStatusTouch(patterns)) {
+		return false;
+	}
+
+	const statusPath = path.join(taskFolder, "STATUS.md");
+	const existing = fs.existsSync(statusPath) ? fs.readFileSync(statusPath, "utf-8") : "";
+	fs.writeFileSync(statusPath, applyStubDeliveryStatusBlock(existing), "utf-8");
+	return true;
+}
+
 function resolveTaskFileScope(taskFolder) {
 	const envScope = process.env.SPINE_TASK_FILE_SCOPE;
 	if (envScope) {
@@ -258,6 +359,8 @@ async function runWorkerRunner() {
 		}
 
 		await enforceStubReviewIfConfigured(taskFolder, worktreePath);
+
+		writeStubDeliveryStatusIfNeeded({ taskFolder });
 
 		const donePath = path.join(taskFolder, ".DONE");
 		const stubTaskId = process.env.SPINE_TASK_ID || taskIdFromFolder(taskFolder) || "stub";
