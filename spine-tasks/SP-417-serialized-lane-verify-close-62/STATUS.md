@@ -1,8 +1,8 @@
 # SP-417: Close #62 serialized lane verify — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-01
+**Current Step:** Step 3 — Testing & Verification
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,27 +11,27 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #62
-- [ ] Dependencies satisfied
+- [x] Read GitHub issue #62
+- [x] Dependencies satisfied (SP-416, SP-409, SP-412 `.DONE` present)
 
 ---
 
 ### Step 1: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run SP-416 integration test locally
-- [ ] Verify stet-style scenario would pass
+- [x] Run SP-416 integration test locally
+- [x] Verify stet-style scenario would pass (contract-verify-serialized: task 2 passes scoped must-not-change)
 
 ---
 
 ### Step 2: Runbook update
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document per-task scoped diff for serialized lanes
-- [ ] Update SP-412 interim note if present
-- [ ] Link to contract-verify-serialized test
+- [x] Document per-task scoped diff for serialized lanes
+- [x] Update SP-412 interim note if present
+- [x] Link to contract-verify-serialized test
 
 ---
 
