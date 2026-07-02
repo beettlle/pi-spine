@@ -123,19 +123,63 @@ export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = D
  * @param {string[]} [params.currentWaveTaskIds]
  */
 export function computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds }) {
+	const runningTaskId = computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds });
+	const queuedTaskIds = computeQueuedTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds });
+	if (runningTaskId) return [runningTaskId, ...queuedTaskIds];
+	return [...queuedTaskIds];
+}
+
+/**
+ * Single running task in the current wave on this physical lane (engine: ≤1 per lane).
+ *
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {string[]} [params.currentWaveTaskIds]
+ */
+export function computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds }) {
+	if (!currentWaveTaskIds?.length) return null;
+	const waveSet = new Set(currentWaveTaskIds.map(String));
+	const running = classifiedTasks.find(
+		(task) =>
+			task.laneNumber === lane.laneNumber &&
+			waveSet.has(task.taskId) &&
+			(task.classification === "running" || task.status === "running"),
+	);
+	return running?.taskId ?? null;
+}
+
+/**
+ * Pending tasks in the current wave on this lane, ordered by lane assignment queue.
+ *
+ * @param {object} params
+ * @param {object} params.lane
+ * @param {import("../batch/reconcile.mjs").NormalizedTask[]} params.classifiedTasks
+ * @param {string[]} [params.currentWaveTaskIds]
+ * @param {string[]} [params.laneTaskIds]
+ */
+export function computeQueuedTaskIdsForLane({
+	lane,
+	classifiedTasks,
+	currentWaveTaskIds,
+	laneTaskIds,
+}) {
 	if (!currentWaveTaskIds?.length) return [];
 	const waveSet = new Set(currentWaveTaskIds.map(String));
-	return classifiedTasks
-		.filter((task) => task.laneNumber === lane.laneNumber)
-		.filter((task) => waveSet.has(task.taskId))
-		.filter(
-			(task) =>
-				task.classification === "running" ||
-				task.classification === "pending" ||
-				task.status === "running" ||
-				task.status === "pending",
-		)
-		.map((task) => task.taskId);
+	const assignmentOrder = laneTaskIds ?? lane.taskIds ?? [];
+
+	const pendingIds = new Set(
+		classifiedTasks
+			.filter(
+				(task) =>
+					task.laneNumber === lane.laneNumber &&
+					waveSet.has(task.taskId) &&
+					(task.classification === "pending" || task.status === "pending"),
+			)
+			.map((task) => String(task.taskId)),
+	);
+
+	return assignmentOrder.filter((taskId) => pendingIds.has(String(taskId))).map(String);
 }
 
 /**
@@ -390,6 +434,13 @@ export function buildLaneRows({
 	return (lanes ?? []).map((lane) => {
 		const heartbeatMeta = resolveLaneHeartbeatMeta(lane.laneNumber, journalEvents);
 		const heartbeatAgeSecondsValue = heartbeatAgeSeconds(lane.lastHeartbeatAt, now);
+		const runningTaskId = computeRunningTaskIdForLane({ lane, classifiedTasks, currentWaveTaskIds });
+		const queuedTaskIds = computeQueuedTaskIdsForLane({
+			lane,
+			classifiedTasks,
+			currentWaveTaskIds,
+			laneTaskIds: lane.taskIds ?? [],
+		});
 		const activeTaskIds = computeActiveTaskIdsForLane({ lane, classifiedTasks, currentWaveTaskIds });
 		const activity = resolveLaneActivityPhase({
 			laneNumber: lane.laneNumber,
@@ -415,6 +466,8 @@ export function buildLaneRows({
 			laneNumber: lane.laneNumber,
 			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
 			activeTaskIds,
+			runningTaskId,
+			queuedTaskIds,
 			activityPhase: activity.activityPhase,
 			activityPhaseLabel: activity.activityPhaseLabel,
 			taskIds: lane.taskIds ?? [],
