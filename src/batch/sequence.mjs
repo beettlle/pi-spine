@@ -4,7 +4,11 @@
  */
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
+import {
+	formatPreflightHuman,
+	runBatchPreflight,
+	resolveTasksRoot,
+} from "../config/spine-preflight-lib.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { resolveWaveTaskIds } from "../planner/wave-scope.mjs";
 
@@ -349,7 +353,7 @@ export async function runSequence(ctx) {
 				ok: false,
 				exitCode: preflight.exitCode ?? 1,
 				error: "preflight_failed",
-				output: preflight.output,
+				output: formatPreflightHuman(preflight),
 			};
 		}
 	}
