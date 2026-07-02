@@ -1,8 +1,8 @@
 # SP-412: Runbook must-not-change failures — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-01
+**Current Step:** Step 3 — Testing & Verification
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,26 +11,26 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #63
-- [ ] Dependencies satisfied
+- [x] Read GitHub issue #63
+- [x] Dependencies satisfied (SP-409 `.DONE`, SP-410 `.DONE`)
 
 ---
 
 ### Step 1: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #63 journal payload examples
+- [x] Read issue #63 journal payload examples
 
 ---
 
 ### Step 2: Runbook common failures section
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Symptom: testCommand pass, fileScopeMustNotChange fail on spine-tasks paths
-- [ ] Fix: remove spine-tasks/** from must-not-change
-- [ ] Note serialized lane cumulative diff until scoped verify (SP-416)
+- [x] Symptom: testCommand pass, fileScopeMustNotChange fail on spine-tasks paths
+- [x] Fix: remove spine-tasks/** from must-not-change
+- [x] Note serialized lane cumulative diff until scoped verify (SP-416)
 
 ---
 
@@ -52,6 +52,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-410 already documents contract-template parallel semantics | No duplicate work needed | `skills/create-spine-tasks/references/contract-template.md` |
 
 ---
 
@@ -60,6 +61,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #63 |
+| 2026-07-02 | Step 0–2 | Issue #63 read; runbook section added to `docs/adoption/operator-runbook.md` |
 
 ---
 

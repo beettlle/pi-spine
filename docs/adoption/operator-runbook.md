@@ -1141,10 +1141,43 @@ Missing keys are merged on `loadSpineConfig` from template defaults (SP-141). In
 
 **Retry with salvage:** `autoCommitOnStall: false` (default) leaves uncommitted scoped work on the lane branch for human review before retry. When `autoCommitOnStall: true`, one scoped `wip(<taskId>): stall salvage …` commit may be created; atomic retry (§18.5) keeps that commit on the lane branch.
 
+### Contract `fileScopeMustNotChange` failures (issue #63)
+
+When journal `contract.verified` shows `testCommand` **pass** but `fileScopeMustNotChange` **fail**, code review may still APPROVE — the batch fails on contract gate only (`review_exhausted`).
+
+**Symptom:** `contract.verified` payload with `field: fileScopeMustNotChange`, `ok: false`, and messages like:
+
+```text
+Contract fileScopeMustNotChange: forbidden change spine-tasks/SP-001/STATUS.md
+Contract fileScopeMustNotChange: forbidden change spine-tasks/SP-001/.DONE
+```
+
+Later tasks on a **serialized same-lane** queue may fail on **prior tasks'** `spine-tasks/<id>/` paths even when the current worker behaved correctly.
+
+**Cause:**
+
+| Pattern | Why it fails |
+|---------|--------------|
+| `spine-tasks/**` in `fileScopeMustNotChange` | Workers must update `STATUS.md`, write `.DONE`, and may write `.reviews/` — orchestration artifacts, not product scope violations |
+| Current task folder in must-not-change | Same — blocks required delivery paths for the running task |
+| Prior task paths on serialized lane | Verify compares cumulative `main...HEAD` lane diff today; earlier task commits remain until per-task scoping ships ([SP-416](https://github.com/beettlle/pi-spine/issues/416)) |
+
+`fileScopeMustNotChange` is for **parallel lane** collision detection (concurrent lanes editing the same product path), not for isolating serialized tasks on one lane. When `spine plan` reports file-scope overlap serialized to one lane, use disjoint `fileScopeMustChange` paths — do not rely on must-not-change for queue ordering.
+
+**Fix:**
+
+1. Edit `PROMPT.md` **## Contract** — remove `spine-tasks/**` and the current task folder from `fileScopeMustNotChange`.
+2. Keep only product paths that parallel lanes must not touch, e.g. `extension/**`, `.spine/**` (not `spine-tasks/**`).
+3. For false failures on **prior** same-lane task paths, remove the conflicting must-not-change patterns or split batches until SP-416 per-task verify lands.
+4. `spine tasks validate <taskId>` then `spine batch retry <taskId>` and `spine batch resume`.
+
+Authoring reference: [contract-template.md](../../skills/create-spine-tasks/references/contract-template.md#filescopemustnotchange-semantics).
+
 ### Common batch failures
 
 | Problem | Command / fix |
 |---------|----------------|
+| `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` or prior lane tasks | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
 | Preflight git dirty | Commit or stash; lanes need clean tree |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
 | Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); `spine status --diagnose` → worker log + `lane.salvage_inspection`; ensure `spine_report_progress` after steps |
