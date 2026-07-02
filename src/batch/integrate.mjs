@@ -5,8 +5,13 @@
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes.mjs";
-import { resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
+import { mergeOrchIntoBaseIsolated, isBranchCheckedOutInWorktree, syncPlumbingMergePathsToWorktree } from "./integrate-worktree.mjs";
+import {
+	isFastForwardCapableIntegrate,
+	resolveRulesManifestIntegrateDrift,
+} from "./rules-manifest-drift.mjs";
+import { assertOrchIntegratable } from "./integrate-assert.mjs";
+export { assertOrchIntegratable } from "./integrate-assert.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
@@ -21,67 +26,111 @@ function git(projectRoot, args) {
 }
 
 /**
- * Validates orch branch state before `spine batch complete` (FR-BATCH-16).
- *
- * @param {string} projectRoot
- * @param {object} ctx
- * @param {string} ctx.baseBranch
- * @param {string|null} ctx.orchBranch
- * @param {boolean} ctx.mergeResultsEmpty
- * @param {boolean} ctx.orchMergedToBase
+ * @param {string} output
  */
-export function assertOrchIntegratable(projectRoot, ctx) {
-	const { baseBranch, orchBranch, mergeResultsEmpty, orchMergedToBase } = ctx;
+function mergeTreeOutputHasConflict(output) {
+	return /CONFLICT/i.test(output);
+}
 
-	if (orchMergedToBase) {
-		return { ok: true, reason: "orch_merged_to_base" };
-	}
+/**
+ * Ref-only merge when base is not checked out in projectRoot (avoids worktree git merge).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ * @param {string} params.mergeMessage
+ */
+function mergeOrchIntoBaseViaRefs({ projectRoot, baseBranch, orchBranch, mergeMessage }) {
+	const baseSha = git(projectRoot, ["rev-parse", baseBranch]);
+	const orchSha = git(projectRoot, ["rev-parse", orchBranch]);
 
-	if (mergeResultsEmpty) {
-		return { ok: true, reason: "no_merge_claimed" };
-	}
-
-	if (!orchBranch) {
-		return {
-			ok: false,
-			failureClass: "EmptyMerge",
-			error: "Batch mergeResults claim success but no orch branch is recorded",
-			suggestedCommand: "spine status --diagnose",
-		};
-	}
-
-	let commitsAhead = 0;
+	let mergeTreeOutput = "";
+	let treeSha = "";
 	try {
-		commitsAhead = countCommitsAhead(projectRoot, baseBranch, orchBranch);
+		mergeTreeOutput = execFileSync(
+			"git",
+			["merge-tree", "--write-tree", baseBranch, orchBranch],
+			{
+				cwd: projectRoot,
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				env: { ...process.env },
+			},
+		).trim();
+		treeSha = mergeTreeOutput.split("\n").pop()?.trim() ?? "";
 	} catch (err) {
+		const stdout = err && typeof err === "object" && "stdout" in err ? String(err.stdout ?? "") : "";
+		const stderr = err && typeof err === "object" && "stderr" in err ? String(err.stderr ?? "") : "";
+		mergeTreeOutput = `${stdout}\n${stderr}`.trim();
+		if (mergeTreeOutputHasConflict(mergeTreeOutput)) {
+			return {
+				ok: false,
+				failureClass: "MergeConflict",
+				error: mergeTreeOutput.split("\n").slice(-3).join(" ") || "merge conflict",
+			};
+		}
 		const message = err instanceof Error ? err.message : String(err);
 		return {
 			ok: false,
-			failureClass: "EmptyMerge",
-			error: `Cannot compare ${orchBranch} to ${baseBranch}: ${message}`,
-			suggestedCommand: "spine status --diagnose",
+			failureClass: "IntegrateFailed",
+			error: message,
 		};
 	}
 
-	if (commitsAhead === 0) {
+	if (!treeSha || mergeTreeOutputHasConflict(mergeTreeOutput)) {
 		return {
 			ok: false,
-			failureClass: "EmptyMerge",
-			error:
-				`Orch branch ${orchBranch} has no commits ahead of ${baseBranch} but mergeResults claim success. ` +
-				`Re-run the batch or land lane work on the orch branch before completing.`,
-			suggestedCommand: "spine status --diagnose",
+			failureClass: "MergeConflict",
+			error: mergeTreeOutput || `merge conflict integrating ${orchBranch} into ${baseBranch}`,
 		};
 	}
 
+	const mergeCommit = git(
+		projectRoot,
+		["commit-tree", treeSha, "-p", baseSha, "-p", orchSha, "-m", mergeMessage],
+	);
+	git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, mergeCommit]);
+
+	return { ok: true, mergeCommit, mode: "plumbing" };
+}
+
+/**
+ * Fast-forward base to orch tip without checking out base in projectRoot.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ */
+function fastForwardOrchIntoBase({ projectRoot, baseBranch, orchBranch }) {
+	const baseShaBefore = git(projectRoot, ["rev-parse", baseBranch]);
+	const orchSha = git(projectRoot, ["rev-parse", orchBranch]);
+	git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, orchSha]);
 	return {
-		ok: false,
-		failureClass: "NeedsIntegrate",
-		error:
-			`Orch branch ${orchBranch} is ${commitsAhead} commit(s) ahead of ${baseBranch} — run integrate before completing the batch record.`,
-		suggestedCommand: "spine integrate",
-		commitsAhead,
+		ok: true,
+		mergeCommit: orchSha,
+		mode: "fast-forward",
+		baseShaBefore,
 	};
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ * @param {string} params.batchId
+ */
+function runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId }) {
+	const mergeMessage = `integrate ${orchBranch} into ${baseBranch}`;
+	if (isFastForwardCapableIntegrate({ projectRoot, baseBranch, orchBranch })) {
+		return fastForwardOrchIntoBase({ projectRoot, baseBranch, orchBranch });
+	}
+	if (isBranchCheckedOutInWorktree(projectRoot, baseBranch)) {
+		return mergeOrchIntoBaseIsolated({ projectRoot, baseBranch, orchBranch, batchId });
+	}
+	return mergeOrchIntoBaseViaRefs({ projectRoot, baseBranch, orchBranch, mergeMessage });
 }
 
 /**
@@ -274,7 +323,11 @@ export function integrateOrchToBase(ctx) {
 				? `Would merge ${orchBranch} → ${baseBranch} after gate approval (${commitsAhead ?? "?"} commit(s))`
 				: `Would merge ${orchBranch} → ${baseBranch} (${commitsAhead ?? "?"} commit(s))`,
 			suggestedCommand: gatePending ? "spine gate approve" : "spine integrate",
-			mergePlan: `git checkout ${baseBranch} && git merge --no-ff ${orchBranch}`,
+			mergePlan: isFastForwardCapableIntegrate({ projectRoot, baseBranch, orchBranch })
+				? `isolated fast-forward ${orchBranch} → ${baseBranch} (ref update, no checkout in projectRoot)`
+				: isBranchCheckedOutInWorktree(projectRoot, baseBranch)
+					? `isolated plumbing merge ${orchBranch} → ${baseBranch} (no checkout in projectRoot)`
+					: `isolated ref merge ${orchBranch} → ${baseBranch} (merge-tree, no checkout in projectRoot)`,
 		};
 	}
 
@@ -287,8 +340,14 @@ export function integrateOrchToBase(ctx) {
 	});
 
 	const previous = git(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	const baseCheckedOutAtStart = isBranchCheckedOutInWorktree(projectRoot, baseBranch);
 	try {
-		const drift = resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, orchBranch });
+		const drift = resolveRulesManifestIntegrateDrift({
+			projectRoot,
+			baseBranch,
+			orchBranch,
+			isolatedMerge: true,
+		});
 		if (!drift.ok) {
 			return {
 				ok: false,
@@ -300,61 +359,71 @@ export function integrateOrchToBase(ctx) {
 				batchId,
 			};
 		}
-
-		git(projectRoot, ["checkout", baseBranch]);
-		let mergeInProgress = false;
-		try {
-			git(projectRoot, [
-				"merge",
-				"--no-ff",
+		if (drift.resolved) {
+			appendJournalEvent(projectRoot, batchId, "integrate.drift_resolved", {
+				baseBranch,
 				orchBranch,
-				"-m",
-				`integrate ${orchBranch} into ${baseBranch}`,
-			]);
-		} catch {
-			mergeInProgress = true;
-			const autoResolved = tryAutoResolveRulesManifestMergeConflict(projectRoot);
-			if (!autoResolved.ok) {
-				try {
-					execFileSync("git", ["merge", "--abort"], {
-						cwd: projectRoot,
-						stdio: ["ignore", "pipe", "pipe"],
-					});
-				} catch {
-					// best-effort abort
-				}
-				const message = autoResolved.error ?? "merge conflict";
-				appendJournalEvent(projectRoot, batchId, "integrate.failed", {
-					baseBranch,
-					orchBranch,
-					error: message.slice(0, 500),
-					conflict: true,
-				});
-				try {
-					git(projectRoot, ["checkout", previous || baseBranch]);
-				} catch {
-					// leave operator on base for manual recovery
-				}
-				return {
-					ok: false,
-					exitCode: 1,
-					error: message,
-					failureClass: autoResolved.failureClass ?? "MergeConflict",
-					headline: `Merge conflict integrating ${orchBranch} into ${baseBranch} — resolve manually`,
-					suggestedCommand: "spine status --diagnose",
-					batchId,
-					alternatives: ["/spine-gate"],
-				};
-			}
-			git(projectRoot, ["commit", "--no-edit"]);
+				action: drift.action ?? "restored_head",
+			});
 		}
-		const mergeCommit = git(projectRoot, ["rev-parse", "HEAD"]);
+
+		const mergeResult = runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId });
+
+		if (!mergeResult.ok) {
+			const message = mergeResult.error ?? "merge conflict";
+			const conflict = mergeResult.failureClass === "MergeConflict";
+			appendJournalEvent(projectRoot, batchId, "integrate.failed", {
+				baseBranch,
+				orchBranch,
+				error: message.slice(0, 500),
+				conflict,
+			});
+			try {
+				git(projectRoot, ["checkout", previous || baseBranch]);
+			} catch {
+				// leave operator on current branch for manual recovery
+			}
+			return {
+				ok: false,
+				exitCode: 1,
+				error: message,
+				failureClass: mergeResult.failureClass ?? (conflict ? "MergeConflict" : "IntegrateFailed"),
+				headline: conflict
+					? `Merge conflict integrating ${orchBranch} into ${baseBranch} — resolve manually`
+					: `Integrate failed: ${message}`,
+				suggestedCommand: "spine status --diagnose",
+				batchId,
+				alternatives: ["/spine-gate"],
+			};
+		}
+
+		const mergeCommit = mergeResult.mergeCommit;
+
+		if (mergeResult.mode === "fast-forward") {
+			syncPlumbingMergePathsToWorktree(
+				projectRoot,
+				mergeResult.baseShaBefore,
+				mergeCommit,
+			);
+		} else if (mergeResult.mode === "plumbing") {
+			const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
+			syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
+		} else if (!baseCheckedOutAtStart) {
+			try {
+				git(projectRoot, ["checkout", baseBranch]);
+				git(projectRoot, ["reset", "--hard", "HEAD"]);
+			} catch {
+				// Dirty tree may block checkout after isolated land — operator syncs manually.
+			}
+		}
 
 		appendJournalEvent(projectRoot, batchId, "integrate.completed", {
 			baseBranch,
 			orchBranch,
 			mergeCommit,
 			commitsAhead,
+			isolated: true,
+			baseCheckedOutAtStart,
 		});
 
 		return {
@@ -382,18 +451,9 @@ export function integrateOrchToBase(ctx) {
 		});
 
 		try {
-			execFileSync("git", ["merge", "--abort"], {
-				cwd: projectRoot,
-				stdio: ["ignore", "pipe", "pipe"],
-			});
-		} catch {
-			// best-effort abort
-		}
-
-		try {
 			git(projectRoot, ["checkout", previous || baseBranch]);
 		} catch {
-			// leave operator on base for manual recovery
+			// leave operator on current branch for manual recovery
 		}
 
 		return {

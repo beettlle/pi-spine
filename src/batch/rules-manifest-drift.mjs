@@ -76,14 +76,37 @@ function restoreRulesManifestFromHead(projectRoot) {
  * @param {string} params.projectRoot
  * @param {string} params.baseBranch
  * @param {string} params.orchBranch
+ * @param {boolean} [params.isolatedMerge] When true, unrelated dirty paths do not block integrate.
  */
-export function resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, orchBranch }) {
+export function resolveRulesManifestIntegrateDrift({
+	projectRoot,
+	baseBranch,
+	orchBranch,
+	isolatedMerge = false,
+}) {
 	const dirtyPaths = listIntegrateDirtyPaths(projectRoot);
 	if (dirtyPaths.length === 0) {
 		return { ok: true, resolved: false };
 	}
 
-	if (dirtyPaths.length !== 1 || dirtyPaths[0] !== RULES_MANIFEST_REL_PATH) {
+	const manifestDirty = dirtyPaths.includes(RULES_MANIFEST_REL_PATH);
+	if (!manifestDirty) {
+		if (isolatedMerge) {
+			return { ok: true, resolved: false };
+		}
+		const preview = dirtyPaths.slice(0, 5).join(", ");
+		const suffix = dirtyPaths.length > 5 ? ` (+${dirtyPaths.length - 5} more)` : "";
+		return {
+			ok: false,
+			failureClass: "DirtyWorktree",
+			error:
+				`integrate refused — working tree has uncommitted changes (${preview}${suffix}); ` +
+				"commit or stash before integrate",
+			dirtyPaths,
+		};
+	}
+
+	if (!isolatedMerge && (dirtyPaths.length !== 1 || dirtyPaths[0] !== RULES_MANIFEST_REL_PATH)) {
 		const preview = dirtyPaths.slice(0, 5).join(", ");
 		const suffix = dirtyPaths.length > 5 ? ` (+${dirtyPaths.length - 5} more)` : "";
 		return {
@@ -154,4 +177,22 @@ export function resolveRulesManifestIntegrateDrift({ projectRoot, baseBranch, or
 		resolved: true,
 		action: "restored_head_for_merge",
 	};
+}
+
+/**
+ * True when orch is a strict descendant of base (manual merge would fast-forward).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ */
+export function isFastForwardCapableIntegrate({ projectRoot, baseBranch, orchBranch }) {
+	const baseSha = gitExec(projectRoot, ["rev-parse", baseBranch], { projectRoot });
+	const mergeBase = gitExec(
+		projectRoot,
+		["merge-base", baseBranch, orchBranch],
+		{ throwOnError: false, projectRoot },
+	);
+	return Boolean(mergeBase && mergeBase === baseSha);
 }

@@ -53,6 +53,27 @@ function writeRulesManifest(projectRoot, generatedAt, rules = baseRules) {
 	fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf-8");
 }
 
+function readRulesManifestFromRef(projectRoot, ref) {
+	return JSON.parse(
+		execFileSync("git", ["show", `${ref}:${RULES_MANIFEST_REL_PATH}`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}),
+	);
+}
+
+function gitRefHasPath(projectRoot, ref, filePath) {
+	try {
+		execFileSync("git", ["show", `${ref}:${filePath}`], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 function execCommit(projectRoot, message) {
 	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
 	execFileSync("git", ["commit", "-m", message], { cwd: projectRoot, stdio: "ignore" });
@@ -142,12 +163,10 @@ test("integrateOrchToBase succeeds with worker manifest drift on main matching o
 		const result = integrateOrchToBase({ projectRoot });
 		assert.equal(result.ok, true, result.error ?? result.headline);
 
-		const merged = JSON.parse(
-			fs.readFileSync(path.join(projectRoot, RULES_MANIFEST_REL_PATH), "utf-8"),
-		);
+		const merged = readRulesManifestFromRef(projectRoot, "main");
 		assert.equal(merged.rules.length, workerAddedRules.length);
 		assert.equal(merged.generatedAt, "2026-06-20T19:30:00.000Z");
-		assert.ok(fs.existsSync(path.join(projectRoot, "orch-work.txt")));
+		assert.ok(gitRefHasPath(projectRoot, "main", "orch-work.txt"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

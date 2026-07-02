@@ -316,6 +316,14 @@ Spine passes `pi --model` and `pi --thinking` from `.spine/spine-config.json` wh
 | `inherit` | Opt-in — pi uses global `defaultProvider` / `defaultModel` from `~/.pi/agent/settings.json` (project `.pi/settings.json` overrides) |
 | Other provider/id | Passed verbatim to `pi --model` |
 
+**Use canonical pi model ids, not TUI display labels.** Pi's model picker shows labels like `gemini-3.1-pro-preview [google]`; spine-config and `pi --model` require the canonical id `google/gemini-3.1-pro-preview` from `pi --list-models`. `spine settings set` normalizes display labels when they match a listed model; `spine doctor` fails when pins use display labels or unknown ids.
+
+```bash
+pi --list-models | rg gemini
+spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
+spine doctor   # agent model ids (canonical) must pass before real-pi batches
+```
+
 **Why pin by default:** Real-pi stress batches (2026-06-12) used `inherit` while pi's global default was **lmstudio** (`pi-lmstudio` → `http://127.0.0.1:1234`). `spine doctor` "model provider configured" showed the first listed model (`cursor/auto`), but lane workers inherited LM Studio and failed with unloaded models or missing MLX backends.
 
 **Operator checklist before real-pi batches:**
@@ -535,7 +543,9 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 | `generatedAt` only (rules[] fingerprint matches `main` HEAD) | Auto-restores HEAD; merge applies orch manifest |
 | Worker entries on `main` matching orch fingerprint | Auto-restores HEAD; merge lands orch manifest (no manual commit — [#22](https://github.com/beettlle/pi-spine/issues/22)) |
 | Manifest differs from both `main` HEAD and orch | Refused — commit or stash, then re-run |
-| Any other dirty file on `main` | Refused — commit or stash unrelated changes first |
+| Any other dirty file on `main` (legacy) | Previously refused; **interim (SP-436):** allowed — integrate uses isolated plumbing merge and leaves your working tree untouched |
+
+**Concurrent development (interim — FR-WT-08 slice 1):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. After integrate, run `git status` — uncommitted files remain until you commit or stash them. Full `spine sync-base` / `human_base_diverged` diagnosis ships in SP-443 ([#91](https://github.com/beettlle/pi-spine/issues/91)).
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
 
