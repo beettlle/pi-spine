@@ -313,13 +313,47 @@ function resolveFailedExitReason(rawTasks, failedTaskId) {
 
 /**
  * @param {string|null} failedTaskId
+ * @param {object} signals
+ * @returns {string|null}
+ */
+function resolvePrimaryFailureExitReason(failedTaskId, signals) {
+	const fromTask = resolveFailedExitReason(signals.raw?.tasks, failedTaskId);
+	if (fromTask) return fromTask;
+	if (!failedTaskId) return null;
+	if (Array.isArray(signals.segments)) {
+		const segment = signals.segments.find((entry) => entry?.taskId === failedTaskId);
+		const classification = segment?.classification;
+		if (
+			typeof classification === "string" &&
+			classification &&
+			classification !== "terminal-failure"
+		) {
+			return classification;
+		}
+	}
+	if (Array.isArray(signals.journalEvents)) {
+		for (let index = signals.journalEvents.length - 1; index >= 0; index -= 1) {
+			const event = signals.journalEvents[index];
+			if (event.type !== "task.failed") continue;
+			const eventTaskId = event.taskId ?? event.payload?.taskId;
+			if (eventTaskId !== failedTaskId) continue;
+			const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+			const reason = payload.exitReason ?? payload.classification;
+			if (typeof reason === "string" && reason) return reason;
+		}
+	}
+	return null;
+}
+
+/**
+ * @param {string|null} failedTaskId
  * @param {string|null} exitReason
  * @param {object} signals
  * @returns {{ exitReason: string|null, launchFailureKind: string|null }}
  */
 function deriveFailureContext(failedTaskId, exitReason, signals) {
 	let resolvedExitReason =
-		exitReason ?? resolveFailedExitReason(signals.raw?.tasks, failedTaskId);
+		exitReason ?? resolvePrimaryFailureExitReason(failedTaskId, signals);
 	if (failedTaskId && signals.tasksRoot) {
 		const taskFolder =
 			signals.tasks?.find((entry) => entry.taskId === failedTaskId)?.taskFolder ?? null;
@@ -750,11 +784,6 @@ export function reconcileBatch(ctx) {
 
 	const hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
 	const hasPendingTasks = classifiedTasks.some((task) => task.classification === "pending");
-	const hasFailedTasks = classifiedTasks.some((task) => task.classification === "terminal-failure");
-	const allTasksTerminalSuccess =
-		classifiedTasks.length > 0 &&
-		classifiedTasks.every((task) => task.classification === "terminal-success");
-	const failedTask = classifiedTasks.find((task) => task.classification === "terminal-failure");
 	const pendingWithFailedSegment = batch.segments.some(
 		(segment) => segment.classification === "terminal-failure",
 	);
@@ -764,6 +793,15 @@ export function reconcileBatch(ctx) {
 			(segment) => segment.taskId === task.taskId && segment.classification === "terminal-failure",
 		);
 	});
+	const hasSegmentDrift = pendingWithFailedSegment || Boolean(driftTask);
+	const hasFailedTasks =
+		classifiedTasks.some((task) => task.classification === "terminal-failure") ||
+		hasSegmentDrift ||
+		batch.failedTasks > 0;
+	const allTasksTerminalSuccess =
+		classifiedTasks.length > 0 &&
+		classifiedTasks.every((task) => task.classification === "terminal-success");
+	const failedTask = classifiedTasks.find((task) => task.classification === "terminal-failure");
 
 	const signals = {
 		phase: batch.phase,
@@ -773,7 +811,7 @@ export function reconcileBatch(ctx) {
 		hasRunningTasks,
 		hasPendingTasks,
 		hasFailedTasks,
-		hasSegmentDrift: pendingWithFailedSegment || Boolean(driftTask),
+		hasSegmentDrift,
 		failedTaskId: failedTask?.taskId ?? driftTask?.taskId ?? null,
 		mergeResultsEmpty: batch.mergeResults.length === 0,
 		git,
@@ -942,6 +980,7 @@ export function reconcileBatch(ctx) {
 		hasRunningTasks,
 		hasPendingTasks,
 		allTasksTerminalSuccess: signals.allTasksTerminalSuccess,
+		tasksRoot,
 		macroPhase,
 		...(doneMissingContext ?? {}),
 	});

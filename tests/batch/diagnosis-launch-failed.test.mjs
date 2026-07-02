@@ -31,7 +31,8 @@ test("buildHeadline surfaces lane commit failures after worker completion", () =
 		failedTaskId: "SAT-048",
 		exitReason: "DirtyWorktree",
 	});
-	assert.match(dirty, /SAT-048 completed but lane commit failed/);
+	assert.match(dirty, /dirty lane worktree/i);
+	assert.match(dirty, /SAT-048/);
 
 	const laneCommit = buildHeadline("needs_retry", {
 		batchId: "20260605T160800",
