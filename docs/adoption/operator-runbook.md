@@ -259,6 +259,28 @@ spine batch start TP-012 --attached
 SPINE_WORKER_STUB=1 spine batch start <task-id>
 ```
 
+#### Stub batch delivery (issue #67, SP-408)
+
+Stub mode (`SPINE_WORKER_STUB=1`) runs `bin/spine-worker-runner.mjs --stub`, which writes `.DONE` but does **not** implement application code. Lane commit still enforces `fileScopeMustChange` via `verifyStubFileScopeMustChange` ([SP-349](https://github.com/beettlle/pi-spine/issues/33) / [#40](https://github.com/beettlle/pi-spine/issues/40)) — stub workers must produce a diff on every contracted path or lane commit fails with `Stub worker completed without required file-scope changes`.
+
+**Auto STATUS delivery (SP-408):** When `## Contract` `fileScopeMustChange` is **delivery-only** (only `spine-tasks/<id>/STATUS.md`, `.DONE`, or task-folder delivery globs such as `spine-tasks/<id>/**`), the stub runner calls `writeStubDeliveryStatusIfNeeded` **before** writing `.DONE`. It updates `**Current Step:**` and `**Status:**` in `STATUS.md` (or appends a minimal completion block). Contracts that list only `.DONE` rely on the existing `.DONE` write — no STATUS touch.
+
+| `fileScopeMustChange` scope | Stub runner behavior |
+|-----------------------------|----------------------|
+| Delivery-only (`STATUS.md`, `.DONE`, `spine-tasks/<id>/**`) | Auto-writes STATUS when required; writes `.DONE` |
+| Implementation paths (`src/**`, `bin/**`, `tests/**`, …) | **No auto-touch** — lane commit fails unless the stub or operator changes those files |
+| Mixed delivery + implementation | Treated as implementation — manual lane work or real `pi` worker required |
+
+**Pre-landed implementation (issue #56, SP-373):** When implementation was already merged to `main` before the batch runs, amend `PROMPT.md` **## Contract** to point `fileScopeMustChange` at delivery artifacts (`STATUS.md`, `.DONE`) and document the pre-land in **## Amendments** (see [§2.3 Pre-landed implementation warning](#pre-landed-implementation-warning-issue-56)). SP-373 satisfies pre-landed **implementation** paths at verify time when `testCommand` and artifacts pass — it does not replace stub STATUS delivery for amended delivery-only contracts. Preflight warns on stale implementation scope ([SP-374](https://github.com/beettlle/pi-spine/pull/374)).
+
+**Operator recovery when stub delivery is insufficient:**
+
+1. Confirm contract scope in `PROMPT.md` — delivery-only vs implementation.
+2. For implementation tasks in stub batches, either run a real `pi` worker (`unset SPINE_WORKER_STUB`) or manually edit scoped files + `STATUS.md` in the lane worktree before retry.
+3. `spine batch retry <taskId>` then `spine batch resume` after lane worktree fixes.
+
+Regression coverage: `tests/batch/stub-runner-delivery.test.mjs`, `tests/batch/contract-stub-delivery.test.mjs`.
+
 **Real pi workers:**
 
 ```bash
