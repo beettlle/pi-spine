@@ -38,13 +38,57 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 |-------|-----------------|--------------|
 | `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. |
 | `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``) |
-| `fileScopeMustNotChange` | When parallel tasks must not collide | Comma-separated paths/globs |
+| `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
 | `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths; **one backtick per path** |
 | `stallTimeoutMinutes` | Long external jobs (operator matrix, CI arms) exceeding global/size stall budget | Positive integer minutes; engine uses `max(global, size floor, contract)` |
 | `extendGraceOnFileScope` | STATUS-only progress during long external work | `true` or `false`; when `true`, file-scope mtime extends stall grace for this task |
 
 Unknown field names produce **warnings** at validate time (not errors). Duplicate rows are errors.
+
+---
+
+## `fileScopeMustNotChange` semantics
+
+**Parallel lanes only.** Use this field to guard product paths that **concurrent tasks on different lanes** must not edit in the same wave. It is **not** for isolating paths touched by **prior serialized tasks** on the same lane.
+
+**How verify works today:** Final contract verify compares changed files on the lane branch against each pattern (currently `main...HEAD` cumulative diff until per-task scoping lands in SP-416). On a serialized lane, commits from earlier tasks remain in that diff — so `fileScopeMustNotChange` can fail even when the current worker behaved correctly.
+
+**Planner overlap warning:** When `spine plan` reports:
+
+```text
+File scope overlaps (tasks serialized to the same lane):
+  Wave N: SP-AAA ↔ SP-BBB
+```
+
+those tasks run **sequentially on one lane**, not in parallel. Do **not** rely on `fileScopeMustNotChange` to separate them; use distinct `fileScopeMustChange` paths or accept cumulative diff semantics until per-task verify ships. The overlap warning means **concurrency is already prevented** — `fileScopeMustNotChange` targets **different lanes** editing the same product path in the same wave.
+
+### Never ban `spine-tasks/**`
+
+Workers **must** update `STATUS.md`, create `.DONE`, and may write `.reviews/`. These orchestration artifacts are not product-code scope violations.
+
+- **Never** list `spine-tasks/**` in `fileScopeMustNotChange`.
+- **Never** list the **current task folder** (e.g. `spine-tasks/SP-410-*/**`) — it blocks required worker outputs.
+
+**Good** (parallel collision guard on product paths):
+
+```markdown
+| fileScopeMustNotChange | `extension/**`, `.spine/**` |
+```
+
+**Bad** (blocks required worker artifacts — fails `contract.verified` even when implementation is correct):
+
+```markdown
+| fileScopeMustNotChange | `extension/**`, `.spine/**`, `spine-tasks/**` |
+```
+
+**Bad** (blocks current task's `STATUS.md` and `.DONE`):
+
+```markdown
+| fileScopeMustNotChange | `spine-tasks/SP-410-contract-template-parallel-semantics/**` |
+```
+
+Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with messages like `forbidden change spine-tasks/SP-001/STATUS.md` or `.DONE`.
 
 ---
 
