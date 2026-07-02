@@ -3,113 +3,48 @@
  */
 
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { rm } from "node:fs/promises";
 import test from "node:test";
 import { installAttachedExitFinalizeHandlers } from "../../src/batch/attached-runner.mjs";
 import { gateRecordPath } from "../../src/batch/gate.mjs";
-import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
+import { readJournalEvents } from "../../src/batch/journal.mjs";
 import {
 	finalizeAttachedLandLoopBeforeExit,
 	hydrateMergeResultsFromJournal,
 	isPostMergeLimbo,
 } from "../../src/batch/post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "../../src/batch/resume-multi-validate.mjs";
+import { loadSpineBatchState } from "../../src/batch/state.mjs";
 import {
-	createInitialBatchState,
-	loadSpineBatchState,
-	saveSpineBatchState,
-} from "../../src/batch/state.mjs";
+	BATCH_20260630T212050_ID,
+	loadBatch20260630OrphanFixture,
+	materializeBatch20260630OrphanFixture,
+} from "../helpers/batch-20260630T212050-fixture.mjs";
 import { initGitRepo } from "../helpers/git-fixture.mjs";
 
-const BATCH_ID = "20260630T212050";
-const TASK_IDS = ["SP-344", "SP-351", "SP-353", "SP-356", "SP-363"];
-const LANE_1 = [TASK_IDS[0], TASK_IDS[1]];
-const LANE_2 = [TASK_IDS[2]];
-const LANE_3 = [TASK_IDS[3], TASK_IDS[4]];
+const BATCH_ID = BATCH_20260630T212050_ID;
+const FIXTURE_PATH = path.join(
+	process.cwd(),
+	"tests/fixtures/batch-20260630T212050/orphan-after-merge.json",
+);
 
-/**
- * Batch 20260630T212050 shape: five tasks, three lanes, journal merge before state mergeResults.
- *
- * @param {string} projectRoot
- */
-function seedBatch20260630T212050JournalLimbo(projectRoot) {
-	const orchBranch = `orch/spine-${BATCH_ID}`;
-	const tasks = TASK_IDS.map((taskId, index) => ({
-		taskId,
-		laneNumber: index < 2 ? 1 : index === 2 ? 2 : 3,
-		status: "succeeded",
-		taskFolder: path.join("spine-tasks", `${taskId}-limbo-20260630`),
-		doneFileFound: true,
-	}));
-	const state = createInitialBatchState({
-		batchId: BATCH_ID,
-		baseBranch: "main",
-		orchBranch,
-		wavePlan: [TASK_IDS],
-		tasks,
-		lanes: [
-			{
-				laneNumber: 1,
-				laneId: "lane-1",
-				worktreePath: projectRoot,
-				branch: `task/spine-lane-1-${BATCH_ID}`,
-				taskIds: LANE_1,
-			},
-			{
-				laneNumber: 2,
-				laneId: "lane-2",
-				worktreePath: projectRoot,
-				branch: `task/spine-lane-2-${BATCH_ID}`,
-				taskIds: LANE_2,
-			},
-			{
-				laneNumber: 3,
-				laneId: "lane-3",
-				worktreePath: projectRoot,
-				branch: `task/spine-lane-3-${BATCH_ID}`,
-				taskIds: LANE_3,
-			},
-		],
-	});
-	state.phase = "running";
-	state.totalWaves = 1;
-	state.currentWaveIndex = 0;
-	state.mergeResults = [];
-	state.resilience = { enginePid: process.pid };
-	saveSpineBatchState(projectRoot, state);
-	execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["commit", "--allow-empty", "-m", "orch head"], { cwd: projectRoot, stdio: "ignore" });
-	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
-	return { state, orchBranch };
-}
-
-/**
- * @param {string} projectRoot
- */
-function seedJournalMergeThenOrphan(projectRoot) {
-	const mergeCommit = "aff02cacf6da0ac115bfa35a298b1b1c611cbb19";
-	for (const laneNumber of [1, 2, 3]) {
-		appendJournalEvent(projectRoot, BATCH_ID, "batch.merge_completed", {
-			mergeCommit,
-			laneNumber,
-			waveIndex: 0,
-		});
-	}
-	appendJournalEvent(projectRoot, BATCH_ID, "engine.orphan_terminated", {
-		stalePid: 16_530,
-		fromPhase: "running",
-		signal: "SIGTERM",
-	});
-}
+test("batch 20260630T212050 orphan-after-merge fixture describes GitHub #59 incident", () => {
+	const fixture = loadBatch20260630OrphanFixture();
+	assert.equal(fixture.meta.batchId, BATCH_ID);
+	assert.equal(fixture.meta.githubIssue, 59);
+	assert.equal(fixture.batchState.mergeResults.length, 0);
+	assert.equal(fixture.batchState.phase, "running");
+	assert.ok(fixture.journalTail.some((event) => event.type === "batch.merge_completed"));
+	assert.ok(fixture.journalTail.some((event) => event.type === "engine.orphan_terminated"));
+	assert.ok(fs.existsSync(FIXTURE_PATH));
+});
 
 test("batch 20260630T212050 journal fixture is limbo via resume detect but not bare state", async () => {
 	const projectRoot = await initGitRepo("spine-limbo-20260630-fixture-");
 	try {
-		seedBatch20260630T212050JournalLimbo(projectRoot);
-		seedJournalMergeThenOrphan(projectRoot);
+		materializeBatch20260630OrphanFixture(projectRoot);
 		const state = loadSpineBatchState(projectRoot).raw;
 		assert.equal(isPostMergeLimbo(state), false);
 		assert.equal(detectPostMergeLimboForResume({ projectRoot, state }), true);
@@ -122,8 +57,7 @@ test("batch 20260630T212050 journal fixture is limbo via resume detect but not b
 test("hydrateMergeResultsFromJournal enables state limbo detection for batch 20260630T212050", async () => {
 	const projectRoot = await initGitRepo("spine-limbo-20260630-hydrate-");
 	try {
-		seedBatch20260630T212050JournalLimbo(projectRoot);
-		seedJournalMergeThenOrphan(projectRoot);
+		materializeBatch20260630OrphanFixture(projectRoot);
 		const state = loadSpineBatchState(projectRoot).raw;
 		assert.equal(hydrateMergeResultsFromJournal({ projectRoot, state, batchId: BATCH_ID }), true);
 		assert.equal(isPostMergeLimbo(state), true);
@@ -135,8 +69,7 @@ test("hydrateMergeResultsFromJournal enables state limbo detection for batch 202
 test("finalizeAttachedLandLoopBeforeExit opens gate for batch 20260630T212050 journal limbo", async () => {
 	const projectRoot = await initGitRepo("spine-limbo-20260630-finalize-");
 	try {
-		seedBatch20260630T212050JournalLimbo(projectRoot);
-		seedJournalMergeThenOrphan(projectRoot);
+		materializeBatch20260630OrphanFixture(projectRoot);
 
 		const handoff = finalizeAttachedLandLoopBeforeExit({
 			projectRoot,
@@ -168,8 +101,7 @@ test("installAttachedExitFinalizeHandlers finalizes journal limbo on SIGTERM wit
 	};
 
 	try {
-		seedBatch20260630T212050JournalLimbo(projectRoot);
-		seedJournalMergeThenOrphan(projectRoot);
+		materializeBatch20260630OrphanFixture(projectRoot);
 		installAttachedExitFinalizeHandlers({ projectRoot });
 		process.emit("SIGTERM");
 		assert.equal(exitCode, 0);
