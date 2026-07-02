@@ -12,11 +12,7 @@ import {
 	skipTaskDoneOnDisk,
 } from "./engine-lanes/queue.mjs";
 import { appendJournalEvent } from "./journal.mjs";
-import {
-	commitLaneWorktree,
-	filterPorcelain,
-	gitPorcelain,
-} from "./lane-commit.mjs";
+import { commitLaneAndValidateWorktree } from "./engine-lanes/commit.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 import {
 	recordTaskSucceeded,
@@ -286,84 +282,30 @@ export async function runTaskOnLane({
 	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
 		? config.worktreeSetupIgnorePaths
 		: [];
-	const laneCommit = commitLaneWorktree({
+	const commitResult = commitLaneAndValidateWorktree({
 		worktreePath: wt,
 		taskBranch,
 		taskId,
 		batchId,
 		taskFolder: taskFolderInWorktree,
 		projectRoot,
+		fileScopePaths,
+		ignorePatterns,
+		task,
+		lane,
+		laneNumber,
+		laneCorrelationId,
+		state,
+		config,
 	});
-	if (!laneCommit.ok) {
-		task.status = "failed";
-		task.endedAt = Date.now();
-		task.exitReason = laneCommit.failureClass ?? "lane_commit_failed";
-		updateSegmentForTask(state, taskId, "failed");
-		recomputeTaskCounters(state);
-		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "task.failed", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			classification: laneCommit.failureClass ?? "lane_commit_failed",
-			exitCode: 1,
-			output: laneCommit.error,
-			gitignoredPaths: laneCommit.gitignoredPaths ?? null,
-		});
-		recordLaneTaskMetric({
-			projectRoot,
-			batchId,
-			task,
-			config,
-			taskFolder: taskFolderInWorktree,
-		});
+	if (!commitResult.ok) {
 		return {
 			ok: false,
-			error: "lane_commit_failed",
-			output: laneCommit.error,
+			error: commitResult.error,
+			output: commitResult.output,
 		};
 	}
-	if (laneCommit.committed) {
-		appendJournalEvent(projectRoot, batchId, "lane.committed", {
-			taskId,
-			laneNumber,
-			commitSha: laneCommit.commitSha,
-		});
-	}
-
-	const remainingDirty = filterPorcelain(gitPorcelain(wt), ignorePatterns);
-	if (remainingDirty) {
-		const dirtyOutput =
-			"Lane worktree still has uncommitted changes after auto-commit — commit manually or fix worker output";
-		task.status = "failed";
-		task.endedAt = Date.now();
-		task.exitReason = "DirtyWorktree";
-		updateSegmentForTask(state, taskId, "failed");
-		recomputeTaskCounters(state);
-		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "task.failed", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			classification: "DirtyWorktree",
-			exitCode: 1,
-			output: dirtyOutput,
-		});
-		recordLaneTaskMetric({
-			projectRoot,
-			batchId,
-			task,
-			config,
-			taskFolder: taskFolderInWorktree,
-		});
-		return {
-			ok: false,
-			error: "dirty_after_lane_commit",
-			output: dirtyOutput,
-		};
-	}
+	const { laneCommit } = commitResult;
 
 	recordTaskSucceeded(state, taskId, { exitReason: "done", doneFileFound: true });
 	recordTaskTransition({
