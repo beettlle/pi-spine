@@ -285,7 +285,7 @@ Use [references/prompt-template.md](references/prompt-template.md). Spine-specif
 - **Worker tools** — when Review Level > 0, steps must note `spine_review_step` after each step
 - **Testing step (required for all tasks)** — every packet MUST include `### Step N: Testing & Verification` inside `## Steps`, placed **before** `## Completion Criteria`. This applies to **docs-only Review Level 0 tasks** as well — omitting the step causes `prompt_parse_failed` at batch launch (SP-075). Docs-only tasks still run the full test suite; they may omit the coverage-gate checkbox when no application code changes.
 - **Coverage gate** — when the task changes application code, add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy)
-- **Contract (required for new SP-\* tasks)** — add `## Contract` after `## File Scope` using [references/contract-template.md](references/contract-template.md). Include `testCommand` for code tasks; use `` `true` `` for docs-only S tasks. Legacy `TP-*` packets may omit Contract when `contract.legacyTaskIdPrefixes` includes `TP-`.
+- **Contract (required for new SP-\* tasks)** — add `## Contract` after `## File Scope` using [references/contract-template.md](references/contract-template.md). Include `testCommand` for code tasks; use `` `true` `` for docs-only S tasks. When using `fileScopeMustNotChange`, follow parallel-only semantics and never ban `spine-tasks/**` (see contract template and [File Scope and parallel batches](#file-scope-and-parallel-batches)). Legacy `TP-*` packets may omit Contract when `contract.legacyTaskIdPrefixes` includes `TP-`.
 - **Completion** — worker creates `{task-folder}/.DONE`; batch engine may auto-commit remaining work
 
 ### Step 5: Create STATUS.md
@@ -437,6 +437,10 @@ Task IDs in JSON use the **folder slug** (full `SP-011-api-handlers`) or bare ID
 `## File Scope` drives lane affinity. Overlapping scope → same lane (serial). Disjoint scope → parallel lanes.
 
 When decomposing a PRD, assign non-overlapping file scopes to tasks that should run in parallel.
+
+**`fileScopeMustNotChange` (parallel lanes only):** When a packet includes `fileScopeMustNotChange` in `## Contract`, use it only to guard **product paths that concurrent tasks on different lanes** must not edit in the same wave — not to isolate paths touched by **prior serialized tasks** on the same lane. When `spine plan` reports `File scope overlaps (tasks serialized to the same lane)`, those tasks run sequentially on one lane; use disjoint `fileScopeMustChange` paths instead of relying on must-not-change. Full semantics and examples: [references/contract-template.md](references/contract-template.md#filescopemustnotchange-semantics).
+
+**Never ban `spine-tasks/**`:** Do **not** list `spine-tasks/**` or the **current task folder** in `fileScopeMustNotChange`. Workers must update `STATUS.md`, create `.DONE`, and may write `.reviews/` — banning those paths causes `contract.verified` failures even when implementation is correct.
 
 **Worker rules:** File Scope also drives **glob-matched Cursor rules** injected into batch workers (FR-WORK-05). Tasks touching `**/*.{js,mjs}` activate JS standards; Swift/Python tasks need scope paths that match those rule globs. Keep scope precise — wide scope pulls more rules and increases prompt byte usage.
 
