@@ -7,6 +7,7 @@ import path from "node:path";
 import { recordLaneTaskMetric } from "./queue.mjs";
 import { REVIEW_DEFAULTS } from "../../config/defaults.mjs";
 import { parseContract } from "../../tasks/packet/parse-prompt.mjs";
+import { resolveTaskStartCommit } from "../contract-task-start.mjs";
 import { shouldRunContractVerify, shouldRunContractVerifyForWorker, verifyContract } from "../contract-verify.mjs";
 import { appendJournalEvent, readJournalEvents } from "../journal.mjs";
 import {
@@ -636,9 +637,18 @@ async function runFinalReviewPhase({
 		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
 		const parsedContract = parseContract(promptMarkdown);
 		if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
+			const journalEvents = readJournalEvents(projectRoot, batchId);
+			const sinceCommit = resolveTaskStartCommit({
+				journal: journalEvents,
+				taskId,
+				laneId: lane.laneId,
+				batchId,
+				worktreePath: wt,
+			});
 			contractVerifyResult = verifyContract(wt, parsedContract, {
 				...config,
 				baseBranch,
+				sinceCommit: sinceCommit ?? undefined,
 			});
 			task.contractOk = contractVerifyResult.ok;
 			saveSpineBatchState(projectRoot, state);
