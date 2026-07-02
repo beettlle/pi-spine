@@ -17,6 +17,13 @@ import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { validateSequenceAutoApproveGate } from "../doctor/sequence-safety.mjs";
+import {
+	buildSequenceStateSnapshot,
+	finalizeSequenceState,
+	haltSequenceAndPersist,
+	persistSequenceState,
+	prepareSequenceRunState,
+} from "./sequence-state.mjs";
 
 const WAVE_BATCH_SETTLED_DIAGNOSES = new Set([
 	"completed",
@@ -266,35 +273,16 @@ export function runSequenceWaveLandLoop({ projectRoot, batchId, autoApproveGate 
 }
 
 /**
- * @param {object} params
- * @param {number} params.waveIndex
- * @param {string} [params.error]
- * @param {string|null} [params.diagnosis]
- * @param {string|null} [params.batchId]
- * @param {Array<{ waveIndex: number, batchId: string|null, diagnosis: string|null }>} params.completedWaves
- */
-function sequenceHalt({ waveIndex, error, diagnosis = null, batchId = null, completedWaves }) {
-	return {
-		ok: false,
-		exitCode: 1,
-		halted: true,
-		waveIndex,
-		error,
-		diagnosis,
-		batchId,
-		completedWaves,
-	};
-}
-
-/**
  * @param {object} ctx
  */
 export async function runSequence(ctx) {
 	const {
 		projectRoot,
 		plan,
+		scope = "pending",
 		fromWave = 0,
 		throughWave = null,
+		resume = false,
 		attached = false,
 		autoApproveGate = false,
 		force = false,
@@ -307,7 +295,26 @@ export async function runSequence(ctx) {
 		startBatchFn = startBatch,
 	} = ctx;
 
-	const wavePlan = resolveSequenceWaves(plan, { fromWave, throughWave });
+	let sequenceState = null;
+	let effectiveFromWave = fromWave;
+	/** @type {Array<{ waveIndex: number, batchId: string|null, diagnosis: string|null }>} */
+	let persistedCompletedWaves = [];
+
+	const prepared = prepareSequenceRunState(projectRoot, {
+		resume,
+		scope,
+		fromWave,
+		throughWave,
+		dryRun,
+	});
+	if (!prepared.ok) {
+		return { ok: false, exitCode: 1, error: prepared.error, output: prepared.output };
+	}
+	sequenceState = prepared.sequenceState;
+	effectiveFromWave = prepared.effectiveFromWave;
+	persistedCompletedWaves = prepared.persistedCompletedWaves;
+
+	const wavePlan = resolveSequenceWaves(plan, { fromWave: effectiveFromWave, throughWave });
 	if (!wavePlan.ok) {
 		return { ok: false, exitCode: 1, error: wavePlan.error, output: wavePlan.output };
 	}
@@ -347,8 +354,12 @@ export async function runSequence(ctx) {
 		}
 	}
 
+	if (sequenceState) {
+		persistSequenceState(projectRoot, sequenceState, persistedCompletedWaves);
+	}
+
 	/** @type {Array<{ waveIndex: number, batchId: string|null, diagnosis: string|null }>} */
-	const completedWaves = [];
+	const completedWaves = [...persistedCompletedWaves];
 
 	for (const wave of wavePlan.waves) {
 		const taskScope = wave.taskIds.join(" ");
@@ -362,14 +373,17 @@ export async function runSequence(ctx) {
 			});
 			if (!startResult.ok) {
 				if (!stopOnFailure) continue;
-				return {
-					...sequenceHalt({
+				return haltSequenceAndPersist(
+					projectRoot,
+					sequenceState,
+					completedWaves,
+					{
 						waveIndex: wave.waveIndex,
 						error: startResult.error ?? "batch_start_failed",
 						completedWaves,
-					}),
-					output: startResult.output,
-				};
+					},
+					{ output: startResult.output },
+				);
 			}
 			batchId = startResult.batchId ?? loadSpineBatchState(projectRoot).raw?.batchId ?? null;
 		} else {
@@ -390,14 +404,17 @@ export async function runSequence(ctx) {
 			});
 			if (!detached.ok) {
 				if (!stopOnFailure) continue;
-				return {
-					...sequenceHalt({
+				return haltSequenceAndPersist(
+					projectRoot,
+					sequenceState,
+					completedWaves,
+					{
 						waveIndex: wave.waveIndex,
 						error: detached.result?.error ?? "batch_start_failed",
 						completedWaves,
-					}),
-					output: detached.output,
-				};
+					},
+					{ output: detached.output },
+				);
 			}
 			batchId = detached.result?.batchId ?? null;
 		}
@@ -412,7 +429,7 @@ export async function runSequence(ctx) {
 
 		if (!wait.ok || isSequenceBatchFailure(wait.diagnosis)) {
 			if (!stopOnFailure) continue;
-			return sequenceHalt({
+			return haltSequenceAndPersist(projectRoot, sequenceState, completedWaves, {
 				waveIndex: wave.waveIndex,
 				error: wait.error ?? "batch_failed",
 				diagnosis: wait.diagnosis ?? null,
@@ -424,31 +441,47 @@ export async function runSequence(ctx) {
 		const land = runSequenceWaveLandLoop({ projectRoot, batchId: wait.batchId ?? batchId, autoApproveGate });
 		if (!land.ok) {
 			if (!stopOnFailure) continue;
-			return {
-				...sequenceHalt({
+			return haltSequenceAndPersist(
+				projectRoot,
+				sequenceState,
+				completedWaves,
+				{
 					waveIndex: wave.waveIndex,
 					error: land.error ?? "land_loop_failed",
 					diagnosis: land.diagnosis ?? wait.diagnosis ?? null,
 					batchId: land.batchId ?? wait.batchId ?? batchId,
 					completedWaves,
-				}),
-				step: land.step,
-				headline: land.headline,
-			};
+				},
+				{ step: land.step, headline: land.headline },
+			);
 		}
 
-		completedWaves.push({
+		const waveResult = {
 			waveIndex: wave.waveIndex,
 			batchId: land.batchId ?? wait.batchId ?? batchId,
 			diagnosis: wait.diagnosis ?? null,
-		});
+		};
+		completedWaves.push(waveResult);
+
+		if (sequenceState) {
+			const lastBatchId = waveResult.batchId ?? sequenceState.lastBatchId ?? null;
+			sequenceState = buildSequenceStateSnapshot(sequenceState, {
+				completedWaves,
+				lastBatchId,
+				status: "active",
+			});
+			persistSequenceState(projectRoot, sequenceState, completedWaves, { lastBatchId });
+		}
 	}
+
+	finalizeSequenceState(projectRoot, sequenceState, completedWaves, plan);
 
 	return {
 		ok: true,
 		exitCode: 0,
 		completedWaves,
 		waveCount: wavePlan.waves.length,
+		resumed: resume,
 		output: `Sequence completed ${completedWaves.length} wave(s).\n`,
 	};
 }

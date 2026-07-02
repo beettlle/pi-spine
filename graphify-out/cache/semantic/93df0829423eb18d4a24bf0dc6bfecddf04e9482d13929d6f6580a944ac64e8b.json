@@ -1,0 +1,1 @@
+{"nodes": [{"id": "spine_tasks_sp_244_start_batch_gate_before_complete_prompt", "label": "SP-244: startBatch gate before batch.completed", "file_type": "document", "source_file": "spine-tasks/SP-244-start-batch-gate-before-complete/PROMPT.md"}], "edges": [], "hyperedges": []}
