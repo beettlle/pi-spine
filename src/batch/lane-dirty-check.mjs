@@ -4,8 +4,11 @@
  */
 
 import path from "node:path";
-import { filterPorcelain } from "./lane-commit.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
+import { filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
 import { gitExec } from "./git-exec.mjs";
+import { runWorktreeSetupHook } from "./worktree.mjs";
 
 /**
  * Path segments that identify generated coverage report artifacts.
@@ -220,6 +223,134 @@ export function restoreOutOfScopeCoverageArtifacts(
  * @param {string[]} [ignorePatterns]
  * @returns {string}
  */
+/**
+ * @param {string} line
+ * @returns {boolean}
+ */
+export function isSymlinkDeletionPorcelainLine(line) {
+	if (!line?.trim() || line.length < 3) return false;
+	const indexStatus = line[0];
+	const worktreeStatus = line[1];
+	const disallowed = new Set(["M", "A", "R", "C", "U"]);
+	if (disallowed.has(indexStatus) || disallowed.has(worktreeStatus)) {
+		return false;
+	}
+	return indexStatus === "D" || worktreeStatus === "D";
+}
+
+/**
+ * @param {string} line
+ * @returns {boolean}
+ */
+export function isWorktreeDeletionPorcelainLine(line) {
+	return isSymlinkDeletionPorcelainLine(line) && line[1] === "D";
+}
+
+/**
+ * True when every porcelain line is a symlink/hook deletion (` D`, `D `, or `DD`).
+ *
+ * @param {string} porcelain
+ * @returns {boolean}
+ */
+export function isSymlinkOnlyDriftPorcelain(porcelain) {
+	if (!porcelain?.trim()) return false;
+	for (const line of porcelain.split("\n")) {
+		if (!line.trim()) continue;
+		if (!isSymlinkDeletionPorcelainLine(line)) return false;
+	}
+	return true;
+}
+
+/**
+ * @param {string} worktreePath
+ * @returns {{ batchId: string, laneNumber: number } | null}
+ */
+export function parseLaneWorktreeIdentity(worktreePath) {
+	const normalized = worktreePath.replace(/\\/g, "/");
+	const match = normalized.match(/\/\.worktrees\/spine-([^/]+)\/lane-(\d+)\/?$/);
+	if (!match) return null;
+	return { batchId: match[1], laneNumber: Number(match[2]) };
+}
+
+/**
+ * @param {string} porcelain
+ * @returns {string}
+ */
+export function filterSetupHookSymlinkDriftPorcelain(porcelain) {
+	if (!porcelain?.trim() || !isSymlinkOnlyDriftPorcelain(porcelain)) {
+		return porcelain ?? "";
+	}
+	return "";
+}
+
+/**
+ * Re-run worktreeSetupHook to recreate hook-managed symlinks after drift.
+ *
+ * @param {string} worktreePath
+ * @param {{ projectRoot: string, config?: object, batchId?: string, laneNumber?: number }} options
+ * @returns {{ repaired: boolean, reason?: string }}
+ */
+export function repairSetupHookSymlinkDrift(worktreePath, { projectRoot, config, batchId, laneNumber }) {
+	const effectiveConfig = config ?? loadSpineConfig(projectRoot).config ?? {};
+	const hookPath = resolveWorktreeSetupHook(projectRoot, effectiveConfig);
+	if (!hookPath) {
+		return { repaired: false, reason: "no_hook" };
+	}
+
+	const identity = parseLaneWorktreeIdentity(worktreePath);
+	const effectiveBatchId = batchId ?? identity?.batchId ?? "unknown";
+	const effectiveLaneNumber = laneNumber ?? identity?.laneNumber ?? 1;
+
+	try {
+		runWorktreeSetupHook({
+			projectRoot,
+			worktreePath,
+			batchId: effectiveBatchId,
+			laneNumber: effectiveLaneNumber,
+			config: effectiveConfig,
+		});
+		return { repaired: true };
+	} catch {
+		return { repaired: false, reason: "hook_failed" };
+	}
+}
+
+/**
+ * Repair or ignore symlink-only deletions from worktreeSetupHook paths (#87 / SP-429).
+ *
+ * @param {string} worktreePath
+ * @param {string} porcelain
+ * @param {{ projectRoot?: string, config?: object, batchId?: string, laneNumber?: number }} [options]
+ * @returns {string}
+ */
+export function resolveSetupHookSymlinkDriftPorcelain(
+	worktreePath,
+	porcelain,
+	{ projectRoot, config, batchId, laneNumber } = {},
+) {
+	if (!porcelain?.trim() || !isSymlinkOnlyDriftPorcelain(porcelain)) {
+		return porcelain ?? "";
+	}
+
+	const identityRoot = projectRoot ?? worktreePath;
+	const effectiveConfig = config ?? loadSpineConfig(identityRoot).config ?? {};
+	if (!resolveWorktreeSetupHook(identityRoot, effectiveConfig)) {
+		return porcelain;
+	}
+
+	const repair = repairSetupHookSymlinkDrift(worktreePath, {
+		projectRoot: identityRoot,
+		config: effectiveConfig,
+		batchId,
+		laneNumber,
+	});
+	if (repair.repaired) {
+		return porcelain;
+	}
+
+	return filterSetupHookSymlinkDriftPorcelain(porcelain);
+}
+
 export function filterOutOfScopeCoveragePorcelain(porcelain, fileScopePaths, ignorePatterns = []) {
 	const afterIgnore = filterPorcelain(porcelain, ignorePatterns);
 	if (!afterIgnore?.trim()) return "";
@@ -249,7 +380,7 @@ export function filterOutOfScopeCoveragePorcelain(porcelain, fileScopePaths, ign
  */
 export function resolvePostLaneCommitPorcelain(
 	worktreePath,
-	{ fileScopePaths, ignorePatterns = [], projectRoot, porcelain } = {},
+	{ fileScopePaths, ignorePatterns = [], projectRoot, porcelain, config, batchId, laneNumber } = {},
 ) {
 	const rawPorcelain = typeof porcelain === "string" ? porcelain : "";
 	const dirtyPaths = listPorcelainPaths(rawPorcelain);
@@ -272,5 +403,35 @@ export function resolvePostLaneCommitPorcelain(
 		effectivePorcelain = kept.length === 0 ? "" : kept.join("\n");
 	}
 
-	return filterOutOfScopeCoveragePorcelain(effectivePorcelain, fileScopePaths, ignorePatterns);
+	let filtered = filterOutOfScopeCoveragePorcelain(effectivePorcelain, fileScopePaths, ignorePatterns);
+	if (!filtered?.trim()) {
+		return "";
+	}
+
+	if (isSymlinkOnlyDriftPorcelain(filtered)) {
+		const identityRoot = projectRoot ?? worktreePath;
+		const effectiveConfig = config ?? loadSpineConfig(identityRoot).config ?? {};
+		if (resolveWorktreeSetupHook(identityRoot, effectiveConfig)) {
+			repairSetupHookSymlinkDrift(worktreePath, {
+				projectRoot: identityRoot,
+				config: effectiveConfig,
+				batchId,
+				laneNumber,
+			});
+			const refreshedPorcelain = gitPorcelain(worktreePath);
+			filtered = filterOutOfScopeCoveragePorcelain(
+				refreshedPorcelain,
+				fileScopePaths,
+				ignorePatterns,
+			);
+			if (!filtered?.trim()) {
+				return "";
+			}
+			if (isSymlinkOnlyDriftPorcelain(filtered)) {
+				return "";
+			}
+		}
+	}
+
+	return filtered;
 }
