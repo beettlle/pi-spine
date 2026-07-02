@@ -1,7 +1,7 @@
 # SP-417: Close #62 serialized lane verify — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -36,18 +36,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` (informational for docs task)
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` (informational for docs task)
 
 ---
 
 ### Step 4: Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issue #62 (`gh issue close 62`)
-- [ ] Create `.DONE`
+- [x] Close issue #62 (`gh issue close 62`)
+- [x] Create `.DONE`
 
 ---
 
@@ -69,7 +69,9 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-07-01 | Task staged | PROMPT.md and STATUS.md created for GitHub #62 |
+| 2026-07-02 | Step 4 delivery | Issue #62 closed; .DONE created |
+| 2026-07-02 | Step 3 verification | 1411/1411 tests pass; coverage 88.05% |
+| 2026-07-02 | Step 2 runbook | Serialized lane scoped verify documented |
 
 ---
 
