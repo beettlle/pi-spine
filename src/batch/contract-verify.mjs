@@ -15,6 +15,9 @@ import {
 
 export { resolvePromptRelPath, isFileScopePatternPrelanded, hasSpineTaskDeliveryChanges } from "./contract-prelanded.mjs";
 
+/** Default stdout/stderr capture limit for contract testCommand (issue #86). */
+export const CONTRACT_TEST_COMMAND_MAX_BUFFER = 10 * 1024 * 1024;
+
 /**
  * @param {string} taskId
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
@@ -241,15 +244,31 @@ export function matchesContractPattern(file, pattern) {
 }
 
 /**
+ * @param {number} byteCount
+ */
+function formatMaxBufferLabel(byteCount) {
+	const mib = byteCount / (1024 * 1024);
+	if (mib >= 1 && Number.isInteger(mib)) {
+		return `${mib}MB`;
+	}
+	if (byteCount >= 1024) {
+		return `${Math.round(byteCount / 1024)}KB`;
+	}
+	return `${byteCount}B`;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} command
+ * @param {{ maxBuffer?: number }} [options]
  */
-function runContractTestCommand(worktreePath, command) {
+export function runContractTestCommand(worktreePath, command, options = {}) {
 	const trimmed = String(command ?? "").trim();
 	if (!trimmed || trimmed === "true") {
 		return { ok: true, exitCode: 0, output: "" };
 	}
 
+	const maxBuffer = options.maxBuffer ?? CONTRACT_TEST_COMMAND_MAX_BUFFER;
 	const shell = process.env.SHELL || (process.platform === "win32" ? "cmd.exe" : "/bin/sh");
 	const shellFlag = process.platform === "win32" ? "/c" : "-c";
 	const result = spawnSync(shell, [shellFlag, trimmed], {
@@ -257,13 +276,25 @@ function runContractTestCommand(worktreePath, command) {
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
 		timeout: 10 * 60 * 1000,
-		maxBuffer: 256 * 1024,
+		maxBuffer,
 	});
 
-	const exitCode = Number(result.status ?? 1);
 	const stdout = String(result.stdout ?? "");
 	const stderr = String(result.stderr ?? "");
 	const output = `${stdout}\n${stderr}`;
+
+	if (result.error?.code === "ENOBUFS") {
+		const limitLabel = formatMaxBufferLabel(maxBuffer);
+		return {
+			ok: false,
+			exitCode: Number(result.status ?? 255),
+			output,
+			bufferOverflow: true,
+			summary: `testCommand output exceeded maxBuffer (${limitLabel}); use a scoped testCommand instead of full-suite commands. Command: ${trimmed}`,
+		};
+	}
+
+	const exitCode = Number(result.status ?? 1);
 	if (exitCode === 0) {
 		return { ok: true, exitCode: 0, output };
 	}
@@ -365,7 +396,9 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	let testCommandOutput = "";
 	let testCommandOk = true;
 	if (parsedContract.testCommand) {
-		const result = runContractTestCommand(worktreePath, parsedContract.testCommand);
+		const result = runContractTestCommand(worktreePath, parsedContract.testCommand, {
+			maxBuffer: config?.contractTestMaxBuffer,
+		});
 		testCommandOutput = result.output;
 		testCommandOk = result.ok;
 		checks.push({
@@ -373,7 +406,9 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 			ok: result.ok,
 			message: result.ok
 				? "testCommand passed"
-				: `Contract testCommand failed (exit ${result.exitCode}): ${result.summary || "(no output)"}`,
+				: result.bufferOverflow
+					? `Contract ${result.summary}`
+					: `Contract testCommand failed (exit ${result.exitCode}): ${result.summary || "(no output)"}`,
 		});
 	}
 

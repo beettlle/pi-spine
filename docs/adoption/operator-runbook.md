@@ -196,6 +196,8 @@ New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.m
 | minLineCoverage | 77 |
 ```
 
+**testCommand output limits (issue #86, SP-426):** Contract verification captures stdout/stderr from `testCommand` with a **10MB** `maxBuffer` (raised from 256KB). Full-suite commands such as `flutter test` with thousands of tests can exceed smaller limits and fail with exit 255 and truncated output. Prefer **scoped** commands — e.g. `flutter test test/widget_test.dart` or `npm test -- tests/feature.test.mjs` — instead of unscoped full-suite runs. If output still exceeds 10MB, the verifier fails with an explicit `maxBuffer` message naming the command; narrow `testCommand` scope rather than disabling contract checks.
+
 | `contract.mode` | Behavior |
 |-----------------|----------|
 | `required` | Missing or empty Contract fails `spine tasks validate` for non-legacy task IDs |

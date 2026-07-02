@@ -1176,7 +1176,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-423 | Sequence preflight `.pi/` + errors | S | **Staged** | — | #81 |
 | SP-424 | Limbo-detect leaf (#83-A) | S | **Staged** | — | — |
 | SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
-| SP-426 | Contract verify maxBuffer | S | **Staged** | — | #86 |
+| SP-426 | Contract verify maxBuffer | S | **Complete** | — | #86 |
 | SP-427 | Dirty worktree coverage hygiene | M | **Complete** | — | #73 |
 | SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Staged** | SP-424 | — |
 | SP-429 | Dirty worktree symlink drift | S | **Complete** | — | #87 |
