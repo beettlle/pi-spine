@@ -1,7 +1,7 @@
 # SP-481: Sequence land loop hang after integrate.started — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,30 +11,30 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] Dependencies satisfied
-- [ ] Understand syncPlumbingMergePathsToWorktree per-file loop
-- [ ] Confirm journal event call sites
+- [x] Required files and paths exist
+- [x] Dependencies satisfied
+- [x] Understand syncPlumbingMergePathsToWorktree per-file loop
+- [x] Confirm journal event call sites
 
 ---
 
 ### Step 1: Add timeout to syncPlumbingMergePathsToWorktree
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add configurable timeout to git subprocess calls
-- [ ] Abort sync loop on timeout with failure indicator
-- [ ] Best-effort cleanup on partial sync failure
+- [x] Add configurable timeout to git subprocess calls
+- [x] Abort sync loop on timeout with failure indicator
+- [x] Best-effort cleanup on partial sync failure
 
 ---
 
 ### Step 2: Emit integrate.failed on post-merge hang
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Wrap post-merge block in try/catch with integrate.failed emission
-- [ ] Return { ok: false, failureClass: "IntegrateTimeout" }
-- [ ] Include mergeCommitLanded flag when merge ref is safe
+- [x] Wrap post-merge block in try/catch with integrate.failed emission
+- [x] Return { ok: false, failureClass: "IntegrateTimeout" }
+- [x] Include mergeCommitLanded flag when merge ref is safe
 
 ---
 

@@ -399,15 +399,17 @@ export function integrateOrchToBase(ctx) {
 
 		const mergeCommit = mergeResult.mergeCommit;
 
+		/** @type {{ ok: boolean, timedOut?: boolean, error?: string } | null} */
+		let syncResult = null;
 		if (mergeResult.mode === "fast-forward") {
-			syncPlumbingMergePathsToWorktree(
+			syncResult = syncPlumbingMergePathsToWorktree(
 				projectRoot,
 				mergeResult.baseShaBefore,
 				mergeCommit,
 			);
 		} else if (mergeResult.mode === "plumbing") {
 			const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-			syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
+			syncResult = syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
 		} else if (!baseCheckedOutAtStart) {
 			try {
 				git(projectRoot, ["checkout", baseBranch]);
@@ -415,6 +417,37 @@ export function integrateOrchToBase(ctx) {
 			} catch {
 				// Dirty tree may block checkout after isolated land — operator syncs manually.
 			}
+		}
+
+		if (syncResult && !syncResult.ok) {
+			appendJournalEvent(projectRoot, batchId, "integrate.failed", {
+				baseBranch,
+				orchBranch,
+				timeout: Boolean(syncResult.timedOut),
+				error: (syncResult.error ?? "sync failed").slice(0, 500),
+				mergeCommitLanded: true,
+				mergeCommit,
+			});
+
+			try {
+				git(projectRoot, ["checkout", previous || baseBranch]);
+			} catch {
+				// Leave operator on current branch for manual recovery.
+			}
+
+			return {
+				ok: false,
+				exitCode: 1,
+				error: syncResult.error ?? "post-merge sync failed",
+				failureClass: syncResult.timedOut ? "IntegrateTimeout" : "IntegrateFailed",
+				headline: syncResult.timedOut
+					? `Integrate sync timed out after merge landed — ${orchBranch} into ${baseBranch}`
+					: `Integrate post-merge sync failed — ${syncResult.error}`,
+				suggestedCommand: "spine status --diagnose",
+				batchId,
+				mergeCommitLanded: true,
+				alternatives: ["spine integrate"],
+			};
 		}
 
 		appendJournalEvent(projectRoot, batchId, "integrate.completed", {

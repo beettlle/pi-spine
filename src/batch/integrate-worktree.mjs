@@ -7,8 +7,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
+import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+
+export const DEFAULT_SYNC_TIMEOUT_MS = 60_000;
 
 /**
  * Record base branch tip at batch start for isolated integrate (FR-WT-08 / #91).
@@ -172,39 +175,111 @@ function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeM
 }
 
 /**
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isTimeoutError(err) {
+	if (!err || typeof err !== "object") return false;
+	return /** @type {any} */ (err).killed === true || /** @type {any} */ (err).code === "ETIMEDOUT";
+}
+
+/**
+ * Git exec with per-subprocess timeout. Uses execFileSync directly to bypass
+ * gitExec which does not support timeout passthrough (#114).
+ *
+ * @param {string} cwd
+ * @param {string[]} args
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {string}
+ */
+function gitWithTimeout(cwd, args, { timeoutMs } = {}) {
+	return execFileSync("git", args, {
+		cwd,
+		encoding: "utf-8",
+		stdio: ["ignore", "pipe", "pipe"],
+		timeout: timeoutMs,
+		env: { ...process.env, ...resolveGitCommitEnv(cwd) },
+	}).trim();
+}
+
+/**
  * Materialize paths introduced/changed by a plumbing merge without resetting human edits.
+ * Returns a result object so callers can detect timeout and emit integrate.failed.
  *
  * @param {string} projectRoot
  * @param {string} baseSha
  * @param {string} mergeCommit
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number }}
  */
-export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit) {
+export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS } = {}) {
+	const envTimeoutMs = process.env.SPINE_SYNC_TIMEOUT_MS
+		? Number(process.env.SPINE_SYNC_TIMEOUT_MS)
+		: null;
+	const effectiveTimeout = envTimeoutMs != null && envTimeoutMs > 0 ? envTimeoutMs : timeoutMs;
+
 	let output = "";
 	try {
-		output = git(
+		output = gitWithTimeout(
 			projectRoot,
 			["diff-tree", "--no-commit-id", "--name-only", "-r", mergeCommit, baseSha],
-			{ throwOnError: false },
+			{ timeoutMs: effectiveTimeout },
 		);
-	} catch {
-		return;
+	} catch (err) {
+		if (isTimeoutError(err)) {
+			return { ok: false, timedOut: true, error: `git diff-tree timed out after ${effectiveTimeout}ms` };
+		}
+		return { ok: false, timedOut: false, error: err instanceof Error ? err.message : String(err) };
 	}
+
 	const paths = output.split("\n").map((line) => line.trim()).filter(Boolean);
+	let processedCount = 0;
+
 	for (const filePath of paths) {
 		let content = null;
 		try {
-			content = git(projectRoot, ["show", `${mergeCommit}:${filePath}`], { throwOnError: false });
-		} catch {
-			content = null;
+			content = gitWithTimeout(
+				projectRoot,
+				["show", `${mergeCommit}:${filePath}`],
+				{ timeoutMs: effectiveTimeout },
+			);
+		} catch (err) {
+			if (isTimeoutError(err)) {
+				return {
+					ok: false,
+					timedOut: true,
+					error: `git show timed out for ${filePath} after ${effectiveTimeout}ms`,
+					processedPaths: processedCount,
+					totalPaths: paths.length,
+				};
+			}
+			continue;
 		}
 		if (content == null) {
 			continue;
 		}
+
 		const absPath = path.join(projectRoot, filePath);
 		fs.mkdirSync(path.dirname(absPath), { recursive: true });
 		fs.writeFileSync(absPath, content.endsWith("\n") ? content : `${content}\n`, "utf-8");
-		git(projectRoot, ["add", "--", filePath], { throwOnError: false });
+
+		try {
+			gitWithTimeout(projectRoot, ["add", "--", filePath], { timeoutMs: effectiveTimeout });
+		} catch (err) {
+			if (isTimeoutError(err)) {
+				return {
+					ok: false,
+					timedOut: true,
+					error: `git add timed out for ${filePath} after ${effectiveTimeout}ms`,
+					processedPaths: processedCount,
+					totalPaths: paths.length,
+				};
+			}
+		}
+		processedCount++;
 	}
+
+	return { ok: true, processedPaths: processedCount, totalPaths: paths.length };
 }
 
 /**
