@@ -30,6 +30,39 @@ function writePlanArtifact({ projectRoot, plan }) {
 	return artifactPath;
 }
 
+/**
+ * Format a friendly informational message when pending scope has zero tasks.
+ *
+ * @param {{ excludedCount?: number, discoveredCount?: number }} meta
+ * @param {{ maxParallel?: number }} laneConfig
+ * @param {{ json?: boolean }} options
+ */
+function formatEmptyPendingResult({ excludedCount = 0, discoveredCount = 0 }, laneConfig, { json = false } = {}) {
+	if (json) {
+		const syntheticPlan = {
+			generatedAt: new Date().toISOString(),
+			scope: { mode: 'pending', taskIds: [] },
+			laneConfig,
+			waves: [],
+			tasks: {},
+			metadata: { tasksDiscovered: discoveredCount, tasksSelected: 0, tasksExcluded: excludedCount },
+		};
+		return { plan: syntheticPlan, artifactPath: null, output: JSON.stringify(syntheticPlan, null, 2) };
+	}
+
+	const lines = [
+		'Spine plan — pending',
+		`0 task(s) · 0 wave(s) · maxParallel ${laneConfig.maxParallel ?? 1}`,
+		`${excludedCount} excluded (.DONE on disk)`,
+		'',
+		'No pending tasks — all discovered tasks have .DONE on disk.',
+		'',
+		'\u2192 spine plan all',
+		'',
+	];
+	return { plan: null, artifactPath: null, output: lines.join('\n') };
+}
+
 export async function runSpinePlan({
 	projectRoot = process.cwd(),
 	scope = 'all',
@@ -49,7 +82,22 @@ export async function runSpinePlan({
 		err.suggestedCommand = 'spine init';
 		throw err;
 	}
-	const plan = buildPlan({ scope, config, tasksRoot });
+
+	let plan;
+	try {
+		plan = buildPlan({ scope, config, tasksRoot });
+	} catch (err) {
+		if (err?.code === 'NO_PENDING_TASKS') {
+			const laneConfig = { maxParallel: config.lanes?.maxParallel ?? 1 };
+			return formatEmptyPendingResult(
+				{ excludedCount: err.excludedCount, discoveredCount: err.discoveredCount },
+				laneConfig,
+				{ json },
+			);
+		}
+		throw err;
+	}
+
 	const artifactPath = writePlanArtifact({ projectRoot, plan });
 
 	if (json) {

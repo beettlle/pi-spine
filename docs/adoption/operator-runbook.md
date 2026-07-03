@@ -173,6 +173,8 @@ spine preflight
 spine preflight --json        # automation / CI
 ```
 
+**Plan pending idle state (issue #99):** When all discovered tasks have `.DONE` on disk, `spine plan pending` prints a friendly summary (excluded count, `→ spine plan all` hint) and exits 0. No stack trace. JSON mode (`--json`) returns a synthetic empty plan with `tasksSelected: 0` and `tasksExcluded: N`.
+
 | Check | What it catches |
 |-------|-----------------|
 | Doctor | Node, git, pi, config, agents, coexistence |
