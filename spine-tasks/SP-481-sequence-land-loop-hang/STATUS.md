@@ -1,7 +1,7 @@
 # SP-481: Sequence land loop hang after integrate.started — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -51,10 +51,10 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator runbook updated with IntegrateTimeout
-- [ ] Batch lifecycle docs reviewed
+- [x] Operator runbook updated with IntegrateTimeout
+- [x] Batch lifecycle docs reviewed (docs/design/batch-lifecycle.md does not exist — no update needed)
 
 ---
 
