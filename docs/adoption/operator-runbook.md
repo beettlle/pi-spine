@@ -605,6 +605,8 @@ spine run sequence pending
 
 `--auto-approve-gate` calls `spine gate approve` automatically in the inter-wave land loop. Safety gates (SP-390) **block** the flag for real pi workers unless you also pass `--force` after reviewing the risk. Stub mode (`SPINE_WORKER_STUB=1`) is the supported path for CI and unattended test sequences.
 
+**Detached sequence monitoring (SP-435):** When running detached sequences (default, not `--attached`), the sequence orchestrator keeps polling while the detached engine PID is alive and the batch phase is active — it does not exit with failure on a poll timeout. The engine log tail shown on errors is scoped to the **current** batch session (stale entries from previous batch starts are filtered out). If the engine process dies while the batch is `running`, the sequence exits with an actionable diagnosis.
+
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
 
 When `spine integrate` merges `orch/spine-<batchId>` into `main` and git reports a conflict, pi-spine **aborts the merge** and restores your previous checkout. `main` is left unchanged. The CLI prints a `MergeConflict` headline and journals `integrate.failed` with `conflict: true`.
