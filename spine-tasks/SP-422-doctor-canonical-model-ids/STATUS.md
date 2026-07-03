@@ -1,6 +1,6 @@
 # SP-422: Doctor validates canonical pi model ids — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
@@ -34,10 +34,10 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Test display label rejected or mapped
-- [ ] Test canonical id passes
+- [x] Test display label rejected or mapped
+- [x] Test canonical id passes
 
 ---
 
