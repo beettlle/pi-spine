@@ -1,7 +1,7 @@
 # SP-484: Review crash state drift — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 (Relax findCompletedCodeReview attempt guard)
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,19 +11,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] Dependencies satisfied
+- [x] Required files and paths exist
+- [x] Dependencies satisfied
+- [x] Read `runTaskOnLane` flow — review→complete gap identified at lines 240–321
+- [x] Read `findCompletedCodeReview` — confirmed `codeReviewAttempt === 0` guard at line 430
+- [x] Read `findCompletedFinalReview` — confirmed `finalAttempt === 0` guard at line 651
+- [x] Understood `detectBatchStateDrift` classification logic
 
 ---
 
 ### Step 1: Relax findCompletedCodeReview attempt guard
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Remove codeReviewAttempt === 0 restriction
-- [ ] Add logging for honored artifacts at attempt > 0
-- [ ] Targeted tests pass
+- [x] Remove codeReviewAttempt === 0 restriction
+- [x] Remove finalAttempt === 0 restriction (same pattern)
+- [x] Add logging for honored artifacts at attempt > 0 (review.crash_recovered event)
+- [x] Targeted tests pass
 
 ---
 
