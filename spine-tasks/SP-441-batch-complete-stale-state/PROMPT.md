@@ -1,7 +1,7 @@
 # Task: SP-441 — Batch complete stale batch-state fix
 
 **Created:** 2026-07-02
-**Size:** M
+**Size:** S
 
 ## Review Level: 2 (Plan + Code)
 

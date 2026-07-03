@@ -1,7 +1,7 @@
 # Task: SP-420 — Cross-model PROMPT authoring docs
 
 **Created:** 2026-07-02
-**Size:** M
+**Size:** S
 
 ## Review Level: 0 (None)
 

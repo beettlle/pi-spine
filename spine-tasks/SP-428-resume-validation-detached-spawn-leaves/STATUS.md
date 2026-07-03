@@ -1,7 +1,7 @@
 # SP-428: Resume validation and detached spawn leaves — Status
 
 **Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Status:** ⏭️ Superseded
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -90,3 +90,5 @@
 ## Notes
 
 *Reserved for execution notes*
+
+| 2026-07-02 | Split into SP-468, SP-469 | Parent superseded — execute children |

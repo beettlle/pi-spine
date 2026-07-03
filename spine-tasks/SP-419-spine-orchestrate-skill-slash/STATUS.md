@@ -1,7 +1,7 @@
 # SP-419: Spine-orchestrate skill and slash command — Status
 
 **Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Status:** ⏭️ Superseded
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -99,3 +99,5 @@
 ## Notes
 
 *Reserved for execution notes*
+
+| 2026-07-02 | Split into SP-466, SP-467 | Parent superseded — execute children |

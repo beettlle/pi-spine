@@ -1,7 +1,7 @@
 # SP-443: Isolated integrate sync-base and doctor — Status
 
 **Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Status:** ⏭️ Superseded
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -91,3 +91,5 @@
 ## Notes
 
 *Reserved for execution notes*
+
+| 2026-07-02 | Split into SP-476, SP-477 | Parent superseded — execute children |

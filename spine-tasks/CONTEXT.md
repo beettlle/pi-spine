@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-02 (Phase 53 — reliability #100/#103/#104)
+**Last Updated:** 2026-07-02 (Phase 55 — task size decomposition)
 **Status:** Active
-**Next Task ID:** SP-451
+**Next Task ID:** SP-480
 
 ---
 
@@ -1169,8 +1169,8 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
 | SP-418 | Agent outer loop how-to doc | S | **Staged** | — | #90 (partial) |
-| SP-419 | Spine-orchestrate skill + slash | M | **Staged** | SP-418 | #90 |
-| SP-420 | Cross-model PROMPT authoring docs | M | **Staged** | — | #84 |
+| SP-419 | Spine-orchestrate skill + slash | M | **Superseded** | SP-418 | → SP-466, SP-467 |
+| SP-420 | Cross-model PROMPT authoring docs | S | **Staged** | — | #84 |
 | SP-421 | Diagnosis primary failure class | S | **Staged** | — | #74 |
 | SP-422 | Doctor canonical model ids | S | **Staged** | — | #76 |
 | SP-423 | Sequence preflight `.pi/` + errors | S | **Staged** | — | #81 |
@@ -1178,22 +1178,22 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
 | SP-426 | Contract verify maxBuffer | S | **Complete** | — | #86 |
 | SP-427 | Dirty worktree coverage hygiene | M | **Complete** | — | #73 |
-| SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Staged** | SP-424 | — |
+| SP-428 | Resume validation + detached spawn leaves (#83-B/C) | M | **Superseded** | SP-424 | → SP-468, SP-469 |
 | SP-429 | Dirty worktree symlink drift | S | **Complete** | — | #87 |
-| SP-430 | Gitignored dirty worktree fix | M | **Staged** | SP-427 | #95 |
+| SP-430 | Gitignored dirty worktree fix | M | **Superseded** | SP-427 | → SP-470, SP-471 |
 | SP-431 | Sequence `--auto-approve-gate` flag | S | **Complete** | SP-390 | #79 |
-| SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-428 | #83 |
+| SP-432 | Import cycle arch guard (#83-D/E) | S | **Staged** | SP-469 | #83 |
 | SP-433 | Resume force skip succeeded tasks | M | **Done** | — | #88 |
 | SP-434 | Attached engine single-owner lock | M | **Done** | — | #89 |
-| SP-435 | Sequence detached false failure exit | M | **Staged** | SP-388 | #72 |
-| SP-436 | Isolated base integrate core (#91 slice 1) | M | **Staged** | — | — |
-| SP-437 | Sequence continue after merge_blocked | M | **Staged** | SP-387 | #82 |
-| SP-438 | Flutter worktree adoption docs | M | **Staged** | SP-420 | #78/#80 (partial) |
+| SP-435 | Sequence detached false failure exit | S | **Staged** | SP-388 | #72 |
+| SP-436 | Isolated base integrate core (#91 slice 1) | M | **Superseded** | — | → SP-474, SP-475 |
+| SP-437 | Sequence continue after merge_blocked | S | **Staged** | SP-387 | #82 |
+| SP-438 | Flutter worktree adoption docs | S | **Staged** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
 | SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
-| SP-441 | Batch complete stale batch-state | M | **Staged** | — | #94 |
+| SP-441 | Batch complete stale batch-state | S | **Staged** | — | #94 |
 | SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
-| SP-443 | Isolated integrate sync-base + doctor | M | **Staged** | SP-436 | #91 |
+| SP-443 | Isolated integrate sync-base + doctor | M | **Superseded** | SP-436 | → SP-476, SP-477 |
 | SP-444 | Supervisor config doctor + docs | S | **Staged** | SP-440 | #71 |
 
 **Suggested batch waves (docs first; 3 bugs : 1 enhancement):**
@@ -1229,8 +1229,8 @@ spine batch start SP-421 SP-422 SP-423 SP-424  # wave 2
 | SP-447 | Dashboard truth for engine_orphaned/drift | M | **Staged** | SP-446 | #100 |
 | SP-448 | Resume lane heartbeat refresh | S | **Staged** | — | #100 (partial) |
 | SP-449 | Attached pause phase persistence | M | **Staged** | SP-376 | #103 |
-| SP-450 | Pi extension conflict doctor + worker guard | M | **Staged** | — | #104 |
-| SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
+| SP-450 | Pi extension conflict doctor + worker guard | M | **Complete** | — | #104 |
+| SP-425 | Contract failed terminal path | M | **Complete** | SP-421 | #85 |
 | SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
 
 **Suggested waves (run after aborting stuck batch `20260702T153101`):**
@@ -1255,6 +1255,79 @@ spine batch start SP-446
 spine batch start SP-447
 spine batch start SP-448 SP-450 SP-425   # parallel where plan allows
 ```
+
+#### Phase 54 — GitHub open issues (#97–#113)
+
+**Source:** Open issues on [beettlle/pi-spine](https://github.com/beettlle/pi-spine/issues) as of 2026-07-02. **#92** remains tracking-only (no task). **Execution policy:** Tier 1 documentation → Tier 2 performance (#98) → Tier 3 **3 bugs : 1 feature** rotation across remaining backlog.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-451 | Journal read cache | S | **Staged** | — | #98 (partial) |
+| SP-452 | Orchestrator poll interval defaults | S | **Staged** | — | #98 (partial) |
+| SP-453 | Dashboard shared reconcile snapshot | M | **Staged** | SP-451 | #98 (partial) |
+| SP-454 | Orchestrator process model docs | S | **Staged** | SP-451–453 | #98 |
+| SP-455 | Heartbeat git porcelain debounce | S | **Staged** | SP-451 | #98 (partial) |
+| SP-456 | Reconcile batch light mode | M | **Staged** | SP-452 | #98 (partial) |
+| SP-457 | Graphify hook spine batch doc | S | **Staged** | — | #113 (partial) |
+| SP-458 | Flutter lane analyzer hygiene | M | **Staged** | SP-438 | #78 |
+| SP-459 | Gitignored asset worktree hook | S | **Staged** | SP-438 | #80 |
+| SP-460 | Doctor inherit provider auth probe | M | **Staged** | SP-422 | #97 |
+| SP-461 | Contract verify resume baseline | M | **Superseded** | SP-415, SP-416 | → SP-478, SP-479 |
+| SP-462 | Contract scope base satisfied | S | **Staged** | SP-478 | #105 |
+| SP-463 | Graphify-out dirty check exclusion | S | **Staged** | SP-471 | #113 |
+| SP-464 | Plan pending empty backlog UX | S | **Staged** | — | #99 |
+| SP-465 | Batch size guidance wording | S | **Staged** | — | #106 |
+
+**Suggested execution order (global backlog):**
+
+| Tier | Wave | Tasks | Notes |
+|------|------|-------|-------|
+| **1 Docs** | D0 | SP-418 → SP-420 | Serial (`operator-runbook.md`) |
+| | D1 | SP-466→467, SP-438, SP-363 | #90, #78/#80 partial, #47 |
+| | D2 | SP-457 | #113 partial doc |
+| **2 Perf** | P0 | SP-451, SP-452 | Parallel |
+| | P1 | SP-453 | After SP-451 |
+| | P2 | SP-454, SP-455 | Docs + debounce |
+| | P3 | SP-456 | After SP-452 |
+| **3 Rotation** | C1 | SP-449, SP-442, SP-460 → **SP-464** | 3 bugs + #99 feature |
+| | C2 | SP-445→446→447, SP-448 → **SP-465** | #100 chain + #106 |
+| | C3 | SP-463, SP-470→471, SP-478 → **SP-432** | #113, #95, #105 + #83 |
+| | C4 | SP-462, SP-435, SP-441 → **SP-474→475** | #105, #72, #94 + #91 |
+| | C5 | SP-437, SP-439, SP-458 → **SP-440** | #82, #93, #78 + #71 |
+| | C6 | SP-459, SP-476→477, **SP-444** | #91 closeouts |
+
+```bash
+spine tasks validate SP-451 SP-452 SP-453 SP-454 SP-455 SP-456 SP-457 SP-458 SP-459 SP-460 SP-461 SP-462 SP-463 SP-464 SP-465
+spine tasks analyze pending
+spine plan SP-418
+spine plan SP-451 SP-452
+```
+
+#### Phase 55 — Task size decomposition (2026-07-02)
+
+**Source:** Batch size guidance warning on `spine plan pending` (16 M, 0 L). Resized 5 mis-sized M→S; split 6 composite parents into 12 children; split SP-461 into SP-478/479. Parents marked `.SUPERSEDED`.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-466 | Spine orchestrate skill package | S | **Staged** | SP-418 | #90 (partial) |
+| SP-467 | Spine orchestrate slash command | S | **Staged** | SP-418, SP-466 | #90 |
+| SP-468 | Resume validation leaf (#83-B) | S | **Staged** | SP-424 | #83 (partial) |
+| SP-469 | Detached spawn leaf (#83-C) | S | **Staged** | SP-424, SP-468 | #83 (partial) |
+| SP-470 | Gitignored index vs worktree detection | S | **Staged** | SP-427 | #95 (partial) |
+| SP-471 | Gitignored auto-clean before dirty gate | S | **Staged** | SP-427, SP-470 | #95 |
+| SP-474 | Integrate base branch snapshot | S | **Staged** | — | #91 (partial) |
+| SP-475 | Integrate isolated merge path | M | **Staged** | SP-474 | #91 (partial) |
+| SP-476 | Integrate config and doctor warnings | S | **Staged** | SP-475 | #91 (partial) |
+| SP-477 | Integrate sync-base CLI and diagnoses | S | **Staged** | SP-475, SP-476 | #91 |
+| SP-478 | Contract verify resume baseline | M | **Staged** | SP-415, SP-416 | #105 (partial) |
+| SP-479 | Contract CLI friction fixes | S | **Staged** | SP-478 | #105 (partial) |
+
+**Superseded parents:** SP-419, SP-428, SP-430, SP-436, SP-443, SP-461
+
+```bash
+spine tasks validate SP-466 SP-467 SP-468 SP-469 SP-470 SP-471 SP-474 SP-475 SP-476 SP-477 SP-478 SP-479
+spine tasks analyze pending
+spine plan SP-418 SP-466 SP-467
 ```
 
 ---

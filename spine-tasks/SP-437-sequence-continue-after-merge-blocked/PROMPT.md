@@ -1,7 +1,7 @@
 # Task: SP-437 — Sequence continue after merge_blocked wave
 
 **Created:** 2026-07-02
-**Size:** M
+**Size:** S
 
 ## Review Level: 2 (Plan + Code)
 

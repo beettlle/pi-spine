@@ -1,7 +1,7 @@
 # Task: SP-435 — Sequence detached false failure exit
 
 **Created:** 2026-07-02
-**Size:** M
+**Size:** S
 
 ## Review Level: 2 (Plan + Code)
 

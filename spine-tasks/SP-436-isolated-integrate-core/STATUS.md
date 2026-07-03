@@ -95,3 +95,5 @@
 ## Notes
 
 Slice 1 (SP-436): isolated integrate + batch snapshot. SP-443 covers sync-base / doctor warnings.
+
+| 2026-07-02 | Split into SP-474, SP-475 | Parent superseded — execute children |

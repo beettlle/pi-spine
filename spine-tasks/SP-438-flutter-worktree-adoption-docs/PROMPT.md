@@ -1,7 +1,7 @@
 # Task: SP-438 — Flutter worktree adoption docs
 
 **Created:** 2026-07-02
-**Size:** M
+**Size:** S
 
 ## Review Level: 0 (None)
 

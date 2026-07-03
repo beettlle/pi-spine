@@ -1,7 +1,7 @@
 # SP-430: Gitignored dirty worktree detection fix — Status
 
 **Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Status:** ⏭️ Superseded
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -89,3 +89,5 @@
 ## Notes
 
 *Reserved for execution notes*
+
+| 2026-07-02 | Split into SP-470, SP-471 | Parent superseded — execute children |
