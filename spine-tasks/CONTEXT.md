@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-07-02 (Phase 55 — task size decomposition)
 **Status:** Active
-**Next Task ID:** SP-488
+**Next Task ID:** SP-491
 
 ---
 
@@ -1340,6 +1340,25 @@ spine plan SP-418 SP-466 SP-467
 spine tasks validate SP-480
 spine preflight
 spine batch start SP-480
+```
+
+#### Phase 57 — v1.4.0 issue fixes (#118, #132, #133)
+
+**Source:** Issues identified for v1.4.0 release. #95 already covered by SP-470/471.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-488 | Contract failed false positive docs | S | **Staged** | — | #132 |
+| SP-489 | Dashboard failed task highlights | S | **Staged** | — | #133 |
+| SP-490 | Contract trailing-slash match | S | **Staged** | — | #118 |
+
+**Suggested batch (all parallel — disjoint file scope):**
+
+```bash
+spine tasks validate SP-488 SP-489 SP-490
+spine tasks analyze SP-488 SP-489 SP-490
+spine plan SP-488 SP-489 SP-490
+spine batch start SP-488 SP-489 SP-490
 ```
 
 ---
