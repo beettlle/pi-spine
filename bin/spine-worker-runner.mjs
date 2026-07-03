@@ -33,7 +33,27 @@ import { isStubDeliveryOnlyScope } from "../src/batch/contract-stub-delivery.mjs
 import { writeWorkerDoneMarker } from "../src/batch/worker-output.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
 import { DEFAULT_TASKS_ROOT } from "../src/config/spine-init-constants.mjs";
+import {
+	isPiExtensionConflictOutput,
+	shouldWorkerUsePiNoExtensions,
+} from "../src/doctor/pi-extension-conflict.mjs";
 import { parseContract, parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
+
+/**
+ * Actionable hint when pi worker spawn fails on duplicate extension tool registration.
+ *
+ * @param {string} output
+ * @returns {string|null}
+ */
+export function formatPiExtensionConflictHint(output) {
+	if (!isPiExtensionConflictOutput(output)) return null;
+	return [
+		"pi extension tool conflict detected (often duplicate pi-web-access npm + local checkout).",
+		"Batch workers pass pi -ne only when spine doctor detects duplicate pi-web-access sources.",
+		"Fix pi settings with `pi remove npm:pi-web-access -l` or remove the local path from",
+		"~/.pi/agent/settings.json, then retry the task.",
+	].join(" ");
+}
 
 function buildReviewJournal() {
 	return resolveBatchJournalContext();
@@ -79,7 +99,13 @@ export async function buildWorkerPiArgs({
 		? path.join(worktreePath, ".spine", "agents", "worker.md")
 		: null;
 
-	const piArgs = ["-p", "--no-session"];
+	const projectRoot =
+		process.env.SPINE_RULES_PROJECT_ROOT || worktreePath || process.env.SPINE_PROJECT_ROOT || process.cwd();
+	const piArgs = [];
+	if (shouldWorkerUsePiNoExtensions({ projectRoot })) {
+		piArgs.push("-ne");
+	}
+	piArgs.push("-p", "--no-session");
 	if (workerAgentPath && fs.existsSync(workerAgentPath)) {
 		piArgs.push("--append-system-prompt", workerAgentPath);
 	}
@@ -87,8 +113,6 @@ export async function buildWorkerPiArgs({
 		piArgs.push(`@${promptPath}`);
 	}
 	appendWorkerAgentModelArgs(piArgs, spineConfig);
-	const projectRoot =
-		process.env.SPINE_RULES_PROJECT_ROOT || worktreePath || process.env.SPINE_PROJECT_ROOT || process.cwd();
 	const taskFileScope = resolveTaskFileScope(taskFolder);
 	const tailPrompt = await buildWorkerTailPrompt({
 		worktreePath,
@@ -409,6 +433,11 @@ async function runWorkerRunner() {
 	}
 
 	if (result.status !== 0) {
+		const combined = `${result.stderr ?? ""}${result.stdout ?? ""}`;
+		const conflictHint = formatPiExtensionConflictHint(combined);
+		if (conflictHint) {
+			console.error(conflictHint);
+		}
 		process.stderr.write(result.stderr ?? "");
 		process.stdout.write(result.stdout ?? "");
 		process.exit(result.status ?? 1);

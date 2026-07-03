@@ -292,6 +292,8 @@ unset SPINE_WORKER_STUB   # or SPINE_WORKER_STUB=0
 spine batch start <task-id>
 ```
 
+**pi-web-access extension conflicts (issue #104):** When both `npm:pi-web-access` and a local dev checkout appear in `~/.pi/agent/settings.json`, pi may fail worker spawn with `Tool "web_search" conflicts with …`. Batch workers pass **`pi -ne`** only when `spine doctor` detects duplicate pi-web-access sources (so Cursor provider extensions still load when there is no conflict). `spine doctor` warns when duplicate pi-web-access sources are detected. Fix: `pi remove npm:pi-web-access -l` or remove the local path entry — keep only one source. Worker output logs append an actionable hint when spawn fails with extension tool conflicts.
+
 **Contract verify vs reviewer failure (issue #85):** When final `contract.verified` fails (`ok: false`), the engine records **`contract_failed`** (not `review_exhausted`) and does **not** re-run the worker or consume `maxFinalAttempts`. Journal includes `contract.failed`; run-metrics uses `failureKind: contract`. Edit `PROMPT.md` `testCommand` / scope, then `spine batch retry <id>`.
 
 ### Worker backend default (FR-SHIP-09)

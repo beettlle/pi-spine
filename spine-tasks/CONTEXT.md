@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-07-02 (Phase 55 — task size decomposition)
 **Status:** Active
-**Next Task ID:** SP-480
+**Next Task ID:** SP-481
 
 ---
 
@@ -1268,7 +1268,7 @@ spine batch start SP-448 SP-450 SP-425   # parallel where plan allows
 | SP-454 | Orchestrator process model docs | S | **Staged** | SP-451–453 | #98 |
 | SP-455 | Heartbeat git porcelain debounce | S | **Staged** | SP-451 | #98 (partial) |
 | SP-456 | Reconcile batch light mode | M | **Staged** | SP-452 | #98 (partial) |
-| SP-457 | Graphify hook spine batch doc | S | **Staged** | — | #113 (partial) |
+| SP-457 | Graphify hook spine batch doc | S | **Complete** | — | #113 (partial) |
 | SP-458 | Flutter lane analyzer hygiene | M | **Staged** | SP-438 | #78 |
 | SP-459 | Gitignored asset worktree hook | S | **Staged** | SP-438 | #80 |
 | SP-460 | Doctor inherit provider auth probe | M | **Staged** | SP-422 | #97 |
@@ -1328,6 +1328,18 @@ spine plan SP-451 SP-452
 spine tasks validate SP-466 SP-467 SP-468 SP-469 SP-470 SP-471 SP-474 SP-475 SP-476 SP-477 SP-478 SP-479
 spine tasks analyze pending
 spine plan SP-418 SP-466 SP-467
+```
+
+#### Phase 56 — Worker conditional -ne (2026-07-02)
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-480 | Worker conditional pi -ne for extension conflicts | S | **Complete** | SP-450 | — |
+
+```bash
+spine tasks validate SP-480
+spine preflight
+spine batch start SP-480
 ```
 
 ---
