@@ -1,7 +1,7 @@
 # SP-418: Agent outer loop how-to doc — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,36 +11,36 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #90
-- [ ] Dependencies satisfied
+- [x] Read issue #90
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #90 acceptance criteria
-- [ ] Read operator-runbook §4 land loop
+- [x] Read GitHub issue #90 acceptance criteria
+- [x] Read operator-runbook §4 land loop
 
 ---
 
 ### Step 1: Author how-to doc
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `docs/adoption/agent-orchestrated-waves.md` (Diátaxis how-to)
-- [ ] Add responsibility split + recommended outer loop bash blocks
-- [ ] Add diagnosis→agent action table and anti-patterns
+- [x] Create `docs/adoption/agent-orchestrated-waves.md` (Diátaxis how-to)
+- [x] Add responsibility split + recommended outer loop bash blocks
+- [x] Add diagnosis→agent action table and anti-patterns
 
 ---
 
 ### Step 2: Cross-links
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Link from operator-runbook (§4.2 or pointer)
-- [ ] Link from bootstrap-checklist after-first-batch step
-- [ ] Add one-line pointer in QUICK-REFERENCE.md
+- [x] Link from operator-runbook (§4.2 or pointer)
+- [x] Link from bootstrap-checklist after-first-batch step
+- [x] Add one-line pointer in QUICK-REFERENCE.md
 
 ---
 

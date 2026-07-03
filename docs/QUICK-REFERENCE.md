@@ -682,6 +682,7 @@ Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook
 
 ## 📖 Further Reading
 
+- [Agent-orchestrated waves](./adoption/agent-orchestrated-waves.md) — Multi-wave outer loop driven by an external agent (pi, OpenCode, Cursor)
 - [Upstream execution workflow](./adoption/upstream-execution-workflow.md) — PRD or optional zero-pi / spec-kit → task packets → batch
 - [Execution Flow](./EXECUTION-FLOW.md) - Detailed execution explanation
 - [Execution Flow Diagrams](./EXECUTION-FLOW-DIAGRAMS.md) - Visual diagrams

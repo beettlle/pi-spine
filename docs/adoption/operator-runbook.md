@@ -559,7 +559,7 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 
 **Concurrent development (interim — FR-WT-08 slice 1):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. After integrate, run `git status` — uncommitted files remain until you commit or stash them. Full `spine sync-base` / `human_base_diverged` diagnosis ships in SP-443 ([#91](https://github.com/beettlle/pi-spine/issues/91)).
 
-Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch.
+Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch. For the full multi-wave procedure driven by an external agent (pi, OpenCode, Cursor), see **[agent-orchestrated-waves.md](./agent-orchestrated-waves.md)**.
 
 #### Planner wave sequences (`spine run sequence`)
 

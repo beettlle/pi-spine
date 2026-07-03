@@ -150,6 +150,8 @@ SPINE_WORKER_STUB=0 spine batch start <task-id>
 
 Monitor with `spine status` or `/spine-status` in pi. After batch completes, follow the land loop per [operator-runbook.md](./operator-runbook.md) (gate → integrate → complete).
 
+**After your first batch:** For multi-wave development driven by an external agent (pi, OpenCode, Cursor), see [agent-orchestrated-waves.md](./agent-orchestrated-waves.md) — the recommended outer loop for hands-off batch execution across dependency waves.
+
 ---
 
 ## Migrate from Taskplane
