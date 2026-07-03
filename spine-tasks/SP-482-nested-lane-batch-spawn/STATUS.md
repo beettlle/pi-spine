@@ -1,7 +1,7 @@
 # SP-482: Guard against nested batch spawns in lane worktrees — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files exist
-- [ ] Dependencies satisfied
-- [ ] Understand current worker spawn env vars
-- [ ] Confirm no existing nested-spawn guard
+- [x] Required files exist
+- [x] Dependencies satisfied
+- [x] Understand current worker spawn env vars
+- [x] Confirm no existing nested-spawn guard
 
 ---
 
 ### Step 1: Set SPINE_IS_WORKER env in worker spawn
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add SPINE_IS_WORKER=1 to worker child env
-- [ ] Verify propagation to all worker child processes
+- [x] Add SPINE_IS_WORKER=1 to worker child env
+- [x] Verify propagation to all worker child processes
 
 ---
 
