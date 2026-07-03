@@ -40,7 +40,7 @@ Implement isolated integrate: `integrate-worktree.mjs`, never `git checkout base
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/integrate-isolated.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `src/batch/integrate-worktree.mjs` |
+| fileScopeMustChange | `tests/batch/integrate-isolated.test.mjs` |
 | artifactsMustExist | `tests/batch/integrate-isolated.test.mjs` |
 
 ## Steps
@@ -103,3 +103,5 @@ Implement isolated integrate: `integrate-worktree.mjs`, never `git checkout base
 ---
 
 ## Amendments (Added During Execution)
+
+- fileScopeMustChange updated from `src/batch/integrate-worktree.mjs` (pre-landed by SP-436/SP-439) to `tests/batch/integrate-isolated.test.mjs` — the delivery artifact that must still be created.
