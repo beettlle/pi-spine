@@ -1,7 +1,7 @@
 # SP-422: Doctor validates canonical pi model ids — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,25 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #76
-- [ ] Dependencies satisfied
+- [x] Read issue #76
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Capture failing label from reaprime repro (#76)
+- [x] Capture failing label from reaprime repro (#76)
 
 ---
 
 ### Step 1: Model id resolver
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add helper to resolve display label → canonical id (or fail with hint)
-- [ ] Wire into settings set and doctor checks
+- [x] Add helper to resolve display label → canonical id (or fail with hint)
+- [x] Wire into settings set and doctor checks
 
 ---
 
