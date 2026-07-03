@@ -1,7 +1,7 @@
 # SP-470: Gitignored index vs worktree detection — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 0
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,25 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Read issue #95
-- [ ] Dependencies satisfied
+- [x] Read issue #95
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Index vs worktree
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detect worktree-only gitignored paths vs index-tracked
-- [ ] Do not suggest git rm --cached when ls-files empty
+- [x] Detect worktree-only gitignored paths vs index-tracked
+- [x] Do not suggest git rm --cached when ls-files empty
 
 ---
 
 ### Step 2: Regression
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduce batch 20260702T061256 SP-011 scenario (detection only)
+- [x] Reproduce batch 20260702T061256 SP-011 scenario (detection only)
 
 ---
 
