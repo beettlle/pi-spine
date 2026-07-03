@@ -1,0 +1,92 @@
+# SP-484: Review crash state drift — Status
+
+**Current Step:** Not Started
+**Status:** 🔵 Ready for Execution
+**Last Updated:** 2026-07-03
+**Review Level:** 2
+**Review Counter:** 0
+**Iteration:** 0
+**Size:** M
+
+---
+
+### Step 0: Preflight
+**Status:** ⬜ Not Started
+
+- [ ] Required files and paths exist
+- [ ] Dependencies satisfied
+
+---
+
+### Step 1: Relax findCompletedCodeReview attempt guard
+**Status:** ⬜ Not Started
+
+- [ ] Remove codeReviewAttempt === 0 restriction
+- [ ] Add logging for honored artifacts at attempt > 0
+- [ ] Targeted tests pass
+
+---
+
+### Step 2: Add resume-time orphan detection
+**Status:** ⬜ Not Started
+
+- [ ] Detect orphaned review.started events
+- [ ] Check disk for review artifact with valid verdict
+- [ ] Synthesize missing events during rebuild
+- [ ] Targeted tests pass
+
+---
+
+### Step 3: Testing & Verification
+**Status:** ⬜ Not Started
+
+- [ ] FULL test suite passing
+- [ ] Coverage gate passes (≥77% line coverage on in-scope code)
+- [ ] Orphan with artifact → synthesize completion
+- [ ] Orphan without artifact → remains stuck
+- [ ] Honor artifact at attempt > 0
+- [ ] Normal review flow regression test
+- [ ] All failures fixed
+
+---
+
+### Step 4: Documentation & Delivery
+**Status:** ⬜ Not Started
+
+- [ ] Operator runbook updated
+- [ ] Incident doc cross-referenced
+- [ ] Discoveries logged
+
+---
+
+## Reviews
+
+| # | Type | Step | Verdict | File |
+|---|------|------|---------|------|
+
+---
+
+## Discoveries
+
+| Discovery | Disposition | Location |
+|-----------|-------------|----------|
+
+---
+
+## Execution Log
+
+| Timestamp | Action | Outcome |
+|-----------|--------|---------|
+| 2026-07-03 | Task staged | PROMPT.md and STATUS.md created |
+
+---
+
+## Blockers
+
+*None*
+
+---
+
+## Notes
+
+*Reserved for execution notes*
