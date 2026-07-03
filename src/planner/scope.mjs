@@ -87,7 +87,11 @@ export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
 	if (tokens.length === 1 && tokens[0] === 'pending') {
 		const { pendingIds, excludedCount } = summarizePendingScope(discoveredTasks, tasksRoot);
 		if (pendingIds.length === 0) {
-			throw new Error(NO_PENDING_TASKS_ERROR);
+			const err = new Error(NO_PENDING_TASKS_ERROR);
+			err.code = 'NO_PENDING_TASKS';
+			err.excludedCount = excludedCount;
+			err.discoveredCount = discoveredTasks.length;
+			throw err;
 		}
 		return { mode: 'pending', taskIds: pendingIds, excludedCount };
 	}
