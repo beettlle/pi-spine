@@ -1,7 +1,7 @@
 # SP-435: Sequence detached false failure exit — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 0 — Poll semantics
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,18 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #72
-- [ ] Dependencies satisfied
+- [x] Read issue #72
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Poll semantics
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Treat alive detached engine + running phase as success-in-progress
-- [ ] Filter detached log tail to current batchId
+- [x] Treat alive detached engine + running phase as success-in-progress
+- [x] Filter detached log tail to current batchId
 
 ---
 

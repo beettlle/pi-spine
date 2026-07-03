@@ -87,6 +87,37 @@ function readLogTailLines(filePath, lineCount = FAILURE_LOG_TAIL_LINES) {
 	return lines.slice(-lineCount).join("\n");
 }
 
+const DETACHED_ENGINE_LOG_HEADER_RE = /^--- detached batch engine /;
+
+/**
+ * Read tail of detached engine log, scoped to the current (last) batch session.
+ * The append-only log contains headers like `--- detached batch engine <ISO> argv=... ---`
+ * separating sessions. Without filtering, stale entries from previous batches are shown.
+ *
+ * @param {string} filePath
+ * @param {number} [lineCount]
+ * @returns {string|null}
+ */
+export function readCurrentBatchLogTail(filePath, lineCount = FAILURE_LOG_TAIL_LINES) {
+	if (!fs.existsSync(filePath)) return null;
+	const content = fs.readFileSync(filePath, "utf-8");
+	const lines = content.split("\n");
+	if (lines.at(-1) === "") lines.pop();
+	if (lines.length === 0) return null;
+
+	let lastHeaderIdx = -1;
+	for (let i = lines.length - 1; i >= 0; i--) {
+		if (DETACHED_ENGINE_LOG_HEADER_RE.test(lines[i])) {
+			lastHeaderIdx = i;
+			break;
+		}
+	}
+
+	const sessionLines = lastHeaderIdx >= 0 ? lines.slice(lastHeaderIdx) : lines;
+	if (sessionLines.length === 0) return null;
+	return sessionLines.slice(-lineCount).join("\n");
+}
+
 /**
  * @param {string} projectRoot
  * @param {string} batchId
@@ -170,7 +201,7 @@ export function collectDetachedFailureDiagnostics({ projectRoot, batchId, taskId
 			? logPath
 			: path.join(projectRoot, logPath)
 		: detachedEngineLogPath(projectRoot);
-	const engineTail = readLogTailLines(engineLogPath);
+	const engineTail = readCurrentBatchLogTail(engineLogPath);
 	if (engineTail) {
 		diagnostics.engineLogPath = path.isAbsolute(logPath ?? "")
 			? logPath
