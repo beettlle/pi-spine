@@ -44,12 +44,12 @@ test("verifyContract fails when testCommand exits non-zero", async () => {
 		const result = verifyContract(worktreePath, {
 			testCommand: "false",
 			artifactsMustExist: [],
-		});
+		}, { contract: { testRetries: 0 } });
 
 		assert.equal(result.ok, false);
 		assert.equal(result.checks[0].field, "testCommand");
 		assert.equal(result.checks[0].ok, false);
-		assert.match(result.checks[0].message, /Contract testCommand failed \(exit 1\)/);
+		assert.match(result.checks[0].message, /Contract testCommand failed/);
 	});
 });
 

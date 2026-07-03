@@ -33,6 +33,16 @@ export function validateContractConfig(config) {
 		}
 	}
 
+	if (contract.testRetries != null) {
+		if (typeof contract.testRetries !== "number" || !Number.isInteger(contract.testRetries) || contract.testRetries < 0) {
+			return {
+				code: "CONFIG_CONTRACT_TEST_RETRIES_INVALID",
+				message: "contract.testRetries must be a non-negative integer when set",
+				suggestedCommand: "spine settings set contract.testRetries 1",
+			};
+		}
+	}
+
 	if (contract.legacyTaskIdPrefixes != null) {
 		if (!Array.isArray(contract.legacyTaskIdPrefixes)) {
 			return {

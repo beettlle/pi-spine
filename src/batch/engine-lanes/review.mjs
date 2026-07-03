@@ -699,6 +699,10 @@ async function runFinalReviewPhase({
 				...config,
 				baseBranch,
 				sinceCommit: sinceCommit ?? undefined,
+				projectRoot,
+				batchId,
+				taskId,
+				taskFolder: taskFolderInWorktree,
 			});
 			task.contractOk = contractVerifyResult.ok;
 			saveSpineBatchState(projectRoot, state);
