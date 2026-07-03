@@ -1,7 +1,7 @@
 # SP-482: Guard against nested batch spawns in lane worktrees — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -52,10 +52,10 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator runbook updated
-- [ ] Worker agent docs reviewed
+- [x] Operator runbook updated
+- [x] Worker agent docs reviewed
 
 ---
 
@@ -79,6 +79,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-03 | Step 0 complete | Preflight — all source files read, no existing guard |
+| 2026-07-03 | Step 1 complete | SPINE_IS_WORKER=1 added to buildWorkerChildEnv |
+| 2026-07-03 | Step 2 complete | detectNestedWorkerContext + startBatch guard + journal event |
+| 2026-07-03 | Step 3 complete | 1502/1502 tests pass, 88.37% coverage (threshold 77%) |
+| 2026-07-03 | Step 4 complete | Operator runbook + worker.md updated |
 
 ---
 
