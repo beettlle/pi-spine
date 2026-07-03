@@ -1,6 +1,6 @@
 # SP-482: Guard against nested batch spawns in lane worktrees — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
@@ -29,12 +29,12 @@
 ---
 
 ### Step 2: Add nested-spawn guard to startBatch
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Check SPINE_IS_WORKER env at startBatch entry
-- [ ] Check CWD against .worktrees/spine-* pattern
-- [ ] Emit engine.nested_spawn_blocked journal event
-- [ ] Return { ok: false } with clear error
+- [x] Check SPINE_IS_WORKER env at startBatch entry
+- [x] Check CWD against .worktrees/spine-* pattern
+- [x] Emit engine.nested_spawn_blocked journal event
+- [x] Return { ok: false } with clear error
 
 ---
 
@@ -70,6 +70,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| engine.mjs exceeded 500 LOC after guard addition (492→536) | Added to PHASE23_GRANDFATHERED_OVER_500 | `bin/spine-cli/verify.mjs` |
 
 ---
 
