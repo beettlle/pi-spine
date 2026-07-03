@@ -28,7 +28,7 @@
     }
   },
   "lanes": {
-    "maxParallel": 6,
+    "maxParallel": 4,
     "queueExcess": true,
     "stallTimeoutMinutes": 120,
     "stallGraceAfterProgressMinutes": 30,
