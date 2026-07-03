@@ -1,7 +1,7 @@
 # SP-422: Doctor validates canonical pi model ids — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -42,20 +42,20 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue closed
+- [x] .DONE created
 
 ---
 
@@ -78,6 +78,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#76) |
+| 2026-07-03 | Step 0 complete | Preflight — read #76, confirmed deps |
+| 2026-07-03 | Step 1 complete | Model id resolver + settings-set/doctor wiring |
+| 2026-07-03 | Step 2 complete | 27 tests — display label + canonical validation |
+| 2026-07-03 | Step 3 complete | Typecheck ✅, targeted tests 27/27 ✅, coverage 88.39% ≥ 77% ✅ |
+| 2026-07-03 | Step 4 complete | Runbook docs already accurate; #76 already closed; .DONE created |
 
 ---
 
