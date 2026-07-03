@@ -1,7 +1,7 @@
 # SP-470: Gitignored index vs worktree detection — Status
 
-**Current Step:** Step 0
-**Status:** 🟡 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -34,20 +34,20 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -70,6 +70,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged (split from parent) | PROMPT.md and STATUS.md created |
+| 2026-07-03 | Steps 0-4 complete | classifyGitignoredPaths + formatGitignoredRemediationMessage in lane-dirty-check.mjs; commitLaneWorktree uses index classification; 10 tests; runbook updated |
 
 ---
 
