@@ -1,7 +1,7 @@
 # SP-436: Isolated base integrate core — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,51 +11,51 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #91
-- [ ] Dependencies satisfied
+- [x] Read issue #91
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Batch snapshot
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Record baseBranchHeadAtStart + journal batch.base_snapshot
+- [x] Record baseBranchHeadAtStart + journal batch.base_snapshot
 
 ---
 
 ### Step 1: Isolated merge path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add integrate-worktree.mjs
-- [ ] Never checkout baseBranch in projectRoot during integrate
+- [x] Add integrate-worktree.mjs
+- [x] Never checkout baseBranch in projectRoot during integrate
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Integrate succeeds with dirty human worktree on main (uncommitted)
-- [ ] Conflict path unchanged
+- [x] Integrate succeeds with dirty human worktree on main (uncommitted)
+- [x] Conflict path unchanged
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -70,6 +70,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Batch snapshot wired in `engine.mjs` at start, not `lifecycle.mjs` | Accept — lifecycle only needed import cycle fix | `src/batch/engine.mjs` |
+| `syncPlumbingMergePathsToWorktree` needs merge parent SHA (`mergeCommit^1`), not current base ref | Fixed | `src/batch/integrate.mjs` |
 
 ---
 
@@ -78,6 +80,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#91) |
+| 2026-07-02 | Core implementation | integrate-worktree, engine snapshot, tests, runbook |
+| 2026-07-02 | Verification | 4/4 integrate-isolated tests; coverage 87.92% (≥77%) |
+| 2026-07-02 | Delivery | Issue #91 commented; .DONE created |
 
 ---
 
@@ -89,4 +94,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Slice 1 (SP-436): isolated integrate + batch snapshot. SP-443 covers sync-base / doctor warnings.

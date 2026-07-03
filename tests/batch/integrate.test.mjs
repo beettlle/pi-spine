@@ -38,6 +38,18 @@ function createOrchWithWork(projectRoot, orchBranch) {
 	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
 }
 
+function gitRefHasPath(projectRoot, ref, filePath) {
+	try {
+		execFileSync("git", ["show", `${ref}:${filePath}`], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 function approveGateForIntegrate(projectRoot, fixture, batchId) {
 	const config = loadSpineConfig(projectRoot).config;
 	openIntegrateGate({ projectRoot, batchId, batchState: fixture, config });
@@ -170,7 +182,7 @@ test("integrateOrchToBase merges orch into main and journals events", async () =
 			encoding: "utf-8",
 		}).trim();
 		assert.equal(onMain, "main");
-		assert.ok(fs.existsSync(path.join(projectRoot, "orch-work.txt")));
+		assert.ok(gitRefHasPath(projectRoot, "main", "orch-work.txt"));
 
 		const events = readJournalEvents(projectRoot, batchId);
 		assert.ok(events.some((event) => event.type === "integrate.started"));
@@ -195,7 +207,7 @@ test("integrateOrchToBase dry-run does not change main HEAD", async () => {
 		const result = integrateOrchToBase({ projectRoot, dryRun: true });
 		assert.equal(result.ok, true);
 		assert.equal(result.dryRun, true);
-		assert.match(result.mergePlan ?? "", /merge --no-ff/);
+		assert.match(result.mergePlan ?? "", /isolated/i);
 
 		const mainAfter = execFileSync("git", ["rev-parse", "main"], {
 			cwd: projectRoot,

@@ -52,6 +52,18 @@ function createOrchWithWork(projectRoot, orchBranch) {
 	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
 }
 
+function gitRefHasPath(projectRoot, ref, filePath) {
+	try {
+		execFileSync("git", ["show", `${ref}:${filePath}`], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 test("buildTaskScorecard lists task rows", () => {
 	const md = buildTaskScorecard({
 		batchId: "20260601T120000",
@@ -204,7 +216,7 @@ test("integrateOrchToBase succeeds after gate approval", async () => {
 
 		const result = integrateOrchToBase({ projectRoot });
 		assert.equal(result.ok, true);
-		assert.ok(fs.existsSync(path.join(projectRoot, "orch-work.txt")));
+		assert.ok(gitRefHasPath(projectRoot, "main", "orch-work.txt"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
