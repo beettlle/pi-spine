@@ -224,6 +224,35 @@ test("classifyLaneStatus stale when heartbeat old", () => {
 	assert.equal(status, "stale");
 });
 
+test("classifyLaneStatus does not mark lane completed when doneInLane but cache pending under engine_orphaned", () => {
+	const stallConfig = resolveStallConfig({ lanes: { stallTimeoutMinutes: 30 } });
+	const lane = {
+		laneNumber: 1,
+		laneId: "lane-1",
+		taskIds: ["SP-434"],
+		lastHeartbeatAt: Date.now() - 3_600_000,
+	};
+	const classifiedTasks = [
+		{
+			taskId: "SP-434",
+			status: "pending",
+			classification: "terminal-success",
+			doneInLane: true,
+			doneFileFound: false,
+		},
+	];
+
+	const status = classifyLaneStatus({
+		lane,
+		classifiedTasks,
+		stallConfig,
+		now: Date.now(),
+		diagnosis: "engine_orphaned",
+	});
+	assert.notEqual(status, "completed");
+	assert.equal(status, "stale");
+});
+
 test("buildWaveProgress marks prior waves completed", () => {
 	const waves = buildWaveProgress({
 		raw: {

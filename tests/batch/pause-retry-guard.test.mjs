@@ -130,7 +130,7 @@ test("pauseBatch fails loud when attached engine keeps phase running", async () 
 			const loaded = loadSpineBatchState(projectRoot);
 			if (loaded.raw?.phase === "paused") {
 				loaded.raw.phase = "running";
-				saveSpineBatchState(projectRoot, loaded.raw);
+				saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
 			}
 		}, 20);
 
@@ -146,7 +146,7 @@ test("pauseBatch fails loud when attached engine keeps phase running", async () 
 		assert.match(result.output ?? "", /spine batch retry is blocked while phase is running/i);
 
 		const events = readJournalEvents(projectRoot, batchId);
-		assert.ok(events.some((event) => event.type === "batch.paused"));
+		assert.equal(events.some((event) => event.type === "batch.paused"), false);
 		assert.ok(events.some((event) => event.type === "batch.pause_failed"));
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "running");
 	} finally {

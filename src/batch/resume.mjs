@@ -27,6 +27,7 @@ import {
 	countPendingSegments,
 	loadSpineBatchState,
 	recordBatchEnginePid,
+	refreshLaneHeartbeatsOnResume,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
@@ -196,6 +197,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	state.endedAt = null;
 	state.lastError = null;
 	recordBatchEnginePid(state, process.pid);
+	refreshLaneHeartbeatsOnResume(state);
 	saveSpineBatchState(projectRoot, state);
 	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
 		resumeForced,

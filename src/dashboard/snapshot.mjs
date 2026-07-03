@@ -72,7 +72,7 @@ export function heartbeatAgeSeconds(lastHeartbeatAt, now = Date.now()) {
  * @param {ReturnType<typeof resolveStallConfig>} params.stallConfig
  * @param {number} [params.now]
  */
-export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = Date.now() }) {
+export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = Date.now(), diagnosis = null }) {
 	const taskIds = lane.taskIds ?? [];
 	const tasks = classifiedTasks.filter((task) => taskIds.includes(task.taskId));
 
@@ -80,8 +80,20 @@ export function classifyLaneStatus({ lane, classifiedTasks, stallConfig, now = D
 		return "completed";
 	}
 
+	if (diagnosis === "engine_orphaned" || diagnosis === "state_drift" || diagnosis === "needs_retry") {
+		const hasOpenWork = tasks.some((task) => {
+			const status = String(task.status ?? "").toLowerCase();
+			return status === "pending" || status === "running" || status === "failed" || task.doneInLane === true;
+		});
+		if (hasOpenWork) return diagnosis === "engine_orphaned" ? "stale" : "running";
+	}
+
 	const allDone =
-		tasks.length > 0 && tasks.every((task) => task.classification === "terminal-success");
+		tasks.length > 0 &&
+		tasks.every((task) => {
+			const status = String(task.status ?? "").toLowerCase();
+			return status === "succeeded" || status === "skipped";
+		});
 	if (allDone) return "completed";
 
 	const hasActive = tasks.some(
@@ -424,6 +436,7 @@ export function buildLaneRows({
 	projectRoot = null,
 	batchId = null,
 	now = Date.now(),
+	diagnosis = null,
 }) {
 	const throughputByLane = deriveLanesThroughput({
 		lanes,
@@ -465,7 +478,7 @@ export function buildLaneRows({
 		return {
 			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 			laneNumber: lane.laneNumber,
-			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now }),
+			status: classifyLaneStatus({ lane, classifiedTasks, stallConfig, now, diagnosis }),
 			activeTaskIds,
 			runningTaskId,
 			queuedTaskIds,
@@ -805,12 +818,13 @@ export function resolveTailActivityLabel({
 /**
  * @param {import("../batch/reconcile.mjs").NormalizedBatchState | null} batch
  */
-function summarizeBatch(batch) {
+function summarizeBatch(batch, reconciliation = null) {
 	if (!batch) return null;
 
 	return {
 		batchId: batch.batchId,
 		phase: batch.phase,
+		diagnosis: reconciliation?.diagnosis ?? null,
 		baseBranch: batch.baseBranch,
 		orchBranch: batch.orchBranch,
 		startedAt: batch.startedAt,
@@ -950,6 +964,7 @@ export function buildDashboardSnapshot(projectRoot) {
 		projectRoot,
 		batchId: reconciliation.batchId,
 		now,
+		diagnosis: reconciliation.diagnosis,
 	});
 	const laneThroughputSummary = summarizeLaneThroughput(
 		deriveLanesThroughput({
@@ -973,7 +988,7 @@ export function buildDashboardSnapshot(projectRoot) {
 		journalEvents,
 	});
 	const resolvedMacroPhaseLabel = macroPhaseLabel(macroPhase);
-	const batchSummary = summarizeBatch(batch);
+	const batchSummary = summarizeBatch(batch, reconciliation);
 	if (batchSummary) {
 		batchSummary.macroPhase = macroPhase;
 		batchSummary.macroPhaseLabel = resolvedMacroPhaseLabel;

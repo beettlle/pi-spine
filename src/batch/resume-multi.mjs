@@ -20,6 +20,7 @@ import {
 	failBatchFromEngineError,
 	loadSpineBatchState,
 	recordBatchEnginePid,
+	refreshLaneHeartbeatsOnResume,
 	saveSpineBatchState,
 } from "./state.mjs";
 import { executeResumeWave, resetFailedTasksForForceResume } from "./resume-multi-lanes.mjs";
@@ -95,6 +96,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 		state.endedAt = null;
 		state.lastError = null;
 		recordBatchEnginePid(state, process.pid);
+		refreshLaneHeartbeatsOnResume(state);
 		saveSpineBatchState(projectRoot, state);
 		recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
 			resumeForced,

@@ -351,6 +351,15 @@ export function rebuildBatchStateFromDisk(projectRoot, batchId, seedState) {
 
 /** @typedef {{ taskId: string, field: string, cached: unknown, rebuilt: unknown }} DriftEntry */
 
+const NON_TERMINAL_CACHE_STATUSES = new Set(["pending", "running"]);
+const JOURNAL_TERMINAL_LIFECYCLE = new Set([
+	"task.completed",
+	"task.skipped",
+	"task.skipped_done_on_disk",
+	"task.failed",
+	"task.prompt_parse_failed",
+]);
+
 function lastLifecycleEventForTask(events, taskId) {
 	const taskEvents = events.filter(
 		(event) => event?.taskId === taskId && TASK_LIFECYCLE_EVENT_TYPES.has(String(event?.type ?? "")),
@@ -358,19 +367,56 @@ function lastLifecycleEventForTask(events, taskId) {
 	return taskEvents.length > 0 ? taskEvents[taskEvents.length - 1] : null;
 }
 
-export function detectBatchStateDrift(cachedState, rebuiltState, events = []) {
+function hasJournalTerminalLifecycle(lastEvent) {
+	if (!lastEvent) return false;
+	return JOURNAL_TERMINAL_LIFECYCLE.has(String(lastEvent.type ?? ""));
+}
+
+/**
+ * @param {object|null|undefined} classified
+ */
+function classifiedShowsDoneInLaneDrift(classified) {
+	if (!classified || typeof classified !== "object") return false;
+	if (classified.doneInLane === true) return true;
+	return (
+		classified.classification === "terminal-success" &&
+		!["succeeded", "skipped"].includes(String(classified.status ?? "").toLowerCase())
+	);
+}
+
+export function detectBatchStateDrift(cachedState, rebuiltState, events = [], classifiedTasks = null) {
 	/** @type {DriftEntry[]} */
 	const entries = [];
 	const rebuiltById = new Map((rebuiltState?.tasks ?? []).map((task) => [String(task?.taskId), task]));
+	const classifiedById = Array.isArray(classifiedTasks)
+		? new Map(classifiedTasks.map((task) => [String(task?.taskId), task]))
+		: null;
 
 	for (const cached of cachedState?.tasks ?? []) {
 		if (!cached?.taskId) continue;
 		const taskId = String(cached.taskId);
 		const rebuilt = rebuiltById.get(taskId);
 		if (!rebuilt) continue;
+		const classified = classifiedById?.get(taskId) ?? null;
+		const cachedStatus = String(cached.status ?? "").toLowerCase();
 		const lastEvent = lastLifecycleEventForTask(events, taskId);
+		const lastType = lastEvent ? String(lastEvent.type ?? "") : "";
+
+		if (
+			NON_TERMINAL_CACHE_STATUSES.has(cachedStatus) &&
+			classifiedShowsDoneInLaneDrift(classified) &&
+			!hasJournalTerminalLifecycle(lastEvent)
+		) {
+			entries.push({
+				taskId,
+				field: "doneInLane",
+				cached: cached.status,
+				rebuilt: classified?.classification ?? "terminal-success",
+			});
+			continue;
+		}
+
 		if (!lastEvent) continue;
-		const lastType = String(lastEvent.type ?? "");
 
 		if (lastType === "task.completed" && cached.status !== "succeeded") {
 			entries.push({ taskId, field: "status", cached: cached.status, rebuilt: rebuilt.status });

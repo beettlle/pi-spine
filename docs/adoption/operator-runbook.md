@@ -767,6 +767,8 @@ spine batch force-merge --wave 0    # mixed-outcome override, then resume --forc
 
 In pi: `/spine-retry-task TP-012`, `/spine-skip-task TP-012`.
 
+When `spine batch skip` clears the last failed task, batch phase moves to **`paused`** (not `failed`) so `spine batch resume --force` can merge. Reconcile no longer reports `needs_retry` when all tasks are terminal-success/skipped but merge has not run. Segment status is set to `skipped` and `failedTasks` is recomputed to zero.
+
 When `spine batch retry` clears the last failed task, the batch transitions from `failed` to **`paused`**, journals `batch.retry_unblocked`, and clears batch-level failure markers (`lastError`, `endedAt`, `resilience.lastFailureClass`). Run `spine batch resume` (or `--force` if batch-state still shows `phase: failed` with only pending tasks). Do not dismiss and cold-start unless you intend to abandon the batch.
 
 ### Replan (v1.3 — FR-UXB-04)
@@ -812,7 +814,7 @@ spine batch abort                   # graceful — worker may finish step
 spine batch abort --hard            # SIGKILL + worktree cleanup
 ```
 
-When a **live attached engine** (foreground `spine batch start --attached` / `resume --attached`) is running, `spine batch pause` writes `batch.paused` and waits briefly for batch-state `phase: paused` to persist. If the engine does not confirm within the grace window, the CLI **fails loud** with `pause_not_confirmed`, journals `batch.pause_failed`, and leaves phase as the engine reported (usually `running`). Do not assume pause succeeded from journal alone — check `grep phase .spine/batch-state.json` or `spine status --diagnose`.
+When a **live attached engine** (foreground `spine batch start --attached` / `resume --attached`) is running, `spine batch pause` writes `phase: paused` to batch-state (bypassing the engine write guard) and waits for that phase to **persist without regression** through the grace window. Only after confirmation does the CLI record `batch.paused` in the journal. If the engine keeps overwriting batch-state back to `running`, the CLI **fails loud** with `pause_not_confirmed`, journals `batch.pause_failed` only (no orphan `batch.paused`), and reverts phase to `running`. Do not assume pause succeeded from journal alone — check `grep phase .spine/batch-state.json` or `spine status --diagnose`.
 
 **Recovery when pause fails:** stop the attached engine (Ctrl+C or kill the engine PID), confirm `phase: paused` or run `spine batch pause` again, then `spine batch retry <taskId>` when you need to reset a failed task. `spine batch retry` is allowed when phase is **`paused`** or **`failed`**, not while phase is **`running`**.
 

@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-02 (Phase 52 — GitHub open issues #71–#96)
+**Last Updated:** 2026-07-02 (Phase 53 — reliability #100/#103/#104)
 **Status:** Active
-**Next Task ID:** SP-445
+**Next Task ID:** SP-451
 
 ---
 
@@ -1217,6 +1217,44 @@ spine batch start SP-418
 spine batch start SP-420               # wave 0b — cross-model docs (after SP-418)
 spine batch start SP-419 SP-438               # wave 1 — docs delivery
 spine batch start SP-421 SP-422 SP-423 SP-424  # wave 2
+
+#### Phase 53 — Batch reliability (#100, #103, #104) + recovery blockers (#85, #96)
+
+**Source:** Dogfood batch `20260702T153101` recovery pain. Fix FSM/reconcile/dashboard before resuming Phase 52 tail. **Policy:** land Phase 53 on `main` locally (no PRs required); then fresh batch for remaining Phase 52 tasks.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-445 | doneInLane drift detection | M | **Staged** | — | #100 (partial) |
+| SP-446 | Diagnosis for doneInLane pending drift | M | **Staged** | SP-445 | #100 (partial) |
+| SP-447 | Dashboard truth for engine_orphaned/drift | M | **Staged** | SP-446 | #100 |
+| SP-448 | Resume lane heartbeat refresh | S | **Staged** | — | #100 (partial) |
+| SP-449 | Attached pause phase persistence | M | **Staged** | SP-376 | #103 |
+| SP-450 | Pi extension conflict doctor + worker guard | M | **Staged** | — | #104 |
+| SP-425 | Contract failed terminal path | M | **Staged** | SP-421 | #85 |
+| SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
+
+**Suggested waves (run after aborting stuck batch `20260702T153101`):**
+
+| Wave | Tasks | Notes |
+|------|-------|-------|
+| **R0 (recovery FSM)** | SP-449, SP-442 | Pause/skip unblock; parallel if file scopes disjoint |
+| **R1 (#100 core)** | SP-445 → SP-446 → SP-447 | Serial chain; SP-448 parallel with R1 |
+| **R2 (worker hygiene)** | SP-450, SP-425 | Extension conflicts + contract_failed path |
+
+```bash
+# Validate and plan
+spine tasks validate SP-445 SP-446 SP-447 SP-448 SP-449 SP-450 SP-425 SP-442
+spine tasks analyze pending
+spine plan SP-449 SP-442 SP-448 SP-450
+
+# Wave R0 — recovery (stub CI first, then real pi)
+SPINE_WORKER_STUB=1 spine batch start SP-449 SP-442
+# After land on main:
+spine batch start SP-445
+spine batch start SP-446
+spine batch start SP-447
+spine batch start SP-448 SP-450 SP-425   # parallel where plan allows
+```
 ```
 
 ---

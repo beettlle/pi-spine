@@ -157,6 +157,22 @@ export function recordBatchEnginePid(state, enginePid) {
 }
 
 /**
+ * Reset lane stall clocks at resume handoff so dashboard does not show pre-resume heartbeats as stale.
+ *
+ * @param {object} state
+ */
+export function refreshLaneHeartbeatsOnResume(state) {
+	const resilience =
+		state.resilience && typeof state.resilience === "object" ? state.resilience : {};
+	const reference =
+		Number(resilience.engineStartedAt) > 0 ? Number(resilience.engineStartedAt) : Date.now();
+	for (const lane of state.lanes ?? []) {
+		if (!lane || typeof lane !== "object") continue;
+		lane.lastHeartbeatAt = reference;
+	}
+}
+
+/**
  * @param {object} state
  */
 export function clearBatchEnginePid(state) {

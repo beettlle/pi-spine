@@ -80,8 +80,9 @@ export function enforceOperatorPauseOnDisk(projectRoot) {
 	const loaded = loadSpineBatchState(projectRoot);
 	if (!loaded.raw) return false;
 	const batchId = String(loaded.raw.batchId ?? "");
-	if (!batchId || !isOperatorPauseActive(projectRoot, batchId)) return false;
+	if (!batchId) return false;
 	if (loaded.raw.phase === "paused") return true;
+	if (!isOperatorPauseActive(projectRoot, batchId)) return false;
 	loaded.raw.phase = "paused";
 	saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
 	return true;
@@ -124,10 +125,14 @@ export async function waitForPauseConfirmation({
 	sleepFn = defaultSleep,
 }) {
 	const deadline = Date.now() + confirmGraceMs;
+	let sawPauseOnDisk = false;
+	let sawRunningAfterPauseOnDisk = false;
 	while (Date.now() < deadline) {
 		const currentPhase = String(loadSpineBatchState(projectRoot).raw?.phase ?? "");
 		if (currentPhase === "paused") {
-			return true;
+			sawPauseOnDisk = true;
+		} else if (sawPauseOnDisk && currentPhase === "running") {
+			sawRunningAfterPauseOnDisk = true;
 		}
 		const remaining = deadline - Date.now();
 		if (remaining <= 0) {
@@ -135,7 +140,8 @@ export async function waitForPauseConfirmation({
 		}
 		await sleepFn(Math.min(pollIntervalMs, remaining));
 	}
-	return String(loadSpineBatchState(projectRoot).raw?.phase ?? "") === "paused";
+	const finalPhase = String(loadSpineBatchState(projectRoot).raw?.phase ?? "");
+	return finalPhase === "paused" && !sawRunningAfterPauseOnDisk;
 }
 
 /**
@@ -176,8 +182,7 @@ export async function pauseBatch({
 		enginePid != null && enginePid !== process.pid && isProcessAlive(enginePid);
 
 	state.phase = "paused";
-	saveSpineBatchState(projectRoot, state);
-	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "paused");
+	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
 	if (attachedEngineAlive) {
 		const confirmed = await waitForPauseConfirmation({
@@ -190,6 +195,10 @@ export async function pauseBatch({
 		if (!confirmed) {
 			const current = loadSpineBatchState(projectRoot).raw;
 			const currentPhase = String(current?.phase ?? "unknown");
+			if (current) {
+				current.phase = fromPhase;
+				saveSpineBatchState(projectRoot, current, { bypassWriteGuard: true });
+			}
 			appendJournalEvent(projectRoot, batchId, "batch.pause_failed", {
 				fromPhase,
 				enginePid,
@@ -198,7 +207,7 @@ export async function pauseBatch({
 			});
 			const output =
 				`Pause not confirmed: batch-state phase is still "${currentPhase}" after ${confirmGraceMs}ms.\n` +
-				`Journal recorded batch.paused but attached engine (PID ${enginePid}) did not persist phase: paused.\n` +
+				`Attached engine (PID ${enginePid}) did not persist phase: paused — batch.paused was not recorded.\n` +
 				"Stop the attached engine or wait for the current step to finish, then run spine batch pause again.\n" +
 				"spine batch retry is blocked while phase is running — retry only after phase is paused.\n";
 			return {
@@ -207,11 +216,13 @@ export async function pauseBatch({
 				error: "pause_not_confirmed",
 				output,
 				batchId,
-				phase: currentPhase,
+				phase: fromPhase,
 				enginePid,
 			};
 		}
 	}
+
+	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "paused");
 
 	return {
 		ok: true,

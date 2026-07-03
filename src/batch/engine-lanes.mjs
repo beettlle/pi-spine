@@ -14,11 +14,11 @@ import {
 import { appendJournalEvent } from "./journal.mjs";
 import { commitLaneAndValidateWorktree } from "./engine-lanes/commit.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
+import { saveEngineBatchState } from "./pause.mjs";
 import {
 	recordTaskSucceeded,
 	recordTaskTransition,
 	recomputeTaskCounters,
-	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
 import { runWorker } from "./worker-host.mjs";
@@ -125,7 +125,7 @@ export async function runTaskOnLane({
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();
 	updateSegmentForTask(state, taskId, "running");
-	saveSpineBatchState(projectRoot, state);
+	saveEngineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.started", {
 		taskId,
 		laneNumber,
@@ -146,12 +146,12 @@ export async function runTaskOnLane({
 		config,
 		onHeartbeat: (timestamp) => {
 			lane.lastHeartbeatAt = timestamp;
-			saveSpineBatchState(projectRoot, state);
+			saveEngineBatchState(projectRoot, state);
 		},
 		onWorkerPid: (pid) => {
 			if (pid > 0) {
 				lane.workerPid = pid;
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 			}
 		},
 	});
@@ -172,7 +172,7 @@ export async function runTaskOnLane({
 			});
 			if (lane.workerPid) {
 				delete lane.workerPid;
-				saveSpineBatchState(projectRoot, state);
+				saveEngineBatchState(projectRoot, state);
 			}
 		} else {
 		const aborted = workerResult.classification === "aborted";
@@ -188,7 +188,7 @@ export async function runTaskOnLane({
 		task.exitReason = workerResult.classification ?? "worker_failed";
 		updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
 		recomputeTaskCounters(state);
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 		if (!aborted) {
 			const salvageFields = recordTaskFailureSalvage({
 				projectRoot,
@@ -227,7 +227,7 @@ export async function runTaskOnLane({
 
 	if (lane.workerPid) {
 		delete lane.workerPid;
-		saveSpineBatchState(projectRoot, state);
+		saveEngineBatchState(projectRoot, state);
 	}
 
 	appendJournalEvent(projectRoot, batchId, "lane.completed", {

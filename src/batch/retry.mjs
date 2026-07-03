@@ -4,6 +4,7 @@
 
 import { reconcileOrphanRunningState } from "./reconcile.mjs";
 import {
+	clearTaskFailureMetadata,
 	countPendingSegments,
 	loadSpineBatchState,
 	recomputeTaskCounters,
@@ -47,6 +48,44 @@ export function unblockBatchAfterRetry(state) {
 	state.resilience = state.resilience ?? {};
 	state.resilience.lastFailureClass = null;
 	return true;
+}
+
+/**
+ * After skip clears the last failed task, leave failed-phase limbo (GitHub #96).
+ *
+ * @param {object} state
+ * @param {string} previousPhase
+ * @returns {boolean}
+ */
+export function unblockBatchAfterSkip(state, previousPhase) {
+	if (Number(state.failedTasks ?? 0) > 0) return false;
+
+	state.lastError = null;
+	state.resilience = state.resilience ?? {};
+	state.resilience.lastFailureClass = null;
+	state.endedAt = null;
+
+	const allTerminal = (state.tasks ?? []).every((entry) => {
+		const status = String(entry?.status ?? "");
+		return status === "succeeded" || status === "skipped";
+	});
+
+	if (allTerminal) {
+		if ((state.mergeResults ?? []).length === 0) {
+			state.phase = "paused";
+		} else {
+			state.phase = "completed";
+			state.endedAt = Date.now();
+		}
+		return true;
+	}
+
+	if (previousPhase === "failed") {
+		state.phase = "paused";
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -263,6 +302,7 @@ export function skipTask({ projectRoot, taskId }) {
 		};
 	}
 
+	clearTaskFailureMetadata(task);
 	task.status = "skipped";
 	task.endedAt = Date.now();
 	task.exitReason = "skipped_by_operator";
@@ -270,21 +310,12 @@ export function skipTask({ projectRoot, taskId }) {
 
 	state.blockedTaskIds = (state.blockedTaskIds ?? []).filter((id) => id !== taskId);
 	recomputeTaskCounters(state);
+	unblockBatchAfterSkip(state, phase);
 
 	const allTerminal = (state.tasks ?? []).every((entry) => {
 		const status = String(entry?.status ?? "");
 		return status === "succeeded" || status === "skipped";
 	});
-
-	if (allTerminal && state.mergeResults.length === 0) {
-		state.phase = "failed";
-		state.lastError = null;
-	} else if (allTerminal) {
-		state.phase = "completed";
-		state.endedAt = Date.now();
-	} else {
-		state.phase = phase === "paused" ? "paused" : "failed";
-	}
 
 	recordTaskTransition({
 		projectRoot,

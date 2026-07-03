@@ -129,6 +129,7 @@ test("skipTask marks task skipped and updates counters", async () => {
 		assert.equal(result.ok, true, result.output ?? result.error);
 
 		const saved = loadSpineBatchState(projectRoot).raw;
+		assert.equal(saved?.phase, "paused");
 		assert.equal(saved?.tasks[0].status, "skipped");
 		assert.equal(saved?.segments[0].status, "skipped");
 		assert.equal(saved?.failedTasks, 0);

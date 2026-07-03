@@ -597,6 +597,20 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("state_drift", driftTask?.taskId ?? null, signals);
 	}
 
+	if (
+		!hasRunningTasks &&
+		hasPendingTasks &&
+		Array.isArray(signals.tasks) &&
+		signals.tasks.some(
+			(task) =>
+				task?.doneInLane === true &&
+				(task.status === "pending" || task.status === "running" || task.classification === "pending" || task.classification === "running"),
+		)
+	) {
+		const driftTask = signals.tasks.find((task) => task?.doneInLane);
+		return withFailureContext("needs_retry", driftTask?.taskId ?? null, signals);
+	}
+
 	if (git?.gitInspectionError) {
 		return withFailureContext("git_unavailable", null, signals);
 	}
@@ -694,6 +708,16 @@ export function deriveDiagnosis(signals) {
 		hasPendingTasks
 	) {
 		return withFailureContext("needs_retry", null, signals);
+	}
+
+	if (
+		phase === "failed" &&
+		!hasFailedTasks &&
+		!hasSegmentDrift &&
+		allTasksTerminalSuccess &&
+		mergeResultsEmpty
+	) {
+		return withFailureContext("needs_merge", null, signals);
 	}
 
 	if (phase === "failed" || (failedTasks > 0 && !hasPendingTasks && !hasRunningTasks)) {
@@ -835,7 +859,7 @@ export function reconcileBatch(ctx) {
 
 	if (journalEvents.length > 0 && batch.raw) {
 		const rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
-		const drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents);
+		const drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
 		signals.stateDrift = drift;
 		signals.rebuiltFromJournal = rebuilt;
 	}

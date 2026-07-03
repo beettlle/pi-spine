@@ -39,5 +39,8 @@ hb-step-*/
 # Pi project-local packages (if using pi install -l)
 .pi/npm/
 
+# Graphify rebuild output (post-commit hook writes here; ignore to avoid spine lane DirtyWorktree)
+graphify-out/
+
 # Dependencies
 node_modules/
