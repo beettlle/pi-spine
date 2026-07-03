@@ -40,7 +40,7 @@
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/doctor/inherit-provider-auth.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `src/doctor/run-doctor-checks.mjs` |
+| fileScopeMustChange | `src/doctor/agents-model-inherit.mjs` |
 | artifactsMustExist | `tests/doctor/inherit-provider-auth.test.mjs` |
 
 ## Steps
@@ -108,3 +108,5 @@
 ---
 
 ## Amendments (Added During Execution)
+
+- **2026-07-03 (pre-batch):** `run-doctor-checks.mjs` already touched on `main` since staging; `fileScopeMustChange` narrowed to new module `agents-model-inherit.mjs`. Wiring in `run-doctor-checks.mjs` remains in file scope but is not the contract diff target.
