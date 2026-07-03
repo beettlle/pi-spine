@@ -1,7 +1,7 @@
 # SP-465: Batch size guidance wording — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,26 +11,26 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #106
-- [ ] Dependencies satisfied
+- [x] Read issue #106
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Message shapes
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Return mCount/lCount from counter
-- [ ] Format M-only without implying L present
+- [x] Return mCount/lCount from counter
+- [x] Format M-only without implying L present
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] M-only fixture does not contain misleading L claim
-- [ ] Mixed batch shows both counts
+- [x] M-only fixture does not contain misleading L claim
+- [x] Mixed batch shows both counts
 
 ---
 
