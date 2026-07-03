@@ -25,6 +25,7 @@ import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
 import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
 import { buildWorkerBackendDoctorCheck } from "../config/worker-backend.mjs";
 import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck } from "./agent-model-inherit.mjs";
+import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import {
@@ -246,6 +247,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	record("git installed", commandExists("git"), { detail: getVersion("git") });
 	record("git worktree support", gitSupportsWorktrees(), { detail: getVersion("git") });
 	record("pi installed", commandExists("pi"), { detail: getVersion("pi") });
+	checks.push(buildPiExtensionConflictDoctorCheck({ projectRoot }));
 
 	const piVersionText = getVersion("pi");
 	const minPiVersion = getMinPiVersion();

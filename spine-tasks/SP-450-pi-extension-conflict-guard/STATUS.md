@@ -1,51 +1,36 @@
 # SP-450: Pi extension conflict doctor and worker guard — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
-**Review Level:** 2
-**Review Counter:** 0
-**Iteration:** 0
-**Size:** M
-
----
-
-### Step 0: Preflight
-**Status:** ⬜ Not Started
-
-- [ ] Read issue #104
 
 ---
 
 ### Step 1: Doctor warning
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detect pi-web-access tool conflicts
-- [ ] Actionable doctor output
-
----
+- [x] detectPiWebAccessExtensionConflict in src/doctor/pi-extension-conflict.mjs
+- [x] Wired into spine doctor
 
 ### Step 2: Worker runner guard
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Safe extension mode for batch workers
-
----
+- [x] buildWorkerPiArgs passes pi -ne
+- [x] formatPiExtensionConflictHint on spawn failure
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate ≥77%
-
----
+- [x] tests/doctor/extension-conflict.test.mjs
+- [x] tests/agents/worker-runner.test.mjs
+- [x] FULL test suite passing (1493 tests)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated
-- [ ] Issue #104 closed
-- [ ] .DONE created
+- [x] operator-runbook.md updated
+- [x] Issue #104 closed
+- [x] .DONE created
 
 ---
 
@@ -53,10 +38,4 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#104) |
-
----
-
-## Blockers
-
-*None*
+| 2026-07-02 | Direct implementation | pi -ne worker guard + doctor warning |
