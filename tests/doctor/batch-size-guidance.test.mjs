@@ -42,7 +42,7 @@ Do work.
 	);
 }
 
-test("countMediumLargeTasks counts only M and L sizes", () => {
+test("countMediumLargeTasks counts only M and L sizes with per-size breakdown", () => {
 	const tasksRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-ml-count-"));
 	try {
 		writeSizedTask(tasksRoot, "SP-901", "S");
@@ -56,6 +56,8 @@ test("countMediumLargeTasks counts only M and L sizes", () => {
 		});
 		assert.equal(result.count, 3);
 		assert.deepEqual(result.taskIds, ["SP-902", "SP-903", "SP-904"]);
+		assert.equal(result.mCount, 2);
+		assert.equal(result.lCount, 1);
 	} finally {
 		fs.rmSync(tasksRoot, { recursive: true, force: true });
 	}
@@ -83,7 +85,7 @@ test("buildBatchSizeGuidanceWarning returns null below threshold", () => {
 	}
 });
 
-test("buildBatchSizeGuidanceWarning warns at 4+ M/L tasks for real pi", () => {
+test("buildBatchSizeGuidanceWarning M-only batch does not mention L", () => {
 	const tasksRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-ml-warn2-"));
 	const prev = process.env.SPINE_WORKER_STUB;
 	delete process.env.SPINE_WORKER_STUB;
@@ -96,7 +98,8 @@ test("buildBatchSizeGuidanceWarning warns at 4+ M/L tasks for real pi", () => {
 			taskIds: ["SP-921", "SP-922", "SP-923", "SP-924"],
 		});
 		assert.ok(warning);
-		assert.match(warning, /4 M\/L task/);
+		assert.match(warning, /4 M task/);
+		assert.doesNotMatch(warning, /L task/);
 		assert.match(warning, /stallTimeoutMinutes/);
 	} finally {
 		if (prev === undefined) delete process.env.SPINE_WORKER_STUB;
@@ -121,7 +124,31 @@ test("formatPlanHuman appends batch size guidance warning", () => {
 			tasks: {},
 		};
 		const output = formatPlanHuman(plan);
-		assert.match(output, /⚠ Batch includes 4 M\/L task/);
+		assert.match(output, /⚠ Batch includes 4 L task/);
+	} finally {
+		if (prev === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prev;
+		fs.rmSync(tasksRoot, { recursive: true, force: true });
+	}
+});
+
+test("buildBatchSizeGuidanceWarning mixed batch shows both M and L counts", () => {
+	const tasksRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-ml-mixed-"));
+	const prev = process.env.SPINE_WORKER_STUB;
+	delete process.env.SPINE_WORKER_STUB;
+	try {
+		writeSizedTask(tasksRoot, "SP-951", "M");
+		writeSizedTask(tasksRoot, "SP-952", "M");
+		writeSizedTask(tasksRoot, "SP-953", "L");
+		writeSizedTask(tasksRoot, "SP-954", "L");
+		writeSizedTask(tasksRoot, "SP-955", "L");
+		const warning = buildBatchSizeGuidanceWarning({
+			tasksRoot,
+			taskIds: ["SP-951", "SP-952", "SP-953", "SP-954", "SP-955"],
+		});
+		assert.ok(warning);
+		assert.match(warning, /2 M and 3 L task/);
+		assert.match(warning, /stallTimeoutMinutes/);
 	} finally {
 		if (prev === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prev;

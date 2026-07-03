@@ -1,7 +1,7 @@
 # SP-465: Batch size guidance wording — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #106
-- [ ] Dependencies satisfied
+- [x] Read issue #106
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Message shapes
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Return mCount/lCount from counter
-- [ ] Format M-only without implying L present
+- [x] Return mCount/lCount from counter
+- [x] Format M-only without implying L present
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] M-only fixture does not contain misleading L claim
-- [ ] Mixed batch shows both counts
+- [x] M-only fixture does not contain misleading L claim
+- [x] Mixed batch shows both counts
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -71,6 +71,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#106) |
+| 2026-07-03 | Steps 0–4 complete | Size-aware wording, tests, verified, #106 closed |
 
 ---
 
