@@ -666,6 +666,42 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 
 Lane worktrees: [Worktree layout](#worktree-layout) (§9).
 
+### 4.2 Integrate sync timeout (issue #114)
+
+When `spine integrate` lands the merge commit on the base ref but the post-merge worktree sync (`syncPlumbingMergePathsToWorktree`) exceeds the timeout, pi-spine journals `integrate.failed` with `timeout: true` and `mergeCommitLanded: true`, then returns `failureClass: "IntegrateTimeout"`. The merge ref is safe — the orch branch is already merged into `main` — but the working tree may not reflect the new HEAD.
+
+**Default timeout:** 60 seconds per git subprocess. Override with `SPINE_SYNC_TIMEOUT_MS` (milliseconds).
+
+#### Recognize
+
+| Signal | Meaning |
+|--------|---------|
+| `spine integrate` exit code 1 with `IntegrateTimeout` | Sync timed out after merge landed |
+| Headline contains `timed out after merge landed` | Worktree sync failed; ref is safe |
+| Journal `integrate.failed` with `timeout: true, mergeCommitLanded: true` | Merge commit is on the ref; only worktree is stale |
+
+#### Recovery
+
+1. Confirm the merge landed: `git log --oneline -3 main` — the merge commit should appear.
+2. Sync the working tree manually:
+
+   ```bash
+   git checkout main
+   git reset --hard main
+   ```
+
+3. Re-run the land loop:
+
+   ```bash
+   spine integrate
+   spine batch complete
+   git push origin main
+   ```
+
+4. If the timeout recurs, raise the limit: `SPINE_SYNC_TIMEOUT_MS=120000 spine integrate`.
+
+**Root cause:** git subprocess hangs on lock contention, credential prompts, or large file counts during per-file `git show` / `git add` in `syncPlumbingMergePathsToWorktree`.
+
 #### Reject and rework
 
 When conflicts indicate bad batch scope or unacceptable merge risk:
@@ -1277,6 +1313,7 @@ Spine classifies this as **`DirtyWorktree`** → `task.failed` → wave **`merge
 | Empty orch merge | Engine blocks complete — check task actually committed in lane worktree |
 | Post-merge limbo (`running`, merges done, no gate) | Normal engine path auto-opens the gate immediately after the last wave merge (SP-280, SP-281, SP-358). Attached engines also finalize on `SIGTERM`/`SIGINT` when merges are done but the land loop has not finished (SP-316); if that fails, a detached resume engine is spawned automatically. If diagnose still shows limbo, run **`spine batch resume --force`** (detached fast path finalizes in-process without spawning a second engine). When global `spine` on PATH may be stale (`spine doctor` → “spine on PATH (stale)”), use **`node bin/spine.mjs batch resume --attached --force`** from the repo root |
 | Integrate merge conflict (`MergeConflict`) | Merge aborted automatically — follow [§4.1 Integrate merge conflicts](#41-integrate-merge-conflicts-fr-ship-12); resolve in git on orch or `main`, then re-run land loop |
+| Integrate sync timeout (`IntegrateTimeout`) | Merge ref landed but worktree sync timed out — [§4.2 Integrate sync timeout](#42-integrate-sync-timeout-issue-114); merge is safe on the ref, run `git checkout main && git reset --hard main` then `spine integrate` to retry sync |
 | Orphaned engine after resume wedge | Detached resume kills stale PID **before** spawning the new engine (`prepareDetachedResumeEngineHandoff`, SP-254); check journal `engine.orphan_terminated`. If dashboard shows `state_drift` after a successful land loop, kill leftover `spine.mjs batch` processes and re-run `spine batch complete` |
 | rules-manifest merge conflict (lane→orch) | Engine auto-resolves when only `.spine/rules-manifest.json` `generatedAt` differs (rules[] identical); merge keeps the newest timestamp. If rules[] differ, merge fails loud — run `spine rules sync` on one branch, commit, and retry the batch merge |
 | `docs/PRD.md` merge conflict (lane→orch) | Engine auto-merges disjoint additive PRD hunks (common after merge-origin-main tasks); overlapping edits fail with recovery commands in `lastError` — resolve in lane worktree, commit, `spine batch resume` |
