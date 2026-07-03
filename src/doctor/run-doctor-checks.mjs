@@ -25,6 +25,7 @@ import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
 import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
 import { buildWorkerBackendDoctorCheck } from "../config/worker-backend.mjs";
 import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck } from "./agent-model-inherit.mjs";
+import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
@@ -354,6 +355,9 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			config: configResult.config,
 			projectRoot,
 		}));
+		const modelIdsCheck = buildAgentModelIdsDoctorCheck({ config: configResult.config });
+		checks.push(modelIdsCheck);
+		if (!modelIdsCheck.ok) issueCount++;
 		const worktreeHealthCheck = buildWorktreeHealthDoctorCheck({
 			projectRoot,
 			config: configResult.config,

@@ -1,7 +1,7 @@
 # SP-422: Doctor validates canonical pi model ids — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,51 +11,51 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #76
-- [ ] Dependencies satisfied
+- [x] Read issue #76
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Capture failing label from reaprime repro (#76)
+- [x] Capture failing label from reaprime repro (#76)
 
 ---
 
 ### Step 1: Model id resolver
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add helper to resolve display label → canonical id (or fail with hint)
-- [ ] Wire into settings set and doctor checks
+- [x] Add helper to resolve display label → canonical id (or fail with hint)
+- [x] Wire into settings set and doctor checks
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Test display label rejected or mapped
-- [ ] Test canonical id passes
+- [x] Test display label rejected or mapped
+- [x] Test canonical id passes
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue closed
+- [x] .DONE created
 
 ---
 
@@ -78,6 +78,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#76) |
+| 2026-07-03 | Step 0 complete | Preflight — read #76, confirmed deps |
+| 2026-07-03 | Step 1 complete | Model id resolver + settings-set/doctor wiring |
+| 2026-07-03 | Step 2 complete | 27 tests — display label + canonical validation |
+| 2026-07-03 | Step 3 complete | Typecheck ✅, targeted tests 27/27 ✅, coverage 88.39% ≥ 77% ✅ |
+| 2026-07-03 | Step 4 complete | Runbook docs already accurate; #76 already closed; .DONE created |
 
 ---
 

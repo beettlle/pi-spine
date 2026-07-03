@@ -5,9 +5,18 @@
 import path from "node:path";
 
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
+import { normalizeModelId } from "../config/model-id.mjs";
 import { parseSettingPath, validateSettingValue } from "../config/settings-fields.mjs";
 import { validateSpineConfig } from "../config/spine-config-load.mjs";
 import { getValueAtPath } from "./settings-show.mjs";
+
+const MODEL_FIELD_PATHS = new Set([
+	"agents.worker.model",
+	"agents.reviewer.model",
+	"agents.reviewer.plan.model",
+	"agents.reviewer.code.model",
+	"agents.reviewer.final.model",
+]);
 
 /**
  * @param {object} config
@@ -93,8 +102,29 @@ export function runSettingsSetOperation(config, { path, rawValue, dryRun = false
 		};
 	}
 
+	let settingValue = validated.normalizedValue;
+	if (MODEL_FIELD_PATHS.has(parsed.path) && typeof settingValue === "string" && settingValue !== "") {
+		const modelResult = normalizeModelId(settingValue);
+		if (!modelResult.ok) {
+			const message = modelResult.error;
+			if (json) {
+				return {
+					exitCode: 1,
+					output: `${JSON.stringify({ error: message }, null, 2)}\n`,
+					error: message,
+				};
+			}
+			return {
+				exitCode: 1,
+				output: `Error: ${message}\n`,
+				error: message,
+			};
+		}
+		settingValue = modelResult.value;
+	}
+
 	const previousValue = getValueAtPath(config, parsed.path);
-	const nextConfig = applySetting(config, parsed.path, validated.normalizedValue);
+	const nextConfig = applySetting(config, parsed.path, settingValue);
 	const validationError = validateSpineConfig(nextConfig);
 	if (validationError) {
 		const message = validationError.message;
@@ -118,7 +148,7 @@ export function runSettingsSetOperation(config, { path, rawValue, dryRun = false
 	const payload = {
 		path: parsed.path,
 		previousValue,
-		newValue: validated.normalizedValue,
+		newValue: settingValue,
 		dryRun,
 		wrote,
 	};
@@ -134,7 +164,7 @@ export function runSettingsSetOperation(config, { path, rawValue, dryRun = false
 
 	return {
 		exitCode: 0,
-		output: `Updated ${parsed.path}: ${formatValue(previousValue)} → ${formatValue(validated.normalizedValue)}${dryRun ? " (dry run)" : ""}\n`,
+		output: `Updated ${parsed.path}: ${formatValue(previousValue)} → ${formatValue(settingValue)}${dryRun ? " (dry run)" : ""}\n`,
 		...payload,
 		config: nextConfig,
 	};
