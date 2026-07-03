@@ -654,6 +654,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
+| `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine excludes gitignored hook output when [SP-463](https://github.com/beettlle/pi-spine/issues/113) lands; until then, add `graphify-out/` to `.gitignore` and `git rm -r --cached graphify-out/` on repos that track it |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
 | `docs/PRD.md` (release-recovery / merge-origin-main) | Engine auto-merges disjoint additive PRD edits (e.g. lane merged `origin/main` while orch advanced earlier waves); overlapping hunks fail with `lastError` recovery commands |
@@ -1224,12 +1225,47 @@ Regression coverage: `tests/batch/contract-verify-serialized.test.mjs` (task 2 p
 
 Authoring reference: [contract-template.md](../../skills/create-spine-tasks/references/contract-template.md#filescopemustnotchange-semantics).
 
+### Graphify post-commit hook vs spine batches
+
+When [graphify](https://github.com/beettlle/graphify) is installed with `graphify hook install`, the **post-commit** hook (`.git/hooks/post-commit`) launches a background rebuild of `graphify-out/` after **every** commit — including spine lane commits in `.worktrees/spine-<batchId>/lane-N/`.
+
+**Observed pattern** (issue [#113](https://github.com/beettlle/pi-spine/issues/113)):
+
+After a successful lane commit, `git status --porcelain` in the lane worktree may show:
+
+```text
+ M graphify-out/.graphify_labels.json
+ D graphify-out/.rebuild.lock
+ M graphify-out/cache/stat-index.json
+?? graphify-out/.pending_changes
+?? graphify-out/cache/ast/v0.9.4/<hash>.json
+```
+
+Spine classifies this as **`DirtyWorktree`** → `task.failed` → wave **`merge_blocked`** even when task implementation succeeded. The same hook output on the **main checkout** can fail preflight **git clean** before batch start.
+
+**Mitigation (consumer repos — do this before spine batch dogfood):**
+
+1. Add `graphify-out/` to `.gitignore` (generated cache — do not track in git).
+2. If `graphify-out/` was previously committed, remove from the index once:
+
+   ```bash
+   git rm -r --cached graphify-out/
+   git commit -m "chore: stop tracking graphify-out cache"
+   ```
+
+3. Re-run `spine preflight` — main checkout should be clean aside from ignored hook churn.
+
+**Engine fix (pi-spine):** [SP-463](https://github.com/beettlle/pi-spine/issues/113) extends lane dirty-worktree hygiene (same family as [SP-427](https://github.com/beettlle/pi-spine/issues/73) coverage and [SP-430](https://github.com/beettlle/pi-spine/issues/95) gitignored paths) to treat gitignored `graphify-out/` as ephemeral hook output — lane merge should not fail when only that directory is dirty.
+
+**Optional follow-ups** (not required for batch operation): defer graphify rebuild when spine lane env is set; document hook coordination in graphify itself.
+
 ### Common batch failures
 
 | Problem | Command / fix |
 |---------|----------------|
 | `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
 | Preflight git dirty | Commit or stash; lanes need clean tree |
+| `DirtyWorktree` / `merge_blocked` with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) — gitignore `graphify-out/`; after SP-463, engine ignores gitignored hook output |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
 | Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); `spine status --diagnose` → worker log + `lane.salvage_inspection`; ensure `spine_report_progress` after steps |
 | Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |

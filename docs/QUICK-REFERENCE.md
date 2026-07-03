@@ -643,6 +643,7 @@ spine batch complete
 | `Needs merge` | `spine batch resume --force` |
 | `Needs integrate` | `spine integrate` after gate approval |
 | `Stale batch` | `spine batch dismiss` |
+| `DirtyWorktree` with only `graphify-out/**` after lane commit | Gitignore `graphify-out/`; see [operator-runbook §9 Graphify hook](./adoption/operator-runbook.md#graphify-post-commit-hook-vs-spine-batches) ([#113](https://github.com/beettlle/pi-spine/issues/113)) |
 
 ### Debug Mode
 
@@ -689,4 +690,4 @@ Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook
 
 ---
 
-*Last updated: 2026-06-30*
+*Last updated: 2026-07-02*

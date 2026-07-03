@@ -1,7 +1,7 @@
 # SP-457: Graphify hook spine batch doc — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1: Author section
+**Status:** 🟢 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,31 +11,31 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** 🟢 In Progress
 
-- [ ] Read issue #113
-- [ ] Dependencies satisfied
+- [x] Read issue #113
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Author section
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] graphify post-commit dirty worktree pattern
-- [ ] Mitigation: gitignore graphify-out
-- [ ] Link SP-463 code fix
+- [x] graphify post-commit dirty worktree pattern
+- [x] Mitigation: gitignore graphify-out
+- [x] Link SP-463 code fix
 
 ---
 
 ### Step 2: Cross-link
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] QUICK-REFERENCE troubleshooting pointer
+- [x] QUICK-REFERENCE troubleshooting pointer
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟢 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate (if applicable)
