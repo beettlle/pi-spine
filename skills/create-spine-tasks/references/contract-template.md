@@ -158,6 +158,46 @@ Recommended: **240** minutes for jobs expected to run 2+ hours. Size S floor (90
 
 ---
 
+## Cross-model authoring (worker ≠ reviewer)
+
+When the worker model differs from the reviewer model (e.g. worker `cursor/auto`, reviewer `google/gemini-3.1-pro-preview`), contract shape directly affects review outcomes. The most common cross-model failure is `review_exhausted` caused by broad `testCommand` or missing context — not reviewer rejection of code quality.
+
+### Scoped `testCommand`
+
+Lane worktrees are **not** identical to the developer checkout. Worktree setup hooks, missing assets, pre-existing test failures, and Flutter/monorepo full-suite pollution can cause a scoped worker to pass targeted tests while the unscoped `testCommand` in Contract fails at final verify.
+
+| Avoid | Prefer |
+|-------|--------|
+| `` `flutter test` `` / `` `npm test` `` (full suite in lane worktree) | Targeted command matching the Testing step: `` `flutter test test/unit/services/foo_test.dart` `` |
+| Same command in Contract and global `testing.test` without verifying lane compatibility | Document when to use `` `true` `` (docs-only) vs scoped shell proof |
+| Unscoped command producing >10 MB stdout (SP-426 `maxBuffer`) | Narrow test scope; prefer `npm test -- tests/feature.test.mjs` |
+
+**Engine-side lane fixes:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) track worktree setup hook and analyzer hygiene — docs alone cannot fix lane environment drift.
+
+### Self-contained PROMPT for independent reviewers
+
+Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-REV-04). Cross-model reviewers receive:
+
+| Worker sees | Reviewer sees |
+|-------------|---------------|
+| `taskplane-worker-cursor.mdc`, glob-matched language standards | Bounded rule subset via `profile.reviewer.*` (FR-REV-08); worker/authoring rules excluded |
+| `referenceDocs` (e.g. `docs/constitution.md`) | **Not** auto-loaded; 16 KiB rule cap |
+| Full PROMPT + STATUS in session, accumulated context | Fresh spawn; review request + diff + Contract only |
+
+**Authoring implication:** Place acceptance criteria, spec references, and "done means" in PROMPT `## Mission`, `## Contract`, and step checkboxes — do not assume the reviewer read `IMPLEMENTATION.md`, domain plans, or `referenceDocs` unless quoted verbatim in PROMPT.
+
+### `testCommand` decision table
+
+| Task type | Recommended `testCommand` |
+|-----------|---------------------------|
+| Docs-only, no code changes | `` `true` `` |
+| Single module, targeted tests exist | `` `npm test -- tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
+| Full-suite safe in lane worktree | `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
+| Coverage gate required (pi-spine ≥77%) | `` `npm run coverage:check` `` |
+| Long external job (>2h) | Scoped command + `stallTimeoutMinutes` and `extendGraceOnFileScope` in Contract (see SP-314 example above) |
+
+---
+
 ## Validate before plan
 
 After authoring packets, run:

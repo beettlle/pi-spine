@@ -487,7 +487,8 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 
 ## Key Principles
 
-- **Self-contained PROMPT.md** — the worker has no memory of this conversation.
+- **Self-contained PROMPT.md** — the worker has no memory of this conversation. Cross-model reviewers receive a **fresh spawn** (FR-REV-04) with only the review request, diff, and Contract — not `referenceDocs` or worker rules. Place acceptance criteria and spec references in PROMPT `## Mission`, `## Contract`, and step checkboxes.
+- **Scoped `testCommand` for cross-model batches** — lane worktrees differ from dev checkouts; broad `flutter test` / `npm test` can fail in lanes even when targeted tests pass. See [cross-model authoring guidance](references/contract-template.md#cross-model-authoring-worker--reviewer) for the `testCommand` decision table.
 - **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. Use `testing.test` from spine config; for **code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only tasks may omit the coverage checkbox.
 - **Documentation in every task** — "Must Update" / "Check If Affected" prevent doc drift.
 - **Concrete deliverables** — name files to create/modify; avoid shortcuttable vague steps.

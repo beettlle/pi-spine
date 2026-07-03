@@ -1,7 +1,7 @@
 # SP-420: Cross-model PROMPT authoring docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,26 +11,26 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #84
-- [ ] Dependencies satisfied
+- [x] Read issue #84
+- [x] Dependencies satisfied
 
 ---
 
-### Step 0: Preflight
-**Status:** ⬜ Not Started
+### Step 0: Preflight (second)
+**Status:** ✅ Complete
 
-- [ ] Read GitHub issue #84 and reaprime batch evidence
-- [ ] Read FR-REV-08 docs
+- [x] Read GitHub issue #84 and reaprime batch evidence
+- [x] Read FR-REV-08 docs
 
 ---
 
 ### Step 1: Contract + skill updates
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add cross-model section to contract-template.md (scoped testCommand table)
-- [ ] Link cross-model section from create-spine-tasks SKILL.md
+- [x] Add cross-model section to contract-template.md (scoped testCommand table)
+- [x] Link cross-model section from create-spine-tasks SKILL.md
 
 ---
 
