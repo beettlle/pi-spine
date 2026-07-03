@@ -1,7 +1,7 @@
 # SP-465: Batch size guidance wording — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,20 +35,20 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -71,6 +71,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#106) |
+| 2026-07-03 | Steps 0–4 complete | Size-aware wording, tests, verified, #106 closed |
 
 ---
 
