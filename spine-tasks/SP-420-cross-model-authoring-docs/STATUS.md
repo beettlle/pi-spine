@@ -1,6 +1,6 @@
 # SP-420: Cross-model PROMPT authoring docs — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 0
@@ -35,10 +35,10 @@
 ---
 
 ### Step 2: Operator + rule updates
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add cross-model subsection to operator-runbook near agent model pins
-- [ ] Update spine-task-authoring.mdc with reviewer context asymmetry
+- [x] Add cross-model subsection to operator-runbook near agent model pins
+- [x] Update spine-task-authoring.mdc with reviewer context asymmetry
 
 ---
 

@@ -351,6 +351,31 @@ spine settings set agents.reviewer.model inherit
 
 Only use `inherit` when you intentionally want batch workers to follow your pi TUI model selection.
 
+### Cross-model PROMPT authoring (issue #84)
+
+When worker and reviewer use **different models** (e.g. worker `cursor/auto`, reviewer `google/gemini-3.1-pro-preview`), PROMPT and Contract shape directly affect review outcomes. The most common cross-model failure pattern is `review_exhausted` / `contract_failed` caused by broad `testCommand` or missing reviewer context — not code quality rejection.
+
+**Scoped `testCommand`:** Lane worktrees are not identical to the developer checkout. Pre-existing full-suite failures, missing assets, and Flutter/monorepo pollution cause unscoped `testCommand` to fail at final contract verify even when targeted tests pass. Prefer scoped commands that match the PROMPT Testing step:
+
+| Avoid | Prefer |
+|-------|--------|
+| `` `flutter test` `` or `` `npm test` `` (full suite) | `` `flutter test test/unit/services/foo_test.dart` `` |
+| `` `npm test` `` without verifying lane compatibility | `` `npm test -- tests/feature.test.mjs` `` |
+| Docs-only tasks with implementation test command | `` `true` `` |
+
+See [contract-template.md § Cross-model authoring](../../skills/create-spine-tasks/references/contract-template.md#cross-model-authoring-worker--reviewer) for the full `testCommand` decision table.
+
+**Self-contained PROMPT:** Cross-model reviewers spawn as **fresh sessions** (FR-REV-04) with no memory of the worker session. They receive a bounded rule subset via `profile.reviewer.*` (FR-REV-08) — not `referenceDocs`, not worker execution rules, and limited to a 16 KiB rule cap. Place acceptance criteria, spec references, and "done means" in PROMPT `## Mission`, `## Contract`, and step checkboxes. Do not assume the reviewer read domain plans or `referenceDocs` unless quoted in PROMPT.
+
+**Reviewer context preview:**
+
+```bash
+spine rules select --role reviewer --review-type plan --task SP-042
+spine rules select --role reviewer --review-type code --task SP-042
+```
+
+**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene).
+
 ### Monitor
 
 ```bash
