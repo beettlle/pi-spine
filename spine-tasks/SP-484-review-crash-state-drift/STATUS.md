@@ -1,6 +1,6 @@
 # SP-484: Review crash state drift — Status
 
-**Current Step:** Step 1 (Relax findCompletedCodeReview attempt guard)
+**Current Step:** Step 2 (Add resume-time orphan detection)
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
@@ -33,12 +33,13 @@
 ---
 
 ### Step 2: Add resume-time orphan detection
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detect orphaned review.started events
-- [ ] Check disk for review artifact with valid verdict
-- [ ] Synthesize missing events during rebuild
-- [ ] Targeted tests pass
+- [x] Detect orphaned review.started events (detectOrphanedReviewStarted)
+- [x] Check disk for review artifact with valid verdict
+- [x] Synthesize missing events during rebuild (reconcileOrphanedReviewEvents)
+- [x] Log synthesized events with synthesizeReason audit trail
+- [x] Targeted tests pass
 
 ---
 
