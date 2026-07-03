@@ -40,3 +40,7 @@ If you call `spine_review_step` anyway, it returns **`skipped: true`** with exit
 - If you leave uncommitted changes but create `.DONE`, the engine runs **lane auto-commit** before merge.
 - If you create `.DONE` while the worktree is still dirty **without** finishing, the batch **fails** (no silent empty merge).
 - Prefer committing yourself so history is step-granular; auto-commit is a safety net, not a substitute for discipline.
+
+## Forbidden operations
+
+- **Do not run `spine batch start`** from inside a worker session. The engine sets `SPINE_IS_WORKER=1` in your env and guards against nested batch spawns (SP-482). Attempting to start a batch from a lane worktree returns `nested_batch_spawn_blocked` immediately — no engine process is created.

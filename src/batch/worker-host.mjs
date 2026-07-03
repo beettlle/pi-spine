@@ -136,6 +136,7 @@ export function buildWorkerChildEnv({
 		SPINE_TASK_FOLDER: taskFolder,
 		SPINE_WORKTREE: worktreePath,
 		SPINE_WORKER_RUNNER: runner,
+		SPINE_IS_WORKER: "1",
 		PI_SPINE_ROOT: resolvePiSpineRoot(config, projectRoot ?? process.cwd()),
 	};
 	if (projectRoot) env.SPINE_PROJECT_ROOT = projectRoot;

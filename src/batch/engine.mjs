@@ -72,6 +72,29 @@ export {
 } from "./engine-scope.mjs";
 export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
 
+const WORKTREE_SPINE_PATTERN = /[/\\]\.worktrees[/\\]spine-/;
+
+/**
+ * Detect whether the current process is running inside a spine worker context.
+ * Returns a human-readable reason string if nested, or null if safe to proceed.
+ *
+ * Two guards: (1) SPINE_IS_WORKER env set by worker-host, and
+ * (2) projectRoot inside a .worktrees/spine-* directory (catches cases where
+ * the env was not inherited but the target is clearly a lane worktree).
+ *
+ * @param {string} projectRoot — the directory where the batch would run
+ * @returns {string | null}
+ */
+export function detectNestedWorkerContext(projectRoot) {
+	if (process.env.SPINE_IS_WORKER === "1") {
+		return "SPINE_IS_WORKER=1 is set (running inside a worker process)";
+	}
+	if (WORKTREE_SPINE_PATTERN.test(projectRoot)) {
+		return "projectRoot is inside a .worktrees/spine-* lane directory";
+	}
+	return null;
+}
+
 /**
  * @param {object} options
  * @param {string} options.projectRoot
@@ -89,6 +112,29 @@ export async function startBatch({
 	forceSuperseded = false,
 	waveFilter = null,
 }) {
+	const nestedReason = detectNestedWorkerContext(projectRoot);
+	if (nestedReason) {
+		const parentBatchId = process.env.SPINE_BATCH_ID ?? "unknown";
+		try {
+			appendJournalEvent(projectRoot, parentBatchId, "engine.nested_spawn_blocked", {
+				projectRoot,
+				parentBatchId,
+				reason: nestedReason,
+			});
+		} catch {
+			// Journal may not be writable from a worker worktree; best-effort.
+		}
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "nested_batch_spawn_blocked",
+			output:
+				`Nested batch start blocked: ${nestedReason}. ` +
+				`Workers must not spawn batch engines. ` +
+				`Parent batch: ${parentBatchId}, projectRoot: ${projectRoot}\n`,
+		};
+	}
+
 	if (!skipPreflight) {
 		const preflight = runBatchPreflight({ projectRoot, skipDoctor: false });
 		if (!preflight.ok) {
