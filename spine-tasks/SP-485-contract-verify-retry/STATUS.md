@@ -1,6 +1,6 @@
 # SP-485: Contract verify retry — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
@@ -54,11 +54,11 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] contract.testRetries config documented
-- [ ] Operator runbook updated
-- [ ] Discoveries logged
+- [x] contract.testRetries config documented
+- [x] Operator runbook updated
+- [x] Discoveries logged
 
 ---
 
@@ -84,6 +84,9 @@
 |-----------|--------|---------|
 | 2026-07-03 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-07-03 | Step 0 complete | Preflight verified; contract-verify.mjs exists, no retry mechanism present |
+| 2026-07-03 | Steps 1-2 complete | Retry logic + output capture in contract-verify.mjs; config validation in contract.mjs; review.mjs wiring |
+| 2026-07-03 | Step 3 complete | 10 dedicated tests in contract-retry.test.mjs; 12 existing tests pass; typecheck clean |
+| 2026-07-03 | Step 4 complete | Operator runbook updated with retry config and failure log docs |
 
 ---
 
