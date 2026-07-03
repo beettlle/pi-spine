@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { appendJournalEvent, readJournalEventsCached } from "./journal.mjs";
 
 const DEFAULT_STALL_TIMEOUT_MIN = 60;
 const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
@@ -200,7 +200,7 @@ export function collectProgressSignals({
 
 	let stepCompletedAtMs = null;
 	if (journalContext?.projectRoot && journalContext?.batchId) {
-		const events = readJournalEvents(journalContext.projectRoot, journalContext.batchId);
+		const events = readJournalEventsCached(journalContext.projectRoot, journalContext.batchId);
 		stepCompletedAtMs = findLatestStepCompletedMs(events, {
 			laneNumber: journalContext.laneNumber,
 			laneId: journalContext.laneId,

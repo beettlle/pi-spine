@@ -243,6 +243,69 @@ export function readJournalEvents(projectRoot, batchId) {
 }
 
 /**
+ * Module-level mtime-keyed journal read cache.
+ * Shared across collectProgressSignals, attached milestone reporter, and dashboard snapshot.
+ * @type {{ filePath: string | null, mtimeMs: number | null, events: object[] }}
+ */
+const _journalCache = { filePath: null, mtimeMs: null, events: [] };
+
+/**
+ * Read journal events with mtime-based cache invalidation.
+ * Returns cached events when the journal file mtime has not changed, avoiding
+ * redundant disk reads during idle orchestrator monitoring loops.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {object[]}
+ */
+export function readJournalEventsCached(projectRoot, batchId) {
+	const filePath = journalPath(projectRoot, batchId);
+	if (!fs.existsSync(filePath)) {
+		_journalCache.filePath = null;
+		_journalCache.mtimeMs = null;
+		_journalCache.events = [];
+		return [];
+	}
+
+	const stat = fs.statSync(filePath);
+	if (filePath === _journalCache.filePath && stat.mtimeMs === _journalCache.mtimeMs) {
+		return _journalCache.events;
+	}
+
+	const events = fs
+		.readFileSync(filePath, "utf-8")
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => normalizeJournalEvent(JSON.parse(line)));
+
+	_journalCache.filePath = filePath;
+	_journalCache.mtimeMs = stat.mtimeMs;
+	_journalCache.events = events;
+
+	return events;
+}
+
+/** Clear the journal read cache. Useful for test isolation. */
+export function clearJournalCache() {
+	_journalCache.filePath = null;
+	_journalCache.mtimeMs = null;
+	_journalCache.events = [];
+}
+
+/**
+ * Invalidate the journal cache for a specific file path.
+ * Forces the next readJournalEventsCached call to re-read from disk.
+ *
+ * @param {string} [filePath] If provided, only invalidate when matching. Otherwise clears unconditionally.
+ */
+export function invalidateJournalCache(filePath) {
+	if (filePath && _journalCache.filePath !== filePath) return;
+	_journalCache.filePath = null;
+	_journalCache.mtimeMs = null;
+	_journalCache.events = [];
+}
+
+/**
  * @param {object[]} events
  * @param {number} [limit]
  */
