@@ -1,6 +1,6 @@
 # SP-484: Review crash state drift — Status
 
-**Current Step:** Step 3 (Testing & Verification)
+**Current Step:** Step 4 (Documentation & Delivery)
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 2
@@ -59,11 +59,11 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Operator runbook updated
-- [ ] Incident doc cross-referenced
-- [ ] Discoveries logged
+- [x] Operator runbook updated (added "Review crash state drift" section)
+- [x] Incident doc cross-referenced (20260605-retry-state-drift.md linked in runbook)
+- [x] Discoveries logged
 
 ---
 
@@ -78,6 +78,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| finalAttempt === 0 guard has same issue as codeReviewAttempt | Fixed in Step 1 alongside code review | `src/batch/engine-lanes/review.mjs` line 651 |
+| 46 pre-existing test failures in worker worktree due to SPINE_IS_WORKER=1 | Not related to SP-484; env unset resolves | `tests/cli/`, `tests/adoption/`, `tests/spine-run.test.mjs` |
+| 2 pre-existing phase23-exit test failures | Unrelated to SP-484 | `tests/cli/phase23-exit-verify.test.mjs` |
 
 ---
 
@@ -86,6 +89,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-03 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-03 | Step 0 complete | Preflight — all source files read, gaps identified |
+| 2026-07-03 | Step 1 complete | Relaxed attempt guards in code + final review |
+| 2026-07-03 | Step 2 complete | Added orphan detection + reconciliation |
+| 2026-07-03 | Step 3 complete | 9 tests pass; full suite 1564/1566 (2 pre-existing) |
+| 2026-07-03 | Step 4 complete | Operator runbook updated, incident cross-referenced |
 
 ---
 
