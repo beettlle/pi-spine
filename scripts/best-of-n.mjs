@@ -13,6 +13,7 @@
  * Options:
  *   -m, --models <pattern>   Model pattern (repeatable; also accepts comma-separated)
  *   --list-models [search]   Print pi model catalog (delegates to pi --list-models)
+ *   --project-root <path>    Use a different git repo as the project root
  *   --base-branch <ref>      Base ref for worktrees (default: current HEAD)
  *   --thinking <level>       Pass through to pi --thinking (default: off)
  *   --keep                   Do not remove worktrees on exit (default: keep)
@@ -50,17 +51,22 @@ Worktrees:
   Created under .worktrees/bon-<runId>/<model-slug>/ on branch bon/<runId>/<slug>.
   Runs .cursor/worktrees.json setup when present (ROOT_WORKTREE_PATH = project root).
 
+Options:
+  --project-root <path>  Use a different git repo as the project root
+                         (default: parent of scripts/ directory)
+
 Examples:
   node scripts/best-of-n.mjs sonnet,composer-2.5 "Fix the flaky logout test"
   node scripts/best-of-n.mjs --list-models composer
   node scripts/best-of-n.mjs --dry-run sonnet,codex-5.3 @task/PROMPT.md
+  node scripts/best-of-n.mjs --project-root ../other-repo sonnet "Analyze this codebase"
 `;
 
 /**
  * @param {string[]} argv
  */
 function parseArgs(argv) {
-	/** @type {{ models: string[], prompt: string[], listModelsSearch: string|null, baseBranch: string|null, thinking: string, keep: boolean, cleanup: boolean, cleanupRunId: string|null, dryRun: boolean, help: boolean }} */
+	/** @type {{ models: string[], prompt: string[], listModelsSearch: string|null, baseBranch: string|null, thinking: string, keep: boolean, cleanup: boolean, cleanupRunId: string|null, dryRun: boolean, help: boolean, projectRoot: string|null }} */
 	const opts = {
 		models: [],
 		prompt: [],
@@ -72,6 +78,7 @@ function parseArgs(argv) {
 		cleanupRunId: null,
 		dryRun: false,
 		help: false,
+		projectRoot: null,
 	};
 
 	for (let i = 0; i < argv.length; i++) {
@@ -112,6 +119,10 @@ function parseArgs(argv) {
 				break;
 			case "--dry-run":
 				opts.dryRun = true;
+				break;
+			case "--project-root":
+				opts.projectRoot = argv[++i] ?? null;
+				if (!opts.projectRoot) throw new Error("Missing value for --project-root");
 				break;
 			default:
 				if (arg.startsWith("-")) {
@@ -480,8 +491,10 @@ function cleanupRun(projectRoot, runId) {
 }
 
 async function main() {
-	const projectRoot = path.resolve(__dirname, "..");
 	const opts = parseArgs(process.argv.slice(2));
+	const projectRoot = opts.projectRoot
+		? path.resolve(opts.projectRoot)
+		: path.resolve(__dirname, "..");
 
 	if (opts.help) {
 		process.stdout.write(HELP);
