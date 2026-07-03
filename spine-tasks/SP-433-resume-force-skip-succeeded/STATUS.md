@@ -1,7 +1,7 @@
 # SP-433: Resume force skip succeeded tasks — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,43 +11,43 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #88
-- [ ] Dependencies satisfied
+- [x] Read issue #88
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 0: Skip logic
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detect terminal success from journal (task.completed, lane.committed, .DONE)
-- [ ] Restrict forced replay to retried/failed/pending segments only
+- [x] Detect terminal success from journal (task.completed, lane.committed, .DONE)
+- [x] Restrict forced replay to retried/failed/pending segments only
 
 ---
 
 ### Step 1: Regression
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Multi-lane batch: one failed → retry → resume must not review.start succeeded IDs
+- [x] Multi-lane batch: one failed → retry → resume must not review.start succeeded IDs
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1420/1420)
+- [x] Coverage gate (88.51% ≥ 77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue closed (#88)
+- [x] .DONE created
 
 ---
 
@@ -62,6 +62,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Root cause: `taskAlreadyComplete` routed succeeded tasks through `markTaskCompleteFromDisk`, re-running review | Fixed via `taskTerminalSuccessInBatch` skip | `resume-multi-lanes.mjs` |
 
 ---
 
@@ -70,6 +71,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#88) |
+| 2026-07-02 | Step 0–1 | `taskTerminalSuccessInBatch` + executeResumeWave skip; regression test added |
+| 2026-07-02 | Step 2–3 | Full suite 1420 pass; coverage 88.51%; issue #88 closed |
 
 ---
 

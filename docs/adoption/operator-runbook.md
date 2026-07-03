@@ -748,8 +748,10 @@ Design reference: [worker-gate-inventory.md](../design/worker-gate-inventory.md)
 spine batch resume                  # detached; returns engine_started
 spine batch resume --wait-terminal  # block until task/batch terminal
 spine batch resume --attached       # foreground
-spine batch resume --force          # after stale segment state
+spine batch resume --force          # after stale segment state; skips already-succeeded tasks
 ```
+
+`--force` on resume resets failed tasks to pending and continues the batch. Tasks that already reached terminal success in journal and batch-state (`task.completed`, `lane.committed`, `.DONE` on the lane branch) are **not** re-run through contract verification or review — only pending, retried, or still-failed segments are scheduled. This prevents a single-task retry from regressing unrelated succeeded lanes in the same wave.
 
 Default detached resume success means **engine started**, not resume finished. Use `--wait-terminal` when you need the CLI to block until the resumed task or batch reaches a terminal state; otherwise monitor with `spine status --diagnose`.
 
