@@ -44,6 +44,7 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 const POST_DONE_KILL_BACKOFF_MS = 5_000;
+const CHILD_DONE_TIMEOUT_MS = 15_000;
 
 /**
  * Force-terminate lane worker processes tracked in batch state.
@@ -744,8 +745,7 @@ export async function runWorker({
 				});
 				stallWarningSent = true;
 			}
-			workerChild.kill("SIGTERM");
-			const { output } = await childDone;
+			const { output } = await terminateHungWorkerChild(workerChild, childDone);
 			return buildWorkerFailureResult({
 				rawOutput: output,
 				classification: "stall_timeout",
@@ -770,7 +770,15 @@ export async function runWorker({
 		await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
 	}
 
-	const { exitCode, output } = await childDone;
+	const childResult = await Promise.race([childDone, sleep(CHILD_DONE_TIMEOUT_MS).then(() => null)]);
+	let exitCode, output;
+	if (childResult) {
+		({ exitCode, output } = childResult);
+	} else {
+		// close event didn't fire — sub-processes likely hold stdio pipes open.
+		const fallback = await terminateHungWorkerChild(workerChild, childDone);
+		({ exitCode, output } = fallback);
+	}
 	const doneFound = fs.existsSync(donePath);
 	if (postDoneTerminated && !doneFound) {
 		return buildWorkerFailureResult({
