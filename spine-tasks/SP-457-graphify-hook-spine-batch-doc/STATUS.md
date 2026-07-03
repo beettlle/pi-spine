@@ -1,7 +1,7 @@
 # SP-457: Graphify hook spine batch doc — Status
 
-**Current Step:** Step 1: Author section
-**Status:** 🟢 In Progress
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -35,20 +35,20 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟢 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -71,6 +71,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#113) |
+| 2026-07-02 | Steps 1–2 | operator-runbook §9 graphify section + QUICK-REFERENCE cross-link |
+| 2026-07-02 | Step 3 | typecheck + 1482 tests pass (SPINE_WORKER_STUB=1) |
+| 2026-07-02 | Step 4 | Issue #113 commented; .DONE created |
 
 ---
 
