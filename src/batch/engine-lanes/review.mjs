@@ -268,6 +268,56 @@ function removeDoneFile(taskFolder) {
 /**
  * @param {object} params
  */
+function recordContractVerifyTaskFailure({
+	projectRoot,
+	state,
+	batchId,
+	task,
+	lane,
+	laneCorrelationId,
+	contractVerifyResult,
+	config,
+	taskFolder,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	task.status = "failed";
+	task.endedAt = Date.now();
+	task.exitReason = "contract_failed";
+	task.contractOk = false;
+	updateSegmentForTask(state, taskId, "failed");
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+	appendJournalEvent(projectRoot, batchId, "contract.failed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		checks: contractVerifyResult?.checks ?? [],
+	});
+	appendJournalEvent(projectRoot, batchId, "task.failed", {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		classification: "contract_failed",
+		exitCode: 1,
+		contractOk: false,
+		failureKind: "contract",
+	});
+	recordLaneTaskMetric({
+		projectRoot,
+		batchId,
+		task,
+		config,
+		taskFolder,
+		lane,
+	});
+}
+
+/**
+ * @param {object} params
+ */
 function recordFinalReviewTaskFailure({
 	projectRoot,
 	state,
@@ -661,99 +711,19 @@ async function runFinalReviewPhase({
 				checks: contractVerifyResult.checks,
 			});
 			if (!contractVerifyResult.ok) {
-				finalAttempt++;
-				task.finalAttempts = finalAttempt;
-				saveSpineBatchState(projectRoot, state);
-				appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-					taskId,
-					laneNumber,
-					laneId: lane.laneId,
-					correlationId: laneCorrelationId,
-					reviewType: "final",
-					verdict: "REVISE",
-					feedback: contractVerifyResult.checks
-						.filter((check) => !check.ok)
-						.map((check) => check.message)
-						.join("; "),
-					finalAttempt,
-					contractOk: false,
-				});
-
-				if (finalAttempt >= maxFinalAttempts) {
-					removeDoneFile(taskFolderInWorktree);
-					appendJournalEvent(projectRoot, batchId, "review.exhausted", {
-						taskId,
-						laneNumber,
-						laneId: lane.laneId,
-						correlationId: laneCorrelationId,
-						finalAttempt,
-						maxFinalAttempts,
-					});
-					recordFinalReviewTaskFailure({
-						projectRoot,
-						state,
-						batchId,
-						task,
-						lane,
-						laneCorrelationId,
-						exitReason: "review_exhausted",
-						verdict: "REVISE",
-						finalAttempt,
-						config,
-						taskFolder: taskFolderInWorktree,
-					});
-					return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
-				}
-
 				removeDoneFile(taskFolderInWorktree);
-				const reworkResult = await runWorker({
-					worktreePath: wt,
-					taskFolder: taskFolderInWorktree,
+				recordContractVerifyTaskFailure({
 					projectRoot,
+					state,
 					batchId,
-					laneNumber,
-					taskId,
-					laneBranch: taskBranch,
+					task,
+					lane,
 					laneCorrelationId,
-					fileScopePaths,
+					contractVerifyResult,
 					config,
-					onHeartbeat: (timestamp) => {
-						lane.lastHeartbeatAt = timestamp;
-						saveSpineBatchState(projectRoot, state);
-					},
-					onWorkerPid: (pid) => {
-						if (pid > 0) {
-							lane.workerPid = pid;
-							saveSpineBatchState(projectRoot, state);
-						}
-					},
+					taskFolder: taskFolderInWorktree,
 				});
-				if (!reworkResult.ok) {
-					const aborted = reworkResult.classification === "aborted";
-					task.status = aborted ? "aborted" : "failed";
-					task.endedAt = Date.now();
-					task.exitReason = reworkResult.classification ?? "worker_failed";
-					updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
-					recomputeTaskCounters(state);
-					saveSpineBatchState(projectRoot, state);
-					recordLaneTaskMetric({
-						projectRoot,
-						batchId,
-						task,
-						config,
-						taskFolder: taskFolderInWorktree,
-					});
-					return { ok: false, aborted, workerResult: reworkResult };
-				}
-
-				appendJournalEvent(projectRoot, batchId, "lane.completed", {
-					laneNumber,
-					laneId: lane.laneId,
-					taskId,
-					correlationId: laneCorrelationId,
-					phase: "final_rework",
-				});
-				continue;
+				return { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" };
 			}
 		}
 

@@ -1,75 +1,40 @@
 # SP-425: Contract failed terminal path — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
-**Review Level:** 2
-**Review Counter:** 0
-**Iteration:** 0
-**Size:** M
-
----
-
-### Step 0: Preflight
-**Status:** ⬜ Not Started
-
-- [ ] Read issue #85
-- [ ] Dependencies satisfied
 
 ---
 
 ### Step 0: Terminal path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add contract_failed exitReason/classification in review.mjs
-- [ ] Skip worker rework loop when checks indicate testCommand/env failure
-
----
+- [x] Add contract_failed exitReason/classification in review.mjs
+- [x] Skip worker rework loop when contract.verified fails
 
 ### Step 1: Reconcile + metrics
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Surface contract_failed in diagnose headline
-- [ ] Distinguish in run-metrics journal fields
-
----
+- [x] Surface contract_failed in diagnose headline (SP-421)
+- [x] Distinguish in run-metrics via failureKind: contract
 
 ### Step 2: Regression fixture
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Test journal path from #85 excerpt (APPROVE code → contract fail)
-
----
+- [x] tests/batch/contract-failed-terminal.test.mjs
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
-
----
+- [x] FULL test suite passing (1493 tests)
+- [x] Coverage gate 88.49%
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
-
----
-
-## Reviews
-
-| # | Type | Step | Verdict | File |
-|---|------|------|---------|------|
-
----
-
-## Discoveries
-
-| Discovery | Disposition | Location |
-|-----------|-------------|----------|
+- [x] operator-runbook.md updated
+- [x] Issue #85 closed
+- [x] .DONE created
 
 ---
 
@@ -77,16 +42,4 @@
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
-| 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#85) |
-
----
-
-## Blockers
-
-*None*
-
----
-
-## Notes
-
-*Reserved for execution notes*
+| 2026-07-02 | Direct implementation | contract.failed journal path; no REVISE/finalAttempts burn |

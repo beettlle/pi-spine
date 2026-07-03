@@ -164,6 +164,8 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, 
 		record.durationMs = Math.max(0, endedMs - startedMs);
 	}
 	if (task.exitReason) record.exitReason = task.exitReason;
+	if (task.exitReason === "contract_failed") record.failureKind = "contract";
+	if (task.exitReason === "review_exhausted") record.failureKind = "reviewer";
 	if (reviewLevel > 0) record.reviewLevel = reviewLevel;
 	if (task.finalVerdict != null) record.finalVerdict = task.finalVerdict;
 	if (task.finalAttempts != null) record.finalAttempts = task.finalAttempts;
