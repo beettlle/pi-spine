@@ -1,6 +1,6 @@
 # Why pi-spine?
 
-How pi-spine relates to [Taskplane](https://pi.dev/packages/taskplane), [Babysitter](https://github.com/a5c-ai/babysitter), and [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) — and when to use each tool on its own.
+How pi-spine relates to [Taskplane](https://pi.dev/packages/taskplane), [Babysitter](https://github.com/a5c-ai/babysitter), and [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) (archived) — and when to use each tool on its own.
 
 ---
 
@@ -14,7 +14,7 @@ Long-running agent development fails for the same reasons repeatedly:
 - **Premature integration** when lane work merges without explicit approval or test evidence
 - **Tool fragmentation** when each orchestrator owns state differently and none covers the full workflow
 
-Taskplane, Babysitter, and pi-conductor each solve important slices of this problem. None of them, used alone, gives you **Taskplane-style task packets**, **Babysitter-grade audit history**, and **pi-conductor-style human gates** in one pi-native flow.
+Taskplane, Babysitter, and pi-conductor each solve important slices of this problem. None of them, used alone, gives you **Taskplane-style task packets**, **Babysitter-grade audit history**, and **~~pi-conductor~~-inspired human gates** in one pi-native flow.
 
 pi-spine exists to be that spine: a thin, composable layer you install once and run from your pi session.
 
@@ -52,6 +52,9 @@ Babysitter excels at **deterministic, event-sourced workflow orchestration** and
 
 ### vs pi-conductor alone
 
+> **Deprecated upstream.** pi-conductor is archived and no longer maintained.
+> pi-spine preserves the gate and evidence patterns it inspired; no dependency exists.
+
 [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) was an **agent-native control plane**: durable workers, gates, artifacts, and PR-oriented flows via model-callable tools. **The upstream project is archived**; pi-spine adopts its gate and evidence patterns without depending on the package.
 
 | You get with pi-spine | Gap when using pi-conductor only |
@@ -73,7 +76,7 @@ Babysitter excels at **deterministic, event-sourced workflow orchestration** and
                            │
          ──────────────────┼──────────────────► Batch orchestration
                            │
-              pi-conductor │   Taskplane
+  pi-conductor (archived) │   Taskplane
                            │
                     Gates  │   Packets + dashboard
 ```
@@ -88,7 +91,7 @@ pi-spine targets the upper-right: **batch orchestration with strong audit trail 
 |---------|------|
 | [Taskplane](https://pi.dev/packages/taskplane) | Parallel task orchestration for pi — foundation pi-spine extends |
 | [Babysitter](https://github.com/a5c-ai/babysitter) | Event-sourced workflow SDK — audit and replay patterns |
-| [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) | Archived control plane — gate and evidence inspiration |
+| ~~[pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor)~~ | Archived control plane (discontinued) — gate and evidence inspiration |
 
 pi-spine respects these tools: it composes their best patterns rather than replacing them outright.
 

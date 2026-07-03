@@ -8,7 +8,7 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 
 ### For New Users
 - **[../README.md](../README.md)** - Project overview (includes quick start)
-- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor
+- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor (archived)
 - **[QUICK-REFERENCE.md](./QUICK-REFERENCE.md)** - Common commands reference
 - **[EXECUTION-FLOW.md](./EXECUTION-FLOW.md)** - Understanding execution flow
 
@@ -48,7 +48,7 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 - **[PRD-v2.0-implementation-handoff.md](./PRD-v2.0-implementation-handoff.md)** - Implementation details (45KB)
 
 ### User Guides
-- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor
+- **[adoption/why-pi-spine.md](adoption/why-pi-spine.md)** - Positioning vs Taskplane, Babysitter, pi-conductor (archived)
 - **[adoption/bootstrap-checklist.md](adoption/bootstrap-checklist.md)** - First-time setup (10KB)
 - **[adoption/local-install.md](adoption/local-install.md)** - Git/path installation (4KB)
 - **[adoption/operator-runbook.md](adoption/operator-runbook.md)** - Daily procedures (30KB)
@@ -112,7 +112,7 @@ Welcome to the pi-spine documentation! This folder contains comprehensive guides
 | [pi](https://pi.dev) | [pi.dev/docs](https://pi.dev/docs) |
 | [Taskplane](https://pi.dev/packages/taskplane) | [taskplane docs](https://github.com/HenryLach/taskplane/blob/main/docs/) |
 | [Babysitter](https://github.com/a5c-ai/babysitter) | [babysitter docs](https://github.com/a5c-ai/babysitter) |
-| [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) | [pi-conductor docs](https://github.com/feniix/pi-conductor) |
+| ~~[pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor)~~ (archived) | [pi-conductor docs](https://github.com/feniix/pi-conductor) |
 
 ---
 

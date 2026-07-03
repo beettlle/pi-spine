@@ -4,14 +4,14 @@
 
 **Orchestration spine for long-running pi development.**
 
-pi-spine is a [pi](https://pi.dev) package for parallel, multi-day agent batches on real codebases. It combines Taskplane-style task packets, Babysitter-grade audit history, and pi-conductor-style human gates in one pi-native flow — **compose, don't merge** three orchestrators into a fourth monolith.
+pi-spine is a [pi](https://pi.dev) package for parallel, multi-day agent batches on real codebases. It combines Taskplane-style task packets, Babysitter-grade audit history, and ~~pi-conductor~~-inspired human gates in one pi-native flow — **compose, don't merge** the best patterns into a single pi-native spine.
 
 | pi-spine is | pi-spine is not |
 |-------------|-----------------|
 | A pi extension + CLI (`spine`) for batch orchestration | A replacement for pi itself |
 | Compatible with Taskplane `PROMPT.md` / `STATUS.md` packets | A fork of Taskplane |
 | An append-only **orchestration journal** for control-plane events | A full Babysitter process-definition engine |
-| **Human gates** before integrate/merge | A clone of pi-conductor's external control-plane DB |
+| **Human gates** before integrate/merge | A clone of ~~pi-conductor's~~ external control-plane DB (archived upstream) |
 | Worktree-isolated parallel lanes | Cross-harness routing (Cursor, Codex, etc.) in v1 |
 
 ## Feature summary
@@ -28,7 +28,7 @@ pi-spine is a [pi](https://pi.dev) package for parallel, multi-day agent batches
 
 ## Inspired by
 
-pi-spine builds on ideas from [Taskplane](https://pi.dev/packages/taskplane), [Babysitter](https://github.com/a5c-ai/babysitter), and [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor). For comparisons, trade-offs, and when to use each tool alone, see **[Why pi-spine?](docs/adoption/why-pi-spine.md)**.
+pi-spine builds on ideas from [Taskplane](https://pi.dev/packages/taskplane), [Babysitter](https://github.com/a5c-ai/babysitter), and [pi-conductor](https://www.npmjs.com/package/@feniix/pi-conductor) (archived). For comparisons, trade-offs, and when to use each tool alone, see **[Why pi-spine?](docs/adoption/why-pi-spine.md)**.
 
 ## Honest limits
 
@@ -138,7 +138,7 @@ CI runs on every push and PR: typecheck, tests, coverage, and CLI smoke checks �
 | [docs/PRD.md](docs/PRD.md) | Product requirements and implementation contract |
 | [docs/QUICK-REFERENCE.md](docs/QUICK-REFERENCE.md) | Operator command reference |
 | [docs/EXECUTION-FLOW.md](docs/EXECUTION-FLOW.md) | Batch lifecycle and scheduling |
-| [docs/adoption/why-pi-spine.md](docs/adoption/why-pi-spine.md) | Positioning vs Taskplane, Babysitter, pi-conductor |
+| [docs/adoption/why-pi-spine.md](docs/adoption/why-pi-spine.md) | Positioning vs Taskplane, Babysitter, pi-conductor (archived) |
 | [docs/adoption/operator-runbook.md](docs/adoption/operator-runbook.md) | Daily operator procedures |
 | [docs/adoption/bootstrap-checklist.md](docs/adoption/bootstrap-checklist.md) | First-time setup |
 
