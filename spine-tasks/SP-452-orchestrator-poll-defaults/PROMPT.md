@@ -42,7 +42,7 @@ Raise default orchestrator poll intervals (attached milestone 200ms→2s, sequen
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/poll-interval-defaults.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `src/batch/attached-runner.mjs` |
+| fileScopeMustChange | `tests/batch/poll-interval-defaults.test.mjs` |
 | artifactsMustExist | `tests/batch/poll-interval-defaults.test.mjs` |
 
 ## Steps
@@ -106,3 +106,5 @@ Raise default orchestrator poll intervals (attached milestone 200ms→2s, sequen
 ---
 
 ## Amendments (Added During Execution)
+
+- fileScopeMustChange updated from `src/batch/attached-runner.mjs` (pre-landed by SP-451) to `tests/batch/poll-interval-defaults.test.mjs` — the delivery artifact that must still be created.

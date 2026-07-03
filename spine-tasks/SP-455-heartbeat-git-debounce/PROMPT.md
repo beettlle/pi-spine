@@ -39,7 +39,7 @@ Skip `git status --porcelain` in `collectProgressSignals` when file-scope mtimes
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/heartbeat-git-debounce.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `src/batch/heartbeat.mjs` |
+| fileScopeMustChange | `tests/batch/heartbeat-git-debounce.test.mjs` |
 | artifactsMustExist | `tests/batch/heartbeat-git-debounce.test.mjs` |
 
 ## Steps
@@ -102,3 +102,5 @@ Skip `git status --porcelain` in `collectProgressSignals` when file-scope mtimes
 ---
 
 ## Amendments (Added During Execution)
+
+- fileScopeMustChange updated from `src/batch/heartbeat.mjs` (pre-landed by SP-451) to `tests/batch/heartbeat-git-debounce.test.mjs` — the delivery artifact that must still be created.
