@@ -22,6 +22,7 @@ export const PHASE23_GRANDFATHERED_OVER_500 = [
 	"src/batch/review.mjs",
 	"src/batch/resume-multi-lanes.mjs",
 	"src/batch/resume.mjs",
+	"src/batch/sequence.mjs",
 ];
 
 const PHASE23_ENGINE_LANES_MAX = 500;
