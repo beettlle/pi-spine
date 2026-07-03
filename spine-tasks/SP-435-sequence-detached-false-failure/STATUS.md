@@ -1,6 +1,6 @@
 # SP-435: Sequence detached false failure exit — Status
 
-**Current Step:** Step 0 — Poll semantics
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-02
 **Review Level:** 2
@@ -27,10 +27,10 @@
 ---
 
 ### Step 1: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Sequence does not exit 1 while engine running
-- [ ] Stale batch log not shown
+- [x] Sequence does not exit 1 while engine running
+- [x] Stale batch log not shown
 
 ---
 
