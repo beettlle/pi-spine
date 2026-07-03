@@ -15,6 +15,7 @@ import { resolveWaveTaskIds } from "../planner/wave-scope.mjs";
 export { resolveWaveTaskIds };
 import { startBatch } from "./engine.mjs";
 import { startBatchDetached } from "./detached-start.mjs";
+import { isProcessAlive } from "../process/liveness.mjs";
 import { approveIntegrateGate, loadGateRecord } from "./gate.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
 import { completeBatch } from "./lifecycle.mjs";
@@ -67,9 +68,10 @@ export async function waitForSequenceBatchTerminal({
 	projectRoot,
 	pollIntervalMs = 250,
 	timeoutMs = 120_000,
+	enginePid = null,
 }) {
 	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
+	while (Date.now() < deadline || isEngineStillRunning(enginePid, projectRoot)) {
 		const reconciliation = reconcileBatch({ projectRoot });
 		const diagnosis = reconciliation.diagnosis;
 		if (isSequenceBatchFailure(diagnosis)) {
@@ -99,6 +101,18 @@ export async function waitForSequenceBatchTerminal({
 		reconciliation,
 		batchId: reconciliation.batchId ?? null,
 	};
+}
+
+/**
+ * Returns true when a detached engine PID is alive or the batch phase is active,
+ * preventing sequence timeout while work is still in progress.
+ */
+function isEngineStillRunning(enginePid, projectRoot) {
+	if (enginePid && isProcessAlive(enginePid)) return true;
+	const { raw } = loadSpineBatchState(projectRoot);
+	const pid = raw?.enginePid ?? null;
+	if (pid && isProcessAlive(pid)) return true;
+	return false;
 }
 
 /**
@@ -368,6 +382,7 @@ export async function runSequence(ctx) {
 	for (const wave of wavePlan.waves) {
 		const taskScope = wave.taskIds.join(" ");
 		let batchId = null;
+		let detachedEnginePid = null;
 
 		if (attached) {
 			const startResult = await startBatchFn({
@@ -404,23 +419,33 @@ export async function runSequence(ctx) {
 				spineBin,
 				scope: taskScope,
 				skipPreflight: true,
-				waitTerminal: true,
+				waitTerminal: false,
 			});
+			detachedEnginePid = detached.result?.enginePid ?? null;
 			if (!detached.ok) {
-				if (!stopOnFailure) continue;
-				return haltSequenceAndPersist(
-					projectRoot,
-					sequenceState,
-					completedWaves,
-					{
-						waveIndex: wave.waveIndex,
-						error: detached.result?.error ?? "batch_start_failed",
+				const engineStartedButTimeout =
+					detached.result?.status === "engine_started" &&
+					detached.result?.batchId &&
+					isProcessAlive(detachedEnginePid);
+				if (engineStartedButTimeout) {
+					batchId = detached.result.batchId;
+				} else {
+					if (!stopOnFailure) continue;
+					return haltSequenceAndPersist(
+						projectRoot,
+						sequenceState,
 						completedWaves,
-					},
-					{ output: detached.output },
-				);
+						{
+							waveIndex: wave.waveIndex,
+							error: detached.result?.error ?? "batch_start_failed",
+							completedWaves,
+						},
+						{ output: detached.output },
+					);
+				}
+			} else {
+				batchId = detached.result?.batchId ?? null;
 			}
-			batchId = detached.result?.batchId ?? null;
 		}
 
 		const wait = attached
@@ -429,7 +454,7 @@ export async function runSequence(ctx) {
 					batchId,
 					diagnosis: reconcileBatch({ projectRoot }).diagnosis ?? null,
 				}
-			: await waitForSequenceBatchTerminal({ projectRoot, pollIntervalMs, timeoutMs });
+			: await waitForSequenceBatchTerminal({ projectRoot, pollIntervalMs, timeoutMs, enginePid: detachedEnginePid ?? null });
 
 		if (!wait.ok || isSequenceBatchFailure(wait.diagnosis)) {
 			if (!stopOnFailure) continue;
