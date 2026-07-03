@@ -14,7 +14,7 @@ import {
 } from "../batch/reconcile.mjs";
 import { loadGateRecord, formatGateSummary } from "../batch/gate.mjs";
 import {
-	readJournalEvents,
+	readJournalEventsCached,
 	readJournalTail,
 	summarizeJournalEvent,
 } from "../batch/journal.mjs";
@@ -929,7 +929,7 @@ export function buildDashboardSnapshot(projectRoot) {
 	let journalTail = [];
 	let journalEvents = [];
 	if (reconciliation.batchId) {
-		journalEvents = readJournalEvents(projectRoot, reconciliation.batchId);
+		journalEvents = readJournalEventsCached(projectRoot, reconciliation.batchId);
 		journalTail = readJournalTail(journalEvents, 20).map(formatJournalTailEntry);
 	}
 

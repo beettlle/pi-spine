@@ -12,7 +12,7 @@ import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { isProcessAlive } from "../process/liveness.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
-import { readJournalEvents } from "./journal.mjs";
+import { readJournalEventsCached } from "./journal.mjs";
 import { enforceOperatorPauseOnDisk } from "./pause.mjs";
 import { loadSpineBatchState, readBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 
@@ -117,7 +117,7 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
 				batchId = loaded.raw?.batchId ? String(loaded.raw.batchId) : null;
 			}
 			if (batchId) {
-				const events = readJournalEvents(projectRoot, batchId);
+				const events = readJournalEventsCached(projectRoot, batchId);
 				for (const event of events) {
 					const key = milestoneEventKey(event);
 					if (printed.has(key)) continue;
@@ -137,7 +137,7 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
 			stopped = true;
 			await loopPromise;
 			if (batchId) {
-				const events = readJournalEvents(projectRoot, batchId);
+				const events = readJournalEventsCached(projectRoot, batchId);
 				for (const event of events) {
 					const key = milestoneEventKey(event);
 					if (printed.has(key)) continue;
