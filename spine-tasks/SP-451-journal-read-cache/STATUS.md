@@ -1,7 +1,7 @@
 # SP-451: Journal read cache — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -45,11 +45,11 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -73,6 +73,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
+| 2026-07-03 | Steps 0-4 executed | Cache API, consumer wiring, tests, docs complete |
 
 ---
 
