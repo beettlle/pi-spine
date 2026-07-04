@@ -9,8 +9,10 @@ import {
 	runBatchPreflight,
 	resolveTasksRoot,
 } from "../config/spine-preflight-lib.mjs";
+import { filterPendingTaskIds } from "../planner/pending.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { resolveWaveTaskIds } from "../planner/wave-scope.mjs";
+import { discoverTasks } from "../tasks/packet/discover.mjs";
 
 export { resolveWaveTaskIds };
 import { startBatch } from "./engine.mjs";
@@ -22,6 +24,13 @@ import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { validateSequenceAutoApproveGate } from "../doctor/sequence-safety.mjs";
+import {
+	buildSequenceSatisfiedTaskIds,
+	collectWaveTaskOutcomes,
+	isMergeBlockedBatchOutcome,
+	planSequenceWaveTasks,
+	resolveWaveAfterMergeBlocked,
+} from "./sequence-waves.mjs";
 import {
 	buildSequenceStateSnapshot,
 	finalizeSequenceState,
@@ -379,8 +388,81 @@ export async function runSequence(ctx) {
 	/** @type {Array<{ waveIndex: number, batchId: string|null, diagnosis: string|null }>} */
 	const completedWaves = [...persistedCompletedWaves];
 
+	const tasksRoot = plan?.metadata?.tasksRoot ?? null;
+	const discoveredTasks = tasksRoot ? discoverTasks(tasksRoot) : [];
+	const pendingTaskIds = tasksRoot ? filterPendingTaskIds(discoveredTasks, tasksRoot) : [];
+	const doneOnMainTaskIds = discoveredTasks
+		.map((task) => task.taskId)
+		.filter((taskId) => !pendingTaskIds.includes(taskId));
+	/** @type {Array<{ succeeded?: string[], skipped?: string[], failed?: string[] }>} */
+	const priorMergeOutcomes = [];
+	let satisfiedTaskIds = buildSequenceSatisfiedTaskIds(doneOnMainTaskIds, priorMergeOutcomes);
+	let mergeBlockedWaveIndex = null;
+	let sequenceHadMergeBlocked = false;
+	/** @type {string[]} */
+	const sequenceOutputLines = [];
+	/** @type {Array<{ waveIndex: number, message: string }>} */
+	const skippedWaves = [];
+
+	/**
+	 * @param {number} waveIndex
+	 * @param {string[]} waveTaskIds
+	 */
+	function resolveRunnableWaveTasks(waveIndex, waveTaskIds) {
+		if (mergeBlockedWaveIndex != null && waveIndex > mergeBlockedWaveIndex) {
+			const lastOutcome = priorMergeOutcomes[priorMergeOutcomes.length - 1] ?? {};
+			return resolveWaveAfterMergeBlocked({
+				plan,
+				waveIndex,
+				waveTaskIds,
+				satisfiedTaskIds,
+				mergeBlockedWaveIndex,
+				failedTaskIds: lastOutcome.failed ?? [],
+				succeededTaskIds: lastOutcome.succeeded ?? [],
+			});
+		}
+		return planSequenceWaveTasks({ plan, waveIndex, waveTaskIds, satisfiedTaskIds });
+	}
+
+	/**
+	 * @param {number} waveIndex
+	 * @param {object|null} batchState
+	 * @param {string} [fallbackMessage]
+	 */
+	function absorbMergeBlockedWave(waveIndex, batchState, fallbackMessage = "") {
+		const outcomes = collectWaveTaskOutcomes(batchState);
+		priorMergeOutcomes.push(outcomes);
+		satisfiedTaskIds = buildSequenceSatisfiedTaskIds(doneOnMainTaskIds, priorMergeOutcomes);
+		mergeBlockedWaveIndex = waveIndex;
+		sequenceHadMergeBlocked = true;
+		const message =
+			String(fallbackMessage ?? "").trim() ||
+			String(batchState?.lastError ?? "").trim() ||
+			`Wave merge blocked (§17.4 mixed-outcome policy) at wave ${waveIndex}.`;
+		sequenceOutputLines.push(message);
+	}
+
 	for (const wave of wavePlan.waves) {
-		const taskScope = wave.taskIds.join(" ");
+		const wavePlanResolution = resolveRunnableWaveTasks(wave.waveIndex, wave.taskIds);
+		if (wavePlanResolution.action === "skip") {
+			skippedWaves.push({
+				waveIndex: wave.waveIndex,
+				message: wavePlanResolution.message ?? `Sequence wave ${wave.waveIndex} skipped.`,
+			});
+			sequenceOutputLines.push(
+				wavePlanResolution.message ?? `Sequence wave ${wave.waveIndex} skipped.`,
+			);
+			continue;
+		}
+		if (wavePlanResolution.message) {
+			sequenceOutputLines.push(wavePlanResolution.message);
+		} else if (wavePlanResolution.partialSkipMessage) {
+			sequenceOutputLines.push(wavePlanResolution.partialSkipMessage);
+		}
+
+		const taskScope = wavePlanResolution.runnableTaskIds.join(" ");
+		if (!taskScope) continue;
+
 		let batchId = null;
 		let detachedEnginePid = null;
 
@@ -391,6 +473,15 @@ export async function runSequence(ctx) {
 				skipPreflight: true,
 			});
 			if (!startResult.ok) {
+				const reconciliation = reconcileBatch({ projectRoot });
+				if (isMergeBlockedBatchOutcome({ startResult, reconciliation })) {
+					absorbMergeBlockedWave(
+						wave.waveIndex,
+						loadSpineBatchState(projectRoot).raw,
+						startResult.output ?? "",
+					);
+					continue;
+				}
 				if (!stopOnFailure) continue;
 				return haltSequenceAndPersist(
 					projectRoot,
@@ -457,6 +548,15 @@ export async function runSequence(ctx) {
 			: await waitForSequenceBatchTerminal({ projectRoot, pollIntervalMs, timeoutMs, enginePid: detachedEnginePid ?? null });
 
 		if (!wait.ok || isSequenceBatchFailure(wait.diagnosis)) {
+			const reconciliation = wait.reconciliation ?? reconcileBatch({ projectRoot });
+			if (isMergeBlockedBatchOutcome({ reconciliation })) {
+				absorbMergeBlockedWave(
+					wave.waveIndex,
+					reconciliation.signals?.raw ?? loadSpineBatchState(projectRoot).raw,
+					reconciliation.headline ?? "",
+				);
+				continue;
+			}
 			if (!stopOnFailure) continue;
 			return haltSequenceAndPersist(projectRoot, sequenceState, completedWaves, {
 				waveIndex: wave.waveIndex,
@@ -492,6 +592,10 @@ export async function runSequence(ctx) {
 		};
 		completedWaves.push(waveResult);
 
+		for (const taskId of wavePlanResolution.runnableTaskIds) {
+			satisfiedTaskIds.add(taskId);
+		}
+
 		if (sequenceState) {
 			const lastBatchId = waveResult.batchId ?? sequenceState.lastBatchId ?? null;
 			sequenceState = buildSequenceStateSnapshot(sequenceState, {
@@ -505,12 +609,21 @@ export async function runSequence(ctx) {
 
 	finalizeSequenceState(projectRoot, sequenceState, completedWaves, plan);
 
+	if (completedWaves.length > 0) {
+		sequenceOutputLines.push(`Sequence completed ${completedWaves.length} wave(s).`);
+	}
+
+	const partialMergeBlocked = sequenceHadMergeBlocked && completedWaves.length < wavePlan.waves.length;
+
 	return {
-		ok: true,
-		exitCode: 0,
+		ok: !sequenceHadMergeBlocked,
+		exitCode: sequenceHadMergeBlocked ? 1 : 0,
 		completedWaves,
+		skippedWaves,
+		mergeBlocked: sequenceHadMergeBlocked,
+		partial: partialMergeBlocked,
 		waveCount: wavePlan.waves.length,
 		resumed: resume,
-		output: `Sequence completed ${completedWaves.length} wave(s).\n`,
+		output: `${sequenceOutputLines.join("\n")}\n`,
 	};
 }
