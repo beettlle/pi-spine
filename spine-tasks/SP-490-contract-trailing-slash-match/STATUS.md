@@ -29,11 +29,11 @@
 ---
 
 ### Step 2: Add test coverage
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Trailing-slash match test (positive)
-- [ ] Trailing-slash no-match test (negative)
-- [ ] Regression test for existing behavior
+- [x] Trailing-slash match test (positive)
+- [x] Trailing-slash no-match test (negative)
+- [x] Regression test for existing behavior
 
 ---
 
