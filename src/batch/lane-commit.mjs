@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { filterGitignoredPaths, gitAddFilteredPaths } from "./git-helpers.mjs";
+import { classifyGitignoredPaths, formatGitignoredRemediationMessage } from "./lane-dirty-check.mjs";
 import { gitExec } from "./git-exec.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import {
@@ -204,13 +205,10 @@ export function commitLaneWorktree({
 		const { stageable, skipped: gitignoredDirtyPaths } = filterGitignoredPaths(worktreePath, dirtyPaths);
 		const gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
 		if (stageable.length === 0 && gitignoredPaths.length > 0) {
-			const preview = gitignoredPaths.slice(0, 20).join(", ");
-			const suffix = gitignoredPaths.length > 20 ? "…" : "";
+			const { indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths);
 			return {
 				ok: false,
-				error:
-					`Lane worktree has gitignored dirty files only (${preview}${suffix}) — ` +
-					"remove from the index with git rm --cached on the task branch before resume",
+				error: formatGitignoredRemediationMessage(indexTracked, worktreeOnly),
 				failureClass: "GitignoredDirtyWorktree",
 				gitignoredPaths,
 			};

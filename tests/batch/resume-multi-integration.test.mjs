@@ -16,7 +16,7 @@ import {
 	loadSpineBatchState,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
-import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { laneTaskBranch, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 

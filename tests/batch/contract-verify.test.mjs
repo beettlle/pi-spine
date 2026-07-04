@@ -303,3 +303,106 @@ test("verifyContract passes SP-193-shaped contract when scoped files changed", a
 		await destroyGitRepo(worktreePath);
 	}
 });
+
+test("fileScopeMustChange trailing-slash pattern matches files under directory prefix", async () => {
+	const worktreePath = await initGitRepo("spine-contract-trailing-slash-");
+	try {
+		fs.mkdirSync(path.join(worktreePath, "src/domain/types"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "src/domain/types/user.ts"), "export type User = {};\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["checkout", "-b", "lane-trailing"], { cwd: worktreePath, stdio: "ignore" });
+
+		fs.writeFileSync(path.join(worktreePath, "src/domain/types/user.ts"), "export type User = { id: string };\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "update types"], { cwd: worktreePath, stdio: "ignore" });
+
+		const result = verifyContract(
+			worktreePath,
+			{
+				testCommand: null,
+				fileScopeMustChange: ["src/domain/types/"],
+				fileScopeMustNotChange: [],
+				artifactsMustExist: [],
+			},
+			{ baseBranch: "main" },
+		);
+
+		assert.equal(result.ok, true);
+		const scopeCheck = result.checks.find((c) => c.field === "fileScopeMustChange");
+		assert.equal(scopeCheck.ok, true);
+		assert.match(scopeCheck.message, /fileScopeMustChange matched/);
+	} finally {
+		await destroyGitRepo(worktreePath);
+	}
+});
+
+test("fileScopeMustChange trailing-slash pattern fails when no files under prefix changed", async () => {
+	const worktreePath = await initGitRepo("spine-contract-trailing-slash-neg-");
+	try {
+		fs.mkdirSync(path.join(worktreePath, "src/domain/types"), { recursive: true });
+		fs.mkdirSync(path.join(worktreePath, "src/other"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "src/domain/types/user.ts"), "export type User = {};\n");
+		fs.writeFileSync(path.join(worktreePath, "src/other/util.ts"), "export const x = 1;\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["checkout", "-b", "lane-trailing-neg"], { cwd: worktreePath, stdio: "ignore" });
+
+		fs.writeFileSync(path.join(worktreePath, "src/other/util.ts"), "export const x = 2;\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "unrelated change"], { cwd: worktreePath, stdio: "ignore" });
+
+		const result = verifyContract(
+			worktreePath,
+			{
+				testCommand: null,
+				fileScopeMustChange: ["src/domain/types/"],
+				fileScopeMustNotChange: [],
+				artifactsMustExist: [],
+			},
+			{ baseBranch: "main" },
+		);
+
+		assert.equal(result.ok, false);
+		const scopeCheck = result.checks.find((c) => c.field === "fileScopeMustChange");
+		assert.equal(scopeCheck.ok, false);
+		assert.match(scopeCheck.message, /no matching changes/);
+	} finally {
+		await destroyGitRepo(worktreePath);
+	}
+});
+
+test("fileScopeMustChange exact-path and glob behavior preserved alongside trailing-slash", async () => {
+	const worktreePath = await initGitRepo("spine-contract-trailing-slash-regression-");
+	try {
+		fs.mkdirSync(path.join(worktreePath, "src/batch"), { recursive: true });
+		fs.mkdirSync(path.join(worktreePath, "src/planner"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "src/batch/review.mjs"), "export const x = 1;\n");
+		fs.writeFileSync(path.join(worktreePath, "src/planner/index.mjs"), "export const y = 1;\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["checkout", "-b", "lane-regression"], { cwd: worktreePath, stdio: "ignore" });
+
+		fs.writeFileSync(path.join(worktreePath, "src/planner/index.mjs"), "export const y = 2;\n");
+		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "planner edit"], { cwd: worktreePath, stdio: "ignore" });
+
+		const result = verifyContract(
+			worktreePath,
+			{
+				testCommand: null,
+				fileScopeMustChange: ["src/planner/index.mjs", "src/planner/**"],
+				fileScopeMustNotChange: [],
+				artifactsMustExist: [],
+			},
+			{ baseBranch: "main" },
+		);
+
+		assert.equal(result.ok, true);
+		const scopeChecks = result.checks.filter((c) => c.field === "fileScopeMustChange");
+		assert.equal(scopeChecks.length, 2);
+		assert.ok(scopeChecks.every((c) => c.ok));
+	} finally {
+		await destroyGitRepo(worktreePath);
+	}
+});

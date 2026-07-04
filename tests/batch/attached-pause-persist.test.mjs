@@ -4,8 +4,6 @@
 
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
 import { startAttachedMilestoneReporter } from "../../src/batch/attached-runner.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";

@@ -123,7 +123,7 @@ test("runScenariosShow rejects unknown scenario", () => {
 });
 
 test("loadScenarioFixture reads incident fixture from registry entry", () => {
-	const tempRoot = createTempRegistry("spine-scenarios-load-fixture-");
+	createTempRegistry("spine-scenarios-load-fixture-");
 	const scenario = {
 		id: "orphan-running-resume",
 		kind: "incident",

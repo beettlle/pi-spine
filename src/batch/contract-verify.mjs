@@ -181,7 +181,9 @@ export function verifyStubFileScopeMustChange(
 	/** @type {string[]} */
 	const failures = [];
 	for (const pattern of patterns) {
-		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
+		const matched = changedFiles.some((file) =>
+			pattern.endsWith("/") ? file.startsWith(pattern) : matchesContractPattern(file, pattern),
+		);
 		if (matched) {
 			continue;
 		}
@@ -413,7 +415,9 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	}
 
 	for (const pattern of parsedContract.fileScopeMustChange ?? []) {
-		const matched = changedFiles.some((file) => matchesContractPattern(file, pattern));
+		const matched = changedFiles.some((file) =>
+			pattern.endsWith("/") ? file.startsWith(pattern) : matchesContractPattern(file, pattern),
+		);
 		const prelanded = !matched &&
 			isPrelandedFileScopeSatisfied(
 				worktreePath,

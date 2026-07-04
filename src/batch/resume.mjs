@@ -2,12 +2,10 @@
  * Batch pause and resume for single-lane batches (TP-015, PRD §18.2).
  */
 
-import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
-import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
@@ -97,7 +95,6 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const taskId = task.taskId;
 	const taskBranch = lane.branch ?? laneTaskBranch(batchId, 1);
 	const wt = lane.worktreePath ?? laneWorktreePath(projectRoot, batchId, 1);
-	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
 	const taskFolderRel = resolveTaskFolderRel(task, projectRoot);
 	const tasksRootRel = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
 	const taskFolderInWorktree = taskFolderRel

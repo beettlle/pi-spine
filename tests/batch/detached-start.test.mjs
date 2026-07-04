@@ -12,16 +12,14 @@ import {
 	formatDetachedBatchStartOutput,
 	formatDetachedEngineOutput,
 	waitForDetachedBatchResume,
-	waitForDetachedBatchStart,
 } from "../../src/batch/detached-start.mjs";
 import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import {
 	createInitialBatchState,
 	loadSpineBatchState,
-	recordBatchEnginePid,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
-import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { laneTaskBranch, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 

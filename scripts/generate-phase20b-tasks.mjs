@@ -769,7 +769,7 @@ ${items.map((i) => `- \`${i}\``).join("\n")}
 `;
 }
 
-function buildPrompt(task, folderPath) {
+function buildPrompt(task, _folderPath) {
 	const codeTask = task.codeTask !== false;
 	const stepCount = task.implSteps.length;
 	const steps = task.implSteps

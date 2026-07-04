@@ -5,7 +5,6 @@ import path from "node:path";
 import test from "node:test";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
-import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
 
 test("startBatch fails closed on invalid PROMPT before batch starts", async () => {
 	const projectRoot = await initGitRepo("spine-prompt-parse-");

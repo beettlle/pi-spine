@@ -13,7 +13,6 @@ import {
 	loadRulesManifest,
 	fingerprintRulesManifest,
 } from "../../config/cursor-rules/discover.mjs";
-import { resolveRulesManifestIntegrateDrift } from "../rules-manifest-drift.mjs";
 import { matchesContractPattern } from "../contract-verify.mjs";
 import {
 	formatAdoptionDocMergeFailure,
@@ -196,7 +195,7 @@ function tryAutoResolveOutOfScopeMergeConflict({
 	projectRoot,
 	filePath,
 	laneFileScopePaths,
-	laneChangedFiles,
+	_laneChangedFiles,
 }) {
 	if (pathInLaneFileScope(filePath, laneFileScopePaths)) {
 		return { ok: false, reason: "in_lane_file_scope" };

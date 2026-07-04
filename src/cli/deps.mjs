@@ -2,8 +2,6 @@
  * spine deps — dependency graph inspection (FR-SCHED-01 subset).
  */
 
-import path from 'node:path';
-
 import { resolveTasksRootPath } from '../config/env-overrides.mjs';
 import {
 	discoverTasks,

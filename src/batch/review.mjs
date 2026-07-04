@@ -11,18 +11,14 @@ import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
 import {
-	DEFAULT_REVIEW_SPAWN_TIMEOUT_MS,
 	ARTIFACT_READY_HONOR_REASON,
-	isActiveWorkerSession,
 	NESTED_REVIEW_SPAWN_BLOCKED,
 	NESTED_REVIEW_SPAWN_REASON,
 	REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
-	REVIEW_TIMEOUT_REASON,
 	shouldBlockNestedReviewerSpawn,
 	spawnReviewerPi,
 } from "./review-spawn.mjs";
 import {
-	REVIEW_LEVEL_RE,
 	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
 	isReviewTypeRequired,

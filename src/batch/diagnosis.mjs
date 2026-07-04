@@ -14,7 +14,6 @@ import { buildAlternatives } from "./diagnosis-alternatives.mjs";
 export { buildAlternatives } from "./diagnosis-alternatives.mjs";
 import {
 	buildMergeFailureHeadline,
-	summarizeMergeFailures,
 } from "./diagnosis-merge-failure.mjs";
 export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";

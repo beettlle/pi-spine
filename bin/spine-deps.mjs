@@ -5,8 +5,6 @@
  * Inspect task dependency graph without running a full batch plan.
  */
 
-import path from 'node:path';
-
 import { isCliEntrypoint } from './spine-cli/shared.mjs';
 import { loadSpineConfig } from './spine-config.mjs';
 import { buildDepsReport, formatDepsHuman } from '../src/cli/deps.mjs';

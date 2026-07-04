@@ -1,28 +1,29 @@
-# npm publish (CI-first)
+# npm publish (tag-triggered)
 
-Release flow: bump version on `main` → green CI → [`.github/workflows/publish.yml`](../../.github/workflows/publish.yml) publishes to npm. Manual `npm publish` is an emergency fallback only (see [Emergency manual publish](#emergency-manual-publish)).
+Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.github/workflows/release.yml`](../../.github/workflows/release.yml) runs tests, publishes to npm, and creates a GitHub Release. Manual `npm publish` is an emergency fallback only (see [Emergency manual publish](#emergency-manual-publish)).
 
-## CI-first release flow
+## Tag-triggered release flow
 
-1. **Pre-release checks** — run locally or rely on CI:
+1. **Pre-release checks** — run locally:
    ```bash
    npm run typecheck && SPINE_WORKER_STUB=1 npm test
    npm run coverage:check
    ```
-2. **Bump version** — set `package.json` `version` on `main` (semver patch/minor/major as appropriate).
-3. **Push to `main`** — triggers [CI](https://github.com/beettlle/pi-spine/actions/workflows/ci.yml) (`typecheck`, full test suite, coverage ≥77%, CLI smoke).
-4. **Wait for CI green** — do not tag or create a GitHub Release until CI succeeds on the release commit.
-5. **Tag and GitHub Release** (after CI green):
+2. **Bump version and tag** — uses npm's built-in versioning:
    ```bash
-   git tag v<version>
-   git push origin v<version>
-   gh release create v<version> --title "pi-spine <version>" --notes "..."
+   npm version patch   # or minor / major
    ```
-6. **Automatic publish** — when CI completes successfully on `main`, `publish.yml` runs (no manual `workflow_dispatch`):
-   - Verifies the triggering CI run concluded `success`.
-   - Checks npm for `pi-spine@<version>`; **skips** if that version already exists (idempotent re-runs).
-   - Otherwise runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
-7. **Post-publish smoke** — verify install and CLI:
+   This updates `package.json`, commits the change, and creates a `v<version>` git tag.
+3. **Push commit and tag**:
+   ```bash
+   git push && git push --tags
+   ```
+4. **Automatic release** — pushing the `v*` tag triggers `release.yml`:
+   - Checks out code at the tag ref.
+   - Runs `npm run typecheck` and `npm test`.
+   - Runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
+   - Creates a GitHub Release with auto-generated notes via `gh release create --generate-notes`.
+5. **Post-publish smoke** — verify install and CLI:
    ```bash
    npm install -g pi-spine@<version>
    spine version
@@ -30,14 +31,22 @@ Release flow: bump version on `main` → green CI → [`.github/workflows/publis
    pi install npm:pi-spine
    ```
 
+## Manual re-publish (workflow_dispatch)
+
+If the tag-triggered workflow fails (e.g. transient npm registry error), re-run it manually:
+
+1. Go to **Actions → Release → Run workflow**.
+2. Enter the tag name (e.g. `v1.2.3`) — the tag must already exist in the repo.
+3. The workflow checks out at that tag and re-runs the full publish pipeline.
+
 ## Pre-publish checklist
 
 - [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green
 - [ ] `npm run coverage:check` green (≥77% line on `src/`, `bin/`, `extensions/`)
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
-- [ ] Version bump merged to `main`
-- [ ] CI green on the release commit
-- [ ] `publish.yml` succeeded (or version already on npm from prior run)
+- [ ] Version bump committed (via `npm version`)
+- [ ] Tag pushed (`git push --tags`)
+- [ ] `release.yml` succeeded
 - [ ] Post-publish smoke: global install + `spine doctor`
 - [ ] Real-pi adoption E2E report filed (optional but recommended)
 
@@ -72,7 +81,7 @@ npm login
 npm publish --access public
 ```
 
-Prefer fixing `publish.yml` / secrets and re-running the workflow. Do not bypass CI gates for routine releases.
+Prefer fixing `release.yml` / secrets and re-running via workflow_dispatch. Do not bypass CI gates for routine releases.
 
 ## pi.dev
 

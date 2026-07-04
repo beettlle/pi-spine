@@ -14,7 +14,6 @@ import {
 import { loadGateRecord } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import {
-	finalizeBatchForIntegrate,
 	isPostMergeLimbo,
 	tryFinalizePostMergeLimbo,
 } from "./post-merge-limbo.mjs";

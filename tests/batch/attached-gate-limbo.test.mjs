@@ -168,7 +168,7 @@ test("maybeFinalizeAfterWaveMerge opens gate for last-wave post-merge limbo", as
 	const batchId = "20260618T000943";
 
 	try {
-		const { state, orchBranch } = seedPostMergeLimboState(projectRoot, batchId);
+		const { orchBranch } = seedPostMergeLimboState(projectRoot, batchId);
 		assert.equal(isPostMergeLimbo(loadSpineBatchState(projectRoot).raw), true);
 
 		const result = maybeFinalizeAfterWaveMerge({

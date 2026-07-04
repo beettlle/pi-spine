@@ -37,7 +37,7 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 | Field | When to include | Value format |
 |-------|-----------------|--------------|
 | `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. |
-| `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``) |
+| `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). |
 | `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
 | `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths; **one backtick per path** |
