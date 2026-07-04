@@ -12,11 +12,18 @@ import {
 	isPrelandedFileScopeSatisfied,
 	isStubPrelandedFileScopeSatisfied,
 } from "./contract-prelanded.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 
 export { resolvePromptRelPath, isFileScopePatternPrelanded, hasSpineTaskDeliveryChanges } from "./contract-prelanded.mjs";
 
 /** Default stdout/stderr capture limit for contract testCommand (issue #86). */
 export const CONTRACT_TEST_COMMAND_MAX_BUFFER = 10 * 1024 * 1024;
+
+/** Default number of retries for failed testCommand (SP-485, issue #136). */
+export const CONTRACT_TEST_DEFAULT_RETRIES = 1;
+
+/** Default delay in ms between testCommand retry attempts. */
+export const CONTRACT_TEST_RETRY_DELAY_MS = 5000;
 
 /**
  * @param {string} taskId
@@ -260,6 +267,48 @@ function formatMaxBufferLabel(byteCount) {
 }
 
 /**
+ * Block the current thread for the given duration without busy-waiting.
+ * Safe for CLI/batch tools; not suitable for servers.
+ *
+ * @param {number} ms
+ */
+function sleepSync(ms) {
+	if (ms <= 0) return;
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Write a failure log for a contract testCommand attempt to the task's .reviews/ directory.
+ * Returns the written path, or null if taskFolder is not provided.
+ *
+ * @param {string | undefined} taskFolder
+ * @param {string} command
+ * @param {{ exitCode: number, output: string, bufferOverflow?: boolean }} result
+ * @param {number} attempt
+ * @param {number} totalAttempts
+ * @returns {string | null}
+ */
+export function writeContractFailureLog(taskFolder, command, result, attempt, totalAttempts) {
+	if (!taskFolder) return null;
+	const reviewsDir = path.join(taskFolder, ".reviews");
+	fs.mkdirSync(reviewsDir, { recursive: true });
+	const ts = new Date().toISOString().replace(/[:.]/g, "-");
+	const logPath = path.join(reviewsDir, `contract-fail-${ts}.log`);
+	const header = [
+		"Contract testCommand failure log",
+		`Command: ${command}`,
+		`Exit code: ${result.exitCode}`,
+		`Attempt: ${attempt} of ${totalAttempts}`,
+		`Timestamp: ${new Date().toISOString()}`,
+		`Buffer overflow: ${result.bufferOverflow ? "yes" : "no"}`,
+		"---",
+		"",
+	].join("\n");
+	fs.writeFileSync(logPath, header + (result.output ?? ""), "utf-8");
+	return logPath;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} command
  * @param {{ maxBuffer?: number }} [options]
@@ -386,7 +435,11 @@ function findArtifactMatch(worktreePath, artifactPattern) {
  * @param {string} [config.baseBranch]
  * @param {string} [config.sinceCommit] When set, scope file-scope checks to `sinceCommit..HEAD` (serialized lanes).
  * @param {string} [config.taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution).
- * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }> }}
+ * @param {string} [config.projectRoot] Repo root for journal events (optional).
+ * @param {string} [config.batchId] Batch ID for journal events (optional).
+ * @param {string} [config.taskId] Task ID for journal events (optional).
+ * @param {string} [config.taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
+ * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }}
  */
 export function verifyContract(worktreePath, parsedContract, config = {}) {
 	/** @type {Array<{ field: string, ok: boolean, message: string }>} */
@@ -397,20 +450,59 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 
 	let testCommandOutput = "";
 	let testCommandOk = true;
+	let retriedCount = 0;
 	if (parsedContract.testCommand) {
-		const result = runContractTestCommand(worktreePath, parsedContract.testCommand, {
-			maxBuffer: config?.contractTestMaxBuffer,
-		});
-		testCommandOutput = result.output;
-		testCommandOk = result.ok;
+		const maxRetries = config?.contract?.testRetries ?? CONTRACT_TEST_DEFAULT_RETRIES;
+		const retryDelayMs = config?.contract?.testRetryDelayMs ?? CONTRACT_TEST_RETRY_DELAY_MS;
+		const totalAttempts = maxRetries + 1;
+		let lastResult = null;
+		let successAttempt = 0;
+
+		for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+			lastResult = runContractTestCommand(worktreePath, parsedContract.testCommand, {
+				maxBuffer: config?.contractTestMaxBuffer,
+			});
+
+			if (lastResult.ok) {
+				successAttempt = attempt;
+				break;
+			}
+
+			writeContractFailureLog(
+				config?.taskFolder,
+				parsedContract.testCommand,
+				lastResult,
+				attempt,
+				totalAttempts,
+			);
+
+			if (attempt < totalAttempts) {
+				retriedCount++;
+				if (config?.projectRoot && config?.batchId) {
+					appendJournalEvent(config.projectRoot, config.batchId, "contract.test_retry", {
+						taskId: config?.taskId,
+						attempt,
+						exitCode: lastResult.exitCode,
+						totalAttempts,
+					});
+				}
+				sleepSync(retryDelayMs);
+			}
+		}
+
+		testCommandOutput = lastResult.output;
+		testCommandOk = lastResult.ok;
+		const attemptLabel = successAttempt > 1
+			? ` (passed on attempt ${successAttempt} of ${totalAttempts})`
+			: "";
 		checks.push({
 			field: "testCommand",
-			ok: result.ok,
-			message: result.ok
-				? "testCommand passed"
-				: result.bufferOverflow
-					? `Contract ${result.summary}`
-					: `Contract testCommand failed (exit ${result.exitCode}): ${result.summary || "(no output)"}`,
+			ok: lastResult.ok,
+			message: lastResult.ok
+				? `testCommand passed${attemptLabel}`
+				: lastResult.bufferOverflow
+					? `Contract ${lastResult.summary}`
+					: `Contract testCommand failed after ${totalAttempts} attempt(s) (exit ${lastResult.exitCode}): ${lastResult.summary || "(no output)"}`,
 		});
 	}
 
@@ -495,5 +587,6 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	return {
 		ok: checks.length === 0 || checks.every((check) => check.ok),
 		checks,
+		...(retriedCount > 0 ? { retries: retriedCount } : {}),
 	};
 }

@@ -202,6 +202,15 @@ New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.m
 
 **testCommand output limits (issue #86, SP-426):** Contract verification captures stdout/stderr from `testCommand` with a **10MB** `maxBuffer` (raised from 256KB). Full-suite commands such as `flutter test` with thousands of tests can exceed smaller limits and fail with exit 255 and truncated output. Prefer **scoped** commands — e.g. `flutter test test/widget_test.dart` or `npm test -- tests/feature.test.mjs` — instead of unscoped full-suite runs. If output still exceeds 10MB, the verifier fails with an explicit `maxBuffer` message naming the command; narrow `testCommand` scope rather than disabling contract checks.
 
+**testCommand retry (issue #136, SP-485):** When `testCommand` fails, the verifier retries up to `contract.testRetries` times (default **1**) with a 5-second delay between attempts. This absorbs transient failures from resource contention (concurrent lane test suites) or pre-existing flakes without masking persistent problems. Failed attempt output is captured to `{taskFolder}/.reviews/contract-fail-{timestamp}.log` for post-mortem diagnosis. The journal records `contract.test_retry` events with attempt number and exit code; the final `contract.verified` event reflects the last attempt's result.
+
+| Config key | Type | Default | Description |
+|------------|------|---------|-------------|
+| `contract.testRetries` | integer ≥ 0 | `1` | Max retries after first `testCommand` failure (total attempts = retries + 1) |
+| `contract.testRetryDelayMs` | integer ≥ 0 | `5000` | Delay in milliseconds between retry attempts |
+
+Set `contract.testRetries: 0` to disable retry (pre-SP-485 behavior). For flaky environments, `2` gives three total attempts.
+
 | `contract.mode` | Behavior |
 |-----------------|----------|
 | `required` | Missing or empty Contract fails `spine tasks validate` for non-legacy task IDs |
