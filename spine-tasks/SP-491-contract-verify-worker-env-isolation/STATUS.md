@@ -1,7 +1,7 @@
 # SP-491: Contract verify worker env isolation — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -37,20 +37,20 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77%)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1592/1592 with SPINE_IS_WORKER unset — matches contract subprocess behavior)
+- [x] Coverage gate passes (88.54% ≥ 77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Runbook updated if behavior changed
-- [ ] Issue #155 closed
-- [ ] Discoveries logged
+- [x] Issue #155 closed
+- [x] Discoveries logged
 
 ---
 
@@ -66,6 +66,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | Only SPINE_IS_WORKER needed stripping; other worker-host vars do not trigger nested spawn guard | Documented in CONTRACT_TEST_WORKER_ENV_KEYS | contract-verify.mjs |
+| Full `npm test` in worker shell still fails on batch-spawn tests; contract verify subprocess sanitization is the fix point | Expected — worker guard SP-482 unchanged | PROMPT Do NOT |
 
 ---
 
@@ -76,6 +77,8 @@
 | 2026-07-04 | Task staged | PROMPT.md and STATUS.md created (#155) |
 | 2026-07-04 | Step 0 preflight | Issue #155 + worker-host env confirmed |
 | 2026-07-04 | Steps 1–2 | buildContractTestEnv + regression test added |
+| 2026-07-04 | Step 3 | typecheck + 1592 tests pass; coverage 88.54%; stet 0 findings |
+| 2026-07-04 | Step 4 | Runbook updated; issue #155 closed |
 
 ---
 
@@ -87,4 +90,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Contract `testCommand` subprocess now uses `buildContractTestEnv()` which deletes `SPINE_IS_WORKER` before `spawnSync`.
