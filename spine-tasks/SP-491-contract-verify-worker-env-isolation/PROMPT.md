@@ -56,7 +56,7 @@ Run contract `testCommand` in a **sanitized subprocess** that omits worker-only 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/contract-verify-worker-env.test.mjs && npm run coverage:check && stet run --strictness default --auto-finish-zero --quiet` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/contract-verify-worker-env.test.mjs && npm run coverage:check && stet start HEAD --allow-dirty --quiet && stet run --strictness default --auto-finish-zero --quiet` |
 | fileScopeMustChange | `src/batch/contract-verify.mjs` |
 | minLineCoverage | 77 |
 | artifactsMustExist | `tests/batch/contract-verify-worker-env.test.mjs` |
