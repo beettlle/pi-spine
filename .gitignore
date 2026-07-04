@@ -42,5 +42,9 @@ hb-step-*/
 # Graphify rebuild output (post-commit hook writes here; ignore to avoid spine lane DirtyWorktree)
 graphify-out/
 
+# Stet runtime state (config.toml is committed; session/lock are per-worktree)
+.review/lock
+.review/session.json
+
 # Dependencies
 node_modules/
