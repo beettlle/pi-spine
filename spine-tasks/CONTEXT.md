@@ -1187,7 +1187,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-434 | Attached engine single-owner lock | M | **Done** | — | #89 |
 | SP-435 | Sequence detached false failure exit | S | **Staged** | SP-388 | #72 |
 | SP-436 | Isolated base integrate core (#91 slice 1) | M | **Superseded** | — | → SP-474, SP-475 |
-| SP-437 | Sequence continue after merge_blocked | S | **Staged** | SP-387 | #82 |
+| SP-437 | Sequence continue after merge_blocked | S | **Complete** | SP-387 | #82 |
 | SP-438 | Flutter worktree adoption docs | S | **Staged** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
 | SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
@@ -1429,13 +1429,13 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 | SP-347 | #38 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-356/357 (done) |
 | SP-419 | #90 | OPEN | `.SUPERSEDED` | **Superseded** — execute SP-466/467 |
 | SP-430 | #95 | CLOSED | `.SUPERSEDED` | **Superseded** — finish SP-471 |
-| SP-437 | #82 | CLOSED | none | **Execute** — issue closed prematurely; fix not on `main`; re-batch SP-437 |
+| SP-437 | #82 | CLOSED | none | **Complete** — wave policy on lane; pending integrate to `main` |
 | SP-471 | #95 | CLOSED | none | **Execute** — remainder of #95 after SP-470 |
 | SP-488 | #132 | CLOSED | none | **Execute** — docs not yet written |
 
 **Superseded SP-2xx/3xx retirement (2026-07-04):** SP-282, SP-284, SP-292, SP-335, SP-340, SP-342, SP-346, SP-347 already have `.SUPERSEDED` markers and completed successors. Planner excludes them from `spine plan pending`. Do not re-batch; use replacement task IDs above.
 
-**SP-437 / #82 action:** Re-open #82 or re-batch SP-437 in v1.5 Wave 2 — lane branch `task/spine-lane-3-20260703T183108` had commits but merge to `main` not verified.
+**SP-437 / #82 action:** Complete on lane `task/spine-lane-1-20260704T185602`; integrate to `main` via batch merge.
 
 ---
 

@@ -1,8 +1,8 @@
 # SP-437: Sequence continue after merge_blocked wave — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-04
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,43 +11,43 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #82
-- [ ] Dependencies satisfied
+- [x] Read issue #82
+- [x] Dependencies satisfied (SP-387, SP-494 on main)
 
 ---
 
 ### Step 0: Wave policy
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Evaluate deps for waves 1+ when wave 0 merge_blocked
-- [ ] Continue or emit structured skip message per §17.4
+- [x] Evaluate deps for waves 1+ when wave 0 merge_blocked
+- [x] Continue or emit structured skip message per §17.4
 
 ---
 
 ### Step 1: Tests + docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fixture: 3-wave plan, wave 0 partial → wave 1 starts if deps allow
+- [x] Fixture: 3-wave plan, wave 0 partial → wave 1 starts if deps allow
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1595/1595 with `env -u SPINE_IS_WORKER`)
+- [x] Coverage gate (88.74% ≥ 77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated (`docs/adoption/operator-runbook.md`)
+- [x] Issue closed (#82 already closed on GitHub)
+- [x] .DONE created
 
 ---
 
@@ -62,6 +62,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Integration tests must unset `SPINE_IS_WORKER` when calling `startBatch` from worker sessions | Test fixture guard | `sequence-merge-blocked-continue.test.mjs` |
 
 ---
 
@@ -70,6 +71,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#82) |
+| 2026-07-04 | Step 0–1 implementation | `sequence-waves.mjs`, `sequence.mjs` wave policy, tests |
+| 2026-07-04 | Verification | typecheck OK; 1598/1598 tests; coverage 88.75%; stet 0 findings |
+| 2026-07-04 | Contract re-verify | Passed with `buildContractTestEnv` (SP-491); `.DONE` recreated |
 
 ---
 
@@ -81,4 +85,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+*Wave policy: succeeded/skipped tasks from merge_blocked waves satisfy deps for independent later waves; blocked waves emit §17.4 skip rationale.*
