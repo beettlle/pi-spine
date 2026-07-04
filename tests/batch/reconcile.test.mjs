@@ -107,17 +107,23 @@ test("running diagnosis for active batch", async () => {
 	}
 });
 
-test("runReconciliationCheck matches reconcileBatch output shape", () => {
-	const fixture = loadFixture("running-batch.json");
-	const result = runReconciliationCheck({
-		projectRoot: process.cwd(),
-		batchState: fixture,
-		batchStatePath: ".pi/batch-state.json",
-	});
+test("runReconciliationCheck matches reconcileBatch output shape", async () => {
+	const projectRoot = await initGitRepo("spine-reconcile-shape-");
+	try {
+		const fixture = loadFixture("running-batch.json");
+		writePiBatchState(projectRoot, fixture);
+		const result = runReconciliationCheck({
+			projectRoot,
+			batchState: fixture,
+			batchStatePath: ".pi/batch-state.json",
+		});
 
-	assert.equal(result.diagnosis, "running");
-	assert.ok(result.headline);
-	assert.ok(result.suggestedCommand);
+		assert.equal(result.diagnosis, "running");
+		assert.ok(result.headline);
+		assert.ok(result.suggestedCommand);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("reconcileBatch includes journal hints when journal exists", async () => {

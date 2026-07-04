@@ -92,21 +92,31 @@ test("runPreflightPlanCheck builds wave plan during preflight", async () => {
 	}
 });
 
-test("runReconciliationCheck returns real diagnosis for running batch", () => {
-	const fixture = JSON.parse(
-		fs.readFileSync(
-			path.join(process.cwd(), "tests/fixtures/batch-state/running-batch.json"),
-			"utf-8",
-		),
-	);
-	const result = runReconciliationCheck({
-		projectRoot: process.cwd(),
-		batchState: fixture,
-		batchStatePath: ".pi/batch-state.json",
-	});
-	assert.equal(result.diagnosis, "running");
-	assert.ok(result.headline);
-	assert.equal(result.suggestedCommand, "/spine-status --diagnose");
+test("runReconciliationCheck returns real diagnosis for running batch", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-reconcile-");
+	try {
+		const fixture = JSON.parse(
+			fs.readFileSync(
+				path.join(process.cwd(), "tests/fixtures/batch-state/running-batch.json"),
+				"utf-8",
+			),
+		);
+		fs.mkdirSync(path.join(projectRoot, ".pi"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".pi", "batch-state.json"),
+			JSON.stringify(fixture, null, 2),
+		);
+		const result = runReconciliationCheck({
+			projectRoot,
+			batchState: fixture,
+			batchStatePath: ".pi/batch-state.json",
+		});
+		assert.equal(result.diagnosis, "running");
+		assert.ok(result.headline);
+		assert.equal(result.suggestedCommand, "/spine-status --diagnose");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("checkDoctor fails when doctor reports issues", () => {

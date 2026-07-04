@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import {
 	DIAGNOSIS_TAXONOMY,
@@ -8,6 +10,7 @@ import {
 	buildSuggestedCommand,
 } from "../../src/batch/diagnosis.mjs";
 import { deriveDiagnosis, reconcileBatch } from "../../src/batch/reconcile.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 test("DIAGNOSIS_TAXONOMY includes needs_replan", () => {
 	assert.ok(DIAGNOSIS_TAXONOMY.includes("needs_replan"));
@@ -110,39 +113,50 @@ test("needs_replan blocks needs_merge diagnosis when replan task remains", () =>
 	assert.equal(diagnosis.diagnosis, "needs_replan");
 });
 
-test("reconcileBatch surfaces needs_replan with edit-PROMPT suggestion", () => {
-	const batchState = {
-		batchId: "20260611T120400",
-		phase: "failed",
-		baseBranch: "main",
-		orchBranch: "orch/spine-20260611T120400",
-		startedAt: Date.now() - 60_000,
-		endedAt: null,
-		failedTasks: 1,
-		succeededTasks: 0,
-		totalTasks: 1,
-		mergeResults: [],
-		tasks: [
-			{
-				taskId: "FX-153",
-				status: "failed",
-				exitReason: "needs_replan",
-				taskFolder: "test/fixtures/taskplane/FX-final-replan",
-				doneFileFound: false,
-				laneNumber: 1,
-			},
-		],
-		segments: [{ segmentId: "FX-153::default", taskId: "FX-153", status: "failed" }],
-		lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["FX-153"] }],
-	};
+test("reconcileBatch surfaces needs_replan with edit-PROMPT suggestion", async () => {
+	const projectRoot = await initGitRepo("spine-replan-");
+	try {
+		const batchState = {
+			batchId: "20260611T120400",
+			phase: "failed",
+			baseBranch: "main",
+			orchBranch: "orch/spine-20260611T120400",
+			startedAt: Date.now() - 60_000,
+			endedAt: null,
+			failedTasks: 1,
+			succeededTasks: 0,
+			totalTasks: 1,
+			mergeResults: [],
+			tasks: [
+				{
+					taskId: "FX-153",
+					status: "failed",
+					exitReason: "needs_replan",
+					taskFolder: "test/fixtures/taskplane/FX-final-replan",
+					doneFileFound: false,
+					laneNumber: 1,
+				},
+			],
+			segments: [{ segmentId: "FX-153::default", taskId: "FX-153", status: "failed" }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["FX-153"] }],
+		};
 
-	const result = reconcileBatch({
-		projectRoot: process.cwd(),
-		batchState,
-		batchStatePath: ".spine/batch-state.json",
-		verbose: true,
-	});
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "batch-state.json"),
+			JSON.stringify(batchState, null, 2),
+		);
 
-	assert.equal(result.diagnosis, "needs_replan");
-	assert.match(result.suggestedCommand, /edit .*FX-153.*PROMPT\.md/);
+		const result = reconcileBatch({
+			projectRoot,
+			batchState,
+			batchStatePath: ".spine/batch-state.json",
+			verbose: true,
+		});
+
+		assert.equal(result.diagnosis, "needs_replan");
+		assert.match(result.suggestedCommand, /edit .*FX-153.*PROMPT\.md/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
