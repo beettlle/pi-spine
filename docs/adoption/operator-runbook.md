@@ -618,6 +618,26 @@ spine run sequence pending
 
 **Detached sequence monitoring (SP-435):** When running detached sequences (default, not `--attached`), the sequence orchestrator keeps polling while the detached engine PID is alive and the batch phase is active — it does not exit with failure on a poll timeout. The engine log tail shown on errors is scoped to the **current** batch session (stale entries from previous batch starts are filtered out). If the engine process dies while the batch is `running`, the sequence exits with an actionable diagnosis.
 
+**Partial wave / merge_blocked continuation (SP-437, [#82](https://github.com/beettlle/pi-spine/issues/82)):** When a sequence wave hits `merge_blocked` or mixed-outcome `§17.4` policy (some tasks succeeded, others failed), the sequence runner **does not silently stop** after that wave. It evaluates later waves against `dependencies.json` / planner task deps:
+
+| Outcome | Behavior |
+|---------|----------|
+| Later wave tasks have all dependencies satisfied by succeeded/skipped tasks from prior waves (or `.DONE` on `main`) | Sequence starts the next wave batch with only runnable task IDs |
+| Later wave tasks depend on failed or unsatisfied tasks | Sequence prints a structured skip message naming the wave, failed task IDs, and blocked dependencies — then continues evaluating remaining waves |
+| Entire sequence | Exits non-zero when any wave was merge_blocked, even if independent later waves completed |
+
+Example skip output:
+
+```text
+Sequence wave 2 skipped (§17.4 mixed-outcome policy — wave 0 merge blocked).
+Prior wave succeeded task(s): SP-001.
+Prior wave failed task(s): SP-002.
+  SP-007: blocked by unsatisfied dependencies SP-002.
+Retry or skip failed tasks on the blocked wave, or land succeeded lanes before dependencies unblock.
+```
+
+Recover the blocked wave with `spine batch retry <taskId>` / `spine batch resume --force` per §6, then `spine run sequence pending --resume` or start the next planner wave manually.
+
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
 
 When `spine integrate` merges `orch/spine-<batchId>` into `main` and git reports a conflict, pi-spine **aborts the merge** and restores your previous checkout. `main` is left unchanged. The CLI prints a `MergeConflict` headline and journals `integrate.failed` with `conflict: true`.
