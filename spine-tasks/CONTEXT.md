@@ -77,6 +77,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 3. **Land loop:** `spine batch start` → monitor `spine status --diagnose` → `spine gate approve` → `spine integrate` → `spine batch complete` → push `main`.
 4. **Never** hand-edit `.spine/batch-state.json`.
 
+**Contract `testCommand` false positives in worker sessions:** Real-pi workers set `SPINE_IS_WORKER=1`. When Contract `testCommand` runs the full test suite, pre-existing tests that call `startBatch` fail with `nested_batch_spawn_blocked` — the batch may show `contract_failed` even though the worker finished (`.DONE`, review APPROVE, scoped tests pass). This is environmental, not a bad task diff. Diagnosis and recovery: operator runbook [§9 — Contract `testCommand` false positives in worker environment](../docs/adoption/operator-runbook.md#contract-testcommand-false-positives-in-worker-environment-issue-132). Prefer scoped `testCommand` matching the PROMPT Testing step; SP-491 will sanitize contract subprocess env ([#155](https://github.com/beettlle/pi-spine/issues/155)).
+
 ---
 
 ## Next steps — Phase 4 run order
