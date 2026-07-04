@@ -1,6 +1,6 @@
 # SP-487: Tag-triggered release — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 1
@@ -38,11 +38,11 @@
 ---
 
 ### Step 3: Update release documentation
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] npm-publish.md updated
-- [ ] Release process documented
-- [ ] workflow_dispatch noted
+- [x] npm-publish.md updated
+- [x] Release process documented
+- [x] workflow_dispatch noted
 
 ---
 
