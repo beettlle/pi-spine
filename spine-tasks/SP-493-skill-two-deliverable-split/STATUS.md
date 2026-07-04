@@ -1,7 +1,7 @@
 # SP-493: Skill two-deliverable split test — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-04
 **Review Level:** 0
 **Review Counter:** 0
@@ -13,23 +13,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #140
-- [ ] Read Step B Slice section
+- [x] Read issue #140
+- [x] Read Step B Slice section
 
 ---
 
 ### Step 1: Add two-deliverable split test
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Rule added to Step B Slice
-- [ ] Evidence table or bullets included
+- [x] Rule added to Step B Slice
+- [x] Evidence table or bullets included
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Build passes
@@ -63,6 +63,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-04 | Task staged | PROMPT.md and STATUS.md created (#140) |
+| 2026-07-04 | Step 0 preflight | Issue #140 and Step B Slice read |
+| 2026-07-04 | Step 1 implementation | Two-deliverable test rule and evidence table added to SKILL.md |
 
 ---
 
