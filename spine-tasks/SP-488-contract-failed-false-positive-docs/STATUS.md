@@ -44,17 +44,21 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
+
+- [x] "Must Update" docs modified
+- [x] "Check If Affected" docs reviewed
+- [x] Discoveries logged
+- [x] GitHub issue #132 closed (already closed upstream; comment added)
 
 ---
 
-### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+## Completion Criteria
 
-- [ ] "Must Update" docs modified
-- [ ] "Check If Affected" docs reviewed
-- [ ] Discoveries logged
-- [ ] GitHub issue #132 closed
+- [x] All steps complete
+- [x] Typecheck passing; full suite 1546/1589 (43 pre-existing worker-env failures documented)
+- [x] Operator runbook has a findable section for contract false positives
+- [x] CONTEXT.md has a worker-facing note
 
 ---
 
