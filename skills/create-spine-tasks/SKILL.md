@@ -285,7 +285,7 @@ Use [references/prompt-template.md](references/prompt-template.md). Spine-specif
 - **Worker tools** — when Review Level > 0, steps must note `spine_review_step` after each step
 - **Testing step (required for all tasks)** — every packet MUST include `### Step N: Testing & Verification` inside `## Steps`, placed **before** `## Completion Criteria`. This applies to **docs-only Review Level 0 tasks** as well — omitting the step causes `prompt_parse_failed` at batch launch (SP-075). Docs-only tasks still run the full test suite; they may omit the coverage-gate checkbox when no application code changes.
 - **Coverage gate** — when the task changes application code, add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy)
-- **Contract (required for new SP-\* tasks)** — add `## Contract` after `## File Scope` using [references/contract-template.md](references/contract-template.md). Include `testCommand` for code tasks; use `` `true` `` for docs-only S tasks. When using `fileScopeMustNotChange`, follow parallel-only semantics and never ban `spine-tasks/**` (see contract template and [File Scope and parallel batches](#file-scope-and-parallel-batches)). Legacy `TP-*` packets may omit Contract when `contract.legacyTaskIdPrefixes` includes `TP-`.
+- **Contract (required for new SP-\* tasks)** — add `## Contract` after `## File Scope` using [references/contract-template.md](references/contract-template.md). Include `testCommand` for code tasks; use `` `true` `` for docs-only S tasks. When `testCommand` is `` `true` `` (docs-only), **always** include `fileScopeMustChange` listing at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). When using `fileScopeMustNotChange`, follow parallel-only semantics and never ban `spine-tasks/**` (see contract template and [File Scope and parallel batches](#file-scope-and-parallel-batches)). Legacy `TP-*` packets may omit Contract when `contract.legacyTaskIdPrefixes` includes `TP-`.
 - **Completion** — worker creates `{task-folder}/.DONE`; batch engine may auto-commit remaining work
 
 ### Step 5: Create STATUS.md
@@ -464,6 +464,7 @@ Before reporting launch commands:
 - [ ] Complexity scored; review level assigned (0–3)
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
+- [ ] If `testCommand` is `` `true` ``, `fileScopeMustChange` MUST list at least one deliverable path
 - [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
