@@ -38,7 +38,7 @@ When wave N hits merge_blocked with partial success, sequence should continue in
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/sequence-merge-blocked-continue.test.mjs && npm run coverage:check && stet run --strictness lenient --auto-finish-zero --quiet` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/sequence-merge-blocked-continue.test.mjs && npm run coverage:check && scripts/spine-stet-contract-run.sh lenient` |
 | minLineCoverage | 77 |
 
 ## Steps

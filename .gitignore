@@ -45,6 +45,7 @@ graphify-out/
 # Stet runtime state (config.toml is committed; session/lock are per-worktree)
 .review/lock
 .review/session.json
+.review/spine-stet-baseline.ref
 
 # Dependencies
 node_modules/

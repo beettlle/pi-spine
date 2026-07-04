@@ -1172,8 +1172,8 @@ Config is committed at `.review/config.toml` so lane worktrees inherit settings 
 
 | Phase | Mechanism | Command |
 |-------|-----------|---------|
-| Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` |
-| Contract verify | task `testCommand` suffix | `stet run --auto-finish-zero --quiet` |
+| Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` (writes `.review/spine-stet-baseline.ref`) |
+| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review) |
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
 
