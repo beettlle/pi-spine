@@ -1238,7 +1238,9 @@ When final contract verification runs inside a **real-pi worker**, the `testComm
 | Assuming full-suite green in a developer checkout implies lane contract verify will pass | Treat worker env (`SPINE_IS_WORKER=1`) as distinct from operator shell |
 | Interpreting `contract_failed` as bad code when STATUS + review are green | Follow diagnosis above before rewriting implementation |
 
-**Future fix:** SP-491 will sanitize contract subprocess env (omit `SPINE_IS_WORKER`) so full-suite `testCommand` matches operator re-run behavior ([#155](https://github.com/beettlle/pi-spine/issues/155)). Until that lands, prefer scoped `testCommand` in new task packets.
+**Fix (SP-491):** Contract `testCommand` now runs in a sanitized subprocess that omits `SPINE_IS_WORKER` (see `buildContractTestEnv` in `src/batch/contract-verify.mjs`), so full-suite `testCommand` matches operator re-run behavior outside worker-host ([#155](https://github.com/beettlle/pi-spine/issues/155)). Scoped `testCommand` values remain faster and are still preferred for large suites.
+
+**Historical note:** Before SP-491, operators saw false `contract_failed` when Contract `testCommand` ran the full suite inside worker env; the diagnosis steps above still apply when investigating older batches or custom contract runners that bypass `runContractTestCommand`.
 
 ### Scenario fixture registry
 
