@@ -1,8 +1,8 @@
 # SP-488: Contract failed false positive docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-03
+**Current Step:** Step 1 — Add operator runbook section
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-04
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,31 +11,31 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] Dependencies satisfied
+- [x] Required files and paths exist
+- [x] Dependencies satisfied (SP-494 complete on lane branch)
 
 ---
 
 ### Step 1: Add operator runbook section
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Troubleshooting section added to operator-runbook.md
-- [ ] Covers symptom, cause, diagnosis, resolution, prevention
-- [ ] References SP-451 and SP-435 incidents
+- [x] Troubleshooting section added to operator-runbook.md
+- [x] Covers symptom, cause, diagnosis, resolution, prevention
+- [x] References SP-451 and SP-435 incidents
 
 ---
 
 ### Step 2: Add CONTEXT.md worker note
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Worker-facing note about SPINE_IS_WORKER=1 added
+- [x] Worker-facing note about SPINE_IS_WORKER=1 added
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] All failures fixed
