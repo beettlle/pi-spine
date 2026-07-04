@@ -16,6 +16,7 @@ When wave N hits merge_blocked with partial success, sequence should continue in
 ## Dependencies
 
 - **Task:** SP-387 (sequence-runner-core-loop)
+- **Task:** SP-494 (stet Option A bootstrap)
 
 ## Context to Read First
 
@@ -37,7 +38,7 @@ When wave N hits merge_blocked with partial success, sequence should continue in
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-merge-blocked-continue.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/sequence-merge-blocked-continue.test.mjs && npm run coverage:check && stet run --strictness lenient --auto-finish-zero --quiet` |
 | minLineCoverage | 77 |
 
 ## Steps
@@ -60,6 +61,7 @@ When wave N hits merge_blocked with partial success, sequence should continue in
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [ ] If `stet run` fails: fix code OR file GitHub issue(s) on beettlle/pi-spine (label `stet`) before marking done — see Stet findings policy in CONTEXT.md
 - [ ] Fix all failures
 
 ### Step 3: Documentation & Delivery

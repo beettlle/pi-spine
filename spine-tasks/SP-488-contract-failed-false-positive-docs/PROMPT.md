@@ -26,7 +26,7 @@ Document the known `contract_failed` false-positive behavior that occurs when `t
 
 ## Dependencies
 
-- **None**
+- **Task:** SP-494 (stet Option A bootstrap — batch ordering)
 
 ## Context to Read First
 

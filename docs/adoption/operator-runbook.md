@@ -1147,6 +1147,50 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 ---
 
+## 8.1 Stet code review (v1.5.0)
+
+v1.5.0 uses **stet** for per-task LLM code review via Option A (baseline-at-setup + contract `testCommand`). See [stet integration overview](../stet-overview.md) §1.
+
+### Preflight (operator)
+
+Before starting a v1.5.0 batch:
+
+1. **stet** on `PATH` (`stet doctor` exits 0).
+2. **LM Studio** local server at `http://127.0.0.1:1234/v1` with model **`qwen/qwen3-coder-next`** loaded.
+3. Verify:
+
+```bash
+export STET_PROVIDER=openai
+export STET_OPENAI_BASE_URL=http://127.0.0.1:1234/v1
+export STET_MODEL=qwen/qwen3-coder-next
+stet doctor   # expect: OpenAI-compatible API OK, Model: qwen/qwen3-coder-next
+```
+
+Config is committed at `.review/config.toml` so lane worktrees inherit settings without per-worker env exports.
+
+### How it runs
+
+| Phase | Mechanism | Command |
+|-------|-----------|---------|
+| Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` |
+| Contract verify | task `testCommand` suffix | `stet run --auto-finish-zero --quiet` |
+
+Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
+
+### Triage
+
+- `stet list` — active findings with IDs
+- `stet dismiss <id> <reason>` — reasons: `false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope` (see `.cursor/rules/stet-integration.mdc`)
+- `scripts/spine-stet-file-issues.sh [SP-XXX]` — file GitHub issues on beettlle/pi-spine with label `stet`
+
+**Findings policy:** Project code defects → beettlle/pi-spine issues (`stet` label). stet CLI bugs → https://github.com/beettlle/stet/issues.
+
+### Gate evidence
+
+Gate-level stet review via `testing.build` is **not supported** until [#160](https://github.com/beettlle/pi-spine/issues/160). Use contract `testCommand` (per-task) or manual operator review before integrate.
+
+---
+
 ## 9. Troubleshooting
 
 ### Dev verification (pi-spine repo)

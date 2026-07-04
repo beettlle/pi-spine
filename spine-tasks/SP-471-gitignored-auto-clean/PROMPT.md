@@ -15,6 +15,7 @@ Optional `git clean -fdX` for known gitignored artifact dirs before lane dirty v
 ## Dependencies
 
 - **Task:** SP-427, SP-470
+- **Task:** SP-494 (stet Option A bootstrap)
 
 ## Context to Read First
 
@@ -38,7 +39,7 @@ Optional `git clean -fdX` for known gitignored artifact dirs before lane dirty v
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/gitignored-auto-clean.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/gitignored-auto-clean.test.mjs && npm run coverage:check && stet run --strictness lenient --auto-finish-zero --quiet` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `src/batch/lane-dirty-check.mjs` |
 | artifactsMustExist | `tests/batch/gitignored-auto-clean.test.mjs` |
@@ -63,6 +64,7 @@ Optional `git clean -fdX` for known gitignored artifact dirs before lane dirty v
 
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Run coverage gate: `npm run coverage:check` — ≥77% line coverage
+- [ ] If `stet run` fails: fix code OR file GitHub issue(s) on beettlle/pi-spine (label `stet`) before marking done — see Stet findings policy in CONTEXT.md
 - [ ] Fix all failures
 
 ### Step 4: Documentation & Delivery

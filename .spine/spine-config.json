@@ -60,7 +60,7 @@
       "TP-"
     ]
   },
-  "worktreeSetupHook": "",
+  "worktreeSetupHook": "scripts/spine-worktree-setup.sh",
   "referenceDocs": [],
   "standards": [],
   "neverLoad": []

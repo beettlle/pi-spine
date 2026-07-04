@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-02 (Phase 55 — task size decomposition)
+**Last Updated:** 2026-07-04 (Phase 58 — v1.5.0 prep + stet Option A)
 **Status:** Active
-**Next Task ID:** SP-491
+**Next Task ID:** SP-495
 
 ---
 
@@ -680,7 +680,7 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 
 1. **Wave 0 (parallel):** `SP-267`, `SP-274`, `SP-281`
 2. **Wave 1 (parallel):** `SP-268`, `SP-275`
-3. **Wave 2:** `SP-282` (closes #5)
+3. **Wave 2:** ~~`SP-282`~~ → SP-294/295 (superseded, retired 2026-07-04)
 
 Completed Phase 28 slices (`.DONE`): SP-256, SP-263–266, SP-269–273, SP-276–277.
 
@@ -918,19 +918,19 @@ FR-SHIP-04 (doc sync, SP-213) closes stale entries in this file's priority backl
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
 | SP-334 | Batch retry failed-phase recovery | S | **Staged** | — | #25 |
-| SP-335 | Batch complete worktree cleanup | M | **Superseded** → SP-350/351 | — | #26 |
+| ~~SP-335~~ | Batch complete worktree cleanup | M | **Retired** (superseded → SP-350/351) | — | #26 |
 | SP-336 | Dashboard heartbeat display fix | S | **Staged** | — | #27 |
 | SP-337 | Dismiss orphan worker kill | S | **Staged** | — | #28 |
 | SP-338 | Merge failure diagnosis | S | **Staged** | — | #29 |
 | SP-339 | Status JSON task progress | S | **Staged** | — | #30 |
-| SP-340 | Planner file-scope overlap guard | M | **Superseded** → SP-352/353 | — | #31 |
+| ~~SP-340~~ | Planner file-scope overlap guard | M | **Retired** (superseded → SP-352/353) | — | #31 |
 | SP-341 | Worker timeout heartbeat slide | S | **Staged** | — | #32 |
-| SP-342 | Stub release task guard | M | **Superseded** → SP-349 | — | #33 |
+| ~~SP-342~~ | Stub release task guard | M | **Retired** (superseded → SP-349) | — | #33 |
 | SP-343 | Attached batch exit after complete | S | **Staged** | — | #34 |
 | SP-344 | doneOnDisk semantics alignment | S | **Staged** | SP-338 | #35 |
 | SP-345 | Transient orphan debounce | S | **Staged** | — | #36 |
-| SP-346 | Merge PRD conflict resolution | M | **Superseded** → SP-354/355 | SP-310 | #37 |
-| SP-347 | Merge blocked terminal phase | M | **Superseded** → SP-356/357 | SP-338 | #38 |
+| ~~SP-346~~ | Merge PRD conflict resolution | M | **Retired** (superseded → SP-354/355) | SP-310 | #37 |
+| ~~SP-347~~ | Merge blocked terminal phase | M | **Retired** (superseded → SP-356/357) | SP-338 | #38 |
 
 #### Phase 45 — Issue-fix decomposition (#26/#31/#37/#38 splits + #33/#39/#40)
 
@@ -966,7 +966,7 @@ spine batch start SP-343                    # attached land-loop UX
 spine batch start pending                   # remainder after wave 0 lands
 ```
 
-**Superseded (skip):** SP-335, SP-340, SP-342, SP-346, SP-347 — replaced by SP-350–357 / SP-349.
+**Superseded (retired 2026-07-04 — do not batch):** SP-335, SP-340, SP-342, SP-346, SP-347 — replaced by SP-350–357 / SP-349 (all `.DONE`).
 
 **Done:** SP-348, SP-349.
 
@@ -1360,6 +1360,82 @@ spine tasks analyze SP-488 SP-489 SP-490
 spine plan SP-488 SP-489 SP-490
 spine batch start SP-488 SP-489 SP-490
 ```
+
+#### Phase 58 — v1.5.0 prep (2026-07-04)
+
+**Source:** v1.5.0 release planning — new P0 task packets, skill P0 fixes, closed-issue audit, superseded task retirement.
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-494 | Stet contract integration (v1.5.0 bootstrap) | S | **Staged** | — | — |
+| SP-491 | Contract verify worker env isolation | M | **Staged** | SP-494 | #155 |
+| SP-492 | Skill fileScopeMustChange for docs-only | S | **Staged** | SP-494 | #139 |
+| SP-493 | Skill two-deliverable split test | S | **Staged** | SP-492, SP-494 | #140 |
+
+**Stet batch policy (v1.5.0):**
+
+- **Prerequisite:** LM Studio server at `http://127.0.0.1:1234/v1` with `qwen/qwen3-coder-next` loaded; `stet doctor` exits 0.
+- **Integration:** Option A — `worktreeSetupHook` + contract `testCommand` (`docs/stet-overview.md` §1).
+- **Bootstrap:** SP-494 must complete before v1.5.0 implementation batches.
+- **Review scope:** Code files only; non-code excluded via `.review/config.toml` `exclude_patterns`.
+- **Contract:** `stet run --auto-finish-zero --quiet` chained after tests; error-severity findings fail contract.
+
+**Stet findings → GitHub issues:**
+
+When stet reports findings the worker cannot fix in-task:
+
+1. **Project code defects** → open issues on **beettlle/pi-spine** with label `stet` (title: `[stet] <summary> (<file>:<line>)`; body: task id, finding id, file, line, severity, category, message). Use `gh issue create` or `scripts/spine-stet-file-issues.sh`.
+2. **stet CLI / tooling bugs** → https://github.com/beettlle/stet/issues (attach `stet doctor` output + config, redact secrets).
+3. Do **not** `stet dismiss` to pass contract without fix + issue or documented reason in `STATUS.md`.
+
+**Suggested batch (revised for stet):**
+
+```bash
+# Wave 0 — bootstrap (serial)
+spine tasks validate SP-494
+spine batch start SP-494
+
+# Wave 1 — after SP-494 lands
+spine tasks validate SP-492 SP-493 SP-491 SP-437 SP-471 SP-488
+spine plan SP-492 SP-493 SP-491
+spine batch start SP-492          # skill #139 — then SP-493 (shared SKILL.md; serial)
+spine batch start SP-493          # after SP-492
+spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel when lanes allow
+# SP-437, SP-471, SP-488 per existing deps when ready
+```
+
+**Previous suggested batch (superseded by stet wave order above):**
+
+```bash
+spine tasks validate SP-491 SP-492 SP-493
+spine tasks analyze SP-492 SP-493 SP-491
+spine plan SP-492 SP-493 SP-491
+spine batch start SP-492          # skill #139 — then SP-493 (shared SKILL.md; serial)
+spine batch start SP-493          # after SP-492
+spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel with SP-492 wave if lanes allow
+```
+
+**Closed-issue audit (open packets referencing closed GitHub issues):**
+
+| Task | Issue | Issue state | Marker | Disposition |
+|------|-------|-------------|--------|-------------|
+| SP-282 | #5 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-294/295 (done) |
+| SP-284 | #7 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-296/297 (done) |
+| SP-292 | #11 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-298/299 (done) |
+| SP-335 | #26 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-350/351 (done) |
+| SP-340 | #31 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-352/353 (done) |
+| SP-342 | #33 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-349 (done) |
+| SP-346 | #37 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-354/355 (done) |
+| SP-347 | #38 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-356/357 (done) |
+| SP-419 | #90 | OPEN | `.SUPERSEDED` | **Superseded** — execute SP-466/467 |
+| SP-430 | #95 | CLOSED | `.SUPERSEDED` | **Superseded** — finish SP-471 |
+| SP-437 | #82 | CLOSED | none | **Execute** — issue closed prematurely; fix not on `main`; re-batch SP-437 |
+| SP-471 | #95 | CLOSED | none | **Execute** — remainder of #95 after SP-470 |
+| SP-488 | #132 | CLOSED | none | **Execute** — docs not yet written |
+
+**Superseded SP-2xx/3xx retirement (2026-07-04):** SP-282, SP-284, SP-292, SP-335, SP-340, SP-342, SP-346, SP-347 already have `.SUPERSEDED` markers and completed successors. Planner excludes them from `spine plan pending`. Do not re-batch; use replacement task IDs above.
+
+**SP-437 / #82 action:** Re-open #82 or re-batch SP-437 in v1.5 Wave 2 — lane branch `task/spine-lane-3-20260703T183108` had commits but merge to `main` not verified.
 
 ---
 
