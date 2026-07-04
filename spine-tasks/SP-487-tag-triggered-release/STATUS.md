@@ -1,7 +1,7 @@
 # SP-487: Tag-triggered release — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,29 +11,29 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] publish.yml exists
-- [ ] Secrets identified
-- [ ] CI independence confirmed
+- [x] publish.yml exists
+- [x] Secrets identified (NPMSECRET used for NODE_AUTH_TOKEN)
+- [x] CI independence confirmed (no cross-reference from ci.yml or real-pi.yml)
 
 ---
 
 ### Step 1: Create release.yml workflow
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Tag-triggered workflow created
-- [ ] Test + publish + release steps
-- [ ] workflow_dispatch fallback
-- [ ] YAML valid
+- [x] Tag-triggered workflow created
+- [x] Test + publish + release steps
+- [x] workflow_dispatch fallback
+- [x] YAML valid
 
 ---
 
 ### Step 2: Remove publish.yml
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] publish.yml deleted
-- [ ] No broken workflow_run references
+- [x] publish.yml deleted
+- [x] No broken workflow_run references
 
 ---
 
