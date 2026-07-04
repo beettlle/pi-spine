@@ -39,6 +39,7 @@ export function gitPorcelain(worktreePath) {
 		cwd: worktreePath,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
+		maxBuffer: 10 * 1024 * 1024,
 	}).trim();
 }
 
@@ -107,6 +108,7 @@ export function countCommitsAhead(projectRoot, baseRef, headRef) {
 		cwd: projectRoot,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
+		maxBuffer: 10 * 1024 * 1024,
 	}).trim();
 	return Number.parseInt(count, 10) || 0;
 }
@@ -119,6 +121,7 @@ function listIgnoredUntrackedPaths(worktreePath) {
 		cwd: worktreePath,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
+		maxBuffer: 10 * 1024 * 1024,
 	}).trim();
 	if (!output) return [];
 	return output.split("\n").map((line) => line.trim()).filter(Boolean);
