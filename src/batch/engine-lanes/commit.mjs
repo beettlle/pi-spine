@@ -6,6 +6,7 @@ import { appendJournalEvent } from "../journal.mjs";
 import { commitLaneWorktree, gitPorcelain } from "../lane-commit.mjs";
 import {
 	resolvePostLaneCommitPorcelain,
+	sanitizeGitignoredArtifactsBeforeLaneCommit,
 	sanitizeOutOfScopeCoverageBeforeLaneCommit,
 } from "../lane-dirty-check.mjs";
 import {
@@ -53,6 +54,11 @@ export function commitLaneAndValidateWorktree({
 	config,
 }) {
 	const preCommitPorcelain = gitPorcelain(worktreePath);
+	sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
+		projectRoot,
+		porcelain: preCommitPorcelain,
+		enabled: config?.lanes?.autoCleanGitignoredArtifacts !== false,
+	});
 	sanitizeOutOfScopeCoverageBeforeLaneCommit(worktreePath, fileScopePaths, {
 		projectRoot,
 		porcelain: preCommitPorcelain,
