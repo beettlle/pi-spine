@@ -20,7 +20,9 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    ```
 4. **Automatic release** — pushing the `v*` tag triggers `release.yml`:
    - Checks out code at the tag ref.
-   - Runs `npm run typecheck` and `npm test`.
+   - If **CI already succeeded** on that commit (typical when `main` and tag are pushed together), skips duplicate validation and publishes immediately.
+   - If **no green CI run** exists for that commit (tag-only release), runs the full gate: typecheck, lint, tests, coverage, and CLI smoke checks (parity with `ci.yml`).
+   - Fails if CI failed on that commit — release does not bypass a red main build.
    - Runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
    - Creates a GitHub Release with auto-generated notes via `gh release create --generate-notes`.
 5. **Post-publish smoke** — verify install and CLI:

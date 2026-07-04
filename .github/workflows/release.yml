@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   release:
@@ -33,6 +34,40 @@ jobs:
         with:
           ref: ${{ steps.ref.outputs.tag }}
 
+      - name: Verify CI status for tagged commit
+        id: ci_gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha;
+            const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: sha,
+              per_page: 30,
+            });
+            const ciRuns = data.workflow_runs.filter((run) => run.name === "CI");
+            const success = ciRuns.some((run) => run.conclusion === "success");
+            const failed = ciRuns.some((run) => run.conclusion === "failure");
+
+            if (failed && !success) {
+              core.setFailed(
+                `CI failed for commit ${sha}; fix CI on main before publishing this tag.`
+              );
+              return;
+            }
+
+            core.setOutput("passed", success ? "true" : "false");
+            if (success) {
+              core.info(
+                `Reusing successful CI run for ${sha}; skipping duplicate validation.`
+              );
+            } else {
+              core.info(
+                `No successful CI run for ${sha}; running full release validation (lint + coverage).`
+              );
+            }
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,10 +86,47 @@ jobs:
           git config --global user.name "GitHub Actions"
 
       - name: Typecheck
+        if: steps.ci_gate.outputs.passed != 'true'
         run: npm run typecheck
 
+      - name: Lint
+        if: steps.ci_gate.outputs.passed != 'true'
+        run: npm run lint
+
       - name: Run tests
+        if: steps.ci_gate.outputs.passed != 'true'
         run: npm test
+
+      - name: Coverage check (77% line minimum)
+        if: steps.ci_gate.outputs.passed != 'true'
+        run: npm run coverage:check
+
+      - name: CLI smoke checks
+        if: steps.ci_gate.outputs.passed != 'true'
+        run: |
+          node bin/spine.mjs version
+          node bin/spine.mjs help
+
+          # Minimal pi stub so doctor can pass without real pi credentials in CI.
+          MOCK_BIN="$RUNNER_TEMP/ci-mock-bin"
+          mkdir -p "$MOCK_BIN"
+          cat > "$MOCK_BIN/pi" << 'EOF'
+          #!/usr/bin/env bash
+          case "$1" in
+            --version) echo "0.78.0"; exit 0 ;;
+            --list-models) printf 'provider model\nci mock-model\n'; exit 0 ;;
+            *) exit 0 ;;
+          esac
+          EOF
+          chmod +x "$MOCK_BIN/pi"
+          export PATH="$MOCK_BIN:$PATH"
+
+          FIXTURE="$RUNNER_TEMP/spine-ci-fixture"
+          mkdir -p "$FIXTURE"
+          cd "$FIXTURE"
+          git init -q
+          node "$GITHUB_WORKSPACE/bin/spine.mjs" init
+          node "$GITHUB_WORKSPACE/bin/spine.mjs" doctor
 
       - name: Publish to npm
         env:
