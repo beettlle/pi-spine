@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-04 (Phase 58 — v1.5.0 prep + stet Option A)
+**Last Updated:** 2026-07-04 (v1.5.0 released — Phase 58 complete)
 **Status:** Active
 **Next Task ID:** SP-495
 
@@ -1350,9 +1350,9 @@ spine batch start SP-480
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-488 | Contract failed false positive docs | S | **Staged** | — | #132 |
-| SP-489 | Dashboard failed task highlights | S | **Staged** | — | #133 |
-| SP-490 | Contract trailing-slash match | S | **Staged** | — | #118 |
+| SP-488 | Contract failed false positive docs | S | **Complete** | SP-494 | #132 |
+| SP-489 | Dashboard failed task highlights | S | **Complete** | — | #133 |
+| SP-490 | Contract trailing-slash match | S | **Complete** | — | #118 |
 
 **Suggested batch (all parallel — disjoint file scope):**
 
@@ -1369,10 +1369,12 @@ spine batch start SP-488 SP-489 SP-490
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-494 | Stet contract integration (v1.5.0 bootstrap) | S | **Staged** | — | — |
-| SP-491 | Contract verify worker env isolation | M | **Staged** | SP-494 | #155 |
-| SP-492 | Skill fileScopeMustChange for docs-only | S | **Staged** | SP-494 | #139 |
-| SP-493 | Skill two-deliverable split test | S | **Staged** | SP-492, SP-494 | #140 |
+| SP-494 | Stet contract integration (v1.5.0 bootstrap) | S | **Complete** | — | — |
+| SP-491 | Contract verify worker env isolation | M | **Complete** | SP-494 | #155 |
+| SP-492 | Skill fileScopeMustChange for docs-only | S | **Complete** | SP-494 | #139 |
+| SP-493 | Skill two-deliverable split test | S | **Complete** | SP-492, SP-494 | #140 |
+| SP-437 | Sequence continue after merge_blocked wave | S | **Complete** | SP-387, SP-494 | #82 |
+| SP-471 | Gitignored auto-clean before dirty gate | S | **Complete** | SP-427, SP-470, SP-494 | #95 |
 
 **Stet batch policy (v1.5.0):**
 
@@ -1431,13 +1433,13 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 | SP-347 | #38 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-356/357 (done) |
 | SP-419 | #90 | OPEN | `.SUPERSEDED` | **Superseded** — execute SP-466/467 |
 | SP-430 | #95 | CLOSED | `.SUPERSEDED` | **Superseded** — finish SP-471 |
-| SP-437 | #82 | CLOSED | none | **Complete** — wave policy on lane; pending integrate to `main` |
-| SP-471 | #95 | CLOSED | none | **Execute** — remainder of #95 after SP-470 |
-| SP-488 | #132 | CLOSED | none | **Execute** — docs not yet written |
+| SP-437 | #82 | CLOSED | none | **Complete** — integrated to `main` (batch 20260704T185602) |
+| SP-471 | #95 | CLOSED | none | **Complete** — integrated to `main` (batch 20260704T185602) |
+| SP-488 | #132 | CLOSED | none | **Complete** — integrated to `main` (batch 20260704T185602) |
 
 **Superseded SP-2xx/3xx retirement (2026-07-04):** SP-282, SP-284, SP-292, SP-335, SP-340, SP-342, SP-346, SP-347 already have `.SUPERSEDED` markers and completed successors. Planner excludes them from `spine plan pending`. Do not re-batch; use replacement task IDs above.
 
-**SP-437 / #82 action:** Complete on lane `task/spine-lane-1-20260704T185602`; integrate to `main` via batch merge.
+**v1.5.0 release:** Shipped as npm `pi-spine@1.5.0` (tag `v1.5.0`). Batches: `20260704T182954` (SP-494), `20260704T185602` (wave 1), `20260704T205637` (SP-493).
 
 ---
 
