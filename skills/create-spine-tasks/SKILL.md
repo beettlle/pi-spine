@@ -188,11 +188,22 @@ Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-on
 |------|----------|
 | **Size** | Target **M** (2–4 h). **L** → split when possible. **XL** → **must** split into multiple S/M tasks with dependencies. |
 | **Steps** | Max **4** implementation steps per task (exclude Testing & Verification / Documentation & Delivery). More steps → split. |
+| **Two-deliverable test** | If your Steps can be grouped into two clusters with no data dependency between them, split into separate tasks even if the step count is ≤4. The #1 sizing mistake is bundling two independent deliverables in one M task. |
 | **Parallel waves** | Prefer **≤4** M-sized tasks per wave; 8-task mega-waves stall pi workers (see Phase 15 / SP-086–088). |
 | **Scope** | One deliverable per task; disjoint **File Scope** when tasks can run in parallel. |
 | **IDs** | Use `Next Task ID` from CONTEXT.md; increment after each new task. Greenfield spine projects typically use `SP-###`; Taskplane migrants may keep `TP-###`. |
 | **Waves** | Order via `## Dependencies` and `{tasksRoot}/dependencies.json`. |
 | **Review** | Score complexity (below). Do not default to Level 0 for implementation work. |
+
+**Two-deliverable split evidence (Phase 55):** Every superseded composite task split into exactly two children because it bundled independent deliverables:
+
+| Superseded | Split into |
+|------------|------------|
+| SP-419 | SP-466, SP-467 |
+| SP-428 | SP-468, SP-469 |
+| SP-430 | SP-470, SP-471 |
+| SP-436 | SP-474, SP-475 |
+| SP-461 | SP-478, SP-479 |
 
 ### Step C.5: Analyze (optional — LLM structural review after slice)
 
