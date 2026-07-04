@@ -2,7 +2,9 @@
  * Rebuild batch task/segment status from append-only journal (FR-REL-01/02, PRD §11.4).
  */
 
-import { readJournalEvents, STRUCTURAL_JOURNAL_EVENT_TYPES } from "./journal.mjs";
+import fs from "node:fs";
+import { appendJournalEvent, readJournalEvents, STRUCTURAL_JOURNAL_EVENT_TYPES } from "./journal.mjs";
+import { parseReviewVerdict } from "./review-shared.mjs";
 import {
 	clearTaskFailureMetadata,
 	createInitialBatchState,
@@ -382,6 +384,113 @@ function classifiedShowsDoneInLaneDrift(classified) {
 		classified.classification === "terminal-success" &&
 		!["succeeded", "skipped"].includes(String(classified.status ?? "").toLowerCase())
 	);
+}
+
+/**
+ * Detect review.started events that have no matching review.completed for the same
+ * taskId + reviewType. These represent engine crashes mid-review where the artifact
+ * may exist on disk but the completion was never journaled.
+ *
+ * @param {object[]} events
+ * @returns {object[]} orphaned review.started events
+ */
+export function detectOrphanedReviewStarted(events) {
+	/** @type {Map<string, object>} keyed by "taskId:reviewType" */
+	const latestStarted = new Map();
+	/** @type {Set<string>} */
+	const completedKeys = new Set();
+
+	for (const event of events) {
+		const type = String(event?.type ?? "");
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const taskId = event.taskId ?? payload.taskId;
+		if (!taskId) continue;
+		const reviewType = payload.reviewType;
+		if (!reviewType) continue;
+		const key = `${taskId}:${reviewType}`;
+
+		if (type === "review.started") {
+			latestStarted.set(key, event);
+		} else if (type === "review.completed") {
+			completedKeys.add(key);
+			latestStarted.delete(key);
+		}
+	}
+
+	const orphaned = [];
+	for (const [key, event] of latestStarted) {
+		if (!completedKeys.has(key)) {
+			orphaned.push(event);
+		}
+	}
+	return orphaned;
+}
+
+/** @type {ReadonlySet<string>} Verdicts that indicate a successful review outcome. */
+const APPROVED_VERDICTS = new Set(["APPROVE", "PASS"]);
+
+/**
+ * Reconcile orphaned review.started events by checking for on-disk artifacts with
+ * valid verdicts and synthesizing the missing review.completed + task.completed events.
+ * Called at resume time to self-heal after engine crashes mid-review (SP-484 / #131).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object[]} params.events - journal events
+ * @returns {{ synthesized: Array<{ taskId: string, reviewType: string, verdict: string, artifactPath: string }> }}
+ */
+export function reconcileOrphanedReviewEvents({ projectRoot, batchId, events }) {
+	const orphaned = detectOrphanedReviewStarted(events);
+	/** @type {Array<{ taskId: string, reviewType: string, verdict: string, artifactPath: string }>} */
+	const synthesized = [];
+
+	for (const event of orphaned) {
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const artifactPath = typeof payload.artifactPath === "string" ? payload.artifactPath : "";
+		const taskId = event.taskId ?? payload.taskId;
+		if (!taskId || !artifactPath) continue;
+		if (!fs.existsSync(artifactPath)) continue;
+
+		let content;
+		try {
+			content = fs.readFileSync(artifactPath, "utf-8");
+		} catch {
+			continue;
+		}
+
+		const reviewType = payload.reviewType ?? "code";
+		const { verdict, feedback } = parseReviewVerdict(content, { reviewType });
+		if (!verdict || !APPROVED_VERDICTS.has(verdict)) continue;
+
+		appendJournalEvent(projectRoot, batchId, "review.completed", {
+			taskId,
+			laneNumber: payload.laneNumber ?? null,
+			correlationId: payload.correlationId ?? null,
+			stepNumber: payload.stepNumber ?? null,
+			reviewType,
+			reviewLevel: payload.reviewLevel ?? null,
+			verdict,
+			feedback: feedback ?? "",
+			artifactPath,
+			synthesized: true,
+			synthesizeReason: "orphaned_review_crash_recovery",
+		});
+
+		appendJournalEvent(projectRoot, batchId, "task.completed", {
+			taskId,
+			laneNumber: payload.laneNumber ?? null,
+			correlationId: payload.correlationId ?? null,
+			synthesized: true,
+			synthesizeReason: "orphaned_review_crash_recovery",
+			exitReason: "done",
+			doneFileFound: true,
+		});
+
+		synthesized.push({ taskId, reviewType, verdict, artifactPath });
+	}
+
+	return { synthesized };
 }
 
 export function detectBatchStateDrift(cachedState, rebuiltState, events = [], classifiedTasks = null) {

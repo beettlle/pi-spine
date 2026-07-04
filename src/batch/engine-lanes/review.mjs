@@ -426,30 +426,40 @@ async function runCodeReviewPhase({
 	const maxCodeReviewAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 	let codeReviewAttempt = task.codeReviewAttempts ?? 0;
 
-	if (codeReviewAttempt === 0) {
-		const honored = findCompletedCodeReview({
-			taskFolder: taskFolderInWorktree,
-			journalEvents: readJournalEvents(projectRoot, batchId),
-			taskId,
-		});
-		if (honored?.verdict === "APPROVE") {
-			appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+	const honored = findCompletedCodeReview({
+		taskFolder: taskFolderInWorktree,
+		journalEvents: readJournalEvents(projectRoot, batchId),
+		taskId,
+	});
+	if (honored?.verdict === "APPROVE") {
+		if (codeReviewAttempt > 0) {
+			appendJournalEvent(projectRoot, batchId, "review.crash_recovered", {
 				taskId,
 				laneNumber,
 				laneId: lane.laneId,
 				correlationId: laneCorrelationId,
 				reviewType: "code",
-				verdict: "APPROVE",
-				feedback: honored.feedback,
+				codeReviewAttempt,
 				artifactPath: honored.artifactPath,
-				codeReviewAttempt: 1,
-				honored: true,
 				honorSource: honored.source,
 			});
-			task.codeReviewAttempts = 1;
-			saveSpineBatchState(projectRoot, state);
-			return { ok: true, verdict: "APPROVE", codeReviewAttempt: 1, honored: true };
 		}
+		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			reviewType: "code",
+			verdict: "APPROVE",
+			feedback: honored.feedback,
+			artifactPath: honored.artifactPath,
+			codeReviewAttempt: codeReviewAttempt + 1,
+			honored: true,
+			honorSource: honored.source,
+		});
+		task.codeReviewAttempts = codeReviewAttempt + 1;
+		saveSpineBatchState(projectRoot, state);
+		return { ok: true, verdict: "APPROVE", codeReviewAttempt: codeReviewAttempt + 1, honored: true };
 	}
 
 	const journal = {
@@ -647,30 +657,40 @@ async function runFinalReviewPhase({
 	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 	let finalAttempt = task.finalAttempts ?? 0;
 
-	if (finalAttempt === 0) {
-		const honored = findCompletedFinalReview({
-			taskFolder: taskFolderInWorktree,
-			journalEvents: readJournalEvents(projectRoot, batchId),
-			taskId,
-		});
-		if (honored?.verdict === "PASS") {
-			appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+	const honoredFinal = findCompletedFinalReview({
+		taskFolder: taskFolderInWorktree,
+		journalEvents: readJournalEvents(projectRoot, batchId),
+		taskId,
+	});
+	if (honoredFinal?.verdict === "PASS") {
+		if (finalAttempt > 0) {
+			appendJournalEvent(projectRoot, batchId, "review.crash_recovered", {
 				taskId,
 				laneNumber,
 				laneId: lane.laneId,
 				correlationId: laneCorrelationId,
 				reviewType: "final",
-				verdict: "PASS",
-				feedback: honored.feedback,
-				artifactPath: honored.artifactPath,
-				finalAttempt: 1,
-				honored: true,
-				honorSource: honored.source,
+				finalAttempt,
+				artifactPath: honoredFinal.artifactPath,
+				honorSource: honoredFinal.source,
 			});
-			task.finalAttempts = 1;
-			saveSpineBatchState(projectRoot, state);
-			return { ok: true, verdict: "PASS", finalAttempt: 1, honored: true };
 		}
+		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			reviewType: "final",
+			verdict: "PASS",
+			feedback: honoredFinal.feedback,
+			artifactPath: honoredFinal.artifactPath,
+			finalAttempt: finalAttempt + 1,
+			honored: true,
+			honorSource: honoredFinal.source,
+		});
+		task.finalAttempts = finalAttempt + 1;
+		saveSpineBatchState(projectRoot, state);
+		return { ok: true, verdict: "PASS", finalAttempt: finalAttempt + 1, honored: true };
 	}
 
 	const journal = {

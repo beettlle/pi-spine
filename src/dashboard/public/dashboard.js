@@ -226,13 +226,29 @@ function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 		}
 		tr.dataset.laneId = lane.laneId;
 		tr.setAttribute("aria-expanded", lane.laneId === expandedLaneId ? "true" : "false");
-		const statusLabel =
-			lane.laneAlert === "checkpoint-warning"
-				? `${lane.status} · checkpoint warning`
-				: lane.laneAlert === "stall-killed"
-					? `${lane.status} · stall killed`
-					: lane.status;
 		const throughput = lane.throughput ?? {};
+		const failedCount = throughput.failedCount ?? 0;
+		const isTaskFailed = failedCount > 0 || lane.activityPhase === "failed";
+		const isTaskSucceeded = lane.status === "completed" && !isTaskFailed;
+		const isTaskRunning = lane.status === "running" && !isTaskFailed;
+		if (isTaskFailed) tr.classList.add("task-failed");
+		else if (isTaskSucceeded) tr.classList.add("task-succeeded");
+		else if (isTaskRunning) tr.classList.add("task-running");
+		let statusLabel;
+		if (isTaskFailed) {
+			const failedEvent = (lane.detail?.recentEvents ?? []).find((e) => e.type === "task.failed");
+			const rawReason = failedEvent?.summary ?? "";
+			const exitReason = rawReason.split("→")[0].replace(/,\s*$/, "").trim();
+			statusLabel = exitReason ? `❌ FAILED — ${exitReason}` : "❌ FAILED";
+		} else if (isTaskSucceeded) {
+			statusLabel = "✅ Done";
+		} else if (lane.laneAlert === "checkpoint-warning") {
+			statusLabel = `${lane.status} · checkpoint warning`;
+		} else if (lane.laneAlert === "stall-killed") {
+			statusLabel = `${lane.status} · stall killed`;
+		} else {
+			statusLabel = lane.status;
+		}
 		const runningText = formatRunningCell(lane.runningTaskId);
 		const queuedText = formatQueuedCell(lane.queuedTaskIds ?? []);
 		const cellSpecs = [

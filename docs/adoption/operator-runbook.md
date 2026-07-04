@@ -948,6 +948,34 @@ When the journal shows **`review.started`** followed by **`review.completed`** w
 
 **Operator action:** Usually none — the batch proceeds. If an artifact exists but honor did not trigger, confirm the file contains a parseable terminal verdict (APPROVE/PASS) and is not still being written. Diagnostic overrides only: `SPINE_REVIEW_ARTIFACT_POLL_MS`, `SPINE_REVIEW_ARTIFACT_QUIESCENCE_MS`.
 
+### Review crash state drift (`state_drift` after `review.started`)
+
+When the engine crashes after journaling `review.started` but before `review.completed` and `task.completed`, the task remains stuck as `status: "running"` even though `.DONE` exists and a review artifact with a terminal verdict is on disk.
+
+**Symptoms:** `spine status --diagnose` reports `state_drift`; journal has `review.started` with no matching `review.completed`; `.DONE` and review artifact (`.reviews/{step}-*.md` or `.reviews/final-*.md`) exist in the lane worktree.
+
+**Self-healing (SP-484 / #131):** On `spine batch resume`, two mechanisms recover automatically:
+
+1. **Artifact honor at any attempt count:** `findCompletedCodeReview` and `findCompletedFinalReview` check for existing review artifacts regardless of `codeReviewAttempt` / `finalAttempt` value. When a valid APPROVE/PASS artifact is found, the engine honors it and journals `review.crash_recovered`.
+2. **Orphaned review reconciliation:** `reconcileOrphanedReviewEvents` detects orphaned `review.started` events, reads the on-disk artifact, and synthesizes `review.completed` + `task.completed` events with `synthesizeReason: orphaned_review_crash_recovery`.
+
+**Manual recovery (if self-healing does not trigger):**
+
+```bash
+spine batch retry <taskId>
+spine batch resume --attached --force
+```
+
+**Diagnosis in journal:**
+
+| Event | Meaning |
+|-------|---------|
+| `review.crash_recovered` | Engine honored pre-existing artifact at attempt > 0 |
+| `review.completed` with `synthesized: true` | Orphan reconciler synthesized missing completion |
+| `task.completed` with `synthesized: true` | Orphan reconciler synthesized missing task completion |
+
+Incident reference: [20260605-retry-state-drift.md](../incidents/20260605-retry-state-drift.md).
+
 ### Final review nested spawn (`final_review_spawn_failed`)
 
 When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with **`final_review_spawn_failed`** / journal **`review.failed`** reason **`nested_spawn_blocked`**, the spine CLI inherited **`SPINE_WORKER_RUNNER`** from an active pi worker session (SP-195). Reviewer spawn is intentionally blocked inside worker sessions.
@@ -1054,7 +1082,7 @@ In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
 - **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required). Banner badge color follows **`diagnosis`**, not macro phase.
-- **Active batch panels** (when a batch is reconciled): batch summary (raw `phase` + **macro phase** label), wave progress (wave index + macro phase), lane table (includes **Phase** column — worker/review activity inferred from journal events; **Elapsed**, **Done**, and **Rate** throughput columns — task-based elapsed time, completed task count, and tasks/hr derived from journal and run-metrics), journal tail
+- **Active batch panels** (when a batch is reconciled): batch summary (raw `phase` + **macro phase** label), wave progress (wave index + macro phase), lane table (includes **Phase** column — worker/review activity inferred from journal events; **Elapsed**, **Done**, and **Rate** throughput columns — task-based elapsed time, completed task count, and tasks/hr derived from journal and run-metrics; **status row highlighting** — failed tasks red with `❌ FAILED — {exitReason}`, succeeded green with `✅ Done`, running amber), journal tail
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
 - Keep the dashboard terminal open while it runs
 
