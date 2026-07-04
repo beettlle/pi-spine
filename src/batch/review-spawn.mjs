@@ -90,7 +90,7 @@ function reviewerPiCommandExists(cmd) {
  */
 export function buildReviewerPiArgs({
 	worktreePath,
-	taskFolder,
+	_taskFolder,
 	reviewPrompt,
 	systemPrompt,
 	config = {},

@@ -16,7 +16,6 @@ import {
 	captureWorkerOutputTail,
 	redactWorkerOutput,
 	resolveWorkerOutputConfig,
-	TRUNCATION_MARKER,
 	workerOutputLogPath,
 } from "../../src/batch/worker-output.mjs";
 

@@ -25,12 +25,9 @@ import { handlePlan } from "./spine-cli/plan.mjs";
 import {
 	c,
 	die,
-	FAIL,
 	getPackageVersion,
 	isCliEntrypoint,
-	OK,
 	PACKAGE_ROOT,
-	WARN,
 } from "./spine-cli/shared.mjs";
 import { handleStatus } from "./spine-cli/status.mjs";
 import { handleLane } from "./spine-cli/lane-logs.mjs";
@@ -38,9 +35,9 @@ import { handleWatch } from "./spine-cli/watch.mjs";
 import { handleWait } from "./spine-cli/wait.mjs";
 import { handleScenarios } from "./spine-cli/scenarios.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
-import { cmdInit, SPINE_GITIGNORE_ENTRIES } from "./spine-init.mjs";
+import { cmdInit } from "./spine-init.mjs";
 import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
-import { runDoctorChecks, cmdDoctor } from "./spine-doctor.mjs";
+import { cmdDoctor } from "./spine-doctor.mjs";
 
 export { runDoctorChecks } from "./spine-doctor.mjs";
 

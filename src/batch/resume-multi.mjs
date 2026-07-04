@@ -9,7 +9,7 @@ import { assessWaveMergeEligibility } from "./engine-scope.mjs";
 import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
-import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
+import { finalizeResumedBatchForIntegrate } from "./post-merge-limbo.mjs";
 import {
 	succeededWaveMergeIndices,
 	waveTasksAllTerminal,

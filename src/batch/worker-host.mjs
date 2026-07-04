@@ -183,7 +183,7 @@ function spawnWorkerChild({
 	worktreePath,
 	taskFolder,
 	useStub,
-	timeoutMs,
+	timeoutMs: _timeoutMs,
 	projectRoot,
 	batchId,
 	laneNumber,
@@ -458,7 +458,7 @@ export async function runWorker({
 	onHeartbeat,
 	onWorkerPid,
 	fileScopePaths = [],
-	timeoutMs = DEFAULT_TIMEOUT_MS,
+	timeoutMs: _timeoutMs = DEFAULT_TIMEOUT_MS,
 	workerBackendDeps = {},
 }) {
 	const donePath = path.join(taskFolder, ".DONE");

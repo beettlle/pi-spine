@@ -6,7 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { collectTaskPacketSizeIssues } from "../../src/doctor/task-packet-size.mjs";
 
-const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const _PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 test("collectTaskPacketSizeIssues flags XL and too many steps on pending packet", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tp-size-warn-"));

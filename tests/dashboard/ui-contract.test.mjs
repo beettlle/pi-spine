@@ -36,7 +36,6 @@ import {
 } from "../../src/dashboard/snapshot.mjs";
 import {
 	deriveLanesThroughput,
-	deriveLaneThroughputStats,
 	summarizeLaneThroughput,
 } from "../../src/dashboard/lane-throughput.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";

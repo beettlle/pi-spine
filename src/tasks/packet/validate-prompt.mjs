@@ -8,7 +8,6 @@ import { matchesContractPattern } from "../../batch/contract-verify.mjs";
 import { CONTRACT_DEFAULTS } from "../../config/defaults.mjs";
 import {
 	parseContract,
-	parsePrompt,
 	validatePrompt as validatePromptStructure,
 } from "./parse-prompt.mjs";
 import { validateContract } from "./validate-contract.mjs";

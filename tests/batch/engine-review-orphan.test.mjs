@@ -10,7 +10,6 @@ import { runStepReview } from "../../src/batch/review.mjs";
 import { terminateStaleDetachedEngine } from "../../src/batch/resume-engine.mjs";
 import {
 	createInitialBatchState,
-	loadSpineBatchState,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 

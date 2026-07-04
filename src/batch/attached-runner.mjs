@@ -218,7 +218,7 @@ export async function runAttachedBatchEngine({
 	runEngine,
 	write,
 	spineBin,
-	force = false,
+	_force = false,
 	operation = "resume",
 }) {
 	if (operation === "start") {

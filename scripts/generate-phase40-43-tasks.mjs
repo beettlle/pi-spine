@@ -1064,8 +1064,6 @@ function statusMd(t) {
 			return `### Step ${i}: ${s.title}\n**Status:** ⬜ Not Started\n\n${items}`;
 		})
 		.join("\n\n---\n\n");
-	const levelLabel = REVIEW_LABELS[t.level];
-
 	return `# ${t.id}: ${t.name} — Status
 
 **Current Step:** Not Started

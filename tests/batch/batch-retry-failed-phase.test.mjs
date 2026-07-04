@@ -14,7 +14,7 @@ import {
 	updateSegmentForTask,
 } from "../../src/batch/state.mjs";
 import { checkNoActiveBatch } from "../../src/config/spine-preflight-lib.mjs";
-import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { laneTaskBranch, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /** Optimator batch 20260622T220028 / GitHub #25 — worker died, retry left failed-phase limbo. */

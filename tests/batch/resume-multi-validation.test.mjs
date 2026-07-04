@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { validateMultiTaskResume } from "../../src/batch/resume-multi.mjs";
@@ -12,7 +11,7 @@ import {
 import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
-function buildTwoTaskPausedState({ projectRoot, batchId, orchBranch, worktreePaths }) {
+function buildTwoTaskPausedState({ _projectRoot, batchId, orchBranch, worktreePaths }) {
 	const taskA = "TP-031";
 	const taskB = "TP-032";
 	return createInitialBatchState({

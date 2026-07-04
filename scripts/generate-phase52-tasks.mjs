@@ -1086,7 +1086,6 @@ function scoreLine(review) {
 }
 
 function buildPrompt(t) {
-  const folder = `${t.id}-${t.slug}`;
   const closesLine = t.closes
     ? `\n**Closes:** [#${t.issue}](https://github.com/beettlle/pi-spine/issues/${t.issue})`
     : `\n**GitHub:** [#${t.issue}](https://github.com/beettlle/pi-spine/issues/${t.issue}) (partial)`;

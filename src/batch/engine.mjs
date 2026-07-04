@@ -32,7 +32,6 @@ import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
 import {
 	assessWaveMergeEligibility,
 	canStartMultiTaskBatch,
-	countPlanTasks,
 	maxLaneNumberForPlan,
 	resolveBatchStartScope,
 	shouldAutoIntegrateAfterWave,

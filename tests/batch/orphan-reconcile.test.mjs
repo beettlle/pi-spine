@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { appendJournalEvent, journalPath } from "../../src/batch/journal.mjs";
+import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	createInitialBatchState,

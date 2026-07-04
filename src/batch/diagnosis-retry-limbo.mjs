@@ -22,7 +22,7 @@ export function isFailedPhasePendingOnlyLimbo(ctx = {}) {
  * @param {string} batchLabel
  * @param {object} ctx
  */
-export function buildFailedPhasePendingOnlyHeadline(batchLabel, ctx = {}) {
+export function buildFailedPhasePendingOnlyHeadline(batchLabel, _ctx = {}) {
 	return `${batchLabel} failed with pending task(s) and no failed tasks — resume to continue`;
 }
 

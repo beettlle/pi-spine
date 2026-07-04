@@ -22,7 +22,6 @@ import { resolveStallConfig } from "../batch/heartbeat.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import {
 	deriveLanesThroughput,
-	deriveLaneThroughputStats,
 	emptyLaneThroughputStats,
 	summarizeLaneThroughput,
 } from "./lane-throughput.mjs";

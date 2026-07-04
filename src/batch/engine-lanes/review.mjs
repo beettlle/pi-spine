@@ -8,7 +8,7 @@ import { recordLaneTaskMetric } from "./queue.mjs";
 import { REVIEW_DEFAULTS } from "../../config/defaults.mjs";
 import { parseContract } from "../../tasks/packet/parse-prompt.mjs";
 import { resolveTaskStartCommit } from "../contract-task-start.mjs";
-import { shouldRunContractVerify, shouldRunContractVerifyForWorker, verifyContract } from "../contract-verify.mjs";
+import { shouldRunContractVerifyForWorker, verifyContract } from "../contract-verify.mjs";
 import { appendJournalEvent, readJournalEvents } from "../journal.mjs";
 import {
 	recomputeTaskCounters,
@@ -21,7 +21,6 @@ import {
 	buildReviewArtifactPath,
 	normalizeCodeVerdict,
 	normalizeFinalVerdict,
-	parseFinalReviewVerdict,
 	shouldRunCodeReview,
 	shouldRunFinalReview,
 } from "../review-shared.mjs";

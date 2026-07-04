@@ -6,8 +6,6 @@ import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { destroyGitRepo, initGitRepo } from "./helpers/git-fixture.mjs";
 import {
-	fingerprintRulesManifest,
-	isRulesManifestGeneratedAtOnlyDrift,
 	RULES_MANIFEST_REL_PATH,
 } from "../src/config/cursor-rules/discover.mjs";
 import { loadSpineConfig } from "../bin/spine-config.mjs";

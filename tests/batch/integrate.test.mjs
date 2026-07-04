@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
-import { runInit } from "../../bin/spine-init.mjs";
 import { runSpineIntegrate } from "../../bin/spine-integrate.mjs";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";

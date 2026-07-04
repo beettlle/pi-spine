@@ -5,11 +5,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-	buildTasksAndLanesFromPlan,
 	loadTaskFileScopePaths,
 	recordLaneTaskMetric,
 	recordPromptParseFailure,
-	skipTaskDoneOnDisk,
 } from "./engine-lanes/queue.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { commitLaneAndValidateWorktree } from "./engine-lanes/commit.mjs";

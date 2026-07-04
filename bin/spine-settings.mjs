@@ -8,8 +8,6 @@
  *   spine settings set <path> <value> [--dry-run] [--json]
  */
 
-import path from "node:path";
-
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { loadSpineConfig, loadSpineConfigFile } from "./spine-config.mjs";
 import { formatSettingsShow } from "../src/cli/settings-show.mjs";

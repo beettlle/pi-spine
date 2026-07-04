@@ -18,7 +18,7 @@ function loadFixture(name) {
 	return JSON.parse(fs.readFileSync(path.join(FIXTURES, name), "utf-8"));
 }
 
-function writeSpineBatchState(projectRoot, fixture) {
+function _writeSpineBatchState(projectRoot, fixture) {
 	fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
 	fs.writeFileSync(
 		path.join(projectRoot, ".spine", "batch-state.json"),

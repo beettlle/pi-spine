@@ -8,8 +8,6 @@
  *   spine rules sync [--json]
  */
 
-import path from "node:path";
-
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { printRulesHelp, runSpineRules } from "../src/cli/rules.mjs";
 

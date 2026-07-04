@@ -10,7 +10,6 @@ import { runEvidenceCommand } from "./evidence-command.mjs";
 import { readJournalEvents, readJournalTail } from "./journal.mjs";
 import { generateBatchPostMortem } from "./postmortem.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
-import { loadSpineConfig } from "../config/spine-config-load.mjs";
 
 const TASKPLANE_CONFIG_PATH = ".pi/taskplane-config.json";
 
@@ -185,7 +184,7 @@ export function collectCoreEvidenceBundle(ctx) {
  * @param {string[]} [ctx.evidenceRefs]
  */
 export function collectExtendedEvidenceBundle(ctx) {
-	const { projectRoot, batchId, batchState = null, config = null } = ctx;
+	const { projectRoot, batchId, config = null } = ctx;
 	const dir = evidenceDir(projectRoot, batchId);
 	fs.mkdirSync(dir, { recursive: true });
 

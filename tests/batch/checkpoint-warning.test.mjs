@@ -23,12 +23,11 @@ test("resolveStallConfig defaults checkpoint warning and no file-scope grace ext
 });
 
 test("file-scope mtime is activity only — does not extend stall deadline by default", () => {
-	const stallConfig = resolveStallConfig({
+	resolveStallConfig({
 		lanes: { stallTimeoutMinutes: 60, stallGraceAfterProgressMinutes: 15 },
 	});
 	const startedAt = 0;
 	const checkpointAt = 5 * 60 * 1000;
-	const fileTouchAt = 50 * 60 * 1000;
 	const stallConfigNarrow = resolveStallConfig({
 		lanes: { stallTimeoutMinutes: 60, stallGraceAfterProgressMinutes: 15 },
 	});

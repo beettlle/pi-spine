@@ -242,7 +242,7 @@ test("startAgentSessionWorker flushes transcript chunks to live log", async () =
 	fs.mkdirSync(taskFolder, { recursive: true });
 	fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), "# Task\n\n## Review Level: 0\n", "utf-8");
 
-	const createStreamingSession = ({ worktreePath: cwd, taskFolder: folder }) => {
+	const createStreamingSession = ({ worktreePath: _cwd, taskFolder: folder }) => {
 		const donePath = path.join(folder, ".DONE");
 		return {
 			subscribe(listener) {

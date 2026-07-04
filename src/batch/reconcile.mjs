@@ -40,7 +40,6 @@ import { isProcessAlive } from "../process/liveness.mjs";
 import {
 	loadBatchStateFile,
 	parseBatchState,
-	resolveBatchStatePath,
 } from "./batch-state-io.mjs";
 import {
 	clearBatchEnginePid,

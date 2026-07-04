@@ -18,7 +18,6 @@ import {
 	metricsFilePath,
 	readMetricsLines,
 	recordBatchTerminalMetric,
-	recordTaskTerminalMetric,
 	resolveTaskMetricOutcome,
 } from "../../src/batch/metrics.mjs";
 import { dismissBatch } from "../../src/batch/lifecycle.mjs";
