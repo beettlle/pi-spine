@@ -618,6 +618,26 @@ spine run sequence pending
 
 **Detached sequence monitoring (SP-435):** When running detached sequences (default, not `--attached`), the sequence orchestrator keeps polling while the detached engine PID is alive and the batch phase is active — it does not exit with failure on a poll timeout. The engine log tail shown on errors is scoped to the **current** batch session (stale entries from previous batch starts are filtered out). If the engine process dies while the batch is `running`, the sequence exits with an actionable diagnosis.
 
+**Partial wave / merge_blocked continuation (SP-437, [#82](https://github.com/beettlle/pi-spine/issues/82)):** When a sequence wave hits `merge_blocked` or mixed-outcome `§17.4` policy (some tasks succeeded, others failed), the sequence runner **does not silently stop** after that wave. It evaluates later waves against `dependencies.json` / planner task deps:
+
+| Outcome | Behavior |
+|---------|----------|
+| Later wave tasks have all dependencies satisfied by succeeded/skipped tasks from prior waves (or `.DONE` on `main`) | Sequence starts the next wave batch with only runnable task IDs |
+| Later wave tasks depend on failed or unsatisfied tasks | Sequence prints a structured skip message naming the wave, failed task IDs, and blocked dependencies — then continues evaluating remaining waves |
+| Entire sequence | Exits non-zero when any wave was merge_blocked, even if independent later waves completed |
+
+Example skip output:
+
+```text
+Sequence wave 2 skipped (§17.4 mixed-outcome policy — wave 0 merge blocked).
+Prior wave succeeded task(s): SP-001.
+Prior wave failed task(s): SP-002.
+  SP-007: blocked by unsatisfied dependencies SP-002.
+Retry or skip failed tasks on the blocked wave, or land succeeded lanes before dependencies unblock.
+```
+
+Recover the blocked wave with `spine batch retry <taskId>` / `spine batch resume --force` per §6, then `spine run sequence pending --resume` or start the next planner wave manually.
+
 ### 4.1 Integrate merge conflicts (FR-SHIP-12)
 
 When `spine integrate` merges `orch/spine-<batchId>` into `main` and git reports a conflict, pi-spine **aborts the merge** and restores your previous checkout. `main` is left unchanged. The CLI prints a `MergeConflict` headline and journals `integrate.failed` with `conflict: true`.
@@ -698,7 +718,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | `GitignoredDirtyWorktree` (index-tracked) | Gitignored paths are in the git index — error message suggests `git rm --cached` on the task branch. Common with force-added `coverage/` or `__pycache__`. |
-| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — error message suggests `git clean -fdX` instead of `git rm --cached` ([SP-470](https://github.com/beettlle/pi-spine/issues/95)). Common after `npm test` generates ephemeral coverage artifacts. |
+| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts. |
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
 | `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine excludes gitignored hook output when [SP-463](https://github.com/beettlle/pi-spine/issues/113) lands; until then, add `graphify-out/` to `.gitignore` and `git rm -r --cached graphify-out/` on repos that track it |
@@ -1206,6 +1226,41 @@ npm run coverage:check
 `npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
 `npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
+
+### Contract `testCommand` false positives in worker environment (issue #132)
+
+When final contract verification runs inside a **real-pi worker**, the `testCommand` subprocess inherits `SPINE_IS_WORKER=1` from `worker-host.mjs`. Pre-existing tests that call `startBatch` (or otherwise spawn a batch from inside a test) hit the `nested_batch_spawn_blocked` guard in `engine.mjs` (SP-482) and fail — even when the task's own code changes are correct, step checkboxes are complete, `.DONE` was written, and code review returned **APPROVE**.
+
+**Symptom:** Batch diagnosis `needs_retry` + **`contract_failed`** after the worker finished normally. Journal shows `contract.verified` with `ok: false`; run-metrics uses `failureKind: contract`. Worker `STATUS.md` shows all steps complete and `.DONE` on disk.
+
+**Cause:** Broad `testCommand` values such as `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` run the **full** suite inside the worker environment. Dozens of batch/adoption/cli tests intentionally call `startBatch`; under `SPINE_IS_WORKER=1` those calls return `nested_batch_spawn_blocked` by design — not because the lane task regressed.
+
+**Observed incidents:** Batch `20260703T183108` — **SP-451** (journal read cache) and **SP-435** (sequence detached false failure) both failed final contract verify with full-suite `testCommand` while task-scoped work was correct. Same pattern appears in other real-pi lanes when PROMPT Testing step uses scoped commands but Contract `testCommand` runs the full suite.
+
+**Diagnosis:**
+
+1. `spine status --diagnose` — headline includes `contract_failed`; suggested next step is often `spine batch retry <id>`.
+2. Open the lane worker's `spine-tasks/<task-id>/STATUS.md` — if steps and `.DONE` look complete, suspect false positive rather than incomplete worker work.
+3. Inspect journal `contract.verified` / `contract.failed` for the task — stderr often lists many `nested_batch_spawn_blocked` failures from unrelated test files.
+4. Re-run the PROMPT **Testing step** command from the lane worktree **without** `SPINE_IS_WORKER=1` (or run only the scoped test files listed in PROMPT). If those pass, the failure is environmental, not a product defect in the task diff.
+
+**Resolution:**
+
+1. Confirm the task implementation is actually correct (review verdict, scoped tests, lane diff).
+2. Narrow `PROMPT.md` **## Contract** `testCommand` to match the Testing step (task-scoped files, or `` `true` `` for docs-only tasks). See [Cross-model PROMPT authoring](#cross-model-prompt-authoring-issue-84).
+3. `spine batch retry <task-id>` — contract verify re-runs after PROMPT edit; no worker re-implementation required when only `testCommand` scope was wrong.
+
+**Prevention:**
+
+| Avoid | Prefer |
+|-------|--------|
+| Full `` `npm test` `` or `` `SPINE_WORKER_STUB=1 npm test` `` in Contract when Testing step is scoped | Same scoped command in both Testing step and Contract |
+| Assuming full-suite green in a developer checkout implies lane contract verify will pass | Treat worker env (`SPINE_IS_WORKER=1`) as distinct from operator shell |
+| Interpreting `contract_failed` as bad code when STATUS + review are green | Follow diagnosis above before rewriting implementation |
+
+**Fix (SP-491):** Contract `testCommand` now runs in a sanitized subprocess that omits `SPINE_IS_WORKER` (see `buildContractTestEnv` in `src/batch/contract-verify.mjs`), so full-suite `testCommand` matches operator re-run behavior outside worker-host ([#155](https://github.com/beettlle/pi-spine/issues/155)). Scoped `testCommand` values remain faster and are still preferred for large suites.
+
+**Historical note:** Before SP-491, operators saw false `contract_failed` when Contract `testCommand` ran the full suite inside worker env; the diagnosis steps above still apply when investigating older batches or custom contract runners that bypass `runContractTestCommand`.
 
 ### Scenario fixture registry
 

@@ -36,8 +36,8 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 
 | Field | When to include | Value format |
 |-------|-----------------|--------------|
-| `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. |
-| `fileScopeMustChange` | When you need proof specific paths were touched | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). |
+| `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. When `` `true` ``, **always** pair with `fileScopeMustChange` (see below). |
+| `fileScopeMustChange` | When you need proof specific paths were touched; **required** when `testCommand` is `` `true` `` | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). For docs-only tasks, list at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). |
 | `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
 | `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths; **one backtick per path** |
@@ -118,12 +118,15 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 
 ### Docs-only Review Level 0 (no application code)
 
+When `testCommand` is `` `true` ``, **always** include `fileScopeMustChange` listing at least one documentation file the task must modify. Without it, workers can pass contract by creating only `.DONE` — two batches were rejected for this reason (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`).
+
 ```markdown
 ## Contract
 
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
+| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
 ```
 
 ### Scope guard for parallel wave
@@ -190,7 +193,7 @@ Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-R
 
 | Task type | Recommended `testCommand` |
 |-----------|---------------------------|
-| Docs-only, no code changes | `` `true` `` |
+| Docs-only, no code changes | `` `true` `` **and** `fileScopeMustChange` with at least one deliverable doc path |
 | Single module, targeted tests exist | `` `npm test -- tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
 | Full-suite safe in lane worktree | `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
 | Coverage gate required (pi-spine ≥77%) | `` `npm run coverage:check` `` |

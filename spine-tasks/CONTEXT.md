@@ -77,6 +77,8 @@ Phase 0 — batch `20260531T165700` (TP-002–TP-005). Several Phase 1b tasks re
 3. **Land loop:** `spine batch start` → monitor `spine status --diagnose` → `spine gate approve` → `spine integrate` → `spine batch complete` → push `main`.
 4. **Never** hand-edit `.spine/batch-state.json`.
 
+**Contract `testCommand` false positives in worker sessions:** Real-pi workers set `SPINE_IS_WORKER=1`. When Contract `testCommand` runs the full test suite, pre-existing tests that call `startBatch` fail with `nested_batch_spawn_blocked` — the batch may show `contract_failed` even though the worker finished (`.DONE`, review APPROVE, scoped tests pass). This is environmental, not a bad task diff. Diagnosis and recovery: operator runbook [§9 — Contract `testCommand` false positives in worker environment](../docs/adoption/operator-runbook.md#contract-testcommand-false-positives-in-worker-environment-issue-132). Prefer scoped `testCommand` matching the PROMPT Testing step; SP-491 will sanitize contract subprocess env ([#155](https://github.com/beettlle/pi-spine/issues/155)).
+
 ---
 
 ## Next steps — Phase 4 run order
@@ -1187,7 +1189,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-434 | Attached engine single-owner lock | M | **Done** | — | #89 |
 | SP-435 | Sequence detached false failure exit | S | **Staged** | SP-388 | #72 |
 | SP-436 | Isolated base integrate core (#91 slice 1) | M | **Superseded** | — | → SP-474, SP-475 |
-| SP-437 | Sequence continue after merge_blocked | S | **Staged** | SP-387 | #82 |
+| SP-437 | Sequence continue after merge_blocked | S | **Complete** | SP-387 | #82 |
 | SP-438 | Flutter worktree adoption docs | S | **Staged** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
 | SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
@@ -1429,13 +1431,13 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 | SP-347 | #38 | CLOSED | `.SUPERSEDED` | **Retired** — use SP-356/357 (done) |
 | SP-419 | #90 | OPEN | `.SUPERSEDED` | **Superseded** — execute SP-466/467 |
 | SP-430 | #95 | CLOSED | `.SUPERSEDED` | **Superseded** — finish SP-471 |
-| SP-437 | #82 | CLOSED | none | **Execute** — issue closed prematurely; fix not on `main`; re-batch SP-437 |
+| SP-437 | #82 | CLOSED | none | **Complete** — wave policy on lane; pending integrate to `main` |
 | SP-471 | #95 | CLOSED | none | **Execute** — remainder of #95 after SP-470 |
 | SP-488 | #132 | CLOSED | none | **Execute** — docs not yet written |
 
 **Superseded SP-2xx/3xx retirement (2026-07-04):** SP-282, SP-284, SP-292, SP-335, SP-340, SP-342, SP-346, SP-347 already have `.SUPERSEDED` markers and completed successors. Planner excludes them from `spine plan pending`. Do not re-batch; use replacement task IDs above.
 
-**SP-437 / #82 action:** Re-open #82 or re-batch SP-437 in v1.5 Wave 2 — lane branch `task/spine-lane-3-20260703T183108` had commits but merge to `main` not verified.
+**SP-437 / #82 action:** Complete on lane `task/spine-lane-1-20260704T185602`; integrate to `main` via batch merge.
 
 ---
 

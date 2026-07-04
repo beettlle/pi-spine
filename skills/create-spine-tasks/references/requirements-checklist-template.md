@@ -47,6 +47,7 @@ Output path: `{tasksRoot}/_authoring/{slug}/checklist.md`
 - [ ] CHK030 — Is the project's test command identifiable for downstream tasks? [Testability]
 - [ ] CHK031 — Are verifiable behaviors separated from implementation details? [Clarity]
 - [ ] CHK032 — Can workers derive a Testing step from the requirements? [Completeness]
+- [ ] CHK033 — If `testCommand` is `` `true` `` (docs-only), does Contract include `fileScopeMustChange` with at least one deliverable path? [Completeness, Gap]
 
 ## Non-functional requirements
 

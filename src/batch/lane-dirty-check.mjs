@@ -17,6 +17,19 @@ import { runWorktreeSetupHook } from "./worktree.mjs";
 export const COVERAGE_ARTIFACT_MARKERS = ["/coverage/", "coverage/"];
 
 /**
+ * Path segments for gitignored build artifacts that npm test and similar tools
+ * regenerate in lane worktrees (SP-471 / #95).
+ */
+export const GITIGNORED_ARTIFACT_MARKERS = [
+	"/node_modules/",
+	"node_modules/",
+	"/coverage/",
+	"coverage/",
+	"/__pycache__/",
+	"__pycache__/",
+];
+
+/**
  * @param {string} filePath
  * @returns {boolean}
  */
@@ -359,6 +372,112 @@ export function resolveSetupHookSymlinkDriftPorcelain(
  * @param {string[]} gitignoredPaths
  * @returns {{ indexTracked: string[], worktreeOnly: string[] }}
  */
+/**
+ * @param {string} filePath
+ * @returns {boolean}
+ */
+export function isGitignoredArtifactPath(filePath) {
+	if (!filePath || typeof filePath !== "string") return false;
+	const normalized = filePath.replace(/\\/g, "/");
+	return GITIGNORED_ARTIFACT_MARKERS.some(
+		(marker) =>
+			normalized === marker.slice(0, -1) ||
+			normalized.startsWith(marker) ||
+			normalized.includes(marker),
+	);
+}
+
+/**
+ * @param {string} filePath
+ * @returns {string | null}
+ */
+function gitignoredArtifactRootForPath(filePath) {
+	const normalized = filePath.replace(/\\/g, "/");
+	for (const marker of ["/node_modules/", "/coverage/", "/__pycache__/"]) {
+		const markerIdx = normalized.indexOf(marker);
+		if (markerIdx >= 0) {
+			return normalized.slice(0, markerIdx + marker.length - 1);
+		}
+	}
+	if (normalized === "node_modules" || normalized.startsWith("node_modules/")) {
+		return "node_modules";
+	}
+	if (normalized === "coverage" || normalized.startsWith("coverage/")) {
+		return "coverage";
+	}
+	if (normalized === "__pycache__" || normalized.startsWith("__pycache__/")) {
+		return "__pycache__";
+	}
+	return null;
+}
+
+/**
+ * @param {string[]} filePaths
+ * @returns {string[]}
+ */
+export function listGitignoredArtifactRoots(filePaths) {
+	const roots = new Set();
+	for (const filePath of filePaths) {
+		if (!isGitignoredArtifactPath(filePath)) continue;
+		const root = gitignoredArtifactRootForPath(filePath);
+		if (root) roots.add(root);
+	}
+	return [...roots].sort();
+}
+
+/**
+ * @param {string} worktreePath
+ * @returns {string[]}
+ */
+function listIgnoredUntrackedPaths(worktreePath) {
+	let output = "";
+	try {
+		output = execFileSync("git", ["ls-files", "-o", "-i", "--exclude-standard"], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+		}).trim();
+	} catch {
+		return [];
+	}
+	if (!output) return [];
+	return output.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * Auto-clean worktree-only gitignored artifacts under known dirs before lane dirty gate.
+ *
+ * @param {string} worktreePath
+ * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean }} [options]
+ * @returns {{ cleanedRoots: string[] }}
+ */
+export function sanitizeGitignoredArtifactsBeforeLaneCommit(
+	worktreePath,
+	{ projectRoot, porcelain, enabled = true } = {},
+) {
+	if (!enabled) return { cleanedRoots: [] };
+
+	const identityRoot = projectRoot ?? worktreePath;
+	const rawPorcelain = typeof porcelain === "string" ? porcelain : "";
+	const dirtyPaths = listPorcelainPaths(rawPorcelain);
+	const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
+	const gitignoredCandidates = [...new Set([...dirtyPaths, ...ignoredUntrackedPaths])];
+	if (gitignoredCandidates.length === 0) {
+		return { cleanedRoots: [] };
+	}
+
+	const { worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredCandidates);
+	const artifactRoots = listGitignoredArtifactRoots(worktreeOnly);
+	for (const root of artifactRoots) {
+		gitExec(worktreePath, ["clean", "-fdX", "--", root], {
+			projectRoot: identityRoot,
+			throwOnError: false,
+		});
+	}
+
+	return { cleanedRoots: artifactRoots };
+}
+
 export function classifyGitignoredPaths(worktreePath, gitignoredPaths) {
 	if (!Array.isArray(gitignoredPaths) || gitignoredPaths.length === 0) {
 		return { indexTracked: [], worktreeOnly: [] };
