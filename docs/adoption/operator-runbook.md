@@ -1207,6 +1207,39 @@ npm run coverage:check
 
 `npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
 
+### Contract `testCommand` false positives in worker environment (issue #132)
+
+When final contract verification runs inside a **real-pi worker**, the `testCommand` subprocess inherits `SPINE_IS_WORKER=1` from `worker-host.mjs`. Pre-existing tests that call `startBatch` (or otherwise spawn a batch from inside a test) hit the `nested_batch_spawn_blocked` guard in `engine.mjs` (SP-482) and fail — even when the task's own code changes are correct, step checkboxes are complete, `.DONE` was written, and code review returned **APPROVE**.
+
+**Symptom:** Batch diagnosis `needs_retry` + **`contract_failed`** after the worker finished normally. Journal shows `contract.verified` with `ok: false`; run-metrics uses `failureKind: contract`. Worker `STATUS.md` shows all steps complete and `.DONE` on disk.
+
+**Cause:** Broad `testCommand` values such as `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` run the **full** suite inside the worker environment. Dozens of batch/adoption/cli tests intentionally call `startBatch`; under `SPINE_IS_WORKER=1` those calls return `nested_batch_spawn_blocked` by design — not because the lane task regressed.
+
+**Observed incidents:** Batch `20260703T183108` — **SP-451** (journal read cache) and **SP-435** (sequence detached false failure) both failed final contract verify with full-suite `testCommand` while task-scoped work was correct. Same pattern appears in other real-pi lanes when PROMPT Testing step uses scoped commands but Contract `testCommand` runs the full suite.
+
+**Diagnosis:**
+
+1. `spine status --diagnose` — headline includes `contract_failed`; suggested next step is often `spine batch retry <id>`.
+2. Open the lane worker's `spine-tasks/<task-id>/STATUS.md` — if steps and `.DONE` look complete, suspect false positive rather than incomplete worker work.
+3. Inspect journal `contract.verified` / `contract.failed` for the task — stderr often lists many `nested_batch_spawn_blocked` failures from unrelated test files.
+4. Re-run the PROMPT **Testing step** command from the lane worktree **without** `SPINE_IS_WORKER=1` (or run only the scoped test files listed in PROMPT). If those pass, the failure is environmental, not a product defect in the task diff.
+
+**Resolution:**
+
+1. Confirm the task implementation is actually correct (review verdict, scoped tests, lane diff).
+2. Narrow `PROMPT.md` **## Contract** `testCommand` to match the Testing step (task-scoped files, or `` `true` `` for docs-only tasks). See [Cross-model PROMPT authoring](#cross-model-prompt-authoring-issue-84).
+3. `spine batch retry <task-id>` — contract verify re-runs after PROMPT edit; no worker re-implementation required when only `testCommand` scope was wrong.
+
+**Prevention:**
+
+| Avoid | Prefer |
+|-------|--------|
+| Full `` `npm test` `` or `` `SPINE_WORKER_STUB=1 npm test` `` in Contract when Testing step is scoped | Same scoped command in both Testing step and Contract |
+| Assuming full-suite green in a developer checkout implies lane contract verify will pass | Treat worker env (`SPINE_IS_WORKER=1`) as distinct from operator shell |
+| Interpreting `contract_failed` as bad code when STATUS + review are green | Follow diagnosis above before rewriting implementation |
+
+**Future fix:** SP-491 will sanitize contract subprocess env (omit `SPINE_IS_WORKER`) so full-suite `testCommand` matches operator re-run behavior ([#155](https://github.com/beettlle/pi-spine/issues/155)). Until that lands, prefer scoped `testCommand` in new task packets.
+
 ### Scenario fixture registry
 
 Central catalog for incident replays, stub batches, adoption fixtures, and test recipes. **Source of truth:** `tests/fixtures/scenarios/registry.json` (schema version 1). Module API: `src/fixtures/scenario-registry.mjs`.
