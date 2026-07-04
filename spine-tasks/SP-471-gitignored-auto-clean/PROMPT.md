@@ -39,7 +39,7 @@ Optional `git clean -fdX` for known gitignored artifact dirs before lane dirty v
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/gitignored-auto-clean.test.mjs && npm run coverage:check && stet run --strictness lenient --auto-finish-zero --quiet` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/gitignored-auto-clean.test.mjs && npm run coverage:check && stet start HEAD --allow-dirty --quiet && stet run --strictness lenient --auto-finish-zero --quiet` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `src/batch/lane-dirty-check.mjs` |
 | artifactsMustExist | `tests/batch/gitignored-auto-clean.test.mjs` |
