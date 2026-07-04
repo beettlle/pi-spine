@@ -1,7 +1,7 @@
 # SP-490: Contract trailing-slash match — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Add test coverage
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Required files and paths exist
-- [ ] Current matching logic understood
-- [ ] Dependencies satisfied
+- [x] Required files and paths exist
+- [x] Current matching logic understood
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Fix trailing-slash prefix matching
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Trailing-slash patterns treated as directory prefix matches
-- [ ] Non-trailing-slash patterns preserve existing behavior
-- [ ] Targeted tests pass
+- [x] Trailing-slash patterns treated as directory prefix matches
+- [x] Non-trailing-slash patterns preserve existing behavior
+- [x] Targeted tests pass
 
 ---
 
