@@ -58,7 +58,7 @@ Reference: `docs/stet-overview.md` §1 (Baseline-at-Setup, Review-at-Contract).
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
-| fileScopeMustChange | `.review/config.toml`, `scripts/spine-worktree-setup.sh`, `.spine/spine-config.json` |
+| fileScopeMustChange | `.gitignore`, `spine-tasks/SP-494-stet-contract-integration/**` |
 | artifactsMustExist | `scripts/spine-stet-file-issues.sh` |
 
 ## Steps
