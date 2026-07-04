@@ -26,6 +26,27 @@ export const CONTRACT_TEST_DEFAULT_RETRIES = 1;
 export const CONTRACT_TEST_RETRY_DELAY_MS = 5000;
 
 /**
+ * Worker-only env keys stripped from contract testCommand subprocesses so full-suite
+ * tests match operator re-run outside worker-host (SP-491, issue #155).
+ */
+export const CONTRACT_TEST_WORKER_ENV_KEYS = ["SPINE_IS_WORKER"];
+
+/**
+ * Build env for contract testCommand subprocess — omits worker-only keys inherited from
+ * worker-host.mjs that would false-fail batch-spawn integration tests (SP-482 guard).
+ *
+ * @param {NodeJS.ProcessEnv} [sourceEnv]
+ * @returns {NodeJS.ProcessEnv}
+ */
+export function buildContractTestEnv(sourceEnv = process.env) {
+	const env = { ...sourceEnv };
+	for (const key of CONTRACT_TEST_WORKER_ENV_KEYS) {
+		delete env[key];
+	}
+	return env;
+}
+
+/**
  * @param {string} taskId
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {object} [config]
@@ -324,6 +345,7 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	const shellFlag = process.platform === "win32" ? "/c" : "-c";
 	const result = spawnSync(shell, [shellFlag, trimmed], {
 		cwd: worktreePath,
+		env: buildContractTestEnv(),
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
 		timeout: 10 * 60 * 1000,
