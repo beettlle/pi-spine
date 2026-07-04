@@ -72,7 +72,8 @@
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#82) |
 | 2026-07-04 | Step 0–1 implementation | `sequence-waves.mjs`, `sequence.mjs` wave policy, tests |
-| 2026-07-04 | Verification | typecheck OK; 1595/1595 tests; coverage 88.74%; stet 0 findings |
+| 2026-07-04 | Verification | typecheck OK; 1598/1598 tests; coverage 88.75%; stet 0 findings |
+| 2026-07-04 | Contract re-verify | Passed with `buildContractTestEnv` (SP-491); `.DONE` recreated |
 
 ---
 
