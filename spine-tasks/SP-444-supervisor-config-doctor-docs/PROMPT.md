@@ -39,7 +39,7 @@ Wire `agents.supervisor.enabled`, `pollIntervalMs`, `autoNudge` into settings/do
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/doctor/supervisor-config.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/doctor/supervisor-config.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 
 ## Steps
