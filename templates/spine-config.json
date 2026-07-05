@@ -72,6 +72,10 @@
     "mode": "required",
     "legacyTaskIdPrefixes": ["TP-"]
   },
+  "_examples": {
+    "worktreeSetupHook": "scripts/spine-worktree-setup-flutter.sh",
+    "_worktreeSetupHookNote": "Optional Flutter: symlink gitignored pubspec assets from SPINE_PROJECT_ROOT into lane worktrees — see docs/adoption/flutter-worktree-guide.md"
+  },
   "worktreeSetupHook": "",
   "worktreeSetupIgnorePaths": [],
   "referenceDocs": ["docs/constitution.md"],

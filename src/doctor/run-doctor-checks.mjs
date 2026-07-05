@@ -23,6 +23,7 @@ import {
 } from "./stall-config.mjs";
 import { buildRulesManifestDoctorCheck } from "./rules-manifest.mjs";
 import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
+import { buildGitignoredPubspecAssetsDoctorCheck } from "../config/worktree-setup-hook.mjs";
 import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
 import { buildWorkerBackendDoctorCheck } from "../config/worker-backend.mjs";
 import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck } from "./agent-model-inherit.mjs";
@@ -372,6 +373,12 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		});
 		checks.push(worktreeHealthCheck);
 		if (!worktreeHealthCheck.ok) issueCount++;
+		const pubspecAssetsCheck = buildGitignoredPubspecAssetsDoctorCheck({
+			projectRoot,
+			config: configResult.config,
+		});
+		checks.push(pubspecAssetsCheck);
+		if (!pubspecAssetsCheck.ok) issueCount++;
 		const workerBackendCheck = buildWorkerBackendDoctorCheck(configResult.config);
 		checks.push(workerBackendCheck);
 		if (!workerBackendCheck.ok) issueCount++;

@@ -398,7 +398,7 @@ spine rules select --role reviewer --review-type plan --task SP-042
 spine rules select --role reviewer --review-type code --task SP-042
 ```
 
-**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh).
+**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and the hook template copied by `spine init` to `scripts/spine-worktree-setup-flutter.sh` ([#80](https://github.com/beettlle/pi-spine/issues/80) / SP-459).
 
 ### Orchestrator process model ([#98](https://github.com/beettlle/pi-spine/issues/98))
 
@@ -1646,7 +1646,7 @@ To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktr
 
 Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
 
-**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh). Partial doc close for #78/#80; engine tasks SP-458/SP-459 may add init templates later.
+**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`. **`spine init`** copies optional [`scripts/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh) from the pi-spine template; customize asset paths, then set `"worktreeSetupHook": "scripts/spine-worktree-setup-flutter.sh"` in `.spine/spine-config.json`. **`spine doctor`** warns when gitignored pubspec assets exist on main but lanes would miss them without the hook (SP-459, closes [#80](https://github.com/beettlle/pi-spine/issues/80)).
 
 ### Get help from reconciliation
 

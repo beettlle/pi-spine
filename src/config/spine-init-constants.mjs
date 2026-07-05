@@ -5,6 +5,11 @@ import { validateSpineConfig } from "./spine-config-load.mjs";
 import { applyConfigDefaults } from "./merge-defaults.mjs";
 import { discoverCursorRules } from "./cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "./cursor-rules/profile.mjs";
+import {
+	copyFlutterWorktreeSetupHookTemplate,
+	FLUTTER_WORKTREE_SETUP_HOOK_TEMPLATE,
+	stripTemplateOnlyKeys,
+} from "./worktree-setup-hook.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +20,7 @@ export const TEMPLATE_PATHS = {
 	rulesProfile: path.join(PACKAGE_ROOT, "templates", "rules-profile.json"),
 	tasksContext: path.join(PACKAGE_ROOT, "templates", "tasks", "CONTEXT.md"),
 	constitution: path.join(PACKAGE_ROOT, "templates", "docs", "constitution.md"),
+	flutterWorktreeSetupHook: FLUTTER_WORKTREE_SETUP_HOOK_TEMPLATE,
 	agents: {
 		worker: path.join(PACKAGE_ROOT, "templates", "agents", "worker.md"),
 		reviewer: path.join(PACKAGE_ROOT, "templates", "agents", "reviewer.md"),
@@ -56,6 +62,7 @@ export function getTemplatePaths() {
 		TEMPLATE_PATHS.rulesProfile,
 		TEMPLATE_PATHS.tasksContext,
 		TEMPLATE_PATHS.constitution,
+		TEMPLATE_PATHS.flutterWorktreeSetupHook,
 		...Object.values(TEMPLATE_PATHS.agents),
 	]) {
 		if (!fs.existsSync(templatePath)) {
@@ -183,7 +190,7 @@ export function applyTaskplaneCompatPreset(config) {
 
 export function buildSpineConfig(projectRoot, tasksRoot, { preset } = {}) {
 	const template = loadSpineConfigTemplate();
-	const config = structuredClone(template);
+	const config = stripTemplateOnlyKeys(structuredClone(template));
 	config.project.name = path.basename(projectRoot);
 	config.paths.tasksRoot = tasksRoot;
 	applySpineInitDefaults(config);
@@ -364,6 +371,17 @@ export function runInit(projectRoot, args = []) {
 			path: ".gitignore",
 			added: gitignoreResult.added,
 		});
+	}
+
+	const hookTemplateResult = copyFlutterWorktreeSetupHookTemplate(projectRoot, { force, dryRun });
+	if (hookTemplateResult.action === "create" || hookTemplateResult.action === "overwrite") {
+		actions.push({ action: hookTemplateResult.action, path: hookTemplateResult.path });
+	} else if (hookTemplateResult.action === "error") {
+		return {
+			ok: false,
+			error: hookTemplateResult.error,
+			exitCode: 1,
+		};
 	}
 
 	const rulesDiscoverResult = runInitRulesDiscover(projectRoot, { dryRun, force });

@@ -35,6 +35,7 @@ export const TEST_GLOBS = [
 	"tests/adoption/*.test.mjs",
 	"tests/dashboard/*.test.mjs",
 	"tests/doctor/*.test.mjs",
+	"tests/init/*.test.mjs",
 	"tests/migrate/*.test.mjs",
 	"tests/worker-tools/*.test.mjs",
 	"tests/coverage/*.test.mjs",
