@@ -16,6 +16,14 @@ export function buildAlternatives(diagnosis, ctx = {}) {
 			return ["spine batch complete --detect-manual-merge", ...common];
 		case "completed_manual":
 			return ["spine batch complete --detect-manual-merge", "spine batch dismiss", ...common];
+		case "human_base_diverged":
+			return [
+				"See operator-runbook §4.1 orch-first recovery",
+				"git merge main",
+				...common,
+			];
+		case "integrate_isolated_ok":
+			return ["git pull", "spine batch complete", ...common];
 		case "needs_retry":
 			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
 		case "worker_orphaned":
