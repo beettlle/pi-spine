@@ -38,7 +38,7 @@ Align `spine wait --until` valid diagnoses with land-loop states; fix invalid `r
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/cli/spine-wait-diagnosis.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/cli/spine-wait-diagnosis.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `bin/spine-wait.mjs` |
 | artifactsMustExist | `tests/cli/spine-wait-diagnosis.test.mjs` |

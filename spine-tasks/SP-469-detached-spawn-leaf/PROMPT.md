@@ -39,7 +39,7 @@ Extract detached spawn argv builders to `detached-spawn.mjs`; rewire post-merge-
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/arch/import-cycles.test.mjs tests/batch/detached-start*.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/detached-start.test.mjs tests/batch/detached-start-land-loop.test.mjs tests/batch/detached-start-orphan-timeout.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `src/batch/detached-spawn.mjs` |
 
