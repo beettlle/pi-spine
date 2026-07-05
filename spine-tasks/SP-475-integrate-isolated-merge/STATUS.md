@@ -1,7 +1,7 @@
 # SP-475: Integrate isolated merge path — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -45,12 +45,20 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] "Must Update" docs modified
 - [x] "Check If Affected" docs reviewed (CONTEXT.md — no SP-475 status change needed pre-.DONE)
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Issue updated
+- [x] .DONE created
+
+---
+
+## Completion Criteria
+
+- [x] All steps complete
+- [x] All tests passing
+- [x] Documentation updated
 
 ---
 
@@ -73,6 +81,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged (split from parent) | PROMPT.md and STATUS.md created |
+| 2026-07-05 | Step 2 tests + contract testCommand fix | 5 isolated integrate tests pass |
+| 2026-07-05 | Full suite + coverage | 1640 pass; 88.55% line coverage |
+| 2026-07-05 | Delivery | runbook updated; issue #91 commented; .DONE |
 
 ---
 
