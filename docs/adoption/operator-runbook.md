@@ -14,6 +14,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
 | [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) or [spec-kit](https://github.com/github/spec-kit) upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
+| [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter lane worktrees — gitignored assets, analyzer scope, setup hook |
 
 **CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:
 
@@ -385,7 +386,7 @@ spine rules select --role reviewer --review-type plan --task SP-042
 spine rules select --role reviewer --review-type code --task SP-042
 ```
 
-**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene).
+**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh).
 
 ### Monitor
 
@@ -1535,6 +1536,12 @@ git branch -D task/spine-lane-<N>-<batchId>   # when merged
 
 To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktreesOnComplete` to `false` in spine-config — expect doctor stale-worktree warnings until you remove dirs yourself.
 
+### Flutter lane worktrees (#78, #80)
+
+Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
+
+**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh). Partial doc close for #78/#80; engine tasks SP-458/SP-459 may add init templates later.
+
 ### Get help from reconciliation
 
 ```bash
@@ -1569,3 +1576,4 @@ spine next --execute       # run suggested dismiss/preflight (careful)
 | [PRD](../PRD.md) | Normative requirements |
 | [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md) | Stall epic (SAT-020), FR-STALL-* |
 | [integrate-conflict-recovery.md](../design/integrate-conflict-recovery.md) | FR-SHIP-12 spike — merger-agent defer, manual integrate conflicts |
+| [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter — gitignored assets, analyzer scope, worktree setup hook |
