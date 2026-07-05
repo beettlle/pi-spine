@@ -5,6 +5,10 @@
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import {
+	DEFAULT_SEQUENCE_POLL_MS,
+	resolveSequencePollMs,
+} from "../config/spine-config-schema.mjs";
+import {
 	formatPreflightHuman,
 	runBatchPreflight,
 	resolveTasksRoot,
@@ -75,7 +79,7 @@ export function isSequenceBatchWaiting(diagnosis) {
 
 export async function waitForSequenceBatchTerminal({
 	projectRoot,
-	pollIntervalMs = 250,
+	pollIntervalMs = DEFAULT_SEQUENCE_POLL_MS,
 	timeoutMs = 120_000,
 	enginePid = null,
 }) {
@@ -316,11 +320,16 @@ export async function runSequence(ctx) {
 		stopOnFailure = true,
 		dryRun = false,
 		skipPreflight = false,
-		pollIntervalMs = 250,
+		pollIntervalMs: pollIntervalMsOverride,
 		timeoutMs = 120_000,
 		spineBin = null,
 		startBatchFn = startBatch,
 	} = ctx;
+
+	const configResult = loadSpineConfig(projectRoot);
+	const pollIntervalMs =
+		pollIntervalMsOverride ??
+		resolveSequencePollMs({ config: configResult.config ?? {} });
 
 	let sequenceState = null;
 	let effectiveFromWave = fromWave;

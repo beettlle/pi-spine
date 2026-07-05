@@ -48,7 +48,7 @@ export function buildWorktreeHealthDoctorCheck({ projectRoot, config = {} }) {
 		}
 	}
 
-	const hook = config.lanes?.worktreeSetupHook;
+	const hook = config.worktreeSetupHook;
 	const hookConfigured = typeof hook === "string" && hook.trim().length > 0;
 	if (!process.env.PI_SPINE_ROOT && hookConfigured) {
 		issues.push("PI_SPINE_ROOT unset with worktreeSetupHook configured");

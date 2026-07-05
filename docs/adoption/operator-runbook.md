@@ -398,7 +398,7 @@ spine rules select --role reviewer --review-type plan --task SP-042
 spine rules select --role reviewer --review-type code --task SP-042
 ```
 
-**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh).
+**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and the hook template copied by `spine init` to `scripts/spine-worktree-setup-flutter.sh` ([#80](https://github.com/beettlle/pi-spine/issues/80) / SP-459).
 
 ### Orchestrator process model ([#98](https://github.com/beettlle/pi-spine/issues/98))
 
@@ -445,19 +445,19 @@ If the command is an LLM agent or test harness, high CPU is expected. If it is `
 
 #### Poll budget (NFR-PERF-03)
 
-PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-03** (orchestrator poll budget) is the operator-facing sketch below — config keys for overrides are tracked in [#98](https://github.com/beettlle/pi-spine/issues/98).
+PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-03** (orchestrator poll budget) is documented below — poll intervals are configurable via `orchestrator.*PollMs` keys ([#98](https://github.com/beettlle/pi-spine/issues/98)).
 
-| Path | Current default | Target / mitigation |
-|------|-----------------|---------------------|
-| Attached milestone poll (`attached-runner.mjs`) | **200ms** | Human-scale events; journal read cache reduces parse cost ([#98](https://github.com/beettlle/pi-spine/issues/98)) |
-| Sequence `waitForSequenceBatchTerminal` | **250ms** full `reconcileBatch` | Prefer detached sequence + `spine watch`; raise interval when configurable |
-| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; distinct `dashboard.port` per repo |
+| Path | Default | Notes |
+|------|---------|-------|
+| Attached milestone poll (`attached-runner.mjs`) | **2000ms** | Human-scale events; override with `orchestrator.attachedMilestonePollMs` |
+| Sequence `waitForSequenceBatchTerminal` | **5000ms** full `reconcileBatch` | Aligns with `spine watch`; override with `orchestrator.sequencePollMs` |
+| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; override with `orchestrator.dashboardPollMs` (wired in SP-453) |
 | Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
 | `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
 
 **Journal read cache (shipped):** hot paths share `readJournalEventsCached` — see [Monitoring cookbook — journal cache](#monitoring-cookbook) below.
 
-**Planned config surface** (`.spine/spine-config.json`, when shipped):
+**Config surface** (`.spine/spine-config.json`):
 
 ```json
 {
@@ -469,7 +469,7 @@ PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-0
 }
 ```
 
-#### Operator mitigations (until poll defaults ship)
+#### Operator mitigations
 
 1. **One `spine dashboard` per machine** — use distinct ports per repo (`dashboard.port`).
 2. **Avoid concurrent attached engines** ([#89](https://github.com/beettlle/pi-spine/issues/89)) — only one `--attached` engine per batch; use `resume --attached --force` for handoff.
@@ -1661,7 +1661,7 @@ To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktr
 
 Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
 
-**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh). Partial doc close for #78/#80; engine tasks SP-458/SP-459 may add init templates later.
+**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`. **`spine init`** copies optional [`scripts/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh) from the pi-spine template; customize asset paths, then set `"worktreeSetupHook": "scripts/spine-worktree-setup-flutter.sh"` in `.spine/spine-config.json`. **`spine doctor`** warns when gitignored pubspec assets exist on main but lanes would miss them without the hook (SP-459, closes [#80](https://github.com/beettlle/pi-spine/issues/80)).
 
 ### Get help from reconciliation
 
