@@ -35,22 +35,22 @@ function gitFirstCommitTouchingPath(worktreePath, relPath) {
 
 /**
  * @param {string} worktreePath
- * @param {string} sinceCommit
- * @param {string} baseRef
- * @param {string} pattern
+ * @param {string} refA
+ * @param {string} refB
+ * @param {string} [pathspec]
  */
-function listPathsChangedSinceCommit(worktreePath, sinceCommit, baseRef, pattern) {
+function listPathsChangedBetweenRefs(worktreePath, refA, refB, pathspec = "") {
 	try {
-		const output = execFileSync(
-			"git",
-			["diff", "--name-only", `${sinceCommit}..${baseRef}`, "--", pattern],
-			{
-				cwd: worktreePath,
-				encoding: "utf-8",
-				stdio: ["ignore", "pipe", "pipe"],
-				timeout: 10_000,
-			},
-		);
+		const args = ["diff", "--name-only", `${refA}..${refB}`];
+		if (pathspec) {
+			args.push("--", pathspec);
+		}
+		const output = execFileSync("git", args, {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 10_000,
+		});
 		return output
 			.split(/\r?\n/)
 			.map((line) => line.trim())
@@ -58,6 +58,27 @@ function listPathsChangedSinceCommit(worktreePath, sinceCommit, baseRef, pattern
 	} catch {
 		return [];
 	}
+}
+
+/**
+ * @param {string} file
+ * @param {string} pattern
+ */
+function matchesScopePattern(file, pattern) {
+	if (pattern.endsWith("/")) {
+		return file.startsWith(pattern);
+	}
+	return matchesPattern(file, pattern);
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} sinceCommit
+ * @param {string} baseRef
+ * @param {string} pattern
+ */
+function listPathsChangedSinceCommit(worktreePath, sinceCommit, baseRef, pattern) {
+	return listPathsChangedBetweenRefs(worktreePath, sinceCommit, baseRef, pattern);
 }
 
 /**
@@ -177,4 +198,85 @@ export function isStubPrelandedFileScopeSatisfied(worktreePath, pattern, changed
 		resolvePromptRelPath(worktreePath, changedFiles, config),
 		baseBranch,
 	);
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} ref
+ * @param {string} pattern
+ */
+function listPathsOnRef(worktreePath, ref, pattern) {
+	try {
+		const output = execFileSync("git", ["ls-tree", "-r", "--name-only", ref, "--", pattern], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 10_000,
+		});
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * True when base branch already contains scope changes and the lane has no diff for the pattern
+ * (issue #105 SP-014, SP-462).
+ *
+ * @param {string} worktreePath
+ * @param {string} pattern
+ * @param {string[]} changedFiles
+ * @param {string} baseBranch
+ */
+export function isBaseScopeSatisfied(worktreePath, pattern, changedFiles, baseBranch, config = {}) {
+	const matchedInLane = changedFiles.some((file) => matchesScopePattern(file, pattern));
+	if (matchedInLane) {
+		return false;
+	}
+	const tasksRoot = config.paths?.tasksRoot ?? DEFAULT_TASKS_ROOT;
+	if (!hasSpineTaskDeliveryChanges(changedFiles, tasksRoot)) {
+		return false;
+	}
+	const laneDiffVsBase = listPathsChangedBetweenRefs(worktreePath, baseBranch, "HEAD", pattern);
+	if (laneDiffVsBase.some((filePath) => matchesScopePattern(filePath, pattern))) {
+		return false;
+	}
+	const onBase = listPathsOnRef(worktreePath, baseBranch, pattern);
+	return onBase.some((filePath) => matchesScopePattern(filePath, pattern));
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} pattern
+ * @param {string[]} changedFiles
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {string} baseBranch
+ * @param {{ testCommandOk: boolean }} delivery
+ * @param {(worktreePath: string, artifactPath: string) => boolean} artifactExists
+ */
+export function isBaseFileScopeSatisfied(
+	worktreePath,
+	pattern,
+	changedFiles,
+	parsedContract,
+	baseBranch,
+	delivery,
+	artifactExists,
+	config = {},
+) {
+	if (!isBaseScopeSatisfied(worktreePath, pattern, changedFiles, baseBranch, config)) {
+		return false;
+	}
+	if (parsedContract.testCommand && !delivery.testCommandOk) {
+		return false;
+	}
+	for (const artifactPath of parsedContract.artifactsMustExist ?? []) {
+		if (!artifactExists(worktreePath, artifactPath)) {
+			return false;
+		}
+	}
+	return true;
 }
