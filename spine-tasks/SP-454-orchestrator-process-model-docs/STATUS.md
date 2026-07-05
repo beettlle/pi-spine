@@ -74,8 +74,8 @@
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
 | 2026-07-05 | Step 1–2 | operator-runbook §3 + QUICK-REFERENCE cross-links |
-| 2026-07-05 | Step 3 | typecheck + stub tests green |
-| 2026-07-05 | Step 4 | .DONE created |
+| 2026-07-05 | Step 3 | typecheck + 1613/1613 stub tests (unset SPINE_IS_WORKER; 43 fail in worker env) |
+| 2026-07-05 | Step 4 | issue #98 already closed; .DONE created |
 
 ---
 
