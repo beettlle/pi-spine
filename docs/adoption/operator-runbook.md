@@ -354,6 +354,14 @@ spine doctor   # agent model ids (canonical) must pass before real-pi batches
 spine settings show agents.worker.model
 spine settings show agents.reviewer.model
 spine doctor   # warns when inherit + pi defaultProvider lmstudio
+spine doctor   # fails when inherit + non-cursor provider lacks valid credentials (SP-460 / #97)
+```
+
+When `agents.*.model` is `inherit` and pi's `defaultProvider` is a cloud API provider (not `cursor` or `lmstudio`), `spine doctor` probes that provider's credentials with `pi --list-models` and a lightweight `pi -p` auth check. Missing or rejected credentials (401 / `authentication_error`) fail doctor before batch start — the same failure mode that otherwise appears only in worker logs. Remediation: `pi login` or refresh provider API keys, or pin explicit models:
+
+```bash
+spine settings set agents.worker.model cursor/auto
+spine settings set agents.reviewer.model cursor/auto
 ```
 
 **Opt into inheritance** (interactive pi session parity):
