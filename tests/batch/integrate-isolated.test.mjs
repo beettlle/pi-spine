@@ -211,6 +211,45 @@ test("integrateOrchToBase conflict path leaves human checkout and files unchange
 	}
 });
 
+test("integrateOrchToBase succeeds with uncommitted edits on feature branch (non-base)", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-isolated-dirty-feature-");
+	const orchBranch = "orch/spine-20260702T130000";
+	const batchId = "20260702T130000";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedBatchFixture(orchBranch, batchId);
+		writeSpineBatchState(projectRoot, fixture);
+		approveGateForIntegrate(projectRoot, fixture, batchId);
+
+		execFileSync("git", ["checkout", "-b", "feature/wip"], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "human-wip.txt"), "feature branch draft\n", "utf-8");
+		assert.equal(isBranchCheckedOutInWorktree(projectRoot, "main"), false);
+
+		const mainBefore = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		const result = integrateOrchToBase({ projectRoot });
+		assert.equal(result.ok, true, result.error ?? result.headline);
+		assert.ok(result.mergeCommit);
+		assert.notEqual(result.mergeCommit, mainBefore);
+
+		const onFeature = execFileSync("git", ["branch", "--show-current"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		assert.equal(onFeature, "feature/wip");
+		assert.equal(
+			fs.readFileSync(path.join(projectRoot, "human-wip.txt"), "utf-8"),
+			"feature branch draft\n",
+		);
+		assert.ok(gitRefHasPath(projectRoot, "main", "orch-work.txt"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("integrateOrchToBase dry-run advertises isolated merge plan", async () => {
 	const projectRoot = await initGitRepo("spine-integrate-isolated-dryrun-");
 	const orchBranch = "orch/spine-20260702T120000";

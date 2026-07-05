@@ -683,9 +683,9 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 | `generatedAt` only (rules[] fingerprint matches `main` HEAD) | Auto-restores HEAD; merge applies orch manifest |
 | Worker entries on `main` matching orch fingerprint | Auto-restores HEAD; merge lands orch manifest (no manual commit — [#22](https://github.com/beettlle/pi-spine/issues/22)) |
 | Manifest differs from both `main` HEAD and orch | Refused — commit or stash, then re-run |
-| Any other dirty file on `main` (legacy) | Previously refused; **interim (SP-436):** allowed — integrate uses isolated plumbing merge and leaves your working tree untouched |
+| Any other dirty file on `main` (legacy) | Previously refused; **interim (SP-475):** allowed — integrate uses isolated plumbing merge and leaves your working tree untouched |
 
-**Concurrent development (interim — FR-WT-08 slice 1):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. After integrate, run `git status` — uncommitted files remain until you commit or stash them. Full `spine sync-base` / `human_base_diverged` diagnosis ships in SP-443 ([#91](https://github.com/beettlle/pi-spine/issues/91)).
+**Concurrent development (interim — FR-WT-08 slice 1b, SP-475):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. The same applies when you are on a **non-base branch** with a dirty tree — isolated integrate does not require a clean checkout. After integrate, run `git status` — uncommitted files remain until you commit or stash them. Full `spine sync-base` / `human_base_diverged` diagnosis ships in SP-443 ([#91](https://github.com/beettlle/pi-spine/issues/91)).
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch. For the full multi-wave procedure driven by an external agent (pi, OpenCode, Cursor), see **[agent-orchestrated-waves.md](./agent-orchestrated-waves.md)**.
 
