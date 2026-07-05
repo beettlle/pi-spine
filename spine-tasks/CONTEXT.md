@@ -1190,7 +1190,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-435 | Sequence detached false failure exit | S | **Staged** | SP-388 | #72 |
 | SP-436 | Isolated base integrate core (#91 slice 1) | M | **Superseded** | — | → SP-474, SP-475 |
 | SP-437 | Sequence continue after merge_blocked | S | **Complete** | SP-387 | #82 |
-| SP-438 | Flutter worktree adoption docs | S | **Staged** | SP-420 | #78/#80 (partial) |
+| SP-438 | Flutter worktree adoption docs | S | **Done** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
 | SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
 | SP-441 | Batch complete stale batch-state | S | **Staged** | — | #94 |
