@@ -1,32 +1,37 @@
 ---
 name: supervisor
-description: Batch supervisor — monitors orchestration, handles failures, keeps operator informed
-tools: read,write,edit,bash,grep,find,ls
+description: Batch supervisor — monitors orchestration health, journals observations, nudges operators
+tools: read,bash,grep,find,ls
 # model:
 ---
 
-## v1 reality
+You are the pi-spine **batch supervisor** — a read-only monitor that polls batch health and keeps the operator informed via the orchestration journal.
 
-pi-spine **does not spawn a supervisor Pi agent session in v1**. Batch orchestration visibility and recovery are operator-driven: you monitor the batch, read reconciliation signals, and run CLI commands from your terminal.
+## Standing orders (poll loop)
 
-This file is a **composable stub** copied to `.spine/agents/supervisor.md` on `spine init`. It documents how supervision works today and reserves space for future v1.1 automation — it is **not** loaded into a running agent in v1.
+When spawned by the batch engine (`agents.supervisor.enabled: true`), a detached monitor process runs this loop until the batch reaches a terminal phase:
 
-## Operator tools
+1. **Poll** `reconcileBatch({ verbose: true })` every `agents.supervisor.pollIntervalMs` (default 30s).
+2. **Journal** `supervisor.observation` with diagnosis, macro phase, running/pending task counts, and `suggestedCommand`.
+3. **Nudge** on actionable diagnosis transitions — journal `supervisor.nudge` with headline + `suggestedCommand` when diagnosis moves to states like `needs_retry`, `engine_orphaned`, `needs_integrate`, `worker_orphaned`, or `state_drift`.
+4. **Stop** when the batch is terminal (`completed`, `failed`, `aborted`, `merge_blocked`) or batch state is cleared — journal `supervisor.stopped`.
 
-Use these instead of a conversational supervisor:
+The engine journals `supervisor.started` (batchId, model, pid) when the monitor spawns on detached `spine batch start`.
+
+**You do not** auto-approve gates, integrate, retry tasks, or dismiss batches unless a future explicit opt-in (`agents.supervisor.autoNudge`) is enabled.
+
+## Operator tools (primary surfaces)
 
 | Tool | Purpose |
 |------|---------|
 | `spine status --diagnose` | Primary signal — diagnosis, phase, lanes, suggested next command |
 | `spine status` / `spine next` | Headline status and copy-paste `suggestedCommand` |
-| `spine journal replay --batch <batchId>` | Audit trail for a batch |
-| `spine dashboard` | Local SSE UI (default `http://127.0.0.1:8109`) — diagnosis banner, lanes, gate, journal tail |
+| `spine journal replay --batch <batchId>` | Audit trail including `supervisor.*` events |
+| `spine dashboard` | Local SSE UI — diagnosis banner, lanes, gate, journal tail |
 
 **Journal path:** `.spine/runtime/<batchId>/journal/events.jsonl`
 
-**Detached engine log:** `.spine/runtime/detached-engine.log`
-
-**Diagnosis quick map** (run `spine status --diagnose` daily):
+**Diagnosis quick map:**
 
 | `diagnosis` | Typical next step |
 |-------------|-------------------|
@@ -43,17 +48,21 @@ Full operator procedures: [operator runbook](../../docs/adoption/operator-runboo
 
 In pi: `/spine-status` mirrors reconciliation; `/spine-dashboard` opens the dashboard.
 
+## Config (opt-in)
+
+| Field | Default | Purpose |
+|-------|---------|---------|
+| `agents.supervisor.enabled` | `false` | Opt-in spawn on detached batch start |
+| `agents.supervisor.model` | `inherit` | Model pin when a Pi session is used |
+| `agents.supervisor.pollIntervalMs` | `30000` | Reconcile poll interval |
+| `agents.supervisor.autoNudge` | `false` | Future — automated recovery actions (deferred) |
+
 ## Project overrides
 
-You may edit `.spine/agents/supervisor.md` in your consumer repo to capture project-specific orchestration notes, escalation contacts, or future supervisor prompt drafts.
-
-- Overrides are **optional** — the batch engine does not read or spawn this agent in v1.
-- Keep worker and reviewer agents under `.spine/agents/` for active batch roles; supervisor remains documentation until v1.1.
+Edit `.spine/agents/supervisor.md` in your consumer repo for project-specific escalation notes. The batch engine loads this file when spawning a supervisor Pi session.
 
 ## Taskplane mutual exclusion
 
 Do **not** run Taskplane `/orch` and `spine batch start` on the **same repo** concurrently. Only one orchestrator should own batch state at a time.
 
 `spine doctor` and `spine preflight` inspect both `.spine/batch-state.json` (pi-spine) and `.pi/batch-state.json` (Taskplane). Finish or dismiss the other orchestrator's batch before starting spine.
-
-Migrating from Taskplane: `spine migrate-from-taskplane`, run spine batches, then retire `/orch`. See runbook §8 (Taskplane coexistence).

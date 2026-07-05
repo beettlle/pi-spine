@@ -21,6 +21,7 @@ import {
 } from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 import { removeLaneWorktrees } from "./worktree.mjs";
+import { terminateSupervisorIfRunning } from "./supervisor-spawn.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
@@ -267,6 +268,8 @@ export function dismissBatch(ctx) {
 		};
 	}
 
+	terminateSupervisorIfRunning(projectRoot, batchId, "batch_dismiss");
+
 	const terminatedWorkers = terminateLaneWorkers(loaded.raw.lanes, { hard: true });
 	for (const entry of terminatedWorkers) {
 		appendJournalEvent(projectRoot, batchId, "lane.worker_terminated", {
@@ -443,6 +446,8 @@ export function completeBatch(ctx) {
 			batchId,
 		};
 	}
+
+	terminateSupervisorIfRunning(projectRoot, batchId, "batch_complete");
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
 	const postMortemPath = writeBatchPostMortem({
