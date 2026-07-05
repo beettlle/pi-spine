@@ -39,7 +39,7 @@ FR-SHIP-11 Tier 1 (#71 slice A–E): opt-in `agents.supervisor.enabled`, spawn s
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/supervisor-spawn.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/supervisor-spawn.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 
 ## Steps
