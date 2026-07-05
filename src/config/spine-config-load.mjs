@@ -9,6 +9,7 @@ import { validateWorkerBackendConfig } from "./worker-backend.mjs";
 import { validateWorkerContextConfig } from "./worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "./worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "./worktree-setup-hook.mjs";
+import { validateOrchestratorConfig } from "./spine-config-schema.mjs";
 
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
@@ -180,6 +181,11 @@ export function validateSpineConfig(config) {
 	const setupHookError = validateWorktreeSetupHookConfig(config);
 	if (setupHookError) {
 		return setupHookError;
+	}
+
+	const orchestratorError = validateOrchestratorConfig(config);
+	if (orchestratorError) {
+		return orchestratorError;
 	}
 
 	if (config.worktreeSetupIgnorePaths != null) {

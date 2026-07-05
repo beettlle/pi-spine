@@ -3,6 +3,8 @@
  * Contract defaults are added in SP-142.
  */
 
+import { ORCHESTRATOR_DEFAULTS } from "./spine-config-schema.mjs";
+
 /** @type {Readonly<{ requireFinalVerdict: boolean; maxFinalAttempts: number }>} */
 export const REVIEW_DEFAULTS = Object.freeze({
 	requireFinalVerdict: true,
@@ -38,7 +40,7 @@ export const INTEGRATE_DEFAULTS = Object.freeze({
 	allowHumanOnBaseBranch: "warn",
 });
 
-/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS }>} */
+/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS; orchestrator: typeof ORCHESTRATOR_DEFAULTS }>} */
 export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	review: REVIEW_DEFAULTS,
 	handoff: HANDOFF_DEFAULTS,
@@ -46,4 +48,5 @@ export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	contract: CONTRACT_DEFAULTS,
 	lanes: LANES_DEFAULTS,
 	integrate: INTEGRATE_DEFAULTS,
+	orchestrator: ORCHESTRATOR_DEFAULTS,
 });

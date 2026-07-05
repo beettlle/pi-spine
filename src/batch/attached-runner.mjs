@@ -15,6 +15,13 @@ import { reconcileBatch } from "./reconcile.mjs";
 import { readJournalEventsCached } from "./journal.mjs";
 import { enforceOperatorPauseOnDisk } from "./pause.mjs";
 import { loadSpineBatchState, readBatchEnginePid, saveSpineBatchState } from "./state.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveAttachedMilestonePollMs } from "../config/spine-config-schema.mjs";
+
+export { DEFAULT_ATTACHED_MILESTONE_POLL_MS } from "../config/spine-config-schema.mjs";
+
+/** @type {boolean} */
+let attachedExitHandlersInstalled = false;
 
 /** Journal types surfaced on attached stdout during the land loop. */
 export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
@@ -32,11 +39,6 @@ export const ATTACHED_LAND_LOOP_MILESTONE_TYPES = new Set([
 	"batch.land_loop_finalized",
 	"batch.completed",
 ]);
-
-const ATTACHED_MILESTONE_POLL_MS = 200;
-
-/** @type {boolean} */
-let attachedExitHandlersInstalled = false;
 
 /**
  * Install journal-aware SIGTERM/SIGINT handlers before attached engine exit (SP-378).
@@ -101,9 +103,18 @@ export function formatAttachedMilestoneLine(event) {
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {(line: string) => void} [params.write]
+ * @param {number} [params.pollIntervalMs]
  * @returns {Promise<{ stop: () => Promise<void> }>}
  */
-export async function startAttachedMilestoneReporter({ projectRoot, write = (line) => process.stdout.write(line) }) {
+export async function startAttachedMilestoneReporter({
+	projectRoot,
+	write = (line) => process.stdout.write(line),
+	pollIntervalMs,
+}) {
+	const configResult = loadSpineConfig(projectRoot);
+	const resolvedPollMs =
+		pollIntervalMs ??
+		resolveAttachedMilestonePollMs({ config: configResult.config ?? {} });
 	/** @type {Set<string>} */
 	const printed = new Set();
 	let batchId = null;
@@ -126,7 +137,7 @@ export async function startAttachedMilestoneReporter({ projectRoot, write = (lin
 					write(formatAttachedMilestoneLine(event));
 				}
 			}
-			await sleep(ATTACHED_MILESTONE_POLL_MS);
+			await sleep(resolvedPollMs);
 		}
 	};
 

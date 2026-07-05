@@ -42,6 +42,11 @@
   "dashboard": {
     "port": 8109
   },
+  "orchestrator": {
+    "attachedMilestonePollMs": 2000,
+    "sequencePollMs": 5000,
+    "dashboardPollMs": 2000
+  },
   "gates": {
     "requireBeforeIntegrate": true,
     "collectBuildEvidence": true,
