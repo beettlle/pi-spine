@@ -489,7 +489,7 @@ export function prepareContractVerifyEnvironment(worktreePath, parsedContract, c
  * @param {object} [config]
  * @param {string} [config.baseBranch]
  * @param {string} [config.sinceCommit] When set, scope file-scope checks to `sinceCommit..HEAD` (serialized lanes).
- * @param {string} [config.taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution).
+ * @param {string} [config.taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution; anchor stable across retry/resume per SP-478).
  * @param {string} [config.projectRoot] Repo root for journal events (optional).
  * @param {string} [config.batchId] Batch ID for journal events (optional).
  * @param {string} [config.taskId] Task ID for journal events (optional).
