@@ -55,10 +55,16 @@ export function taskTerminalSuccessInBatch({ events, task, taskFolder }) {
  */
 export function taskAlreadyComplete({ taskFolder, events, task }) {
 	const status = String(task?.status ?? "");
-	if (status === "pending" || status === "failed" || status === "running") {
+	if (status === "failed") {
 		return false;
 	}
 	const doneOnDisk = fs.existsSync(path.join(taskFolder, ".DONE"));
+	if (doneOnDisk && (status === "running" || status === "pending")) {
+		return true;
+	}
+	if (status === "pending" || status === "running") {
+		return false;
+	}
 	return (
 		doneOnDisk ||
 		task.doneFileFound ||
