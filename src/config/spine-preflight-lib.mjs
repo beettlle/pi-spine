@@ -9,7 +9,7 @@ import { PACKAGE_ROOT } from "./spine-init-constants.mjs";
 import { runReconciliationCheck } from "../batch/reconcile.mjs";
 import { buildPlan } from "../planner/index.mjs";
 import { formatPlanHuman } from "../planner/format-plan.mjs";
-import { buildCoexistencePreflightCheck } from "../doctor/coexistence.mjs";
+import { buildCoexistencePreflightCheck, assessOrchestratorCoexistence } from "../doctor/coexistence.mjs";
 import { validatePiSpineRootConfig } from "./pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "./worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "./worktree-setup-hook.mjs";
@@ -22,7 +22,7 @@ import { NO_PENDING_TASKS_ERROR } from "../planner/scope.mjs";
 import { summarizePendingScope } from "../planner/pending.mjs";
 import { validatePrompt, collectStaleFileScopeMustChangeWarnings } from "../tasks/packet/validate-prompt.mjs";
 import { isRunMetricsAppendOnlyDrift } from "../batch/metrics.mjs";
-import { METRICS_DEFAULTS } from "./defaults.mjs";
+import { METRICS_DEFAULTS, INTEGRATE_DEFAULTS } from "./defaults.mjs";
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";
 
@@ -53,6 +53,150 @@ export function isPiSessionMetadataPath(relPath) {
  */
 export function filterPiSessionDirtyPaths(dirtyPaths) {
 	return dirtyPaths.filter((relPath) => !isPiSessionMetadataPath(relPath));
+}
+
+/**
+ * List uncommitted paths in projectRoot, excluding pi session metadata (issue #81).
+ *
+ * @param {string} projectRoot
+ * @returns {{ dirtyPaths: string[]; error: string | null }}
+ */
+export function listHumanDirtyPaths(projectRoot) {
+	try {
+		const output = execFileSync("git", ["status", "--porcelain"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			timeout: 5000,
+		});
+		const allDirtyPaths = output
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => line.slice(3).trim() || line.trim());
+		return { dirtyPaths: filterPiSessionDirtyPaths(allDirtyPaths), error: null };
+	} catch (err) {
+		return {
+			dirtyPaths: [],
+			error: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+/**
+ * Resolve current git branch in projectRoot.
+ *
+ * @param {string} projectRoot
+ * @returns {{ branch: string | null; error: string | null }}
+ */
+export function resolveCurrentGitBranch(projectRoot) {
+	try {
+		const branch = execFileSync("git", ["branch", "--show-current"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			timeout: 5000,
+		}).trim();
+		return { branch: branch || null, error: null };
+	} catch (err) {
+		return {
+			branch: null,
+			error: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
+const CONCURRENT_DEV_LABEL = "concurrent development on base branch";
+
+/**
+ * Doctor/preflight advisory when a human stays on baseBranch during an active batch (FR-WT-08 / #91).
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
+ * @param {typeof runReconciliationCheck} [ctx.runReconciliation]
+ */
+export function buildConcurrentDevDoctorCheck(ctx) {
+	const { projectRoot, config } = ctx;
+	const allowMode =
+		config?.integrate?.allowHumanOnBaseBranch ?? INTEGRATE_DEFAULTS.allowHumanOnBaseBranch;
+
+	if (allowMode === "allow") {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: "integrate.allowHumanOnBaseBranch=allow — concurrent base-branch edits permitted",
+		};
+	}
+
+	const assessment = assessOrchestratorCoexistence({
+		projectRoot,
+		runReconciliation: ctx.runReconciliation,
+	});
+	if (assessment.kind !== "spine_active") {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: "no active pi-spine batch",
+		};
+	}
+
+	const baseBranch = String(config?.baseBranch ?? "main").trim() || "main";
+	const branchResult = resolveCurrentGitBranch(projectRoot);
+	if (branchResult.error) {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: `branch check skipped: ${branchResult.error}`,
+		};
+	}
+	if (branchResult.branch !== baseBranch) {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: `checked out on ${branchResult.branch ?? "detached HEAD"}, not ${baseBranch}`,
+		};
+	}
+
+	const dirtyResult = listHumanDirtyPaths(projectRoot);
+	if (dirtyResult.error) {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: `dirty-tree check skipped: ${dirtyResult.error}`,
+		};
+	}
+	if (dirtyResult.dirtyPaths.length === 0) {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: true,
+			detail: `active batch with human on ${baseBranch} — working tree clean`,
+		};
+	}
+
+	const batchId = assessment.spine?.batchId ?? "unknown";
+	const preview = dirtyResult.dirtyPaths.slice(0, 3).join(", ");
+	const suffix =
+		dirtyResult.dirtyPaths.length > 3
+			? ` (+${dirtyResult.dirtyPaths.length - 3} more)`
+			: "";
+	const detail =
+		`active batch ${batchId} with uncommitted edits on ${baseBranch} (${preview}${suffix}) — ` +
+		"isolated integrate leaves your checkout untouched; commit or stash to reduce overlap risk";
+
+	if (allowMode === "block") {
+		return {
+			label: CONCURRENT_DEV_LABEL,
+			ok: false,
+			detail,
+			suggestedCommand: "git stash push -m 'spine-batch' || git switch -c wip/spine-batch",
+		};
+	}
+
+	return {
+		label: CONCURRENT_DEV_LABEL,
+		ok: true,
+		warning: true,
+		detail,
+		suggestedCommand: "git status",
+	};
 }
 
 /**

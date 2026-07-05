@@ -47,6 +47,10 @@
     "collectBuildEvidence": true,
     "collectTestEvidence": true
   },
+  "integrate": {
+    "isolatedWorktree": true,
+    "allowHumanOnBaseBranch": "warn"
+  },
   "review": {
     "requireFinalVerdict": true,
     "maxFinalAttempts": 3
