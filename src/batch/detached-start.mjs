@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { maybeSpawnSupervisorOnDetachedStart } from "./supervisor-spawn.mjs";
 import { runBatchPreflight } from "../config/spine-preflight-lib.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
@@ -762,6 +763,13 @@ export async function startBatchDetached({
 		};
 	}
 
+	const configResult = loadSpineConfig(projectRoot);
+	const supervisorSpawn = maybeSpawnSupervisorOnDetachedStart({
+		projectRoot,
+		batchId: wait.batchId,
+		config: configResult.config ?? {},
+	});
+
 	const payload = {
 		ok: true,
 		detached: true,
@@ -773,6 +781,8 @@ export async function startBatchDetached({
 		enginePid,
 		logPath,
 		suggestedCommand: "spine status --diagnose",
+		supervisorSpawned: supervisorSpawn.spawned === true,
+		supervisorPid: supervisorSpawn.supervisorPid ?? null,
 	};
 	return {
 		ok: true,
