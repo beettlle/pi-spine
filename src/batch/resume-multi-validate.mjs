@@ -4,24 +4,32 @@
 
 import fs from "node:fs";
 import { isProcessAlive } from "../process/liveness.mjs";
-import {
-	findFirstWaveNeedingMerge,
-	hasPendingWaveMerge,
-	succeededWaveMergeIndices,
-	waveTasksAllTerminal,
-} from "./merge/wave-merge-state.mjs";
+import { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
-import { isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { inspectGitState } from "./reconcile.mjs";
 import { detectSegmentDrift } from "./retry.mjs";
+import {
+	classifyTasksForOrphanDetect,
+	computePendingTasks,
+	detectPostMergeLimboFromResumeSignals,
+	findResumableWave,
+	isTaskResumable,
+} from "./resume-validation.mjs";
 import { loadSpineBatchState, readBatchEnginePid, validateBatchState } from "./state.mjs";
 import {
 	assertLaneWorktreeGitHealthy,
 	laneWorktreePath,
 	repairLaneWorktreeGitMetadata,
 } from "./worktree.mjs";
+
+export {
+	classifyTasksForOrphanDetect,
+	computePendingTasks,
+	findResumableWave,
+	isTaskResumable,
+} from "./resume-validation.mjs";
 
 /**
  * Resume-time limbo detection — state file, git signals, and journal merge events (SP-358, GitHub #41).
@@ -31,108 +39,25 @@ import {
  * @param {object} params.state
  */
 export function detectPostMergeLimboForResume({ projectRoot, state }) {
-	if (!state || typeof state !== "object") return false;
-	if (String(state.phase ?? "") === "completed") return false;
-
-	if (isPostMergeLimbo(state)) return true;
-
-	const batchId = String(state.batchId ?? "");
+	const batchId = String(state?.batchId ?? "");
 	const git = inspectGitState({
 		projectRoot,
 		batchId,
-		baseBranch: state.baseBranch ?? "main",
-		orchBranch: state.orchBranch ?? null,
+		baseBranch: state?.baseBranch ?? "main",
+		orchBranch: state?.orchBranch ?? null,
 	});
-	if (isPostMergeLimbo(state, git)) return true;
+	const journalEvents = batchId ? readJournalEvents(projectRoot, batchId) : [];
+	const gateRecordExists = batchId ? loadGateRecord(projectRoot, batchId) != null : false;
 
-	const phase = String(state.phase ?? "");
-	if (phase !== "running" && phase !== "merging") return false;
-	if (state.endedAt != null) return false;
-	if (!git.orchBranchExists || git.orchMergedToBase) return false;
-	if (!batchId || loadGateRecord(projectRoot, batchId)) return false;
-
-	const tasks = state.tasks ?? [];
-	if (tasks.length === 0) return false;
-	const allSucceeded = tasks.every((task) => String(task?.status ?? "") === "succeeded");
-	if (!allSucceeded) return false;
-
-	const totalWaves = Number(state.totalWaves ?? state.wavePlan?.length ?? 0);
-	if (!Number.isFinite(totalWaves) || totalWaves <= 0) return false;
-
-	const events = readJournalEvents(projectRoot, batchId);
-	const mergeCompleted = events.filter((event) => event.type === "batch.merge_completed");
-	if (mergeCompleted.length < 1) return false;
-
-	const lastWaveIndex = totalWaves - 1;
-	return mergeCompleted.some((event) => Number(event.payload?.waveIndex ?? -1) === lastWaveIndex);
-}
-
-/**
- * @param {object} state
- * @param {object} task
- */
-export function isTaskResumable(state, task) {
-	const status = String(task.status ?? "").toLowerCase();
-	if (status === "pending" || status === "running") return true;
-
-	return (state.segments ?? []).some((segment) => {
-		if (!segment || segment.taskId !== task.taskId) return false;
-		const segmentStatus = String(segment.status ?? "").toLowerCase();
-		return segmentStatus === "pending" || segmentStatus === "running";
+	return detectPostMergeLimboFromResumeSignals({
+		state,
+		git,
+		journalEvents,
+		gateRecordExists,
 	});
-}
-
-/**
- * @param {object} state
- */
-export function computePendingTasks(state) {
-	return (state.tasks ?? []).filter((task) => task && isTaskResumable(state, task));
 }
 
 export { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
-
-/**
- * @param {object} state
- * @param {object[]} pendingTasks
- */
-export function findResumableWave(state, pendingTasks) {
-	const pendingIds = new Set(pendingTasks.map((task) => task.taskId));
-	const wavePlan = state.wavePlan ?? [];
-	const succeededMerges = succeededWaveMergeIndices(state);
-
-	for (let waveIndex = 0; waveIndex < wavePlan.length; waveIndex++) {
-		if (succeededMerges.has(waveIndex) && waveTasksAllTerminal(state, waveIndex)) {
-			continue;
-		}
-		const waveTaskIds = wavePlan[waveIndex] ?? [];
-		if (waveTaskIds.some((taskId) => pendingIds.has(taskId))) {
-			return waveIndex;
-		}
-	}
-
-	const pendingMergeWave = findFirstWaveNeedingMerge(state);
-	if (pendingMergeWave != null) {
-		return pendingMergeWave;
-	}
-
-	return Number(state.currentWaveIndex ?? 0);
-}
-
-/**
- * Classify tasks for orphan detection during resume validation (status-only).
- *
- * @param {object[]} tasks
- */
-function classifyTasksForOrphanDetect(tasks) {
-	return (tasks ?? []).map((task) => {
-		const status = String(task?.status ?? "").toLowerCase();
-		return {
-			taskId: task.taskId,
-			laneNumber: task.laneNumber,
-			classification: status === "running" ? "running" : status,
-		};
-	});
-}
 
 /**
  * Assess whether a running-phase batch may resume after a dead detached engine (SP-296).

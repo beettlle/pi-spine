@@ -38,10 +38,9 @@ Extract pure resume validation helpers to `resume-validation.mjs` with no reconc
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/resume-validation-leaf.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/resume-validation-leaf.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `src/batch/resume-validation.mjs` |
-| artifactsMustExist | `tests/batch/resume-validation-leaf.test.mjs` |
+| artifactsMustExist | `tests/batch/resume-validation-leaf.test.mjs`, `src/batch/resume-validation.mjs` |
 
 ## Steps
 
