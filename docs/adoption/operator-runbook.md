@@ -1646,7 +1646,9 @@ To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktr
 
 Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
 
-**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh). Partial doc close for #78/#80; engine tasks SP-458/SP-459 may add init templates later.
+**Engine hygiene (SP-458, #78):** When a task Contract `testCommand` includes **unscoped** `flutter analyze` (for example `flutter analyze && flutter test`), contract verify removes the lane worktree `build/` directory before running the command. Scoped analyze (`flutter analyze lib test`) is unchanged. Disable with `contract.flutterAnalyzerHygiene: false` in spine-config when you intentionally rely on `build/` during verify.
+
+**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh) (also cleans `build/` at lane setup). Engine tasks SP-459 may add init templates for gitignored assets ([#80](https://github.com/beettlle/pi-spine/issues/80)).
 
 ### Get help from reconciliation
 

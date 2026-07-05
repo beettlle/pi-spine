@@ -15,6 +15,10 @@ import {
 	isStubPrelandedFileScopeSatisfied,
 } from "./contract-prelanded.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import {
+	sanitizeFlutterBuildBeforeAnalyze,
+	shouldCleanFlutterBuildBeforeAnalyze,
+} from "./lane-dirty-check.mjs";
 
 export { resolvePromptRelPath, isFileScopePatternPrelanded, hasSpineTaskDeliveryChanges } from "./contract-prelanded.mjs";
 
@@ -462,6 +466,24 @@ function findArtifactMatch(worktreePath, artifactPattern) {
 }
 
 /**
+ * Prepare lane worktree before contract testCommand (Flutter analyzer hygiene #78).
+ *
+ * @param {string} worktreePath
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {object} [config]
+ * @returns {{ hygieneApplied: boolean, cleaned?: boolean, buildDir?: string, reason?: string }}
+ */
+export function prepareContractVerifyEnvironment(worktreePath, parsedContract, config = {}) {
+	const testCommand = parsedContract?.testCommand;
+	if (!testCommand || !shouldCleanFlutterBuildBeforeAnalyze(testCommand, config)) {
+		return { hygieneApplied: false };
+	}
+
+	const result = sanitizeFlutterBuildBeforeAnalyze(worktreePath);
+	return { hygieneApplied: true, ...result };
+}
+
+/**
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
  * @param {object} [config]
@@ -480,6 +502,8 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	const baseBranch = config?.baseBranch ?? "main";
 	const sinceCommit = config?.sinceCommit ?? config?.taskStartCommit ?? undefined;
 	const changedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
+
+	prepareContractVerifyEnvironment(worktreePath, parsedContract, config);
 
 	let testCommandOutput = "";
 	let testCommandOk = true;
