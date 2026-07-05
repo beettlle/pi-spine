@@ -32,11 +32,18 @@ export const LANES_DEFAULTS = Object.freeze({
 	cleanupWorktreesOnComplete: true,
 });
 
-/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS }>} */
+/** @type {Readonly<{ isolatedWorktree: boolean; allowHumanOnBaseBranch: "warn" | "block" | "allow" }>} */
+export const INTEGRATE_DEFAULTS = Object.freeze({
+	isolatedWorktree: true,
+	allowHumanOnBaseBranch: "warn",
+});
+
+/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS }>} */
 export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	review: REVIEW_DEFAULTS,
 	handoff: HANDOFF_DEFAULTS,
 	metrics: METRICS_DEFAULTS,
 	contract: CONTRACT_DEFAULTS,
 	lanes: LANES_DEFAULTS,
+	integrate: INTEGRATE_DEFAULTS,
 });

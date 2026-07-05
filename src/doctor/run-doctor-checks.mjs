@@ -15,6 +15,7 @@ import {
 } from "./suggest-max-parallel.mjs";
 import { buildStalePathDoctorCheck } from "./stale-path.mjs";
 import { buildCoexistenceDoctorCheck } from "./coexistence.mjs";
+import { buildConcurrentDevDoctorCheck } from "../config/spine-preflight-lib.mjs";
 import { buildTaskPacketSizeDoctorCheck } from "./task-packet-size.mjs";
 import {
 	buildPiWorkerTimeoutDoctorCheck,
@@ -377,6 +378,12 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		for (const testingCheck of buildTestingEvidenceDoctorChecks(configResult.config)) {
 			checks.push(testingCheck);
 		}
+		const concurrentDevCheck = buildConcurrentDevDoctorCheck({
+			projectRoot,
+			config: configResult.config,
+		});
+		checks.push(concurrentDevCheck);
+		if (!concurrentDevCheck.ok) issueCount++;
 	}
 
 	for (const agentFile of REQUIRED_AGENT_FILES) {
