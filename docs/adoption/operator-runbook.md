@@ -291,6 +291,8 @@ Stub mode (`SPINE_WORKER_STUB=1`) runs `bin/spine-worker-runner.mjs --stub`, whi
 
 **Pre-landed implementation (issue #56, SP-373):** When implementation was already merged to `main` before the batch runs, amend `PROMPT.md` **## Contract** to point `fileScopeMustChange` at delivery artifacts (`STATUS.md`, `.DONE`) and document the pre-land in **## Amendments** (see [§2.3 Pre-landed implementation warning](#pre-landed-implementation-warning-issue-56)). SP-373 satisfies pre-landed **implementation** paths at verify time when `testCommand` and artifacts pass — it does not replace stub STATUS delivery for amended delivery-only contracts. Preflight warns on stale implementation scope ([SP-374](https://github.com/beettlle/pi-spine/pull/374)).
 
+**Idempotent tasks on consumer base (issue #105, SP-462):** When a task's `fileScopeMustChange` path already exists on the batch base branch and the lane has zero diff for that path (no-op after a prior integration on the consumer base), contract verification treats the scope as satisfied — the worker only needs delivery artifacts and a passing `testCommand`. This complements SP-373 pre-landed detection (paths changed on base *after* the task PROMPT was introduced). Regression: `tests/batch/contract-base-satisfied.test.mjs`.
+
 **Operator recovery when stub delivery is insufficient:**
 
 1. Confirm contract scope in `PROMPT.md` — delivery-only vs implementation.
