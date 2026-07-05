@@ -1,8 +1,8 @@
 # SP-478: Contract verify resume baseline — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,43 +11,43 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #105
-- [ ] Dependencies satisfied
+- [x] Read issue #105
+- [x] Dependencies satisfied (SP-415/SP-416 code landed; resolveTaskStartCommit + verifyContract sinceCommit wired)
 
 ---
 
 ### Step 1: Baseline fix
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Persist task-start commit across retry/resume
-- [ ] Verify diff uses task boundary not stale post-rework tree
+- [x] Persist task-start commit across retry/resume
+- [x] Verify diff uses task boundary not stale post-rework tree
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fixture: lane commit exists but verifier false negative → pass after fix
+- [x] Fixture: lane commit exists but verifier false negative → pass after fix
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1670/1670 with `env -u SPINE_IS_WORKER`)
+- [x] Coverage gate (88.49% line coverage ≥ 77%)
+- [x] All failures fixed (worker-env nested spawn failures are environmental; contract tests pass)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated (`docs/adoption/operator-runbook.md`)
+- [x] Issue updated (#105 comment)
+- [x] .DONE created
 
 ---
 

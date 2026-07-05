@@ -1546,6 +1546,22 @@ When the planner serializes multiple tasks on one lane (`lane.tasks_serialized`)
 
 Regression coverage: `tests/batch/contract-verify-serialized.test.mjs` (task 2 passes `fileScopeMustNotChange` for paths only task 1 committed when `sinceCommit` is set).
 
+#### Contract verify after pause/retry/resume (issue #105, SP-478)
+
+After `spine batch retry` + `spine batch resume`, the engine may append a second `task.started` with `resumed: true`. Final contract verify must still diff from the **original** task-start baseline — not from the task's own `lane.committed` SHA (which would make `sinceCommit..HEAD` empty and false-fail `fileScopeMustChange` even when the lane commit is present).
+
+| Mechanism | Behavior |
+|-----------|----------|
+| Baseline anchor | `resolveTaskStartCommit` uses the **first** matching `task.started` for the task in the batch journal |
+| Same-task lane commit | Prior `lane.committed` events for the **same** `taskId` are excluded when resolving the start anchor |
+| Payload commit | When the first `task.started` carries `taskStartCommit` (or alias keys), that SHA wins over journal inference |
+
+**Symptom:** First final review passes; after operator pause/retry/resume, `contract.verified` fails with `fileScopeMustChange: no matching changes for <path>` while `git log` on the lane branch shows the required commit.
+
+**Recovery:** No PROMPT edit required when the lane commit is correct — `spine batch retry <taskId>` and `spine batch resume` re-run verify with the stable baseline. If failure persists, inspect journal for missing first `task.started` or absent `taskStartCommit` on serialized lanes.
+
+Regression coverage: `tests/batch/contract-resume-baseline.test.mjs`.
+
 **Cause (remaining failure patterns):**
 
 | Pattern | Why it fails |
@@ -1660,6 +1676,8 @@ To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktr
 ### Flutter lane worktrees (#78, #80)
 
 Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
+
+**Engine hygiene (SP-458, #78):** When a task Contract `testCommand` includes **unscoped** `flutter analyze` (for example `flutter analyze && flutter test`), contract verify removes the lane worktree `build/` directory before running the command. Scoped analyze (`flutter analyze lib test`) is unchanged. Disable with `contract.flutterAnalyzerHygiene: false` in spine-config when you intentionally rely on `build/` during verify.
 
 **Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`. **`spine init`** copies optional [`scripts/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh) from the pi-spine template; customize asset paths, then set `"worktreeSetupHook": "scripts/spine-worktree-setup-flutter.sh"` in `.spine/spine-config.json`. **`spine doctor`** warns when gitignored pubspec assets exist on main but lanes would miss them without the hook (SP-459, closes [#80](https://github.com/beettlle/pi-spine/issues/80)).
 
