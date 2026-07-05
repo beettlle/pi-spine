@@ -42,7 +42,7 @@ Raise default orchestrator poll intervals (attached milestone 200ms→2s, sequen
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/poll-interval-defaults.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
-| fileScopeMustChange | `tests/batch/poll-interval-defaults.test.mjs` |
+| fileScopeMustChange | `src/config/defaults.mjs`, `src/batch/attached-runner.mjs` |
 | artifactsMustExist | `tests/batch/poll-interval-defaults.test.mjs` |
 
 ## Steps
