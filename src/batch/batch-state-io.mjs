@@ -79,6 +79,24 @@ export function readBatchStateId(raw) {
 
 /**
  * @param {unknown} raw
+ * @returns {string}
+ */
+export function readBaseBranchHeadAtStart(raw) {
+	if (!raw || typeof raw !== "object") return "";
+	return String(/** @type {{ baseBranchHeadAtStart?: string }} */ (raw).baseBranchHeadAtStart ?? "").trim();
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function readIntegrateWorktreePath(raw) {
+	if (!raw || typeof raw !== "object") return "";
+	return String(/** @type {{ integrateWorktreePath?: string }} */ (raw).integrateWorktreePath ?? "").trim();
+}
+
+/**
+ * @param {unknown} raw
  * @returns {number|null}
  */
 export function readBatchStateEnginePid(raw) {

@@ -24,6 +24,8 @@ import { removeLaneWorktrees } from "./worktree.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
+export { recordBatchBaseSnapshot as recordBatchBaseSnapshotOnStart } from "./integrate-worktree.mjs";
+
 /**
  * Terminal merge-blocked state when the engine exits after a wave merge failure (GitHub #38).
  * Clears stale enginePid so status does not imply an in-progress merge.
