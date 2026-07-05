@@ -1,8 +1,8 @@
 # SP-475: Integrate isolated merge path — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 4
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-05
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,42 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #91
-- [ ] Dependencies satisfied
+- [x] Read issue #91
+- [x] Dependencies satisfied (SP-474 `.DONE` on branch)
 
 ---
 
 ### Step 1: Isolated merge path
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add integrate-worktree.mjs
-- [ ] Never checkout baseBranch in projectRoot during integrate
+- [x] Add integrate-worktree.mjs (pre-landed SP-436/SP-439; verified in lane)
+- [x] Never checkout baseBranch in projectRoot during integrate
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Integrate succeeds with dirty human worktree on main (uncommitted)
-- [ ] Conflict path unchanged
+- [x] Integrate succeeds with dirty human worktree on main (uncommitted)
+- [x] Conflict path unchanged
+- [x] Integrate succeeds with dirty human on non-base branch (mission coverage)
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1640/1640 with `SPINE_IS_WORKER=` cleared)
+- [x] Coverage gate: 88.55% line coverage (threshold 77%)
+- [x] All failures fixed (worker-env nested spawn: run full suite with `SPINE_IS_WORKER=` unset)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Docs updated
+- [x] "Must Update" docs modified
+- [x] "Check If Affected" docs reviewed (CONTEXT.md — no SP-475 status change needed pre-.DONE)
 - [ ] Issue updated
 - [ ] .DONE created
 
