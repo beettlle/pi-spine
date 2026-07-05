@@ -1,6 +1,6 @@
 # How to orchestrate multi-wave spine batches with an external agent
 
-**pi skill:** [`spine-orchestrate-waves`](../../skills/spine-orchestrate-waves/SKILL.md) — decision tree, evidence checklist, and wave picker for agent sessions. Slash entry: `/spine-orchestrate` (see SP-467).
+> **Sync source:** `docs/adoption/agent-orchestrated-waves.md` (canonical). Update the doc first, then re-copy here when content changes.
 
 Run all pending tasks across multiple dependency waves without manual intervention between each step. An **external agent** (pi, OpenCode, Cursor, CI script) drives the land loop between waves while spine owns batch execution, review, and integrate gates.
 
@@ -10,9 +10,9 @@ Run all pending tasks across multiple dependency waves without manual interventi
 
 ## Prerequisites
 
-- pi-spine installed and configured ([bootstrap-checklist.md](./bootstrap-checklist.md))
+- pi-spine installed and configured ([bootstrap-checklist.md](../../../docs/adoption/bootstrap-checklist.md))
 - Tasks decomposed into dependency waves (`spine plan pending` shows wave structure)
-- Familiarity with the [land loop](./operator-runbook.md#4-land-loop)
+- Familiarity with the [land loop](../../../docs/adoption/operator-runbook.md#4-land-loop)
 
 ---
 
@@ -149,14 +149,15 @@ Adapt for agent sessions: replace the bash loop with agent tool calls (`spine st
 
 | Doc | Relevance |
 |-----|-----------|
-| [operator-runbook.md §4](./operator-runbook.md#4-land-loop) | Land loop copy-paste sequence |
-| [bootstrap-checklist.md](./bootstrap-checklist.md) | First batch setup |
-| [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch |
-| [QUICK-REFERENCE.md](../QUICK-REFERENCE.md) | Command reference |
-| [spine-orchestrate-waves SKILL.md](../../skills/spine-orchestrate-waves/SKILL.md) | pi skill (decision tree + evidence checklist) |
+| [operator-runbook.md §4](../../../docs/adoption/operator-runbook.md#4-land-loop) | Land loop copy-paste sequence |
+| [bootstrap-checklist.md](../../../docs/adoption/bootstrap-checklist.md) | First batch setup |
+| [upstream-execution-workflow.md](../../../docs/adoption/upstream-execution-workflow.md) | PRD → task packets → batch |
+| [QUICK-REFERENCE.md](../../../docs/QUICK-REFERENCE.md) | Command reference |
+| [spine-orchestrate-waves SKILL.md](../SKILL.md) | pi skill entry with decision tree |
 
 ## Related issues
 
+- [#90](https://github.com/beettlle/pi-spine/issues/90) — agent-orchestrated multi-wave outer loop
 - [#79](https://github.com/beettlle/pi-spine/issues/79) — `--auto-approve-gate` flag (deprioritized; agent loop replaces need)
 - [#82](https://github.com/beettlle/pi-spine/issues/82) — sequence stops on merge_blocked
 - [#84](https://github.com/beettlle/pi-spine/issues/84) — PROMPT authoring for cross-model

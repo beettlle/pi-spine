@@ -1311,7 +1311,7 @@ spine plan SP-451 SP-452
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-466 | Spine orchestrate skill package | S | **Staged** | SP-418 | #90 (partial) |
+| SP-466 | Spine orchestrate skill package | S | **Done** | SP-418 | #90 (partial) |
 | SP-467 | Spine orchestrate slash command | S | **Staged** | SP-418, SP-466 | #90 |
 | SP-468 | Resume validation leaf (#83-B) | S | **Staged** | SP-424 | #83 (partial) |
 | SP-469 | Detached spawn leaf (#83-C) | S | **Staged** | SP-424, SP-468 | #83 (partial) |
