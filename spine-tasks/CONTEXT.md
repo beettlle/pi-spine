@@ -1441,6 +1441,8 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 
 **v1.5.0 release:** Shipped as npm `pi-spine@1.5.0` (tag `v1.5.0`). Batches: `20260704T182954` (SP-494), `20260704T185602` (wave 1), `20260704T205637` (SP-493).
 
+**Next (stet feedback loop):** v1.5.0 contract path auto-finishes zero-finding sessions, so `.review/history.jsonl` is absent until dismissals occur. Audit and next-release proposals: `docs/features/stet-feedback-loop-brief.md`.
+
 ---
 
 ## Priority backlog
