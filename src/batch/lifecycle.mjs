@@ -10,11 +10,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
-import {
-	appendBatchHistoryEntry,
-	clearBatchEnginePid,
-	saveSpineBatchState,
-} from "./state.mjs";
+import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import {
 	clearActiveBatchStateIfMatches,
