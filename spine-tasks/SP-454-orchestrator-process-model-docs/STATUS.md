@@ -1,8 +1,8 @@
 # SP-454: Orchestrator process model docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 4 (Documentation & Delivery)
+**Status:** 🟢 Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #98
-- [ ] Dependencies satisfied
+- [x] Read issue #98
+- [x] Dependencies satisfied (SP-451 journal cache shipped; SP-452/453 pending — documented current defaults + planned config)
 
 ---
 
 ### Step 1: Runbook section
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add process model table (pi vs spine vs harness)
-- [ ] Document poll config keys and mitigations
+- [x] Add process model table (pi vs spine vs harness)
+- [x] Document poll config keys and mitigations
 
 ---
 
 ### Step 2: Cross-links
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] QUICK-REFERENCE pointer
-- [ ] Link from doctor maxParallel section
+- [x] QUICK-REFERENCE pointer
+- [x] Link from doctor maxParallel section
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -63,6 +63,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| SP-452/453 not merged; documented current code defaults + planned `orchestrator.*PollMs` sketch | Accurate as-of ship date | operator-runbook §3 |
+| Issue #98 already closed on GitHub | No action | gh issue view |
 
 ---
 
@@ -71,6 +73,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
+| 2026-07-05 | Step 1–2 | operator-runbook §3 + QUICK-REFERENCE cross-links |
+| 2026-07-05 | Step 3 | typecheck + stub tests green |
+| 2026-07-05 | Step 4 | .DONE created |
 
 ---
 

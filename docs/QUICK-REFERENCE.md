@@ -86,7 +86,7 @@ spine preflight --json
 | Tasks validate | Pending `PROMPT.md` packets pass structural validation (v1.3+) |
 | Wave plan | Dependency waves and lane assignment (same output as `spine plan`) |
 
-`spine doctor` also prints an advisory **lanes.maxParallel** sizing line when config is valid (configured vs CPU-based suggestion). The hint never fails doctor; it may warn when configured parallelism looks high for your machine.
+`spine doctor` also prints an advisory **lanes.maxParallel** sizing line when config is valid (configured vs CPU-based suggestion). The hint never fails doctor; it may warn when configured parallelism looks high for your machine. For expected node process count (pi vs spine vs harness), poll defaults, and CPU mitigations, see [operator-runbook §3 — Orchestrator process model](./adoption/operator-runbook.md#orchestrator-process-model-98).
 
 ### Plan Visualization
 
@@ -190,6 +190,7 @@ spine status --verbose
 # Live reconcile poll (default 5s)
 spine watch
 spine watch --json --once
+spine watch --interval 10   # lighter orchestrator poll (see runbook §3)
 
 # Block until terminal diagnosis (CI)
 spine wait --until completed,failed --json --timeout 30m

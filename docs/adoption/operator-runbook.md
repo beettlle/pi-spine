@@ -83,6 +83,8 @@ spine doctor
 spine version   # confirms global npm link resolves (npm bin is a symlink to bin/spine.mjs)
 ```
 
+`spine doctor` prints an advisory **`lanes.maxParallel`** sizing line when config is valid (configured vs CPU-based suggestion). Use it with [§3 Orchestrator process model](#orchestrator-process-model-98) to estimate expected node process count during batches.
+
 Global `npm link` / `npm install -g` invokes `spine` through a symlink on `PATH`. If `spine version` prints package and Node info, the CLI entrypoint is wired correctly (SP-099).
 
 In pi: `pi list` should show `pi-spine`; try `/spine-plan pending`.
@@ -387,6 +389,83 @@ spine rules select --role reviewer --review-type code --task SP-042
 ```
 
 **Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh).
+
+### Orchestrator process model ([#98](https://github.com/beettlle/pi-spine/issues/98))
+
+pi-spine is a **transparent orchestrator**: most CPU belongs to LLM workers (pi/Cursor), reviewers, and project harnesses (`testCommand`, `buildCommand`). Spine poll paths (reconcile, journal reads, dashboard SSE, attached milestone loops) should stay **idle-light** when lanes are not actively working.
+
+| Layer | Should be heavy | Should be light |
+|-------|-----------------|-----------------|
+| pi / Cursor worker | ✅ | |
+| Reviewer LLM session | ✅ | |
+| `testCommand` / `buildCommand` | ✅ | |
+| Batch engine reconcile | | ✅ |
+| Dashboard status polling | | ✅ |
+| Journal reads for milestones | | ✅ |
+| Attached / sequence wait loops | | ✅ |
+
+#### Expected node processes (normal vs leak)
+
+| `ps` command pattern | Owner | Busy CPU expected? | Normal count |
+|--------------------|-------|------------------|--------------|
+| `pi`, `cursor`, agent harness | LLM worker / reviewer | Yes, while session runs | **≤ `lanes.maxParallel`** workers during a wave tick, plus **0–1** reviewer subprocess per active review |
+| `flutter test`, `npm test`, `go test`, … | Contract verify / PROMPT `testCommand` | Yes, during verify | Bursts per lane at contract verify — not spine orchestration |
+| `spine.mjs batch`, `attached-runner`, detached engine | Spine batch engine | Low when lanes idle | **1** engine per active batch |
+| `spine dashboard` | Dashboard SSE server | Low–moderate (reconcile + journal per tick) | **1** per machine/repo (distinct ports for multiple repos) |
+| `spine watch`, `spine wait`, `spine run sequence` | CLI monitor / sequence waiter | Low–moderate during poll | **0–1** while you monitor; sequence waiter only during `spine run sequence` |
+| Second `spine.mjs batch … --attached` for same batch | **Leak** ([#89](https://github.com/beettlle/pi-spine/issues/89)) | High duplicate reconcile | **0** — use `resume --attached --force` handoff instead |
+
+**Rough process budget:** `1` batch engine + up to **`lanes.maxParallel`** pi workers + optional `1` dashboard + short-lived reviewers and `testCommand` children. Seven or more sustained busy `node` processes usually means overlapping harness work **or** duplicate orchestrator monitors — not a single healthy batch.
+
+Run `spine doctor` for an advisory **`lanes.maxParallel`** line (`configured` vs `suggested = clamp(1, 4, floor(cpu/2))`). The hint never fails doctor; it warns when configured parallelism looks high for your machine. See [§1 Install — `spine doctor`](#1-install) and [QUICK-REFERENCE — doctor](../QUICK-REFERENCE.md#validate-installation).
+
+```bash
+spine doctor
+spine settings show lanes.maxParallel
+SPINE_MAX_LANES=2 spine batch start pending   # env override (FR-CFG-04)
+```
+
+#### Distinguish spine vs harness CPU
+
+```bash
+ps -p <pid> -o command=
+```
+
+If the command is an LLM agent or test harness, high CPU is expected. If it is `spine.mjs`, `spine dashboard`, or attached milestone polling with **idle lanes**, investigate poll duplication (extra dashboard, concurrent attached engines, aggressive `spine watch` in many terminals).
+
+#### Poll budget (NFR-PERF-03)
+
+PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-03** (orchestrator poll budget) is the operator-facing sketch below — config keys for overrides are tracked in [#98](https://github.com/beettlle/pi-spine/issues/98).
+
+| Path | Current default | Target / mitigation |
+|------|-----------------|---------------------|
+| Attached milestone poll (`attached-runner.mjs`) | **200ms** | Human-scale events; journal read cache reduces parse cost ([#98](https://github.com/beettlle/pi-spine/issues/98)) |
+| Sequence `waitForSequenceBatchTerminal` | **250ms** full `reconcileBatch` | Prefer detached sequence + `spine watch`; raise interval when configurable |
+| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; distinct `dashboard.port` per repo |
+| Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
+| `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
+
+**Journal read cache (shipped):** hot paths share `readJournalEventsCached` — see [Monitoring cookbook — journal cache](#monitoring-cookbook) below.
+
+**Planned config surface** (`.spine/spine-config.json`, when shipped):
+
+```json
+{
+  "orchestrator": {
+    "attachedMilestonePollMs": 2000,
+    "sequencePollMs": 5000,
+    "dashboardPollMs": 2000
+  }
+}
+```
+
+#### Operator mitigations (until poll defaults ship)
+
+1. **One `spine dashboard` per machine** — use distinct ports per repo (`dashboard.port`).
+2. **Avoid concurrent attached engines** ([#89](https://github.com/beettlle/pi-spine/issues/89)) — only one `--attached` engine per batch; use `resume --attached --force` for handoff.
+3. **Slower CLI monitors:** `spine watch --interval 10`, `spine wait --interval 10`.
+4. **Scoped `testCommand`** in PROMPTs ([#84](https://github.com/beettlle/pi-spine/issues/84)) — full-suite tests look like spine CPU but are contract verify children.
+5. **Right-size lanes:** follow `spine doctor` `lanes.maxParallel` suggestion (`floor(cpu/2)`, cap 4).
 
 ### Monitor
 
