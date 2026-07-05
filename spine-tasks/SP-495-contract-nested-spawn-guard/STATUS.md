@@ -47,7 +47,7 @@
 **Status:** ✅ Complete
 
 - [x] Operator runbook updated (nested spawn during contract verify)
-- [ ] Comment on GitHub issue #162 with fix summary
+- [x] Comment on GitHub issue #162 with fix summary
 - [x] `.DONE` created
 
 ---

@@ -46,7 +46,7 @@
 **Status:** ✅ Complete
 
 - [x] Runbook + release skill updated
-- [ ] Issues updated on GitHub
+- [x] Issues updated on GitHub
 - [x] `.DONE` created
 
 ---
