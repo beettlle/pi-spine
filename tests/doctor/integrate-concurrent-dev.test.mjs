@@ -2,15 +2,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
 
 import { runDoctorChecks } from "../../bin/spine.mjs";
 import { applyConfigDefaults } from "../../src/config/merge-defaults.mjs";
 import { INTEGRATE_DEFAULTS } from "../../src/config/defaults.mjs";
 import { buildConcurrentDevDoctorCheck } from "../../src/config/spine-preflight-lib.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
-
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 function writeSpineBatchState(projectRoot, fixture) {
 	fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });

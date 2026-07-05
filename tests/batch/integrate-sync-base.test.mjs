@@ -69,10 +69,6 @@ test("inspectHumanBaseSync reports integrate_isolated_ok after plumbing integrat
 	const orchBranch = "orch/spine-20260705T120000";
 	const batchId = "20260705T120000";
 	try {
-		const snapshotHead = execFileSync("git", ["rev-parse", "main"], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-		}).trim();
 		createOrchWithWork(projectRoot, orchBranch);
 		const fixture = completedBatchFixture(orchBranch, batchId);
 		recordBatchBaseSnapshot(projectRoot, fixture);
