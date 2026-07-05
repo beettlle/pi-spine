@@ -17,6 +17,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Same validation steps as ci.yml when CI gate misses; allow headroom for npm publish.
     timeout-minutes: 20
 
     steps:
@@ -93,11 +94,7 @@ jobs:
         if: steps.ci_gate.outputs.passed != 'true'
         run: npm run lint
 
-      - name: Run tests
-        if: steps.ci_gate.outputs.passed != 'true'
-        run: npm test
-
-      - name: Coverage check (77% line minimum)
+      - name: Tests with coverage (77% line minimum)
         if: steps.ci_gate.outputs.passed != 'true'
         run: npm run coverage:check
 

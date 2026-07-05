@@ -12,7 +12,9 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Timing budget (2026-07-05): npm ci ~1m; typecheck ~10s; lint ~5s; coverage:check ~8–9m
+    # on ubuntu-latest (local M-series: ~134s); CLI smoke ~1m → ~11m typical. 18m ceiling.
+    timeout-minutes: 18
 
     steps:
       - name: Checkout
@@ -40,10 +42,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Coverage check (77% line minimum)
+      - name: Tests with coverage (77% line minimum)
         run: npm run coverage:check --if-present
 
       - name: CLI smoke checks
