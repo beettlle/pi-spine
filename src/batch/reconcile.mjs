@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { PACKAGE_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
+import { resolveCurrentGitBranch } from "../config/spine-preflight-lib.mjs";
 import { buildStalePathDoctorCheck } from "../doctor/stale-path.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
@@ -40,6 +41,7 @@ import { isProcessAlive } from "../process/liveness.mjs";
 import {
 	loadBatchStateFile,
 	parseBatchState,
+	readBaseBranchHeadAtStart,
 } from "./batch-state-io.mjs";
 import {
 	clearBatchEnginePid,
@@ -293,6 +295,239 @@ export function inspectGitState(ctx) {
 
 	return result;
 }
+
+/**
+ * @typedef {object} HumanBaseSyncInspection
+ * @property {"human_base_diverged"|"integrate_isolated_ok"} diagnosis
+ * @property {string} headline
+ * @property {string[]} [overlapPaths]
+ * @property {string} [humanHead]
+ * @property {string} [baseTip]
+ * @property {string|null} [orchBranch]
+ * @property {boolean} [preIntegrate]
+ */
+
+/**
+ * @param {string} projectRoot
+ * @param {string} refA
+ * @param {string} refB
+ * @returns {string[]}
+ */
+export function listGitChangedPaths(projectRoot, refA, refB) {
+	if (!refA || !refB || refA === refB) return [];
+	try {
+		const output = execFileSync("git", ["diff", "--name-only", `${refA}..${refB}`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return output
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter(Boolean);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Paths touched by human commits on base since batch snapshot, excluding orch ancestry.
+ *
+ * @param {string} projectRoot
+ * @param {string} snapshot
+ * @param {string} humanHead
+ * @param {string|null} orchBranch
+ * @returns {string[]}
+ */
+export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch) {
+	if (!snapshot || !humanHead || snapshot === humanHead) return [];
+	const args = ["log", "--name-only", "--pretty=format:", `${snapshot}..${humanHead}`];
+	if (orchBranch && gitRefExists(projectRoot, orchBranch)) {
+		args.push("--not", orchBranch);
+	}
+	try {
+		const output = execFileSync("git", args, {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return [...new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))];
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} ref
+ * @param {string} filePath
+ */
+function pathExistsAtRef(projectRoot, ref, filePath) {
+	try {
+		execFileSync("git", ["cat-file", "-e", `${ref}:${filePath}`], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} baseTip
+ * @param {string} snapshot
+ * @returns {boolean}
+ */
+function humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot) {
+	const landPaths = listGitChangedPaths(projectRoot, snapshot, baseTip);
+	for (const filePath of landPaths) {
+		if (!pathExistsAtRef(projectRoot, baseTip, filePath)) continue;
+		if (!fs.existsSync(path.join(projectRoot, filePath))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Detect human/base divergence or post-isolated-integrate sync need (FR-WT-08 / #91).
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {string} ctx.baseBranch
+ * @param {string} ctx.baseBranchHeadAtStart
+ * @param {string|null} ctx.orchBranch
+ * @param {ReturnType<typeof inspectGitState>} ctx.git
+ * @param {object[]} [ctx.journalEvents]
+ * @returns {HumanBaseSyncInspection|null}
+ */
+export function inspectHumanBaseSync(ctx) {
+	const { projectRoot, baseBranch, baseBranchHeadAtStart, orchBranch, git, journalEvents } = ctx;
+	if (!git?.inGitRepo) return null;
+
+	const snapshot = String(baseBranchHeadAtStart ?? "").trim();
+	if (!snapshot) return null;
+
+	let baseTip = "";
+	let humanHead = "";
+	try {
+		baseTip = execFileSync("git", ["rev-parse", baseBranch], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			timeout: 5000,
+		}).trim();
+		humanHead = execFileSync("git", ["rev-parse", "HEAD"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			timeout: 5000,
+		}).trim();
+	} catch {
+		return null;
+	}
+
+	const integrateCompleted = Array.isArray(journalEvents)
+		? journalEvents.some((event) => event.type === "integrate.completed")
+		: false;
+	const landSucceeded =
+		git.orchMergedToBase ||
+		integrateCompleted ||
+		(baseTip !== snapshot && gitIsAncestor(projectRoot, snapshot, baseTip));
+
+	const resolvedOrch =
+		orchBranch && gitRefExists(projectRoot, orchBranch)
+			? orchBranch
+			: git.mergedOrchBranch && gitRefExists(projectRoot, git.mergedOrchBranch)
+				? git.mergedOrchBranch
+				: null;
+
+	const branchResult = resolveCurrentGitBranch(projectRoot);
+	const onBaseBranch = branchResult.branch === baseBranch;
+
+	const humanSinceSnapshot =
+		onBaseBranch &&
+		gitIsAncestor(projectRoot, snapshot, humanHead) &&
+		humanHead !== snapshot;
+	const humanPaths = humanSinceSnapshot
+		? listHumanOnlyPaths(projectRoot, snapshot, humanHead, resolvedOrch)
+		: [];
+	const landPaths = landSucceeded ? listGitChangedPaths(projectRoot, snapshot, baseTip) : [];
+	const orchPaths =
+		resolvedOrch && gitRefExists(projectRoot, resolvedOrch)
+			? listGitChangedPaths(projectRoot, snapshot, resolvedOrch)
+			: landPaths;
+	const overlapPaths = humanPaths.filter((filePath) => orchPaths.includes(filePath));
+
+	if (overlapPaths.length > 0) {
+		return {
+			diagnosis: "human_base_diverged",
+			headline: onBaseBranch
+				? `Human commits on ${baseBranch} overlap orch land (${overlapPaths.length} path(s))`
+				: `Human commits overlap orch land (${overlapPaths.length} path(s))`,
+			overlapPaths,
+			humanHead,
+			baseTip,
+			orchBranch: resolvedOrch,
+			preIntegrate: !landSucceeded,
+		};
+	}
+
+	if (!landSucceeded) return null;
+
+	const needsCommitSync =
+		humanHead !== baseTip && onBaseBranch && gitIsAncestor(projectRoot, humanHead, baseTip);
+	const needsPathSync =
+		onBaseBranch && humanHead === baseTip && humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot);
+
+	if (!needsCommitSync && !needsPathSync) {
+		if (!onBaseBranch) {
+			const mergeBase = (() => {
+				try {
+					return execFileSync("git", ["merge-base", humanHead, baseTip], {
+						cwd: projectRoot,
+						encoding: "utf-8",
+						timeout: 5000,
+					}).trim();
+				} catch {
+					return "";
+				}
+			})();
+			if (mergeBase && mergeBase !== baseTip && gitIsAncestor(projectRoot, mergeBase, baseTip)) {
+				return {
+					diagnosis: "integrate_isolated_ok",
+					headline: `${baseBranch} advanced during batch; feature branch needs sync`,
+					humanHead,
+					baseTip,
+					orchBranch: resolvedOrch,
+				};
+			}
+		}
+		return null;
+	}
+
+	return {
+		diagnosis: "integrate_isolated_ok",
+		headline: needsPathSync
+			? `Isolated integrate landed on ${baseBranch}; working tree needs path sync`
+			: `Isolated integrate landed on ${baseBranch}; checkout needs sync`,
+		humanHead,
+		baseTip,
+		orchBranch: resolvedOrch,
+	};
+}
+
+const HUMAN_SYNC_OVERRIDE_DIAGNOSES = new Set([
+	"completed",
+	"completed_manual",
+	"needs_integrate",
+	"limbo_stale",
+	"running",
+	"paused",
+]);
 
 /**
  * @param {unknown} rawTasks
@@ -888,6 +1123,19 @@ export function reconcileBatch(ctx) {
 		failedTaskId = stubSucceededTaskId;
 		exitReason = "stub";
 	}
+
+	const humanBaseSync = inspectHumanBaseSync({
+		projectRoot,
+		baseBranch: batch.baseBranch,
+		baseBranchHeadAtStart: readBaseBranchHeadAtStart(batch.raw),
+		orchBranch: batch.orchBranch,
+		git,
+		journalEvents,
+	});
+	if (humanBaseSync && HUMAN_SYNC_OVERRIDE_DIAGNOSES.has(diagnosis)) {
+		diagnosis = humanBaseSync.diagnosis;
+	}
+
 	const doneMissingHint =
 		diagnosis === "worker_done_missing"
 			? inferWorkerDoneMissingFailure({
@@ -1006,7 +1254,13 @@ export function reconcileBatch(ctx) {
 		tasksRoot,
 		macroPhase,
 		...(doneMissingContext ?? {}),
+		humanBaseSync,
+		overlapPaths: humanBaseSync?.overlapPaths ?? [],
 	});
+
+	if (humanBaseSync && (diagnosis === "human_base_diverged" || diagnosis === "integrate_isolated_ok")) {
+		output.headline = humanBaseSync.headline;
+	}
 
 	if (diagnosis === "git_unavailable") {
 		output.headline = `Batch ${batch.batchId} — git inspection failed: ${git.gitInspectionError}`;

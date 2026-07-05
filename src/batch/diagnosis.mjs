@@ -50,11 +50,19 @@ export const DIAGNOSIS_TAXONOMY = [
 	"completed",
 	"completed_manual",
 	"limbo_stale",
+	"human_base_diverged",
+	"integrate_isolated_ok",
 	"failed",
 	"aborted",
 ];
 
-const NO_PAUSE_DIAGNOSES = new Set(["limbo_stale", "completed_manual", "needs_integrate", "engine_orphaned"]);
+const NO_PAUSE_DIAGNOSES = new Set([
+	"limbo_stale",
+	"completed_manual",
+	"needs_integrate",
+	"engine_orphaned",
+	"integrate_isolated_ok",
+]);
 const GITIGNORED_MERGE_FAILURE_CLASSES = new Set(["merge_failed_gitignored", "GitignoredDirtyWorktree"]);
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
@@ -228,6 +236,10 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return "spine batch dismiss";
 		case "completed":
 			return "spine preflight";
+		case "human_base_diverged":
+			return "spine sync-base";
+		case "integrate_isolated_ok":
+			return "spine sync-base";
 		default:
 			return "spine status --diagnose";
 	}
@@ -377,6 +389,14 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			return `${batchLabel} was aborted`;
 		case "completed":
 			return `${batchLabel} completed successfully`;
+		case "human_base_diverged": {
+			const overlapCount = Array.isArray(ctx.overlapPaths) ? ctx.overlapPaths.length : 0;
+			return overlapCount > 0
+				? `${batchLabel} — human commits on base overlap orch land (${overlapCount} path(s))`
+				: `${batchLabel} — human commits on base overlap orch land`;
+		}
+		case "integrate_isolated_ok":
+			return `${batchLabel} — isolated integrate landed; sync human checkout with base`;
 		default:
 			return `${batchLabel} requires attention (phase: ${ctx.phase ?? "unknown"})`;
 	}

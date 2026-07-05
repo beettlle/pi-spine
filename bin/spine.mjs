@@ -88,6 +88,13 @@ async function cmdDashboard(args) {
 	if (result.exitCode !== 0) process.exit(result.exitCode);
 }
 
+async function cmdSyncBase(args) {
+	const { runSpineSyncBase } = await import("../src/cli/sync-base.mjs");
+	const result = runSpineSyncBase({ projectRoot: process.cwd(), args });
+	process.stdout.write(result.output ?? "");
+	if (result.exitCode !== 0) process.exit(result.exitCode);
+}
+
 async function cmdVerify(args) {
 	const { runSpineVerify } = await import("./spine-cli/verify.mjs");
 	const result = runSpineVerify({ projectRoot: process.cwd(), args });
@@ -260,6 +267,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
  ${c.cyan}integrate${c.reset}      Merge orch branch into base (FR-INT-01)
+  ${c.cyan}sync-base${c.reset}      Sync human checkout after isolated integrate (FR-WT-08)
   ${c.cyan}verify${c.reset}          Phase exit verification checklists
   ${c.cyan}journal${c.reset}         Replay orchestration journal timeline
   ${c.cyan}state${c.reset}           Validate batch-state cache schema
@@ -317,6 +325,7 @@ ${c.bold}Examples:${c.reset}
   spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM
  spine integrate [--dry-run] [--force-integrate]  # merge orch branch into main
+  spine sync-base [--dry-run] [--json]           # sync checkout after isolated land
   spine journal replay --batch 20260601T120000  # audit timeline for a batch
   spine state validate                          # validate active batch-state.json
   spine next                                    # suggested next command (dry-run)
@@ -417,6 +426,9 @@ if (isCliEntrypoint(import.meta.url)) {
 				break;
 			case "integrate":
 				await handleIntegrate(args);
+				break;
+			case "sync-base":
+				await cmdSyncBase(args);
 				break;
 			case "verify":
 				await cmdVerify(args);

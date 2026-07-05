@@ -685,9 +685,24 @@ When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine
 | Manifest differs from both `main` HEAD and orch | Refused — commit or stash, then re-run |
 | Any other dirty file on `main` (legacy) | Previously refused; **interim (SP-475):** allowed — integrate uses isolated plumbing merge and leaves your working tree untouched |
 
-**Concurrent development (FR-WT-08, SP-475/476):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. The same applies when you are on a **non-base branch** with a dirty tree — isolated integrate does not require a clean checkout. After integrate, run `git status` — uncommitted files remain until you commit or stash them.
+**Concurrent development (FR-WT-08, SP-475/476/477):** `spine integrate` no longer checks out `main` in your project root. When you stay on `main` with uncommitted edits, integrate uses an isolated plumbing merge so lane land can proceed; your working tree is left as-is. The same applies when you are on a **non-base branch** with a dirty tree — isolated integrate does not require a clean checkout. After integrate, run `git status` — uncommitted files remain until you commit or stash them.
 
-Config defaults (`.spine/spine-config.json`): `integrate.isolatedWorktree` (default `true`) and `integrate.allowHumanOnBaseBranch` (`warn` | `block` | `allow`, default `warn`). With an active batch, `spine doctor` warns when you are on `baseBranch` with uncommitted edits (`warn`) or fails the check (`block`). Full `spine sync-base` / `human_base_diverged` diagnosis ships in SP-477 ([#91](https://github.com/beettlle/pi-spine/issues/91)).
+Config defaults (`.spine/spine-config.json`): `integrate.isolatedWorktree` (default `true`) and `integrate.allowHumanOnBaseBranch` (`warn` | `block` | `allow`, default `warn`). With an active batch, `spine doctor` warns when you are on `baseBranch` with uncommitted edits (`warn`) or fails the check (`block`).
+
+**Sync human checkout after isolated land:**
+
+```bash
+spine sync-base              # fast-forward or path-sync checkout with landed base
+spine sync-base --dry-run    # preview sync plan
+spine status --diagnose      # integrate_isolated_ok or human_base_diverged
+```
+
+| Diagnosis | Meaning | Suggested command |
+|-----------|---------|-------------------|
+| `integrate_isolated_ok` | Orch landed on base via isolated integrate; human checkout behind | `spine sync-base` |
+| `human_base_diverged` | Human commits on base overlap orch land paths | `spine sync-base` (may refuse) + runbook §4.1 orch-first |
+
+When `human_base_diverged` reports overlapping paths, prefer **orch-first recovery** (§4.1) before forcing a merge on `main`.
 
 Multi-wave batches: repeat monitor → land loop **between waves** if the plan has multiple dependency waves. pi-spine does not auto-integrate mid-batch. For the full multi-wave procedure driven by an external agent (pi, OpenCode, Cursor), see **[agent-orchestrated-waves.md](./agent-orchestrated-waves.md)**.
 
