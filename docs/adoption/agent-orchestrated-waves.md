@@ -1,5 +1,7 @@
 # How to orchestrate multi-wave spine batches with an external agent
 
+**pi skill:** [`spine-orchestrate-waves`](../../skills/spine-orchestrate-waves/SKILL.md) — decision tree, evidence checklist, and wave picker for agent sessions. Slash entry: `/spine-orchestrate` (see SP-467).
+
 Run all pending tasks across multiple dependency waves without manual intervention between each step. An **external agent** (pi, OpenCode, Cursor, CI script) drives the land loop between waves while spine owns batch execution, review, and integrate gates.
 
 **Gate approval by the external agent is intentional** — spine workers return `not_supported` from `spine_request_gate` (FR-SHIP-13). The agent-as-operator model decouples wave scheduling from engine internals.
@@ -151,6 +153,7 @@ Adapt for agent sessions: replace the bash loop with agent tool calls (`spine st
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | First batch setup |
 | [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch |
 | [QUICK-REFERENCE.md](../QUICK-REFERENCE.md) | Command reference |
+| [spine-orchestrate-waves SKILL.md](../../skills/spine-orchestrate-waves/SKILL.md) | pi skill (decision tree + evidence checklist) |
 
 ## Related issues
 

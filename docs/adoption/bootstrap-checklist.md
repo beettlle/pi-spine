@@ -152,6 +152,8 @@ Monitor with `spine status` or `/spine-status` in pi. After batch completes, fol
 
 **After your first batch:** For multi-wave development driven by an external agent (pi, OpenCode, Cursor), see [agent-orchestrated-waves.md](./agent-orchestrated-waves.md) — the recommended outer loop for hands-off batch execution across dependency waves.
 
+**Flutter repos:** Lane worktrees omit gitignored pubspec assets and may carry stale `build/` artifacts. Before real-pi batches, read [flutter-worktree-guide.md](./flutter-worktree-guide.md), copy [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh) into `scripts/`, set `worktreeSetupHook`, and use scoped Contract `testCommand` (see [cross-model authoring](./operator-runbook.md#cross-model-prompt-authoring-issue-84)).
+
 ---
 
 ## Migrate from Taskplane
@@ -248,3 +250,4 @@ Use `npm run test:batch` or `npm run test:core` instead of appending directory p
 | [QUICK-REFERENCE.md](../QUICK-REFERENCE.md) | Operator command reference |
 | [EXECUTION-FLOW.md](../EXECUTION-FLOW.md) | Batch lifecycle and scheduling |
 | [cursor-rules-discovery.md](../design/cursor-rules-discovery.md) | Cursor rules auto-discovery for workers |
+| [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter lane worktrees — assets, analyze scope, setup hook |

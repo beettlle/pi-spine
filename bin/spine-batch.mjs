@@ -7,7 +7,8 @@ import {
 	resumeBatchDetached,
 	startBatchDetached,
 } from "../src/batch/detached-start.mjs";
-import { completeBatch, dismissBatch } from "../src/batch/lifecycle.mjs";
+import { dismissBatch } from "../src/batch/lifecycle.mjs";
+import { runBatchComplete } from "../src/cli/batch-complete.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { parseBatchStartWaveFilter } from "../src/planner/wave-scope.mjs";
 import { pauseBatch } from "../src/batch/pause.mjs";
@@ -238,7 +239,7 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "complete") {
-		const result = completeBatch({
+		const result = runBatchComplete({
 			projectRoot,
 			batchId: parsed.batchId,
 			detectManualMerge: parsed.detectManualMerge,

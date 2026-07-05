@@ -27,6 +27,8 @@ export const GITIGNORED_ARTIFACT_MARKERS = [
 	"coverage/",
 	"/__pycache__/",
 	"__pycache__/",
+	"/graphify-out/",
+	"graphify-out/",
 ];
 
 /**
@@ -393,7 +395,7 @@ export function isGitignoredArtifactPath(filePath) {
  */
 function gitignoredArtifactRootForPath(filePath) {
 	const normalized = filePath.replace(/\\/g, "/");
-	for (const marker of ["/node_modules/", "/coverage/", "/__pycache__/"]) {
+	for (const marker of ["/node_modules/", "/coverage/", "/__pycache__/", "/graphify-out/"]) {
 		const markerIdx = normalized.indexOf(marker);
 		if (markerIdx >= 0) {
 			return normalized.slice(0, markerIdx + marker.length - 1);
@@ -407,6 +409,9 @@ function gitignoredArtifactRootForPath(filePath) {
 	}
 	if (normalized === "__pycache__" || normalized.startsWith("__pycache__/")) {
 		return "__pycache__";
+	}
+	if (normalized === "graphify-out" || normalized.startsWith("graphify-out/")) {
+		return "graphify-out";
 	}
 	return null;
 }

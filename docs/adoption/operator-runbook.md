@@ -14,6 +14,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
 | [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) or [spec-kit](https://github.com/github/spec-kit) upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
+| [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter lane worktrees — gitignored assets, analyzer scope, setup hook |
 
 **CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:
 
@@ -81,6 +82,8 @@ Verify:
 spine doctor
 spine version   # confirms global npm link resolves (npm bin is a symlink to bin/spine.mjs)
 ```
+
+`spine doctor` prints an advisory **`lanes.maxParallel`** sizing line when config is valid (configured vs CPU-based suggestion). Use it with [§3 Orchestrator process model](#orchestrator-process-model-98) to estimate expected node process count during batches.
 
 Global `npm link` / `npm install -g` invokes `spine` through a symlink on `PATH`. If `spine version` prints package and Node info, the CLI entrypoint is wired correctly (SP-099).
 
@@ -288,6 +291,8 @@ Stub mode (`SPINE_WORKER_STUB=1`) runs `bin/spine-worker-runner.mjs --stub`, whi
 
 **Pre-landed implementation (issue #56, SP-373):** When implementation was already merged to `main` before the batch runs, amend `PROMPT.md` **## Contract** to point `fileScopeMustChange` at delivery artifacts (`STATUS.md`, `.DONE`) and document the pre-land in **## Amendments** (see [§2.3 Pre-landed implementation warning](#pre-landed-implementation-warning-issue-56)). SP-373 satisfies pre-landed **implementation** paths at verify time when `testCommand` and artifacts pass — it does not replace stub STATUS delivery for amended delivery-only contracts. Preflight warns on stale implementation scope ([SP-374](https://github.com/beettlle/pi-spine/pull/374)).
 
+**Idempotent tasks on consumer base (issue #105, SP-462):** When a task's `fileScopeMustChange` path already exists on the batch base branch and the lane has zero diff for that path (no-op after a prior integration on the consumer base), contract verification treats the scope as satisfied — the worker only needs delivery artifacts and a passing `testCommand`. This complements SP-373 pre-landed detection (paths changed on base *after* the task PROMPT was introduced). Regression: `tests/batch/contract-base-satisfied.test.mjs`.
+
 **Operator recovery when stub delivery is insufficient:**
 
 1. Confirm contract scope in `PROMPT.md` — delivery-only vs implementation.
@@ -351,6 +356,14 @@ spine doctor   # agent model ids (canonical) must pass before real-pi batches
 spine settings show agents.worker.model
 spine settings show agents.reviewer.model
 spine doctor   # warns when inherit + pi defaultProvider lmstudio
+spine doctor   # fails when inherit + non-cursor provider lacks valid credentials (SP-460 / #97)
+```
+
+When `agents.*.model` is `inherit` and pi's `defaultProvider` is a cloud API provider (not `cursor` or `lmstudio`), `spine doctor` probes that provider's credentials with `pi --list-models` and a lightweight `pi -p` auth check. Missing or rejected credentials (401 / `authentication_error`) fail doctor before batch start — the same failure mode that otherwise appears only in worker logs. Remediation: `pi login` or refresh provider API keys, or pin explicit models:
+
+```bash
+spine settings set agents.worker.model cursor/auto
+spine settings set agents.reviewer.model cursor/auto
 ```
 
 **Opt into inheritance** (interactive pi session parity):
@@ -385,7 +398,84 @@ spine rules select --role reviewer --review-type plan --task SP-042
 spine rules select --role reviewer --review-type code --task SP-042
 ```
 
-**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene).
+**Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh).
+
+### Orchestrator process model ([#98](https://github.com/beettlle/pi-spine/issues/98))
+
+pi-spine is a **transparent orchestrator**: most CPU belongs to LLM workers (pi/Cursor), reviewers, and project harnesses (`testCommand`, `buildCommand`). Spine poll paths (reconcile, journal reads, dashboard SSE, attached milestone loops) should stay **idle-light** when lanes are not actively working.
+
+| Layer | Should be heavy | Should be light |
+|-------|-----------------|-----------------|
+| pi / Cursor worker | ✅ | |
+| Reviewer LLM session | ✅ | |
+| `testCommand` / `buildCommand` | ✅ | |
+| Batch engine reconcile | | ✅ |
+| Dashboard status polling | | ✅ |
+| Journal reads for milestones | | ✅ |
+| Attached / sequence wait loops | | ✅ |
+
+#### Expected node processes (normal vs leak)
+
+| `ps` command pattern | Owner | Busy CPU expected? | Normal count |
+|--------------------|-------|------------------|--------------|
+| `pi`, `cursor`, agent harness | LLM worker / reviewer | Yes, while session runs | **≤ `lanes.maxParallel`** workers during a wave tick, plus **0–1** reviewer subprocess per active review |
+| `flutter test`, `npm test`, `go test`, … | Contract verify / PROMPT `testCommand` | Yes, during verify | Bursts per lane at contract verify — not spine orchestration |
+| `spine.mjs batch`, `attached-runner`, detached engine | Spine batch engine | Low when lanes idle | **1** engine per active batch |
+| `spine dashboard` | Dashboard SSE server | Low–moderate (reconcile + journal per tick) | **1** per machine/repo (distinct ports for multiple repos) |
+| `spine watch`, `spine wait`, `spine run sequence` | CLI monitor / sequence waiter | Low–moderate during poll | **0–1** while you monitor; sequence waiter only during `spine run sequence` |
+| Second `spine.mjs batch … --attached` for same batch | **Leak** ([#89](https://github.com/beettlle/pi-spine/issues/89)) | High duplicate reconcile | **0** — use `resume --attached --force` handoff instead |
+
+**Rough process budget:** `1` batch engine + up to **`lanes.maxParallel`** pi workers + optional `1` dashboard + short-lived reviewers and `testCommand` children. Seven or more sustained busy `node` processes usually means overlapping harness work **or** duplicate orchestrator monitors — not a single healthy batch.
+
+Run `spine doctor` for an advisory **`lanes.maxParallel`** line (`configured` vs `suggested = clamp(1, 4, floor(cpu/2))`). The hint never fails doctor; it warns when configured parallelism looks high for your machine. See [§1 Install — `spine doctor`](#1-install) and [QUICK-REFERENCE — doctor](../QUICK-REFERENCE.md#validate-installation).
+
+```bash
+spine doctor
+spine settings show lanes.maxParallel
+SPINE_MAX_LANES=2 spine batch start pending   # env override (FR-CFG-04)
+```
+
+#### Distinguish spine vs harness CPU
+
+```bash
+ps -p <pid> -o command=
+```
+
+If the command is an LLM agent or test harness, high CPU is expected. If it is `spine.mjs`, `spine dashboard`, or attached milestone polling with **idle lanes**, investigate poll duplication (extra dashboard, concurrent attached engines, aggressive `spine watch` in many terminals).
+
+#### Poll budget (NFR-PERF-03)
+
+PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-03** (orchestrator poll budget) is the operator-facing sketch below — config keys for overrides are tracked in [#98](https://github.com/beettlle/pi-spine/issues/98).
+
+| Path | Current default | Target / mitigation |
+|------|-----------------|---------------------|
+| Attached milestone poll (`attached-runner.mjs`) | **200ms** | Human-scale events; journal read cache reduces parse cost ([#98](https://github.com/beettlle/pi-spine/issues/98)) |
+| Sequence `waitForSequenceBatchTerminal` | **250ms** full `reconcileBatch` | Prefer detached sequence + `spine watch`; raise interval when configurable |
+| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; distinct `dashboard.port` per repo |
+| Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
+| `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
+
+**Journal read cache (shipped):** hot paths share `readJournalEventsCached` — see [Monitoring cookbook — journal cache](#monitoring-cookbook) below.
+
+**Planned config surface** (`.spine/spine-config.json`, when shipped):
+
+```json
+{
+  "orchestrator": {
+    "attachedMilestonePollMs": 2000,
+    "sequencePollMs": 5000,
+    "dashboardPollMs": 2000
+  }
+}
+```
+
+#### Operator mitigations (until poll defaults ship)
+
+1. **One `spine dashboard` per machine** — use distinct ports per repo (`dashboard.port`).
+2. **Avoid concurrent attached engines** ([#89](https://github.com/beettlle/pi-spine/issues/89)) — only one `--attached` engine per batch; use `resume --attached --force` for handoff.
+3. **Slower CLI monitors:** `spine watch --interval 10`, `spine wait --interval 10`.
+4. **Scoped `testCommand`** in PROMPTs ([#84](https://github.com/beettlle/pi-spine/issues/84)) — full-suite tests look like spine CPU but are contract verify children.
+5. **Right-size lanes:** follow `spine doctor` `lanes.maxParallel` suggestion (`floor(cpu/2)`, cap 4).
 
 ### Monitor
 
@@ -718,10 +808,10 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | `GitignoredDirtyWorktree` (index-tracked) | Gitignored paths are in the git index — error message suggests `git rm --cached` on the task branch. Common with force-added `coverage/` or `__pycache__`. |
-| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts. |
+| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`, `graphify-out/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95), [SP-463](https://github.com/beettlle/pi-spine/issues/113)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts or graphify post-commit hook rebuilds `graphify-out/`. |
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
-| `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine excludes gitignored hook output when [SP-463](https://github.com/beettlle/pi-spine/issues/113) lands; until then, add `graphify-out/` to `.gitignore` and `git rm -r --cached graphify-out/` on repos that track it |
+| `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)). Ensure `graphify-out/` is in `.gitignore`; if it was previously tracked, run `git rm -r --cached graphify-out/` once on the repo |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
 | `docs/PRD.md` (release-recovery / merge-origin-main) | Engine auto-merges disjoint additive PRD edits (e.g. lane merged `origin/main` while orch advanced earlier waves); overlapping hunks fail with `lastError` recovery commands |
@@ -1473,7 +1563,7 @@ Spine classifies this as **`DirtyWorktree`** → `task.failed` → wave **`merge
 
 3. Re-run `spine preflight` — main checkout should be clean aside from ignored hook churn.
 
-**Engine fix (pi-spine):** [SP-463](https://github.com/beettlle/pi-spine/issues/113) extends lane dirty-worktree hygiene (same family as [SP-427](https://github.com/beettlle/pi-spine/issues/73) coverage and [SP-430](https://github.com/beettlle/pi-spine/issues/95) gitignored paths) to treat gitignored `graphify-out/` as ephemeral hook output — lane merge should not fail when only that directory is dirty.
+**Engine fix (pi-spine):** [SP-463](https://github.com/beettlle/pi-spine/issues/113) extends lane dirty-worktree hygiene (same family as [SP-427](https://github.com/beettlle/pi-spine/issues/73) coverage and [SP-430](https://github.com/beettlle/pi-spine/issues/95) gitignored paths) to treat gitignored `graphify-out/` as ephemeral hook output — lane merge does not fail when only that directory is dirty.
 
 **Optional follow-ups** (not required for batch operation): defer graphify rebuild when spine lane env is set; document hook coordination in graphify itself.
 
@@ -1483,7 +1573,7 @@ Spine classifies this as **`DirtyWorktree`** → `task.failed` → wave **`merge
 |---------|----------------|
 | `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
 | Preflight git dirty | Commit or stash; lanes need clean tree |
-| `DirtyWorktree` / `merge_blocked` with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) — gitignore `graphify-out/`; after SP-463, engine ignores gitignored hook output |
+| `DirtyWorktree` / `merge_blocked` with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) — gitignore `graphify-out/`; engine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)) |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |
 | Worker stall | Follow [Stall diagnosis](#stall-diagnosis-5-minute-path); `spine status --diagnose` → worker log + `lane.salvage_inspection`; ensure `spine_report_progress` after steps |
 | Stall salvage WIP | Set `lanes.autoCommitOnStall: true` to commit scoped File Scope + task folder on stall (default **false**). Journal `lane.salvage_commit`. Refused during merge, index conflicts, or hook failure. `spine batch retry` keeps WIP on the lane branch (PRD §18.5). |
@@ -1535,6 +1625,12 @@ git branch -D task/spine-lane-<N>-<batchId>   # when merged
 
 To keep worktrees after terminal lifecycle (debugging), set `lanes.cleanupWorktreesOnComplete` to `false` in spine-config — expect doctor stale-worktree warnings until you remove dirs yourself.
 
+### Flutter lane worktrees (#78, #80)
+
+Flutter consumer repos often hit **contract verify** failures in lane worktrees while the main checkout passes: gitignored `pubspec.yaml` asset dirs missing from git-only worktrees ([#80](https://github.com/beettlle/pi-spine/issues/80)), and `flutter analyze` scanning polluted `build/SourcePackages` ([#78](https://github.com/beettlle/pi-spine/issues/78)).
+
+**Operator guide:** [flutter-worktree-guide.md](./flutter-worktree-guide.md) — symlink pattern via `worktreeSetupHook` + `SPINE_PROJECT_ROOT`, scoped Contract `testCommand`, optional [`templates/spine-worktree-setup-flutter.sh`](../../templates/spine-worktree-setup-flutter.sh). Partial doc close for #78/#80; engine tasks SP-458/SP-459 may add init templates later.
+
 ### Get help from reconciliation
 
 ```bash
@@ -1569,3 +1665,4 @@ spine next --execute       # run suggested dismiss/preflight (careful)
 | [PRD](../PRD.md) | Normative requirements |
 | [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md) | Stall epic (SAT-020), FR-STALL-* |
 | [integrate-conflict-recovery.md](../design/integrate-conflict-recovery.md) | FR-SHIP-12 spike — merger-agent defer, manual integrate conflicts |
+| [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter — gitignored assets, analyzer scope, worktree setup hook |

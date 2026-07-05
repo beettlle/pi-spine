@@ -203,6 +203,44 @@ function gitWithTimeout(cwd, args, { timeoutMs } = {}) {
 }
 
 /**
+ * @param {string} message
+ */
+function debugSyncLog(message) {
+	if (process.env.DEBUG || process.env.SPINE_DEBUG) {
+		process.stderr.write(`${message}\n`);
+	}
+}
+
+/**
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isPathspecMismatchError(err) {
+	const stderr = err && typeof err === "object" && "stderr" in err ? String(err.stderr ?? "") : "";
+	const message = err instanceof Error ? err.message : String(err);
+	return /pathspec.*did not match/i.test(`${message}\n${stderr}`);
+}
+
+/**
+ * @param {string} cwd
+ * @param {string} treeRef
+ * @param {string} filePath
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {boolean}
+ */
+function pathExistsInTree(cwd, treeRef, filePath, { timeoutMs } = {}) {
+	try {
+		gitWithTimeout(cwd, ["cat-file", "-e", `${treeRef}:${filePath}`], { timeoutMs });
+		return true;
+	} catch (err) {
+		if (isTimeoutError(err)) {
+			throw err;
+		}
+		return false;
+	}
+}
+
+/**
  * Materialize paths introduced/changed by a plumbing merge without resetting human edits.
  * Returns a result object so callers can detect timeout and emit integrate.failed.
  *
@@ -236,11 +274,35 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 	let processedCount = 0;
 
 	for (const filePath of paths) {
-		let content = null;
+		let existsInMerge = false;
 		try {
-			content = gitWithTimeout(
+			existsInMerge = pathExistsInTree(projectRoot, mergeCommit, filePath, {
+				timeoutMs: effectiveTimeout,
+			});
+		} catch (err) {
+			if (isTimeoutError(err)) {
+				return {
+					ok: false,
+					timedOut: true,
+					error: `git cat-file timed out for ${filePath} after ${effectiveTimeout}ms`,
+					processedPaths: processedCount,
+					totalPaths: paths.length,
+				};
+			}
+			existsInMerge = false;
+		}
+
+		if (!existsInMerge) {
+			debugSyncLog(
+				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
+			);
+			continue;
+		}
+
+		try {
+			gitWithTimeout(
 				projectRoot,
-				["show", `${mergeCommit}:${filePath}`],
+				["restore", "--source", mergeCommit, "--staged", "--worktree", "--", filePath],
 				{ timeoutMs: effectiveTimeout },
 			);
 		} catch (err) {
@@ -248,33 +310,21 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 				return {
 					ok: false,
 					timedOut: true,
-					error: `git show timed out for ${filePath} after ${effectiveTimeout}ms`,
+					error: `git restore timed out for ${filePath} after ${effectiveTimeout}ms`,
 					processedPaths: processedCount,
 					totalPaths: paths.length,
 				};
 			}
-			continue;
-		}
-		if (content == null) {
-			continue;
-		}
-
-		const absPath = path.join(projectRoot, filePath);
-		fs.mkdirSync(path.dirname(absPath), { recursive: true });
-		fs.writeFileSync(absPath, content.endsWith("\n") ? content : `${content}\n`, "utf-8");
-
-		try {
-			gitWithTimeout(projectRoot, ["add", "--", filePath], { timeoutMs: effectiveTimeout });
-		} catch (err) {
-			if (isTimeoutError(err)) {
-				return {
-					ok: false,
-					timedOut: true,
-					error: `git add timed out for ${filePath} after ${effectiveTimeout}ms`,
-					processedPaths: processedCount,
-					totalPaths: paths.length,
-				};
+			if (isPathspecMismatchError(err)) {
+				debugSyncLog(
+					`syncPlumbingMergePathsToWorktree: skip ${filePath} — pathspec did not match merge commit`,
+				);
+				continue;
 			}
+			debugSyncLog(
+				`syncPlumbingMergePathsToWorktree: skip ${filePath} — ${err instanceof Error ? err.message : String(err)}`,
+			);
+			continue;
 		}
 		processedCount++;
 	}
