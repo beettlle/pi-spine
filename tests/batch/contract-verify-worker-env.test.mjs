@@ -26,12 +26,15 @@ const FAIL_IF_WORKER_ENV =
 test("buildContractTestEnv removes worker-only keys", () => {
 	const env = buildContractTestEnv({
 		SPINE_IS_WORKER: "1",
+		SPINE_BATCH_ID: "20260705T004723",
 		PATH: "/bin",
 		HOME: "/tmp",
 	});
 	for (const key of CONTRACT_TEST_WORKER_ENV_KEYS) {
 		assert.equal(env[key], undefined, `expected ${key} to be stripped`);
 	}
+	assert.equal(env.SPINE_BATCH_ID, undefined);
+	assert.equal(env.SPINE_PARENT_BATCH_ID, "20260705T004723");
 	assert.equal(env.PATH, "/bin");
 	assert.equal(env.HOME, "/tmp");
 });

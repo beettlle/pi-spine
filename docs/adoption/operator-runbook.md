@@ -50,7 +50,7 @@ After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_dri
 **Orphan recovery tree:**
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
-2. `state_drift` → retry affected task, then `spine batch resume --force`
+2. `state_drift` → if task still `running`, `spine batch pause && spine batch retry <id>`; else `spine batch retry <id>`; then `spine batch resume --attached --force` (single engine — do not run multiple concurrent `resume --force`)
 3. `engine_orphaned` or `worker_orphaned` with dead PIDs → run the **`suggestedCommand`** (usually `spine batch retry <id>`). **No `batch pause` first** — retry reconciles orphan `running` tasks to `failed` and journals `task.failed` / `lane.died` when missing (SP-315). Then `spine batch resume --attached` or `--force` as diagnose suggests. `worker_done_missing` → `spine batch retry <id>` only (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — `spine batch retry <id>` or `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
@@ -486,7 +486,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 **Operator implications:**
 
-- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise `spine batch retry <id>` or `spine batch resume --force`.
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise use the **`suggestedCommand`** (`spine batch retry <id>`, or `spine batch pause && spine batch retry <id>` when the drifted task is still `running`), then `spine batch resume --attached --force`.
 - **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
 - **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
 
@@ -1249,6 +1249,14 @@ When final contract verification runs inside a **real-pi worker**, the `testComm
 1. Confirm the task implementation is actually correct (review verdict, scoped tests, lane diff).
 2. Narrow `PROMPT.md` **## Contract** `testCommand` to match the Testing step (task-scoped files, or `` `true` `` for docs-only tasks). See [Cross-model PROMPT authoring](#cross-model-prompt-authoring-issue-84).
 3. `spine batch retry <task-id>` — contract verify re-runs after PROMPT edit; no worker re-implementation required when only `testCommand` scope was wrong.
+
+### Contract verify nested batch spawn in lane worktrees (issue #162)
+
+When contract `testCommand` runs batch integration tests from a **lane worktree**, sanitized subprocess env clears `SPINE_IS_WORKER` (SP-491) but must **not** spawn live nested batch engines in the parent batch. `buildContractTestEnv()` moves `SPINE_BATCH_ID` → `SPINE_PARENT_BATCH_ID` and blocks `startBatch` when `projectRoot` is under `.worktrees/spine-*`.
+
+**Symptom:** Journal shows rogue `spine.mjs batch start` PIDs under `.worktrees/spine-<batchId>/lane-*`; parent batch hits `state_drift` or duplicate resume engines.
+
+**Resolution:** Guard is in `detectNestedWorkerContext` (SP-495). If nested engines appear, `pkill` rogue PIDs, `spine batch pause`, `spine batch retry <id>`, single `spine batch resume --attached --force`. Narrow contract `testCommand` to scoped tests when possible.
 
 **Prevention:**
 

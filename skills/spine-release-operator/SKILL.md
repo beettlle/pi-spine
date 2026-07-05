@@ -249,7 +249,7 @@ Always: `spine status --diagnose`
 | `needs_retry` | Fix packet; `spine batch retry <taskId>` |
 | `worker_orphaned` | abort → dismiss → prune worktree → retry |
 | `needs_integrate` | Land loop |
-| `state_drift` | Follow `suggestedCommand` |
+| `state_drift` | `spine batch retry <taskId>` (pause first if task still `running`); then `spine batch resume --attached --force` |
 | `failed` / `aborted` | Inspect journal; fix packet; dismiss; retry |
 | Contract fail | Fix PROMPT on main, commit, abort, dismiss, retry |
 

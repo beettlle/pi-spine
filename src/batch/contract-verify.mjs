@@ -34,6 +34,8 @@ export const CONTRACT_TEST_WORKER_ENV_KEYS = ["SPINE_IS_WORKER"];
 /**
  * Build env for contract testCommand subprocess — omits worker-only keys inherited from
  * worker-host.mjs that would false-fail batch-spawn integration tests (SP-482 guard).
+ * Preserves parent batch id as SPINE_PARENT_BATCH_ID so nested-spawn guard can block
+ * live engines in lane worktrees while still allowing isolated fixture tests (#162).
  *
  * @param {NodeJS.ProcessEnv} [sourceEnv]
  * @returns {NodeJS.ProcessEnv}
@@ -43,6 +45,10 @@ export function buildContractTestEnv(sourceEnv = process.env) {
 	for (const key of CONTRACT_TEST_WORKER_ENV_KEYS) {
 		delete env[key];
 	}
+	if (env.SPINE_BATCH_ID && !env.SPINE_PARENT_BATCH_ID) {
+		env.SPINE_PARENT_BATCH_ID = env.SPINE_BATCH_ID;
+	}
+	delete env.SPINE_BATCH_ID;
 	return env;
 }
 

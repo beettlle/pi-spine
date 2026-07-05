@@ -140,7 +140,13 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "spine batch dismiss";
 		case "state_drift":
-			return "spine batch retry --force";
+			if (ctx.failedTaskId) {
+				if (ctx.phase === "running") {
+					return `spine batch pause && spine batch retry ${ctx.failedTaskId}`;
+				}
+				return `spine batch retry ${ctx.failedTaskId}`;
+			}
+			return "spine status --diagnose";
 		case "needs_retry":
 			if (STUB_EXIT_REASONS.has(ctx.exitReason ?? "")) {
 				return buildStubFailureSuggestedCommand(ctx);

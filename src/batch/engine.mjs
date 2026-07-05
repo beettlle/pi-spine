@@ -88,6 +88,13 @@ export function detectNestedWorkerContext(projectRoot) {
 	if (process.env.SPINE_IS_WORKER === "1") {
 		return "SPINE_IS_WORKER=1 is set (running inside a worker process)";
 	}
+	const parentBatchId = process.env.SPINE_PARENT_BATCH_ID ?? process.env.SPINE_BATCH_ID;
+	if (parentBatchId && WORKTREE_SPINE_PATTERN.test(projectRoot)) {
+		return (
+			`parent batch ${parentBatchId} is active and projectRoot is inside a ` +
+			`.worktrees/spine-* lane directory`
+		);
+	}
 	if (WORKTREE_SPINE_PATTERN.test(projectRoot)) {
 		return "projectRoot is inside a .worktrees/spine-* lane directory";
 	}
@@ -113,7 +120,7 @@ export async function startBatch({
 }) {
 	const nestedReason = detectNestedWorkerContext(projectRoot);
 	if (nestedReason) {
-		const parentBatchId = process.env.SPINE_BATCH_ID ?? "unknown";
+		const parentBatchId = process.env.SPINE_PARENT_BATCH_ID ?? process.env.SPINE_BATCH_ID ?? "unknown";
 		try {
 			appendJournalEvent(projectRoot, parentBatchId, "engine.nested_spawn_blocked", {
 				projectRoot,
