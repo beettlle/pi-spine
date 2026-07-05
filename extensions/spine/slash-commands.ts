@@ -29,6 +29,7 @@ export const SPINE_SLASH_COMMAND_NAMES = [
 	"spine-dashboard",
 	"spine-validate",
 	"spine-handoff",
+	"spine-orchestrate",
 ] as const;
 
 type SpineSlashCommandName = (typeof SPINE_SLASH_COMMAND_NAMES)[number];
@@ -108,6 +109,11 @@ const SPINE_SLASH_COMMANDS: SpineSlashCommandSpec[] = [
 		name: "spine-handoff",
 		description: "Write operator handoff note (usage: /spine-handoff [--batch ID])",
 	},
+	{
+		name: "spine-orchestrate",
+		description:
+			"Multi-wave outer loop checklist from plan (usage: /spine-orchestrate [pending|all] [--from-wave N])",
+	},
 ];
 
 function runSpinePreflight(cwd = process.cwd()) {
@@ -149,11 +155,14 @@ function runSpineDeps(argsText: string, cwd = process.cwd()) {
 	};
 }
 
-function runSpinePlan(argsText: string, cwd = process.cwd()) {
+function runSpinePlan(argsText: string, cwd = process.cwd(), { json = false } = {}) {
 	const tokens = String(argsText ?? "")
 		.trim()
 		.split(/\s+/)
 		.filter(Boolean);
+	if (json) {
+		tokens.push("--json");
+	}
 
 	const result = spawnSync(
 		process.execPath,
@@ -169,6 +178,131 @@ function runSpinePlan(argsText: string, cwd = process.cwd()) {
 		ok: result.status === 0,
 		output: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim(),
 	};
+}
+
+interface OrchestratePlanWave {
+	index: number;
+	taskIds?: string[];
+}
+
+interface OrchestratePlan {
+	scope?: { mode?: string };
+	waves?: OrchestratePlanWave[];
+	tasks?: Record<string, { title?: string | null }>;
+	metadata?: { tasksSelected?: number; tasksExcluded?: number };
+}
+
+/** Parse `/spine-orchestrate` args: scope (pending|all) and optional --from-wave N. */
+export function parseSpineOrchestrateArgs(argsText: string) {
+	const tokens = String(argsText ?? "")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+
+	let scope = "pending";
+	let fromWave = 0;
+
+	for (let index = 0; index < tokens.length; index += 1) {
+		const token = tokens[index];
+		if (token === "--from-wave") {
+			fromWave = Number(tokens[index + 1]);
+			index += 1;
+			continue;
+		}
+		if (!token.startsWith("--")) {
+			scope = token;
+		}
+	}
+
+	return { scope, fromWave };
+}
+
+function formatOrchestrateTaskLine(taskId: string, tasks?: OrchestratePlan["tasks"]) {
+	const title = tasks?.[taskId]?.title?.trim();
+	return title ? `${taskId} — ${title}` : taskId;
+}
+
+/** Build the structured orchestration prompt from a planner JSON plan. */
+export function formatOrchestratePrompt(
+	plan: OrchestratePlan,
+	{ scope, fromWave }: { scope: string; fromWave: number },
+) {
+	const waves = plan.waves ?? [];
+	if (waves.length === 0) {
+		const excluded = plan.metadata?.tasksExcluded ?? 0;
+		return [
+			"Spine orchestration — no waves in plan",
+			"",
+			`Scope: ${scope} · 0 wave(s)`,
+			excluded > 0 ? `${excluded} task(s) excluded (.DONE on disk)` : "",
+			"",
+			"No pending waves — all discovered tasks may be complete.",
+			"",
+			"→ spine plan all",
+			"→ /skill:spine-orchestrate-waves for full decision tree",
+		]
+			.filter(Boolean)
+			.join("\n");
+	}
+
+	if (!Number.isInteger(fromWave) || fromWave < 0 || fromWave >= waves.length) {
+		return [
+			"Spine orchestration — invalid --from-wave",
+			"",
+			`--from-wave ${fromWave} is out of range (plan has ${waves.length} wave(s)).`,
+			"",
+			"→ spine plan pending",
+		].join("\n");
+	}
+
+	const selectedWaves = waves.filter((wave) => wave.index >= fromWave);
+	const nextWave = selectedWaves[0];
+	const nextTaskIds = nextWave?.taskIds ?? [];
+
+	const lines = [
+		"Spine multi-wave orchestration",
+		"",
+		`Scope: ${scope} · ${waves.length} wave(s) · starting at wave ${fromWave}`,
+		nextWave
+			? `Next wave: ${nextWave.index} · ${nextTaskIds.map((taskId) => formatOrchestrateTaskLine(taskId, plan.tasks)).join(", ")}`
+			: "",
+		"",
+		"## Wave plan",
+		"",
+	];
+
+	for (const wave of selectedWaves) {
+		const taskIds = wave.taskIds ?? [];
+		lines.push(`Wave ${wave.index} · ${taskIds.length} task(s)`);
+		for (const taskId of taskIds) {
+			lines.push(`  · ${formatOrchestrateTaskLine(taskId, plan.tasks)}`);
+		}
+		lines.push("");
+	}
+
+	lines.push(
+		"## Outer loop (per wave — you decide gate/integrate)",
+		"",
+		"1. spine preflight",
+		`2. spine batch start ${scope} --wave W --attached`,
+		"3. spine wait --until completed,needs_integrate,failed,aborted,needs_retry --timeout 4h",
+		"4. spine status --diagnose",
+		"5. spine gate status  # review .spine/runtime/<batchId>/evidence/",
+		"6. spine gate approve  # agent judgment — NOT auto-run by /spine-orchestrate",
+		"7. spine integrate",
+		"8. spine batch complete",
+		"9. git push origin <baseBranch>  # when remote sync desired",
+		"",
+		"Repeat for the next wave after land loop completes.",
+		"This command does NOT auto-approve gates or auto-integrate.",
+		"",
+		"## Skill",
+		"",
+		"Load: /skill:spine-orchestrate-waves",
+		"Doc: docs/adoption/agent-orchestrated-waves.md",
+	);
+
+	return lines.filter((line, index, all) => !(line === "" && all[index - 1] === "")).join("\n");
 }
 
 function runSpineBatchDismiss(argsText: string, cwd = process.cwd()) {
@@ -724,6 +858,39 @@ async function spineIntegrateHandler(args: string, ctx: ExtensionCommandContext)
 	ctx.ui.notify(result.output || "integrate completed", "info");
 }
 
+async function spineOrchestrateHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
+	const { scope, fromWave } = parseSpineOrchestrateArgs(args);
+
+	const preflight = runSpinePreflight();
+	if (!preflight.ok) {
+		ctx.ui.notify(
+			`Batch preflight failed — fix issues before orchestrating.
+
+${preflight.output}
+`,
+			"error",
+		);
+		return;
+	}
+
+	const planResult = runSpinePlan(scope, process.cwd(), { json: true });
+	if (!planResult.ok) {
+		ctx.ui.notify(planResult.output || "spine plan failed", "error");
+		return;
+	}
+
+	let plan: OrchestratePlan;
+	try {
+		plan = JSON.parse(planResult.output) as OrchestratePlan;
+	} catch {
+		ctx.ui.notify(planResult.output || "spine plan returned invalid JSON", "error");
+		return;
+	}
+
+	const prompt = formatOrchestratePrompt(plan, { scope, fromWave });
+	ctx.ui.notify(prompt, "info");
+}
+
 async function spineSettingsHandler(args: string, ctx: ExtensionCommandContext): Promise<void> {
 	await runSpineSettingsSlash(args, ctx);
 }
@@ -800,6 +967,8 @@ export function registerSpineSlashCommands(pi: ExtensionAPI): void {
 												? spineValidateHandler
 												: name === "spine-handoff"
 													? spineHandoffHandler
+													: name === "spine-orchestrate"
+														? spineOrchestrateHandler
 													: stubHandler(name),
 		});
 	}

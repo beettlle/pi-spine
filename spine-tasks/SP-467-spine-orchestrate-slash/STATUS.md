@@ -1,8 +1,8 @@
 # SP-467: Spine orchestrate slash command — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 1 — Slash command
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #90
-- [ ] Dependencies satisfied
+- [x] Read issue #90
+- [x] Dependencies satisfied (SP-418, SP-466 done)
 
 ---
 
