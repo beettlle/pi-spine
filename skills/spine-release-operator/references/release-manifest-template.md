@@ -68,8 +68,7 @@
 
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [ ] `spine preflight` green
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green
-- [ ] `npm run coverage:check` green (≥77%)
+- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — CI parity)
 - [ ] `git status` clean
 - [ ] Operator approved publish bump type: patch | minor | major
 - [ ] `npm version <bump>` + `git push && git push --tags`

@@ -4,11 +4,11 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
 
 ## Tag-triggered release flow
 
-1. **Pre-release checks** — run locally:
+1. **Pre-release checks** — run locally (same order as `ci.yml` / `release.yml`):
    ```bash
-   npm run typecheck && SPINE_WORKER_STUB=1 npm test
-   npm run coverage:check
+   npm run release:check
    ```
+   Equivalent to: `typecheck` → `lint` → `SPINE_WORKER_STUB=1 npm test` → `coverage:check`.
 2. **Bump version and tag** — uses npm's built-in versioning:
    ```bash
    npm version patch   # or minor / major
@@ -43,8 +43,7 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 
 ## Pre-publish checklist
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` green
-- [ ] `npm run coverage:check` green (≥77% line on `src/`, `bin/`, `extensions/`)
+- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)

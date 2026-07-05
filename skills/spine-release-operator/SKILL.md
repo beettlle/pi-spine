@@ -262,8 +262,7 @@ Always: `spine status --diagnose`
 ```bash
 spine plan <release-scope>    # should show 0 pending for scope
 spine preflight
-npm run typecheck && SPINE_WORKER_STUB=1 npm test
-npm run coverage:check
+npm run release:check         # typecheck → lint → tests → coverage (CI parity)
 git status
 ```
 
@@ -271,7 +270,7 @@ Present checklist from `docs/release/npm-publish.md`:
 
 - [ ] All release-scoped tasks done
 - [ ] Preflight green
-- [ ] Tests + coverage green (≥77%)
+- [ ] `npm run release:check` green (includes lint; ≥77% coverage)
 - [ ] Clean git tree
 - [ ] Bump type matches profile: patch | minor | major
 
@@ -327,8 +326,7 @@ Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
 |------|-------|
 | Tasks root | `spine-tasks/` |
 | Issues repo | `beettlle/pi-spine` |
-| Test gate | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
-| Coverage gate | `npm run coverage:check` (≥77%) |
+| Pre-publish gate | `npm run release:check` (typecheck → lint → tests → coverage; CI parity) |
 | Publish | Tag-triggered `.github/workflows/release.yml` |
 | Pending backlog | Run `spine plan pending` — release executes **subset only** |
 

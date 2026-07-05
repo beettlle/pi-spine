@@ -1325,12 +1325,12 @@ Gate-level stet review via `testing.build` is **not supported** until [#160](htt
 When developing or contributing to **pi-spine itself**, run these from the repo root after `npm ci`:
 
 ```bash
-npm run lint
-npm run typecheck && SPINE_WORKER_STUB=1 npm test
-npm run coverage:check
+npm run release:check
 ```
 
-`npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` (baseline warns on existing debt; CI fails on errors only). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
+`npm run release:check` runs the full local gate in CI order: `typecheck` → `lint` → `SPINE_WORKER_STUB=1 npm test` → `coverage:check`. Run this before `npm version` / push to avoid lint-only CI failures.
+
+`npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` with `--max-warnings 0` (any warning fails, same as CI). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
 `npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
 
