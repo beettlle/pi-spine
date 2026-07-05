@@ -1192,7 +1192,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-437 | Sequence continue after merge_blocked | S | **Complete** | SP-387 | #82 |
 | SP-438 | Flutter worktree adoption docs | S | **Done** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
-| SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
+| SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Complete** | — | — |
 | SP-441 | Batch complete stale batch-state | S | **Done** | — | #94 |
 | SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
 | SP-443 | Isolated integrate sync-base + doctor | M | **Superseded** | SP-436 | → SP-476, SP-477 |
