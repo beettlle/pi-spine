@@ -98,15 +98,19 @@ function batchMatches(event, batchId) {
  * @param {object[]} journal
  * @param {string|null|undefined} laneId
  * @param {number} beforeIndex
+ * @param {string|null|undefined} [excludeTaskId] Skip lane.committed for this task (SP-478 / issue #105).
  * @returns {string|null}
  */
-function resolvePriorLaneCommit(journal, laneId, beforeIndex) {
+function resolvePriorLaneCommit(journal, laneId, beforeIndex, excludeTaskId) {
 	for (let index = beforeIndex - 1; index >= 0; index -= 1) {
 		const event = journal[index];
 		if (String(event?.type ?? "") !== "lane.committed") {
 			continue;
 		}
 		if (!lanesMatch(readEventLaneId(event), laneId)) {
+			continue;
+		}
+		if (excludeTaskId && readEventTaskId(event) === excludeTaskId) {
 			continue;
 		}
 		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
@@ -138,14 +142,15 @@ function resolveHeadAtTimestamp(worktreePath, timestampIso) {
 }
 
 /**
+ * First task.started for a task — stable baseline across retry/resume (SP-478 / issue #105).
+ *
  * @param {object[]} journal
  * @param {string} taskId
  * @param {string|null|undefined} laneId
  * @param {string|null|undefined} batchId
  * @returns {{ event: object, index: number } | null}
  */
-function findLastTaskStarted(journal, taskId, laneId, batchId) {
-	let match = null;
+function findFirstTaskStarted(journal, taskId, laneId, batchId) {
 	for (let index = 0; index < journal.length; index += 1) {
 		const event = journal[index];
 		if (String(event?.type ?? "") !== "task.started") {
@@ -160,9 +165,9 @@ function findLastTaskStarted(journal, taskId, laneId, batchId) {
 		if (!batchMatches(event, batchId)) {
 			continue;
 		}
-		match = { event, index };
+		return { event, index };
 	}
-	return match;
+	return null;
 }
 
 /**
@@ -177,7 +182,7 @@ export function resolveTaskStartCommit({ journal, taskId, laneId, batchId, workt
 		return null;
 	}
 
-	const started = findLastTaskStarted(journal, taskId, laneId, batchId);
+	const started = findFirstTaskStarted(journal, taskId, laneId, batchId);
 	if (!started) {
 		return null;
 	}
@@ -188,7 +193,7 @@ export function resolveTaskStartCommit({ journal, taskId, laneId, batchId, workt
 	}
 
 	const eventLaneId = readEventLaneId(started.event);
-	const priorLaneCommit = resolvePriorLaneCommit(journal, eventLaneId, started.index);
+	const priorLaneCommit = resolvePriorLaneCommit(journal, eventLaneId, started.index, taskId);
 	if (priorLaneCommit) {
 		return priorLaneCommit;
 	}

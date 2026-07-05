@@ -1,8 +1,8 @@
 # SP-478: Contract verify resume baseline — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-05
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,25 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #105
-- [ ] Dependencies satisfied
+- [x] Read issue #105
+- [x] Dependencies satisfied (SP-415/SP-416 code landed; resolveTaskStartCommit + verifyContract sinceCommit wired)
 
 ---
 
 ### Step 1: Baseline fix
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Persist task-start commit across retry/resume
-- [ ] Verify diff uses task boundary not stale post-rework tree
+- [x] Persist task-start commit across retry/resume
+- [x] Verify diff uses task boundary not stale post-rework tree
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Fixture: lane commit exists but verifier false negative → pass after fix
+- [x] Fixture: lane commit exists but verifier false negative → pass after fix
 
 ---
 
