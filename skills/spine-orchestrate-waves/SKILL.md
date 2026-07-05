@@ -22,7 +22,7 @@ Invoke explicitly: `/skill:spine-orchestrate-waves`, `/spine-orchestrate pending
 | Task packet authoring | `create-spine-tasks` skill |
 | Curated release subset | `spine-release-operator` skill |
 | Canonical how-to prose | [references/outer-loop.md](references/outer-loop.md) (synced from `docs/adoption/agent-orchestrated-waves.md`) |
-| Slash entry (`/spine-orchestrate`) | pi-spine extension (SP-467) |
+| Slash entry (`/spine-orchestrate`) | pi-spine extension — wave plan + outer loop checklist |
 | Single-task suggested command | `/spine-next` inside land loop |
 
 ## Prerequisites

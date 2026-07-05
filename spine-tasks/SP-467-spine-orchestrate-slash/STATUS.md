@@ -1,8 +1,8 @@
 # SP-467: Spine orchestrate slash command — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 4 — Documentation & Delivery
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #90
-- [ ] Dependencies satisfied
+- [x] Read issue #90
+- [x] Dependencies satisfied (SP-418, SP-466 done)
 
 ---
 
 ### Step 1: Slash command
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add /spine-orchestrate with pending|all and --from-wave N
-- [ ] Emit structured prompt: wave tasks + outer loop steps + skill link
+- [x] Add /spine-orchestrate with pending|all and --from-wave N
+- [x] Emit structured prompt: wave tasks + outer loop steps + skill link
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add slash command unit test
-- [ ] Verify no auto gate approve/integrate
+- [x] Add slash command unit test
+- [x] Verify no auto gate approve/integrate
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (with SPINE_IS_WORKER unset; worker env blocks batch-start tests)
+- [x] Coverage gate (if applicable) — 88.55% line coverage
+- [x] All failures fixed (orchestrate tests 8/8 pass)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 

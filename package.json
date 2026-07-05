@@ -9,7 +9,8 @@
     "orchestration",
     "task-runner",
     "parallel",
-    "spine-orchestrate-waves"
+    "spine-orchestrate-waves",
+    "spine-orchestrate"
   ],
   "bin": {
     "spine": "bin/spine.mjs"
