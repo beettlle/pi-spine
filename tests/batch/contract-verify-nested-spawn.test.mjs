@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -43,6 +44,7 @@ test("startBatch blocks nested spawn when SPINE_PARENT_BATCH_ID set in lane work
 	const prevParent = process.env.SPINE_PARENT_BATCH_ID;
 	const prevWorker = process.env.SPINE_IS_WORKER;
 	const worktreeParent = path.join(os.tmpdir(), ".worktrees");
+	fs.mkdirSync(worktreeParent, { recursive: true });
 	const worktreeDir = await mkdtemp(path.join(worktreeParent, "spine-nested-contract-"));
 	try {
 		delete process.env.SPINE_IS_WORKER;
