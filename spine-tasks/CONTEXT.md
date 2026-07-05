@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-07-04 (v1.5.0 released — Phase 58 complete)
 **Status:** Active
-**Next Task ID:** SP-495
+**Next Task ID:** SP-497
 
 ---
 

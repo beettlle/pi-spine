@@ -46,7 +46,27 @@
 
 ## Gaps requiring new packets
 
-None — all selected work has existing SP-* packets.
+| SP-ID | Issue | Size | Title | Status |
+|-------|-------|------|-------|--------|
+| SP-495 | #162 | M | Contract verify nested batch spawn guard | **Prerequisite** — before resuming release scope |
+| SP-496 | #164 | S | state_drift recovery UX | **Prerequisite** — before resuming release scope |
+
+---
+
+## Pre-release blockers (wave 0 recovery)
+
+Batch `20260704T233623` hit `engine_orphaned` / `state_drift` during v1.6.0 wave 0. **Do not resume release-scoped batch** until:
+
+1. **SP-495** and **SP-496** are `.DONE` on `main` (P1 fixes from failed run)
+2. Orphaned batch `20260704T233623` is aborted/archived and worktrees pruned
+3. `spine preflight` green
+
+**Resume release scope after blockers:**
+
+```bash
+spine batch start SP-441 SP-454 SP-460 SP-462 SP-463 SP-466 SP-474 SP-483 --attached
+# SP-438 already succeeded in lane — verify .DONE on main or re-include if needed
+```
 
 ---
 
@@ -90,12 +110,21 @@ Wave 3 · 1 task
 | SP-478 | bug | Contract verify resume (M) — out of budget |
 | #117 | epic | v2.3 module split — out of minor scope |
 | #141–150 | skill | create-spine-tasks cluster — skill authoring, not product release |
+| #163 | bug P1 | Attached batch SIGKILL/orphan — follow-on patch |
+| #165 | bug P2 | Macro phase Failed while workers active |
+| #166 | bug P2 | Task status/classification drift after retry |
+| #167 | bug P2 | Concurrent resume --force not fail-fast (#89 extension) |
+| #168 | doc P3 | Release skill state_drift recovery (partial via SP-496) |
 | Remaining pending | mixed | 13 tasks outside release scope |
+
+**Filed from wave 0 failed run (2026-07-04):** #162–#168. #162/#164 staged as SP-495/SP-496 prerequisites.
 
 ---
 
 ## Risks and blockers
 
+- **Wave 0 blocked** until SP-495/SP-496 land (#162, #164)
+- Batch `20260704T233623` orphaned — abort before prerequisite batch
 - SP-475/460 are M-sized — dedicated lanes; stallTimeoutMinutes ≥120
 - Integrate chain serial: SP-474→475→476→477
 - Preflight pre-landed contract risk: SP-462, SP-463 paths may need PROMPT amend if contract loops
