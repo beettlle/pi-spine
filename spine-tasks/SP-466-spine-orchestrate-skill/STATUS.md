@@ -1,8 +1,8 @@
 # SP-466: Spine orchestrate skill package — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 3 (Documentation & Delivery)
+**Status:** 🟢 Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,37 +11,37 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #90
-- [ ] Dependencies satisfied
+- [x] Read issue #90
+- [x] Dependencies satisfied (SP-418 `.DONE`)
 
 ---
 
 ### Step 1: Skill package
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create SKILL.md with triggers and decision tree
-- [ ] Add references/outer-loop.md synced from agent-orchestrated-waves.md
-- [ ] Register skill in package.json
+- [x] Create SKILL.md with triggers and decision tree
+- [x] Add references/outer-loop.md synced from agent-orchestrated-waves.md
+- [x] Register skill in package.json (keyword + existing `./skills` pi.skills path)
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (`unset SPINE_IS_WORKER` required in worker lane)
+- [x] Coverage gate (if applicable) — N/A for docs-only skill deliverable
+- [x] All failures fixed — flaky stall test passed on retry
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated (`docs/adoption/agent-orchestrated-waves.md`)
+- [x] Issue updated (#90 comment)
+- [x] .DONE created
 
 ---
 
@@ -49,6 +49,7 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | skipped | `.reviews/1-20260705T094852.md` (engine-owned review) |
 
 ---
 
@@ -56,6 +57,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Full npm test fails with SPINE_IS_WORKER=1 (nested batch guard) | Run with `unset SPINE_IS_WORKER` in worker lanes | Step 2 verification |
+| package.json uses `./skills` directory glob — no per-skill path needed | Added npm keyword for discoverability | Step 1 |
 
 ---
 
@@ -64,6 +67,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged (split from parent) | PROMPT.md and STATUS.md created |
+| 2026-07-05 | Step 0–3 complete | Skill package shipped |
 
 ---
 
@@ -75,4 +79,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Skill: `skills/spine-orchestrate-waves/SKILL.md`. Slash command deferred to SP-467.

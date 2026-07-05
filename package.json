@@ -8,7 +8,8 @@
     "agent",
     "orchestration",
     "task-runner",
-    "parallel"
+    "parallel",
+    "spine-orchestrate-waves"
   ],
   "bin": {
     "spine": "bin/spine.mjs"

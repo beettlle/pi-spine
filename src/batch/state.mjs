@@ -6,7 +6,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { appendJournalEvent } from "./journal.mjs";
-import { loadBatchStateFile } from "./batch-state-io.mjs";
+import {
+	clearStaleTerminalBatchStateForStart,
+	loadBatchStateFile,
+} from "./batch-state-io.mjs";
 import { isProcessAlive } from "../process/liveness.mjs";
 
 export const SPINE_BATCH_STATE_REL = path.join(".spine", "batch-state.json");
@@ -85,7 +88,19 @@ export function evaluateBatchStateWriteGuard(projectRoot, state) {
 	if (fs.existsSync(filePath)) {
 		try {
 			const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+			const onDiskBatchId = String(onDisk.batchId ?? "");
+			const incomingBatchId = String(state.batchId ?? "");
+			const onDiskPhase = String(onDisk.phase ?? "");
 			const ownerPid = readBatchEnginePid(onDisk);
+			if (
+				incomingBatchId &&
+				onDiskBatchId &&
+				incomingBatchId !== onDiskBatchId &&
+				TERMINAL_BATCH_PHASES.has(onDiskPhase) &&
+				(!ownerPid || !isProcessAlive(ownerPid))
+			) {
+				return { allowed: true };
+			}
 			if (ownerPid && ownerPid !== process.pid && isProcessAlive(ownerPid)) {
 				return { allowed: false, reason: "stale_engine_pid" };
 			}
@@ -251,6 +266,8 @@ export function failBatchFromEngineError({
  * @param {string} projectRoot
  */
 export function assertNoActiveBatch(projectRoot) {
+	clearStaleTerminalBatchStateForStart(projectRoot);
+
 	const spine = loadSpineBatchState(projectRoot);
 	if (spine.path && spine.raw) {
 		const phase = String(spine.raw.phase ?? "");

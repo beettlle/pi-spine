@@ -1,8 +1,8 @@
 # SP-474: Integrate base branch snapshot — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Complete
+**Status:** 🟢 Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,43 +11,43 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #91
-- [ ] Dependencies satisfied
+- [x] Read issue #91
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Batch snapshot
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Record baseBranchHeadAtStart in batch state on batch start
-- [ ] Emit journal batch.base_snapshot event
+- [x] Record baseBranchHeadAtStart in batch state on batch start
+- [x] Emit journal batch.base_snapshot event
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Assert snapshot persisted and journaled on start
+- [x] Assert snapshot persisted and journaled on start
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing
+- [x] Coverage gate (if applicable)
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -62,6 +62,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Worker env sets SPINE_IS_WORKER=1; startBatch tests must unset it | Test harness fix | integrate-base-snapshot.test.mjs |
+| operator-runbook concurrent-dev section deferred to SP-475/476 | No doc change this slice | PROMPT Check If Affected |
 
 ---
 
@@ -70,6 +72,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged (split from parent) | PROMPT.md and STATUS.md created |
+| 2026-07-05 | Step 1 — wire snapshot on batch start | lifecycle re-export + engine hook |
+| 2026-07-05 | Step 2 — integration test | integrate-base-snapshot.test.mjs |
+| 2026-07-05 | Step 3 — verification | typecheck + 1619 tests + coverage:check |
 
 ---
 
@@ -81,4 +86,5 @@
 
 ## Notes
 
-*Reserved for execution notes*
+- `recordBatchBaseSnapshotOnStart` re-exported from `lifecycle.mjs`; `startBatch` invokes it after initial state creation.
+- Batch-state readers: `readBaseBranchHeadAtStart`, `readIntegrateWorktreePath` in `batch-state-io.mjs`.

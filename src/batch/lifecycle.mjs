@@ -16,10 +16,15 @@ import {
 	saveSpineBatchState,
 } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
+import {
+	clearActiveBatchStateIfMatches,
+} from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 import { removeLaneWorktrees } from "./worktree.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
+
+export { recordBatchBaseSnapshot as recordBatchBaseSnapshotOnStart } from "./integrate-worktree.mjs";
 
 /**
  * Terminal merge-blocked state when the engine exits after a wave merge failure (GitHub #38).
@@ -106,11 +111,10 @@ function archiveBatchState(projectRoot, batchId, raw) {
 
 /**
  * @param {string|null} batchStatePath
+ * @param {string} batchId
  */
-function clearActiveBatchState(batchStatePath) {
-	if (batchStatePath && fs.existsSync(batchStatePath)) {
-		fs.unlinkSync(batchStatePath);
-	}
+function clearCompletedBatchState(batchStatePath, batchId) {
+	clearActiveBatchStateIfMatches(batchStatePath, batchId);
 }
 
 /**
@@ -309,7 +313,7 @@ export function dismissBatch(ctx) {
 		batchState: loaded.raw,
 		config,
 	});
-	clearActiveBatchState(loaded.path);
+	clearCompletedBatchState(loaded.path, batchId);
 
 	return {
 		ok: true,
@@ -476,7 +480,7 @@ export function completeBatch(ctx) {
 		batchState: loaded.raw,
 		config,
 	});
-	clearActiveBatchState(loaded.path);
+	clearCompletedBatchState(loaded.path, batchId);
 
 	return {
 		ok: true,

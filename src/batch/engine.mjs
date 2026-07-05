@@ -15,6 +15,7 @@ import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff
 import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { recordBatchBaseSnapshotOnStart } from "./lifecycle.mjs";
 import { adoptPauseIfRequested, saveEngineBatchState } from "./pause.mjs";
 import {
 	assertNoActiveBatch,
@@ -250,6 +251,7 @@ export async function startBatch({
 		lanes,
 	});
 
+	recordBatchBaseSnapshotOnStart(projectRoot, state);
 	saveEngineBatchState(projectRoot, state);
 
 	try {

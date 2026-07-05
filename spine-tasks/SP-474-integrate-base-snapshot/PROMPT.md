@@ -38,7 +38,7 @@ Record `baseBranchHeadAtStart` on batch start and journal `batch.base_snapshot` 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/integrate-base-snapshot.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/integrate-base-snapshot.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `src/batch/lifecycle.mjs` |
 | artifactsMustExist | `tests/batch/integrate-base-snapshot.test.mjs` |

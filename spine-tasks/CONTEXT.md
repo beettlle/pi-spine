@@ -1193,7 +1193,7 @@ spine batch start SP-403 SP-405 SP-407 SP-410 SP-414 SP-415
 | SP-438 | Flutter worktree adoption docs | S | **Done** | SP-420 | #78/#80 (partial) |
 | SP-439 | Integrate false merge conflict | M | **Staged** | — | #93 |
 | SP-440 | Supervisor spawn MVP (#71 slice 1) | M | **Staged** | — | — |
-| SP-441 | Batch complete stale batch-state | S | **Staged** | — | #94 |
+| SP-441 | Batch complete stale batch-state | S | **Done** | — | #94 |
 | SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
 | SP-443 | Isolated integrate sync-base + doctor | M | **Superseded** | SP-436 | → SP-476, SP-477 |
 | SP-444 | Supervisor config doctor + docs | S | **Staged** | SP-440 | #71 |
@@ -1311,7 +1311,7 @@ spine plan SP-451 SP-452
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-466 | Spine orchestrate skill package | S | **Staged** | SP-418 | #90 (partial) |
+| SP-466 | Spine orchestrate skill package | S | **Done** | SP-418 | #90 (partial) |
 | SP-467 | Spine orchestrate slash command | S | **Staged** | SP-418, SP-466 | #90 |
 | SP-468 | Resume validation leaf (#83-B) | S | **Staged** | SP-424 | #83 (partial) |
 | SP-469 | Detached spawn leaf (#83-C) | S | **Staged** | SP-424, SP-468 | #83 (partial) |
