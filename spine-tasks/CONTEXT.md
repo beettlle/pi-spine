@@ -1313,7 +1313,7 @@ spine plan SP-451 SP-452
 |------|---------|------|--------|------|--------|
 | SP-466 | Spine orchestrate skill package | S | **Done** | SP-418 | #90 (partial) |
 | SP-467 | Spine orchestrate slash command | S | **Staged** | SP-418, SP-466 | #90 |
-| SP-468 | Resume validation leaf (#83-B) | S | **Staged** | SP-424 | #83 (partial) |
+| SP-468 | Resume validation leaf (#83-B) | S | **Done** | SP-424 | #83 (partial) |
 | SP-469 | Detached spawn leaf (#83-C) | S | **Staged** | SP-424, SP-468 | #83 (partial) |
 | SP-470 | Gitignored index vs worktree detection | S | **Staged** | SP-427 | #95 (partial) |
 | SP-471 | Gitignored auto-clean before dirty gate | S | **Staged** | SP-427, SP-470 | #95 |
