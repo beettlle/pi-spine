@@ -21,6 +21,7 @@ Invoke explicitly: `/skill:spine-orchestrate-waves`, `/spine-orchestrate pending
 |---------|-------------|
 | Task packet authoring | `create-spine-tasks` skill |
 | Curated release subset | `spine-release-operator` skill |
+| Pi async batch/verify (MonitorCreate) | [spine-release-operator/references/pi-async-orchestration.md](../spine-release-operator/references/pi-async-orchestration.md) |
 | Canonical how-to prose | [references/outer-loop.md](references/outer-loop.md) (synced from `docs/adoption/agent-orchestrated-waves.md`) |
 | Slash entry (`/spine-orchestrate`) | pi-spine extension — wave plan + outer loop checklist |
 | Single-task suggested command | `/spine-next` inside land loop |
