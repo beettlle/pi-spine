@@ -1,7 +1,7 @@
 ---
 name: spine-release-operator
 description: End-to-end pi-spine release operator. Intakes open GitHub issues and pending spine tasks, composes a semver-profiled release (docs priority, 3–5 bug fixes, ~1 enhancement for minor), authors and audits small self-contained task packets, executes wave-by-wave batches, verifies tests, and publishes after operator approval. Use when asked to run a spine release cycle, release vX.Y.Z, patch/minor/major release, or ship pi-spine to npm.
-compatibility: Requires spine CLI, gh CLI, git, Node >= 22. Run from pi-spine repo root on main.
+compatibility: Requires spine CLI, gh CLI, git, Node >= 22, gitnexus (pi-gitnexus extension or `gitnexus` on PATH). Run from pi-spine repo root on main.
 ---
 
 # Spine Release Operator
@@ -26,11 +26,12 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 
 ## Success criteria
 
-1. Release manifest written and operator-approved
-2. All **release-scoped** tasks `.DONE` and integrated on `main`
-3. `spine preflight` green; local test/coverage gates pass
-4. Operator explicitly approved publish; version bumped and tag pushed (if approved)
-5. Final report with composition table, issues closed/deferred, verification output
+1. GitNexus index refreshed (`gitnexus status` up-to-date with HEAD)
+2. Release manifest written and operator-approved
+3. All **release-scoped** tasks `.DONE` and integrated on `main`
+4. `spine preflight` green; local test/coverage gates pass
+5. Operator explicitly approved publish; version bumped and tag pushed (if approved)
+6. Final report with composition table, issues closed/deferred, verification output
 
 ## Hard rules
 
@@ -43,6 +44,34 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Always** run `spine gate approve` before `spine integrate`
 - **Always** run `npm install` on `main` after successful integrate
 - **Do not** execute tasks outside the approved manifest scope
+- **Always** run `/gitnexus analyze` (Pre-work) before Phase 0 — do not start intake, authoring, or batches on a stale index
+
+---
+
+## Pre-work — GitNexus index
+
+**First step on every release cycle.** Refresh the knowledge graph so GitNexus auto-augment, impact analysis, and symbol lookups reflect current `main` before intake, packet audit, or batch execution.
+
+In pi:
+
+```
+/gitnexus analyze
+```
+
+Outside pi (same repo root):
+
+```bash
+cd <repo-root>
+gitnexus analyze
+```
+
+Verify before continuing:
+
+```bash
+gitnexus status   # Status: up-to-date; indexed commit matches HEAD
+```
+
+If analyze fails or status is not up-to-date, **stop** and report — do not proceed to Phase 0.
 
 ---
 
@@ -333,7 +362,8 @@ Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
 ## Short prompt (resume mid-release)
 
 ```text
-Resume spine release v{TARGET}: check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
+Resume spine release v{TARGET}: /gitnexus analyze (or gitnexus analyze) → gitnexus status →
+check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
 verify remaining scope → preflight → for each wave: batch start --attached → diagnose →
 gate approve → integrate → npm install → batch complete →
 when scope done: tests + preflight → STOP for publish approval.
