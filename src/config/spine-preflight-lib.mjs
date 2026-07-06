@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { loadSpineConfig } from "./spine-config-load.mjs";
 import { resolveTasksRootPath } from "./env-overrides.mjs";
 import { runDoctorChecks } from "../doctor/run-doctor-checks.mjs";
@@ -699,6 +699,49 @@ export function checkWorktreeSetupHook(ctx) {
 }
 
 /**
+ * Read multiple UTF-8 text files concurrently in a child process (sync parent API).
+ *
+ * @param {string[]} filePaths
+ * @returns {Map<string, string>}
+ */
+function readUtf8FilesBatchSync(filePaths) {
+	const uniquePaths = [...new Set(filePaths)];
+	if (uniquePaths.length === 0) {
+		return new Map();
+	}
+
+	const child = spawnSync(
+		process.execPath,
+		[
+			"--input-type=module",
+			"-e",
+			`const paths = JSON.parse(process.argv[1]);
+const fs = await import("node:fs/promises");
+const entries = await Promise.all(
+	paths.map(async (filePath) => [filePath, await fs.readFile(filePath, "utf-8")]),
+);
+process.stdout.write(JSON.stringify(entries));`,
+			JSON.stringify(uniquePaths),
+		],
+		{
+			encoding: "utf-8",
+			maxBuffer: 10 * 1024 * 1024,
+		},
+	);
+
+	if (child.error) {
+		throw child.error;
+	}
+	if (child.status !== 0) {
+		throw new Error(child.stderr?.trim() || `batch read failed with status ${child.status}`);
+	}
+
+	/** @type {[string, string][]} */
+	const entries = JSON.parse(child.stdout);
+	return new Map(entries);
+}
+
+/**
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {ReturnType<typeof loadSpineConfig>} [ctx.configResult]
@@ -734,13 +777,23 @@ export function checkTasksValidate(ctx) {
 		const selectedTaskIds = new Set(pendingIds);
 		/** @type {string[]} */
 		const failures = [];
+		/** @type {Array<{ discoveredTask: (typeof discovered)[number], promptPath: string }>} */
+		const pendingPrompts = [];
 
 		for (const discoveredTask of discovered) {
 			if (!selectedTaskIds.has(discoveredTask.taskId)) continue;
-			const promptMarkdown = fs.readFileSync(
-				path.join(discoveredTask.folderPath, "PROMPT.md"),
-				"utf-8",
-			);
+			pendingPrompts.push({
+				discoveredTask,
+				promptPath: path.join(discoveredTask.folderPath, "PROMPT.md"),
+			});
+		}
+
+		const promptContents = readUtf8FilesBatchSync(
+			pendingPrompts.map((entry) => entry.promptPath),
+		);
+
+		for (const { discoveredTask, promptPath } of pendingPrompts) {
+			const promptMarkdown = promptContents.get(promptPath);
 			const validation = validatePrompt(promptMarkdown, {
 				taskId: discoveredTask.taskId,
 				contract: config.contract,
@@ -1088,11 +1141,23 @@ export function listPrelandedFileScopeStaleTasks(ctx) {
 	const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
 	/** @type {Array<{ taskId: string, warnings: string[] }>} */
 	const staleTasks = [];
+	/** @type {Array<{ discoveredTask: (typeof discovered)[number], promptPath: string }>} */
+	const pendingPrompts = [];
 
 	for (const discoveredTask of discovered) {
 		if (!pendingIds.includes(discoveredTask.taskId)) continue;
-		const promptPath = path.join(discoveredTask.folderPath, "PROMPT.md");
-		const promptMarkdown = fs.readFileSync(promptPath, "utf-8");
+		pendingPrompts.push({
+			discoveredTask,
+			promptPath: path.join(discoveredTask.folderPath, "PROMPT.md"),
+		});
+	}
+
+	const promptContents = readUtf8FilesBatchSync(
+		pendingPrompts.map((entry) => entry.promptPath),
+	);
+
+	for (const { discoveredTask, promptPath } of pendingPrompts) {
+		const promptMarkdown = promptContents.get(promptPath);
 		const parsedContract = parseContract(promptMarkdown);
 		const promptRelPath = path.relative(ctx.projectRoot, promptPath);
 		const warnings = collectStaleFileScopeMustChangeWarnings(
