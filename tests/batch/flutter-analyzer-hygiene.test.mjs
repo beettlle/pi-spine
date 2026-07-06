@@ -29,6 +29,19 @@ function createPollutedFlutterBuild(worktreePath) {
 	return pollution;
 }
 
+/** Stub `flutter` on PATH so verifyContract integration tests do not require the SDK (CI). */
+function installFlutterStubOnPath(projectRoot) {
+	const stubBin = path.join(projectRoot, ".spine-flutter-stub-bin");
+	fs.mkdirSync(stubBin, { recursive: true });
+	const flutterStub = path.join(stubBin, "flutter");
+	fs.writeFileSync(flutterStub, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+	const previousPath = process.env.PATH;
+	process.env.PATH = `${stubBin}${path.delimiter}${previousPath}`;
+	return () => {
+		process.env.PATH = previousPath;
+	};
+}
+
 test("isUnscopedFlutterAnalyzeSegment detects bare and compound analyze commands", () => {
 	assert.equal(isUnscopedFlutterAnalyzeSegment("flutter analyze"), true);
 	assert.equal(isUnscopedFlutterAnalyzeSegment("flutter analyze --no-fatal-infos"), true);
@@ -131,6 +144,7 @@ test("polluted build does not fail verify after hygiene", async () => {
 
 test("verifyContract cleans polluted build before unscoped flutter analyze testCommand", async () => {
 	const projectRoot = await initGitRepo("spine-flutter-verify-auto-");
+	const restorePath = installFlutterStubOnPath(projectRoot);
 	try {
 		const pollution = createPollutedFlutterBuild(projectRoot);
 		const result = verifyContract(
@@ -146,6 +160,7 @@ test("verifyContract cleans polluted build before unscoped flutter analyze testC
 		assert.equal(result.ok, true);
 		assert.equal(result.checks[0].field, "testCommand");
 	} finally {
+		restorePath();
 		await destroyGitRepo(projectRoot);
 	}
 });
