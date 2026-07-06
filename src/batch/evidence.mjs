@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Integrate gate evidence bundle (PRD §12.2, FR-GATE).
  * Collection orchestration lives in gate.mjs; path readers in gate-evidence-read.mjs (SP-432 / #83-D).

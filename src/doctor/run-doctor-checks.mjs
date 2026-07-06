@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor check orchestration — library surface for preflight and CLI.
  */

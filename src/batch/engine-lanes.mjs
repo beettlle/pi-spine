@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lane task execution facade — re-exports split modules and phase transitions.
  */

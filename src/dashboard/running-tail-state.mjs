@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Running tail-state detection for dashboard + batch headlines (GitHub #68).
  * Browser-safe — no Node or batch-layer imports.

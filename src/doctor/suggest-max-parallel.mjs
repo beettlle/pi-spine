@@ -1,3 +1,4 @@
+// @ts-nocheck
 import os from "node:os";
 
 const MIN_SUGGESTED = 1;

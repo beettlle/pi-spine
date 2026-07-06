@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Per-lane task execution and wave queue wiring for multi-task resume (extracted from resume-multi.mjs).
  */

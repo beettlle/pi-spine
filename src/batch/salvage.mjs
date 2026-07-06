@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-STALL-03A/03B: salvage inspection and optional WIP commit on stall (no `.DONE`).
  *

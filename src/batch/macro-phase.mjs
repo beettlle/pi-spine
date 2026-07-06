@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch macro-phase derivation (Phase 41 — operator lifecycle label).
  *

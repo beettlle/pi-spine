@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor check: validate that all agent model pins use canonical provider/model format (SP-422 / #76).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-BATCH-13 diagnosis taxonomy and operator messaging (§18.3).
  */

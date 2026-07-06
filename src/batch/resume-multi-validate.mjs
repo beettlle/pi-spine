@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Multi-task batch resume validation and worktree health checks (extracted from resume-multi.mjs).
  */

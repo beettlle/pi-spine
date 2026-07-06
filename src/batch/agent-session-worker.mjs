@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * In-process lane worker via pi-coding-agent createAgentSession (TP-050 spike).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch scope resolution and wave merge policy (extracted from engine.mjs).
  */

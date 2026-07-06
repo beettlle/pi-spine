@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Pure review helpers shared by `review.mjs` and `engine-lanes/review.mjs`.
  * SP-265 extraction target; SP-266 wires imports.

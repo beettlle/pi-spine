@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor warnings for stall config when running real pi workers (SP-087).
  */

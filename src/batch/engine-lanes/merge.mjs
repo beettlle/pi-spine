@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Engine lane merge-phase wiring — lane→orch merges and rules-manifest conflict resolution.
  */

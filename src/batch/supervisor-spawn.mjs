@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-SHIP-11 Tier 1 — opt-in supervisor monitor spawn on detached batch start.
  * Detached node child polls reconcileBatch and journals supervisor.* events.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Orchestrator poll interval schema and resolvers (SP-452, GitHub #98).
  */

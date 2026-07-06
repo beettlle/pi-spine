@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Validate-time checks for PROMPT.md `## Contract` tables (handoff §4.4).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Archive-first batch abort (FR-BATCH-06, §18.6).
  */

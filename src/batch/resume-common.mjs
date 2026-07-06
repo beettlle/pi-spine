@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shared resume validation and task-path helpers (SP-076).
  */

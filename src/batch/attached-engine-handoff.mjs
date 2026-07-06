@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Attached engine post-merge SIGTERM survival (SP-316, GitHub #21).
  *

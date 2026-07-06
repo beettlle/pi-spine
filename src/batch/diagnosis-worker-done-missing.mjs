@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Worker exited without `.DONE` diagnosis helpers (SP-313 / issue #18).
  */

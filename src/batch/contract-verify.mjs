@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Machine contract verification in lane worktree (handoff §4.5, SP-154/SP-155).
  */

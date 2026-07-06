@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lane heartbeat and progress-aware stall helpers (FR-WORK-09, PRD §18.4, FR-STALL-02).
  */

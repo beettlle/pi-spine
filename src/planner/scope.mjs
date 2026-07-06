@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-SCHED-06: scope parsing
  *

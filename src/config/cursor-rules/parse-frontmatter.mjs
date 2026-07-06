@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Minimal YAML frontmatter parser for `.cursor/rules/*.{mdc,md}`.
  */

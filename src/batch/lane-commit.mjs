@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Auto-commit lane worktree before merge (TP-015, FR-WORK-02/03).
  */

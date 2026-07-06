@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Taskplane / pi-spine mutual exclusion (PRD §22.1).
  * Inspects `.spine/batch-state.json` and `.pi/batch-state.json` independently.

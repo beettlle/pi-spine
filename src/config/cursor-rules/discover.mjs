@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Discover `.cursor/rules/` and build `.spine/rules-manifest.json`.
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-CFG-04 environment variable overrides (TP-046).
  * Precedence: env > file > defaults (applied in loadSpineConfig after file parse).

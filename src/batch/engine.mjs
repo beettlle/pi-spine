@@ -72,6 +72,16 @@ export {
 } from "./engine-scope.mjs";
 export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
 
+/**
+ * Mutable batch-state fields are widened from createInitialBatchState literals so
+ * terminal transitions can assign endedAt/lastError without any casts.
+ *
+ * @typedef {Omit<ReturnType<typeof createInitialBatchState>, "endedAt" | "lastError"> & {
+ *   endedAt: number | null;
+ *   lastError: string | null;
+ * }} SpineBatchState
+ */
+
 const WORKTREE_SPINE_PATTERN = /[/\\]\.worktrees[/\\]spine-/;
 
 /**
@@ -149,7 +159,7 @@ export async function startBatch({
 				ok: false,
 				exitCode: preflight.exitCode ?? 1,
 				error: "preflight_failed",
-				output: /** @type {string | undefined} */ (/** @type {any} */ (preflight).output),
+				output: /** @type {{ output?: string }} */ (preflight).output,
 			};
 		}
 	}
@@ -241,7 +251,7 @@ export async function startBatch({
 		maxLaneNumber,
 	});
 
-	/** @type {ReturnType<typeof createInitialBatchState>} */
+	/** @type {SpineBatchState} */
 	const state = createInitialBatchState({
 		batchId,
 		baseBranch,
@@ -425,8 +435,8 @@ export async function startBatch({
 
 			if (batchAborted) {
 				const abortedTask = state.tasks.find((/** @type {{ status: string }} */ task) => task.status === "aborted");
-				/** @type {any} */ (state).endedAt = Date.now();
-				/** @type {any} */ (state).lastError = "batch aborted";
+				state.endedAt = Date.now();
+				state.lastError = "batch aborted";
 				transitionPhase(state, "aborted", {
 					projectRoot,
 					batchId,
@@ -444,8 +454,8 @@ export async function startBatch({
 
 			const mergeEligibility = assessWaveMergeEligibility(state, wave.index);
 			if (!mergeEligibility.ok) {
-				/** @type {any} */ (state).endedAt = Date.now();
-				/** @type {any} */ (state).lastError = mergeEligibility.message?.slice(0, 500) ?? "mixed_outcome";
+				state.endedAt = Date.now();
+				state.lastError = mergeEligibility.message?.slice(0, 500) ?? "mixed_outcome";
 				transitionPhase(state, "failed", {
 					projectRoot,
 					batchId,
@@ -531,8 +541,8 @@ export async function startBatch({
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		/** @type {any} */ (state).endedAt = Date.now();
-		/** @type {any} */ (state).lastError = message;
+		state.endedAt = Date.now();
+		state.lastError = message;
 		transitionPhase(state, "failed", {
 			projectRoot,
 			batchId,

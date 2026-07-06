@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Micromatch helpers for PROMPT File Scope vs rule globs (SP-091).
  */

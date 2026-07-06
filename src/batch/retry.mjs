@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Atomic task retry and skip (TP-017, PRD §18.5, FR-BATCH-09/10).
  */

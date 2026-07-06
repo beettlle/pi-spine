@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseSizeLineFromMarkdown } from "./size-line.mjs";
 
 /** PRD §13.4 — em dash (U+2014) required between ID and title. */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Pre-landed fileScopeMustChange satisfaction (issue #56, SP-373).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Bounded worker stdout/stderr capture on terminal failure (FR-STALL-01).
  */

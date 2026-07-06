@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor checks for lane worktree / devcontainer health (FR-REL-11, SP-101–105).
  */

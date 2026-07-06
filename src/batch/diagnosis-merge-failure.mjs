@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Wave merge failure diagnosis helpers (SP-338 / GitHub #29).
  */

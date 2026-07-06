@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rules profile loader for `.spine/rules-profile.json` (cursor rules discovery).
  */

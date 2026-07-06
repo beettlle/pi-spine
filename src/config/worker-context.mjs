@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-WORK-05: tiered worker context from spine-config referenceDocs/standards.
  * SP-092: auto-select `.cursor/rules/` via manifest + PROMPT File Scope.

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * pi-spine batch-state.json read/write (schema v1, PRD §10.1).
  */

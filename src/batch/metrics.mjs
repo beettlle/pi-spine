@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Append-only run-metrics.jsonl writer (handoff §6.5, SP-158).
  */

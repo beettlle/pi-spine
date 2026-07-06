@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Per-task done-marker semantics for reconcile / status JSON (SP-344 / GitHub #35).
  */

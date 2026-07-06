@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sandbox validation for worktreeSetupHook (SP-102).
  * Flutter gitignored-asset hook template and doctor helpers (SP-459, #80).

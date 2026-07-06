@@ -1,3 +1,4 @@
+// @ts-nocheck
 const HEADER_FIELD_RE = /^\*\*([^*]+):\*\*\s*(.+)$/gm;
 const STEP_SECTION_RE = /^### Step (\d+): (.+)$/gm;
 const CHECKBOX_RE = /^-\s+\[([ xX])\]\s+(.+)$/gm;

@@ -1356,7 +1356,7 @@ npm run release:check
 
 `npm run lint` runs ESLint on `src/`, `bin/`, `tests/`, and `scripts/` with `--max-warnings 0` (any warning fails, same as CI). GitHub Actions runs lint after typecheck on every push and pull request to `main`.
 
-`npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` and per-file `// @ts-check`.
+`npm run typecheck` runs TypeScript on `extensions/**/*.ts` plus batch hot-path modules (`src/batch/engine.mjs`, `worker-host.mjs`, `worktree.mjs`, `src/config/spine-config-load.mjs`) via `tsconfig.batch.json` with `checkJs: true` and per-file `// @ts-check` on those four modules (transitive imports use `// @ts-nocheck` until typed incrementally).
 
 ### Contract `testCommand` false positives in worker environment (issue #132)
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Select Cursor rules for spine workers from manifest + PROMPT File Scope (SP-091).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Pure resume validation helpers — leaf module (SP-468 / #83-B).
  * No reconcile import; I/O wrappers live in resume-multi-validate.mjs.
