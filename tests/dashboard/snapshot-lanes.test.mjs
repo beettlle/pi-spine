@@ -5,7 +5,7 @@ import {
 	computeActiveTaskIdsForLane,
 	computeQueuedTaskIdsForLane,
 	computeRunningTaskIdForLane,
-} from "../../src/dashboard/snapshot.mjs";
+} from "../../src/dashboard/snapshot-lanes.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";
 
 const BASE_TS = Date.parse("2026-06-20T12:00:00.000Z");
