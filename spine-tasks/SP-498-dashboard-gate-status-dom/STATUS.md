@@ -1,7 +1,7 @@
 # SP-498: Dashboard gate status safe DOM — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] Gate status `innerHTML` location identified in `dashboard.js`
-- [ ] Dependencies satisfied
+- [x] Required files and paths exist
+- [x] Gate status `innerHTML` location identified in `dashboard.js` (`renderGatePanel` line ~434)
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Replace innerHTML with safe DOM construction
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Gate status built with `textContent` and DOM APIs
-- [ ] Visual structure preserved (badge, separator, kind label)
-- [ ] No `innerHTML` for gate status in render path
+- [x] Gate status built with `textContent` and DOM APIs
+- [x] Visual structure preserved (badge, separator, kind label)
+- [x] No `innerHTML` for gate status in render path
 - [ ] Targeted ui-contract tests pass
 
 ---
@@ -69,6 +69,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Function is `renderGatePanel`, not `renderGateAffordancePanel` | Noted in STATUS | `dashboard.js` |
 
 ---
 
@@ -77,6 +78,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-05 | Task staged | PROMPT.md and STATUS.md created (v1.8.0 wave 0) |
+| 2026-07-05 | Step 0 preflight | `innerHTML` at `renderGatePanel` line 434; only gate-status usage |
 
 ---
 
@@ -88,4 +90,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**Step 1 plan:** Replace `status.innerHTML` with `createElement("span")` + `textContent` for badge, `createTextNode` for separator and kind label. Preserve `gate-status-{approved,rejected,pending}` class mapping.
