@@ -11,6 +11,7 @@ const MODEL_PATHS = Object.freeze([
 	{ path: "agents.reviewer.plan.model", get: (c) => c?.agents?.reviewer?.plan?.model },
 	{ path: "agents.reviewer.code.model", get: (c) => c?.agents?.reviewer?.code?.model },
 	{ path: "agents.reviewer.final.model", get: (c) => c?.agents?.reviewer?.final?.model },
+	{ path: "agents.supervisor.model", get: (c) => c?.agents?.supervisor?.model },
 ]);
 
 /**

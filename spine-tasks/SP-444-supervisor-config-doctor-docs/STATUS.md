@@ -1,8 +1,8 @@
 # SP-444: Supervisor config doctor and docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 2 (Testing & Verification)
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,31 +11,31 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #71
-- [ ] Dependencies satisfied
+- [x] Read issue #71
+- [x] Dependencies satisfied (SP-440 complete)
 
 ---
 
 ### Step 0: Settings + doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add editable supervisor fields
-- [ ] Doctor warns enabled + missing template or bad model
+- [x] Add editable supervisor fields
+- [x] Doctor warns enabled + missing template or bad model
 
 ---
 
 ### Step 1: Docs + close
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update runbook supervisor section
+- [x] Update runbook supervisor section
 - [ ] Close #71
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate (if applicable)

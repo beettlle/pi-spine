@@ -108,6 +108,29 @@ export const SETTINGS_FIELDS = Object.freeze([
 		enum: ["off", "low", "medium", "high", "inherit"],
 	},
 	{
+		path: "agents.supervisor.enabled",
+		label: "Supervisor monitor enabled",
+		type: "boolean",
+	},
+	{
+		path: "agents.supervisor.model",
+		label: "Supervisor model",
+		type: "string",
+		optional: true,
+	},
+	{
+		path: "agents.supervisor.pollIntervalMs",
+		label: "Supervisor poll interval (ms)",
+		type: "number",
+		min: 1000,
+		max: 3_600_000,
+	},
+	{
+		path: "agents.supervisor.autoNudge",
+		label: "Supervisor auto nudge (deferred)",
+		type: "boolean",
+	},
+	{
 		path: "dashboard.port",
 		label: "Dashboard port",
 		type: "number",

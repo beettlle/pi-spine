@@ -30,6 +30,7 @@ import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck 
 import { buildInheritProviderAuthDoctorCheck } from "./agents-model-inherit.mjs";
 import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
+import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import {
@@ -367,6 +368,12 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		const modelIdsCheck = buildAgentModelIdsDoctorCheck({ config: configResult.config });
 		checks.push(modelIdsCheck);
 		if (!modelIdsCheck.ok) issueCount++;
+		const supervisorConfigCheck = buildSupervisorConfigDoctorCheck({
+			config: configResult.config,
+			projectRoot,
+		});
+		checks.push(supervisorConfigCheck);
+		if (!supervisorConfigCheck.ok) issueCount++;
 		const worktreeHealthCheck = buildWorktreeHealthDoctorCheck({
 			projectRoot,
 			config: configResult.config,
