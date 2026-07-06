@@ -52,7 +52,7 @@ Extract task discovery helpers and tasks-validate-related checks from `spine-pre
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm test -- tests/config/spine-preflight.test.mjs tests/spine-preflight.test.mjs` |
+| testCommand | `node --test tests/config/spine-preflight.test.mjs tests/spine-preflight.test.mjs` |
 | fileScopeMustChange | `src/config/preflight/discovery.mjs`, `src/config/spine-preflight-lib.mjs` |
 | minLineCoverage | 77 |
 
