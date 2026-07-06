@@ -3,11 +3,7 @@
  */
 
 import { reconcileBatch } from "../batch/reconcile.mjs";
-import {
-	diagnosisMatchesUntil,
-	parseUntilDiagnoses,
-	reconciliationMatchesUntil,
-} from "./spine-wait.mjs";
+import { parseUntilDiagnoses, reconciliationMatchesUntil } from "./spine-wait.mjs";
 import {
 	buildWatchSnapshot,
 	DEFAULT_WATCH_INTERVAL_SEC,

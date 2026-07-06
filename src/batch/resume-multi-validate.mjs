@@ -15,7 +15,6 @@ import {
 	computePendingTasks,
 	detectPostMergeLimboFromResumeSignals,
 	findResumableWave,
-	isTaskResumable,
 } from "./resume-validation.mjs";
 import { loadSpineBatchState, readBatchEnginePid, validateBatchState } from "./state.mjs";
 import {

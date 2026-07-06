@@ -16,7 +16,7 @@ import {
 	collectExtendedEvidenceBundle as gateCollectExtendedEvidenceBundle,
 	collectEvidenceBundle as gateCollectEvidenceBundle,
 	finalizeEvidenceBundleComplete as gateFinalizeEvidenceBundleComplete,
-} from "./gate.mjs";
+} from "./gate-evidence-collect.mjs";
 
 export {
 	buildTaskScorecard,
