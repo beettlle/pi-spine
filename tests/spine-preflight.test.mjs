@@ -392,6 +392,28 @@ Broken packet.
 	}
 });
 
+test("checkTasksValidate validates multiple pending PROMPT packets in one batch", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-batch-read-");
+	try {
+		writeTask(projectRoot, "TP-001", "one");
+		writeTask(projectRoot, "TP-002", "two");
+		writeTask(projectRoot, "TP-003", "three");
+		writeDependencies(projectRoot, { "TP-001": [], "TP-002": [], "TP-003": [] });
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tasks"], { cwd: projectRoot, stdio: "ignore" });
+
+		const result = checkTasksValidate({
+			projectRoot,
+			configResult: loadSpineConfig(projectRoot),
+		});
+
+		assert.equal(result.ok, true);
+		assert.match(result.message, /pending task PROMPT packets valid/i);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("runBatchPreflight includes tasks-validate check distinct from plan", async () => {
 	const projectRoot = await initGitRepo("spine-preflight-validate-batch-");
 	try {

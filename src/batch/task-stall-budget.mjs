@@ -5,8 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { resolveStallConfig } from "./heartbeat.mjs";
-
-const SIZE_LINE_RE = /^\*\*Size:\*\*\s*(S|M|L|XL)\s*$/im;
+import { parseSizeLineFromMarkdown } from "../tasks/packet/size-line.mjs";
 
 /** Minimum stall timeout minutes by packet size (floor for real pi work). */
 export const STALL_MINUTES_BY_SIZE = Object.freeze({
@@ -20,8 +19,7 @@ export const STALL_MINUTES_BY_SIZE = Object.freeze({
  * @returns {"S"|"M"|"L"|"XL"|null}
  */
 export function parseTaskSizeFromMarkdown(markdown) {
-	const match = SIZE_LINE_RE.exec(markdown);
-	return match ? /** @type {"S"|"M"|"L"|"XL"} */ (match[1].toUpperCase()) : null;
+	return parseSizeLineFromMarkdown(markdown);
 }
 
 /**

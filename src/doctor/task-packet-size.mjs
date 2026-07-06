@@ -5,24 +5,16 @@
 import fs from "node:fs";
 import { discoverTasks } from "../tasks/packet/discover.mjs";
 import { loadTaskPacket } from "../tasks/packet/index.mjs";
+import { parseSizeLineFromMarkdown } from "../tasks/packet/size-line.mjs";
 
 const MAX_IMPLEMENTATION_STEPS = 4;
 const MAX_FILE_SCOPE_ENTRIES = 8;
-const SIZE_LINE_RE = /^\*\*Size:\*\*\s*(S|M|L|XL)\s*$/im;
 
 /**
  * @param {string} folderPath
  */
 function isPendingTask(folderPath) {
 	return !fs.existsSync(`${folderPath}/.DONE`);
-}
-
-/**
- * @param {string} promptMarkdown
- */
-function parseSizeLine(promptMarkdown) {
-	const match = SIZE_LINE_RE.exec(promptMarkdown);
-	return match ? match[1].toUpperCase() : null;
 }
 
 /**
@@ -49,7 +41,7 @@ export function collectTaskPacketSizeIssues({ tasksRoot }) {
 		if (!isPendingTask(discovered.folderPath)) continue;
 
 		const promptMarkdown = fs.readFileSync(discovered.promptPath, "utf-8");
-		const size = parseSizeLine(promptMarkdown);
+		const size = parseSizeLineFromMarkdown(promptMarkdown);
 
 		const packet = loadTaskPacket(discovered.folderPath);
 		if (!packet.validation?.ok) {

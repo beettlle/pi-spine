@@ -1110,7 +1110,9 @@ export function reconcileBatch(ctx) {
 	const pendingTaskCount = computePendingTasks(batch.raw ?? {}).length;
 	signals.pendingTaskCount = pendingTaskCount;
 
-	let { diagnosis, failedTaskId, exitReason, launchFailureKind } = deriveDiagnosis(signals);
+	const derived = deriveDiagnosis(signals);
+	let { diagnosis, failedTaskId, exitReason } = derived;
+	const launchFailureKind = derived.launchFailureKind;
 	const stubSucceededTaskId = findStubMarkedSucceededTask(tasksRoot, classifiedTasks);
 	if (
 		stubSucceededTaskId &&

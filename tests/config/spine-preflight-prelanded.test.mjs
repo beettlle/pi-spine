@@ -116,6 +116,35 @@ test("checkPrelandedFileScopeWarn warns for prelanded fileScopeMustChange", asyn
 	}
 });
 
+test("listPrelandedFileScopeStaleTasks reports multiple stale pending tasks", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-preland-batch-read-");
+	try {
+		writePendingPrelandedTask(projectRoot);
+		const secondFolder = path.join(projectRoot, "spine-tasks", "SP-903-preflight-prelanded-two");
+		fs.mkdirSync(secondFolder, { recursive: true });
+		fs.writeFileSync(
+			path.join(secondFolder, "PROMPT.md"),
+			PRELANDED_PROMPT.replaceAll("SP-902", "SP-903"),
+			"utf-8",
+		);
+		fs.writeFileSync(path.join(secondFolder, "STATUS.md"), "# Status\n", "utf-8");
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { "SP-902": [], "SP-903": [] } }),
+			"utf-8",
+		);
+		gitCommitAll(projectRoot, "pending tasks");
+		prelandImplementation(projectRoot);
+
+		const staleTasks = listPrelandedFileScopeStaleTasks({ projectRoot });
+		assert.equal(staleTasks.length, 2);
+		const staleIds = staleTasks.map((entry) => entry.taskId).sort();
+		assert.deepEqual(staleIds, ["SP-902", "SP-903"]);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("runBatchPreflight and plan check surface prelanded file-scope warning", async () => {
 	const projectRoot = await initGitRepo("spine-preflight-preland-batch-");
 	try {

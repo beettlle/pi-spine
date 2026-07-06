@@ -26,6 +26,9 @@ export default [
 			"no-undef": "error",
 			eqeqeq: ["error", "always", { null: "ignore" }],
 			"no-throw-literal": "error",
+			"prefer-const": "error",
+			"no-var": "error",
+			"no-async-promise-executor": "error",
 		},
 	},
 ];
