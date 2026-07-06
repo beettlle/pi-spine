@@ -109,7 +109,7 @@ export function formatJournalFollowOutputLine(rawLine, options = {}) {
  * @returns {string}
  */
 export function drainJournalFollowChunk(chunk, partial, options) {
-	let buffer = partial + chunk;
+	const buffer = partial + chunk;
 	const parts = buffer.split("\n");
 	const remainder = parts.pop() ?? "";
 

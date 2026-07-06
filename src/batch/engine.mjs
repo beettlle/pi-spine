@@ -242,7 +242,7 @@ export async function startBatch({
 	});
 
 	/** @type {ReturnType<typeof createInitialBatchState>} */
-	let state = createInitialBatchState({
+	const state = createInitialBatchState({
 		batchId,
 		baseBranch,
 		orchBranch,

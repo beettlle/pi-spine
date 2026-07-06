@@ -83,7 +83,7 @@ export function redactSecrets(value) {
  * @param {Record<string, unknown>} payload
  */
 export function capPayloadSize(payload) {
-	let serialized = JSON.stringify(payload);
+	const serialized = JSON.stringify(payload);
 	if (Buffer.byteLength(serialized, "utf-8") <= MAX_PAYLOAD_BYTES) {
 		return payload;
 	}

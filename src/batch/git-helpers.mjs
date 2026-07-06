@@ -17,7 +17,7 @@ export function filterGitignoredPaths(projectRoot, paths) {
 	}
 
 	/** @type {Set<string>} */
-	let ignoredSet = new Set();
+	const ignoredSet = new Set();
 	try {
 		const output = execFileSync("git", ["check-ignore", "--no-index", "--stdin"], {
 			cwd: projectRoot,
