@@ -1,7 +1,7 @@
 # SP-509: Stet feedback loop documentation — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-06
 **Review Level:** 1
 **Review Counter:** 0
@@ -38,18 +38,19 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Links resolve
-- [ ] typecheck + validate pass
+- [x] Links resolve
+- [x] typecheck + validate pass (`npm run typecheck && spine tasks validate SP-509`)
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] `.DONE` created
+- [x] Discoveries logged
+- [x] PR #172 commented and closed
+- [x] `.DONE` created
 
 ---
 
@@ -68,3 +69,4 @@
 |------|-------|-------|
 | 2026-07-06 | Task staged | v1.8.0 stet P0 from PR #172 |
 | 2026-07-06 | Steps 0–2 complete | Docs landed from PR #172 audit |
+| 2026-07-06 | Steps 3–4 complete | Validation passed; PR #172 closed |
