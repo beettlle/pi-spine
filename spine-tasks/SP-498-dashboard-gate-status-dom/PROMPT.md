@@ -52,7 +52,7 @@ Replace the `innerHTML` assignment for gate status rendering in `src/dashboard/p
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/dashboard/ && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --test tests/dashboard/*.test.mjs` |
 | fileScopeMustChange | `src/dashboard/public/dashboard.js` |
 | minLineCoverage | 77 |
 

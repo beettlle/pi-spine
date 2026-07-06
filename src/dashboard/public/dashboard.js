@@ -431,7 +431,12 @@ function renderGatePanel(gateAffordance) {
 			: gateAffordance.status === "rejected"
 				? "gate-status-rejected"
 				: "gate-status-pending";
-	status.innerHTML = `<span class="gate-status ${statusClass}">${gateAffordance.status}</span> · ${gateAffordance.kind ?? "integrate"}`;
+	const badge = document.createElement("span");
+	badge.className = `gate-status ${statusClass}`;
+	badge.textContent = gateAffordance.status;
+	status.appendChild(badge);
+	status.appendChild(document.createTextNode(" · "));
+	status.appendChild(document.createTextNode(gateAffordance.kind ?? "integrate"));
 	panel.appendChild(status);
 
 	if (gateAffordance.summary) {

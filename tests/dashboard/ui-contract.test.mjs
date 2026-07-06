@@ -801,6 +801,28 @@ test("resolveLaneWorkerLog prefers live log over terminal output", async () => {
 	}
 });
 
+test("dashboard.js builds gate status without innerHTML", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	const renderGatePanelMatch = dashboardJs.match(/function renderGatePanel[\s\S]*?(?=\nfunction |\n\/\*\* @param)/);
+	assert.ok(renderGatePanelMatch, "renderGatePanel function found");
+	const renderGatePanelSource = renderGatePanelMatch[0];
+	assert.doesNotMatch(renderGatePanelSource, /\.innerHTML/);
+	assert.match(renderGatePanelSource, /textContent/);
+	assert.match(renderGatePanelSource, /createElement\("span"\)/);
+	assert.match(renderGatePanelSource, /gate-status-approved/);
+	assert.match(renderGatePanelSource, /gate-status-rejected/);
+	assert.match(renderGatePanelSource, /gate-status-pending/);
+});
+
+test("dashboard.js uses textContent for gate status badge and kind label", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	const renderGatePanelMatch = dashboardJs.match(/function renderGatePanel[\s\S]*?(?=\nfunction |\n\/\*\* @param)/);
+	assert.ok(renderGatePanelMatch);
+	const renderGatePanelSource = renderGatePanelMatch[0];
+	assert.match(renderGatePanelSource, /badge\.textContent = gateAffordance\.status/);
+	assert.match(renderGatePanelSource, /createTextNode\(gateAffordance\.kind \?\? "integrate"\)/);
+});
+
 test("dashboard HTML exposes lane detail and journal lane filter hooks", () => {
 	const indexHtml = fs.readFileSync(path.join(PUBLIC_DIR, "index.html"), "utf-8");
 	assert.match(indexHtml, /id="journal-lane-filter"/);
