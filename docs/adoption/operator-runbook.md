@@ -638,7 +638,9 @@ pi-spine ships an **opt-in supervisor monitor** behind `agents.supervisor.enable
 
 The supervisor **does not** auto-approve gates, integrate, or retry tasks. Operators still use CLI diagnosis and dashboard as primary surfaces; the monitor augments the journal audit trail.
 
-Agent template: `.spine/agents/supervisor.md` (poll-loop standing orders). Full settings/doctor wiring: SP-444.
+Configure via `spine settings set agents.supervisor.enabled true` (and related fields). Run `spine doctor` to verify the agent template exists and the model pin is valid when enabled.
+
+Agent template: `.spine/agents/supervisor.md` (poll-loop standing orders).
 
 ### Supervisor deferred (legacy v2.2 note)
 

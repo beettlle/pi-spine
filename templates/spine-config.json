@@ -20,7 +20,13 @@
       "thinking": "medium",
       "plan": { "model": "google/gemini-flash-latest", "thinking": "low" }
     },
-    "supervisor": { "model": "inherit", "thinking": "off" }
+    "supervisor": {
+      "enabled": false,
+      "model": "inherit",
+      "pollIntervalMs": 30000,
+      "autoNudge": false,
+      "thinking": "off"
+    }
   },
   "lanes": {
     "maxParallel": 3,
