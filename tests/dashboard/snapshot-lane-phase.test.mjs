@@ -3,7 +3,7 @@ import test from "node:test";
 import {
 	resolveLaneActivityPhase,
 	buildLaneRows,
-} from "../../src/dashboard/snapshot.mjs";
+} from "../../src/dashboard/snapshot-lanes.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";
 
 const classifiedRunning = [
