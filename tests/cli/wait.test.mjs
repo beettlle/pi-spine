@@ -10,6 +10,7 @@ import {
 	parseDurationMs,
 	parseUntilDiagnoses,
 	parseWaitArgs,
+	reconciliationMatchesUntil,
 	runSpineWait,
 } from "../../src/cli/wait.mjs";
 import { DEFAULT_WATCH_INTERVAL_SEC } from "../../src/cli/watch.mjs";
@@ -65,6 +66,11 @@ test("parseUntilDiagnoses rejects unknown diagnoses", () => {
 	assert.throws(() => parseUntilDiagnoses(""), /--until requires/);
 });
 
+test("parseUntilDiagnoses accepts gate_open pseudo diagnosis", () => {
+	const diagnoses = parseUntilDiagnoses("gate_open,completed");
+	assert.deepEqual([...diagnoses].sort(), ["completed", "gate_open"]);
+});
+
 test("parseWaitArgs requires --until and applies defaults", () => {
 	const args = parseWaitArgs(["--until", "completed,failed"]);
 	assert.deepEqual([...args.until].sort(), ["completed", "failed"]);
@@ -98,6 +104,40 @@ test("diagnosisMatchesUntil matches only non-null diagnoses in set", () => {
 	assert.equal(diagnosisMatchesUntil("completed", until), true);
 	assert.equal(diagnosisMatchesUntil("running", until), false);
 	assert.equal(diagnosisMatchesUntil(null, until), false);
+});
+
+test("runSpineWait exits 0 when gate_open pseudo diagnosis matches", async () => {
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["gate_open"]),
+		reconcileFn: () => ({
+			diagnosis: "running",
+			macroPhase: "gating",
+			headline: "Batch b1 gate opened — approve to continue land loop",
+			suggestedCommand: "spine gate approve",
+		}),
+		sleepFn: async () => {
+			throw new Error("sleep should not run after match");
+		},
+		writeStdout: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+});
+
+test("reconciliationMatchesUntil matches gate_open without taxonomy diagnosis", () => {
+	const until = new Set(["gate_open"]);
+	const matched = reconciliationMatchesUntil(
+		{
+			diagnosis: "running",
+			macroPhase: "gating",
+			headline: "Batch b1 gate opened — approve to continue land loop",
+			suggestedCommand: "spine gate approve",
+		},
+		until,
+	);
+	assert.equal(matched, true);
 });
 
 test("runSpineWait exits 0 when diagnosis matches", async () => {

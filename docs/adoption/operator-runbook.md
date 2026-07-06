@@ -487,6 +487,7 @@ spine watch                     # compact one-line reconcile poll (default 5s)
 spine watch --json --once       # single NDJSON snapshot for scripts/monitors
 spine watch --interval 10       # slower poll interval in seconds
 spine wait --until completed,needs_integrate,failed,aborted --timeout 2h  # CI: block until terminal diagnosis
+spine wait --until gate_open,post_merge_limbo --timeout 30m  # land loop: block until integrate gate opens
 spine wait --until completed,failed --json --timeout 30m  # emit final reconcile snapshot on match or timeout
 spine next                      # print suggestedCommand only
 ```
@@ -502,6 +503,8 @@ Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle
 | Live compact reconcile poll in the terminal (default 5s)? | `spine watch` |
 | Single reconcile snapshot for scripts or CI? | `spine watch --json --once` or `spine status --json` |
 | Block until diagnosis reaches a target set (CI/automation)? | `spine wait --until completed,needs_integrate,failed,aborted --timeout 2h` |
+| Block until integrate gate opens during land loop? | `spine wait --until gate_open,needs_approval --timeout 30m` |
+| Block until post-merge limbo clears (gate not yet open)? | `spine wait --until post_merge_limbo --timeout 15m` |
 | Live control-plane journal events as they append? | `spine journal follow` |
 | Journal follow scoped to one lane? | `spine journal follow --lane lane-1` |
 | Raw jsonl journal lines for parsers? | `spine journal follow --json` |
@@ -535,6 +538,10 @@ Idle repos omit these fields. `spine watch --json` wraps the same reconcile fiel
 `spine watch` wraps the same `reconcileBatch` path as `spine status` without `--diagnose` verbosity. Human mode refreshes one line (diagnosis, batchId, macro phase, headline). `--json` emits newline-delimited snapshots with `observedAt`, reconcile fields, and a `progress` block when SP-339 / issue #30 fields are present on the reconcile result.
 
 `spine wait` reuses the same reconcile poll interval as `spine watch` (default 5s, overridable with `--interval`). It blocks until `diagnosis` is in the `--until` set, exits **0** on match and **1** on `--timeout`. With `--json`, stdout receives one final reconcile snapshot (match or timeout) for CI parsers — no continuous NDJSON stream.
+
+Land-loop pseudo-diagnoses for `--until` (SP-479, issue #105): `gate_open` and `needs_approval` match when reconcile suggests `spine gate approve` (integrate gate opened, awaiting operator approval); `post_merge_limbo` matches when merges finished but the gate is not yet open (`spine batch resume --force` suggestion). These complement taxonomy diagnoses such as `needs_integrate`.
+
+For `state_drift`, `spine status --diagnose` suggests `spine batch retry <taskId>` (or `spine batch pause && spine batch retry <taskId>` when the drifted task is still `running`). **`spine batch retry --force` is invalid** — retry always requires a task id.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 
