@@ -58,17 +58,17 @@ All 14 packets authored (SP-497–SP-510). SP-509/510 added from PR #172 stet br
 Wave 0 · 4 tasks · 4 lanes parallel
   SP-497, SP-498, SP-499, SP-500
 
-Wave 1 · 2 tasks · 2 lanes parallel
-  SP-501, SP-502
+Wave 1 · 3 tasks · 3 lanes parallel
+  SP-501, SP-502, SP-509
 
-Wave 2 · 3 tasks · serial (preflight split chain)
+Wave 2 · 1 task
+  SP-510 (after SP-509)
+
+Wave 3 · 3 tasks · serial (preflight split chain)
   SP-503 → SP-504 → SP-505
 
-Wave 3 · 3 tasks · serial (dashboard split chain)
+Wave 4 · 3 tasks · serial (dashboard split chain)
   SP-506 → SP-507 → SP-508
-
-Wave 4 · 2 tasks · serial (stet feedback loop — PR #172)
-  SP-509 → SP-510
 ```
 
 ---
