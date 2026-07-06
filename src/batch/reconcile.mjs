@@ -10,7 +10,7 @@ import { PACKAGE_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { resolveCurrentGitBranch } from "../config/spine-preflight-lib.mjs";
 import { buildStalePathDoctorCheck } from "../doctor/stale-path.mjs";
-import { loadGateRecord } from "./gate.mjs";
+import { loadGateRecord } from "./gate-evidence-read.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
 import {
 	buildDiagnosisOutput,

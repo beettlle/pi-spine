@@ -160,6 +160,78 @@ test("detached-spawn.mjs is a batch leaf (no relative batch imports)", () => {
 	assert.deepEqual(spawnImports, []);
 });
 
+test("gate-evidence-read.mjs is a batch leaf (SP-432 / #83-D)", () => {
+	const leafImports = batchImportGraph["gate-evidence-read.mjs"] ?? [];
+	assert.deepEqual(leafImports, []);
+});
+
+test("gate.mjs does not import evidence.mjs (breaks evidence gate triangle)", () => {
+	const gateImports = batchImportGraph["gate.mjs"] ?? [];
+	assert.equal(
+		gateImports.includes("evidence.mjs"),
+		false,
+		"gate.mjs must not import evidence.mjs — collection lives in gate.mjs; reads in gate-evidence-read.mjs",
+	);
+});
+
+test("reconcile.mjs reads gate state via gate-evidence-read leaf", () => {
+	const reconcileImports = batchImportGraph["reconcile.mjs"] ?? [];
+	assert.ok(
+		reconcileImports.includes("gate-evidence-read.mjs"),
+		"reconcile.mjs must import gate-evidence-read.mjs for loadGateRecord",
+	);
+	assert.equal(
+		reconcileImports.includes("gate.mjs"),
+		false,
+		"reconcile.mjs must not import gate.mjs (avoids evidence triangle)",
+	);
+});
+
+/** @type {ReadonlySet<string>} */
+const EVIDENCE_GATE_CLUSTER = new Set([
+	"evidence.mjs",
+	"gate.mjs",
+	"reconcile.mjs",
+	"postmortem.mjs",
+]);
+
+/**
+ * @param {Record<string, string[]>} depsByTask
+ * @param {ReadonlySet<string>} cluster
+ * @returns {string[]}
+ */
+function findClusterCycles(depsByTask, cluster) {
+	const subgraph = Object.fromEntries(
+		Object.entries(depsByTask).filter(([moduleName]) => cluster.has(moduleName)),
+	);
+	const work = structuredClone(subgraph);
+	/** @type {Set<string>} */
+	const found = new Set();
+	for (let attempt = 0; attempt < 100; attempt++) {
+		const cycle = findCyclePath({ nodes: Object.keys(work), depsByTask: work });
+		if (!cycle) {
+			break;
+		}
+		found.add(canonicalizeCycle(cycle));
+		const from = cycle.at(-2);
+		const to = cycle.at(-1);
+		if (!from || !to) {
+			break;
+		}
+		work[from] = (work[from] ?? []).filter((dep) => dep !== to);
+	}
+	return [...found];
+}
+
+test("no import cycle within evidence/gate/reconcile cluster (#83-D)", () => {
+	const clusterCycles = findClusterCycles(batchImportGraph, EVIDENCE_GATE_CLUSTER);
+	assert.deepEqual(
+		clusterCycles,
+		[],
+		`evidence/gate/reconcile/postmortem cluster must be cycle-free (SP-432): ${clusterCycles.join("; ")}`,
+	);
+});
+
 test("no import cycle contains detached-start and post-merge-limbo together", () => {
 	const allCycles = findAllBatchCycles(batchImportGraph);
 	const forbidden = allCycles.filter((cycleKey) => {

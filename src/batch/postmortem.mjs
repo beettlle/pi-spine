@@ -4,8 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { buildTaskScorecard } from "./evidence.mjs";
-import { loadGateRecord, formatGateSummary } from "./gate.mjs";
+import { buildTaskScorecard, formatGateSummary, loadGateRecord } from "./gate-evidence-read.mjs";
 import { readJournalEvents, readJournalTail, summarizeJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 
