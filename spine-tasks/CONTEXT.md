@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-05 (v1.8.0 release cycle — audit #176–#183)
+**Last Updated:** 2026-07-05 (v1.8.0 release cycle — audit #176–#183; SP-499 pi-coding-agent ^0.80.3)
 **Status:** Active
 **Next Task ID:** SP-509
 
