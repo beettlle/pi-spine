@@ -23,6 +23,25 @@ Stet is a local-first, LLM-powered code review CLI written in Go. It reviews git
 
 ---
 
+## State artifacts & feedback loop
+
+Stet persists session state under `.review/` (default). Pi-spine commits `.review/config.toml` but gitignores runtime files (`session.json`, `lock`, `spine-stet-baseline.ref`). See `.gitignore`.
+
+| Artifact | Purpose |
+|----------|---------|
+| `.review/session.json` | Active session (baseline, findings, dismissed_ids) |
+| `.review/history.jsonl` | Feedback log for `stet optimize` and prompt shadowing |
+| `.review/system_prompt_optimized.txt` | Output of `stet optimize` (used when present) |
+| `refs/notes/stet` | Session analytics written at `stet finish` |
+
+**When does `history.jsonl` appear?** Only on feedback events: `stet dismiss`, auto-dismiss during re-review, or `stet finish` when the session had findings. The v1.5.0 contract path uses `--auto-finish-zero`; batches with zero findings never append history, so `stet optimize` has nothing to read until dismissals occur.
+
+**Not the same as:** `.spine/run-metrics.jsonl` (spine batch metrics) or `.spine/runtime/*/journal/events.jsonl` (orchestration journal).
+
+For audit findings, operator playbook, and next-release improvements, see [stet feedback loop brief](features/stet-feedback-loop-brief.md).
+
+---
+
 ## Five Integration Approaches
 
 ### 1. Baseline-at-Setup, Review-at-Contract (recommended first)

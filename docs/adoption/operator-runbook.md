@@ -1336,6 +1336,27 @@ Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_pa
 
 **Findings policy:** Project code defects → beettlle/pi-spine issues (`stet` label). stet CLI bugs → https://github.com/beettlle/stet/issues.
 
+### State & feedback loop (`history.jsonl`)
+
+Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id> <reason>`, auto-dismiss during re-review, or `stet finish` when the session had findings. The contract script uses `--auto-finish-zero`; **zero-finding sessions do not create `history.jsonl`**. That is expected — stet ran; no dismissals were recorded.
+
+| Symptom | Likely cause |
+|---------|--------------|
+| No `.review/history.jsonl` | No dismissals and no finish-with-findings yet (common in v1.5.0 batches with 0 findings) |
+| `stet optimize` fails or no-ops | Same — optimizer reads `history.jsonl` |
+| Git notes on `refs/notes/stet` exist | Sessions finished; notes are analytics, not the optimizer input |
+
+**When findings exist:** triage before the session auto-finishes — `stet list`, then `stet dismiss <id> <reason>` for each finding you accept as suppressed. Each dismiss appends to `history.jsonl` and feeds prompt shadowing.
+
+**Quality loop (optional cadence):**
+
+```bash
+stet stats    # dismissal rate, categories (reads history + git notes)
+stet optimize # after enough dismissals; writes .review/system_prompt_optimized.txt
+```
+
+See [stet feedback loop brief](../features/stet-feedback-loop-brief.md) for v1.5.0 audit and next-release proposals.
+
 ### Gate evidence
 
 Gate-level stet review via `testing.build` is **not supported** until [#160](https://github.com/beettlle/pi-spine/issues/160). Use contract `testCommand` (per-task) or manual operator review before integrate.
