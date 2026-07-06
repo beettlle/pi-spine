@@ -20,6 +20,12 @@ test("tsconfig.batch.json scopes checkJs hot paths", () => {
 	const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 	const include = config.include ?? [];
 
+	assert.equal(
+		config.compilerOptions?.checkJs,
+		true,
+		"expected tsconfig.batch.json compilerOptions.checkJs === true",
+	);
+
 	for (const relativePath of BATCH_HOT_PATHS) {
 		assert.ok(
 			include.includes(relativePath),
