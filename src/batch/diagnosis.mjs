@@ -36,6 +36,25 @@ import {
 } from "./diagnosis-primary-failure.mjs";
 export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
 
+const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
+
+/**
+ * Retry suggestions must include a task id; journal salvage payloads may be stale.
+ *
+ * @param {string|null|undefined} command
+ * @param {string|null|undefined} taskId
+ * @returns {string|null}
+ */
+export function sanitizeRetrySuggestedCommand(command, taskId) {
+	if (typeof command !== "string" || command.length === 0) {
+		return command ?? null;
+	}
+	if (INVALID_BARE_RETRY_FORCE.test(command.trim())) {
+		return taskId ? `spine batch retry ${taskId}` : "spine status --diagnose";
+	}
+	return command;
+}
+
 export const DIAGNOSIS_TAXONOMY = [
 	"running",
 	"paused",
@@ -169,7 +188,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			if (ctx.launchFailureKind === "worktree_unhealthy") {
 				return "spine doctor";
 			}
-			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
+			if (ctx.salvageRetryCommand) {
+				return sanitizeRetrySuggestedCommand(ctx.salvageRetryCommand, ctx.failedTaskId);
+			}
 			if (isFailedPhasePendingOnlyLimbo(ctx)) {
 				return buildFailedPhasePendingOnlySuggestedCommand(ctx);
 			}
@@ -197,7 +218,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			if (ctx.launchFailureKind === "worktree_unhealthy") {
 				return "spine doctor";
 			}
-			if (ctx.salvageRetryCommand) return ctx.salvageRetryCommand;
+			if (ctx.salvageRetryCommand) {
+				return sanitizeRetrySuggestedCommand(ctx.salvageRetryCommand, ctx.failedTaskId);
+			}
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch abort";
