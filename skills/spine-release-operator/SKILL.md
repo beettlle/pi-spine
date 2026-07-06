@@ -17,7 +17,8 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 | Concern | Delegate to |
 |---------|-------------|
 | PROMPT/STATUS/Contract authoring | `create-spine-tasks` skill + templates |
-| Batch land loop / recovery | Phases below (adapted from `spine-autonomous-operator`) |
+| Batch land loop / recovery | [`spine-autonomous-operator`](../spine-autonomous-operator/SKILL.md) Phase 3–4 + [pi-async-orchestration.md](references/pi-async-orchestration.md) |
+| Wave evidence / diagnosis tree | [`spine-orchestrate-waves`](../spine-orchestrate-waves/SKILL.md) |
 | Semver scope budgets | [references/release-profiles.md](references/release-profiles.md) |
 | Issue intake queries | [references/issue-intake-checklist.md](references/issue-intake-checklist.md) |
 | Manifest format | [references/release-manifest-template.md](references/release-manifest-template.md) |
@@ -44,6 +45,8 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Always** run `spine gate approve` before `spine integrate`
 - **Always** run `npm install` on `main` after successful integrate
 - **Do not** execute tasks outside the approved manifest scope
+- **Do not** start a second batch while another batch is **running** on this repo
+- **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
 - **Always** run `/gitnexus analyze` (Pre-work) before Phase 0 — do not start intake, authoring, or batches on a stale index
 
 ---
@@ -105,6 +108,13 @@ If not on `main`, stop. If git is dirty, commit or stash hygiene fixes before re
 ## Phase 1 — Intake inventory
 
 Follow [references/issue-intake-checklist.md](references/issue-intake-checklist.md).
+
+Optional snapshot (readonly):
+
+```bash
+skills/spine-release-operator/scripts/collect-release-intake.sh {TARGET}
+# optional: tee spine-tasks/_authoring/release-v{TARGET}/intake-snapshot-$(date -u +%Y%m%d).md
+```
 
 **GitHub issues:**
 
@@ -235,7 +245,21 @@ spine run sequence <release-scope> --dry-run
 
 For each wave `N` until all release-scoped tasks are `.DONE`:
 
-### 4.1 Start
+Check `spine status --diagnose` first — if a batch is already **running** for this release, do not start another; follow recovery or wait.
+
+### 4.1 Start (pi async — preferred in pi sessions)
+
+See [references/pi-async-orchestration.md](references/pi-async-orchestration.md):
+
+```text
+MonitorCreate:
+  command: spine batch start <release-scope> --wave N --attached
+  description: Release wave N
+  timeout: 0
+  onDone: spine status --diagnose → §4.3 land loop or §4.4 recovery
+```
+
+**Foreground fallback** (non-pi, or after #163 orphan on MonitorCreate):
 
 ```bash
 spine batch start <release-scope> --wave N --attached
@@ -248,6 +272,8 @@ spine status --diagnose
 # or block:
 spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 2h
 ```
+
+Optional pi watchdog: `LoopCreate` every 2m, `readOnly: true`, `maxFires: 50` — see pi-async-orchestration.
 
 **Do not** start wave N+1 until wave N is integrated on `main`.
 
@@ -278,7 +304,7 @@ Always: `spine status --diagnose`
 | `needs_retry` | Fix packet; `spine batch retry <taskId>` |
 | `worker_orphaned` | abort → dismiss → prune worktree → retry |
 | `needs_integrate` | Land loop |
-| `state_drift` | `spine batch retry <taskId>` (pause first if task still `running`); then `spine batch resume --attached --force` |
+| `state_drift` | `spine batch retry <taskId>` (pause first if task still `running`); then **`spine batch resume --attached --force` in foreground** (never MonitorCreate) |
 | `failed` / `aborted` | Inspect journal; fix packet; dismiss; retry |
 | Contract fail | Fix PROMPT on main, commit, abort, dismiss, retry |
 
@@ -291,8 +317,15 @@ Always: `spine status --diagnose`
 ```bash
 spine plan <release-scope>    # should show 0 pending for scope
 spine preflight
-npm run release:check         # typecheck → lint → tests → coverage (CI parity)
 git status
+```
+
+**pi async (preferred):** `MonitorCreate` with `npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log`, `timeout: 900000`, `onDone` to read log tail and present checklist.
+
+**Foreground fallback:**
+
+```bash
+npm run release:check         # typecheck → lint → tests → coverage (CI parity)
 ```
 
 Present checklist from `docs/release/npm-publish.md`:
@@ -321,6 +354,8 @@ Monitor CI:
 ```bash
 gh run list --workflow release.yml --limit 3
 ```
+
+**pi async:** `MonitorCreate` with `gh run watch --exit-status <run-id>`, `timeout: 1800000`, `onDone` to report conclusion and run smoke tests if green.
 
 Post-publish smoke per `docs/release/npm-publish.md`:
 
@@ -362,10 +397,11 @@ Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
 ## Short prompt (resume mid-release)
 
 ```text
-Resume spine release v{TARGET}: /gitnexus analyze (or gitnexus analyze) → gitnexus status →
+Resume spine release v{TARGET}: /gitnexus analyze → gitnexus status →
 check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
-verify remaining scope → preflight → for each wave: batch start --attached → diagnose →
+spine status --diagnose (do not collide with running batch) →
+preflight → for each wave: MonitorCreate batch start (or foreground) → onDone diagnose →
 gate approve → integrate → npm install → batch complete →
-when scope done: tests + preflight → STOP for publish approval.
-Post final report with composition table.
+MonitorCreate release:check → STOP for publish approval.
+resume --attached --force stays foreground. Post final report with composition table.
 ```
