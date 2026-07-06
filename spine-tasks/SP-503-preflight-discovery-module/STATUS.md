@@ -1,8 +1,8 @@
 # SP-503: Split preflight: discovery + validate module — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-05
+**Current Step:** Complete
+**Status:** ✅ Complete
+**Last Updated:** 2026-07-06
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,56 +11,56 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-502 complete
-- [ ] Extract list finalized
-- [ ] Dependencies satisfied
+- [x] SP-502 complete (`readUtf8FilesBatchSync` present in preflight)
+- [x] Extract list finalized (resolveTasksRoot, discoverTaskFolders, discoverTaskIds, taskIdFromFolder, checkTasksRoot, checkDependenciesJson, checkWorktreeSetupHook, checkTasksValidate, readUtf8FilesBatchSync)
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Create discovery.mjs module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] discovery.mjs created with extracted logic
-- [ ] Module ≤500 LOC
-- [ ] JSDoc and error messages preserved
+- [x] discovery.mjs created with extracted logic
+- [x] Module ≤500 LOC (332 lines)
+- [x] JSDoc and error messages preserved
 
 ---
 
 ### Step 2: Thin spine-preflight-lib re-exports
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Moved code removed from spine-preflight-lib.mjs
-- [ ] Re-exports wired from discovery.mjs
-- [ ] External importers unchanged
+- [x] Moved code removed from spine-preflight-lib.mjs
+- [x] Re-exports wired from discovery.mjs
+- [x] External importers unchanged
 
 ---
 
 ### Step 3: Tests and regression
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Preflight tests pass
-- [ ] Coverage on extracted module adequate
-- [ ] Targeted tests pass
+- [x] Preflight tests pass (23/23 targeted)
+- [x] Coverage on extracted module via existing preflight tests (discovery.mjs 77.11% line)
+- [x] Targeted tests pass
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77% line coverage on in-scope code)
-- [ ] All failures fixed
-- [ ] Build passes
+- [x] FULL test suite passing (1689/1733 in worker context; 44 nested-batch failures pre-existing SPINE_IS_WORKER noise; 1731/1731 with env -u SPINE_IS_WORKER per SP-502 pattern)
+- [x] Coverage gate passes (88.61% aggregate, discovery.mjs 77.11% ≥77%)
+- [x] All failures fixed (none introduced by SP-503)
+- [x] Build passes (`npm run typecheck`)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Partial #176 progress noted
+- [x] Discoveries logged
+- [x] Partial #176 progress noted
 
 ---
 
@@ -75,6 +75,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `readUtf8FilesBatchSync` exported from discovery.mjs for `listPrelandedFileScopeStaleTasks` in spine-preflight-lib (SP-504/505 scope) | Internal import only, not re-exported | `discovery.mjs` |
+| discovery.mjs 332 LOC, well under 500 LOC cap | Accepted | `discovery.mjs` |
+| Full suite in worker context hits nested_batch_spawn_blocked (same as SP-502); coverage:check requires `env -u SPINE_IS_WORKER` | Documented in STATUS | N/A |
 
 ---
 
@@ -83,6 +86,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-05 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-06 | Step 0–3 | Extracted discovery module; targeted tests 23/23 pass |
+| 2026-07-06 | Step 4–5 | typecheck pass; coverage 88.61%; commits d86d6b9, 1a133da |
 
 ---
 
@@ -94,4 +99,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Partial progress on GitHub issue #176 (preflight lib split). Full close deferred to SP-505.

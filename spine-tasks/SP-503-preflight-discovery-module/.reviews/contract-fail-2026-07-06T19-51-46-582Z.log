@@ -1,0 +1,1613 @@
+Contract testCommand failure log
+Command: npm test -- tests/config/spine-preflight.test.mjs tests/spine-preflight.test.mjs
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-07-06T19:51:46.582Z
+Buffer overflow: no
+---
+
+> pi-spine@1.7.0 test
+> SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/*.test.mjs tests/cli/*.test.mjs tests/compat/*.test.mjs tests/tasks/*.test.mjs tests/config/*.test.mjs tests/config/cursor-rules/*.test.mjs tests/planner/*.test.mjs tests/batch/*.test.mjs tests/agents/*.test.mjs tests/adoption/*.test.mjs tests/dashboard/*.test.mjs tests/doctor/*.test.mjs tests/init/*.test.mjs tests/migrate/*.test.mjs tests/worker-tools/*.test.mjs tests/coverage/*.test.mjs tests/extensions/*.test.mjs tests/config/spine-preflight.test.mjs tests/spine-preflight.test.mjs
+
+✔ adoption fixture: init, plan, stub batch AD-001 creates .DONE (19537.922792ms)
+✔ adoption integration: REPLAN final verdict surfaces needs_replan diagnosis (17789.313209ms)
+✔ worker.md documents spine tools, stall checkpoint, and coverage policy (0.767208ms)
+✔ worker.md documents engine-owned code and final review after .DONE (0.346292ms)
+✔ reviewer.md documents final PASS REVISE REPLAN verdicts (0.220375ms)
+✔ worker-prompt tail aligns with worker.md commit and review conventions (0.132ms)
+✔ buildWorkerTailPrompt does not contradict worker.md on commit format (19.408125ms)
+✔ buildAgentSessionWorkerPrompt includes review hint when level > 0 (2.547833ms)
+✔ buildWorkerPiArgs omits -ne when no pi-web-access conflict (40.2345ms)
+✔ buildWorkerPiArgs includes -ne before -p when extension conflict detected (27.235792ms)
+✔ formatPiExtensionConflictHint surfaces pi-web-access remediation (0.323ms)
+✔ abortBatch archives batch-state before clearing active file (1675.891458ms)
+✔ abortBatch journals batch.aborted and preserves prior journal tail (1760.135709ms)
+✔ abortBatch writes abort signal without killing on graceful abort (1716.052541ms)
+✔ hard abort removes lane worktree when cleanup enabled (1734.608083ms)
+✔ hard abort keeps worktree when cleanupOnHardAbort is false (1685.01375ms)
+✔ abortBatch fails when no active batch (489.561584ms)
+✔ mergeLaneToOrch auto-resolves disjoint adoption doc edits without force-merge (6459.102167ms)
+✔ mergeLaneToOrch fails adoption doc merge with recovery commands when hunks overlap (4188.816ms)
+✔ formatAdoptionDocMergeFailure names file and wave recovery (1.477625ms)
+✔ agent session abort failure journals lane.worker_abort_failed (2026.155292ms)
+✔ formatAttachedMilestoneLine renders land-loop journal types (0.548458ms)
+[spine] batch.started
+[spine] task.started SP-343
+[spine] task.completed SP-343
+[spine] batch.merge_started wave=0
+[spine] batch.merge_completed wave=0
+[spine] gate.opened
+[spine] gate.evidence_collecting
+[spine] gate.evidence_completed
+[spine] batch.completed
+[spine] batch.land_loop_finalized
+
+Batch started
+
+Batch 20260706T195057 completed: SP-343 succeeded; merged to orch/spine-20260706T195057.
+  → spine gate status
+  → spine gate approve
+  → spine integrate
+  → spine batch complete
+
+Batch 20260706T195057 ready to integrate orch branch to main
+
+  → spine integrate
+
+  Alternatives:
+    • /spine-integrate
+    • /spine-gate
+    • spine status --diagnose
+
+  Batch: 20260706T195057
+  Task: SP-343
+✔ runSpineBatch attached start returns integrate handoff without process.exit in tests (18683.721375ms)
+✔ attached batch CLI subprocess exits after completed with stdout milestones (11409.436625ms)
+✔ formatAttachedBatchCliResult includes diagnosis suggested command (0.3ms)
+✔ enforceAttachedEngineSingleOwner fails fast when engine PID is alive (2413.029083ms)
+✔ enforceAttachedEngineSingleOwner orphans prior engine with --force (1471.364667ms)
+✔ resumeBatch rejects second attached resume when engine PID is alive (1640.06525ms)
+✔ resumeBatchDetached rejects spawn when attached engine PID is alive (1202.356458ms)
+✔ runAttachedBatchEngine blocks attached start when engine PID is alive (1321.094125ms)
+✔ isLastWaveIndex matches batch 20260618T000943 wave plan (0.545542ms)
+✔ maybeFinalizeAfterWaveMerge opens gate for last-wave post-merge limbo (6995.662792ms)
+✔ resumeMultiTaskBatch finalizes post-merge limbo even with stale engine pid (3814.368166ms)
+✔ terminateStaleDetachedEngine still clears stale engine during post-merge limbo resume handoff (996.172542ms)
+✔ startBatch multi-wave attached path opens gate after wave 1 without resume (17911.242ms)
+✔ attached milestone types include batch.merge_blocked (0.519791ms)
+✔ formatAttachedBatchCliResult prints merge failure headline and exits non-zero for merge_blocked (5383.106333ms)
+✔ runAttachedBatchEngine streams merge_blocked milestone before merge failure CLI output (4575.256833ms)
+✔ mergeEngineStateWithDiskPause adopts operator pause from disk (1773.721375ms)
+✔ saveEngineBatchState does not clobber phase paused during heartbeat-style saves (1704.146708ms)
+✔ enforceOperatorPauseOnDisk re-asserts paused after engine overwrite (3750.278917ms)
+✔ pauseBatch confirms when attached engine heartbeat saves honor pause (3253.275ms)
+✔ batch 20260620T194352 fixture is post-merge limbo without gate (2184.141167ms)
+✔ attemptPostMergeLandLoopHandoff finalizes in-process after SIGTERM-shaped limbo (5806.04225ms)
+✔ finalizeAttachedPostMergeLimbo is idempotent when gate already open (3402.800084ms)
+✔ resume after orphan_terminated journal opens gate for batch 20260620T194352 pattern (4141.41175ms)
+✔ installAttachedEngineShutdownHandlers finalizes on SIGTERM without manual resume (2828.165375ms)
+✔ terminateStaleDetachedEngine during post-merge limbo still allows resume finalize (2651.431666ms)
+✔ shouldAutoIntegrateAfterWave is false by default (0.539917ms)
+✔ shouldAutoIntegrateAfterWave is true when configured and not last wave (0.078875ms)
+✔ shouldAutoIntegrateAfterWave is false on last wave (0.061625ms)
+✔ issue #25: retry unblocks failed phase when only pending tasks remain (10278.249834ms)
+✔ issue #25: failed phase with pending-only limbo resumes without --force (3669.52125ms)
+✔ retry keeps failed phase when other failed tasks remain (1479.525917ms)
+✔ diagnosis suggests resume --force for failed-phase pending-only limbo (0.25875ms)
+✔ parseSupersededReplacementIds extracts child task IDs (1.113ms)
+✔ assertBatchStartTasksNotSuperseded rejects superseded IDs (2463.963833ms)
+✔ assertBatchStartTasksNotSuperseded allows pending IDs (2337.985792ms)
+✔ assertBatchStartTasksNotSuperseded honors --force-superseded (1774.271833ms)
+✔ resolveBatchStartScope rejects explicit superseded task IDs (1611.020666ms)
+✔ resolveBatchStartScope allows superseded IDs with forceSuperseded (834.884709ms)
+✔ startBatch dry-run rejects superseded explicit scope (834.150833ms)
+✔ startBatch dry-run allows superseded scope with forceSuperseded (1060.191625ms)
+✔ parseBatchArgs maps --wave on start to waveFilter (0.645209ms)
+✔ parseBatchArgs strips --wave value from scope for wave 0 (0.096875ms)
+✔ buildAttachedBatchStartArgv forwards waveFilter to detached engine (0.516834ms)
+✔ startBatch dry-run with pending scope and --wave 0 selects planner wave 0 (2361.033209ms)
+✔ startBatch dry-run with --wave selects planner wave task IDs (2586.205708ms)
+✔ wave-filtered dry-run matches explicit wave task scope dry-run (1667.009708ms)
+✔ complete handoff preserves newer active batch (073511 vs 073937 race) (21.831292ms)
+✔ clearStaleTerminalBatchStateForStart removes completed batch-state pointer (3.863917ms)
+✔ assertNoActiveBatch clears stale completed pointer before start handoff (4.492667ms)
+✔ runBatchComplete clears active batch-state when no newer batch took over (6128.774125ms)
+✔ new batch save replaces terminal completed cache with different batchId (20.559625ms)
+✔ evaluateBatchStateWriteGuard rejects writes from non-owner live engine (17.72875ms)
+✔ saveSpineBatchState rejects resurrecting archived batch cache (41.40525ms)
+✔ resolveStallConfig defaults checkpoint warning and no file-scope grace extension (0.959917ms)
+✔ file-scope mtime is activity only — does not extend stall deadline by default (0.21575ms)
+✔ checkpoint signals extend grace; STATUS update moves deadline (0.077833ms)
+✔ shouldEmitCheckpointWarning after activity without checkpoint threshold (0.110167ms)
+✔ resolveScopedDirtyPaths limits porcelain to file scope and task folder (1076.680833ms)
+✔ lane.checkpoint_warning journal event and diagnose hints (49.662375ms)
+✔ extractJournalDiagnosisHints omits stale checkpoint_warning older than 30 minutes (1.888458ms)
+✔ collectProgressSignals includes dirtyPaths for scoped changes (1529.1225ms)
+✔ verifyContract uses base-satisfied when scope predates task PROMPT on base (4184.942625ms)
+✔ verifyContract passes when scope is on base and lane has zero implementation diff (3171.141375ms)
+✔ verifyContract fails base-satisfied scope when testCommand fails (7371.442375ms)
+✔ verifyStubFileScopeMustChange passes when base already satisfies scope (1468.501333ms)
+✔ isBaseScopeSatisfied is false when base lacks scope changes (1095.26325ms)
+✔ runFinalReviewPhase fails fast with contract_failed and does not consume finalAttempts (9166.962417ms)
+✔ reconcileBatch surfaces contract_failed headline for failed task (2361.43975ms)
+✔ verifyContract satisfies pre-landed fileScopeMustChange when testCommand and artifacts pass (4510.85375ms)
+✔ verifyContract still fails pre-landed scope when testCommand fails (7921.606375ms)
+✔ verifyStubFileScopeMustChange passes delivery-only STATUS when source scope pre-landed (1589.303291ms)
+✔ verifyContract passes delivery-only STATUS.md fileScopeMustChange contract (1725.148958ms)
+✔ resolvePromptRelPath derives task PROMPT from spine-tasks delivery changes (690.482542ms)
+✔ isFileScopePatternPrelanded detects scope changed on main after task intro (1503.601542ms)
+✔ resolveTaskStartCommit ignores resumed task.started after same-task lane.committed (1.651083ms)
+✔ verifyContract passes fileScopeMustChange after pause/retry/resume when lane commit exists (3635.64575ms)
+✔ testCommand fails once then succeeds on retry — contract passes (173.675542ms)
+✔ testCommand fails all retries — contract_failed as before (352.200125ms)
+✔ retry count configurable via spine-config contract.testRetries (497.21475ms)
+✔ failed output captured to .reviews/ directory (309.956625ms)
+✔ no retry when testCommand succeeds first time (no performance cost) (153.450334ms)
+✔ writeContractFailureLog creates log file with header (197.84025ms)
+✔ writeContractFailureLog returns null when taskFolder is undefined (0.364042ms)
+✔ CONTRACT_TEST_DEFAULT_RETRIES is 1 (0.127583ms)
+✔ CONTRACT_TEST_RETRY_DELAY_MS is 5000 (0.163666ms)
+✔ multiple failure logs captured across retry attempts (543.853292ms)
+✔ parseContract extracts stallTimeoutMinutes and extendGraceOnFileScope (1.130875ms)
+✔ resolveTaskStallMinutes uses max of global, size floor, and contract override (0.114125ms)
+✔ resolveStallConfigForTask applies contract stallTimeoutMinutes to stallTimeoutMs (0.113583ms)
+✔ resolveStallConfigForTask honors contract extendGraceOnFileScope (0.06475ms)
+✔ resolveWorkerPiTimeoutMs aligns with contract stall budget (0.087125ms)
+✔ runWorker with contract stall override survives beyond global stall budget (scaled) (5162.975583ms)
+✔ runWorker without contract override stalls at scaled global budget (5206.8325ms)
+✔ isDeliveryArtifactPath accepts STATUS.md-only patterns (0.729667ms)
+✔ isDeliveryArtifactPath accepts .DONE-only patterns (0.192459ms)
+✔ isDeliveryArtifactPath accepts task-folder delivery globs (0.126959ms)
+✔ isDeliveryArtifactPath rejects implementation and tasks-root paths (0.102042ms)
+✔ isImplementationScopePattern detects source and tooling roots (0.095ms)
+✔ isStubDeliveryOnlyScope is true for delivery-only pattern sets (0.120875ms)
+✔ isStubDeliveryOnlyScope rejects mixed implementation and delivery patterns (0.063583ms)
+✔ isStubDeliveryOnlyScope rejects empty pattern lists (0.05075ms)
+✔ isDeliveryArtifactPath honors custom tasksRoot (0.178334ms)
+✔ resolveTaskStartCommit returns distinct start commits for serialized lane tasks (0.660917ms)
+✔ resolveTaskStartCommit prefers task.started payload commit over prior lane.committed (0.094041ms)
+✔ resolveTaskStartCommit returns null when task.started is missing (main...HEAD fallback) (0.070333ms)
+✔ resolveTaskStartCommit resolves git HEAD at task.started timestamp when journal lacks commit (1661.825458ms)
+✔ CONTRACT_TEST_COMMAND_MAX_BUFFER exceeds legacy 256KB limit (0.499333ms)
+✔ runContractTestCommand captures large stdout without killing child (164.180209ms)
+✔ runContractTestCommand surfaces ENOBUFS with scoped testCommand guidance (213.620291ms)
+✔ verifyContract reports buffer overflow with scoped testCommand guidance (5584.258375ms)
+✔ buildContractTestEnv moves SPINE_BATCH_ID to SPINE_PARENT_BATCH_ID (0.501917ms)
+✔ detectNestedWorkerContext blocks parent batch in lane worktree (0.236292ms)
+✔ startBatch blocks nested spawn when SPINE_PARENT_BATCH_ID set in lane worktree (81.004417ms)
+✔ buildContractTestEnv allows isolated fixture batch start without parent batch id (4.01875ms)
+✔ listChangedFiles with sinceCommit scopes diff to commits after anchor (2016.950875ms)
+✔ listChangedFiles without sinceCommit preserves baseBranch...HEAD (870.302709ms)
+✔ verifyContract with sinceCommit ignores prior same-lane task fileScopeMustNotChange violations (1703.093375ms)
+✔ verifyContract without sinceCommit preserves cumulative lane branch behavior (941.076334ms)
+✔ buildContractTestEnv removes worker-only keys (0.493583ms)
+✔ runContractTestCommand subprocess does not inherit SPINE_IS_WORKER (201.839334ms)
+✔ verifyContract testCommand passes under worker env when subprocess is sanitized (183.550375ms)
+✔ verifyContract passes when testCommand exits 0 (54.224041ms)
+✔ verifyContract fails when testCommand exits non-zero (63.09425ms)
+✔ verifyContract checks artifactsMustExist paths in worktree (55.086375ms)
+✔ verifyContract expands glob patterns in artifactsMustExist (60.559458ms)
+✔ verifyContract returns ok with empty checks when contract has no verify fields (161.611125ms)
+✔ verifyContract enforces fileScopeMustChange and fileScopeMustNotChange (1297.855792ms)
+✔ verifyContract checks minLineCoverage from command output (184.59075ms)
+✔ shouldRunContractVerify skips legacy TP-* tasks and absent contract sections (0.57375ms)
+✔ matchesContractPattern supports glob paths (0.456917ms)
+✔ parseAggregateLineCoverage parses coverage table rows (0.376541ms)
+✔ SP-193-shaped placeholder contract fails validateContract in required mode (5.447625ms)
+✔ verifyContract passes SP-193-shaped contract when scoped files changed (1879.670833ms)
+✔ fileScopeMustChange trailing-slash pattern matches files under directory prefix (1057.638959ms)
+✔ fileScopeMustChange trailing-slash pattern fails when no files under prefix changed (1604.800458ms)
+✔ fileScopeMustChange exact-path and glob behavior preserved alongside trailing-slash (1063.345583ms)
+✔ waitForDetachedBatchResume waits for integrate gate after batch completes (775.896458ms)
+✔ waitForDetachedBatchResume completes without gate when integrate gate not required (936.918333ms)
+✔ prepareDetachedResumeEngineHandoff terminates stale engine before resume spawn (66.822792ms)
+✔ resolveDefaultResumeWaitTerminal returns true for engine_orphaned without flags (0.496834ms)
+✔ resolveDefaultResumeWaitTerminal respects explicit flags (0.094042ms)
+✔ detectPostMergeLimboForResume matches journal-only limbo for batch 20260629T210738 (2623.721708ms)
+✔ postMergeLimbo diagnosis suggests spine batch resume --force (0.280292ms)
+✔ resumeBatchDetached --force finalizes journal-only limbo without spawning engine (4878.775417ms)
+✔ detached batch start opens integrate gate after stub engine completes (10784.496208ms)
+✔ timeout_waiting_for_batch with dead enginePid reconciles as engine_orphaned not running (2918.150417ms)
+✔ startBatchDetached persists spawn enginePid before wait on timeout failure path (31940.047875ms)
+✔ parseBatchArgs defaults to detached start (attached flag off) (0.84225ms)
+✔ parseBatchArgs --attached opts into foreground engine (0.103459ms)
+✔ buildAttachedBatchStartArgv forwards scope and skip-preflight (0.552125ms)
+✔ formatDetachedBatchStartOutput includes monitor hints (0.21025ms)
+✔ batch start returns quickly and runs engine in background (11646.502791ms)
+✔ parseBatchArgs resume defaults to detached (attached flag off) (0.350333ms)
+✔ buildAttachedBatchResumeArgv forwards force (0.098542ms)
+✔ formatDetachedEngineOutput includes resume wording (0.114125ms)
+✔ waitForDetachedBatchResume returns engine_started by default (678.706167ms)
+✔ waitForDetachedBatchResume with waitTerminal returns resume_completed (931.153084ms)
+✔ collectDetachedFailureDiagnostics includes task.failed summary and log tails (324.102417ms)
+✔ parseBatchArgs accepts --wait-terminal (0.197667ms)
+✔ batch resume returns quickly and runs engine in background (10404.717125ms)
+✔ inferLaunchFailureKind ignores DirtyWorktree exitReason (0.581834ms)
+✔ buildHeadline prefers DirtyWorktree over worker launch (0.323417ms)
+✔ buildSuggestedCommand for DirtyWorktree suggests coverage cleanup and retry (0.156209ms)
+✔ buildHeadline surfaces review_exhausted primary failure (0.113542ms)
+✔ buildSuggestedCommand for review_exhausted suggests batch retry (0.083042ms)
+✔ buildHeadline surfaces contract_failed primary failure (0.07025ms)
+✔ buildSuggestedCommand for contract_failed suggests PROMPT edit and retry (0.053833ms)
+✔ buildDiagnosisOutput bundles primary failure class without launch headline (0.116458ms)
+✔ reconcileBatch aligns hasFailedTasks with segment drift and DirtyWorktree headline (2925.308833ms)
+✔ reconcileBatch diagnoses review_exhausted from failed task exitReason (2546.994667ms)
+✔ buildHeadline surfaces PI_SPINE_ROOT launch failure (0.709209ms)
+✔ buildHeadline surfaces lane commit failures after worker completion (0.117417ms)
+✔ buildSuggestedCommand prefers spine doctor for launch failures (0.186792ms)
+✔ inferLaunchFailureKind reads worker output hints from journal (0.177125ms)
+✔ extractJournalDiagnosisHints prioritizes setup hook and merge blocked events (3.2275ms)
+✔ formatMixedOutcomeMessage lists succeeded tasks and spine batch retry guidance (0.257667ms)
+✔ reconcileBatch diagnoses launch failure wave from fixture (3053.08525ms)
+✔ buildDiagnosisOutput bundles launch failure headline and command (0.193542ms)
+✔ DIAGNOSIS_TAXONOMY includes worker_orphaned distinct from needs_retry (0.5935ms)
+✔ inferLaunchFailureFromWorkerOutputTail reads PI_SPINE_ROOT hints from log tail (0.123625ms)
+✔ buildSuggestedCommand prefers abort for ghost running cluster (0.13875ms)
+✔ buildHeadline surfaces worker_orphaned launch failure from worker output context (0.250125ms)
+✔ worker_orphaned after plan review nested_spawn_blocked suggests batch retry (0.103042ms)
+✔ dead lane workerPid diagnoses worker_orphaned not needs_retry (3069.439792ms)
+✔ dead workerPid after lane.completed does not diagnose worker_orphaned (2487.7515ms)
+✔ worker_orphaned enriches launch headline from worker output log without task.failed (2450.38025ms)
+✔ multiple ghost running tasks on one lane prefer spine batch abort (1739.549875ms)
+✔ segment drift still diagnoses needs_retry (1208.3725ms)
+✔ buildDiagnosisOutput bundles worker_orphaned headline and command (0.223667ms)
+✔ isRunningWithoutActiveWorkers is false when workers are active (0.560791ms)
+✔ isRunningWithoutActiveWorkers detects all-terminal tail state (0.082958ms)
+✔ buildRunningTailHeadline maps macroPhase merging to operator text (0.182917ms)
+✔ buildRunningTailHeadline maps gating / post-merge limbo (0.102708ms)
+✔ buildHeadline preserves generic running when workers are active (0.180667ms)
+✔ deriveMacroPhase uses journal merge tail when diagnosis is running without workers (0.200958ms)
+✔ deriveMacroPhase stays executing when workers are active (0.059125ms)
+✔ tail-state fixture reconciles without bare is running headline (3170.6805ms)
+✔ tail-state headline matches batch 20260701T031142 shape via buildHeadline (0.212125ms)
+✔ isCoverageArtifactPath matches extension/coverage and root coverage dirs (0.589083ms)
+✔ isPathInFileScope matches exact paths and directory prefixes (0.12325ms)
+✔ filterOutOfScopeCoveragePorcelain drops modified coverage outside file scope (0.137417ms)
+✔ filterOutOfScopeCoveragePorcelain keeps in-scope coverage modifications (0.071291ms)
+✔ restoreOutOfScopeCoverageArtifacts resets tracked coverage files (1380.054125ms)
+✔ resolvePostLaneCommitPorcelain restores and filters out-of-scope coverage (1159.364042ms)
+✔ commitLaneAndValidateWorktree succeeds when only out-of-scope coverage is dirty (2030.482ms)
+✔ commitLaneAndValidateWorktree fails when dirty without .DONE (1094.65375ms)
+✔ isWorktreeDeletionPorcelainLine matches unstaged deletions (0.504625ms)
+✔ isSymlinkOnlyDriftPorcelain is true only for deletion-only porcelain (0.098917ms)
+✔ filterSetupHookSymlinkDriftPorcelain clears deletion-only drift (0.075541ms)
+✔ parseLaneWorktreeIdentity extracts batch and lane from worktree path (0.477417ms)
+✔ resolvePostLaneCommitPorcelain repairs hook symlink drift (2134.269333ms)
+✔ commitLaneAndValidateWorktree succeeds when hook symlink drifts after PASS (2580.594542ms)
+✔ dismissBatch kills live stub worker PID and journals lane.worker_terminated (2586.599958ms)
+✔ shouldRunCodeReview requires review level 2 or higher (0.528166ms)
+✔ findCodeReviewStepNumber prefers step with code review checkpoint (9.809834ms)
+✔ findCompletedCodeReview honors journal review.completed code APPROVE (10.629083ms)
+✔ findCompletedCodeReview honors step artifact APPROVE for code review step (36.29825ms)
+✔ runTaskOnLane runs engine code review for RL2 without worker nested spawn (6806.753542ms)
+✔ runTaskOnLane skips engine code review when review level is 0 (6195.186792ms)
+✔ runTaskOnLane skips engine code review when review level is 1 (6241.1385ms)
+✔ runTaskOnLane honors journal review.completed code APPROVE without duplicate spawn (6389.746958ms)
+✔ runTaskOnLane re-invokes worker after code REVISE and succeeds on APPROVE (11164.262583ms)
+
+Interrupted while running:
+
+⚠ tests/batch/engine-code-review.test.mjs (tests/batch/engine-code-review.test.mjs:1:1)
+⚠ tests/batch/engine-final-review-timeout.test.mjs (tests/batch/engine-final-review-timeout.test.mjs:1:1)
+⚠ tests/batch/engine-gate-open.test.mjs (tests/batch/engine-gate-open.test.mjs:1:1)
+⚠ tests/batch/engine-lane-execution.test.mjs (tests/batch/engine-lane-execution.test.mjs:1:1)
+⚠ tests/batch/engine-lanes-commit-order.test.mjs (tests/batch/engine-lanes-commit-order.test.mjs:1:1)
+⚠ tests/batch/engine-orphan-resume.test.mjs (tests/batch/engine-orphan-resume.test.mjs:1:1)
+⚠ tests/batch/engine-orphan-retry-recovery.test.mjs (tests/batch/engine-orphan-retry-recovery.test.mjs:1:1)
+⚠ tests/batch/engine-review-orphan.test.mjs (tests/batch/engine-review-orphan.test.mjs:1:1)
+⚠ tests/batch/engine.test.mjs (tests/batch/engine.test.mjs:1:1)
+⚠ tests/batch/evidence-gate-resilience.test.mjs (tests/batch/evidence-gate-resilience.test.mjs:1:1)
+⚠ tests/batch/evidence.test.mjs (tests/batch/evidence.test.mjs:1:1)
+⚠ tests/batch/final-review-honor.test.mjs (tests/batch/final-review-honor.test.mjs:1:1)
+⚠ tests/batch/final-verdict.test.mjs (tests/batch/final-verdict.test.mjs:1:1)
+⚠ tests/batch/flutter-analyzer-hygiene.test.mjs (tests/batch/flutter-analyzer-hygiene.test.mjs:1:1)
+⚠ tests/batch/gate.test.mjs (tests/batch/gate.test.mjs:1:1)
+⚠ tests/batch/gitignored-auto-clean.test.mjs (tests/batch/gitignored-auto-clean.test.mjs:1:1)
+⚠ tests/batch/gitignored-index-detect.test.mjs (tests/batch/gitignored-index-detect.test.mjs:1:1)
+⚠ tests/batch/graphify-out-dirty.test.mjs (tests/batch/graphify-out-dirty.test.mjs:1:1)
+⚠ tests/batch/heartbeat.test.mjs (tests/batch/heartbeat.test.mjs:1:1)
+⚠ tests/batch/integrate-base-snapshot.test.mjs (tests/batch/integrate-base-snapshot.test.mjs:1:1)
+⚠ tests/batch/integrate-fast-forward.test.mjs (tests/batch/integrate-fast-forward.test.mjs:1:1)
+⚠ tests/batch/integrate-isolated.test.mjs (tests/batch/integrate-isolated.test.mjs:1:1)
+⚠ tests/batch/integrate-rules-manifest-drift.test.mjs (tests/batch/integrate-rules-manifest-drift.test.mjs:1:1)
+⚠ tests/batch/integrate-rules-manifest.test.mjs (tests/batch/integrate-rules-manifest.test.mjs:1:1)
+⚠ tests/batch/integrate-sync-base.test.mjs (tests/batch/integrate-sync-base.test.mjs:1:1)
+⚠ tests/batch/integrate-timeout.test.mjs (tests/batch/integrate-timeout.test.mjs:1:1)
+⚠ tests/batch/integrate-worktree-sync.test.mjs (tests/batch/integrate-worktree-sync.test.mjs:1:1)
+⚠ tests/batch/integrate.test.mjs (tests/batch/integrate.test.mjs:1:1)
+⚠ tests/batch/integration-abc.test.mjs (tests/batch/integration-abc.test.mjs:1:1)
+⚠ tests/batch/journal-attach.test.mjs (tests/batch/journal-attach.test.mjs:1:1)
+⚠ tests/batch/journal-cache.test.mjs (tests/batch/journal-cache.test.mjs:1:1)
+⚠ tests/batch/journal-cli.test.mjs (tests/batch/journal-cli.test.mjs:1:1)
+⚠ tests/batch/journal-export-jsonl.test.mjs (tests/batch/journal-export-jsonl.test.mjs:1:1)
+⚠ tests/batch/journal-export-markdown.test.mjs (tests/batch/journal-export-markdown.test.mjs:1:1)
+⚠ tests/batch/journal-rebuild-drift.test.mjs (tests/batch/journal-rebuild-drift.test.mjs:1:1)
+⚠ tests/batch/journal-rebuild-incidents.test.mjs (tests/batch/journal-rebuild-incidents.test.mjs:1:1)
+⚠ tests/batch/journal-rebuild.test.mjs (tests/batch/journal-rebuild.test.mjs:1:1)
+⚠ tests/batch/journal.test.mjs (tests/batch/journal.test.mjs:1:1)
+⚠ tests/batch/lane-commit.test.mjs (tests/batch/lane-commit.test.mjs:1:1)
+⚠ tests/batch/lane-merge-out-of-scope.test.mjs (tests/batch/lane-merge-out-of-scope.test.mjs:1:1)
+⚠ tests/batch/lifecycle.test.mjs (tests/batch/lifecycle.test.mjs:1:1)
+⚠ tests/batch/limbo-detect.test.mjs (tests/batch/limbo-detect.test.mjs:1:1)
+⚠ tests/batch/live-worker-log.test.mjs (tests/batch/live-worker-log.test.mjs:1:1)
+⚠ tests/batch/macro-phase.test.mjs (tests/batch/macro-phase.test.mjs:1:1)
+⚠ tests/batch/merge-blocked-phase.test.mjs (tests/batch/merge-blocked-phase.test.mjs:1:1)
+⚠ tests/batch/merge-blocked-resume.test.mjs (tests/batch/merge-blocked-resume.test.mjs:1:1)
+⚠ tests/batch/merge-failure-diagnosis.test.mjs (tests/batch/merge-failure-diagnosis.test.mjs:1:1)
+⚠ tests/batch/merge-gitignored-paths.test.mjs (tests/batch/merge-gitignored-paths.test.mjs:1:1)
+⚠ tests/batch/merge-prd-conflict.test.mjs (tests/batch/merge-prd-conflict.test.mjs:1:1)
+⚠ tests/batch/nested-reviewer-guard.test.mjs (tests/batch/nested-reviewer-guard.test.mjs:1:1)
+⚠ tests/batch/nested-spawn-guard.test.mjs (tests/batch/nested-spawn-guard.test.mjs:1:1)
+⚠ tests/batch/orphan-detect-scope.test.mjs (tests/batch/orphan-detect-scope.test.mjs:1:1)
+⚠ tests/batch/orphan-pidless-ghost.test.mjs (tests/batch/orphan-pidless-ghost.test.mjs:1:1)
+⚠ tests/batch/orphan-reconcile.test.mjs (tests/batch/orphan-reconcile.test.mjs:1:1)
+⚠ tests/batch/pause-phase-persistence.test.mjs (tests/batch/pause-phase-persistence.test.mjs:1:1)
+⚠ tests/batch/pause-retry-guard.test.mjs (tests/batch/pause-retry-guard.test.mjs:1:1)
+⚠ tests/batch/poll-interval-defaults.test.mjs (tests/batch/poll-interval-defaults.test.mjs:1:1)
+⚠ tests/batch/post-merge-limbo-20260630.test.mjs (tests/batch/post-merge-limbo-20260630.test.mjs:1:1)
+⚠ tests/batch/post-merge-limbo-regression.test.mjs (tests/batch/post-merge-limbo-regression.test.mjs:1:1)
+⚠ tests/batch/post-merge-limbo.test.mjs (tests/batch/post-merge-limbo.test.mjs:1:1)
+⚠ tests/batch/postmortem.test.mjs (tests/batch/postmortem.test.mjs:1:1)
+⚠ tests/batch/progress-snapshot.test.mjs (tests/batch/progress-snapshot.test.mjs:1:1)
+⚠ tests/batch/prompt-parse-fail.test.mjs (tests/batch/prompt-parse-fail.test.mjs:1:1)
+⚠ tests/batch/reconcile-git-error.test.mjs (tests/batch/reconcile-git-error.test.mjs:1:1)
+⚠ tests/batch/reconcile.test.mjs (tests/batch/reconcile.test.mjs:1:1)
+⚠ tests/batch/resume-engine-crash.test.mjs (tests/batch/resume-engine-crash.test.mjs:1:1)
+⚠ tests/batch/resume-gate-open.test.mjs (tests/batch/resume-gate-open.test.mjs:1:1)
+⚠ tests/batch/resume-heartbeat-refresh.test.mjs (tests/batch/resume-heartbeat-refresh.test.mjs:1:1)
+⚠ tests/batch/resume-lane-reviews.test.mjs (tests/batch/resume-lane-reviews.test.mjs:1:1)
+⚠ tests/batch/resume-multi-engine.test.mjs (tests/batch/resume-multi-engine.test.mjs:1:1)
+⚠ tests/batch/resume-multi-integration.test.mjs (tests/batch/resume-multi-integration.test.mjs:1:1)
+⚠ tests/batch/resume-multi-sequential.test.mjs (tests/batch/resume-multi-sequential.test.mjs:1:1)
+⚠ tests/batch/resume-multi-validation.test.mjs (tests/batch/resume-multi-validation.test.mjs:1:1)
+⚠ tests/batch/resume-orphan-recovery.test.mjs (tests/batch/resume-orphan-recovery.test.mjs:1:1)
+⚠ tests/batch/resume-skip-succeeded.test.mjs (tests/batch/resume-skip-succeeded.test.mjs:1:1)
+⚠ tests/batch/resume-validation-leaf.test.mjs (tests/batch/resume-validation-leaf.test.mjs:1:1)
+⚠ tests/batch/resume.test.mjs (tests/batch/resume.test.mjs:1:1)
+⚠ tests/batch/retry-state-drift.test.mjs (tests/batch/retry-state-drift.test.mjs:1:1)
+⚠ tests/batch/retry.test.mjs (tests/batch/retry.test.mjs:1:1)
+✖ tests/batch/engine-code-review.test.mjs (37480.989834ms)
+✔ resolveReviewSpawnTimeoutMs aligns with stall budget for M tasks (0.576917ms)
+✔ runStepReview journals review.failed with review_timeout on hung spawn (315.300334ms)
+✔ async reviewer spawn does not block the event loop while waiting for timeout (362.5165ms)
+✔ startBatch opens integrate gate before batch.completed journal event (10223.008875ms)
+✔ startBatch serializes multiple tasks on one physical lane (16261.945416ms)
+✔ startBatch runs disjoint-scope tasks on separate lanes in parallel (10315.962667ms)
+✖ tests/batch/engine-lane-execution.test.mjs (35656.415875ms)
+✔ startBatch records lane commit before task.completed (10473.253375ms)
+✔ runTaskOnLane emits task.failed not task.completed when lane commit fails (5906.90375ms)
+✔ validateSpineConfig accepts worktreeSetupIgnorePaths (0.260083ms)
+✔ engine_orphaned diagnosis suggests retry when task id known, attached resume otherwise (0.596875ms)
+✔ dead engine with phase running passes validateMultiTaskResume without pause (1424.738458ms)
+✔ running phase with live engine pid rejects resume without force (1345.004541ms)
+✔ reconcile engine_orphaned recommends attached resume for batch 20260618T191236 pattern (1613.443875ms)
+✔ engine_orphaned with failedTaskId suggests retry (SP-315) (0.583083ms)
+✔ reconcileOrphanRunningState transitions running task to failed with journal events (1667.519375ms)
+✔ retryTask succeeds on orphan without manual pause (issue #20 trap) (1201.177708ms)
+✔ diagnose then retry: suggestedCommand matches working recovery path (1480.087333ms)
+✔ resume --force allowed after orphan reconcile when phase was running (650.599334ms)
+✔ terminateStaleDetachedEngine SIGTERM stale pid on failed resume (26.824583ms)
+✔ runStepReview honors existing final PASS without re-spawn (16.698458ms)
+✔ runStepReview skips review.failed journal when batch already completed (62.099375ms)
+✔ startBatch lane branch has commit before merge when stub touches files (10660.750542ms)
+✔ startBatch completes single task with stub worker (8715.032209ms)
+✔ isExplicitBatchScope treats pending as explicit (0.210125ms)
+✔ startBatch all dry-run allows multi-wave pending backlog (327.538541ms)
+✔ startBatch pending dry-run excludes done tasks (319.943791ms)
+✔ startBatch all fails when every task has .DONE (224.927625ms)
+✔ startBatch skips worker when .DONE exists on disk (2709.343167ms)
+✔ resolveBatchStartScope normalizes all to pending IDs (355.520042ms)
+✔ startBatch explicit IDs still allow multi-wave when scope is not bare all (315.638459ms)
+✔ startBatch completes two-lane wave with stub workers (9366.271959ms)
+✖ tests/batch/engine.test.mjs (34355.889ms)
+✔ collectCoreEvidenceBundle writes summary without complete marker (2403.747666ms)
+✔ openIntegrateGate persists gate before extended evidence and journals milestones (1502.244791ms)
+✔ openIntegrateGate keeps gate when extended evidence command fails (1394.659541ms)
+✔ collectExtendedEvidenceBundle appends to existing refs (1082.030416ms)
+✔ parseEvidenceCommandArgv accepts npm run test (4.144417ms)
+✔ parseEvidenceCommandArgv preserves quoted arguments (0.125167ms)
+✔ parseEvidenceCommandArgv rejects shell command chaining (0.23625ms)
+✔ parseEvidenceCommandArgv rejects unknown binary (0.082583ms)
+✔ runEvidenceCommand executes allowlisted argv without shell (161.873209ms)
+✔ runEvidenceCommand rejects malicious config strings (0.143625ms)
+✔ runEvidenceCommand skips empty command (0.1045ms)
+✔ runEvidenceCommand rejects disallowed build binary (0.111375ms)
+✔ parseEvidenceCommandArgv rejects subshell injection (0.121917ms)
+✔ collectEvidenceBundle writes summary and .complete marker atomically (2481.01225ms)
+✔ collectEvidenceBundle writes rejected output for unsafe testing.test (1122.039584ms)
+✔ findCompletedFinalReview honors journal review.completed final PASS (7.039292ms)
+✔ findCompletedFinalReview honors latest final artifact PASS (35.426667ms)
+✔ runTaskOnLane honors pre-existing worker final review without spawn failure (7040.277292ms)
+✔ runTaskOnLane honors journal review.completed final PASS without duplicate spawn (6261.067208ms)
+✔ parseFinalReviewVerdict accepts PASS, REVISE, and REPLAN (0.942208ms)
+✔ shouldRunFinalReview skips when review level is 0 (0.095792ms)
+✔ runTaskOnLane skips final review when review level is 0 (6843.316833ms)
+✔ runTaskOnLane journals task.verdict_recorded on PASS final review (6720.196625ms)
+✔ runTaskOnLane re-invokes worker after REVISE and succeeds on PASS (11347.505584ms)
+✖ tests/batch/final-verdict.test.mjs (32484.234375ms)
+✔ isUnscopedFlutterAnalyzeSegment detects bare and compound analyze commands (0.751084ms)
+✔ isUnscopedFlutterAnalyzeCommand handles compound shell commands (0.161167ms)
+✔ isFlutterAnalyzeTestCompoundCommand matches analyze plus test (0.11775ms)
+✔ shouldCleanFlutterBuildBeforeAnalyze respects config opt-out (0.085ms)
+✔ sanitizeFlutterBuildBeforeAnalyze removes polluted build directory (217.329208ms)
+✔ sanitizeFlutterBuildBeforeAnalyze is no-op when build is absent (328.008292ms)
+✔ prepareContractVerifyEnvironment removes polluted build for compound analyze command (274.053833ms)
+✔ polluted build does not fail verify after hygiene (278.35325ms)
+✔ verifyContract cleans polluted build before unscoped flutter analyze testCommand (453.91ms)
+✔ buildTaskScorecard lists task rows (0.774167ms)
+✔ openIntegrateGate persists pending gate and journals gate.opened (1703.248584ms)
+✔ collectEvidenceBundle writes summary and diff-stat (1518.886916ms)
+✔ approve and reject enforce gate FSM (1427.796375ms)
+✔ rejectIntegrateGate journals gate.rejected (1661.528667ms)
+✔ checkIntegrateGate blocks until approved (exit 2) (1262.428ms)
+✔ integrateOrchToBase fails with exit 2 when gate pending (1848.478916ms)
+✔ integrateOrchToBase succeeds after gate approval (2918.936666ms)
+✔ force integrate requires SPINE_ALLOW_FORCE=1 (660.356708ms)
+✔ openIntegrateGateAfterBatchComplete skips non-completed batches (288.67425ms)
+✔ runSpineGate CLI approve updates gate record (1221.371917ms)
+✔ isGitignoredArtifactPath matches extension/coverage and node_modules (0.737ms)
+✔ listGitignoredArtifactRoots deduplicates nested artifact dirs (0.608167ms)
+✔ sanitizeGitignoredArtifactsBeforeLaneCommit removes worktree-only coverage (446.642209ms)
+✔ sanitizeGitignoredArtifactsBeforeLaneCommit skips when disabled (337.852625ms)
+✔ commitLaneAndValidateWorktree succeeds when only extension/coverage is gitignored dirty (761.065041ms)
+✔ commitLaneAndValidateWorktree succeeds when only node_modules is gitignored dirty (626.456125ms)
+✔ sanitizeGitignoredArtifactsBeforeLaneCommit does not clean index-tracked gitignored paths (574.644542ms)
+✔ commitLaneWorktree still fails for index-tracked gitignored coverage (711.138541ms)
+✔ classifyGitignoredPaths returns empty arrays for empty input (282.13125ms)
+✔ classifyGitignoredPaths detects index-tracked gitignored paths (405.52875ms)
+✔ classifyGitignoredPaths detects worktree-only gitignored paths (371.394125ms)
+✔ classifyGitignoredPaths handles mixed index-tracked and worktree-only (413.486417ms)
+✔ formatGitignoredRemediationMessage: worktree-only does not suggest git rm --cached (0.315167ms)
+✔ formatGitignoredRemediationMessage: index-tracked suggests git rm --cached (0.069792ms)
+✔ formatGitignoredRemediationMessage: mixed suggests both remediation paths (0.061708ms)
+✔ commitLaneWorktree: worktree-only gitignored does not suggest git rm --cached (530.65725ms)
+✔ commitLaneWorktree: index-tracked gitignored still suggests git rm --cached (791.000583ms)
+✔ regression: SP-011 worktree-only coverage after npm test does not suggest git rm --cached (721.223625ms)
+✔ isGitignoredArtifactPath matches graphify-out hook output (0.502042ms)
+✔ listGitignoredArtifactRoots deduplicates nested graphify-out paths (0.470834ms)
+✔ sanitizeGitignoredArtifactsBeforeLaneCommit removes worktree-only graphify-out (494.918125ms)
+✔ commitLaneAndValidateWorktree succeeds when only graphify-out is gitignored dirty (744.18675ms)
+✔ resolveHeartbeatKind marks launching as worker_alive only (0.586459ms)
+✔ shouldEmitCheckpointWarning skips launching phase (0.570458ms)
+✔ buildHeartbeatPayloadFields omits stale checkpoint signals during launching (0.168916ms)
+✔ recordLaneHeartbeat journals kind and phase (128.083625ms)
+✔ runWorker launching heartbeat does not journal stale STATUS mtime on fast-fail retry (5196.650083ms)
+✔ resolveStallConfig applies lane overrides (0.174666ms)
+✔ progressSignalsChanged detects STATUS mtime updates (152.457208ms)
+✔ computeStallDeadline extends past hard timeout after progress (0.123167ms)
+✔ stall false positive avoided when STATUS updates extend deadline (I-01) (0.112625ms)
+✔ findLatestStepCompletedMs returns newest matching task.step_completed (0.131125ms)
+✔ progressSignalsChanged detects journal task.step_completed (silent tools) (209.57ms)
+✔ activitySignalsChanged detects file-scope mtime updates (FR-WORK-10 / FR-STALL-02) (154.156042ms)
+✔ startBatch records lane.heartbeat during stub worker delay (8627.293791ms)
+✔ startBatch persists baseBranchHeadAtStart and journals batch.base_snapshot (8742.062042ms)
+✔ isFastForwardCapableIntegrate detects orch ahead of main (#93) (877.792125ms)
+✔ integrateOrchToBase fast-forwards when orch is strictly ahead (#93 batch 20260702T071449) (3965.653667ms)
+✔ integrateOrchToBase fast-forwards with generatedAt-only rules-manifest drift on main (#93) (2916.016041ms)
+✔ recordBatchBaseSnapshot stores head sha and journals batch.base_snapshot (473.451834ms)
+✔ integrateOrchToBase succeeds with uncommitted edits on main (3226.486167ms)
+✔ integrateOrchToBase conflict path leaves human checkout and files unchanged (2814.565334ms)
+✔ integrateOrchToBase succeeds with uncommitted edits on feature branch (non-base) (3146.938167ms)
+✔ integrateOrchToBase dry-run advertises isolated merge plan (683.355292ms)
+✔ resolveRulesManifestIntegrateDrift restores main when worker manifest matches orch (#22) (1334.176709ms)
+✔ integrateOrchToBase succeeds with worker manifest drift on main matching orch (#22) (3188.841875ms)
+✔ resolveRulesManifestIntegrateDrift blocks unrelated dirty files on main (614.279917ms)
+✔ resolveRulesManifestIntegrateDrift blocks substantive manifest drift not matching orch (654.43825ms)
+✔ resolveRulesManifestIntegrateDrift still clears generatedAt-only drift on main (718.08475ms)
+✔ resolveRulesManifestIntegrateDrift clears generatedAt-only dirty manifest on main (1276.46625ms)
+✔ integrateOrchToBase succeeds with dirty generatedAt-only rules-manifest on main (3253.667292ms)
+✔ inspectHumanBaseSync reports integrate_isolated_ok after plumbing integrate leaves HEAD behind (5248.029708ms)
+✔ inspectHumanBaseSync reports human_base_diverged when human commits overlap orch paths (2134.363167ms)
+✔ spine sync-base CLI merges landed main into feature branch (2886.294375ms)
+✔ DEFAULT_SYNC_TIMEOUT_MS is 60 seconds (0.515584ms)
+✔ syncPlumbingMergePathsToWorktree returns ok: true on successful sync (576.100834ms)
+✔ syncPlumbingMergePathsToWorktree returns ok: false with timedOut on timeout (569.126167ms)
+✔ integrateOrchToBase emits integrate.failed with IntegrateTimeout on sync timeout (2984.958375ms)
+✔ successful integrate still emits integrate.completed (regression) (2501.338792ms)
+✔ partial sync failure returns ok: false with correct failureClass from integrateOrchToBase (2203.994959ms)
+✔ syncPlumbingMergePathsToWorktree succeeds when worktree has paths not in HEAD (698.233125ms)
+✔ syncPlumbingMergePathsToWorktree restores paths that exist in merge commit (781.89775ms)
+✔ syncPlumbingMergePathsToWorktree skips diff paths absent from merge commit (872.664083ms)
+✔ assertOrchIntegratable refuses empty orch when mergeResults claim success (720.603625ms)
+✔ assertOrchIntegratable requires integrate when orch is ahead of base (656.47975ms)
+✔ reconcileBatch reports needs_integrate when batch completed but orch not on main (1632.851583ms)
+✔ completeBatch refuses when orch is ahead but not integrated (1333.254167ms)
+✔ integrateOrchToBase merges orch into main and journals events (2303.18925ms)
+✔ integrateOrchToBase dry-run does not change main HEAD (711.694416ms)
+✔ completeBatch succeeds after integrate lands orch on main (3558.993209ms)
+✔ integrateOrchToBase aborts merge on conflict and restores checkout (2177.56275ms)
+✔ integrateOrchToBase fails when batch state is missing (0.308625ms)
+✔ runSpineIntegrate CLI succeeds when orch tip already matches main (383.361292ms)
+✔ PRD §20.2 planner yields wave0 {A,C} and wave1 {B} (783.206375ms)
+✔ PRD §20.2 two-lane stub batch completes ABC waves (15969.203459ms)
+✖ tests/batch/integration-abc.test.mjs (19513.51275ms)
+✔ runStepReview with worker attach env does not journal when attach suppressed (48.671916ms)
+✔ runSpineReviewStep with worker attach env does not journal when attach suppressed (50.591834ms)
+✔ runSpineReportProgress with worker attach env does not journal when attach suppressed (3.870208ms)
+✔ readJournalEventsCached returns same events as readJournalEvents (28.087209ms)
+✔ readJournalEventsCached returns cached copy on second call without file change (13.113083ms)
+✔ readJournalEventsCached invalidates when file mtime changes (15.788042ms)
+✔ readJournalEventsCached returns empty array for missing file (1.1365ms)
+✔ clearJournalCache forces re-read on next call (9.452917ms)
+✔ invalidateJournalCache with matching path clears cache (11.144583ms)
+✔ invalidateJournalCache with non-matching path preserves cache (30.06225ms)
+✔ readJournalEventsCached handles transition from missing to existing file (42.385708ms)
+✔ readJournalEventsCached handles switch between different batch IDs (33.067917ms)
+✔ runSpineJournal replay exits non-zero when journal missing (2.554625ms)
+✔ runSpineJournal replay prints human table (17.552542ms)
+✔ runSpineJournal replay --json returns events array (12.764334ms)
+✔ exportJournalJsonl returns null when journal missing (3.240875ms)
+✔ runSpineJournal export exits non-zero when journal missing (1.721083ms)
+✔ runSpineJournal export writes jsonl to stdout (25.816167ms)
+✔ runSpineJournal export --output writes file (16.053292ms)
+✔ exportJournalMarkdown returns null when journal missing (3.151583ms)
+✔ formatJournalMarkdownTimeline produces stable table shape (1.555958ms)
+✔ formatJournalMarkdownTimeline escapes pipe characters in summary (0.10675ms)
+✔ runSpineJournal export markdown exits non-zero when journal missing (1.316458ms)
+✔ runSpineJournal export writes markdown to stdout (23.516708ms)
+✔ runSpineJournal export markdown --output writes file (33.7925ms)
+✔ detectBatchStateDrift flags running cache when reconcile sees doneInLane without journal terminal (0.692292ms)
+✔ deriveStructuralBatchStateFromJournal rebuilds multi-lane skeleton without cache seed (3.159875ms)
+✔ resume-parallel-lane-orphan fixture: journal-only rebuild marks resumed tasks running (2.236084ms)
+✔ orphan-running-resume fixture: structural + lifecycle rebuild without seed (1.177083ms)
+✔ pidless-ghost-running fixture: post-resume task.started wins over historical failure (0.532541ms)
+✔ resume-orphan-historical-failure fixture: rebuild ignores pre-resume failure for active task (2.476417ms)
+✔ retry-clears-failed-classification fixture: rebuild fixes stale failed cache (0.559833ms)
+✔ retry-clears-failed-classification fixture: detectBatchStateDrift flags cache vs journal (1.659958ms)
+✔ incident fixtures rebuild from disk matches in-memory journal rebuild (397.59775ms)
+✔ readJournalTimeline filters task and batch lifecycle events (0.47475ms)
+✔ rebuildBatchStateFromJournal applies task.completed over stale failed cache (0.762125ms)
+✔ detectBatchStateDrift flags journal completed vs cache failed (0.238959ms)
+✔ detectBatchStateDrift ignores incomplete journal when cache failed (0.114209ms)
+✔ incident orphan-running fixture: journal timeline is readable (285.237167ms)
+✔ appendJournalEvent writes schema v1 with ISO timestamp and payload (20.404166ms)
+✔ readLastTaskFailedEvent returns most recent task.failed (27.422875ms)
+✔ redactSecrets masks sensitive keys (0.227792ms)
+✔ capPayloadSize truncates oversized payloads (0.183625ms)
+✔ normalizeJournalEvent upgrades legacy lines (0.092125ms)
+✔ readJournalEvents reads mixed legacy and v1 lines (9.616958ms)
+✔ extractJournalDiagnosisHints surfaces failure events from tail (0.3375ms)
+✔ commitLaneWorktree commits dirty worktree when .DONE exists (741.659708ms)
+✔ commitLaneWorktree fails loud when dirty without .DONE (356.957417ms)
+✔ filterPorcelain drops lines matching ignore patterns by full path (0.271ms)
+✔ filterPorcelain drops lines matching ignore patterns by basename (0.087958ms)
+✔ filterPorcelain keeps rename targets when only source matches ignore (0.073792ms)
+✔ filterPorcelain returns empty for empty input (0.060208ms)
+✔ mergeLaneToOrch rejects empty merge when lane commits were required (486.818916ms)
+✔ mergeLaneToOrch prefers orch for conflicts outside lane file scope (1217.654209ms)
+✔ mergeLaneToOrch does not auto-resolve in-scope lane conflicts (1129.081083ms)
+✔ dismiss archives batch-state before clearing active file (1087.39025ms)
+✔ complete with --detect-manual-merge succeeds when orch merged to main (1305.409ms)
+✔ complete refused when mergeResults succeeded but orch not on main (4266.847167ms)
+✔ dismiss refused when diagnosis is running without --force (1049.870208ms)
+✔ isPostMergeLimbo is true when tasks and merges succeeded with open orch branch (0.518958ms)
+✔ isPostMergeLimbo rejects non-running or ended batches (0.088083ms)
+✔ isPostMergeLimbo rejects empty or partial task/merge state (0.073917ms)
+✔ isPostMergeLimbo respects git orch branch signals (0.706291ms)
+✔ isPostMergeLimbo rejects null or non-object state (0.089291ms)
+✔ resolveWorkerOutputConfig defaults live log streaming off (0.599125ms)
+✔ workerLiveLogPath matches runtime layout (0.156958ms)
+✔ truncateLiveLogBytes applies truncation marker when over cap (0.187375ms)
+✔ appendWorkerLiveLogChunk redacts secrets and enforces byte cap (4.60925ms)
+✔ createWorkerLiveLogWriter returns null when streaming disabled (0.189417ms)
+✔ runWorker streams subprocess stub output to live log when enabled (5061.666375ms)
+✔ runWorker skips live log when streamWorkerOutputLive is false (5036.878666ms)
+✔ runWorker still writes terminal failure log when live streaming enabled (5077.521333ms)
+✔ startAgentSessionWorker flushes transcript chunks to live log (484.406042ms)
+✔ appendWorkerLiveLogChunk rolls file with truncation marker when over max bytes (2.400583ms)
+✖ tests/batch/live-worker-log.test.mjs (15847.32775ms)
+✔ MACRO_PHASES exports all eleven lifecycle values (0.985667ms)
+✔ deriveMacroPhase: idle when no batch signals (0.101458ms)
+✔ deriveMacroPhase: planning from batch phase (0.121083ms)
+✔ deriveMacroPhase: executing for active running batch (0.24075ms)
+✔ deriveMacroPhase: merging phase and needs_merge diagnosis (0.111916ms)
+✔ deriveMacroPhase: reviewing when review.started is open (0.1225ms)
+✔ deriveMacroPhase: gating for pending gate or post-merge limbo (0.067209ms)
+✔ deriveMacroPhase: integrating for needs_integrate and open integrate.started (0.092666ms)
+✔ deriveMacroPhase: completed, failed, aborted, paused terminal phases (0.095584ms)
+✔ fixture running-batch.json reconciles to executing macro-phase (1083.393458ms)
+✔ fixture taskplane-executing.json maps to executing (1.153583ms)
+✔ fixture needs-retry-batch.json maps to failed macro-phase (981.920334ms)
+✔ fixture limbo-stale maps to completed macro-phase (1115.428125ms)
+✔ all macro-phase enum values are reachable via deriveMacroPhase (0.828792ms)
+✔ recordMergeBlocked sets terminal merge_blocked phase and clears enginePid (258.4965ms)
+✔ reconcileBatch diagnoses merge_blocked as failed merge, not needs_merge (985.6785ms)
+✔ legacy merging phase with endedAt and failed mergeResults reconciles as failed (1151.062209ms)
+✔ findResumableWave skips succeeded merged waves when later wave has pending tasks (0.551291ms)
+✔ validateMultiTaskResume allows force resume from merge_blocked (645.3955ms)
+✔ buildSuggestedCommand recommends resume --force for merge_blocked phase (0.324375ms)
+✔ summarizeMergeFailures extracts failed wave and lane from mergeResults (0.619167ms)
+✔ buildMergeFailureHeadline uses 1-based wave number and lane label (0.179667ms)
+✔ buildHeadline for failed diagnosis surfaces merge conflict instead of zero failed tasks (0.203458ms)
+✔ buildSuggestedCommand for merge failure suggests resume --force (0.126083ms)
+✔ buildDiagnosisOutput bundles merge failure headline and command (0.160917ms)
+✔ reconcileBatch surfaces merge failure fields distinct from failedTasks (1275.825292ms)
+✔ spine status --json includes merge failure fields for monitors (1273.861417ms)
+✔ spine status --diagnose prints merge failure details in text output (1204.530166ms)
+✔ filterGitignoredPaths separates ignored and stageable paths (321.8455ms)
+✔ gitAddFilteredPaths skips gitignored paths without failing (634.108584ms)
+✔ mergeLaneToOrch succeeds when task branch committed gitignored coverage (1863.863542ms)
+✔ commitLaneWorktree refuses gitignored-only dirty paths (478.401ms)
+✔ commitLaneWorktree commits tracked files while skipping gitignored dirty paths (801.751792ms)
+✔ inferMergeGitignoredFailure detects gitignored merge and lane commit failures (0.245875ms)
+✔ buildSuggestedCommand returns git rm --cached repair for gitignored merge failures (0.212625ms)
+✔ reconcileBatch surfaces gitignored merge repair command from journal (1006.415208ms)
+✔ filterPorcelain remains unchanged for SP-104 ignore patterns (0.33225ms)
+✔ mergeLaneToOrch auto-resolves additive docs/PRD.md after origin/main merge task (1970.683584ms)
+✔ mergeLaneToOrch fails PRD merge with recovery commands when hunks overlap (1345.899416ms)
+✔ formatPrdDocMergeFailure names file and wave recovery (0.203084ms)
+✔ isActiveWorkerSession true when SPINE_WORKER_RUNNER is set (0.557834ms)
+✔ isActiveWorkerSession false outside worker context (0.091584ms)
+✔ runStepReview skips nested reviewer spawn when worker env is set (71.700708ms)
+✔ runStepReview skips nested plan review spawn when worker env is set (35.31325ms)
+✔ runStepReview stub path still works inside worker session (13.508083ms)
+✔ runStepReview reaches pi availability check when worker env absent (5.383209ms)
+✔ engine parent with leaked worker runner reaches reviewer spawn (3.387291ms)
+✔ batch 20260619T020951 SP-306 plan step 0 journals review.skipped not review.failed (27.668125ms)
+✔ detectNestedWorkerContext returns reason when SPINE_IS_WORKER=1 (0.604833ms)
+✔ detectNestedWorkerContext returns reason when projectRoot is inside .worktrees/spine-* (0.136292ms)
+✔ detectNestedWorkerContext returns null for normal projectRoot without worker env (0.687333ms)
+✔ startBatch returns error when SPINE_IS_WORKER=1 (8.864709ms)
+✔ startBatch returns error when projectRoot is inside .worktrees/spine-* (23.583833ms)
+✔ startBatch succeeds normally (no env, normal CWD) — regression (8803.757208ms)
+✔ buildWorkerChildEnv includes SPINE_IS_WORKER=1 (0.917959ms)
+✖ tests/batch/nested-spawn-guard.test.mjs (12042.404834ms)
+✔ journalEventsSinceResume excludes pre-resume terminal events (1.440167ms)
+✔ detectOrphanRunning: historical task.failed + post-resume silence + dead engine (0.494959ms)
+✔ resume orphan with historical failure fixture is not diagnosed as running (1385.268917ms)
+✔ terminal event within scoped window still suppresses engine orphan (1.078375ms)
+✔ journalIndicatesStalledSession: post-resume start without terminal (0.708333ms)
+✔ detectOrphanRunning: PID-less ghost running with post-resume journal stall (0.34ms)
+✔ pidless ghost fixture reconcile is engine_orphaned, not running (1117.012542ms)
+✔ terminal event within scoped window suppresses PID-less ghost signal (0.350625ms)
+✔ isProcessAlive returns false for absent pid (0.600708ms)
+✔ resume parallel lane orphan fixture: multiple running on lane 1 (1.037584ms)
+✔ resume parallel lane orphan fixture: reconcile is actionable after scoped orphan detect (1239.530709ms)
+✔ searchATon orphan incident fixture: dead workerPid is not diagnosed as running (1036.913666ms)
+✔ dead workerPid with running task is not diagnosed as running (1048.827833ms)
+✔ dead enginePid mid-resume without terminal journal is engine_orphaned (1169.432125ms)
+✔ running batch without recorded pids still reports running (1099.046ms)
+✔ detectOrphanRunning ignores dead engine when terminal journal exists (0.22625ms)
+✔ recordBatchEnginePid persists under resilience and clears on terminal save (219.818417ms)
+✔ confirmed pause records batch.paused only after engine persists phase (338.43425ms)
+✔ unconfirmed pause does not leave orphan batch.paused journal entry (492.145667ms)
+✔ pauseBatch succeeds immediately when no attached engine is alive (305.738084ms)
+✔ pauseBatch fails loud when attached engine keeps phase running (477.179083ms)
+✔ waitForPauseConfirmation returns true when phase stays paused (286.1025ms)
+✔ retryTask succeeds when batch phase is paused (234.989292ms)
+✔ retryTask rejects when batch phase is running (162.44875ms)
+✔ resolveAttachedMilestonePollMs defaults to 2000ms when config omitted (0.562ms)
+✔ resolveSequencePollMs defaults to 5000ms when config omitted (0.09975ms)
+✔ resolveDashboardPollMs defaults to 2000ms when config omitted (0.071916ms)
+✔ resolveAttachedMilestonePollMs honors orchestrator.attachedMilestonePollMs override (0.063209ms)
+✔ resolveSequencePollMs honors orchestrator.sequencePollMs override (0.080583ms)
+✔ resolveDashboardPollMs honors orchestrator.dashboardPollMs override (0.05375ms)
+✔ validateOrchestratorConfig rejects invalid poll values (0.126584ms)
+✔ validateSpineConfig accepts orchestrator poll overrides (0.445083ms)
+✔ waitForSequenceBatchTerminal uses 5000ms default poll interval (0.114583ms)
+✔ batch 20260630T212050 orphan-after-merge fixture describes GitHub #59 incident (1.280084ms)
+✔ batch 20260630T212050 journal fixture is limbo via resume detect but not bare state (462.158958ms)
+✔ hydrateMergeResultsFromJournal enables state limbo detection for batch 20260630T212050 (281.492125ms)
+✔ finalizeAttachedLandLoopBeforeExit opens gate for batch 20260630T212050 journal limbo (1963.91325ms)
+✔ installAttachedExitFinalizeHandlers finalizes journal limbo on SIGTERM without manual resume (2192.637417ms)
+✔ batch 20260629T021550 fixture is post-merge limbo without gate (202.77625ms)
+✔ attemptPostMergeLandLoopHandoff finalizes batch 20260629T021550 limbo after SIGTERM (1380.023667ms)
+✔ resumeBatchDetached --force finalizes post-merge limbo without spawning engine (1691.68875ms)
+✔ resumeBatch attached path finalizes batch 20260629T021550 limbo immediately (1708.59675ms)
+✔ resumeMultiTaskBatch still finalizes batch 20260629T021550 after orphan_terminated (1508.195708ms)
+✔ finalizeResumePostMergeLimbo clears stale engine pid during post-merge limbo (1273.1405ms)
+✔ isPostMergeLimbo detects running phase with successful merges (0.488459ms)
+✔ deriveDiagnosis returns needs_integrate for post-merge limbo (0.375125ms)
+✔ finalizeBatchForIntegrate opens gate from post-merge limbo without resume (1225.321ms)
+✔ resumeMultiTaskBatch opens gate from post-merge limbo without re-running tasks (1554.534542ms)
+✔ mixed-outcome post-mortem lists failed IDs and retry hint, not smooth success (1031.428459ms)
+✔ false-success reconciliation headline is overridden when failures exist (0.366791ms)
+✔ listFailedTaskIds prefers classified terminal-failure tasks (0.5425ms)
+✔ collectEvidenceBundle summary.md is honest post-mortem markdown (1175.898583ms)
+✔ dismissBatch writes post-mortem path into batch history (1196.938666ms)
+✔ writeBatchPostMortem persists markdown under runtime batch dir (1154.331833ms)
+✔ spine status --verbose includes post-mortem section for active batch (1075.123583ms)
+✔ resolveStallConfig defaults progressSnapshotIntervalMinutes to 2 (0.542625ms)
+✔ resolveStallConfig applies progressSnapshotIntervalMinutes override (0.078333ms)
+✔ buildProgressSnapshotPayload is bounded and omits dirty path lists (0.4945ms)
+✔ progressSnapshotPayloadChanged detects field deltas (0.098583ms)
+✔ shouldEmitProgressSnapshot respects interval (0.203041ms)
+✔ recordLaneProgressSnapshot journals bounded payload (84.553292ms)
+✖ tests/batch/progress-snapshot.test.mjs (7531.024458ms)
+✔ startBatch fails closed on invalid PROMPT before batch starts (279.093875ms)
+fatal: malformed object name missing-base-branch
+✔ inspectGitState records gitInspectionError when merged-branch scan fails (332.284166ms)
+✔ deriveDiagnosis returns git_unavailable when git inspection failed (0.463208ms)
+✔ reconcileBatch surfaces git_unavailable instead of limbo_stale on git failure (1016.292584ms)
+fatal: malformed object name missing-base-branch
+✔ reconcileBatch records count_commits_ahead git errors from real git refs (1352.019958ms)
+✔ idle-no-batch returns healthy idle state (215.972167ms)
+✔ limbo_stale detected from incident fixture (1166.866333ms)
+✔ completed_manual when orch branch merged to main (1362.223958ms)
+✔ needs_retry when a task failed (1113.795416ms)
+✔ running diagnosis for active batch (1092.649375ms)
+✔ runReconciliationCheck matches reconcileBatch output shape (927.051ms)
+✖ tests/batch/reconcile.test.mjs (6377.765625ms)
+✔ failBatchFromEngineError writes batch.failed and clears enginePid (221.779083ms)
+✔ reconcileGhostRunningTasks marks running tasks failed without worker (0.263417ms)
+✖ tests/batch/resume-engine-crash.test.mjs (6064.297542ms)
+✖ tests/batch/resume-gate-open.test.mjs (5901.595ms)
+✔ refreshLaneHeartbeatsOnResume aligns lane heartbeats to engineStartedAt (0.590542ms)
+✔ taskAlreadyComplete returns false for failed task with stale .DONE on disk (0.536791ms)
+✔ resumeBatch after failed retry runs contract verification before succeed (2884.169625ms)
+✖ tests/batch/resume-multi-engine.test.mjs (4351.579041ms)
+✖ tests/batch/resume-multi-integration.test.mjs (4349.53475ms)
+✖ tests/batch/resume-multi-sequential.test.mjs (4144.65575ms)
+✔ validateMultiTaskResume accepts paused 2-task 2-lane batch (696.25825ms)
+✔ validateMultiTaskResume rejects batch with zero tasks (314.149542ms)
+✔ validateMultiTaskResume rejects missing worktree per lane (487.499042ms)
+✔ validateMultiTaskResume allows force resume when wave merge is pending (694.092ms)
+✔ validateResumeBatch delegates to multi validator for single-task batch (442.551667ms)
+✔ resolveDetachedWaitTimeoutMs uses long default for wait-terminal orphan resume (0.700333ms)
+✔ prepareOrphanResumeHandoff clears stale workerPid before orphan resume (256.990875ms)
+✔ clearStaleLaneWorkerPids preserves live worker pid (224.161708ms)
+✔ dual-dead lane+engine orphan reconciles as engine_orphaned with attached resume (1145.297708ms)
+✖ tests/batch/resume-orphan-recovery.test.mjs (2363.549708ms)
+✔ taskTerminalSuccessInBatch requires succeeded status and journal task.completed (0.520333ms)
+✖ tests/batch/resume-skip-succeeded.test.mjs (2357.521083ms)
+✔ resume-validation leaf does not import reconcile.mjs (0.804292ms)
+✔ isTaskResumable accepts pending, running, and resumable segments (0.135125ms)
+✔ computePendingTasks filters to resumable tasks only (0.089666ms)
+✔ findResumableWave skips succeeded merged waves when later wave has pending tasks (0.171042ms)
+✔ detectPostMergeLimboFromResumeSignals uses state mergeResults without journal (0.168125ms)
+✔ detectPostMergeLimboFromResumeSignals detects journal-only limbo when mergeResults empty (0.082334ms)
+✔ detectPostMergeLimboFromResumeSignals rejects when gate already exists (0.065042ms)
+✔ classifyTasksForOrphanDetect maps running status to running classification (0.475958ms)
+✔ pauseBatch sets phase paused and journals batch.paused (226.246584ms)
+✖ tests/batch/resume.test.mjs (1712.865625ms)
+✔ retryTask clears stale failure metadata before re-run (191.904916ms)
+✖ tests/batch/retry-state-drift.test.mjs (1016.748666ms)
+✔ retryTask atomically resets task and segment records (193.134458ms)
+✖ tests/batch/retry.test.mjs (444.839958ms)
+✖ tests/batch/review-crash-recovery.test.mjs
+✖ tests/batch/review-reviewer-rules.test.mjs
+✖ tests/batch/review-scope.test.mjs
+✖ tests/batch/review-shared.test.mjs
+✖ tests/batch/review-spawn-timeout-recovery.test.mjs
+✖ tests/batch/review-spawn.test.mjs
+✖ tests/batch/review.test.mjs
+✖ tests/batch/reviewer-artifact-early-honor.test.mjs
+✖ tests/batch/reviewer-model-resolve.test.mjs
+✖ tests/batch/rules-manifest-merge.test.mjs
+✖ tests/batch/run-metrics.test.mjs
+✖ tests/batch/salvage-auto-commit.test.mjs
+✖ tests/batch/salvage-inspect.test.mjs
+✖ tests/batch/sequence-auto-approve-flag.test.mjs
+✖ tests/batch/sequence-auto-approve.test.mjs
+✖ tests/batch/sequence-detached-poll.test.mjs
+✖ tests/batch/sequence-merge-blocked-continue.test.mjs
+✖ tests/batch/sequence-preflight.test.mjs
+✖ tests/batch/sequence-resume.test.mjs
+✖ tests/batch/sequence.test.mjs
+✖ tests/batch/skip-clears-failed.test.mjs
+✖ tests/batch/stall-output.test.mjs
+✖ tests/batch/stall-sat020-integration.test.mjs
+✖ tests/batch/state-transition.test.mjs
+✖ tests/batch/state-validate.test.mjs
+✖ tests/batch/status-json-progress.test.mjs
+✖ tests/batch/stub-contract-enforcement.test.mjs
+✖ tests/batch/stub-release-task-guard.test.mjs
+✖ tests/batch/stub-runner-delivery.test.mjs
+✖ tests/batch/supervisor-spawn.test.mjs
+✖ tests/batch/task-stall-budget.test.mjs
+✖ tests/batch/transient-orphan-debounce.test.mjs
+✖ tests/batch/wave-merge-state.test.mjs
+✖ tests/batch/worker-backend.test.mjs
+✖ tests/batch/worker-exit-no-done.test.mjs
+✖ tests/batch/worker-host-env.test.mjs
+✖ tests/batch/worker-host.test.mjs
+✖ tests/batch/worker-model-pin.test.mjs
+✖ tests/batch/worker-output.test.mjs
+✖ tests/batch/worker-pi-timeout.test.mjs
+✖ tests/batch/worker-post-done-grace.test.mjs
+✖ tests/batch/worker-prompt-rules.test.mjs
+✖ tests/batch/worker-prompt.test.mjs
+✖ tests/batch/worker-timeout-heartbeat-slide.test.mjs
+✖ tests/batch/worker-wedge-incident.test.mjs
+✖ tests/batch/worktree-cleanup-on-complete.test.mjs
+✖ tests/batch/worktree-git-paths.test.mjs
+✖ tests/batch/worktree-setup-hook.test.mjs
+✖ tests/cli/batch-help.test.mjs
+✖ tests/cli/cli-entrypoint-symlink.test.mjs
+✖ tests/cli/handoff-autowrite.test.mjs
+✖ tests/cli/issue-draft.test.mjs
+✖ tests/cli/journal-follow.test.mjs
+✖ tests/cli/lane-logs.test.mjs
+✖ tests/cli/phase23-exit-verify.test.mjs
+✖ tests/cli/scenarios.test.mjs
+✖ tests/cli/sequence.test.mjs
+✖ tests/cli/spine-diagnosis-state-drift.test.mjs
+✖ tests/cli/spine-handoff.test.mjs
+✖ tests/cli/spine-init-rules.test.mjs
+✖ tests/cli/spine-issue.test.mjs
+✖ tests/cli/spine-router.test.mjs
+✖ tests/cli/spine-rules.test.mjs
+✖ tests/cli/spine-wait-diagnosis.test.mjs
+✖ tests/cli/status.test.mjs
+✖ tests/cli/wait.test.mjs
+✖ tests/cli/watch.test.mjs
+✖ tests/compat/final-verdict-reconcile.test.mjs
+✖ tests/compat/incidents.test.mjs
+✖ tests/config/config-defaults-v2.test.mjs
+✖ tests/config/contract-mode.test.mjs
+✖ tests/config/cursor-rules/discover.test.mjs
+✖ tests/config/cursor-rules/match-globs.test.mjs
+✖ tests/config/cursor-rules/parse-frontmatter.test.mjs
+✖ tests/config/cursor-rules/profile.test.mjs
+✖ tests/config/cursor-rules/select-reviewer.test.mjs
+✖ tests/config/cursor-rules/select.test.mjs
+✖ tests/config/env-overrides.test.mjs
+✖ tests/config/reviewer-context.test.mjs
+✖ tests/config/settings-fields.test.mjs
+✖ tests/config/spine-config-layer.test.mjs
+✖ tests/config/spine-config-testing.test.mjs
+✖ tests/config/spine-init-gitignore.test.mjs
+✖ tests/config/spine-preflight-orch-conflict.test.mjs
+✖ tests/config/spine-preflight-prelanded.test.mjs
+✖ tests/config/spine-preflight.test.mjs
+✖ tests/config/typecheck-batch.test.mjs
+✖ tests/config/worker-context.test.mjs
+✖ tests/config/worker-launch-script.test.mjs
+✖ tests/coverage/policy.test.mjs
+✖ tests/dashboard/cli-startup.test.mjs
+✖ tests/dashboard/lane-throughput.test.mjs
+✖ tests/dashboard/parity.test.mjs
+✖ tests/dashboard/server.test.mjs
+✖ tests/dashboard/snapshot-lane-phase.test.mjs
+✖ tests/dashboard/snapshot-lanes.test.mjs
+✖ tests/dashboard/snapshot.test.mjs
+✖ tests/dashboard/ui-contract.test.mjs
+✖ tests/doctor/agent-model-inherit.test.mjs
+✖ tests/doctor/batch-size-guidance.test.mjs
+✖ tests/doctor/extension-conflict.test.mjs
+✖ tests/doctor/inherit-provider-auth.test.mjs
+✖ tests/doctor/integrate-concurrent-dev.test.mjs
+✖ tests/doctor/model-id-validation.test.mjs
+✖ tests/doctor/rules-manifest.test.mjs
+✖ tests/doctor/stale-path.test.mjs
+✖ tests/doctor/stale-worktrees.test.mjs
+✖ tests/doctor/stall-config.test.mjs
+✖ tests/doctor/suggest-max-parallel.test.mjs
+✖ tests/doctor/supervisor-config.test.mjs
+✖ tests/doctor/task-packet-size.test.mjs
+✖ tests/doctor/taskplane-coexistence.test.mjs
+✖ tests/doctor/worktree-health.test.mjs
+✖ tests/extensions/slash-commands-handlers.test.mjs
+✖ tests/extensions/spine-orchestrate-slash.test.mjs
+✖ tests/init/worktree-setup-hook-template.test.mjs
+✖ tests/migrate/spine-migrate.test.mjs
+✖ tests/migrate/taskplane-config.test.mjs
+✖ tests/planner/file-scope-overlap.test.mjs
+✖ tests/planner/format-plan.test.mjs
+✖ tests/planner/graph.test.mjs
+✖ tests/planner/integration.test.mjs
+✖ tests/planner/lanes-parallel.test.mjs
+✖ tests/planner/lanes.test.mjs
+✖ tests/planner/pending-scope.test.mjs
+✖ tests/planner/plan-pending-empty.test.mjs
+✖ tests/planner/prompt-validation.test.mjs
+✖ tests/planner/scope-glob-escape.test.mjs
+✖ tests/planner/scope.test.mjs
+✖ tests/planner/wave-scope.test.mjs
+✖ tests/slash-commands.test.mjs
+✖ tests/spine-deps.test.mjs
+✖ tests/spine-init-preset.test.mjs
+✖ tests/spine-init.test.mjs
+✖ tests/spine-preflight.test.mjs
+✖ tests/spine-run.test.mjs
+✖ tests/spine-settings-set.test.mjs
+✖ tests/spine-settings-show.test.mjs
+✖ tests/spine-settings-slash.test.mjs
+✖ tests/tasks/analyze-cli.test.mjs
+✖ tests/tasks/contract-parse.test.mjs
+✖ tests/tasks/packet-deps.test.mjs
+✖ tests/tasks/packet-prompt.test.mjs
+✖ tests/tasks/packet-status.test.mjs
+✖ tests/tasks/phase20-fixtures.test.mjs
+✖ tests/tasks/validate-cli.test.mjs
+✖ tests/tasks/validate-contract-warn.test.mjs
+✖ tests/tasks/validate-prelanded-contract.test.mjs
+✖ tests/worker-tools/report-progress.test.mjs
+✖ tests/worker-tools/request-gate.test.mjs
+✖ tests/worker-tools/review-step-tool.test.mjs
+✖ tests/worker-tools/worker-tools-registration.test.mjs
+ℹ tests 793
+ℹ suites 0
+ℹ pass 622
+ℹ fail 0
+ℹ cancelled 171
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 52167.7115
+
+✖ failing tests:
+
+test at tests/batch/engine-code-review.test.mjs:1:1
+✖ tests/batch/engine-code-review.test.mjs (37480.989834ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/engine-lane-execution.test.mjs:1:1
+✖ tests/batch/engine-lane-execution.test.mjs (35656.415875ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/engine.test.mjs:1:1
+✖ tests/batch/engine.test.mjs (34355.889ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/final-verdict.test.mjs:1:1
+✖ tests/batch/final-verdict.test.mjs (32484.234375ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/integration-abc.test.mjs:1:1
+✖ tests/batch/integration-abc.test.mjs (19513.51275ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/live-worker-log.test.mjs:1:1
+✖ tests/batch/live-worker-log.test.mjs (15847.32775ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/nested-spawn-guard.test.mjs:1:1
+✖ tests/batch/nested-spawn-guard.test.mjs (12042.404834ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/progress-snapshot.test.mjs:1:1
+✖ tests/batch/progress-snapshot.test.mjs (7531.024458ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/reconcile.test.mjs:1:1
+✖ tests/batch/reconcile.test.mjs (6377.765625ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-engine-crash.test.mjs:1:1
+✖ tests/batch/resume-engine-crash.test.mjs (6064.297542ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-gate-open.test.mjs:1:1
+✖ tests/batch/resume-gate-open.test.mjs (5901.595ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-multi-engine.test.mjs:1:1
+✖ tests/batch/resume-multi-engine.test.mjs (4351.579041ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-multi-integration.test.mjs:1:1
+✖ tests/batch/resume-multi-integration.test.mjs (4349.53475ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-multi-sequential.test.mjs:1:1
+✖ tests/batch/resume-multi-sequential.test.mjs (4144.65575ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-orphan-recovery.test.mjs:1:1
+✖ tests/batch/resume-orphan-recovery.test.mjs (2363.549708ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume-skip-succeeded.test.mjs:1:1
+✖ tests/batch/resume-skip-succeeded.test.mjs (2357.521083ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/resume.test.mjs:1:1
+✖ tests/batch/resume.test.mjs (1712.865625ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/retry-state-drift.test.mjs:1:1
+✖ tests/batch/retry-state-drift.test.mjs (1016.748666ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/retry.test.mjs:1:1
+✖ tests/batch/retry.test.mjs (444.839958ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-crash-recovery.test.mjs:1:1
+✖ tests/batch/review-crash-recovery.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-reviewer-rules.test.mjs:1:1
+✖ tests/batch/review-reviewer-rules.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-scope.test.mjs:1:1
+✖ tests/batch/review-scope.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-shared.test.mjs:1:1
+✖ tests/batch/review-shared.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-spawn-timeout-recovery.test.mjs:1:1
+✖ tests/batch/review-spawn-timeout-recovery.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review-spawn.test.mjs:1:1
+✖ tests/batch/review-spawn.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/review.test.mjs:1:1
+✖ tests/batch/review.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/reviewer-artifact-early-honor.test.mjs:1:1
+✖ tests/batch/reviewer-artifact-early-honor.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/reviewer-model-resolve.test.mjs:1:1
+✖ tests/batch/reviewer-model-resolve.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/rules-manifest-merge.test.mjs:1:1
+✖ tests/batch/rules-manifest-merge.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/run-metrics.test.mjs:1:1
+✖ tests/batch/run-metrics.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/salvage-auto-commit.test.mjs:1:1
+✖ tests/batch/salvage-auto-commit.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/salvage-inspect.test.mjs:1:1
+✖ tests/batch/salvage-inspect.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-auto-approve-flag.test.mjs:1:1
+✖ tests/batch/sequence-auto-approve-flag.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-auto-approve.test.mjs:1:1
+✖ tests/batch/sequence-auto-approve.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-detached-poll.test.mjs:1:1
+✖ tests/batch/sequence-detached-poll.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-merge-blocked-continue.test.mjs:1:1
+✖ tests/batch/sequence-merge-blocked-continue.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-preflight.test.mjs:1:1
+✖ tests/batch/sequence-preflight.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence-resume.test.mjs:1:1
+✖ tests/batch/sequence-resume.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/sequence.test.mjs:1:1
+✖ tests/batch/sequence.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/skip-clears-failed.test.mjs:1:1
+✖ tests/batch/skip-clears-failed.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/stall-output.test.mjs:1:1
+✖ tests/batch/stall-output.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/stall-sat020-integration.test.mjs:1:1
+✖ tests/batch/stall-sat020-integration.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/state-transition.test.mjs:1:1
+✖ tests/batch/state-transition.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/state-validate.test.mjs:1:1
+✖ tests/batch/state-validate.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/status-json-progress.test.mjs:1:1
+✖ tests/batch/status-json-progress.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/stub-contract-enforcement.test.mjs:1:1
+✖ tests/batch/stub-contract-enforcement.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/stub-release-task-guard.test.mjs:1:1
+✖ tests/batch/stub-release-task-guard.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/stub-runner-delivery.test.mjs:1:1
+✖ tests/batch/stub-runner-delivery.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/supervisor-spawn.test.mjs:1:1
+✖ tests/batch/supervisor-spawn.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/task-stall-budget.test.mjs:1:1
+✖ tests/batch/task-stall-budget.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/transient-orphan-debounce.test.mjs:1:1
+✖ tests/batch/transient-orphan-debounce.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/wave-merge-state.test.mjs:1:1
+✖ tests/batch/wave-merge-state.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-backend.test.mjs:1:1
+✖ tests/batch/worker-backend.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-exit-no-done.test.mjs:1:1
+✖ tests/batch/worker-exit-no-done.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-host-env.test.mjs:1:1
+✖ tests/batch/worker-host-env.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-host.test.mjs:1:1
+✖ tests/batch/worker-host.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-model-pin.test.mjs:1:1
+✖ tests/batch/worker-model-pin.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-output.test.mjs:1:1
+✖ tests/batch/worker-output.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-pi-timeout.test.mjs:1:1
+✖ tests/batch/worker-pi-timeout.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-post-done-grace.test.mjs:1:1
+✖ tests/batch/worker-post-done-grace.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-prompt-rules.test.mjs:1:1
+✖ tests/batch/worker-prompt-rules.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-prompt.test.mjs:1:1
+✖ tests/batch/worker-prompt.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-timeout-heartbeat-slide.test.mjs:1:1
+✖ tests/batch/worker-timeout-heartbeat-slide.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worker-wedge-incident.test.mjs:1:1
+✖ tests/batch/worker-wedge-incident.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worktree-cleanup-on-complete.test.mjs:1:1
+✖ tests/batch/worktree-cleanup-on-complete.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worktree-git-paths.test.mjs:1:1
+✖ tests/batch/worktree-git-paths.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/batch/worktree-setup-hook.test.mjs:1:1
+✖ tests/batch/worktree-setup-hook.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/batch-help.test.mjs:1:1
+✖ tests/cli/batch-help.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/cli-entrypoint-symlink.test.mjs:1:1
+✖ tests/cli/cli-entrypoint-symlink.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/handoff-autowrite.test.mjs:1:1
+✖ tests/cli/handoff-autowrite.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/issue-draft.test.mjs:1:1
+✖ tests/cli/issue-draft.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/journal-follow.test.mjs:1:1
+✖ tests/cli/journal-follow.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/lane-logs.test.mjs:1:1
+✖ tests/cli/lane-logs.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/phase23-exit-verify.test.mjs:1:1
+✖ tests/cli/phase23-exit-verify.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/scenarios.test.mjs:1:1
+✖ tests/cli/scenarios.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/sequence.test.mjs:1:1
+✖ tests/cli/sequence.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-diagnosis-state-drift.test.mjs:1:1
+✖ tests/cli/spine-diagnosis-state-drift.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-handoff.test.mjs:1:1
+✖ tests/cli/spine-handoff.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-init-rules.test.mjs:1:1
+✖ tests/cli/spine-init-rules.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-issue.test.mjs:1:1
+✖ tests/cli/spine-issue.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-router.test.mjs:1:1
+✖ tests/cli/spine-router.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-rules.test.mjs:1:1
+✖ tests/cli/spine-rules.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/spine-wait-diagnosis.test.mjs:1:1
+✖ tests/cli/spine-wait-diagnosis.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/status.test.mjs:1:1
+✖ tests/cli/status.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/wait.test.mjs:1:1
+✖ tests/cli/wait.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/cli/watch.test.mjs:1:1
+✖ tests/cli/watch.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/compat/final-verdict-reconcile.test.mjs:1:1
+✖ tests/compat/final-verdict-reconcile.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/compat/incidents.test.mjs:1:1
+✖ tests/compat/incidents.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/config-defaults-v2.test.mjs:1:1
+✖ tests/config/config-defaults-v2.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/contract-mode.test.mjs:1:1
+✖ tests/config/contract-mode.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/discover.test.mjs:1:1
+✖ tests/config/cursor-rules/discover.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/match-globs.test.mjs:1:1
+✖ tests/config/cursor-rules/match-globs.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/parse-frontmatter.test.mjs:1:1
+✖ tests/config/cursor-rules/parse-frontmatter.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/profile.test.mjs:1:1
+✖ tests/config/cursor-rules/profile.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/select-reviewer.test.mjs:1:1
+✖ tests/config/cursor-rules/select-reviewer.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/cursor-rules/select.test.mjs:1:1
+✖ tests/config/cursor-rules/select.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/env-overrides.test.mjs:1:1
+✖ tests/config/env-overrides.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/reviewer-context.test.mjs:1:1
+✖ tests/config/reviewer-context.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/settings-fields.test.mjs:1:1
+✖ tests/config/settings-fields.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-config-layer.test.mjs:1:1
+✖ tests/config/spine-config-layer.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-config-testing.test.mjs:1:1
+✖ tests/config/spine-config-testing.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-init-gitignore.test.mjs:1:1
+✖ tests/config/spine-init-gitignore.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-preflight-orch-conflict.test.mjs:1:1
+✖ tests/config/spine-preflight-orch-conflict.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-preflight-prelanded.test.mjs:1:1
+✖ tests/config/spine-preflight-prelanded.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/spine-preflight.test.mjs:1:1
+✖ tests/config/spine-preflight.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/typecheck-batch.test.mjs:1:1
+✖ tests/config/typecheck-batch.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/worker-context.test.mjs:1:1
+✖ tests/config/worker-context.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/config/worker-launch-script.test.mjs:1:1
+✖ tests/config/worker-launch-script.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/coverage/policy.test.mjs:1:1
+✖ tests/coverage/policy.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/cli-startup.test.mjs:1:1
+✖ tests/dashboard/cli-startup.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/lane-throughput.test.mjs:1:1
+✖ tests/dashboard/lane-throughput.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/parity.test.mjs:1:1
+✖ tests/dashboard/parity.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/server.test.mjs:1:1
+✖ tests/dashboard/server.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/snapshot-lane-phase.test.mjs:1:1
+✖ tests/dashboard/snapshot-lane-phase.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/snapshot-lanes.test.mjs:1:1
+✖ tests/dashboard/snapshot-lanes.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/snapshot.test.mjs:1:1
+✖ tests/dashboard/snapshot.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/dashboard/ui-contract.test.mjs:1:1
+✖ tests/dashboard/ui-contract.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/agent-model-inherit.test.mjs:1:1
+✖ tests/doctor/agent-model-inherit.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/batch-size-guidance.test.mjs:1:1
+✖ tests/doctor/batch-size-guidance.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/extension-conflict.test.mjs:1:1
+✖ tests/doctor/extension-conflict.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/inherit-provider-auth.test.mjs:1:1
+✖ tests/doctor/inherit-provider-auth.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/integrate-concurrent-dev.test.mjs:1:1
+✖ tests/doctor/integrate-concurrent-dev.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/model-id-validation.test.mjs:1:1
+✖ tests/doctor/model-id-validation.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/rules-manifest.test.mjs:1:1
+✖ tests/doctor/rules-manifest.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/stale-path.test.mjs:1:1
+✖ tests/doctor/stale-path.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/stale-worktrees.test.mjs:1:1
+✖ tests/doctor/stale-worktrees.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/stall-config.test.mjs:1:1
+✖ tests/doctor/stall-config.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/suggest-max-parallel.test.mjs:1:1
+✖ tests/doctor/suggest-max-parallel.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/supervisor-config.test.mjs:1:1
+✖ tests/doctor/supervisor-config.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/task-packet-size.test.mjs:1:1
+✖ tests/doctor/task-packet-size.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/taskplane-coexistence.test.mjs:1:1
+✖ tests/doctor/taskplane-coexistence.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/doctor/worktree-health.test.mjs:1:1
+✖ tests/doctor/worktree-health.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/extensions/slash-commands-handlers.test.mjs:1:1
+✖ tests/extensions/slash-commands-handlers.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/extensions/spine-orchestrate-slash.test.mjs:1:1
+✖ tests/extensions/spine-orchestrate-slash.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/init/worktree-setup-hook-template.test.mjs:1:1
+✖ tests/init/worktree-setup-hook-template.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/migrate/spine-migrate.test.mjs:1:1
+✖ tests/migrate/spine-migrate.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/migrate/taskplane-config.test.mjs:1:1
+✖ tests/migrate/taskplane-config.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/file-scope-overlap.test.mjs:1:1
+✖ tests/planner/file-scope-overlap.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/format-plan.test.mjs:1:1
+✖ tests/planner/format-plan.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/graph.test.mjs:1:1
+✖ tests/planner/graph.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/integration.test.mjs:1:1
+✖ tests/planner/integration.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/lanes-parallel.test.mjs:1:1
+✖ tests/planner/lanes-parallel.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/lanes.test.mjs:1:1
+✖ tests/planner/lanes.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/pending-scope.test.mjs:1:1
+✖ tests/planner/pending-scope.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/plan-pending-empty.test.mjs:1:1
+✖ tests/planner/plan-pending-empty.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/prompt-validation.test.mjs:1:1
+✖ tests/planner/prompt-validation.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/scope-glob-escape.test.mjs:1:1
+✖ tests/planner/scope-glob-escape.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/scope.test.mjs:1:1
+✖ tests/planner/scope.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/planner/wave-scope.test.mjs:1:1
+✖ tests/planner/wave-scope.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/slash-commands.test.mjs:1:1
+✖ tests/slash-commands.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-deps.test.mjs:1:1
+✖ tests/spine-deps.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-init-preset.test.mjs:1:1
+✖ tests/spine-init-preset.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-init.test.mjs:1:1
+✖ tests/spine-init.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-preflight.test.mjs:1:1
+✖ tests/spine-preflight.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-run.test.mjs:1:1
+✖ tests/spine-run.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-settings-set.test.mjs:1:1
+✖ tests/spine-settings-set.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-settings-show.test.mjs:1:1
+✖ tests/spine-settings-show.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/spine-settings-slash.test.mjs:1:1
+✖ tests/spine-settings-slash.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/analyze-cli.test.mjs:1:1
+✖ tests/tasks/analyze-cli.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/contract-parse.test.mjs:1:1
+✖ tests/tasks/contract-parse.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/packet-deps.test.mjs:1:1
+✖ tests/tasks/packet-deps.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/packet-prompt.test.mjs:1:1
+✖ tests/tasks/packet-prompt.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/packet-status.test.mjs:1:1
+✖ tests/tasks/packet-status.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/phase20-fixtures.test.mjs:1:1
+✖ tests/tasks/phase20-fixtures.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/validate-cli.test.mjs:1:1
+✖ tests/tasks/validate-cli.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/validate-contract-warn.test.mjs:1:1
+✖ tests/tasks/validate-contract-warn.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/tasks/validate-prelanded-contract.test.mjs:1:1
+✖ tests/tasks/validate-prelanded-contract.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/worker-tools/report-progress.test.mjs:1:1
+✖ tests/worker-tools/report-progress.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/worker-tools/request-gate.test.mjs:1:1
+✖ tests/worker-tools/request-gate.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/worker-tools/review-step-tool.test.mjs:1:1
+✖ tests/worker-tools/review-step-tool.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
+test at tests/worker-tools/worker-tools-registration.test.mjs:1:1
+✖ tests/worker-tools/worker-tools-registration.test.mjs
+  'Promise resolution is still pending but the event loop has already resolved'
+
