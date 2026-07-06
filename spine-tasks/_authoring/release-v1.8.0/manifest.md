@@ -13,10 +13,11 @@
 
 | Bucket | Selected | Profile limit | Status |
 |--------|----------|---------------|--------|
-| Documentation | 0 | 2–4 | PASS (audit-only release) |
+| Documentation | 1 | 2–4 | PASS |
 | Bug fixes | 0 | 3–5 | WARN (operator override — audit hardening) |
 | Enhancements | 8 issues → 12 tasks | 1–2 | PASS with operator override |
-| **Total tasks** | 12 | 10–15 | PASS |
+| Enhancements (stet) | 1 | — | PASS (operator request; PR #172 P1) |
+| **Total tasks** | 14 | 10–15 | PASS |
 
 **Profile audit:** PASS with operator override (audit-driven minor; #176–#183 decomposed)
 
@@ -38,14 +39,16 @@
 | SP-506 | #177 | enh | M | Split dashboard: lane row builders | Partial #177 |
 | SP-507 | #177 | enh | M | Split dashboard: wave + tail activity builders | Partial #177 |
 | SP-508 | #177 | enh | S | Split dashboard: thin snapshot assembly | Closes #177 |
+| SP-509 | — | docs | S | Stet feedback loop documentation (P0) | From PR #172 |
+| SP-510 | — | enh | M | Contract stet triage on non-zero findings (P1) | Enables `stet optimize` |
 
-**Release scope ID:** `SP-497,SP-498,SP-499,SP-500,SP-501,SP-502,SP-503,SP-504,SP-505,SP-506,SP-507,SP-508`
+**Release scope ID:** `SP-497,SP-498,SP-499,SP-500,SP-501,SP-502,SP-503,SP-504,SP-505,SP-506,SP-507,SP-508,SP-509,SP-510`
 
 ---
 
 ## Gaps requiring new packets
 
-All 12 packets authored in Phase 3 (SP-497–SP-508).
+All 14 packets authored (SP-497–SP-510). SP-509/510 added from PR #172 stet brief.
 
 ---
 
@@ -63,6 +66,9 @@ Wave 2 · 3 tasks · serial (preflight split chain)
 
 Wave 3 · 3 tasks · serial (dashboard split chain)
   SP-506 → SP-507 → SP-508
+
+Wave 4 · 2 tasks · serial (stet feedback loop — PR #172)
+  SP-509 → SP-510
 ```
 
 ---
