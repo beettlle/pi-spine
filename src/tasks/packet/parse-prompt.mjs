@@ -1,3 +1,5 @@
+import { parseSizeLineFromMarkdown } from "./size-line.mjs";
+
 /** PRD §13.4 — em dash (U+2014) required between ID and title. */
 export const TASK_HEADING_RE = /^# Task: ([A-Z][A-Z0-9]*-\d+) — (.+)$/m;
 
@@ -14,7 +16,6 @@ const OPTIONAL_SECTIONS = ["Testing", "Context to Read First", "Environment", "D
 
 const H2_SECTION_RE = /^## (.+)$/gm;
 const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
-const SIZE_LINE_RE = /^\*\*Size:\*\*\s*(S|M|L|XL)\s*$/im;
 
 /** Normative contract table fields per handoff §4.1. */
 export const CONTRACT_FIELD_NAMES = Object.freeze([
@@ -62,8 +63,7 @@ export function parsePrompt(markdown) {
 		steps.some((step) => /testing/i.test(step.title));
 
 	const missingSections = REQUIRED_SECTIONS.filter((name) => !sections[name]);
-	const sizeMatch = SIZE_LINE_RE.exec(markdown);
-	const size = sizeMatch ? sizeMatch[1].toUpperCase() : null;
+	const size = parseSizeLineFromMarkdown(markdown);
 
 	return {
 		taskId,
