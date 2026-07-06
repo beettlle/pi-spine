@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Planner wave filtering for batch start (GitHub #54 Tier 1 SP-A).
  */

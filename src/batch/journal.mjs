@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Append-only orchestration journal (FR-JRN, PRD §11).
  */

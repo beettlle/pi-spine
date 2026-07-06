@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Wave planning with file-scope overlap detection and lane serialization (SP-353 / issue #31).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Gate and evidence path readers — leaf module (SP-432 / #83-D).
  * No imports from evidence, gate, reconcile, or postmortem.

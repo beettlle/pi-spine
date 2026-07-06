@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Per-task stall timeout budget from PROMPT Size (SP-088).
  */

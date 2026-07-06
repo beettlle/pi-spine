@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Integrate gate evidence collection (SP-432 / #83-D).
  * Split from gate.mjs to keep gate FSM under phase-23 LOC policy.

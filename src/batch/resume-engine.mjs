@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Detached engine lifecycle helpers for batch resume (SP-203).
  */

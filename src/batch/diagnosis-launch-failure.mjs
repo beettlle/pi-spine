@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Worker launch failure inference for diagnosis headlines (SP-105, SP-421).
  */

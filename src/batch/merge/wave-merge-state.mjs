@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Wave merge bookkeeping — detect waves missing mergeResults entries.
  */

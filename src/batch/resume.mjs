@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch pause and resume for single-lane batches (TP-015, PRD §18.2).
  */

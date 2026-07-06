@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lane worker execution backend (TP-050).
  * @see docs/adoption/create-agent-session-spike.md

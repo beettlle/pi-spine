@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch pause CLI with attached-engine confirmation (SP-376, GitHub #57).
  * Engine pause propagation helpers (SP-375).

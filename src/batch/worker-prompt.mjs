@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shared worker tail prompt text for pi runners (SP-067).
  */

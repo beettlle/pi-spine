@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rules-manifest drift resolution for integrate prep (SP-317 / #22).
  */

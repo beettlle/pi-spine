@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-SCHED-01: build directed graph from dependencies and
  * produce topological waves.

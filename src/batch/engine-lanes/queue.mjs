@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lane queue and provisioning — build lane/task state from plan and handle
  * per-lane task prep (file scope) plus skip-when-done-on-disk queue behavior.

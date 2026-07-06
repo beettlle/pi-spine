@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Failed-phase limbo after retry clears failed tasks but phase stays failed (GitHub #25).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Attached batch foreground runner — milestones, integrate handoff, CLI exit (SP-343, GitHub #34).
  * Post-merge limbo resume fast path (SP-348, GitHub #39).

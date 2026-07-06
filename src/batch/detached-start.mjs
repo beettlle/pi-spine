@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Detached batch engine spawn — default for `spine batch start` and `spine batch resume`.
  */

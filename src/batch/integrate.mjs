@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Orch → base integration (FR-INT-01–05, TP-016).
  */

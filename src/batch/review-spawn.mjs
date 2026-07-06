@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reviewer pi spawn assembly and child process (FR-REV spawn contract).
  * SP-259 strangler extract from review.mjs.

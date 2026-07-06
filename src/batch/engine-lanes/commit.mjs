@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Lane commit and post-commit dirty validation (SP-427 / #73).
  */

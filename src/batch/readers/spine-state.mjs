@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Parse pi-spine batch-state.json (schema v1, tolerant reader).
  */

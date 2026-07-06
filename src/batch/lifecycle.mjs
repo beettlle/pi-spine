@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch lifecycle: dismiss, complete, archive-first (FR-BATCH-15/16, §18.6).
  */

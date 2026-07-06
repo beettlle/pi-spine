@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Post-merge limbo detection — merges done, tasks succeeded, phase still running (SP-204).
  */

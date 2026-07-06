@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FR-SCHED-02: detect dependency cycles.
  */

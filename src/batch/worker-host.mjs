@@ -606,16 +606,18 @@ export async function runWorker({
 			continue;
 		}
 
-		const signals = collectProgressSignals(/** @type {any} */ ({
-			worktreePath,
-			taskFolder,
-			laneBranch,
-			fileScopePaths,
-			journalContext:
-				projectRoot && batchId
-					? { projectRoot, batchId, laneNumber, taskId }
-					: undefined,
-		}));
+		const signals = collectProgressSignals(
+			/** @type {Parameters<typeof collectProgressSignals>[0]} */ ({
+				worktreePath,
+				taskFolder,
+				laneBranch,
+				fileScopePaths,
+				journalContext:
+					projectRoot && batchId
+						? { projectRoot, batchId, laneNumber, taskId }
+						: undefined,
+			}),
+		);
 		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
 			stallAnchorAt = now;
@@ -700,21 +702,25 @@ export async function runWorker({
 			batchId &&
 			now - lastHeartbeatAt >= stallConfig.heartbeatIntervalMs
 		) {
-			const heartbeatKind = resolveHeartbeatKind(/** @type {any} */ ({
-				workerPhase,
-				checkpointChanged,
-				activityChanged,
-			}));
-			recordLaneHeartbeat(/** @type {any} */ ({
-				projectRoot,
-				batchId,
-				laneNumber,
-				taskId,
-				signals,
-				correlationId: laneCorrelationId,
-				workerPhase,
-				heartbeatKind,
-			}));
+			const heartbeatKind = resolveHeartbeatKind(
+				/** @type {Parameters<typeof resolveHeartbeatKind>[0]} */ ({
+					workerPhase,
+					checkpointChanged,
+					activityChanged,
+				}),
+			);
+			recordLaneHeartbeat(
+				/** @type {Parameters<typeof recordLaneHeartbeat>[0]} */ ({
+					projectRoot,
+					batchId,
+					laneNumber,
+					taskId,
+					signals,
+					correlationId: laneCorrelationId,
+					workerPhase,
+					heartbeatKind,
+				}),
+			);
 			stallAnchorAt = nextStallAnchorAt({
 				stallAnchorAt,
 				now,

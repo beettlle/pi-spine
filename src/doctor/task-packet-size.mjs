@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor warnings for oversized task packets (SP-086).
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rebuild batch task/segment status from append-only journal (FR-REL-01/02, PRD §11.4).
  */

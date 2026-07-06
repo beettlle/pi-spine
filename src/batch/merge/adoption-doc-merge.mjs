@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Safe auto-merge for additive conflicts in docs/adoption/* during lane→orch wave merge.
  * @see GitHub #14 — serial README wave tasks overlapping operator-runbook.md

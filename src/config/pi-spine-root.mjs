@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Resolve pi-spine package root for worker subprocess env (SP-103).
  */

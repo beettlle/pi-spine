@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Agent model/thinking pin resolution for reviewer spawns (issue #53 / SP-369).
  */

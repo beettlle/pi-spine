@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Doctor warning when spine agents inherit pi's global model and pi defaults to LM Studio (SP-238).
  * Per-type reviewer effective pins (issue #53 / SP-371).

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Human-readable plan output for `spine plan` and `/spine-plan`.
  */

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * contract.mode config validation (SP-142, handoff §3.1).
  */

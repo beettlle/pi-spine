@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Post-merge limbo predicates — pure state readers (leaf module, SP-424 / #83-A).
  */

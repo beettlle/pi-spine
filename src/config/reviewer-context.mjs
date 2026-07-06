@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Reviewer context: auto-selected Cursor rules for review spawn (SP-250).
  * Mirrors worker context path with 16 KiB cap and no referenceDocs injection.

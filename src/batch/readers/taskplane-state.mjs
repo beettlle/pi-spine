@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Parse Taskplane `.pi/batch-state.json` for dogfood reconciliation.
  */

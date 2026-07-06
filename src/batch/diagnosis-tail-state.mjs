@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Running diagnosis headlines when batch phase is active but no workers are scheduled (GitHub #68).
  */

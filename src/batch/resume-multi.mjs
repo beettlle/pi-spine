@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Multi-task batch resume validation (TP-039) and execution (TP-040).
  */

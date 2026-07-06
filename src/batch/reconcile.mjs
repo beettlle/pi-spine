@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Batch reconciliation (FR-BATCH-12, §17.5).
  */

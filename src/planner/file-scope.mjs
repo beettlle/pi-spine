@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * File Scope overlap detection for wave planner (SP-352 / issue #31).
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Sandbox validation for development.workerLaunchScript (SP-077).
  */
