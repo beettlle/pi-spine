@@ -1,8 +1,8 @@
 # SP-444: Supervisor config doctor and docs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 3 (Documentation & Delivery)
+**Status:** 🟢 Complete
+**Last Updated:** 2026-07-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,44 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #71
-- [ ] Dependencies satisfied
+- [x] Read issue #71
+- [x] Dependencies satisfied (SP-440 complete)
 
 ---
 
 ### Step 0: Settings + doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add editable supervisor fields
-- [ ] Doctor warns enabled + missing template or bad model
+- [x] Add editable supervisor fields
+- [x] Doctor warns enabled + missing template or bad model
 
 ---
 
 ### Step 1: Docs + close
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update runbook supervisor section
-- [ ] Close #71
+- [x] Update runbook supervisor section
+- [x] Close #71
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (1716/1716 with SPINE_IS_WORKER unset)
+- [x] Coverage gate (88.43% line coverage, threshold 77%)
+- [x] All failures fixed
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updated
-- [ ] Issue closed
-- [ ] .DONE created
+- [x] Docs updated
+- [x] Issue closed
+- [x] .DONE created
 
 ---
 
@@ -63,6 +63,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Full npm test fails under SPINE_IS_WORKER=1 (nested batch spawn guard) | Pre-existing env constraint; contract tests pass | worker session |
 
 ---
 
@@ -71,6 +72,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#71) |
+| 2026-07-05 | Step 0–1 | Settings, doctor, runbook, tests |
+| 2026-07-05 | Step 2–3 | Tests verified, #71 closed, .DONE |
 
 ---
 
@@ -82,4 +85,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Commit: `aef420d` feat(SP-444): complete Step 1 — supervisor settings, doctor, and docs

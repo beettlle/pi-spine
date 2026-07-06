@@ -2,15 +2,22 @@
  * Block until reconcile diagnosis reaches a target set (issue #46, SP-362).
  */
 
-import { DIAGNOSIS_TAXONOMY } from "../batch/diagnosis.mjs";
 import { reconcileBatch } from "../batch/reconcile.mjs";
+import {
+	diagnosisMatchesUntil,
+	parseUntilDiagnoses,
+	reconciliationMatchesUntil,
+} from "./spine-wait.mjs";
 import {
 	buildWatchSnapshot,
 	DEFAULT_WATCH_INTERVAL_SEC,
 } from "./watch.mjs";
 
-/** @type {ReadonlySet<string>} */
-const VALID_UNTIL_DIAGNOSES = new Set(DIAGNOSIS_TAXONOMY);
+export {
+	diagnosisMatchesUntil,
+	parseUntilDiagnoses,
+	reconciliationMatchesUntil,
+} from "./spine-wait.mjs";
 
 /**
  * @param {string} raw
@@ -43,34 +50,6 @@ export function parseDurationMs(raw) {
 
 	const multipliers = { s: 1000, m: 60_000, h: 3_600_000 };
 	return value * multipliers[unit];
-}
-
-/**
- * @param {string} raw
- * @returns {Set<string>}
- */
-export function parseUntilDiagnoses(raw) {
-	const trimmed = String(raw).trim();
-	if (trimmed.length === 0) {
-		throw new Error("--until requires a comma-separated diagnosis list");
-	}
-
-	/** @type {Set<string>} */
-	const diagnoses = new Set();
-	for (const part of trimmed.split(",")) {
-		const diagnosis = part.trim();
-		if (diagnosis.length === 0) {
-			throw new Error("--until contains an empty diagnosis entry");
-		}
-		if (!VALID_UNTIL_DIAGNOSES.has(diagnosis)) {
-			throw new Error(
-				`Unknown diagnosis in --until: ${diagnosis} (valid: ${DIAGNOSIS_TAXONOMY.join(", ")})`,
-			);
-		}
-		diagnoses.add(diagnosis);
-	}
-
-	return diagnoses;
 }
 
 /**
@@ -113,17 +92,6 @@ export function parseWaitArgs(argv) {
 }
 
 /**
- * @param {string | null | undefined} diagnosis
- * @param {Set<string>} untilDiagnoses
- */
-export function diagnosisMatchesUntil(diagnosis, untilDiagnoses) {
-	if (diagnosis == null) {
-		return false;
-	}
-	return untilDiagnoses.has(diagnosis);
-}
-
-/**
  * @param {object} options
  * @param {string} options.projectRoot
  * @param {Set<string>} options.untilDiagnoses
@@ -163,7 +131,7 @@ export async function runSpineWait(options) {
 			const result = reconcileFn({ projectRoot });
 			const diagnosis = result.diagnosis ?? null;
 
-			if (diagnosisMatchesUntil(diagnosis, untilDiagnoses)) {
+			if (reconciliationMatchesUntil(result, untilDiagnoses)) {
 				if (json) {
 					writeStdout(`${JSON.stringify(buildWatchSnapshot(result, nowFn()))}\n`);
 				}

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
 	buildAttachedBatchResumeArgv,
 	spawnDetachedBatchEngine,
-} from "./detached-start.mjs";
+} from "./detached-spawn.mjs";
 import { loadGateRecord, openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordWaveMergeResult } from "./merge/wave-merge-state.mjs";
