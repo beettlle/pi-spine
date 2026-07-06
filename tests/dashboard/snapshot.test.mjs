@@ -5,13 +5,16 @@ import test from "node:test";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import {
 	buildDashboardSnapshot,
-	buildDefaultViewStatus,
-	buildWaveProgress,
 	classifyLaneStatus,
 	formatLaneHeartbeatDisplay,
 	resolveLaneHeartbeatMeta,
 	truncateWorktreePath,
 } from "../../src/dashboard/snapshot.mjs";
+import {
+	buildDefaultViewStatus,
+	buildWaveProgress,
+	resolveTailActivityFromJournal,
+} from "../../src/dashboard/snapshot-waves.mjs";
 import { resolveStallConfig } from "../../src/batch/heartbeat.mjs";
 import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import { formatLaneHeartbeatDisplay as viewFormatLaneHeartbeatDisplay } from "../../src/dashboard/view.mjs";
@@ -303,4 +306,12 @@ test("buildWaveProgress keeps in-flight current wave active", () => {
 	);
 	assert.equal(waves.waves[0].status, "completed");
 	assert.equal(waves.waves[1].status, "active");
+});
+
+test("resolveTailActivityFromJournal reads latest matching journal event", () => {
+	const label = resolveTailActivityFromJournal([
+		{ type: "batch.merge_started" },
+		{ type: "gate.opened" },
+	]);
+	assert.equal(label, "Integrate gate opened — awaiting approval");
 });
