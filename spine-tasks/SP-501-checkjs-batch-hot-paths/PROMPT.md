@@ -57,7 +57,7 @@ Enable `checkJs: true` in `tsconfig.batch.json` for the batch hot-path slice (en
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && npm test -- tests/config/typecheck-batch.test.mjs` |
+| testCommand | `npm run typecheck && node --test tests/config/typecheck-batch.test.mjs` |
 | fileScopeMustChange | `tsconfig.batch.json`, `tests/config/typecheck-batch.test.mjs` |
 | minLineCoverage | 77 |
 
