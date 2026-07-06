@@ -38,7 +38,7 @@ Complete #83: break evidence↔reconcile↔gate triangle via thin read leaf if n
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/arch/import-cycles.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs && npm run coverage:check` |
 | minLineCoverage | 77 |
 
 ## Steps
