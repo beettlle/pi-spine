@@ -1,7 +1,7 @@
 # SP-515: Macro phase active workers — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -13,28 +13,26 @@
 
 - [x] Read #165 and reproduce macro Failed + running batch
 
-**Notes:** `deriveMacroPhase` maps `state_drift`/`engine_orphaned`/`worker_orphaned` to `failed` even when `batchPhase: running` and `hasActiveWorkerTasks: true`. Gate-pending tail with `allTasksTerminalSuccess` also misclassified as Failed.
-
 ### Step 1: Fix
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Adjust macro phase derivation when workers active under drift/orphan
 
 ### Step 2: Tests
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
 - [x] Add macro-phase-active regression test
 
 ### Step 3: Testing & Verification
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Run contract testCommand
+- [x] Run contract testCommand (typecheck + macro-phase-active: 8/8 pass; coverage:check aborted 44 pre-existing unrelated failures)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Close #165
-- [ ] Create `.DONE`
+- [x] Close #165
+- [x] Create `.DONE`
 
 ---
 
