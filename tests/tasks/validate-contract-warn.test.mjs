@@ -7,6 +7,11 @@ import {
 	FILE_SCOPE_MUST_NOT_SPINE_TASKS_FIX_HINT,
 	validateContract,
 } from "../../src/tasks/packet/validate-contract.mjs";
+import {
+	collectTestCommandScopeWarnings,
+	TEST_COMMAND_COVERAGE_FIX_HINT,
+	TEST_COMMAND_NPM_TEST_FIX_HINT,
+} from "../../src/tasks/validate-contract-warn.mjs";
 
 /**
  * @param {string[]} mustNotChange
@@ -114,4 +119,99 @@ test("collectFileScopeMustNotChangeWarnings skips current-task check without tas
 	const warnings = collectFileScopeMustNotChangeWarnings(parsed, { taskId: null });
 
 	assert.deepEqual(warnings, []);
+});
+
+/**
+ * @param {string} testCommand
+ * @param {"S"|"M"|"L"} [size]
+ */
+function promptWithTestCommand(testCommand, size = "S") {
+	return `# Task: SP-521 — Scoped contract fixture
+
+**Size:** ${size}
+
+## Mission
+x
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/example.mjs\`
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`${testCommand}\` |
+| fileScopeMustChange | \`src/example.mjs\` |
+
+## Steps
+### Step 1: Testing & Verification
+- [ ] t
+
+## Completion Criteria
+- [ ] done
+
+## Do NOT
+- n
+`;
+}
+
+test("collectTestCommandScopeWarnings warns on coverage:check for Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --test tests/foo.test.mjs && npm run coverage:check",
+		),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "S" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /coverage:check/);
+	assert.match(warnings[0], new RegExp(TEST_COMMAND_COVERAGE_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});
+
+test("collectTestCommandScopeWarnings warns on npm test for Size M", () => {
+	const parsed = parseContract(
+		promptWithTestCommand("npm run typecheck && SPINE_WORKER_STUB=1 npm test", "M"),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "M" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /npm test/);
+	assert.match(warnings[0], new RegExp(TEST_COMMAND_NPM_TEST_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});
+
+test("collectTestCommandScopeWarnings is quiet for scoped node --test on Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
+		),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "S" });
+
+	assert.deepEqual(warnings, []);
+});
+
+test("collectTestCommandScopeWarnings allows coverage:check on Size L", () => {
+	const parsed = parseContract(
+		promptWithTestCommand("npm run typecheck && npm run coverage:check", "L"),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "L" });
+
+	assert.deepEqual(warnings, []);
+});
+
+test("validateContract warns on SP-516-shaped coverage chain for Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs && npm run coverage:check",
+		),
+	);
+	const result = validateContract(parsed, { mode: "required", taskId: "SP-516", taskSize: "S" });
+
+	assert.equal(result.ok, true);
+	assert.deepEqual(result.errors, []);
+	assert.equal(result.warnings.length, 1);
+	assert.match(result.warnings[0], /coverage:check/);
 });

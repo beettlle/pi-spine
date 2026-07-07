@@ -40,6 +40,7 @@ export function validatePrompt(markdown, options = {}) {
 	const contractValidation = validateContract(contract, {
 		mode,
 		taskId: structure.prompt.taskId,
+		taskSize: structure.prompt.size,
 		legacyTaskIdPrefixes,
 	});
 
