@@ -1283,8 +1283,11 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 				(task) => task.classification === "terminal-failure",
 			);
 			signals.failedTaskId = healedFailedTask?.taskId ?? signals.failedTaskId;
-			syncPersistedClassifications({ projectRoot, state: batch.raw });
 		}
+	}
+
+	if (batch.raw) {
+		syncPersistedClassifications({ projectRoot, state: batch.raw });
 	}
 
 	signals.orphanRunning = detectOrphanRunning({

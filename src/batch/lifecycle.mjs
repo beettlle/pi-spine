@@ -12,7 +12,7 @@ import { appendJournalEvent } from "./journal.mjs";
 import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
-import { loadBatchStateFile, parseBatchState, reconcileBatch, syncPersistedClassifications } from "./reconcile.mjs";
+import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import {
 	clearActiveBatchStateIfMatches,
 } from "./batch-state-io.mjs";
@@ -267,8 +267,6 @@ export function dismissBatch(ctx) {
 
 	terminateSupervisorIfRunning(projectRoot, batchId, "batch_dismiss");
 
-	syncPersistedClassifications({ projectRoot, state: loaded.raw });
-
 	const terminatedWorkers = terminateLaneWorkers(loaded.raw.lanes, { hard: true });
 	for (const entry of terminatedWorkers) {
 		appendJournalEvent(projectRoot, batchId, "lane.worker_terminated", {
@@ -447,8 +445,6 @@ export function completeBatch(ctx) {
 	}
 
 	terminateSupervisorIfRunning(projectRoot, batchId, "batch_complete");
-
-	syncPersistedClassifications({ projectRoot, state: loaded.raw });
 
 	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
 	const postMortemPath = writeBatchPostMortem({
