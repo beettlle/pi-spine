@@ -1,7 +1,7 @@
 # SP-512: Drift retry deadlock fix — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 2
 **Size:** S
@@ -33,12 +33,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
+
+- [x] Run contract testCommand
+- [x] Full suite if batch-touching: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
+
+- [x] Close #170 on GitHub
+- [x] Create `.DONE`
 
 ---
 
