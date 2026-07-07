@@ -62,10 +62,46 @@ export function resolveStallConfig(config = {}) {
 }
 
 /**
+ * Per-lane file-scope mtime snapshot for git porcelain debounce (issue #98 P1).
+ * Keyed by worktree + file-scope paths; reused when mtimes are unchanged.
+ * @type {Map<string, { fileScopeMtimeMs: number | null, dirtyPaths: string[] }>}
+ */
+const _gitPorcelainDebounceByLane = new Map();
+
+let _gitPorcelainCallCount = 0;
+
+/**
+ * @param {string} worktreePath
+ * @param {string[]} [fileScopePaths]
+ */
+function gitPorcelainDebounceKey(worktreePath, fileScopePaths) {
+	const scopeKey = Array.isArray(fileScopePaths) ? fileScopePaths.join("\0") : "";
+	return `${worktreePath}\0${scopeKey}`;
+}
+
+/** Clear git porcelain debounce cache. Useful for test isolation. */
+export function clearGitPorcelainDebounceCache() {
+	_gitPorcelainDebounceByLane.clear();
+}
+
+/** Reset git porcelain invocation counter (tests only). */
+export function resetGitPorcelainCallCount() {
+	_gitPorcelainCallCount = 0;
+}
+
+/** @returns {number} git status --porcelain invocations since last reset. */
+export function getGitPorcelainCallCount() {
+	return _gitPorcelainCallCount;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string[]} args
  */
 function git(worktreePath, args) {
+	if (args[0] === "status" && args[1] === "--porcelain") {
+		_gitPorcelainCallCount += 1;
+	}
 	try {
 		return execFileSync("git", args, {
 			cwd: worktreePath,
@@ -197,7 +233,15 @@ export function collectProgressSignals({
 	}
 
 	const fileScopeMtimeMs = resolveFileScopeMtimeMs(worktreePath, fileScopePaths);
-	const dirtyPaths = resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder);
+	const debounceKey = gitPorcelainDebounceKey(worktreePath, fileScopePaths);
+	const debounced = _gitPorcelainDebounceByLane.get(debounceKey);
+	let dirtyPaths;
+	if (debounced && debounced.fileScopeMtimeMs === fileScopeMtimeMs) {
+		dirtyPaths = debounced.dirtyPaths;
+	} else {
+		dirtyPaths = resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder);
+		_gitPorcelainDebounceByLane.set(debounceKey, { fileScopeMtimeMs, dirtyPaths });
+	}
 
 	let stepCompletedAtMs = null;
 	if (journalContext?.projectRoot && journalContext?.batchId) {

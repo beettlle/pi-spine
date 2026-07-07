@@ -523,6 +523,8 @@ Tier 2 surfaces (`lane.progress_snapshot`, `spine lane logs --follow`, dashboard
 
 **Journal read cache ([#98](https://github.com/beettlle/pi-spine/issues/98)):** orchestrator hot paths (`collectProgressSignals`, attached milestone reporter, dashboard snapshot) share an mtime-keyed journal read cache. When the journal file has not changed since the last read, the cached parsed events are reused — reducing CPU during idle monitoring loops. The cache invalidates automatically when the file mtime changes (e.g. after `appendJournalEvent`). Test code should call `clearJournalCache()` for isolation.
 
+**Git porcelain debounce ([#98](https://github.com/beettlle/pi-spine/issues/98)):** `collectProgressSignals` skips `git status --porcelain` when file-scope mtimes are unchanged since the last check for that lane worktree. When a scoped file is touched, porcelain is refreshed and cached dirty paths update. Test code should call `clearGitPorcelainDebounceCache()` for isolation.
+
 **`spine status --json` progress fields (issue #30):** when a batch is active, JSON output includes task and wave progress at the top level:
 
 | Field | Meaning |
