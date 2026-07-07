@@ -6,6 +6,8 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveDashboardPollMs } from "../config/spine-config-schema.mjs";
 import { buildDashboardSnapshot } from "./snapshot.mjs";
 import { formatSseDataFrame, writeSseHeaders } from "./sse.mjs";
 
@@ -74,19 +76,143 @@ export function assertLoopbackHost(host) {
 }
 
 /**
+ * @typedef {object} DashboardSseClient
+ * @property {import("node:http").ServerResponse} res
+ * @property {string} lastSerialized
+ */
+
+/**
+ * @param {object} options
+ * @param {string} options.projectRoot
+ * @param {(projectRoot: string) => object} options.buildSnapshot
+ * @returns {{
+ *   sseClients: Set<DashboardSseClient>,
+ *   attachSseClient: (res: import("node:http").ServerResponse) => void,
+ *   detachSseClient: (client: DashboardSseClient) => void,
+ *   refreshSharedSnapshot: () => { snapshot: object, serialized: string, generation: number },
+ *   getSharedSnapshot: () => { snapshot: object | null, serialized: string, generation: number },
+ *   ensurePollTimer: () => void,
+ *   stopPollTimer: () => void,
+ * }}
+ */
+export function createSharedSnapshotPollHub({
+	projectRoot,
+	buildSnapshot,
+	pollIntervalMs,
+}) {
+	/** @type {Set<DashboardSseClient>} */
+	const sseClients = new Set();
+	/** @type {ReturnType<typeof setInterval> | null} */
+	let pollTimer = null;
+	let snapshotGeneration = 0;
+	/** @type {object | null} */
+	let lastSharedSnapshot = null;
+	let lastSerialized = "";
+
+	const getSharedSnapshot = () => ({
+		snapshot: lastSharedSnapshot,
+		serialized: lastSerialized,
+		generation: snapshotGeneration,
+	});
+
+	const fanOutSnapshot = (snapshot, serialized) => {
+		for (const client of sseClients) {
+			if (client.res.writableEnded) continue;
+			if (serialized === client.lastSerialized) continue;
+			client.lastSerialized = serialized;
+			client.res.write(formatSseDataFrame(snapshot));
+		}
+	};
+
+	const refreshSharedSnapshot = () => {
+		snapshotGeneration += 1;
+		const snapshot = {
+			...buildSnapshot(projectRoot),
+			snapshotGeneration,
+		};
+		lastSharedSnapshot = snapshot;
+		lastSerialized = JSON.stringify(snapshot);
+		fanOutSnapshot(snapshot, lastSerialized);
+		return { snapshot, serialized: lastSerialized, generation: snapshotGeneration };
+	};
+
+	const tick = () => {
+		if (sseClients.size === 0) return;
+		refreshSharedSnapshot();
+	};
+
+	const ensurePollTimer = () => {
+		if (pollTimer) return;
+		pollTimer = setInterval(tick, pollIntervalMs);
+	};
+
+	const stopPollTimer = () => {
+		if (!pollTimer) return;
+		clearInterval(pollTimer);
+		pollTimer = null;
+	};
+
+	const attachSseClient = (res) => {
+		const client = { res, lastSerialized: "" };
+		sseClients.add(client);
+		ensurePollTimer();
+
+		if (lastSharedSnapshot && lastSerialized) {
+			client.lastSerialized = lastSerialized;
+			res.write(formatSseDataFrame(lastSharedSnapshot));
+			return client;
+		}
+
+		const built = refreshSharedSnapshot();
+		client.lastSerialized = built.serialized;
+		return client;
+	};
+
+	const detachSseClient = (client) => {
+		sseClients.delete(client);
+		if (sseClients.size === 0) {
+			stopPollTimer();
+		}
+	};
+
+	return {
+		sseClients,
+		attachSseClient,
+		detachSseClient,
+		refreshSharedSnapshot,
+		getSharedSnapshot,
+		ensurePollTimer,
+		stopPollTimer,
+	};
+}
+
+/**
  * @param {object} options
  * @param {string} options.projectRoot
  * @param {string} [options.host]
  * @param {number} [options.port]
  * @param {number} [options.pollIntervalMs]
+ * @param {(projectRoot: string) => object} [options.buildSnapshot]
  */
 export function createDashboardServer({
 	projectRoot,
 	host = DEFAULT_DASHBOARD_HOST,
 	port = DEFAULT_DASHBOARD_PORT,
-	pollIntervalMs = DEFAULT_DASHBOARD_POLL_MS,
+	pollIntervalMs,
+	buildSnapshot = buildDashboardSnapshot,
 }) {
 	assertLoopbackHost(host);
+
+	const configResult = loadSpineConfig(projectRoot);
+	const resolvedPollIntervalMs =
+		pollIntervalMs ??
+		resolveDashboardPollMs({ config: configResult.config ?? {} });
+
+	const pollHub = createSharedSnapshotPollHub({
+		projectRoot,
+		buildSnapshot,
+		pollIntervalMs: resolvedPollIntervalMs,
+	});
 
 	/** @type {import("node:http").Server} */
 	const server = http.createServer((req, res) => {
@@ -105,22 +231,9 @@ export function createDashboardServer({
 
 		if (req.method === "GET" && url.pathname === "/api/events") {
 			writeSseHeaders(res);
-			let lastSerialized = "";
-
-			const pushSnapshot = () => {
-				if (res.writableEnded) return;
-				const snapshot = buildDashboardSnapshot(projectRoot);
-				const serialized = JSON.stringify(snapshot);
-				if (serialized !== lastSerialized) {
-					lastSerialized = serialized;
-					res.write(formatSseDataFrame(snapshot));
-				}
-			};
-
-			pushSnapshot();
-			const timer = setInterval(pushSnapshot, pollIntervalMs);
+			const client = pollHub.attachSseClient(res);
 			req.on("close", () => {
-				clearInterval(timer);
+				pollHub.detachSseClient(client);
 				if (!res.writableEnded) res.end();
 			});
 			return;
@@ -129,6 +242,13 @@ export function createDashboardServer({
 		res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
 		res.end("Not found\n");
 	});
+
+	const originalClose = server.close.bind(server);
+	server.close = (...args) => {
+		pollHub.stopPollTimer();
+		pollHub.sseClients.clear();
+		return originalClose(...args);
+	};
 
 	return server;
 }
