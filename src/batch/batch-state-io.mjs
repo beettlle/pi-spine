@@ -115,6 +115,18 @@ export function readBatchStateEnginePid(raw) {
 }
 
 /**
+ * Returns the alive batch-engine PID when complete/archive must wait (FR-STA-22 / #173).
+ *
+ * @param {unknown} raw
+ * @returns {number|null}
+ */
+export function readAliveBatchEnginePid(raw) {
+	const enginePid = readBatchStateEnginePid(raw);
+	if (enginePid == null || !isProcessAlive(enginePid)) return null;
+	return enginePid;
+}
+
+/**
  * Remove active batch-state only when on-disk batch matches expected (SP-441 / #94).
  * Prevents complete/dismiss from clearing a newer batch after a concurrent start handoff.
  *

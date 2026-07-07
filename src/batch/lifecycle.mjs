@@ -15,6 +15,7 @@ import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } fro
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import {
 	clearActiveBatchStateIfMatches,
+	readAliveBatchEnginePid,
 } from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 import { removeLaneWorktrees } from "./worktree.mjs";
@@ -443,6 +444,21 @@ export function completeBatch(ctx) {
 			suggestedCommand: integratable.suggestedCommand ?? output.suggestedCommand,
 			alternatives: output.alternatives,
 			batchId,
+		};
+	}
+
+	const aliveEnginePid = readAliveBatchEnginePid(loaded.raw);
+	if (aliveEnginePid != null) {
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "engine_still_running",
+			diagnosis: "engine_still_running",
+			batchId,
+			enginePid: aliveEnginePid,
+			headline: `Batch ${batchId} engine still running (PID ${aliveEnginePid}) — complete refused`,
+			suggestedCommand: "spine wait --until completed,failed,needs_integrate --timeout 2h",
+			alternatives: ["spine status --diagnose"],
 		};
 	}
 
