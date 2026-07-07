@@ -11,6 +11,10 @@ import {
 } from "./spine-cli/shared.mjs";
 import { runDoctorChecks } from "../src/doctor/run-doctor-checks.mjs";
 
+export {
+	buildAttachedOrphanRiskDoctorCheck,
+	detectAttachedOrphanRiskPatterns,
+} from "../src/doctor/attached-orphan-risk.mjs";
 export { buildTestingEvidenceDoctorChecks, runDoctorChecks } from "../src/doctor/run-doctor-checks.mjs";
 
 export function cmdDoctor() {

@@ -32,6 +32,7 @@ import { buildInheritProviderAuthDoctorCheck } from "./agents-model-inherit.mjs"
 import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
+import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import {
@@ -254,6 +255,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	record("git worktree support", gitSupportsWorktrees(), { detail: getVersion("git") });
 	record("pi installed", commandExists("pi"), { detail: getVersion("pi") });
 	checks.push(buildPiExtensionConflictDoctorCheck({ projectRoot }));
+	checks.push(buildAttachedOrphanRiskDoctorCheck());
 
 	const piVersionText = getVersion("pi");
 	const minPiVersion = getMinPiVersion();
