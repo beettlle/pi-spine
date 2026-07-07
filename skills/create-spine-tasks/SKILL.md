@@ -515,6 +515,8 @@ Before reporting launch commands:
 - [ ] If `testCommand` is `` `true` ``, `fileScopeMustChange` MUST list at least one deliverable path
 - [ ] Every **Must Update** doc path also appears in `## File Scope` ([#144](https://github.com/beettlle/pi-spine/issues/144))
 - [ ] Docs-only tasks: consider `fileScopeMustNotChange` on `src/**`, `bin/**` ([#142](https://github.com/beettlle/pi-spine/issues/142)); see [Docs-only contract pattern](#docs-only-contract-pattern-fr-sta-12)
+- [ ] S/M patch Contract uses scoped `node --test` — not `npm test` or `npm test -- path` ([#141](https://github.com/beettlle/pi-spine/issues/141), SP-522)
+- [ ] Plan waves ≤8 tasks when possible — `spine plan` warns when exceeded ([#143](https://github.com/beettlle/pi-spine/issues/143), SP-524)
 - [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps

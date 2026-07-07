@@ -201,7 +201,7 @@ Lane worktrees are **not** identical to the developer checkout. Worktree setup h
 |-------|--------|
 | `` `flutter test` `` / `` `npm test` `` (full suite in lane worktree) | Targeted command matching the Testing step: `` `flutter test test/unit/services/foo_test.dart` `` |
 | Same command in Contract and global `testing.test` without verifying lane compatibility | Document when to use `` `true` `` (docs-only) vs scoped shell proof |
-| Unscoped command producing >10 MB stdout (SP-426 `maxBuffer`) | Narrow test scope; prefer `npm test -- tests/feature.test.mjs` |
+| Unscoped command producing >10 MB stdout (SP-426 `maxBuffer`) | Narrow test scope; prefer `` `node --test tests/feature.test.mjs` `` |
 
 **Engine-side lane fixes:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) track worktree setup hook and analyzer hygiene — docs alone cannot fix lane environment drift.
 
@@ -222,7 +222,7 @@ Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-R
 | Task type | Recommended `testCommand` |
 |-----------|---------------------------|
 | Docs-only, no code changes | `` `true` `` **and** `fileScopeMustChange` with at least one deliverable doc path |
-| Single module, targeted tests exist | `` `npm test -- tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
+| Single module, targeted tests exist | `` `node --test tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
 | Full-suite safe in lane worktree | `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
 | Coverage gate required (pi-spine ≥77%) | `` `npm run coverage:check` `` |
 | Long external job (>2h) | Scoped command + `stallTimeoutMinutes` and `extendGraceOnFileScope` in Contract (see SP-314 example above) |

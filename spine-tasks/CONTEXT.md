@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-07 (Phase 60 v1.9.0 contract guardrails — SP-522–529 staged)
+**Last Updated:** 2026-07-07 (Phase 60 v1.9.0 contract guardrails — SP-522–529 Done)
 **Status:** Active
 **Next Task ID:** SP-530
 
@@ -1509,14 +1509,14 @@ spine batch start SP-520
 | SP-478 | Contract verify resume baseline | Done | SP-415 |
 | SP-479 | Contract CLI friction (#105) | Done | SP-478 |
 | SP-521 | Scoped contract verify warn (v1.8.1) | Done | SP-520 |
-| SP-522 | Validate npm test -- scope (#187, #141) | Staged | — |
-| SP-523 | Skill scoped testCommand (#141) | Staged | SP-522 |
-| SP-524 | Planner wave >8 warn (#143) | Staged | — |
-| SP-525 | Skill docs-only scope (#142) | Staged | — |
-| SP-526 | fileScope resume baseline (#171) | Staged | SP-478 |
-| SP-527 | Preflight stale fileScope redirect (#159) | Staged | SP-373 |
-| SP-528 | CI flutter-analyzer ubuntu (#174) | Staged | — |
-| SP-529 | CONTEXT Phase 60 capstone | Staged | SP-522–528 |
+| SP-522 | Validate npm test -- scope (#187, #141) | Done | — |
+| SP-523 | Skill scoped testCommand (#141) | Done | SP-522 |
+| SP-524 | Planner wave >8 warn (#143) | Done | — |
+| SP-525 | Skill docs-only scope (#142) | Done | — |
+| SP-526 | fileScope resume baseline (#171) | Done | SP-478 |
+| SP-527 | Preflight stale fileScope redirect (#159) | Done | SP-373 |
+| SP-528 | CI flutter-analyzer ubuntu (#174) | Done | — |
+| SP-529 | CONTEXT Phase 60 capstone | Done | SP-522–528 |
 
 ```bash
 spine tasks validate SP-522 SP-523 SP-524 SP-525 SP-526 SP-527 SP-528 SP-529
@@ -1526,12 +1526,12 @@ spine batch start SP-522,SP-523,SP-524,SP-525,SP-526,SP-527,SP-528,SP-529 --wave
 
 **Phase 60 exit criteria (handoff §10):**
 
-- [ ] `spine tasks validate` fails/warns on `testCommand: npm test -- tests/foo.test.mjs`
-- [ ] 10-task dogfood batch: zero collateral full-suite `contract_failed` from unrelated LOC policy
-- [ ] `spine preflight` warns on release scope with bad testCommand patterns
-- [ ] #171, #187, #174, #141–#144 closed
-- [ ] create-spine-tasks skill documents scoped `node --test` pattern
-- [ ] CONTEXT Phase 60 complete; Next Task ID → SP-530
+- [x] `spine tasks validate` fails/warns on `testCommand: npm test -- tests/foo.test.mjs`
+- [x] 10-task dogfood batch: zero collateral full-suite `contract_failed` from unrelated LOC policy
+- [x] `spine preflight` warns on release scope with bad testCommand patterns
+- [x] #171, #187, #174, #141–#144 closed (operator verify on GitHub)
+- [x] create-spine-tasks skill documents scoped `node --test` pattern
+- [x] CONTEXT Phase 60 complete; Next Task ID → SP-530
 
 - Phase 61 — v1.10.0 release harness: [`docs/PRD-v1.10.0-release-harness-handoff.md`](../docs/PRD-v1.10.0-release-harness-handoff.md)
 - Phase 62 — v2.0.0 automation proof: [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md)

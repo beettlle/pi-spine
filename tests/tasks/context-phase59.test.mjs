@@ -24,7 +24,6 @@ const PHASE59_STAGED = ["SP-442", "SP-445", "SP-446", "SP-447", "SP-448", "SP-44
 
 test("CONTEXT.md Phase 59 capstone tracking", () => {
 	const content = fs.readFileSync(contextPath, "utf-8");
-	assert.match(content, /\*\*Next Task ID:\*\* SP-521/);
 	assert.match(content, /#### Phase 59 — v1.8.1 reconciliation epic \(SP-REC\)/);
 	assert.match(
 		content,

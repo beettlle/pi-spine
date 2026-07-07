@@ -118,7 +118,9 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 > **Required for every task** — including docs-only and Review Level 0 packets.
 > ZERO test failures allowed. This step runs the FULL test suite as a quality gate.
-> (Earlier steps should use targeted tests for fast feedback — see worker prompt.)
+> Earlier steps should use **targeted** tests for fast feedback — e.g.
+> `node --experimental-strip-types --test tests/feature.test.mjs` (not `npm test -- path`,
+> which runs the full suite in lane worktrees; see SP-522).
 >
 > **Docs-only tasks:** keep this step; run the full test suite. Omit the coverage-gate
 > checkbox below when the task does not change application code.
