@@ -304,7 +304,7 @@ Always: `spine status --diagnose`
 | `needs_retry` | Fix packet; `spine batch retry <taskId>` |
 | `worker_orphaned` | abort → dismiss → prune worktree → retry |
 | `needs_integrate` | Land loop |
-| `state_drift` | `spine batch retry <taskId>` (pause first if task still `running`); then **`spine batch resume --attached --force` in foreground** (never MonitorCreate) |
+| `state_drift` | Follow `suggestedCommand` from diagnose: `spine batch retry <taskId>` when drift task is not `running`; `spine batch resume --force` when still `running` (SP-512 — not `pause && retry`). Then **`spine batch resume --attached --force` in foreground** if engine remains detached (never MonitorCreate) |
 | `failed` / `aborted` | Inspect journal; fix packet; dismiss; retry |
 | Contract fail | Fix PROMPT on main, commit, abort, dismiss, retry |
 

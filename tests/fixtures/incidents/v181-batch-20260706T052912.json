@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "incidentId": "20260706-pause-resume-sigterm-orphan",
+    "source": "pi-spine batch 20260706T052912 (#184)",
+    "batchId": "20260706T052912",
+    "pattern": "batch.paused → engine.orphan_terminated(SIGTERM) → batch.resumed with lane .DONE + contract.verified",
+    "relatedTasks": ["SP-497", "SP-513", "SP-514"],
+    "expectedReconcile": {
+      "diagnosisNot": "engine_orphaned",
+      "taskStatus": "succeeded",
+      "doneFileFound": true
+    }
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "batchId": "20260706T052912",
+    "phase": "running",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260706T052912",
+    "startedAt": 1783315752000,
+    "updatedAt": 1783316538000,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [["SP-497"]],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260706T052912/lane-1",
+        "branch": "task/spine-lane-1-20260706T052912",
+        "taskIds": ["SP-497"],
+        "lastHeartbeatAt": 1783315989000
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SP-497",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SP-497-dry-size-line-parser",
+        "startedAt": 1783315755000,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      }
+    ],
+    "segments": [
+      {
+        "segmentId": "SP-497::default",
+        "taskId": "SP-497",
+        "status": "running"
+      }
+    ],
+    "mergeResults": [],
+    "totalTasks": 1,
+    "succeededTasks": 0,
+    "failedTasks": 0,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": true,
+      "retryCountByScope": {},
+      "lastFailureClass": null,
+      "repairHistory": [],
+      "enginePid": 999999999,
+      "engineStartedAt": 1783315752000
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-task-started",
+      "type": "task.started",
+      "timestamp": "2026-07-06T05:29:15.660Z",
+      "batchId": "20260706T052912",
+      "laneId": "lane-1",
+      "taskId": "SP-497",
+      "payload": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-lane-completed",
+      "type": "lane.completed",
+      "timestamp": "2026-07-06T05:53:09.234Z",
+      "batchId": "20260706T052912",
+      "laneId": "lane-1",
+      "taskId": "SP-497",
+      "payload": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-batch-paused",
+      "type": "batch.paused",
+      "timestamp": "2026-07-06T05:56:43.645Z",
+      "batchId": "20260706T052912",
+      "payload": {
+        "fromPhase": "running",
+        "toPhase": "paused"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-engine-orphan-terminated",
+      "type": "engine.orphan_terminated",
+      "timestamp": "2026-07-06T05:57:09.800Z",
+      "batchId": "20260706T052912",
+      "payload": {
+        "stalePid": 999999999,
+        "fromPhase": "paused",
+        "signal": "SIGTERM"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-batch-resumed",
+      "type": "batch.resumed",
+      "timestamp": "2026-07-06T05:57:11.361Z",
+      "batchId": "20260706T052912",
+      "payload": {
+        "fromPhase": "paused",
+        "toPhase": "running",
+        "resumeForced": true,
+        "pendingSegments": 1,
+        "pendingTaskIds": ["SP-497"],
+        "resumableWave": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-184-contract-verified",
+      "type": "contract.verified",
+      "timestamp": "2026-07-06T06:02:18.697Z",
+      "batchId": "20260706T052912",
+      "laneId": "lane-1",
+      "taskId": "SP-497",
+      "payload": {
+        "ok": true,
+        "checks": [
+          { "field": "testCommand", "ok": true, "message": "testCommand passed" }
+        ],
+        "resumed": true
+      }
+    }
+  ]
+}

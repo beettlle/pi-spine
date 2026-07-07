@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "incidentId": "20260705-state-drift-done-inlane",
+    "source": "pi-spine batch 20260705T210857 (#170)",
+    "batchId": "20260705T210857",
+    "pattern": "lane.completed + review APPROVE while batch-state cache still running (state_drift)",
+    "relatedTasks": ["SP-440", "SP-512", "SP-514"],
+    "expectedReconcile": {
+      "diagnosisNot": "state_drift",
+      "taskStatus": "succeeded",
+      "doneFileFound": true
+    }
+  },
+  "batchState": {
+    "schemaVersion": 1,
+    "batchId": "20260705T210857",
+    "phase": "running",
+    "baseBranch": "main",
+    "orchBranch": "orch/spine-20260705T210857",
+    "startedAt": 1783285737000,
+    "updatedAt": 1783286000000,
+    "endedAt": null,
+    "currentWaveIndex": 0,
+    "totalWaves": 1,
+    "wavePlan": [["SP-440"]],
+    "lanes": [
+      {
+        "laneNumber": 1,
+        "laneId": "lane-1",
+        "worktreePath": ".worktrees/spine-20260705T210857/lane-1",
+        "branch": "task/spine-lane-1-20260705T210857",
+        "taskIds": ["SP-440"],
+        "lastHeartbeatAt": 1783285990000
+      }
+    ],
+    "tasks": [
+      {
+        "taskId": "SP-440",
+        "laneNumber": 1,
+        "status": "running",
+        "taskFolder": "spine-tasks/SP-440-supervisor-spawn-mvp",
+        "startedAt": 1783285739000,
+        "endedAt": null,
+        "doneFileFound": false,
+        "exitReason": null
+      }
+    ],
+    "segments": [
+      {
+        "segmentId": "SP-440::default",
+        "taskId": "SP-440",
+        "status": "running"
+      }
+    ],
+    "mergeResults": [],
+    "totalTasks": 1,
+    "succeededTasks": 0,
+    "failedTasks": 0,
+    "skippedTasks": 0,
+    "blockedTasks": 0,
+    "blockedTaskIds": [],
+    "lastError": null,
+    "resilience": {
+      "resumeForced": false,
+      "retryCountByScope": {},
+      "lastFailureClass": null,
+      "repairHistory": []
+    }
+  },
+  "journalTail": [
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-170-task-started",
+      "type": "task.started",
+      "timestamp": "2026-07-05T21:08:59.883Z",
+      "batchId": "20260705T210857",
+      "laneId": "lane-1",
+      "taskId": "SP-440",
+      "payload": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-170-lane-completed",
+      "type": "lane.completed",
+      "timestamp": "2026-07-05T21:23:19.848Z",
+      "batchId": "20260705T210857",
+      "laneId": "lane-1",
+      "taskId": "SP-440",
+      "payload": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-170-review-completed",
+      "type": "review.completed",
+      "timestamp": "2026-07-05T21:33:20.053Z",
+      "batchId": "20260705T210857",
+      "laneId": "lane-1",
+      "taskId": "SP-440",
+      "payload": {
+        "stepNumber": 4,
+        "reviewType": "code",
+        "reviewLevel": 2,
+        "verdict": "APPROVE",
+        "artifactPath": ".worktrees/spine-20260705T210857/lane-1/spine-tasks/SP-440-supervisor-spawn-mvp/.reviews/4-20260705T212319.md",
+        "honored": true,
+        "honorReason": "artifact_ready"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "v181-170-verdict-recorded",
+      "type": "task.verdict_recorded",
+      "timestamp": "2026-07-05T21:33:20.059Z",
+      "batchId": "20260705T210857",
+      "laneId": "lane-1",
+      "taskId": "SP-440",
+      "payload": {
+        "reviewType": "code",
+        "verdict": "APPROVE",
+        "codeReviewAttempt": 1
+      }
+    }
+  ]
+}
