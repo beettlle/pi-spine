@@ -1,7 +1,7 @@
 # SP-513: Pause resume SIGTERM fix — Status
 
 **Current Step:** Step 4
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 2
 **Size:** S
@@ -28,7 +28,7 @@
 ### Step 4: Documentation & Delivery
 
 - [x] Close #184
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
