@@ -6,6 +6,7 @@
 import micromatch from "micromatch";
 
 import { matchesContractPattern } from "../../batch/contract-verify.mjs";
+import { collectTestCommandScopeWarnings } from "../validate-contract-warn.mjs";
 import { detectCommaInSingleBacktickPathLists } from "./parse-prompt.mjs";
 
 /** Operator-facing hint when must-not-change blocks worker orchestration artifacts. */
@@ -48,7 +49,7 @@ export function resolveContractMode(options = {}) {
 
 /**
  * @param {ReturnType<import("./parse-prompt.mjs").parseContract>} parsed
- * @param {{ mode?: string, taskId?: string | null, legacyTaskIdPrefixes?: string[] }} [options]
+ * @param {{ mode?: string, taskId?: string | null, taskSize?: "S"|"M"|"L"|"XL"|null, legacyTaskIdPrefixes?: string[] }} [options]
  * @returns {{ ok: boolean, errors: string[], warnings: string[], mode: "required" | "optional" | "legacy" }}
  */
 export function validateContract(parsed, options = {}) {
@@ -112,6 +113,12 @@ export function validateContract(parsed, options = {}) {
 		...collectFileScopeMustNotChangeWarnings(parsed, {
 			taskId: options.taskId ?? null,
 			tasksRoot: options.tasksRoot ?? DEFAULT_TASKS_ROOT,
+		}),
+	);
+
+	warnings.push(
+		...collectTestCommandScopeWarnings(parsed, {
+			taskSize: options.taskSize ?? null,
 		}),
 	);
 
