@@ -29,16 +29,21 @@ function createPollutedFlutterBuild(worktreePath) {
 	return pollution;
 }
 
-/** Stub `flutter` on PATH so verifyContract integration tests do not require the SDK (CI). */
+/**
+ * Stub `flutter` on PATH so verifyContract integration tests do not require the SDK.
+ * FR-STA-13 / #174: ubuntu-latest CI has no Flutter; scoped lane tests passed on macOS
+ * but full `coverage:check` failed until this stub ran before shelling out to `flutter analyze`.
+ */
 function installFlutterStubOnPath(projectRoot) {
 	const stubBin = path.join(projectRoot, ".spine-flutter-stub-bin");
 	fs.mkdirSync(stubBin, { recursive: true });
 	const flutterStub = path.join(stubBin, "flutter");
-	fs.writeFileSync(flutterStub, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+	fs.writeFileSync(flutterStub, "#!/usr/bin/env bash\nexit 0\n", { mode: 0o755 });
 	const previousPath = process.env.PATH;
 	process.env.PATH = `${stubBin}${path.delimiter}${previousPath}`;
 	return () => {
 		process.env.PATH = previousPath;
+		fs.rmSync(stubBin, { recursive: true, force: true });
 	};
 }
 
