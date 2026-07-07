@@ -51,9 +51,8 @@ Extract wave progress and tail activity builders from `src/dashboard/snapshot.mj
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm test -- tests/dashboard/snapshot.test.mjs` |
+| testCommand | `node --test tests/dashboard/snapshot.test.mjs && npm run coverage:check` |
 | fileScopeMustChange | `src/dashboard/snapshot-waves.mjs`, `src/dashboard/snapshot.mjs` |
-| minLineCoverage | 77 |
 
 ## Steps
 
