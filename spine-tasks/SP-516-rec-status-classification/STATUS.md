@@ -1,7 +1,7 @@
 # SP-516: Status classification alignment — Status
 
-**Current Step:** Step 0
-**Status:** ⏳ Pending
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-07
 **Review Level:** 2
 **Size:** S

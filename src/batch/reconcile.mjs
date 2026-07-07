@@ -165,19 +165,115 @@ export function resolveTasksRoot(projectRoot, configResult) {
 }
 
 /**
+ * Align computed classification with reconciled batch-state status (SP-516 / #166).
+ * Stale lane `.DONE` markers must not imply terminal-success when cache status is
+ * failed or pending. Running + done markers stays terminal-success for drift (SP-512).
+ *
+ * @param {object} classified
+ */
+export function alignTaskClassificationWithStatus(classified) {
+	const status = String(classified.status ?? "").toLowerCase();
+	let classification = classified.classification;
+
+	if (status === "succeeded" || status === "skipped") {
+		classification = "terminal-success";
+	} else if (status === "failed") {
+		classification = "terminal-failure";
+	} else if (status === "running") {
+		if (classified.doneOnMain || classified.doneInLane || classified.doneFileFound) {
+			classification = "terminal-success";
+		} else {
+			classification = "running";
+		}
+	} else {
+		classification = "pending";
+	}
+
+	return { ...classified, classification };
+}
+
+/**
  * @param {NormalizedBatchState} batch
  * @param {string|null} tasksRoot
  * @param {string} [projectRoot]
  */
 export function classifyTasks(batch, tasksRoot, projectRoot = "") {
 	return batch.tasks.map((task) =>
-		classifyTaskDoneSemantics(task, {
-			tasksRoot,
-			projectRoot,
-			batchId: batch.batchId,
-			lanes: batch.lanes,
-		}),
+		alignTaskClassificationWithStatus(
+			classifyTaskDoneSemantics(task, {
+				tasksRoot,
+				projectRoot,
+				batchId: batch.batchId,
+				lanes: batch.lanes,
+			}),
+		),
 	);
+}
+
+/**
+ * Clear stale persisted task classification fields that contradict reconciled status.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @returns {{ changed: boolean }}
+ */
+export function syncPersistedClassifications({ projectRoot, state }) {
+	if (!state || typeof state !== "object") {
+		return { changed: false };
+	}
+
+	const batch = parseBatchState(state, "");
+	if (!batch) {
+		return { changed: false };
+	}
+
+	const tasksRoot = resolveTasksRoot(projectRoot);
+	const classified = classifyTasks(batch, tasksRoot, projectRoot);
+	const alignedById = new Map(classified.map((task) => [String(task.taskId), task]));
+	let changed = false;
+
+	for (const task of state.tasks ?? []) {
+		if (!task?.taskId) continue;
+		const aligned = alignedById.get(String(task.taskId));
+		if (!aligned) continue;
+
+		const status = String(task.status ?? "").toLowerCase();
+		if (status === "succeeded" || status === "skipped") {
+			if ("classification" in task) {
+				delete task.classification;
+				changed = true;
+			}
+			continue;
+		}
+
+		if (!("classification" in task)) continue;
+
+		const persisted = String(task.classification ?? "");
+		if (persisted === aligned.classification) continue;
+
+		if (status === "failed" || status === "pending") {
+			delete task.classification;
+			changed = true;
+		}
+	}
+
+	for (const segment of state.segments ?? []) {
+		if (!segment?.taskId || !("classification" in segment)) continue;
+		const aligned = alignedById.get(String(segment.taskId));
+		if (!aligned) continue;
+		const segmentStatus = String(segment.status ?? "").toLowerCase();
+		if (segmentStatus === "failed" || segmentStatus === "pending") {
+			delete segment.classification;
+			changed = true;
+		}
+	}
+
+	if (changed) {
+		saveSpineBatchState(projectRoot, state);
+	}
+
+	return { changed };
 }
 
 /**
@@ -1187,6 +1283,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 				(task) => task.classification === "terminal-failure",
 			);
 			signals.failedTaskId = healedFailedTask?.taskId ?? signals.failedTaskId;
+			syncPersistedClassifications({ projectRoot, state: batch.raw });
 		}
 	}
 
