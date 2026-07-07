@@ -1,0 +1,3 @@
+Completed: 2026-07-07
+Task: SP-514 — v1.8.1 incident fixtures
+Verification: npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/incident-replay-v181.test.mjs (2/2 pass)
