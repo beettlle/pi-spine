@@ -37,6 +37,8 @@ jobs:
 
       - name: Verify CI status for tagged commit
         id: ci_gate
+        # Release-safe profile: same validation as ci.yml (typecheck, lint, coverage, CLI smoke).
+        # Fail closed when CI failed on this commit; skip duplicate steps when CI already succeeded.
         uses: actions/github-script@v7
         with:
           script: |
@@ -53,7 +55,7 @@ jobs:
 
             if (failed && !success) {
               core.setFailed(
-                `CI failed for commit ${sha}; fix CI on main before publishing this tag.`
+                `CI failed for commit ${sha} (release-safe profile: typecheck, lint, tests, coverage). Fix CI on main before publishing this tag.`
               );
               return;
             }

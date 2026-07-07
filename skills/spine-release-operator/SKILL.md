@@ -32,8 +32,9 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 2. Release manifest written and operator-approved
 3. All **release-scoped** tasks `.DONE` and integrated on `main`
 4. `spine preflight` green; **`npm run release:check` green (blocking gate)** on current `main`
-5. Operator explicitly approved publish; version bumped and tag pushed (if approved)
-6. Final report with composition table, issues closed/deferred, verification output
+5. **CI workflow green on release commit** (release-safe profile — parity with `ci.yml`) before tag push
+6. Operator explicitly approved publish; version bumped and tag pushed (if approved)
+7. Final report with composition table, issues closed/deferred, verification output
 
 ## Hard rules
 
@@ -42,6 +43,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** claim batch/test/publish success without CLI output
 - **Never** run `npm version` or `git push --tags` without explicit operator approval
 - **Never** run `npm version` or `git push --tags` when `npm run release:check` exits non-zero on current `main` ([#175](https://github.com/beettlle/pi-spine/issues/175))
+- **Never** run `npm version` or `git push --tags` when the **CI** workflow is not green on current `HEAD` — release-safe profile: typecheck + lint + tests + coverage (parity with `ci.yml`) ([#156](https://github.com/beettlle/pi-spine/issues/156))
 - **Always** parse target version / bump type **before** task selection (Phase 2)
 - **Always** prioritize documentation issues over enhancements
 - **Always** run `spine gate approve` before `spine integrate`
@@ -356,6 +358,7 @@ Present checklist from `docs/release/npm-publish.md`:
 - [ ] All release-scoped tasks done
 - [ ] Preflight green
 - [ ] `npm run release:check` green (includes lint; ≥77% coverage) — **verified exit 0**
+- [ ] CI workflow green on `HEAD` (release-safe profile — parity with `ci.yml`) — **verified via `gh run list`**
 - [ ] Clean git tree
 - [ ] Bump type matches profile: patch | minor | major
 - [ ] `release:check` output recorded in manifest publish checklist
@@ -369,19 +372,39 @@ Present checklist from `docs/release/npm-publish.md`:
 **Prerequisites (all required — no bypass):**
 
 - Phase 5 `npm run release:check` exited **0** on current `main` (re-run if `main` moved since Phase 5)
+- **CI workflow green on current `HEAD`** (pre-tag gate — see below)
 - Operator explicitly said "approve publish" / "bump and push"
 - Operator confirmed bump type matches Phase 2 profile
 
 **Do not skip the release:check gate.** Operator approval alone does not authorize `npm version` or tag push when `release:check` would fail. If unsure, re-run `npm run release:check` before bumping.
 
-Only after all prerequisites are met:
+### Pre-tag CI gate (HARD STOP — blocking)
+
+Before `npm version` or `git push --tags`, verify the **CI** workflow succeeded on current `HEAD` (the commit you are about to tag). **Release-safe CI profile** matches `ci.yml`: typecheck → lint → tests with coverage (≥77% line minimum) → CLI smoke checks. Local parity: `npm run release:check` (Phase 5).
+
+**If CI is not green on `HEAD`, STOP.** Push to `main` and wait for CI before tagging — do not retag after a failed release.
+
+```bash
+COMMIT=$(git rev-parse HEAD)
+gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,status --limit 5
+```
+
+**Fail closed** when no run has `conclusion: success`. If the latest run is `in_progress` or `queued`, wait:
+
+```bash
+gh run watch --exit-status <run-id>
+```
+
+If CI **failed** or **no CI run** exists for `HEAD`, **STOP** — fix CI on `main`, re-run Phase 5, then re-attempt this gate. Do not `npm version` or `git push --tags`.
+
+Only after Phase 5 **and** pre-tag CI gate pass:
 
 ```bash
 npm version patch   # or minor / major — must match Phase 2 profile
 git push && git push --tags
 ```
 
-Monitor CI:
+Monitor Release workflow (tag publish):
 
 ```bash
 gh run list --workflow release.yml --limit 3
@@ -423,6 +446,7 @@ Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
 | Tasks root | `spine-tasks/` |
 | Issues repo | `beettlle/pi-spine` |
 | Pre-publish gate | `npm run release:check` (typecheck → lint → tests → coverage; CI parity) |
+| Pre-tag CI gate | `ci.yml` green on `HEAD` via `gh run list` / `gh run watch` before `npm version` ([#156](https://github.com/beettlle/pi-spine/issues/156)) |
 | Publish | Tag-triggered `.github/workflows/release.yml` |
 | Pending backlog | Run `spine plan pending` — release executes **subset only** |
 
@@ -434,6 +458,6 @@ check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
 spine status --diagnose (do not collide with running batch) →
 preflight → for each wave: MonitorCreate batch start (or foreground) → onDone diagnose →
 gate approve → integrate → npm install → batch complete →
-MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: STOP for publish approval.
+MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval.
 resume --attached --force stays foreground. Post final report with composition table.
 ```
