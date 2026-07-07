@@ -6,10 +6,13 @@
 import fs from "node:fs";
 import { appendJournalEvent, readJournalEvents, STRUCTURAL_JOURNAL_EVENT_TYPES } from "./journal.mjs";
 import { parseReviewVerdict } from "./review-shared.mjs";
+import { journalHasTaskCompleted } from "./resume-common.mjs";
 import {
 	clearTaskFailureMetadata,
 	createInitialBatchState,
+	recordTaskSucceeded,
 	recomputeTaskCounters,
+	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
 
@@ -541,4 +544,118 @@ export function detectBatchStateDrift(cachedState, rebuiltState, events = [], cl
 	}
 
 	return { drifted: entries.length > 0, entries };
+}
+
+/**
+ * Journal evidence that lane work finished and review/contract passed (FR-STA-01 / #170).
+ *
+ * @param {object[]} events
+ * @param {string} taskId
+ */
+export function journalShowsDoneInLaneTerminalArtifacts(events, taskId) {
+	let hasApprovedReview = false;
+	let hasLaneCompleted = false;
+	let hasContractVerified = false;
+
+	for (const event of events ?? []) {
+		const type = String(event?.type ?? "");
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId !== taskId) continue;
+
+		if (type === "review.completed" && APPROVED_VERDICTS.has(String(payload.verdict ?? ""))) {
+			hasApprovedReview = true;
+		}
+		if (type === "task.verdict_recorded" && APPROVED_VERDICTS.has(String(payload.verdict ?? ""))) {
+			hasApprovedReview = true;
+		}
+		if (type === "lane.completed") {
+			hasLaneCompleted = true;
+		}
+		if (type === "contract.verified" && payload.ok === true) {
+			hasContractVerified = true;
+		}
+	}
+
+	return hasLaneCompleted && (hasApprovedReview || hasContractVerified);
+}
+
+/**
+ * Promote batch-state tasks when lane on-disk truth and journal show terminal success
+ * but cache still shows pending/running (idempotent; FR-STA-01 / SP-512).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {object[]} [params.classifiedTasks]
+ * @param {object[]} [params.journalEvents]
+ * @param {{ drifted?: boolean, entries?: Array<{ taskId: string, field: string, rebuilt?: unknown }> }} [params.drift]
+ * @returns {{ reconciled: boolean, taskIds: string[] }}
+ */
+export function reconcileBatchStateDrift({
+	projectRoot,
+	state,
+	classifiedTasks = [],
+	journalEvents = [],
+	drift = null,
+}) {
+	if (!state || typeof state !== "object" || !drift?.drifted || !Array.isArray(drift.entries)) {
+		return { reconciled: false, taskIds: [] };
+	}
+
+	const batchId = String(state.batchId ?? "");
+	if (!batchId) {
+		return { reconciled: false, taskIds: [] };
+	}
+
+	const classifiedById = new Map(
+		(classifiedTasks ?? []).map((task) => [String(task?.taskId ?? ""), task]),
+	);
+	/** @type {string[]} */
+	const reconciledTaskIds = [];
+	let changed = false;
+
+	for (const entry of drift.entries) {
+		const taskId = String(entry?.taskId ?? "");
+		if (!taskId || taskId === "*") continue;
+
+		const task = (state.tasks ?? []).find((row) => row?.taskId === taskId);
+		if (!task) continue;
+
+		if (entry.field === "status" && String(entry.rebuilt ?? "") === "succeeded") {
+			if (String(task.status ?? "") === "succeeded") continue;
+			if (!recordTaskSucceeded(state, taskId, { doneFileFound: true, exitReason: "done" })) continue;
+			reconciledTaskIds.push(taskId);
+			changed = true;
+			continue;
+		}
+
+		if (entry.field !== "doneInLane") continue;
+
+		const classified = classifiedById.get(taskId);
+		if (!classifiedShowsDoneInLaneDrift(classified)) continue;
+		if (classified?.doneInLane !== true) continue;
+		if (journalHasTaskCompleted(journalEvents, taskId)) continue;
+		if (!journalShowsDoneInLaneTerminalArtifacts(journalEvents, taskId)) continue;
+		if (String(task.status ?? "") === "succeeded") continue;
+
+		if (!recordTaskSucceeded(state, taskId, { doneFileFound: true, exitReason: "done" })) continue;
+
+		appendJournalEvent(projectRoot, batchId, "task.completed", {
+			taskId,
+			laneNumber: task.laneNumber ?? null,
+			reconciled: true,
+			reconcileReason: "done_in_lane_terminal",
+			skippedDoneOnDisk: true,
+		});
+
+		reconciledTaskIds.push(taskId);
+		changed = true;
+	}
+
+	if (changed) {
+		saveSpineBatchState(projectRoot, state);
+	}
+
+	return { reconciled: changed, taskIds: reconciledTaskIds };
 }
