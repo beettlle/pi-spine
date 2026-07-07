@@ -1,7 +1,7 @@
 # SP-510: Contract stet triage on non-zero findings — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-06
 **Review Level:** 1
 **Review Counter:** 0
@@ -14,8 +14,8 @@
 **Status:** ✅ Complete
 
 - [x] Read SP-509 brief and contract script
-- [x] Confirm auto-finish behavior (`--auto-finish-zero` only on zero findings; non-zero leaves session open but contract did not fail with triage — fixed in SP-510)
-- [x] SP-509 dependency satisfied (brief + runbook landed)
+- [x] Confirm auto-finish behavior
+- [x] SP-509 dependency satisfied
 
 ---
 
@@ -23,7 +23,7 @@
 **Status:** ✅ Complete
 
 - [x] Non-zero findings block auto-finish
-- [x] Zero findings preserve auto-finish (`stet finish` after zero-count status)
+- [x] Zero findings preserve auto-finish
 
 ---
 
@@ -38,22 +38,32 @@
 **Status:** ✅ Complete
 
 - [x] Test file created
-- [x] Both paths covered (zero auto-finish, non-zero triage fail, no-auto-finish env)
+- [x] Both paths covered
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Contract tests + coverage pass
+- [x] Contract tests + coverage pass
+
+**Verification (worker env):** `unset SPINE_IS_WORKER` required for `npm run coverage:check` — batch engine tests fail with `nested_batch_spawn_blocked` when `SPINE_IS_WORKER=1` (expected in lane worker).
+
+```
+npm run typecheck                          # pass
+node --test tests/scripts/spine-stet-contract-run.test.mjs  # 5/5 pass
+SPINE_IS_WORKER= npm run coverage:check    # 88.53% line coverage (threshold 77%)
+```
+
+Manual stet smoke not run in CI (mocked tests only).
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Runbook + brief updated
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -62,7 +72,8 @@
 | Finding | Impact | Action |
 |---------|--------|--------|
 | `stet finish` has no `--quiet` flag | Low | Redirect stdout/stderr to `/dev/null` in script |
-| Manual stet smoke unavailable in CI | Expected | Documented triage flow in runbook; tests use mocked `stet` |
+| `coverage:check` fails under `SPINE_IS_WORKER=1` | Worker env | Unset for verification; engine blocks nested batch spawn |
+| Manual stet smoke unavailable in CI | Expected | Mocked `stet` in tests |
 
 ---
 
@@ -71,4 +82,4 @@
 | Date | Event | Notes |
 |------|-------|-------|
 | 2026-07-06 | Task staged | v1.8.0 stet P1 from PR #172 brief |
-| 2026-07-06 | Steps 0–3 | Script triage gate, env override, mocked tests |
+| 2026-07-06 | Steps 0–5 | Triage gate, env override, tests, docs |
