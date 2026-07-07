@@ -57,6 +57,53 @@ export { loadBatchStateFile, parseBatchState, resolveBatchStatePath } from "./ba
 const LIMBO_PHASES = new Set(["stopped", "failed", "executing"]);
 const RUNNING_PHASES = new Set(["planning", "running", "executing", "merging"]);
 
+/** @type {{ projectRoot: string|null, batchId: string|null, phase: string|null, git: object|null, diagnosis: string|null }} */
+let _lightReconcileCache = {
+	projectRoot: null,
+	batchId: null,
+	phase: null,
+	git: null,
+	diagnosis: null,
+};
+
+/**
+ * Clears light-reconcile git cache (test isolation).
+ */
+export function clearLightReconcileCache() {
+	_lightReconcileCache = {
+		projectRoot: null,
+		batchId: null,
+		phase: null,
+		git: null,
+		diagnosis: null,
+	};
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} phase
+ */
+function lightReconcileCacheMatches(projectRoot, batchId, phase) {
+	return (
+		_lightReconcileCache.projectRoot === projectRoot &&
+		_lightReconcileCache.batchId === batchId &&
+		_lightReconcileCache.phase === phase &&
+		_lightReconcileCache.git != null
+	);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} phase
+ * @param {object} git
+ * @param {string|null} diagnosis
+ */
+function updateLightReconcileCache(projectRoot, batchId, phase, git, diagnosis) {
+	_lightReconcileCache = { projectRoot, batchId, phase, git, diagnosis };
+}
+
 /**
  * @typedef {object} NormalizedTask
  * @property {string} taskId
@@ -976,8 +1023,10 @@ export function deriveDiagnosis(signals) {
  * @param {object|null} [ctx.batchState]
  * @param {string|null} [ctx.batchStatePath]
  * @param {boolean} [ctx.verbose]
+ * @param {boolean} [ctx.light] Skip git branch scans when batch phase unchanged since last full reconcile.
+ * @param {boolean} [ctx._lightRetry] Internal — full reconcile after light diagnosis transition.
  */
-export function reconcileBatch(ctx) {
+export function reconcileBatch(ctx, _lightRetry = false) {
 	const { projectRoot } = ctx;
 	const loaded = ctx.batchState
 		? {
@@ -988,6 +1037,7 @@ export function reconcileBatch(ctx) {
 		: loadBatchStateFile(projectRoot, ctx.batchStatePath ?? null);
 
 	if (!loaded.path && !loaded.raw) {
+		clearLightReconcileCache();
 		return {
 			diagnosis: null,
 			headline: "No active batch — ready to plan or start",
@@ -1034,12 +1084,18 @@ export function reconcileBatch(ctx) {
 
 	const tasksRoot = resolveTasksRoot(projectRoot);
 	const classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
-	const git = inspectGitState({
-		projectRoot,
-		batchId: batch.batchId,
-		baseBranch: batch.baseBranch,
-		orchBranch: batch.orchBranch,
-	});
+	const useLightGit =
+		ctx.light === true &&
+		!_lightRetry &&
+		lightReconcileCacheMatches(projectRoot, batch.batchId, batch.phase);
+	const git = useLightGit
+		? /** @type {ReturnType<typeof inspectGitState>} */ (_lightReconcileCache.git)
+		: inspectGitState({
+				projectRoot,
+				batchId: batch.batchId,
+				baseBranch: batch.baseBranch,
+				orchBranch: batch.orchBranch,
+			});
 
 	const hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
 	const hasPendingTasks = classifiedTasks.some((task) => task.classification === "pending");
@@ -1194,6 +1250,7 @@ export function reconcileBatch(ctx) {
 	const resolvedMacroPhaseLabel = macroPhaseLabel(macroPhase);
 	if (ctx.verbose) {
 		signals.macroPhase = macroPhase;
+		signals.reconcileMode = useLightGit ? "light" : "full";
 	}
 
 	const stalePathCheck = buildStalePathDoctorCheck({
@@ -1277,6 +1334,22 @@ export function reconcileBatch(ctx) {
 		totalTasks: batch.totalTasks,
 		pendingTasks: pendingTaskCount,
 	});
+
+	if (
+		ctx.light === true &&
+		useLightGit &&
+		!_lightRetry &&
+		_lightReconcileCache.diagnosis != null &&
+		_lightReconcileCache.diagnosis !== diagnosis
+	) {
+		return reconcileBatch({ ...ctx, light: false }, true);
+	}
+
+	if (!useLightGit) {
+		updateLightReconcileCache(projectRoot, batch.batchId, batch.phase, git, diagnosis);
+	} else {
+		_lightReconcileCache.diagnosis = diagnosis;
+	}
 
 	return {
 		...output,

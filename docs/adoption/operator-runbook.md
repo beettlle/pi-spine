@@ -450,12 +450,14 @@ PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-0
 | Path | Default | Notes |
 |------|---------|-------|
 | Attached milestone poll (`attached-runner.mjs`) | **2000ms** | Human-scale events; override with `orchestrator.attachedMilestonePollMs` |
-| Sequence `waitForSequenceBatchTerminal` | **5000ms** full `reconcileBatch` | Aligns with `spine watch`; override with `orchestrator.sequencePollMs` |
+| Sequence `waitForSequenceBatchTerminal` | **5000ms**; first poll full reconcile, later polls **`reconcileBatch({ light: true })`** when phase stable | Aligns with `spine watch`; override with `orchestrator.sequencePollMs` |
 | Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** shared reconcile per server tick | One `reconcileBatch` + journal tail per poll interval; fan-out to all SSE clients. One dashboard per machine; override with `orchestrator.dashboardPollMs` |
 | Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
 | `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
 
 **Journal read cache (shipped):** hot paths share `readJournalEventsCached` — see [Monitoring cookbook — journal cache](#monitoring-cookbook) below.
+
+**Light reconcile (shipped, SP-456):** poll loops may call `reconcileBatch({ light: true })` when batch **phase** is unchanged since the last full reconcile. Light mode skips expensive git branch scans but still classifies tasks and reads the journal. Phase changes or diagnosis transitions automatically fall back to a full reconcile — correctness first, performance when safe ([#98](https://github.com/beettlle/pi-spine/issues/98)).
 
 **Config surface** (`.spine/spine-config.json`):
 
