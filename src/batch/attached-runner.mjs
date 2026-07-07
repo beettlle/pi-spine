@@ -13,11 +13,25 @@ import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { isProcessAlive } from "../process/liveness.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
-import { readJournalEventsCached } from "./journal.mjs";
+import { readJournalEventsCached, readJournalEvents, appendJournalEvent } from "./journal.mjs";
 import { enforceOperatorPauseOnDisk } from "./pause.mjs";
-import { loadSpineBatchState, readBatchEnginePid, saveSpineBatchState } from "./state.mjs";
+import {
+	loadSpineBatchState,
+	readBatchEnginePid,
+	saveSpineBatchState,
+	updateSegmentForTask,
+	recomputeTaskCounters,
+	clearBatchEnginePid,
+} from "./state.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveAttachedMilestonePollMs } from "../config/spine-config-schema.mjs";
+import {
+	journalHasContractVerified,
+	journalIndicatesPausedForceResume,
+} from "./orphan-detect.mjs";
+import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
+import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
+import { journalHasTaskCompleted } from "./resume-common.mjs";
 
 export { DEFAULT_ATTACHED_MILESTONE_POLL_MS } from "../config/spine-config-schema.mjs";
 
@@ -216,6 +230,81 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 }
 
 /**
+ * Promote running cache tasks with lane `.DONE` and contract verify after paused force resume (SP-513 / #184).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.batchId
+ * @returns {{ reconciled: boolean, taskIds?: string[] }}
+ */
+export function reconcilePausedResumeDoneInLane({ projectRoot, state, batchId }) {
+	if (!state || typeof state !== "object" || !batchId) {
+		return { reconciled: false };
+	}
+
+	const journalEvents = readJournalEvents(projectRoot, batchId);
+	if (!journalIndicatesPausedForceResume(journalEvents)) {
+		return { reconciled: false };
+	}
+
+	const configResult = loadSpineConfig(projectRoot);
+	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
+	const lanes = state.lanes ?? [];
+	/** @type {string[]} */
+	const promotedTaskIds = [];
+	let changed = false;
+
+	for (const task of state.tasks ?? []) {
+		const status = String(task?.status ?? "").toLowerCase();
+		if (status !== "running" && status !== "pending") continue;
+
+		const classified = classifyTaskDoneSemantics(task, {
+			tasksRoot,
+			projectRoot,
+			batchId,
+			lanes,
+		});
+		if (classified.doneInLane !== true) continue;
+		if (!journalHasContractVerified(journalEvents, task.taskId)) continue;
+
+		task.status = "succeeded";
+		task.doneFileFound = true;
+		task.exitReason = task.exitReason ?? "done";
+		if (!task.endedAt) task.endedAt = Date.now();
+		updateSegmentForTask(state, task.taskId, "succeeded");
+		promotedTaskIds.push(task.taskId);
+		changed = true;
+
+		if (!journalHasTaskCompleted(journalEvents, task.taskId)) {
+			const laneNumber = Number(task.laneNumber ?? 1);
+			const lane = lanes.find((entry) => Number(entry?.laneNumber) === laneNumber);
+			appendJournalEvent(projectRoot, batchId, "task.completed", {
+				taskId: task.taskId,
+				laneNumber,
+				laneId: lane?.laneId ?? `lane-${laneNumber}`,
+				resumed: true,
+				skippedDoneOnDisk: true,
+				reconciled: true,
+			});
+		}
+	}
+
+	if (!changed) {
+		return { reconciled: false };
+	}
+
+	const enginePid = readBatchEnginePid(state);
+	if (enginePid != null && !isProcessAlive(enginePid)) {
+		clearBatchEnginePid(state);
+	}
+
+	recomputeTaskCounters(state);
+	saveSpineBatchState(projectRoot, state);
+	return { reconciled: true, taskIds: promotedTaskIds };
+}
+
+/**
  * Run an attached foreground engine while streaming land-loop journal milestones to stdout.
  *
  * @param {object} params
@@ -279,6 +368,14 @@ function resolveAttachedBatchExitCode(result, reconciliation) {
  * @param {boolean} [params.json]
  */
 export function formatAttachedBatchCliResult({ projectRoot, operation, result, json = false }) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (loaded.raw?.batchId) {
+		reconcilePausedResumeDoneInLane({
+			projectRoot,
+			state: loaded.raw,
+			batchId: String(loaded.raw.batchId),
+		});
+	}
 	const reconciliation = reconcileBatch({ projectRoot });
 	const mergeBlocked = reconciliation.phase === "merge_blocked";
 

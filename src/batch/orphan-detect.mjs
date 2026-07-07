@@ -67,6 +67,99 @@ function readEngineStartedAt(raw) {
 }
 
 /**
+ * @param {unknown} event
+ * @returns {string|null}
+ */
+function eventFromPhase(event) {
+	if (!event || typeof event !== "object") return null;
+	const payload = /** @type {{ fromPhase?: unknown, payload?: { fromPhase?: unknown } }} */ (event);
+	const direct = payload.fromPhase ?? payload.payload?.fromPhase;
+	return typeof direct === "string" && direct ? direct : null;
+}
+
+/**
+ * Paused batch resumed with --force after intentional engine handoff (SP-513 / #184).
+ *
+ * @param {object[]} journalEvents
+ */
+export function journalIndicatesPausedForceResume(journalEvents) {
+	if (!Array.isArray(journalEvents) || journalEvents.length === 0) return false;
+	return journalEvents.some((event) => {
+		if (String(event?.type ?? "") !== "batch.resumed") return false;
+		const payload =
+			event.payload && typeof event.payload === "object"
+				? /** @type {Record<string, unknown>} */ (event.payload)
+				: {};
+		const resumeForced = payload.resumeForced === true || event.resumeForced === true;
+		const fromPhase = eventFromPhase(event);
+		return resumeForced && fromPhase === "paused";
+	});
+}
+
+/**
+ * @param {object[]} journalEvents
+ * @param {string} taskId
+ */
+export function journalHasContractVerified(journalEvents, taskId) {
+	if (!Array.isArray(journalEvents) || !taskId) return false;
+	return journalEvents.some((event) => {
+		if (String(event?.type ?? "") !== "contract.verified") return false;
+		const matchedTaskId = eventTaskId(event) ?? event.payload?.taskId;
+		if (matchedTaskId !== taskId) return false;
+		const payload =
+			event.payload && typeof event.payload === "object"
+				? /** @type {Record<string, unknown>} */ (event.payload)
+				: {};
+		if (payload.ok === false || event.ok === false) return false;
+		return true;
+	});
+}
+
+/**
+ * Running cache tasks with lane `.DONE` and contract verify should not surface engine_orphaned
+ * after a paused force-resume handoff (SP-513 / #184).
+ *
+ * @param {object} ctx
+ * @param {object[]} scopedJournalEvents
+ */
+export function shouldSuppressPausedResumeEngineOrphan(ctx, scopedJournalEvents) {
+	if (!journalIndicatesPausedForceResume(scopedJournalEvents)) {
+		return false;
+	}
+
+	const cacheTasks = Array.isArray(ctx.raw?.tasks) ? ctx.raw.tasks : [];
+	const runningCacheTasks = cacheTasks.filter(
+		(task) => String(task?.status ?? "").toLowerCase() === "running",
+	);
+	if (runningCacheTasks.length === 0) {
+		return false;
+	}
+
+	const classifiedById = new Map(
+		(ctx.tasks ?? [])
+			.filter((task) => typeof task?.taskId === "string" && task.taskId)
+			.map((task) => [task.taskId, task]),
+	);
+	const journalEvents = Array.isArray(ctx.fullJournalEvents)
+		? ctx.fullJournalEvents
+		: scopedJournalEvents;
+
+	for (const task of runningCacheTasks) {
+		const taskId = String(task.taskId ?? "");
+		if (!taskId) return false;
+		const classified = classifiedById.get(taskId);
+		if (classified?.doneInLane !== true) {
+			return false;
+		}
+		if (!journalHasContractVerified(journalEvents, taskId)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
  * Journal events for the current detached engine session only.
  * Prefers the latest `batch.resumed`; otherwise filters from `engineStartedAt`.
  *
@@ -255,7 +348,16 @@ export function detectOrphanRunning(ctx) {
 	}
 
 	const enginePid = readBatchEnginePid(ctx.raw);
-	if (enginePid && !isProcessAlive(enginePid) && !journalHasTerminalBatchEvent(scopedJournalEvents)) {
+	const suppressPausedResumeEngineOrphan = shouldSuppressPausedResumeEngineOrphan(
+		ctx,
+		scopedJournalEvents,
+	);
+	if (
+		enginePid &&
+		!isProcessAlive(enginePid) &&
+		!journalHasTerminalBatchEvent(scopedJournalEvents) &&
+		!suppressPausedResumeEngineOrphan
+	) {
 		/** @type {OrphanRunningSignal} */
 		return {
 			kind: "engine",
@@ -271,7 +373,8 @@ export function detectOrphanRunning(ctx) {
 		enginePid == null &&
 		!hasFiniteWorkerPidForRunningTasks(ctx.lanes, runningTasks) &&
 		engineStartedAt != null &&
-		journalIndicatesStalledSession(scopedJournalEvents)
+		journalIndicatesStalledSession(scopedJournalEvents) &&
+		!suppressPausedResumeEngineOrphan
 	) {
 		/** @type {OrphanRunningSignal} */
 		return {
