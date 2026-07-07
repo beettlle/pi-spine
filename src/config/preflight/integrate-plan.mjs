@@ -268,7 +268,7 @@ export function listPrelandedFileScopeStaleTasks(ctx) {
 
 	const discovered = discoverTasks(tasksRootPath);
 	const { pendingIds } = summarizePendingScope(discovered, tasksRootPath);
-	/** @type {Array<{ taskId: string, warnings: string[] }>} */
+	/** @type {Array<{ taskId: string, warnings: string[], statusRelPath: string, promptRelPath: string }>} */
 	const staleTasks = [];
 	/** @type {Array<{ discoveredTask: (typeof discovered)[number], promptPath: string }>} */
 	const pendingPrompts = [];
@@ -295,11 +295,34 @@ export function listPrelandedFileScopeStaleTasks(ctx) {
 			promptRelPath,
 		);
 		if (warnings.length > 0) {
-			staleTasks.push({ taskId: discoveredTask.taskId, warnings });
+			const taskFolderRel = path
+				.relative(ctx.projectRoot, discoveredTask.folderPath)
+				.replace(/\\/g, "/");
+			staleTasks.push({
+				taskId: discoveredTask.taskId,
+				warnings,
+				statusRelPath: `${taskFolderRel}/STATUS.md`,
+				promptRelPath: path.relative(ctx.projectRoot, promptPath).replace(/\\/g, "/"),
+			});
 		}
 	}
 
 	return staleTasks;
+}
+
+/**
+ * Actionable redirect hint for pre-landed fileScope (FR-STA-14 / issue #159).
+ * Distinct from SP-374 generic stale warn — points operators at STATUS.md + Amendments.
+ *
+ * @param {Array<{ taskId: string, statusRelPath: string, promptRelPath: string }>} staleTasks
+ */
+export function formatPrelandedFileScopeRedirectSuggestion(staleTasks) {
+	return staleTasks
+		.map(
+			(entry) =>
+				`${entry.taskId}: amend ${entry.statusRelPath} and ${entry.promptRelPath} ## Amendments (redirect fileScopeMustChange to delivery artifacts)`,
+		)
+		.join("; ");
 }
 
 /**
@@ -322,15 +345,15 @@ export function checkPrelandedFileScopeWarn(ctx) {
 
 		const preview = staleTasks.map((entry) => entry.taskId).slice(0, 5).join(", ");
 		const suffix = staleTasks.length > 5 ? ` (+${staleTasks.length - 5} more)` : "";
+		const redirectHint = formatPrelandedFileScopeRedirectSuggestion(staleTasks);
 		return makeCheck(
 			"prelanded-file-scope",
 			true,
-			`${staleTasks.length} pending task(s) with fileScopeMustChange already changed on main (${preview}${suffix})`,
+			`${staleTasks.length} pending task(s) with fileScopeMustChange already changed on main (${preview}${suffix}) — ${redirectHint}`,
 			{
 				warning: true,
-				details: { staleTasks },
-				suggestedCommand:
-					"spine tasks validate pending --warnings-only; amend PROMPT ## Contract before batch start",
+				details: { staleTasks, redirectHint },
+				suggestedCommand: `spine tasks validate pending --warnings-only; ${redirectHint}`,
 			},
 		);
 	} catch (err) {
@@ -345,10 +368,11 @@ export function checkPrelandedFileScopeWarn(ctx) {
 
 function formatPrelandedFileScopePlanWarning(staleTasks) {
 	const preview = staleTasks.map((entry) => entry.taskId).slice(0, 5).join(", ");
+	const redirectHint = formatPrelandedFileScopeRedirectSuggestion(staleTasks);
 	return [
 		"⚠️ Pre-landed contract risk: pending task(s)",
 		`(${preview}) have fileScopeMustChange paths already changed on main.`,
-		"Amend PROMPT ## Contract before batch start or expect contract rework loops.",
+		`Redirect: ${redirectHint}`,
 	].join(" ");
 }
 

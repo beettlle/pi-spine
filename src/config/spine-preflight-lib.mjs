@@ -55,6 +55,7 @@ export {
 export {
 	checkOrchMergeConflictWarn,
 	checkPrelandedFileScopeWarn,
+	formatPrelandedFileScopeRedirectSuggestion,
 	isMergeOriginMainTask,
 	listDivergentOrchMergeRiskPaths,
 	listPrelandedFileScopeStaleTasks,

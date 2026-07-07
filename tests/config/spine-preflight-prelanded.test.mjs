@@ -7,6 +7,7 @@ import test from "node:test";
 import { loadSpineConfig } from "../../src/config/spine-config-load.mjs";
 import {
 	checkPrelandedFileScopeWarn,
+	formatPrelandedFileScopeRedirectSuggestion,
 	listPrelandedFileScopeStaleTasks,
 	runBatchPreflight,
 	runPreflightPlanCheck,
@@ -110,7 +111,11 @@ test("checkPrelandedFileScopeWarn warns for prelanded fileScopeMustChange", asyn
 		assert.equal(check.warning, true);
 		assert.match(check.message, /SP-902/);
 		assert.match(check.message, /already changed on main/i);
+		assert.match(check.message, /spine-tasks\/SP-902-preflight-prelanded\/STATUS\.md/);
+		assert.match(check.message, /## Amendments/);
 		assert.match(check.suggestedCommand, /spine tasks validate pending --warnings-only/);
+		assert.match(check.suggestedCommand, /STATUS\.md/);
+		assert.match(check.suggestedCommand, /## Amendments/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -145,6 +150,25 @@ test("listPrelandedFileScopeStaleTasks reports multiple stale pending tasks", as
 	}
 });
 
+test("formatPrelandedFileScopeRedirectSuggestion names STATUS.md and Amendments per task", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-preland-redirect-");
+	try {
+		writePendingPrelandedTask(projectRoot);
+		gitCommitAll(projectRoot, "pending task");
+		prelandImplementation(projectRoot);
+
+		const staleTasks = listPrelandedFileScopeStaleTasks({ projectRoot });
+		const redirect = formatPrelandedFileScopeRedirectSuggestion(staleTasks);
+		assert.match(
+			redirect,
+			/SP-902: amend spine-tasks\/SP-902-preflight-prelanded\/STATUS\.md and spine-tasks\/SP-902-preflight-prelanded\/PROMPT\.md ## Amendments/,
+		);
+		assert.match(redirect, /redirect fileScopeMustChange to delivery artifacts/i);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("runBatchPreflight and plan check surface prelanded file-scope warning", async () => {
 	const projectRoot = await initGitRepo("spine-preflight-preland-batch-");
 	try {
@@ -158,6 +182,7 @@ test("runBatchPreflight and plan check surface prelanded file-scope warning", as
 		assert.ok(prelandCheck);
 		assert.equal(prelandCheck.warning, true);
 		assert.match(prelandCheck.message, /SP-902/);
+		assert.match(prelandCheck.message, /STATUS\.md/);
 
 		const plan = runPreflightPlanCheck({
 			projectRoot,
@@ -166,6 +191,9 @@ test("runBatchPreflight and plan check surface prelanded file-scope warning", as
 		assert.equal(plan.status, "ok");
 		assert.match(plan.message, /Pre-landed contract risk/i);
 		assert.match(plan.message, /SP-902/);
+		assert.match(plan.message, /Redirect:/);
+		assert.match(plan.message, /STATUS\.md/);
+		assert.match(plan.message, /## Amendments/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
