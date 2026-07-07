@@ -20,6 +20,7 @@ import {
 	inferLaunchFailureKind,
 	inferMergeGitignoredFailure,
 } from "./diagnosis.mjs";
+import { findLatestReviewHonorSignal } from "./review.mjs";
 import { summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
 import {
@@ -1424,6 +1425,15 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 				)
 			: null;
 
+	const activeReviewTaskId =
+		failedTaskId ??
+		classifiedTasks.find((task) => task.classification === "running")?.taskId ??
+		null;
+	const reviewHonorSignal = findLatestReviewHonorSignal(journalEvents, activeReviewTaskId);
+	if (ctx.verbose) {
+		signals.reviewHonor = reviewHonorSignal;
+	}
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -1455,6 +1465,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		allTasksTerminalSuccess: signals.allTasksTerminalSuccess,
 		tasksRoot,
 		macroPhase,
+		reviewHonorSignal,
 		...(doneMissingContext ?? {}),
 		humanBaseSync,
 		overlapPaths: humanBaseSync?.overlapPaths ?? [],

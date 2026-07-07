@@ -19,6 +19,8 @@ import {
 export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";
 export { buildRunningTailHeadline, isRunningWithoutActiveWorkers } from "./diagnosis-tail-state.mjs";
+import { findLatestReviewHonorSignal } from "./review.mjs";
+export { findLatestReviewHonorSignal } from "./review.mjs";
 import {
 	buildStubFailureHeadline,
 	buildStubFailureSuggestedCommand,
@@ -90,6 +92,26 @@ const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"final_review_spawn_failed",
 	"final_review_timeout",
 ]);
+
+/**
+ * @param {object|null|undefined} reviewHonorSignal
+ * @returns {string|null}
+ */
+export function buildReviewHonorHeadlineSuffix(reviewHonorSignal) {
+	if (!reviewHonorSignal?.kind) return null;
+	const reviewLabel =
+		reviewHonorSignal.reviewType === "final" ? "final review" : "code review";
+	if (reviewHonorSignal.kind === "review.crash_recovered") {
+		return `recovered ${reviewLabel} crash — prior verdict honored from ${reviewHonorSignal.honorSource ?? "artifact"}`;
+	}
+	if (reviewHonorSignal.kind === "review.skipped_fresh_artifact") {
+		return `skipped redundant ${reviewLabel} — fresh artifact honored`;
+	}
+	if (reviewHonorSignal.kind === "review.resumed") {
+		return `${reviewLabel} resumed after operator retry`;
+	}
+	return null;
+}
 
 /**
  * @param {object} [ctx]
@@ -395,6 +417,10 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				? `Task ${ctx.failedTaskId} needs replan — edit PROMPT.md before retry`
 				: `${batchLabel} has tasks needing replan — edit PROMPT.md before retry`;
 		case "running": {
+			const reviewHonorSuffix = buildReviewHonorHeadlineSuffix(ctx.reviewHonorSignal);
+			if (reviewHonorSuffix && ctx.reviewHonorSignal?.taskId) {
+				return `${batchLabel} task ${ctx.reviewHonorSignal.taskId}: ${reviewHonorSuffix}`;
+			}
 			const tailHeadline = buildRunningTailHeadline(batchLabel, ctx);
 			if (tailHeadline) {
 				return tailHeadline;

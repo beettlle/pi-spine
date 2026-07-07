@@ -32,6 +32,9 @@ import {
 	findFinalReviewStepNumber,
 	readReviewLevel,
 	REVIEW_TIMEOUT_REASON,
+	resolveReviewHonorJournalEvent,
+	resolveReviewPassKind,
+	shouldEmitReviewResumed,
 	runStepReview,
 } from "../review.mjs";
 
@@ -403,6 +406,58 @@ function recordCodeReviewTaskFailure({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.task
+ * @param {object} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {"code"|"final"} params.reviewType
+ * @param {number} params.reviewAttempt
+ * @param {object} params.honored
+ * @param {"review.crash_recovered"|"review.skipped_fresh_artifact"|null} params.honorJournalEvent
+ */
+function appendReviewHonorJournalEvents({
+	projectRoot,
+	batchId,
+	task,
+	lane,
+	laneCorrelationId,
+	reviewType,
+	reviewAttempt,
+	honored,
+	honorJournalEvent,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	if (!honorJournalEvent) return;
+
+	const basePayload = {
+		taskId,
+		laneNumber,
+		laneId: lane.laneId,
+		correlationId: laneCorrelationId,
+		reviewType,
+		artifactPath: honored.artifactPath,
+		honorSource: honored.source,
+		reviewPassKind: resolveReviewPassKind(honorJournalEvent),
+	};
+
+	if (reviewType === "code") {
+		appendJournalEvent(projectRoot, batchId, honorJournalEvent, {
+			...basePayload,
+			codeReviewAttempt: reviewAttempt,
+		});
+		return;
+	}
+
+	appendJournalEvent(projectRoot, batchId, honorJournalEvent, {
+		...basePayload,
+		finalAttempt: reviewAttempt,
+	});
+}
+
+/**
+ * @param {object} params
  */
 async function runCodeReviewPhase({
 	projectRoot,
@@ -427,24 +482,31 @@ async function runCodeReviewPhase({
 	const maxCodeReviewAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 	let codeReviewAttempt = task.codeReviewAttempts ?? 0;
 
+	const journalEvents = readJournalEvents(projectRoot, batchId);
 	const honored = findCompletedCodeReview({
 		taskFolder: taskFolderInWorktree,
-		journalEvents: readJournalEvents(projectRoot, batchId),
+		journalEvents,
 		taskId,
 	});
 	if (honored?.verdict === "APPROVE") {
-		if (codeReviewAttempt > 0) {
-			appendJournalEvent(projectRoot, batchId, "review.crash_recovered", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				reviewType: "code",
-				codeReviewAttempt,
-				artifactPath: honored.artifactPath,
-				honorSource: honored.source,
-			});
-		}
+		const honorJournalEvent = resolveReviewHonorJournalEvent({
+			journalEvents,
+			taskId,
+			reviewType: "code",
+			honorSource: honored.source,
+			reviewAttempt: codeReviewAttempt,
+		});
+		appendReviewHonorJournalEvents({
+			projectRoot,
+			batchId,
+			task,
+			lane,
+			laneCorrelationId,
+			reviewType: "code",
+			reviewAttempt: codeReviewAttempt,
+			honored,
+			honorJournalEvent,
+		});
 		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
 			taskId,
 			laneNumber,
@@ -457,6 +519,7 @@ async function runCodeReviewPhase({
 			codeReviewAttempt: codeReviewAttempt + 1,
 			honored: true,
 			honorSource: honored.source,
+			reviewPassKind: resolveReviewPassKind(honorJournalEvent),
 		});
 		task.codeReviewAttempts = codeReviewAttempt + 1;
 		saveSpineBatchState(projectRoot, state);
@@ -471,7 +534,24 @@ async function runCodeReviewPhase({
 		correlationId: laneCorrelationId,
 	};
 
+	let reviewResumedEmitted = false;
+
 	while (true) {
+		if (
+			!reviewResumedEmitted &&
+			shouldEmitReviewResumed({ journalEvents, taskId })
+		) {
+			appendJournalEvent(projectRoot, batchId, "review.resumed", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				reviewType: "code",
+				codeReviewAttempt: codeReviewAttempt + 1,
+			});
+			reviewResumedEmitted = true;
+		}
+
 		const reviewResult = await runEngineCodeReview({
 			taskFolder: taskFolderInWorktree,
 			worktreePath: wt,
@@ -658,24 +738,31 @@ async function runFinalReviewPhase({
 	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 	let finalAttempt = task.finalAttempts ?? 0;
 
+	const journalEvents = readJournalEvents(projectRoot, batchId);
 	const honoredFinal = findCompletedFinalReview({
 		taskFolder: taskFolderInWorktree,
-		journalEvents: readJournalEvents(projectRoot, batchId),
+		journalEvents,
 		taskId,
 	});
 	if (honoredFinal?.verdict === "PASS") {
-		if (finalAttempt > 0) {
-			appendJournalEvent(projectRoot, batchId, "review.crash_recovered", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				reviewType: "final",
-				finalAttempt,
-				artifactPath: honoredFinal.artifactPath,
-				honorSource: honoredFinal.source,
-			});
-		}
+		const honorJournalEvent = resolveReviewHonorJournalEvent({
+			journalEvents,
+			taskId,
+			reviewType: "final",
+			honorSource: honoredFinal.source,
+			reviewAttempt: finalAttempt,
+		});
+		appendReviewHonorJournalEvents({
+			projectRoot,
+			batchId,
+			task,
+			lane,
+			laneCorrelationId,
+			reviewType: "final",
+			reviewAttempt: finalAttempt,
+			honored: honoredFinal,
+			honorJournalEvent,
+		});
 		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
 			taskId,
 			laneNumber,
@@ -688,6 +775,7 @@ async function runFinalReviewPhase({
 			finalAttempt: finalAttempt + 1,
 			honored: true,
 			honorSource: honoredFinal.source,
+			reviewPassKind: resolveReviewPassKind(honorJournalEvent),
 		});
 		task.finalAttempts = finalAttempt + 1;
 		saveSpineBatchState(projectRoot, state);
@@ -702,7 +790,24 @@ async function runFinalReviewPhase({
 		correlationId: laneCorrelationId,
 	};
 
+	let reviewResumedEmitted = false;
+
 	while (true) {
+		if (
+			!reviewResumedEmitted &&
+			shouldEmitReviewResumed({ journalEvents, taskId })
+		) {
+			appendJournalEvent(projectRoot, batchId, "review.resumed", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				reviewType: "final",
+				finalAttempt: finalAttempt + 1,
+			});
+			reviewResumedEmitted = true;
+		}
+
 		let contractVerifyResult = null;
 		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
 		const parsedContract = parseContract(promptMarkdown);

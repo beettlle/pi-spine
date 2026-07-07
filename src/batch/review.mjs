@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { detectOrphanedReviewStarted } from "./journal-rebuild.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
@@ -165,6 +166,201 @@ export function findCompletedCodeReview({ taskFolder, journalEvents = [], taskId
 	if (!journalMatch) return null;
 	const { seq: _seq, ...result } = journalMatch;
 	return result;
+}
+
+/** Journal honor events emitted when honoring a completed review artifact. */
+export const REVIEW_HONOR_JOURNAL_EVENTS = {
+	crashRecovered: "review.crash_recovered",
+	skippedFreshArtifact: "review.skipped_fresh_artifact",
+	resumed: "review.resumed",
+};
+
+/**
+ * True when operator retry or reconcile re-enters review with a still-valid prior verdict.
+ *
+ * @param {object} params
+ * @param {object[]} params.journalEvents
+ * @param {string} params.taskId
+ * @param {"code"|"final"} params.reviewType
+ * @param {"journal"|"artifact"} [params.honorSource]
+ */
+export function isRetryReconcileFreshReview({
+	journalEvents = [],
+	taskId,
+	reviewType,
+	honorSource,
+}) {
+	let lastReviewCompletedIndex = -1;
+	let lastRetryIndex = -1;
+	let lastReconciledCompleteIndex = -1;
+
+	for (let index = 0; index < journalEvents.length; index += 1) {
+		const event = journalEvents[index];
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId !== taskId) continue;
+
+		if (event.type === "review.completed" && payload.reviewType === reviewType) {
+			lastReviewCompletedIndex = index;
+		}
+		if (event.type === "task.retry_requested") {
+			lastRetryIndex = index;
+		}
+		if (
+			event.type === "task.completed" &&
+			(payload.reconcileReason === "done_in_lane_terminal" || payload.reconciled === true)
+		) {
+			lastReconciledCompleteIndex = index;
+		}
+	}
+
+	if (lastReviewCompletedIndex < 0) {
+		return false;
+	}
+	if (lastRetryIndex > lastReviewCompletedIndex) {
+		return true;
+	}
+	if (honorSource === "journal" && lastReconciledCompleteIndex > lastReviewCompletedIndex) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * True when journal shows a review spawn crash/failure that warrants crash_recovered.
+ *
+ * @param {object} params
+ * @param {object[]} params.journalEvents
+ * @param {string} params.taskId
+ * @param {"code"|"final"} params.reviewType
+ */
+export function hasReviewSpawnFailureForHonor({ journalEvents = [], taskId, reviewType }) {
+	const orphaned = detectOrphanedReviewStarted(journalEvents);
+	for (const event of orphaned) {
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId === taskId && payload.reviewType === reviewType) {
+			return true;
+		}
+	}
+
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId !== taskId) continue;
+
+		if (event.type === "review.failed") {
+			if (payload.reviewType !== reviewType) continue;
+			if (payload.reason === NESTED_REVIEW_SPAWN_REASON) continue;
+			return true;
+		}
+		if (event.type === "review.completed" && payload.reviewType === reviewType) {
+			break;
+		}
+	}
+	return false;
+}
+
+/**
+ * Resolve explicit journal event for honoring a completed review artifact.
+ *
+ * @param {object} params
+ * @param {object[]} params.journalEvents
+ * @param {string} params.taskId
+ * @param {"code"|"final"} params.reviewType
+ * @param {"journal"|"artifact"} [params.honorSource]
+ * @param {number} [params.reviewAttempt]
+ * @returns {"review.crash_recovered"|"review.skipped_fresh_artifact"|null}
+ */
+export function resolveReviewHonorJournalEvent({
+	journalEvents = [],
+	taskId,
+	reviewType,
+	honorSource,
+	reviewAttempt = 0,
+}) {
+	if (
+		isRetryReconcileFreshReview({ journalEvents, taskId, reviewType, honorSource }) &&
+		!hasReviewSpawnFailureForHonor({ journalEvents, taskId, reviewType })
+	) {
+		return REVIEW_HONOR_JOURNAL_EVENTS.skippedFreshArtifact;
+	}
+	if (hasReviewSpawnFailureForHonor({ journalEvents, taskId, reviewType })) {
+		return REVIEW_HONOR_JOURNAL_EVENTS.crashRecovered;
+	}
+	if (reviewAttempt > 0) {
+		return REVIEW_HONOR_JOURNAL_EVENTS.crashRecovered;
+	}
+	return null;
+}
+
+/**
+ * Map honor journal event to task.verdict_recorded reviewPassKind.
+ *
+ * @param {"review.crash_recovered"|"review.skipped_fresh_artifact"|null} honorJournalEvent
+ * @returns {"recovered"|"fresh_skip"|"normal"}
+ */
+export function resolveReviewPassKind(honorJournalEvent) {
+	if (honorJournalEvent === REVIEW_HONOR_JOURNAL_EVENTS.crashRecovered) {
+		return "recovered";
+	}
+	if (honorJournalEvent === REVIEW_HONOR_JOURNAL_EVENTS.skippedFreshArtifact) {
+		return "fresh_skip";
+	}
+	return "normal";
+}
+
+/**
+ * True when review should emit review.resumed before spawning after operator retry.
+ *
+ * @param {object} params
+ * @param {object[]} params.journalEvents
+ * @param {string} params.taskId
+ */
+export function shouldEmitReviewResumed({ journalEvents = [], taskId }) {
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event.type !== "task.retry_requested") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId === taskId) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Latest review honor/resume signal for diagnose and dashboard surfaces.
+ *
+ * @param {object[]} journalEvents
+ * @param {string|null} [activeTaskId]
+ * @returns {{ taskId: string, reviewType: string, kind: string, honorSource?: string, reviewPassKind?: string }|null}
+ */
+export function findLatestReviewHonorSignal(journalEvents, activeTaskId = null) {
+	const honorTypes = new Set([
+		REVIEW_HONOR_JOURNAL_EVENTS.crashRecovered,
+		REVIEW_HONOR_JOURNAL_EVENTS.skippedFreshArtifact,
+		REVIEW_HONOR_JOURNAL_EVENTS.resumed,
+	]);
+
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (!honorTypes.has(event.type)) continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const taskId = event.taskId ?? payload.taskId;
+		if (!taskId) continue;
+		if (activeTaskId && taskId !== activeTaskId) continue;
+		return {
+			taskId,
+			reviewType: payload.reviewType,
+			kind: event.type,
+			honorSource: payload.honorSource,
+			reviewPassKind: payload.reviewPassKind,
+		};
+	}
+	return null;
 }
 
 /**

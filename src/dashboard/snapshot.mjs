@@ -165,6 +165,7 @@ export function buildDashboardSnapshot(projectRoot) {
 		headline: reconciliation.headline,
 		suggestedCommand: reconciliation.suggestedCommand,
 		alternatives: reconciliation.alternatives ?? [],
+		reviewHonor: reconciliation.signals?.reviewHonor ?? null,
 		batchId: reconciliation.batchId,
 		phase: reconciliation.phase,
 		batchStatePath: reconciliation.batchStatePath,
