@@ -82,10 +82,13 @@ export async function waitForSequenceBatchTerminal({
 	pollIntervalMs = DEFAULT_SEQUENCE_POLL_MS,
 	timeoutMs = 120_000,
 	enginePid = null,
+	reconcileFn = reconcileBatch,
 }) {
 	const deadline = Date.now() + timeoutMs;
+	let useLightReconcile = false;
 	while (Date.now() < deadline || isEngineStillRunning(enginePid, projectRoot)) {
-		const reconciliation = reconcileBatch({ projectRoot });
+		const reconciliation = reconcileFn({ projectRoot, light: useLightReconcile });
+		useLightReconcile = true;
 		const diagnosis = reconciliation.diagnosis;
 		if (isSequenceBatchFailure(diagnosis)) {
 			return {
@@ -106,7 +109,7 @@ export async function waitForSequenceBatchTerminal({
 		}
 		await sleep(pollIntervalMs);
 	}
-	const reconciliation = reconcileBatch({ projectRoot });
+	const reconciliation = reconcileFn({ projectRoot });
 	return {
 		ok: false,
 		error: "timeout_waiting_for_batch",
