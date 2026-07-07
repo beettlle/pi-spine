@@ -8,9 +8,6 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { appendJournalEvent, readJournalEventsCached } from "./journal.mjs";
 import {
-	clearGitPorcelainDebounceCache,
-	getGitPorcelainCallCount,
-	resetGitPorcelainCallCount,
 	resolveDebouncedScopedDirtyPaths,
 	resolveFileScopeMtimeMs,
 } from "./heartbeat-git-debounce.mjs";

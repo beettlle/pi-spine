@@ -5,7 +5,6 @@ import { loadSpineConfig } from "./spine-config-load.mjs";
 import { runDoctorChecks } from "../doctor/run-doctor-checks.mjs";
 import { buildStalePathDoctorCheck, isStalePathSpinePreflightBlocking } from "../doctor/stale-path.mjs";
 import { PACKAGE_ROOT } from "./spine-init-constants.mjs";
-import { runReconciliationCheck } from "../batch/reconcile.mjs";
 import { buildCoexistencePreflightCheck, assessOrchestratorCoexistence } from "../doctor/coexistence.mjs";
 import { validatePiSpineRootConfig } from "./pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "./worker-launch-script.mjs";
@@ -73,7 +72,7 @@ const CONCURRENT_DEV_LABEL = "concurrent development on base branch";
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
- * @param {typeof runReconciliationCheck} [ctx.runReconciliation]
+ * @param {Function} [ctx.runReconciliation]
  */
 export function buildConcurrentDevDoctorCheck(ctx) {
 	const { projectRoot, config } = ctx;
@@ -312,7 +311,7 @@ export function checkStubReleaseCritical(ctx) {
  * @param {string} options.projectRoot
  * @param {boolean} [options.skipDoctor]
  * @param {() => ReturnType<typeof runDoctorChecks>} [options.runDoctor]
- * @param {typeof runReconciliationCheck} [options.runReconciliation]
+ * @param {Function} [options.runReconciliation]
  */
 export function runBatchPreflight(options) {
 	const { projectRoot, skipDoctor = false } = options;
