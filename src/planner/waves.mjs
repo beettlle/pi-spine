@@ -132,3 +132,44 @@ export function formatFileScopeOverlapWarnings(overlaps) {
 	}
 	return lines;
 }
+
+/** Topological waves with more than this many tasks trigger a planner warning (FR-STA-12 / issue #143). */
+export const WAVE_SIZE_WARN_THRESHOLD = 8;
+
+/**
+ * Collect warning lines when any wave exceeds the task limit.
+ * Mega-waves stall pi workers (Phase 15 / SP-086–088).
+ *
+ * @param {string[][]} waves
+ * @returns {string[]}
+ */
+export function collectWaveSizeWarnings(waves) {
+	if (!Array.isArray(waves) || waves.length === 0) {
+		return [];
+	}
+
+	/** @type {Array<{ waveIndex: number, taskCount: number }>} */
+	const oversized = [];
+	for (let waveIndex = 0; waveIndex < waves.length; waveIndex++) {
+		const taskIds = waves[waveIndex];
+		const taskCount = Array.isArray(taskIds) ? taskIds.length : 0;
+		if (taskCount > WAVE_SIZE_WARN_THRESHOLD) {
+			oversized.push({ waveIndex, taskCount });
+		}
+	}
+
+	if (oversized.length === 0) {
+		return [];
+	}
+
+	const lines = [
+		`Wave size warning: ${oversized.length} wave(s) exceed ${WAVE_SIZE_WARN_THRESHOLD} tasks (mega-waves stall pi workers):`,
+	];
+	for (const { waveIndex, taskCount } of oversized) {
+		lines.push(`  Wave ${waveIndex}: ${taskCount} tasks`);
+	}
+	lines.push(
+		'  Split waves per create-spine-tasks guidance (prefer ≤4 M-sized tasks per wave; see skills/create-spine-tasks/SKILL.md).',
+	);
+	return lines;
+}

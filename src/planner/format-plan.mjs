@@ -131,5 +131,9 @@ export function formatPlanHuman(plan) {
 		lines.push(`Start: spine batch start ${firstWave.taskIds.join(" ")}`);
 	}
 
-	return appendBatchSizeGuidanceToPlanOutput(`${lines.join("\n").trimEnd()}\n`, plan);
+	let output = `${lines.join("\n").trimEnd()}\n`;
+	if (Array.isArray(plan.waveSizeWarnings) && plan.waveSizeWarnings.length > 0) {
+		output = `${output.trimEnd()}\n\n${plan.waveSizeWarnings.join("\n")}\n`;
+	}
+	return appendBatchSizeGuidanceToPlanOutput(output, plan);
 }
