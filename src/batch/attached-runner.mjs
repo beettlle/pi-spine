@@ -4,6 +4,8 @@
  * Post-merge limbo resume fast path (SP-348, GitHub #39).
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import {
 	finalizeAttachedLandLoopBeforeExit,
 	finalizeResumedBatchForIntegrate,
@@ -177,7 +179,103 @@ export async function startAttachedMilestoneReporter({
 }
 
 /**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function resumeHandoffLockPath(projectRoot, batchId) {
+	return path.join(projectRoot, ".spine", "runtime", batchId, "resume-handoff.lock");
+}
+
+/**
+ * Exclusive lock for forced resume handoff (SP-533 / #167).
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {boolean} [allowRetry]
+ * @returns {{ ok: true, release: () => void } | { ok: false, holderPid?: number|null, startedAt?: number }}
+ */
+export function tryAcquireResumeHandoffLock(projectRoot, batchId, allowRetry = true) {
+	const lockPath = resumeHandoffLockPath(projectRoot, batchId);
+	fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+	const payload = JSON.stringify({ pid: process.pid, startedAt: Date.now() });
+
+	try {
+		fs.writeFileSync(lockPath, payload, { encoding: "utf-8", flag: "wx" });
+		return {
+			ok: true,
+			release: () => releaseResumeHandoffLock(projectRoot, batchId),
+		};
+	} catch (err) {
+		if (/** @type {NodeJS.ErrnoException} */ (err).code !== "EEXIST") {
+			throw err;
+		}
+	}
+
+	/** @type {{ pid?: number, startedAt?: number } | null} */
+	let holder = null;
+	try {
+		holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+	} catch {
+		try {
+			fs.unlinkSync(lockPath);
+		} catch {
+			/* ignore stale corrupt lock cleanup */
+		}
+		if (allowRetry) {
+			return tryAcquireResumeHandoffLock(projectRoot, batchId, false);
+		}
+		return { ok: false, holderPid: null };
+	}
+
+	const holderPid = Number(holder?.pid);
+	if (Number.isFinite(holderPid) && holderPid > 0 && isProcessAlive(holderPid)) {
+		return {
+			ok: false,
+			holderPid,
+			startedAt: Number(holder?.startedAt) || undefined,
+		};
+	}
+
+	try {
+		fs.unlinkSync(lockPath);
+	} catch {
+		/* ignore stale lock cleanup */
+	}
+
+	try {
+		fs.writeFileSync(lockPath, payload, { encoding: "utf-8", flag: "wx" });
+		return {
+			ok: true,
+			release: () => releaseResumeHandoffLock(projectRoot, batchId),
+		};
+	} catch (err) {
+		if (/** @type {NodeJS.ErrnoException} */ (err).code === "EEXIST") {
+			return { ok: false, holderPid: Number.isFinite(holderPid) ? holderPid : null };
+		}
+		throw err;
+	}
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function releaseResumeHandoffLock(projectRoot, batchId) {
+	const lockPath = resumeHandoffLockPath(projectRoot, batchId);
+	try {
+		if (!fs.existsSync(lockPath)) return;
+		const holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+		if (Number(holder?.pid) === process.pid) {
+			fs.unlinkSync(lockPath);
+		}
+	} catch {
+		/* ignore release races */
+	}
+}
+
+/**
  * Reject a second attached engine when resilience.enginePid is alive (SP-434, GitHub #89).
+ * Serialized forced resume handoff when another resume --force is in flight (SP-533, #167).
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -192,9 +290,37 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 	}
 
 	const batchId = String(state.batchId ?? "");
+	/** @type {(() => void) | undefined} */
+	let releaseResumeLock;
+
+	if (force && operation === "resume") {
+		const lock = tryAcquireResumeHandoffLock(projectRoot, batchId);
+		if (!lock.ok) {
+			const enginePid = readBatchEnginePid(state);
+			const holderPid = lock.holderPid ?? null;
+			const output =
+				`Another batch resume --force is already in progress (batch ${batchId}` +
+				`${holderPid ? `, holder PID ${holderPid}` : ""}).\n` +
+				`Wait for the in-flight forced resume to finish before starting another.\n`;
+			return {
+				ok: false,
+				exitCode: 1,
+				error: "concurrent_resume_blocked",
+				output,
+				batchId,
+				enginePid,
+				holderPid,
+			};
+		}
+		releaseResumeLock = lock.release;
+		appendJournalEvent(projectRoot, batchId, "batch.resume_handoff_started", {
+			pid: process.pid,
+		});
+	}
+
 	const enginePid = readBatchEnginePid(state);
 	if (enginePid == null || enginePid === process.pid || !isProcessAlive(enginePid)) {
-		return { ok: true };
+		return releaseResumeLock ? { ok: true, releaseResumeLock } : { ok: true };
 	}
 
 	const fromPhase = String(state.phase ?? "");
@@ -212,6 +338,7 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 			handoff: true,
 			terminated: terminateResult.terminated,
 			stalePid: terminateResult.stalePid ?? enginePid,
+			releaseResumeLock,
 		};
 	}
 

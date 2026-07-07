@@ -762,7 +762,10 @@ export async function resumeBatchDetached({
 			error: engineLock.error,
 			output: engineLock.output,
 			enginePid: engineLock.enginePid,
-			suggestedCommand: "spine batch resume --attached --force",
+			suggestedCommand:
+				engineLock.error === "concurrent_resume_blocked"
+					? "spine status --diagnose"
+					: "spine batch resume --attached --force",
 		};
 		return {
 			ok: false,
@@ -771,9 +774,11 @@ export async function resumeBatchDetached({
 			result: payload,
 		};
 	}
+	const releaseResumeLock = engineLock.releaseResumeLock;
 
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
+		releaseResumeLock?.();
 		const payload = {
 			ok: false,
 			detached: true,
@@ -804,6 +809,7 @@ export async function resumeBatchDetached({
 			fromPhase: String(state.phase ?? "running"),
 			resumeForced: force,
 		});
+		releaseResumeLock?.();
 		if (!finalizeResult?.ok) {
 			const payload = {
 				ok: false,
@@ -843,6 +849,7 @@ export async function resumeBatchDetached({
 	prepareDetachedResumeEngineHandoff(projectRoot);
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
+	releaseResumeLock?.();
 	const waitTimeoutMs = resolveDetachedWaitTimeoutMs(waitTerminal);
 	const wait = await waitForDetachedBatchResume({
 		projectRoot,
