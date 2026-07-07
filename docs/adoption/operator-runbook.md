@@ -1324,7 +1324,7 @@ Config is committed at `.review/config.toml` so lane worktrees inherit settings 
 | Phase | Mechanism | Command |
 |-------|-----------|---------|
 | Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` (writes `.review/spine-stet-baseline.ref`) |
-| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review) |
+| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review). **Non-zero findings fail contract** with triage instructions; session stays open until dismissals. Zero findings auto-finish as before. |
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
 
@@ -1347,6 +1347,10 @@ Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id
 | Git notes on `refs/notes/stet` exist | Sessions finished; notes are analytics, not the optimizer input |
 
 **When findings exist:** triage before the session auto-finishes — `stet list`, then `stet dismiss <id> <reason>` for each finding you accept as suppressed. Each dismiss appends to `history.jsonl` and feeds prompt shadowing.
+
+**Contract failure → triage → re-run:** When contract verify reports findings, `scripts/spine-stet-contract-run.sh` exits non-zero and prints triage steps. Dismiss each finding (with reason), then re-run the task `testCommand` (or `scripts/spine-stet-contract-run.sh` alone). Do not dismiss project code defects without a filed issue or documented reason in `STATUS.md`.
+
+**Optional env — keep session open:** Set `SPINE_STET_NO_AUTO_FINISH=1` before contract stet to skip auto-finish even when findings are zero (manual triage window; session and worktree remain until `stet finish`).
 
 **Quality loop (optional cadence):**
 
