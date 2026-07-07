@@ -1,7 +1,7 @@
 # SP-536: Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** see PROMPT
 **Size:** S
@@ -27,16 +27,16 @@
 - [x] `tests/batch/sequence-release-profile.test.mjs`: dry-run wave plan; auto-approve safety check
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run contract `testCommand` — 11/11 pass
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — typecheck pass; 46 env failures (SPINE_IS_WORKER nested batch spawn, pre-existing)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Cross-link `docs/release/manifest-v1.10.0-example.md`
-- [ ] Create `.DONE`
+- [x] Cross-link `docs/release/manifest-v1.10.0-example.md`
+- [x] Create `.DONE`
 
 ---
 
