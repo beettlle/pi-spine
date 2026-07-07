@@ -1,7 +1,7 @@
 # SP-522: Validate npm test -- scope — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -26,15 +26,15 @@
 - [x] Unit + CLI integration tests
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract testCommand
+- [x] Run contract testCommand
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close issues #187, #141
-- [ ] Create `.DONE`
+- [x] Close issues #187, #141
+- [x] Create `.DONE`
 
 ---
 
