@@ -15,17 +15,34 @@ function waveTasksAllTerminalSuccess(taskIds, classifiedTasks) {
 	return taskIds.every((taskId) => byId.get(String(taskId))?.classification === "terminal-success");
 }
 
+/** Diagnoses where terminal-success on disk must not imply wave completed (GitHub #186). */
+const DRIFT_BLOCKING_DIAGNOSES = new Set(["state_drift", "engine_orphaned", "needs_retry"]);
+
+/**
+ * @param {string|null|undefined} diagnosis
+ * @param {string|null|undefined} endedAt
+ */
+function blocksOptimisticWaveCompletion(diagnosis, endedAt) {
+	if (!diagnosis || !DRIFT_BLOCKING_DIAGNOSES.has(diagnosis)) return false;
+	if (endedAt != null) return false;
+	return true;
+}
+
 /**
  * @param {number} index
  * @param {number} currentWaveIndex
  * @param {string[]} taskIds
  * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ * @param {{ diagnosis?: string|null, endedAt?: string|null }} [options]
  */
-function resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks) {
-	if (classifiedTasks?.length && waveTasksAllTerminalSuccess(taskIds, classifiedTasks)) {
+function resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks, options = {}) {
+	const { diagnosis = null, endedAt = null } = options;
+	const blocked = blocksOptimisticWaveCompletion(diagnosis, endedAt);
+
+	if (!blocked && classifiedTasks?.length && waveTasksAllTerminalSuccess(taskIds, classifiedTasks)) {
 		return "completed";
 	}
-	if (index < currentWaveIndex) return "completed";
+	if (!blocked && index < currentWaveIndex) return "completed";
 	if (index === currentWaveIndex) return "active";
 	return "pending";
 }
@@ -33,8 +50,9 @@ function resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks) {
 /**
  * @param {import("../batch/reconcile.mjs").NormalizedBatchState | Record<string, unknown> | null} batchState
  * @param {import("../batch/reconcile.mjs").NormalizedTask[]} [classifiedTasks]
+ * @param {{ diagnosis?: string|null, endedAt?: string|null }} [options]
  */
-export function buildWaveProgress(batchState, classifiedTasks) {
+export function buildWaveProgress(batchState, classifiedTasks, options = {}) {
 	const raw =
 		batchState && typeof batchState === "object" && "raw" in batchState
 			? /** @type {Record<string, unknown>} */ (batchState.raw)
@@ -43,6 +61,12 @@ export function buildWaveProgress(batchState, classifiedTasks) {
 	const wavePlan = Array.isArray(raw.wavePlan) ? raw.wavePlan : [];
 	const currentWaveIndex = Number(raw.currentWaveIndex ?? 0);
 	const totalWaves = Number(raw.totalWaves ?? wavePlan.length);
+	const diagnosis = options.diagnosis ?? null;
+	const endedAt =
+		options.endedAt ??
+		(batchState && typeof batchState === "object" && "endedAt" in batchState
+			? /** @type {{ endedAt?: string|null }} */ (batchState).endedAt ?? null
+			: null);
 
 	return {
 		currentWaveIndex,
@@ -52,7 +76,10 @@ export function buildWaveProgress(batchState, classifiedTasks) {
 			return {
 				index,
 				taskIds,
-				status: resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks),
+				status: resolveWaveStatus(index, currentWaveIndex, taskIds, classifiedTasks, {
+					diagnosis,
+					endedAt,
+				}),
 			};
 		}),
 	};
