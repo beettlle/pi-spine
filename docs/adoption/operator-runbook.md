@@ -1472,6 +1472,15 @@ spine scenarios materialize orphan-running-resume --force   # when active batch 
 
 Materialize does **not** start a batch. Refuses when `.spine/batch-state.json` shows an active batch unless `--force` is passed.
 
+**v1.8.1 reconciliation incidents** (Phase 59 / FR-STA-06; fixes in SP-512, SP-513):
+
+| Registry id | Batch | Symptom | Fixture |
+|-------------|-------|---------|---------|
+| `v181-batch-20260705T210857` | `20260705T210857` | `state_drift` with lane `.DONE` + review APPROVE while cache `running` ([#170](https://github.com/beettlle/pi-spine/issues/170)) | `tests/fixtures/incidents/v181-batch-20260705T210857.json` |
+| `v181-batch-20260706T052912` | `20260706T052912` | `engine_orphaned` after pause → SIGTERM → force resume with lane `.DONE` ([#184](https://github.com/beettlle/pi-spine/issues/184)) | `tests/fixtures/incidents/v181-batch-20260706T052912.json` |
+
+Regression: `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/incident-replay-v181.test.mjs`. Explore narrative: `spine-tasks/_explore/reconciliation-v181/findings.md`.
+
 **Adoption smoke recipe** (`adoption-smoke` in the registry): operator entry point for pre-publish validation — typecheck plus stub adoption tests (no network, no real `pi`):
 
 ```bash
