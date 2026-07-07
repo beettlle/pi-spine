@@ -125,7 +125,10 @@ export function buildDashboardSnapshot(projectRoot) {
 			now,
 		}),
 	);
-	const waves = buildWaveProgress(batch, classifiedTasks);
+	const waves = buildWaveProgress(batch, classifiedTasks, {
+		diagnosis: reconciliation.diagnosis,
+		endedAt: batch?.endedAt ?? null,
+	});
 	const defaultView = buildDefaultViewStatus(reconciliation, gate);
 
 	const macroPhase = deriveMacroPhase({
