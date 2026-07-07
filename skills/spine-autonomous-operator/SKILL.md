@@ -32,6 +32,7 @@ Invoke explicitly: `/skill:spine-autonomous-operator`
 - **Do not** use unattended `spine run sequence --auto-approve-gate --force` without monitoring
 - **Do not** start a second batch while another batch is **running** on the same repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
+- **Release and agent batches:** use **detached** `spine batch start|resume` (omit `--attached`) unless the operator shell blocks until batch completion; then `spine wait --until …` ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)). `spine doctor` warns in non-interactive and agent-harness contexts.
 
 ## Phase 0 — Baseline
 
@@ -128,13 +129,15 @@ For each wave `N` until `spine plan pending` shows 0 tasks:
 
 ```text
 MonitorCreate:
-  command: spine batch start pending --wave N --attached
+  command: spine batch start pending --wave N    # detached — omit --attached (#163)
   description: Pending wave N
   timeout: 0
   onDone: spine status --diagnose → land loop (§3.3) or recovery (§4)
 ```
 
-**Foreground fallback** (non-pi or after #163 orphan on MonitorCreate):
+After detached start, monitor with `spine wait --until completed,needs_integrate,failed,aborted --timeout 4h` or `spine status --diagnose`.
+
+**Foreground fallback** (interactive terminal only — keep shell in foreground for full batch):
 
 ```bash
 spine batch start pending --wave N --attached

@@ -35,12 +35,23 @@ Throughout this doc, `spine` means whichever invocation you chose (global `npm i
 
 ### Attached-first policy (Phase 22)
 
-Until you trust detached batches on a repo, prefer **attached** mode so the CLI blocks until the engine finishes:
+Until you trust detached batches on a repo, prefer **attached** mode so the CLI blocks until the engine finishes — but **only from an interactive terminal you keep in the foreground** for the full batch duration:
 
 ```bash
 spine batch start SP-042 --attached
 spine batch resume --attached
 ```
+
+**Release and agent batches (default detached):** For release waves, pi/Cursor agent harnesses, CI scripts, or any subprocess that may return before the batch finishes, use **detached** start/resume and monitor separately ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)):
+
+```bash
+spine batch start pending --wave 2          # detached — engine survives parent shell exit
+spine batch resume --force                  # detached orphan recovery
+spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
+spine status --diagnose
+```
+
+`spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running`.
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
