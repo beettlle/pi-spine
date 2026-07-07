@@ -32,6 +32,7 @@ Invoke explicitly: `/skill:spine-autonomous-operator`
 - **Do not** use unattended `spine run sequence --auto-approve-gate --force` without monitoring
 - **Do not** start a second batch while another batch is **running** on the same repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
+- **Cursor Agent shell (~120s background timeout):** use **detached** `spine batch start|resume` (omit `--attached`); monitor with `spine status --diagnose` and `spine wait` — see [references/agent-shell-batch-policy.md](references/agent-shell-batch-policy.md)
 - **Release and agent batches:** use **detached** `spine batch start|resume` (omit `--attached`) unless the operator shell blocks until batch completion; then `spine wait --until …` ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)). `spine doctor` warns in non-interactive and agent-harness contexts.
 
 ## Phase 0 — Baseline
@@ -254,6 +255,7 @@ In pi sessions, `MonitorCreate` for `npm run release:check` is allowed (see pi-a
 - **Tasks root:** `spine-tasks/`
 - **Config:** `.spine/spine-config.json`
 - **Test gate:** `npm run release:check` (typecheck → lint → tests → coverage)
+- **Agent shell policy:** [references/agent-shell-batch-policy.md](references/agent-shell-batch-policy.md)
 - **Known upstream issues:** #114 (integrate hang, fixed), #118 (trailing-slash contracts), #130 (`coverage/` restore), #163 (`engine_orphaned`)
 
 ## Short prompt (resume mid-batch)

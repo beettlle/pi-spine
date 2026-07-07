@@ -199,7 +199,7 @@ spine tasks validate
 spine tasks analyze
 spine plan pending    # or: spine plan all
 spine preflight
-spine batch start pending --attached   # first run: attached until trusted
+spine batch start pending          # detached — omit --attached; then spine status --diagnose
 ```
 
 ## External references

@@ -21,6 +21,7 @@ Invoke explicitly: `/skill:spine-orchestrate-waves`, `/spine-orchestrate pending
 |---------|-------------|
 | Task packet authoring | `create-spine-tasks` skill |
 | Curated release subset | `spine-release-operator` skill |
+| Agent shell batch policy (detached vs attached) | [spine-autonomous-operator/references/agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md) |
 | Pi async batch/verify (MonitorCreate) | [spine-release-operator/references/pi-async-orchestration.md](../spine-release-operator/references/pi-async-orchestration.md) |
 | Canonical how-to prose | [references/outer-loop.md](references/outer-loop.md) (synced from `docs/adoption/agent-orchestrated-waves.md`) |
 | Slash entry (`/spine-orchestrate`) | pi-spine extension — wave plan + outer loop checklist |
@@ -50,7 +51,8 @@ START
   │
   └─ FOR each wave W (from --from-wave or 0):
         │
-        ├─ spine batch start <scope> --wave W --attached
+        ├─ spine batch start <scope> --wave W    # detached — omit --attached
+        ├─ spine status --diagnose
         ├─ spine wait --until completed,needs_integrate,failed,aborted,needs_retry --timeout 4h
         ├─ spine status --diagnose
         │
@@ -92,7 +94,8 @@ From consumer repo root:
 spine preflight
 WAVE=0    # or next index from plan
 
-spine batch start pending --wave $WAVE --attached
+spine batch start pending --wave $WAVE          # detached — omit --attached
+spine status --diagnose
 spine wait --until completed,needs_integrate,failed,aborted,needs_retry --timeout 4h
 
 spine status --diagnose
@@ -133,17 +136,17 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 | Diagnosis | Agent action |
 |-----------|--------------|
 | `needs_integrate` | Evidence checklist → `spine gate approve` → `spine integrate` → `spine batch complete` → push |
-| `needs_retry` | `spine batch retry <taskId>` then `spine batch resume --attached`; amend PROMPT contract if scope wrong |
+| `needs_retry` | `spine batch retry <taskId>` then `spine batch resume` (detached); amend PROMPT contract if scope wrong |
 | `needs_retry` + `review_exhausted` | Inspect `.reviews/` feedback; fix implementation or packet scope, then retry |
 | `needs_retry` + `contract_failed` | Edit `PROMPT.md` `testCommand` or file scope, then retry |
 | `failed` | Inspect journal (`spine journal follow`); fix contract/env before retry |
 | `needs_replan` | Read `{taskFolder}/.reviews/final-*.md`; edit PROMPT scope, then retry |
 | `merge_blocked` | Resolve conflicts on orch branch or lane worktree; `spine batch resume --force` |
-| `engine_orphaned` | Do **not** start a second attached engine; `spine batch retry <taskId>` or `spine batch resume --attached --force` after confirming dead PIDs |
+| `engine_orphaned` | Do **not** start a second attached engine; `spine batch retry <taskId>` or follow `suggestedCommand` (`resume --attached --force` only in **foreground** after confirming dead PIDs) |
 | `worker_orphaned` | `spine batch retry <taskId>` (reconciles orphan running → failed) |
 | `worker_done_missing` | Read worker output log from headline; fix blocker, then `spine batch retry <taskId>` |
 | `completed` | Run `spine batch complete` if not archived, then push |
-| `state_drift` | `spine batch retry <taskId>`; then `spine batch resume --attached --force` |
+| `state_drift` | `spine batch retry <taskId>`; then follow `suggestedCommand` (`resume --attached --force` in **foreground** if diagnose requires) |
 
 ---
 
@@ -151,6 +154,7 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 
 | Anti-pattern | Correct approach |
 |--------------|------------------|
+| `spine batch start … --attached` from Cursor Agent or non-TTY shell | Detached start + `spine wait` / `spine status --diagnose` — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md) |
 | `spine batch resume --attached` while `spine run sequence --attached` is active | One entry point; kill stale engines first (`spine status --diagnose`) |
 | Approving gate without reading evidence | Always inspect evidence directory before `spine gate approve` |
 | Expecting workers to call `spine_request_gate` for integrate | Agent drives gate approval from host shell |
@@ -195,7 +199,7 @@ When all waves finish, report:
 
 ```text
 Resume spine wave orchestration: spine plan pending --json → pick next wave W →
-spine batch start pending --wave W --attached → spine wait → spine status --diagnose →
+spine batch start pending --wave W (detached) → spine status --diagnose → spine wait →
 branch on diagnosis (evidence checklist before gate approve) → integrate → batch complete → push →
 repeat until plan shows 0 waves. Post completion report.
 ```

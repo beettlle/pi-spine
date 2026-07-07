@@ -49,7 +49,8 @@ test("formatOrchestratePrompt includes wave tasks, outer loop, and skill link", 
 	assert.match(prompt, /TP-001 — First/);
 	assert.match(prompt, /TP-003 — Third/);
 	assert.match(prompt, /Outer loop/i);
-	assert.match(prompt, /spine batch start pending --wave W --attached/);
+	assert.match(prompt, /spine batch start pending --wave W/);
+	assert.doesNotMatch(prompt, /spine batch start pending --wave W --attached/);
 	assert.match(prompt, /\/skill:spine-orchestrate-waves/);
 	assert.match(prompt, /docs\/adoption\/agent-orchestrated-waves\.md/);
 });

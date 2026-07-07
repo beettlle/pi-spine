@@ -284,7 +284,7 @@ export function formatOrchestratePrompt(
 		"## Outer loop (per wave — you decide gate/integrate)",
 		"",
 		"1. spine preflight",
-		`2. spine batch start ${scope} --wave W --attached`,
+		`2. spine batch start ${scope} --wave W    # detached — monitor with spine wait`,
 		"3. spine wait --until completed,needs_integrate,failed,aborted,needs_retry --timeout 4h",
 		"4. spine status --diagnose",
 		"5. spine gate status  # review .spine/runtime/<batchId>/evidence/",

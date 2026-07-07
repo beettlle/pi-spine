@@ -51,7 +51,7 @@ spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
 spine status --diagnose
 ```
 
-`spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running`.
+`spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. Cursor Agent shells may background long commands after **~120 seconds** even when started from the IDE terminal — treat them like CI/agent harnesses (detached + monitor). **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running`.
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
@@ -528,7 +528,7 @@ Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle
 
 **Typical combinations:**
 
-- **Daily attached-first:** `spine batch start … --attached` — engine blocks; use a second terminal for `spine journal follow` or `spine dashboard` if you want live context.
+- **Daily attached-first (human interactive terminal only):** `spine batch start … --attached` — engine blocks; use a second terminal for `spine journal follow` or `spine dashboard` if you want live context. Not for Cursor Agent or other short-lived agent shells — use detached + monitor.
 - **Detached batch:** after start/resume returns, run `spine watch` or `spine status --diagnose` until diagnosis changes; add `spine journal follow` when you need event-level detail (stall, orphan, review).
 - **CI pipeline:** `spine batch start pending --json` then `spine wait --until completed,failed --json --timeout 30m`; parse the final snapshot stdout.
 

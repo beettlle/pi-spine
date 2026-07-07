@@ -18,6 +18,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 |---------|-------------|
 | PROMPT/STATUS/Contract authoring | `create-spine-tasks` skill + templates |
 | Batch land loop / recovery | [`spine-autonomous-operator`](../spine-autonomous-operator/SKILL.md) Phase 3–4 + [pi-async-orchestration.md](references/pi-async-orchestration.md) |
+| Agent shell batch policy (detached vs attached) | [spine-autonomous-operator/references/agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md) |
 | Wave evidence / diagnosis tree | [`spine-orchestrate-waves`](../spine-orchestrate-waves/SKILL.md) |
 | Semver scope budgets | [references/release-profiles.md](references/release-profiles.md) |
 | Issue intake queries | [references/issue-intake-checklist.md](references/issue-intake-checklist.md) |
@@ -253,13 +254,21 @@ See [references/pi-async-orchestration.md](references/pi-async-orchestration.md)
 
 ```text
 MonitorCreate:
-  command: spine batch start <release-scope> --wave N --attached
+  command: spine batch start <release-scope> --wave N    # detached — omit --attached (#163)
   description: Release wave N
   timeout: 0
   onDone: spine status --diagnose → §4.3 land loop or §4.4 recovery
 ```
 
-**Foreground fallback** (non-pi, or after #163 orphan on MonitorCreate):
+**Blocking fallback** (Cursor Agent, non-pi, or after MonitorCreate orphan — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md)):
+
+```bash
+spine batch start <release-scope> --wave N
+spine status --diagnose
+spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 4h
+```
+
+**Foreground `--attached`** (persistent interactive human terminal only):
 
 ```bash
 spine batch start <release-scope> --wave N --attached

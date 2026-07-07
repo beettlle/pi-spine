@@ -2,7 +2,7 @@
 
 Use in **pi sessions** when long-running shell work would waste the agent context window. The operator session stays free for intake, manifest edits, issue filing, and recovery planning while batches and verification run in the background.
 
-**Fallback:** When pi bridge tools are unavailable (Cursor-only, no MonitorCreate), use blocking `spine wait` and foreground shell — see each skill's non-pi sections.
+**Fallback:** When pi bridge tools are unavailable (Cursor-only, no MonitorCreate), use detached `spine batch start` + `spine wait` / `spine status --diagnose` — see [agent-shell-batch-policy.md](../../spine-autonomous-operator/references/agent-shell-batch-policy.md) and each skill's non-pi sections.
 
 ---
 
@@ -12,7 +12,7 @@ Use in **pi sessions** when long-running shell work would waste the agent contex
 
 | Command | timeout | Notes |
 |---------|---------|-------|
-| `spine batch start <scope> --wave N --attached` | `0` (none) | Wave batch; see safety rules below |
+| `spine batch start <scope> --wave N` | `0` (none) | Detached wave batch; monitor via onDone + `spine wait` ([#163](https://github.com/beettlle/pi-spine/issues/163)) |
 | `npm run release:check 2>&1 \| tee /tmp/pi-spine-release-check.log` | `900000` (15m) | Default 5m is too short for full pi-spine suite |
 | `gh run watch --exit-status <run-id>` | `1800000` (30m) | After tag push; resolve run-id from `gh run list` |
 
