@@ -179,6 +179,54 @@
       ]
     },
     {
+      "id": "v181-batch-20260705T210857",
+      "kind": "incident",
+      "title": "v1.8.1 state_drift doneInLane (#170)",
+      "description": "lane.completed + review APPROVE while batch-state cache still running; reconcile promotes terminal success.",
+      "fixturePath": "tests/fixtures/incidents/v181-batch-20260705T210857.json",
+      "batchId": "20260705T210857",
+      "tests": [
+        "tests/batch/incident-replay-v181.test.mjs"
+      ],
+      "docs": [
+        "spine-tasks/_explore/reconciliation-v181/findings.md"
+      ],
+      "relatedTasks": [
+        "SP-440",
+        "SP-512",
+        "SP-514"
+      ],
+      "tags": [
+        "state-drift",
+        "v181",
+        "reconcile"
+      ]
+    },
+    {
+      "id": "v181-batch-20260706T052912",
+      "kind": "incident",
+      "title": "v1.8.1 pause resume SIGTERM orphan (#184)",
+      "description": "batch.paused → engine.orphan_terminated(SIGTERM) → batch.resumed with lane .DONE and contract.verified.",
+      "fixturePath": "tests/fixtures/incidents/v181-batch-20260706T052912.json",
+      "batchId": "20260706T052912",
+      "tests": [
+        "tests/batch/incident-replay-v181.test.mjs"
+      ],
+      "docs": [
+        "spine-tasks/_explore/reconciliation-v181/findings.md"
+      ],
+      "relatedTasks": [
+        "SP-497",
+        "SP-513",
+        "SP-514"
+      ],
+      "tags": [
+        "pause-resume",
+        "v181",
+        "reconcile"
+      ]
+    },
+    {
       "id": "retry-clears-failed-classification",
       "kind": "incident",
       "title": "Retry clears failed classification",
