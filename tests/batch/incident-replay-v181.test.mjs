@@ -16,7 +16,7 @@ import { reconcilePausedResumeDoneInLane } from "../../src/batch/attached-runner
 import { journalPath } from "../../src/batch/journal.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { loadSpineBatchState, saveSpineBatchState } from "../../src/batch/state.mjs";
-import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
+import { laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES_DIR = path.join(process.cwd(), "tests/fixtures/incidents");
