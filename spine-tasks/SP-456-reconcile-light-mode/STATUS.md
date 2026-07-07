@@ -1,7 +1,7 @@
 # SP-456: Reconcile batch light mode — Status
 
-**Current Step:** Step 4 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-06
 **Review Level:** 2
 **Review Counter:** 0
@@ -42,20 +42,20 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] FULL test suite passing (`env -u SPINE_IS_WORKER SPINE_WORKER_STUB=1 npm run coverage:check`)
+- [x] Coverage gate (88.64% line ≥ 77%)
+- [x] All failures fixed (worker-env batch starts blocked; full suite passes without SPINE_IS_WORKER)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Docs updated
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Issue updated
+- [x] .DONE created
 
 ---
 
@@ -71,6 +71,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | npm test script runs full suite regardless of path arg | Use direct node --test for targeted runs | package.json |
+| coverage:check fails under SPINE_IS_WORKER=1 (nested batch guard) | Run with env -u SPINE_IS_WORKER for full verification | worker session |
 
 ---
 
@@ -80,6 +81,8 @@
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
 | 2026-07-06 | Step 1–3 | light cache, sequence wiring, tests |
+| 2026-07-06 | Step 4 | coverage:check 88.64% line, 0 failures without worker env |
+| 2026-07-06 | Step 5 | runbook + issue #98 comment |
 
 ---
 
