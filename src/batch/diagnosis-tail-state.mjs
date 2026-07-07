@@ -45,6 +45,11 @@ export function buildRunningTailHeadline(batchLabel, ctx = {}) {
 		return `${batchLabel} planning — no workers scheduled`;
 	}
 
+	// Macro Failed must not surface in running tail — drift/orphan may still be recoverable (#165).
+	if (macroPhase === "failed") {
+		return `${batchLabel} finalizing batch — no active workers`;
+	}
+
 	if (macroPhase != null && macroPhase !== "executing") {
 		const label = macroPhaseLabel(macroPhase);
 		return `${batchLabel} ${label.toLowerCase()} — finalizing batch`;

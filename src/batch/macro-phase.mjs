@@ -11,7 +11,7 @@
  * |--------------|---------|
  * | idle         | diagnosis null/undefined (no active batch) |
  * | aborted      | batchPhase or diagnosis `aborted` |
- * | failed       | batchPhase `failed`, or terminal-failure diagnoses (needs_retry, worker_orphaned, …) |
+ * | failed       | batchPhase `failed`, or terminal-failure diagnoses when not recoverable drift/orphan (#165) |
  * | paused       | batchPhase or diagnosis `paused` (when not failed) |
  * | gating       | integrate gate record `pending`, or postMergeLimbo awaiting operator gate approval |
  * | integrating  | open `integrate.started` journal event, or diagnosis `needs_integrate` |
@@ -65,6 +65,15 @@ const FAILED_DIAGNOSES = new Set([
 	"needs_replan",
 	"git_unavailable",
 ]);
+
+/** Drift/orphan diagnoses that may still be progressing while batch phase is active (#165). */
+const RECOVERABLE_DRIFT_ORPHAN_DIAGNOSES = new Set([
+	"state_drift",
+	"engine_orphaned",
+	"worker_orphaned",
+]);
+
+const ACTIVE_BATCH_PHASES = new Set(["running", "merging"]);
 
 const INTEGRATE_EVENT_TYPES = new Set(["integrate.started", "integrate.completed", "integrate.failed"]);
 
@@ -194,6 +203,31 @@ function isGatingState(gateRecord, postMergeLimbo, diagnosis) {
 }
 
 /**
+ * Drift/orphan under an active batch may still be executing, merging, or gating — not macro Failed.
+ *
+ * @param {DeriveMacroPhaseInput} input
+ * @returns {boolean}
+ */
+function isRecoverableDriftOrphanWhileActive(input) {
+	const diagnosis = input.diagnosis ?? null;
+	const batchPhase = input.batchPhase ?? null;
+	if (diagnosis == null || !RECOVERABLE_DRIFT_ORPHAN_DIAGNOSES.has(diagnosis)) {
+		return false;
+	}
+	if (!ACTIVE_BATCH_PHASES.has(batchPhase ?? "")) {
+		return false;
+	}
+	if (input.hasActiveWorkerTasks === true) {
+		return true;
+	}
+	// All lanes terminal — defer to gating/integrating/merging tail derivation.
+	if (input.allTasksTerminalSuccess === true) {
+		return true;
+	}
+	return false;
+}
+
+/**
  * @param {DeriveMacroPhaseInput} input
  * @returns {MacroPhase|null}
  */
@@ -262,7 +296,11 @@ export function deriveMacroPhase(input) {
 		return "aborted";
 	}
 
-	if (batchPhase === "failed" || batchPhase === "merge_blocked" || (diagnosis != null && FAILED_DIAGNOSES.has(diagnosis))) {
+	if (
+		batchPhase === "failed" ||
+		batchPhase === "merge_blocked" ||
+		(diagnosis != null && FAILED_DIAGNOSES.has(diagnosis) && !isRecoverableDriftOrphanWhileActive(input))
+	) {
 		return "failed";
 	}
 
