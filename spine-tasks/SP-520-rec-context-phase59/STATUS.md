@@ -1,7 +1,7 @@
 # SP-520: CONTEXT Phase 59 capstone — Status
 
-**Current Step:** Step 3
-**Status:** ⏳ In progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-07
 **Review Level:** 0
 **Size:** S
@@ -26,15 +26,15 @@
 - [x] Verify SP-511–520 edges present (no edits required)
 
 ### Step 3: Testing & Verification
-**Status:** ⏳ In progress
+**Status:** ✅ Complete
 
-- [ ] `spine tasks validate SP-511 SP-512 SP-513 SP-514 SP-515 SP-516 SP-517 SP-518 SP-519 SP-520`
-- [ ] Add or update context-phase59 test if missing
+- [x] `spine tasks validate SP-511 SP-512 SP-513 SP-514 SP-515 SP-516 SP-517 SP-518 SP-519 SP-520` — 10 passed
+- [x] Add `tests/tasks/context-phase59.test.mjs`
 
 ### Step 4: Documentation & Delivery
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
