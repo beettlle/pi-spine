@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-05 (v1.8.0 release cycle — audit #176–#183; SP-499 pi-coding-agent ^0.80.3)
+**Last Updated:** 2026-07-07 (Phase 59 v1.8.1 reconciliation — SP-511–520 staged)
 **Status:** Active
-**Next Task ID:** SP-511
+**Next Task ID:** SP-521
 
 ---
 
@@ -1442,6 +1442,50 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 **v1.5.0 release:** Shipped as npm `pi-spine@1.5.0` (tag `v1.5.0`). Batches: `20260704T182954` (SP-494), `20260704T185602` (wave 1), `20260704T205637` (SP-493).
 
 **Next (stet feedback loop):** v1.5.0 contract path auto-finishes zero-finding sessions, so `.review/history.jsonl` is absent until dismissals occur. Audit and next-release proposals: `docs/features/stet-feedback-loop-brief.md`.
+
+#### Phase 59 — v1.8.1 reconciliation epic (SP-REC)
+
+**Source:** [`docs/PRD-v1.8.1-reconciliation-handoff.md`](../docs/PRD-v1.8.1-reconciliation-handoff.md), [`docs/release/stabilization-roadmap-v1.8-v2.0.md`](../docs/release/stabilization-roadmap-v1.8-v2.0.md)
+
+| Task | Summary | Size | Status | Deps | Closes |
+|------|---------|------|--------|------|--------|
+| SP-511 | Reconciliation v1.8.1 explore findings | S | **Staged** | — | — |
+| SP-512 | Drift retry deadlock fix | S | **Staged** | SP-511 | #170 |
+| SP-513 | Pause/resume SIGTERM engine orphan | S | **Staged** | SP-511 | #184 |
+| SP-514 | v1.8.1 incident fixtures | S | **Staged** | SP-512, SP-513 | — |
+| SP-515 | Macro phase active workers | S | **Staged** | SP-512 | #165 |
+| SP-516 | Status classification alignment | S | **Staged** | SP-512 | #166 |
+| SP-517 | Dashboard wave completed under drift | S | **Staged** | SP-512 | #186 |
+| SP-518 | Attached SIGKILL orphan guard | S | **Staged** | — | #163 (Partial) |
+| SP-519 | State drift recovery docs | S | **Staged** | SP-512 | #168 |
+| SP-520 | CONTEXT Phase 59 capstone | S | **Staged** | SP-511–519 | — |
+| SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
+| SP-445 | doneInLane drift detection | M | **Staged** | — | #100 (Partial) |
+| SP-446 | Diagnosis doneInLane pending | M | **Staged** | SP-445 | #100 (Partial) |
+| SP-447 | Dashboard orphan truth | M | **Staged** | SP-446 | #100 (Partial) |
+| SP-448 | Resume heartbeat refresh | S | **Staged** | — | #100 (Partial) |
+| SP-449 | Attached pause phase persistence | M | **Staged** | SP-376 | #103 |
+
+**Suggested batches (patch S-first):**
+
+```bash
+spine tasks validate SP-511 SP-512 SP-513 SP-514 SP-515 SP-516 SP-517 SP-518 SP-519 SP-520
+spine plan SP-511
+spine batch start SP-511
+spine batch start SP-512
+spine batch start SP-513
+spine batch start SP-514 SP-515 SP-516 SP-518
+spine batch start SP-517 SP-519
+spine batch start SP-520
+```
+
+**Phase 59 exit criteria:** See handoff §10 — incident replay, actionable diagnose, open issues ≤ ~35.
+
+**Future phases (handoffs only — tasks not yet authored):**
+
+- Phase 60 — v1.9.0 contract guardrails: [`docs/PRD-v1.9.0-contract-guardrails-handoff.md`](../docs/PRD-v1.9.0-contract-guardrails-handoff.md)
+- Phase 61 — v1.10.0 release harness: [`docs/PRD-v1.10.0-release-harness-handoff.md`](../docs/PRD-v1.10.0-release-harness-handoff.md)
+- Phase 62 — v2.0.0 automation proof: [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md)
 
 ---
 

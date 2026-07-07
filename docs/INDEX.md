@@ -26,6 +26,10 @@ This is the main navigation page for pi-spine documentation.
 | [**PRD-v2.2-ship-readiness-handoff.md**](./PRD-v2.2-ship-readiness-handoff.md) | v2.2 ship readiness | Developers | 21KB |
 | [**PRD-v1.3-upstream-execution-bridge.md**](./PRD-v1.3-upstream-execution-bridge.md) | v1.3 upstream execution | Developers | 38KB |
 | [**PRD-v2.0-implementation-handoff.md**](./PRD-v2.0-implementation-handoff.md) | v2.0 implementation details | Developers | 46KB |
+| [**PRD-v1.8.1-reconciliation-handoff.md**](./PRD-v1.8.1-reconciliation-handoff.md) | v1.8.1 reconciliation epic | Developers | — |
+| [**PRD-v1.9.0-contract-guardrails-handoff.md**](./PRD-v1.9.0-contract-guardrails-handoff.md) | v1.9.0 contract guardrails | Developers | — |
+| [**PRD-v1.10.0-release-harness-handoff.md**](./PRD-v1.10.0-release-harness-handoff.md) | v1.10.0 release harness | Developers | — |
+| [**PRD-v2.0.0-automation-proof-handoff.md**](./PRD-v2.0.0-automation-proof-handoff.md) | v2.0.0 automation proof (semver) | Developers | — |
 
 ---
 
@@ -55,6 +59,9 @@ This is the main navigation page for pi-spine documentation.
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [**release/stabilization-roadmap-v1.8-v2.0.md**](release/stabilization-roadmap-v1.8-v2.0.md) | Stabilization roadmap v1.8.1 → v2.0.0 | Operators, Developers |
+| [**release/npm-publish.md**](release/npm-publish.md) | npm publish mechanics | Operators |
+| [**release/v1.0-checklist.md**](release/v1.0-checklist.md) | Pre-release checklist | Operators |
 | [**release/**](release/) | Release notes and version history | Everyone |
 
 ---
@@ -97,7 +104,13 @@ docs/
 │   ├── PRD-v2.1-reliability-handoff.md
 │   ├── PRD-v2.2-ship-readiness-handoff.md
 │   ├── PRD-v1.3-upstream-execution-bridge.md
-│   └── PRD-v2.0-implementation-handoff.md
+│   ├── PRD-v2.0-implementation-handoff.md
+│   ├── PRD-v1.8.1-reconciliation-handoff.md
+│   ├── PRD-v1.9.0-contract-guardrails-handoff.md
+│   ├── PRD-v1.10.0-release-harness-handoff.md
+│   └── PRD-v2.0.0-automation-proof-handoff.md
+├── release/
+│   └── stabilization-roadmap-v1.8-v2.0.md
 ├── adoption/                      ← User guides
 │   ├── bootstrap-checklist.md
 │   ├── operator-runbook.md
@@ -141,4 +154,4 @@ When adding new documentation:
 
 ---
 
-*Last updated: 2026-06-12*
+*Last updated: 2026-07-07*
