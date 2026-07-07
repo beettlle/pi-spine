@@ -1,7 +1,7 @@
 # SP-527: Preflight stale fileScope redirect — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -12,16 +12,16 @@
 **Status:** ✅ Complete
 
 ### Step 1: Advisory redirect
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 ---
 
