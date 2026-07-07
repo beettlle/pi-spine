@@ -62,7 +62,7 @@ After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_dri
 **Orphan recovery tree:**
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
-2. `state_drift` → if task still `running`, `spine batch pause && spine batch retry <id>`; else `spine batch retry <id>`; then `spine batch resume --attached --force` (single engine — do not run multiple concurrent `resume --force`)
+2. `state_drift` → follow **`suggestedCommand`** from diagnose: `spine batch resume --force` when drift task is still `running` (SP-512 — do not `pause && retry`; retry rejects running tasks); `spine batch retry <id>` when not `running`. If engine remains detached, `spine batch resume --attached --force` (single engine — do not run multiple concurrent `resume --force`)
 3. `engine_orphaned` or `worker_orphaned` with dead PIDs → run the **`suggestedCommand`** (usually `spine batch retry <id>`). **No `batch pause` first** — retry reconciles orphan `running` tasks to `failed` and journals `task.failed` / `lane.died` when missing (SP-315). Then `spine batch resume --attached` or `--force` as diagnose suggests. `worker_done_missing` → `spine batch retry <id>` only (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — `spine batch retry <id>` or `spine batch resume --attached --force` (detached resume waits up to 2h by default).
 4. Never hand-edit `.spine/batch-state.json`
 
@@ -556,7 +556,7 @@ Idle repos omit these fields. `spine watch --json` wraps the same reconcile fiel
 
 Land-loop pseudo-diagnoses for `--until` (SP-479, issue #105): `gate_open` and `needs_approval` match when reconcile suggests `spine gate approve` (integrate gate opened, awaiting operator approval); `post_merge_limbo` matches when merges finished but the gate is not yet open (`spine batch resume --force` suggestion). These complement taxonomy diagnoses such as `needs_integrate`.
 
-For `state_drift`, `spine status --diagnose` suggests `spine batch retry <taskId>` (or `spine batch pause && spine batch retry <taskId>` when the drifted task is still `running`). **`spine batch retry --force` is invalid** — retry always requires a task id.
+For `state_drift`, `spine status --diagnose` suggests **`suggestedCommand`**: `spine batch retry <taskId>` when the drift task is not `running`, or `spine batch resume --force` when still `running` (SP-512 — not `pause && retry`, which deadlocks). **`spine batch retry --force` is invalid** — retry always requires a task id.
 
 Detached engine logs: `.spine/runtime/detached-engine.log`
 
@@ -598,7 +598,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 **Operator implications:**
 
-- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise use the **`suggestedCommand`** (`spine batch retry <id>`, or `spine batch pause && spine batch retry <id>` when the drifted task is still `running`), then `spine batch resume --attached --force`.
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise use the **`suggestedCommand`** from diagnose: `spine batch retry <id>` when the drift task is not `running`, or `spine batch resume --force` when still `running` (SP-512). If a detached engine remains, then `spine batch resume --attached --force`.
 - **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
 - **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
 
