@@ -457,6 +457,43 @@ When decomposing a PRD, assign non-overlapping file scopes to tasks that should 
 
 **Reviewer rules (FR-REV-08):** Plan reviews use the same File Scope for glob matching; code reviews use changed paths from `git diff`. Final reviews load always-on rules only. Worker-only packs (`taskplane-worker-cursor.mdc`) are excluded from reviewer context by default.
 
+**Documentation paths in File Scope ([#144](https://github.com/beettlle/pi-spine/issues/144)):** Every path under **Must Update** in `## Documentation Requirements` **must** also appear in `## File Scope`. If a doc is advisory only, move it to **Check If Affected** — do not require workers to edit paths outside File Scope. Mismatches (e.g. SP-435, SP-451) caused out-of-scope edits and merge dirty-file failures.
+
+---
+
+## Docs-only contract pattern (FR-STA-12)
+
+Use when the task delivers **documentation only** — no application code changes. Pair with Review Level 0 and Size S when appropriate.
+
+### Required fields
+
+| Field | Value |
+|-------|-------|
+| `testCommand` | `` `true` `` |
+| `fileScopeMustChange` | At least one documentation deliverable path (same paths in `## File Scope`) |
+
+Without `fileScopeMustChange`, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`).
+
+### Recommended scope guard ([#142](https://github.com/beettlle/pi-spine/issues/142))
+
+Add `fileScopeMustNotChange` on product-code directories so accidental edits fail contract verify before merge:
+
+```markdown
+| fileScopeMustNotChange | `src/**`, `bin/**` |
+```
+
+Never ban `spine-tasks/**` — workers must update `STATUS.md` and create `.DONE`. Full example: [references/contract-template.md](references/contract-template.md#docs-only-with-scope-guard-recommended).
+
+### Docs-only vs scoped `node --test`
+
+| Use docs-only (`testCommand: true`) | Use scoped `node --test` instead |
+|-------------------------------------|----------------------------------|
+| Skill, runbook, or README edits only | Any `src/**`, `bin/**`, or test file change |
+| Review Level 0, Size S, no code deliverable | Size S/M patch with an existing targeted test |
+| Contract proof is doc mtime, not test output | Contract must prove code behavior |
+
+Docs-only tasks still include `### Step N: Testing & Verification` (full suite in the Testing step) — Contract `` `true` `` only means final verify does not re-run tests. See [contract-template decision table](references/contract-template.md#docs-only-vs-scoped-node---test).
+
 ---
 
 ## Unsupported (spine v1)
@@ -476,6 +513,8 @@ Before reporting launch commands:
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
 - [ ] If `testCommand` is `` `true` ``, `fileScopeMustChange` MUST list at least one deliverable path
+- [ ] Every **Must Update** doc path also appears in `## File Scope` ([#144](https://github.com/beettlle/pi-spine/issues/144))
+- [ ] Docs-only tasks: consider `fileScopeMustNotChange` on `src/**`, `bin/**` ([#142](https://github.com/beettlle/pi-spine/issues/142)); see [Docs-only contract pattern](#docs-only-contract-pattern-fr-sta-12)
 - [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps

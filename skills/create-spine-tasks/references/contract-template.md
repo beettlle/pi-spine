@@ -120,6 +120,8 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 
 When `testCommand` is `` `true` ``, **always** include `fileScopeMustChange` listing at least one documentation file the task must modify. Without it, workers can pass contract by creating only `.DONE` — two batches were rejected for this reason (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`).
 
+Every path in `fileScopeMustChange` **must** also appear in PROMPT `## File Scope` ([#144](https://github.com/beettlle/pi-spine/issues/144)) — workers cannot edit out-of-scope deliverables without merge dirty-file failures.
+
 ```markdown
 ## Contract
 
@@ -128,6 +130,30 @@ When `testCommand` is `` `true` ``, **always** include `fileScopeMustChange` lis
 | testCommand | `true` |
 | fileScopeMustChange | `docs/adoption/operator-runbook.md` |
 ```
+
+### Docs-only with scope guard (recommended)
+
+For docs-only tasks, add `fileScopeMustNotChange` on product-code directories so accidental worker edits to `src/**` or `bin/**` fail contract verify before merge — SP-457 post-mortem `20260703T051629` landed docs in-worker but merge failed on dirty `src/batch/`, `bin/`, `.spine/` paths ([#142](https://github.com/beettlle/pi-spine/issues/142)). Do **not** list `spine-tasks/**` here (workers must update `STATUS.md` and `.DONE`).
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `true` |
+| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
+| fileScopeMustNotChange | `src/**`, `bin/**` |
+```
+
+### Docs-only vs scoped `node --test`
+
+| Situation | Contract pattern |
+|-----------|------------------|
+| No application code changes; documentation or skill text only | `` `true` `` + `fileScopeMustChange` on deliverable doc paths (+ optional `fileScopeMustNotChange` on `src/**`, `bin/**`) |
+| Small code change with an existing targeted test file | `` `node --test tests/feature.test.mjs` `` (see [scoped testCommand](#scoped-testcommand) below) |
+| Code change but no narrow test yet; full suite unsafe in lane | Scoped command matching the Testing step, or split into a code task + docs task |
+
+Use docs-only when the worker's only product deliverable is documentation. Use scoped `node --test` when the task changes application code — even Size S/M patches should not use bare `` `npm test` `` or `` `npm test -- path` `` in Contract ([#141](https://github.com/beettlle/pi-spine/issues/141)).
 
 ### Scope guard for parallel wave
 
@@ -166,6 +192,8 @@ Recommended: **240** minutes for jobs expected to run 2+ hours. Size S floor (90
 When the worker model differs from the reviewer model (e.g. worker `cursor/auto`, reviewer `google/gemini-3.1-pro-preview`), contract shape directly affects review outcomes. The most common cross-model failure is `review_exhausted` caused by broad `testCommand` or missing context — not reviewer rejection of code quality.
 
 ### Scoped `testCommand`
+
+Prefer `` `node --test tests/feature.test.mjs` `` for targeted proof in Contract. `` `npm test -- path` `` runs the full npm test script in lane worktrees — `spine tasks validate` warns or errors (FR-STA-10 / SP-522).
 
 Lane worktrees are **not** identical to the developer checkout. Worktree setup hooks, missing assets, pre-existing test failures, and Flutter/monorepo full-suite pollution can cause a scoped worker to pass targeted tests while the unscoped `testCommand` in Contract fails at final verify.
 
