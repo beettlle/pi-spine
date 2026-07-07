@@ -1,7 +1,7 @@
 # SP-532: Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** see PROMPT
 **Size:** S
@@ -26,16 +26,16 @@
 - [x] `tests/batch/batch-complete-engine.test.mjs`: complete refused when engine PID alive; allowed when dead/null
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run contract `testCommand`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Comment on #173
-- [ ] Create `.DONE`
+- [x] Comment on #173
+- [x] Create `.DONE`
 
 ---
 
