@@ -1,7 +1,7 @@
 # SP-521: Scoped contract verify for patch tasks — Status
 
-**Current Step:** Step 3
-**Status:** ⏳ In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -26,16 +26,16 @@
 - [x] Add create-spine-tasks anti-pattern row for coverage-in-testCommand
 
 ### Step 3: Testing & Verification
-**Status:** ⏳ In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract testCommand
-- [ ] `spine tasks validate SP-516` shows warn (not error)
+- [x] Run contract testCommand (12/12 pass)
+- [x] `spine tasks validate SP-516` passes with zero warnings after fix
 
 ### Step 4: Documentation & Delivery
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Comment Partial on #141
-- [ ] Create `.DONE`
+- [x] Comment Partial on #141
+- [x] Create `.DONE`
 
 ---
 
