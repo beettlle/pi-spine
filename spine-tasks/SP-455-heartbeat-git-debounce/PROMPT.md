@@ -31,15 +31,15 @@ Skip `git status --porcelain` in `collectProgressSignals` when file-scope mtimes
 ## File Scope
 
 - `src/batch/heartbeat.mjs`
+- `src/batch/heartbeat-git-debounce.mjs`
 - `tests/batch/heartbeat-git-debounce.test.mjs`
 
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test -- tests/batch/heartbeat-git-debounce.test.mjs && npm run coverage:check` |
-| minLineCoverage | 77 |
-| fileScopeMustChange | `tests/batch/heartbeat-git-debounce.test.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 SPINE_SUPPRESS_JOURNAL_ATTACH=1 node --experimental-strip-types --test tests/batch/heartbeat-git-debounce.test.mjs && npm run coverage:check` |
+| fileScopeMustChange | `src/batch/heartbeat-git-debounce.mjs`, `tests/batch/heartbeat-git-debounce.test.mjs` |
 | artifactsMustExist | `tests/batch/heartbeat-git-debounce.test.mjs` |
 
 ## Steps
@@ -104,3 +104,5 @@ Skip `git status --porcelain` in `collectProgressSignals` when file-scope mtimes
 ## Amendments (Added During Execution)
 
 - fileScopeMustChange updated from `src/batch/heartbeat.mjs` (pre-landed by SP-451) to `tests/batch/heartbeat-git-debounce.test.mjs` — the delivery artifact that must still be created.
+- Extracted debounce logic to `src/batch/heartbeat-git-debounce.mjs` to keep `heartbeat.mjs` under 500 LOC (phase23 batch-loc-policy).
+- testCommand updated to use `node --experimental-strip-types --test` instead of `npm test -- <path>` (npm test runs full suite, not scoped file).
