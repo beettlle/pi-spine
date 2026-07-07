@@ -1,7 +1,7 @@
 # SP-505: Split preflight: integrate + plan module — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-06
 **Review Level:** 1
 **Review Counter:** 0
@@ -47,20 +47,20 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate passes (≥77% line coverage on in-scope code)
-- [ ] All failures fixed
-- [ ] Build passes
+- [x] FULL test suite passing (1734/1734 with SPINE_IS_WORKER unset)
+- [x] Coverage gate passes (88.51% ≥ 77%)
+- [x] All failures fixed
+- [x] Build passes (`npm run typecheck`)
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] GitHub issue #176 closed
+- [x] Discoveries logged
+- [x] GitHub issue #176 closed
 
 ---
 
@@ -76,6 +76,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | `checkDoctor` suggestedCommand dropped during thin refactor | Fixed before commit | `spine-preflight-lib.mjs` |
+| Full suite/coverage require `SPINE_IS_WORKER` unset in worker sessions | Documented; engine re-verifies post-.DONE | STATUS |
 
 ---
 
@@ -85,6 +86,7 @@
 |-----------|--------|---------|
 | 2026-07-05 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-07-06 | Step 0–3 | Extracted integrate-plan.mjs (460 LOC), thinned lib (389 LOC), 31/31 targeted tests pass |
+| 2026-07-06 | Step 4–5 | typecheck OK, 1734/1734 tests, 88.51% coverage, #176 closed |
 
 ---
 
@@ -96,4 +98,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Closes #176 — final preflight Strangler slice (SP-503/504/505).
