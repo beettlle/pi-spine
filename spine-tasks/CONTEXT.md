@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-07 (Phase 59 v1.8.1 reconciliation — SP-511–520 staged)
+**Last Updated:** 2026-07-07 (Phase 59 v1.8.1 reconciliation — SP-511–520 Done)
 **Status:** Active
 **Next Task ID:** SP-521
 
@@ -1449,16 +1449,16 @@ spine batch start SP-491          # P0 bug #155 — disjoint scope; parallel wit
 
 | Task | Summary | Size | Status | Deps | Closes |
 |------|---------|------|--------|------|--------|
-| SP-511 | Reconciliation v1.8.1 explore findings | S | **Staged** | — | — |
-| SP-512 | Drift retry deadlock fix | S | **Staged** | SP-511 | #170 |
-| SP-513 | Pause/resume SIGTERM engine orphan | S | **Staged** | SP-511 | #184 |
-| SP-514 | v1.8.1 incident fixtures | S | **Staged** | SP-512, SP-513 | — |
-| SP-515 | Macro phase active workers | S | **Staged** | SP-512 | #165 |
-| SP-516 | Status classification alignment | S | **Staged** | SP-512 | #166 |
-| SP-517 | Dashboard wave completed under drift | S | **Staged** | SP-512 | #186 |
-| SP-518 | Attached SIGKILL orphan guard | S | **Staged** | — | #163 (Partial) |
-| SP-519 | State drift recovery docs | S | **Staged** | SP-512 | #168 |
-| SP-520 | CONTEXT Phase 59 capstone | S | **Staged** | SP-511–519 | — |
+| SP-511 | Reconciliation v1.8.1 explore findings | S | **Done** | — | — |
+| SP-512 | Drift retry deadlock fix | S | **Done** | SP-511 | #170 |
+| SP-513 | Pause/resume SIGTERM engine orphan | S | **Done** | SP-511 | #184 |
+| SP-514 | v1.8.1 incident fixtures | S | **Done** | SP-512, SP-513 | — |
+| SP-515 | Macro phase active workers | S | **Done** | SP-512 | #165 |
+| SP-516 | Status classification alignment | S | **Done** | SP-512 | #166 |
+| SP-517 | Dashboard wave completed under drift | S | **Done** | SP-512 | #186 |
+| SP-518 | Attached SIGKILL orphan guard | S | **Done** | — | #163 (Partial) |
+| SP-519 | State drift recovery docs | S | **Done** | SP-512 | #168 |
+| SP-520 | CONTEXT Phase 59 capstone | S | **Done** | SP-511–519 | — |
 | SP-442 | Skip clears failed segment | M | **Staged** | SP-401 | #96 |
 | SP-445 | doneInLane drift detection | M | **Staged** | — | #100 (Partial) |
 | SP-446 | Diagnosis doneInLane pending | M | **Staged** | SP-445 | #100 (Partial) |
@@ -1479,7 +1479,18 @@ spine batch start SP-517 SP-519
 spine batch start SP-520
 ```
 
-**Phase 59 exit criteria:** See handoff §10 — incident replay, actionable diagnose, open issues ≤ ~35.
+**Phase 59 exit criteria (handoff §10):**
+
+- [x] Incident journals `20260705T210857` and `20260706T052912` replay to terminal success without manual batch-state JSON edits (SP-514)
+- [x] `state_drift` with lane `.DONE` + review APPROVE suggests command that succeeds (not `retry` on `running`) (SP-512)
+- [x] One pause/resume cycle during release-scale batch does not leave `engine_orphaned` (SP-513)
+- [x] Macro phase not `Failed` when batch phase `running` and lane PIDs alive ([#165](https://github.com/beettlle/pi-spine/issues/165)) (SP-515)
+- [x] Dashboard wave panel does not show `[completed]` when diagnosis is `state_drift` / `engine_orphaned` ([#186](https://github.com/beettlle/pi-spine/issues/186)) (SP-517)
+- [x] Issues #170, #184, #165, #166, #186, #168 closed (or Partial with documented remainder)
+- [ ] Open GitHub issues ≤ ~35 (down from ~48 baseline) — operator audit pending
+- [x] CONTEXT Phase 59 complete; Next Task ID → SP-521
+
+**Patch release minimum (SP-511–519):** complete. **Follow-up (v1.8.2 or override):** staged SP-442, SP-445–449 remain in table above.
 
 **Future phases (handoffs only — tasks not yet authored):**
 
