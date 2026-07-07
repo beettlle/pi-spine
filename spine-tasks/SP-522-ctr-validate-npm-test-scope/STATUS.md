@@ -1,7 +1,7 @@
 # SP-522: Validate npm test -- scope — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 3
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -9,24 +9,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read SP-521 validate-contract-warn baseline
-- [ ] Confirm #187 reproduction
+- [x] Read SP-521 validate-contract-warn baseline
+- [x] Confirm #187 reproduction
 
 ### Step 1: Validator detection
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add `npm test --` path detection
-- [ ] Wire into validateContract
+- [x] Add `npm test --` path detection
+- [x] Wire into validateContract
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Unit + CLI integration tests
+- [x] Unit + CLI integration tests
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Run contract testCommand
 

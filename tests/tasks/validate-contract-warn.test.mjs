@@ -8,8 +8,10 @@ import {
 	validateContract,
 } from "../../src/tasks/packet/validate-contract.mjs";
 import {
+	collectNpmTestDashDashWarnings,
 	collectTestCommandScopeWarnings,
 	TEST_COMMAND_COVERAGE_FIX_HINT,
+	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 	TEST_COMMAND_NPM_TEST_FIX_HINT,
 } from "../../src/tasks/validate-contract-warn.mjs";
 
@@ -182,6 +184,50 @@ test("collectTestCommandScopeWarnings warns on npm test for Size M", () => {
 	assert.match(warnings[0], new RegExp(TEST_COMMAND_NPM_TEST_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
+test("collectNpmTestDashDashWarnings warns on npm test -- <path> for Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand("npm test -- tests/foo.test.mjs"),
+	);
+	const warnings = collectNpmTestDashDashWarnings(parsed, { taskSize: "S" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /npm test -- <path>/);
+	assert.match(warnings[0], /full suite/);
+	assert.match(
+		warnings[0],
+		new RegExp(TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	);
+});
+
+test("collectTestCommandScopeWarnings prefers npm test -- warning over generic npm test", () => {
+	const parsed = parseContract(
+		promptWithTestCommand("npm run typecheck && npm test -- tests/foo.test.mjs", "M"),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "M" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /npm test -- <path>/);
+	assert.doesNotMatch(warnings[0], new RegExp(TEST_COMMAND_NPM_TEST_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});
+
+test("collectNpmTestDashDashWarnings is quiet for scoped node --test on Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
+		),
+	);
+	const warnings = collectNpmTestDashDashWarnings(parsed, { taskSize: "S" });
+
+	assert.deepEqual(warnings, []);
+});
+
+test("collectNpmTestDashDashWarnings allows npm test -- on Size L", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "L"));
+	const warnings = collectNpmTestDashDashWarnings(parsed, { taskSize: "L" });
+
+	assert.deepEqual(warnings, []);
+});
+
 test("collectTestCommandScopeWarnings is quiet for scoped node --test on Size S", () => {
 	const parsed = parseContract(
 		promptWithTestCommand(
@@ -214,4 +260,15 @@ test("validateContract warns on SP-516-shaped coverage chain for Size S", () => 
 	assert.deepEqual(result.errors, []);
 	assert.equal(result.warnings.length, 1);
 	assert.match(result.warnings[0], /coverage:check/);
+});
+
+test("validateContract warns on npm test -- false scope for Size S", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
+	const result = validateContract(parsed, { mode: "required", taskId: "SP-522", taskSize: "S" });
+
+	assert.equal(result.ok, true);
+	assert.deepEqual(result.errors, []);
+	assert.equal(result.warnings.length, 1);
+	assert.match(result.warnings[0], /npm test -- <path>/);
+	assert.match(result.warnings[0], /node --test/);
 });
