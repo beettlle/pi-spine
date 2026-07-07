@@ -28,7 +28,7 @@ Fix [#166](https://github.com/beettlle/pi-spine/issues/166): align `status` and 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs && npm run coverage:check` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs` |
 | minLineCoverage | 77 |
 | fileScopeMustChange | `src/batch/reconcile.mjs` |
 
