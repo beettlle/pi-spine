@@ -351,6 +351,8 @@ export function summarizeJournalEvent(event) {
 	if (payload.worktreePath) parts.push(String(payload.worktreePath).split("/").slice(-2).join("/"));
 	if (payload.verdict) parts.push(String(payload.verdict));
 	if (payload.reviewType) parts.push(`${payload.reviewType} review`);
+	if (payload.honorSource) parts.push(`honor ${payload.honorSource}`);
+	if (payload.reviewPassKind) parts.push(`pass ${payload.reviewPassKind}`);
 	if (payload.diagnosis) parts.push(String(payload.diagnosis));
 	if (payload.stallDeadline) parts.push(`stall deadline ${payload.stallDeadline}`);
 	if (payload.logPath) parts.push(`→ ${payload.logPath}`);
@@ -411,6 +413,9 @@ export function extractJournalDiagnosisHints(events) {
 		"batch.failed",
 		"batch.merge_blocked",
 		"task.failed",
+		"review.crash_recovered",
+		"review.skipped_fresh_artifact",
+		"review.resumed",
 		"lane.setup_hook.failed",
 		"lane.stall_killed",
 		"review.failed",
