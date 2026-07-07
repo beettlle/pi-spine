@@ -34,6 +34,7 @@ import { computeStatusProgress } from "./status-json.mjs";
 import {
 	detectBatchStateDrift,
 	rebuildBatchStateFromJournal,
+	reconcileBatchStateDrift,
 } from "./journal-rebuild.mjs";
 import { appendJournalEvent, extractJournalDiagnosisHints, findPlanReviewNestedSpawnBlockedFailure, journalPath, readJournalEvents } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
@@ -1083,7 +1084,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	}
 
 	const tasksRoot = resolveTasksRoot(projectRoot);
-	const classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
+	let classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
 	const useLightGit =
 		ctx.light === true &&
 		!_lightRetry &&
@@ -1149,15 +1150,49 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	const engineSessionJournalEvents = journalEventsSinceResume(journalEvents, batch.raw);
 
 	if (journalEvents.length > 0 && batch.raw) {
-		const rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
-		const drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
+		let rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
+		let drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
+		const healed = reconcileBatchStateDrift({
+			projectRoot,
+			state: batch.raw,
+			classifiedTasks,
+			journalEvents,
+			drift,
+		});
+		if (healed.reconciled) {
+			journalEvents = readJournalEvents(projectRoot, batch.batchId);
+			const refreshed = parseBatchState(batch.raw, loaded.path ?? ctx.batchStatePath ?? "");
+			if (refreshed) {
+				batch.tasks = refreshed.tasks;
+				batch.segments = refreshed.segments;
+				batch.succeededTasks = refreshed.succeededTasks;
+				batch.failedTasks = refreshed.failedTasks;
+				batch.lanes = refreshed.lanes;
+			}
+			classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
+			rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
+			drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
+		}
 		signals.stateDrift = drift;
 		signals.rebuiltFromJournal = rebuilt;
+		if (healed.reconciled) {
+			signals.journalEvents = journalEvents;
+			signals.tasks = classifiedTasks;
+			signals.hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
+			signals.hasPendingTasks = classifiedTasks.some((task) => task.classification === "pending");
+			signals.allTasksTerminalSuccess =
+				classifiedTasks.length > 0 &&
+				classifiedTasks.every((task) => task.classification === "terminal-success");
+			const healedFailedTask = classifiedTasks.find(
+				(task) => task.classification === "terminal-failure",
+			);
+			signals.failedTaskId = healedFailedTask?.taskId ?? signals.failedTaskId;
+		}
 	}
 
 	signals.orphanRunning = detectOrphanRunning({
 		phase: batch.phase,
-		hasRunningTasks,
+		hasRunningTasks: signals.hasRunningTasks,
 		tasks: classifiedTasks,
 		lanes: batch.lanes,
 		raw: batch.raw,
@@ -1282,12 +1317,19 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		failedTaskId != null
 			? laneTaskBranchForDiagnosis(batch.raw, batch.batchId, failedTaskId)
 			: null;
+	const driftTaskStatus =
+		failedTaskId != null
+			? String(
+					(batch.raw?.tasks ?? []).find((entry) => entry?.taskId === failedTaskId)?.status ?? "",
+				)
+			: null;
 
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
 		failedTasks: signals.failedTasks,
 		failedTaskId,
+		driftTaskStatus,
 		exitReason,
 		launchFailureKind: resolvedLaunchFailureKind,
 		gitMerged: git.orchMergedToBase,

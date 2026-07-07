@@ -169,8 +169,9 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return "spine batch dismiss";
 		case "state_drift":
 			if (ctx.failedTaskId) {
-				if (ctx.phase === "running") {
-					return `spine batch pause && spine batch retry ${ctx.failedTaskId}`;
+				const driftStatus = String(ctx.driftTaskStatus ?? "").toLowerCase();
+				if (driftStatus === "running" || ctx.phase === "running") {
+					return "spine batch resume --force";
 				}
 				return `spine batch retry ${ctx.failedTaskId}`;
 			}
