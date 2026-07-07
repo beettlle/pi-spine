@@ -1,7 +1,7 @@
 # SP-455: Heartbeat git porcelain debounce — Status
 
-**Current Step:** Step 1
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-06
 **Review Level:** 1
 **Review Counter:** 0
@@ -44,11 +44,19 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Docs updated (operator-runbook git porcelain debounce note)
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Issue updated
+- [x] .DONE created
+
+---
+
+## Completion Criteria
+
+- [x] All steps complete
+- [x] All tests passing (contract: 10/10 targeted heartbeat tests)
+- [x] Documentation updated
 
 ---
 
