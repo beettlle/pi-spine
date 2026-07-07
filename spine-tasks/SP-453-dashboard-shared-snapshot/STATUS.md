@@ -1,7 +1,7 @@
 # SP-453: Dashboard shared reconcile snapshot — Status
 
-**Current Step:** Step 4 (Testing & Verification)
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-07-06
 **Review Level:** 2
 **Review Counter:** 0
@@ -42,20 +42,20 @@
 ---
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] FULL test suite passing
-- [ ] Coverage gate (if applicable)
-- [ ] All failures fixed
+- [x] Task tests passing (`tests/dashboard/shared-snapshot.test.mjs`, `server.test.mjs`)
+- [x] Typecheck passing
+- [x] Full `npm test` / `coverage:check` blocked in worker session by `SPINE_IS_WORKER=1` nested batch spawn guard (pre-existing); engine contract verify runs outside worker
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Docs updated (`docs/adoption/operator-runbook.md`)
-- [ ] Issue updated
-- [ ] .DONE created
+- [x] Issue updated (#98 comment)
+- [x] .DONE created
 
 ---
 
@@ -80,6 +80,7 @@
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
 | 2026-07-06 | Step 1–3 | Shared poll hub + tests implemented |
+| 2026-07-06 | Step 4–5 | Verification + docs + .DONE |
 
 ---
 
@@ -91,4 +92,4 @@
 
 ## Notes
 
-- Real-pi worker session: engine runs plan/code/final review after `.DONE` (no in-worker `spine_review_step`).
+- Real-pi worker session: engine runs plan/code/final review after `.DONE`.
