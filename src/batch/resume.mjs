@@ -67,9 +67,11 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	if (!engineLock.ok) {
 		return engineLock;
 	}
+	const releaseResumeLock = engineLock.releaseResumeLock;
 
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
+		releaseResumeLock?.();
 		return resumeCheck;
 	}
 
@@ -81,7 +83,11 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const lanes = state.lanes ?? [];
 
 	if (tasks.length > 1 || lanes.length > 1) {
-		return resumeMultiTaskBatch({ projectRoot, force, resumeCheck });
+		try {
+			return await resumeMultiTaskBatch({ projectRoot, force, resumeCheck });
+		} finally {
+			releaseResumeLock?.();
+		}
 	}
 
 	const phase = String(state.phase ?? "");
@@ -137,6 +143,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			output: scopeResult.error,
 			resumed: true,
 		});
+		releaseResumeLock?.();
 		return {
 			ok: false,
 			exitCode: 1,
@@ -164,6 +171,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			resumeForced: Boolean(force),
 		});
 		if (finalizeResult) {
+			releaseResumeLock?.();
 			return finalizeResult;
 		}
 	}
@@ -197,6 +205,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	recordBatchEnginePid(state, process.pid);
 	refreshLaneHeartbeatsOnResume(state);
 	saveSpineBatchState(projectRoot, state);
+	releaseResumeLock?.();
 	recordResumePhaseTransition(projectRoot, batchId, fromPhase, "running", {
 		resumeForced,
 		pendingSegments,
