@@ -135,9 +135,9 @@ Dismiss reasons: see `.cursor/rules/stet-integration.mdc`.
 
 ### P1 — Feedback capture when findings exist
 
-- When contract stet reports findings, **pause before auto-finish**: operator or script triages via `stet dismiss` (with reason) so history accumulates for shadowing/optimize.
+- [x] When contract stet reports findings, **pause before auto-finish**: `scripts/spine-stet-contract-run.sh` fails with triage instructions; operator dismisses via `stet dismiss` (with reason) so history accumulates for shadowing/optimize (SP-510).
 - Optional: persist contract stet JSON output under `spine-tasks/<id>/.reviews/stet-*.json` for audit (similar to existing contract-fail logs).
-- Consider a contract script flag or env (e.g. `SPINE_STET_NO_AUTO_FINISH=1`) for triage windows on non-zero findings.
+- [x] Contract env `SPINE_STET_NO_AUTO_FINISH=1` keeps session open for manual triage (documented in operator runbook §8.1; SP-510).
 
 ### P1 — Quality loop
 

@@ -421,7 +421,7 @@ pi-spine is a **transparent orchestrator**: most CPU belongs to LLM workers (pi/
 | `pi`, `cursor`, agent harness | LLM worker / reviewer | Yes, while session runs | **≤ `lanes.maxParallel`** workers during a wave tick, plus **0–1** reviewer subprocess per active review |
 | `flutter test`, `npm test`, `go test`, … | Contract verify / PROMPT `testCommand` | Yes, during verify | Bursts per lane at contract verify — not spine orchestration |
 | `spine.mjs batch`, `attached-runner`, detached engine | Spine batch engine | Low when lanes idle | **1** engine per active batch |
-| `spine dashboard` | Dashboard SSE server | Low–moderate (reconcile + journal per tick) | **1** per machine/repo (distinct ports for multiple repos) |
+| `spine dashboard` | Dashboard SSE server | Low–moderate (one shared reconcile + journal tail per tick) | **1** per machine/repo (distinct ports for multiple repos) |
 | `spine watch`, `spine wait`, `spine run sequence` | CLI monitor / sequence waiter | Low–moderate during poll | **0–1** while you monitor; sequence waiter only during `spine run sequence` |
 | Second `spine.mjs batch … --attached` for same batch | **Leak** ([#89](https://github.com/beettlle/pi-spine/issues/89)) | High duplicate reconcile | **0** — use `resume --attached --force` handoff instead |
 
@@ -451,7 +451,7 @@ PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-0
 |------|---------|-------|
 | Attached milestone poll (`attached-runner.mjs`) | **2000ms** | Human-scale events; override with `orchestrator.attachedMilestonePollMs` |
 | Sequence `waitForSequenceBatchTerminal` | **5000ms**; first poll full reconcile, later polls **`reconcileBatch({ light: true })`** when phase stable | Aligns with `spine watch`; override with `orchestrator.sequencePollMs` |
-| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; override with `orchestrator.dashboardPollMs` (wired in SP-453) |
+| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** shared reconcile per server tick | One `reconcileBatch` + journal tail per poll interval; fan-out to all SSE clients. One dashboard per machine; override with `orchestrator.dashboardPollMs` |
 | Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
 | `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
 
@@ -524,6 +524,8 @@ Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle
 Tier 2 surfaces (`lane.progress_snapshot`, `spine lane logs --follow`, dashboard lane detail) are tracked under epic #43 ([#48](https://github.com/beettlle/pi-spine/issues/48)–[#51](https://github.com/beettlle/pi-spine/issues/51)). Tier 3 agent event streaming remains deferred ([#52](https://github.com/beettlle/pi-spine/issues/52)).
 
 **Journal read cache ([#98](https://github.com/beettlle/pi-spine/issues/98)):** orchestrator hot paths (`collectProgressSignals`, attached milestone reporter, dashboard snapshot) share an mtime-keyed journal read cache. When the journal file has not changed since the last read, the cached parsed events are reused — reducing CPU during idle monitoring loops. The cache invalidates automatically when the file mtime changes (e.g. after `appendJournalEvent`). Test code should call `clearJournalCache()` for isolation.
+
+**Git porcelain debounce ([#98](https://github.com/beettlle/pi-spine/issues/98)):** `collectProgressSignals` skips `git status --porcelain` when file-scope mtimes are unchanged since the last check for that lane worktree. When a scoped file is touched, porcelain is refreshed and cached dirty paths update. Test code should call `clearGitPorcelainDebounceCache()` for isolation.
 
 **`spine status --json` progress fields (issue #30):** when a batch is active, JSON output includes task and wave progress at the top level:
 
@@ -1326,7 +1328,7 @@ Config is committed at `.review/config.toml` so lane worktrees inherit settings 
 | Phase | Mechanism | Command |
 |-------|-----------|---------|
 | Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` (writes `.review/spine-stet-baseline.ref`) |
-| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review) |
+| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review). **Non-zero findings fail contract** with triage instructions; session stays open until dismissals. Zero findings auto-finish as before. |
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
 
@@ -1349,6 +1351,10 @@ Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id
 | Git notes on `refs/notes/stet` exist | Sessions finished; notes are analytics, not the optimizer input |
 
 **When findings exist:** triage before the session auto-finishes — `stet list`, then `stet dismiss <id> <reason>` for each finding you accept as suppressed. Each dismiss appends to `history.jsonl` and feeds prompt shadowing.
+
+**Contract failure → triage → re-run:** When contract verify reports findings, `scripts/spine-stet-contract-run.sh` exits non-zero and prints triage steps. Dismiss each finding (with reason), then re-run the task `testCommand` (or `scripts/spine-stet-contract-run.sh` alone). Do not dismiss project code defects without a filed issue or documented reason in `STATUS.md`.
+
+**Optional env — keep session open:** Set `SPINE_STET_NO_AUTO_FINISH=1` before contract stet to skip auto-finish even when findings are zero (manual triage window; session and worktree remain until `stet finish`).
 
 **Quality loop (optional cadence):**
 

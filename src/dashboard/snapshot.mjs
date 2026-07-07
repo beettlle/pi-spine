@@ -1,5 +1,6 @@
 /**
  * Dashboard snapshot builder (PRD §16, NFR-OBS-04).
+ * Thin assembly: `buildDashboardSnapshot` composes snapshot-lanes and snapshot-waves.
  */
 
 import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
@@ -34,33 +35,8 @@ import {
 	summarizeBatch,
 } from "./snapshot-waves.mjs";
 
-export {
-	buildLaneLogTail,
-	buildLaneRecentEvents,
-	buildLaneRows,
-	classifyLaneStatus,
-	computeActiveTaskIdsForLane,
-	computeQueuedTaskIdsForLane,
-	computeRunningTaskIdForLane,
-	formatLaneHeartbeatDisplay,
-	heartbeatAgeSeconds,
-	laneEventMatches,
-	readLogFileTailLines,
-	resolveLaneActivityPhase,
-	resolveLaneAlert,
-	resolveLaneHeartbeatMeta,
-	resolveLaneWorkerLog,
-	truncateWorktreePath,
-} from "./snapshot-lanes.mjs";
-
-export {
-	buildDefaultViewStatus,
-	buildWaveProgress,
-	formatJournalTailEntry,
-	lanesHaveActiveTasks,
-	resolveTailActivityFromJournal,
-	resolveTailActivityLabel,
-} from "./snapshot-waves.mjs";
+/** Last N journal events included in dashboard snapshot tail (not full journal per client). */
+export const DASHBOARD_JOURNAL_TAIL_LIMIT = 20;
 
 /**
  * @param {string} projectRoot
@@ -102,7 +78,9 @@ export function buildDashboardSnapshot(projectRoot) {
 	let journalEvents = [];
 	if (reconciliation.batchId) {
 		journalEvents = readJournalEventsCached(projectRoot, reconciliation.batchId);
-		journalTail = readJournalTail(journalEvents, 20).map(formatJournalTailEntry);
+		journalTail = readJournalTail(journalEvents, DASHBOARD_JOURNAL_TAIL_LIMIT).map(
+			formatJournalTailEntry,
+		);
 	}
 
 	const now = Date.now();
@@ -197,3 +175,31 @@ export function buildDashboardSnapshot(projectRoot) {
 		waves,
 	};
 }
+
+export {
+	buildLaneLogTail,
+	buildLaneRecentEvents,
+	buildLaneRows,
+	classifyLaneStatus,
+	computeActiveTaskIdsForLane,
+	computeQueuedTaskIdsForLane,
+	computeRunningTaskIdForLane,
+	formatLaneHeartbeatDisplay,
+	heartbeatAgeSeconds,
+	laneEventMatches,
+	readLogFileTailLines,
+	resolveLaneActivityPhase,
+	resolveLaneAlert,
+	resolveLaneHeartbeatMeta,
+	resolveLaneWorkerLog,
+	truncateWorktreePath,
+} from "./snapshot-lanes.mjs";
+
+export {
+	buildDefaultViewStatus,
+	buildWaveProgress,
+	formatJournalTailEntry,
+	lanesHaveActiveTasks,
+	resolveTailActivityFromJournal,
+	resolveTailActivityLabel,
+} from "./snapshot-waves.mjs";

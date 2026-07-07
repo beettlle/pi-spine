@@ -7,6 +7,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { appendJournalEvent, readJournalEventsCached } from "./journal.mjs";
+import {
+	clearGitPorcelainDebounceCache,
+	getGitPorcelainCallCount,
+	resetGitPorcelainCallCount,
+	resolveDebouncedScopedDirtyPaths,
+	resolveFileScopeMtimeMs,
+} from "./heartbeat-git-debounce.mjs";
+
+export {
+	clearGitPorcelainDebounceCache,
+	getGitPorcelainCallCount,
+	resetGitPorcelainCallCount,
+} from "./heartbeat-git-debounce.mjs";
 
 const DEFAULT_STALL_TIMEOUT_MIN = 60;
 const DEFAULT_GRACE_AFTER_PROGRESS_MIN = 15;
@@ -75,25 +88,6 @@ function git(worktreePath, args) {
 	} catch {
 		return null;
 	}
-}
-
-/**
- * Max mtime among existing file-scope paths (FR-WORK-10 activity signal; warning only by default).
- * @param {string} worktreePath
- * @param {string[]} [fileScopePaths]
- */
-function resolveFileScopeMtimeMs(worktreePath, fileScopePaths) {
-	if (!Array.isArray(fileScopePaths) || fileScopePaths.length === 0) return null;
-	let max = null;
-	for (const rel of fileScopePaths) {
-		if (!rel || typeof rel !== "string") continue;
-		const target = path.join(worktreePath, rel);
-		if (!fs.existsSync(target)) continue;
-		const stat = fs.statSync(target);
-		if (!stat.isFile()) continue;
-		max = max === null ? stat.mtimeMs : Math.max(max, stat.mtimeMs);
-	}
-	return max;
 }
 
 /**
@@ -197,7 +191,12 @@ export function collectProgressSignals({
 	}
 
 	const fileScopeMtimeMs = resolveFileScopeMtimeMs(worktreePath, fileScopePaths);
-	const dirtyPaths = resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder);
+	const dirtyPaths = resolveDebouncedScopedDirtyPaths(
+		worktreePath,
+		fileScopePaths,
+		taskFolder,
+		resolveScopedDirtyPaths,
+	);
 
 	let stepCompletedAtMs = null;
 	if (journalContext?.projectRoot && journalContext?.batchId) {
