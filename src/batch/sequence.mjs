@@ -43,6 +43,96 @@ import {
 	prepareSequenceRunState,
 } from "./sequence-state.mjs";
 
+/** Release sequence profile (FR-STA-25 / SP-536). See docs/release/manifest-v1.10.0-example.md. */
+export const SEQUENCE_RELEASE_PROFILE = {
+	id: "release",
+	/** Max parallel tasks per planner wave (release-profiles.md minor). */
+	maxTasksPerWave: 4,
+	/** Operator-only pause points between waves; sequence does not auto-approve these. */
+	gateOnlyPausePoints: ["gate_approve"],
+	/** Dry-run prints the wave land loop without starting batches. */
+	dryRunSupported: true,
+	manifestDocPath: "docs/release/manifest-v1.10.0-example.md",
+};
+
+/**
+ * @param {string|null|undefined} scope
+ * @returns {boolean}
+ */
+export function isReleaseSequenceScope(scope) {
+	const normalized = String(scope ?? "").trim();
+	return normalized.includes(",");
+}
+
+/**
+ * @param {object} [params]
+ * @param {string|null|undefined} [params.scope]
+ * @param {string|null|undefined} [params.profile]
+ * @returns {typeof SEQUENCE_RELEASE_PROFILE|null}
+ */
+export function resolveSequenceProfile({ scope, profile = null } = {}) {
+	const normalized = String(profile ?? "")
+		.trim()
+		.toLowerCase();
+	if (normalized === "release") {
+		return SEQUENCE_RELEASE_PROFILE;
+	}
+	if (isReleaseSequenceScope(scope)) {
+		return SEQUENCE_RELEASE_PROFILE;
+	}
+	return null;
+}
+
+/**
+ * @param {object} plan
+ * @param {typeof SEQUENCE_RELEASE_PROFILE} [profile]
+ */
+export function validateReleaseSequenceWaveCaps(plan, profile = SEQUENCE_RELEASE_PROFILE) {
+	const waves = plan?.waves ?? [];
+	/** @type {Array<{ waveIndex: number, taskCount: number }>} */
+	const violations = [];
+
+	for (const wave of waves) {
+		const waveIndex = wave.waveIndex ?? wave.index ?? 0;
+		const taskCount = Array.isArray(wave.taskIds) ? wave.taskIds.length : 0;
+		if (taskCount > profile.maxTasksPerWave) {
+			violations.push({ waveIndex, taskCount });
+		}
+	}
+
+	if (violations.length === 0) {
+		return { ok: true };
+	}
+
+	const lines = [
+		`Release sequence profile wave cap exceeded (max ${profile.maxTasksPerWave} tasks per wave):`,
+	];
+	for (const { waveIndex, taskCount } of violations) {
+		lines.push(`  Wave ${waveIndex}: ${taskCount} tasks`);
+	}
+	lines.push(`See ${profile.manifestDocPath} and release-profiles.md to split waves.`);
+
+	return {
+		ok: false,
+		error: "release_wave_cap_exceeded",
+		violations,
+		output: `${lines.join("\n")}\n`,
+	};
+}
+
+/**
+ * @param {typeof SEQUENCE_RELEASE_PROFILE} profile
+ */
+export function buildReleaseSequenceDryRunHeader(profile = SEQUENCE_RELEASE_PROFILE) {
+	const pausePoints = profile.gateOnlyPausePoints.join(", ");
+	return [
+		`# Release sequence profile (${profile.id})`,
+		`# Manifest: ${profile.manifestDocPath}`,
+		`# Operator pause points: ${pausePoints} (per wave; publish approval is manual)`,
+		`# Wave cap: max ${profile.maxTasksPerWave} tasks per wave`,
+	];
+}
+
 const WAVE_BATCH_SETTLED_DIAGNOSES = new Set([
 	"completed",
 	"completed_manual",
@@ -180,14 +270,27 @@ export function resolveSequenceWaves(plan, { fromWave = 0, throughWave = null } 
  * @param {number} params.waveIndex
  * @param {string[]} params.taskIds
  * @param {boolean} [params.autoApproveGate]
+ * @param {typeof SEQUENCE_RELEASE_PROFILE|null} [params.profile]
  */
-export function buildSequenceWaveCommands({ waveIndex, taskIds, autoApproveGate = false }) {
+export function buildSequenceWaveCommands({
+	waveIndex,
+	taskIds,
+	autoApproveGate = false,
+	profile = null,
+}) {
 	const taskScope = taskIds.join(" ");
+	const gateOnly =
+		profile?.gateOnlyPausePoints?.includes("gate_approve") && !autoApproveGate;
+	const gateLine = autoApproveGate
+		? "spine gate approve"
+		: gateOnly
+			? "spine gate approve  # GATE-ONLY: operator approval required (release profile)"
+			: "spine gate approve  # when integrate gate is open";
 	return [
 		`# Wave ${waveIndex}`,
 		`spine batch start ${taskScope}`,
 		"spine status --diagnose  # wait for terminal batch phase",
-		autoApproveGate ? "spine gate approve" : "spine gate approve  # when integrate gate is open",
+		gateLine,
 		"spine integrate",
 		"spine batch complete",
 	];
@@ -199,26 +302,37 @@ export function buildSequenceWaveCommands({ waveIndex, taskIds, autoApproveGate 
  * @param {number} [params.fromWave]
  * @param {number|null} [params.throughWave]
  * @param {boolean} [params.autoApproveGate]
+ * @param {typeof SEQUENCE_RELEASE_PROFILE|null} [params.profile]
  */
 export function buildSequenceDryRunPlan({
 	plan,
 	fromWave = 0,
 	throughWave = null,
 	autoApproveGate = false,
+	profile = null,
 }) {
 	const wavePlan = resolveSequenceWaves(plan, { fromWave, throughWave });
 	if (!wavePlan.ok) return wavePlan;
 
-	const commands = wavePlan.waves.flatMap((wave) =>
+	if (profile) {
+		const capCheck = validateReleaseSequenceWaveCaps(plan, profile);
+		if (!capCheck.ok) return capCheck;
+	}
+
+	const waveCommands = wavePlan.waves.flatMap((wave) =>
 		buildSequenceWaveCommands({
 			waveIndex: wave.waveIndex,
 			taskIds: wave.taskIds,
 			autoApproveGate,
+			profile,
 		}),
 	);
+	const header = profile ? buildReleaseSequenceDryRunHeader(profile) : [];
+	const commands = [...header, ...waveCommands];
 
 	return {
 		ok: true,
+		profile: profile?.id ?? null,
 		waves: wavePlan.waves,
 		waveCount: wavePlan.waveCount,
 		fromWave: wavePlan.fromWave,
@@ -323,11 +437,14 @@ export async function runSequence(ctx) {
 		stopOnFailure = true,
 		dryRun = false,
 		skipPreflight = false,
+		profile: profileOverride = null,
 		pollIntervalMs: pollIntervalMsOverride,
 		timeoutMs = 120_000,
 		spineBin = null,
 		startBatchFn = startBatch,
 	} = ctx;
+
+	const sequenceProfile = resolveSequenceProfile({ scope, profile: profileOverride });
 
 	const configResult = loadSpineConfig(projectRoot);
 	const pollIntervalMs =
@@ -358,7 +475,11 @@ export async function runSequence(ctx) {
 		return { ok: false, exitCode: 1, error: wavePlan.error, output: wavePlan.output };
 	}
 
-	const autoApproveCheck = validateSequenceAutoApproveGate({ autoApproveGate, force });
+	const autoApproveCheck = validateSequenceAutoApproveGate({
+		autoApproveGate,
+		force,
+		profile: sequenceProfile,
+	});
 	if (!autoApproveCheck.ok) {
 		return {
 			ok: false,
@@ -369,12 +490,41 @@ export async function runSequence(ctx) {
 		};
 	}
 
+	if (sequenceProfile) {
+		const capCheck = validateReleaseSequenceWaveCaps(plan, sequenceProfile);
+		if (!capCheck.ok) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: capCheck.error,
+				output: capCheck.output,
+				violations: capCheck.violations,
+			};
+		}
+	}
+
 	if (dryRun) {
-		const dryPlan = buildSequenceDryRunPlan({ plan, fromWave, throughWave, autoApproveGate });
+		const dryPlan = buildSequenceDryRunPlan({
+			plan,
+			fromWave: effectiveFromWave,
+			throughWave,
+			autoApproveGate,
+			profile: sequenceProfile,
+		});
+		if (!dryPlan.ok) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: dryPlan.error,
+				output: dryPlan.output,
+				violations: dryPlan.violations,
+			};
+		}
 		return {
 			ok: true,
 			exitCode: 0,
 			dryRun: true,
+			profile: dryPlan.profile,
 			waves: dryPlan.waves,
 			commands: dryPlan.commands,
 			output: dryPlan.output,

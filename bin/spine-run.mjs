@@ -6,6 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Route `spine run` subcommands.
  * - `spine run sequence <scope>` — planner wave sequence (GitHub #54 Tier 2)
+ *   Release scope: comma-separated SP-IDs or `--profile release` (FR-STA-25 / SP-536).
+ *   Dry-run: `spine run sequence <scope> --dry-run` — see docs/release/manifest-v1.10.0-example.md
  * - `spine run <scope>` — alias for `spine batch start <scope>` (TP-024)
  *
  * @param {object} options
