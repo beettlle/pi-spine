@@ -1,8 +1,8 @@
 # SP-453: Dashboard shared reconcile snapshot — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-02
+**Current Step:** Step 4 (Testing & Verification)
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-07-06
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,38 +11,38 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read issue #98
-- [ ] Dependencies satisfied
+- [x] Read issue #98
+- [x] Dependencies satisfied (SP-451 journal cache present in `readJournalEventsCached`)
 
 ---
 
 ### Step 1: Shared tick
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Build snapshot once per poll interval
-- [ ] Fan-out cached snapshot to SSE clients
+- [x] Build snapshot once per poll interval
+- [x] Fan-out cached snapshot to SSE clients
 
 ---
 
 ### Step 2: Journal tail
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Use journal cache/tail (last N events) not full parse per client
+- [x] Use journal cache/tail (last N events) not full parse per client
 
 ---
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Multi-client SSE receives same snapshot generation
-- [ ] Reconcile called once per tick in test harness
+- [x] Multi-client SSE receives same snapshot generation
+- [x] Reconcile called once per tick in test harness
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] FULL test suite passing
 - [ ] Coverage gate (if applicable)
@@ -51,9 +51,9 @@
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Docs updated
+- [x] Docs updated (`docs/adoption/operator-runbook.md`)
 - [ ] Issue updated
 - [ ] .DONE created
 
@@ -70,6 +70,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `createDashboardServer` now resolves `orchestrator.dashboardPollMs` from spine config | In scope | `src/dashboard/server.mjs` |
 
 ---
 
@@ -78,6 +79,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-02 | Task staged | PROMPT.md and STATUS.md created (#98) |
+| 2026-07-06 | Step 1–3 | Shared poll hub + tests implemented |
 
 ---
 
@@ -89,4 +91,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+- Real-pi worker session: engine runs plan/code/final review after `.DONE` (no in-worker `spine_review_step`).

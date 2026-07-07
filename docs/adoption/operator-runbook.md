@@ -421,7 +421,7 @@ pi-spine is a **transparent orchestrator**: most CPU belongs to LLM workers (pi/
 | `pi`, `cursor`, agent harness | LLM worker / reviewer | Yes, while session runs | **≤ `lanes.maxParallel`** workers during a wave tick, plus **0–1** reviewer subprocess per active review |
 | `flutter test`, `npm test`, `go test`, … | Contract verify / PROMPT `testCommand` | Yes, during verify | Bursts per lane at contract verify — not spine orchestration |
 | `spine.mjs batch`, `attached-runner`, detached engine | Spine batch engine | Low when lanes idle | **1** engine per active batch |
-| `spine dashboard` | Dashboard SSE server | Low–moderate (reconcile + journal per tick) | **1** per machine/repo (distinct ports for multiple repos) |
+| `spine dashboard` | Dashboard SSE server | Low–moderate (one shared reconcile + journal tail per tick) | **1** per machine/repo (distinct ports for multiple repos) |
 | `spine watch`, `spine wait`, `spine run sequence` | CLI monitor / sequence waiter | Low–moderate during poll | **0–1** while you monitor; sequence waiter only during `spine run sequence` |
 | Second `spine.mjs batch … --attached` for same batch | **Leak** ([#89](https://github.com/beettlle/pi-spine/issues/89)) | High duplicate reconcile | **0** — use `resume --attached --force` handoff instead |
 
@@ -451,7 +451,7 @@ PRD defines NFR-PERF-01 (planner) and NFR-PERF-02 (journal append). **NFR-PERF-0
 |------|---------|-------|
 | Attached milestone poll (`attached-runner.mjs`) | **2000ms** | Human-scale events; override with `orchestrator.attachedMilestonePollMs` |
 | Sequence `waitForSequenceBatchTerminal` | **5000ms** full `reconcileBatch` | Aligns with `spine watch`; override with `orchestrator.sequencePollMs` |
-| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** reconcile + journal per client connection | One dashboard per machine; override with `orchestrator.dashboardPollMs` (wired in SP-453) |
+| Dashboard SSE (`DEFAULT_DASHBOARD_POLL_MS`) | **2000ms** shared reconcile per server tick | One `reconcileBatch` + journal tail per poll interval; fan-out to all SSE clients. One dashboard per machine; override with `orchestrator.dashboardPollMs` |
 | Heartbeat stall monitor (`worker-host.mjs`) | **30s** poll (loop sleeps ≤5s) | Shared journal cache across lanes when mtime unchanged |
 | `spine watch` / `spine wait` | **5s** | Reference interval — use `--interval 10` for lighter monitoring |
 

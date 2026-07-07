@@ -34,6 +34,9 @@ import {
 	summarizeBatch,
 } from "./snapshot-waves.mjs";
 
+/** Last N journal events included in dashboard snapshot tail (not full journal per client). */
+export const DASHBOARD_JOURNAL_TAIL_LIMIT = 20;
+
 export {
 	buildLaneLogTail,
 	buildLaneRecentEvents,
@@ -102,7 +105,9 @@ export function buildDashboardSnapshot(projectRoot) {
 	let journalEvents = [];
 	if (reconciliation.batchId) {
 		journalEvents = readJournalEventsCached(projectRoot, reconciliation.batchId);
-		journalTail = readJournalTail(journalEvents, 20).map(formatJournalTailEntry);
+		journalTail = readJournalTail(journalEvents, DASHBOARD_JOURNAL_TAIL_LIMIT).map(
+			formatJournalTailEntry,
+		);
 	}
 
 	const now = Date.now();
