@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-07 (Phase 59 v1.8.1 reconciliation — SP-511–520 Done)
+**Last Updated:** 2026-07-07 (Phase 60 v1.9.0 contract guardrails — SP-522–529 staged)
 **Status:** Active
-**Next Task ID:** SP-521
+**Next Task ID:** SP-530
 
 ---
 
@@ -1494,7 +1494,45 @@ spine batch start SP-520
 
 **Future phases (handoffs only — tasks not yet authored):**
 
-- Phase 60 — v1.9.0 contract guardrails: [`docs/PRD-v1.9.0-contract-guardrails-handoff.md`](../docs/PRD-v1.9.0-contract-guardrails-handoff.md)
+### Phase 60 — v1.9.0 contract guardrails (SP-CTR)
+
+**Handoff:** [`docs/PRD-v1.9.0-contract-guardrails-handoff.md`](../docs/PRD-v1.9.0-contract-guardrails-handoff.md)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-373 | Contract pre-landed verify | Done | — |
+| SP-374 | Preflight prelanded warn (#56) | Done | SP-373 |
+| SP-410 | Contract template parallel semantics | Done | — |
+| SP-411–412 | must-not-change skill + runbook | Done | SP-410 |
+| SP-413 | tasks validate must-not warn | Done | SP-410 |
+| SP-414–417 | Serialized lane scoped verify (#62) | Done | SP-414 |
+| SP-478 | Contract verify resume baseline | Done | SP-415 |
+| SP-479 | Contract CLI friction (#105) | Done | SP-478 |
+| SP-521 | Scoped contract verify warn (v1.8.1) | Done | SP-520 |
+| SP-522 | Validate npm test -- scope (#187, #141) | Staged | — |
+| SP-523 | Skill scoped testCommand (#141) | Staged | SP-522 |
+| SP-524 | Planner wave >8 warn (#143) | Staged | — |
+| SP-525 | Skill docs-only scope (#142) | Staged | — |
+| SP-526 | fileScope resume baseline (#171) | Staged | SP-478 |
+| SP-527 | Preflight stale fileScope redirect (#159) | Staged | SP-373 |
+| SP-528 | CI flutter-analyzer ubuntu (#174) | Staged | — |
+| SP-529 | CONTEXT Phase 60 capstone | Staged | SP-522–528 |
+
+```bash
+spine tasks validate SP-522 SP-523 SP-524 SP-525 SP-526 SP-527 SP-528 SP-529
+spine plan SP-522,SP-523,SP-524,SP-525,SP-526,SP-527,SP-528,SP-529
+spine batch start SP-522,SP-523,SP-524,SP-525,SP-526,SP-527,SP-528,SP-529 --wave 0
+```
+
+**Phase 60 exit criteria (handoff §10):**
+
+- [ ] `spine tasks validate` fails/warns on `testCommand: npm test -- tests/foo.test.mjs`
+- [ ] 10-task dogfood batch: zero collateral full-suite `contract_failed` from unrelated LOC policy
+- [ ] `spine preflight` warns on release scope with bad testCommand patterns
+- [ ] #171, #187, #174, #141–#144 closed
+- [ ] create-spine-tasks skill documents scoped `node --test` pattern
+- [ ] CONTEXT Phase 60 complete; Next Task ID → SP-530
+
 - Phase 61 — v1.10.0 release harness: [`docs/PRD-v1.10.0-release-harness-handoff.md`](../docs/PRD-v1.10.0-release-harness-handoff.md)
 - Phase 62 — v2.0.0 automation proof: [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md)
 
