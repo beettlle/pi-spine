@@ -13,6 +13,7 @@ import {
 	isBaseFileScopeSatisfied,
 	isBaseScopeSatisfied,
 	isPrelandedFileScopeSatisfied,
+	isResumeBaselineFileScopeSatisfied,
 	isStubPrelandedFileScopeSatisfied,
 } from "./contract-prelanded.mjs";
 import { appendJournalEvent } from "./journal.mjs";
@@ -579,7 +580,18 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 				{ testCommandOk },
 				(worktree, artifactPath) => findArtifactMatch(worktree, artifactPath).ok,
 			);
-		const baseSatisfied = !matched && !prelanded &&
+		const resumeBaseline = !matched && !prelanded && sinceCommit &&
+			isResumeBaselineFileScopeSatisfied(
+				worktreePath,
+				pattern,
+				changedFiles,
+				sinceCommit,
+				baseBranch,
+				parsedContract,
+				{ testCommandOk },
+				(worktree, artifactPath) => findArtifactMatch(worktree, artifactPath).ok,
+			);
+		const baseSatisfied = !matched && !prelanded && !resumeBaseline &&
 			isBaseFileScopeSatisfied(
 				worktreePath,
 				pattern,
@@ -590,7 +602,7 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 				(worktree, artifactPath) => findArtifactMatch(worktree, artifactPath).ok,
 				config,
 			);
-		const ok = matched || prelanded || baseSatisfied;
+		const ok = matched || prelanded || resumeBaseline || baseSatisfied;
 		checks.push({
 			field: "fileScopeMustChange",
 			ok,
@@ -598,9 +610,11 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 				? `fileScopeMustChange matched: ${pattern}`
 				: prelanded
 					? `fileScopeMustChange pre-landed on ${baseBranch}: ${pattern}`
-					: baseSatisfied
-						? `fileScopeMustChange satisfied on ${baseBranch}: ${pattern}`
-						: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
+					: resumeBaseline
+						? `fileScopeMustChange pre-landed at resume baseline: ${pattern}`
+						: baseSatisfied
+							? `fileScopeMustChange satisfied on ${baseBranch}: ${pattern}`
+							: `Contract fileScopeMustChange: no matching changes for ${pattern}`,
 		});
 	}
 

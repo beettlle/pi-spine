@@ -250,6 +250,89 @@ export function isBaseScopeSatisfied(worktreePath, pattern, changedFiles, baseBr
 }
 
 /**
+ * When `sinceCommit` scopes verify to a resume baseline, paths matching `fileScopeMustChange`
+ * that are unchanged on the lane since task start are satisfied if they already exist on
+ * `baseBranch` at that baseline (issue #171, SP-526 / FR-STA-11).
+ *
+ * @param {string} worktreePath
+ * @param {string} pattern
+ * @param {string[]} changedFiles
+ * @param {string} sinceCommit
+ * @param {string} baseBranch
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {{ testCommandOk: boolean }} delivery
+ * @param {(worktreePath: string, artifactPath: string) => boolean} artifactExists
+ */
+export function isResumeBaselineFileScopeSatisfied(
+	worktreePath,
+	pattern,
+	changedFiles,
+	sinceCommit,
+	baseBranch,
+	parsedContract,
+	delivery,
+	artifactExists,
+) {
+	const scopedSince = String(sinceCommit ?? "").trim();
+	if (!scopedSince) {
+		return false;
+	}
+
+	if (changedFiles.some((file) => matchesScopePattern(file, pattern))) {
+		return false;
+	}
+
+	const laneChangesSinceStart = listPathsChangedBetweenRefs(
+		worktreePath,
+		scopedSince,
+		"HEAD",
+		pattern,
+	);
+	if (laneChangesSinceStart.some((filePath) => matchesScopePattern(filePath, pattern))) {
+		return false;
+	}
+
+	const changedInSinceCommit = listPathsChangedBetweenRefs(
+		worktreePath,
+		`${scopedSince}^`,
+		scopedSince,
+		pattern,
+	);
+	if (changedInSinceCommit.some((filePath) => matchesScopePattern(filePath, pattern))) {
+		return false;
+	}
+
+	const onBaseAtStart = listPathsOnRef(worktreePath, scopedSince, pattern);
+	if (onBaseAtStart.some((filePath) => matchesScopePattern(filePath, pattern))) {
+		// Pattern already present at task-start baseline on the lane tree.
+	} else {
+		const onBaseNow = listPathsOnRef(worktreePath, baseBranch, pattern);
+		if (!onBaseNow.some((filePath) => matchesScopePattern(filePath, pattern))) {
+			return false;
+		}
+		const mainChangesSinceStart = listPathsChangedBetweenRefs(
+			worktreePath,
+			scopedSince,
+			baseBranch,
+			pattern,
+		);
+		if (mainChangesSinceStart.some((filePath) => matchesScopePattern(filePath, pattern))) {
+			return false;
+		}
+	}
+
+	if (parsedContract.testCommand && !delivery.testCommandOk) {
+		return false;
+	}
+	for (const artifactPath of parsedContract.artifactsMustExist ?? []) {
+		if (!artifactExists(worktreePath, artifactPath)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} pattern
  * @param {string[]} changedFiles
