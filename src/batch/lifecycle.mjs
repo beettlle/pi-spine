@@ -19,6 +19,7 @@ import {
 import { terminateLaneWorkers } from "./worker-host.mjs";
 import { removeLaneWorktrees } from "./worktree.mjs";
 import { terminateSupervisorIfRunning } from "./supervisor-spawn.mjs";
+import { bumpDashboardInvalidateSignal } from "../dashboard/cache-invalidate.mjs";
 
 const DISMISS_ALLOWED = new Set(["limbo_stale", "completed_manual", "aborted"]);
 
@@ -314,6 +315,7 @@ export function dismissBatch(ctx) {
 		config,
 	});
 	clearCompletedBatchState(loaded.path, batchId);
+	bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
 
 	return {
 		ok: true,

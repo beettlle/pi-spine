@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveDashboardPollMs } from "../config/spine-config-schema.mjs";
+import { consumeDashboardInvalidateSignal } from "./cache-invalidate.mjs";
 import { buildDashboardSnapshot } from "./snapshot.mjs";
 import { formatSseDataFrame, writeSseHeaders } from "./sse.mjs";
 
@@ -125,6 +126,12 @@ export function createSharedSnapshotPollHub({
 	};
 
 	const refreshSharedSnapshot = () => {
+		const invalidated = consumeDashboardInvalidateSignal(projectRoot);
+		if (invalidated) {
+			for (const client of sseClients) {
+				client.lastSerialized = "";
+			}
+		}
 		snapshotGeneration += 1;
 		const snapshot = {
 			...buildSnapshot(projectRoot),

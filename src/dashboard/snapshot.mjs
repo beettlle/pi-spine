@@ -26,6 +26,7 @@ import {
 	metricsFilePath,
 	readMetricsLines,
 } from "../batch/metrics.mjs";
+import { consumeDashboardInvalidateSignal } from "./cache-invalidate.mjs";
 import { buildLaneRows } from "./snapshot-lanes.mjs";
 import {
 	buildDefaultViewStatus,
@@ -42,6 +43,7 @@ export const DASHBOARD_JOURNAL_TAIL_LIMIT = 20;
  * @param {string} projectRoot
  */
 export function buildDashboardSnapshot(projectRoot) {
+	consumeDashboardInvalidateSignal(projectRoot);
 	const configResult = loadSpineConfig(projectRoot);
 	const stallConfig = resolveStallConfig(configResult.config ?? {});
 	const reconciliation = reconcileBatch({ projectRoot, verbose: true });
