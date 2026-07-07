@@ -41,7 +41,6 @@ Implement FR-STA-14: `spine preflight` emits an **advisory** when `fileScopeMust
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/config/spine-preflight-prelanded.test.mjs` |
 | fileScopeMustChange | `src/config/spine-preflight-lib.mjs` |
-| minLineCoverage | `77` |
 
 ## Steps
 

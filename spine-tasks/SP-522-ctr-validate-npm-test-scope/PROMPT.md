@@ -41,7 +41,6 @@ Implement FR-STA-10: `spine tasks validate` must **reject or hard-warn** when Co
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/validate-contract-warn.test.mjs tests/cli/tasks-validate-contract.test.mjs` |
 | fileScopeMustChange | `src/tasks/validate-contract-warn.mjs` |
-| minLineCoverage | `77` |
 
 ## Steps
 

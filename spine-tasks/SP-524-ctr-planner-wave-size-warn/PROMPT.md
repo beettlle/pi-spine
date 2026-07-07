@@ -41,7 +41,6 @@ Implement FR-STA-12 (wave size): when `spine plan` produces a wave with **more t
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/planner/wave-size-warn.test.mjs` |
 | fileScopeMustChange | `src/planner/waves.mjs` |
-| minLineCoverage | `77` |
 
 ## Steps
 

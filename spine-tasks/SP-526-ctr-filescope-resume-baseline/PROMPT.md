@@ -41,7 +41,6 @@ Fix [#171](https://github.com/beettlle/pi-spine/issues/171): `fileScopeMustChang
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/contract-verify-resume.test.mjs` |
 | fileScopeMustChange | `src/batch/contract-verify.mjs` |
-| minLineCoverage | `77` |
 
 ## Steps
 

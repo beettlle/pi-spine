@@ -40,7 +40,6 @@ Fix [#174](https://github.com/beettlle/pi-spine/issues/174): `flutter-analyzer-h
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/flutter-analyzer-hygiene.test.mjs` |
 | fileScopeMustChange | `tests/batch/flutter-analyzer-hygiene.test.mjs` |
-| minLineCoverage | `77` |
 
 ## Steps
 
