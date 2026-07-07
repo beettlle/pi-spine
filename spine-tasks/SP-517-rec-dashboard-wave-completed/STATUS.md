@@ -1,7 +1,7 @@
 # SP-517: Dashboard wave completed under drift — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-07
 **Review Level:** 1
 **Size:** S
@@ -13,28 +13,28 @@
 
 - [x] Read #186 and dashboard snapshot wave logic
 
-**Notes:** Root cause in `resolveWaveStatus` — terminal-success alone marks completed; lanes already gate on diagnosis (SP-447).
-
 ### Step 1: Fix
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Wave panel labels respect active diagnosis (drift/orphan overrides optimistic completed)
 
 ### Step 2: Tests
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] UI contract test for drift scenario
 
 ### Step 3: Testing & Verification
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Run contract testCommand
+- [x] Run contract testCommand
+
+**Evidence:** typecheck pass; 8/8 wave-panel-drift-truth tests pass; coverage 88.79% (threshold 77%). Note: `npm run coverage:check` requires `SPINE_IS_WORKER` unset in worker sessions (nested batch guard).
 
 ### Step 4: Documentation & Delivery
-**Status:** ⏳ Pending
+**Status:** ✅ Complete
 
-- [ ] Close #186
-- [ ] Create `.DONE`
+- [x] Close #186
+- [x] Create `.DONE`
 
 ---
 
