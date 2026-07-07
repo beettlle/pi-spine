@@ -31,7 +31,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 1. GitNexus index refreshed (`gitnexus status` up-to-date with HEAD)
 2. Release manifest written and operator-approved
 3. All **release-scoped** tasks `.DONE` and integrated on `main`
-4. `spine preflight` green; local test/coverage gates pass
+4. `spine preflight` green; **`npm run release:check` green (blocking gate)** on current `main`
 5. Operator explicitly approved publish; version bumped and tag pushed (if approved)
 6. Final report with composition table, issues closed/deferred, verification output
 
@@ -41,6 +41,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** implement product code in task folders while a batch owns that scope
 - **Never** claim batch/test/publish success without CLI output
 - **Never** run `npm version` or `git push --tags` without explicit operator approval
+- **Never** run `npm version` or `git push --tags` when `npm run release:check` exits non-zero on current `main` ([#175](https://github.com/beettlle/pi-spine/issues/175))
 - **Always** parse target version / bump type **before** task selection (Phase 2)
 - **Always** prioritize documentation issues over enhancements
 - **Always** run `spine gate approve` before `spine integrate`
@@ -337,21 +338,43 @@ git status
 npm run release:check         # typecheck → lint → tests → coverage (CI parity)
 ```
 
+### `release:check` gate (HARD STOP — blocking)
+
+`npm run release:check` is **not advisory**. It is a **blocking gate** before any publish checklist or Phase 6.
+
+**If `npm run release:check` exits non-zero:**
+
+1. **STOP immediately.** Do not present the pre-publish checklist as passable.
+2. Do not ask for publish approval. Do not run `npm version` or `git push --tags`.
+3. Record the failure output in the release manifest publish checklist (paste log tail or path to `/tmp/pi-spine-release-check.log`).
+4. **Recovery:** fix failures on `main` (commit fixes), re-run `npm run release:check` until green, then **re-attempt Phase 5** from the top.
+
+Only after `npm run release:check` exits **0** may you present the checklist below.
+
 Present checklist from `docs/release/npm-publish.md`:
 
 - [ ] All release-scoped tasks done
 - [ ] Preflight green
-- [ ] `npm run release:check` green (includes lint; ≥77% coverage)
+- [ ] `npm run release:check` green (includes lint; ≥77% coverage) — **verified exit 0**
 - [ ] Clean git tree
 - [ ] Bump type matches profile: patch | minor | major
+- [ ] `release:check` output recorded in manifest publish checklist
 
-**Human gate (required):** **STOP HERE.** Do not bump or push until operator explicitly approves publish and confirms bump type.
+**Human gate (required):** **STOP HERE.** Do not bump or push until operator explicitly approves publish, confirms bump type, **and** Phase 5 `release:check` passed on current `main`.
 
 ---
 
 ## Phase 6 — Publish (after approval only)
 
-Only after operator says "approve publish" / "bump and push":
+**Prerequisites (all required — no bypass):**
+
+- Phase 5 `npm run release:check` exited **0** on current `main` (re-run if `main` moved since Phase 5)
+- Operator explicitly said "approve publish" / "bump and push"
+- Operator confirmed bump type matches Phase 2 profile
+
+**Do not skip the release:check gate.** Operator approval alone does not authorize `npm version` or tag push when `release:check` would fail. If unsure, re-run `npm run release:check` before bumping.
+
+Only after all prerequisites are met:
 
 ```bash
 npm version patch   # or minor / major — must match Phase 2 profile
@@ -388,7 +411,7 @@ Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
 4. **Authoring changes** — new SP-* created, splits/fixes in Phase 3
 5. **Issues filed** — pi-spine GitHub links or "none"
 6. **Recovery actions** — aborts, retries, contract fixes
-7. **Verification** — paste `spine preflight` tail, test/coverage output
+7. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
 8. **Publish** — version bumped (Y/N), tag pushed (Y/N), workflow URL, or "awaiting operator approval"
 
 ---
@@ -411,6 +434,6 @@ check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
 spine status --diagnose (do not collide with running batch) →
 preflight → for each wave: MonitorCreate batch start (or foreground) → onDone diagnose →
 gate approve → integrate → npm install → batch complete →
-MonitorCreate release:check → STOP for publish approval.
+MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: STOP for publish approval.
 resume --attached --force stays foreground. Post final report with composition table.
 ```
