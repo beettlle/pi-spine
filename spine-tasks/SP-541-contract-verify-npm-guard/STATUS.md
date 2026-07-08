@@ -1,18 +1,18 @@
 # STATUS — SP-541 contract-verify npm guard
 
 **Task:** SP-541
-**Status:** Not Started
+**Status:** In Progress — Step 2
 
 ## Steps
 
 ### Step 0: Preflight
 
-- [ ] Read contract-verify spawn path
+- [x] Read contract-verify spawn path
 
 ### Step 1: Runtime guard
 
-- [ ] Share NPM_TEST_DASH_DASH_RE
-- [ ] Refuse before spawn with clear error
+- [x] Share NPM_TEST_DASH_DASH_RE
+- [x] Refuse before spawn with clear error
 
 ### Step 2: Testing & Verification
 
