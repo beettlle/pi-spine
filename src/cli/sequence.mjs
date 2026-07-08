@@ -10,7 +10,7 @@ import { resolveDefaultSpineBin } from "../batch/post-merge-limbo.mjs";
  * @param {string[]} argv
  */
 export function parseSequenceArgs(argv) {
-	/** @type {{ scope: string, fromWave: number, throughWave: number|null, attached: boolean, stopOnFailure: boolean, dryRun: boolean, json: boolean, skipPreflight: boolean, resume: boolean, autoApproveGate: boolean, force: boolean }} */
+	/** @type {{ scope: string, fromWave: number, throughWave: number|null, attached: boolean, stopOnFailure: boolean, dryRun: boolean, json: boolean, skipPreflight: boolean, resume: boolean, autoApproveGate: boolean, force: boolean, profile: string|null }} */
 	const parsed = {
 		scope: "pending",
 		fromWave: 0,
@@ -23,6 +23,7 @@ export function parseSequenceArgs(argv) {
 		resume: false,
 		autoApproveGate: false,
 		force: false,
+		profile: null,
 	};
 
 	/** @type {string[]} */
@@ -51,6 +52,8 @@ export function parseSequenceArgs(argv) {
 			parsed.autoApproveGate = true;
 		} else if (arg === "--force") {
 			parsed.force = true;
+		} else if (arg === "--profile") {
+			parsed.profile = String(argv[++i] ?? "").trim() || null;
 		} else if (!arg.startsWith("--")) {
 			positional.push(arg);
 		}
@@ -110,6 +113,7 @@ export async function runSpineSequence({ projectRoot, args = [], spineBin = null
 		stopOnFailure: parsed.stopOnFailure,
 		dryRun: parsed.dryRun,
 		skipPreflight: parsed.skipPreflight,
+		profile: parsed.profile,
 		spineBin: parsed.attached ? null : resolveDefaultSpineBin(spineBin),
 	});
 
