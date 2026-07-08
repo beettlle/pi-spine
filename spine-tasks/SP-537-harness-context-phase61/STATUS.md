@@ -27,14 +27,14 @@
 - [x] Verify SP-530–538 edges present and correct (no edits required)
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ In Progress
+**Status:** ✅ Complete
 
-- [ ] `spine tasks validate SP-530 SP-531 SP-532 SP-533 SP-534 SP-535 SP-536 SP-538 SP-537`
+- [x] `spine tasks validate SP-530 SP-531 SP-532 SP-533 SP-534 SP-535 SP-536 SP-538 SP-537`
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
