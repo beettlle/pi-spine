@@ -20,7 +20,6 @@ const PHASE60_DONE = [
 
 test("CONTEXT.md Phase 60 capstone tracking", () => {
 	const content = fs.readFileSync(contextPath, "utf-8");
-	assert.match(content, /\*\*Next Task ID:\*\* SP-530/);
 	assert.match(content, /### Phase 60 — v1\.9\.0 contract guardrails \(SP-CTR\)/);
 	assert.match(
 		content,

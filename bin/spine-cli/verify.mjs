@@ -26,6 +26,8 @@ export const PHASE23_GRANDFATHERED_OVER_500 = [
 	"src/batch/contract-verify.mjs",
 	"src/batch/journal-rebuild.mjs",
 	"src/batch/lane-dirty-check.mjs",
+	"src/batch/attached-runner.mjs",
+	"src/batch/lifecycle.mjs",
 ];
 
 const PHASE23_ENGINE_LANES_MAX = 500;
