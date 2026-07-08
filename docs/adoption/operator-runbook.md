@@ -33,22 +33,24 @@ alias spine="node $SPINE"
 
 Throughout this doc, `spine` means whichever invocation you chose (global `npm install -g`, `node …/bin/spine.mjs`, or linked checkout).
 
-### Attached-first policy (Phase 22)
+### Detached-first policy (default)
 
-Until you trust detached batches on a repo, prefer **attached** mode so the CLI blocks until the engine finishes — but **only from an interactive terminal you keep in the foreground** for the full batch duration:
-
-```bash
-spine batch start SP-042 --attached
-spine batch resume --attached
-```
-
-**Release and agent batches (default detached):** For release waves, pi/Cursor agent harnesses, CI scripts, or any subprocess that may return before the batch finishes, use **detached** start/resume and monitor separately ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)):
+Omit `--attached`. Detached is the CLI default for `spine batch start` and `spine batch resume` — the engine survives parent shell exit ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)):
 
 ```bash
 spine batch start pending --wave 2          # detached — engine survives parent shell exit
 spine batch resume --force                  # detached orphan recovery
 spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
 spine status --diagnose
+```
+
+In pi sessions, prefer **MonitorCreate** for detached start with an `onDone` prompt — see `skills/spine-release-operator/references/pi-async-orchestration.md`.
+
+**`--attached` (persistent interactive terminal only):** Use only when **all** of the following hold: a human operator in iTerm/Terminal.app (or similar), the shell stays in the **foreground** for the full batch duration (often 30+ minutes), and you want the CLI to block until the engine finishes. Until you trust detached batches on a new repo, attached mode can help build confidence — but never from agent harnesses:
+
+```bash
+spine batch start SP-042 --attached   # human terminal — blocks until engine finishes
+spine batch resume --attached
 ```
 
 `spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. Cursor Agent shells may background long commands after **~120 seconds** even when started from the IDE terminal — treat them like CI/agent harnesses (detached + monitor). **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running`.
@@ -528,7 +530,7 @@ Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle
 
 **Typical combinations:**
 
-- **Daily attached-first (human interactive terminal only):** `spine batch start … --attached` — engine blocks; use a second terminal for `spine journal follow` or `spine dashboard` if you want live context. Not for Cursor Agent or other short-lived agent shells — use detached + monitor.
+- **Daily `--attached` (human interactive terminal only):** `spine batch start … --attached` — engine blocks; use a second terminal for `spine journal follow` or `spine dashboard` if you want live context. Not for Cursor Agent or other short-lived agent shells — use detached + monitor.
 - **Detached batch:** after start/resume returns, run `spine watch` or `spine status --diagnose` until diagnosis changes; add `spine journal follow` when you need event-level detail (stall, orphan, review).
 - **CI pipeline:** `spine batch start pending --json` then `spine wait --until completed,failed --json --timeout 30m`; parse the final snapshot stdout.
 

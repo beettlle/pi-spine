@@ -124,7 +124,9 @@ spine run sequence pending --dry-run
 
 For each wave `N` until `spine plan pending` shows 0 tasks:
 
-### 3.1 Start
+### 3.1 Start (detached default)
+
+See [references/agent-shell-batch-policy.md](references/agent-shell-batch-policy.md). **Omit `--attached`** unless you are in a persistent interactive human terminal that stays foreground for the full batch.
 
 **pi async (preferred in pi sessions)** — see [pi-async-orchestration.md](../spine-release-operator/references/pi-async-orchestration.md):
 
@@ -138,7 +140,15 @@ MonitorCreate:
 
 After detached start, monitor with `spine wait --until completed,needs_integrate,failed,aborted --timeout 4h` or `spine status --diagnose`.
 
-**Foreground fallback** (interactive terminal only — keep shell in foreground for full batch):
+**Detached shell fallback** (Cursor Agent, non-pi, CI — parent may return before batch finishes):
+
+```bash
+spine batch start pending --wave N
+spine status --diagnose
+spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
+```
+
+**`--attached`** (persistent interactive human terminal only — shell stays foreground for full batch duration):
 
 ```bash
 spine batch start pending --wave N --attached

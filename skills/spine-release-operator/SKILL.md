@@ -51,6 +51,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Do not** execute tasks outside the approved manifest scope
 - **Do not** start a second batch while another batch is **running** on this repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
+- **Release and agent batches:** use **detached** `spine batch start|resume` (omit `--attached`); monitor with MonitorCreate, `spine wait`, or `spine status --diagnose` ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)) — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md)
 - **Always** run `/gitnexus analyze` (Pre-work) before Phase 0 — do not start intake, authoring, or batches on a stale index
 
 ---
@@ -239,6 +240,8 @@ git commit -m "chore(spine): release v{TARGET} task packets"
 ---
 
 ## Phase 4 — Execute release scope
+
+**Detached-first:** See [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md). Omit `--attached` for release waves unless the operator shell is a persistent interactive terminal that blocks until batch completion.
 
 **Scope:** manifest tasks only — build a comma-separated release scope ID list.
 

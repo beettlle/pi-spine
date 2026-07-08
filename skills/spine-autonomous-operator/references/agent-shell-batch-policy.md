@@ -2,7 +2,7 @@
 
 When an **external agent** (Cursor Agent, pi MonitorCreate, CI script, OpenCode) drives spine batches, the parent shell may return or be killed before the batch engine finishes. Use **detached** start/resume and monitor separately.
 
-**Related:** [#163](https://github.com/beettlle/pi-spine/issues/163) (attached orphan / exit 137), [#185](https://github.com/beettlle/pi-spine/issues/185) (detached default for release/agent batches), [operator-runbook §Attached-first](../../../docs/adoption/operator-runbook.md#attached-first-policy-phase-22).
+**Related:** [#163](https://github.com/beettlle/pi-spine/issues/163) (attached orphan / exit 137), [#185](https://github.com/beettlle/pi-spine/issues/185) (detached default for release/agent batches), [operator-runbook §Detached-first](../../../docs/adoption/operator-runbook.md#detached-first-policy-default).
 
 ---
 
