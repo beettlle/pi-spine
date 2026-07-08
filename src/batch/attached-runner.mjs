@@ -34,6 +34,7 @@ import {
 import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { journalHasTaskCompleted } from "./resume-common.mjs";
+import { startParentSessionMonitor } from "./parent-session-monitor.mjs";
 
 export { DEFAULT_ATTACHED_MILESTONE_POLL_MS } from "../config/spine-config-schema.mjs";
 
@@ -464,6 +465,12 @@ export async function runAttachedBatchEngine({
 
 	installAttachedExitFinalizeHandlers({ projectRoot, spineBin });
 	const reporter = await startAttachedMilestoneReporter({ projectRoot, write });
+	const parentMonitor = await startParentSessionMonitor({
+		projectRoot,
+		onParentDied: () => {
+			process.exit(1);
+		},
+	});
 	try {
 		const result = await runEngine();
 		const handoff = finalizeAttachedLandLoopBeforeExit({ projectRoot, spineBin, signal: "exit" });
@@ -472,6 +479,7 @@ export async function runAttachedBatchEngine({
 		}
 		return result;
 	} finally {
+		await parentMonitor.stop();
 		await reporter.stop();
 	}
 }
