@@ -8,6 +8,7 @@ import {
 	validateContract,
 } from "../../src/tasks/packet/validate-contract.mjs";
 import {
+	collectNpmTestDashDashErrors,
 	collectNpmTestDashDashWarnings,
 	collectTestCommandScopeWarnings,
 	TEST_COMMAND_COVERAGE_FIX_HINT,
@@ -225,7 +226,42 @@ test("collectNpmTestDashDashWarnings allows npm test -- on Size L", () => {
 	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "L"));
 	const warnings = collectNpmTestDashDashWarnings(parsed, { taskSize: "L" });
 
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /npm test -- <path>/);
+});
+
+test("collectNpmTestDashDashWarnings is quiet for required Size S (promoted to error)", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
+	const warnings = collectNpmTestDashDashWarnings(parsed, { taskSize: "S", mode: "required" });
+
 	assert.deepEqual(warnings, []);
+});
+
+test("collectNpmTestDashDashErrors errors on npm test -- <path> for Size S", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
+	const errors = collectNpmTestDashDashErrors(parsed, { taskSize: "S" });
+
+	assert.equal(errors.length, 1);
+	assert.match(errors[0], /npm test -- <path>/);
+	assert.match(
+		errors[0],
+		new RegExp(TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	);
+});
+
+test("collectNpmTestDashDashErrors errors on npm test -- <path> for Size M", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "M"));
+	const errors = collectNpmTestDashDashErrors(parsed, { taskSize: "M" });
+
+	assert.equal(errors.length, 1);
+	assert.match(errors[0], /Size M/);
+});
+
+test("collectNpmTestDashDashErrors is quiet for Size L", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "L"));
+	const errors = collectNpmTestDashDashErrors(parsed, { taskSize: "L" });
+
+	assert.deepEqual(errors, []);
 });
 
 test("collectTestCommandScopeWarnings is quiet for scoped node --test on Size S", () => {
@@ -262,13 +298,42 @@ test("validateContract warns on SP-516-shaped coverage chain for Size S", () => 
 	assert.match(result.warnings[0], /coverage:check/);
 });
 
-test("validateContract warns on npm test -- false scope for Size S", () => {
+test("validateContract errors on npm test -- false scope for required Size S", () => {
 	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
 	const result = validateContract(parsed, { mode: "required", taskId: "SP-522", taskSize: "S" });
+
+	assert.equal(result.ok, false);
+	assert.equal(result.errors.length, 1);
+	assert.match(result.errors[0], /npm test -- <path>/);
+	assert.match(result.errors[0], /node --test/);
+	assert.deepEqual(result.warnings.filter((w) => /npm test --/.test(w)), []);
+});
+
+test("validateContract errors on npm test -- false scope for required Size M", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "M"));
+	const result = validateContract(parsed, { mode: "required", taskId: "SP-540", taskSize: "M" });
+
+	assert.equal(result.ok, false);
+	assert.equal(result.errors.length, 1);
+	assert.match(result.errors[0], /Size M/);
+});
+
+test("validateContract warns on npm test -- false scope for optional Size S", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
+	const result = validateContract(parsed, { mode: "optional", taskId: "SP-522", taskSize: "S" });
 
 	assert.equal(result.ok, true);
 	assert.deepEqual(result.errors, []);
 	assert.equal(result.warnings.length, 1);
 	assert.match(result.warnings[0], /npm test -- <path>/);
-	assert.match(result.warnings[0], /node --test/);
+});
+
+test("validateContract warns on npm test -- false scope for required Size L", () => {
+	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "L"));
+	const result = validateContract(parsed, { mode: "required", taskId: "SP-540", taskSize: "L" });
+
+	assert.equal(result.ok, true);
+	assert.deepEqual(result.errors, []);
+	assert.equal(result.warnings.length, 1);
+	assert.match(result.warnings[0], /npm test -- <path>/);
 });

@@ -21,7 +21,7 @@ Fixture packet with a valid ## Contract table for required-mode validation pass.
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm test -- tests/tasks/contract-parse.test.mjs` |
+| testCommand | `node --experimental-strip-types --test tests/tasks/contract-parse.test.mjs` |
 
 ## Steps
 
