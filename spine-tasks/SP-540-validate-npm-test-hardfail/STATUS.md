@@ -1,7 +1,7 @@
 # STATUS — SP-540 validate npm test hardfail
 
 **Task:** SP-540
-**Status:** In Progress
+**Status:** Complete
 
 ## Steps
 
@@ -21,9 +21,9 @@
 
 ### Step 3: Testing & Verification
 
-- [ ] Tests updated for ok: false on required/S/M
-- [ ] Contract and full suite green
+- [x] Tests updated for ok: false on required/S/M
+- [x] Contract and full suite green
 
 ### Step 4: Documentation & Delivery
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
