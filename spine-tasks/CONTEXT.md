@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-07 (Phase 61 v1.10.0 release harness — SP-530–538 staged)
+**Last Updated:** 2026-07-08 (Phase 61 v1.10.0 release harness — SP-530–538 Done)
 **Status:** Active
 **Next Task ID:** SP-539
 
@@ -1538,25 +1538,39 @@ spine batch start SP-522,SP-523,SP-524,SP-525,SP-526,SP-527,SP-528,SP-529 --wave
 
 ### Phase 61 — v1.10.0 release harness (SP-HARNESS)
 
-**Manifest:** [`spine-tasks/_authoring/release-v1.10.0/manifest.md`](_authoring/release-v1.10.0/manifest.md)
+**Handoff:** [`docs/PRD-v1.10.0-release-harness-handoff.md`](../docs/PRD-v1.10.0-release-harness-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v1.10.0/manifest.md`](_authoring/release-v1.10.0/manifest.md)  
+**Example:** [`docs/release/manifest-v1.10.0-example.md`](../docs/release/manifest-v1.10.0-example.md)
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-530 | release:check skill gate | Staged | — | #175 |
-| SP-531 | tag CI gate | Staged | SP-530 | #156 |
-| SP-532 | complete waits engine | Staged | — | #173 |
-| SP-533 | concurrent resume failfast | Staged | SP-434 | #167 |
-| SP-534 | detached policy docs | Staged | SP-530 | #185 |
-| SP-535 | release manifest format | Staged | — | #54 |
-| SP-536 | sequence release profile | Staged | SP-388, SP-535 | #54 |
-| SP-538 | review retry crash_recovered | Staged | — | #188 |
-| SP-537 | CONTEXT Phase 61 capstone | Staged | leaves | — |
+| SP-530 | release:check skill gate | Done | — | #175 |
+| SP-531 | tag CI gate | Done | SP-530 | #156 |
+| SP-532 | complete waits engine | Done | — | #173 |
+| SP-533 | concurrent resume failfast | Done | SP-434 | #167 |
+| SP-534 | detached policy docs | Done | SP-530, SP-531 | #185 |
+| SP-535 | release manifest format | Done | — | #54 |
+| SP-536 | sequence release profile | Done | SP-388, SP-535 | #54 |
+| SP-538 | review retry crash_recovered | Done | — | #188 |
+| SP-537 | CONTEXT Phase 61 capstone | Done | leaves | — |
 
 ```bash
 spine tasks validate SP-530 SP-531 SP-532 SP-533 SP-534 SP-535 SP-536 SP-538 SP-537
 spine plan SP-530,SP-531,SP-532,SP-533,SP-534,SP-535,SP-536,SP-538,SP-537
 spine batch start SP-530,SP-532,SP-533,SP-538 --wave 0
 ```
+
+**Phase 61 exit criteria (handoff §10):**
+
+- [x] `spine-release-operator` skill blocks `npm version` when `npm run release:check` fails (SP-530)
+- [x] Tag push requires release-safe CI profile green ([#156](https://github.com/beettlle/pi-spine/issues/156)) (SP-531)
+- [x] `batch complete` does not archive active engine ([#173](https://github.com/beettlle/pi-spine/issues/173)) (SP-532)
+- [x] Second concurrent `resume --force` fails with clear error ([#167](https://github.com/beettlle/pi-spine/issues/167)) (SP-533)
+- [x] Worktree cleanup on dismiss/complete ([#169](https://github.com/beettlle/pi-spine/issues/169)) (SP-350, SP-351 — prerequisites)
+- [x] `spine run sequence <manifest>` documented and tested for release scope (SP-535, SP-536)
+- [ ] Patch release (5 tasks) dry-run: gate approvals only — operator sign-off pending
+- [ ] Open GitHub issues ≤ ~15 — operator audit pending
+- [x] CONTEXT Phase 61 complete; Next Task ID → SP-539
 
 **Prerequisites (Done on main):** SP-350, SP-351, SP-360, SP-362, SP-388, SP-389, SP-391, SP-392, SP-434
 
