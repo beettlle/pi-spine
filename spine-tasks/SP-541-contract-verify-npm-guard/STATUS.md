@@ -1,7 +1,7 @@
 # STATUS — SP-541 contract-verify npm guard
 
 **Task:** SP-541
-**Status:** In Progress — Step 2
+**Status:** Complete
 
 ## Steps
 
@@ -16,9 +16,9 @@
 
 ### Step 2: Testing & Verification
 
-- [ ] contract-verify-npm-scope.test.mjs passes
-- [ ] Contract and full suite green
+- [x] contract-verify-npm-scope.test.mjs passes
+- [x] Contract and full suite green
 
 ### Step 3: Documentation & Delivery
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
