@@ -4,7 +4,9 @@ Operators use a **release sequence manifest** to plan and execute semver-scoped 
 
 **Sequence runner:** `spine run sequence` accepts the **release scope ID** (comma-separated SP-IDs), not a manifest file path.
 
-**Source PRD:** [`docs/PRD-v1.10.1-stabilization-handoff.md`](../PRD-v1.10.1-stabilization-handoff.md) (Phase 61b — SP-STAB)
+**Source PRD:** [`docs/PRD-v1.10.1-stabilization-handoff.md`](../PRD-v1.10.1-stabilization-handoff.md) (Phase 61b — SP-STAB)  
+**CONTEXT tracking:** [`spine-tasks/CONTEXT.md`](../../spine-tasks/CONTEXT.md) (Phase 61b — SP-STAB)  
+**Authoring manifest:** [`spine-tasks/_authoring/release-v1.10.1/manifest.md`](../../spine-tasks/_authoring/release-v1.10.1/manifest.md)
 
 ---
 
@@ -87,7 +89,7 @@ npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run release:check
 
 ### Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [ ] All release-scoped tasks `.DONE` on `main` (SP-539, SP-540 landed; SP-541, SP-542 pending at capstone)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green
 - [ ] `git status` clean
