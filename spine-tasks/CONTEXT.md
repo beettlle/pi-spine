@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-08 (Phase 61 v1.10.0 release harness — SP-530–538 Done)
+**Last Updated:** 2026-07-08 (Phase 61b v1.10.1 stabilization — SP-539–542 staged)
 **Status:** Active
-**Next Task ID:** SP-539
+**Next Task ID:** SP-543
 
 ---
 
@@ -1573,6 +1573,37 @@ spine batch start SP-530,SP-532,SP-533,SP-538 --wave 0
 - [x] CONTEXT Phase 61 complete; Next Task ID → SP-539
 
 **Prerequisites (Done on main):** SP-350, SP-351, SP-360, SP-362, SP-388, SP-389, SP-391, SP-392, SP-434
+
+### Phase 61b — v1.10.1 stabilization (SP-STAB)
+
+**Handoff:** [`docs/PRD-v1.10.1-stabilization-handoff.md`](../docs/PRD-v1.10.1-stabilization-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v1.10.1/manifest.md`](_authoring/release-v1.10.1/manifest.md)  
+**Example:** [`docs/release/manifest-v1.10.1-example.md`](../docs/release/manifest-v1.10.1-example.md)
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-539 | attached parent-died guard | Staged | — | #163 |
+| SP-540 | validate npm test hardfail | Staged | — | #187 |
+| SP-541 | contract-verify npm guard | Staged | SP-540 | #187 |
+| SP-542 | CONTEXT Phase 61b capstone | Staged | SP-539, SP-540 | — |
+
+```bash
+spine tasks validate SP-539 SP-540 SP-541 SP-542
+spine plan SP-539,SP-540,SP-541,SP-542
+spine run sequence SP-539,SP-540,SP-541,SP-542 --dry-run
+```
+
+**Phase 61b exit criteria (handoff §10):**
+
+- [ ] Attached engine journals `engine.parent_died` and reconciles ([#163](https://github.com/beettlle/pi-spine/issues/163)) (SP-539)
+- [ ] `batch start|resume --attached` fails fast in risky shells (SP-539)
+- [ ] `spine tasks validate` errors on `npm test --` for required/S/M ([#187](https://github.com/beettlle/pi-spine/issues/187)) (SP-540)
+- [ ] contract-verify refuses `npm test --` at runtime (SP-541)
+- [ ] GitHub issues #174, #173, #167, #188 closed at publish
+- [ ] GitHub issues #163, #187 closed after merge
+- [ ] Open P1 bugs = 0 before v2.0.0 proof
+- [ ] CONTEXT Phase 61b complete; Next Task ID → SP-543
+- [ ] `npm version patch` → v1.10.1 published
 
 ---
 
