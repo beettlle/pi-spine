@@ -18,47 +18,92 @@ export const TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT =
 const PATCH_TASK_SIZES = new Set(["S", "M"]);
 
 /** Matches `npm test --` followed by at least one path/token argument. */
-const NPM_TEST_DASH_DASH_RE = /\bnpm\s+test\s+--\s+\S+/;
+export const NPM_TEST_DASH_DASH_RE = /\bnpm\s+test\s+--\s+\S+/;
 
 /**
- * Warn when S/M task contracts use npm test -- <path> false scoping (issues #187, #141).
+ * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
+ * @returns {boolean}
+ */
+function matchesNpmTestDashDashPattern(parsed) {
+	const testCommand = parsed?.testCommand;
+	if (!testCommand || testCommand === "true") {
+		return false;
+	}
+	return NPM_TEST_DASH_DASH_RE.test(testCommand);
+}
+
+/**
+ * @param {"S"|"M"|"L"} taskSize
+ * @returns {string}
+ */
+function formatNpmTestDashDashIssue(taskSize) {
+	return `Contract testCommand uses npm test -- <path> on Size ${taskSize} patch task; npm runs the full suite, not the path. ${TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT}`;
+}
+
+/**
+ * Error when required-mode S/M contracts use npm test -- <path> false scoping (issue #187).
  *
  * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
  * @param {{ taskSize?: "S"|"M"|"L"|"XL"|null }} [options]
  * @returns {string[]}
  */
-export function collectNpmTestDashDashWarnings(parsed, options = {}) {
+export function collectNpmTestDashDashErrors(parsed, options = {}) {
 	const taskSize = options.taskSize ?? null;
 	if (!PATCH_TASK_SIZES.has(taskSize)) {
 		return [];
 	}
 
-	const testCommand = parsed?.testCommand;
-	if (!testCommand || testCommand === "true") {
+	if (!matchesNpmTestDashDashPattern(parsed)) {
 		return [];
 	}
 
-	if (!NPM_TEST_DASH_DASH_RE.test(testCommand)) {
+	return [formatNpmTestDashDashIssue(taskSize)];
+}
+
+/**
+ * Warn when S/M optional-mode or L task contracts use npm test -- <path> false scoping (issues #187, #141).
+ *
+ * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
+ * @param {{ taskSize?: "S"|"M"|"L"|"XL"|null, mode?: "required" | "optional" | "legacy" }} [options]
+ * @returns {string[]}
+ */
+export function collectNpmTestDashDashWarnings(parsed, options = {}) {
+	const taskSize = options.taskSize ?? null;
+	const mode = options.mode ?? "optional";
+
+	if (taskSize === "L") {
+		if (!matchesNpmTestDashDashPattern(parsed)) {
+			return [];
+		}
+		return [formatNpmTestDashDashIssue(taskSize)];
+	}
+
+	if (!PATCH_TASK_SIZES.has(taskSize)) {
 		return [];
 	}
 
-	return [
-		`Contract testCommand uses npm test -- <path> on Size ${taskSize} patch task; npm runs the full suite, not the path. ${TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT}`,
-	];
+	// Required S/M promotes to validation errors in validateContract.
+	if (mode === "required") {
+		return [];
+	}
+
+	if (!matchesNpmTestDashDashPattern(parsed)) {
+		return [];
+	}
+
+	return [formatNpmTestDashDashIssue(taskSize)];
 }
 
 /**
  * Warn when S/M task contracts chain full-suite gates in testCommand.
  *
  * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
- * @param {{ taskSize?: "S"|"M"|"L"|"XL"|null }} [options]
+ * @param {{ taskSize?: "S"|"M"|"L"|"XL"|null, mode?: "required" | "optional" | "legacy" }} [options]
  * @returns {string[]}
  */
 export function collectTestCommandScopeWarnings(parsed, options = {}) {
 	const taskSize = options.taskSize ?? null;
-	if (!PATCH_TASK_SIZES.has(taskSize)) {
-		return [];
-	}
+	const mode = options.mode ?? "optional";
 
 	const testCommand = parsed?.testCommand;
 	if (!testCommand || testCommand === "true") {
@@ -68,19 +113,27 @@ export function collectTestCommandScopeWarnings(parsed, options = {}) {
 	/** @type {string[]} */
 	const warnings = [];
 
-	if (/\bcoverage:check\b/.test(testCommand)) {
-		warnings.push(
-			`Contract testCommand chains full coverage gate (coverage:check) on Size ${taskSize} patch task. ${TEST_COMMAND_COVERAGE_FIX_HINT}`,
-		);
+	if (PATCH_TASK_SIZES.has(taskSize)) {
+		if (/\bcoverage:check\b/.test(testCommand)) {
+			warnings.push(
+				`Contract testCommand chains full coverage gate (coverage:check) on Size ${taskSize} patch task. ${TEST_COMMAND_COVERAGE_FIX_HINT}`,
+			);
+		}
+
+		const npmTestDashDashWarnings = collectNpmTestDashDashWarnings(parsed, { taskSize, mode });
+		if (npmTestDashDashWarnings.length > 0) {
+			warnings.push(...npmTestDashDashWarnings);
+		} else if (/\bnpm test\b/.test(testCommand)) {
+			warnings.push(
+				`Contract testCommand uses npm test on Size ${taskSize} patch task. ${TEST_COMMAND_NPM_TEST_FIX_HINT}`,
+			);
+		}
+
+		return warnings;
 	}
 
-	const npmTestDashDashWarnings = collectNpmTestDashDashWarnings(parsed, options);
-	if (npmTestDashDashWarnings.length > 0) {
-		warnings.push(...npmTestDashDashWarnings);
-	} else if (/\bnpm test\b/.test(testCommand)) {
-		warnings.push(
-			`Contract testCommand uses npm test on Size ${taskSize} patch task. ${TEST_COMMAND_NPM_TEST_FIX_HINT}`,
-		);
+	if (taskSize === "L") {
+		warnings.push(...collectNpmTestDashDashWarnings(parsed, { taskSize, mode }));
 	}
 
 	return warnings;

@@ -6,7 +6,10 @@
 import micromatch from "micromatch";
 
 import { matchesContractPattern } from "../../batch/contract-verify.mjs";
-import { collectTestCommandScopeWarnings } from "../validate-contract-warn.mjs";
+import {
+	collectNpmTestDashDashErrors,
+	collectTestCommandScopeWarnings,
+} from "../validate-contract-warn.mjs";
 import { detectCommaInSingleBacktickPathLists } from "./parse-prompt.mjs";
 
 /** Operator-facing hint when must-not-change blocks worker orchestration artifacts. */
@@ -116,9 +119,18 @@ export function validateContract(parsed, options = {}) {
 		}),
 	);
 
+	if (mode === "required") {
+		errors.push(
+			...collectNpmTestDashDashErrors(parsed, {
+				taskSize: options.taskSize ?? null,
+			}),
+		);
+	}
+
 	warnings.push(
 		...collectTestCommandScopeWarnings(parsed, {
 			taskSize: options.taskSize ?? null,
+			mode,
 		}),
 	);
 

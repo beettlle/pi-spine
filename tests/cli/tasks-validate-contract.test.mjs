@@ -60,53 +60,79 @@ function writeTask(projectRoot, folderName, taskId, promptMarkdown) {
 	fs.writeFileSync(path.join(folder, 'PROMPT.md'), promptMarkdown, 'utf-8');
 }
 
-test('spine tasks validate --warnings-only surfaces npm test -- false scope', async () => {
+test('spine tasks validate fails on npm test -- false scope for required Size S', async () => {
 	const projectRoot = await initGitRepo('spine-validate-npm-test-dash-');
 	try {
 		writeTask(
 			projectRoot,
-			'SP-522-npm-test-dash',
-			'SP-522',
-			promptWithNpmTestDashDash('SP-522', 'npm test -- tests/foo.test.mjs'),
+			'SP-540-npm-test-dash',
+			'SP-540',
+			promptWithNpmTestDashDash('SP-540', 'npm test -- tests/foo.test.mjs'),
 		);
 
 		const result = await runSpineTasksValidate({
 			projectRoot,
-			scope: 'SP-522',
-			warningsOnly: true,
+			scope: 'SP-540',
 		});
 
-		assert.equal(result.exitCode, 0);
-		assert.match(result.output, /warning:.*npm test -- <path>/);
+		assert.equal(result.exitCode, 1);
+		assert.match(result.output, /npm test -- <path>/);
 		assert.match(result.output, /full suite/);
 		assert.match(result.output, /node --test/);
 		assert.ok(
-			result.result.tasks[0].warnings?.some((warning) => /npm test -- <path>/.test(warning)),
+			result.result.tasks[0].errors?.some((error) => /npm test -- <path>/.test(error)),
 		);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
 });
 
-test('spine tasks validate CLI --warnings-only exits 0 with npm test -- warning', async () => {
+test('spine tasks validate CLI exits non-zero on npm test -- error for required Size S', async () => {
 	const projectRoot = await initGitRepo('spine-validate-npm-test-dash-cli-');
 	try {
 		writeTask(
 			projectRoot,
-			'SP-522-cli',
-			'SP-522',
-			promptWithNpmTestDashDash('SP-522', 'npm test -- tests/foo.test.mjs'),
+			'SP-540-cli',
+			'SP-540',
+			promptWithNpmTestDashDash('SP-540', 'npm test -- tests/foo.test.mjs'),
 		);
 
 		const result = spawnSync(
 			process.execPath,
-			[SPINE_BIN, 'tasks', 'validate', 'SP-522', '--warnings-only'],
+			[SPINE_BIN, 'tasks', 'validate', 'SP-540'],
 			{ cwd: projectRoot, encoding: 'utf-8' },
 		);
 
-		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /warning:.*npm test -- <path>/);
-		assert.match(result.stdout, /node --test/);
+		assert.notEqual(result.status, 0, result.stderr);
+		assert.match(result.stdout + result.stderr, /npm test -- <path>/);
+		assert.match(result.stdout + result.stderr, /node --test/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test('spine tasks validate --warnings-only surfaces npm test -- warning for Size L', async () => {
+	const projectRoot = await initGitRepo('spine-validate-npm-test-dash-l-');
+	try {
+		writeTask(
+			projectRoot,
+			'SP-540-npm-test-dash-l',
+			'SP-540',
+			promptWithNpmTestDashDash('SP-540', 'npm test -- tests/foo.test.mjs', 'L'),
+		);
+
+		const result = await runSpineTasksValidate({
+			projectRoot,
+			scope: 'SP-540',
+			warningsOnly: true,
+		});
+
+		assert.equal(result.exitCode, 0);
+		assert.match(result.output, /warning:.*npm test -- <path>/);
+		assert.match(result.output, /node --test/);
+		assert.ok(
+			result.result.tasks[0].warnings?.some((warning) => /npm test -- <path>/.test(warning)),
+		);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
