@@ -35,7 +35,7 @@ const AUTOMATION_ENV_PATTERNS = [
 	{ env: "CURSOR_SESSION_ID", id: "cursor_agent_shell", label: "Cursor agent shell" },
 ];
 
-const DETACHED_RESUME_SUGGESTED =
+export const DETACHED_RESUME_SUGGESTED =
 	"spine batch start|resume (omit --attached); spine wait --until completed,needs_integrate,failed,aborted --timeout 2h";
 
 /**
@@ -78,6 +78,40 @@ export function detectAttachedOrphanRiskPatterns({
 
 	return {
 		risky: patterns.length > 0,
+		patterns,
+	};
+}
+
+/**
+ * Fail-fast guard for `batch start|resume --attached` in risky shell contexts (SP-539 / #163).
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.stdinIsTTY]
+ * @param {NodeJS.ProcessEnv} [options.env]
+ */
+export function enforceAttachedOrphanRiskGuard({
+	stdinIsTTY = process.stdin.isTTY === true,
+	env = process.env,
+} = {}) {
+	if (env.SPINE_ALLOW_ATTACHED_HARNESS === "1") {
+		return { ok: true };
+	}
+
+	const { risky, patterns } = detectAttachedOrphanRiskPatterns({ stdinIsTTY, env });
+	if (!risky) {
+		return { ok: true };
+	}
+
+	const summary = patterns.map((pattern) => pattern.label).join("; ");
+	return {
+		ok: false,
+		exitCode: 1,
+		error: "attached_orphan_risk",
+		output:
+			`Refusing batch --attached in a risky shell context (#163).\n` +
+			`${summary}\n\n` +
+			`Parent shell exit orphans attached engines (exit 137). Use detached start instead:\n` +
+			`  ${DETACHED_RESUME_SUGGESTED}\n`,
 		patterns,
 	};
 }

@@ -92,6 +92,7 @@ test("adoption integration: REPLAN final verdict surfaces needs_replan diagnosis
 					SPINE_WORKER_STUB: "1",
 					SPINE_REVIEW_STUB: "1",
 					SPINE_ENGINE_FINAL_STUB_VERDICT: "REPLAN",
+					SPINE_ALLOW_ATTACHED_HARNESS: "1",
 				},
 			},
 		);

@@ -53,7 +53,7 @@ spine batch start SP-042 --attached   # human terminal — blocks until engine f
 spine batch resume --attached
 ```
 
-`spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. Cursor Agent shells may background long commands after **~120 seconds** even when started from the IDE terminal — treat them like CI/agent harnesses (detached + monitor). **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running`.
+`spine doctor` warns when stdin is not a TTY or when agent/CI environment variables indicate a short-lived parent shell. **`batch start|resume --attached` now fails fast** in those contexts (SP-539, **Closes** [#163](https://github.com/beettlle/pi-spine/issues/163)) with detached-start remediation. Cursor Agent shells may background long commands after **~120 seconds** even when started from the IDE terminal — treat them like CI/agent harnesses (detached + monitor). **Do not** pass `--attached` from Cursor background shells, piped CI steps, or pi worker sessions — the parent exit orphans the engine (shell exit 137) and tasks stick in `running` until `engine.parent_died` reconciliation runs.
 
 Default detached `start`/`resume` return when the engine **starts**, not when work completes. After detached return, always run `spine status --diagnose`.
 
@@ -1072,7 +1072,7 @@ When a **live attached engine** (foreground `spine batch start --attached` / `re
 
 ### Orphan running (zombie batch)
 
-When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume).
+When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume). Attached engines journal **`engine.parent_died`** when the parent shell/session is lost, reconcile orphan `running` → `failed`, clear `enginePid`, and set **`phase: paused`** (SP-539, **Closes** [#163](https://github.com/beettlle/pi-spine/issues/163)).
 
 1. Confirm diagnosis: `spine status --diagnose` (never trust plain `running` when PIDs are dead).
 2. Inspect journal: `spine journal follow` — expect `task.started` / `lane.heartbeat` then silence.

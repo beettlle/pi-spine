@@ -105,6 +105,7 @@ test("adoption fixture: init, plan, stub batch AD-001 creates .DONE", async () =
 
 		runSpine(projectRoot, ["batch", "start", TASK_ID, "--skip-preflight", "--attached"], {
 			SPINE_WORKER_STUB: "1",
+			SPINE_ALLOW_ATTACHED_HARNESS: "1",
 		});
 
 		const donePath = findTaskDoneMarker(projectRoot);

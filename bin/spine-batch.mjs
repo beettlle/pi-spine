@@ -20,6 +20,7 @@ import {
 	formatAttachedBatchCliResult,
 	runAttachedBatchEngine,
 } from "../src/batch/attached-runner.mjs";
+import { enforceAttachedOrphanRiskGuard } from "../src/doctor/attached-orphan-risk.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -355,6 +356,17 @@ export async function runSpineBatch(options) {
 	}
 
 	if (parsed.subcommand === "resume") {
+		if (parsed.attached) {
+			const orphanGuard = enforceAttachedOrphanRiskGuard();
+			if (!orphanGuard.ok) {
+				return {
+					exitCode: orphanGuard.exitCode ?? 1,
+					output: orphanGuard.output ?? "",
+					result: orphanGuard,
+				};
+			}
+		}
+
 		if (!parsed.attached) {
 			const waitTerminal = resolveDefaultResumeWaitTerminal(
 				projectRoot,
@@ -398,6 +410,17 @@ export async function runSpineBatch(options) {
 		}
 
 		const useAttached = parsed.attached || parsed.dryRun;
+		if (parsed.attached && !parsed.dryRun) {
+			const orphanGuard = enforceAttachedOrphanRiskGuard();
+			if (!orphanGuard.ok) {
+				return {
+					exitCode: orphanGuard.exitCode ?? 1,
+					output: orphanGuard.output ?? "",
+					result: orphanGuard,
+				};
+			}
+		}
+
 		if (!useAttached) {
 			const detached = await startBatchDetached({
 				projectRoot,

@@ -63,7 +63,9 @@ test("formatAttachedMilestoneLine renders land-loop journal types", () => {
 test("runSpineBatch attached start returns integrate handoff without process.exit in tests", async () => {
 	const projectRoot = await initGitRepo("spine-attached-batch-exit-defer-");
 	const prevStub = process.env.SPINE_WORKER_STUB;
+	const prevHarness = process.env.SPINE_ALLOW_ATTACHED_HARNESS;
 	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_ALLOW_ATTACHED_HARNESS = "1";
 
 	try {
 		writeSmokeTask(projectRoot);
@@ -99,6 +101,8 @@ test("runSpineBatch attached start returns integrate handoff without process.exi
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;
+		if (prevHarness === undefined) delete process.env.SPINE_ALLOW_ATTACHED_HARNESS;
+		else process.env.SPINE_ALLOW_ATTACHED_HARNESS = prevHarness;
 		await rm(projectRoot, { recursive: true, force: true });
 	}
 });
@@ -118,7 +122,7 @@ test("attached batch CLI subprocess exits after completed with stdout milestones
 			[SPINE_BIN, "batch", "start", TASK_ID, "--attached", "--skip-preflight"],
 			{
 				cwd: projectRoot,
-				env: process.env,
+				env: { ...process.env, SPINE_ALLOW_ATTACHED_HARNESS: "1" },
 				stdio: ["ignore", "pipe", "pipe"],
 			},
 		);
