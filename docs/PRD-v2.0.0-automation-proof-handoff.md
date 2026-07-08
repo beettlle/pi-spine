@@ -8,7 +8,7 @@
 
 **Epic alias:** Phase 62 — SP-AUTO (SP-538+)
 
-**Prerequisite:** v1.8.1, v1.9.0, and v1.10.0 exit criteria met.
+**Prerequisite:** v1.8.1, v1.9.0, v1.10.0, and v1.10.1 exit criteria met ([`PRD-v1.10.1-stabilization-handoff.md`](PRD-v1.10.1-stabilization-handoff.md)).
 
 **Release profile:** minor (proof) — curated manifest 5–8 tasks; **not** backlog drain.
 

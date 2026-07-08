@@ -2,7 +2,7 @@
 
 **Document type:** Release planning index  
 **Product:** pi-spine  
-**Last updated:** 2026-07-07  
+**Last updated:** 2026-07-08  
 **Status:** Active  
 
 **Prerequisite:** v1.8.0 release cycle complete on `main`.
@@ -24,6 +24,7 @@ This roadmap sequences four releases to fix root causes before attempting unatte
 | **v1.8.1** | patch | Reconciliation truth | [`PRD-v1.8.1-reconciliation-handoff.md`](../PRD-v1.8.1-reconciliation-handoff.md) |
 | **v1.9.0** | minor | Contract & authoring guardrails | [`PRD-v1.9.0-contract-guardrails-handoff.md`](../PRD-v1.9.0-contract-guardrails-handoff.md) |
 | **v1.10.0** | minor | Release harness | [`PRD-v1.10.0-release-harness-handoff.md`](../PRD-v1.10.0-release-harness-handoff.md) |
+| **v1.10.1** | patch | P1 stabilization + GitHub hygiene | [`PRD-v1.10.1-stabilization-handoff.md`](../PRD-v1.10.1-stabilization-handoff.md) |
 | **v2.0.0** | minor (proof) | Gates-only automation proof | [`PRD-v2.0.0-automation-proof-handoff.md`](../PRD-v2.0.0-automation-proof-handoff.md) |
 
 **Tagline:** *Fix truth, fix contracts, fix the harness, then prove gates-only.*
@@ -37,10 +38,11 @@ v1.8.0 (done)
     └── v1.8.1 — reconciliation FSM (blocks trustworthy automation)
             └── v1.9.0 — contract guardrails (blocks unattended contract verify)
                     └── v1.10.0 — release harness (sequence + release:check)
-                            └── v2.0.0 — automation proof (dogfood full release)
+                            └── v1.10.1 — P1 stabilization (#163, #187) + issue cleanup
+                                    └── v2.0.0 — automation proof (dogfood full release)
 ```
 
-**Hard rule:** Do not run v1.10.0 sequence-based release automation until v1.8.1 and v1.9.0 exit criteria pass. Unattended batches will stall on the same failure classes that blocked v1.7.0 and v1.8.0.
+**Hard rule:** Do not run v2.0.0 automation proof until v1.10.1 exit criteria pass (open P1 = 0). Do not run v1.10.0 sequence-based release automation until v1.8.1 and v1.9.0 exit criteria pass. Unattended batches will stall on the same failure classes that blocked v1.7.0 and v1.8.0.
 
 ---
 
