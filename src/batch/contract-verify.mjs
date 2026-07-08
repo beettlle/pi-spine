@@ -21,6 +21,10 @@ import {
 	sanitizeFlutterBuildBeforeAnalyze,
 	shouldCleanFlutterBuildBeforeAnalyze,
 } from "./lane-dirty-check.mjs";
+import {
+	NPM_TEST_DASH_DASH_RE,
+	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
+} from "../tasks/validate-contract-warn.mjs";
 
 export { resolvePromptRelPath, isFileScopePatternPrelanded, hasSpineTaskDeliveryChanges } from "./contract-prelanded.mjs";
 
@@ -347,6 +351,28 @@ export function writeContractFailureLog(taskFolder, command, result, attempt, to
 }
 
 /**
+ * Defense in depth: block `npm test -- <path>` before subprocess spawn (issue #187, SP-541).
+ *
+ * @param {string} command
+ * @returns {boolean}
+ */
+export function isRefusedNpmTestDashDashCommand(command) {
+	const trimmed = String(command ?? "").trim();
+	if (!trimmed || trimmed === "true") {
+		return false;
+	}
+	return NPM_TEST_DASH_DASH_RE.test(trimmed);
+}
+
+/**
+ * @param {string} command
+ * @returns {string}
+ */
+function formatRefusedNpmTestDashDashMessage(command) {
+	return `Contract testCommand refused before spawn: npm test -- <path> is blocked at runtime (command: ${command}). ${TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT}`;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} command
  * @param {{ maxBuffer?: number }} [options]
@@ -355,6 +381,17 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	const trimmed = String(command ?? "").trim();
 	if (!trimmed || trimmed === "true") {
 		return { ok: true, exitCode: 0, output: "" };
+	}
+
+	if (isRefusedNpmTestDashDashCommand(trimmed)) {
+		const summary = formatRefusedNpmTestDashDashMessage(trimmed);
+		return {
+			ok: false,
+			exitCode: 1,
+			output: summary,
+			summary,
+			refusedBeforeSpawn: true,
+		};
 	}
 
 	const maxBuffer = options.maxBuffer ?? CONTRACT_TEST_COMMAND_MAX_BUFFER;
