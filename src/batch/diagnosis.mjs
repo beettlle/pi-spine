@@ -19,7 +19,6 @@ import {
 export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";
 export { buildRunningTailHeadline, isRunningWithoutActiveWorkers } from "./diagnosis-tail-state.mjs";
-import { findLatestReviewHonorSignal } from "./review.mjs";
 export { findLatestReviewHonorSignal } from "./review.mjs";
 import {
 	buildStubFailureHeadline,
