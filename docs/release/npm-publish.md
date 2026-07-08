@@ -44,6 +44,13 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 ## Pre-publish checklist
 
 - [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
+- [ ] **CI workflow green on release commit** — before `npm version` / tag push:
+  ```bash
+  COMMIT=$(git rev-parse HEAD)
+  gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,status --limit 5
+  # If in progress: gh run watch --exit-status <run-id>
+  ```
+  Fail closed if no successful CI run (release-safe profile: typecheck → lint → tests → coverage → CLI smoke — same as `ci.yml`). Do not tag commits that failed CI on `main`.
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
