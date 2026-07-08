@@ -35,6 +35,7 @@ hb-step-*/
 .spine/batch-history.json
 .spine/run-metrics.jsonl
 .spine/handoff.md
+.pi-smart-router/
 
 # Pi project-local packages (if using pi install -l)
 .pi/npm/
