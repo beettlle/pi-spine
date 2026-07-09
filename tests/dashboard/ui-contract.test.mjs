@@ -391,6 +391,86 @@ test("dashboard.js uses heartbeatDisplay without double-formatting", () => {
 	assert.match(dashboardJs, /displayHeartbeat\(lane\)/);
 });
 
+test("dashboard.js uses terminal outcome for completed lane styling, not cumulative failedCount", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	const renderLanesMatch = dashboardJs.match(
+		/function renderLanes[\s\S]*?(?=\n\/\*\* @param \{ReturnType<typeof buildDashboardViewModel>\["journal"\]\})/,
+	);
+	assert.ok(renderLanesMatch, "renderLanes function found");
+	const renderLanesSource = renderLanesMatch[0];
+	assert.match(renderLanesSource, /lane\.status === "completed"/);
+	assert.match(renderLanesSource, /lane\.activityPhase === "failed"/);
+	assert.doesNotMatch(renderLanesSource, /failedCount > 0 \|\| lane\.activityPhase === "failed"/);
+});
+
+test("retry-then-succeed completed lane keeps failedCount metric but terminal activity is not failed", () => {
+	const journalEvents = [
+		{
+			type: "task.started",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:00:00.000Z",
+		},
+		{
+			type: "task.failed",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:05:00.000Z",
+		},
+		{
+			type: "task.started",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:10:00.000Z",
+		},
+		{
+			type: "task.failed",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:15:00.000Z",
+		},
+		{
+			type: "task.started",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:20:00.000Z",
+		},
+		{
+			type: "task.completed",
+			laneId: "lane-1",
+			taskId: "SP-547",
+			payload: { laneNumber: 1 },
+			timestamp: "2026-07-08T10:30:00.000Z",
+		},
+	];
+	const lanes = [{ laneNumber: 1, laneId: "lane-1", taskIds: ["SP-547"], lastHeartbeatAt: Date.now() }];
+	const classifiedTasks = [
+		{
+			taskId: "SP-547",
+			laneNumber: 1,
+			status: "succeeded",
+			classification: "terminal-success",
+		},
+	];
+	const stallConfig = resolveStallConfig({});
+	const rows = buildLaneRows({
+		lanes,
+		classifiedTasks,
+		stallConfig,
+		currentWaveTaskIds: [],
+		journalEvents,
+	});
+	assert.equal(rows.length, 1);
+	assert.equal(rows[0].status, "completed");
+	assert.equal(rows[0].activityPhase, "idle");
+	assert.ok((rows[0].throughput?.failedCount ?? 0) >= 2);
+});
+
 test("buildBannerModel uses finalizing badge and macro phase during tail state", () => {
 	const snapshot = {
 		diagnosis: "running",
