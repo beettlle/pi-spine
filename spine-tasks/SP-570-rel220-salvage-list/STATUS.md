@@ -1,7 +1,7 @@
 # SP-570: salvage list — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** S
@@ -24,11 +24,11 @@
 - [x] spine batch salvage --dry-run
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand
+- [x] Contract testCommand
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
