@@ -25,4 +25,4 @@
 ### Step 4: Documentation & Delivery
 
 - [x] Script referenced in `docs/release/automation-signoff-checklist.md`
-- [x] `.DONE` pending commit
+- [x] `.DONE` created
