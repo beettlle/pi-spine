@@ -111,7 +111,36 @@ export function validatePrompt(markdown) {
 		errors.push('Size XL is not allowed — split into multiple S/M tasks (see create-spine-tasks skill)');
 	}
 
+	errors.push(...collectDuplicateStepNumberErrors(prompt.steps));
+
 	return { ok: errors.length === 0, errors, prompt };
+}
+
+/**
+ * @param {Array<{ number: number, title: string }>} steps
+ * @returns {string[]}
+ */
+function collectDuplicateStepNumberErrors(steps) {
+	/** @type {Map<number, string[]>} */
+	const titlesByNumber = new Map();
+
+	for (const step of steps) {
+		const titles = titlesByNumber.get(step.number) ?? [];
+		titles.push(step.title);
+		titlesByNumber.set(step.number, titles);
+	}
+
+	/** @type {string[]} */
+	const errors = [];
+	for (const [number, titles] of [...titlesByNumber.entries()].sort((a, b) => a[0] - b[0])) {
+		if (titles.length <= 1) {
+			continue;
+		}
+		const quotedTitles = titles.map((title) => `"${title}"`).join(", ");
+		errors.push(`Duplicate step number ${number} in ## Steps: ${quotedTitles}`);
+	}
+
+	return errors;
 }
 
 /**

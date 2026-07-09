@@ -188,6 +188,7 @@ Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-on
 |------|----------|
 | **Size** | Target **M** (2–4 h). **L** → split when possible. **XL** → **must** split into multiple S/M tasks with dependencies. |
 | **Steps** | Max **4** implementation steps per task (exclude Testing & Verification / Documentation & Delivery). More steps → split. |
+| **Step numbering** | Number steps sequentially starting at 0 with **no duplicates** (`### Step N:`). `spine tasks validate` rejects duplicate step numbers (see issue #148 / SP-435). |
 | **Two-deliverable test** | If your Steps can be grouped into two clusters with no data dependency between them, split into separate tasks even if the step count is ≤4. The #1 sizing mistake is bundling two independent deliverables in one M task. |
 | **Parallel waves** | Prefer **≤4** M-sized tasks per wave; 8-task mega-waves stall pi workers (see Phase 15 / SP-086–088). |
 | **Scope** | One deliverable per task; disjoint **File Scope** when tasks can run in parallel. |
