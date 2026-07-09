@@ -7,6 +7,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
+import {
+	listStaleSpineWorktreeBatchIds,
+	resolveInProgressSpineBatchId,
+} from "../doctor/stale-worktrees.mjs";
 
 const WORKTREE_SETUP_HOOK_TIMEOUT_MS = 120_000;
 
@@ -148,10 +152,53 @@ export function repairLaneWorktreeGitMetadata({ projectRoot, worktreePath }) {
 /**
  * @param {string} projectRoot
  * @param {string} batchId
+ */
+export function batchWorktreeDir(projectRoot, batchId) {
+	return path.join(projectRoot, ".worktrees", `spine-${batchId}`);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} batchId
  * @param {number} laneNumber
  */
 export function laneWorktreePath(projectRoot, batchId, laneNumber = 1) {
-	return path.join(projectRoot, ".worktrees", `spine-${batchId}`, `lane-${laneNumber}`);
+	return path.join(batchWorktreeDir(projectRoot, batchId), `lane-${laneNumber}`);
+}
+
+/**
+ * @param {unknown} batchState
+ */
+export function maxLaneNumberFromBatchState(batchState) {
+	const lanes = /** @type {{ lanes?: unknown }} */ (batchState)?.lanes;
+	if (!Array.isArray(lanes) || lanes.length === 0) return 1;
+	let max = 1;
+	for (const lane of lanes) {
+		if (!lane || typeof lane !== "object") continue;
+		const laneNumber = Number(/** @type {{ laneNumber?: number }} */ (lane).laneNumber);
+		if (Number.isFinite(laneNumber) && laneNumber > max) {
+			max = laneNumber;
+		}
+	}
+	return max;
+}
+
+/**
+ * Remove `.worktrees/spine-<batchId>/` when it has no remaining entries.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {boolean} true when the batch shell dir was removed
+ */
+export function removeEmptyBatchWorktreeDir(projectRoot, batchId) {
+	const batchDir = batchWorktreeDir(projectRoot, batchId);
+	if (!fs.existsSync(batchDir)) return false;
+
+	const entries = fs.readdirSync(batchDir);
+	if (entries.length > 0) return false;
+
+	fs.rmdirSync(batchDir);
+	return true;
 }
 
 /**
@@ -228,6 +275,7 @@ export function removeLaneWorktrees(projectRoot, batchId, maxLaneNumber) {
 	for (let laneNumber = 1; laneNumber <= maxLaneNumber; laneNumber++) {
 		removeLaneWorktree(projectRoot, batchId, laneNumber);
 	}
+	removeEmptyBatchWorktreeDir(projectRoot, batchId);
 }
 
 /**
@@ -297,4 +345,85 @@ export function runWorktreeSetupHook({
 	}
 
 	return { ok: true, durationMs };
+}
+
+/**
+ * Scan stale spine batch worktree dirs and empty shells eligible for cleanup.
+ *
+ * @param {string} projectRoot
+ * @param {string|null} [activeBatchId]
+ * @returns {{ batchIds: string[], emptyShells: string[], danglingWorktrees: string[] }}
+ */
+export function scanStaleWorktrees(projectRoot, activeBatchId = null) {
+	const inProgressBatchId =
+		activeBatchId === undefined ? resolveInProgressSpineBatchId(projectRoot) : activeBatchId;
+	const batchIds = listStaleSpineWorktreeBatchIds(projectRoot, inProgressBatchId);
+
+	/** @type {string[]} */
+	const emptyShells = [];
+	for (const batchId of batchIds) {
+		const batchDir = batchWorktreeDir(projectRoot, batchId);
+		if (!fs.existsSync(batchDir)) continue;
+		const entries = fs.readdirSync(batchDir);
+		if (entries.length === 0) {
+			emptyShells.push(batchId);
+		}
+	}
+
+	/** @type {string[]} */
+	let danglingWorktrees = [];
+	try {
+		const pruneOutput = git(projectRoot, ["worktree", "prune", "--dry-run", "--verbose"]);
+		danglingWorktrees = pruneOutput
+			.split(/\r?\n/)
+			.map((line) => line.trim())
+			.filter((line) => line.length > 0);
+	} catch {
+		danglingWorktrees = [];
+	}
+
+	return { batchIds, emptyShells, danglingWorktrees };
+}
+
+/**
+ * Prune empty batch shells and git worktree admin metadata.
+ *
+ * @param {string} projectRoot
+ * @param {object} [options]
+ * @param {boolean} [options.dryRun]
+ * @param {string|null} [options.activeBatchId]
+ * @returns {{ removedShells: string[], prunedWorktrees: string[] }}
+ */
+export function pruneStaleWorktrees(projectRoot, { dryRun = false, activeBatchId = null } = {}) {
+	const scan = scanStaleWorktrees(projectRoot, activeBatchId);
+	/** @type {string[]} */
+	const removedShells = [];
+
+	for (const batchId of scan.emptyShells) {
+		if (dryRun) {
+			removedShells.push(batchId);
+			continue;
+		}
+		if (removeEmptyBatchWorktreeDir(projectRoot, batchId)) {
+			removedShells.push(batchId);
+		}
+	}
+
+	/** @type {string[]} */
+	let prunedWorktrees = [];
+	if (dryRun) {
+		prunedWorktrees = scan.danglingWorktrees;
+	} else {
+		try {
+			const pruneOutput = git(projectRoot, ["worktree", "prune", "--verbose"]);
+			prunedWorktrees = pruneOutput
+				.split(/\r?\n/)
+				.map((line) => line.trim())
+				.filter((line) => line.length > 0);
+		} catch {
+			prunedWorktrees = [];
+		}
+	}
+
+	return { removedShells, prunedWorktrees };
 }

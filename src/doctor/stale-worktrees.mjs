@@ -97,6 +97,6 @@ export function buildStaleWorktreesDoctorCheck({
 		warning: true,
 		detail: `${staleBatchIds.length} leftover batch dir(s): ${preview}${suffix}`,
 		suggestedCommand:
-			"After spine batch complete/dismiss, lane worktrees auto-clean (lanes.cleanupWorktreesOnComplete). Remove legacy dirs: git worktree remove --force .worktrees/spine-<batchId>/lane-N; rm -rf .worktrees/spine-<batchId>",
+			"spine cleanup worktrees --dry-run (then --yes) or remove legacy dirs: git worktree remove --force .worktrees/spine-<batchId>/lane-N; rm -rf .worktrees/spine-<batchId>",
 	};
 }

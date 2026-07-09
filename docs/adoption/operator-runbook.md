@@ -686,6 +686,8 @@ That **Tier 3** capability is deferred per [GitHub #52](https://github.com/beett
 
 ## 4. Land loop
 
+> **Agent/automation callers:** The attached-first guidance in [§Detached-first policy](#detached-first-policy-default) applies to **persistent interactive human terminals only** — not Cursor Agent shells, pi worker sessions, or CI. For multi-wave agent orchestration, see **[agent-orchestrated-waves.md](./agent-orchestrated-waves.md)** (detached default + orphan recovery recipe).
+
 After a successful wave (all tasks succeeded or skipped, lane merges into `orch/spine-<batchId>`), merge orch → `main` and archive the batch record.
 
 ```mermaid
@@ -1723,9 +1725,18 @@ Stub and agent-session workers write structured `.DONE` JSON (`{ "taskId", "comp
 | `.spine/runtime/<batchId>/evidence/` | Gate evidence bundle |
 | `<tasksRoot>/<id>/.DONE` | Task completion marker — structured JSON from spine workers; legacy empty/text still accepted (`spine-tasks/` or `taskplane-tasks/` — see [bootstrap checklist](./bootstrap-checklist.md#tasks-root-decision)) |
 
-**Cleanup after complete/dismiss:** When `lanes.cleanupWorktreesOnComplete` is true (default), `spine batch complete` and `spine batch dismiss` call `removeLaneWorktrees` and journal `batch.worktrees_cleaned`. Legacy batches completed before this behavior may leave `.worktrees/spine-<batchId>/` on disk.
+**Cleanup after complete/dismiss/abort:** When `lanes.cleanupWorktreesOnComplete` is true (default), `spine batch complete` and `spine batch dismiss` call `removeLaneWorktrees`, journal `batch.worktrees_cleaned`, and remove empty `.worktrees/spine-<batchId>/` shells. Hard abort (`spine batch abort --hard`) removes lane worktrees when `lanes.cleanupWorktreesOnHardAbort` is true (default) with the same journal event. Legacy batches completed before this behavior may leave `.worktrees/spine-<batchId>/` on disk.
 
-**Stale worktree warning:** `spine doctor` (and preflight via doctor) reports **stale worktrees** when `.worktrees/spine-*` directories exist for batch IDs other than the in-progress batch in `.spine/batch-state.json`. To clean up manually after confirming no active batch (`spine status --diagnose`):
+**Operator cleanup CLI:**
+
+```bash
+spine cleanup worktrees --dry-run   # list stale batch dirs and dangling git worktree refs
+spine cleanup worktrees --yes       # remove empty batch shells + git worktree prune
+```
+
+**Stale worktree warning:** `spine doctor` (and preflight via doctor) reports **stale worktrees** when `.worktrees/spine-*` directories exist for batch IDs other than the in-progress batch in `.spine/batch-state.json`.
+
+To clean up manually after confirming no active batch (`spine status --diagnose`):
 
 ```bash
 # One completed batch (repeat per stale batchId)
