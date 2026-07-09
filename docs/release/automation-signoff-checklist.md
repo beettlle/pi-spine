@@ -3,6 +3,7 @@
 Operator attestation checklist for **gates-only** proof per [PRD §8](../PRD-v2.0.0-automation-proof-handoff.md#8-gates-only-exit-criteria-definition-of-done) (FR-STA-33). Check every box before `npm version minor` → v2.0.0 tag.
 
 **Proof manifest:** [`manifest-v2.0.0-proof.md`](manifest-v2.0.0-proof.md) (SP-543)  
+**Prerequisite gate:** [`../../scripts/release-proof-gate.sh`](../../scripts/release-proof-gate.sh) (SP-545) — run before proof sequence; exits non-zero on blocking failures.  
 **Recovery (should not be needed):** [Operator runbook §4](../adoption/operator-runbook.md) — manual `pause`, `retry`, or `resume --force` during waves **voids** gates-only proof.
 
 ---
@@ -34,6 +35,9 @@ Human actions during proof waves must be limited to **`spine gate approve`** (pe
 Record batch ID from `spine status --diagnose` or sequence start output.
 
 ```bash
+# Before starting proof — regression gate (doctor, preflight, gitnexus, manifest)
+./scripts/release-proof-gate.sh
+
 # Before starting proof — record baseline issue count (M-AUTO-02)
 gh issue list --state open --json number | jq 'length'
 
