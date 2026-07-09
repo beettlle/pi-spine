@@ -1,7 +1,7 @@
 # SP-557: duplicate step validator — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 1
 **Size:** S
@@ -27,13 +27,15 @@
 - [x] Add Step B note: steps must be sequentially numbered, no duplicates
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand`
-- [ ] `spine tasks validate` on a synthetic bad packet in test
+- [x] Run contract `testCommand`
+- [x] `spine tasks validate` on a synthetic bad packet in test
+
+**Verification:** `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/parse-prompt-duplicate-step.test.mjs` — 5/5 pass.
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Comment on #148
-- [ ] Create `.DONE`
+- [x] Comment on #148
+- [x] Create `.DONE`
