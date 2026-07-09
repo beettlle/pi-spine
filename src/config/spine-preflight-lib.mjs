@@ -190,7 +190,18 @@ export function checkDoctor(ctx) {
  * @param {object} [_ctx]
  * @param {{ stalePathCheckArgs?: object }} [options]
  */
-export function checkStalePathSpine(_ctx = {}, options = {}) {
+export function checkStalePathSpine(ctx = {}, options = {}) {
+	if (
+		ctx.projectRoot &&
+		path.resolve(ctx.projectRoot) !== path.resolve(PACKAGE_ROOT)
+	) {
+		return makeCheck(
+			"stale-path-spine",
+			true,
+			"stale PATH spine check skipped (isolated project fixture)",
+		);
+	}
+
 	const check = buildStalePathDoctorCheck({
 		packageRoot: PACKAGE_ROOT,
 		runningSpinePath: path.join(PACKAGE_ROOT, "bin", "spine.mjs"),

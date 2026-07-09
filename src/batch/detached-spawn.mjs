@@ -69,7 +69,11 @@ export function spawnDetachedBatchEngine({ projectRoot, spineBin, argv }) {
 		cwd: projectRoot,
 		detached: true,
 		stdio: ["ignore", logFd, logFd],
-		env: process.env,
+		env: {
+			...process.env,
+			// Detached parent intentionally spawns an attached engine subprocess (#163 / SP-539).
+			SPINE_ALLOW_ATTACHED_HARNESS: "1",
+		},
 	});
 	child.unref();
 	fs.closeSync(logFd);

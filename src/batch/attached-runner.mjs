@@ -465,12 +465,16 @@ export async function runAttachedBatchEngine({
 
 	installAttachedExitFinalizeHandlers({ projectRoot, spineBin });
 	const reporter = await startAttachedMilestoneReporter({ projectRoot, write });
-	const parentMonitor = await startParentSessionMonitor({
-		projectRoot,
-		onParentDied: () => {
-			process.exit(1);
-		},
-	});
+	/** @type {{ stop: () => Promise<void> }} */
+	let parentMonitor = { stop: async () => {} };
+	if (process.env.SPINE_ALLOW_ATTACHED_HARNESS !== "1") {
+		parentMonitor = await startParentSessionMonitor({
+			projectRoot,
+			onParentDied: () => {
+				process.exit(1);
+			},
+		});
+	}
 	try {
 		const result = await runEngine();
 		const handoff = finalizeAttachedLandLoopBeforeExit({ projectRoot, spineBin, signal: "exit" });

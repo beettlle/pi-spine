@@ -1584,7 +1584,7 @@ spine batch start SP-530,SP-532,SP-533,SP-538 --wave 0
 |------|---------|--------|------|-------|
 | SP-539 | attached parent-died guard | Done | — | #163 |
 | SP-540 | validate npm test hardfail | Done | — | #187 |
-| SP-541 | contract-verify npm guard | Staged | SP-540 | #187 |
+| SP-541 | contract-verify npm guard | Done | SP-540 | #187 |
 | SP-542 | CONTEXT Phase 61b capstone | Done | SP-539, SP-540 | — |
 
 ```bash
@@ -1598,14 +1598,14 @@ spine run sequence SP-539,SP-540,SP-541,SP-542 --dry-run
 - [x] Attached engine journals `engine.parent_died` and reconciles ([#163](https://github.com/beettlle/pi-spine/issues/163)) (SP-539)
 - [x] `batch start|resume --attached` fails fast in risky shells (SP-539)
 - [x] `spine tasks validate` errors on `npm test --` for required/S/M ([#187](https://github.com/beettlle/pi-spine/issues/187)) (SP-540)
-- [ ] contract-verify refuses `npm test --` at runtime (SP-541)
+- [x] contract-verify refuses `npm test --` at runtime (SP-541)
 - [ ] GitHub issues #174, #173, #167, #188 closed at publish
 - [ ] GitHub issues #163, #187 closed after merge
 - [ ] Open P1 bugs = 0 before v2.0.0 proof
 - [x] CONTEXT Phase 61b complete; Next Task ID → SP-543
 - [ ] `npm version patch` → v1.10.1 published
 
-**Patch release progress:** SP-539–540 landed on `main`; SP-541 pending integrate before publish.
+**Patch release progress:** SP-539–542 landed on `main`; publish pending operator approval.
 
 **Handoff to v2.0.0:** After v1.10.1 exit criteria met, proceed to [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md) (Phase 62 — SP-AUTO).
 
