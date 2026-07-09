@@ -1,7 +1,7 @@
 # SP-560: agent detached UX — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** S
