@@ -4,16 +4,17 @@
 # Usage:
 #   ./scripts/release-proof-gate.sh
 #   RELEASE_GATE_VERSION=2.0.0 ./scripts/release-proof-gate.sh   # v2.0.0 proof manifest only
+#   RELEASE_GATE_VERSION=2.1.0 ./scripts/release-proof-gate.sh   # v2.1.0 manifest + handoff
 #   RELEASE_GATE_VERSION=both ./scripts/release-proof-gate.sh     # proof + v2.1.0 manifests
 #   SPINE_PROOF_SKIP_GITNEXUS=1 ./scripts/release-proof-gate.sh
 #
 # Blocking checks: spine doctor, spine preflight, gitnexus up-to-date (unless skipped),
-# signoff checklist, release manifest(s), v2.1.0 handoff PRD (when applicable).
+# signoff checklist, release manifest(s), handoff PRD (when applicable).
 # Non-blocking: open P1 bug count (warn only).
 #
 # Environment overrides (testing / CI):
 #   RELEASE_PROOF_GATE_ROOT  Repo root (default: parent of scripts/)
-#   RELEASE_GATE_VERSION     2.0.0 | 2.1.0 (default) | both — which manifest checks to run
+#   RELEASE_GATE_VERSION     2.0.0 | 2.1.0 | 2.2.0 (default) | both — which manifest checks to run
 #   RELEASE_MANIFEST         Explicit manifest path (overrides RELEASE_GATE_VERSION manifest picks)
 #   SPINE_BIN                spine CLI (default: spine, else node bin/spine.mjs)
 #   GITNEXUS_BIN             gitnexus CLI (default: gitnexus)
@@ -46,12 +47,14 @@ fi
 GITNEXUS="${GITNEXUS_BIN:-gitnexus}"
 GH_REPO="${GH_REPO:-beettlle/pi-spine}"
 
-RELEASE_GATE_VERSION="${RELEASE_GATE_VERSION:-2.1.0}"
+RELEASE_GATE_VERSION="${RELEASE_GATE_VERSION:-2.2.0}"
 
 SIGNOFF_CHECKLIST="$ROOT/docs/release/automation-signoff-checklist.md"
 PROOF_MANIFEST="$ROOT/docs/release/manifest-v2.0.0-proof.md"
 RELEASE_MANIFEST_V210="$ROOT/docs/release/manifest-v2.1.0.md"
-HANDOFF_PRD="$ROOT/docs/PRD-v2.1.0-backlog-drain-handoff.md"
+RELEASE_MANIFEST_V220="$ROOT/docs/release/manifest-v2.2.0.md"
+HANDOFF_PRD_V210="$ROOT/docs/PRD-v2.1.0-backlog-drain-handoff.md"
+HANDOFF_PRD_V220="$ROOT/docs/PRD-v2.2.0-backlog-drain-handoff.md"
 
 pass() { printf '  ✅ %s\n' "$1"; }
 fail() { printf '  ❌ %s\n' "$1" >&2; }
@@ -162,11 +165,13 @@ check_release_manifests() {
 		check_manifest_file "proof manifest" "$PROOF_MANIFEST" || manifest_failures=$((manifest_failures + 1))
 	elif [[ "$RELEASE_GATE_VERSION" == "2.1.0" ]]; then
 		check_manifest_file "v2.1.0 release manifest" "$RELEASE_MANIFEST_V210" || manifest_failures=$((manifest_failures + 1))
+	elif [[ "$RELEASE_GATE_VERSION" == "2.2.0" ]]; then
+		check_manifest_file "v2.2.0 release manifest" "$RELEASE_MANIFEST_V220" || manifest_failures=$((manifest_failures + 1))
 	elif [[ "$RELEASE_GATE_VERSION" == "both" ]]; then
 		check_manifest_file "proof manifest" "$PROOF_MANIFEST" || manifest_failures=$((manifest_failures + 1))
 		check_manifest_file "v2.1.0 release manifest" "$RELEASE_MANIFEST_V210" || manifest_failures=$((manifest_failures + 1))
 	else
-		fail "invalid RELEASE_GATE_VERSION: $RELEASE_GATE_VERSION (use 2.0.0, 2.1.0, or both)"
+		fail "invalid RELEASE_GATE_VERSION: $RELEASE_GATE_VERSION (use 2.0.0, 2.1.0, 2.2.0, or both)"
 		record_result "release manifest(s)" "FAIL"
 		return 1
 	fi
@@ -178,18 +183,35 @@ check_release_manifests() {
 }
 
 check_handoff_prd() {
-	section "Check 6: v2.1.0 handoff PRD"
+	local handoff_path=""
+	local handoff_label=""
+
 	if [[ "$RELEASE_GATE_VERSION" == "2.0.0" ]]; then
+		section "Check 6: handoff PRD"
 		warn "handoff PRD check skipped (RELEASE_GATE_VERSION=2.0.0)"
 		record_result "handoff PRD" "SKIP"
 		return 0
 	fi
-	if [[ -f "$HANDOFF_PRD" ]]; then
-		pass "handoff PRD present ($HANDOFF_PRD)"
+	if [[ "$RELEASE_GATE_VERSION" == "2.1.0" || "$RELEASE_GATE_VERSION" == "both" ]]; then
+		handoff_path="$HANDOFF_PRD_V210"
+		handoff_label="v2.1.0 handoff PRD"
+	elif [[ "$RELEASE_GATE_VERSION" == "2.2.0" ]]; then
+		handoff_path="$HANDOFF_PRD_V220"
+		handoff_label="v2.2.0 handoff PRD"
+	else
+		section "Check 6: handoff PRD"
+		fail "invalid RELEASE_GATE_VERSION for handoff check: $RELEASE_GATE_VERSION"
+		record_result "handoff PRD" "FAIL"
+		return 1
+	fi
+
+	section "Check 6: $handoff_label"
+	if [[ -f "$handoff_path" ]]; then
+		pass "handoff PRD present ($handoff_path)"
 		record_result "handoff PRD" "PASS"
 		return 0
 	fi
-	fail "missing handoff PRD: $HANDOFF_PRD"
+	fail "missing handoff PRD: $handoff_path"
 	record_result "handoff PRD" "FAIL"
 	return 1
 }
