@@ -21,6 +21,7 @@ import {
 	runAttachedBatchEngine,
 } from "../src/batch/attached-runner.mjs";
 import { enforceAttachedOrphanRiskGuard } from "../src/doctor/attached-orphan-risk.mjs";
+import { formatSalvageListOutput, listSalvageableLanes } from "../src/batch/salvage-batch.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,7 +37,7 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
  */
 export function printBatchHelp() {
 	return (
-		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
 	);
 }
 
@@ -51,9 +52,18 @@ export function isBatchHelpRequest(args) {
 		return true;
 	}
 	const subcommand = args.find((token) =>
-		["dismiss", "complete", "abort", "start", "pause", "resume", "retry", "skip", "force-merge"].includes(
-			token,
-		),
+		[
+			"dismiss",
+			"complete",
+			"abort",
+			"start",
+			"pause",
+			"resume",
+			"retry",
+			"skip",
+			"force-merge",
+			"salvage",
+		].includes(token),
 	);
 	if (subcommand && args.includes("help")) {
 		const helpIdx = args.indexOf("help");
@@ -154,7 +164,8 @@ export function parseBatchArgs(args) {
 				t === "resume" ||
 				t === "retry" ||
 				t === "skip" ||
-				t === "force-merge",
+				t === "force-merge" ||
+				t === "salvage",
 		) ?? null;
 
 	let waveFilter = null;
@@ -221,6 +232,29 @@ export async function runSpineBatch(options) {
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
 			output: formatLifecycleHuman(result, parsed.json),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "salvage") {
+		if (!parsed.batchId) {
+			return {
+				exitCode: 1,
+				output: "Usage: spine batch salvage --batch <batchId> --dry-run [--json]\n",
+			};
+		}
+		if (!parsed.dryRun) {
+			return {
+				exitCode: 1,
+				output:
+					"Usage: spine batch salvage --batch <batchId> --dry-run [--json]\n" +
+					"List mode requires --dry-run. Integrate mode is not available in this release.\n",
+			};
+		}
+		const result = listSalvageableLanes(projectRoot, parsed.batchId);
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: formatSalvageListOutput(result, { json: parsed.json }),
 			result,
 		};
 	}
