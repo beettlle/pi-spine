@@ -1,7 +1,7 @@
 # SP-554: v2.1.0 regression gate — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 1
 **Size:** S
@@ -27,7 +27,12 @@
 - [x] Extend `release-proof-gate.test.mjs` for v2.1.0 manifest path
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
+
+- [x] Run contract `testCommand` (9/9 pass)
+- [x] `./scripts/release-proof-gate.sh` exits 0 on clean repo (SPINE_PROOF_SKIP_GITNEXUS=1)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
+
+- [x] Create `.DONE`
