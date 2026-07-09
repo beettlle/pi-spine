@@ -1,7 +1,7 @@
 # SP-553: v2.1.0 release manifest — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 0
 **Size:** S
@@ -9,22 +9,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read template and PRD
+- [x] Read template and PRD
+- [x] Confirm open-issue baseline (29)
 
 ### Step 1: Author manifest
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Manifest and authoring copy complete
-- [ ] Operator approval recorded
+- [x] Manifest and authoring copy complete
+- [x] Operator approval recorded (2026-07-09)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `spine tasks validate SP-553`
+- [x] `spine tasks validate SP-553` — 1 passed, 0 failed
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
