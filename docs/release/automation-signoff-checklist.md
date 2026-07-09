@@ -3,6 +3,7 @@
 Operator attestation checklist for **gates-only** proof per [PRD §8](../PRD-v2.0.0-automation-proof-handoff.md#8-gates-only-exit-criteria-definition-of-done) (FR-STA-33). Check every box before `npm version minor` → v2.0.0 tag.
 
 **Proof manifest:** [`manifest-v2.0.0-proof.md`](manifest-v2.0.0-proof.md) (SP-543)  
+**Proof runbook:** [`v2.0.0-proof-runbook.md`](v2.0.0-proof-runbook.md) (SP-550) — post-mortem template and commit steps (FR-STA-32)  
 **Prerequisite gate:** [`../../scripts/release-proof-gate.sh`](../../scripts/release-proof-gate.sh) (SP-545) — run before proof sequence; exits non-zero on blocking failures.  
 **Recovery (should not be needed):** [Operator runbook §4](../adoption/operator-runbook.md) — manual `pause`, `retry`, or `resume --force` during waves **voids** gates-only proof.
 
@@ -123,15 +124,16 @@ git status   # clean tree before tag
 
 ## Post-mortem committed
 
-Per PRD §8 and FR-STA-32: journal export + issue delta table committed to repo (path recorded in manifest or release notes).
+Per PRD §8 and FR-STA-32. Follow **[Post-mortem (FR-STA-32)](v2.0.0-proof-runbook.md#post-mortem-fr-sta-32)** in [`v2.0.0-proof-runbook.md`](v2.0.0-proof-runbook.md) for the full template, commands, and commit checklist.
 
-- [ ] Journal export committed (markdown or jsonl)
-- [ ] Issue delta table committed (section above or manifest publish checklist)
-- [ ] Batch post-mortem / evidence summary path recorded
+- [ ] Post-mortem summary committed (`docs/release/proof-v2.0.0-post-mortem.md` or path recorded in summary table)
+- [ ] Journal export committed (markdown and/or jsonl per runbook)
+- [ ] Issue delta table committed (runbook template or M-AUTO-02 section above)
+- [ ] Batch post-mortem path recorded (`.spine/runtime/<batchId>/post-mortem.md` or exported copy)
 
 ```bash
+# See v2.0.0-proof-runbook.md § Post-mortem for full workflow
 spine journal export --batch <batchId> --format markdown --output docs/release/proof-v2.0.0-journal.md
-# Or jsonl for machine replay:
 spine journal export --batch <batchId> --format jsonl --output docs/release/proof-v2.0.0-journal.jsonl
 ```
 
