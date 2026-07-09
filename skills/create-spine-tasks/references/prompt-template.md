@@ -20,16 +20,6 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 > **Real-pi batches (SP-195/SP-278):** Do **not** add per-step "Call `spine_review_step`" checkboxes for Review Level ≥ 1. The batch engine runs plan, code, and final reviews after worker `.DONE`. Stub batches (`SPINE_WORKER_STUB=1`) may still use in-worker stub plan review via the tool when a checkpoint marker requires it.
 
-## Canonical Task Folder
-
-```
-[FULL_PATH_TO_TASK_FOLDER]/
-├── PROMPT.md   ← This file (immutable above --- divider)
-├── STATUS.md   ← Execution state (worker updates this)
-├── .reviews/   ← Reviewer output (created by the orchestrator runtime)
-└── .DONE       ← Created when complete
-```
-
 ## Mission
 
 [One paragraph: what you're building and why it matters]
@@ -50,10 +40,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 > Only list docs the worker actually needs. Less is better.
 
-**Tier 2 (area context):**
 - `[path/to/CONTEXT.md]`
-
-**Tier 3 (load only if needed):**
 - `[path/to/specific-doc.md]` — [why needed]
 
 ## Environment
@@ -69,6 +56,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 - `[path/to/file.ext]`
 - `[path/to/directory/*]`
+- `[docs/adoption/operator-runbook.md]` — include when listed under Documentation Requirements **Must Update**
 
 ## Contract
 
@@ -109,7 +97,6 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 - [ ] [Specific, verifiable task]
 - [ ] [Specific, verifiable task]
 - [ ] [Specific, verifiable task]
-- [ ] Run targeted tests: `[test command] --changed` or specific test files
 
 **Artifacts:**
 - `path/to/file` (new | modified)
@@ -118,9 +105,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 > **Required for every task** — including docs-only and Review Level 0 packets.
 > ZERO test failures allowed. This step runs the FULL test suite as a quality gate.
-> Earlier steps should use **targeted** tests for fast feedback — e.g.
-> `node --experimental-strip-types --test tests/feature.test.mjs` (not `npm test -- path`,
-> which runs the full suite in lane worktrees; see SP-522).
+> Use `testCommand` from `## Contract` (often chains `npm run typecheck` with tests).
 >
 > **Docs-only tasks:** keep this step; run the full test suite. Omit the coverage-gate
 > checkbox below when the task does not change application code.
@@ -129,7 +114,6 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 - [ ] Run coverage gate: `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code (code-related tasks only; omit for docs-only)
 - [ ] Run integration tests (if applicable)
 - [ ] Fix all failures
-- [ ] Build passes: `[build command]`
 
 ### Step [N]: Documentation & Delivery
 
@@ -139,8 +123,12 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 ## Documentation Requirements
 
+> **File Scope rule ([#144](https://github.com/beettlle/pi-spine/issues/144)):** Every path under **Must Update**
+> **must** also appear in `## File Scope`. If a doc is advisory only, list it under **Check If Affected**
+> instead — do not require workers to edit paths outside File Scope.
+
 **Must Update:**
-- `[path/to/doc.md]` — [what to add/change]
+- `[path/to/doc.md]` — [what to add/change] *(also list this path in `## File Scope`)*
 
 **Check If Affected:**
 - `[path/to/doc.md]` — [update if relevant]
@@ -172,6 +160,8 @@ for this task MUST include the task ID for traceability:
 ---
 
 ## Amendments (Added During Execution)
+
+> Rarely used — workers normally log discoveries in STATUS.md Notes instead.
 
 <!-- Workers add amendments here if issues discovered during execution.
      Format:
@@ -233,7 +223,6 @@ this from PROMPT.md.
 - [ ] Coverage gate passes (≥77% line coverage on in-scope code, when applicable)
 - [ ] Integration tests (if applicable)
 - [ ] All failures fixed
-- [ ] Build passes
 
 ---
 
