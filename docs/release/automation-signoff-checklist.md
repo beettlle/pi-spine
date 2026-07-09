@@ -4,6 +4,7 @@ Operator attestation checklist for **gates-only** proof per [PRD §8](../PRD-v2.
 
 **Proof manifest:** [`manifest-v2.0.0-proof.md`](manifest-v2.0.0-proof.md) (SP-543)  
 **Proof runbook:** [`v2.0.0-proof-runbook.md`](v2.0.0-proof-runbook.md) (SP-550) — post-mortem template and commit steps (FR-STA-32)  
+**Post-mortem:** [`proof-v2.0.0-post-mortem.md`](proof-v2.0.0-post-mortem.md)  
 **Prerequisite gate:** [`../../scripts/release-proof-gate.sh`](../../scripts/release-proof-gate.sh) (SP-545) — run before proof sequence; exits non-zero on blocking failures.  
 **Recovery (should not be needed):** [Operator runbook §4](../adoption/operator-runbook.md) — manual `pause`, `retry`, or `resume --force` during waves **voids** gates-only proof.
 
@@ -13,12 +14,12 @@ Operator attestation checklist for **gates-only** proof per [PRD §8](../PRD-v2.
 
 | Field | Value |
 |-------|-------|
-| Operator | |
-| Proof start (UTC) | |
-| Proof end (UTC) | |
-| Batch ID | |
-| Sequence command | `spine run sequence <manifest-scope> --auto-approve-gate --detached` |
-| Manifest scope ID | |
+| Operator | Cursor release operator (waves); Cesar Delgado (publish) |
+| Proof start (UTC) | 2026-07-09T04:46:39Z |
+| Proof end (UTC) | 2026-07-09T05:45:34Z (waves); publish 2026-07-09T06:44Z |
+| Batch ID | `20260709T044639`, `20260709T045417`, `20260709T051755`, `20260709T053127` |
+| Sequence command | Per-wave `spine batch start SP-543,…,SP-551 --wave N` (4 batches; not single sequence) |
+| Manifest scope ID | `SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551` |
 
 ---
 
@@ -26,10 +27,10 @@ Operator attestation checklist for **gates-only** proof per [PRD §8](../PRD-v2.
 
 Human actions during proof waves must be limited to **`spine gate approve`** (per wave) and **explicit publish approval** at Phase 6. No manual batch recovery.
 
-- [ ] **One session:** Operator started a **single** autonomous or sequence-driven release session (no restart mid-proof)
-- [ ] **Zero manual recovery:** No `spine batch pause`, `spine batch retry`, or `spine batch resume --force` during waves
-- [ ] **Gate-only human touch:** Human actions limited to `spine gate approve` + explicit publish approval
-- [ ] **Journal clean:** Exported journal shows no manual recovery events (see verification below)
+- [ ] **One session:** Operator started a **single** autonomous or sequence-driven release session (no restart mid-proof) — **FAIL:** four per-wave batches
+- [ ] **Zero manual recovery:** No `spine batch pause`, `spine batch retry`, or `spine batch resume --force` during waves — **FAIL:** wave 0 (`20260709T044639`) had 2× pause/retry/resume for SP-544 `GitignoredDirtyWorktree`
+- [x] **Gate-only human touch:** Human actions limited to `spine gate approve` + explicit publish approval (recovery on wave 0 was additional)
+- [ ] **Journal clean:** Exported journal shows no manual recovery events — **FAIL:** see [`proof-v2.0.0-journal-wave0.md`](proof-v2.0.0-journal-wave0.md)
 
 ### Verification commands
 
@@ -43,17 +44,18 @@ Record batch ID from `spine status --diagnose` or sequence start output.
 gh issue list --state open --json number | jq 'length'
 
 # After waves complete — confirm no manual recovery in journal
-spine journal export --batch <batchId> --format markdown --output /tmp/proof-journal.md
-grep -E 'batch\.(pause|retry)|resume.*--force' /tmp/proof-journal.md && echo "FAIL: manual recovery detected" || echo "OK: no manual recovery"
+spine journal export --batch 20260709T044639 --format markdown --output /tmp/proof-journal.md
+grep -E 'batch\.(pause|retry)|resume' /tmp/proof-journal.md && echo "FAIL: manual recovery detected" || echo "OK: no manual recovery"
+# Result: FAIL — batch.paused, batch.retry_unblocked, batch.resumed present
 ```
 
 **Operator attestation (sign):**
 
-> I confirm the proof ran gates-only: one sequence session, zero manual pause/retry/resume --force, and human actions were limited to gate approve + publish approval.
+> Proof **did not** run gates-only: wave 0 required operator pause/retry/resume after SP-544 `GitignoredDirtyWorktree`. Waves 1–3 had zero manual recovery. Publish proceeded with M-AUTO-01 documented as waived in post-mortem.
 
 | Operator | Date (UTC) |
 |----------|------------|
-| | |
+| Cesar Delgado | 2026-07-09 |
 
 ---
 
@@ -63,15 +65,15 @@ Open GitHub issues must **decrease** vs proof start count.
 
 ### Issue delta table
 
-Fill before proof start and after sign-off. Commit this table (or equivalent) in the post-mortem artifact.
-
 | When | Open issue count | Command output |
 |------|------------------|----------------|
-| Proof start | | `gh issue list --state open --json number \| jq length` |
-| Proof end (pre-tag) | | same |
-| **Delta** | | end − start (must be **negative**) |
+| Proof start | 30 | `gh issue list --state open --json number \| jq length` |
+| Proof end (pre-tag) | 29 | same |
+| **Delta** | **−1** | end − start (**negative** — pass) |
 
-- [ ] Delta is negative (fewer open issues than at proof start)
+- [x] Delta is negative (fewer open issues than at proof start)
+
+Closed in scope: #119, #134, #161, #144, #145.
 
 ```bash
 gh issue list --state open --json number,title --limit 500
@@ -83,21 +85,22 @@ gh issue list --state open --json number,title --limit 500
 
 Blocking pre-publish gate per [release-operator Phase 5](../../skills/spine-release-operator/SKILL.md#phase-5--pre-publish-verification-stop). Must exit **0** on current `main` before tag.
 
-- [ ] `npm run release:check` exited **0** (typecheck → lint → tests → coverage)
-- [ ] CI workflow green on current `HEAD` (parity with `ci.yml`)
+- [x] `npm run release:check` exited **0** (typecheck → lint → tests → coverage)
+- [x] CI workflow green on current `HEAD` (parity with `ci.yml`)
 
 ```bash
 npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log
 echo "exit: $?"
+# exit: 0 on commit 48709fea (89.21% line coverage)
 
-COMMIT=$(git rev-parse HEAD)
+COMMIT=$(git rev-parse 48709fea)
 gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,status --limit 5
 ```
 
 | Check | Exit code / conclusion | Log path |
 |-------|------------------------|----------|
-| `release:check` | | `/tmp/pi-spine-release-check.log` |
-| CI on `HEAD` | | `gh run watch --exit-status <run-id>` if in progress |
+| `release:check` | 0 | `/tmp/pi-spine-release-check.log` |
+| CI on `48709fea` | success | [28999068135](https://github.com/beettlle/pi-spine/actions/runs/28999068135) |
 
 ---
 
@@ -105,20 +108,26 @@ gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,st
 
 All manifest-scoped tasks `.DONE` on `main`; plan shows zero pending for scope.
 
-- [ ] All manifest-scoped tasks have `.DONE` on `main`
-- [ ] `spine plan <manifest-scope>` shows **0** pending
+- [x] All manifest-scoped tasks have `.DONE` on `main`
+- [x] `spine plan <manifest-scope>` shows **0** pending (all 9 tasks have `.DONE`)
 
 ```bash
-# Replace <manifest-scope> with scope from manifest-v2.0.0-proof.md
-spine plan <manifest-scope>
+spine plan SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551
 spine preflight
-git status   # clean tree before tag
+git status   # clean tree before tag (except rules-manifest hook noise)
 ```
 
 | Task ID | `.DONE` on main | Notes |
 |---------|-----------------|-------|
-| | | |
-| | | |
+| SP-543 | yes | manifest |
+| SP-544 | yes | signoff checklist |
+| SP-545 | yes | proof gate script |
+| SP-546 | yes | closes #119 |
+| SP-547 | yes | closes #161 |
+| SP-548 | yes | closes #134 |
+| SP-549 | yes | closes #144, #145 |
+| SP-550 | yes | runbook |
+| SP-551 | yes | CONTEXT capstone |
 
 ---
 
@@ -126,23 +135,22 @@ git status   # clean tree before tag
 
 Per PRD §8 and FR-STA-32. Follow **[Post-mortem (FR-STA-32)](v2.0.0-proof-runbook.md#post-mortem-fr-sta-32)** in [`v2.0.0-proof-runbook.md`](v2.0.0-proof-runbook.md) for the full template, commands, and commit checklist.
 
-- [ ] Post-mortem summary committed (`docs/release/proof-v2.0.0-post-mortem.md` or path recorded in summary table)
-- [ ] Journal export committed (markdown and/or jsonl per runbook)
-- [ ] Issue delta table committed (runbook template or M-AUTO-02 section above)
-- [ ] Batch post-mortem path recorded (`.spine/runtime/<batchId>/post-mortem.md` or exported copy)
+- [x] Post-mortem summary committed (`docs/release/proof-v2.0.0-post-mortem.md`)
+- [x] Journal export committed (markdown per wave: `proof-v2.0.0-journal-wave{0,1,2,3}.md`)
+- [x] Issue delta table committed (post-mortem + M-AUTO-02 above)
+- [x] Batch post-mortem paths recorded (`.spine/runtime/20260709T{044639,045417,051755,053127}/post-mortem.md`)
 
 ```bash
-# See v2.0.0-proof-runbook.md § Post-mortem for full workflow
-spine journal export --batch <batchId> --format markdown --output docs/release/proof-v2.0.0-journal.md
-spine journal export --batch <batchId> --format jsonl --output docs/release/proof-v2.0.0-journal.jsonl
+spine journal export --batch 20260709T044639 --format markdown --output docs/release/proof-v2.0.0-journal-wave0.md
+# … waves 1–3 similarly
 ```
 
 ---
 
 ## CONTEXT Phase 62 complete
 
-- [ ] `spine-tasks/CONTEXT.md` Phase 62 table updated (SP-551)
-- [ ] PRD §8 exit criteria reflected in CONTEXT per operator attestation
+- [x] `spine-tasks/CONTEXT.md` Phase 62 table updated (SP-551)
+- [x] PRD §8 exit criteria reflected in CONTEXT per operator attestation (M-AUTO-01 waived)
 
 ---
 
@@ -150,9 +158,11 @@ spine journal export --batch <batchId> --format jsonl --output docs/release/proo
 
 Per [release-operator Phase 6](../../skills/spine-release-operator/SKILL.md#phase-6--publish-after-approval-only). **Do not** bump until M-AUTO-01 through M-AUTO-04 and post-mortem are satisfied.
 
-- [ ] Operator explicitly approved publish (`minor` → v2.0.0)
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded; post-publish smoke per [`npm-publish.md`](npm-publish.md)
+- [x] Operator explicitly approved publish (`major` → v2.0.0)
+- [x] `npm version major` + `git push && git push --tags`
+- [x] `release.yml` succeeded; post-publish smoke per [`npm-publish.md`](npm-publish.md)
+
+Release run: [28999465693](https://github.com/beettlle/pi-spine/actions/runs/28999465693). npm: `pi-spine@2.0.0`.
 
 ---
 
@@ -160,16 +170,16 @@ Per [release-operator Phase 6](../../skills/spine-release-operator/SKILL.md#phas
 
 | Metric | ID | Status |
 |--------|-----|--------|
-| Gates-only execution | M-AUTO-01 | ☐ |
-| Issue delta negative | M-AUTO-02 | ☐ |
-| `release:check` green | M-AUTO-03 | ☐ |
-| Manifest scope complete | M-AUTO-04 | ☐ |
-| Post-mortem committed | FR-STA-32 | ☐ |
-| CONTEXT Phase 62 | SP-551 | ☐ |
-| **All PRD §8 criteria** | | ☐ |
+| Gates-only execution | M-AUTO-01 | ☐ **waived** (wave 0 manual recovery) |
+| Issue delta negative | M-AUTO-02 | ☑ |
+| `release:check` green | M-AUTO-03 | ☑ |
+| Manifest scope complete | M-AUTO-04 | ☑ |
+| Post-mortem committed | FR-STA-32 | ☑ |
+| CONTEXT Phase 62 | SP-551 | ☑ |
+| **All PRD §8 criteria** | | ☐ **partial** (M-AUTO-01 miss documented) |
 
 **Final operator sign-off:**
 
 | Operator | Date (UTC) | v2.0.0 tag SHA |
 |----------|------------|----------------|
-| | | |
+| Cesar Delgado | 2026-07-09 | `aff1343d` |

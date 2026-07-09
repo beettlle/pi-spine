@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-08 (Phase 62 v2.0.0 automation proof — SP-543–551 Done)
+**Last Updated:** 2026-07-09 (Phase 62 v2.0.0 published — signoff + post-mortem attested)
 **Status:** Active
 **Next Task ID:** SP-552
 
@@ -1636,18 +1636,19 @@ spine run sequence SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-55
 
 **Phase 62 exit criteria (handoff §8):**
 
-- [ ] Operator started **one** autonomous or sequence-driven release session — operator attestation pending
-- [ ] **Zero** manual `spine batch pause`, `retry`, or `resume --force` during waves — operator attestation pending
-- [ ] Human actions limited to: `spine gate approve` (per wave) + explicit publish approval — operator attestation pending
+- [ ] Operator started **one** autonomous or sequence-driven release session — **waived** (four per-wave batches; see [post-mortem](../docs/release/proof-v2.0.0-post-mortem.md))
+- [ ] **Zero** manual `spine batch pause`, `retry`, or `resume --force` during waves — **waived** (wave 0 SP-544 `GitignoredDirtyWorktree` recovery)
+- [x] Human actions limited to: `spine gate approve` (per wave) + explicit publish approval (+ wave 0 recovery)
 - [x] All manifest-scoped tasks `.DONE` on `main` (SP-543–551)
-- [ ] `spine plan <manifest-scope>` shows 0 pending — operator sign-off pending (proof sequence not yet run)
-- [ ] `npm run release:check` green before tag — operator sign-off pending
-- [ ] Open GitHub issues **decreased** vs proof start count (baseline 30) — operator audit pending
-- [ ] Post-mortem committed: journal export + issue delta table — operator sign-off pending (see [proof runbook](../docs/release/v2.0.0-proof-runbook.md))
-- [ ] [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) all boxes checked — operator sign-off pending
+- [x] `spine plan <manifest-scope>` shows 0 pending
+- [x] `npm run release:check` green before tag (`48709fea`, 89.21% coverage)
+- [x] Open GitHub issues **decreased** vs proof start (30 → 29, Δ −1)
+- [x] Post-mortem committed: [`proof-v2.0.0-post-mortem.md`](../docs/release/proof-v2.0.0-post-mortem.md) + journal exports
+- [x] [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) attested (M-AUTO-01 waived)
 - [x] CONTEXT Phase 62 complete; Next Task ID → SP-552
+- [x] **v2.0.0 published** — tag `aff1343d`, npm `pi-spine@2.0.0`
 
-**Packet delivery complete (SP-543–551).** Proof execution (gates-only sequence + publish) remains operator-gated per [signoff checklist](../docs/release/automation-signoff-checklist.md).
+**Phase 62 complete.** Proof post-mortem: [`docs/release/proof-v2.0.0-post-mortem.md`](../docs/release/proof-v2.0.0-post-mortem.md).
 
 ---
 
