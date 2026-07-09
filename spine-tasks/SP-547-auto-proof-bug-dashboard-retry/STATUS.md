@@ -1,7 +1,7 @@
 # STATUS — SP-547 Dashboard retry-then-succeed display fix
 
 **Task:** SP-547
-**Status:** In progress
+**Status:** Complete
 
 ## Steps
 
@@ -17,12 +17,14 @@
 
 ### Step 2: Regression test
 
-- [ ] Pending
+- [x] Add test: journal with 2× `task.failed` then `task.completed` on completed lane → succeeded styling
 
 ### Step 3: Testing & Verification
 
-- [ ] Pending
+- [x] `node --test tests/dashboard/ui-contract.test.mjs` — 38/38 pass
+- [x] `npm run typecheck` — pass
 
 ### Step 4: Documentation & Delivery
 
-- [ ] Pending
+- [x] Close #161
+- [x] Create `.DONE`
