@@ -38,5 +38,5 @@
 **Status:** ✅ Complete
 
 - [x] Runbook section: fail-closed vs `skippedDoneOnDisk` semantics
-- [ ] Comment on #190 with behavior summary (operator / integrate)
+- [x] Comment on #190 with behavior summary
 - [x] Create `.DONE`
