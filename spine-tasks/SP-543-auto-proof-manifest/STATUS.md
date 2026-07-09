@@ -1,7 +1,7 @@
 # STATUS — SP-543 v2.0.0 proof release manifest
 
 **Task:** SP-543
-**Status:** In progress
+**Status:** Complete
 
 ## Steps
 
@@ -19,11 +19,13 @@
 
 ### Step 2: Testing & Verification
 
-- [ ] Pending
+- [x] `spine tasks validate SP-543` — 1 passed, 0 failed
+- [x] Contract `testCommand`: `true` (exit 0)
+- [x] `npm test` — exit 0 (pre-existing `context-phase61.test.mjs` assertion noise unrelated to manifest)
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Pending
+- [x] `.DONE` created
 
 ## Discoveries
 
