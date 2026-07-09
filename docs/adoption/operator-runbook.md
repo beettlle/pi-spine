@@ -14,6 +14,7 @@ Daily procedures for running pi-spine batches on a **consumer repository** — i
 | [bootstrap-checklist.md](./bootstrap-checklist.md) | Greenfield or Taskplane migration |
 | [upstream-execution-workflow.md](./upstream-execution-workflow.md) | PRD → task packets → batch (optional [zero-pi](https://pi.dev/packages/@gonrocca/zero-pi) or [spec-kit](https://github.com/github/spec-kit) upstream) |
 | [real-pi-e2e.md](./real-pi-e2e.md) | Optional real-`pi` validation on adoption fixture |
+| [component-maturity-matrix.md](./component-maturity-matrix.md) | L0–L4 per-component test/CI maturity audit ([#129](https://github.com/beettlle/pi-spine/issues/129)) |
 | [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter lane worktrees — gitignored assets, analyzer scope, setup hook |
 
 **CLI choice:** Prefer the published global CLI; pin a checkout path when developing pi-spine itself or when PATH drift is a concern:
