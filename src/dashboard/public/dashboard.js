@@ -227,8 +227,12 @@ function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 		tr.dataset.laneId = lane.laneId;
 		tr.setAttribute("aria-expanded", lane.laneId === expandedLaneId ? "true" : "false");
 		const throughput = lane.throughput ?? {};
-		const failedCount = throughput.failedCount ?? 0;
-		const isTaskFailed = failedCount > 0 || lane.activityPhase === "failed";
+		const isTerminalFailure = lane.activityPhase === "failed";
+		// Completed lanes use terminal outcome only; failedCount stays a retry metric.
+		const isTaskFailed =
+			lane.status === "completed"
+				? isTerminalFailure
+				: (throughput.failedCount ?? 0) > 0 || isTerminalFailure;
 		const isTaskSucceeded = lane.status === "completed" && !isTaskFailed;
 		const isTaskRunning = lane.status === "running" && !isTaskFailed;
 		if (isTaskFailed) tr.classList.add("task-failed");
