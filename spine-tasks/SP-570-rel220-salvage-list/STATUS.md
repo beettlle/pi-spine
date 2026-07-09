@@ -1,7 +1,7 @@
 # SP-570: salvage list — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 3
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** S
@@ -9,22 +9,22 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read #158 acceptance criteria
+- [x] Read #158 acceptance criteria
 
 ### Step 1: Salvage list module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] listSalvageableLanes implementation
+- [x] listSalvageableLanes implementation
 
 ### Step 2: CLI wiring
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] spine batch salvage --dry-run
+- [x] spine batch salvage --dry-run
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Contract testCommand
 
