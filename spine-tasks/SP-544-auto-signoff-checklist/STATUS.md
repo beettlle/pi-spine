@@ -1,7 +1,7 @@
 # STATUS — SP-544 Automation signoff checklist
 
 **Task:** SP-544
-**Status:** In progress — Step 1
+**Status:** Complete
 
 ## Steps
 
@@ -18,8 +18,8 @@
 
 ### Step 2: Testing & Verification
 
-- [ ] Pending
+- [x] `spine tasks validate SP-544` — 1 passed, 0 failed
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Pending
+- [x] Create `.DONE`
