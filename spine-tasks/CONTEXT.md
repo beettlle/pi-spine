@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-09 (Phase 62 v2.0.0 published — signoff + post-mortem attested)
+**Last Updated:** 2026-07-09 (Phase 63 v2.1.0 staged — SP-552–564)
 **Status:** Active
-**Next Task ID:** SP-552
+**Next Task ID:** SP-565
 
 ---
 
@@ -1649,6 +1649,44 @@ spine run sequence SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-55
 - [x] **v2.0.0 published** — tag `aff1343d`, npm `pi-spine@2.0.0`
 
 **Phase 62 complete.** Proof post-mortem: [`docs/release/proof-v2.0.0-post-mortem.md`](../docs/release/proof-v2.0.0-post-mortem.md).
+
+### Phase 63 — v2.1.0 backlog drain (SP-REL210)
+
+**Handoff:** [`docs/PRD-v2.1.0-backlog-drain-handoff.md`](../docs/PRD-v2.1.0-backlog-drain-handoff.md)  
+**Manifest:** [`docs/release/manifest-v2.1.0.md`](../docs/release/manifest-v2.1.0.md) (SP-553)  
+**Authoring:** [`spine-tasks/_authoring/release-v2.1.0/manifest.md`](_authoring/release-v2.1.0/manifest.md)
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-552 | v2.1.0 handoff PRD | **Staged** | — | — |
+| SP-553 | release manifest | **Staged** | SP-552 | — |
+| SP-554 | regression gate script | **Staged** | SP-553 | — |
+| SP-555 | worktree cleanup completion | **Staged** | SP-553 | #169 |
+| SP-556 | CI guard reconcile cwd | **Staged** | SP-553 | #157 |
+| SP-557 | duplicate step validator | **Staged** | SP-553 | #148 |
+| SP-558 | skill authoring polish | **Staged** | SP-553 | #146–150 |
+| SP-559 | doctor duplicate install | **Staged** | SP-553 | #128 |
+| SP-560 | agent detached UX | **Staged** | SP-553 | #185 |
+| SP-561 | maturity matrix doc | **Staged** | SP-553 | #129 |
+| SP-562 | preversion release:check hook | **Staged** | SP-554 | #175 |
+| SP-563 | GitHub backlog hygiene | **Staged** | SP-555–562 | hygiene |
+| SP-564 | CONTEXT Phase 63 capstone | **Staged** | SP-552–563 | — |
+
+```bash
+spine tasks validate SP-552 SP-553 SP-554 SP-555 SP-556 SP-557 SP-558 SP-559 SP-560 SP-561 SP-562 SP-563 SP-564
+spine plan SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-560,SP-561,SP-562,SP-563,SP-564
+spine run sequence SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-560,SP-561,SP-562,SP-563,SP-564 --detached
+```
+
+**Phase 63 exit criteria (handoff §8):**
+
+- [ ] Operator approved manifest scope (SP-553)
+- [ ] All manifest-scoped tasks `.DONE` on `main`
+- [ ] `npm run release:check` green before tag
+- [ ] Open GitHub issues decreased vs baseline 29
+- [ ] Hygiene issues closed (SP-563)
+- [ ] CONTEXT Phase 63 complete; Next Task ID → SP-565
+- [ ] **v2.1.0 published** (operator approval)
 
 ---
 
