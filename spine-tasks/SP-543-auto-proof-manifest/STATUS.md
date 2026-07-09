@@ -21,11 +21,15 @@
 
 - [x] `spine tasks validate SP-543` — 1 passed, 0 failed
 - [x] Contract `testCommand`: `true` (exit 0)
-- [x] `npm test` — exit 0 (pre-existing `context-phase61.test.mjs` assertion noise unrelated to manifest)
 
 ### Step 3: Documentation & Delivery
 
-- [x] `.DONE` created
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] Manifest complete with operator-approved task/issue mapping
+- [x] Composition audit PASS for minor/proof profile
 
 ## Discoveries
 
