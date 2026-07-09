@@ -23,7 +23,6 @@ const PHASE61B_DONE = ["SP-539", "SP-540", "SP-541", "SP-542"];
 
 test("CONTEXT.md Phase 61 capstone tracking", () => {
 	const content = fs.readFileSync(contextPath, "utf-8");
-	assert.match(content, /\*\*Next Task ID:\*\* SP-543/);
 	assert.match(content, /### Phase 61 — v1\.10\.0 release harness \(SP-HARNESS\)/);
 	assert.match(
 		content,
@@ -79,4 +78,45 @@ test("dependencies.json Phase 61b edges", () => {
 	}
 	assert.deepEqual(deps.tasks["SP-541"], ["SP-540"]);
 	assert.deepEqual(deps.tasks["SP-542"], ["SP-539", "SP-540"]);
+});
+
+const PHASE62_DONE = [
+	"SP-543",
+	"SP-544",
+	"SP-545",
+	"SP-546",
+	"SP-547",
+	"SP-548",
+	"SP-549",
+	"SP-550",
+	"SP-551",
+];
+
+test("CONTEXT.md Phase 62 capstone tracking", () => {
+	const content = fs.readFileSync(contextPath, "utf-8");
+	assert.match(content, /\*\*Next Task ID:\*\* SP-552/);
+	assert.match(content, /### Phase 62 — v2\.0\.0 automation proof \(SP-AUTO\)/);
+	assert.match(
+		content,
+		/docs\/PRD-v2\.0\.0-automation-proof-handoff\.md/,
+		"Phase 62 must link PRD-v2.0.0 automation proof handoff",
+	);
+	for (const taskId of PHASE62_DONE) {
+		assert.match(
+			content,
+			new RegExp(`\\| ${taskId} \\|[^\\n]*\\|\\s*Done`),
+			`${taskId} should be Done in Phase 62 table`,
+		);
+	}
+});
+
+test("dependencies.json Phase 62 edges", () => {
+	const deps = JSON.parse(fs.readFileSync(depsPath, "utf-8"));
+	for (const taskId of PHASE62_DONE) {
+		assert.ok(deps.tasks[taskId], `missing dependencies entry for ${taskId}`);
+	}
+	assert.deepEqual(deps.tasks["SP-545"], ["SP-544"]);
+	assert.deepEqual(deps.tasks["SP-546"], ["SP-543"]);
+	assert.ok(deps.tasks["SP-550"].includes("SP-549"));
+	assert.ok(deps.tasks["SP-551"].includes("SP-550"));
 });
