@@ -14,6 +14,10 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    npm version patch   # or minor / major
    ```
    This updates `package.json`, commits the change, and creates a `v<version>` git tag.
+
+   **`preversion` hook (package.json):** `npm version` runs `npm run release:check` via the `preversion` lifecycle script **before** bumping the version. If `release:check` fails, `npm version` exits non-zero and the version is not changed ([#175](https://github.com/beettlle/pi-spine/issues/175) §B). This blocks tag creation earlier than `prepublishOnly`, which only runs at publish time.
+
+   **Dry-run escape hatch:** `npm version --no-git-tag-version` skips the git commit and tag but **does not** skip `preversion` — `release:check` still runs. Use `--no-git-tag-version` only to bump `package.json` locally without git side effects (for example inspecting the next version string). To bypass lifecycle scripts entirely (emergency only), use `npm version --ignore-scripts` and run `npm run release:check` manually before any real release.
 3. **Push commit and tag**:
    ```bash
    git push && git push --tags
