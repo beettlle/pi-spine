@@ -1,7 +1,7 @@
 # STATUS — SP-549 create-spine-tasks skill template hygiene
 
 **Task:** SP-549
-**Status:** In Progress
+**Status:** Complete
 
 ## Steps
 
@@ -21,8 +21,9 @@
 
 ### Step 3: Testing & Verification
 
-- [ ] Pending
+- [x] `spine tasks validate SP-549`
 
 ### Step 4: Documentation & Delivery
 
-- [ ] Pending
+- [x] Close #144 and #145
+- [x] Create `.DONE`
