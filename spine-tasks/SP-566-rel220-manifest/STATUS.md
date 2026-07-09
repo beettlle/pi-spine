@@ -1,7 +1,7 @@
 # SP-566: v2.2.0 manifest — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-09
 **Review Level:** 0
 **Size:** S
@@ -9,9 +9,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read handoff and v2.1.0 manifest template
+- [x] Read handoff and v2.1.0 manifest template
 
 ### Step 1: Author manifest
 **Status:** ⬜ Not Started
