@@ -36,6 +36,10 @@ import {
 	buildPrimaryFailureHeadline,
 	buildPrimaryFailureSuggestedCommand,
 } from "./diagnosis-primary-failure.mjs";
+import {
+	isGitignoredArtifactPath,
+	listGitignoredArtifactRoots,
+} from "./lane-dirty-check.mjs";
 export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
 
 const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
@@ -153,10 +157,21 @@ export function inferMergeGitignoredFailure(ctx = {}) {
  */
 export function buildGitignoredMergeRepairCommand(taskBranch, gitignoredPaths) {
 	const branchHint = taskBranch ? `git checkout ${taskBranch}` : "git checkout <task-branch>";
-	const pathHint =
-		Array.isArray(gitignoredPaths) && gitignoredPaths.length > 0
-			? `git rm -r --cached -- ${gitignoredPaths.slice(0, 5).join(" ")}`
-			: "git rm -r --cached -- <gitignored-paths>";
+	const stetRuntimeCleanRoots = new Set([".review", ".spine/runtime"]);
+	if (Array.isArray(gitignoredPaths) && gitignoredPaths.length > 0) {
+		const artifactRoots = listGitignoredArtifactRoots(gitignoredPaths);
+		const stetRuntimeOnly =
+			artifactRoots.length > 0 &&
+			artifactRoots.every((root) => stetRuntimeCleanRoots.has(root)) &&
+			gitignoredPaths.every((p) => isGitignoredArtifactPath(p));
+		if (stetRuntimeOnly) {
+			const cleanHint = `git clean -fdX -- ${artifactRoots.join(" ")}`;
+			return `${branchHint} && ${cleanHint} && spine batch resume --force`;
+		}
+		const pathHint = `git rm -r --cached -- ${gitignoredPaths.slice(0, 5).join(" ")}`;
+		return `${branchHint} && ${pathHint} && spine batch resume --force`;
+	}
+	const pathHint = "git rm -r --cached -- <gitignored-paths>";
 	return `${branchHint} && ${pathHint} && spine batch resume --force`;
 }
 

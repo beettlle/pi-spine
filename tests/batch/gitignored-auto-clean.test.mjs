@@ -195,6 +195,114 @@ test("commitLaneAndValidateWorktree succeeds when only node_modules is gitignore
 	}
 });
 
+test("isGitignoredArtifactPath matches stet .review and spine runtime plan snapshots", () => {
+	assert.equal(isGitignoredArtifactPath(".review/lock"), true);
+	assert.equal(isGitignoredArtifactPath(".review/session.json"), true);
+	assert.equal(isGitignoredArtifactPath(".review/spine-stet-baseline.ref"), true);
+	assert.equal(isGitignoredArtifactPath(".spine/runtime/plan-2026-07-09T18-26-00-283Z.json"), true);
+	assert.equal(isGitignoredArtifactPath(".review/config.toml"), true);
+});
+
+test("listGitignoredArtifactRoots deduplicates nested .review paths", () => {
+	const roots = listGitignoredArtifactRoots([
+		".review/lock",
+		".review/session.json",
+		".review/spine-stet-baseline.ref",
+	]);
+	assert.deepEqual(roots, [".review"]);
+});
+
+test("sanitizeGitignoredArtifactsBeforeLaneCommit removes worktree-only stet .review files", async () => {
+	const projectRoot = await initGitRepo("spine-gitignored-clean-review-");
+	try {
+		fs.writeFileSync(
+			path.join(projectRoot, ".gitignore"),
+			".review/lock\n.review/session.json\n.review/spine-stet-baseline.ref\n",
+			"utf-8",
+		);
+		execCommit(projectRoot, "gitignore stet review");
+
+		fs.mkdirSync(path.join(projectRoot, ".review"), { recursive: true });
+		fs.writeFileSync(path.join(projectRoot, ".review", "lock"), "", "utf-8");
+		fs.writeFileSync(
+			path.join(projectRoot, ".review", "session.json"),
+			"{}\n",
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, ".review", "spine-stet-baseline.ref"),
+			"abc123\n",
+			"utf-8",
+		);
+
+		const { cleanedRoots } = sanitizeGitignoredArtifactsBeforeLaneCommit(projectRoot, {
+			porcelain: gitPorcelain(projectRoot),
+		});
+		assert.deepEqual(cleanedRoots, [".review"]);
+		assert.equal(gitPorcelain(projectRoot), "");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("commitLaneAndValidateWorktree succeeds when only stet .review is gitignored dirty", async () => {
+	const projectRoot = await initGitRepo("spine-auto-clean-stet-review-");
+	try {
+		const batchId = "20260709T183137";
+		const taskId = "SP-189";
+
+		fs.writeFileSync(
+			path.join(projectRoot, ".gitignore"),
+			".review/lock\n.review/session.json\n.review/spine-stet-baseline.ref\n",
+			"utf-8",
+		);
+		execCommit(projectRoot, "gitignore stet review");
+
+		const { worktreePath, taskBranch } = createLaneWorktree(projectRoot, batchId);
+		const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
+
+		fs.mkdirSync(taskFolder, { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "lane-change.txt"), "work\n", "utf-8");
+		fs.writeFileSync(path.join(taskFolder, ".DONE"), "done\n", "utf-8");
+		execCommit(worktreePath, "commit task work");
+
+		fs.mkdirSync(path.join(worktreePath, ".review"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, ".review", "lock"), "", "utf-8");
+		fs.writeFileSync(path.join(worktreePath, ".review", "session.json"), "{}\n", "utf-8");
+		fs.writeFileSync(
+			path.join(worktreePath, ".review", "spine-stet-baseline.ref"),
+			"deadbeef\n",
+			"utf-8",
+		);
+
+		const task = { taskId, status: "running" };
+		const lane = { laneId: "lane-1", laneNumber: 1 };
+		const state = { tasks: [task], lanes: [lane] };
+		const result = commitLaneAndValidateWorktree({
+			worktreePath,
+			taskBranch,
+			taskId,
+			batchId,
+			taskFolder,
+			projectRoot,
+			fileScopePaths: ["lane-change.txt"],
+			ignorePatterns: [],
+			task,
+			lane,
+			laneNumber: 1,
+			laneCorrelationId: "corr-189",
+			state,
+			config: {},
+		});
+
+		assert.equal(result.ok, true);
+		assert.equal(result.laneCommit.committed, false);
+		assert.equal(gitPorcelain(worktreePath), "");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("sanitizeGitignoredArtifactsBeforeLaneCommit does not clean index-tracked gitignored paths", async () => {
 	const projectRoot = await initGitRepo("spine-auto-clean-index-tracked-sanitize-");
 	try {

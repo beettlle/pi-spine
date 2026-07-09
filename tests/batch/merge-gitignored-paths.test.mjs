@@ -305,6 +305,18 @@ test("buildSuggestedCommand returns git rm --cached repair for gitignored merge 
 	assert.match(suggested, /spine batch resume --force/);
 });
 
+test("buildSuggestedCommand returns git clean repair for stet .review worktree-only failures", () => {
+	const suggested = buildSuggestedCommand("needs_merge", {
+		mergeGitignoredFailure: true,
+		taskBranch: "task/spine-lane-1-20260709T183137",
+		gitignoredPaths: [".review/lock", ".review/session.json", ".review/spine-stet-baseline.ref"],
+	});
+	assert.match(suggested, /git checkout task\/spine-lane-1-20260709T183137/);
+	assert.match(suggested, /git clean -fdX -- \.review/);
+	assert.doesNotMatch(suggested, /git rm -r --cached/);
+	assert.match(suggested, /spine batch resume --force/);
+});
+
 test("reconcileBatch surfaces gitignored merge repair command from journal", async () => {
 	const projectRoot = await initGitRepo("spine-diagnose-gitignored-merge-");
 	try {

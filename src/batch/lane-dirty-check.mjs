@@ -32,6 +32,10 @@ export const GITIGNORED_ARTIFACT_MARKERS = [
 	"__pycache__/",
 	"/graphify-out/",
 	"graphify-out/",
+	"/.review/",
+	".review/",
+	"/.spine/runtime/",
+	".spine/runtime/",
 ];
 
 /** Flutter build output dir that can pollute unscoped `flutter analyze` (#78). */
@@ -515,6 +519,12 @@ function gitignoredArtifactRootForPath(filePath) {
 	}
 	if (normalized === "graphify-out" || normalized.startsWith("graphify-out/")) {
 		return "graphify-out";
+	}
+	if (normalized === ".review" || normalized.startsWith(".review/")) {
+		return ".review";
+	}
+	if (normalized === ".spine/runtime" || normalized.startsWith(".spine/runtime/")) {
+		return ".spine/runtime";
 	}
 	return null;
 }
