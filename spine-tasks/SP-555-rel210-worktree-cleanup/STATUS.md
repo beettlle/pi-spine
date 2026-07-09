@@ -38,4 +38,4 @@
 
 - [x] Update operator runbook worktree section
 - [x] Comment on #169
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
