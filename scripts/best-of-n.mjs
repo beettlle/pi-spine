@@ -27,8 +27,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { isCliEntrypoint } from "../bin/spine-cli/shared.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DEFAULT_PROJECT_ROOT = path.resolve(__dirname, "..");
+const DEFAULT_EMPTY_LOG_TIMEOUT_MS = 120_000;
+const EMPTY_LOG_POLL_MS = 1_000;
 
 const HELP = `Best-of-N — parallel pi runs across models in git worktrees
 
@@ -394,11 +398,84 @@ function removeWorktree(projectRoot, worktreePath, branch) {
 }
 
 /**
+ * @param {string} arg
+ * @param {string} referenceCwd
+ */
+export function resolvePromptArg(arg, referenceCwd) {
+	if (!arg.startsWith("@")) {
+		return arg;
+	}
+	const ref = arg.slice(1);
+	if (!ref) {
+		throw new Error("Empty @file reference in prompt");
+	}
+	const filePath = path.isAbsolute(ref) ? ref : path.resolve(referenceCwd, ref);
+	if (!fs.existsSync(filePath)) {
+		throw new Error(`Prompt file not found: ${filePath}`);
+	}
+	return `@${filePath}`;
+}
+
+/**
+ * @param {string[]} prompt
+ * @param {string} referenceCwd
+ */
+export function resolvePromptArgs(prompt, referenceCwd) {
+	return prompt.map((arg) => resolvePromptArg(arg, referenceCwd));
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {string} worktreePath
+ */
+export function buildPiSpawnEnv(projectRoot, worktreePath) {
+	return {
+		...process.env,
+		ROOT_WORKTREE_PATH: projectRoot,
+		PI_WORKTREE_PATH: worktreePath,
+	};
+}
+
+/**
+ * @param {string} [raw]
+ */
+export function parseEmptyLogTimeoutMs(raw = process.env.BON_EMPTY_LOG_TIMEOUT_MS) {
+	if (raw === undefined || raw === "") {
+		return DEFAULT_EMPTY_LOG_TIMEOUT_MS;
+	}
+	const parsed = Number(raw);
+	if (!Number.isFinite(parsed) || parsed < 0) {
+		throw new Error(`Invalid BON_EMPTY_LOG_TIMEOUT_MS: ${raw}`);
+	}
+	return parsed;
+}
+
+/**
  * @param {object} params
  * @returns {Promise<{ exitCode: number, logPath: string, durationMs: number }>}
  */
-function runPiInWorktree({ worktreePath, modelSpec, thinking, prompt, dryRun, logPath }) {
-	const piArgs = ["-p", "--no-session", "--model", modelSpec, "--thinking", thinking, ...prompt];
+function runPiInWorktree({
+	worktreePath,
+	projectRoot,
+	invokeCwd,
+	modelSpec,
+	thinking,
+	prompt,
+	dryRun,
+	logPath,
+	emptyLogTimeoutMs = parseEmptyLogTimeoutMs(),
+}) {
+	const resolvedPrompt = resolvePromptArgs(prompt, invokeCwd);
+	const piArgs = [
+		"-p",
+		"--no-session",
+		"--approve",
+		"--model",
+		modelSpec,
+		"--thinking",
+		thinking,
+		...resolvedPrompt,
+	];
 
 	if (dryRun) {
 		const line = `cwd=${worktreePath}\npi ${piArgs.map(shellQuote).join(" ")}\n`;
@@ -411,32 +488,65 @@ function runPiInWorktree({ worktreePath, modelSpec, thinking, prompt, dryRun, lo
 		const logStream = fs.createWriteStream(logPath, { flags: "w" });
 		logStream.write(`$ pi ${piArgs.map(shellQuote).join(" ")}\n\n`);
 
-		const child = spawn("pi", piArgs, {
-			cwd: worktreePath,
-			env: process.env,
-			stdio: ["ignore", "pipe", "pipe"],
-		});
+		let childBytes = 0;
+		let settled = false;
+		/** @type {NodeJS.Timeout | undefined} */
+		let watchdog;
 
-		child.stdout?.on("data", (chunk) => logStream.write(chunk));
-		child.stderr?.on("data", (chunk) => logStream.write(chunk));
-
-		child.on("close", (code) => {
+		const finish = (exitCode) => {
+			if (settled) return;
+			settled = true;
+			if (watchdog) clearInterval(watchdog);
 			logStream.end();
 			resolve({
-				exitCode: code ?? 1,
+				exitCode,
 				logPath,
 				durationMs: Date.now() - startedAt,
 			});
+		};
+
+		const child = spawn("pi", piArgs, {
+			cwd: worktreePath,
+			env: buildPiSpawnEnv(projectRoot, worktreePath),
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+
+		const recordChildOutput = (chunk) => {
+			childBytes += chunk.length;
+			logStream.write(chunk);
+		};
+
+		child.stdout?.on("data", recordChildOutput);
+		child.stderr?.on("data", recordChildOutput);
+
+		if (emptyLogTimeoutMs > 0) {
+			watchdog = setInterval(() => {
+				if (childBytes > 0) {
+					return;
+				}
+				if (Date.now() - startedAt < emptyLogTimeoutMs) {
+					return;
+				}
+				logStream.write(
+					`\n[best-of-n] pi produced no output after ${emptyLogTimeoutMs}ms; sending SIGTERM\n`,
+				);
+				child.kill("SIGTERM");
+				setTimeout(() => {
+					if (!child.killed) {
+						child.kill("SIGKILL");
+					}
+				}, 5_000).unref();
+			}, EMPTY_LOG_POLL_MS);
+			watchdog.unref();
+		}
+
+		child.on("close", (code) => {
+			finish(code ?? 1);
 		});
 
 		child.on("error", (err) => {
 			logStream.write(`\n[spawn error] ${err.message}\n`);
-			logStream.end();
-			resolve({
-				exitCode: 1,
-				logPath,
-				durationMs: Date.now() - startedAt,
-			});
+			finish(1);
 		});
 	});
 }
@@ -494,7 +604,8 @@ async function main() {
 	const opts = parseArgs(process.argv.slice(2));
 	const projectRoot = opts.projectRoot
 		? path.resolve(opts.projectRoot)
-		: path.resolve(__dirname, "..");
+		: DEFAULT_PROJECT_ROOT;
+	const invokeCwd = process.cwd();
 
 	if (opts.help) {
 		process.stdout.write(HELP);
@@ -567,6 +678,8 @@ async function main() {
 			console.log(`→ running ${lane.modelSpec} …`);
 			const outcome = await runPiInWorktree({
 				worktreePath: lane.worktreePath,
+				projectRoot,
+				invokeCwd,
 				modelSpec: lane.modelSpec,
 				thinking: opts.thinking,
 				prompt: opts.prompt,
@@ -620,8 +733,10 @@ async function main() {
 	process.exit(failed ? 1 : 0);
 }
 
-main().catch((err) => {
-	const message = err instanceof Error ? err.message : String(err);
-	process.stderr.write(`best-of-n: ${message}\n`);
-	process.exit(1);
-});
+if (isCliEntrypoint(import.meta.url)) {
+	main().catch((err) => {
+		const message = err instanceof Error ? err.message : String(err);
+		process.stderr.write(`best-of-n: ${message}\n`);
+		process.exit(1);
+	});
+}
