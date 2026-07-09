@@ -12,7 +12,7 @@
 
 Implement [#148](https://github.com/beettlle/pi-spine/issues/148):
 
-1. Add duplicate `### Step N:` detection in [`src/tasks/parse-prompt.mjs`](../../src/tasks/parse-prompt.mjs) — validation error
+1. Add duplicate `### Step N:` detection in [`src/tasks/packet/parse-prompt.mjs`](../../src/tasks/packet/parse-prompt.mjs) — validation error
 2. Add Step B guidance in `create-spine-tasks` SKILL.md
 
 **Closes:** [#148](https://github.com/beettlle/pi-spine/issues/148)
@@ -23,7 +23,7 @@ Implement [#148](https://github.com/beettlle/pi-spine/issues/148):
 
 ## File Scope
 
-- `src/tasks/parse-prompt.mjs`
+- `src/tasks/packet/parse-prompt.mjs`
 - `skills/create-spine-tasks/SKILL.md`
 - `tests/tasks/parse-prompt-duplicate-step.test.mjs`
 
@@ -32,7 +32,7 @@ Implement [#148](https://github.com/beettlle/pi-spine/issues/148):
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/parse-prompt-duplicate-step.test.mjs` |
-| fileScopeMustChange | `src/tasks/parse-prompt.mjs` |
+| fileScopeMustChange | `src/tasks/packet/parse-prompt.mjs` |
 
 ## Steps
 
