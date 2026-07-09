@@ -18,7 +18,7 @@ import {
 	readAliveBatchEnginePid,
 } from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
-import { removeLaneWorktrees } from "./worktree.mjs";
+import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs";
 import { terminateSupervisorIfRunning } from "./supervisor-spawn.mjs";
 import { bumpDashboardInvalidateSignal } from "../dashboard/cache-invalidate.mjs";
 
@@ -115,23 +115,6 @@ function archiveBatchState(projectRoot, batchId, raw) {
  */
 function clearCompletedBatchState(batchStatePath, batchId) {
 	clearActiveBatchStateIfMatches(batchStatePath, batchId);
-}
-
-/**
- * @param {unknown} raw
- */
-function maxLaneNumberFromBatchState(raw) {
-	const lanes = /** @type {{ lanes?: unknown }} */ (raw)?.lanes;
-	if (!Array.isArray(lanes) || lanes.length === 0) return 1;
-	let max = 1;
-	for (const lane of lanes) {
-		if (!lane || typeof lane !== "object") continue;
-		const laneNumber = Number(/** @type {{ laneNumber?: number }} */ (lane).laneNumber);
-		if (Number.isFinite(laneNumber) && laneNumber > max) {
-			max = laneNumber;
-		}
-	}
-	return max;
 }
 
 /**

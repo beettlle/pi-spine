@@ -142,7 +142,7 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 | `failed` | Inspect journal (`spine journal follow`); fix contract/env before retry |
 | `needs_replan` | Read `{taskFolder}/.reviews/final-*.md`; edit PROMPT scope, then retry |
 | `merge_blocked` | Resolve conflicts on orch branch or lane worktree; `spine batch resume --force` |
-| `engine_orphaned` | Do **not** start a second attached engine; `spine batch retry <taskId>` or follow `suggestedCommand` (`resume --attached --force` only in **foreground** after confirming dead PIDs) |
+| `engine_orphaned` | Do **not** start a second attached engine; follow recovery recipe in [outer-loop.md](references/outer-loop.md#orphan-recovery-recipe) — `spine batch retry <taskId>` then `spine batch resume --force` (detached). Headline distinguishes parent shell exit from crash when journal has no `engine.crash` |
 | `worker_orphaned` | `spine batch retry <taskId>` (reconciles orphan running → failed) |
 | `worker_done_missing` | Read worker output log from headline; fix blocker, then `spine batch retry <taskId>` |
 | `completed` | Run `spine batch complete` if not archived, then push |
@@ -155,6 +155,7 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 | Anti-pattern | Correct approach |
 |--------------|------------------|
 | `spine batch start … --attached` from Cursor Agent or non-TTY shell | Detached start + `spine wait` / `spine status --diagnose` — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md) |
+| Cursor background shell + `--attached` (`block_until_ms` backgrounds tool shell) | Parent exits in ~15–120s; `engine_orphaned` misread as crash — detached start/resume + recovery recipe (retry → resume --force → diagnose) |
 | `spine batch resume --attached` while `spine run sequence --attached` is active | One entry point; kill stale engines first (`spine status --diagnose`) |
 | Approving gate without reading evidence | Always inspect evidence directory before `spine gate approve` |
 | Expecting workers to call `spine_request_gate` for integrate | Agent drives gate approval from host shell |

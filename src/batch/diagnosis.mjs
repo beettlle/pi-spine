@@ -37,10 +37,20 @@ import {
 	buildPrimaryFailureSuggestedCommand,
 } from "./diagnosis-primary-failure.mjs";
 import {
+	buildEngineOrphanParentExitHeadline,
+	buildEngineOrphanParentExitSuggestedCommand,
+	inferEngineOrphanCause,
+} from "./diagnosis-parent-exit.mjs";
+import {
 	isGitignoredArtifactPath,
 	listGitignoredArtifactRoots,
-} from "./lane-dirty-check.mjs";
+} from "./lane-dirty-check.mjs"
 export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
+export {
+	inferEngineOrphanCause,
+	journalHasEngineCrash,
+	journalIndicatesParentExit,
+} from "./diagnosis-parent-exit.mjs";
 
 const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
 
@@ -264,10 +274,13 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 				: "spine batch abort";
 		case "worker_done_missing":
 			return buildWorkerDoneMissingSuggestedCommand(ctx);
-		case "engine_orphaned":
+		case "engine_orphaned": {
+			const parentExitCommand = buildEngineOrphanParentExitSuggestedCommand(ctx);
+			if (parentExitCommand) return parentExitCommand;
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch resume --attached";
+		}
 		case "needs_merge":
 			return "/spine-resume --force";
 		case "needs_integrate":
@@ -406,10 +419,13 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				: `${batchLabel} lane worker orphaned — retry or abort`;
 		case "worker_done_missing":
 			return buildWorkerDoneMissingHeadline(batchLabel, ctx);
-		case "engine_orphaned":
+		case "engine_orphaned": {
+			const parentExitHeadline = buildEngineOrphanParentExitHeadline(batchLabel, ctx);
+			if (parentExitHeadline) return parentExitHeadline;
 			return ctx.failedTaskId
 				? `${batchLabel} engine died mid-run (task ${ctx.failedTaskId} still running) — retry or abort`
 				: `${batchLabel} batch engine died while running — retry or abort`;
+		}
 		case "needs_merge":
 			if (ctx.mergeGitignoredFailure) {
 				return `${batchLabel} merge blocked by gitignored paths committed on a lane branch`;

@@ -33,6 +33,8 @@ import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
+import { buildDuplicateInstallDoctorCheck } from "./duplicate-install.mjs";
+import { buildPiCliResolutionDoctorCheck } from "./pi-cli-resolution.mjs";
 import { CURSOR_RULES_ROOT_REL } from "../config/cursor-rules/discover.mjs";
 import { RULES_PROFILE_REL_PATH } from "../config/cursor-rules/profile.mjs";
 import {
@@ -254,6 +256,8 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	record("git installed", commandExists("git"), { detail: getVersion("git") });
 	record("git worktree support", gitSupportsWorktrees(), { detail: getVersion("git") });
 	record("pi installed", commandExists("pi"), { detail: getVersion("pi") });
+	checks.push(buildPiCliResolutionDoctorCheck());
+	checks.push(buildDuplicateInstallDoctorCheck());
 	checks.push(buildPiExtensionConflictDoctorCheck({ projectRoot }));
 	checks.push(buildAttachedOrphanRiskDoctorCheck());
 

@@ -20,9 +20,13 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 > **Real-pi batches (SP-195/SP-278):** Do **not** add per-step "Call `spine_review_step`" checkboxes for Review Level ≥ 1. The batch engine runs plan, code, and final reviews after worker `.DONE`. Stub batches (`SPINE_WORKER_STUB=1`) may still use in-worker stub plan review via the tool when a checkpoint marker requires it.
 
+> **Environment ([#150](https://github.com/beettlle/pi-spine/issues/150)):** Review Level **2+** requires cross-model reviewer support. `SPINE_WORKER_STUB=1` simulates reviews only — verify operator environment before assigning Level 2+.
+
 ## Mission
 
-[One paragraph: what you're building and why it matters]
+> **Issue links ([#147](https://github.com/beettlle/pi-spine/issues/147)):** Use `Closes #N` when this task fully resolves the issue. Use `Partial #N` when this task is one of several addressing the issue. Place on the first line below (not `Closes: [#N]` or `GitHub: [#N]` variants).
+
+[Closes #N | Partial #N] — [One paragraph: what you're building and why it matters]
 
 ## Dependencies
 
@@ -42,6 +46,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 - `[path/to/CONTEXT.md]`
 - `[path/to/specific-doc.md]` — [why needed]
+- `Parent split: SP-### — [what was split out]` — **successor tasks only** ([#146](https://github.com/beettlle/pi-spine/issues/146)); omit when not a split child
 
 ## Environment
 
@@ -156,6 +161,7 @@ for this task MUST include the task ID for traceability:
 - Modify framework/standards docs without explicit user approval
 - Load docs not listed in "Context to Read First"
 - Commit without the task ID prefix in the commit message
+- Modify `.spine/`, `AGENTS.md`, `CLAUDE.md`, or `.gitnexus/` — maintained by spine engine / GitNexus ([#149](https://github.com/beettlle/pi-spine/issues/149))
 
 ---
 

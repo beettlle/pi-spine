@@ -23,6 +23,7 @@ import {
 import { findLatestReviewHonorSignal } from "./review.mjs";
 import { summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
+import { inferEngineOrphanCause } from "./diagnosis-parent-exit.mjs";
 import {
 	findStubMarkedSucceededTask,
 	inferStubExitReasonForTask,
@@ -1434,6 +1435,14 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		signals.reviewHonor = reviewHonorSignal;
 	}
 
+	const enginePid = readBatchEnginePid(batch.raw);
+	const staleEnginePid =
+		enginePid != null && !isProcessAlive(enginePid);
+	const engineOrphanCause =
+		diagnosis === "engine_orphaned"
+			? inferEngineOrphanCause({ journalEvents, staleEnginePid })
+			: null;
+
 	const output = buildDiagnosisOutput(diagnosis, {
 		batchId: batch.batchId,
 		phase: batch.phase,
@@ -1467,6 +1476,8 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		macroPhase,
 		reviewHonorSignal,
 		...(doneMissingContext ?? {}),
+		engineOrphanCause,
+		staleEnginePid,
 		humanBaseSync,
 		overlapPaths: humanBaseSync?.overlapPaths ?? [],
 	});
