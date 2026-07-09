@@ -94,7 +94,7 @@ const PHASE62_DONE = [
 
 test("CONTEXT.md Phase 62 capstone tracking", () => {
 	const content = fs.readFileSync(contextPath, "utf-8");
-	assert.match(content, /\*\*Next Task ID:\*\* SP-552/);
+	assert.match(content, /CONTEXT Phase 62 complete; Next Task ID → SP-552/);
 	assert.match(content, /### Phase 62 — v2\.0\.0 automation proof \(SP-AUTO\)/);
 	assert.match(
 		content,

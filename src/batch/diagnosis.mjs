@@ -39,7 +39,6 @@ import {
 import {
 	buildEngineOrphanParentExitHeadline,
 	buildEngineOrphanParentExitSuggestedCommand,
-	inferEngineOrphanCause,
 } from "./diagnosis-parent-exit.mjs";
 import {
 	isGitignoredArtifactPath,
