@@ -98,6 +98,10 @@ spine version   # confirms global npm link resolves (npm bin is a symlink to bin
 
 `spine doctor` prints an advisory **`lanes.maxParallel`** sizing line when config is valid (configured vs CPU-based suggestion). Use it with [§3 Orchestrator process model](#orchestrator-process-model-98) to estimate expected node process count during batches.
 
+**Duplicate pi-spine installs (issue #128, SP-559):** Pi 0.75+ installs packages under `~/.pi/agent/npm/node_modules/` via `pi install npm:pi-spine`. If you previously ran `npm install -g pi-spine`, two copies can drift independently — `pi update` refreshes only the Pi-private copy while the global CLI runs stale code. `spine doctor` warns when both copies exist with **different versions** and suggests `npm uninstall -g pi-spine` plus `pi install npm:pi-spine`. Same-version pairs are tolerated.
+
+**Pi CLI resolution (issue #128):** Doctor resolves the authoritative Pi entrypoint via `process.argv[1]` when spine runs inside a Pi session, then falls back through `npm root -g`, NVM (`NVM_BIN` / `NVM_SYMLINK`), and common static paths. When PATH `pi` differs from that resolution, doctor prints a **PATH mismatch** warning so you can align `PATH` with the Pi install you intend to use.
+
 Global `npm link` / `npm install -g` invokes `spine` through a symlink on `PATH`. If `spine version` prints package and Node info, the CLI entrypoint is wired correctly (SP-099).
 
 In pi: `pi list` should show `pi-spine`; try `/spine-plan pending`.

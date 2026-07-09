@@ -15,6 +15,14 @@ export {
 	buildAttachedOrphanRiskDoctorCheck,
 	detectAttachedOrphanRiskPatterns,
 } from "../src/doctor/attached-orphan-risk.mjs";
+export {
+	buildDuplicateInstallDoctorCheck,
+	detectDuplicatePiSpineInstall,
+} from "../src/doctor/duplicate-install.mjs";
+export {
+	buildPiCliResolutionDoctorCheck,
+	resolveAuthoritativePiCliPath,
+} from "../src/doctor/pi-cli-resolution.mjs";
 export { buildTestingEvidenceDoctorChecks, runDoctorChecks } from "../src/doctor/run-doctor-checks.mjs";
 
 export function cmdDoctor() {
