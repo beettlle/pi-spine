@@ -338,6 +338,8 @@ In pi: `/spine-plan pending` then `/spine SP-042` (single-task) or `spine batch 
 | 2 | Plan + Code | Plan + code review at step boundaries |
 | 3 | Full | Plan + code + test review |
 
+**Environment compatibility ([#150](https://github.com/beettlle/pi-spine/issues/150)):** Review Level **2+** requires cross-model reviewer support in the execution environment. If running `SPINE_WORKER_STUB=1`, reviews are simulated — do not assign Level 2+ for tasks that need real cross-model review unless the operator has verified environment capability (preflight / batch config). Level 2+ in an unsupported environment can stall or kill lanes (e.g. SP-190 review spawn failure).
+
 Workers call **`spine_review_step`** (Pi tool) or `spine review step --step N [--type plan|code]`.
 
 When Review Level ≥ 1 (v1.3), workers also run a **final** review (`--type final`) before `.DONE`. Verdicts: `PASS`, `REVISE`, or `REPLAN` (scope wrong — operator edits PROMPT then retries). See [PRD v1.3](../docs/PRD-v1.3-upstream-execution-bridge.md) FR-UXB-04.
@@ -397,6 +399,14 @@ Individual steps can override the task-level review:
 | **4** | Cursor rules (when `.cursor/rules/` exists) | **Workers:** auto-selected per task via profile `worker.*`, PROMPT File Scope globs, `config.standards` append (FR-WORK-05). **Reviewers:** separate `profile.reviewer.*` selection with review-type scope — plan uses File Scope, code uses git diff paths, final uses always-only rules; 16 KiB cap, no `referenceDocs` (FR-REV-08) |
 
 Populate "Context to Read First" from `referenceDocs` in spine config. Never list docs in `neverLoad`.
+
+**Parent split (successor tasks — [#146](https://github.com/beettlle/pi-spine/issues/146)):** When this task is a child of a superseded parent (e.g. SP-419 split into SP-466 + SP-467), add a line in **Context to Read First**:
+
+```markdown
+- `Parent split: SP-### — [what was split out]`
+```
+
+Example: SP-466 lists `Parent split: SP-419 — API schema types` so reviewers can trace decomposition history.
 
 When authoring tasks for Cursor-based repos, **File Scope drives glob-matched worker rules** — include concrete paths (e.g. `src/**/*.mjs`, not only `src/`) so language packs activate. The same File Scope applies to **plan review** rule matching; code reviews match globs against changed diff paths instead. Preview worker selection with `spine rules select --task <id>`; preview reviewer selection with `spine rules select --role reviewer --review-type plan|code|final --task <id>`. See [docs/design/cursor-rules-discovery.md](../../docs/design/cursor-rules-discovery.md).
 
@@ -502,6 +512,16 @@ Docs-only tasks still include `### Step N: Testing & Verification` (full suite i
 
 Do **not** generate Taskplane polyrepo **`#### Segment: <repoId>`** markers — pi-spine is monorepo-only (PRD §13.2). Split multi-repo work into separate tasks with dependencies instead.
 
+## Do NOT (worker scope — include in every PROMPT)
+
+Workers must **not** modify paths maintained by other processes ([#149](https://github.com/beettlle/pi-spine/issues/149)):
+
+- `.spine/` — spine engine config, runtime, rules manifest
+- `AGENTS.md`, `CLAUDE.md` — GitNexus / agent harness indexes
+- `.gitnexus/` — code intelligence index
+
+Include these in every packet's `## Do NOT` section. Workers editing these paths cause merge dirty-file failures (e.g. batch `20260703T051629`).
+
 ---
 
 ## Checklist (Definition of Ready)
@@ -514,6 +534,10 @@ Before reporting launch commands:
 - [ ] Complexity scored; review level assigned (0–3)
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
+- [ ] Mission uses `Closes #N` or `Partial #N` on first line when tracking GitHub issues ([#147](https://github.com/beettlle/pi-spine/issues/147))
+- [ ] Split-successor tasks include `Parent split: SP-###` in Context to Read First ([#146](https://github.com/beettlle/pi-spine/issues/146))
+- [ ] `## Do NOT` bans `.spine/`, `AGENTS.md`, `CLAUDE.md`, `.gitnexus/` ([#149](https://github.com/beettlle/pi-spine/issues/149))
+- [ ] Level 2+ only when operator environment supports cross-model review ([#150](https://github.com/beettlle/pi-spine/issues/150))
 - [ ] If `testCommand` is `` `true` ``, `fileScopeMustChange` MUST list at least one deliverable path
 - [ ] Every **Must Update** doc path also appears in `## File Scope` ([#144](https://github.com/beettlle/pi-spine/issues/144))
 - [ ] Docs-only tasks: consider `fileScopeMustNotChange` on `src/**`, `bin/**` ([#142](https://github.com/beettlle/pi-spine/issues/142)); see [Docs-only contract pattern](#docs-only-contract-pattern-fr-sta-12)
@@ -543,6 +567,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 ## Key Principles
 
 - **Self-contained PROMPT.md** — the worker has no memory of this conversation. Cross-model reviewers receive a **fresh spawn** (FR-REV-04) with only the review request, diff, and Contract — not `referenceDocs` or worker rules. Place acceptance criteria and spec references in PROMPT `## Mission`, `## Contract`, and step checkboxes.
+- **Issue links in Mission ([#147](https://github.com/beettlle/pi-spine/issues/147))** — Use `Closes #N` when this task fully resolves the issue. Use `Partial #N` when this task is one of several addressing the issue. Place on the first line of `## Mission` (not `Closes: [#N]` or `GitHub: [#N]` variants).
 - **Scoped `testCommand` for cross-model batches** — lane worktrees differ from dev checkouts; broad `flutter test` / `npm test` can fail in lanes even when targeted tests pass. See [cross-model authoring guidance](references/contract-template.md#cross-model-authoring-worker--reviewer) for the `testCommand` decision table.
 - **S/M patch tasks: no coverage gate in Contract** — do not chain `npm run coverage:check` or bare `npm test` in `## Contract` `testCommand` on Size S/M tasks; integrate gate owns full coverage at merge. Use scoped `node --test path/to.test.mjs` (SP-521 / [#141](https://github.com/beettlle/pi-spine/issues/141)). `spine tasks validate` warns when violated.
 - **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. Use `testing.test` from spine config; for **code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only tasks may omit the coverage checkbox.
