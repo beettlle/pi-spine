@@ -2,7 +2,7 @@
  * Lane worker watch helpers — stall anchor slides on worker_alive while running (SP-341 / #32).
  */
 
-/** @typedef {"launching" | "pi" | "verify" | "unknown"} WorkerPhase */
+/** @typedef {"launching" | "pi" | "verify" | "subprocess" | "unknown"} WorkerPhase */
 /** @typedef {"worker_alive" | "checkpoint" | "file_scope_activity"} HeartbeatKind */
 
 /**
@@ -11,7 +11,9 @@
  * @param {HeartbeatKind} params.heartbeatKind
  */
 export function shouldSlideStallAnchorOnHeartbeat({ workerPhase, heartbeatKind }) {
-	return workerPhase === "pi" && heartbeatKind === "worker_alive";
+	return (
+		(workerPhase === "pi" || workerPhase === "subprocess") && heartbeatKind === "worker_alive"
+	);
 }
 
 /**

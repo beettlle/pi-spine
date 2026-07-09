@@ -17,6 +17,7 @@ import {
 } from "../batch/journal.mjs";
 import { resolveStallConfig } from "../batch/heartbeat.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { formatElapsedMs } from "./lane-throughput.mjs";
 import {
 	deriveLanesThroughput,
 	summarizeLaneThroughput,
@@ -38,6 +39,75 @@ import {
 
 /** Last N journal events included in dashboard snapshot tail (not full journal per client). */
 export const DASHBOARD_JOURNAL_TAIL_LIMIT = 20;
+
+/**
+ * @param {number} laneNumber
+ * @param {object[]} journalEvents
+ */
+export function resolveSubprocessHeartbeatMeta(laneNumber, journalEvents) {
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event.type !== "lane.heartbeat") continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		if (payload.laneNumber != null && payload.laneNumber !== laneNumber) continue;
+		if (event.laneId && event.laneId !== `lane-${laneNumber}`) continue;
+		return {
+			workerPhase: typeof payload.workerPhase === "string" ? payload.workerPhase : null,
+			subprocessCommand:
+				typeof payload.subprocessCommand === "string" ? payload.subprocessCommand : null,
+			subprocessStartedAtMs:
+				payload.subprocessStartedAtMs != null ? Number(payload.subprocessStartedAtMs) : null,
+		};
+	}
+	return { workerPhase: null, subprocessCommand: null, subprocessStartedAtMs: null };
+}
+
+/**
+ * @param {object} params
+ * @param {string} params.subprocessCommand
+ * @param {number | null} [params.subprocessStartedAtMs]
+ * @param {number} [params.now]
+ */
+export function formatSubprocessHeartbeatDisplay({
+	subprocessCommand,
+	subprocessStartedAtMs,
+	now = Date.now(),
+}) {
+	const elapsedMs =
+		subprocessStartedAtMs != null && Number.isFinite(subprocessStartedAtMs)
+			? Math.max(0, now - subprocessStartedAtMs)
+			: null;
+	const elapsed = elapsedMs != null ? formatElapsedMs(elapsedMs) : null;
+	if (elapsed && elapsed !== "—") {
+		return `running ${subprocessCommand} (${elapsed})`;
+	}
+	return `running ${subprocessCommand}`;
+}
+
+/**
+ * @param {object[]} lanes
+ * @param {object[]} journalEvents
+ * @param {number} [now]
+ */
+export function enrichLaneRowsWithSubprocessHeartbeat(lanes, journalEvents, now = Date.now()) {
+	return (lanes ?? []).map((lane) => {
+		const subprocessMeta = resolveSubprocessHeartbeatMeta(lane.laneNumber, journalEvents);
+		if (subprocessMeta.workerPhase !== "subprocess" || !subprocessMeta.subprocessCommand) {
+			return lane;
+		}
+		return {
+			...lane,
+			workerPhase: subprocessMeta.workerPhase,
+			subprocessCommand: subprocessMeta.subprocessCommand,
+			subprocessStartedAtMs: subprocessMeta.subprocessStartedAtMs,
+			heartbeatDisplay: formatSubprocessHeartbeatDisplay({
+				subprocessCommand: subprocessMeta.subprocessCommand,
+				subprocessStartedAtMs: subprocessMeta.subprocessStartedAtMs,
+				now,
+			}),
+		};
+	});
+}
 
 /**
  * @param {string} projectRoot
@@ -105,19 +175,23 @@ export function buildDashboardSnapshot(projectRoot) {
 		});
 	}
 
-	const lanes = buildLaneRows({
-		lanes: batch?.lanes ?? [],
-		classifiedTasks,
-		stallConfig,
-		currentWaveTaskIds,
-		journalTail,
+	const lanes = enrichLaneRowsWithSubprocessHeartbeat(
+		buildLaneRows({
+			lanes: batch?.lanes ?? [],
+			classifiedTasks,
+			stallConfig,
+			currentWaveTaskIds,
+			journalTail,
+			journalEvents,
+			metricsLines,
+			projectRoot,
+			batchId: reconciliation.batchId,
+			now,
+			diagnosis: reconciliation.diagnosis,
+		}),
 		journalEvents,
-		metricsLines,
-		projectRoot,
-		batchId: reconciliation.batchId,
 		now,
-		diagnosis: reconciliation.diagnosis,
-	});
+	);
 	const laneThroughputSummary = summarizeLaneThroughput(
 		deriveLanesThroughput({
 			lanes: batch?.lanes ?? [],
