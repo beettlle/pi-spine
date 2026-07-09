@@ -68,8 +68,25 @@ function writeSequenceFixture(projectRoot) {
 test("isPiSessionMetadataPath matches .pi session roots and children", () => {
 	assert.equal(isPiSessionMetadataPath(".pi"), true);
 	assert.equal(isPiSessionMetadataPath(".pi/settings.json"), true);
+	assert.equal(isPiSessionMetadataPath(".pi-smart-router"), true);
+	assert.equal(isPiSessionMetadataPath(".pi-smart-router/state.db-wal"), true);
 	assert.equal(isPiSessionMetadataPath("dirty.txt"), false);
 	assert.deepEqual(filterPiSessionDirtyPaths([".pi", "src/a.mjs"]), ["src/a.mjs"]);
+	assert.deepEqual(filterPiSessionDirtyPaths([".pi-smart-router/", "src/a.mjs"]), ["src/a.mjs"]);
+});
+
+test("checkGitClean ignores untracked .pi-smart-router/ session metadata", async () => {
+	const projectRoot = await initGitRepo("spine-seq-preflight-smart-router-");
+	try {
+		fs.mkdirSync(path.join(projectRoot, ".pi-smart-router"), { recursive: true });
+		fs.writeFileSync(path.join(projectRoot, ".pi-smart-router", "state.db-wal"), "", "utf-8");
+
+		const result = checkGitClean({ projectRoot });
+		assert.equal(result.ok, true);
+		assert.match(result.message, /pi session metadata ignored/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("checkGitClean ignores untracked .pi/ session metadata", async () => {
@@ -83,7 +100,7 @@ test("checkGitClean ignores untracked .pi/ session metadata", async () => {
 
 		const result = checkGitClean({ projectRoot });
 		assert.equal(result.ok, true);
-		assert.match(result.message, /\.pi\/ session metadata ignored/);
+		assert.match(result.message, /pi session metadata ignored/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

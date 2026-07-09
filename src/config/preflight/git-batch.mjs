@@ -14,19 +14,26 @@ import { METRICS_DEFAULTS } from "../defaults.mjs";
 const HEALTHY_ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
 const LIMBO_DIAGNOSES = new Set(["limbo_stale", "completed_manual"]);
 const PI_SESSION_METADATA_PREFIX = ".pi/";
+const PI_SMART_ROUTER_PREFIX = ".pi-smart-router/";
 
 function makeCheck(id, ok, message, extra = {}) {
 	return { id, ok, message, ...extra };
 }
 
 /**
- * Pi session metadata under `.pi/` is not project source (issue #81).
+ * Pi session metadata under `.pi/` and ephemeral `.pi-smart-router/` WAL dirs
+ * are not project source (issues #81, v1.10.1 preflight git-clean).
  *
  * @param {string} relPath
  */
 export function isPiSessionMetadataPath(relPath) {
 	const normalized = String(relPath).replace(/\\/g, "/").replace(/^\.\/+/, "");
-	return normalized === ".pi" || normalized.startsWith(PI_SESSION_METADATA_PREFIX);
+	return (
+		normalized === ".pi" ||
+		normalized.startsWith(PI_SESSION_METADATA_PREFIX) ||
+		normalized === ".pi-smart-router" ||
+		normalized.startsWith(PI_SMART_ROUTER_PREFIX)
+	);
 }
 
 /**
@@ -155,7 +162,11 @@ export function checkGitClean(ctx) {
 
 	if (dirtyPaths.length === 0) {
 		if (allDirtyPaths.length > 0) {
-			return makeCheck("git-clean", true, "working tree clean (.pi/ session metadata ignored)");
+			return makeCheck(
+				"git-clean",
+				true,
+				"working tree clean (pi session metadata ignored)",
+			);
 		}
 		return makeCheck("git-clean", true, "working tree clean");
 	}

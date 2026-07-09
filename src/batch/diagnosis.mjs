@@ -15,11 +15,17 @@ import { buildAlternatives } from "./diagnosis-alternatives.mjs";
 export { buildAlternatives } from "./diagnosis-alternatives.mjs";
 import {
 	buildMergeFailureHeadline,
+	buildGitignoredMergeRepairCommand,
 } from "./diagnosis-merge-failure.mjs";
-export { buildMergeFailureHeadline, summarizeMergeFailures } from "./diagnosis-merge-failure.mjs";
+export {
+	buildMergeFailureHeadline,
+	buildGitignoredMergeRepairCommand,
+	inferMergeGitignoredFailure,
+	summarizeMergeFailures,
+} from "./diagnosis-merge-failure.mjs";
 import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";
 export { buildRunningTailHeadline, isRunningWithoutActiveWorkers } from "./diagnosis-tail-state.mjs";
-export { findLatestReviewHonorSignal } from "./review.mjs";
+export { buildReviewHonorHeadlineSuffix, findLatestReviewHonorSignal } from "./review.mjs";
 import {
 	buildStubFailureHeadline,
 	buildStubFailureSuggestedCommand,
@@ -40,16 +46,13 @@ import {
 	buildEngineOrphanParentExitHeadline,
 	buildEngineOrphanParentExitSuggestedCommand,
 } from "./diagnosis-parent-exit.mjs";
-import {
-	isGitignoredArtifactPath,
-	listGitignoredArtifactRoots,
-} from "./lane-dirty-check.mjs"
-export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
 export {
 	inferEngineOrphanCause,
 	journalHasEngineCrash,
 	journalIndicatesParentExit,
 } from "./diagnosis-parent-exit.mjs";
+import { buildReviewHonorHeadlineSuffix } from "./review.mjs";
+export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
 
 const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
 
@@ -97,92 +100,12 @@ const NO_PAUSE_DIAGNOSES = new Set([
 	"engine_orphaned",
 	"integrate_isolated_ok",
 ]);
-const GITIGNORED_MERGE_FAILURE_CLASSES = new Set(["merge_failed_gitignored", "GitignoredDirtyWorktree"]);
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
 	"code_review_timeout",
 	"final_review_spawn_failed",
 	"final_review_timeout",
 ]);
-
-/**
- * @param {object|null|undefined} reviewHonorSignal
- * @returns {string|null}
- */
-export function buildReviewHonorHeadlineSuffix(reviewHonorSignal) {
-	if (!reviewHonorSignal?.kind) return null;
-	const reviewLabel =
-		reviewHonorSignal.reviewType === "final" ? "final review" : "code review";
-	if (reviewHonorSignal.kind === "review.crash_recovered") {
-		return `recovered ${reviewLabel} crash — prior verdict honored from ${reviewHonorSignal.honorSource ?? "artifact"}`;
-	}
-	if (reviewHonorSignal.kind === "review.skipped_fresh_artifact") {
-		return `skipped redundant ${reviewLabel} — fresh artifact honored`;
-	}
-	if (reviewHonorSignal.kind === "review.resumed") {
-		return `${reviewLabel} resumed after operator retry`;
-	}
-	return null;
-}
-
-/**
- * @param {object} [ctx]
- * @param {string|null} [ctx.exitReason]
- * @param {string|null} [ctx.failureClass]
- * @param {string|null} [ctx.lastError]
- * @param {object[]} [ctx.journalEvents]
- * @returns {boolean}
- */
-export function inferMergeGitignoredFailure(ctx = {}) {
-	const { exitReason, failureClass, lastError, journalEvents } = ctx;
-	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(exitReason ?? "")) return true;
-	if (GITIGNORED_MERGE_FAILURE_CLASSES.has(failureClass ?? "")) return true;
-
-	const haystackParts = [exitReason, failureClass, lastError];
-	if (Array.isArray(journalEvents)) {
-		for (const event of journalEvents) {
-			if (event.type !== "batch.merge_failed" && event.type !== "task.failed") continue;
-			const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
-			haystackParts.push(
-				payload.failureClass,
-				payload.classification,
-				payload.error,
-				payload.output,
-			);
-		}
-	}
-	const haystack = haystackParts.filter(Boolean).join("\n").toLowerCase();
-	return (
-		haystack.includes("gitignored dirty files only") ||
-		haystack.includes("merge_failed_gitignored") ||
-		haystack.includes("gitignoreddirtyworktree") ||
-		(haystack.includes("git add") && haystack.includes("ignored"))
-	);
-}
-
-/**
- * @param {string|null|undefined} taskBranch
- * @param {string[]|null|undefined} gitignoredPaths
- */
-export function buildGitignoredMergeRepairCommand(taskBranch, gitignoredPaths) {
-	const branchHint = taskBranch ? `git checkout ${taskBranch}` : "git checkout <task-branch>";
-	const stetRuntimeCleanRoots = new Set([".review", ".spine/runtime"]);
-	if (Array.isArray(gitignoredPaths) && gitignoredPaths.length > 0) {
-		const artifactRoots = listGitignoredArtifactRoots(gitignoredPaths);
-		const stetRuntimeOnly =
-			artifactRoots.length > 0 &&
-			artifactRoots.every((root) => stetRuntimeCleanRoots.has(root)) &&
-			gitignoredPaths.every((p) => isGitignoredArtifactPath(p));
-		if (stetRuntimeOnly) {
-			const cleanHint = `git clean -fdX -- ${artifactRoots.join(" ")}`;
-			return `${branchHint} && ${cleanHint} && spine batch resume --force`;
-		}
-		const pathHint = `git rm -r --cached -- ${gitignoredPaths.slice(0, 5).join(" ")}`;
-		return `${branchHint} && ${pathHint} && spine batch resume --force`;
-	}
-	const pathHint = "git rm -r --cached -- <gitignored-paths>";
-	return `${branchHint} && ${pathHint} && spine batch resume --force`;
-}
 
 /**
  * @param {string} diagnosis

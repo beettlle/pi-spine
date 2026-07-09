@@ -364,6 +364,26 @@ export function findLatestReviewHonorSignal(journalEvents, activeTaskId = null) 
 }
 
 /**
+ * @param {object|null|undefined} reviewHonorSignal
+ * @returns {string|null}
+ */
+export function buildReviewHonorHeadlineSuffix(reviewHonorSignal) {
+	if (!reviewHonorSignal?.kind) return null;
+	const reviewLabel =
+		reviewHonorSignal.reviewType === "final" ? "final review" : "code review";
+	if (reviewHonorSignal.kind === "review.crash_recovered") {
+		return `recovered ${reviewLabel} crash — prior verdict honored from ${reviewHonorSignal.honorSource ?? "artifact"}`;
+	}
+	if (reviewHonorSignal.kind === "review.skipped_fresh_artifact") {
+		return `skipped redundant ${reviewLabel} — fresh artifact honored`;
+	}
+	if (reviewHonorSignal.kind === "review.resumed") {
+		return `${reviewLabel} resumed after operator retry`;
+	}
+	return null;
+}
+
+/**
  * Latest `.reviews/final-*.md` by mtime, if any.
  * @param {string} taskFolder
  * @returns {{ artifactPath: string, mtimeMs: number }|null}
