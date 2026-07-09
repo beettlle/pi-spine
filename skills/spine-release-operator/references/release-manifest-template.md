@@ -51,11 +51,14 @@ spine status --diagnose
 spine gate approve && spine integrate && npm install && spine batch complete
 ```
 
-**Regression gate** (run after each integrate, before next wave):
+**Regression gate** (run after each integrate, before next wave — full reference: [post-integrate-regression-gate.md](../../skills/spine-release-operator/references/post-integrate-regression-gate.md)):
 
 ```bash
-npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run release:check
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${WAVE:-main}.log
+test "${PIPESTATUS[0]}" -eq 0
 ```
+
+Do **not** use `| tail` alone for pass/fail — verify exit code.
 
 **Operator gates** (human only — sequence does not auto-approve without explicit flags):
 
@@ -104,8 +107,9 @@ Filled example: [`docs/release/manifest-v1.10.0-example.md`](../../../docs/relea
 ## Publish checklist (Phase 5–6)
 
 - [ ] All release-scoped tasks `.DONE` on `main`
+- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green
-- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — CI parity)
+- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
 - [ ] `git status` clean
 - [ ] Operator approved publish bump type: patch | minor | major
 - [ ] `npm version <bump>` + `git push && git push --tags`

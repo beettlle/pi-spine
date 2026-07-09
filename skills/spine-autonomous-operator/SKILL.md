@@ -29,6 +29,8 @@ Invoke explicitly: `/skill:spine-autonomous-operator`
 - **Always** use `spine status --diagnose` for recovery; follow `suggestedCommand`
 - **Always** run `spine gate approve` before `spine integrate`
 - **Always** run `npm install` on `main` after successful integrate
+- **Always** run post-integrate `npm run release:check` on `main` after each wave land loop before the next wave — see [post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md)
+- **Never** use `| tail` or `| head` alone to judge `release:check` pass/fail — verify exit code
 - **Do not** use unattended `spine run sequence --auto-approve-gate --force` without monitoring
 - **Do not** start a second batch while another batch is **running** on the same repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
@@ -190,6 +192,19 @@ git add spine-tasks/*/.DONE 2>/dev/null; git commit -m "chore: track .DONE for w
 
 Verify: `git status` clean, `.DONE` count increased.
 
+### 3.3a Post-integrate regression gate (blocking)
+
+After **every** land loop (including manual merge), on current `main`:
+
+```bash
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${N}.log
+test "${PIPESTATUS[0]}" -eq 0
+```
+
+Full reference: [post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md).
+
+**If non-zero:** fix on `main`, commit, re-run. Do **not** start wave N+1 until green.
+
 ### 3.4 Advance
 
 Increment `N` and repeat.
@@ -245,11 +260,12 @@ See [references/issue-template.md](references/issue-template.md) for a full temp
 spine plan pending
 spine preflight
 git status
-npm run release:check
+npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log
+test "${PIPESTATUS[0]}" -eq 0
 find spine-tasks -name '.DONE' | wc -l
 ```
 
-In pi sessions, `MonitorCreate` for `npm run release:check` is allowed (see pi-async-orchestration).
+In pi sessions, `MonitorCreate` for `npm run release:check` is allowed (see pi-async-orchestration). Verify exit 0 from full log — not `tail` alone.
 
 ## Final report (required)
 
@@ -273,7 +289,7 @@ In pi sessions, `MonitorCreate` for `npm run release:check` is allowed (see pi-a
 ```text
 Run pending spine tasks: validate/analyze/plan → fix packets → preflight →
 for each wave: MonitorCreate batch start (or foreground) → diagnose →
-gate approve → integrate → npm install → batch complete.
+gate approve → integrate → npm install → batch complete → post-integrate release:check (exit 0).
 Resume --attached --force stays foreground. File pi-spine bugs on engine faults.
 Done when 0 pending, preflight green, release:check passes. Post final report.
 ```

@@ -72,6 +72,24 @@ Follow `suggestedCommand` from `spine status --diagnose` when unsure.
 
 ---
 
+## Post-integrate verification
+
+After each wave land loop (`integrate` + `batch complete`), before the next wave or `git push`:
+
+```bash
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${N}.log
+test "${PIPESTATUS[0]}" -eq 0
+```
+
+Full reference: [post-integrate-regression-gate.md](../../spine-release-operator/references/post-integrate-regression-gate.md).
+
+| Do | Do not |
+|----|--------|
+| Verify `$?` or `${PIPESTATUS[0]}` after `release:check` | Use `\| tail` alone for pass/fail |
+| Re-run after manual merge / conflict resolution | Assume scoped task `testCommand` covered full CI |
+
+---
+
 ## Preflight
 
 ```bash

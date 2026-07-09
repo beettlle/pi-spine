@@ -23,6 +23,7 @@ Invoke explicitly: `/skill:spine-orchestrate-waves`, `/spine-orchestrate pending
 | Curated release subset | `spine-release-operator` skill |
 | Agent shell batch policy (detached vs attached) | [spine-autonomous-operator/references/agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md) |
 | Pi async batch/verify (MonitorCreate) | [spine-release-operator/references/pi-async-orchestration.md](../spine-release-operator/references/pi-async-orchestration.md) |
+| Post-integrate regression gate | [spine-release-operator/references/post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md) |
 | Canonical how-to prose | [references/outer-loop.md](references/outer-loop.md) (synced from `docs/adoption/agent-orchestrated-waves.md`) |
 | Slash entry (`/spine-orchestrate`) | pi-spine extension — wave plan + outer loop checklist |
 | Single-task suggested command | `/spine-next` inside land loop |
@@ -69,6 +70,7 @@ START
 **Hard stops before next wave:**
 
 - Land loop incomplete (`integrate` + `batch complete` + push when remote sync desired)
+- Post-integrate `npm run release:check` not green on `main` — see [post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md)
 - Unresolved `failed`, `aborted`, or `needs_retry` on current wave
 - Active `spine run sequence --attached` on same batch (state corruption risk)
 
@@ -106,7 +108,10 @@ spine gate status
 
 spine gate approve          # only after evidence checklist passes
 spine integrate
+npm install
 spine batch complete
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${WAVE}.log
+test "${PIPESTATUS[0]}" -eq 0   # blocking — see post-integrate-regression-gate.md
 git push origin <baseBranch>   # when remote sync desired
 ```
 
@@ -160,8 +165,9 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 | Approving gate without reading evidence | Always inspect evidence directory before `spine gate approve` |
 | Expecting workers to call `spine_request_gate` for integrate | Agent drives gate approval from host shell |
 | `--auto-approve-gate` with real pi workers | Per-wave agent loop with explicit gate approval |
-| Starting next wave before land loop completes | Complete integrate + batch complete + push before next wave |
+| Starting next wave before land loop completes | Complete integrate + batch complete + post-integrate release:check + push before next wave |
 | Bare full-suite `testCommand` with large output | Scope `testCommand` to relevant test files |
+| `release:check \| tail` for pass/fail | Verify exit code; use `tee` + `${PIPESTATUS[0]}` — see [post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md) |
 
 ---
 

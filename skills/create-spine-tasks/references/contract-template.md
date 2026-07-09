@@ -223,9 +223,20 @@ Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-R
 |-----------|---------------------------|
 | Docs-only, no code changes | `` `true` `` **and** `fileScopeMustChange` with at least one deliverable doc path |
 | Single module, targeted tests exist | `` `node --test tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
+| **Shared-module behavior change** (diagnosis, reconcile, parse-prompt, worktree, doctor) | Chain **all** related `tests/**/*.test.mjs` from `rg` for old strings — not only the new test file (see below) |
 | Full-suite safe in lane worktree | `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
 | Coverage gate required (pi-spine ≥77%) | `` `npm run coverage:check` `` |
 | Long external job (>2h) | Scoped command + `stallTimeoutMinutes` and `extendGraceOnFileScope` in Contract (see SP-314 example above) |
+
+### Shared-module behavior changes
+
+When `fileScopeMustChange` touches modules whose output is asserted across multiple test files (e.g. `src/batch/diagnosis*.mjs`, `src/batch/reconcile.mjs`, `src/tasks/packet/parse-prompt.mjs`, `src/batch/worktree.mjs`, `bin/spine-doctor.mjs`):
+
+1. Before finalizing Contract, run `rg -l 'old headline|old error phrase' tests/` for strings being replaced.
+2. Include **every** hit file in `testCommand` (chain with `&&`), or document why post-integrate `release:check` on `main` will cover them ([post-integrate-regression-gate.md](../../spine-release-operator/references/post-integrate-regression-gate.md)).
+3. List discovered test files in the Testing step checkboxes.
+
+**Anti-pattern:** New test file only in `testCommand` while older tests still assert previous behavior (SP-560 / `detached-start-orphan-timeout.test.mjs` vs `diagnosis-parent-exit.test.mjs`).
 
 ---
 

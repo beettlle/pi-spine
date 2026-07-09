@@ -23,6 +23,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 | Semver scope budgets | [references/release-profiles.md](references/release-profiles.md) |
 | Issue intake queries | [references/issue-intake-checklist.md](references/issue-intake-checklist.md) |
 | Manifest format | [references/release-manifest-template.md](references/release-manifest-template.md) |
+| Post-integrate regression gate | [references/post-integrate-regression-gate.md](references/post-integrate-regression-gate.md) |
 | npm publish mechanics | `docs/release/npm-publish.md` |
 | Upstream bug filing | [references/issue-template.md](references/issue-template.md) |
 
@@ -48,6 +49,9 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Always** prioritize documentation issues over enhancements
 - **Always** run `spine gate approve` before `spine integrate`
 - **Always** run `npm install` on `main` after successful integrate
+- **Always** run post-integrate `npm run release:check` on `main` after each wave land loop before starting the next wave or pushing — see [post-integrate-regression-gate.md](references/post-integrate-regression-gate.md)
+- **Never** use `| tail` or `| head` alone to judge `release:check` pass/fail — verify exit code (`$?` or `${PIPESTATUS[0]}`)
+- **Never** `git push origin main` during a release until post-integrate `release:check` exits 0 on current `HEAD`
 - **Do not** execute tasks outside the approved manifest scope
 - **Do not** start a second batch while another batch is **running** on this repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
@@ -308,6 +312,21 @@ spine batch complete
 
 Verify: `git status` clean, `.DONE` count increased.
 
+### 4.3a Post-integrate regression gate (blocking)
+
+After **every** land loop (including manual merge / conflict resolution), on current `main`:
+
+```bash
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${N}.log
+test "${PIPESTATUS[0]}" -eq 0
+```
+
+Full reference: [post-integrate-regression-gate.md](references/post-integrate-regression-gate.md).
+
+**If non-zero:** fix on `main`, commit, re-run gate. Do **not** start wave N+1, push, or proceed to Phase 5 until green.
+
+**Do not** judge pass/fail from `tail` output — `tail` exits 0 even when `release:check` failed.
+
 ### 4.4 Recovery
 
 Always: `spine status --diagnose`
@@ -335,13 +354,16 @@ spine preflight
 git status
 ```
 
-**pi async (preferred):** `MonitorCreate` with `npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log`, `timeout: 900000`, `onDone` to read log tail and present checklist.
+**pi async (preferred):** `MonitorCreate` with `npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log`, `timeout: 900000`, `onDone` to read **full log** and verify exit 0 — not log tail alone.
 
 **Foreground fallback:**
 
 ```bash
-npm run release:check         # typecheck → lint → tests → coverage (CI parity)
+npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log
+test "${PIPESTATUS[0]}" -eq 0   # or: npm run release:check; echo $?
 ```
+
+**Do not** use `npm run release:check 2>&1 | tail -20` for pass/fail — verify exit code explicitly.
 
 ### `release:check` gate (HARD STOP — blocking)
 
@@ -461,6 +483,7 @@ check manifest at spine-tasks/_authoring/release-v{TARGET}/manifest.md →
 spine status --diagnose (do not collide with running batch) →
 preflight → for each wave: MonitorCreate batch start (or foreground) → onDone diagnose →
 gate approve → integrate → npm install → batch complete →
+post-integrate release:check (exit 0 required; no tail-only verification) →
 MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval.
 resume --attached --force stays foreground. Post final report with composition table.
 ```

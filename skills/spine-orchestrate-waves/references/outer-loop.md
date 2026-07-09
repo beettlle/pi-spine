@@ -71,7 +71,10 @@ spine gate status
 # Inspect .spine/runtime/<batchId>/evidence/
 spine gate approve
 spine integrate
+npm install
 spine batch complete
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${WAVE}.log
+test "${PIPESTATUS[0]}" -eq 0   # blocking — see post-integrate-regression-gate.md
 git push origin main
 ```
 
@@ -130,8 +133,9 @@ After `spine wait` returns or `spine status --diagnose` reports a non-running st
 | Approving gate without reading evidence | Merges untested or broken code to main | Always inspect `.spine/runtime/<batchId>/evidence/` before `spine gate approve` |
 | Expecting workers to call `spine_request_gate` for integrate | Workers always receive `not_supported` (FR-SHIP-13) | Agent drives gate approval from the host shell |
 | Using `--auto-approve-gate` with real pi workers | Bypasses evidence review; safety gates block this for real pi | Use per-wave agent loop with explicit gate approval |
-| Starting next wave before land loop completes | Base branch diverges from orch; downstream waves may conflict | Complete `integrate` + `batch complete` + push before next wave |
+| Starting next wave before land loop completes | Base branch diverges from orch; downstream waves may conflict | Complete `integrate` + `batch complete` + post-integrate `release:check` + push before next wave |
 | Bare full-suite `testCommand` with large output | Contract verify exceeds `maxBuffer` (10MB) and fails | Scope `testCommand` to relevant test files |
+| `release:check \| tail` for pass/fail | `tail` exits 0 even when `release:check` failed | Verify exit code; use `tee` + `${PIPESTATUS[0]}` — [post-integrate-regression-gate.md](../../spine-release-operator/references/post-integrate-regression-gate.md) |
 
 ---
 
@@ -158,7 +162,10 @@ for ((WAVE=0; WAVE<WAVES; WAVE++)); do
     spine gate status
     spine gate approve
     spine integrate
+    npm install
     spine batch complete
+    npm run release:check 2>&1 | tee "/tmp/pi-spine-post-integrate-wave-${WAVE}.log"
+    test "${PIPESTATUS[0]}" -eq 0
     git push origin main
   else
     echo "Wave $WAVE ended with diagnosis: $DIAG"
