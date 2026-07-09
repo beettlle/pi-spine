@@ -40,6 +40,7 @@
     "test:coverage": "node scripts/run-coverage.mjs --report-only",
     "coverage:check": "node scripts/run-coverage.mjs",
     "release:check": "npm run typecheck && npm run lint && SPINE_WORKER_STUB=1 npm test && npm run coverage:check",
+    "preversion": "npm run release:check",
     "prepublishOnly": "npm run release:check"
   },
   "repository": {
