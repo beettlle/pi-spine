@@ -10,7 +10,7 @@ import { archiveBatchStatePath } from "./lifecycle.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
-import { removeLaneWorktree } from "./worktree.mjs";
+import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 
 /**
@@ -230,19 +230,15 @@ export function abortBatch(ctx) {
 
 	if (hard) {
 		const configResult = loadSpineConfig(projectRoot);
-		if (shouldCleanupWorktreesOnHardAbort(configResult.config ?? {})) {
-			for (const lane of snapshot.lanes ?? []) {
-				const laneNumber = Number(
-					lane && typeof lane === "object"
-						? /** @type {{ laneNumber?: number }} */ (lane).laneNumber
-						: 1,
-				);
-				try {
-					removeLaneWorktree(projectRoot, batchId, laneNumber || 1);
-				} catch {
-					// best-effort cleanup
-				}
-			}
+		const config = configResult.config ?? {};
+		if (shouldCleanupWorktreesOnHardAbort(config)) {
+			const laneCount = maxLaneNumberFromBatchState(snapshot);
+			removeLaneWorktrees(projectRoot, batchId, laneCount);
+			appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
+				batchId,
+				laneCount,
+				reason: "hard_abort",
+			});
 		}
 	}
 
