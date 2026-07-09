@@ -1,3 +1,7 @@
+/**
+ * Reconcile tests must use initGitRepo()/destroyGitRepo() for projectRoot — never
+ * process.cwd() as projectRoot (CI detached HEAD; see #157, scripts/verify-reconcile-test-fixtures.mjs).
+ */
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

@@ -10,6 +10,7 @@ Operator guides for pi-spine semver releases, publish gates, and harness executi
 | [`npm-publish.md`](npm-publish.md) | npm publish workflow and post-publish smoke |
 | [`v1.0-checklist.md`](v1.0-checklist.md) | v1.0 release checklist (historical) |
 | [`stabilization-roadmap-v1.8-v2.0.md`](stabilization-roadmap-v1.8-v2.0.md) | Stabilization roadmap v1.8 → v2.0 |
+| [`../adoption/component-maturity-matrix.md`](../adoption/component-maturity-matrix.md) | L0–L4 component maturity audit (tests, CI, cross-axis) — [#129](https://github.com/beettlle/pi-spine/issues/129) |
 
 ## Related
 
