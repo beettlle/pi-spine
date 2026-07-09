@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-08 (Phase 62 v2.0.0 automation proof — SP-543–551 staged)
+**Last Updated:** 2026-07-08 (Phase 62 v2.0.0 automation proof — SP-543–551 Done)
 **Status:** Active
 **Next Task ID:** SP-552
 
@@ -1612,19 +1612,21 @@ spine run sequence SP-539,SP-540,SP-541,SP-542 --dry-run
 ### Phase 62 — v2.0.0 automation proof (SP-AUTO)
 
 **Handoff:** [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md)  
-**Manifest:** [`docs/release/manifest-v2.0.0-proof.md`](../docs/release/manifest-v2.0.0-proof.md) (SP-543)
+**Manifest:** [`docs/release/manifest-v2.0.0-proof.md`](../docs/release/manifest-v2.0.0-proof.md) (SP-543)  
+**Signoff checklist:** [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) (SP-544)  
+**Proof runbook:** [`docs/release/v2.0.0-proof-runbook.md`](../docs/release/v2.0.0-proof-runbook.md) (SP-550)
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-543 | proof release manifest | Staged | — | — |
-| SP-544 | automation signoff checklist | Staged | — | — |
-| SP-545 | release-proof-gate script | Staged | SP-544 | — |
-| SP-546 | best-of-n external project-root | Staged | SP-543 | #119 |
-| SP-547 | dashboard retry-then-succeed display | Staged | SP-543 | #161 |
-| SP-548 | subprocess heartbeat observability | Staged | SP-543 | #134 |
-| SP-549 | create-spine-tasks template hygiene | Staged | SP-543 | #144, #145 |
-| SP-550 | proof post-mortem runbook | Staged | SP-544–549 | — |
-| SP-551 | CONTEXT Phase 62 capstone | Staged | SP-543–550 | — |
+| SP-543 | proof release manifest | Done | — | — |
+| SP-544 | automation signoff checklist | Done | — | — |
+| SP-545 | release-proof-gate script | Done | SP-544 | — |
+| SP-546 | best-of-n external project-root | Done | SP-543 | #119 |
+| SP-547 | dashboard retry-then-succeed display | Done | SP-543 | #161 |
+| SP-548 | subprocess heartbeat observability | Done | SP-543 | #134 |
+| SP-549 | create-spine-tasks template hygiene | Done | SP-543 | #144, #145 |
+| SP-550 | proof post-mortem runbook | Done | SP-544–549 | — |
+| SP-551 | CONTEXT Phase 62 capstone | Done | SP-543–550 | — |
 
 ```bash
 spine tasks validate SP-543 SP-544 SP-545 SP-546 SP-547 SP-548 SP-549 SP-550 SP-551
@@ -1632,7 +1634,20 @@ spine plan SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551
 spine run sequence SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551 --auto-approve-gate --detached
 ```
 
-**Phase 62 exit criteria (handoff §8):** operator attestation pending — see [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) (SP-544).
+**Phase 62 exit criteria (handoff §8):**
+
+- [ ] Operator started **one** autonomous or sequence-driven release session — operator attestation pending
+- [ ] **Zero** manual `spine batch pause`, `retry`, or `resume --force` during waves — operator attestation pending
+- [ ] Human actions limited to: `spine gate approve` (per wave) + explicit publish approval — operator attestation pending
+- [x] All manifest-scoped tasks `.DONE` on `main` (SP-543–551)
+- [ ] `spine plan <manifest-scope>` shows 0 pending — operator sign-off pending (proof sequence not yet run)
+- [ ] `npm run release:check` green before tag — operator sign-off pending
+- [ ] Open GitHub issues **decreased** vs proof start count (baseline 30) — operator audit pending
+- [ ] Post-mortem committed: journal export + issue delta table — operator sign-off pending (see [proof runbook](../docs/release/v2.0.0-proof-runbook.md))
+- [ ] [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) all boxes checked — operator sign-off pending
+- [x] CONTEXT Phase 62 complete; Next Task ID → SP-552
+
+**Packet delivery complete (SP-543–551).** Proof execution (gates-only sequence + publish) remains operator-gated per [signoff checklist](../docs/release/automation-signoff-checklist.md).
 
 ---
 
