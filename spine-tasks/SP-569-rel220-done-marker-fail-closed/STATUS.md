@@ -1,7 +1,7 @@
 # SP-569: done-marker fail-closed — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** M
@@ -9,29 +9,34 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read explore findings and #190 evidence
+- [x] Read explore findings and #190 evidence
+- [x] Identify all `skippedDoneOnDisk: true` emitters (journal-rebuild, attached-runner, resume-multi-lanes)
 
 ### Step 1: Reconcile + attached-runner fail-closed
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Gate reconcile promote on filesystem `.DONE`
-- [ ] Gate attached-runner promote
+- [x] Gate reconcile promote on committed `.DONE` via `laneDoneMarkerReadyForPromote`
+- [x] Gate attached-runner promote on committed `.DONE`
+- [x] Audit resume-multi-lanes — fail-closed before promote in `markTaskCompleteFromDisk`
 
 ### Step 2: Pre-merge guard + tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Merge-phase guard
-- [ ] Negative + positive regression tests
+- [x] Merge-phase check in `mergeLaneToOrch` when `laneTaskFolders` provided
+- [x] New `done-marker-fail-closed.test.mjs`
+- [x] Extended SP-512 test — negative #190 case + positive fixture commits `.DONE`
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand + full suite
+- [x] Contract testCommand
+- [x] Full suite (`npm run typecheck && SPINE_WORKER_STUB=1 npm test`)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook update
-- [ ] Create `.DONE`
+- [x] Runbook section: fail-closed vs `skippedDoneOnDisk` semantics
+- [x] Comment on #190 with behavior summary
+- [x] Create `.DONE`

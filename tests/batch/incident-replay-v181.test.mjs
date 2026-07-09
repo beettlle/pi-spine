@@ -65,6 +65,12 @@ function provisionDoneInLaneWorktree(projectRoot, fixture) {
 	fs.mkdirSync(laneFolder, { recursive: true });
 	fs.writeFileSync(path.join(laneFolder, "PROMPT.md"), `# ${task.taskId}\n`, "utf-8");
 	fs.writeFileSync(path.join(laneFolder, ".DONE"), "Completed: 2026-07-07\n", "utf-8");
+	const wt = laneWorktreePath(projectRoot, batchId, 1);
+	execFileSync("git", ["add", `${taskFolderRel}/.DONE`, `${taskFolderRel}/PROMPT.md`], {
+		cwd: wt,
+		stdio: "ignore",
+	});
+	execFileSync("git", ["commit", "-m", "worker: .DONE"], { cwd: wt, stdio: "ignore" });
 }
 
 test("v181 batch 20260705T210857 (#170): reconcile heals state_drift to terminal success", async () => {

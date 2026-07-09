@@ -49,6 +49,8 @@ function writeDoneInLane(projectRoot, laneWorktree) {
 	const laneFolder = path.join(laneWorktree, taskFolderRel);
 	fs.mkdirSync(laneFolder, { recursive: true });
 	fs.writeFileSync(path.join(laneFolder, ".DONE"), "", "utf-8");
+	execFileSync("git", ["add", `${taskFolderRel}/.DONE`], { cwd: laneWorktree, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "worker: .DONE"], { cwd: laneWorktree, stdio: "ignore" });
 	return taskFolderRel;
 }
 

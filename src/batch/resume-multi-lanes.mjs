@@ -5,6 +5,7 @@
 
 import path from "node:path";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import {
 	journalHasTaskCompleted,
 	loadResumeFileScopePaths,
@@ -18,6 +19,7 @@ import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 import { saveSpineBatchState, updateSegmentForTask } from "./state.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
+import { laneDoneMarkerCommittedOnBranch } from "./journal-rebuild.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { isTaskResumable } from "./resume-multi-validate.mjs";
 import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
@@ -161,6 +163,41 @@ async function markTaskCompleteFromDisk({
 		};
 	}
 
+	const taskFolderRel = task.taskFolder;
+	const doneOnDisk = fs.existsSync(path.join(taskFolderInWorktree, ".DONE"));
+	if (
+		doneOnDisk &&
+		(!taskFolderRel ||
+			!laneDoneMarkerCommittedOnBranch(projectRoot, taskBranchResolved, taskFolderRel))
+	) {
+		const output =
+			`Lane task branch ${taskBranchResolved} lacks committed ${taskFolderRel ?? "<unknown>"}/.DONE — ` +
+			"worker must create and commit .DONE before resume can promote";
+		task.status = "failed";
+		task.endedAt = Date.now();
+		task.exitReason = "done_marker_missing";
+		updateSegmentForTask(state, taskId, "failed");
+		recomputeTaskCounters(state);
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: "done_marker_missing",
+			exitCode: 1,
+			output,
+			resumed: true,
+		});
+		return {
+			ok: false,
+			error: "done_marker_missing",
+			output,
+			taskId,
+			laneNumber,
+		};
+	}
+
 	task.status = "succeeded";
 	task.doneFileFound = true;
 	task.exitReason = task.exitReason ?? "done";
@@ -176,7 +213,7 @@ async function markTaskCompleteFromDisk({
 			laneId: lane.laneId,
 			correlationId: laneCorrelationId,
 			resumed: true,
-			skippedDoneOnDisk: true,
+			...(doneOnDisk ? { skippedDoneOnDisk: true } : {}),
 			taskFolder: taskFolderInWorktree,
 		});
 	}

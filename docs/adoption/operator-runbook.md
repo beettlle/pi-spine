@@ -1717,6 +1717,10 @@ pi-spine persists orchestration artifacts with **temp file + rename** so crash m
 
 Stub and agent-session workers write structured `.DONE` JSON (`{ "taskId", "completedAt" }`). Legacy empty or text `.DONE` markers remain valid for pending-task filtering. Partial JSON bodies are invalid and should not appear when workers use atomic writes.
 
+**Fail-closed done marker (SP-569 / [#190](https://github.com/beettlle/pi-spine/issues/190)):** Reconcile, paused-resume promote, resume fast-path, and lane→orch merge require **`.DONE` committed on the lane task branch** (`git cat-file -e task/spine-lane-N-<batchId>:<tasksRoot>/<id>/.DONE`), not merely present in the worktree or implied by journal terminal events (`lane.completed`, `contract.verified`, review APPROVE). A worker that finishes `STATUS.md` without creating `.DONE` stays `running` until retry or manual fix — the engine does **not** auto-create `.DONE`.
+
+**`skippedDoneOnDisk` journal field:** When reconcile or resume promotes a task whose `.DONE` was already on the lane branch before the normal `task.completed` journal line, the engine may journal `task.completed` with `skippedDoneOnDisk: true`. This means “completion journal synthesized during reconcile/resume,” **not** “`.DONE` was intentionally omitted.” If `.DONE` is missing from the branch, promote/merge is blocked (fail-closed).
+
 ### Worktree layout
 
 | Path | Purpose |

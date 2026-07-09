@@ -53,6 +53,11 @@ function setupDoneInLaneDriftFixture(
 	fs.mkdirSync(laneTaskFolder, { recursive: true });
 	fs.writeFileSync(path.join(laneTaskFolder, "PROMPT.md"), "# Task\n", "utf-8");
 	fs.writeFileSync(path.join(laneTaskFolder, ".DONE"), "Completed: 2026-07-05\n", "utf-8");
+	execFileSync("git", ["add", `${taskFolder}/.DONE`, `${taskFolder}/PROMPT.md`], {
+		cwd: wt,
+		stdio: "ignore",
+	});
+	execFileSync("git", ["commit", "-m", "worker: add .DONE"], { cwd: wt, stdio: "ignore" });
 
 	const state = createInitialBatchState({
 		batchId,
@@ -96,7 +101,80 @@ function setupDoneInLaneDriftFixture(
 		verdict: "APPROVE",
 	});
 
-	return { batchId, taskId, state, taskFolder, wt };
+	return { batchId, taskId, state, taskFolder, wt, taskBranch };
+}
+
+/**
+ * #190 negative — journal terminal artifacts without committed `.DONE`.
+ *
+ * @param {string} projectRoot
+ * @param {{ batchId?: string, taskId?: string }} [options]
+ */
+function setupDoneInLaneTerminalWithoutDoneFixture(
+	projectRoot,
+	{ batchId = "20260709T211740", taskId = "SP-146" } = {},
+) {
+	const taskFolder = `spine-tasks/${taskId}-smoke`;
+	const wt = laneWorktreePath(projectRoot, batchId, 1);
+	const laneTaskFolder = path.join(wt, taskFolder);
+	const orchBranch = `orch/spine-${batchId}`;
+	const taskBranch = laneTaskBranch(batchId, 1);
+	const hostTaskFolder = path.join(projectRoot, taskFolder);
+
+	fs.mkdirSync(hostTaskFolder, { recursive: true });
+	fs.writeFileSync(path.join(hostTaskFolder, "PROMPT.md"), "# Task\n", "utf-8");
+	fs.writeFileSync(path.join(hostTaskFolder, "STATUS.md"), "**Status:** complete\n", "utf-8");
+
+	execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+	fs.mkdirSync(path.dirname(wt), { recursive: true });
+	execFileSync(
+		"git",
+		["worktree", "add", "-b", taskBranch, wt, orchBranch],
+		{ cwd: projectRoot, stdio: "ignore" },
+	);
+	fs.mkdirSync(laneTaskFolder, { recursive: true });
+	fs.writeFileSync(path.join(laneTaskFolder, "PROMPT.md"), "# Task\n", "utf-8");
+	fs.writeFileSync(path.join(laneTaskFolder, "STATUS.md"), "**Status:** complete\n", "utf-8");
+
+	const state = createInitialBatchState({
+		batchId,
+		baseBranch: "main",
+		orchBranch,
+		wavePlan: [[taskId]],
+		tasks: [
+			{
+				taskId,
+				laneNumber: 1,
+				status: "running",
+				taskFolder,
+				startedAt: Date.now() - 60_000,
+				doneFileFound: false,
+				classification: "terminal-success",
+			},
+		],
+		lanes: [
+			{
+				laneNumber: 1,
+				laneId: "lane-1",
+				worktreePath: wt,
+				branch: taskBranch,
+				taskIds: [taskId],
+			},
+		],
+	});
+	state.phase = "running";
+	updateSegmentForTask(state, taskId, "running");
+	saveSpineBatchState(projectRoot, state);
+
+	appendJournalEvent(projectRoot, batchId, "task.started", { taskId, laneNumber: 1 });
+	appendJournalEvent(projectRoot, batchId, "lane.completed", { taskId, laneNumber: 1 });
+	appendJournalEvent(projectRoot, batchId, "contract.verified", {
+		taskId,
+		laneNumber: 1,
+		ok: true,
+	});
+
+	return { batchId, taskId, state, taskFolder, wt, taskBranch };
 }
 
 test("journalShowsDoneInLaneTerminalArtifacts requires lane.completed and approved review", () => {
@@ -229,6 +307,50 @@ test("reconcileBatchStateDrift is idempotent when called twice", async () => {
 				(event) => event.type === "task.completed" && event.taskId === taskId,
 			).length,
 			1,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reconcileBatchStateDrift does not promote when journal terminal but .DONE missing (#190)", async () => {
+	const projectRoot = await initGitRepo("spine-reconcile-no-done-");
+	try {
+		const { batchId, taskId } = setupDoneInLaneTerminalWithoutDoneFixture(projectRoot);
+		const loaded = loadSpineBatchState(projectRoot);
+		const journalEvents = readJournalEvents(projectRoot, batchId);
+		const classified = (loaded.raw?.tasks ?? []).map((task) =>
+			classifyTaskDoneSemantics(task, {
+				tasksRoot: path.join(projectRoot, "spine-tasks"),
+				projectRoot,
+				batchId,
+				lanes: loaded.raw?.lanes ?? [],
+			}),
+		);
+		assert.equal(journalShowsDoneInLaneTerminalArtifacts(journalEvents, taskId), true);
+		assert.equal(classified[0]?.doneInLane, false);
+
+		const rebuilt = rebuildBatchStateFromJournal(loaded.raw, journalEvents);
+		const drift = detectBatchStateDrift(loaded.raw, rebuilt, journalEvents, classified);
+
+		const healed = reconcileBatchStateDrift({
+			projectRoot,
+			state: loaded.raw,
+			classifiedTasks: classified,
+			journalEvents,
+			drift,
+		});
+		assert.equal(healed.reconciled, false);
+		assert.deepEqual(healed.taskIds, []);
+
+		const saved = loadSpineBatchState(projectRoot).raw;
+		assert.equal(saved?.tasks[0].status, "running");
+		assert.equal(saved?.tasks[0].doneFileFound, false);
+		assert.equal(
+			readJournalEvents(projectRoot, batchId).some(
+				(event) => event.type === "task.completed" && event.taskId === taskId,
+			),
+			false,
 		);
 	} finally {
 		await destroyGitRepo(projectRoot);

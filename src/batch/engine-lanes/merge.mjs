@@ -31,6 +31,7 @@ import { maybeFinalizeAfterWaveMerge } from "../post-merge-limbo.mjs";
 import { saveSpineBatchState } from "../state.mjs";
 import { loadTaskFileScopePaths } from "./queue.mjs";
 import { laneTaskBranch } from "../worktree.mjs";
+import { laneDoneMarkerCommittedOnBranch, normalizeTaskFolderRel } from "../journal-rebuild.mjs";
 
 /**
  * @param {string} projectRoot
@@ -486,6 +487,7 @@ export function mergeLaneToOrch({
 	batchId,
 	requireLaneCommits = false,
 	laneFileScopePaths = [],
+	laneTaskFolders = [],
 	waveIndex,
 }) {
 	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
@@ -502,6 +504,21 @@ export function mergeLaneToOrch({
 
 		const orchHeadBefore = gitStrict(projectRoot, ["rev-parse", orchBranch]);
 		const commitsAhead = countCommitsAhead(projectRoot, orchBranch, taskBranch);
+
+		if (Array.isArray(laneTaskFolders) && laneTaskFolders.length > 0) {
+			for (const taskFolderRel of laneTaskFolders) {
+				if (laneDoneMarkerCommittedOnBranch(projectRoot, taskBranch, taskFolderRel)) {
+					continue;
+				}
+				return {
+					ok: false,
+					failureClass: "DoneMarkerMissing",
+					error:
+						`Task branch ${taskBranch} lacks committed ${normalizeTaskFolderRel(projectRoot, taskFolderRel) ?? taskFolderRel}/.DONE. ` +
+						"Worker must create .DONE on the lane branch before merge.",
+				};
+			}
+		}
 
 		if (requireLaneCommits && commitsAhead === 0) {
 			return {
@@ -628,6 +645,13 @@ export async function mergeWaveLanesToOrch({
 
 		const taskBranch = lane.branch ?? laneTaskBranch(batchId, laneNumber);
 		const laneFileScopePaths = collectLaneWaveFileScope(state, laneNumber, waveTaskIds);
+		const laneTaskFolders = waveTaskIds
+			.map((taskId) => {
+				const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+				if (!task || task.laneNumber !== laneNumber || !task.taskFolder) return null;
+				return task.taskFolder;
+			})
+			.filter(Boolean);
 		appendJournalEvent(projectRoot, batchId, "batch.merge_started", {
 			taskBranch,
 			orchBranch,
@@ -644,6 +668,7 @@ export async function mergeWaveLanesToOrch({
 			batchId,
 			requireLaneCommits: false,
 			laneFileScopePaths,
+			laneTaskFolders,
 			waveIndex,
 		});
 		if (!merge.ok) {
