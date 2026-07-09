@@ -126,20 +126,28 @@ v2.0.0 proved gates-only automation with a curated 9-task manifest. **29 open Gi
 
 ---
 
-## 7. Wave run order
+## 7. Release execution flow
 
 ```text
-SP-552 (handoff)
-  └── SP-553 (manifest)
-        ├── SP-554 (regression gate)
-        ├── SP-555, SP-556, SP-557 (parallel)
-        ├── SP-558, SP-559, SP-560, SP-561 (parallel)
-        └── SP-562 (after SP-554)
-SP-555–562 → SP-563 (hygiene)
-leaves → SP-564
+Phase 0 — Handoff + manifest
+  SP-552 (this document)
+  SP-553 (operator approves manifest)
+
+Phase 1 — Gate + implementation
+  SP-554 (regression gate — extends release-proof-gate.sh)
+  SP-555, SP-556, SP-557 (parallel — bugs/enhancements)
+  SP-558, SP-559, SP-560, SP-561 (parallel — docs + doctor)
+  SP-562 (preversion hook — after SP-554)
+
+Phase 2 — Hygiene + sign-off
+  SP-563 (close landed issues on GitHub)
+  SP-564 (CONTEXT Phase 63 capstone)
+
+Phase 3 — Publish (operator approval)
+  npm run release:check → npm version minor → v2.1.0 tag
 ```
 
-**Regression gate:** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run release:check`
+**Regression gate (all implementation waves):** `npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run release:check`
 
 ---
 
@@ -162,3 +170,54 @@ leaves → SP-564
 | M-REL210-02 | Worktree cleanup on abort | `worktree-cleanup-abort.test.mjs` |
 | M-REL210-03 | Duplicate step rejected | `parse-prompt.test.mjs` |
 | M-REL210-04 | Doctor duplicate install | `doctor-duplicate-install.test.mjs` |
+
+---
+
+## 10. Wave run order
+
+| Wave | Tasks | Notes |
+|------|-------|-------|
+| 0 | SP-552, SP-553 | Handoff + manifest — **operator approval required** |
+| 1 | SP-554, SP-555, SP-556, SP-557 | Gate + worktree/CI/validator — parallel if disjoint |
+| 2 | SP-558, SP-559, SP-560, SP-561 | Skill polish + doctor + detached UX + maturity matrix |
+| 3 | SP-562 | Preversion hook — depends on SP-554 gate |
+| 4 | SP-563 | GitHub hygiene — after implementation tasks |
+| 5 | SP-564 | CONTEXT capstone — leaves only |
+
+Run `spine plan SP-552,...,SP-564` after validate for authoritative waves.
+
+---
+
+## 11. Workflow after this document
+
+### 11.1 Author manifest (operator gate)
+
+```text
+SP-553 writes docs/release/manifest-v2.1.0.md from this handoff §5–§6.
+Operator must set "Operator approved scope: yes" before implementation batch.
+```
+
+### 11.2 Execute release sequence
+
+```bash
+./scripts/release-proof-gate.sh   # or v2.1.0 gate after SP-554
+spine run sequence SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-560,SP-561,SP-562,SP-563,SP-564 --detached
+# Operator: spine gate approve between waves; npm version after SP-564
+```
+
+### 11.3 Post-release
+
+Update [`docs/release/stabilization-roadmap-v1.8-v2.0.md`](release/stabilization-roadmap-v1.8-v2.0.md) metrics table with v2.1.0 issue delta. File follow-up epics for deferred backlog (#43, #117, #120–127).
+
+---
+
+## 12. Related documents
+
+| Document | Role |
+|----------|------|
+| [`docs/PRD-v2.0.0-automation-proof-handoff.md`](PRD-v2.0.0-automation-proof-handoff.md) | Prior release — gates-only proof (Phase 62) |
+| [`docs/PRD-v2.1-reliability-handoff.md`](PRD-v2.1-reliability-handoff.md) | Phase 22 reliability epic (landed — not this release) |
+| [`docs/release/stabilization-roadmap-v1.8-v2.0.md`](release/stabilization-roadmap-v1.8-v2.0.md) | Master stabilization roadmap |
+| [`docs/release/manifest-v2.1.0.md`](release/manifest-v2.1.0.md) | Operator manifest (SP-553) |
+| [`skills/spine-release-operator/references/release-manifest-template.md`](../skills/spine-release-operator/references/release-manifest-template.md) | Manifest format |
+| [`spine-tasks/CONTEXT.md`](../spine-tasks/CONTEXT.md) | Phase 63 task table |
