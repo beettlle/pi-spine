@@ -1,7 +1,7 @@
 # STATUS — SP-546 best-of-n external project-root fix
 
 **Task:** SP-546
-**Status:** In progress
+**Status:** Complete
 
 ## Steps
 
@@ -22,8 +22,10 @@
 
 ### Step 3: Testing & Verification
 
-- [ ] Pending
+- [x] `node --test tests/scripts/best-of-n-external-root.test.mjs`
+- [x] `npm run typecheck`
 
 ### Step 4: Documentation & Delivery
 
-- [ ] Pending
+- [x] Close #119: `gh issue close 119 --comment "Fixed best-of-n external project-root — SP-546"`
+- [x] Create `.DONE`
