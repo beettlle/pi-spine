@@ -169,6 +169,27 @@ Run `spine plan SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-560,S
 
 ---
 
+## GitHub backlog hygiene (SP-563)
+
+**Executed:** 2026-07-09
+
+| Issue | SP-ID | Land commit | Status |
+|-------|-------|-------------|--------|
+| [#130](https://github.com/beettlle/pi-spine/issues/130) | SP-483 | `ba9e914d` | Closed |
+| [#171](https://github.com/beettlle/pi-spine/issues/171) | SP-526 | `cd313ec3` | Closed |
+| [#156](https://github.com/beettlle/pi-spine/issues/156) | SP-531 | `0293e278` | Closed |
+| [#141](https://github.com/beettlle/pi-spine/issues/141) | SP-522, SP-523, SP-540 | `09f780c3`, `1176e8b6`, `98ac8456` | Closed |
+| [#125](https://github.com/beettlle/pi-spine/issues/125) | SP-352, SP-353 | `a2832364`, `8b33e089` | Closed |
+
+**Open-issue delta:**
+
+| When | Count | Notes |
+|------|-------|-------|
+| v2.1.0 baseline | 29 | Recorded at manifest creation |
+| After SP-563 hygiene | 24 | −5 verify-only closures |
+
+---
+
 ## Publish checklist (Phase 5–6)
 
 - [ ] All release-scoped tasks `.DONE` on `main`
