@@ -1,0 +1,30 @@
+# SP-566: v2.2.0 manifest — Status
+
+**Current Step:** Step 0
+**Status:** ⬜ Not Started
+**Last Updated:** 2026-07-09
+**Review Level:** 0
+**Size:** S
+
+---
+
+### Step 0: Preflight
+**Status:** ⬜ Not Started
+
+- [ ] Read handoff and v2.1.0 manifest template
+
+### Step 1: Author manifest
+**Status:** ⬜ Not Started
+
+- [ ] Manifest complete with scope ID and audit table
+
+### Step 2: Testing & Verification
+**Status:** ⬜ Not Started
+
+- [ ] `spine tasks validate SP-566`
+
+### Step 3: Documentation & Delivery
+**Status:** ⬜ Not Started
+
+- [ ] Sync authoring pointer
+- [ ] Create `.DONE`
