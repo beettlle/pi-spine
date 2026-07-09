@@ -79,7 +79,7 @@ test("buildStaleWorktreesDoctorCheck warns on stale worktree dirs", async () => 
 		assert.equal(check.warning, true);
 		assert.match(check.detail, /1 leftover batch dir/);
 		assert.match(check.detail, /spine-20260630T100000/);
-		assert.ok(check.suggestedCommand?.includes("cleanupWorktreesOnComplete"));
+		assert.ok(check.suggestedCommand?.includes("spine cleanup worktrees"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

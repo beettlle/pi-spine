@@ -682,6 +682,8 @@ That **Tier 3** capability is deferred per [GitHub #52](https://github.com/beett
 
 ## 4. Land loop
 
+> **Agent/automation callers:** The attached-first guidance in [§Detached-first policy](#detached-first-policy-default) applies to **persistent interactive human terminals only** — not Cursor Agent shells, pi worker sessions, or CI. For multi-wave agent orchestration, see **[agent-orchestrated-waves.md](./agent-orchestrated-waves.md)** (detached default + orphan recovery recipe).
+
 After a successful wave (all tasks succeeded or skipped, lane merges into `orch/spine-<batchId>`), merge orch → `main` and archive the batch record.
 
 ```mermaid
