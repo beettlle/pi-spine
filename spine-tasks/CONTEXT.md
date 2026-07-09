@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-08 (Phase 61b v1.10.1 stabilization — SP-539–540 Done; SP-541 staged; SP-542 capstone Done)
+**Last Updated:** 2026-07-08 (Phase 62 v2.0.0 automation proof — SP-543–551 staged)
 **Status:** Active
-**Next Task ID:** SP-543
+**Next Task ID:** SP-552
 
 ---
 
@@ -1608,6 +1608,31 @@ spine run sequence SP-539,SP-540,SP-541,SP-542 --dry-run
 **Patch release progress:** SP-539–542 landed on `main`; publish pending operator approval.
 
 **Handoff to v2.0.0:** After v1.10.1 exit criteria met, proceed to [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md) (Phase 62 — SP-AUTO).
+
+### Phase 62 — v2.0.0 automation proof (SP-AUTO)
+
+**Handoff:** [`docs/PRD-v2.0.0-automation-proof-handoff.md`](../docs/PRD-v2.0.0-automation-proof-handoff.md)  
+**Manifest:** [`docs/release/manifest-v2.0.0-proof.md`](../docs/release/manifest-v2.0.0-proof.md) (SP-543)
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-543 | proof release manifest | Staged | — | — |
+| SP-544 | automation signoff checklist | Staged | — | — |
+| SP-545 | release-proof-gate script | Staged | SP-544 | — |
+| SP-546 | best-of-n external project-root | Staged | SP-543 | #119 |
+| SP-547 | dashboard retry-then-succeed display | Staged | SP-543 | #161 |
+| SP-548 | subprocess heartbeat observability | Staged | SP-543 | #134 |
+| SP-549 | create-spine-tasks template hygiene | Staged | SP-543 | #144, #145 |
+| SP-550 | proof post-mortem runbook | Staged | SP-544–549 | — |
+| SP-551 | CONTEXT Phase 62 capstone | Staged | SP-543–550 | — |
+
+```bash
+spine tasks validate SP-543 SP-544 SP-545 SP-546 SP-547 SP-548 SP-549 SP-550 SP-551
+spine plan SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551
+spine run sequence SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-551 --auto-approve-gate --detached
+```
+
+**Phase 62 exit criteria (handoff §8):** operator attestation pending — see [`docs/release/automation-signoff-checklist.md`](../docs/release/automation-signoff-checklist.md) (SP-544).
 
 ---
 
