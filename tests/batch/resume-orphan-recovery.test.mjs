@@ -229,10 +229,22 @@ test("attached resume --force completes stuck task after plan review orphan stal
 			[TASK_DONE, lane1],
 			[TASK_STUCK, lane2],
 		]) {
-			const src = path.join(projectRoot, "spine-tasks", `${taskId}-orphan-recovery`);
-			const dest = path.join(lane.worktreePath, "spine-tasks", `${taskId}-orphan-recovery`);
+			const relFolder = `spine-tasks/${taskId}-orphan-recovery`;
+			const src = path.join(projectRoot, relFolder);
+			const dest = path.join(lane.worktreePath, relFolder);
 			fs.mkdirSync(path.dirname(dest), { recursive: true });
 			fs.cpSync(src, dest, { recursive: true });
+			if (taskId === TASK_DONE) {
+				fs.writeFileSync(path.join(dest, ".DONE"), "done\n", "utf-8");
+				execFileSync("git", ["add", `${relFolder}/.DONE`], {
+					cwd: lane.worktreePath,
+					stdio: "ignore",
+				});
+				execFileSync("git", ["commit", "-m", "worker: .DONE"], {
+					cwd: lane.worktreePath,
+					stdio: "ignore",
+				});
+			}
 		}
 
 		seedWorkerOrphanAfterPlanReview(projectRoot, lane2.worktreePath);

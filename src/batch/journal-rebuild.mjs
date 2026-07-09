@@ -4,7 +4,10 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { appendJournalEvent, readJournalEvents, STRUCTURAL_JOURNAL_EVENT_TYPES } from "./journal.mjs";
+import { laneTaskBranch } from "./worktree.mjs";
 import { parseReviewVerdict } from "./review-shared.mjs";
 import { journalHasTaskCompleted } from "./resume-common.mjs";
 import {
@@ -390,6 +393,72 @@ function classifiedShowsDoneInLaneDrift(classified) {
 	);
 }
 
+export function normalizeTaskFolderRel(projectRoot, taskFolder) {
+	if (!taskFolder) return null;
+	if (path.isAbsolute(taskFolder)) {
+		return path.relative(projectRoot, taskFolder).replace(/\\/g, "/");
+	}
+	return String(taskFolder).replace(/\\/g, "/");
+}
+
+/**
+ * True when `.DONE` is committed on the lane task branch (fail-closed / #190).
+ *
+ * @param {string} projectRoot
+ * @param {string} taskBranch
+ * @param {string} taskFolderRel
+ */
+export function laneDoneMarkerCommittedOnBranch(projectRoot, taskBranch, taskFolderRel) {
+	const folderRel = normalizeTaskFolderRel(projectRoot, taskFolderRel);
+	if (!projectRoot || !taskBranch || !folderRel) return false;
+	const donePath = `${folderRel.replace(/\/+$/, "")}/.DONE`;
+	try {
+		execFileSync("git", ["cat-file", "-e", `${taskBranch}:${donePath}`], {
+			cwd: projectRoot,
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * @param {object} task
+ * @param {string} batchId
+ * @param {unknown[]} lanes
+ * @param {string} projectRoot
+ */
+function laneTaskBranchForTask(task, batchId, lanes) {
+	const laneNumber = Number(task.laneNumber ?? 1);
+	const lane = Array.isArray(lanes)
+		? lanes.find((entry) => Number(entry?.laneNumber) === laneNumber)
+		: null;
+	if (lane && typeof lane.branch === "string" && lane.branch) {
+		return lane.branch;
+	}
+	return laneTaskBranch(batchId, laneNumber);
+}
+
+/**
+ * Fail-closed gate: filesystem `.DONE` in lane worktree and committed on lane branch.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.task
+ * @param {unknown[]} [params.lanes]
+ * @param {object|null|undefined} params.classified
+ */
+export function laneDoneMarkerReadyForPromote({ projectRoot, batchId, task, lanes = [], classified }) {
+	if (classified?.doneInLane !== true) return false;
+	const taskFolder = normalizeTaskFolderRel(projectRoot, task?.taskFolder);
+	if (!taskFolder) return false;
+	const taskBranch = laneTaskBranchForTask(task, batchId, lanes);
+	return laneDoneMarkerCommittedOnBranch(projectRoot, taskBranch, taskFolder);
+}
+
 /**
  * Detect review.started events that have no matching review.completed for the same
  * taskId + reviewType. These represent engine crashes mid-review where the artifact
@@ -634,7 +703,17 @@ export function reconcileBatchStateDrift({
 
 		const classified = classifiedById.get(taskId);
 		if (!classifiedShowsDoneInLaneDrift(classified)) continue;
-		if (classified?.doneInLane !== true) continue;
+		if (
+			!laneDoneMarkerReadyForPromote({
+				projectRoot,
+				batchId,
+				task,
+				lanes: state.lanes ?? [],
+				classified,
+			})
+		) {
+			continue;
+		}
 		if (journalHasTaskCompleted(journalEvents, taskId)) continue;
 		if (!journalShowsDoneInLaneTerminalArtifacts(journalEvents, taskId)) continue;
 		if (String(task.status ?? "") === "succeeded") continue;

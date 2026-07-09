@@ -32,6 +32,7 @@ import {
 	journalIndicatesPausedForceResume,
 } from "./orphan-detect.mjs";
 import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
+import { laneDoneMarkerReadyForPromote } from "./journal-rebuild.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { journalHasTaskCompleted } from "./resume-common.mjs";
 import { startParentSessionMonitor } from "./parent-session-monitor.mjs";
@@ -393,7 +394,17 @@ export function reconcilePausedResumeDoneInLane({ projectRoot, state, batchId })
 			batchId,
 			lanes,
 		});
-		if (classified.doneInLane !== true) continue;
+		if (
+			!laneDoneMarkerReadyForPromote({
+				projectRoot,
+				batchId,
+				task,
+				lanes,
+				classified,
+			})
+		) {
+			continue;
+		}
 		if (!journalHasContractVerified(journalEvents, task.taskId)) continue;
 
 		task.status = "succeeded";
