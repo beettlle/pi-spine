@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-09 (Phase 63 v2.1.0 staged — SP-552–564)
+**Last Updated:** 2026-07-09 (Phase 63 v2.1.0 complete — SP-552–564)
 **Status:** Active
 **Next Task ID:** SP-565
 
@@ -1658,19 +1658,19 @@ spine run sequence SP-543,SP-544,SP-545,SP-546,SP-547,SP-548,SP-549,SP-550,SP-55
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-552 | v2.1.0 handoff PRD | **Staged** | — | — |
-| SP-553 | release manifest | **Staged** | SP-552 | — |
-| SP-554 | regression gate script | **Staged** | SP-553 | — |
-| SP-555 | worktree cleanup completion | **Staged** | SP-553 | #169 |
-| SP-556 | CI guard reconcile cwd | **Staged** | SP-553 | #157 |
-| SP-557 | duplicate step validator | **Staged** | SP-553 | #148 |
-| SP-558 | skill authoring polish | **Staged** | SP-553 | #146–150 |
-| SP-559 | doctor duplicate install | **Staged** | SP-553 | #128 |
-| SP-560 | agent detached UX | **Staged** | SP-553 | #185 |
-| SP-561 | maturity matrix doc | **Staged** | SP-553 | #129 |
-| SP-562 | preversion release:check hook | **Staged** | SP-554 | #175 |
-| SP-563 | GitHub backlog hygiene | **Staged** | SP-555–562 | hygiene |
-| SP-564 | CONTEXT Phase 63 capstone | **Staged** | SP-552–563 | — |
+| SP-552 | v2.1.0 handoff PRD | Done | — | — |
+| SP-553 | release manifest | Done | SP-552 | — |
+| SP-554 | regression gate script | Done | SP-553 | — |
+| SP-555 | worktree cleanup completion | Done | SP-553 | #169 |
+| SP-556 | CI guard reconcile cwd | Done | SP-553 | #157 |
+| SP-557 | duplicate step validator | Done | SP-553 | #148 |
+| SP-558 | skill authoring polish | Done | SP-553 | #146–150 |
+| SP-559 | doctor duplicate install | Done | SP-553 | #128 |
+| SP-560 | agent detached UX | Done | SP-553 | #185 |
+| SP-561 | maturity matrix doc | Done | SP-553 | #129 |
+| SP-562 | preversion release:check hook | Done | SP-554 | #175 |
+| SP-563 | GitHub backlog hygiene | Done | SP-555–562 | hygiene |
+| SP-564 | CONTEXT Phase 63 capstone | Done | SP-552–563 | — |
 
 ```bash
 spine tasks validate SP-552 SP-553 SP-554 SP-555 SP-556 SP-557 SP-558 SP-559 SP-560 SP-561 SP-562 SP-563 SP-564
@@ -1680,13 +1680,15 @@ spine run sequence SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-56
 
 **Phase 63 exit criteria (handoff §8):**
 
-- [ ] Operator approved manifest scope (SP-553)
-- [ ] All manifest-scoped tasks `.DONE` on `main`
-- [ ] `npm run release:check` green before tag
-- [ ] Open GitHub issues decreased vs baseline 29
-- [ ] Hygiene issues closed (SP-563)
-- [ ] CONTEXT Phase 63 complete; Next Task ID → SP-565
-- [ ] **v2.1.0 published** (operator approval)
+- [x] Operator approved manifest scope (SP-553 — 2026-07-09)
+- [x] All manifest-scoped tasks `.DONE` on `main` (SP-552–564)
+- [x] `npm run release:check` green before tag (SP-554 gate + SP-562 preversion hook)
+- [x] Open GitHub issues decreased vs baseline 29 (29 → 24, Δ −5)
+- [x] Hygiene issues closed (SP-563 — #130, #171, #156, #141, #125)
+- [x] CONTEXT Phase 63 complete; Next Task ID → SP-565
+- [ ] **v2.1.0 published** (operator approval — release operator Phase 6)
+
+**Phase 63 complete.** Manifest: [`docs/release/manifest-v2.1.0.md`](../docs/release/manifest-v2.1.0.md).
 
 ---
 

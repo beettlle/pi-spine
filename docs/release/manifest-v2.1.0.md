@@ -192,12 +192,12 @@ Run `spine plan SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-560,S
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [x] All release-scoped tasks `.DONE` on `main` (SP-552–564 — SP-564 capstone 2026-07-09)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green (typecheck, lint, tests, coverage — CI parity)
 - [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
+- [x] Operator approved publish bump type: minor
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded
 - [ ] Post-publish smoke per [`docs/release/npm-publish.md`](npm-publish.md)
-- [ ] Open GitHub issues decreased vs baseline 29
+- [x] Open GitHub issues decreased vs baseline 29 (24 open, Δ −5)
