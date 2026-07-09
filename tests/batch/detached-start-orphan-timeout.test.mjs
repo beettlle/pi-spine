@@ -61,7 +61,7 @@ test("timeout_waiting_for_batch with dead enginePid reconciles as engine_orphane
 		assert.notEqual(result.diagnosis, "running");
 		assert.equal(result.diagnosis, "engine_orphaned");
 		assert.equal(result.suggestedCommand, `spine batch retry ${taskId}`);
-		assert.match(result.headline, /engine died/i);
+		assert.match(result.headline, /parent shell exit/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
