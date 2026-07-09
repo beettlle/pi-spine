@@ -1,7 +1,7 @@
 # SP-562: preversion hook — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 1
 **Size:** S
@@ -26,12 +26,12 @@
 - [x] Test documents expected package.json script presence
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand`
+- [x] Run contract `testCommand`
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Comment on #175
-- [ ] Create `.DONE`
+- [x] Comment on #175
+- [x] Create `.DONE`
