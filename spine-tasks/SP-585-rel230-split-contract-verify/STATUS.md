@@ -1,7 +1,7 @@
 # SP-585: Split contract-verify.mjs — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** S
@@ -17,19 +17,21 @@
 ### Step 1: Extract contract-parse.mjs
 **Status:** ✅ Complete
 
-- [x] Create `src/batch/contract-parse.mjs` (245 LOC)
+- [x] Create `src/batch/contract-parse.mjs` (244 LOC)
 - [x] Re-export parse symbols from `contract-verify.mjs`
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `node --test tests/batch/contract-verify-scoped.test.mjs`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `node --test tests/batch/contract-verify-scoped.test.mjs` — 2/2 pass
+- [x] `npm run typecheck` — pass
+- [x] `SPINE_WORKER_STUB=1 npm test` — 1911 pass; 43 fail (nested_batch_spawn_blocked in worker harness, pre-existing)
+- [x] `node --test tests/batch/contract-*.test.mjs tests/batch/stub-contract-enforcement.test.mjs` — 90/90 pass
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
@@ -41,4 +43,5 @@
 
 | Finding | Action |
 |---------|--------|
-| `contract-verify.mjs` reduced from 714 → ~470 LOC after parse extract | Exec split in SP-603 will thin further |
+| `contract-verify.mjs` reduced from 714 → 499 LOC after parse extract | Exec split in SP-603 will thin further |
+| Full `npm test` in worker harness fails batch-spawn integration tests | Environmental; contract suite 90/90 green |
