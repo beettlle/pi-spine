@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Batch reconciliation (FR-BATCH-12, §17.5).
- * Re-export shim — classify in reconcile-classify.mjs, diagnosis in reconcile-diagnosis.mjs.
+ * Re-export shim — classify / diagnosis / batch / orphan / light-cache (SP-578/596/606).
  */
 
 /**
@@ -32,10 +32,10 @@ export {
 	resolveTasksRoot,
 	syncPersistedClassifications,
 } from "./reconcile-classify.mjs";
+export { deriveDiagnosis } from "./reconcile-diagnosis.mjs";
+export { clearLightReconcileCache } from "./reconcile-light-cache.mjs";
+export { reconcileBatch } from "./reconcile-batch.mjs";
 export {
-	clearLightReconcileCache,
-	deriveDiagnosis,
-	reconcileBatch,
 	reconcileOrphanRunningState,
 	runReconciliationCheck,
-} from "./reconcile-diagnosis.mjs";
+} from "./reconcile-orphan.mjs";

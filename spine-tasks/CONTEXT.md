@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 65 v2.3.0 staged — SP-574–605)
+**Last Updated:** 2026-07-10 (Phase 65 salvage SP-606/607 + review-step — #192)
 **Status:** Active
-**Next Task ID:** SP-606
+**Next Task ID:** SP-608
 
 ---
 
@@ -1734,7 +1734,7 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 **Handoff:** [`docs/PRD-v2.3.0-module-split-handoff.md`](../docs/PRD-v2.3.0-module-split-handoff.md)  
 **Manifest:** [`docs/release/manifest-v2.3.0.md`](../docs/release/manifest-v2.3.0.md) (SP-575 — operator approval pending)  
 **Authoring:** [`spine-tasks/_authoring/release-v2.3.0/`](_authoring/release-v2.3.0/) — clarify, checklist, analyze  
-**Explore:** [`spine-tasks/_explore/batch-module-split-v23/findings.md`](_explore/batch-module-split-v23/findings.md) — 16 grandfathered modules (SP-577)
+**Explore:** [`spine-tasks/_explore/batch-module-split-v23/findings.md`](_explore/batch-module-split-v23/findings.md) — 16 grandfathered modules; verified SP-577 (2026-07-10)
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
@@ -1767,6 +1767,8 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 | SP-589 | integrate tryRestoreBranch | Staged | SP-587 | #116 |
 | SP-590 | split resume-multi-lanes | Staged | SP-588 | partial #117 |
 | SP-592 | monitor resume/lifecycle | Staged | SP-590 | partial #117 |
+| SP-606 | split reconcile-batch/orphan (salvage) | Done (orch) | SP-596 | #192 |
+| SP-607 | thin sequence shim (salvage) | Done (orch) | SP-600 | #192 |
 | SP-593 | empty grandfather list | Staged | SP-578–605 | #117 |
 | SP-594 | GitHub backlog hygiene | Staged | SP-593 | hygiene |
 | SP-595 | CONTEXT Phase 65 capstone | Staged | SP-594 | — |
@@ -1787,7 +1789,7 @@ spine run sequence SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-58
 - [ ] `PHASE23_GRANDFATHERED_OVER_500` empty (SP-593)
 - [ ] #117 and #116 closed on GitHub (SP-594)
 - [ ] Open GitHub issues decreased vs baseline 12
-- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-606
+- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-608
 
 ---
 

@@ -60,3 +60,31 @@ Sixteen `src/batch/` modules are grandfathered in `PHASE23_GRANDFATHERED_OVER_50
 ## Open questions
 
 - None — split-only scope confirmed in clarify.md; operator defers #43, #120–127, #135, #160.
+
+## Verification (SP-577, 2026-07-10)
+
+LOC counts re-checked with `wc -l` — no drift from explore snapshot above.
+
+| Module | LOC (verified) | In `PHASE23_GRANDFATHERED_OVER_500` |
+|--------|----------------|--------------------------------------|
+| reconcile.mjs | 1715 | yes |
+| review.mjs | 1224 | yes |
+| detached-start.mjs | 908 | yes |
+| detached-spawn.mjs | 82 | no (prior extract) |
+| worker-host.mjs | 846 | yes |
+| sequence.mjs | 791 | yes |
+| lane-dirty-check.mjs | 750 | yes |
+| journal-rebuild.mjs | 740 | yes |
+| state.mjs | 729 | yes |
+| contract-verify.mjs | 714 | yes |
+| salvage-batch.mjs | 691 | yes |
+| attached-runner.mjs | 647 | yes |
+| resume-multi-lanes.mjs | 583 | yes |
+| engine.mjs | 556 | yes |
+| resume.mjs | 506 | yes |
+| integrate.mjs | 506 | yes |
+| lifecycle.mjs | 498 | yes (borderline; monitor SP-592) |
+
+**Grandfather list:** 16 entries in `bin/spine-cli/verify.mjs` — matches summary.
+
+**Handoff §6 cross-check (SP-574–595):** Task IDs, slugs, sizes, and split targets align with suggested file scopes table. Extended second-half tasks (SP-596–605) documented in `CONTEXT.md` Phase 65 table; not in handoff §6 decomposition.

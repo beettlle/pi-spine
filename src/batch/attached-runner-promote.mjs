@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Attached batch promote/exit paths — milestones, land-loop CLI, post-merge limbo (SP-586).
- * Pause/resume reconcile stays in attached-runner.mjs until SP-604.
+ * Pause/resume reconcile lives in attached-runner-reconcile.mjs (SP-604).
  */
 
 import {
@@ -21,7 +21,7 @@ import { startParentSessionMonitor } from "./parent-session-monitor.mjs";
 import {
 	enforceAttachedEngineSingleOwner,
 	reconcilePausedResumeDoneInLane,
-} from "./attached-runner.mjs";
+} from "./attached-runner-reconcile.mjs";
 
 export { DEFAULT_ATTACHED_MILESTONE_POLL_MS } from "../config/spine-config-schema.mjs";
 
