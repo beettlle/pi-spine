@@ -1,7 +1,7 @@
 # SP-572: GitHub hygiene — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 0
 **Size:** S
@@ -25,7 +25,7 @@
 - [x] Record open issue delta (22 → 14, Δ −8)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Update manifest hygiene table
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
