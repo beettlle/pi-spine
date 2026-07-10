@@ -1,6 +1,6 @@
 # SP-594: v2.3.0 GitHub backlog hygiene — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 0
@@ -15,13 +15,13 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Execute
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Complete deliverable per Mission
-- [ ] Cross-check task table SP-574–595 in handoff §6
+- [x] Complete deliverable per Mission
+- [x] Cross-check task table SP-574–595 in handoff §6
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] `spine tasks validate SP-594`
 - [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
@@ -44,6 +44,28 @@
 |---------|--------|
 | Batch SHAs not yet on `origin/main` (orch/lane local until integrate push) | Cite full SHAs in close comments; GitHub commit permalinks resolve after orch→main push |
 | Open issues baseline at Step 0 | 15 open (includes #116, #117) |
+| After close | 13 open (Δ −2); #116 and #117 CLOSED |
+
+## Hygiene closures
+
+| Issue | State | Closing tasks | Primary SHA |
+|-------|-------|---------------|-------------|
+| [#116](https://github.com/beettlle/pi-spine/issues/116) | CLOSED | SP-589 | `498ea20995b171f11e1d47c21cb280b5efb04fc7` |
+| [#117](https://github.com/beettlle/pi-spine/issues/117) | CLOSED | SP-578–593 | `b368b4298ecb6c75271b244a837b676ee51bc2d3` |
+
+## Handoff §6 cross-check (SP-574–595)
+
+| SP-ID | Slug | Closes (handoff) | Status |
+|-------|------|------------------|--------|
+| SP-574 | rel230-handoff-doc | — | prior |
+| SP-575 | rel230-manifest | — | prior |
+| SP-576 | rel230-regression-gate | — | prior |
+| SP-577 | rel230-module-split-explore | — | prior |
+| SP-578–592 | splits / monitor | partial #117 | `.DONE` |
+| SP-589 | integrate helper | #116 | closed via SP-594 |
+| SP-593 | grandfather empty | #117 | closed via SP-594 |
+| SP-594 | github-hygiene | hygiene | this task |
+| SP-595 | context-capstone | — | next |
 
 ## Landed SHAs (SP-578–593)
 
