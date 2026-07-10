@@ -21,7 +21,7 @@ import {
 	runAttachedBatchEngine,
 } from "../src/batch/attached-runner.mjs";
 import { enforceAttachedOrphanRiskGuard } from "../src/doctor/attached-orphan-risk.mjs";
-import { formatSalvageListOutput, listSalvageableLanes } from "../src/batch/salvage-batch.mjs";
+import { formatSalvageIntegrateOutput, formatSalvageListOutput, integrateSalvageableLane, listSalvageableLanes } from "../src/batch/salvage-batch.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +30,7 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
 	"--through-wave",
 	"--batch",
 	"--reason",
+	"--lane",
 ]);
 
 /**
@@ -37,7 +38,7 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
  */
 export function printBatchHelp() {
 	return (
-		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
 	);
 }
 
@@ -153,6 +154,12 @@ export function parseBatchArgs(args) {
 		waveIndex = Number(args[waveIdx + 1]);
 	}
 
+	let laneNumber = null;
+	const laneIdx = args.indexOf("--lane");
+	if (laneIdx >= 0 && args[laneIdx + 1]) {
+		laneNumber = Number(args[laneIdx + 1]);
+	}
+
 	const subcommand =
 		args.find(
 			(t) =>
@@ -186,6 +193,8 @@ export function parseBatchArgs(args) {
 	const dryRun = flags.has("--dry-run");
 	const skipPreflight = flags.has("--skip-preflight");
 	const forceSuperseded = flags.has("--force-superseded");
+	const integrate = flags.has("--integrate");
+	const yes = flags.has("--yes");
 
 	return {
 		json: flags.has("--json"),
@@ -198,9 +207,12 @@ export function parseBatchArgs(args) {
 		dryRun,
 		skipPreflight,
 		forceSuperseded,
+		integrate,
+		yes,
 		batchId,
 		reason,
 		waveIndex,
+		laneNumber,
 		waveFilter,
 		waveFilterError,
 		subcommand,
@@ -240,17 +252,40 @@ export async function runSpineBatch(options) {
 		if (!parsed.batchId) {
 			return {
 				exitCode: 1,
-				output: "Usage: spine batch salvage --batch <batchId> --dry-run [--json]\n",
+				output:
+					"Usage: spine batch salvage --batch <batchId> --dry-run [--json]\n" +
+					"       spine batch salvage --batch <batchId> --lane <n> --integrate [--yes] [--json]\n",
 			};
 		}
+
+		if (parsed.integrate) {
+			if (!Number.isFinite(parsed.laneNumber) || parsed.laneNumber <= 0) {
+				return {
+					exitCode: 1,
+					output: "Usage: spine batch salvage --batch <batchId> --lane <n> --integrate [--yes] [--json]\n",
+				};
+			}
+
+			const result = await integrateSalvageableLane(projectRoot, parsed.batchId, parsed.laneNumber, {
+				yes: parsed.yes,
+				forceIntegrate: parsed.force,
+			});
+			return {
+				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+				output: formatSalvageIntegrateOutput(result, { json: parsed.json }),
+				result,
+			};
+		}
+
 		if (!parsed.dryRun) {
 			return {
 				exitCode: 1,
 				output:
 					"Usage: spine batch salvage --batch <batchId> --dry-run [--json]\n" +
-					"List mode requires --dry-run. Integrate mode is not available in this release.\n",
+					"       spine batch salvage --batch <batchId> --lane <n> --integrate [--yes] [--json]\n",
 			};
 		}
+
 		const result = listSalvageableLanes(projectRoot, parsed.batchId);
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
