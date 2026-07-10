@@ -1,38 +1,68 @@
 # SP-591: Split salvage-batch.mjs — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 1
-**Size:** M
+**Size:** S
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Pending
+- [x] Read explore findings for salvage-batch.mjs
+- [x] List public exports to preserve
 
 ### Step 1: Create extracted module(s)
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Pending
+- [ ] Create `salvage-batch-list.mjs` ≤500 LOC (`listSalvageableLanes`, `formatSalvageListOutput`, `isNonSalvageableExitReason`)
 
 ### Step 2: Re-export
 **Status:** ⬜ Not Started
 
-- [ ] Pending
+- [ ] Re-export list API from `salvage-batch.mjs` (integrate left for SP-605)
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Pending
+- [ ] `node --test tests/batch/batch-salvage-list.test.mjs`
+- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
 
-- [ ] Pending
+- [ ] Create `.DONE`
 
 ## Notes
 
 - Phase 65 v2.3.0 module split (SP-REL230)
+- Explore: `salvage-batch.mjs` (691 LOC) → list + integrate; this task is list half only
+- Do NOT edit `bin/spine-cli/verify.mjs` (SP-593 grandfather)
+
+### Plan (Review Level 1)
+
+1. Create `src/batch/salvage-batch-list.mjs` with list helpers + `NON_SALVAGEABLE_EXIT_REASONS`, `isNonSalvageableExitReason`, `listSalvageableLanes`, `formatSalvageListOutput`.
+2. Thin `salvage-batch.mjs`: re-export list API; keep integrate path importing `listSalvageableLanes` from the new module.
+3. Preserve public surface for `bin/spine-batch.mjs` and tests (no import path changes required).
+4. No runtime behavior change; integrate deferred to SP-605.
+
+### Public exports to preserve (via re-export)
+
+| Export | Destination |
+|--------|-------------|
+| `NON_SALVAGEABLE_EXIT_REASONS` | list module |
+| `isNonSalvageableExitReason` | list module |
+| `listSalvageableLanes` | list module |
+| `formatSalvageListOutput` | list module |
+| `confirmSalvageIntegrate` | stays in salvage-batch.mjs |
+| `integrateSalvageableLane` | stays in salvage-batch.mjs |
+| `formatSalvageIntegrateOutput` | stays in salvage-batch.mjs |
+
+## Discoveries
+
+| Finding | Action |
+|---------|--------|
+| GitNexus impact: symbols not in index (stale) | Proceed via grep callers: `bin/spine-batch.mjs`, tests, integrate path |
+| STATUS had generic Pending checkboxes vs PROMPT | Hydrated to PROMPT outcomes within existing step numbers |
