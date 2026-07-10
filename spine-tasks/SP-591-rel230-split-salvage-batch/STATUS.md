@@ -1,7 +1,7 @@
 # SP-591: Split salvage-batch.mjs — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** S
@@ -25,15 +25,15 @@
 - [x] Re-export list API from `salvage-batch.mjs` (integrate left for SP-605)
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [x] `node --test tests/batch/batch-salvage-list.test.mjs`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `node --test tests/batch/batch-salvage-list.test.mjs` — 7/7 pass
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — typecheck clean; suite 1953/1954 then flaky stall re-run 7/7; salvage list+integrate 14/14
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
@@ -68,3 +68,5 @@
 | GitNexus impact: symbols not in index (stale) | Proceed via grep callers: `bin/spine-batch.mjs`, tests, integrate path |
 | STATUS had generic Pending checkboxes vs PROMPT | Hydrated to PROMPT outcomes within existing step numbers |
 | Contract testCommand: 7/7 pass | Evidence recorded Step 3 |
+| Full `npm test` under `SPINE_IS_WORKER=1` fails nested-batch tests | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_PARENT_BATCH_ID` |
+| 1 flake: contract stall override under load | Re-ran `contract-stall-override.test.mjs` → 7/7 pass; unrelated to extract |
