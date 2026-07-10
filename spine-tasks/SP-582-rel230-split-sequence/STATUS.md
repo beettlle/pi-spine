@@ -1,7 +1,7 @@
 # SP-582: Split sequence.mjs — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** S
@@ -12,27 +12,25 @@
 **Status:** ✅ Complete
 
 - [x] Read explore findings for sequence.mjs (`batch-module-split-v23/findings.md`)
-- [x] List public exports to preserve:
-  - Plan (→ `sequence-plan.mjs`): `SEQUENCE_RELEASE_PROFILE`, `isReleaseSequenceScope`, `resolveSequenceProfile`, `validateReleaseSequenceWaveCaps`, `buildReleaseSequenceDryRunHeader`, `resolveSequenceWaves`, `buildSequenceWaveCommands`, `buildSequenceDryRunPlan`, `buildSequencePlan`
-  - Run (stays in `sequence.mjs` for SP-600): `isSequenceBatchSettled`, `isSequenceBatchFailure`, `isSequenceBatchWaiting`, `waitForSequenceBatchTerminal`, `runSequenceWaveLandLoop`, `runSequence`
-  - Re-export: `resolveWaveTaskIds`
+- [x] List public exports to preserve
 
 ### Step 1: Extract sequence-plan.mjs
 **Status:** ✅ Complete
 
-- [x] Create `src/batch/sequence-plan.mjs` (~230 LOC)
+- [x] Create `src/batch/sequence-plan.mjs` (234 LOC)
 - [x] Re-export plan symbols from `sequence.mjs`
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `node --test tests/batch/sequence-preflight.test.mjs`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `node --test tests/batch/sequence-preflight.test.mjs` — 6/6 pass (with `SPINE_IS_WORKER` unset)
+- [x] `npm run typecheck` — pass
+- [x] `SPINE_WORKER_STUB=1 npm test` — 1955/1957 pass; 2 failures in `phase23-exit-verify` (pre-existing `reconcile-diagnosis.mjs` LOC, out of scope)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
