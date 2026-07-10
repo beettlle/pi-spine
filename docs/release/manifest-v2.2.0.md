@@ -167,25 +167,26 @@ Run `spine plan SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-573` 
 
 | Issue | SP-ID | Land commit | Status |
 |-------|-------|-------------|--------|
-| [#128](https://github.com/beettlle/pi-spine/issues/128) | SP-559 | pending | pending |
-| [#129](https://github.com/beettlle/pi-spine/issues/129) | SP-561 | pending | pending |
-| [#146](https://github.com/beettlle/pi-spine/issues/146)–[#150](https://github.com/beettlle/pi-spine/issues/150) | SP-558 | pending | pending |
-| [#175](https://github.com/beettlle/pi-spine/issues/175) | SP-562 | pending | pending |
-| [#185](https://github.com/beettlle/pi-spine/issues/185) | SP-560 | pending | pending |
+| [#128](https://github.com/beettlle/pi-spine/issues/128) | SP-559 | `dc50e58b` | closed |
+| [#129](https://github.com/beettlle/pi-spine/issues/129) | SP-561 | `153b2696` | closed |
+| [#146](https://github.com/beettlle/pi-spine/issues/146)–[#150](https://github.com/beettlle/pi-spine/issues/150) | SP-558 | `281748da` | closed (#148 was already closed by SP-557) |
+| [#175](https://github.com/beettlle/pi-spine/issues/175) | SP-562 | `a3b6ab43` | closed |
+| [#185](https://github.com/beettlle/pi-spine/issues/185) | SP-560 | `7a29e1bd` | closed |
 
 **Implementation closures (SP-569, SP-571):**
 
 | Issue | SP-ID | Status |
 |-------|-------|--------|
-| [#190](https://github.com/beettlle/pi-spine/issues/190) | SP-569 | pending |
-| [#158](https://github.com/beettlle/pi-spine/issues/158) | SP-571 | pending |
+| [#190](https://github.com/beettlle/pi-spine/issues/190) | SP-569 | implementation complete (`01ab34a3`); issue still open |
+| [#158](https://github.com/beettlle/pi-spine/issues/158) | SP-571 | implementation complete (`8daed6d7`); issue still open |
 
 **Open-issue delta:**
 
 | When | Count | Notes |
 |------|-------|-------|
 | v2.2.0 baseline | 22 | Recorded at manifest creation |
-| After SP-572 hygiene + SP-569/571 | <15 | Target per PRD §8 exit criteria |
+| After SP-572 hygiene | 14 | Δ −8 (8 closed by SP-572; #148 was already closed) |
+| After SP-569/571 closures | <15 | Target per PRD §8 exit criteria (pending #190, #158) |
 
 ---
 
