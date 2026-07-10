@@ -1,7 +1,7 @@
 # SP-577: batch module split explore — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 0
 **Size:** S
@@ -22,14 +22,15 @@
 - [x] Linked explore row in CONTEXT.md
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `npm run typecheck` — passed
+- [x] `SPINE_WORKER_STUB=1 npm test` — 1911/1954 pass; 43 fail (all `nested_batch_spawn_blocked` in worker harness; no src changes)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
