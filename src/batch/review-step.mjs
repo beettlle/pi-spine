@@ -208,7 +208,7 @@ export function findStepName(taskFolder, stepNumber) {
 /**
  * @param {object} params
  */
-function writeStubReviewArtifact({ artifactPath, reviewType, stepNumber, stepName, verdict, feedback }) {
+export function writeStubReviewArtifact({ artifactPath, reviewType, stepNumber, stepName, verdict, feedback }) {
 	fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
 	const reviewLabel =
 		reviewType === "final" ? "Final" : reviewType === "plan" ? "Plan" : "Code";
@@ -238,7 +238,7 @@ function isBatchJournalFrozen(journal) {
 	return phase === "completed" || phase === "dismissed";
 }
 
-function journalReviewEvent(type, journal, payload) {
+export function journalReviewEvent(type, journal, payload) {
 	if (!journal?.projectRoot || !journal?.batchId) return;
 	if (type === "review.failed" && isBatchJournalFrozen(journal)) {
 		return;
@@ -257,7 +257,7 @@ function journalReviewEvent(type, journal, payload) {
  *
  * @param {object} params
  */
-function completeNestedReviewSpawnSkipped({
+export function completeNestedReviewSpawnSkipped({
 	stepNumber,
 	reviewType,
 	reviewLevel,
