@@ -1,7 +1,7 @@
 # SP-579: Split review.mjs — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** M
@@ -25,15 +25,21 @@
 - [x] Re-exported artifact API from `review.mjs`
 
 ### Step 3: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `node --test tests/batch/review-retry-reconcile.test.mjs`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `node --test tests/batch/review-retry-reconcile.test.mjs` — 6/6 pass
+- [x] `npm run typecheck` — pass
+- [x] `SPINE_WORKER_STUB=1 npm test` — 1911 pass, 43 fail (nested_batch_spawn_blocked in worker env; no review failures)
+- [x] Targeted review suite — 42/42 pass
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] Artifact discovery API unchanged for engine-lanes consumers (re-export shim in `review.mjs`)
 
 ## Notes
 
