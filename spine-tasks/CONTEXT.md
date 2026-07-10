@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 65 salvage SP-606/607 + review-step — #192)
+**Last Updated:** 2026-07-10 (Phase 65 CONTEXT capstone SP-595)
 **Status:** Active
 **Next Task ID:** SP-608
 
@@ -1738,40 +1738,40 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-574 | v2.3.0 handoff PRD | Staged | — | — |
-| SP-575 | release manifest | Staged | SP-574 | — |
-| SP-576 | regression gate script | Staged | SP-575 | — |
-| SP-577 | module-split explore | Staged | SP-575 | — |
-| SP-578 | extract reconcile-classify | Staged | SP-577 | partial #117 |
-| SP-596 | extract reconcile-diagnosis | Staged | SP-578 | partial #117 |
-| SP-579 | extract review-artifacts | Staged | SP-577 | partial #117 |
-| SP-597 | extract review-spawn remainder | Staged | SP-579 | partial #117 |
-| SP-580 | extract detached-diagnostics | Staged | SP-577 | partial #117 |
-| SP-598 | thin detached-start shim | Staged | SP-580 | partial #117 |
-| SP-581 | extract worker-spawn | Staged | SP-577 | partial #117 |
-| SP-599 | extract worker-heartbeat | Staged | SP-581 | partial #117 |
-| SP-582 | extract sequence-plan | Staged | SP-577, SP-599 | partial #117 |
-| SP-600 | extract sequence-run | Staged | SP-582 | partial #117 |
-| SP-583 | extract lane-dirty-check-git | Staged | SP-577, SP-599 | partial #117 |
-| SP-601 | lane-dirty commit paths | Staged | SP-583 | partial #117 |
-| SP-584 | extract journal-rebuild-structural | Staged | SP-577, SP-599 | partial #117 |
-| SP-602 | extract journal-rebuild-drift | Staged | SP-584 | partial #117 |
-| SP-585 | extract contract-parse | Staged | SP-577, SP-599 | partial #117 |
-| SP-603 | extract contract-exec | Staged | SP-585 | partial #117 |
-| SP-586 | extract attached-runner-promote | Staged | SP-577, SP-603 | partial #117 |
-| SP-604 | extract attached-runner-reconcile | Staged | SP-586 | partial #117 |
-| SP-588 | extract engine guards | Staged | SP-577, SP-603 | partial #117 |
-| SP-591 | extract salvage-batch-list | Staged | SP-577, SP-603 | partial #117 |
-| SP-605 | extract salvage-batch-integrate | Staged | SP-591 | partial #117 |
-| SP-587 | split state.mjs | Staged | SP-596 | partial #117 |
-| SP-589 | integrate tryRestoreBranch | Staged | SP-587 | #116 |
-| SP-590 | split resume-multi-lanes | Staged | SP-588 | partial #117 |
-| SP-592 | monitor resume/lifecycle | Staged | SP-590 | partial #117 |
+| SP-574 | v2.3.0 handoff PRD | Done | — | — |
+| SP-575 | release manifest | Done | SP-574 | — |
+| SP-576 | regression gate script | Done | SP-575 | — |
+| SP-577 | module-split explore | Done | SP-575 | — |
+| SP-578 | extract reconcile-classify | Done | SP-577 | partial #117 |
+| SP-596 | extract reconcile-diagnosis | Done | SP-578 | partial #117 |
+| SP-579 | extract review-artifacts | Done | SP-577 | partial #117 |
+| SP-597 | extract review-spawn remainder | Done | SP-579 | partial #117 |
+| SP-580 | extract detached-diagnostics | Done | SP-577 | partial #117 |
+| SP-598 | thin detached-start shim | Done | SP-580 | partial #117 |
+| SP-581 | extract worker-spawn | Done | SP-577 | partial #117 |
+| SP-599 | extract worker-heartbeat | Done | SP-581 | partial #117 |
+| SP-582 | extract sequence-plan | Done | SP-577, SP-599 | partial #117 |
+| SP-600 | extract sequence-run | Done | SP-582 | partial #117 |
+| SP-583 | extract lane-dirty-check-git | Done | SP-577, SP-599 | partial #117 |
+| SP-601 | lane-dirty commit paths | Done | SP-583 | partial #117 |
+| SP-584 | extract journal-rebuild-structural | Done | SP-577, SP-599 | partial #117 |
+| SP-602 | extract journal-rebuild-drift | Staged (lane-4) | SP-584 | partial #117 |
+| SP-585 | extract contract-parse | Done | SP-577, SP-599 | partial #117 |
+| SP-603 | extract contract-exec | Done | SP-585 | partial #117 |
+| SP-586 | extract attached-runner-promote | Done | SP-577, SP-603 | partial #117 |
+| SP-604 | extract attached-runner-reconcile | Done | SP-586 | partial #117 |
+| SP-588 | extract engine guards | Done | SP-577, SP-603 | partial #117 |
+| SP-591 | extract salvage-batch-list | Done | SP-577, SP-603 | partial #117 |
+| SP-605 | extract salvage-batch-integrate | Staged (lane-4) | SP-591 | partial #117 |
+| SP-587 | split state.mjs | Done | SP-596 | partial #117 |
+| SP-589 | integrate tryRestoreBranch | Done | SP-587 | #116 |
+| SP-590 | split resume-multi-lanes | Done | SP-588 | partial #117 |
+| SP-592 | monitor resume/lifecycle | Done | SP-590 | partial #117 |
 | SP-606 | split reconcile-batch/orphan (salvage) | Done (orch) | SP-596 | #192 |
 | SP-607 | thin sequence shim (salvage) | Done (orch) | SP-600 | #192 |
-| SP-593 | empty grandfather list | Staged | SP-578–605 | #117 |
-| SP-594 | GitHub backlog hygiene | Staged | SP-593 | hygiene |
-| SP-595 | CONTEXT Phase 65 capstone | Staged | SP-594 | — |
+| SP-593 | empty grandfather list | Done | SP-578–605 | #117 |
+| SP-594 | GitHub backlog hygiene | Done | SP-593 | hygiene |
+| SP-595 | CONTEXT Phase 65 capstone | Done | SP-594 | — |
 
 ```bash
 spine tasks validate SP-574 SP-575 SP-576 SP-577 SP-578 SP-579 SP-580 SP-581 SP-582 SP-583 SP-584 SP-585 SP-586 SP-587 SP-588 SP-589 SP-590 SP-591 SP-592 SP-593 SP-594 SP-595 SP-596 SP-597 SP-598 SP-599 SP-600 SP-601 SP-602 SP-603 SP-604 SP-605
@@ -1783,13 +1783,15 @@ spine run sequence SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-58
 
 **Phase 65 exit criteria (handoff §8):**
 
-- [ ] Operator approved manifest scope (SP-575)
-- [ ] All manifest-scoped tasks `.DONE` on `main` (SP-574–595)
-- [ ] `npm run release:check` green before tag
-- [ ] `PHASE23_GRANDFATHERED_OVER_500` empty (SP-593)
-- [ ] #117 and #116 closed on GitHub (SP-594)
-- [ ] Open GitHub issues decreased vs baseline 12
-- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-608
+- [ ] Operator approved manifest scope (SP-575) — still **pending** (human gate; do not auto-approve)
+- [x] All manifest-scoped tasks `.DONE` on lane (SP-574–595); integrate to `main` pending
+- [ ] `npm run release:check` green before tag (operator publish gate)
+- [x] `PHASE23_GRANDFATHERED_OVER_500` empty (SP-593 — `[]` in `bin/spine-cli/verify.mjs`)
+- [x] #117 and #116 closed on GitHub (SP-594)
+- [ ] Open GitHub issues decreased vs baseline 12 (14 open at SP-595; #191–194 opened during batch)
+- [x] CONTEXT Phase 65 complete; Next Task ID → SP-608
+
+**Phase 65 implementation complete (SP-574–595 + extended splits).** Publish (`npm version minor` → v2.3.0) remains operator-gated. Manifest: [`docs/release/manifest-v2.3.0.md`](../docs/release/manifest-v2.3.0.md). Explore: [`batch-module-split-v23`](_explore/batch-module-split-v23/findings.md). Residual: SP-602/SP-605 `.DONE` on lane-4 not yet in this worktree; modules already ≤500 LOC after first-half + salvage.
 
 ---
 
