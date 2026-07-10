@@ -1,7 +1,7 @@
 # SP-601: Extract lane-dirty-check commit paths — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** S
@@ -18,16 +18,20 @@
 - [x] Preserve all public exports via re-export
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] `node --test tests/batch/gitignored-auto-clean.test.mjs` — 12/12 pass
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — typecheck pass; 1910 pass / 44 fail (pre-existing `nested_batch_spawn_blocked` under `SPINE_IS_WORKER=1`); 37/37 related dirty-check regressions pass
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] `lane-dirty-check.mjs` ≤500 LOC (141); API unchanged via re-exports
 
 ## Notes
 
 - Plan review skipped (real-pi nested spawn blocked; engine reviews after `.DONE`).
-- Blast radius: `classifyGitignoredPaths` HIGH via `commitLaneWorktree` — mitigated by re-export from `lane-dirty-check.mjs` (API unchanged).
 - Modules: `lane-dirty-check-git.mjs` (298), `lane-dirty-check-commit.mjs` (361), shim (141).
+- Flutter analyze helpers remain in the shim; gitignored + `resolvePostLaneCommitPorcelain` + coverage sanitize/restore in commit module.
