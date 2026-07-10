@@ -71,8 +71,12 @@ exit 127
 
 /**
  * @param {string} root
+ * @param {{ includeProof?: boolean, includeV230?: boolean }} opts
  */
-function seedRepoLayout(root) {
+function seedRepoLayout(root, opts = {}) {
+	const includeProof = opts.includeProof ?? false;
+	const includeV230 = opts.includeV230 ?? true;
+
 	mkdirSync(path.join(root, ".spine"), { recursive: true });
 	writeFileSync(path.join(root, ".spine/spine-config.json"), "{}\n", "utf-8");
 	mkdirSync(path.join(root, "docs/release"), { recursive: true });
@@ -81,7 +85,13 @@ function seedRepoLayout(root) {
 		"# signoff\n",
 		"utf-8",
 	);
-	writeFileSync(path.join(root, "docs/release/manifest-v2.0.0-proof.md"), "# manifest\n", "utf-8");
+	if (includeProof) {
+		writeFileSync(path.join(root, "docs/release/manifest-v2.0.0-proof.md"), "# manifest\n", "utf-8");
+	}
+	if (includeV230) {
+		writeFileSync(path.join(root, "docs/release/manifest-v2.3.0.md"), "# manifest\n", "utf-8");
+		writeFileSync(path.join(root, "docs/PRD-v2.3.0-module-split-handoff.md"), "# handoff\n", "utf-8");
+	}
 }
 
 /**
@@ -138,7 +148,7 @@ test("all blocking checks pass with mocked spine/gitnexus", async () => {
 		});
 		assert.match(stdout, /All blocking checks passed/);
 		assert.match(stdout, /spine doctor\s+PASS/);
-		assert.match(stdout, /proof manifest\s+PASS/);
+		assert.match(stdout, /v2\.3\.0 release manifest\s+PASS/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -192,12 +202,12 @@ test("fails when gitnexus index is stale unless skipped", async () => {
 	}
 });
 
-test("fails when proof manifest is missing", async () => {
+test("fails when v2.3.0 release manifest is missing", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-manifest-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
 	seedRepoLayout(root);
-	fs.unlinkSync(path.join(root, "docs/release/manifest-v2.0.0-proof.md"));
+	fs.unlinkSync(path.join(root, "docs/release/manifest-v2.3.0.md"));
 	try {
 		const result = runGateExpectFail(root, {
 			RELEASE_PROOF_GATE_ROOT: root,
@@ -206,7 +216,7 @@ test("fails when proof manifest is missing", async () => {
 			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
 		});
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /missing proof manifest/);
+		assert.match(result.stderr, /missing v2\.3\.0 release manifest/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
