@@ -1,7 +1,7 @@
 # SP-574: v2.3.0 module split handoff PRD — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 0
 **Size:** S
@@ -26,15 +26,16 @@
 - [x] Verified §10 waves match `spine plan` output (13 waves, maxParallel 4)
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `spine tasks validate SP-574`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `spine tasks validate SP-574` — 1 passed, 0 failed
+- [x] `npm run typecheck` — passed
+- [x] `SPINE_WORKER_STUB=1 npm test` — 1911/1954 pass; 43 batch-start tests fail due to `SPINE_IS_WORKER=1` nested spawn guard (environmental, not doc-related)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
