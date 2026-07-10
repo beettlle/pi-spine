@@ -13,6 +13,8 @@ import {
 } from "./rules-manifest-drift.mjs";
 import { assertOrchIntegratable } from "./integrate-assert.mjs";
 export { assertOrchIntegratable } from "./integrate-assert.mjs";
+import { tryRestoreBranch } from "./integrate-git.mjs";
+export { tryRestoreBranch } from "./integrate-git.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
@@ -379,11 +381,7 @@ export function integrateOrchToBase(ctx) {
 				error: message.slice(0, 500),
 				conflict,
 			});
-			try {
-				git(projectRoot, ["checkout", previous || baseBranch]);
-			} catch {
-				// leave operator on current branch for manual recovery
-			}
+			tryRestoreBranch(projectRoot, previous || baseBranch);
 			return {
 				ok: false,
 				exitCode: 1,
@@ -430,11 +428,7 @@ export function integrateOrchToBase(ctx) {
 				mergeCommit,
 			});
 
-			try {
-				git(projectRoot, ["checkout", previous || baseBranch]);
-			} catch {
-				// Leave operator on current branch for manual recovery.
-			}
+			tryRestoreBranch(projectRoot, previous || baseBranch);
 
 			return {
 				ok: false,
@@ -484,11 +478,7 @@ export function integrateOrchToBase(ctx) {
 			conflict,
 		});
 
-		try {
-			git(projectRoot, ["checkout", previous || baseBranch]);
-		} catch {
-			// leave operator on current branch for manual recovery
-		}
+		tryRestoreBranch(projectRoot, previous || baseBranch);
 
 		return {
 			ok: false,

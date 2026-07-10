@@ -1,0 +1,6 @@
+Task: SP-603
+Status: complete
+contract-verify.mjs: 39 LOC shim
+contract-exec.mjs: 483 LOC (verifyContract, runContractTestCommand, npm guard)
+contract-parse.mjs: 244 LOC (SP-585 baseline)
+testCommand: node --test tests/batch/contract-verify-npm-scope.test.mjs — 5/5 pass
