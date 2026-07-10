@@ -1,7 +1,7 @@
 # SP-598: Thin detached-start.mjs shim — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Size:** S
@@ -19,14 +19,16 @@
 - [x] Preserve all public exports via re-export
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
-- [ ] Pending
+**Status:** ✅ Complete
+- [x] `node --test tests/batch/detached-start-orphan-timeout.test.mjs` — 2/2 pass
+- [x] `npm run typecheck` — pass
+- [x] `SPINE_WORKER_STUB=1 npm test` — 44 failures from `SPINE_IS_WORKER=1` nested spawn guard (same as SP-580); detached-start*.test.mjs 34/34 pass without worker env
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Pending
+**Status:** ✅ Complete
+- [x] Create `.DONE`
 
 ## Notes
 
-- Split pattern: spawn (leaf) + diagnostics (leaf) + wait + run; shim re-exports all public API
+- Split: spawn (leaf) + diagnostics (leaf) + wait + run; shim re-exports all public API
 - `detached-start.mjs` 671 → 32 LOC
