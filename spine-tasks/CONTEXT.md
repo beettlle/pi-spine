@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-09 (Phase 64 v2.2.0 complete — SP-565–573)
+**Last Updated:** 2026-07-10 (Phase 64 v2.2.0 published — SP-565–573)
 **Status:** Active
 **Next Task ID:** SP-574
 
@@ -1719,13 +1719,13 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 
 - [x] Operator approved manifest scope (SP-566 — 2026-07-09)
 - [x] All manifest-scoped tasks `.DONE` on `main` (SP-565–573)
-- [ ] `npm run release:check` green before tag (operator pre-publish — lint fix pending in `salvage-batch.mjs`)
-- [x] Open GitHub issues decreased vs baseline 22 (22 → 14, Δ −8; target <15 met per SP-572)
+- [x] `npm run release:check` green before tag (`69a1d02c`, 88.99% coverage)
+- [x] Open GitHub issues decreased vs baseline 22 (22 → 12, Δ −10; target <15 met)
 - [x] #190 fail-closed with regression tests (SP-569 — `done-marker-fail-closed.test.mjs`)
 - [x] #158 salvage documented in runbook (SP-571 — `spine batch salvage --integrate`)
 - [x] Hygiene issues closed (SP-572 — #128, #129, #146–#150, #175, #185)
 - [x] CONTEXT Phase 64 complete; Next Task ID → SP-574
-- [ ] **v2.2.0 published** (operator approval — release operator Phase 6)
+- [x] **v2.2.0 published** — tag `v2.2.0`, npm `pi-spine@2.2.0` (2026-07-10); CI `29069234480`, Release `29069235335`
 
 **Phase 64 complete.** Manifest: [`docs/release/manifest-v2.2.0.md`](../docs/release/manifest-v2.2.0.md). Explore: [`done-marker-fail-closed`](_explore/done-marker-fail-closed/findings.md).
 

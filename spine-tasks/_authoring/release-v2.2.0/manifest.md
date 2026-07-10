@@ -5,7 +5,9 @@
 **Target version:** v2.2.0
 **Bump type:** minor
 **Profile:** minor
-**Operator approved scope:** pending
+**Operator approved scope:** yes (2026-07-09)
+
+**Published:** 2026-07-10 — tag `v2.2.0`
 
 See canonical copy: [`docs/release/manifest-v2.2.0.md`](../../../docs/release/manifest-v2.2.0.md)
 

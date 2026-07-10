@@ -5,7 +5,9 @@
 **Target version:** v2.2.0
 **Bump type:** minor
 **Profile:** minor
-**Operator approved scope:** pending
+**Operator approved scope:** yes (2026-07-09)
+
+**Published:** 2026-07-10 — tag `v2.2.0`, npm `pi-spine@2.2.0`
 
 **Source PRD:** [`docs/PRD-v2.2.0-backlog-drain-handoff.md`](../PRD-v2.2.0-backlog-drain-handoff.md)
 
@@ -177,28 +179,28 @@ Run `spine plan SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-573` 
 
 | Issue | SP-ID | Status |
 |-------|-------|--------|
-| [#190](https://github.com/beettlle/pi-spine/issues/190) | SP-569 | implementation complete (`01ab34a3`); issue still open |
-| [#158](https://github.com/beettlle/pi-spine/issues/158) | SP-571 | implementation complete (`8daed6d7`); issue still open |
+| [#190](https://github.com/beettlle/pi-spine/issues/190) | SP-569 | `40533e2d` | closed |
+| [#158](https://github.com/beettlle/pi-spine/issues/158) | SP-571 | `b11d7775` | closed |
 
 **Open-issue delta:**
 
 | When | Count | Notes |
 |------|-------|-------|
 | v2.2.0 baseline | 22 | Recorded at manifest creation |
-| After SP-572 hygiene | 14 | Δ −8 (8 closed by SP-572; #148 was already closed) |
-| After SP-569/571 closures | <15 | Target per PRD §8 exit criteria (pending #190, #158) |
+| After SP-572 hygiene | 14 | Δ −8 |
+| After publish + #158 close | 12 | Δ −10 vs baseline |
 
 ---
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] Operator approved scope: yes
-- [ ] All release-scoped tasks `.DONE` on `main` (SP-565–573)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — CI parity)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per [`docs/release/npm-publish.md`](npm-publish.md)
-- [ ] Open GitHub issues decreased vs baseline 22 (<15 target)
+- [x] Operator approved scope: yes (2026-07-09)
+- [x] All release-scoped tasks `.DONE` on `main` (SP-565–573)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green (`69a1d02c`, 88.99% coverage)
+- [x] Operator approved publish bump type: minor
+- [x] `npm version minor` + `git push && git push --tags` → `v2.2.0`
+- [x] CI succeeded (`29069234480`)
+- [x] Release workflow succeeded (`29069235335`)
+- [x] npm published `pi-spine@2.2.0`
+- [x] Open GitHub issues decreased vs baseline 22 (12 open, Δ −10)
