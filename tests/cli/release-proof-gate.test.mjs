@@ -71,11 +71,12 @@ exit 127
 
 /**
  * @param {string} root
- * @param {{ includeV210?: boolean, includeV220?: boolean, includeProof?: boolean }} opts
+ * @param {{ includeV210?: boolean, includeV220?: boolean, includeV230?: boolean, includeProof?: boolean }} opts
  */
 function seedRepoLayout(root, opts = {}) {
 	const includeV210 = opts.includeV210 ?? false;
-	const includeV220 = opts.includeV220 ?? true;
+	const includeV220 = opts.includeV220 ?? false;
+	const includeV230 = opts.includeV230 ?? true;
 	const includeProof = opts.includeProof ?? false;
 
 	mkdirSync(path.join(root, ".spine"), { recursive: true });
@@ -96,6 +97,10 @@ function seedRepoLayout(root, opts = {}) {
 	if (includeV220) {
 		writeFileSync(path.join(root, "docs/release/manifest-v2.2.0.md"), "# manifest\n", "utf-8");
 		writeFileSync(path.join(root, "docs/PRD-v2.2.0-backlog-drain-handoff.md"), "# handoff\n", "utf-8");
+	}
+	if (includeV230) {
+		writeFileSync(path.join(root, "docs/release/manifest-v2.3.0.md"), "# manifest\n", "utf-8");
+		writeFileSync(path.join(root, "docs/PRD-v2.3.0-module-split-handoff.md"), "# handoff\n", "utf-8");
 	}
 }
 
@@ -150,7 +155,7 @@ test("gate script passes bash -n syntax check", () => {
 	execFileSync("bash", ["-n", gateScript], { encoding: "utf8" });
 });
 
-test("v2.2.0 default: all blocking checks pass with mocked spine/gitnexus", async () => {
+test("v2.3.0 default: all blocking checks pass with mocked spine/gitnexus", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-pass-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
@@ -159,6 +164,21 @@ test("v2.2.0 default: all blocking checks pass with mocked spine/gitnexus", asyn
 		const stdout = runGate(root, mockEnv(root, mockBin));
 		assert.match(stdout, /All blocking checks passed/);
 		assert.match(stdout, /spine doctor\s+PASS/);
+		assert.match(stdout, /v2\.3\.0 release manifest\s+PASS/);
+		assert.match(stdout, /handoff PRD\s+PASS/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("v2.2.0 explicit: all blocking checks pass with mocked spine/gitnexus", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-v220-pass-"));
+	const mockBin = path.join(root, "bin");
+	writeMockBinaries(mockBin);
+	seedRepoLayout(root, { includeV220: true, includeV230: false });
+	try {
+		const stdout = runGate(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.2.0" }));
+		assert.match(stdout, /All blocking checks passed/);
 		assert.match(stdout, /v2\.2\.0 release manifest\s+PASS/);
 		assert.match(stdout, /handoff PRD\s+PASS/);
 	} finally {
@@ -170,7 +190,7 @@ test("v2.1.0 explicit: all blocking checks pass with mocked spine/gitnexus", asy
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-v210-pass-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV210: true, includeV220: false });
+	seedRepoLayout(root, { includeV210: true, includeV220: false, includeV230: false });
 	try {
 		const stdout = runGate(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.1.0" }));
 		assert.match(stdout, /All blocking checks passed/);
@@ -217,7 +237,7 @@ test("fails when v2.1.0 release manifest is missing", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-manifest-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV210: true, includeV220: false });
+	seedRepoLayout(root, { includeV210: true, includeV220: false, includeV230: false });
 	fs.unlinkSync(path.join(root, "docs/release/manifest-v2.1.0.md"));
 	try {
 		const result = runGateExpectFail(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.1.0" }));
@@ -228,14 +248,29 @@ test("fails when v2.1.0 release manifest is missing", async () => {
 	}
 });
 
+test("fails when v2.3.0 release manifest is missing", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-manifest-v230-"));
+	const mockBin = path.join(root, "bin");
+	writeMockBinaries(mockBin);
+	seedRepoLayout(root);
+	fs.unlinkSync(path.join(root, "docs/release/manifest-v2.3.0.md"));
+	try {
+		const result = runGateExpectFail(root, mockEnv(root, mockBin));
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /missing v2\.3\.0 release manifest/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("fails when v2.2.0 release manifest is missing", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-manifest-v220-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root);
+	seedRepoLayout(root, { includeV220: true, includeV230: false });
 	fs.unlinkSync(path.join(root, "docs/release/manifest-v2.2.0.md"));
 	try {
-		const result = runGateExpectFail(root, mockEnv(root, mockBin));
+		const result = runGateExpectFail(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.2.0" }));
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /missing v2\.2\.0 release manifest/);
 	} finally {
@@ -247,10 +282,25 @@ test("fails when handoff PRD is missing for v2.1.0 gate", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-handoff-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV210: true, includeV220: false });
+	seedRepoLayout(root, { includeV210: true, includeV220: false, includeV230: false });
 	fs.unlinkSync(path.join(root, "docs/PRD-v2.1.0-backlog-drain-handoff.md"));
 	try {
 		const result = runGateExpectFail(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.1.0" }));
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /missing handoff PRD/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("fails when handoff PRD is missing for v2.3.0 gate", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-handoff-v230-"));
+	const mockBin = path.join(root, "bin");
+	writeMockBinaries(mockBin);
+	seedRepoLayout(root);
+	fs.unlinkSync(path.join(root, "docs/PRD-v2.3.0-module-split-handoff.md"));
+	try {
+		const result = runGateExpectFail(root, mockEnv(root, mockBin));
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /missing handoff PRD/);
 	} finally {
@@ -262,10 +312,10 @@ test("fails when handoff PRD is missing for v2.2.0 gate", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-handoff-v220-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root);
+	seedRepoLayout(root, { includeV220: true, includeV230: false });
 	fs.unlinkSync(path.join(root, "docs/PRD-v2.2.0-backlog-drain-handoff.md"));
 	try {
-		const result = runGateExpectFail(root, mockEnv(root, mockBin));
+		const result = runGateExpectFail(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.2.0" }));
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /missing handoff PRD/);
 	} finally {
@@ -277,7 +327,7 @@ test("RELEASE_GATE_VERSION=2.0.0 preserves proof manifest check only", async () 
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-v200-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV210: false, includeV220: false, includeProof: true });
+	seedRepoLayout(root, { includeV210: false, includeV220: false, includeV230: false, includeProof: true });
 	try {
 		const stdout = runGate(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "2.0.0" }));
 		assert.match(stdout, /proof manifest\s+PASS/);
@@ -291,7 +341,7 @@ test("RELEASE_GATE_VERSION=both requires proof and v2.1.0 manifests", async () =
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-both-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV210: true, includeV220: false, includeProof: true });
+	seedRepoLayout(root, { includeV210: true, includeV220: false, includeV230: false, includeProof: true });
 	try {
 		const stdout = runGate(root, mockEnv(root, mockBin, { RELEASE_GATE_VERSION: "both" }));
 		assert.match(stdout, /proof manifest\s+PASS/);
@@ -305,8 +355,8 @@ test("RELEASE_MANIFEST env overrides default manifest path", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "release-proof-gate-custom-"));
 	const mockBin = path.join(root, "bin");
 	writeMockBinaries(mockBin);
-	seedRepoLayout(root, { includeV220: false });
-	writeFileSync(path.join(root, "docs/PRD-v2.2.0-backlog-drain-handoff.md"), "# handoff\n", "utf-8");
+	seedRepoLayout(root, { includeV220: false, includeV230: false });
+	writeFileSync(path.join(root, "docs/PRD-v2.3.0-module-split-handoff.md"), "# handoff\n", "utf-8");
 	const customManifest = path.join(root, "docs/release/custom-manifest.md");
 	writeFileSync(customManifest, "# custom\n", "utf-8");
 	try {
