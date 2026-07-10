@@ -11,20 +11,8 @@ import { c, FAIL, OK } from "./shared.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** Modules >500 LOC grandfathered until v2.3 split (FR-SHIP-02 partial — engine-lanes split done). */
-export const PHASE23_GRANDFATHERED_OVER_500 = [
-	"src/batch/engine.mjs",
-	"src/batch/worker-host.mjs",
-	"src/batch/reconcile.mjs",
-	"src/batch/detached-start.mjs",
-	"src/batch/review.mjs",
-	"src/batch/sequence.mjs",
-	"src/batch/contract-verify.mjs",
-	"src/batch/journal-rebuild.mjs",
-	"src/batch/lane-dirty-check.mjs",
-	"src/batch/attached-runner.mjs",
-	"src/batch/salvage-batch.mjs",
-];
+/** Modules >500 LOC grandfathered until v2.3 split — emptied after SP-578–592 (issue #117). */
+export const PHASE23_GRANDFATHERED_OVER_500 = [];
 
 const PHASE23_ENGINE_LANES_MAX = 500;
 
