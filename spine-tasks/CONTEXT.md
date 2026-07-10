@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-09 (Phase 64 v2.2.0 staged — SP-565–573)
+**Last Updated:** 2026-07-09 (Phase 64 v2.2.0 complete — SP-565–573)
 **Status:** Active
 **Next Task ID:** SP-574
 
@@ -1699,15 +1699,15 @@ spine run sequence SP-552,SP-553,SP-554,SP-555,SP-556,SP-557,SP-558,SP-559,SP-56
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-565 | v2.2.0 handoff PRD | **Staged** | — | — |
-| SP-566 | release manifest | **Staged** | SP-565 | — |
-| SP-567 | regression gate script | **Staged** | SP-566 | — |
-| SP-568 | done-marker explore (#190) | **Staged** | SP-566 | #190 |
-| SP-569 | done-marker fail-closed engine | **Staged** | SP-568 | #190 |
-| SP-570 | operator salvage list | **Staged** | SP-567 | #158 |
-| SP-571 | operator salvage integrate | **Staged** | SP-570 | #158 |
-| SP-572 | GitHub backlog hygiene | **Staged** | SP-569, SP-571 | hygiene |
-| SP-573 | CONTEXT Phase 64 capstone | **Staged** | SP-565–572 | — |
+| SP-565 | v2.2.0 handoff PRD | Done | — | — |
+| SP-566 | release manifest | Done | SP-565 | — |
+| SP-567 | regression gate script | Done | SP-566 | — |
+| SP-568 | done-marker explore (#190) | Done | SP-566 | #190 |
+| SP-569 | done-marker fail-closed engine | Done | SP-568 | #190 |
+| SP-570 | operator salvage list | Done | SP-567 | #158 |
+| SP-571 | operator salvage integrate | Done | SP-570 | #158 |
+| SP-572 | GitHub backlog hygiene | Done | SP-569, SP-571 | hygiene |
+| SP-573 | CONTEXT Phase 64 capstone | Done | SP-565–572 | — |
 
 ```bash
 spine tasks validate SP-565 SP-566 SP-567 SP-568 SP-569 SP-570 SP-571 SP-572 SP-573
@@ -1717,15 +1717,17 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 
 **Phase 64 exit criteria (handoff §8):**
 
-- [ ] Operator approved manifest scope (SP-566)
-- [ ] All manifest-scoped tasks `.DONE` on `main` (SP-565–573)
-- [ ] `npm run release:check` green before tag
-- [ ] Open GitHub issues decreased vs baseline 22 (target <15)
-- [ ] #190 fail-closed with regression tests (SP-569)
-- [ ] #158 salvage documented in runbook (SP-571)
-- [ ] Hygiene issues closed (SP-572)
-- [ ] CONTEXT Phase 64 complete; Next Task ID → SP-574
+- [x] Operator approved manifest scope (SP-566 — 2026-07-09)
+- [x] All manifest-scoped tasks `.DONE` on `main` (SP-565–573)
+- [ ] `npm run release:check` green before tag (operator pre-publish — lint fix pending in `salvage-batch.mjs`)
+- [x] Open GitHub issues decreased vs baseline 22 (22 → 14, Δ −8; target <15 met per SP-572)
+- [x] #190 fail-closed with regression tests (SP-569 — `done-marker-fail-closed.test.mjs`)
+- [x] #158 salvage documented in runbook (SP-571 — `spine batch salvage --integrate`)
+- [x] Hygiene issues closed (SP-572 — #128, #129, #146–#150, #175, #185)
+- [x] CONTEXT Phase 64 complete; Next Task ID → SP-574
 - [ ] **v2.2.0 published** (operator approval — release operator Phase 6)
+
+**Phase 64 complete.** Manifest: [`docs/release/manifest-v2.2.0.md`](../docs/release/manifest-v2.2.0.md). Explore: [`done-marker-fail-closed`](_explore/done-marker-fail-closed/findings.md).
 
 ---
 
