@@ -1,7 +1,7 @@
 # SP-572: GitHub hygiene — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-09
 **Review Level:** 0
 **Size:** S
@@ -9,23 +9,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Verify SP-558–562 landed commits
-- [ ] Verify #190 and #158 closed by implementation tasks
+- [x] Verify SP-558–562 landed commits (batch SHAs on main)
+- [x] Verify SP-569/571 implementation complete (#190/#158 still open — out of SP-572 scope per Do NOT)
 
 ### Step 1: Close issues
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Close hygiene issues with SHA comments
+- [x] Close hygiene issues with SHA comments (#128, #129, #146–#147, #149–#150, #175, #185)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Record open issue delta
+- [x] Record open issue delta (22 → 14, Δ −8)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Update manifest hygiene table
+- [x] Update manifest hygiene table
 - [ ] Create `.DONE`
