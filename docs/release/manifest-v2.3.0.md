@@ -104,23 +104,25 @@ npm run typecheck && SPINE_WORKER_STUB=1 npm test && npm run release:check
 
 ## Wave plan snapshot
 
+Authoritative source: `spine plan` (2026-07-10) — 32 tasks · 13 waves · maxParallel 4.
+
 ```text
-Wave 0 · SP-574 — handoff PRD
-Wave 1 · SP-575 — manifest (operator gate)
-Wave 2 · SP-576, SP-577 — gate + explore (2 lanes)
+Wave 0 · SP-574 — v2.3.0 module split handoff PRD
+Wave 1 · SP-575 — v2.3.0 release manifest
+Wave 2 · SP-576, SP-577 — regression gate + batch module split explore (2 lanes)
 Wave 3 · SP-578, SP-579, SP-580, SP-581 — first-half batch 1 (4 lanes)
 Wave 4 · SP-596, SP-597, SP-598, SP-599 — second-half batch 1 (4 lanes)
-Wave 5 · SP-582–585, SP-587 — batch 2 first halves + state (5 tasks, 2 rounds)
-Wave 6 · SP-589, SP-600–603 — batch 2 second halves + integrate (5 tasks, 2 rounds)
+Wave 5 · SP-582, SP-583, SP-584, SP-585, SP-587 — batch 2 first halves + state (5 tasks, 2 rounds)
+Wave 6 · SP-589, SP-600, SP-601, SP-602, SP-603 — batch 2 second halves + integrate (5 tasks, 2 rounds)
 Wave 7 · SP-586, SP-588, SP-591 — batch 3 first halves (3 lanes)
 Wave 8 · SP-590, SP-604, SP-605 — batch 3 second halves + resume-multi (3 lanes)
-Wave 9 · SP-592 — monitor
-Wave 10 · SP-593 — empty grandfather list
-Wave 11 · SP-594 — GitHub hygiene
-Wave 12 · SP-595 — CONTEXT capstone
+Wave 9 · SP-592 — monitor resume and lifecycle LOC
+Wave 10 · SP-593 — empty PHASE23_GRANDFATHERED_OVER_500
+Wave 11 · SP-594 — v2.3.0 GitHub backlog hygiene
+Wave 12 · SP-595 — CONTEXT Phase 65 capstone
 ```
 
-Wave gates: SP-582–585 → SP-599; SP-586/588/591 → SP-603.
+Wave gates: SP-582–585 depend on SP-599; SP-586, SP-588, SP-591 depend on SP-603.
 
 Run `spine plan SP-574,...,SP-605` for authoritative output.
 
