@@ -31,31 +31,14 @@ import {
 	updateSegmentForTask,
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
-import { validateMultiTaskResume, resumeMultiTaskBatch } from "./resume-multi.mjs";
+import { resumeMultiTaskBatch } from "./resume-multi.mjs";
 import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
+import { validateResumeBatch } from "./resume-single-validate.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 export { pauseBatch } from "./pause.mjs";
-
-/**
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {boolean} [params.force]
- */
-export function validateResumeBatch({ projectRoot, force = false }) {
-	const result = validateMultiTaskResume({ projectRoot, force });
-	if (!result.ok) {
-		return result;
-	}
-
-	const taskId = result.pendingTasks.length === 1 ? result.pendingTasks[0].taskId : undefined;
-
-	return {
-		...result,
-		taskId,
-	};
-}
+export { validateResumeBatch } from "./resume-single-validate.mjs";
 
 /**
  * @param {object} params
