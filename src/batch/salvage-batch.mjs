@@ -15,7 +15,7 @@ import { gitExec } from "./git-exec.mjs";
 import { mergeOrchIntoBaseIsolated, syncPlumbingMergePathsToWorktree } from "./integrate-worktree.mjs";
 import { journalPath, readJournalEvents, appendJournalEvent } from "./journal.mjs";
 import { rebuildBatchStateFromJournal } from "./journal-rebuild.mjs";
-import { loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
+import { loadBatchStateFile } from "./reconcile.mjs";
 import { resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 
