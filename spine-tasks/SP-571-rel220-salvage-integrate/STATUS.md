@@ -1,7 +1,7 @@
 # SP-571: salvage integrate — Status
 
-**Current Step:** Step 1
-**Status:** 🔄 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** M
@@ -14,22 +14,24 @@
 - [x] Read SP-570 API and integrate gates
 
 ### Step 1: Salvage integrate module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] integrateSalvageableLane implementation
+- [x] integrateSalvageableLane implementation
 
 ### Step 2: CLI + tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] --integrate flags and tests
+- [x] --integrate flags and tests
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand
+- [x] Contract testCommand (7/7 pass)
+- [x] Full suite: 1952/1954 pass (2 pre-existing failures without worker env)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook section
-- [ ] Create `.DONE`
+- [x] Runbook section
+- [x] Comment on #158
+- [x] Create `.DONE`
