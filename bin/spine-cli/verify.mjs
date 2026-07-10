@@ -18,7 +18,6 @@ export const PHASE23_GRANDFATHERED_OVER_500 = [
 	"src/batch/reconcile.mjs",
 	"src/batch/detached-start.mjs",
 	"src/batch/review.mjs",
-	"src/batch/resume-multi-lanes.mjs",
 	"src/batch/resume.mjs",
 	"src/batch/sequence.mjs",
 	"src/batch/contract-verify.mjs",
