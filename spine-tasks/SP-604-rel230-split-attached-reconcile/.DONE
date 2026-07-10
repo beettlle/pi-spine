@@ -1,0 +1,1 @@
+SP-604 complete: attached-runner.mjs split (reconcile extract); shim 26 LOC; API unchanged via re-exports.
