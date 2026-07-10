@@ -15,7 +15,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PHASE23_GRANDFATHERED_OVER_500 = [
 	"src/batch/engine.mjs",
 	"src/batch/integrate.mjs",
-	"src/batch/state.mjs",
 	"src/batch/worker-host.mjs",
 	"src/batch/reconcile.mjs",
 	"src/batch/detached-start.mjs",
