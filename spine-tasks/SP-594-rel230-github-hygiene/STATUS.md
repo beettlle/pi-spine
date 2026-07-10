@@ -1,7 +1,7 @@
 # SP-594: v2.3.0 GitHub backlog hygiene — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 0
 **Size:** S
@@ -21,15 +21,15 @@
 - [x] Cross-check task table SP-574–595 in handoff §6
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `spine tasks validate SP-594`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] `spine tasks validate SP-594`
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Notes
 
@@ -37,6 +37,7 @@
 - Handoff: `docs/PRD-v2.3.0-module-split-handoff.md` §5–§6, §8 (#117/#116 close)
 - Prior pattern: SP-572 / SP-563 — `gh issue close` with SP-ID + landed SHA comment
 - SP-593 `.DONE` present; `PHASE23_GRANDFATHERED_OVER_500 = []`; `tryRestoreBranch` in `integrate-git.mjs`
+- Verification: `spine tasks validate SP-594` → 1 passed; typecheck OK; `env -u SPINE_IS_WORKER SPINE_WORKER_STUB=1 npm test` → 1957 pass / 0 fail
 
 ## Discoveries
 
@@ -45,6 +46,7 @@
 | Batch SHAs not yet on `origin/main` (orch/lane local until integrate push) | Cite full SHAs in close comments; GitHub commit permalinks resolve after orch→main push |
 | Open issues baseline at Step 0 | 15 open (includes #116, #117) |
 | After close | 13 open (Δ −2); #116 and #117 CLOSED |
+| `npm test` under `SPINE_IS_WORKER=1` fails nested batch starts | Re-ran with `env -u SPINE_IS_WORKER` — 1957/1957 pass |
 
 ## Hygiene closures
 
