@@ -14,7 +14,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Modules >500 LOC grandfathered until v2.3 split (FR-SHIP-02 partial — engine-lanes split done). */
 export const PHASE23_GRANDFATHERED_OVER_500 = [
 	"src/batch/engine.mjs",
-	"src/batch/integrate.mjs",
 	"src/batch/worker-host.mjs",
 	"src/batch/reconcile.mjs",
 	"src/batch/detached-start.mjs",
