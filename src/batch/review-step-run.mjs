@@ -25,7 +25,10 @@ import {
 	normalizeVerdict,
 	parseReviewVerdict,
 } from "./review-shared.mjs";
-import { readReviewLevel } from "./review-artifacts.mjs";
+import {
+	findCompletedFinalReview,
+	readReviewLevel,
+} from "./review-artifacts.mjs";
 import {
 	buildReviewRequest,
 	buildReviewerSystemPrompt,
@@ -37,6 +40,9 @@ import {
 	journalReviewEvent,
 	writeStubReviewArtifact,
 } from "./review-step.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PACKAGE_ROOT = path.resolve(__dirname, "../..");
 
 /**
  * @param {object} params
