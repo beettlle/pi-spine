@@ -198,7 +198,8 @@ test("runSpineBatch salvage without --dry-run returns usage", async () => {
 			args: ["salvage", "--batch", BATCH_ID],
 		});
 		assert.equal(cli.exitCode, 1);
-		assert.match(cli.output ?? "", /requires --dry-run/i);
+		assert.match(cli.output ?? "", /--dry-run/);
+		assert.match(cli.output ?? "", /--integrate/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

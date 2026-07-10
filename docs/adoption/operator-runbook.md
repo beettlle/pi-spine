@@ -1077,6 +1077,36 @@ When a **live attached engine** (foreground `spine batch start --attached` / `re
 
 **Recovery when pause fails:** stop the attached engine (Ctrl+C or kill the engine PID), confirm `phase: paused` or run `spine batch pause` again, then `spine batch retry <taskId>` when you need to reset a failed task. `spine batch retry` is allowed when phase is **`paused`** or **`failed`**, not while phase is **`running`**.
 
+### Batch abort recovery (salvage)
+
+After **`spine batch abort`** or **`spine batch dismiss --force`**, succeeded lane commits may remain on lane task branches without reaching `main`. Use salvage to list and land that work without manual cherry-pick (**Closes** [#158](https://github.com/beettlle/pi-spine/issues/158)).
+
+```bash
+# 1. List salvageable lanes (read-only)
+spine batch salvage --batch <batchId> --dry-run
+
+# 2. Integrate one lane (interactive confirm on TTY)
+spine batch salvage --batch <batchId> --lane <n> --integrate
+
+# 3. Non-interactive / CI
+spine batch salvage --batch <batchId> --lane <n> --integrate --yes
+```
+
+| Step | What it does |
+|------|----------------|
+| `--dry-run` | Lists lanes with journal success + lane commit ahead of `main`; shows per-lane diff stat and excluded failed tasks |
+| `--integrate` | Merges the lane task branch into `main` using isolated integrate plumbing |
+| `--yes` | Skip confirmation (required when stdin is not a TTY) |
+
+**Rules:**
+
+- Only tasks with terminal success (`succeeded` / `skipped`) and a `lane.committed` journal event are salvageable. Tasks that failed contract or review are **listed as excluded** and must not be integrated alone.
+- Salvage integrate respects **integrate gates** (`gates.requireBeforeIntegrate`). When gates are enabled, run `spine gate approve` before `--integrate`, or salvage exits **2** with `GateBlocked`.
+- Merge conflicts fail loud with `MergeConflict` — `main` is not silently updated. Resolve on the lane branch or `main`, then re-run salvage integrate.
+- Journal events: `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
+
+**Typical workflow:** abort → `salvage --dry-run` → approve gate if required → `salvage --lane N --integrate` per salvageable lane → `spine status --diagnose`.
+
 ### Orphan running (zombie batch)
 
 When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume). Attached engines journal **`engine.parent_died`** when the parent shell/session is lost, reconcile orphan `running` → `failed`, clear `enginePid`, and set **`phase: paused`** (SP-539, **Closes** [#163](https://github.com/beettlle/pi-spine/issues/163)).
