@@ -5,22 +5,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { readAbortSignal } from "./abort.mjs";
-import {
-	activitySignalsChanged,
-	checkpointSignalsChanged,
-	collectProgressSignals,
-	computeStallDeadline,
-	recordCheckpointWarning,
-	recordLaneHeartbeat,
-	recordLaneProgressSnapshot,
-	recordStallWarning,
-	resolveHeartbeatKind,
-	shouldEmitCheckpointWarning,
-	shouldEmitProgressSnapshot,
-	buildProgressSnapshotPayload,
-	progressSnapshotPayloadChanged,
-} from "./heartbeat.mjs";
 import {
 	resolveStallConfigForTask,
 	resolveWorkerPiTimeoutMs,
@@ -30,7 +14,6 @@ import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
-import { nextStallAnchorAt } from "./engine-lanes/watch.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import {
@@ -43,6 +26,10 @@ import {
 	terminateHungWorkerChild,
 	CHILD_DONE_TIMEOUT_MS,
 } from "./worker-spawn.mjs";
+import {
+	createWorkerPollState,
+	pollWorkerUntilSettled,
+} from "./worker-heartbeat.mjs";
 
 export { buildWorkerChildEnv } from "./worker-spawn.mjs";
 
@@ -224,17 +211,6 @@ export async function runWorker({
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
-	let stallAnchorAt = startedAt;
-	let lastCheckpointAt = startedAt;
-	let lastHeartbeatAt = 0;
-	let lastProgressSnapshotAt = 0;
-	let lastSnapshotPayload = null;
-	let lastSignals = null;
-	let activitySinceCheckpoint = false;
-	let checkpointWarningSent = false;
-	let stallWarningSent = false;
-	let postDoneStartedAt = null;
-	let postDoneTerminated = false;
 
 	const child = spawnWorkerHandle({
 		worktreePath,
@@ -254,7 +230,7 @@ export async function runWorker({
 	const workerChild = /** @type {WorkerChildHandle} */ (child);
 	let childPastPreflight = !useLaunchScript;
 	/** @type {WorkerPhase} */
-	let workerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
+	const initialWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 	markChildPastPreflight(workerChild, () => {
 		childPastPreflight = true;
 	});
@@ -268,229 +244,47 @@ export async function runWorker({
 	});
 	const childDone = collectChildOutput(workerChild, liveLogWriter);
 
-	while (true) {
-		const doneOnDisk = fs.existsSync(donePath);
-		const now = Date.now();
-
-		if (doneOnDisk && postDoneStartedAt === null) {
-			postDoneStartedAt = now;
-		}
-
-		if (projectRoot && batchId) {
-			const abortSignal = readAbortSignal(projectRoot, batchId);
-			if (abortSignal) {
-				const hard = Boolean(abortSignal.hard);
-				workerChild.kill(hard ? "SIGKILL" : "SIGTERM");
-				const { output } = await childDone;
-				return buildWorkerFailureResult({
-					rawOutput: output,
-					classification: "aborted",
-					exitCode: hard ? 137 : 130,
-					mode: workerMode,
-					doneFound: fs.existsSync(donePath),
-					projectRoot,
-					batchId,
-					laneNumber,
-					taskId,
-					laneCorrelationId,
-					config,
-				});
-			}
-		}
-
-		if (doneOnDisk) {
-			if (workerChild.exitCode !== null) {
-				break;
-			}
-			const graceElapsed = now - (postDoneStartedAt ?? now);
-			if (graceElapsed >= stallConfig.postDoneGraceMs) {
-				if (projectRoot && batchId) {
-					appendJournalEvent(projectRoot, batchId, "worker.post_done_terminated", {
-						laneNumber,
-						taskId,
-						correlationId: laneCorrelationId,
-						graceElapsedMs: graceElapsed,
-						postDoneGraceMs: stallConfig.postDoneGraceMs,
-						childPid: workerChild.pid ?? null,
-					});
-				}
-				postDoneTerminated = true;
-				await terminateHungWorkerChild(workerChild, childDone);
-				break;
-			}
-			await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
-			continue;
-		}
-
-		const signals = collectProgressSignals(
-			/** @type {Parameters<typeof collectProgressSignals>[0]} */ ({
-				worktreePath,
-				taskFolder,
-				laneBranch,
-				fileScopePaths,
-				journalContext:
-					projectRoot && batchId
-						? { projectRoot, batchId, laneNumber, taskId }
-						: undefined,
-			}),
-		);
-		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
-		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
-			stallAnchorAt = now;
-			lastCheckpointAt = now;
-			activitySinceCheckpoint = false;
-			checkpointWarningSent = false;
-			lastSignals = null;
-			lastSnapshotPayload = null;
-		}
-		workerPhase = nextWorkerPhase;
-
-		const checkpointChanged =
-			workerPhase !== "launching" && checkpointSignalsChanged(lastSignals, signals);
-		const activityChanged =
-			workerPhase !== "launching" && activitySignalsChanged(lastSignals, signals);
-
-		if (checkpointChanged) {
-			lastCheckpointAt = now;
-			activitySinceCheckpoint = false;
-			checkpointWarningSent = false;
-		} else if (activityChanged) {
-			activitySinceCheckpoint = true;
-			if (stallConfig.extendGraceOnFileScope) {
-				lastCheckpointAt = now;
-			}
-		}
-
-		if (
-			projectRoot &&
-			batchId &&
-			!checkpointWarningSent &&
-			shouldEmitCheckpointWarning({
-				now,
-				lastCheckpointAt,
-				signals,
-				stallConfig,
-				activitySinceCheckpoint,
-				workerPhase,
-			})
-		) {
-			recordCheckpointWarning({
-				projectRoot,
-				batchId,
-				laneNumber,
-				taskId,
-				signals,
-				lastCheckpointAt,
-				correlationId: laneCorrelationId,
-			});
-			checkpointWarningSent = true;
-		}
-
-		lastSignals = signals;
-
-		if (
-			projectRoot &&
-			batchId &&
-			shouldEmitProgressSnapshot({
-				now,
-				lastEmittedAt: lastProgressSnapshotAt,
-				intervalMs: stallConfig.progressSnapshotIntervalMs,
-			})
-		) {
-			const snapshotPayload = buildProgressSnapshotPayload(signals, workerPhase);
-			if (progressSnapshotPayloadChanged(lastSnapshotPayload, snapshotPayload)) {
-				recordLaneProgressSnapshot({
-					projectRoot,
-					batchId,
-					laneNumber,
-					taskId,
-					signals,
-					correlationId: laneCorrelationId,
-					workerPhase,
-				});
-				lastSnapshotPayload = snapshotPayload;
-			}
-			lastProgressSnapshotAt = now;
-		}
-
-		if (
-			projectRoot &&
-			batchId &&
-			now - lastHeartbeatAt >= stallConfig.heartbeatIntervalMs
-		) {
-			const heartbeatKind = resolveHeartbeatKind(
-				/** @type {Parameters<typeof resolveHeartbeatKind>[0]} */ ({
-					workerPhase,
-					checkpointChanged,
-					activityChanged,
-				}),
-			);
-			recordLaneHeartbeat(
-				/** @type {Parameters<typeof recordLaneHeartbeat>[0]} */ ({
-					projectRoot,
-					batchId,
-					laneNumber,
-					taskId,
-					signals,
-					correlationId: laneCorrelationId,
-					workerPhase,
-					heartbeatKind,
-				}),
-			);
-			stallAnchorAt = nextStallAnchorAt({
-				stallAnchorAt,
-				now,
-				workerPhase,
-				heartbeatKind,
-			});
-			onHeartbeat?.(now);
-			lastHeartbeatAt = now;
-		}
-
-		const stallDeadline = computeStallDeadline({
-			startedAt,
-			lastProgressAt: lastCheckpointAt,
-			lastAliveAt: stallAnchorAt,
-			stallConfig,
-		});
-
-		if (now >= stallDeadline) {
-			if (!stallWarningSent && projectRoot && batchId) {
-				recordStallWarning({
-					projectRoot,
-					batchId,
-					laneNumber,
-					taskId,
-					signals,
-					stallDeadline,
-					correlationId: laneCorrelationId,
-				});
-				stallWarningSent = true;
-			}
-			const { output } = await terminateHungWorkerChild(workerChild, childDone);
-			return buildWorkerFailureResult({
-				rawOutput: output,
-				classification: "stall_timeout",
-				exitCode: 124,
-				mode: workerMode,
-				doneFound: fs.existsSync(donePath),
+	const pollState = createWorkerPollState(startedAt, initialWorkerPhase);
+	const pollOutcome = await pollWorkerUntilSettled({
+		donePath,
+		workerChild,
+		childDone,
+		stallConfig,
+		startedAt,
+		pollState,
+		worktreePath,
+		taskFolder,
+		laneBranch,
+		fileScopePaths,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		laneCorrelationId,
+		useStub,
+		workerBackend,
+		childPastPreflight,
+		onHeartbeat,
+		workerMode,
+		buildFailureResult: (
+			/** @type {Pick<Parameters<typeof buildWorkerFailureResult>[0], "rawOutput" | "classification" | "exitCode" | "mode" | "doneFound" | "stallDeadline" | "signals">} */ partial,
+		) =>
+			buildWorkerFailureResult({
+				...partial,
 				projectRoot,
 				batchId,
 				laneNumber,
 				taskId,
 				laneCorrelationId,
 				config,
-				stallDeadline,
-				signals,
-			});
-		}
+			}),
+	});
 
-		if (workerChild.exitCode !== null) {
-			break;
-		}
-
-		await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
+	if (pollOutcome.kind === "failure") {
+		return pollOutcome.result;
 	}
+
+	const postDoneTerminated = pollOutcome.postDoneTerminated;
 
 	const childResult = await Promise.race([childDone, sleep(CHILD_DONE_TIMEOUT_MS).then(() => null)]);
 	let exitCode, output;
