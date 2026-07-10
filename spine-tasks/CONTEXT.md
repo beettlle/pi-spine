@@ -1734,7 +1734,7 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 **Handoff:** [`docs/PRD-v2.3.0-module-split-handoff.md`](../docs/PRD-v2.3.0-module-split-handoff.md)  
 **Manifest:** [`docs/release/manifest-v2.3.0.md`](../docs/release/manifest-v2.3.0.md) (SP-575 — operator approval pending)  
 **Authoring:** [`spine-tasks/_authoring/release-v2.3.0/`](_authoring/release-v2.3.0/) — clarify, checklist, analyze  
-**Explore:** [`spine-tasks/_explore/batch-module-split-v23/findings.md`](_explore/batch-module-split-v23/findings.md) — 16 grandfathered modules (SP-577)
+**Explore:** [`spine-tasks/_explore/batch-module-split-v23/findings.md`](_explore/batch-module-split-v23/findings.md) — 16 grandfathered modules; verified SP-577 (2026-07-10)
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
