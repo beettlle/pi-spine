@@ -1,7 +1,6 @@
 // @ts-nocheck
 /** Orphan reconcile helpers (SP-606 / #192). */
 
-import path from "node:path";
 import {
 	appendJournalEvent,
 	readJournalEvents,

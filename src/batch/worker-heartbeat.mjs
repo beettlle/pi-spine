@@ -15,7 +15,7 @@ import {
 	recordLaneProgressSnapshot,
 	recordStallWarning,
 	resolveHeartbeatKind,
-	resolveStallConfig,
+	resolveStallConfig as _resolveStallConfig,
 	shouldEmitCheckpointWarning,
 	shouldEmitProgressSnapshot,
 	buildProgressSnapshotPayload,
@@ -30,7 +30,7 @@ import {
 
 /** @typedef {import("./worker-spawn.mjs").WorkerPhase} WorkerPhase */
 /** @typedef {import("./worker-spawn.mjs").WorkerChildHandle} WorkerChildHandle */
-/** @typedef {ReturnType<typeof resolveStallConfig>} StallConfig */
+/** @typedef {ReturnType<typeof _resolveStallConfig>} StallConfig */
 
 /**
  * @param {number} ms

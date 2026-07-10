@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 import { parseReviewVerdict } from "./review-shared.mjs";
 import { journalHasTaskCompleted } from "./resume-common.mjs";

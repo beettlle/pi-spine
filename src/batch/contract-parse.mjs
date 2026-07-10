@@ -8,7 +8,6 @@ import { execFileSync } from "node:child_process";
 import micromatch from "micromatch";
 import { resolveContractMode } from "../tasks/packet/validate-contract.mjs";
 import {
-	isBaseFileScopeSatisfied,
 	isBaseScopeSatisfied,
 	isStubPrelandedFileScopeSatisfied,
 } from "./contract-prelanded.mjs";

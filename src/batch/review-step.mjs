@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
@@ -17,20 +17,12 @@ import {
 	NESTED_REVIEW_SPAWN_BLOCKED,
 	NESTED_REVIEW_SPAWN_REASON,
 	REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
-	shouldBlockNestedReviewerSpawn,
-	spawnReviewerPi,
 } from "./review-spawn.mjs";
 import {
 	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
-	isReviewTypeRequired,
-	normalizeVerdict,
 	parseReviewVerdict,
 } from "./review-shared.mjs";
-import {
-	findCompletedFinalReview,
-	readReviewLevel,
-} from "./review-artifacts.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");

@@ -17,7 +17,6 @@ import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import {
-	buildWorkerChildEnv,
 	collectChildOutput,
 	markChildPastPreflight,
 	resolveWorkerLaunchScript,
