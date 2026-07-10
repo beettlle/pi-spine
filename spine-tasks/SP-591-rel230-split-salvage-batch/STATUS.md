@@ -1,6 +1,6 @@
 # SP-591: Split salvage-batch.mjs — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 1
@@ -15,19 +15,19 @@
 - [x] List public exports to preserve
 
 ### Step 1: Create extracted module(s)
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Create `salvage-batch-list.mjs` ≤500 LOC (`listSalvageableLanes`, `formatSalvageListOutput`, `isNonSalvageableExitReason`)
+- [x] Create `salvage-batch-list.mjs` ≤500 LOC (`listSalvageableLanes`, `formatSalvageListOutput`, `isNonSalvageableExitReason`)
 
 ### Step 2: Re-export
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Re-export list API from `salvage-batch.mjs` (integrate left for SP-605)
+- [x] Re-export list API from `salvage-batch.mjs` (integrate left for SP-605)
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] `node --test tests/batch/batch-salvage-list.test.mjs`
+- [x] `node --test tests/batch/batch-salvage-list.test.mjs`
 - [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 
 ### Step 4: Documentation & Delivery
@@ -40,6 +40,7 @@
 - Phase 65 v2.3.0 module split (SP-REL230)
 - Explore: `salvage-batch.mjs` (691 LOC) → list + integrate; this task is list half only
 - Do NOT edit `bin/spine-cli/verify.mjs` (SP-593 grandfather)
+- Extract: `salvage-batch-list.mjs` 291 LOC; `salvage-batch.mjs` 417 LOC (still >500 until SP-605)
 
 ### Plan (Review Level 1)
 
@@ -66,3 +67,4 @@
 |---------|--------|
 | GitNexus impact: symbols not in index (stale) | Proceed via grep callers: `bin/spine-batch.mjs`, tests, integrate path |
 | STATUS had generic Pending checkboxes vs PROMPT | Hydrated to PROMPT outcomes within existing step numbers |
+| Contract testCommand: 7/7 pass | Evidence recorded Step 3 |
