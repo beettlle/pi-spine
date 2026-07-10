@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 64 v2.2.0 published — SP-565–573)
+**Last Updated:** 2026-07-10 (Phase 65 v2.3.0 staged — SP-574–605)
 **Status:** Active
-**Next Task ID:** SP-574
+**Next Task ID:** SP-606
 
 ---
 
@@ -1728,6 +1728,66 @@ spine run sequence SP-565,SP-566,SP-567,SP-568,SP-569,SP-570,SP-571,SP-572,SP-57
 - [x] **v2.2.0 published** — tag `v2.2.0`, npm `pi-spine@2.2.0` (2026-07-10); CI `29069234480`, Release `29069235335`
 
 **Phase 64 complete.** Manifest: [`docs/release/manifest-v2.2.0.md`](../docs/release/manifest-v2.2.0.md). Explore: [`done-marker-fail-closed`](_explore/done-marker-fail-closed/findings.md).
+
+### Phase 65 — v2.3.0 batch module split (SP-REL230)
+
+**Handoff:** [`docs/PRD-v2.3.0-module-split-handoff.md`](../docs/PRD-v2.3.0-module-split-handoff.md)  
+**Manifest:** [`docs/release/manifest-v2.3.0.md`](../docs/release/manifest-v2.3.0.md) (SP-575 — operator approval pending)  
+**Authoring:** [`spine-tasks/_authoring/release-v2.3.0/`](_authoring/release-v2.3.0/) — clarify, checklist, analyze  
+**Explore:** [`spine-tasks/_explore/batch-module-split-v23/findings.md`](_explore/batch-module-split-v23/findings.md) — 16 grandfathered modules (SP-577)
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-574 | v2.3.0 handoff PRD | Staged | — | — |
+| SP-575 | release manifest | Staged | SP-574 | — |
+| SP-576 | regression gate script | Staged | SP-575 | — |
+| SP-577 | module-split explore | Staged | SP-575 | — |
+| SP-578 | extract reconcile-classify | Staged | SP-577 | partial #117 |
+| SP-596 | extract reconcile-diagnosis | Staged | SP-578 | partial #117 |
+| SP-579 | extract review-artifacts | Staged | SP-577 | partial #117 |
+| SP-597 | extract review-spawn remainder | Staged | SP-579 | partial #117 |
+| SP-580 | extract detached-diagnostics | Staged | SP-577 | partial #117 |
+| SP-598 | thin detached-start shim | Staged | SP-580 | partial #117 |
+| SP-581 | extract worker-spawn | Staged | SP-577 | partial #117 |
+| SP-599 | extract worker-heartbeat | Staged | SP-581 | partial #117 |
+| SP-582 | extract sequence-plan | Staged | SP-577, SP-599 | partial #117 |
+| SP-600 | extract sequence-run | Staged | SP-582 | partial #117 |
+| SP-583 | extract lane-dirty-check-git | Staged | SP-577, SP-599 | partial #117 |
+| SP-601 | lane-dirty commit paths | Staged | SP-583 | partial #117 |
+| SP-584 | extract journal-rebuild-structural | Staged | SP-577, SP-599 | partial #117 |
+| SP-602 | extract journal-rebuild-drift | Staged | SP-584 | partial #117 |
+| SP-585 | extract contract-parse | Staged | SP-577, SP-599 | partial #117 |
+| SP-603 | extract contract-exec | Staged | SP-585 | partial #117 |
+| SP-586 | extract attached-runner-promote | Staged | SP-577, SP-603 | partial #117 |
+| SP-604 | extract attached-runner-reconcile | Staged | SP-586 | partial #117 |
+| SP-588 | extract engine guards | Staged | SP-577, SP-603 | partial #117 |
+| SP-591 | extract salvage-batch-list | Staged | SP-577, SP-603 | partial #117 |
+| SP-605 | extract salvage-batch-integrate | Staged | SP-591 | partial #117 |
+| SP-587 | split state.mjs | Staged | SP-596 | partial #117 |
+| SP-589 | integrate tryRestoreBranch | Staged | SP-587 | #116 |
+| SP-590 | split resume-multi-lanes | Staged | SP-588 | partial #117 |
+| SP-592 | monitor resume/lifecycle | Staged | SP-590 | partial #117 |
+| SP-593 | empty grandfather list | Staged | SP-578–605 | #117 |
+| SP-594 | GitHub backlog hygiene | Staged | SP-593 | hygiene |
+| SP-595 | CONTEXT Phase 65 capstone | Staged | SP-594 | — |
+
+```bash
+spine tasks validate SP-574 SP-575 SP-576 SP-577 SP-578 SP-579 SP-580 SP-581 SP-582 SP-583 SP-584 SP-585 SP-586 SP-587 SP-588 SP-589 SP-590 SP-591 SP-592 SP-593 SP-594 SP-595 SP-596 SP-597 SP-598 SP-599 SP-600 SP-601 SP-602 SP-603 SP-604 SP-605
+spine plan SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-582,SP-583,SP-584,SP-585,SP-586,SP-587,SP-588,SP-589,SP-590,SP-591,SP-592,SP-593,SP-594,SP-595,SP-596,SP-597,SP-598,SP-599,SP-600,SP-601,SP-602,SP-603,SP-604,SP-605
+spine run sequence SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-582,SP-583,SP-584,SP-585,SP-586,SP-587,SP-588,SP-589,SP-590,SP-591,SP-592,SP-593,SP-594,SP-595,SP-596,SP-597,SP-598,SP-599,SP-600,SP-601,SP-602,SP-603,SP-604,SP-605 --detached
+```
+
+**Wave plan:** 13 waves, max 4 parallel. Wave gates: SP-582–585 → SP-599; SP-586/588/591 → SP-603. No mega-waves.
+
+**Phase 65 exit criteria (handoff §8):**
+
+- [ ] Operator approved manifest scope (SP-575)
+- [ ] All manifest-scoped tasks `.DONE` on `main` (SP-574–595)
+- [ ] `npm run release:check` green before tag
+- [ ] `PHASE23_GRANDFATHERED_OVER_500` empty (SP-593)
+- [ ] #117 and #116 closed on GitHub (SP-594)
+- [ ] Open GitHub issues decreased vs baseline 12
+- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-606
 
 ---
 

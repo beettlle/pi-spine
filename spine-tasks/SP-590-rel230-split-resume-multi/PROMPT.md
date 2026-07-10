@@ -1,0 +1,88 @@
+# Task: SP-590 — Split resume-multi-lanes.mjs
+
+**Created:** 2026-07-10
+**Size:** S
+
+## Review Level: 1 (Plan Only)
+
+**Assessment:** Strangler Fig split of `src/batch/resume-multi-lanes.mjs` per FR-SHIP-02 / #117. per-lane queue wiring → resume-multi-queue.mjs if still >500 LOC.
+**Score:** 2/8 — Blast radius: 1, Pattern novelty: 1, Security: 0, Reversibility: 1
+
+> **Real-pi batches (SP-195/SP-278):** Do **not** add per-step "Call `spine_review_step`" checkboxes for Review Level ≥ 1. The batch engine runs plan, code, and final reviews after worker `.DONE`.
+
+## Mission
+
+Extract modules from `src/batch/resume-multi-lanes.mjs` into `src/batch/resume-multi-queue.mjs`. Re-export from `resume-multi-lanes.mjs` to preserve public API. Remove `src/batch/resume-multi-lanes.mjs` from `PHASE23_GRANDFATHERED_OVER_500` in `bin/spine-cli/verify.mjs`. Each resulting file must be ≤500 LOC.
+
+**Closes:** partial #117
+
+## Dependencies
+
+- **Task:** SP-588
+
+## Context to Read First
+
+- [`spine-tasks/_explore/batch-module-split-v23/findings.md`](../_explore/batch-module-split-v23/findings.md)
+- [`src/batch/resume-multi-lanes.mjs`](../../src/batch/resume-multi-lanes.mjs)
+- [`docs/PRD-v2.3.0-module-split-handoff.md`](../../docs/PRD-v2.3.0-module-split-handoff.md) §3 inventory
+
+## File Scope
+
+- `src/batch/resume-multi-lanes.mjs`
+- `bin/spine-cli/verify.mjs`
+- `src/batch/resume-multi-queue.mjs`
+- `tests/batch/resume-orphan-recovery.test.mjs`
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `node --test tests/batch/resume-orphan-recovery.test.mjs` |
+| fileScopeMustChange | `src/batch/resume-multi-lanes.mjs`, `bin/spine-cli/verify.mjs`, `src/batch/resume-multi-queue.mjs` |
+
+## Steps
+
+### Step 0: Preflight
+
+- [ ] Read explore findings for resume-multi-lanes.mjs
+- [ ] Confirm dependencies satisfied
+- [ ] Identify public exports to preserve via re-export
+
+### Step 1: Create extracted module(s)
+
+- [ ] Create `src/batch/resume-multi-queue.mjs`
+- [ ] Move implementations per handoff: per-lane queue wiring → resume-multi-queue.mjs if still >500 LOC
+- [ ] Keep each new file ≤500 LOC
+
+### Step 2: Re-export from resume-multi-lanes.mjs
+
+- [ ] Remove moved code from `src/batch/resume-multi-lanes.mjs`
+- [ ] Re-export public symbols from new module(s)
+- [ ] Remove `src/batch/resume-multi-lanes.mjs` from `PHASE23_GRANDFATHERED_OVER_500`
+
+### Step 3: Testing & Verification
+
+- [ ] Run targeted test: `node --test tests/batch/resume-orphan-recovery.test.mjs`
+- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [ ] Verify `src/batch/resume-multi-lanes.mjs` ≤500 LOC (or removed from grandfather list with justification)
+
+### Step 4: Documentation & Delivery
+
+- [ ] Log discoveries in STATUS.md
+- [ ] Create `.DONE`
+
+## Completion Criteria
+
+- [ ] New module(s) exist; public API unchanged
+- [ ] Grandfather entry removed for resume-multi-lanes.mjs
+- [ ] All tests passing
+
+## Git Commit Convention
+
+- `refactor(SP-590): split resume-multi-lanes.mjs per FR-SHIP-02`
+
+## Do NOT
+
+- Change runtime behavior
+- Skip re-exports (breaking importers)
+- Leave module in `PHASE23_GRANDFATHERED_OVER_500` after split
