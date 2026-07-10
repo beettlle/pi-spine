@@ -1,7 +1,7 @@
 # SP-573: CONTEXT capstone — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-09
 **Review Level:** 0
 **Size:** S
@@ -9,27 +9,27 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-565–572 complete
+- [x] SP-565–572 complete
 
 ### Step 1: CONTEXT Phase 64
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Phase table and exit criteria
-- [ ] Next Task ID SP-574
+- [x] Phase table and exit criteria
+- [x] Next Task ID SP-574
 
 ### Step 2: dependencies.json
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Verify edges
+- [x] Verify edges
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] spine tasks validate scope
+- [x] spine tasks validate scope
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
