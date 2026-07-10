@@ -134,13 +134,13 @@ All other open issues deferred per §2.
 | 011 | SP-584 | rel230-split-journal-rebuild | Split `journal-rebuild.mjs` | M | SP-577 | partial #117 |
 | 012 | SP-585 | rel230-split-contract-verify | Split `contract-verify.mjs` | M | SP-577 | partial #117 |
 | 013 | SP-586 | rel230-split-attached-runner | Split `attached-runner.mjs` | M | SP-577 | partial #117 |
-| 014 | SP-587 | rel230-split-state | Split `state.mjs` | M | SP-578 | partial #117 |
+| 014 | SP-587 | rel230-split-state | Split `state.mjs` | M | SP-596 | partial #117 |
 | 015 | SP-588 | rel230-split-engine-guards | Extract nested-spawn guard from `engine.mjs` | S | SP-577 | partial #117 |
 | 016 | SP-589 | rel230-split-integrate-helper | `tryRestoreBranch` helper (#116) | S | SP-587 | #116 |
 | 017 | SP-590 | rel230-split-resume-multi | Split `resume-multi-lanes.mjs` if >500 | S | SP-588 | partial #117 |
 | 018 | SP-591 | rel230-split-salvage-batch | Split `salvage-batch.mjs` | M | SP-577 | partial #117 |
 | 019 | SP-592 | rel230-monitor-resume-lifecycle | Verify `resume.mjs` / `lifecycle.mjs` ≤500 | S | SP-590 | partial #117 |
-| 020 | SP-593 | rel230-grandfather-list-empty | Empty `PHASE23_GRANDFATHERED_OVER_500` | S | SP-578–592 | #117 |
+| 020 | SP-593 | rel230-grandfather-list-empty | Empty `PHASE23_GRANDFATHERED_OVER_500` | S | SP-578–605 | #117 |
 | 021 | SP-594 | rel230-github-hygiene | Close #117, #116 with commit refs | S | SP-593 | hygiene |
 | 022 | SP-595 | rel230-context-capstone | CONTEXT Phase 65 capstone | S | SP-594 | — |
 
@@ -186,7 +186,7 @@ Phase 10 — Verification + sign-off
   SP-594 (GitHub hygiene)
   SP-595 (CONTEXT capstone)
 
-Phase 6 — Publish (operator approval)
+Phase 11 — Publish (operator approval)
   npm run release:check → npm version minor → v2.3.0 tag
 ```
 
@@ -197,14 +197,14 @@ Phase 6 — Publish (operator approval)
 ## 8. Phase 65 exit criteria
 
 - [ ] Operator approved manifest scope (SP-575)
-- [ ] All manifest-scoped tasks `.DONE` on `main` (SP-574–595)
+- [ ] All manifest-scoped tasks `.DONE` on `main` (SP-574–605)
 - [ ] `npm run release:check` green before tag
 - [ ] `PHASE23_GRANDFATHERED_OVER_500` empty or resume.mjs only (borderline)
 - [ ] `bin/spine-cli/verify.mjs` `batch-loc-policy` check passes
 - [ ] No new import cycles (SP-432)
 - [ ] #117 and #116 closed on GitHub
 - [ ] Open GitHub issues **12 → ≤10**
-- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-596
+- [ ] CONTEXT Phase 65 complete; Next Task ID → SP-606
 
 ---
 
