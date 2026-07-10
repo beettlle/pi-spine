@@ -1,7 +1,7 @@
 # SP-571: salvage integrate — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-09
 **Review Level:** 2
 **Size:** M
@@ -9,9 +9,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read SP-570 API and integrate gates
+- [x] Read SP-570 API and integrate gates
 
 ### Step 1: Salvage integrate module
 **Status:** ⬜ Not Started
