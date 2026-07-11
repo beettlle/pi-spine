@@ -84,7 +84,9 @@ For each pending `spine-tasks/{SP-###-slug}/PROMPT.md`:
 
 - [ ] `dependencies.json` matches PROMPT `## Dependencies`
 - [ ] Same-wave tasks have **disjoint** `fileScopeMustChange`
-- [ ] Hot shared files are serial (e.g. `src/batch/heartbeat.mjs`, `bin/spine.mjs`)
+- [ ] Hot shared files / shared docs are serial (e.g. `src/batch/heartbeat.mjs`, `bin/spine.mjs`, `CONTEXT.md`) — overlapping shared paths collapse lanes
+- [ ] No false (preference-order) deps that force size-1 waves when deliverables are independent
+- [ ] When parallelism is intended: `spine plan` shows `N lanes in parallel` for that wave — or explain why scopes/deps forced serial collapse
 - [ ] No directory paths with trailing `/` in contracts — use explicit files
 - [ ] No parenthetical comments in contract paths (e.g. `file.ts (Step 2 only)`)
 - [ ] Pre-landed code on `main` → point `fileScopeMustChange` at `spine-tasks/{task}/STATUS.md` + `## Amendments`

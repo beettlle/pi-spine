@@ -147,6 +147,7 @@ When worker and reviewer use different models, PROMPT must be **self-contained**
 - [ ] `dependencies.json` edges match PROMPT Dependencies
 - [ ] Review level assigned; size S/M/L (XL split)
 - [ ] File scopes disjoint for parallel wave mates
+- [ ] When parallelism intended: `spine plan` shows `N lanes in parallel` (or explain serial collapse from scopes/deps)
 - [ ] No `.DONE`, `.reviews/`, runtime `.spine/` edits
 - [ ] Handoff path to `PROMPT.md` reported
 
