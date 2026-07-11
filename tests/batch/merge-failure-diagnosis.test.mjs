@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { runSpineStatus } from "../../bin/spine-status.mjs";
 import {
@@ -8,6 +11,8 @@ import {
 	buildSuggestedCommand,
 	summarizeMergeFailures,
 } from "../../src/batch/diagnosis.mjs";
+import { saveGateRecord } from "../../src/batch/gate.mjs";
+import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { createInitialBatchState, saveSpineBatchState } from "../../src/batch/state.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -213,6 +218,98 @@ test("spine status --diagnose prints merge failure details in text output", asyn
 		assert.match(output, /Failed wave: 5 \(index 4\)/);
 		assert.match(output, /Failed lane: 1/);
 		assert.match(output, /Last error:.*revert\.go/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("buildHeadline for needs_integrate ignores historical mergeFailed (#195)", () => {
+	const headline = buildHeadline("needs_integrate", {
+		batchId: BATCH_ID,
+		phase: "running",
+		postMergeLimbo: true,
+		integrateGateOpen: true,
+		mergeFailed: true,
+		failedWaveIndex: 4,
+		failedLane: 1,
+		lastError: MERGE_CONFLICT_ERROR,
+		succeededTasks: 20,
+		totalTasks: 20,
+	});
+	assert.match(headline, /gate opened/i);
+	assert.doesNotMatch(headline, /merge conflict/i);
+	assert.equal(
+		buildSuggestedCommand("needs_integrate", {
+			phase: "running",
+			postMergeLimbo: true,
+			integrateGateOpen: true,
+			mergeFailed: true,
+		}),
+		"spine gate approve",
+	);
+});
+
+test("reconcileBatch gate-ready demotes stale gitignored merge headline (#195)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-ready-stale-gitignored-");
+	try {
+		const batchId = "20260710T195001";
+		const taskId = "SP-608";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "orch-work.txt"), "merged", "utf-8");
+		execFileSync("git", ["add", "orch-work.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch work"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [buildSucceededTask(taskId, 1)],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: "/tmp/lane-1",
+					branch: `task/spine-lane-1-${batchId}`,
+					taskIds: [taskId],
+					lastHeartbeatAt: null,
+					workerPid: null,
+				},
+			],
+		});
+		state.phase = "running";
+		state.succeededTasks = 1;
+		state.failedTasks = 0;
+		state.totalTasks = 1;
+		// Recovered: wave merge succeeded, but lastError / journal still mention gitignored.
+		state.lastError =
+			"The following paths are ignored by one of your .gitignore files:\ncoverage/lcov.info";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "abc1234" }];
+		saveSpineBatchState(projectRoot, state);
+
+		appendJournalEvent(projectRoot, batchId, "batch.merge_failed", {
+			laneNumber: 1,
+			failureClass: "merge_failed_gitignored",
+			error: state.lastError,
+		});
+		saveGateRecord(projectRoot, {
+			gateId: "gate-sp608-test",
+			batchId,
+			kind: "integrate",
+			status: "pending",
+			openedAt: new Date().toISOString(),
+			evidenceRefs: [],
+		});
+
+		const reconciliation = reconcileBatch({ projectRoot, verbose: true });
+		assert.equal(reconciliation.diagnosis, "needs_integrate");
+		assert.match(reconciliation.headline, /gate opened|ready to integrate|integrate/i);
+		assert.doesNotMatch(reconciliation.headline, /gitignored/i);
+		assert.equal(reconciliation.suggestedCommand, "spine gate approve");
+		assert.equal(reconciliation.signals?.mergeGitignoredFailure, true);
+		assert.equal(reconciliation.signals?.mergeGitignoredFailureSuperseded, true);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

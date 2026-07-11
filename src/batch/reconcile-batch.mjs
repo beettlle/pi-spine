@@ -10,6 +10,7 @@ import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
 import {
 	buildDiagnosisOutput,
 	inferMergeGitignoredFailure,
+	isGateReadyHeadlineContext,
 } from "./diagnosis.mjs";
 import {
 	classifyTasks,
@@ -344,7 +345,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		diagnosis === "worker_orphaned" &&
 		findPlanReviewNestedSpawnBlockedFailure(journalEvents, failedTaskId);
 
-	const mergeGitignoredFailure = inferMergeGitignoredFailure({
+	const mergeGitignoredFailureInferred = inferMergeGitignoredFailure({
 		exitReason,
 		failureClass: batch.raw?.mergeResults?.find((entry) => entry?.failureClass)?.failureClass ?? null,
 		lastError: batch.raw?.lastError ?? null,
@@ -359,6 +360,17 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	signals.failedWaveIndex = mergeFailureSummary.failedWaveIndex;
 	signals.failedLane = mergeFailureSummary.failedLane;
 	signals.lastError = mergeFailureSummary.lastError;
+	// Keep historical gitignored merge evidence in signals; demote for headline once gate-ready (#195).
+	signals.mergeGitignoredFailure = mergeGitignoredFailureInferred;
+	const gateReadyHeadline = isGateReadyHeadlineContext(diagnosis, {
+		allTasksTerminalSuccess: signals.allTasksTerminalSuccess === true,
+		integrateGateOpen,
+	});
+	const mergeGitignoredFailure = gateReadyHeadline ? false : mergeGitignoredFailureInferred;
+	const mergeFailedForHeadline = gateReadyHeadline ? false : mergeFailureSummary.mergeFailed;
+	if (ctx.verbose && gateReadyHeadline && mergeGitignoredFailureInferred) {
+		signals.mergeGitignoredFailureSuperseded = true;
+	}
 	const gitignoredPaths = extractGitignoredPathsFromJournal(journalEvents, failedTaskId);
 	const taskBranch =
 		failedTaskId != null
@@ -406,7 +418,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		stalePathSpine,
 		planReviewNestedSpawnBlocked,
 		mergeGitignoredFailure,
-		mergeFailed: mergeFailureSummary.mergeFailed,
+		mergeFailed: mergeFailedForHeadline,
 		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
 		failedLane: mergeFailureSummary.failedLane,
 		lastError: mergeFailureSummary.lastError,
