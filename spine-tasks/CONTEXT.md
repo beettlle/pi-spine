@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-11 (Phase 67 v2.3.2 state-drift recovery SP-613–618 complete; Next → SP-619)
+**Last Updated:** 2026-07-11 (Phase 67 v2.3.2 published; Next → SP-619)
 **Status:** Active
 **Next Task ID:** SP-619
 
@@ -1856,10 +1856,10 @@ spine run sequence SP-613,SP-614,SP-615,SP-616,SP-617,SP-618
 - [x] #193 fix landed (SP-616) — create-spine-tasks DoR multi-lane; GitHub close on publish
 - [x] Runbook agent recovery note (SP-617)
 - [x] CONTEXT Phase 67 complete; Next Task ID → SP-619
-- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
-- [ ] `npm version patch` → v2.3.2 published (operator-gated)
+- [x] `npm run release:check` green on publish HEAD (operator publish gate)
+- [x] **v2.3.2 published** — tag `v2.3.2`, npm `pi-spine@2.3.2` (2026-07-11); issues #196/#193 closed
 
-**Phase 67 implementation complete (SP-613–618).** Publish (`npm version patch` → v2.3.2) remains operator-gated. PRD: [`docs/PRD-v2.3.2-state-drift-recovery-handoff.md`](../docs/PRD-v2.3.2-state-drift-recovery-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md). Deferred: #160, #135, #127–#120, #124–#126, #43; SP-602/SP-605.
+**Phase 67 complete and published (SP-613–618 → v2.3.2).** PRD: [`docs/PRD-v2.3.2-state-drift-recovery-handoff.md`](../docs/PRD-v2.3.2-state-drift-recovery-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md). Deferred: #160, #135, #127–#120, #124–#126, #43; SP-602/SP-605.
 
 ---
 
