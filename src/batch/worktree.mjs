@@ -11,6 +11,7 @@ import {
 	listStaleSpineWorktreeBatchIds,
 	resolveInProgressSpineBatchId,
 } from "../doctor/stale-worktrees.mjs";
+import { gitExec } from "./git-exec.mjs";
 
 const WORKTREE_SETUP_HOOK_TIMEOUT_MS = 120_000;
 
@@ -24,6 +25,16 @@ function git(projectRoot, args) {
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
 	}).trim();
+}
+
+/**
+ * @param {unknown} err
+ */
+function gitErrorMessage(err) {
+	if (!(err instanceof Error)) return String(err);
+	const stderr = /** @type {{ stderr?: string }} */ (err).stderr;
+	if (typeof stderr === "string" && stderr.trim()) return stderr.trim();
+	return err.message;
 }
 
 /**
@@ -248,6 +259,97 @@ export function provisionLaneWorktree({
 	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
 
 	return { worktreePath, taskBranch, orchBranch };
+}
+
+/**
+ * Merge orch into an existing lane worktree so shared-scope dep commits are ancestors
+ * of the lane HEAD before the next task starts (FR-REL231-03 / #191).
+ *
+ * @param {object} params
+ * @param {string} params.worktreePath
+ * @param {string} params.orchBranch
+ * @param {string} [params.projectRoot] Identity root for merge commits
+ * @returns {{ ok: true, skipped: boolean, reason?: string, headSha: string }}
+ */
+export function syncLaneWorktreeFromOrch({ worktreePath, orchBranch, projectRoot }) {
+	if (!worktreePath || !fs.existsSync(worktreePath)) {
+		throw new Error(
+			`Cannot sync lane worktree from orch: worktree missing (${worktreePath ?? "unset"}). ` +
+				`Recreate the lane worktree or resume the batch.`,
+		);
+	}
+	if (!orchBranch || typeof orchBranch !== "string") {
+		throw new Error(
+			"Cannot sync lane worktree from orch: orchBranch is missing from batch state.",
+		);
+	}
+
+	const identityRoot = projectRoot ?? worktreePath;
+	const orchShaRaw = gitExec(worktreePath, ["rev-parse", "--verify", orchBranch], {
+		projectRoot: identityRoot,
+	});
+	if (!orchShaRaw) {
+		throw new Error(
+			`Cannot sync lane worktree from orch: failed to resolve ${orchBranch}.`,
+		);
+	}
+	const orchSha = orchShaRaw;
+
+	const alreadyContains = gitExec(
+		worktreePath,
+		["merge-base", "--is-ancestor", orchBranch, "HEAD"],
+		{ throwOnError: false, projectRoot: identityRoot },
+	);
+	if (alreadyContains !== null) {
+		const headSha =
+			gitExec(worktreePath, ["rev-parse", "HEAD"], {
+				projectRoot: identityRoot,
+			}) ?? "";
+		return { ok: true, skipped: true, reason: "already_contains_orch", headSha };
+	}
+
+	const porcelain = gitExec(worktreePath, ["status", "--porcelain"], {
+		projectRoot: identityRoot,
+	});
+	if (porcelain) {
+		throw new Error(
+			`Cannot sync lane worktree from ${orchBranch}: worktree is dirty (${worktreePath}). ` +
+				`Commit or discard lane changes, then retry. Dirty paths:\n${porcelain}`,
+		);
+	}
+
+	try {
+		gitExec(
+			worktreePath,
+			[
+				"merge",
+				"--no-edit",
+				"-m",
+				`sync lane from ${orchBranch} before task start`,
+				orchBranch,
+			],
+			{ projectRoot: identityRoot },
+		);
+	} catch (err) {
+		try {
+			gitExec(worktreePath, ["merge", "--abort"], {
+				throwOnError: false,
+				projectRoot: identityRoot,
+			});
+		} catch {
+			// best effort — surface the original merge failure
+		}
+		throw new Error(
+			`Failed to sync lane worktree from ${orchBranch} (${orchSha.slice(0, 12)}): ${gitErrorMessage(err)}. ` +
+				`Resolve the conflict in ${worktreePath}, or remove the lane worktree and resume the batch.`,
+		);
+	}
+
+	const headSha =
+		gitExec(worktreePath, ["rev-parse", "HEAD"], {
+			projectRoot: identityRoot,
+		}) ?? "";
+	return { ok: true, skipped: false, headSha };
 }
 
 /**
