@@ -27,6 +27,7 @@ import {
 	resolveWorkerPhase,
 	terminateHungWorkerChild,
 } from "./worker-spawn.mjs";
+import { terminateProcessTree } from "../process/terminate-tree.mjs";
 
 /** @typedef {import("./worker-spawn.mjs").WorkerPhase} WorkerPhase */
 /** @typedef {import("./worker-spawn.mjs").WorkerChildHandle} WorkerChildHandle */
@@ -165,7 +166,13 @@ export async function pollWorkerUntilSettled({
 			const abortSignal = readAbortSignal(projectRoot, batchId);
 			if (abortSignal) {
 				const hard = Boolean(abortSignal.hard);
-				workerChild.kill(hard ? "SIGKILL" : "SIGTERM");
+				const signal = hard ? "SIGKILL" : "SIGTERM";
+				const pid = workerChild.pid ?? 0;
+				if (pid > 0) {
+					terminateProcessTree(pid, { signal });
+				} else {
+					workerChild.kill(signal);
+				}
 				const { output } = await childDone;
 				return {
 					kind: "failure",

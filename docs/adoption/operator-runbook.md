@@ -1277,6 +1277,16 @@ spine batch dismiss --reason "manual recovery"
 spine batch complete
 ```
 
+**Worker tree teardown (SP-609 / #194):** abort, dismiss, stall timeout, and hung-worker teardown kill the tracked lane `workerPid` **and** its descendants (nested `pi` / tool children). If a leftover `pi` still appears after teardown (rare race or pre-existing orphan), detect and clean up:
+
+```bash
+# List pi processes tagged with this batch (env inherited by workers):
+pgrep -af "SPINE_BATCH_ID=<batchId>" || pgrep -af '[p]i '
+
+# Confirm before kill — only processes for the finished batch:
+kill -9 <pid>
+```
+
 **Never** edit `.pi/batch-state.json` or `.spine/batch-state.json` by hand. pi-spine archives to `.spine/runtime/<batchId>/archive/` first.
 
 **Crash-safe persistence:** `.spine/batch-state.json` and `.spine/runtime/<batchId>/gate.json` are written atomically (temp file + rename). A crash mid-write should leave the previous file intact or the new complete file — never torn partial JSON. The append-only journal and run-metrics paths are unchanged.
