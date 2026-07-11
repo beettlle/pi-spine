@@ -1,0 +1,3 @@
+SP-609 worker tree terminate complete.
+Teardown reaps nested pi grandchildren via terminateProcessTree.
+Contract tests 2/2; coverage 89.06%; full suite 1957/1958 (known stall-override load flake).
