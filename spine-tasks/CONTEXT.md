@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 66 v2.3.1 reliability SP-608–612 complete; Next → SP-613)
+**Last Updated:** 2026-07-11 (Phase 67 v2.3.2 state-drift recovery SP-613–618 staged; Next → SP-619)
 **Status:** Active
-**Next Task ID:** SP-613
+**Next Task ID:** SP-619
 
 ---
 
@@ -1825,7 +1825,41 @@ spine run sequence SP-608,SP-609,SP-610,SP-611,SP-612
 - [ ] `npm run release:check` green on publish HEAD (operator publish gate)
 - [ ] `npm version patch` → v2.3.1 published (operator-gated)
 
-**Phase 66 implementation complete (SP-608–612).** Publish (`npm version patch` → v2.3.1) remains operator-gated. Manifest: [`spine-tasks/_authoring/release-v2.3.1/manifest.md`](_authoring/release-v2.3.1/manifest.md). Deferred: #193 to next minor.
+**Phase 66 implementation complete (SP-608–612).** Publish (`npm version patch` → v2.3.1) remains operator-gated. Manifest: [`spine-tasks/_authoring/release-v2.3.1/manifest.md`](_authoring/release-v2.3.1/manifest.md). Deferred: #193 was pulled into Phase 67 (operator override).
+
+### Phase 67 — v2.3.2 state-drift recovery (SP-REL232)
+
+**PRD:** [`docs/PRD-v2.3.2-state-drift-recovery-handoff.md`](../docs/PRD-v2.3.2-state-drift-recovery-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md)  
+**Operator approved scope:** yes (2026-07-11). Enhancement override: #193 in patch.
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-613 | drift detached recover | Staged | — | Partial #196 |
+| SP-614 | salvage lane commits | Staged | — | Partial #196 |
+| SP-615 | abort dry-run readonly | Staged | SP-613, SP-614 | Closes #196 |
+| SP-616 | create-spine-tasks DoR lanes | Staged | — | Closes #193 |
+| SP-617 | runbook agent drift recovery | Staged | SP-613 | — |
+| SP-618 | CONTEXT Phase 67 capstone | Staged | SP-613–617 | — |
+
+```bash
+spine tasks validate SP-613 SP-614 SP-615 SP-616 SP-617 SP-618
+spine plan SP-613,SP-614,SP-615,SP-616,SP-617,SP-618
+spine run sequence SP-613,SP-614,SP-615,SP-616,SP-617,SP-618
+```
+
+**Wave plan:** Wave 0 parallel SP-613, SP-614, SP-616; Wave 1 SP-615 + SP-617; Cap SP-618.
+
+**Phase 67 exit criteria (PRD §9):**
+
+- [ ] #196 fix landed (SP-613–615) — detached drift recovery + salvage + abort dry-run; GitHub close on publish
+- [ ] #193 fix landed (SP-616) — create-spine-tasks DoR multi-lane; GitHub close on publish
+- [ ] Runbook agent recovery note (SP-617)
+- [ ] CONTEXT Phase 67 complete; Next Task ID → SP-619
+- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
+- [ ] `npm version patch` → v2.3.2 published (operator-gated)
+
+**Phase 67 packets staged (SP-613–618).** Await operator “approve release scope” before batch. Manifest: [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md). Deferred: #160, #135, #127–#120, #124–#126, #43; SP-602/SP-605.
 
 ---
 
