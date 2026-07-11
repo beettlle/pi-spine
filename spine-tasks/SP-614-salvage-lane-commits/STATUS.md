@@ -1,7 +1,7 @@
 # SP-614: Salvage lane commits — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-11
 **Review Level:** 1
 **Review Counter:** 0
@@ -27,17 +27,17 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Regression tests
 - [x] Contract testCommand
-- [ ] Full suite + coverage gate
+- [x] Full suite + coverage gate
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
@@ -47,9 +47,15 @@ Plan (Review Level 1):
 3. Integrate already uses `listSalvageableLanes` — fixing list fixes false `lane_not_salvageable`.
 4. Add regression: succeeded + branch ahead + no `lane.committed` → list + integrate succeed.
 
+Verification:
+- Contract: typecheck + salvage list/integrate tests — 18 pass
+- Full suite (SPINE_WORKER_STUB=1, nest env cleared): 1980 pass / 0 fail
+- Coverage: 88.85% line (threshold 77%)
+
 ## Discoveries
 
 | Finding | Action |
 |---------|--------|
 | `isSalvageableTask` requires journal `lane.committed`; git branch ahead is checked only after that filter — #196 empty salvage | Drop journal-commit gate for terminal-success / doneInLane candidates; keep git commits-ahead + exit-reason exclusions |
 | Journal rebuild strips seed `doneInLane` | Enrich rebuilt tasks from archive seed before salvage classification |
+| Full `npm test` inside worker inherits `SPINE_IS_WORKER=1` and fails nested batch starts | Cleared nest env for suite/coverage runs |
