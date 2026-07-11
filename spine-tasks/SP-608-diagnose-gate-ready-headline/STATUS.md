@@ -1,7 +1,7 @@
 # SP-608: Diagnose gate-ready headline — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟢 Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Review Counter:** 0
@@ -26,15 +26,15 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Regression tests for #195
 - [x] Contract testCommand green
-- [ ] Full suite + coverage gate
+- [x] Full suite + coverage gate
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `.DONE` created
 
@@ -53,9 +53,16 @@
 - `buildHeadline` / `buildSuggestedCommand` skip merge/gitignored primary when gate-ready.
 - `reconcile-batch.mjs` demotes headline inputs when gate-ready; keeps `signals.mergeGitignoredFailure` (+ `mergeGitignoredFailureSuperseded` when verbose).
 
+### Step 2 verification
+
+- Contract: typecheck + diagnosis/merge-failure tests — 23 pass
+- Full suite (worker env cleared): 1963 pass
+- Coverage: 88.96% line (threshold 77%)
+
 ## Discoveries
 
 | Finding | Action |
 |---------|--------|
 | Historical journal keeps merge_failed_gitignored after gate opens | Demote for headline; keep in signals |
 | Operator runbook copy unchanged (same gate-approve strings) | No docs update |
+| Full `npm test` under `SPINE_IS_WORKER=1` fails nested batch starts | Cleared worker env for suite/coverage |
