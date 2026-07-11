@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 65 CONTEXT capstone SP-595)
+**Last Updated:** 2026-07-10 (Phase 66 v2.3.1 reliability packets SP-608–612 staged)
 **Status:** Active
-**Next Task ID:** SP-608
+**Next Task ID:** SP-613
 
 ---
 
@@ -1792,6 +1792,28 @@ spine run sequence SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-58
 - [x] CONTEXT Phase 65 complete; Next Task ID → SP-608
 
 **Phase 65 implementation complete (SP-574–595 + extended splits).** Publish (`npm version minor` → v2.3.0) remains operator-gated. Manifest: [`docs/release/manifest-v2.3.0.md`](../docs/release/manifest-v2.3.0.md). Explore: [`batch-module-split-v23`](_explore/batch-module-split-v23/findings.md). Residual: SP-602/SP-605 `.DONE` on lane-4 not yet in this worktree; modules already ≤500 LOC after first-half + salvage.
+
+### Phase 66 — v2.3.1 reliability (SP-REL231)
+
+**PRD:** [`docs/PRD-v2.3.1-reliability-handoff.md`](../docs/PRD-v2.3.1-reliability-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.3.1/manifest.md`](_authoring/release-v2.3.1/manifest.md)  
+**Operator approved scope:** yes (2026-07-10). Defer #193 to next minor.
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-608 | diagnose gate-ready headline | Staged | — | #195 |
+| SP-609 | worker tree terminate | Staged | — | #194 |
+| SP-610 | lane orch sync before start | Staged | — | #191 |
+| SP-611 | loc-capstone readiness gate | Staged | — | #192 |
+| SP-612 | CONTEXT Phase 66 capstone | Staged | SP-608–611 | — |
+
+```bash
+spine tasks validate SP-608 SP-609 SP-610 SP-611 SP-612
+spine plan SP-608,SP-609,SP-610,SP-611,SP-612
+spine run sequence SP-608,SP-609,SP-610,SP-611,SP-612
+```
+
+**Wave plan:** Wave 0 parallel SP-608–611; Cap SP-612.
 
 ---
 
