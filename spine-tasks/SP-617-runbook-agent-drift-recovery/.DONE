@@ -1,0 +1,7 @@
+SP-617 complete — agent-safe state_drift recovery documented in docs/adoption/operator-runbook.md (#196).
+
+Verification:
+- typecheck: pass
+- SPINE_WORKER_STUB=1 npm test (worker env unset): 1983 pass, 0 fail
+- Contract testCommand: true
+- File scope: docs/adoption/operator-runbook.md only (plus task STATUS/.DONE)
