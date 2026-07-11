@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-10 (Phase 66 v2.3.1 reliability packets SP-608–612 staged)
+**Last Updated:** 2026-07-10 (Phase 66 v2.3.1 reliability SP-608–612 complete; Next → SP-613)
 **Status:** Active
 **Next Task ID:** SP-613
 
@@ -1801,11 +1801,11 @@ spine run sequence SP-574,SP-575,SP-576,SP-577,SP-578,SP-579,SP-580,SP-581,SP-58
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-608 | diagnose gate-ready headline | Staged | — | #195 |
-| SP-609 | worker tree terminate | Staged | — | #194 |
-| SP-610 | lane orch sync before start | Staged | — | #191 |
-| SP-611 | loc-capstone readiness gate | Staged | — | #192 |
-| SP-612 | CONTEXT Phase 66 capstone | Staged | SP-608–611 | — |
+| SP-608 | diagnose gate-ready headline | Done | — | #195 |
+| SP-609 | worker tree terminate | Done | — | #194 |
+| SP-610 | lane orch sync before start | Done | — | #191 |
+| SP-611 | loc-capstone readiness gate | Done | — | #192 |
+| SP-612 | CONTEXT Phase 66 capstone | Done | SP-608–611 | — |
 
 ```bash
 spine tasks validate SP-608 SP-609 SP-610 SP-611 SP-612
@@ -1814,6 +1814,18 @@ spine run sequence SP-608,SP-609,SP-610,SP-611,SP-612
 ```
 
 **Wave plan:** Wave 0 parallel SP-608–611; Cap SP-612.
+
+**Phase 66 exit criteria (PRD §9):**
+
+- [x] #195 fix landed (SP-608) — gate-ready headline preferred; GitHub close on publish
+- [x] #194 fix landed (SP-609) — tree terminate + runbook note; GitHub close on publish
+- [x] #191 fix landed (SP-610) — orch→lane sync before task start; GitHub close on publish
+- [x] #192 fix landed (SP-611) — LOC-capstone readiness gate; GitHub close on publish
+- [x] CONTEXT Phase 66 complete; Next Task ID → SP-613
+- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
+- [ ] `npm version patch` → v2.3.1 published (operator-gated)
+
+**Phase 66 implementation complete (SP-608–612).** Publish (`npm version patch` → v2.3.1) remains operator-gated. Manifest: [`spine-tasks/_authoring/release-v2.3.1/manifest.md`](_authoring/release-v2.3.1/manifest.md). Deferred: #193 to next minor.
 
 ---
 
