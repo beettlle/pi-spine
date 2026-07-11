@@ -191,6 +191,7 @@ Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-on
 | **Step numbering** | Number steps sequentially starting at 0 with **no duplicates** (`### Step N:`). `spine tasks validate` rejects duplicate step numbers (see issue #148 / SP-435). |
 | **Two-deliverable test** | If your Steps can be grouped into two clusters with no data dependency between them, split into separate tasks even if the step count is ≤4. The #1 sizing mistake is bundling two independent deliverables in one M task. |
 | **Parallel waves** | Prefer **≤4** M-sized tasks per wave; 8-task mega-waves stall pi workers (see Phase 15 / SP-086–088). |
+| **False deps** | Edge only for **real data deps** (B needs A's output on disk). Preference-order or "nice to finish first" is **not** a dep — it forces size-1 waves and empty parallel lanes. Independent deliverables → same wave + disjoint File Scope. |
 | **Scope** | One deliverable per task; disjoint **File Scope** when tasks can run in parallel. |
 | **IDs** | Use `Next Task ID` from CONTEXT.md; increment after each new task. Greenfield spine projects typically use `SP-###`; Taskplane migrants may keep `TP-###`. |
 | **Waves** | Order via `## Dependencies` and `{tasksRoot}/dependencies.json`. |
@@ -246,13 +247,24 @@ After creating packets:
 2. **`{tasksRoot}/dependencies.json`** — add edges for every dependency (machine-parseable)
 3. Report launch commands: `spine tasks validate pending` (fix contract/PROMPT errors first), `spine tasks analyze pending` (structural checks — wave sizing, deps drift, explore refs), `spine plan pending`, then `spine batch start <id>`
 
-**Example decomposition** (feature brief → three tasks):
+**Example — serial when data deps are real** (handlers import schema; tests call handlers):
 
 | Task | Mission | Deps |
 |------|---------|------|
 | `SP-010-api-schema` | Add request/response types + validation | None |
 | `SP-011-api-handlers` | Implement routes using schema | SP-010 |
 | `SP-012-api-tests` | Integration tests + docs | SP-011 |
+
+`spine plan` correctly shows one lane per wave here — serial is required.
+
+**Counter-example — parallel when deliverables are independent** (no shared output; disjoint File Scope):
+
+| Task | Mission | Deps | File Scope |
+|------|---------|------|------------|
+| `SP-020-skill-dor` | Tighten skill DoR checklist | None | `skills/create-spine-tasks/SKILL.md` |
+| `SP-021-runbook-note` | Add operator recovery note | None | `docs/adoption/operator-runbook.md` |
+
+Same wave, no edges → `spine plan` should report **`2 lanes in parallel`**. If it collapses to `1 lane`, check overlapping scopes or accidental deps — do not "fix" with preference-order edges.
 
 ---
 
@@ -461,6 +473,8 @@ Task IDs in JSON use the **folder slug** (full `SP-011-api-handlers`) or bare ID
 
 When decomposing a PRD, assign non-overlapping file scopes to tasks that should run in parallel.
 
+**Shared docs / hot files collapse lanes:** Shared `CONTEXT.md`, `README.md`, area docs, or hot modules (e.g. `bin/spine.mjs`, `src/batch/engine.mjs`) in multiple same-wave File Scopes pack those tasks onto one virtual lane. Keep shared-doc edits **serial** (dependency edge or separate wave) or **out of** parallel mates' scopes — do not list the same shared path on two intended-parallel tasks.
+
 **`fileScopeMustNotChange` (parallel lanes only):** When a packet includes `fileScopeMustNotChange` in `## Contract`, use it only to guard **product paths that concurrent tasks on different lanes** must not edit in the same wave — not to isolate paths touched by **prior serialized tasks** on the same lane. When `spine plan` reports `File scope overlaps (tasks serialized to the same lane)`, those tasks run sequentially on one lane; use disjoint `fileScopeMustChange` paths instead of relying on must-not-change. Full semantics and examples: [references/contract-template.md](references/contract-template.md#filescopemustnotchange-semantics).
 
 **Never ban `spine-tasks/**`:** Do **not** list `spine-tasks/**` or the **current task folder** in `fileScopeMustNotChange`. Workers must update `STATUS.md`, create `.DONE`, and may write `.reviews/` — banning those paths causes `contract.verified` failures even when implementation is correct.
@@ -544,6 +558,8 @@ Before reporting launch commands:
 - [ ] S/M patch Contract uses scoped `node --test` — not `npm test` or `npm test -- path` ([#141](https://github.com/beettlle/pi-spine/issues/141), SP-522)
 - [ ] Shared-module behavior change: `rg` old strings in `tests/`; all hit files in `testCommand` or documented for post-integrate `release:check` ([post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md))
 - [ ] Plan waves ≤8 tasks when possible — `spine plan` warns when exceeded ([#143](https://github.com/beettlle/pi-spine/issues/143), SP-524)
+- [ ] When parallelism is intended: `spine plan` shows `N lanes in parallel` for that wave — or document why overlapping scopes / real deps forced serial collapse ([#193](https://github.com/beettlle/pi-spine/issues/193))
+- [ ] No false deps: edges only for real data dependencies; preference-order edges that force size-1 waves are rejected ([#193](https://github.com/beettlle/pi-spine/issues/193))
 - [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
@@ -575,6 +591,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. Use `testing.test` from spine config; for **code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only tasks may omit the coverage checkbox.
 - **Documentation in every task** — "Must Update" / "Check If Affected" prevent doc drift.
 - **Concrete deliverables** — name files to create/modify; avoid shortcuttable vague steps.
+- **False deps defeat parallelism** — edge only when B needs A's output; independent work gets disjoint File Scope and no edge. Verify intended parallel waves with `spine plan` (`N lanes in parallel`) before handoff ([#193](https://github.com/beettlle/pi-spine/issues/193)).
 - **Local install** — skill ships with pi-spine; `pi install /path/to/pi-spine -l` loads `./skills`.
 
 ---
