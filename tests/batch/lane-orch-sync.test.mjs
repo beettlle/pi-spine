@@ -30,9 +30,8 @@ function git(cwd, args) {
  * @param {string} projectRoot
  * @param {string} taskId
  * @param {string[]} fileScope
- * @param {string[]} [deps]
  */
-function writeTaskPacket(projectRoot, taskId, fileScope, deps = []) {
+function writeTaskPacket(projectRoot, taskId, fileScope) {
 	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-fixture`);
 	fs.mkdirSync(folder, { recursive: true });
 	fs.writeFileSync(
