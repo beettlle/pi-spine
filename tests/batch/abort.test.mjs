@@ -180,3 +180,67 @@ test("abortBatch fails when no active batch", async () => {
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("abortBatch dry-run leaves live batch unarchived and unjournaled", async () => {
+	const projectRoot = await initGitRepo("spine-abort-dry-run-");
+	try {
+		const batchId = "20260601T170005";
+		writeRunningBatch(projectRoot, batchId);
+		appendJournalEvent(projectRoot, batchId, "batch.started", { fromPhase: "planning", toPhase: "running" });
+
+		const activePath = spineBatchStatePath(projectRoot);
+		const archivePath = archiveBatchStatePath(projectRoot, batchId);
+		const signalPath = abortSignalPath(projectRoot, batchId);
+		const beforeJournal = readJournalEvents(projectRoot, batchId);
+		assert.equal(beforeJournal.length, 1);
+
+		const result = abortBatch({
+			projectRoot,
+			reason: "preview only",
+			dryRun: true,
+		});
+		assert.equal(result.ok, true);
+		assert.equal(result.dryRun, true);
+		assert.equal(result.batchId, batchId);
+		assert.equal(result.diagnosis, "abort_preview");
+		assert.equal(result.archivePath, archivePath);
+		assert.match(result.headline, /Would abort and archive/i);
+
+		assert.ok(fs.existsSync(activePath), "active batch-state must remain");
+		assert.ok(!fs.existsSync(archivePath), "archive must not be written on dry-run");
+		assert.ok(!fs.existsSync(signalPath), "abort signal must not be written on dry-run");
+
+		const afterJournal = readJournalEvents(projectRoot, batchId);
+		assert.equal(afterJournal.length, 1);
+		assert.equal(afterJournal[0].type, "batch.started");
+
+		const active = JSON.parse(fs.readFileSync(activePath, "utf-8"));
+		assert.equal(active.phase, "running");
+		assert.equal(active.batchId, batchId);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("abortBatch without dry-run still archives after a prior dry-run", async () => {
+	const projectRoot = await initGitRepo("spine-abort-dry-then-real-");
+	try {
+		const batchId = "20260601T170006";
+		writeRunningBatch(projectRoot, batchId);
+
+		const preview = abortBatch({ projectRoot, dryRun: true });
+		assert.equal(preview.ok, true);
+		assert.equal(preview.dryRun, true);
+
+		const activePath = spineBatchStatePath(projectRoot);
+		assert.ok(fs.existsSync(activePath));
+
+		const result = abortBatch({ projectRoot, reason: "operator abort" });
+		assert.equal(result.ok, true);
+		assert.equal(result.dryRun, undefined);
+		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, batchId)));
+		assert.ok(!fs.existsSync(activePath));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
