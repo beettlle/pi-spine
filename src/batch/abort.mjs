@@ -131,12 +131,13 @@ function buildAbortedSnapshot(raw, reason) {
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {boolean} [ctx.hard]
+ * @param {boolean} [ctx.dryRun]
  * @param {string|null} [ctx.reason]
  * @param {string|null} [ctx.batchId]
  * @param {string|null} [ctx.batchStatePath]
  */
 export function abortBatch(ctx) {
-	const { projectRoot, hard = false, reason = null } = ctx;
+	const { projectRoot, hard = false, reason = null, dryRun = false } = ctx;
 	const loaded = loadBatchStateFile(projectRoot, ctx.batchStatePath ?? null);
 
 	if (!loaded.path || !loaded.raw) {
@@ -147,6 +148,7 @@ export function abortBatch(ctx) {
 			suggestedCommand: "spine preflight",
 			alternatives: ["spine status --diagnose"],
 			batchId: null,
+			dryRun,
 		};
 	}
 
@@ -158,6 +160,7 @@ export function abortBatch(ctx) {
 			headline: `Cannot parse batch state: ${loaded.parseError}`,
 			suggestedCommand: "spine status --diagnose",
 			batchId: null,
+			dryRun,
 		};
 	}
 
@@ -170,6 +173,7 @@ export function abortBatch(ctx) {
 			headline: "Active batch state has no batchId",
 			suggestedCommand: "spine status --diagnose",
 			batchId: null,
+			dryRun,
 		};
 	}
 
@@ -181,6 +185,29 @@ export function abortBatch(ctx) {
 			headline: `Batch ID mismatch — active batch is ${batchId}`,
 			suggestedCommand: "spine status --diagnose",
 			batchId,
+			dryRun,
+		};
+	}
+
+	const previewArchivePath = archiveBatchStatePath(projectRoot, batchId);
+
+	// Dry-run previews abort without writing archive, journal, signal, or clearing live state.
+	if (dryRun) {
+		const abortCmd = hard ? "spine batch abort --hard" : "spine batch abort";
+		return {
+			ok: true,
+			exitCode: 0,
+			dryRun: true,
+			batchId,
+			hard,
+			reason: reason ?? null,
+			diagnosis: "abort_preview",
+			archivePath: previewArchivePath,
+			headline: hard
+				? `Would hard-abort and archive batch ${batchId}`
+				: `Would abort and archive batch ${batchId}`,
+			suggestedCommand: abortCmd,
+			alternatives: ["spine status --diagnose"],
 		};
 	}
 

@@ -38,7 +38,8 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
  */
 export function printBatchHelp() {
 	return (
-		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n"
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n" +
+		"  abort --dry-run  Preview abort (reason/archive target); does not archive, journal, or clear live batch\n"
 	);
 }
 
@@ -113,8 +114,14 @@ export function formatLifecycleHuman(result, json = false) {
 	if (result.diagnosis) {
 		lines.push(`  Diagnosis: ${result.diagnosis}`);
 	}
+	if (result.dryRun) {
+		lines.push(`  Dry-run: true (no mutation)`);
+	}
 	if (result.archivePath) {
-		lines.push(`  Archive: ${result.archivePath}`);
+		lines.push(result.dryRun ? `  Would archive: ${result.archivePath}` : `  Archive: ${result.archivePath}`);
+	}
+	if (result.reason) {
+		lines.push(`  Reason: ${result.reason}`);
 	}
 
 	lines.push("", `  → ${result.suggestedCommand}`);
@@ -300,6 +307,7 @@ export async function runSpineBatch(options) {
 			batchId: parsed.batchId,
 			reason: parsed.reason,
 			hard: parsed.hard,
+			dryRun: parsed.dryRun,
 		});
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
