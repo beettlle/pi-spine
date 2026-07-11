@@ -1,7 +1,7 @@
 # SP-610: Lane orch sync before start — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Review Counter:** 0
@@ -34,9 +34,9 @@
 
 ### Step 3: Documentation & Delivery
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
@@ -64,3 +64,9 @@
 | Same-wave cross-tick shared-scope (dep not yet on orch) not fixed by orch sync | Deferred — planner affinity (out of scope) |
 | `engine-lanes.mjs` / `worktree.mjs` 500 LOC gate | Extracted `engine-lanes/orch-sync.mjs` (required for phase23-exit) |
 | Full suite under `SPINE_IS_WORKER=1` blocks nested `startBatch` | Ran verification with `env -u SPINE_IS_WORKER` |
+
+## Completion Criteria
+
+- [x] Dependent shared-scope tasks start on a worktree that includes orch dep commits
+- [x] Regression test covers the sync invariant
+- [x] Issue #191 closable after land (affinity/auto-resolve still deferred)
