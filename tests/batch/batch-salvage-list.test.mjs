@@ -218,3 +218,91 @@ test("runSpineBatch salvage missing journal exits non-zero", async () => {
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+/**
+ * #196 / FR-REL232-02 — succeeded + lane `.DONE` + branch ahead must list even without journal `lane.committed`.
+ *
+ * @param {string} projectRoot
+ */
+function seedSalvageJournalWithoutLaneCommitted(projectRoot) {
+	appendJournalEvent(projectRoot, BATCH_ID, "batch.started", {
+		baseBranch: "main",
+		orchBranch: `orch/spine-${BATCH_ID}`,
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-470", laneNumber: 1 });
+	appendJournalEvent(projectRoot, BATCH_ID, "task.completed", {
+		taskId: "SP-470",
+		doneFileFound: true,
+		exitReason: "done",
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-471", laneNumber: 2 });
+	appendJournalEvent(projectRoot, BATCH_ID, "task.failed", {
+		taskId: "SP-471",
+		exitReason: "contract_failed",
+		classification: "contract_failed",
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "batch.aborted", { reason: "operator abort" });
+}
+
+test("listSalvageableLanes lists succeeded lane without journal lane.committed (#196)", async () => {
+	const projectRoot = await initGitRepo("salvage-list-no-lane-committed-");
+	try {
+		writeArchivedBatch(projectRoot);
+		seedSalvageJournalWithoutLaneCommitted(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-196-miss.txt");
+		commitLaneBranchWork(projectRoot, 2, "salvage-196-excluded.txt");
+
+		const result = listSalvageableLanes(projectRoot, BATCH_ID);
+		assert.equal(result.ok, true);
+		assert.equal(result.lanes.length, 1);
+		assert.equal(result.lanes[0].laneNumber, 1);
+		assert.equal(result.lanes[0].salvageableTasks.join(","), "SP-470");
+		assert.ok(result.lanes[0].commitsAhead >= 1);
+		assert.match(result.lanes[0].diffStat, /salvage-196-miss\.txt/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("listSalvageableLanes lists doneInLane task when status cache disagrees (#196)", async () => {
+	const projectRoot = await initGitRepo("salvage-list-done-in-lane-");
+	try {
+		writeArchivedBatch(projectRoot, {
+			tasks: [
+				{
+					taskId: "SP-470",
+					laneNumber: 1,
+					status: "running",
+					taskFolder: "spine-tasks/SP-470-fixture",
+					doneFileFound: false,
+					doneInLane: true,
+					exitReason: null,
+				},
+				{
+					taskId: "SP-471",
+					laneNumber: 2,
+					status: "failed",
+					taskFolder: "spine-tasks/SP-471-fixture",
+					doneFileFound: false,
+					exitReason: "contract_failed",
+				},
+			],
+		});
+		// No task.completed — status stays non-terminal in rebuild; doneInLane is the success signal.
+		appendJournalEvent(projectRoot, BATCH_ID, "batch.started", {
+			baseBranch: "main",
+			orchBranch: `orch/spine-${BATCH_ID}`,
+		});
+		appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-470", laneNumber: 1 });
+		appendJournalEvent(projectRoot, BATCH_ID, "batch.aborted", { reason: "operator abort" });
+		commitLaneBranchWork(projectRoot, 1, "salvage-done-in-lane.txt");
+
+		const result = listSalvageableLanes(projectRoot, BATCH_ID);
+		assert.equal(result.ok, true);
+		assert.equal(result.lanes.length, 1);
+		assert.equal(result.lanes[0].laneNumber, 1);
+		assert.equal(result.lanes[0].salvageableTasks.join(","), "SP-470");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

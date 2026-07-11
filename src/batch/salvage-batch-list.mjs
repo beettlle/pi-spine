@@ -116,18 +116,51 @@ function laneNumbersFromTasks(tasks) {
 }
 
 /**
- * @param {object} task
- * @param {Set<string>} committedTaskIds
+ * Journal rebuild may drop seed done* flags; merge them for salvage discovery (#196).
+ *
+ * @param {object} rebuiltTask
+ * @param {object[]|undefined} seedTasks
  */
-function isSalvageableTask(task, committedTaskIds) {
+function enrichTaskWithSeedEvidence(rebuiltTask, seedTasks) {
+	const taskId = String(rebuiltTask?.taskId ?? "");
+	if (!taskId || !Array.isArray(seedTasks)) return rebuiltTask;
+	const seed = seedTasks.find((task) => String(task?.taskId ?? "") === taskId);
+	if (!seed) return rebuiltTask;
+	return {
+		...rebuiltTask,
+		doneInLane: rebuiltTask?.doneInLane === true || seed.doneInLane === true,
+		doneFileFound: rebuiltTask?.doneFileFound === true || seed.doneFileFound === true,
+		doneOnMain: rebuiltTask?.doneOnMain === true || seed.doneOnMain === true,
+		classification:
+			rebuiltTask?.classification ??
+			seed.classification ??
+			undefined,
+	};
+}
+
+/**
+ * Terminal-success / lane `.DONE` evidence — journal `lane.committed` is optional (#196 / FR-REL232-02).
+ * Git commits-ahead on the lane task branch remains the hard gate in `listSalvageableLanes`.
+ *
+ * @param {object} task
+ */
+function isTerminalSuccessTask(task) {
+	const status = String(task?.status ?? "").toLowerCase();
+	if (status === "succeeded" || status === "skipped") return true;
+	if (task?.doneInLane === true || task?.doneFileFound === true || task?.doneOnMain === true) {
+		return true;
+	}
+	return String(task?.classification ?? "").toLowerCase() === "terminal-success";
+}
+
+/**
+ * @param {object} task
+ */
+function isSalvageableTask(task) {
 	const taskId = String(task?.taskId ?? "");
 	if (!taskId) return false;
-	if (!committedTaskIds.has(taskId)) return false;
-
-	const status = String(task?.status ?? "").toLowerCase();
-	if (status !== "succeeded" && status !== "skipped") return false;
 	if (isNonSalvageableExitReason(task?.exitReason)) return false;
-	return true;
+	return isTerminalSuccessTask(task);
 }
 
 /**
@@ -165,11 +198,13 @@ export function listSalvageableLanes(projectRoot, batchId) {
 	const rebuilt = rebuildBatchStateFromJournal(seedState, journalEvents);
 	const baseBranch = String(rebuilt.baseBranch ?? seedState?.baseBranch ?? "main");
 	const committedTaskIds = laneCommittedTaskIds(journalEvents);
+	const seedTasks = seedState?.tasks;
 
 	/** @type {Map<number, { laneNumber: number, salvageableTasks: string[], excludedTasks: string[] }>} */
 	const laneMap = new Map();
 
-	for (const task of rebuilt.tasks ?? []) {
+	for (const rawTask of rebuilt.tasks ?? []) {
+		const task = enrichTaskWithSeedEvidence(rawTask, seedTasks);
 		const laneNumber = Number(task?.laneNumber);
 		if (!Number.isFinite(laneNumber) || laneNumber <= 0) continue;
 
@@ -182,17 +217,15 @@ export function listSalvageableLanes(projectRoot, batchId) {
 		const status = String(task.status ?? "").toLowerCase();
 		const hasLaneCommit = committedTaskIds.has(taskId);
 
-		if (hasLaneCommit && isNonSalvageableExitReason(task.exitReason)) {
+		// Exclude non-salvageable exit reasons even when journal lacks lane.committed (#196).
+		if (isNonSalvageableExitReason(task.exitReason)) {
 			laneEntry.excludedTasks.push(taskId);
 			continue;
 		}
 
-		if (isSalvageableTask(task, committedTaskIds)) {
+		if (isSalvageableTask(task)) {
 			laneEntry.salvageableTasks.push(taskId);
-		} else if (
-			hasLaneCommit &&
-			(status === "failed" || isNonSalvageableExitReason(task.exitReason))
-		) {
+		} else if (hasLaneCommit && status === "failed") {
 			laneEntry.excludedTasks.push(taskId);
 		}
 	}

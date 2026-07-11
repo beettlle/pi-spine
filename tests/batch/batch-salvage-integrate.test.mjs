@@ -300,3 +300,72 @@ test("runSpineBatch salvage integrate without --lane returns usage", async () =>
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+/**
+ * #196 — journal without lane.committed still integrates when branch is ahead.
+ *
+ * @param {string} projectRoot
+ */
+function seedSalvageJournalWithoutLaneCommitted(projectRoot) {
+	appendJournalEvent(projectRoot, BATCH_ID, "batch.started", {
+		baseBranch: "main",
+		orchBranch: `orch/spine-${BATCH_ID}`,
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-470", laneNumber: 1 });
+	appendJournalEvent(projectRoot, BATCH_ID, "task.completed", {
+		taskId: "SP-470",
+		doneFileFound: true,
+		exitReason: "done",
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-471", laneNumber: 2 });
+	appendJournalEvent(projectRoot, BATCH_ID, "task.failed", {
+		taskId: "SP-471",
+		exitReason: "contract_failed",
+		classification: "contract_failed",
+	});
+	appendJournalEvent(projectRoot, BATCH_ID, "batch.aborted", { reason: "operator abort" });
+}
+
+test("integrateSalvageableLane lands commits without journal lane.committed (#196)", async () => {
+	const projectRoot = await initGitRepo("salvage-integrate-no-lane-committed-");
+	try {
+		const batchState = writeArchivedBatch(projectRoot);
+		seedSalvageJournalWithoutLaneCommitted(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-196-integrate.txt");
+		approveGateForSalvage(projectRoot, batchState);
+
+		const result = await integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+
+		assert.equal(result.ok, true);
+		assert.equal(result.exitCode, 0);
+		assert.equal(result.laneNumber, 1);
+		assert.notEqual(result.error, "lane_not_salvageable");
+		assert.ok(result.mergeCommit);
+		assert.ok(gitRefHasPath(projectRoot, "main", "salvage-196-integrate.txt"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("integrateSalvageableLane still rejects contract_failed lane without lane.committed", async () => {
+	const projectRoot = await initGitRepo("salvage-integrate-exclude-no-commit-");
+	try {
+		writeArchivedBatch(projectRoot);
+		seedSalvageJournalWithoutLaneCommitted(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-ok.txt");
+		commitLaneBranchWork(projectRoot, 2, "salvage-excluded.txt");
+
+		const result = await integrateSalvageableLane(projectRoot, BATCH_ID, 2, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "lane_not_salvageable");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
