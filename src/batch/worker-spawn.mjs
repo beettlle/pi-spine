@@ -10,6 +10,7 @@ import { startAgentSessionWorker } from "./agent-session-worker.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../config/worker-launch-script.mjs";
+import { terminateProcessTree } from "../process/terminate-tree.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -197,19 +198,29 @@ export function resolveWorkerPhase({
 }
 
 /**
- * SIGTERM then SIGKILL when a worker stays alive after post-.DONE grace.
+ * SIGTERM then SIGKILL the worker process tree when a child stays alive
+ * after post-.DONE grace (reaps nested `pi` grandchildren — SP-609 / #194).
  *
  * @param {WorkerChildHandle} child
  * @param {Promise<{ exitCode: number; output: string }>} childDone
  */
 export async function terminateHungWorkerChild(child, childDone) {
-	child.kill("SIGTERM");
+	const pid = child.pid ?? 0;
+	if (pid > 0) {
+		terminateProcessTree(pid, { signal: "SIGTERM" });
+	} else if (typeof child.kill === "function") {
+		child.kill("SIGTERM");
+	}
 	const raced = await Promise.race([childDone, sleep(POST_DONE_KILL_BACKOFF_MS)]);
 	if (raced && typeof raced === "object" && "exitCode" in raced) {
 		return raced;
 	}
-	if (child.exitCode === null && typeof child.kill === "function") {
-		child.kill("SIGKILL");
+	if (child.exitCode === null) {
+		if (pid > 0) {
+			terminateProcessTree(pid, { signal: "SIGKILL" });
+		} else if (typeof child.kill === "function") {
+			child.kill("SIGKILL");
+		}
 	}
 	return childDone;
 }

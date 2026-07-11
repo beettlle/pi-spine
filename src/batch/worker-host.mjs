@@ -29,13 +29,15 @@ import {
 	createWorkerPollState,
 	pollWorkerUntilSettled,
 } from "./worker-heartbeat.mjs";
+import { terminateProcessTree } from "../process/terminate-tree.mjs";
 
 export { buildWorkerChildEnv } from "./worker-spawn.mjs";
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 
 /**
- * Force-terminate lane worker processes tracked in batch state.
+ * Force-terminate lane worker process trees tracked in batch state.
+ * Reaps nested `pi` grandchildren, not only the tracked runner PID (SP-609 / #194).
  *
  * @param {unknown[]} lanes
  * @param {{ hard?: boolean }} [options]
@@ -52,12 +54,9 @@ export function terminateLaneWorkers(lanes, { hard = true } = {}) {
 		const laneNumber = Number(
 			/** @type {{ laneNumber?: number }} */ (lane).laneNumber ?? 1,
 		);
-		try {
-			process.kill(workerPid, signal);
-			terminated.push({ laneNumber, workerPid, signal });
-		} catch {
-			// process may already be gone
-		}
+		const result = terminateProcessTree(workerPid, { signal });
+		if (result.signaled.length === 0) continue;
+		terminated.push({ laneNumber, workerPid, signal });
 	}
 	return terminated;
 }

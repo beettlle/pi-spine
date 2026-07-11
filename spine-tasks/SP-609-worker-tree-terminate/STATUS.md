@@ -1,6 +1,6 @@
 # SP-609: Worker tree terminate — Status
 
-**Current Step:** Step 0: Preflight
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 1
@@ -12,30 +12,30 @@
 
 ### Step 0: Preflight
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Teardown call sites mapped
 - [x] Grandchild spawn path confirmed
 
 ### Step 1: Tree terminate helper
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Helper implemented
-- [ ] Wired into terminate paths
+- [x] Helper implemented
+- [x] Wired into terminate paths
 
 ### Step 2: Tests + runbook
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Grandchild regression test
-- [ ] Runbook leftover-`pi` note
+- [x] Grandchild regression test
+- [x] Runbook leftover-`pi` note
 
 ### Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Contract testCommand green
+- [x] Contract testCommand green
 - [ ] Full suite + coverage gate
 
 ### Step 4: Documentation & Delivery
@@ -52,8 +52,16 @@
 - Stall / hung / in-poll abort use `workerChild.kill` / `terminateHungWorkerChild` (`worker-spawn.mjs` / `worker-heartbeat.mjs`) — same single-PID gap; FR requires tree-kill there too (touch as logically required).
 - Runner (`spine-worker-runner.mjs`) `spawnSync("pi", …)` — grandchild stays in runner PGID by default; SIGKILL on runner alone orphans `pi` (~300–450 MB).
 
-### Plan (Step 1)
+### Implementation
 
-1. Add `src/process/terminate-tree.mjs`: list descendants (`pgrep -P` / Windows `taskkill /T`), kill descendants then root; try `-pid` process-group signal on Unix.
-2. Wire into `terminateLaneWorkers`; also `terminateHungWorkerChild` + heartbeat abort kill.
-3. Optionally spawn worker with `detached: true` so runner is PGID leader (stub-safe).
+- `src/process/terminate-tree.mjs` — `listDirectChildPids`, `listDescendantPids`, `terminateProcessTree`
+- Wired: `terminateLaneWorkers`, `terminateHungWorkerChild`, heartbeat abort kill
+- Skipped `detached: true` spawn (CRITICAL blast radius); tree-walk sufficient
+- Contract testCommand: typecheck + dismiss-orphan tests **2/2 pass**
+
+## Discoveries
+
+| Date | Discovery | Action |
+|------|-----------|--------|
+| 2026-07-10 | `terminateHungWorkerChild` / heartbeat abort are out of PROMPT File Scope but required by FR-REL231-02 | Touch as logically required; keep change additive (tree-kill) |
+| 2026-07-10 | GitNexus CRITICAL on `terminateHungWorkerChild` / `spawnWorkerChild` | Avoid spawn option changes; only swap kill helper |
