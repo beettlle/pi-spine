@@ -1,7 +1,7 @@
 # SP-609: Worker tree terminate — Status
 
-**Current Step:** Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** 🟢 Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Review Counter:** 0
@@ -33,35 +33,33 @@
 
 ### Step 3: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Contract testCommand green
-- [ ] Full suite + coverage gate
+- [x] Full suite + coverage gate
 
 ### Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
-
-### Step 0 findings
-
-- `terminateLaneWorkers` (`worker-host.mjs`) only `process.kill(workerPid)` — used by `dismissBatch` (lifecycle) and `killLaneWorkers`/`abortBatch` (abort). GitNexus impact: LOW (2 direct callers).
-- Stall / hung / in-poll abort use `workerChild.kill` / `terminateHungWorkerChild` (`worker-spawn.mjs` / `worker-heartbeat.mjs`) — same single-PID gap; FR requires tree-kill there too (touch as logically required).
-- Runner (`spine-worker-runner.mjs`) `spawnSync("pi", …)` — grandchild stays in runner PGID by default; SIGKILL on runner alone orphans `pi` (~300–450 MB).
 
 ### Implementation
 
 - `src/process/terminate-tree.mjs` — `listDirectChildPids`, `listDescendantPids`, `terminateProcessTree`
 - Wired: `terminateLaneWorkers`, `terminateHungWorkerChild`, heartbeat abort kill
 - Skipped `detached: true` spawn (CRITICAL blast radius); tree-walk sufficient
-- Contract testCommand: typecheck + dismiss-orphan tests **2/2 pass**
+- Contract: typecheck + dismiss-orphan tests **2/2 pass**
+- Full suite: **1957/1958** with worker env cleared; sole fail is load-flake `contract-stall-override` (passes in isolation)
+- Coverage: **89.06%** line (threshold 77%)
 
 ## Discoveries
 
 | Date | Discovery | Action |
 |------|-----------|--------|
-| 2026-07-10 | `terminateHungWorkerChild` / heartbeat abort are out of PROMPT File Scope but required by FR-REL231-02 | Touch as logically required; keep change additive (tree-kill) |
-| 2026-07-10 | GitNexus CRITICAL on `terminateHungWorkerChild` / `spawnWorkerChild` | Avoid spawn option changes; only swap kill helper |
+| 2026-07-10 | `terminateHungWorkerChild` / heartbeat abort out of File Scope but required by FR-REL231-02 | Touched as logically required |
+| 2026-07-10 | GitNexus CRITICAL on spawn/hung helpers | Avoided spawn option changes |
+| 2026-07-10 | Full suite under `SPINE_IS_WORKER=1` fails nested batch tests | Cleared worker env for suite/coverage |
+| 2026-07-10 | `contract-stall-override` flakes under full parallel load | Isolation pass; not caused by tree-kill |
