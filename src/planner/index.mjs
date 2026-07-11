@@ -17,11 +17,13 @@ import { buildGraph, topoWaves } from './graph.mjs';
 import { findCyclePath } from './cycles.mjs';
 import { parseScope } from './scope.mjs';
 import { collectWaveSizeWarnings, formatFileScopeOverlapWarnings, planWaves } from './waves.mjs';
+import { assertLocCapstoneReadinessForPlan } from '../config/preflight/loc-capstone.mjs';
+import path from 'node:path';
 
 /**
- * @param {{ scope?: any, config: { lanes?: { maxParallel?: number, queueExcess?: boolean } }, tasksRoot: string }} args
+ * @param {{ scope?: any, config: { lanes?: { maxParallel?: number, queueExcess?: boolean } }, tasksRoot: string, projectRoot?: string }} args
  */
-export function buildPlan({ scope, config, tasksRoot }) {
+export function buildPlan({ scope, config, tasksRoot, projectRoot }) {
 	if (!tasksRoot) throw new Error('buildPlan requires tasksRoot');
 	if (!config) throw new Error('buildPlan requires config');
 
@@ -32,7 +34,7 @@ export function buildPlan({ scope, config, tasksRoot }) {
 
 	const depsJson = loadDependenciesJson(tasksRoot);
 
-	/** @type {Record<string, { taskId: string, title: string|null, fileScope: string[], dependencies: string[] }> } */
+	/** @type {Record<string, { taskId: string, title: string|null, fileScope: string[], dependencies: string[], missionText?: string, folderName?: string }> } */
 	const tasksById = {};
 	/** @type {Array<{ taskId: string, promptPath?: string, errors: string[] }>} */
 	const promptValidationFailures = [];
@@ -56,12 +58,21 @@ export function buildPlan({ scope, config, tasksRoot }) {
 			title: prompt.title ?? null,
 			fileScope: Array.isArray(prompt.fileScope) ? prompt.fileScope : [],
 			dependencies: mergedDeps,
+			missionText: prompt.sections?.Mission ?? '',
+			folderName: path.basename(discoveredTask.folderPath),
 		};
 	}
 
 	if (promptValidationFailures.length > 0) {
 		throw new Error(formatPromptValidationFailures(promptValidationFailures));
 	}
+
+	const resolvedProjectRoot =
+		projectRoot ?? path.resolve(tasksRoot, '..');
+	assertLocCapstoneReadinessForPlan({
+		projectRoot: resolvedProjectRoot,
+		tasks: selectedIdsSorted.map((taskId) => tasksById[taskId]).filter(Boolean),
+	});
 
 	/** @type {Record<string, string[]>} */
 	const depsByTask = {};

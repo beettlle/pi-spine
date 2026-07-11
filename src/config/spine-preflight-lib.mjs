@@ -28,6 +28,7 @@ import {
 	checkPrelandedFileScopeWarn,
 	runPreflightPlanCheck,
 } from "./preflight/integrate-plan.mjs";
+import { checkLocCapstoneReadiness } from "./preflight/loc-capstone.mjs";
 import { INTEGRATE_DEFAULTS } from "./defaults.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";
@@ -64,6 +65,18 @@ export {
 	predictOrchMergeConflictRisk,
 	runPreflightPlanCheck,
 } from "./preflight/integrate-plan.mjs";
+
+export {
+	assertLocCapstoneReadinessForPlan,
+	BATCH_MODULE_LOC_LIMIT,
+	checkLocCapstoneReadiness,
+	evaluateBatchLocPolicy,
+	evaluateBatchLocPolicyAfterEmptyGrandfather,
+	formatOverLimitModules,
+	isLocCapstoneEmptyGrandfatherMission,
+	listBatchModuleLineCounts,
+	listPendingLocCapstoneTasks,
+} from "./preflight/loc-capstone.mjs";
 
 const CONCURRENT_DEV_LABEL = "concurrent development on base branch";
 
@@ -360,6 +373,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkWorktreeSetupHook(ctx));
 	checks.push(checkTasksValidate(ctx));
 	checks.push(checkStubReleaseCritical(ctx));
+	checks.push(checkLocCapstoneReadiness(ctx));
 	checks.push(checkOrchMergeConflictWarn(ctx));
 	checks.push(checkPrelandedFileScopeWarn(ctx));
 
