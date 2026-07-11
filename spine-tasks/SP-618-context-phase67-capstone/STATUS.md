@@ -1,7 +1,7 @@
 # SP-618: CONTEXT Phase 67 capstone — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
+**Current Step:** Step 2
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-11
 **Review Level:** 0
 **Review Counter:** 0
@@ -12,22 +12,22 @@
 
 ### Step 0: Preflight
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-613–617 `.DONE` on main
+- [x] Confirm SP-613–617 `.DONE` on main
 
 ### Step 1: CONTEXT Phase 67
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Phase 67 table Done
-- [ ] Exit criteria notes
-- [ ] Next Task ID → SP-619
-- [ ] Link PRD + manifest
+- [x] Phase 67 table Done
+- [x] Exit criteria notes
+- [x] Next Task ID → SP-619
+- [x] Link PRD + manifest
 
 ### Step 2: dependencies.json
 
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Verify SP-613–618 edges
 
@@ -44,6 +44,9 @@
 - [ ] `.DONE` created
 
 ## Notes
+
+- Preflight: SP-613–617 `.DONE` present on `main` and in this worktree (2026-07-11).
+- Step 1: Phase 67 table marked Done; PRD §9 implementation exit criteria checked; Next Task ID SP-619; PRD + manifest linked.
 
 ## Discoveries
 
