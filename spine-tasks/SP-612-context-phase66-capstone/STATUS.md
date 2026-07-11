@@ -1,6 +1,6 @@
 # SP-612: CONTEXT Phase 66 capstone — Status
 
-**Current Step:** Step 1 — CONTEXT Phase 66
+**Current Step:** Step 4 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 0
@@ -18,7 +18,7 @@
 
 ### Step 1: CONTEXT Phase 66
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Phase 66 table updated
 - [x] Next Task ID → SP-613
@@ -26,19 +26,19 @@
 
 ### Step 2: dependencies.json
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Edges verified
+- [x] Edges verified
 
 ### Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] tasks validate green for release scope
+- [x] tasks validate green for release scope
 
 ### Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `.DONE` created
 
@@ -46,4 +46,6 @@
 
 - SP-608–611 `.DONE` present on `main` (git ls-tree) and local worktree.
 - Phase 66 table → Done; PRD §9 exit criteria added; Next Task ID already SP-613.
-- dependencies.json edges SP-608–611 → [] ; SP-612 → [SP-608..611] already correct (verify Step 2).
+- dependencies.json: SP-608–611 → []; SP-612 → [SP-608, SP-609, SP-610, SP-611] — correct, no edit needed.
+- Contract: `Validated 5 task(s): 5 passed, 0 failed`
+- `npm test` exit 1 under `SPINE_IS_WORKER=1` — `nested_batch_spawn_blocked` (operator-runbook false positive; out of File Scope).
