@@ -5,6 +5,8 @@ import test from "node:test";
 import {
 	buildHeadline,
 	buildRunningTailHeadline,
+	buildSuggestedCommand,
+	isGateReadyHeadlineContext,
 	isRunningWithoutActiveWorkers,
 } from "../../src/batch/diagnosis.mjs";
 import { deriveMacroPhase } from "../../src/batch/macro-phase.mjs";
@@ -114,6 +116,60 @@ test("buildHeadline preserves generic running when workers are active", () => {
 		totalTasks: 3,
 	});
 	assert.equal(headline, "Batch 20260601T120000 is running");
+});
+
+test("isGateReadyHeadlineContext prefers needs_integrate and open gate", () => {
+	assert.equal(isGateReadyHeadlineContext("needs_integrate", {}), true);
+	assert.equal(
+		isGateReadyHeadlineContext("running", {
+			allTasksTerminalSuccess: true,
+			integrateGateOpen: true,
+		}),
+		true,
+	);
+	assert.equal(
+		isGateReadyHeadlineContext("failed", {
+			allTasksTerminalSuccess: false,
+			integrateGateOpen: false,
+		}),
+		false,
+	);
+});
+
+test("buildHeadline prefers gate-ready over stale mergeGitignoredFailure (#195)", () => {
+	const headline = buildHeadline("needs_integrate", {
+		batchId: "20260710T120000",
+		phase: "running",
+		postMergeLimbo: true,
+		integrateGateOpen: true,
+		mergeGitignoredFailure: true,
+		mergeFailed: true,
+		lastError: "merge_failed_gitignored: coverage/lcov.info",
+	});
+	assert.match(headline, /gate opened/i);
+	assert.doesNotMatch(headline, /gitignored/i);
+	assert.doesNotMatch(headline, /merge conflict/i);
+});
+
+test("buildSuggestedCommand prefers gate approve over stale gitignored repair (#195)", () => {
+	const command = buildSuggestedCommand("needs_integrate", {
+		phase: "running",
+		postMergeLimbo: true,
+		integrateGateOpen: true,
+		mergeGitignoredFailure: true,
+		taskBranch: "task/spine-lane-1-20260710T120000",
+		gitignoredPaths: ["coverage/lcov.info"],
+	});
+	assert.equal(command, "spine gate approve");
+	assert.doesNotMatch(command, /git rm/);
+});
+
+test("buildHeadline still surfaces gitignored merge when not gate-ready", () => {
+	const headline = buildHeadline("needs_merge", {
+		batchId: "20260710T120000",
+		mergeGitignoredFailure: true,
+	});
+	assert.match(headline, /gitignored paths/i);
 });
 
 test("deriveMacroPhase uses journal merge tail when diagnosis is running without workers", () => {

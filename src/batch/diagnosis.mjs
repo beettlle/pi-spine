@@ -57,6 +57,25 @@ export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "
 const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
 
 /**
+ * Gate-ready batches must not headline historical merge/gitignored blockers (#195 / FR-REL231-01).
+ *
+ * @param {string} diagnosis
+ * @param {object} [ctx]
+ * @param {boolean} [ctx.allTasksTerminalSuccess]
+ * @param {boolean} [ctx.integrateGateOpen]
+ * @returns {boolean}
+ */
+export function isGateReadyHeadlineContext(diagnosis, ctx = {}) {
+	if (diagnosis === "needs_integrate") {
+		return true;
+	}
+	if (ctx.allTasksTerminalSuccess === true && ctx.integrateGateOpen === true) {
+		return true;
+	}
+	return false;
+}
+
+/**
  * Retry suggestions must include a task id; journal salvage payloads may be stale.
  *
  * @param {string|null|undefined} command
@@ -121,10 +140,16 @@ const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
  * @param {string[]|null} [ctx.gitignoredPaths]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
-	if (ctx.mergeGitignoredFailure) {
+	const preferGateReady = isGateReadyHeadlineContext(diagnosis, ctx);
+	// Prefer gate-approve / land-loop next step over recovered merge/gitignored repair (#195).
+	if (ctx.mergeGitignoredFailure && !preferGateReady) {
 		return buildGitignoredMergeRepairCommand(ctx.taskBranch, ctx.gitignoredPaths);
 	}
-	if (ctx.mergeFailed && (diagnosis === "failed" || diagnosis === "needs_retry")) {
+	if (
+		ctx.mergeFailed &&
+		!preferGateReady &&
+		(diagnosis === "failed" || diagnosis === "needs_retry")
+	) {
 		return "spine batch resume --force";
 	}
 	if (ctx.phase === "merge_blocked") {
@@ -263,12 +288,18 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
+	const preferGateReady = isGateReadyHeadlineContext(diagnosis, ctx);
 
-	if (ctx.mergeGitignoredFailure) {
+	// Historical merge/gitignored signals stay in diagnose signals — not the primary headline (#195).
+	if (ctx.mergeGitignoredFailure && !preferGateReady) {
 		return `${batchLabel} merge blocked by gitignored paths on a lane branch — drop cached ignored files, then resume`;
 	}
 
-	if (ctx.mergeFailed && (diagnosis === "failed" || diagnosis === "needs_retry")) {
+	if (
+		ctx.mergeFailed &&
+		!preferGateReady &&
+		(diagnosis === "failed" || diagnosis === "needs_retry")
+	) {
 		return buildMergeFailureHeadline(batchLabel, ctx);
 	}
 
