@@ -22,6 +22,7 @@ import {
 } from "./state.mjs";
 import { runWorker } from "./worker-host.mjs";
 import { runCodeReviewPhase, runFinalReviewPhase } from "./engine-lanes/review.mjs";
+import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 
 export {
 	buildTasksAndLanesFromPlan,
@@ -45,6 +46,12 @@ export {
 	tryAutoResolveMergeConflicts,
 	tryAutoResolveRulesManifestMergeConflict,
 } from "./engine-lanes/merge.mjs";
+
+export { syncLaneWorktreeFromOrch } from "./worktree.mjs";
+export {
+	collectSharedScopeSatisfiedDeps,
+	ensureLaneSyncedForSharedScopeDeps,
+} from "./engine-lanes/orch-sync.mjs";
 
 /**
  * @param {string} fromPhase
@@ -120,6 +127,68 @@ export async function runTaskOnLane({
 		});
 	}
 	const fileScopePaths = scopeResult.fileScopePaths;
+
+	const syncResult = ensureLaneSyncedForSharedScopeDeps({
+		projectRoot,
+		state,
+		taskId,
+		fileScopePaths,
+		worktreePath: wt,
+		config,
+	});
+	if (!syncResult.ok) {
+		task.status = "failed";
+		task.endedAt = Date.now();
+		task.exitReason = "orch_sync_failed";
+		if (!task.startedAt) task.startedAt = Date.now();
+		updateSegmentForTask(state, taskId, "failed");
+		recomputeTaskCounters(state);
+		saveEngineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "lane.orch_sync_failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			error: syncResult.error,
+			sharedDeps: syncResult.sharedDeps,
+		});
+		appendJournalEvent(projectRoot, batchId, "task.failed", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			classification: "orch_sync_failed",
+			exitCode: 1,
+			output: syncResult.error,
+		});
+		recordLaneTaskMetric({
+			projectRoot,
+			batchId,
+			task,
+			config,
+			taskFolder: taskFolderInWorktree,
+		});
+		return {
+			ok: false,
+			workerResult: {
+				ok: false,
+				classification: "orch_sync_failed",
+				output: syncResult.error,
+				exitCode: 1,
+			},
+		};
+	}
+	if (syncResult.synced) {
+		appendJournalEvent(projectRoot, batchId, "lane.orch_synced", {
+			taskId,
+			laneNumber,
+			laneId: lane.laneId,
+			correlationId: laneCorrelationId,
+			orchBranch: state.orchBranch,
+			headSha: syncResult.headSha,
+			sharedDeps: syncResult.sharedDeps,
+		});
+	}
 
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();
