@@ -1,7 +1,7 @@
 # SP-611: LOC capstone readiness gate — Status
 
-**Current Step:** Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3: Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-10
 **Review Level:** 1
 **Review Counter:** 0
@@ -26,17 +26,17 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] `tests/config/loc-capstone-readiness.test.mjs` added
 - [x] Contract testCommand green
-- [ ] Full suite + coverage gate
+- [x] Full suite + coverage gate
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
@@ -61,4 +61,13 @@
 
 ### Step 2
 
-- Contract: `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/config/loc-capstone-readiness.test.mjs` → 9/9 pass
+- Contract: typecheck + loc-capstone-readiness.test.mjs → 9/9 pass
+- Full suite (`env -u SPINE_IS_WORKER -u SPINE_PARENT_BATCH_ID SPINE_WORKER_STUB=1 npm test`): 1965/1966; one flake in `contract-stall-override.test.mjs` (passed on re-run 7/7)
+- Coverage: `env -u SPINE_IS_WORKER -u SPINE_PARENT_BATCH_ID SPINE_WORKER_STUB=1 npm run coverage:check` → 88.98% line (≥77%)
+
+## Discoveries
+
+| Date | Finding | Action |
+|------|---------|--------|
+| 2026-07-10 | Full suite flake: contract stall override timing | Out of scope; re-run green |
+| 2026-07-10 | `PHASE23_GRANDFATHERED_OVER_500` remains `[]` | No re-open |
