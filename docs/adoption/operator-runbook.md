@@ -65,8 +65,8 @@ After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_dri
 **Orphan recovery tree:**
 
 1. `spine status --diagnose` — read headline and `suggestedCommand`
-2. `state_drift` → follow **`suggestedCommand`** from diagnose: `spine batch resume --force` when drift task is still `running` (SP-512 — do not `pause && retry`; retry rejects running tasks); `spine batch retry <id>` when not `running`. If engine remains detached, `spine batch resume --attached --force` (single engine — do not run multiple concurrent `resume --force`)
-3. `engine_orphaned` or `worker_orphaned` with dead PIDs → run the **`suggestedCommand`** (usually `spine batch retry <id>`). **No `batch pause` first** — retry reconciles orphan `running` tasks to `failed` and journals `task.failed` / `lane.died` when missing (SP-315). Then `spine batch resume --attached` or `--force` as diagnose suggests. `worker_done_missing` → `spine batch retry <id>` only (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — `spine batch retry <id>` or `spine batch resume --attached --force` (detached resume waits up to 2h by default).
+2. `state_drift` → follow **`suggestedCommand`** from diagnose (agent-safe: detached `spine batch resume --force` when phase is `running` / engine dead / tasks terminal-success — SP-613 / [#196](https://github.com/beettlle/pi-spine/issues/196); `spine batch retry <id>` when the drift task is not `running` — SP-512). **Do not** background `resume --attached` from agent/non-TTY shells ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)). See **[Agent-safe state_drift recovery (#196)](#agent-safe-state_drift-recovery-196)** below.
+3. `engine_orphaned` or `worker_orphaned` with dead PIDs → run the **`suggestedCommand`** (usually `spine batch retry <id>`). **No `batch pause` first** — retry reconciles orphan `running` tasks to `failed` and journals `task.failed` / `lane.died` when missing (SP-315). Then detached `spine batch resume --force` (or `resume --attached` only in a persistent human TTY). `worker_done_missing` → `spine batch retry <id>` only (worker already exited — do not use orphan-resume paths). When journal shows `batch.resumed` + `worker.rules_selected` with both PIDs dead, diagnosis upgrades to `engine_orphaned` — follow `suggestedCommand` (detached `resume --force` when tasks are terminal-success; otherwise retry / attached only for human TTY).
 4. Never hand-edit `.spine/batch-state.json`
 
 ---
@@ -605,7 +605,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 
 **Operator implications:**
 
-- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise use the **`suggestedCommand`** from diagnose: `spine batch retry <id>` when the drift task is not `running`, or `spine batch resume --force` when still `running` (SP-512). If a detached engine remains, then `spine batch resume --attached --force`.
+- **`state_drift`** usually means the journal has a terminal lifecycle event the cache missed (common after retry success, crash, or a **stale detached engine** still writing `.spine/batch-state.json` after pause/resume). Inspect `spine journal follow` (or `spine journal replay --batch <batchId>`) for `engine.orphan_terminated`. If batch already landed on `main`, kill orphan `spine.mjs batch` PIDs and run `spine batch complete` to clear cache; otherwise use the **`suggestedCommand`** from diagnose — prefer detached `spine batch resume --force` for dead-engine / `phase=running` / terminal-success drift ([#196](https://github.com/beettlle/pi-spine/issues/196), SP-613); `spine batch retry <id>` when the drift task is not `running` (SP-512). **Never** background `--attached` from agent shells — see **[Agent-safe state_drift recovery (#196)](#agent-safe-state_drift-recovery-196)**.
 - **Incident tails** often start mid-batch (resume wedge, orphan stall). Structural rebuild without cache seed still derives lanes/tasks from `task.started`, but `wavePlan` and `taskFolder` may need the existing batch-state cache — regression coverage lives in `tests/batch/journal-rebuild-incidents.test.mjs`.
 - **Do not expect** pi-spine to replay pi worker sessions or re-run agent code from the journal alone; use lane worktrees, `.DONE`, and evidence bundles for that audit trail.
 
@@ -621,7 +621,8 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `needs_retry` + `contract_failed` | Final `contract.verified` failed | Edit `PROMPT.md` scope, then `spine batch retry <id>` |
 | `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
 | `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
-| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` when task still `running`, else `spine batch resume --attached` |
+| `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` when task still `running`; detached `spine batch resume --force` when tasks are terminal-success ([#196](https://github.com/beettlle/pi-spine/issues/196)); `--attached` only in a persistent human TTY |
+| `state_drift` | Cache vs journal disagree | Detached `spine batch resume --force` / `retry <id>` per `suggestedCommand` — never background `--attached` ([#196](https://github.com/beettlle/pi-spine/issues/196)) |
 | `nested_batch_spawn_blocked` | Worker or extension tried to start a nested batch inside a lane worktree | No action needed — guard prevented the rogue engine. Check worker/extension config if unexpected |
 | `needs_merge` | Wave done, merge blocked | Fix failures or `force-merge` |
 | `needs_integrate` | Orch ahead of `main` | Land loop (§4) |
@@ -1069,9 +1070,12 @@ In pi: `/spine-handoff`. Handoff summarizes batch diagnosis, pending tasks, and 
 
 ```bash
 spine batch pause
+spine batch abort --dry-run         # read-only preview — does not archive or clear (SP-615 / #196)
 spine batch abort                   # graceful — worker may finish step
 spine batch abort --hard            # SIGKILL + worktree cleanup
 ```
+
+**`abort --dry-run` is read-only** (SP-615, [#196](https://github.com/beettlle/pi-spine/issues/196)): it must not archive the live batch, journal `batch.aborted`, or clear batch-state. Do **not** treat dry-run as a mutation probe — if you need to abandon the batch, run `spine batch abort` without `--dry-run`.
 
 When a **live attached engine** (foreground `spine batch start --attached` / `resume --attached`) is running, `spine batch pause` writes `phase: paused` to batch-state (bypassing the engine write guard) and waits for that phase to **persist without regression** through the grace window. Only after confirmation does the CLI record `batch.paused` in the journal. If the engine keeps overwriting batch-state back to `running`, the CLI **fails loud** with `pause_not_confirmed`, journals `batch.pause_failed` only (no orphan `batch.paused`), and reverts phase to `running`. Do not assume pause succeeded from journal alone — check `grep phase .spine/batch-state.json` or `spine status --diagnose`.
 
@@ -1106,6 +1110,34 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 - Journal events: `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
 
 **Typical workflow:** abort → `salvage --dry-run` → approve gate if required → `salvage --lane N --integrate` per salvageable lane → `spine status --diagnose`.
+
+After abort, salvage lists lanes whose task branches have commits ahead of base when the task reached terminal-success / lane `.DONE` — even if journal status cache disagrees (SP-614 / [#196](https://github.com/beettlle/pi-spine/issues/196)). Do not assume "no salvageable commits" means the lane branch is empty; re-check with `salvage --dry-run` and `git log main..<lane-task-branch>`.
+
+### Agent-safe state_drift recovery (#196)
+
+When an agent/non-TTY shell hits **`state_drift`** after engine SIGTERM (dead `enginePid`, cache still `phase=running`, lane `.DONE` / terminal-success evidence), recover **detached-first**. Do **not** background `spine batch resume --attached` — agent harnesses refuse or orphan attached engines ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185); see [Detached-first policy](#detached-first-policy-default)).
+
+**Ordered path:**
+
+1. **Diagnose** — `spine status --diagnose`. Read `headline` and `suggestedCommand`. Confirm engine PID is dead and lane evidence (`.DONE`, terminal task status) before mutating.
+2. **Detached recover** — run the suggested detached command (typically `spine batch resume --force`). SP-613 reconciles dead-engine + `phase=running` + `doneInLane` toward `needs_integrate` / an open gate — it must not dead-end on `Cannot resume batch in phase running`. Monitor with `spine status --diagnose` (or `spine wait --until needs_integrate,completed,failed,aborted`).
+3. **Abort only if reconcile cannot progress** — `spine batch abort` (mutating). Preview with `spine batch abort --dry-run` first if you need a read-only check; dry-run must not archive (SP-615).
+4. **Salvage lane commits** — after abort, `spine batch salvage --batch <batchId> --dry-run`, then `salvage --lane N --integrate` for lanes with commits ahead of base (SP-614). See [Batch abort recovery (salvage)](#batch-abort-recovery-salvage).
+5. **Manual fast-forward last resort** — only if salvage cannot land work: inspect lane task branches under `.worktrees/spine-<batchId>/`, then operator-controlled `git merge --ff-only` onto `main` / orch. Prefer salvage over hand merges.
+
+```bash
+spine status --diagnose
+spine batch resume --force          # detached — never background --attached from agents
+spine status --diagnose             # expect needs_integrate / gate, or clearer next step
+
+# If still stuck after abort:
+spine batch abort --dry-run         # read-only (SP-615)
+spine batch abort
+spine batch salvage --batch <batchId> --dry-run
+spine batch salvage --batch <batchId> --lane <n> --integrate --yes
+```
+
+**Related:** review-crash drift after `review.started` is a different path — see [Review crash state drift](#review-crash-state-drift-state_drift-after-reviewstarted).
 
 ### Orphan running (zombie batch)
 
