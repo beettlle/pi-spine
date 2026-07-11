@@ -430,7 +430,12 @@ export function runPreflightPlanCheck(ctx) {
 			};
 		}
 
-		const plan = buildPlan({ scope: "pending", config, tasksRoot: tasksRootPath });
+		const plan = buildPlan({
+			scope: "pending",
+			config,
+			tasksRoot: tasksRootPath,
+			projectRoot,
+		});
 		const waveCount = plan.waves?.length ?? 0;
 		const planText = formatPlanHuman(plan).trimEnd();
 		const planWarnings = [];

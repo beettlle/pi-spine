@@ -8,6 +8,11 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { c, FAIL, OK } from "./shared.mjs";
+import {
+	BATCH_MODULE_LOC_LIMIT,
+	evaluateBatchLocPolicy,
+	listBatchModuleLineCounts,
+} from "../../src/config/preflight/loc-capstone.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,24 +21,7 @@ export const PHASE23_GRANDFATHERED_OVER_500 = [];
 
 const PHASE23_ENGINE_LANES_MAX = 500;
 
-/**
- * @param {string} projectRoot
- */
-function listBatchModuleLineCounts(projectRoot) {
-	const batchDir = path.join(projectRoot, "src/batch");
-	if (!fs.existsSync(batchDir)) return [];
-
-	return fs
-		.readdirSync(batchDir)
-		.filter((name) => name.endsWith(".mjs"))
-		.map((name) => {
-			const relPath = path.posix.join("src/batch", name);
-			const absPath = path.join(batchDir, name);
-			const lines = fs.readFileSync(absPath, "utf-8").split(/\r?\n/).length;
-			return { relPath, lines };
-		})
-		.sort((left, right) => left.relPath.localeCompare(right.relPath));
-}
+export { listBatchModuleLineCounts, evaluateBatchLocPolicy, BATCH_MODULE_LOC_LIMIT };
 
 /**
  * @param {object} params
@@ -94,17 +82,15 @@ export function runPhase23ExitVerify({ projectRoot, skipTest = false }) {
 			: `engine-lanes.mjs exceeds ${PHASE23_ENGINE_LANES_MAX} LOC (${engineLanes?.lines ?? "missing"})`,
 	});
 
-	const over500 = modules.filter((entry) => entry.lines > 500);
-	const ungrandfathered = over500.filter(
-		(entry) => !PHASE23_GRANDFATHERED_OVER_500.includes(entry.relPath),
-	);
-	const locPolicyOk = ungrandfathered.length === 0;
+	const locPolicy = evaluateBatchLocPolicy(projectRoot, {
+		grandfathered: PHASE23_GRANDFATHERED_OVER_500,
+	});
 	checks.push({
 		id: "batch-loc-policy",
-		ok: locPolicyOk,
-		message: locPolicyOk
-			? `batch module LOC policy ok (${over500.length} grandfathered >500)`
-			: `unexpected >500 LOC modules: ${ungrandfathered.map((entry) => `${entry.relPath} (${entry.lines})`).join(", ")}`,
+		ok: locPolicy.ok,
+		message: locPolicy.ok
+			? `batch module LOC policy ok (${locPolicy.overLimit.length} grandfathered >${BATCH_MODULE_LOC_LIMIT})`
+			: `unexpected >${BATCH_MODULE_LOC_LIMIT} LOC modules: ${locPolicy.ungrandfathered.map((entry) => `${entry.relPath} (${entry.lines})`).join(", ")}`,
 	});
 
 	const realPiWorkflow = path.join(projectRoot, ".github/workflows/real-pi.yml");
