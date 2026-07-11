@@ -60,7 +60,24 @@ export function detectPostMergeLimboForResume({ projectRoot, state }) {
 export { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
 
 /**
+ * Whether every task is terminal-success (or skipped) for #196 drift recovery.
+ *
+ * @param {object|null|undefined} state
+ */
+function allTasksTerminalSuccessForResume(state) {
+	const tasks = state?.tasks ?? [];
+	if (tasks.length < 1) return false;
+	return tasks.every((task) => {
+		const status = String(task?.status ?? "").toLowerCase();
+		return status === "succeeded" || status === "skipped";
+	});
+}
+
+/**
  * Assess whether a running-phase batch may resume after a dead detached engine (SP-296).
+ *
+ * Also covers SP-613 / #196: pidless engine + all tasks terminal-success + pending wave
+ * merge (doneInLane healed, enginePid cleared) must not dead-end on phase=running.
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -83,17 +100,25 @@ export function assessRunningPhaseResumeEligibility({ projectRoot, state }) {
 	const enginePid = readBatchEnginePid(state);
 	const enginePidDead = enginePid != null && !isProcessAlive(enginePid);
 	const pidlessEngineOrphan = enginePid == null && orphanRunning?.kind === "engine";
-	const engineConfirmedDead = enginePidDead || pidlessEngineOrphan;
+	// Dead/missing engine with work finished but merge not landed — agent-safe detached resume (#196).
+	const pidlessTerminalSuccessPendingMerge =
+		enginePid == null &&
+		allTasksTerminalSuccessForResume(state) &&
+		hasPendingWaveMerge(state);
+	const engineConfirmedDead =
+		enginePidDead || pidlessEngineOrphan || pidlessTerminalSuccessPendingMerge;
 
 	const allowOrphanResume =
 		engineConfirmedDead &&
-		orphanRunning != null &&
-		(orphanRunning.kind === "engine" || orphanRunning.kind === "lane");
+		((orphanRunning != null &&
+			(orphanRunning.kind === "engine" || orphanRunning.kind === "lane")) ||
+			pidlessTerminalSuccessPendingMerge);
 
 	return {
 		engineConfirmedDead,
 		allowOrphanResume,
-		orphanKind: orphanRunning?.kind ?? null,
+		orphanKind: orphanRunning?.kind ?? (pidlessTerminalSuccessPendingMerge ? "engine" : null),
+		terminalSuccessPendingMerge: pidlessTerminalSuccessPendingMerge,
 	};
 }
 

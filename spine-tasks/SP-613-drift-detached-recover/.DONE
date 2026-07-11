@@ -1,0 +1,6 @@
+SP-613 complete — agent-safe detached state_drift recovery (#196 / FR-REL232-01).
+
+Verification:
+- Contract testCommand: 13/13 pass
+- Full suite (nest env unset): 1979 pass, 0 fail
+- coverage:check: 89.02% line (≥77%)

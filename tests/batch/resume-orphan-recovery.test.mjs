@@ -269,3 +269,106 @@ test("attached resume --force completes stuck task after plan review orphan stal
 test("detached resume with wait-terminal uses extended timeout constant", () => {
 	assert.ok(resolveDetachedWaitTimeoutMs(true) > 30_000);
 });
+
+test("pidless terminal-success pending merge validates and resumes without attached (#196)", async () => {
+	const projectRoot = await initGitRepo("spine-detached-drift-196-");
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+	try {
+		const batchId = "20260711T196614";
+		const taskId = "SP-614";
+		const taskFolder = `spine-tasks/${taskId}-smoke`;
+		fs.mkdirSync(path.join(projectRoot, "src"), { recursive: true });
+		fs.mkdirSync(path.join(projectRoot, taskFolder), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, taskFolder, "PROMPT.md"),
+			minimalValidPromptMarkdown(taskId, {
+				fileScope: `src/${taskId.toLowerCase()}.txt`,
+				mission: "Detached drift recovery regression.",
+			}),
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		fs.writeFileSync(path.join(projectRoot, "src", `${taskId.toLowerCase()}.txt`), "seed\n", "utf-8");
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "seed"], { cwd: projectRoot, stdio: "ignore" });
+
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "orch-marker.txt"), "orch\n", "utf-8");
+		execFileSync("git", ["add", "orch-marker.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch advance"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const lane = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+		const dest = path.join(lane.worktreePath, taskFolder);
+		fs.mkdirSync(path.dirname(dest), { recursive: true });
+		fs.cpSync(path.join(projectRoot, taskFolder), dest, { recursive: true });
+		fs.mkdirSync(path.join(lane.worktreePath, "src"), { recursive: true });
+		fs.writeFileSync(path.join(dest, ".DONE"), "done\n", "utf-8");
+		fs.writeFileSync(
+			path.join(lane.worktreePath, "src", `${taskId.toLowerCase()}.txt`),
+			"done\n",
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: lane.worktreePath, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "worker: .DONE"], {
+			cwd: lane.worktreePath,
+			stdio: "ignore",
+		});
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder,
+					doneFileFound: true,
+					endedAt: Date.now() - 1_000,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: lane.worktreePath,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: [taskId],
+				},
+			],
+		});
+		state.phase = "running";
+		state.succeededTasks = 1;
+		saveSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, batchId, "task.started", { taskId, laneNumber: 1 });
+		appendJournalEvent(projectRoot, batchId, "task.completed", { taskId, laneNumber: 1 });
+
+		const { validateMultiTaskResume } = await import("../../src/batch/resume-multi-validate.mjs");
+		const forced = validateMultiTaskResume({ projectRoot, force: true });
+		assert.equal(forced.ok, true, forced.output ?? forced.error);
+		assert.equal(forced.engineConfirmedDead, true);
+		assert.doesNotMatch(forced.output ?? "", /Cannot resume batch in phase running/);
+
+		const diagnosis = reconcileBatch({ projectRoot, verbose: true });
+		assert.doesNotMatch(diagnosis.suggestedCommand ?? "", /--attached/);
+		assert.match(diagnosis.suggestedCommand ?? "", /resume --force/);
+
+		const resumeResult = await resumeBatch({ projectRoot, force: true });
+		assert.equal(resumeResult.ok, true, resumeResult.output ?? resumeResult.error);
+		const final = loadSpineBatchState(projectRoot).raw;
+		assert.equal(final?.phase, "completed");
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		await destroyGitRepo(projectRoot);
+	}
+});
