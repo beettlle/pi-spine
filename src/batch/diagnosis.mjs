@@ -161,9 +161,18 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "spine batch dismiss";
 		case "state_drift":
+			// Agent-safe detached recovery (#196 / SP-613) — never suggest --attached.
+			if (
+				ctx.phase === "running" ||
+				ctx.staleEnginePid === true ||
+				ctx.engineDead === true ||
+				ctx.allTasksTerminalSuccess === true
+			) {
+				return "spine batch resume --force";
+			}
 			if (ctx.failedTaskId) {
 				const driftStatus = String(ctx.driftTaskStatus ?? "").toLowerCase();
-				if (driftStatus === "running" || ctx.phase === "running") {
+				if (driftStatus === "running") {
 					return "spine batch resume --force";
 				}
 				return `spine batch retry ${ctx.failedTaskId}`;
@@ -224,12 +233,16 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "engine_orphaned": {
 			const parentExitCommand = buildEngineOrphanParentExitSuggestedCommand(ctx);
 			if (parentExitCommand) return parentExitCommand;
+			// Terminal-success / doneInLane heal with dead engine — detached resume (#196 / #163).
+			if (ctx.allTasksTerminalSuccess === true) {
+				return "spine batch resume --force";
+			}
 			return ctx.failedTaskId
 				? `spine batch retry ${ctx.failedTaskId}`
 				: "spine batch resume --attached";
 		}
 		case "needs_merge":
-			return "/spine-resume --force";
+			return "spine batch resume --force";
 		case "needs_integrate":
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
 				if (ctx.integrateGateOpen) {

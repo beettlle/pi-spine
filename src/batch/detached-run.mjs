@@ -265,6 +265,8 @@ export async function resumeBatchDetached({
 	}
 
 	prepareDetachedResumeEngineHandoff(projectRoot);
+	// SP-613: validateMultiTaskResume already admits pidless terminal-success + pending
+	// wave merge (#196); spawn the attached engine argv in detached mode (no --attached).
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
 	releaseResumeLock?.();
