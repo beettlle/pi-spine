@@ -28,16 +28,6 @@ function git(projectRoot, args) {
 }
 
 /**
- * @param {unknown} err
- */
-function gitErrorMessage(err) {
-	if (!(err instanceof Error)) return String(err);
-	const stderr = /** @type {{ stderr?: string }} */ (err).stderr;
-	if (typeof stderr === "string" && stderr.trim()) return stderr.trim();
-	return err.message;
-}
-
-/**
  * @param {string} fromDir
  * @param {string} toPath
  */
@@ -262,38 +252,29 @@ export function provisionLaneWorktree({
 }
 
 /**
- * Merge orch into an existing lane worktree so shared-scope dep commits are ancestors
- * of the lane HEAD before the next task starts (FR-REL231-03 / #191).
+ * Merge orch into a lane worktree so shared-scope dep commits are ancestors of HEAD
+ * before the next task starts (FR-REL231-03 / #191).
  *
- * @param {object} params
- * @param {string} params.worktreePath
- * @param {string} params.orchBranch
- * @param {string} [params.projectRoot] Identity root for merge commits
+ * @param {{ worktreePath: string, orchBranch: string, projectRoot?: string }} params
  * @returns {{ ok: true, skipped: boolean, reason?: string, headSha: string }}
  */
 export function syncLaneWorktreeFromOrch({ worktreePath, orchBranch, projectRoot }) {
 	if (!worktreePath || !fs.existsSync(worktreePath)) {
 		throw new Error(
-			`Cannot sync lane worktree from orch: worktree missing (${worktreePath ?? "unset"}). ` +
-				`Recreate the lane worktree or resume the batch.`,
+			`Cannot sync lane worktree from orch: worktree missing (${worktreePath ?? "unset"}). Recreate the lane worktree or resume the batch.`,
 		);
 	}
 	if (!orchBranch || typeof orchBranch !== "string") {
-		throw new Error(
-			"Cannot sync lane worktree from orch: orchBranch is missing from batch state.",
-		);
+		throw new Error("Cannot sync lane worktree from orch: orchBranch is missing from batch state.");
 	}
 
 	const identityRoot = projectRoot ?? worktreePath;
-	const orchShaRaw = gitExec(worktreePath, ["rev-parse", "--verify", orchBranch], {
+	const orchSha = gitExec(worktreePath, ["rev-parse", "--verify", orchBranch], {
 		projectRoot: identityRoot,
 	});
-	if (!orchShaRaw) {
-		throw new Error(
-			`Cannot sync lane worktree from orch: failed to resolve ${orchBranch}.`,
-		);
+	if (!orchSha) {
+		throw new Error(`Cannot sync lane worktree from orch: failed to resolve ${orchBranch}.`);
 	}
-	const orchSha = orchShaRaw;
 
 	const alreadyContains = gitExec(
 		worktreePath,
@@ -301,55 +282,40 @@ export function syncLaneWorktreeFromOrch({ worktreePath, orchBranch, projectRoot
 		{ throwOnError: false, projectRoot: identityRoot },
 	);
 	if (alreadyContains !== null) {
-		const headSha =
-			gitExec(worktreePath, ["rev-parse", "HEAD"], {
-				projectRoot: identityRoot,
-			}) ?? "";
-		return { ok: true, skipped: true, reason: "already_contains_orch", headSha };
+		return {
+			ok: true,
+			skipped: true,
+			reason: "already_contains_orch",
+			headSha: gitExec(worktreePath, ["rev-parse", "HEAD"], { projectRoot: identityRoot }) ?? "",
+		};
 	}
 
-	const porcelain = gitExec(worktreePath, ["status", "--porcelain"], {
-		projectRoot: identityRoot,
-	});
+	const porcelain = gitExec(worktreePath, ["status", "--porcelain"], { projectRoot: identityRoot });
 	if (porcelain) {
 		throw new Error(
-			`Cannot sync lane worktree from ${orchBranch}: worktree is dirty (${worktreePath}). ` +
-				`Commit or discard lane changes, then retry. Dirty paths:\n${porcelain}`,
+			`Cannot sync lane worktree from ${orchBranch}: worktree is dirty (${worktreePath}). Commit or discard lane changes, then retry. Dirty paths:\n${porcelain}`,
 		);
 	}
 
 	try {
 		gitExec(
 			worktreePath,
-			[
-				"merge",
-				"--no-edit",
-				"-m",
-				`sync lane from ${orchBranch} before task start`,
-				orchBranch,
-			],
+			["merge", "--no-edit", "-m", `sync lane from ${orchBranch} before task start`, orchBranch],
 			{ projectRoot: identityRoot },
 		);
 	} catch (err) {
-		try {
-			gitExec(worktreePath, ["merge", "--abort"], {
-				throwOnError: false,
-				projectRoot: identityRoot,
-			});
-		} catch {
-			// best effort — surface the original merge failure
-		}
+		gitExec(worktreePath, ["merge", "--abort"], { throwOnError: false, projectRoot: identityRoot });
+		const detail = err instanceof Error ? err.message : String(err);
 		throw new Error(
-			`Failed to sync lane worktree from ${orchBranch} (${orchSha.slice(0, 12)}): ${gitErrorMessage(err)}. ` +
-				`Resolve the conflict in ${worktreePath}, or remove the lane worktree and resume the batch.`,
+			`Failed to sync lane worktree from ${orchBranch} (${orchSha.slice(0, 12)}): ${detail}. Resolve the conflict in ${worktreePath}, or remove the lane worktree and resume the batch.`,
 		);
 	}
 
-	const headSha =
-		gitExec(worktreePath, ["rev-parse", "HEAD"], {
-			projectRoot: identityRoot,
-		}) ?? "";
-	return { ok: true, skipped: false, headSha };
+	return {
+		ok: true,
+		skipped: false,
+		headSha: gitExec(worktreePath, ["rev-parse", "HEAD"], { projectRoot: identityRoot }) ?? "",
+	};
 }
 
 /**

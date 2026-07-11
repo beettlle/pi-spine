@@ -1,6 +1,6 @@
 # SP-610: Lane orch sync before start — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-10
 **Review Level:** 1
@@ -26,15 +26,15 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] `tests/batch/lane-orch-sync.test.mjs` added
-- [ ] Contract testCommand green
-- [ ] Full suite + coverage gate
+- [x] Contract testCommand green
+- [x] Full suite + coverage gate
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `.DONE` created
 
@@ -42,17 +42,25 @@
 
 ### Step 0 findings
 
-- **Missing sync:** Lanes are provisioned once from orch at batch start (`engine.mjs` → `provisionLaneWorktree`). After each wave, `mergeWaveLanesToOrch` lands lane commits on orch, but subsequent waves reuse the same lane worktrees without merging orch back into the lane. `runTaskOnLane` launches the worker with no orch sync.
-- **Detection:** Before worker launch, load deps from `dependencies.json` for the task; for each dep with `status === "succeeded"`, load File Scope via `loadTaskFileScopePaths`; if any path intersects the current task scope, call `syncLaneWorktreeFromOrch` (merge orch → lane). Fail loud on dirty worktree or merge conflict.
+- **Missing sync:** Lanes provisioned once from orch at batch start; wave merge lands on orch but lanes are not synced before later tasks. Fix at `runTaskOnLane` before worker launch.
+- **Detection:** Succeeded deps from `dependencies.json` whose File Scope intersects the current task → `syncLaneWorktreeFromOrch`.
 
 ### Step 1
 
-- Added `syncLaneWorktreeFromOrch` in `worktree.mjs`
-- Added `collectSharedScopeSatisfiedDeps` / `ensureLaneSyncedForSharedScopeDeps` in `engine-lanes.mjs`
-- `runTaskOnLane` syncs before `task.started` / worker launch; journals `lane.orch_synced` or fails with `orch_sync_failed`
+- `syncLaneWorktreeFromOrch` in `worktree.mjs`
+- Detection helpers in `src/batch/engine-lanes/orch-sync.mjs` (extracted to keep facade ≤500 LOC)
+- `runTaskOnLane` syncs before `task.started`; journals `lane.orch_synced` / fails `orch_sync_failed`
+
+### Step 2 verification
+
+- Contract: typecheck + `lane-orch-sync.test.mjs` — 3/3 pass
+- Full suite (`env -u SPINE_IS_WORKER SPINE_WORKER_STUB=1 npm test`): 1959 pass; one flaky stall-override failure on first run, passed on retry
+- Coverage: **88.87%** line (threshold 77%)
 
 ## Discoveries
 
 | Discovery | Action |
 |-----------|--------|
 | Same-wave cross-tick shared-scope (dep not yet on orch) not fixed by orch sync | Deferred — planner affinity (out of scope) |
+| `engine-lanes.mjs` / `worktree.mjs` 500 LOC gate | Extracted `engine-lanes/orch-sync.mjs` (required for phase23-exit) |
+| Full suite under `SPINE_IS_WORKER=1` blocks nested `startBatch` | Ran verification with `env -u SPINE_IS_WORKER` |
