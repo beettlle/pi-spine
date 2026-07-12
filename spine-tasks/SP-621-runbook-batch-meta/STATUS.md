@@ -1,7 +1,7 @@
 # SP-621: Runbook batch-meta recovery — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-11
 **Review Level:** 0
 **Review Counter:** 0
@@ -27,15 +27,15 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Full test suite (docs-only)
+- [x] Full test suite (docs-only)
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
@@ -43,6 +43,7 @@
 - Detached-first (#163/#185) is in **Before you start**.
 - SP-620 landed: `src/batch/batch-meta-reconstruct.mjs` (`reconstructBatchStateFromRuntime` / `ensureForceResumeBatchState`); wired from `resume.mjs`; packet has `.DONE`.
 - Added `### Force-resume from batch-meta after abort limbo (#126)` after salvage, before #196.
+- Step 2: `env -u SPINE_IS_WORKER npm run typecheck && env -u SPINE_IS_WORKER SPINE_WORKER_STUB=1 npm test` → typecheck ok; tests 1995 pass / 0 fail (stripped `SPINE_IS_WORKER` per SP-491 runbook note — inherited worker env false-fails batch-spawn tests).
 
 ## Discoveries
 
@@ -50,3 +51,4 @@
 |---------|--------|
 | SP-620 reconstruct already on lane (`.DONE` + `batch-meta-reconstruct.mjs`) | Document operator path only |
 | Best insert point: after salvage, before #196 agent-safe | Added § force-resume from batch-meta (#126) there |
+| Full suite under `SPINE_IS_WORKER=1` hits nested_batch_spawn_blocked | Re-ran with `env -u SPINE_IS_WORKER` (docs-only; matches contract sanitize) |
