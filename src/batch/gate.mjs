@@ -19,6 +19,7 @@ import {
 	gateRecordPath,
 	loadGateRecord,
 } from "./gate-evidence-read.mjs";
+import { resolveGateTargetRevision } from "./gate-revision.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 
@@ -57,6 +58,7 @@ export function openIntegrateGate(ctx) {
 		return { gate: existing, opened: false, evidenceRefs: existing.evidenceRefs ?? [] };
 	}
 
+	const targetRevision = resolveGateTargetRevision(projectRoot, batchState);
 	const reconciliation = reconcileBatch({ projectRoot, batchState, verbose: true });
 	const core = collectCoreEvidenceBundle({ projectRoot, batchId, batchState, config, reconciliation });
 	/** @type {string[]} */
@@ -68,6 +70,7 @@ export function openIntegrateGate(ctx) {
 		kind: "integrate",
 		status: "pending",
 		openedAt: new Date().toISOString(),
+		targetRevision,
 		evidenceRefs,
 		summary: formatGateSummary({ kind: "integrate", status: "pending", evidenceRefs }),
 	};
