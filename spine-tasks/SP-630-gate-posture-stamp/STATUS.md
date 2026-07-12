@@ -1,6 +1,6 @@
 # SP-630: Stamp category on gate open — Status
 
-**Current Step:** Step 0 — Preflight (completing)
+**Current Step:** Step 1 — Stamp category on open (complete)
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-12
 **Review Level:** 1
@@ -11,15 +11,15 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Required files and paths exist
 - [x] Dependencies satisfied
 
 ### Step 1: Stamp category on open
-**Status:** ⬜ Not Started
-- [ ] Set `gate.category` on open using defaults/config mapping
-- [ ] Default remains locked posture (no auto-approve side effect)
-- [ ] Unit test asserts category present and status still pending
+**Status:** ✅ Complete
+- [x] Set `gate.category` on open using defaults/config mapping
+- [x] Default remains locked posture (no auto-approve side effect)
+- [x] Unit test asserts category present and status still pending
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started

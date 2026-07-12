@@ -4,6 +4,7 @@
  */
 
 import crypto from "node:crypto";
+import { resolveGatePostureConfig } from "../config/gate-posture-config.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import {
@@ -21,9 +22,49 @@ import {
 } from "./gate-evidence-read.mjs";
 import { loadBatchStateFile } from "./batch-state-io.mjs";
 import { makeBlocker } from "./blocker-codes.mjs";
+import { GATE_CATEGORIES } from "./gate-posture-defaults.mjs";
 import { resolveGateTargetRevision, validateGateTargetRevision } from "./gate-revision.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
+
+/** @typedef {import("./gate-posture-defaults.mjs").GateCategory} GateCategory */
+
+/**
+ * Default category stamped on integrate gates (SP-630 / FR-REL250-08 / #123).
+ * Explore decision: execute mapped to locked posture until config opts in (SP-632).
+ */
+export const DEFAULT_INTEGRATE_GATE_CATEGORY = /** @type {GateCategory} */ ("execute");
+
+const CATEGORY_SET = new Set(/** @type {string[]} */ ([...GATE_CATEGORIES]));
+
+/**
+ * Resolve integrate gate category from config overlay or fail-closed default.
+ * Valid `gates.integrateCategory` wins; unknown/missing → execute.
+ * Consults posture config so stamp stays aligned with defaults/config mapping.
+ *
+ * @param {unknown} config
+ * @returns {GateCategory}
+ */
+export function resolveIntegrateGateCategory(config) {
+	const postureConfig = resolveGatePostureConfig(config);
+	/** @type {GateCategory} */
+	let category = DEFAULT_INTEGRATE_GATE_CATEGORY;
+
+	if (config && typeof config === "object" && !Array.isArray(config)) {
+		const gates = /** @type {{ integrateCategory?: unknown }} */ (config).gates;
+		if (gates && typeof gates === "object" && !Array.isArray(gates)) {
+			const raw = /** @type {{ integrateCategory?: unknown }} */ (gates).integrateCategory;
+			if (typeof raw === "string" && CATEGORY_SET.has(raw)) {
+				category = /** @type {GateCategory} */ (raw);
+			}
+		}
+	}
+
+	if (!(category in postureConfig.categories)) {
+		return DEFAULT_INTEGRATE_GATE_CATEGORY;
+	}
+	return category;
+}
 
 export {
 	collectCoreEvidenceBundle,
@@ -65,11 +106,14 @@ export function openIntegrateGate(ctx) {
 	const core = collectCoreEvidenceBundle({ projectRoot, batchId, batchState, config, reconciliation });
 	/** @type {string[]} */
 	let evidenceRefs = [...core.evidenceRefs];
+	// Stamp category only — do not auto-approve; locked posture until SP-632 config opt-in.
+	const category = resolveIntegrateGateCategory(config);
 
 	const gate = {
 		gateId: crypto.randomUUID(),
 		batchId,
 		kind: "integrate",
+		category,
 		status: "pending",
 		openedAt: new Date().toISOString(),
 		targetRevision,
@@ -81,6 +125,7 @@ export function openIntegrateGate(ctx) {
 	appendJournalEvent(projectRoot, batchId, "gate.opened", {
 		gateId: gate.gateId,
 		kind: gate.kind,
+		category: gate.category,
 		status: gate.status,
 		evidenceRefs: gate.evidenceRefs,
 	});
