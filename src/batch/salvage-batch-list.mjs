@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Salvage list (dry-run) after batch abort/dismiss (FR-REL220-03, #158).
- * Extracted from salvage-batch.mjs (SP-591); integrate remains in salvage-batch.mjs until SP-605.
+ * Extracted from salvage-batch.mjs (SP-591); integrate lives in salvage-batch-integrate.mjs (SP-605).
  */
 
 import fs from "node:fs";
