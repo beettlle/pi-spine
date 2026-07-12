@@ -19,7 +19,8 @@ import {
 	gateRecordPath,
 	loadGateRecord,
 } from "./gate-evidence-read.mjs";
-import { resolveGateTargetRevision } from "./gate-revision.mjs";
+import { loadBatchStateFile } from "./batch-state-io.mjs";
+import { resolveGateTargetRevision, validateGateTargetRevision } from "./gate-revision.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 
@@ -301,6 +302,7 @@ export function getIntegrateGateStatus(ctx) {
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
  * @param {ReturnType<typeof loadSpineConfig>["config"]} [ctx.config]
+ * @param {object|null} [ctx.batchState]
  * @param {boolean} [ctx.forceIntegrate]
  * @param {boolean} [ctx.dryRun]
  */
@@ -351,6 +353,23 @@ export function checkIntegrateGate(ctx) {
 	}
 
 	if (gate.status === "approved") {
+		const batchState = ctx.batchState ?? loadBatchStateFile(projectRoot).raw ?? null;
+		const revisionCheck = validateGateTargetRevision(projectRoot, gate, batchState);
+		if (!revisionCheck.ok) {
+			return {
+				ok: false,
+				required: true,
+				exitCode: 2,
+				failureClass: "GateBlocked",
+				error: revisionCheck.error,
+				headline: "Integrate blocked — gate targetRevision stale; re-open and re-approve",
+				suggestedCommand: "spine gate status",
+				gate,
+				alternatives: ["/spine-gate status"],
+				pinnedRevision: revisionCheck.pinnedRevision,
+				currentRevision: revisionCheck.currentRevision,
+			};
+		}
 		return { ok: true, required: true, gate };
 	}
 
