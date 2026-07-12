@@ -1,7 +1,7 @@
 # SP-619: Persist batch-meta.json — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-11
 **Review Level:** 1
 **Review Counter:** 0
@@ -27,15 +27,15 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Add `tests/batch/batch-meta-persist.test.mjs`
 - [x] Run contract `testCommand`
-- [ ] Full suite + coverage gate ≥77%
+- [x] Full suite + coverage gate ≥77%
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `.DONE` created
 
@@ -44,18 +44,22 @@
 ### Step 0 plan
 
 - No `batch-meta` module exists today.
-- Topology is known in `startBatch` (`engine.mjs`) right after `createInitialBatchState`: `batchId`, `baseBranch`, `orchBranch`, `wavePlan`/`totalWaves`, `tasksRoot`.
-- Detached start (`startBatchDetached`) spawns an attached engine child that calls `startBatch` — one persist call in `startBatch` covers both paths.
+- Topology is known in `startBatch` (`engine.mjs`) right after `createInitialBatchState`.
+- Detached start spawns attached engine → `startBatch`; one persist call covers both.
 - Write path: `.spine/runtime/{batchId}/batch-meta.json` via `writeJsonAtomic`.
-- `mode` assumption: `"batch"` (orchestration kind; state has no mode field; attached/detached is launch style, not topology).
-- Wave→task mapping: reuse `wavePlan` (string[][]).
-- lifecycle.mjs / detached-run.mjs: no extra edits — engine path covers both start modes.
+- `mode`: `"batch"` (orchestration kind).
+- Wave→task mapping: `wavePlan`.
 
 ### Step 1 notes
 
-- Added `src/batch/batch-meta.mjs` with `saveBatchMetaRuntimeArtifact`.
-- Wired in `engine.mjs` immediately after initial `saveEngineBatchState`.
-- Contract testCommand passed (3/3).
+- `src/batch/batch-meta.mjs` — `saveBatchMetaRuntimeArtifact` + `persistBatchMetaFromStartState`.
+- Wired in `engine.mjs` after initial `saveEngineBatchState` (keeps engine ≤500 LOC).
+
+### Step 2 evidence
+
+- Contract: 3/3 pass.
+- Full suite (worker env cleared): 1988 pass, 0 fail.
+- Coverage: 89.04% line (threshold 77%).
 
 ## Discoveries
 
@@ -64,3 +68,4 @@
 | No existing batch-meta module | Add `src/batch/batch-meta.mjs` |
 | Detached start delegates to `startBatch` child | Single wire site in `engine.mjs` |
 | `createInitialBatchState` has no `mode` | Persist `mode: "batch"` |
+| engine.mjs LOC cap 500 | Thin wrapper in batch-meta; one-line call in engine (499 LOC) |

@@ -93,3 +93,23 @@ export function saveBatchMetaRuntimeArtifact({
 	writeJsonAtomic(filePath, meta);
 	return { path: filePath, meta };
 }
+
+/**
+ * Persist batch-meta from initial batch-state (attached + detached share startBatch).
+ *
+ * @param {string} projectRoot
+ * @param {{ batchId?: string, baseBranch?: string, orchBranch?: string, totalWaves?: number, wavePlan?: string[][] }} state
+ * @param {string} tasksRoot
+ */
+export function persistBatchMetaFromStartState(projectRoot, state, tasksRoot) {
+	return saveBatchMetaRuntimeArtifact({
+		projectRoot,
+		batchId: String(state?.batchId ?? ""),
+		baseBranch: String(state?.baseBranch ?? ""),
+		orchBranch: String(state?.orchBranch ?? ""),
+		totalWaves: Number(state?.totalWaves ?? 0),
+		mode: BATCH_META_DEFAULT_MODE,
+		tasksRoot,
+		wavePlan: Array.isArray(state?.wavePlan) ? state.wavePlan : [],
+	});
+}
