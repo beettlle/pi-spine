@@ -1,7 +1,7 @@
 # SP-620: Reconstruct batch state from batch-meta — Status
 
-**Current Step:** Step 2
-**Status:** 🔄 In Progress
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-11
 **Review Level:** 2
 **Review Counter:** 0
@@ -27,42 +27,38 @@
 
 ### Step 2: Testing & Verification
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Incident-style reconstruct tests
 - [x] Run contract `testCommand`
-- [ ] Full suite + coverage gate ≥77%
+- [x] Full suite + coverage gate ≥77%
 
 ### Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] `.DONE` created
 
 ## Notes
 
-### Step 0 findings
+### Implementation
 
-- SP-619 landed: `spine-tasks/SP-619-batch-meta-persist/.DONE` + `src/batch/batch-meta.mjs`.
-- Missing/corrupt path was `no_active_batch` with no reconstruct.
+- `src/batch/batch-meta-reconstruct.mjs` — `reconstructBatchStateFromRuntime`, `ensureForceResumeBatchState`, fail-closed helpers
+- `src/batch/resume.mjs` — force-resume reconstruct before validate
+- `src/batch/resume-multi-validate.mjs` — reconstruct when `force && !raw` (covers detached)
+- `tests/batch/batch-meta-reconstruct.test.mjs` — missing/corrupt/ambiguous/conflict + validate force path
 
-### Step 1 plan (Review Level 2)
+### Verification
 
-Plan review skipped (real-pi nested spawn blocked; engine reviews after `.DONE`).
-
-Implemented:
-- `reconstructBatchStateFromRuntime` / `ensureForceResumeBatchState` in `batch-meta.mjs`
-- Wired in `validateMultiTaskResume` + `resumeBatch` (journal `batch.state_reconstructed`)
-- Fail-closed: missing meta, ambiguous metas, wavePlan conflict, completed
-
-### Step 2
-
-Contract testCommand PASS (7/7). Full suite + coverage pending.
+- Contract: typecheck + reconstruct tests 7/7 PASS
+- Full suite: `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm test` → 1995/1995 PASS
+- Coverage: 88.86% line (≥77%)
 
 ## Discoveries
 
 | Finding | Action |
 |---------|--------|
-| Write guard blocks ACTIVE-phase resurrection when archive exists | Reconstruct persist uses `bypassWriteGuard: true` |
-| Journal rebuild yields running without live engine | Remap running/aborted/planning → failed for force-reconstruct |
-| Orch branch required before lane provision in tests | Call `ensureOrchBranch` in resume validate incident test |
+| Write guard blocks ACTIVE resurrection with archive | `bypassWriteGuard: true` on reconstruct persist |
+| Journal rebuild yields running without engine | Remap running/aborted/planning → failed |
+| `resume.mjs` LOC gate uses split().length (trailing NL) | Keep ≤499 wc-l / ≤500 split count |
+| Nested batch tests need `SPINE_IS_WORKER` unset | Documented in verification commands |

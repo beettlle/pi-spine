@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import { isProcessAlive } from "../process/liveness.mjs";
 import { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
-import { ensureForceResumeBatchState } from "./batch-meta.mjs";
+import { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";

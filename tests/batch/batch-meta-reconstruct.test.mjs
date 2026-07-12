@@ -10,9 +10,9 @@ import test from "node:test";
 import {
 	ensureForceResumeBatchState,
 	reconstructBatchStateFromRuntime,
-	saveBatchMetaRuntimeArtifact,
 	wavePlansConflict,
-} from "../../src/batch/batch-meta.mjs";
+} from "../../src/batch/batch-meta-reconstruct.mjs";
+import { saveBatchMetaRuntimeArtifact } from "../../src/batch/batch-meta.mjs";
 import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import { validateMultiTaskResume } from "../../src/batch/resume-multi-validate.mjs";
 import { loadSpineBatchState, spineBatchStatePath } from "../../src/batch/state.mjs";
