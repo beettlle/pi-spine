@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-12 (Phase 69 v2.5.0 gate maturity staged; Next → SP-635)
+**Last Updated:** 2026-07-12 (Phase 69 v2.5.0 gate maturity complete; Next → SP-635)
 **Status:** Active
 **Next Task ID:** SP-635
 
@@ -1904,18 +1904,18 @@ spine run sequence SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-623 | Persist targetRevision | Pending | — | Partial #121 |
-| SP-624 | Validate targetRevision | Pending | SP-623 | Closes #121 |
-| SP-625 | BlockerCode types | Pending | — | Partial #122 |
-| SP-626 | Wire structured blockers | Pending | SP-625, SP-624 | Closes #122 |
-| SP-627 | DEFAULT_POSTURES | Pending | — | Partial #123 |
-| SP-628 | Posture evaluator | Pending | SP-627 | Partial #123 |
-| SP-629 | Posture config load | Pending | SP-627 | Partial #123 |
-| SP-630 | Stamp category on open | Pending | SP-624, SP-627 | Partial #123 |
-| SP-631 | Approval streak counters | Pending | SP-629 | Partial #123 |
-| SP-632 | Wire evaluator to approve | Pending | SP-628, SP-630, SP-631 | Closes #123 |
-| SP-633 | Runbook gate maturity | Pending | SP-624, SP-626, SP-632 | — |
-| SP-634 | CONTEXT Phase 69 capstone | Pending | SP-623–633 | — |
+| SP-623 | Persist targetRevision | Done | — | Partial #121 |
+| SP-624 | Validate targetRevision | Done | SP-623 | Closes #121 |
+| SP-625 | BlockerCode types | Done | — | Partial #122 |
+| SP-626 | Wire structured blockers | Done | SP-625, SP-624 | Closes #122 |
+| SP-627 | DEFAULT_POSTURES | Done | — | Partial #123 |
+| SP-628 | Posture evaluator | Done | SP-627 | Partial #123 |
+| SP-629 | Posture config load | Done | SP-627 | Partial #123 |
+| SP-630 | Stamp category on open | Done | SP-624, SP-627 | Partial #123 |
+| SP-631 | Approval streak counters | Done | SP-629 | Partial #123 |
+| SP-632 | Wire evaluator to approve | Done | SP-628, SP-630, SP-631 | Closes #123 |
+| SP-633 | Runbook gate maturity | Done | SP-624, SP-626, SP-632 | — |
+| SP-634 | CONTEXT Phase 69 capstone | Done | SP-623–633 | — |
 
 ```bash
 spine tasks validate SP-623 SP-624 SP-625 SP-626 SP-627 SP-628 SP-629 SP-630 SP-631 SP-632 SP-633 SP-634
@@ -1927,17 +1927,19 @@ spine run sequence SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-63
 
 **Phase 69 exit criteria (PRD §9):**
 
-- [ ] #121 closed — targetRevision persist + validate
-- [ ] #122 closed — structured blockers
-- [ ] #123 closed — postures with locked defaults
-- [ ] Runbook gate maturity (SP-633)
-- [ ] CONTEXT Phase 69 complete; Next Task ID → SP-635
-- [ ] `npm run release:check` green on publish HEAD
+- [x] #121 closed — targetRevision persist + validate (SP-623–624 landed)
+- [x] #122 closed — structured blockers (SP-625–626 landed)
+- [x] #123 closed — postures with locked defaults (SP-627–632 landed)
+- [x] Runbook gate maturity (SP-633)
+- [x] CONTEXT Phase 69 complete; Next Task ID → SP-635
+- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
 - [ ] **v2.5.0 published** — `npm version minor` (operator-gated)
 
 **Explore complete:** `v2.5-gate-maturity` (2026-07-12) — [`_explore/v2.5-gate-maturity/findings.md`](_explore/v2.5-gate-maturity/findings.md).
 
-**Phase 69 staged (SP-623–634 packets authored; not yet executed).** Deferred after this release: #160, #135, #127, #124, #120, #43.
+**Release note (placeholder — fill on publish):** v2.5.0 — Gate maturity: targetRevision pinning (#121), structured blocker codes (#122), category postures with locked defaults (#123).
+
+**Phase 69 implementation complete (SP-623–634 → v2.5.0 pending publish).** PRD: [`docs/PRD-v2.5.0-gate-maturity-handoff.md`](../docs/PRD-v2.5.0-gate-maturity-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.5.0/manifest.md`](_authoring/release-v2.5.0/manifest.md). Deferred backlog (next release): #160, #135, #127, #124, #120, #43.
 
 ---
 
