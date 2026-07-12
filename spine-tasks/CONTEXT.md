@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-11 (Phase 68 v2.4.0 recovery continuity complete; Next → SP-623)
+**Last Updated:** 2026-07-12 (Phase 68 v2.4.0 published; Next → SP-623)
 **Status:** Active
 **Next Task ID:** SP-623
 
@@ -1890,10 +1890,10 @@ spine run sequence SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
 - [x] SP-602 / SP-605 `.DONE` — LOC leftover splits
 - [x] Runbook batch-meta recovery (SP-621)
 - [x] CONTEXT Phase 68 complete; Next Task ID → SP-623
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] `npm version minor` → v2.4.0 published (operator-gated)
+- [x] `npm run release:check` green on publish HEAD (operator publish gate)
+- [x] **v2.4.0 published** — tag `v2.4.0`, npm `pi-spine@2.4.0` (2026-07-12); issue #126 closed
 
-**Phase 68 implementation complete (SP-602, SP-605, SP-619–622).** Publish (`npm version minor` → v2.4.0) remains operator-gated. PRD: [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md). Deferred: #160, #135, #127–#120, #124–#121, #43.
+**Phase 68 complete and published (SP-602, SP-605, SP-619–622 → v2.4.0).** PRD: [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md). Deferred: #160, #135, #127–#120, #124–#121, #43.
 
 ---
 
