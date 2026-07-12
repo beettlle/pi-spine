@@ -9,6 +9,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
+import { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
@@ -39,18 +40,24 @@ import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 export { pauseBatch } from "./pause.mjs";
 export { validateResumeBatch } from "./resume-single-validate.mjs";
+export { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
 
-/**
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {boolean} [params.force]
- */
+/** @param {{ projectRoot: string, force?: boolean }} params */
 export async function resumeBatch({ projectRoot, force = false }) {
 	const engineLock = enforceAttachedEngineSingleOwner({ projectRoot, force, operation: "resume" });
 	if (!engineLock.ok) {
 		return engineLock;
 	}
 	const releaseResumeLock = engineLock.releaseResumeLock;
+
+	// SP-620 / #126: reconstruct from batch-meta when live state is missing/corrupt.
+	if (force) {
+		const ensured = ensureForceResumeBatchState(projectRoot, { force: true });
+		if (!ensured.ok && ensured.attempted) {
+			releaseResumeLock?.();
+			return ensured;
+		}
+	}
 
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {

@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import { isProcessAlive } from "../process/liveness.mjs";
 import { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
+import { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
 import { loadGateRecord } from "./gate.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
@@ -128,9 +129,21 @@ export function assessRunningPhaseResumeEligibility({ projectRoot, state }) {
  * @param {boolean} [params.force]
  */
 export function validateMultiTaskResume({ projectRoot, force = false }) {
-	const loaded = loadSpineBatchState(projectRoot);
+	let loaded = loadSpineBatchState(projectRoot);
 	if (!loaded.raw) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+		const ensured = ensureForceResumeBatchState(projectRoot, { force });
+		if (!ensured.ok) {
+			return {
+				ok: false,
+				exitCode: ensured.exitCode ?? 1,
+				error: ensured.error ?? "no_active_batch",
+				output: ensured.output ?? "No active pi-spine batch.\n",
+			};
+		}
+		loaded = loadSpineBatchState(projectRoot);
+		if (!loaded.raw) {
+			return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+		}
 	}
 
 	const state = loaded.raw;

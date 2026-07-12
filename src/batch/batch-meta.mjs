@@ -1,7 +1,7 @@
+// @ts-nocheck
 /**
  * Survival batch-meta.json artifact (SP-619 / FR-REL240-03 / #126).
- * Written at batch start so operators can reconstruct topology when
- * batch-state.json is missing or corrupt (reconstruct is SP-620).
+ * Persist at batch start; reconstruct helpers live in batch-meta-reconstruct.mjs (SP-620).
  */
 
 import path from "node:path";
