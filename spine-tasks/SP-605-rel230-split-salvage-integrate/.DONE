@@ -1,0 +1,1 @@
+SP-605 complete: extracted salvage-batch-integrate.mjs; salvage-batch.mjs is 18 LOC re-export shim; API unchanged; integrate tests 9/9; typecheck + full suite 1985/1985.

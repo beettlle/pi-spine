@@ -1,7 +1,7 @@
 # SP-605: Extract salvage-batch-integrate.mjs — Status
 
 **Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Size:** S
@@ -23,8 +23,8 @@
 - [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — typecheck clean; 1985/1985 pass (`env -u SPINE_IS_WORKER -u SPINE_PARENT_BATCH_ID`)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Create `.DONE`
 
 ## Completion Criteria
 
@@ -48,3 +48,11 @@
 | GitNexus impact on `integrateSalvageableLane`: LOW | Callers via `salvage-batch.mjs` re-export: `bin/spine-batch.mjs`, tests |
 | Plan review (step 1): skipped (real-pi nested spawn blocked) | Engine reviews after `.DONE` |
 | Full `npm test` under `SPINE_IS_WORKER=1` fails nested-batch tests | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_PARENT_BATCH_ID SPINE_WORKER_STUB=1` |
+
+### Deliverables
+
+| Path | LOC | Role |
+|------|-----|------|
+| `src/batch/salvage-batch-integrate.mjs` | 410 | integrate + confirm + formatters |
+| `src/batch/salvage-batch.mjs` | 18 | thin re-export shim |
+| `src/batch/salvage-batch-list.mjs` | 324 | list API (SP-591; comment updated) |
