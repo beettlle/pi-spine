@@ -20,6 +20,7 @@ import {
 	loadGateRecord,
 } from "./gate-evidence-read.mjs";
 import { loadBatchStateFile } from "./batch-state-io.mjs";
+import { makeBlocker } from "./blocker-codes.mjs";
 import { resolveGateTargetRevision, validateGateTargetRevision } from "./gate-revision.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
@@ -157,12 +158,14 @@ export function approveIntegrateGate(ctx) {
 	const gate = loadGateRecord(projectRoot, batchId);
 
 	if (!gate) {
+		const error = "No integrate gate found for this batch";
 		return {
 			ok: false,
 			exitCode: 1,
-			error: "No integrate gate found for this batch",
+			error,
 			headline: "Cannot approve — gate not opened",
 			suggestedCommand: "spine status --diagnose",
+			blockers: [makeBlocker("missing_gate", error)],
 		};
 	}
 
@@ -171,13 +174,15 @@ export function approveIntegrateGate(ctx) {
 	}
 
 	if (gate.status === "rejected") {
+		const error = "Gate was rejected — reopen batch evidence or start a new gate cycle";
 		return {
 			ok: false,
 			exitCode: 1,
-			error: "Gate was rejected — reopen batch evidence or start a new gate cycle",
+			error,
 			headline: "Cannot approve a rejected gate",
 			suggestedCommand: "spine gate status",
 			gate,
+			blockers: [makeBlocker("gate_rejected", error)],
 		};
 	}
 
@@ -317,14 +322,16 @@ export function checkIntegrateGate(ctx) {
 
 	if (forceIntegrate) {
 		if (process.env.SPINE_ALLOW_FORCE !== "1") {
+			const error = "Force integrate requires SPINE_ALLOW_FORCE=1";
 			return {
 				ok: false,
 				required: true,
 				exitCode: 2,
 				failureClass: "GateBlocked",
-				error: "Force integrate requires SPINE_ALLOW_FORCE=1",
+				error,
 				headline: "Force integrate blocked — set SPINE_ALLOW_FORCE=1 to bypass gate",
 				suggestedCommand: "spine gate approve",
+				blockers: [makeBlocker("force_integrate_blocked", error)],
 			};
 		}
 
@@ -340,15 +347,17 @@ export function checkIntegrateGate(ctx) {
 
 	const gate = loadGateRecord(projectRoot, batchId);
 	if (!gate) {
+		const error = "Integrate gate not opened — approve evidence before merging";
 		return {
 			ok: false,
 			required: true,
 			exitCode: 2,
 			failureClass: "GateBlocked",
-			error: "Integrate gate not opened — approve evidence before merging",
+			error,
 			headline: "Integrate blocked — no gate record (run batch to completion or spine gate status)",
 			suggestedCommand: "spine gate status",
 			alternatives: ["/spine-gate"],
+			blockers: [makeBlocker("missing_gate", error)],
 		};
 	}
 
@@ -356,46 +365,52 @@ export function checkIntegrateGate(ctx) {
 		const batchState = ctx.batchState ?? loadBatchStateFile(projectRoot).raw ?? null;
 		const revisionCheck = validateGateTargetRevision(projectRoot, gate, batchState);
 		if (!revisionCheck.ok) {
+			const error = revisionCheck.error;
 			return {
 				ok: false,
 				required: true,
 				exitCode: 2,
 				failureClass: "GateBlocked",
-				error: revisionCheck.error,
+				error,
 				headline: "Integrate blocked — gate targetRevision stale; re-open and re-approve",
 				suggestedCommand: "spine gate status",
 				gate,
 				alternatives: ["/spine-gate status"],
 				pinnedRevision: revisionCheck.pinnedRevision,
 				currentRevision: revisionCheck.currentRevision,
+				blockers: [makeBlocker("stale_revision", error)],
 			};
 		}
 		return { ok: true, required: true, gate };
 	}
 
 	if (gate.status === "rejected") {
+		const error = gate.rejectionReason ?? "Integrate gate was rejected";
 		return {
 			ok: false,
 			required: true,
 			exitCode: 2,
 			failureClass: "GateBlocked",
-			error: gate.rejectionReason ?? "Integrate gate was rejected",
+			error,
 			headline: "Integrate blocked — gate rejected",
 			suggestedCommand: "spine gate status",
 			gate,
 			alternatives: ["/spine-gate status"],
+			blockers: [makeBlocker("gate_rejected", error)],
 		};
 	}
 
+	const pendingError = "Integrate gate pending human approval";
 	return {
 		ok: false,
 		required: true,
 		exitCode: 2,
 		failureClass: "GateBlocked",
-		error: "Integrate gate pending human approval",
+		error: pendingError,
 		headline: "Integrate blocked — gate pending approval",
 		suggestedCommand: "spine gate approve",
 		gate,
 		alternatives: ["/spine-gate approve", "spine gate reject"],
+		blockers: [makeBlocker("gate_pending", pendingError)],
 	};
 }

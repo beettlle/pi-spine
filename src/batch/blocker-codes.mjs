@@ -1,7 +1,7 @@
 /**
  * Allow-listed BlockerCode values and `{ code, message }` helper (FR-REL250-03 / #122).
  *
- * Pure module — gate/readiness wiring lands in SP-626. Unknown codes fail closed.
+ * Pure module — wired into `checkIntegrateGate` / approve fail paths (SP-626). Unknown codes fail closed.
  */
 
 /** @typedef {(typeof BLOCKER_CODES)[number]} BlockerCode */
