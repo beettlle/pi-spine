@@ -1,7 +1,7 @@
 # SP-632: Wire posture evaluator into approve path — Status
 
-**Current Step:** Step 1 — Wire evaluator + safety tests
-**Status:** ✅ Complete
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-12
 **Review Level:** 2
 **Review Counter:** 0
@@ -22,15 +22,15 @@
 - [x] Tests: default locked, opted-in auto, release/safety coexistence
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Run contract `testCommand`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run contract `testCommand`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified (if any)
+**Status:** 🟡 In Progress
+- [x] Must Update docs modified (if any) — None required
 - [ ] Create `.DONE`
 
 ## Discoveries & Decisions
@@ -40,10 +40,13 @@
 | Explore: integrate category mapped to locked until config opts in | Auto-approve only when `gates.postures[category]` is explicitly present; bare DEFAULT_POSTURES must not unlock integrate |
 | `approveIntegrateGate` GitNexus impact HIGH | Additive `maybeAutoApproveIntegrateGate`; human path keeps `decidedBy: human` |
 | Real-pi worker (`SPINE_WORKER_RUNNER` set) | Engine owns plan/code/final review after `.DONE`; in-worker review skipped |
+| `gate.mjs` exceeded 500 LOC after wiring | Extracted approve/reject/auto to `gate-posture-approve.mjs` (required for batch-loc-policy); re-exported from `gate.mjs` |
+| Full suite under `SPINE_IS_WORKER=1` | Unset worker env for `npm test` / coverage; failures were nested_batch_spawn_blocked, not product regressions |
 
 ## Notes
 
-**Step 1:** Added `maybeAutoApproveIntegrateGate` + opt-in helper; land-loop tries posture auto before blunt `--auto-approve-gate`; journal `decidedBy` + streak increment/reset. Contract tests 14/14 pass.
+**Step 1:** `maybeAutoApproveIntegrateGate` + land-loop posture path; journal `decidedBy`; streak on approve/reset on reject.
+**Step 2:** Contract 14/14; full suite 2085/2085 (worker env cleared); coverage 89.16%.
 
 ## Blockers
 
