@@ -841,7 +841,7 @@ Use when batch lane work on the orch branch is correct but `main` moved during t
    git push origin main
    ```
 
-Gate approval from before the failed integrate attempt remains valid unless you rejected it or changed orch content materially — if unsure, run `spine gate status` before re-integrating.
+Gate approval remains valid only while the orch tip still matches the gate’s pinned `targetRevision` ([§5.2](#52-gate-maturity-v250--121122123)). If orch advanced after approve, integrate fails closed with `stale_revision` — re-open and re-approve before retrying. If unsure, run `spine gate status` before re-integrating.
 
 #### Manual recovery (merge on main)
 
@@ -997,6 +997,84 @@ Lane workers register `spine_request_gate`, but **cannot open or refresh any hum
 In pi (operator session): `/spine-gate approve` delegates to `spine gate approve`.
 
 Design reference: [worker-gate-inventory.md](../design/worker-gate-inventory.md).
+
+### 5.2 Gate maturity (v2.5.0 — #121/#122/#123)
+
+v2.5.0 tightens the integrate gate for operators and automation: revision pinning so stale approvals cannot land after orch drift ([#121](https://github.com/beettlle/pi-spine/issues/121)), structured `{ code, message }` blockers ([#122](https://github.com/beettlle/pi-spine/issues/122)), and category postures with **locked defaults** so existing integrate gates stay manual until you opt in ([#123](https://github.com/beettlle/pi-spine/issues/123)).
+
+Cross-links: sequence `--auto-approve-gate` safety remains fail-closed for real pi (see [Planner wave sequences](#planner-wave-sequences-spine-run-sequence) / `validateSequenceAutoApproveGate`); prefer [detached-first](#detached-first-policy-default) batches ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)) so land-loop gate opens survive parent shell exit.
+
+#### Revision pin + re-approve on drift (#121)
+
+On gate open, pi-spine pins `targetRevision` to the **orch tip SHA** (`batchState.orchBranch` via `git rev-parse`, with HEAD fallback). The pin is stored on `.spine/runtime/<batchId>/gate.json`.
+
+On `spine integrate` / `checkIntegrateGate`, an **approved** gate is re-validated against the current orch tip:
+
+| Outcome | Behavior |
+|---------|----------|
+| Pin matches current orch tip | Integrate may proceed (gate still required) |
+| Pin missing, unreadable, or orch tip advanced | Fail closed — `stale_revision` blocker; headline *gate targetRevision stale* |
+
+**Operator recovery when integrate reports stale revision:**
+
+1. Confirm drift: `spine gate status` and compare orch tip (`git rev-parse orch/spine-<batchId>`) to `targetRevision` in the gate record.
+2. Re-open a fresh pin (existing `gate.json` blocks reopen): remove `.spine/runtime/<batchId>/gate.json`, then run `spine status --diagnose` / detached `spine batch resume --force` so finalize re-opens the gate with a new `targetRevision`.
+3. Review evidence again → `spine gate approve` → `spine integrate`.
+
+Do not hand-edit `targetRevision` on an approved gate to “force” a match — that defeats the safety boundary.
+
+#### Structured blocker codes (#122)
+
+Gate check / approve fail paths return `blockers: [{ code, message }]` alongside the human `error` / headline. Automation and dashboards should switch on `code`; humans still read `message`.
+
+| Code | When |
+|------|------|
+| `missing_gate` | No gate record — batch not ready or gate not opened |
+| `gate_pending` | Gate open, awaiting approve/reject |
+| `gate_rejected` | Gate was rejected |
+| `stale_revision` | Approved gate pin missing or orch tip drifted (#121) |
+| `force_integrate_blocked` | `--force-integrate` without `SPINE_ALLOW_FORCE=1` |
+
+Additional readiness-oriented codes exist for automation parity (`missing_task`, `task_not_terminal`, `open_gate`, `missing_completion_report`, `missing_test_result`, `missing_commit`, `missing_push`, `missing_ready_for_pr_gate`). Unknown codes fail closed in the helper — do not invent strings outside the allow-list.
+
+#### Category postures + locked defaults (#123)
+
+Gates carry a `category` (`read` \| `write` \| `execute` \| `destroy` \| `network` \| `auth`). Integrate gates default to **`execute`** (`gates.integrateCategory` may override). Documented default postures:
+
+| Category | Default posture | `autoApproveAfterN` |
+|----------|-----------------|---------------------|
+| `read` | permissive | `0` (immediate when opted in) |
+| `write` | cautious | `3` |
+| `execute` | guarded | `5` |
+| `destroy` | **locked** | never (`null`) |
+| `network` | cautious | `3` |
+| `auth` | **locked** | never (`null`) |
+
+**Hard safety:** Without an explicit `gates.postures.<category>` overlay in `.spine/spine-config.json`, integrate auto-approve stays **locked** — bare defaults never unlock land-loop approve. `destroy` / `auth` remain locked even if config tries to relax them. Evaluation cascade (highest precedence first): posture locked → never-auto → `alwaysBreakOn` tag match → immediate auto (`autoApproveAfterN: 0`) → streak threshold. Journal events record `decidedBy: "auto"` vs `"human"`.
+
+**Opt in safely** (example — only after you accept consecutive-approve risk for that category):
+
+```json
+{
+  "gates": {
+    "requireBeforeIntegrate": true,
+    "integrateCategory": "execute",
+    "alwaysBreakOn": ["release", "destroy-path"],
+    "postures": {
+      "execute": { "posture": "guarded", "autoApproveAfterN": 5 }
+    }
+  }
+}
+```
+
+| Control | Guidance |
+|---------|----------|
+| Explicit `gates.postures.<category>` | Required for auto-approve; omit → locked |
+| `alwaysBreakOn` | Tags that always require manual approve regardless of posture |
+| Reject | Resets consecutive-approval streak for that category |
+| Sequence `--auto-approve-gate` | Separate blunt CLI path — still blocked for real pi unless stub/`--force`; posture opt-in does **not** bypass release gate-only loops |
+
+Keep real-pi and release sequences on manual `spine gate approve` between waves unless you have reviewed stub/`--force` risk. Prefer detached land loops so gate open + approve are not orphaned by a short-lived parent shell.
 
 ---
 
