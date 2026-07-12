@@ -1,6 +1,6 @@
 # SP-628: Pure posture evaluation cascade — Status
 
-**Current Step:** Step 1 — Implement cascade + tests
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-12
 **Review Level:** 1
@@ -16,13 +16,13 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Implement cascade + tests
-**Status:** 🟡 In Progress
-- [ ] Implement 5-tier evaluation returning allow-auto vs require-manual with reason
-- [ ] locked / destroy / auth never auto
-- [ ] Exhaustive unit tests for each tier
+**Status:** ✅ Complete
+- [x] Implement 5-tier evaluation returning allow-auto vs require-manual with reason
+- [x] locked / destroy / auth never auto
+- [x] Exhaustive unit tests for each tier
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 - [ ] Run contract `testCommand`
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
 - [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
@@ -43,20 +43,7 @@
 
 ## Plan (Step 1)
 
-Pure `evaluateGatePosture(input)` in `src/batch/gate-posture-evaluate.mjs` — no I/O.
-
-**Input:** `{ category, posture, autoApproveAfterN, consecutiveApprovals?, tags?, alwaysBreakOn?, neverAutoApprove? }`
-
-**Result:** `{ decision: "allow-auto" | "require-manual", reason: string, tier: 1..5 | null }`
-
-**Cascade (fail-closed):**
-1. `posture === "locked"` → require-manual
-2. `category` in `LOCKED_CATEGORIES` or `neverAutoApprove === true` → require-manual
-3. any `tags` ∩ `alwaysBreakOn` → require-manual
-4. `autoApproveAfterN === 0` → allow-auto (immediate)
-5. `autoApproveAfterN > 0` && streak ≥ N → allow-auto; else require-manual
-
-Tests cover each tier + destroy/auth hard-block even if posture mis-set.
+Pure `evaluateGatePosture(input)` — cascade: locked → never-auto → alwaysBreakOn → immediate (N=0) → streak ≥ N. Implemented; contract tests 19/19 pass.
 
 ## Blockers
 
