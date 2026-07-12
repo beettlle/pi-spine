@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-12 (Phase 68 v2.4.0 published; Next → SP-623)
+**Last Updated:** 2026-07-12 (Phase 69 v2.5.0 gate maturity staged; Next → SP-635)
 **Status:** Active
-**Next Task ID:** SP-623
+**Next Task ID:** SP-635
 
 ---
 
@@ -1893,7 +1893,51 @@ spine run sequence SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
 - [x] `npm run release:check` green on publish HEAD (operator publish gate)
 - [x] **v2.4.0 published** — tag `v2.4.0`, npm `pi-spine@2.4.0` (2026-07-12); issue #126 closed
 
-**Phase 68 complete and published (SP-602, SP-605, SP-619–622 → v2.4.0).** PRD: [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md). Deferred: #160, #135, #127–#120, #124–#121, #43.
+**Phase 68 complete and published (SP-602, SP-605, SP-619–622 → v2.4.0).** PRD: [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md). Deferred into Phase 69: #121–#123 gate maturity; still deferred: #160, #135, #127, #124, #120, #43.
+
+### Phase 69 — v2.5.0 gate maturity (SP-REL250)
+
+**PRD:** [`docs/PRD-v2.5.0-gate-maturity-handoff.md`](../docs/PRD-v2.5.0-gate-maturity-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.5.0/manifest.md`](_authoring/release-v2.5.0/manifest.md)  
+**Explore:** [`spine-tasks/_explore/v2.5-gate-maturity/findings.md`](_explore/v2.5-gate-maturity/findings.md)  
+**Operator approved scope:** yes (2026-07-12). Theme: #121 targetRevision + #122 structured blockers + #123 postures (6×S). Profile audit: PASS with operator override (3 enh).
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-623 | Persist targetRevision | Pending | — | Partial #121 |
+| SP-624 | Validate targetRevision | Pending | SP-623 | Closes #121 |
+| SP-625 | BlockerCode types | Pending | — | Partial #122 |
+| SP-626 | Wire structured blockers | Pending | SP-625, SP-624 | Closes #122 |
+| SP-627 | DEFAULT_POSTURES | Pending | — | Partial #123 |
+| SP-628 | Posture evaluator | Pending | SP-627 | Partial #123 |
+| SP-629 | Posture config load | Pending | SP-627 | Partial #123 |
+| SP-630 | Stamp category on open | Pending | SP-624, SP-627 | Partial #123 |
+| SP-631 | Approval streak counters | Pending | SP-629 | Partial #123 |
+| SP-632 | Wire evaluator to approve | Pending | SP-628, SP-630, SP-631 | Closes #123 |
+| SP-633 | Runbook gate maturity | Pending | SP-624, SP-626, SP-632 | — |
+| SP-634 | CONTEXT Phase 69 capstone | Pending | SP-623–633 | — |
+
+```bash
+spine tasks validate SP-623 SP-624 SP-625 SP-626 SP-627 SP-628 SP-629 SP-630 SP-631 SP-632 SP-633 SP-634
+spine plan SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-631,SP-632,SP-633,SP-634
+spine run sequence SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-631,SP-632,SP-633,SP-634 --dry-run
+```
+
+**Wave plan:** Wave 0 SP-623/625/627; Wave 1 SP-624/628/629; Wave 2 SP-626/631; Wave 3 SP-630; Wave 4 SP-632; Wave 5 SP-633; Cap SP-634.
+
+**Phase 69 exit criteria (PRD §9):**
+
+- [ ] #121 closed — targetRevision persist + validate
+- [ ] #122 closed — structured blockers
+- [ ] #123 closed — postures with locked defaults
+- [ ] Runbook gate maturity (SP-633)
+- [ ] CONTEXT Phase 69 complete; Next Task ID → SP-635
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.5.0 published** — `npm version minor` (operator-gated)
+
+**Explore complete:** `v2.5-gate-maturity` (2026-07-12) — [`_explore/v2.5-gate-maturity/findings.md`](_explore/v2.5-gate-maturity/findings.md).
+
+**Phase 69 staged (SP-623–634 packets authored; not yet executed).** Deferred after this release: #160, #135, #127, #124, #120, #43.
 
 ---
 
