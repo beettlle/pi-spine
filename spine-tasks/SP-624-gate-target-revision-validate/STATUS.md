@@ -1,7 +1,7 @@
 # SP-624: Validate targetRevision on gate use — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
-- [ ] Must Update docs modified (if any)
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified (if any) — none required
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -53,3 +53,4 @@ _None._
 - Full suite: 2016 pass / 0 fail (worker nest env cleared)
 - Coverage: 88.89% line (threshold 77%)
 - Must Update: none; Check If Affected runbook deferred to SP-633
+- Completion: stale revision blocks integrate; matching pin allows approved gate path (#121)
