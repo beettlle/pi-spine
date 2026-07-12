@@ -1113,6 +1113,38 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 
 After abort, salvage lists lanes whose task branches have commits ahead of base when the task reached terminal-success / lane `.DONE` — even if journal status cache disagrees (SP-614 / [#196](https://github.com/beettlle/pi-spine/issues/196)). Do not assume "no salvageable commits" means the lane branch is empty; re-check with `salvage --dry-run` and `git log main..<lane-task-branch>`.
 
+### Force-resume from batch-meta after abort limbo (#126)
+
+When **`batch-state.json` is missing or corrupt** after abort, crash, or cleanup limbo — but the batch may still be recoverable — prefer reconstructing from survival **`batch-meta.json`** rather than hand-editing state or cold-starting (**Closes** path for [#126](https://github.com/beettlle/pi-spine/issues/126); SP-619 persist / SP-620 reconstruct).
+
+**Artifact:** `.spine/runtime/{batchId}/batch-meta.json` (written at batch start). It holds wave topology (`baseBranch`, `orchBranch`, `totalWaves`, `mode`, `tasksRoot`, wave→task mapping) so force-resume can rebuild usable live state.
+
+**Ordered path:**
+
+1. **Locate meta** — confirm survival artifact exists:
+   ```bash
+   ls .spine/runtime/*/batch-meta.json
+   # or, for a known batch:
+   cat .spine/runtime/<batchId>/batch-meta.json
+   ```
+2. **Detached force-resume** — rebuild state from meta + surviving journal/archive, then continue:
+   ```bash
+   spine batch resume --force          # detached — never background --attached from agents
+   ```
+   Prefer detached (see [Detached-first policy](#detached-first-policy-default); [#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)). Do **not** pass `--attached` from Cursor Agent, pi workers, or CI shells.
+3. **Diagnose** — `spine status --diagnose`. Expect reconstructed progress toward `needs_integrate` / gate open, clearer retry, or a terminal phase. Follow `suggestedCommand`.
+4. **Integrate or salvage** — when lanes already succeeded: open/approve integrate gate and `spine integrate`, or after a deliberate abort use [Batch abort recovery (salvage)](#batch-abort-recovery-salvage). For dead-engine / `phase=running` drift with intact live state, use [Agent-safe state_drift recovery (#196)](#agent-safe-state_drift-recovery-196) first — batch-meta reconstruct is for **missing/corrupt** live state.
+
+```bash
+ls .spine/runtime/*/batch-meta.json
+spine batch resume --force          # detached reconstruct + resume
+spine status --diagnose             # confirm next step (integrate / retry / salvage)
+```
+
+**Fail-closed:** If `batch-meta.json` is **missing**, **corrupt**, **ambiguous** (multiple runtime metas with no batch id), or **wavePlan conflicts** with archive/journal topology, `resume --force` exits with a clear error and does **not** guess a wave. Inspect `.spine/runtime/`, remove stale runtime dirs or identify the correct `batchId`, then retry — or abandon via dismiss / salvage only the lanes you can prove succeeded. Prefer a loud failure over silently resuming the wrong wave.
+
+**Related:** journal `batch.state_reconstructed` after a successful reconstruct; never hand-edit `.spine/batch-state.json` (orphan recovery tree step 4).
+
 ### Agent-safe state_drift recovery (#196)
 
 When an agent/non-TTY shell hits **`state_drift`** after engine SIGTERM (dead `enginePid`, cache still `phase=running`, lane `.DONE` / terminal-success evidence), recover **detached-first**. Do **not** background `spine batch resume --attached` — agent harnesses refuse or orphan attached engines ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185); see [Detached-first policy](#detached-first-policy-default)).
