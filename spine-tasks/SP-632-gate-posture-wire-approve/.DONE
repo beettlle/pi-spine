@@ -1,0 +1,1 @@
+SP-632 complete: evaluateGatePosture wired into approve/land-loop; decidedBy auto vs human; locked defaults; destroy/auth never auto; sequence-safety coexistence preserved. Closes #123.

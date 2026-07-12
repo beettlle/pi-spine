@@ -27,6 +27,13 @@ import { resolveGateTargetRevision, validateGateTargetRevision } from "./gate-re
 import { appendJournalEvent } from "./journal.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
 
+export {
+	approveIntegrateGate,
+	hasExplicitCategoryPostureOptIn,
+	maybeAutoApproveIntegrateGate,
+	rejectIntegrateGate,
+} from "./gate-posture-approve.mjs";
+
 /** @typedef {import("./gate-posture-defaults.mjs").GateCategory} GateCategory */
 
 /**
@@ -190,123 +197,6 @@ export function openIntegrateGateAfterBatchComplete(ctx) {
 	return {
 		skipped: false,
 		...openIntegrateGate({ projectRoot, batchId, batchState, config }),
-	};
-}
-
-/**
- * @param {object} ctx
- * @param {string} ctx.projectRoot
- * @param {string} ctx.batchId
- */
-export function approveIntegrateGate(ctx) {
-	const { projectRoot, batchId } = ctx;
-	const gate = loadGateRecord(projectRoot, batchId);
-
-	if (!gate) {
-		const error = "No integrate gate found for this batch";
-		return {
-			ok: false,
-			exitCode: 1,
-			error,
-			headline: "Cannot approve — gate not opened",
-			suggestedCommand: "spine status --diagnose",
-			blockers: [makeBlocker("missing_gate", error)],
-		};
-	}
-
-	if (gate.status === "approved") {
-		return { ok: true, exitCode: 0, gate, headline: "Integrate gate already approved", alreadyDecided: true };
-	}
-
-	if (gate.status === "rejected") {
-		const error = "Gate was rejected — reopen batch evidence or start a new gate cycle";
-		return {
-			ok: false,
-			exitCode: 1,
-			error,
-			headline: "Cannot approve a rejected gate",
-			suggestedCommand: "spine gate status",
-			gate,
-			blockers: [makeBlocker("gate_rejected", error)],
-		};
-	}
-
-	gate.status = "approved";
-	gate.decidedAt = new Date().toISOString();
-	gate.decidedBy = "human";
-	saveGateRecord(projectRoot, gate);
-
-	appendJournalEvent(projectRoot, batchId, "gate.approved", {
-		gateId: gate.gateId,
-		kind: gate.kind,
-		status: gate.status,
-	});
-
-	return {
-		ok: true,
-		exitCode: 0,
-		gate,
-		headline: "Integrate gate approved",
-		suggestedCommand: "spine integrate",
-		alternatives: ["/spine-integrate"],
-	};
-}
-
-/**
- * @param {object} ctx
- * @param {string} ctx.projectRoot
- * @param {string} ctx.batchId
- * @param {string} [ctx.reason]
- */
-export function rejectIntegrateGate(ctx) {
-	const { projectRoot, batchId, reason } = ctx;
-	const gate = loadGateRecord(projectRoot, batchId);
-
-	if (!gate) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "No integrate gate found for this batch",
-			headline: "Cannot reject — gate not opened",
-			suggestedCommand: "spine status --diagnose",
-		};
-	}
-
-	if (gate.status === "rejected") {
-		return { ok: true, exitCode: 0, gate, headline: "Integrate gate already rejected", alreadyDecided: true };
-	}
-
-	if (gate.status === "approved") {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "Gate already approved",
-			headline: "Cannot reject an approved gate",
-			suggestedCommand: "spine integrate",
-			gate,
-		};
-	}
-
-	gate.status = "rejected";
-	gate.decidedAt = new Date().toISOString();
-	gate.decidedBy = "human";
-	if (reason) gate.rejectionReason = reason;
-	saveGateRecord(projectRoot, gate);
-
-	appendJournalEvent(projectRoot, batchId, "gate.rejected", {
-		gateId: gate.gateId,
-		kind: gate.kind,
-		status: gate.status,
-		reason: reason ?? null,
-	});
-
-	return {
-		ok: true,
-		exitCode: 0,
-		gate,
-		headline: "Integrate gate rejected",
-		suggestedCommand: "spine status --diagnose",
-		alternatives: ["/spine-gate status"],
 	};
 }
 

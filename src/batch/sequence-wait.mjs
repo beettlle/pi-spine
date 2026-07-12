@@ -5,7 +5,7 @@
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_SEQUENCE_POLL_MS } from "../config/spine-config-schema.mjs";
 import { isProcessAlive } from "../process/liveness.mjs";
-import { approveIntegrateGate, loadGateRecord } from "./gate.mjs";
+import { approveIntegrateGate, loadGateRecord, maybeAutoApproveIntegrateGate } from "./gate.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
 import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
@@ -127,7 +127,14 @@ export function runSequenceWaveLandLoop({ projectRoot, batchId, autoApproveGate 
 	const gate = activeBatchId ? loadGateRecord(projectRoot, activeBatchId) : null;
 
 	if (gateRequired && gate?.status === "pending") {
-		if (!autoApproveGate) {
+		const postureAuto = maybeAutoApproveIntegrateGate({
+			projectRoot,
+			batchId: activeBatchId,
+			config,
+		});
+		if (postureAuto.approved) {
+			// Posture opt-in allowed auto-approve; continue to integrate.
+		} else if (!autoApproveGate) {
 			return {
 				ok: false,
 				step: "gate_approve",
@@ -136,11 +143,18 @@ export function runSequenceWaveLandLoop({ projectRoot, batchId, autoApproveGate 
 				batchId: activeBatchId,
 				headline: "Integrate gate requires approval — pass autoApproveGate or approve manually",
 				suggestedCommand: "spine gate approve",
+				postureEvaluation: postureAuto.evaluation ?? null,
 			};
-		}
-		const approve = approveIntegrateGate({ projectRoot, batchId: activeBatchId });
-		if (!approve.ok) {
-			return { ok: false, step: "gate_approve", diagnosis, batchId: activeBatchId, ...approve };
+		} else {
+			// Blunt --auto-approve-gate path (still gated by validateSequenceAutoApproveGate upstream).
+			const approve = approveIntegrateGate({
+				projectRoot,
+				batchId: activeBatchId,
+				decidedBy: "auto",
+			});
+			if (!approve.ok) {
+				return { ok: false, step: "gate_approve", diagnosis, batchId: activeBatchId, ...approve };
+			}
 		}
 	}
 
