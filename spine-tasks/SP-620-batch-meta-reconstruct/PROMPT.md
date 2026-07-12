@@ -50,7 +50,7 @@ Closes #126 — On `spine batch resume --force` after abort (or when live `batch
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-meta-reconstruct.test.mjs` |
-| fileScopeMustChange | `src/batch/batch-meta.mjs`, `tests/batch/batch-meta-reconstruct.test.mjs` |
+| fileScopeMustChange | `tests/batch/batch-meta-reconstruct.test.mjs`, `src/batch/resume.mjs` |
 
 ## Steps
 
@@ -101,3 +101,7 @@ Closes #126 — On `spine batch resume --force` after abort (or when live `batch
 ## Git Commit Convention
 
 - `feat(SP-620): reconstruct batch state from batch-meta on force-resume`
+
+## Amendments
+
+- Pre-landed redirect (2026-07-11): dropped `src/batch/batch-meta.mjs` from `fileScopeMustChange` — already landed by SP-619. Delivery proof is reconstruct test + `resume.mjs` wiring.
