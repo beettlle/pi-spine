@@ -5,11 +5,14 @@ import path from "node:path";
 import { applyEnvOverrides } from "./env-overrides.mjs";
 import { applyConfigDefaults } from "./merge-defaults.mjs";
 import { validateContractConfig } from "./contract.mjs";
+import { resolveGatePostureConfig } from "./gate-posture-config.mjs";
 import { validateWorkerBackendConfig } from "./worker-backend.mjs";
 import { validateWorkerContextConfig } from "./worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "./worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "./worktree-setup-hook.mjs";
 import { validateOrchestratorConfig } from "./spine-config-schema.mjs";
+
+export { resolveGatePostureConfig } from "./gate-posture-config.mjs";
 
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
@@ -107,10 +110,14 @@ export function loadSpineConfig(projectRoot) {
 		};
 	}
 
+	// Soft attach: posture merge fails closed inside the helper and never rejects load.
+	const gatePostureConfig = resolveGatePostureConfig(envResult.config);
+
 	return {
 		configPath: fileResult.configPath,
 		config: envResult.config,
 		fileConfig: config,
+		gatePostureConfig,
 		sources: envResult.sources,
 		envVars: envResult.envVars,
 		error: null,
