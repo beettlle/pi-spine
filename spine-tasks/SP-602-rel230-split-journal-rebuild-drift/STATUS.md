@@ -1,6 +1,6 @@
 # SP-602: Extract journal-rebuild-drift.mjs — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-11
 **Review Level:** 1
@@ -18,13 +18,17 @@
 - [x] Preserve all public exports via re-export
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] `node --test tests/batch/done-marker-fail-closed.test.mjs`
-- [ ] `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+**Status:** ✅ Complete
+- [x] `node --test tests/batch/done-marker-fail-closed.test.mjs` — 4/4 pass
+- [x] `npm run typecheck && SPINE_WORKER_STUB=1 npm test` — typecheck pass; 1985/1985 pass
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Create `.DONE`
+
+## Completion Criteria
+
+- [x] `journal-rebuild.mjs` ≤500 LOC (28); API unchanged via re-export
 
 ## Notes
 
@@ -33,4 +37,5 @@
 - GitNexus impact: CRITICAL upstream on detectBatchStateDrift / reconcileBatchStateDrift — expected for refactor-only re-export split (same as SP-584)
 - Amendment: delivery proof is new `journal-rebuild-drift.mjs`
 - Plan review: skipped (real-pi; engine reviews after `.DONE`)
-- Targeted tests: done-marker + journal-rebuild-drift + journal-rebuild — 10/10 pass
+- Commit Step 1: `207ecb95` feat(SP-602): complete Step 1
+- Verification: done-marker 4/4; typecheck ok; full suite 1985 pass (SPINE_IS_WORKER unset for suite)
