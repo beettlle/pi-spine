@@ -1,7 +1,7 @@
 # SP-628: Pure posture evaluation cascade — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟢 Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -22,28 +22,35 @@
 - [x] Exhaustive unit tests for each tier
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
-- [ ] Run contract `testCommand`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run contract `testCommand`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified (if any)
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified (if any) — none required
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] Pure evaluator covered by unit tests
 
 ## Discoveries & Decisions
 
 | Discovery | Decision |
 |-----------|----------|
 | Babysitter `evaluator.ts` is upstream reference (#123) | Adapt 5-tier cascade to pi-spine: pure input (no rule pattern engine); use SP-627 postures/`LOCKED_CATEGORIES`; `autoApproveAfterN===0` = immediate auto |
-| Real-pi worker (`SPINE_WORKER_RUNNER` set, stub unset) | `spine_review_step` expected to skip; engine reviews after `.DONE` |
-| GitNexus impact on LOCKED_CATEGORIES | Index stale/missing (UNKNOWN); new module has blast radius 0 until SP-632 wires it |
+| Real-pi worker (`SPINE_WORKER_RUNNER` set, stub unset) | `spine_review_step` skipped; engine reviews after `.DONE` |
+| Full `npm test` with `SPINE_IS_WORKER=1` inherited | 43 failures all `nested_batch_spawn_blocked`; re-ran with `env -u SPINE_IS_WORKER` → 2030/2030 pass |
+| Coverage | Line coverage 89.04% (threshold 77%) |
 
-## Plan (Step 1)
+## Verification evidence
 
-Pure `evaluateGatePosture(input)` — cascade: locked → never-auto → alwaysBreakOn → immediate (N=0) → streak ≥ N. Implemented; contract tests 19/19 pass.
+- Contract: typecheck + 19/19 `gate-posture-evaluate` tests
+- Full suite: 2030 pass / 0 fail (worker nest env cleared for spawn tests)
+- Coverage: 89.04% lines
 
 ## Blockers
 
