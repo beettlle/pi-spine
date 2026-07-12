@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Structural batch-state derivation from journal events (FR-REL-01/02, FR-SHIP-10).
- * Drift reconcile lives in journal-rebuild.mjs until SP-602.
+ * Drift reconcile lives in journal-rebuild-drift.mjs (SP-602); public API via journal-rebuild.mjs.
  */
 
 import { readJournalEvents, STRUCTURAL_JOURNAL_EVENT_TYPES } from "./journal.mjs";
