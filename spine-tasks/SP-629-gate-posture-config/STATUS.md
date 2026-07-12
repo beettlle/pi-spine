@@ -1,7 +1,7 @@
 # SP-629: Load gate postures from spine-config — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -22,24 +22,29 @@
 - [x] Unit tests for missing, valid, and invalid config
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
-- [ ] Run contract `testCommand`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run contract `testCommand`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified (if any)
+**Status:** ✅ Complete
+- [x] Must Update docs modified (if any)
 - [ ] Create `.DONE`
+
+## Completion Criteria
+
+- [x] Config helper ready for stamp/wire tasks
 
 ## Discoveries & Decisions
 
 | Discovery | Decision |
 |-----------|----------|
 | `loadSpineConfig` impact is CRITICAL | Soft-attach `gatePostureConfig` on successful load; never reject load for posture errors |
-| SP-627 defaults present + `.DONE` | Dependency satisfied |
-| Schema: `gates.postures` + `gates.alwaysBreakOn` | Per-category overlay; `alwaysBreakOn` under `gates` or `gates.postures` |
+| Full suite under worker inherits `SPINE_IS_WORKER=1` | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` — 2025 pass / 0 fail |
+| Coverage | 88.91% line (threshold 77%) |
+| `templates/spine-config.json` | Left unchanged — optional keys; defaults fail closed without template docs |
 | Plan review | skipped (real-pi engine post-.DONE) |
 
 ## Blockers
