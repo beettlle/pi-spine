@@ -1,7 +1,7 @@
 # SP-623: Persist targetRevision on gate open — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 - [x] Must Update docs modified (if any)
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -44,11 +44,10 @@
 | Full suite under worker env | Unset `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` for suite and coverage (nested batch guard) |
 | Coverage | 88.84% line (threshold 77%) |
 
-## Plan (Step 1)
+## Completion Criteria
 
-1. Add `resolveGateTargetRevision(projectRoot, batchState)` in `src/batch/gate-revision.mjs` using `gitExec` + `rev-parse --verify` on `orchBranch`; throw if missing/unreadable.
-2. Call helper in `openIntegrateGate` before first `saveGateRecord`; set `gate.targetRevision`.
-3. Add `tests/batch/gate-target-revision-persist.test.mjs` asserting field after open + fail-closed paths.
+- [x] Gate records include `targetRevision` after open
+- [x] Regression test covers persist path
 
 ## Blockers
 
