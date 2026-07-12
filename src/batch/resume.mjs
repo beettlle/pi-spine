@@ -9,6 +9,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
+import { ensureForceResumeBatchState } from "./batch-meta.mjs";
 import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
@@ -39,6 +40,7 @@ import { recordTaskFailureSalvage } from "./salvage.mjs";
 
 export { pauseBatch } from "./pause.mjs";
 export { validateResumeBatch } from "./resume-single-validate.mjs";
+export { ensureForceResumeBatchState } from "./batch-meta.mjs";
 
 /**
  * @param {object} params
@@ -51,6 +53,28 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		return engineLock;
 	}
 	const releaseResumeLock = engineLock.releaseResumeLock;
+
+	// Reconstruct live batch-state from batch-meta before validation when force-resuming
+	// after missing/corrupt state (SP-620 / #126). Idempotent when state already exists.
+	if (force) {
+		const ensured = ensureForceResumeBatchState(projectRoot, { force: true });
+		if (!ensured.ok && ensured.attempted) {
+			releaseResumeLock?.();
+			return {
+				ok: false,
+				exitCode: ensured.exitCode ?? 1,
+				error: ensured.error ?? "batch_meta_reconstruct_failed",
+				output: ensured.output ?? "Failed to reconstruct batch state from batch-meta.\n",
+			};
+		}
+		if (ensured.ok && ensured.attempted && ensured.batchId) {
+			appendJournalEvent(projectRoot, ensured.batchId, "batch.state_reconstructed", {
+				reason: ensured.reason ?? "missing",
+				source: ensured.reconstructedFrom ?? "batch-meta",
+				resumeForced: true,
+			});
+		}
+	}
 
 	const resumeCheck = validateResumeBatch({ projectRoot, force });
 	if (!resumeCheck.ok) {
