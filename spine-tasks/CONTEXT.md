@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-11 (Phase 68 v2.4.0 tasks authored; Next → SP-623)
+**Last Updated:** 2026-07-11 (Phase 68 v2.4.0 recovery continuity complete; Next → SP-623)
 **Status:** Active
 **Next Task ID:** SP-623
 
@@ -1869,12 +1869,12 @@ spine run sequence SP-613,SP-614,SP-615,SP-616,SP-617,SP-618
 
 | Task | Summary | Status | Deps | Issue |
 |------|---------|--------|------|-------|
-| SP-602 | Extract journal-rebuild-drift | Pending | SP-584 | partial #117 |
-| SP-605 | Extract salvage-batch-integrate | Pending | SP-591 | partial #117 |
-| SP-619 | Persist batch-meta.json | Pending | — | Partial #126 |
-| SP-620 | Reconstruct on force-resume | Pending | SP-619 | Closes #126 |
-| SP-621 | Runbook batch-meta recovery | Pending | SP-620 | — |
-| SP-622 | CONTEXT Phase 68 capstone | Pending | SP-602,605,619–621 | — |
+| SP-602 | Extract journal-rebuild-drift | Done | SP-584 | partial #117 |
+| SP-605 | Extract salvage-batch-integrate | Done | SP-591 | partial #117 |
+| SP-619 | Persist batch-meta.json | Done | — | Partial #126 |
+| SP-620 | Reconstruct on force-resume | Done | SP-619 | Closes #126 |
+| SP-621 | Runbook batch-meta recovery | Done | SP-620 | — |
+| SP-622 | CONTEXT Phase 68 capstone | Done | SP-602,605,619–621 | — |
 
 ```bash
 spine tasks validate SP-602 SP-605 SP-619 SP-620 SP-621 SP-622
@@ -1886,14 +1886,14 @@ spine run sequence SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
 
 **Phase 68 exit criteria (PRD §9):**
 
-- [ ] #126 closed — batch-meta persist + force-resume reconstruct
-- [ ] SP-602 / SP-605 `.DONE` — LOC leftover splits
-- [ ] Runbook batch-meta recovery (SP-621)
-- [ ] CONTEXT Phase 68 complete; Next Task ID → SP-623
+- [x] #126 closed — batch-meta persist + force-resume reconstruct (SP-619–620 landed)
+- [x] SP-602 / SP-605 `.DONE` — LOC leftover splits
+- [x] Runbook batch-meta recovery (SP-621)
+- [x] CONTEXT Phase 68 complete; Next Task ID → SP-623
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] `npm version minor` → v2.4.0 published (operator-gated)
 
-**Phase 68 packets authored (SP-602, SP-605, SP-619–622).** Awaiting batch execution. Deferred: #160, #135, #127–#120, #124–#121, #43.
+**Phase 68 implementation complete (SP-602, SP-605, SP-619–622).** Publish (`npm version minor` → v2.4.0) remains operator-gated. PRD: [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md). Deferred: #160, #135, #127–#120, #124–#121, #43.
 
 ---
 
