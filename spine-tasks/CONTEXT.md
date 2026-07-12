@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-12 (Phase 69 v2.5.0 gate maturity complete; Next → SP-635)
+**Last Updated:** 2026-07-12 (Phase 70 v2.6.0 consumer resume staged; Next → SP-643 after capstone)
 **Status:** Active
-**Next Task ID:** SP-635
+**Next Task ID:** SP-643
 
 ---
 
@@ -1939,7 +1939,42 @@ spine run sequence SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-63
 
 **Release note (placeholder — fill on publish):** v2.5.0 — Gate maturity: targetRevision pinning (#121), structured blocker codes (#122), category postures with locked defaults (#123).
 
-**Phase 69 implementation complete (SP-623–634 → v2.5.0 pending publish).** PRD: [`docs/PRD-v2.5.0-gate-maturity-handoff.md`](../docs/PRD-v2.5.0-gate-maturity-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.5.0/manifest.md`](_authoring/release-v2.5.0/manifest.md). Deferred backlog (next release): #160, #135, #127, #124, #120, #43.
+**Phase 69 implementation complete (SP-623–634 → v2.5.0 pending publish).** PRD: [`docs/PRD-v2.5.0-gate-maturity-handoff.md`](../docs/PRD-v2.5.0-gate-maturity-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.5.0/manifest.md`](_authoring/release-v2.5.0/manifest.md). Deferred backlog picked up in Phase 70: #197–#200 bugs + #160 Phase A; still deferred: #160 B/C, #135, #127, #124, #120, #43.
+
+### Phase 70 — v2.6.0 consumer reliability + resume lifecycle (SP-REL260)
+
+**PRD:** [`docs/PRD-v2.6.0-consumer-resume-handoff.md`](../docs/PRD-v2.6.0-consumer-resume-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.6.0/manifest.md`](_authoring/release-v2.6.0/manifest.md)  
+**Status:** Staged for batch (`spine batch start pending`)
+
+| Task | Summary | Status | Deps | Closes |
+|------|---------|--------|------|--------|
+| SP-635 | Resume eligibility terminal class | Pending | — | #197 |
+| SP-636 | Resume post-integrate finalize | Pending | — | Partial #198 |
+| SP-637 | Resume engine limbo diagnose | Pending | SP-636 | #198 |
+| SP-638 | Evidence allow venv python | Pending | — | #199 |
+| SP-639 | Evidence scripts/ executor | Pending | SP-638 | Partial #160 |
+| SP-640 | Lane commit ignore hook .venv | Pending | — | #200 |
+| SP-641 | Runbook v2.6.0 consumer resume | Pending | SP-635,637,638,640 | — |
+| SP-642 | CONTEXT Phase 70 capstone | Pending | SP-635–641 | — |
+
+```bash
+spine tasks validate pending
+spine plan pending
+spine batch start pending
+```
+
+**Wave plan:** Wave 0 SP-635/636/638/640; Wave 1 SP-637/639; Wave 2 SP-641; Cap SP-642.
+
+**Phase 70 exit criteria (PRD §9):**
+
+- [ ] #197–#200 closed
+- [ ] #160 Phase A shipped
+- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-643
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.6.0 published** — `npm version minor` (operator-gated)
+
+**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A).
 
 ---
 
