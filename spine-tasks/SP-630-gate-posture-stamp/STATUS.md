@@ -1,7 +1,7 @@
 # SP-630: Stamp category on gate open — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 — Documentation & Delivery (complete)
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,26 +11,41 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] (see PROMPT.md)
+**Status:** ✅ Complete
+- [x] Required files and paths exist
+- [x] Dependencies satisfied
 
 ### Step 1: Stamp category on open
-**Status:** ⬜ Not Started
-- [ ] (see PROMPT.md)
+**Status:** ✅ Complete
+- [x] Set `gate.category` on open using defaults/config mapping
+- [x] Default remains locked posture (no auto-approve side effect)
+- [x] Unit test asserts category present and status still pending
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] (see PROMPT.md)
+**Status:** ✅ Complete
+- [x] Run contract `testCommand`
+- [x] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [x] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] (see PROMPT.md)
+**Status:** ✅ Complete
+- [x] Must Update docs modified (if any) — none required
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
-_None yet._
+| Decision | Rationale |
+|----------|-----------|
+| Default integrate category = `execute` | Explore v2.5-gate-maturity: execute/write mapped to locked until config opts in |
+| Optional override via `gates.integrateCategory` | Valid GateCategory only; unknown → fail closed to `execute` |
+| No auto-approve in this task | Status stays `pending`; SP-632 wires evaluator |
+| Full suite under worker inherits `SPINE_IS_WORKER=1` | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` — 2071 pass / 0 fail |
 
 ## Blockers
 
 _None._
 
+## Completion Criteria
+
+- [x] Gate records include category; still pending/manual by default
