@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-11 (Phase 67 v2.3.2 published; Next → SP-619)
+**Last Updated:** 2026-07-11 (Phase 68 v2.4.0 tasks authored; Next → SP-623)
 **Status:** Active
-**Next Task ID:** SP-619
+**Next Task ID:** SP-623
 
 ---
 
@@ -1859,7 +1859,41 @@ spine run sequence SP-613,SP-614,SP-615,SP-616,SP-617,SP-618
 - [x] `npm run release:check` green on publish HEAD (operator publish gate)
 - [x] **v2.3.2 published** — tag `v2.3.2`, npm `pi-spine@2.3.2` (2026-07-11); issues #196/#193 closed
 
-**Phase 67 complete and published (SP-613–618 → v2.3.2).** PRD: [`docs/PRD-v2.3.2-state-drift-recovery-handoff.md`](../docs/PRD-v2.3.2-state-drift-recovery-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md). Deferred: #160, #135, #127–#120, #124–#126, #43; SP-602/SP-605.
+**Phase 67 complete and published (SP-613–618 → v2.3.2).** PRD: [`docs/PRD-v2.3.2-state-drift-recovery-handoff.md`](../docs/PRD-v2.3.2-state-drift-recovery-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.3.2/manifest.md`](_authoring/release-v2.3.2/manifest.md). Deferred into Phase 68: #126 + SP-602/SP-605; still deferred: #160, #135, #127–#120, #124–#121, #43.
+
+### Phase 68 — v2.4.0 recovery continuity / batch-meta (SP-REL240)
+
+**PRD:** [`docs/PRD-v2.4.0-recovery-batch-meta-handoff.md`](../docs/PRD-v2.4.0-recovery-batch-meta-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.4.0/manifest.md`](_authoring/release-v2.4.0/manifest.md)  
+**Operator approved scope:** yes (2026-07-11). Theme: #126 batch-meta force-resume + finish SP-602/SP-605.
+
+| Task | Summary | Status | Deps | Issue |
+|------|---------|--------|------|-------|
+| SP-602 | Extract journal-rebuild-drift | Pending | SP-584 | partial #117 |
+| SP-605 | Extract salvage-batch-integrate | Pending | SP-591 | partial #117 |
+| SP-619 | Persist batch-meta.json | Pending | — | Partial #126 |
+| SP-620 | Reconstruct on force-resume | Pending | SP-619 | Closes #126 |
+| SP-621 | Runbook batch-meta recovery | Pending | SP-620 | — |
+| SP-622 | CONTEXT Phase 68 capstone | Pending | SP-602,605,619–621 | — |
+
+```bash
+spine tasks validate SP-602 SP-605 SP-619 SP-620 SP-621 SP-622
+spine plan SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
+spine run sequence SP-602,SP-605,SP-619,SP-620,SP-621,SP-622
+```
+
+**Wave plan:** Wave 0 parallel SP-602, SP-605, SP-619; Wave 1 SP-620; Wave 2 SP-621; Cap SP-622.
+
+**Phase 68 exit criteria (PRD §9):**
+
+- [ ] #126 closed — batch-meta persist + force-resume reconstruct
+- [ ] SP-602 / SP-605 `.DONE` — LOC leftover splits
+- [ ] Runbook batch-meta recovery (SP-621)
+- [ ] CONTEXT Phase 68 complete; Next Task ID → SP-623
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] `npm version minor` → v2.4.0 published (operator-gated)
+
+**Phase 68 packets authored (SP-602, SP-605, SP-619–622).** Awaiting batch execution. Deferred: #160, #135, #127–#120, #124–#121, #43.
 
 ---
 

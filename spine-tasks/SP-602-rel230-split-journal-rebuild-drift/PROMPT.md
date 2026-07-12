@@ -31,7 +31,7 @@ Extract `journal-rebuild-drift.mjs` — `reconcileBatchStateDrift`, `detectBatch
 | Field | Value |
 |-------|-------|
 | testCommand | `node --test tests/batch/done-marker-fail-closed.test.mjs` |
-| fileScopeMustChange | `src/batch/journal-rebuild-drift.mjs`, `src/batch/journal-rebuild.mjs` |
+| fileScopeMustChange | `src/batch/journal-rebuild-drift.mjs` |
 
 ## Steps
 
@@ -64,3 +64,7 @@ Extract `journal-rebuild-drift.mjs` — `reconcileBatchStateDrift`, `detectBatch
 ## Do NOT
 
 - Edit `bin/spine-cli/verify.mjs`
+
+## Amendments
+
+- Pre-landed redirect (2026-07-11): `fileScopeMustChange` narrowed to `src/batch/journal-rebuild-drift.mjs` only — `journal-rebuild.mjs` already changed on main after v2.3.2 reliability work; new extract file remains the delivery proof.

@@ -31,7 +31,7 @@ Extract `salvage-batch-integrate.mjs` — `integrateSalvageableLane`, `confirmSa
 | Field | Value |
 |-------|-------|
 | testCommand | `node --test tests/batch/batch-salvage-integrate.test.mjs` |
-| fileScopeMustChange | `src/batch/salvage-batch-integrate.mjs`, `src/batch/salvage-batch.mjs` |
+| fileScopeMustChange | `src/batch/salvage-batch-integrate.mjs` |
 
 ## Steps
 
@@ -64,3 +64,7 @@ Extract `salvage-batch-integrate.mjs` — `integrateSalvageableLane`, `confirmSa
 ## Do NOT
 
 - Edit `bin/spine-cli/verify.mjs`
+
+## Amendments
+
+- Pre-landed redirect (2026-07-11): `fileScopeMustChange` narrowed to `src/batch/salvage-batch-integrate.mjs` only — `salvage-batch.mjs` already changed on main after v2.3.2 salvage work; new extract file remains the delivery proof.
