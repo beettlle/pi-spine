@@ -35,25 +35,23 @@
 
 ### Step 3: Documentation & Delivery
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
 ### Step 0 plan
 
-- No `batch-meta` module exists today.
-- Topology is known in `startBatch` (`engine.mjs`) right after `createInitialBatchState`.
-- Detached start spawns attached engine → `startBatch`; one persist call covers both.
-- Write path: `.spine/runtime/{batchId}/batch-meta.json` via `writeJsonAtomic`.
-- `mode`: `"batch"` (orchestration kind).
-- Wave→task mapping: `wavePlan`.
+- Topology known in `startBatch` after `createInitialBatchState`.
+- Detached start → attached engine → `startBatch`; one persist covers both.
+- Path: `.spine/runtime/{batchId}/batch-meta.json`.
+- `mode`: `"batch"`; wave→task: `wavePlan`.
 
 ### Step 1 notes
 
 - `src/batch/batch-meta.mjs` — `saveBatchMetaRuntimeArtifact` + `persistBatchMetaFromStartState`.
-- Wired in `engine.mjs` after initial `saveEngineBatchState` (keeps engine ≤500 LOC).
+- Wired in `engine.mjs` after initial `saveEngineBatchState` (engine 499 LOC).
 
 ### Step 2 evidence
 
