@@ -1,7 +1,7 @@
 # SP-632: Wire posture evaluator into approve path — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** 🟡 In Progress
+**Current Step:** Step 1 — Wire evaluator + safety tests
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,15 +11,15 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Required files and paths exist
 - [x] Dependencies satisfied
 
 ### Step 1: Wire evaluator + safety tests
-**Status:** ⬜ Not Started
-- [ ] Call evaluator before/during approve when category/config present
-- [ ] Auto path journals decidedBy auto; locked never auto
-- [ ] Tests: default locked, opted-in auto, release/safety coexistence
+**Status:** ✅ Complete
+- [x] Call evaluator before/during approve when category/config present
+- [x] Auto path journals decidedBy auto; locked never auto
+- [x] Tests: default locked, opted-in auto, release/safety coexistence
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
@@ -40,6 +40,10 @@
 | Explore: integrate category mapped to locked until config opts in | Auto-approve only when `gates.postures[category]` is explicitly present; bare DEFAULT_POSTURES must not unlock integrate |
 | `approveIntegrateGate` GitNexus impact HIGH | Additive `maybeAutoApproveIntegrateGate`; human path keeps `decidedBy: human` |
 | Real-pi worker (`SPINE_WORKER_RUNNER` set) | Engine owns plan/code/final review after `.DONE`; in-worker review skipped |
+
+## Notes
+
+**Step 1:** Added `maybeAutoApproveIntegrateGate` + opt-in helper; land-loop tries posture auto before blunt `--auto-approve-gate`; journal `decidedBy` + streak increment/reset. Contract tests 14/14 pass.
 
 ## Blockers
 
