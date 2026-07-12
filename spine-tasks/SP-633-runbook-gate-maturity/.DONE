@@ -1,0 +1,2 @@
+SP-633 complete — operator-runbook §5.2 gate maturity (#121/#122/#123).
+Tests: typecheck ok; SPINE_WORKER_STUB=1 npm test → 2085 pass / 0 fail (worker env unset for suite).
