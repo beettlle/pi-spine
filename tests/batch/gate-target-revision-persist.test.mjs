@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
@@ -36,8 +37,8 @@ function createOrchWithWork(projectRoot, orchBranch) {
 	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
 }
 
-function orchTipSha(projectRoot, orchBranch) {
-	return execFileSync("git", ["rev-parse", "--verify", `${orchBranch}^{commit}`], {
+function tipSha(projectRoot, ref) {
+	return execFileSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
 		cwd: projectRoot,
 		encoding: "utf-8",
 		stdio: ["ignore", "pipe", "pipe"],
@@ -50,38 +51,38 @@ test("resolveGateTargetRevision returns orch tip SHA", async () => {
 	try {
 		createOrchWithWork(projectRoot, orchBranch);
 		const sha = resolveGateTargetRevision(projectRoot, { orchBranch });
-		assert.equal(sha, orchTipSha(projectRoot, orchBranch));
+		assert.equal(sha, tipSha(projectRoot, orchBranch));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
 });
 
-test("resolveGateTargetRevision fails closed when orchBranch missing", async () => {
+test("resolveGateTargetRevision falls back to HEAD when orch tip unreadable", async () => {
+	const projectRoot = await initGitRepo("spine-gate-rev-fallback-");
+	try {
+		const sha = resolveGateTargetRevision(projectRoot, { orchBranch: "orch/does-not-exist" });
+		assert.equal(sha, tipSha(projectRoot, "HEAD"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("resolveGateTargetRevision falls back to HEAD when orchBranch missing", async () => {
 	const projectRoot = await initGitRepo("spine-gate-rev-miss-");
 	try {
-		assert.throws(
-			() => resolveGateTargetRevision(projectRoot, {}),
-			/orchBranch is missing/,
-		);
-		assert.throws(
-			() => resolveGateTargetRevision(projectRoot, null),
-			/orchBranch is missing/,
-		);
+		const sha = resolveGateTargetRevision(projectRoot, {});
+		assert.equal(sha, tipSha(projectRoot, "HEAD"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
 });
 
-test("resolveGateTargetRevision fails closed when orch tip unreadable", async () => {
-	const projectRoot = await initGitRepo("spine-gate-rev-bad-");
-	try {
-		assert.throws(
-			() => resolveGateTargetRevision(projectRoot, { orchBranch: "orch/does-not-exist" }),
-			/failed to read tip/,
-		);
-	} finally {
-		await destroyGitRepo(projectRoot);
-	}
+test("resolveGateTargetRevision fails closed when no revision is readable", () => {
+	const missingRoot = path.join(os.tmpdir(), `spine-gate-rev-missing-${process.pid}`);
+	assert.throws(
+		() => resolveGateTargetRevision(missingRoot, { orchBranch: "orch/x" }),
+		/failed to read tip/,
+	);
 });
 
 test("openIntegrateGate persists targetRevision on gate record", async () => {
@@ -90,7 +91,7 @@ test("openIntegrateGate persists targetRevision on gate record", async () => {
 	const orchBranch = "orch/spine-rev-persist";
 	try {
 		createOrchWithWork(projectRoot, orchBranch);
-		const expected = orchTipSha(projectRoot, orchBranch);
+		const expected = tipSha(projectRoot, orchBranch);
 		const fixture = completedFixture(batchId, orchBranch);
 		const config = loadSpineConfig(projectRoot).config;
 

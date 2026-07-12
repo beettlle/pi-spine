@@ -7,7 +7,10 @@ import { gitExec } from "./git-exec.mjs";
 
 /**
  * Resolve durable `targetRevision` as the orch tip SHA at gate open.
- * Fail closed when orch branch is missing or unreadable.
+ *
+ * Prefer `batchState.orchBranch` tip via `git rev-parse`. When that tip is
+ * missing or unreadable, fall back to project `HEAD` so the gate still pins a
+ * durable SHA. Fail closed only when no revision can be resolved.
  *
  * @param {string} projectRoot
  * @param {object|null|undefined} batchState
@@ -15,18 +18,29 @@ import { gitExec } from "./git-exec.mjs";
  */
 export function resolveGateTargetRevision(projectRoot, batchState) {
 	const orchBranch = String(batchState?.orchBranch ?? "").trim();
-	if (!orchBranch) {
-		throw new Error("Cannot resolve gate targetRevision: batchState.orchBranch is missing.");
+	if (orchBranch) {
+		const orchSha = gitExec(projectRoot, ["rev-parse", "--verify", `${orchBranch}^{commit}`], {
+			throwOnError: false,
+			projectRoot,
+		});
+		if (orchSha) {
+			return orchSha;
+		}
 	}
 
-	const sha = gitExec(projectRoot, ["rev-parse", "--verify", `${orchBranch}^{commit}`], {
+	// Documented fallback: pin HEAD when orch tip is absent or unreadable.
+	const headSha = gitExec(projectRoot, ["rev-parse", "--verify", "HEAD"], {
 		throwOnError: false,
 		projectRoot,
 	});
-	if (!sha) {
-		throw new Error(
-			`Cannot resolve gate targetRevision: failed to read tip of ${orchBranch}.`,
-		);
+	if (headSha) {
+		return headSha;
 	}
-	return sha;
+
+	if (!orchBranch) {
+		throw new Error("Cannot resolve gate targetRevision: batchState.orchBranch is missing and HEAD is unreadable.");
+	}
+	throw new Error(
+		`Cannot resolve gate targetRevision: failed to read tip of ${orchBranch} and HEAD.`,
+	);
 }
