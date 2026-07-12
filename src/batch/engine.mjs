@@ -15,6 +15,7 @@ import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff
 import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { saveBatchMetaRuntimeArtifact } from "./batch-meta.mjs";
 import { recordBatchBaseSnapshotOnStart } from "./lifecycle.mjs";
 import { adoptPauseIfRequested, saveEngineBatchState } from "./pause.mjs";
 import {
@@ -204,6 +205,18 @@ export async function startBatch({
 
 	recordBatchBaseSnapshotOnStart(projectRoot, state);
 	saveEngineBatchState(projectRoot, state);
+	// Survival topology for force-resume when batch-state is gone (SP-619 / #126).
+	// Detached start spawns this same startBatch path, so one write covers both.
+	saveBatchMetaRuntimeArtifact({
+		projectRoot,
+		batchId,
+		baseBranch,
+		orchBranch,
+		totalWaves: state.totalWaves,
+		mode: "batch",
+		tasksRoot: /** @type {string} */ (tasksRoot),
+		wavePlan: state.wavePlan,
+	});
 
 	try {
 		ensureOrchBranch(projectRoot, baseBranch, orchBranch);
