@@ -1,6 +1,6 @@
 # SP-623: Persist targetRevision on gate open — Status
 
-**Current Step:** Step 0 — Preflight
+**Current Step:** Step 1 — Persist helper + open wiring
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-12
 **Review Level:** 1
@@ -16,10 +16,10 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Persist helper + open wiring
-**Status:** ⬜ Not Started
-- [ ] Add helper to resolve orch tip SHA (or documented fallback) as `targetRevision`
-- [ ] Set `targetRevision` on new gate records in `openIntegrateGate`
-- [ ] Atomic save via existing gate I/O
+**Status:** 🔄 In Progress
+- [x] Add helper to resolve orch tip SHA (or documented fallback) as `targetRevision`
+- [x] Set `targetRevision` on new gate records in `openIntegrateGate`
+- [x] Atomic save via existing gate I/O
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
