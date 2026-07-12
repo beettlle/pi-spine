@@ -44,3 +44,52 @@ export function resolveGateTargetRevision(projectRoot, batchState) {
 		`Cannot resolve gate targetRevision: failed to read tip of ${orchBranch} and HEAD.`,
 	);
 }
+
+/**
+ * Compare a gate's pinned `targetRevision` to the current orch tip (same resolver as open).
+ * Fail closed when the pin is missing or drifts — caller must re-open/re-approve.
+ *
+ * @param {string} projectRoot
+ * @param {object|null|undefined} gate
+ * @param {object|null|undefined} batchState
+ * @returns {{ ok: true, currentRevision: string, pinnedRevision: string } | { ok: false, currentRevision: string|null, pinnedRevision: string, reason: "missing_pin"|"mismatch"|"unreadable", error: string }}
+ */
+export function validateGateTargetRevision(projectRoot, gate, batchState) {
+	const pinnedRevision = String(gate?.targetRevision ?? "").trim();
+	if (!pinnedRevision) {
+		return {
+			ok: false,
+			currentRevision: null,
+			pinnedRevision: "",
+			reason: "missing_pin",
+			error:
+				"Integrate gate has no targetRevision pin — re-open and re-approve before integrating",
+		};
+	}
+
+	let currentRevision;
+	try {
+		currentRevision = resolveGateTargetRevision(projectRoot, batchState);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		return {
+			ok: false,
+			currentRevision: null,
+			pinnedRevision,
+			reason: "unreadable",
+			error: `Cannot verify gate targetRevision: ${message}`,
+		};
+	}
+
+	if (pinnedRevision !== currentRevision) {
+		return {
+			ok: false,
+			currentRevision,
+			pinnedRevision,
+			reason: "mismatch",
+			error: `Gate targetRevision drifted (pinned ${pinnedRevision}, current ${currentRevision}) — re-open and re-approve before integrating`,
+		};
+	}
+
+	return { ok: true, currentRevision, pinnedRevision };
+}

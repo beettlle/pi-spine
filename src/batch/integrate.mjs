@@ -283,6 +283,7 @@ export function integrateOrchToBase(ctx) {
 		projectRoot,
 		batchId,
 		config,
+		batchState: batch,
 		forceIntegrate: Boolean(ctx.forceIntegrate),
 		dryRun,
 	});
