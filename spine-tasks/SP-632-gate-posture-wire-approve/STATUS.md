@@ -1,7 +1,7 @@
 # SP-632: Wire posture evaluator into approve path — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 2
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Must Update docs modified (if any) — None required
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -47,6 +47,7 @@
 
 **Step 1:** `maybeAutoApproveIntegrateGate` + land-loop posture path; journal `decidedBy`; streak on approve/reset on reject.
 **Step 2:** Contract 14/14; full suite 2085/2085 (worker env cleared); coverage 89.16%.
+**Step 3:** No Must Update docs; closes #123 via posture wiring with locked defaults.
 
 ## Blockers
 
