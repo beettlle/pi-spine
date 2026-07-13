@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 70 v2.6.0 dogfood expansion SP-644–648; Next → SP-649 after capstone)
+**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 operator UX + evidence Phase B staged SP-649–655; Next → SP-656)
 **Status:** Active
-**Next Task ID:** SP-649
+**Next Task ID:** SP-656
 
 ---
 
@@ -1978,14 +1978,53 @@ node bin/spine.mjs plan pending
 - [x] #160 Phase A shipped
 - [x] CLI defaults unset `PI_SPINE_ROOT` to cwd (SP-643)
 - [x] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-649
+- [x] `npm run release:check` green on publish HEAD
+- [x] **v2.6.0 published** — npm `2.6.0` / tag `v2.6.0` (2026-07-13)
+
+**Deferred (picked up in Phase 71):** #202 (wrong-cwd plan UX); #160 B/C; still deferred later: #135; #127; #124; #120; #43.
+
+**Release note:** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A), refuse-complete/salvage pending land (#201), dead-engine multi-lane orphan (#203), PATH version skew warn (#204), CLI `PI_SPINE_ROOT` cwd default (SP-643).
+
+**Phase 70 implementation complete (SP-635–648 → v2.6.0 published).**
+
+### Phase 71 — v2.7.0 operator UX + evidence Phase B (SP-REL270)
+
+**PRD:** [`docs/PRD-v2.7.0-operator-ux-evidence-handoff.md`](../docs/PRD-v2.7.0-operator-ux-evidence-handoff.md)  
+**Manifest:** [`spine-tasks/_authoring/release-v2.7.0/manifest.md`](_authoring/release-v2.7.0/manifest.md)  
+**Operator approved scope:** yes (2026-07-13)
+
+| Task | Summary | Status | Deps | Closes |
+|------|---------|--------|------|--------|
+| SP-649 | Wrong-cwd config missing message | Staged | — | Partial #202 |
+| SP-650 | Wrong-cwd CLI surfaces | Staged | SP-649 | #202 |
+| SP-651 | Template evidence command drift | Staged | — | — |
+| SP-652 | Gitignore `.pi/` entry | Staged | — | — |
+| SP-653 | Evidence allowlisted npm chains | Staged | — | Partial #160 |
+| SP-654 | Runbook v2.7.0 operator UX | Staged | SP-649,650,651,653 | — |
+| SP-655 | CONTEXT Phase 71 capstone | Staged | SP-649–654 | — |
+
+```bash
+spine tasks validate SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
+node bin/spine.mjs plan SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
+```
+
+**Wave plan:** Wave 0 SP-649/651/652; Wave 1 SP-650/653; Wave 2 SP-654; Cap SP-655.
+
+**Phase 71 exit criteria (PRD §9):**
+
+- [ ] #202 closed
+- [ ] Template testing commands pass evidence validator
+- [ ] Doctor `.gitignore` includes `.pi/`
+- [ ] #160 Phase B narrow shipped (Phase C remains open)
+- [ ] Runbook + CONTEXT Phase 71 complete; Next Task ID → SP-656
 - [ ] `npm run release:check` green on publish HEAD
-- [ ] **v2.6.0 published** — `npm version minor` (operator-gated)
+- [ ] **v2.7.0 published** — `npm version minor` (operator-gated)
 
-**Deferred:** #202 (wrong-cwd plan UX); #160 B/C; #135; #127; #124; #120; #43.
+**Deferred:** #160 Phase C; #135; #127; #124; #120; #43.
 
-**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A), refuse-complete/salvage pending land (#201), dead-engine multi-lane orphan (#203), PATH version skew warn (#204), CLI `PI_SPINE_ROOT` cwd default (SP-643).
+**Release note (placeholder — fill on publish):** v2.7.0 — Operator UX: wrong-cwd missing-config hints (#202), template/evidence parity, `.pi/` gitignore doctor hygiene, allowlisted `&&` gate-evidence chains (#160 Phase B).
 
-**Phase 70 implementation complete (SP-635–648 → v2.6.0 pending publish).**
+**Phase 71 packets staged (SP-649–655 → pending batch).**
 
 ---
 
