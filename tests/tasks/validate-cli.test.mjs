@@ -165,7 +165,10 @@ test('runSpineTasksValidate returns exit 2 for missing config', async () => {
 			(err) => {
 				assert.equal(err.exitCode, 2);
 				assert.match(err.message, /spine-config\.json not found/);
-				assert.equal(err.suggestedCommand, 'spine init');
+				assert.match(err.message, /cwd\/\$PWD|project root/i);
+				assert.match(err.suggestedCommand, /cd\s+/);
+				assert.match(err.suggestedCommand, /spine init/);
+				assert.notEqual(err.suggestedCommand.trim(), 'spine init');
 				return true;
 			},
 		);
@@ -386,7 +389,8 @@ test('spine tasks validate CLI exits 2 for config error', async () => {
 
 		assert.equal(result.status, 2, result.stdout);
 		assert.match(result.stderr, /spine-config\.json not found/);
-		assert.match(result.stderr, /Suggested: spine init/);
+		assert.match(result.stderr, /Suggested: cd /);
+		assert.match(result.stderr, /spine init/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

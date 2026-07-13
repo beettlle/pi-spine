@@ -58,13 +58,14 @@ export function loadSpineConfigFile(projectRoot) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
 
 	if (!fs.existsSync(configPath)) {
+		const resolvedRoot = path.resolve(projectRoot);
 		return {
 			configPath,
 			config: null,
 			error: {
 				code: "CONFIG_MISSING",
-				message: ".spine/spine-config.json not found",
-				suggestedCommand: "spine init",
+				message: `.spine/spine-config.json not found under ${resolvedRoot} (cwd/$PWD). Change to your project root, or run spine init here if this directory should be initialized.`,
+				suggestedCommand: `cd ${resolvedRoot}  # if wrong directory — or run: spine init`,
 			},
 		};
 	}
