@@ -1,6 +1,6 @@
 # SP-653: Evidence allowlisted npm chains — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 2
@@ -23,15 +23,15 @@
 - [x] Reject other metacharacters / expansions
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Add evidence-allowlisted-chains.test.mjs
-- [ ] Extend evidence.test.mjs if needed
-- [x] Run contract testCommand
+- [x] Extend evidence.test.mjs if needed (not required — Phase A coverage unchanged)
+- [x] Run contract testCommand (34 pass)
 - [x] Fix scoped failures
-- [ ] Coverage gate (≥77%)
+- [x] Coverage gate (≥77%) — 89.22% with worker env cleared
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 - [ ] Create `.DONE`
 - [ ] Comment on #160 Phase B; leave open for Phase C
 
@@ -44,6 +44,7 @@
 | GitNexus impact on assert/parse/run: LOW | Proceeded with edits |
 | Real-pi worker (`SPINE_WORKER_RUNNER` set) | Engine reviews after `.DONE`; in-worker plan review returns skipped |
 | Existing evidence.test.mjs still covers Phase A + metachar rejects | No extend required beyond new allowlisted-chains file |
+| `npm run coverage:check` inherits `SPINE_IS_WORKER` and fails batch tests | Re-ran with worker env unset; line coverage 89.22% |
 
 ## Completion Criteria
 
@@ -56,23 +57,10 @@
 
 _None._
 
-## Step 0 Notes — Current rejection rules (pre-Phase B)
-
-`assertSafeEvidenceCommand` today:
-
-1. Non-empty string, no `\r`/`\n`
-2. `SHELL_METACHAR_PATTERN = /[;|&\`<>]|>>|\$\(|\$\{/` — rejects `;`, `|`, `&`, backticks, `<`, `>`, `>>`, `$(`, `${`
-3. Any `$` → variable-expansion rejection
-4. First token must be: allowlisted basename (`npm`/`node`/`npx`/`pnpm`/`yarn`), or `.venv`/`venv` python, or `scripts/` relative path
-
 ## Step 0 Notes — Phase B grammar
 
-**Allowlist (chain segments):** `npm`, `node`, `npx`, `pnpm`, `yarn` only (same `ALLOWED_EVIDENCE_EXECUTABLES`).
+**Allowlist (chain segments):** `npm`, `node`, `npx`, `pnpm`, `yarn` only.
 
-**Chain operator:** `&&` only, outside quotes; segments trimmed; empty segments rejected.
+**Chain operator:** `&&` only, outside quotes; empty segments rejected.
 
-**Positive:** `npm run typecheck && npm test`; `node a.mjs && npm test`; multi-segment all allowlisted.
-
-**Reject matrix:** `;`, `|`, lone `&`, `>`, `<`, `>>`, backticks, `$VAR` / `$(...)` / `${...}`, newlines; non-allowlisted first token in any segment; `scripts/… && …` and venv python in multi-segment chains (Phase A single-segment only).
-
-**Execution:** `execFileSync` per segment, no `shell: true`; stop on first non-zero; concatenate stdout.
+**Reject matrix:** `;`, `|`, lone `&`, redirects, backticks, `$` expansion; non-allowlisted segment executables; `scripts/` / venv python only as single-segment Phase A.
