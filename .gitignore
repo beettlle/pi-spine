@@ -30,6 +30,7 @@ hb-scope-*/
 hb-step-*/
 
 # pi-spine runtime artifacts
+.pi/
 .spine/runtime/
 .spine/batch-state.json
 .spine/batch-history.json
