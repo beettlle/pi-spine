@@ -170,7 +170,8 @@ test("spine settings set exits 1 with suggestedCommand when config missing", asy
 		);
 		assert.equal(result.status, 1);
 		assert.match(result.stdout, /Error:/);
-		assert.match(result.stdout, /Suggested: spine init/);
+		assert.match(result.stdout, /Suggested: cd /);
+		assert.match(result.stdout, /spine init/);
 
 		const json = spawnSync(
 			process.execPath,
@@ -179,8 +180,11 @@ test("spine settings set exits 1 with suggestedCommand when config missing", asy
 		);
 		assert.equal(json.status, 1);
 		const parsed = JSON.parse(json.stdout);
-		assert.equal(parsed.suggestedCommand, "spine init");
+		assert.match(parsed.suggestedCommand, /cd\s+/);
+		assert.match(parsed.suggestedCommand, /spine init/);
+		assert.notEqual(parsed.suggestedCommand.trim(), "spine init");
 		assert.match(parsed.error, /not found/);
+		assert.match(parsed.error, /cwd\/\$PWD|project root/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
