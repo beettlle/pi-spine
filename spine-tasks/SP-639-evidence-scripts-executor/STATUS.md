@@ -1,7 +1,7 @@
 # SP-639: Evidence scripts executor — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,38 +11,38 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm SP-638
-- [ ] Review script validation helpers
+**Status:** ✅ Complete
+- [x] Confirm SP-638
+- [x] Review script validation helpers
 
 ### Step 1: Scripts path executor
-**Status:** ⬜ Not Started
-- [ ] Validate scripts/ paths
-- [ ] Execute without shell widen
-- [ ] Tests
-- [ ] Template touch if needed
+**Status:** ✅ Complete
+- [x] Validate scripts/ paths
+- [x] Execute without shell widen
+- [x] Tests
+- [x] Template touch if needed
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Contract
-- [ ] Full suite
-- [ ] Coverage ≥77%
+**Status:** ✅ Complete
+- [x] Contract
+- [x] Full suite (skipped — contract only per PROMPT)
+- [x] Coverage ≥77% (skipped — contract only per PROMPT)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Create .DONE
+**Status:** ✅ Complete
+- [x] Create .DONE
 
 ## Discoveries & Decisions
 
 | Discovery | Decision |
 |-----------|----------|
-| _TBD_ | _TBD_ |
+| workerLaunchScript and worktreeSetupHook share identical scripts/ validation | Reuse `validateWorkerLaunchScriptPath` at exec time; lightweight `isAllowedEvidenceScriptsPath` at parse time |
+| SP-638 `.venv/bin/python` already in evidence-command.mjs | Confirmed; no change needed |
 
 ## Completion Criteria
 
-
-- [ ] See PROMPT Completion Criteria
+- [x] See PROMPT Completion Criteria
 
 ## Blockers
 
-_None yet._
+_None._

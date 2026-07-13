@@ -5,6 +5,7 @@
 
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { validateWorkerLaunchScriptPath } from "../config/worker-launch-script.mjs";
 
 /**
  * Allowed first-token executables for evidence commands.
@@ -23,6 +24,9 @@ export const ALLOWED_PROJECT_LOCAL_INTERPRETERS = new Set(["python", "python3"])
 
 /** Relative venv roots that may host an allowed interpreter (posix-normalized). */
 const PROJECT_LOCAL_VENV_PREFIXES = [".venv/", "venv/"];
+
+/** Relative prefix for validated gate-evidence scripts (posix-normalized). */
+const EVIDENCE_SCRIPTS_PREFIX = "scripts/";
 
 const SHELL_METACHAR_PATTERN = /[;|&`<>]|>>|\$\(|\$\{/;
 
@@ -75,6 +79,9 @@ export function parseEvidenceCommandArgv(command) {
 	if (isAllowedProjectLocalInterpreter(argv[0])) {
 		return argv;
 	}
+	if (isAllowedEvidenceScriptsPath(argv[0])) {
+		return argv;
+	}
 
 	throw new EvidenceCommandError(`evidence executable not allowed: ${executable}`);
 }
@@ -120,6 +127,62 @@ export function isAllowedProjectLocalInterpreter(firstToken) {
 
 	const basename = path.posix.basename(normalized);
 	return ALLOWED_PROJECT_LOCAL_INTERPRETERS.has(basename);
+}
+
+/**
+ * Lightweight parse-time check: first token is a relative path under `scripts/`
+ * with no parent traversal. Full symlink/root validation runs at execution via
+ * {@link validateWorkerLaunchScriptPath} (same sandbox as workerLaunchScript).
+ *
+ * @param {string} firstToken
+ * @returns {boolean}
+ */
+export function isAllowedEvidenceScriptsPath(firstToken) {
+	if (typeof firstToken !== "string" || !firstToken) {
+		return false;
+	}
+	if (path.isAbsolute(firstToken)) {
+		return false;
+	}
+
+	const posixToken = firstToken.replaceAll("\\", "/");
+	const segments = posixToken.split("/");
+	if (segments.some((segment) => segment === "..")) {
+		return false;
+	}
+
+	const normalized = path.posix.normalize(posixToken);
+	if (normalized.startsWith("../") || normalized === "..") {
+		return false;
+	}
+	if (path.posix.isAbsolute(normalized)) {
+		return false;
+	}
+
+	return normalized.startsWith(EVIDENCE_SCRIPTS_PREFIX);
+}
+
+/**
+ * Resolve and validate a scripts/ evidence argv for execFile (no shell).
+ *
+ * @param {string} projectRoot
+ * @param {string[]} argv
+ * @returns {string[]}
+ */
+export function resolveEvidenceScriptsArgv(projectRoot, argv) {
+	if (!isAllowedEvidenceScriptsPath(argv[0])) {
+		return argv;
+	}
+
+	const validated = validateWorkerLaunchScriptPath(projectRoot, argv[0]);
+	if (!validated.ok) {
+		throw new EvidenceCommandError(validated.message ?? "evidence script path invalid");
+	}
+	if (!validated.scriptPath) {
+		throw new EvidenceCommandError("evidence script path invalid");
+	}
+
+	return [validated.scriptPath, ...argv.slice(1)];
 }
 
 /**
@@ -185,7 +248,8 @@ export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) 
 
 	try {
 		const argv = parseEvidenceCommandArgv(command);
-		const output = execFileSync(argv[0], argv.slice(1), {
+		const execArgv = resolveEvidenceScriptsArgv(projectRoot, argv);
+		const output = execFileSync(execArgv[0], execArgv.slice(1), {
 			cwd: projectRoot,
 			encoding: "utf-8",
 			stdio: ["ignore", "pipe", "pipe"],

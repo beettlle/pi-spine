@@ -7,11 +7,29 @@ import { buildWorkerDoneMissingAlternatives } from "./diagnosis-worker-done-miss
  * @param {string} diagnosis
  * @param {object} [ctx]
  * @param {string|null} [ctx.failedTaskId]
+ * @param {string|null} [ctx.batchId]
+ * @param {object[]} [ctx.pendingLaneLandTasks]
  */
 export function buildAlternatives(diagnosis, ctx = {}) {
 	const common = ["spine status --diagnose"];
 
+	if ((ctx.pendingLaneLandTasks?.length ?? 0) > 0) {
+		return [
+			ctx.batchId
+				? `spine batch salvage --batch ${ctx.batchId} --dry-run`
+				: "spine batch salvage --batch <batchId> --dry-run",
+			...common,
+		];
+	}
+
 	switch (diagnosis) {
+		case "pending_lane_land":
+			return [
+				ctx.batchId
+					? `spine batch salvage --batch ${ctx.batchId} --dry-run`
+					: "spine batch salvage --batch <batchId> --dry-run",
+				...common,
+			];
 		case "limbo_stale":
 			return ["spine batch complete --detect-manual-merge", ...common];
 		case "completed_manual":

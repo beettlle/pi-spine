@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import {
+	buildDiagnosisOutput,
+	buildHeadline,
+} from "../../src/batch/diagnosis.mjs";
 import { saveGateRecord } from "../../src/batch/gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import {
@@ -10,6 +14,7 @@ import {
 	finalizeAttachedLandLoopBeforeExit,
 	finalizeBatchForIntegrate,
 } from "../../src/batch/post-merge-limbo.mjs";
+import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { resumeBatch } from "../../src/batch/resume.mjs";
 import {
 	createInitialBatchState,
@@ -372,6 +377,155 @@ test("SP-636: finalizeAttachedLandLoopBeforeExit finalizes when gate exists with
 			),
 		);
 	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-637: post-integrate engine limbo diagnose avoids running reviews headline (#198)", async () => {
+	const batchId = "20260712T221500";
+	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	await new Promise((resolve, reject) => {
+		child.once("spawn", resolve);
+		child.once("error", reject);
+	});
+
+	try {
+		const limboCtx = {
+			batchId,
+			phase: "running",
+			hasRunningTasks: false,
+			hasPendingTasks: false,
+			pendingTaskCount: 0,
+			succeededTasks: 2,
+			totalTasks: 2,
+			failedTasks: 0,
+			allTasksTerminalSuccess: true,
+			gitMerged: true,
+			macroPhase: "reviewing",
+			enginePid: child.pid,
+			engineStillRunning: true,
+		};
+
+		const output = buildDiagnosisOutput("running", limboCtx);
+		assert.equal(output.diagnosis, "engine_still_running");
+		assert.match(output.headline ?? "", /resume engine still running after integrate/i);
+		assert.doesNotMatch(output.headline ?? "", /running reviews/i);
+		assert.equal(
+			output.suggestedCommand,
+			"spine wait --until completed,failed,needs_integrate --timeout 2h",
+		);
+		assert.doesNotMatch(output.suggestedCommand ?? "", /batch resume --force/);
+
+		const tailOnly = buildHeadline("running", limboCtx);
+		assert.match(tailOnly, /resume engine still running after integrate/i);
+		assert.doesNotMatch(tailOnly, /running reviews/i);
+
+		const postMergeLimboCtx = {
+			...limboCtx,
+			gitMerged: false,
+			postMergeLimbo: true,
+			macroPhase: "gating",
+			integrateGateOpen: true,
+		};
+		assert.match(
+			buildHeadline("needs_integrate", postMergeLimboCtx),
+			/gate opened/i,
+		);
+		assert.doesNotMatch(buildHeadline("running", postMergeLimboCtx), /running reviews/i);
+	} finally {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+	}
+});
+
+test("SP-637: reconcileBatch surfaces engine_still_running after integrate with live PID", async () => {
+	const projectRoot = await initGitRepo("spine-sp637-reconcile-");
+	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	await new Promise((resolve, reject) => {
+		child.once("spawn", resolve);
+		child.once("error", reject);
+	});
+
+	try {
+		const batchId = "20260712T221501";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "integrated.txt"), "landed", "utf-8");
+		execFileSync("git", ["add", "integrated.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch integrate work"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["merge", "--ff-only", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [["SP-637"]],
+			tasks: [
+				{
+					taskId: "SP-637",
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder: "spine-tasks/SP-637-smoke",
+					doneFileFound: true,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: projectRoot,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: ["SP-637"],
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "abc999" }];
+		state.resilience = { enginePid: child.pid ?? 0 };
+		saveSpineBatchState(projectRoot, state);
+
+		appendJournalEvent(projectRoot, batchId, "review.started", {
+			taskId: "SP-637",
+			reviewType: "code",
+			stepNumber: 1,
+		});
+		appendJournalEvent(projectRoot, batchId, "integrate.completed", {
+			mergeCommit: "abc999",
+		});
+		saveGateRecord(projectRoot, {
+			gateId: "gate-sp637",
+			batchId,
+			kind: "integrate",
+			category: "standard",
+			status: "approved",
+			openedAt: new Date().toISOString(),
+			targetRevision: "abc999",
+			evidenceRefs: [],
+			summary: "approved",
+		});
+
+		const result = reconcileBatch({ projectRoot });
+		assert.equal(result.diagnosis, "engine_still_running");
+		assert.match(result.headline ?? "", /resume engine still running after integrate/i);
+		assert.doesNotMatch(result.headline ?? "", /running reviews/i);
+		assert.equal(
+			result.suggestedCommand,
+			"spine wait --until completed,failed,needs_integrate --timeout 2h",
+		);
+	} finally {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
 		await destroyGitRepo(projectRoot);
 	}
 });

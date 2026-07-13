@@ -10,7 +10,7 @@
 
 ## Mission
 
-**Related:** [#203](https://github.com/beettlle/pi-spine/issues/203) (dogfood: unset `PI_SPINE_ROOT` + `worktreeSetupHook` forced operators to export cwd before preflight/batch)
+**Related:** v2.6.0 dogfood ergonomics (unset `PI_SPINE_ROOT` + `worktreeSetupHook` forced operators to export cwd before preflight/batch). **Does not close** [#203](https://github.com/beettlle/pi-spine/issues/203) (that issue is multi-lane dead-engine orphan — SP-646/SP-647). Version skew is [#204](https://github.com/beettlle/pi-spine/issues/204) / SP-648.
 
 When `PI_SPINE_ROOT` is unset, the CLI should default it to `process.cwd()` so checkout dogfood and consumer projects with `worktreeSetupHook` do not fail doctor/preflight solely for a missing env var. Keep `resolvePiSpineRoot` package-root semantics for worker spawn unchanged (config override + package discovery via `import.meta.url`).
 

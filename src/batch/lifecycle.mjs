@@ -3,9 +3,18 @@
  * Batch lifecycle: dismiss, complete, archive-first (FR-BATCH-15/16, §18.6).
  */
 
-import fs from "node:fs";
 import path from "node:path";
 import { buildDiagnosisOutput } from "./diagnosis.mjs";
+import {
+	buildPendingLaneLandSuggestedCommand,
+	findPendingLaneLandTasks,
+} from "./diagnosis-pending-lane.mjs";
+import {
+	archiveBatchState,
+	cleanupBatchLaneWorktrees,
+	clearCompletedBatchState,
+} from "./lifecycle-archive.mjs";
+export { archiveBatchStatePath } from "./lifecycle-archive.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { appendJournalEvent } from "./journal.mjs";
@@ -13,12 +22,8 @@ import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
-import {
-	clearActiveBatchStateIfMatches,
-	readAliveBatchEnginePid,
-} from "./batch-state-io.mjs";
+import { readAliveBatchEnginePid } from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
-import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs";
 import { terminateSupervisorIfRunning } from "./supervisor-spawn.mjs";
 import { bumpDashboardInvalidateSignal } from "../dashboard/cache-invalidate.mjs";
 
@@ -79,67 +84,6 @@ export function recordMergeBlocked({
 		fromPhase,
 		lastError: message,
 	};
-}
-
-/**
- * @param {string} projectRoot
- * @param {string} batchId
- */
-export function archiveBatchStatePath(projectRoot, batchId) {
-	return path.join(projectRoot, ".spine", "runtime", batchId, "archive", "batch-state.json");
-}
-
-/**
- * @param {string} projectRoot
- * @param {string} batchId
- * @param {unknown} raw
- */
-function archiveBatchState(projectRoot, batchId, raw) {
-	const archivePath = archiveBatchStatePath(projectRoot, batchId);
-	fs.mkdirSync(path.dirname(archivePath), { recursive: true });
-	fs.writeFileSync(archivePath, `${JSON.stringify(raw, null, 2)}\n`, "utf-8");
-
-	const fd = fs.openSync(archivePath, "r");
-	try {
-		fs.fsyncSync(fd);
-	} finally {
-		fs.closeSync(fd);
-	}
-
-	return archivePath;
-}
-
-/**
- * @param {string|null} batchStatePath
- * @param {string} batchId
- */
-function clearCompletedBatchState(batchStatePath, batchId) {
-	clearActiveBatchStateIfMatches(batchStatePath, batchId);
-}
-
-/**
- * @param {object|null|undefined} config
- */
-function shouldCleanupWorktreesOnComplete(config) {
-	if (config?.lanes?.cleanupWorktreesOnComplete === false) return false;
-	return true;
-}
-
-/**
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {string} params.batchId
- * @param {unknown} params.batchState
- * @param {object} params.config
- */
-function cleanupBatchLaneWorktrees({ projectRoot, batchId, batchState, config }) {
-	if (!shouldCleanupWorktreesOnComplete(config)) return;
-	const laneCount = maxLaneNumberFromBatchState(batchState);
-	removeLaneWorktrees(projectRoot, batchId, laneCount);
-	appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
-		batchId,
-		laneCount,
-	});
 }
 
 /**
@@ -442,6 +386,22 @@ export function completeBatch(ctx) {
 			headline: `Batch ${batchId} engine still running (PID ${aliveEnginePid}) — complete refused`,
 			suggestedCommand: "spine wait --until completed,failed,needs_integrate --timeout 2h",
 			alternatives: ["spine status --diagnose"],
+		};
+	}
+
+	const pendingLaneLandTasks = findPendingLaneLandTasks(signals.tasks);
+	if (pendingLaneLandTasks.length > 0 && Boolean(signals.git?.orchMergedToBase)) {
+		const pendingTaskIds = pendingLaneLandTasks.map((task) => String(task.taskId ?? "")).filter(Boolean);
+		return {
+			ok: false,
+			exitCode: 1,
+			error: "pending_lane_land",
+			diagnosis: "pending_lane_land",
+			batchId,
+			pendingTaskIds,
+			headline: `Batch ${batchId} has lane work not on ${signals.git?.baseBranch ?? "main"} (${pendingTaskIds.join(", ")}) — complete refused`,
+			suggestedCommand: buildPendingLaneLandSuggestedCommand(batchId, pendingLaneLandTasks),
+			alternatives: ["spine status --diagnose", "spine batch salvage --batch <batchId> --dry-run"],
 		};
 	}
 

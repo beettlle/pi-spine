@@ -188,7 +188,7 @@ test("clearStaleLaneWorkerPids preserves live worker pid", async () => {
 	}
 });
 
-test("dual-dead lane+engine orphan reconciles as engine_orphaned with attached resume", async () => {
+test("dual-dead lane+engine orphan reconciles as worker_orphaned with retry (single lane)", async () => {
 	const projectRoot = await initGitRepo("spine-dual-dead-reconcile-");
 	try {
 		const orchBranch = `orch/spine-${BATCH_ID}`;
@@ -197,9 +197,9 @@ test("dual-dead lane+engine orphan reconciles as engine_orphaned with attached r
 		seedWorkerOrphanAfterPlanReview(projectRoot, lane2.worktreePath);
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
-		assert.equal(result.diagnosis, "engine_orphaned");
-		assert.equal(result.suggestedCommand, `spine batch retry ${TASK_STUCK}`);
-		assert.match(result.headline, /engine died/i);
+		assert.equal(result.diagnosis, "worker_orphaned");
+		assert.match(result.suggestedCommand ?? "", /batch retry SP-306/);
+		assert.match(result.headline ?? "", /SP-306|orphan|nested_spawn/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

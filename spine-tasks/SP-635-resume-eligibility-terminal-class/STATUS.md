@@ -1,7 +1,7 @@
 # SP-635: Resume eligibility terminal class — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery (hygiene .DONE)
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -22,15 +22,15 @@
 - [x] Fail-closed for real running workers
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Regression for #197
 - [x] Contract testCommand
-- [ ] Full suite
-- [ ] Coverage ≥77%
+- [x] Full suite
+- [x] Coverage ≥77%
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ## Discoveries & Decisions
 
@@ -50,3 +50,8 @@
 ## Blockers
 
 _None yet._
+
+
+## Hygiene note
+
+ created on main 2026-07-13 after salvaged land of implementation commits (dogfood #201/#203). No re-implementation.

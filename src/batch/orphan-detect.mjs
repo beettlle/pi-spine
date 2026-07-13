@@ -282,6 +282,43 @@ function hasFiniteWorkerPidForRunningTasks(lanes, runningTasks) {
 }
 
 /**
+ * No running task lane has a live worker PID (#203 multi-lane).
+ * Missing / non-finite workerPid counts as absent (not live).
+ *
+ * @param {unknown[]} lanes
+ * @param {Array<{ taskId?: string, laneNumber?: number|null }>} runningTasks
+ */
+function noLiveWorkerPidForRunningTasks(lanes, runningTasks) {
+	if (runningTasks.length === 0) return false;
+	for (const task of runningTasks) {
+		const lane = findLane(lanes, task.laneNumber);
+		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane)?.workerPid);
+		if (Number.isFinite(workerPid) && workerPid > 0 && isProcessAlive(workerPid)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * Prefer the first running task whose lane worker PID is stale (dead-engine orphan #203).
+ *
+ * @param {Array<{ taskId: string, laneNumber?: number|null }>} runningTasks
+ * @param {unknown[]} lanes
+ * @returns {string|null}
+ */
+function pickDeadEngineOrphanTaskId(runningTasks, lanes) {
+	for (const task of runningTasks) {
+		const lane = findLane(lanes, task.laneNumber);
+		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane)?.workerPid);
+		if (Number.isFinite(workerPid) && workerPid > 0 && !isProcessAlive(workerPid)) {
+			return task.taskId;
+		}
+	}
+	return runningTasks[0]?.taskId ?? null;
+}
+
+/**
  * @param {unknown[]} lanes
  * @param {number|null|undefined} laneNumber
  */
@@ -318,6 +355,37 @@ export function detectOrphanRunning(ctx) {
 	}
 
 	const scopedJournalEvents = journalEventsSinceResume(ctx.journalEvents ?? [], ctx.raw);
+	const enginePid = readBatchEnginePid(ctx.raw);
+	const suppressPausedResumeEngineOrphan = shouldSuppressPausedResumeEngineOrphan(
+		ctx,
+		scopedJournalEvents,
+	);
+
+	// Dead or cleared engine + no live workers across multiple lanes → engine orphan (#203).
+	// Covers cleared enginePid and missing workerPid; single-lane stays lane/worker_orphaned.
+	// Only while phase is running — paused multi-lane must stay paused for resume DX.
+	const distinctRunningLanes = new Set(
+		runningTasks
+			.map((task) => (task.laneNumber == null ? null : Number(task.laneNumber)))
+			.filter((laneNumber) => Number.isFinite(laneNumber)),
+	);
+	const multiLaneRunning = distinctRunningLanes.size > 1;
+	const engineDeadOrCleared = enginePid == null || !isProcessAlive(enginePid);
+	if (
+		ctx.phase === "running" &&
+		multiLaneRunning &&
+		engineDeadOrCleared &&
+		!journalHasTerminalBatchEvent(scopedJournalEvents) &&
+		!suppressPausedResumeEngineOrphan &&
+		noLiveWorkerPidForRunningTasks(ctx.lanes, runningTasks)
+	) {
+		/** @type {OrphanRunningSignal} */
+		return {
+			kind: "engine",
+			taskId: pickDeadEngineOrphanTaskId(runningTasks, ctx.lanes),
+			enginePid: enginePid ?? null,
+		};
+	}
 
 	for (const task of runningTasks) {
 		const lane = findLane(ctx.lanes, task.laneNumber);
@@ -347,11 +415,6 @@ export function detectOrphanRunning(ctx) {
 		}
 	}
 
-	const enginePid = readBatchEnginePid(ctx.raw);
-	const suppressPausedResumeEngineOrphan = shouldSuppressPausedResumeEngineOrphan(
-		ctx,
-		scopedJournalEvents,
-	);
 	if (
 		enginePid &&
 		!isProcessAlive(enginePid) &&

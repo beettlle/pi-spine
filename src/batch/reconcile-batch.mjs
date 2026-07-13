@@ -7,11 +7,8 @@ import { buildStalePathDoctorCheck } from "../doctor/stale-path.mjs";
 import { PACKAGE_ROOT } from "../config/spine-init-constants.mjs";
 import { loadGateRecord } from "./gate-evidence-read.mjs";
 import { deriveMacroPhase, macroPhaseLabel } from "./macro-phase.mjs";
-import {
-	buildDiagnosisOutput,
-	inferMergeGitignoredFailure,
-	isGateReadyHeadlineContext,
-} from "./diagnosis.mjs";
+import { buildDiagnosisOutput, inferMergeGitignoredFailure } from "./diagnosis.mjs";
+import { isGateReadyHeadlineContext } from "./diagnosis-gate-ready.mjs";
 import {
 	classifyTasks,
 	inspectGitState,
@@ -47,6 +44,7 @@ import {
 } from "./batch-state-io.mjs";
 import { readBatchEnginePid } from "./state.mjs";
 import {
+	buildReconcileDiagnosisContext,
 	deriveDiagnosis,
 	enrichLaunchFailureFromWorkerOutput,
 	enrichWorkerDoneMissingContext,
@@ -395,49 +393,48 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	const enginePid = readBatchEnginePid(batch.raw);
 	const staleEnginePid =
 		enginePid != null && !isProcessAlive(enginePid);
+	const engineStillRunning = enginePid != null && !staleEnginePid;
 	const engineOrphanCause =
 		diagnosis === "engine_orphaned"
 			? inferEngineOrphanCause({ journalEvents, staleEnginePid })
 			: null;
 
-	const output = buildDiagnosisOutput(diagnosis, {
-		batchId: batch.batchId,
-		phase: batch.phase,
-		failedTasks: signals.failedTasks,
-		failedTaskId,
-		driftTaskStatus,
-		exitReason,
-		launchFailureKind: resolvedLaunchFailureKind,
-		gitMerged: git.orchMergedToBase,
-		pendingTaskCount,
-		salvageChangedFileCount,
-		salvageRetryCommand,
-		ghostRunningCluster,
-		postMergeLimbo: signals.postMergeLimbo === true,
-		integrateGateOpen,
-		stalePathSpine,
-		planReviewNestedSpawnBlocked,
-		mergeGitignoredFailure,
-		mergeFailed: mergeFailedForHeadline,
-		failedWaveIndex: mergeFailureSummary.failedWaveIndex,
-		failedLane: mergeFailureSummary.failedLane,
-		lastError: mergeFailureSummary.lastError,
-		succeededTasks: batch.succeededTasks,
-		totalTasks: batch.totalTasks,
-		taskBranch,
-		gitignoredPaths,
-		hasRunningTasks,
-		hasPendingTasks,
-		allTasksTerminalSuccess: signals.allTasksTerminalSuccess,
-		tasksRoot,
-		macroPhase,
-		reviewHonorSignal,
-		...(doneMissingContext ?? {}),
-		engineOrphanCause,
-		staleEnginePid,
-		humanBaseSync,
-		overlapPaths: humanBaseSync?.overlapPaths ?? [],
-	});
+	const output = buildDiagnosisOutput(
+		diagnosis,
+		buildReconcileDiagnosisContext({
+			batch,
+			git,
+			signals,
+			classifiedTasks,
+			diagnosis,
+			failedTaskId,
+			driftTaskStatus,
+			exitReason,
+			resolvedLaunchFailureKind,
+			pendingTaskCount,
+			salvageChangedFileCount,
+			salvageRetryCommand,
+			ghostRunningCluster,
+			integrateGateOpen,
+			stalePathSpine,
+			planReviewNestedSpawnBlocked,
+			mergeGitignoredFailure,
+			mergeFailedForHeadline,
+			mergeFailureSummary,
+			taskBranch,
+			gitignoredPaths,
+			hasRunningTasks,
+			hasPendingTasks,
+			macroPhase,
+			reviewHonorSignal,
+			doneMissingContext,
+			engineOrphanCause,
+			staleEnginePid,
+			enginePid,
+			engineStillRunning,
+			humanBaseSync,
+		}),
+	);
 
 	if (humanBaseSync && (diagnosis === "human_base_diverged" || diagnosis === "integrate_isolated_ok")) {
 		output.headline = humanBaseSync.headline;

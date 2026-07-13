@@ -5,9 +5,13 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+	buildCheckoutVersionSkewDoctorCheck,
 	buildDuplicateInstallDoctorCheck,
 	detectDuplicatePiSpineInstall,
+	detectPathSpineVersionSkew,
+	formatCheckoutVersionSkewRemediation,
 	formatDuplicateInstallRemediation,
+	readCheckoutPiSpineVersion,
 	readInstalledPackageVersion,
 	resolveNpmGlobalSpineRoot,
 	resolvePiPrivateSpineRoot,
@@ -190,10 +194,103 @@ test("formatDuplicateInstallRemediation mentions pi install", () => {
 	assert.match(remediation, /pi install npm:pi-spine/);
 });
 
+test("readCheckoutPiSpineVersion returns version only for pi-spine package.json", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-checkout-ver-"));
+	try {
+		fs.writeFileSync(
+			path.join(tmp, "package.json"),
+			JSON.stringify({ name: "pi-spine", version: "2.6.0" }),
+			"utf-8",
+		);
+		assert.equal(readCheckoutPiSpineVersion(tmp), "2.6.0");
+
+		fs.writeFileSync(
+			path.join(tmp, "package.json"),
+			JSON.stringify({ name: "other-project", version: "1.0.0" }),
+			"utf-8",
+		);
+		assert.equal(readCheckoutPiSpineVersion(tmp), null);
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("detectPathSpineVersionSkew reports skew between running CLI and checkout", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-skew-"));
+	try {
+		const globalRoot = path.join(tmp, "global", "pi-spine");
+		const checkoutRoot = path.join(tmp, "checkout");
+		writePackageVersion(globalRoot, "2.4.0");
+		writePackageVersion(checkoutRoot, "2.6.0");
+
+		const assessment = detectPathSpineVersionSkew({
+			runningPackageRoot: globalRoot,
+			projectRoot: checkoutRoot,
+			exists: (p) => fs.existsSync(p),
+		});
+
+		assert.equal(assessment.skewed, true);
+		assert.equal(assessment.cliVersion, "2.4.0");
+		assert.equal(assessment.checkoutVersion, "2.6.0");
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("detectPathSpineVersionSkew ok when running from checkout", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-skew-same-"));
+	try {
+		writePackageVersion(tmp, "2.6.0");
+
+		const assessment = detectPathSpineVersionSkew({
+			runningPackageRoot: tmp,
+			projectRoot: tmp,
+			exists: (p) => fs.existsSync(p),
+		});
+
+		assert.equal(assessment.skewed, false);
+		assert.equal(assessment.cliVersion, "2.6.0");
+		assert.equal(assessment.checkoutVersion, "2.6.0");
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("buildCheckoutVersionSkewDoctorCheck warns with remediation on skew", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-skew-warn-"));
+	try {
+		const globalRoot = path.join(tmp, "global", "pi-spine");
+		const checkoutRoot = path.join(tmp, "checkout");
+		writePackageVersion(globalRoot, "2.3.0");
+		writePackageVersion(checkoutRoot, "2.6.0");
+
+		const check = buildCheckoutVersionSkewDoctorCheck({
+			runningPackageRoot: globalRoot,
+			projectRoot: checkoutRoot,
+			exists: (p) => fs.existsSync(p),
+		});
+
+		assert.equal(check.warning, true);
+		assert.match(check.label, /checkout version skew/);
+		assert.match(check.detail, /running v2\.3\.0 vs checkout v2\.6\.0/);
+		assert.ok(check.suggestedCommand?.includes("node bin/spine.mjs"));
+		assert.ok(check.suggestedCommand?.includes("npm link"));
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("formatCheckoutVersionSkewRemediation suggests node bin/spine.mjs and npm link", () => {
+	const remediation = formatCheckoutVersionSkewRemediation();
+	assert.match(remediation, /node bin\/spine\.mjs/);
+	assert.match(remediation, /npm link/);
+});
+
 test("runDoctorChecks includes duplicate install and pi CLI resolution checks", async () => {
 	const { runDoctorChecks } = await import("../../src/doctor/run-doctor-checks.mjs");
 	const result = runDoctorChecks(process.cwd());
 	const labels = result.checks.map((check) => check.label);
 	assert.ok(labels.some((label) => label.startsWith("pi CLI resolution")));
 	assert.ok(labels.some((label) => label.startsWith("pi-spine duplicate install")));
+	assert.ok(labels.some((label) => label.startsWith("pi-spine checkout version skew")));
 });

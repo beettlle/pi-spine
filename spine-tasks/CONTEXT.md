@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-12 (Phase 70 v2.6.0 + SP-643 PI_SPINE_ROOT default; Next → SP-644 after capstone)
+**Last Updated:** 2026-07-13 (Phase 70 v2.6.0 dogfood expansion SP-644–648; Next → SP-649 after capstone)
 **Status:** Active
-**Next Task ID:** SP-644
+**Next Task ID:** SP-649
 
 ---
 
@@ -1945,38 +1945,47 @@ spine run sequence SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-63
 
 **PRD:** [`docs/PRD-v2.6.0-consumer-resume-handoff.md`](../docs/PRD-v2.6.0-consumer-resume-handoff.md)  
 **Manifest:** [`spine-tasks/_authoring/release-v2.6.0/manifest.md`](_authoring/release-v2.6.0/manifest.md)  
-**Status:** Staged for batch (`spine batch start pending`)
+**Operator approved scope:** yes (2026-07-12); dogfood expansion #201/#203/#204 (2026-07-13) with bug-budget override.
 
 | Task | Summary | Status | Deps | Closes |
 |------|---------|--------|------|--------|
-| SP-635 | Resume eligibility terminal class | Pending | — | #197 |
-| SP-636 | Resume post-integrate finalize | Pending | — | Partial #198 |
-| SP-637 | Resume engine limbo diagnose | Pending | SP-636 | #198 |
-| SP-638 | Evidence allow venv python | Pending | — | #199 |
-| SP-639 | Evidence scripts/ executor | Pending | SP-638 | Partial #160 |
-| SP-640 | Lane commit ignore hook .venv | Pending | — | #200 |
-| SP-641 | Runbook v2.6.0 consumer resume | Pending | SP-635,637,638,640 | — |
-| SP-642 | CONTEXT Phase 70 capstone | Pending | SP-635–641,SP-643 | — |
-| SP-643 | CLI default PI_SPINE_ROOT to cwd | Pending | — | #203 ergonomics |
+| SP-635 | Resume eligibility terminal class | Done | — | #197 |
+| SP-636 | Resume post-integrate finalize | Done | — | Partial #198 |
+| SP-637 | Resume engine limbo diagnose | Done | SP-636 | #198 |
+| SP-638 | Evidence allow venv python | Done | — | #199 |
+| SP-639 | Evidence scripts/ executor | Done | SP-638 | Partial #160 |
+| SP-640 | Lane commit ignore hook .venv | Done | — | #200 |
+| SP-641 | Runbook v2.6.0 consumer resume | Done | SP-635,637,638,640,645,647,648 | — |
+| SP-642 | CONTEXT Phase 70 capstone | Done | SP-635–648 | — |
+| SP-643 | CLI default PI_SPINE_ROOT to cwd | Done | — | ergonomics (not #203) |
+| SP-644 | Complete refuse pending lane land | Done | — | Partial #201 |
+| SP-645 | Diagnose salvage pending lane | Done | SP-644 | #201 |
+| SP-646 | Dead engine orphan classify | Done | — | Partial #203 |
+| SP-647 | Orphan retry/abort limbo clear | Done | SP-646 | #203 |
+| SP-648 | PATH spine version skew warn | Done | — | #204 |
 
 ```bash
-spine tasks validate pending
-spine plan pending
-spine batch start pending
+spine tasks validate SP-635,SP-636,SP-637,SP-638,SP-639,SP-640,SP-641,SP-642,SP-643,SP-644,SP-645,SP-646,SP-647,SP-648
+node bin/spine.mjs plan pending
 ```
 
-**Wave plan:** Wave 0 SP-635/636/638/640/643; Wave 1 SP-637/639; Wave 2 SP-641; Cap SP-642.
+**Wave plan (final):** Hygiene `.DONE` for SP-635/636/638/640; Wave 0 SP-644/646/648/637/639; Wave 1 SP-645/647; Wave 2 SP-641; Cap SP-642.
 
-**Phase 70 exit criteria (PRD §9):**
+**Phase 70 exit criteria (PRD §9 + dogfood):**
 
-- [ ] #197–#200 closed
-- [ ] #160 Phase A shipped
-- [ ] CLI defaults unset `PI_SPINE_ROOT` to cwd (SP-643 / #203 ergonomics)
-- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-644
+- [x] #197–#200 closed (implementation landed)
+- [x] #201 / #203 / #204 closed (implementation landed)
+- [x] #160 Phase A shipped
+- [x] CLI defaults unset `PI_SPINE_ROOT` to cwd (SP-643)
+- [x] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-649
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] **v2.6.0 published** — `npm version minor` (operator-gated)
 
-**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A), CLI `PI_SPINE_ROOT` cwd default (#203 ergonomics).
+**Deferred:** #202 (wrong-cwd plan UX); #160 B/C; #135; #127; #124; #120; #43.
+
+**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A), refuse-complete/salvage pending land (#201), dead-engine multi-lane orphan (#203), PATH version skew warn (#204), CLI `PI_SPINE_ROOT` cwd default (SP-643).
+
+**Phase 70 implementation complete (SP-635–648 → v2.6.0 pending publish).**
 
 ---
 

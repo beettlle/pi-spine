@@ -13,6 +13,7 @@ import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { archiveBatchStatePath, completeBatch } from "../../src/batch/lifecycle.mjs";
 import { recordBatchEnginePid } from "../../src/batch/state.mjs";
+import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const DEAD_PID = 4_000_000;
@@ -82,6 +83,100 @@ function prepareCompletableBatch(projectRoot) {
 	assert.equal(integrate.ok, true);
 	return { fixture, orchBranch };
 }
+
+function pendingLaneLandFixture(orchBranch, batchId = "20260601T120000") {
+	const taskFolder = "TP-012-single-lane-worker";
+	const taskBranch = laneTaskBranch(batchId, 1);
+	return {
+		batchId,
+		phase: "completed",
+		baseBranch: "main",
+		orchBranch,
+		startedAt: Date.now() - 60_000,
+		endedAt: Date.now(),
+		failedTasks: 0,
+		succeededTasks: 1,
+		totalTasks: 1,
+		mergeResults: [
+			{
+				waveIndex: 0,
+				status: "succeeded",
+				failedLane: null,
+				failureReason: null,
+				mergeCommit: "deadbeef",
+			},
+		],
+		tasks: [
+			{
+				taskId: "TP-012",
+				status: "succeeded",
+				taskFolder,
+				doneFileFound: true,
+				laneNumber: 1,
+			},
+		],
+		lanes: [
+			{
+				laneNumber: 1,
+				laneId: "lane-1",
+				worktreePath: `.worktrees/spine-${batchId}/lane-1`,
+				branch: taskBranch,
+				taskIds: ["TP-012"],
+			},
+		],
+		segments: [{ segmentId: "TP-012::default", taskId: "TP-012", status: "succeeded" }],
+	};
+}
+
+function setupLaneDoneNotOnMain(projectRoot, batchId, taskFolder) {
+	const wt = laneWorktreePath(projectRoot, batchId, 1);
+	const orchBranch = `orch/spine-${batchId}`;
+	const taskBranch = laneTaskBranch(batchId, 1);
+	fs.mkdirSync(path.dirname(wt), { recursive: true });
+	execFileSync("git", ["worktree", "add", "-b", taskBranch, wt, orchBranch], {
+		cwd: projectRoot,
+		stdio: "ignore",
+	});
+	const laneTaskFolder = path.join(wt, "spine-tasks", taskFolder);
+	fs.mkdirSync(laneTaskFolder, { recursive: true });
+	fs.writeFileSync(path.join(laneTaskFolder, ".DONE"), "", "utf-8");
+}
+
+function preparePendingLaneLandBatch(projectRoot) {
+	const batchId = "20260601T120000";
+	const orchBranch = `orch/spine-${batchId}`;
+	createOrchWithWork(projectRoot, orchBranch);
+	const fixture = pendingLaneLandFixture(orchBranch, batchId);
+	setupLaneDoneNotOnMain(projectRoot, batchId, fixture.tasks[0].taskFolder);
+	writeSpineBatchState(projectRoot, fixture);
+	approveGateForIntegrate(projectRoot, fixture, batchId);
+	const integrate = integrateOrchToBase({ projectRoot });
+	assert.equal(integrate.ok, true);
+	return { fixture, batchId };
+}
+
+test("completeBatch refuses when lane .DONE exists but not on main (#201)", async () => {
+	const projectRoot = await initGitRepo("spine-complete-pending-lane-");
+	try {
+		const { fixture, batchId } = preparePendingLaneLandBatch(projectRoot);
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+
+		const result = completeBatch({ projectRoot });
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "pending_lane_land");
+		assert.equal(result.diagnosis, "pending_lane_land");
+		assert.deepEqual(result.pendingTaskIds, ["TP-012"]);
+		assert.equal(
+			result.suggestedCommand,
+			`spine batch salvage --batch ${batchId} --lane 1 --integrate`,
+		);
+		assert.match(result.headline ?? "", /lane work not on main/i);
+		assert.ok(fs.existsSync(statePath), "active batch-state must not be archived");
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
 
 test("completeBatch refuses when batch engine PID is alive", async () => {
 	const projectRoot = await initGitRepo("spine-complete-engine-alive-");

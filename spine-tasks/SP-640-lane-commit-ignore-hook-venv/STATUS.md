@@ -1,7 +1,7 @@
 # SP-640: Lane commit ignore hook .venv — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Step 3 — Documentation & Delivery (hygiene .DONE)
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-12
 **Review Level:** 1
 **Review Counter:** 0
@@ -22,15 +22,15 @@
 - [x] Regression
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
-- [ ] Contract
-- [ ] Full suite
-- [ ] Coverage ≥77%
+**Status:** ✅ Complete
+- [x] Contract
+- [x] Full suite
+- [x] Coverage ≥77%
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
-- [ ] Template default if needed
-- [ ] Create .DONE
+- [x] Template default if needed
+- [x] Create .DONE
 
 ## Discoveries & Decisions
 
@@ -43,8 +43,13 @@
 ## Completion Criteria
 
 - [x] Hook `.venv` not committed by lane completion
-- [ ] #200 closable
+- [x] #200 closable
 
 ## Blockers
 
 _None yet._
+
+
+## Hygiene note
+
+ created on main 2026-07-13 after salvaged land of implementation commits (dogfood #201/#203). No re-implementation.

@@ -10,7 +10,7 @@
 
 ## Mission
 
-Document operator-facing v2.6.0 paths: #197 resume eligibility (no pause dead-end), #198 post-integrate resume limbo recovery, Python `.venv` gate evidence commands (#199), scripts/ evidence wrappers (#160 Phase A), and worktree hook `.venv` ignore / no-commit (#200). Cross-link detached-first (#163/#185).
+Document operator-facing v2.6.0 paths: #197 resume eligibility (no pause dead-end), #198 post-integrate resume limbo recovery, Python `.venv` gate evidence commands (#199), scripts/ evidence wrappers (#160 Phase A), worktree hook `.venv` ignore / no-commit (#200), refuse-complete / salvage pending land (#201), dead-engine multi-lane orphan recovery (#203), and PATH spine version skew (#204). Cross-link detached-first (#163/#185). Prefer `node bin/spine.mjs` for checkout dogfood.
 
 **Source:** [`docs/PRD-v2.6.0-consumer-resume-handoff.md`](../../docs/PRD-v2.6.0-consumer-resume-handoff.md) §6 FR-REL260-07
 
@@ -20,11 +20,14 @@ Document operator-facing v2.6.0 paths: #197 resume eligibility (no pause dead-en
 - **Task:** SP-637
 - **Task:** SP-638
 - **Task:** SP-640
+- **Task:** SP-645
+- **Task:** SP-647
+- **Task:** SP-648
 
 ## Context to Read First
 
 - `docs/adoption/operator-runbook.md`
-- GitHub #197 #198 #199 #200 #160
+- GitHub #197 #198 #199 #200 #160 #201 #203 #204
 
 ## Environment
 
@@ -55,6 +58,7 @@ Document operator-facing v2.6.0 paths: #197 resume eligibility (no pause dead-en
 - [ ] Document #197/#198 recovery commands
 - [ ] Document `.venv/bin/python` evidence + scripts/ wrappers
 - [ ] Document hook ignore / never commit `.venv`
+- [ ] Document #201 refuse-complete + salvage; #203 orphan recovery; #204 PATH skew / `node bin/spine.mjs`
 
 ### Step 2: Testing & Verification
 
@@ -76,7 +80,7 @@ Document operator-facing v2.6.0 paths: #197 resume eligibility (no pause dead-en
 
 ## Completion Criteria
 
-- [ ] Runbook covers #197–#200 and #160 Phase A operator paths
+- [ ] Runbook covers #197–#201, #203–#204, and #160 Phase A operator paths
 
 ## Do NOT
 

@@ -245,7 +245,7 @@ test("worker_orphaned enriches launch headline from worker output log without ta
 	}
 });
 
-test("multiple ghost running tasks on one lane prefer spine batch abort", async () => {
+test("dead-engine multi-lane ghost fixture is engine_orphaned with retry (#203)", async () => {
 	const projectRoot = await initGitRepo("spine-worker-orphan-cluster-");
 	try {
 		const fixture = JSON.parse(
@@ -263,9 +263,10 @@ test("multiple ghost running tasks on one lane prefer spine batch abort", async 
 		}
 
 		const result = reconcileBatch({ projectRoot, verbose: true });
-		assert.equal(result.diagnosis, "worker_orphaned");
-		assert.equal(result.suggestedCommand, "spine batch abort");
-		assert.match(result.headline, /multiple ghost running tasks/i);
+		// Dead engine + multi-lane + no live workers → engine_orphaned (not worker abort).
+		assert.equal(result.diagnosis, "engine_orphaned");
+		assert.match(result.suggestedCommand ?? "", /batch retry/);
+		assert.match(result.headline ?? "", /engine died/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

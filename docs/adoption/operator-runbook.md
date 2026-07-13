@@ -1251,6 +1251,44 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 
 **Related:** review-crash drift after `review.started` is a different path — see [Review crash state drift](#review-crash-state-drift-state_drift-after-reviewstarted).
 
+### v2.6.0 consumer reliability + resume (#197–#204)
+
+Use the **checkout CLI** for dogfood on this repo: `node bin/spine.mjs …` (or `npm link`). PATH global `spine` may lag `package.json` — `spine version` / `spine doctor` warn on skew ([#204](https://github.com/beettlle/pi-spine/issues/204)). Unset `PI_SPINE_ROOT` defaults to cwd for CLI doctor/preflight (SP-643).
+
+| Issue | Symptom | Recovery / behavior |
+|-------|---------|---------------------|
+| [#197](https://github.com/beettlle/pi-spine/issues/197) | `state_drift` suggests `resume --force` but detached resume rejects `phase=running` | Eligibility uses terminal-success / `doneInLane` — **no manual `pause` first** (SP-635) |
+| [#198](https://github.com/beettlle/pi-spine/issues/198) | Resume engine hangs after host integrate; `batch complete` blocked by live PID | Engine finalizes / exits; diagnose shows `engine_still_running` limbo — not “running reviews” (SP-636/SP-637) |
+| [#199](https://github.com/beettlle/pi-spine/issues/199) | Gate evidence rejects `python` | Allow project-local `.venv/bin/python` / `venv/bin/python3` relative paths; bare `python` still rejected (SP-638) |
+| [#160](https://github.com/beettlle/pi-spine/issues/160) Phase A | Need stet/external CLI at gate | Point `testing.*` at `scripts/…` wrappers — validated sandbox, no shell metachar widen (SP-639) |
+| [#200](https://github.com/beettlle/pi-spine/issues/200) | Lane commit stages hook `.venv` symlink | Default ignore includes `.venv`; lane commit skips hook noise (SP-640) |
+| [#201](https://github.com/beettlle/pi-spine/issues/201) | `batch complete` archives while lane commits never landed | Complete **refuses** when `doneInLane && !doneOnMain`; diagnose suggests `spine batch salvage --batch <id> --lane <n> --integrate` (SP-644/SP-645) |
+| [#203](https://github.com/beettlle/pi-spine/issues/203) | Multi-lane `worker_orphaned` with **dead** engine PID | Classify `engine_orphaned` + single `spine batch retry <taskId>` (or abort); no `.spine/runtime` surgery (SP-646/SP-647) |
+
+```bash
+# Checkout dogfood
+node bin/spine.mjs version          # warn if PATH/global skews package.json
+node bin/spine.mjs status --diagnose
+
+# #197 / #196 family
+node bin/spine.mjs batch resume --force
+
+# #201 pending land — do NOT batch complete first
+node bin/spine.mjs batch salvage --batch <batchId> --lane <n> --integrate --yes
+
+# #203 dead-engine multi-lane orphan
+node bin/spine.mjs batch retry <taskId>
+```
+
+Gate evidence examples (consumer Python):
+
+```json
+"testing": {
+  "test": ".venv/bin/python -m unittest discover -s tests",
+  "testWithCoverage": "scripts/run-coverage.sh"
+}
+```
+
 ### Orphan running (zombie batch)
 
 When `spine status --diagnose` shows `engine_orphaned` or `needs_retry` with a **worker died** headline while batch-state still says `phase: running`, the detached engine or lane worker exited without writing a terminal journal event (common after kill -9, OOM, or host crash mid-resume). Attached engines journal **`engine.parent_died`** when the parent shell/session is lost, reconcile orphan `running` → `failed`, clear `enginePid`, and set **`phase: paused`** (SP-539, **Closes** [#163](https://github.com/beettlle/pi-spine/issues/163)).

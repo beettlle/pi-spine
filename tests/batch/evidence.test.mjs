@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
 	EvidenceCommandError,
+	isAllowedEvidenceScriptsPath,
 	parseEvidenceCommandArgv,
+	resolveEvidenceScriptsArgv,
 	runEvidenceCommand,
 } from "../../src/batch/evidence-command.mjs";
 
@@ -74,6 +77,86 @@ test("parseEvidenceCommandArgv rejects venv path with parent traversal", () => {
 		() => parseEvidenceCommandArgv("../../.venv/bin/python -m unittest"),
 		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
 	);
+});
+
+test("parseEvidenceCommandArgv accepts scripts/ evidence path", () => {
+	assert.deepEqual(parseEvidenceCommandArgv("scripts/run-gate-evidence.sh"), [
+		"scripts/run-gate-evidence.sh",
+	]);
+	assert.deepEqual(parseEvidenceCommandArgv("./scripts/run-gate-evidence.sh --flag"), [
+		"./scripts/run-gate-evidence.sh",
+		"--flag",
+	]);
+});
+
+test("parseEvidenceCommandArgv rejects scripts path traversal", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("scripts/../outside.sh"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: outside.sh/.test(err.message),
+	);
+	assert.throws(
+		() => parseEvidenceCommandArgv("./scripts/../outside.sh"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: outside.sh/.test(err.message),
+	);
+});
+
+test("parseEvidenceCommandArgv rejects absolute scripts path", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("/tmp/scripts/evil.sh"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: evil.sh/.test(err.message),
+	);
+});
+
+test("isAllowedEvidenceScriptsPath requires scripts/ prefix", () => {
+	assert.equal(isAllowedEvidenceScriptsPath("scripts/gate.sh"), true);
+	assert.equal(isAllowedEvidenceScriptsPath("./scripts/gate.sh"), true);
+	assert.equal(isAllowedEvidenceScriptsPath("bin/gate.sh"), false);
+	assert.equal(isAllowedEvidenceScriptsPath("scripts/../gate.sh"), false);
+});
+
+test("resolveEvidenceScriptsArgv rejects symlink escape outside scripts/", async () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-evidence-scripts-"));
+	try {
+		fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+		fs.writeFileSync(path.join(root, "outside.sh"), "#!/bin/sh\necho outside\n", "utf-8");
+		fs.symlinkSync(path.join(root, "outside.sh"), path.join(root, "scripts", "escape.sh"));
+
+		assert.throws(
+			() => resolveEvidenceScriptsArgv(root, ["scripts/escape.sh"]),
+			(err) => err instanceof EvidenceCommandError && /symlink escapes/.test(err.message),
+		);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("runEvidenceCommand executes validated scripts/ path without shell", () => {
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-evidence-run-script-"));
+	try {
+		fs.mkdirSync(path.join(projectRoot, "scripts"), { recursive: true });
+		const scriptPath = path.join(projectRoot, "scripts", "gate-evidence.sh");
+		fs.writeFileSync(scriptPath, "#!/bin/sh\necho evidence-script-ok\n", "utf-8");
+		fs.chmodSync(scriptPath, 0o755);
+
+		const result = runEvidenceCommand(projectRoot, "scripts/gate-evidence.sh");
+		assert.equal(result.skipped, false);
+		assert.equal(result.ok, true);
+		assert.match(result.output, /evidence-script-ok/);
+	} finally {
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("runEvidenceCommand rejects scripts path traversal at resolve time", () => {
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-evidence-reject-script-"));
+	try {
+		const result = runEvidenceCommand(projectRoot, "scripts/../outside.sh");
+		assert.equal(result.skipped, false);
+		assert.equal(result.ok, false);
+		assert.match(result.output, /\[rejected\].*not allowed: outside.sh/);
+	} finally {
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
 });
 
 test("runEvidenceCommand executes allowlisted argv without shell", () => {

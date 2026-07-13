@@ -10,7 +10,7 @@
 
 ## Mission
 
-Record Phase 70 completion in `spine-tasks/CONTEXT.md`: task table for SP-635–643, link PRD + manifest, release note placeholder for v2.6.0, set **Next Task ID → SP-644**, note deferred backlog (#160 B/C, #135, #127, #124, #120, #43).
+Record Phase 70 completion in `spine-tasks/CONTEXT.md`: task table for SP-635–648, link PRD + manifest, release note placeholder for v2.6.0, set **Next Task ID → SP-649**, note deferred backlog (#202, #160 B/C, #135, #127, #124, #120, #43).
 
 **Source:** [`docs/PRD-v2.6.0-consumer-resume-handoff.md`](../../docs/PRD-v2.6.0-consumer-resume-handoff.md) §6 FR-REL260-08
 
@@ -24,6 +24,11 @@ Record Phase 70 completion in `spine-tasks/CONTEXT.md`: task table for SP-635–
 - **Task:** SP-640
 - **Task:** SP-641
 - **Task:** SP-643
+- **Task:** SP-644
+- **Task:** SP-645
+- **Task:** SP-646
+- **Task:** SP-647
+- **Task:** SP-648
 
 ## Context to Read First
 
@@ -57,9 +62,9 @@ Record Phase 70 completion in `spine-tasks/CONTEXT.md`: task table for SP-635–
 
 ### Step 1: Phase 70 CONTEXT update
 
-- [ ] Add Phase 70 section with SP-635–643 rows and exit criteria checkboxes
-- [ ] Set Next Task ID → SP-644; link PRD + manifest
-- [ ] Note deferred backlog (#160 B/C, #135, #127, #124, #120, #43)
+- [ ] Add Phase 70 section with SP-635–648 rows and exit criteria checkboxes
+- [ ] Set Next Task ID → SP-649; link PRD + manifest
+- [ ] Note deferred backlog (#202, #160 B/C, #135, #127, #124, #120, #43)
 
 ### Step 2: Testing & Verification
 

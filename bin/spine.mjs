@@ -39,6 +39,10 @@ import { cmdInit } from "./spine-init.mjs";
 import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
 import { cmdDoctor } from "./spine-doctor.mjs";
 import { ensureDefaultPiSpineRootEnv } from "../src/config/pi-spine-root.mjs";
+import {
+	detectPathSpineVersionSkew,
+	formatCheckoutVersionSkewRemediation,
+} from "../src/doctor/duplicate-install.mjs";
 
 export { runDoctorChecks } from "./spine-doctor.mjs";
 
@@ -244,6 +248,20 @@ function cmdVersion() {
 	const piVersion = getVersion("pi");
 	if (piVersion) console.log(`  Pi:       ${piVersion}`);
 	console.log(`  Node:     v${process.versions.node}`);
+
+	const skew = detectPathSpineVersionSkew({
+		runningPackageRoot: PACKAGE_ROOT,
+		projectRoot,
+	});
+	if (skew.skewed) {
+		console.log(
+			`\n  ${c.yellow}⚠️  Version skew:${c.reset} running v${skew.cliVersion} ≠ checkout v${skew.checkoutVersion}`,
+		);
+		console.log(
+			`     ${c.dim}→ Use: ${formatCheckoutVersionSkewRemediation()}${c.reset}`,
+		);
+	}
+
 	console.log();
 }
 

@@ -19,6 +19,16 @@ const RETRY_ALLOWED_PHASES = new Set(["paused", "failed"]);
 const RETRY_BLOCKED_PHASES = new Set(["running", "planning"]);
 
 /**
+ * Fail running tasks and clear dead engine/worker PIDs before retry/skip (#203 / SP-647).
+ *
+ * @param {string} projectRoot
+ * @param {object} state
+ */
+function reconcileOrphanBeforeTaskMutation(projectRoot, state) {
+	return reconcileOrphanRunningState({ projectRoot, state });
+}
+
+/**
  * @param {object} state
  * @param {string} taskId
  */
@@ -115,7 +125,7 @@ export function retryTask({ projectRoot, taskId }) {
 		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
 	}
 
-	reconcileOrphanRunningState({ projectRoot, state: loaded.raw });
+	reconcileOrphanBeforeTaskMutation(projectRoot, loaded.raw);
 
 	const reloaded = loadSpineBatchState(projectRoot);
 	const state = reloaded.raw;
@@ -255,7 +265,13 @@ export function skipTask({ projectRoot, taskId }) {
 		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
 	}
 
-	const state = loaded.raw;
+	reconcileOrphanBeforeTaskMutation(projectRoot, loaded.raw);
+
+	const reloaded = loadSpineBatchState(projectRoot);
+	const state = reloaded.raw;
+	if (!state) {
+		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
+	}
 	const phase = String(state.phase ?? "");
 
 	if (RETRY_BLOCKED_PHASES.has(phase)) {

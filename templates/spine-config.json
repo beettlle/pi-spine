@@ -80,7 +80,8 @@
   },
   "_examples": {
     "worktreeSetupHook": "scripts/spine-worktree-setup-flutter.sh",
-    "_worktreeSetupHookNote": "Optional Flutter: symlink gitignored pubspec assets from SPINE_PROJECT_ROOT into lane worktrees — see docs/adoption/flutter-worktree-guide.md"
+    "_worktreeSetupHookNote": "Optional Flutter: symlink gitignored pubspec assets from SPINE_PROJECT_ROOT into lane worktrees — see docs/adoption/flutter-worktree-guide.md",
+    "_testingScriptsNote": "testing.build/test/testWithCoverage may use a relative scripts/*.sh path (validated sandbox, no shell metacharacters); e.g. scripts/run-gate-evidence.sh"
   },
   "worktreeSetupHook": "",
   "worktreeSetupIgnorePaths": [".venv"],

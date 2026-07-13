@@ -2,21 +2,20 @@
 /** Diagnosis derivation (SP-596/SP-606 / #192). */
 
 import fs from "node:fs";
+import { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis.mjs";
 import {
-	inferLaunchFailureFromWorkerOutputTail,
-	inferLaunchFailureKind,
-} from "./diagnosis.mjs";
+	findPendingLaneLandTasks,
+	shouldDiagnosePendingLaneLand,
+} from "./diagnosis-pending-lane.mjs";
 import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.mjs";
 import { inferStubExitReasonForTask } from "./diagnosis-stub.mjs";
 import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
-import { journalEventsSinceResume } from "./orphan-detect.mjs";
 import { isPostMergeLimbo } from "./limbo-detect.mjs";
-import { isProcessAlive } from "../process/liveness.mjs";
-import { readBatchEnginePid } from "./state.mjs";
 import {
 	LIMBO_PHASES,
 	RUNNING_PHASES,
 } from "./reconcile-light-cache.mjs";
+export { buildReconcileDiagnosisContext } from "./reconcile-diagnosis-context.mjs";
 
 /**
  * @param {unknown} rawTasks
@@ -242,22 +241,6 @@ function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null)
 }
 
 /**
- * @param {object[]} journalEvents
- * @param {Record<string, unknown>|null|undefined} raw
- * @param {string|null} taskId
- */
-function journalIndicatesResumeRulesStall(journalEvents, raw, taskId) {
-	const scoped = journalEventsSinceResume(journalEvents, raw);
-	const hasRulesSelected = scoped.some((event) => {
-		if (event.type !== "worker.rules_selected") return false;
-		const eventTaskId = event.taskId ?? event.payload?.taskId;
-		return !taskId || !eventTaskId || eventTaskId === taskId;
-	});
-	const hasBatchResumed = scoped.some((event) => event.type === "batch.resumed");
-	return hasRulesSelected && hasBatchResumed;
-}
-
-/**
  * @param {object} signals
  */
 function findNeedsReplanTask(signals) {
@@ -300,19 +283,18 @@ export function deriveDiagnosis(signals) {
 
 	if (orphanRunning) {
 		if (orphanRunning.kind === "lane" && orphanRunning.taskId) {
-			const enginePid = readBatchEnginePid(signals.raw);
-			const engineDead = enginePid == null || !isProcessAlive(enginePid);
-			const resumeRulesStall = journalIndicatesResumeRulesStall(
-				signals.journalEvents ?? [],
-				signals.raw,
-				orphanRunning.taskId,
-			);
-			if (engineDead && resumeRulesStall) {
-				return withFailureContext("engine_orphaned", orphanRunning.taskId, signals);
-			}
 			return withFailureContext("worker_orphaned", orphanRunning.taskId, signals);
 		}
 		return withFailureContext("engine_orphaned", orphanRunning.taskId ?? null, signals);
+	}
+
+	if (shouldDiagnosePendingLaneLand(signals)) {
+		const pendingLaneLandTasks = findPendingLaneLandTasks(signals.tasks);
+		return withFailureContext(
+			"pending_lane_land",
+			pendingLaneLandTasks[0]?.taskId ?? null,
+			signals,
+		);
 	}
 
 	if (signals.stateDrift?.drifted) {

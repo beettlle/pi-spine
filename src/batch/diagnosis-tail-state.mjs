@@ -8,11 +8,76 @@ import { macroPhaseLabel } from "./macro-phase.mjs";
 export { isRunningWithoutActiveWorkers };
 
 /**
+ * Whether batch-state records a live resume/batch engine PID (#198 / SP-637).
+ *
+ * @param {object} ctx
+ * @returns {boolean}
+ */
+export function isEngineStillRunning(ctx = {}) {
+	if (ctx.engineStillRunning === true) {
+		return true;
+	}
+	const enginePid = ctx.enginePid;
+	if (enginePid == null) {
+		return false;
+	}
+	if (ctx.staleEnginePid === true) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Post-integrate limbo: orch merged, tasks terminal-success, engine PID still alive.
+ * Stale segment pending must not mask limbo when lane workers are idle (#198 / SP-637).
+ *
+ * @param {object} ctx
+ * @returns {boolean}
+ */
+export function isPostIntegrateEngineLimbo(ctx = {}) {
+	if (ctx.allTasksTerminalSuccess !== true) {
+		return false;
+	}
+	if (ctx.gitMerged !== true) {
+		return false;
+	}
+	if (!isEngineStillRunning(ctx)) {
+		return false;
+	}
+	if (ctx.hasRunningTasks === true) {
+		return false;
+	}
+	const phase = ctx.phase ?? "";
+	if (phase !== "running" && phase !== "merging") {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @param {string} batchLabel
+ * @param {object} ctx
+ * @returns {string|null}
+ */
+export function buildPostIntegrateEngineLimboHeadline(batchLabel, ctx = {}) {
+	const enginePid = ctx.enginePid;
+	const pidSuffix =
+		enginePid != null && Number.isFinite(Number(enginePid))
+			? ` (PID ${enginePid})`
+			: "";
+	return `${batchLabel} resume engine still running after integrate${pidSuffix} — wait, abort, or batch complete after exit`;
+}
+
+/**
  * @param {string} batchLabel
  * @param {object} ctx
  * @returns {string|null}
  */
 export function buildRunningTailHeadline(batchLabel, ctx = {}) {
+	if (isPostIntegrateEngineLimbo(ctx)) {
+		return buildPostIntegrateEngineLimboHeadline(batchLabel, ctx);
+	}
+
 	if (!isRunningWithoutActiveWorkers(ctx)) {
 		return null;
 	}
@@ -38,6 +103,9 @@ export function buildRunningTailHeadline(batchLabel, ctx = {}) {
 	}
 
 	if (macroPhase === "reviewing") {
+		if (ctx.allTasksTerminalSuccess === true && isEngineStillRunning(ctx)) {
+			return buildPostIntegrateEngineLimboHeadline(batchLabel, ctx);
+		}
 		return `${batchLabel} running reviews — no workers scheduled`;
 	}
 

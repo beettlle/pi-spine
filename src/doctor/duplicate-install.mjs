@@ -83,6 +83,106 @@ export function detectDuplicatePiSpineInstall({
 }
 
 /**
+ * Read pi-spine version from a checkout cwd when package.json name matches.
+ *
+ * @param {string} projectRoot
+ * @param {(p: string) => boolean} [exists]
+ */
+export function readCheckoutPiSpineVersion(projectRoot, exists = fs.existsSync) {
+	const packageJsonPath = path.join(projectRoot, "package.json");
+	if (!exists(packageJsonPath)) return null;
+	try {
+		const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+		if (String(pkg.name ?? "").trim() !== PI_SPINE_PACKAGE_NAME) return null;
+		return String(pkg.version ?? "").trim() || null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Detect when the running CLI package version differs from checkout package.json (#204 / SP-648).
+ *
+ * @param {object} [options]
+ * @param {string} [options.runningPackageRoot]
+ * @param {string} [options.runningVersion]
+ * @param {string} [options.projectRoot]
+ * @param {(p: string) => boolean} [options.exists]
+ */
+export function detectPathSpineVersionSkew({
+	runningPackageRoot,
+	runningVersion,
+	projectRoot = process.cwd(),
+	exists = fs.existsSync,
+} = {}) {
+	const cliVersion =
+		runningVersion ??
+		(runningPackageRoot ? readInstalledPackageVersion(runningPackageRoot) : null);
+	const checkoutVersion = readCheckoutPiSpineVersion(projectRoot, exists);
+	const checkoutPresent = checkoutVersion != null;
+	const skewed =
+		checkoutPresent && cliVersion != null && cliVersion !== checkoutVersion;
+
+	return {
+		cliVersion,
+		checkoutVersion,
+		checkoutPresent,
+		skewed,
+		projectRoot,
+	};
+}
+
+/**
+ * Remediation when PATH/global CLI skews checkout dogfood (#204).
+ */
+export function formatCheckoutVersionSkewRemediation() {
+	return "node bin/spine.mjs  # or: npm link";
+}
+
+/**
+ * @param {object} [options]
+ * @param {string} [options.runningPackageRoot]
+ * @param {string} [options.runningVersion]
+ * @param {string} [options.projectRoot]
+ * @param {(p: string) => boolean} [options.exists]
+ */
+export function buildCheckoutVersionSkewDoctorCheck(options = {}) {
+	const assessment = detectPathSpineVersionSkew(options);
+
+	if (!assessment.checkoutPresent) {
+		return {
+			label: "pi-spine checkout version skew",
+			ok: true,
+			detail: "no pi-spine checkout package.json in cwd",
+		};
+	}
+
+	if (!assessment.cliVersion) {
+		return {
+			label: "pi-spine checkout version skew",
+			ok: true,
+			detail: `checkout v${assessment.checkoutVersion} (running CLI version unknown)`,
+		};
+	}
+
+	if (!assessment.skewed) {
+		return {
+			label: "pi-spine checkout version skew",
+			ok: true,
+			detail: `running and checkout both v${assessment.cliVersion}`,
+		};
+	}
+
+	return {
+		label: "pi-spine checkout version skew",
+		ok: true,
+		warning: true,
+		detail: `running v${assessment.cliVersion} vs checkout v${assessment.checkoutVersion}`,
+		suggestedCommand: formatCheckoutVersionSkewRemediation(),
+	};
+}
+
+/**
  * Platform-aware remediation when duplicate installs diverge.
  */
 export function formatDuplicateInstallRemediation() {

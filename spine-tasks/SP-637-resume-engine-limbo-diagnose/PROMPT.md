@@ -37,7 +37,6 @@ When tasks are terminal-success, orch is merged, and a resume engine PID is stil
 
 - `src/batch/diagnosis-tail-state.mjs`
 - `src/batch/diagnosis.mjs`
-- `src/batch/lifecycle.mjs`
 - `tests/batch/resume-multi-engine.test.mjs`
 
 ## Contract

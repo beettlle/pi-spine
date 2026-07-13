@@ -23,8 +23,14 @@ export {
 	inferMergeGitignoredFailure,
 	summarizeMergeFailures,
 } from "./diagnosis-merge-failure.mjs";
-import { buildRunningTailHeadline } from "./diagnosis-tail-state.mjs";
-export { buildRunningTailHeadline, isRunningWithoutActiveWorkers } from "./diagnosis-tail-state.mjs";
+import { buildRunningTailHeadline, isPostIntegrateEngineLimbo, buildPostIntegrateEngineLimboHeadline } from "./diagnosis-tail-state.mjs";
+export {
+	buildPostIntegrateEngineLimboHeadline,
+	buildRunningTailHeadline,
+	isEngineStillRunning,
+	isPostIntegrateEngineLimbo,
+	isRunningWithoutActiveWorkers,
+} from "./diagnosis-tail-state.mjs";
 export { buildReviewHonorHeadlineSuffix, findLatestReviewHonorSignal } from "./review.mjs";
 import {
 	buildStubFailureHeadline,
@@ -53,44 +59,20 @@ export {
 } from "./diagnosis-parent-exit.mjs";
 import { buildReviewHonorHeadlineSuffix } from "./review.mjs";
 export { inferLaunchFailureFromWorkerOutputTail, inferLaunchFailureKind } from "./diagnosis-launch-failure.mjs";
-
-const INVALID_BARE_RETRY_FORCE = /^spine batch retry --force$/;
-
-/**
- * Gate-ready batches must not headline historical merge/gitignored blockers (#195 / FR-REL231-01).
- *
- * @param {string} diagnosis
- * @param {object} [ctx]
- * @param {boolean} [ctx.allTasksTerminalSuccess]
- * @param {boolean} [ctx.integrateGateOpen]
- * @returns {boolean}
- */
-export function isGateReadyHeadlineContext(diagnosis, ctx = {}) {
-	if (diagnosis === "needs_integrate") {
-		return true;
-	}
-	if (ctx.allTasksTerminalSuccess === true && ctx.integrateGateOpen === true) {
-		return true;
-	}
-	return false;
-}
-
-/**
- * Retry suggestions must include a task id; journal salvage payloads may be stale.
- *
- * @param {string|null|undefined} command
- * @param {string|null|undefined} taskId
- * @returns {string|null}
- */
-export function sanitizeRetrySuggestedCommand(command, taskId) {
-	if (typeof command !== "string" || command.length === 0) {
-		return command ?? null;
-	}
-	if (INVALID_BARE_RETRY_FORCE.test(command.trim())) {
-		return taskId ? `spine batch retry ${taskId}` : "spine status --diagnose";
-	}
-	return command;
-}
+import { isGateReadyHeadlineContext } from "./diagnosis-gate-ready.mjs";
+export { isGateReadyHeadlineContext };
+import { sanitizeRetrySuggestedCommand } from "./diagnosis-retry-command.mjs";
+export { sanitizeRetrySuggestedCommand };
+import {
+	buildPendingLaneLandHeadline,
+	buildPendingLaneLandSuggestedCommand,
+} from "./diagnosis-pending-lane.mjs";
+export {
+	buildPendingLaneLandHeadline,
+	buildPendingLaneLandSuggestedCommand,
+	findPendingLaneLandTasks,
+	shouldDiagnosePendingLaneLand,
+} from "./diagnosis-pending-lane.mjs";
 
 export const DIAGNOSIS_TAXONOMY = [
 	"running",
@@ -108,6 +90,8 @@ export const DIAGNOSIS_TAXONOMY = [
 	"limbo_stale",
 	"human_base_diverged",
 	"integrate_isolated_ok",
+	"pending_lane_land",
+	"engine_still_running",
 	"failed",
 	"aborted",
 ];
@@ -118,6 +102,7 @@ const NO_PAUSE_DIAGNOSES = new Set([
 	"needs_integrate",
 	"engine_orphaned",
 	"integrate_isolated_ok",
+	"engine_still_running",
 ]);
 const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
 	"code_review_spawn_failed",
@@ -138,6 +123,7 @@ const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
  * @param {boolean} [ctx.mergeFailed]
  * @param {string|null} [ctx.taskBranch]
  * @param {string[]|null} [ctx.gitignoredPaths]
+ * @param {object[]} [ctx.pendingLaneLandTasks]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	const preferGateReady = isGateReadyHeadlineContext(diagnosis, ctx);
@@ -157,6 +143,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 	}
 
 	switch (diagnosis) {
+		case "engine_still_running":
+			return "spine wait --until completed,failed,needs_integrate --timeout 2h";
 		case "limbo_stale":
 		case "completed_manual":
 			return "spine batch dismiss";
@@ -182,10 +170,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			if (STUB_EXIT_REASONS.has(ctx.exitReason ?? "")) {
 				return buildStubFailureSuggestedCommand(ctx);
 			}
-			{
-				const primaryCommand = buildPrimaryFailureSuggestedCommand(ctx);
-				if (primaryCommand) return primaryCommand;
-			}
+			const primaryCommand = buildPrimaryFailureSuggestedCommand(ctx);
+			if (primaryCommand) return primaryCommand;
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return "spine doctor";
 			}
@@ -274,6 +260,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			return "spine sync-base";
 		case "integrate_isolated_ok":
 			return "spine sync-base";
+		case "pending_lane_land":
+			return buildPendingLaneLandSuggestedCommand(ctx.batchId, ctx.pendingLaneLandTasks ?? []);
 		default:
 			return "spine status --diagnose";
 	}
@@ -298,6 +286,8 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  * @param {string|null} [ctx.lastError]
  * @param {number} [ctx.succeededTasks]
  * @param {number} [ctx.totalTasks]
+ * @param {object[]} [ctx.pendingLaneLandTasks]
+ * @param {string|null|undefined} [ctx.baseBranch]
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
@@ -317,6 +307,17 @@ export function buildHeadline(diagnosis, ctx = {}) {
 	}
 
 	switch (diagnosis) {
+		case "engine_still_running": {
+			const enginePid = ctx.enginePid;
+			const pidSuffix =
+				enginePid != null && Number.isFinite(Number(enginePid))
+					? ` (PID ${enginePid})`
+					: "";
+			if (ctx.gitMerged === true) {
+				return `${batchLabel} resume engine still running after integrate${pidSuffix} — wait, abort, or batch complete after exit`;
+			}
+			return `${batchLabel} engine still running${pidSuffix} — complete refused`;
+		}
 		case "limbo_stale":
 			return `${batchLabel} finished but state is stale — dismiss to clear`;
 		case "completed_manual":
@@ -325,10 +326,8 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			if (STUB_EXIT_REASONS.has(ctx.exitReason ?? "")) {
 				return buildStubFailureHeadline(batchLabel, ctx);
 			}
-			{
-				const primaryHeadline = buildPrimaryFailureHeadline(batchLabel, ctx);
-				if (primaryHeadline) return primaryHeadline;
-			}
+			const primaryHeadline = buildPrimaryFailureHeadline(batchLabel, ctx);
+			if (primaryHeadline) return primaryHeadline;
 			if (ctx.launchFailureKind === "pi_spine_root" || ctx.launchFailureKind === "launch_failed") {
 				return `${batchLabel} failed at worker launch — fix PI_SPINE_ROOT/devcontainer, then retry`;
 			}
@@ -413,6 +412,9 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				? `Task ${ctx.failedTaskId} needs replan — edit PROMPT.md before retry`
 				: `${batchLabel} has tasks needing replan — edit PROMPT.md before retry`;
 		case "running": {
+			if (isPostIntegrateEngineLimbo(ctx)) {
+				return buildPostIntegrateEngineLimboHeadline(batchLabel, ctx);
+			}
 			const reviewHonorSuffix = buildReviewHonorHeadlineSuffix(ctx.reviewHonorSignal);
 			if (reviewHonorSuffix && ctx.reviewHonorSignal?.taskId) {
 				return `${batchLabel} task ${ctx.reviewHonorSignal.taskId}: ${reviewHonorSuffix}`;
@@ -444,6 +446,8 @@ export function buildHeadline(diagnosis, ctx = {}) {
 		}
 		case "integrate_isolated_ok":
 			return `${batchLabel} — isolated integrate landed; sync human checkout with base`;
+		case "pending_lane_land":
+			return buildPendingLaneLandHeadline(batchLabel, ctx);
 		default:
 			return `${batchLabel} requires attention (phase: ${ctx.phase ?? "unknown"})`;
 	}
@@ -459,13 +463,26 @@ export function shouldNeverSuggestPause(diagnosis) {
 /**
  * @param {string} diagnosis
  * @param {object} ctx
+ * @returns {string}
+ */
+export function resolveEffectiveDiagnosis(diagnosis, ctx = {}) {
+	if (diagnosis === "running" && isPostIntegrateEngineLimbo(ctx)) {
+		return "engine_still_running";
+	}
+	return diagnosis;
+}
+
+/**
+ * @param {string} diagnosis
+ * @param {object} ctx
  * @returns {Pick<ReconciliationResult, "diagnosis" | "headline" | "suggestedCommand" | "alternatives">}
  */
 export function buildDiagnosisOutput(diagnosis, ctx = {}) {
+	const effectiveDiagnosis = resolveEffectiveDiagnosis(diagnosis, ctx);
 	return {
-		diagnosis,
-		headline: buildHeadline(diagnosis, ctx),
-		suggestedCommand: buildSuggestedCommand(diagnosis, ctx),
-		alternatives: buildAlternatives(diagnosis, ctx),
+		diagnosis: effectiveDiagnosis,
+		headline: buildHeadline(effectiveDiagnosis, ctx),
+		suggestedCommand: buildSuggestedCommand(effectiveDiagnosis, ctx),
+		alternatives: buildAlternatives(effectiveDiagnosis, ctx),
 	};
 }
