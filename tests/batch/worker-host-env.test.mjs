@@ -6,9 +6,36 @@ import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildWorkerChildEnv } from "../../src/batch/worker-host.mjs";
-import { resolvePiSpineRoot } from "../../src/config/pi-spine-root.mjs";
+import {
+	ensureDefaultPiSpineRootEnv,
+	resolvePiSpineRoot,
+} from "../../src/config/pi-spine-root.mjs";
 
 const PACKAGE_ROOT = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
+
+test("ensureDefaultPiSpineRootEnv defaults unset env to cwd", () => {
+	const env = /** @type {NodeJS.ProcessEnv} */ ({});
+	const cwd = "/tmp/spine-643-cwd";
+	const result = ensureDefaultPiSpineRootEnv(env, cwd);
+	assert.equal(result, cwd);
+	assert.equal(env.PI_SPINE_ROOT, cwd);
+});
+
+test("ensureDefaultPiSpineRootEnv defaults empty/whitespace env to cwd", () => {
+	const env = /** @type {NodeJS.ProcessEnv} */ ({ PI_SPINE_ROOT: "  " });
+	const cwd = "/tmp/spine-643-empty";
+	assert.equal(ensureDefaultPiSpineRootEnv(env, cwd), cwd);
+	assert.equal(env.PI_SPINE_ROOT, cwd);
+});
+
+test("ensureDefaultPiSpineRootEnv preserves explicit env value", () => {
+	const env = /** @type {NodeJS.ProcessEnv} */ ({
+		PI_SPINE_ROOT: "/opt/homebrew/lib/node_modules/pi-spine",
+	});
+	const result = ensureDefaultPiSpineRootEnv(env, "/tmp/ignored-cwd");
+	assert.equal(result, "/opt/homebrew/lib/node_modules/pi-spine");
+	assert.equal(env.PI_SPINE_ROOT, "/opt/homebrew/lib/node_modules/pi-spine");
+});
 
 test("resolvePiSpineRoot defaults to pi-spine package root", () => {
 	const root = resolvePiSpineRoot({}, PACKAGE_ROOT);

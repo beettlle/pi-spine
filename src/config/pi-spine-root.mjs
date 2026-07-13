@@ -31,6 +31,28 @@ function realpathOrResolve(root) {
 }
 
 /**
+ * Default `PI_SPINE_ROOT` to cwd when unset/empty so CLI doctor/preflight
+ * do not require a manual export (SP-643 / #203). Does not override an
+ * explicit env value. Worker package-root resolution stays in
+ * {@link resolvePiSpineRoot}.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {string} [cwd]
+ * @returns {string} Effective `PI_SPINE_ROOT` after ensure
+ */
+export function ensureDefaultPiSpineRootEnv(
+	env = process.env,
+	cwd = process.cwd(),
+) {
+	const current = env.PI_SPINE_ROOT;
+	if (typeof current === "string" && current.trim()) {
+		return current.trim();
+	}
+	env.PI_SPINE_ROOT = cwd;
+	return cwd;
+}
+
+/**
  * @param {object} [config]
  * @param {string} [projectRoot]
  * @param {string} [importMetaUrl]

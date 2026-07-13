@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { ensureDefaultPiSpineRootEnv } from "../config/pi-spine-root.mjs";
 
 /**
  * @param {string} gitFilePath
@@ -51,6 +52,9 @@ export function buildWorktreeHealthDoctorCheck({ projectRoot, config = {} }) {
 
 	const hook = config.worktreeSetupHook;
 	const hookConfigured = typeof hook === "string" && hook.trim().length > 0;
+	// CLI defaults unset PI_SPINE_ROOT to cwd (SP-643); apply here so doctor
+	// library callers get the same behavior without requiring bin/spine.mjs.
+	ensureDefaultPiSpineRootEnv();
 	if (!process.env.PI_SPINE_ROOT && hookConfigured) {
 		issues.push("PI_SPINE_ROOT unset with worktreeSetupHook configured");
 	}

@@ -38,6 +38,7 @@ import { loadSpineConfig } from "./spine-config.mjs";
 import { cmdInit } from "./spine-init.mjs";
 import { cmdMigrateFromTaskplane } from "./spine-migrate-from-taskplane.mjs";
 import { cmdDoctor } from "./spine-doctor.mjs";
+import { ensureDefaultPiSpineRootEnv } from "../src/config/pi-spine-root.mjs";
 
 export { runDoctorChecks } from "./spine-doctor.mjs";
 
@@ -355,6 +356,9 @@ ${c.bold}Examples:${c.reset}
 }
 
 if (isCliEntrypoint(import.meta.url)) {
+	// Dogfood/checkout: unset PI_SPINE_ROOT + worktreeSetupHook must not fail
+	// doctor/preflight solely for a missing env var (SP-643 / #203).
+	ensureDefaultPiSpineRootEnv();
 	const [command = "help", ...args] = process.argv.slice(2);
 
 	const runCli = async () => {

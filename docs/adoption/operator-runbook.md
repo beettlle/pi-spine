@@ -97,6 +97,8 @@ spine doctor
 spine version   # confirms global npm link resolves (npm bin is a symlink to bin/spine.mjs)
 ```
 
+When `PI_SPINE_ROOT` is unset, the CLI defaults it to the current working directory so `spine doctor` / preflight do not require a manual `export PI_SPINE_ROOT=$PWD` solely for a missing env var (SP-643 / [#203](https://github.com/beettlle/pi-spine/issues/203)). An explicit `PI_SPINE_ROOT` still wins; worker spawn continues to resolve the package root via `resolvePiSpineRoot`.
+
 `spine doctor` prints an advisory **`lanes.maxParallel`** sizing line when config is valid (configured vs CPU-based suggestion). Use it with [§3 Orchestrator process model](#orchestrator-process-model-98) to estimate expected node process count during batches.
 
 **Duplicate pi-spine installs (issue #128, SP-559):** Pi 0.75+ installs packages under `~/.pi/agent/npm/node_modules/` via `pi install npm:pi-spine`. If you previously ran `npm install -g pi-spine`, two copies can drift independently — `pi update` refreshes only the Pi-private copy while the global CLI runs stale code. `spine doctor` warns when both copies exist with **different versions** and suggests `npm uninstall -g pi-spine` plus `pi install npm:pi-spine`. Same-version pairs are tolerated.
