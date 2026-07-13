@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { loadSpineConfig } from "../spine-config-load.mjs";
+import { missingConfigHint } from "../missing-config-hint.mjs";
 import { resolveTasksRootPath } from "../env-overrides.mjs";
 import { validateWorktreeSetupHookConfig } from "../worktree-setup-hook.mjs";
 import { discoverTasks } from "../../tasks/packet/discover.mjs";
@@ -61,7 +62,7 @@ export function checkTasksRoot(ctx) {
 
 	if (!tasksRootPath) {
 		return makeCheck("tasks-root", false, "tasks root not configured", {
-			suggestedCommand: "spine init",
+			suggestedCommand: missingConfigHint(ctx.projectRoot).suggestedCommand,
 		});
 	}
 
@@ -108,7 +109,7 @@ export function checkDependenciesJson(ctx) {
 
 	if (!tasksRootPath) {
 		return makeCheck("dependencies-json", false, "tasks root not configured", {
-			suggestedCommand: "spine init",
+			suggestedCommand: missingConfigHint(ctx.projectRoot).suggestedCommand,
 		});
 	}
 
@@ -255,15 +256,16 @@ export function checkTasksValidate(ctx) {
 	const config = configResult?.config;
 
 	if (!config || configResult?.error) {
+		const hint = missingConfigHint(projectRoot);
 		return makeCheck("tasks-validate", false, "cannot validate tasks without spine config", {
-			suggestedCommand: "spine init",
+			suggestedCommand: hint.suggestedCommand,
 		});
 	}
 
 	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
 	if (!tasksRootPath) {
 		return makeCheck("tasks-validate", false, "tasks root not configured", {
-			suggestedCommand: "spine init",
+			suggestedCommand: missingConfigHint(projectRoot).suggestedCommand,
 		});
 	}
 

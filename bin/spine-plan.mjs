@@ -11,6 +11,7 @@ import path from 'node:path';
 import { isCliEntrypoint } from './spine-cli/shared.mjs';
 import { loadSpineConfig } from './spine-config.mjs';
 import { resolveTasksRootPath } from '../src/config/env-overrides.mjs';
+import { missingConfigHint } from '../src/config/missing-config-hint.mjs';
 import { buildPlan } from '../src/planner/index.mjs';
 import { formatPlanHuman } from '../src/planner/format-plan.mjs';
 
@@ -79,7 +80,7 @@ export async function runSpinePlan({
 	const tasksRoot = resolveTasksRootPath(projectRoot, config);
 	if (!tasksRoot) {
 		const err = new Error('Cannot build plan: tasksRoot not configured');
-		err.suggestedCommand = 'spine init';
+		err.suggestedCommand = missingConfigHint(projectRoot).suggestedCommand;
 		throw err;
 	}
 

@@ -11,6 +11,7 @@ import { validateWorkerContextConfig } from "./worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "./worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "./worktree-setup-hook.mjs";
 import { validateOrchestratorConfig } from "./spine-config-schema.mjs";
+import { missingConfigHint } from "./missing-config-hint.mjs";
 
 export { resolveGatePostureConfig } from "./gate-posture-config.mjs";
 
@@ -58,14 +59,14 @@ export function loadSpineConfigFile(projectRoot) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
 
 	if (!fs.existsSync(configPath)) {
-		const resolvedRoot = path.resolve(projectRoot);
+		const hint = missingConfigHint(projectRoot);
 		return {
 			configPath,
 			config: null,
 			error: {
 				code: "CONFIG_MISSING",
-				message: `.spine/spine-config.json not found under ${resolvedRoot} (cwd/$PWD). Change to your project root, or run spine init here if this directory should be initialized.`,
-				suggestedCommand: `cd ${resolvedRoot}  # if wrong directory — or run: spine init`,
+				message: hint.message,
+				suggestedCommand: hint.suggestedCommand,
 			},
 		};
 	}
