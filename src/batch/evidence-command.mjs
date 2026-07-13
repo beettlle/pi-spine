@@ -13,6 +13,17 @@ import { execFileSync } from "node:child_process";
  */
 export const ALLOWED_EVIDENCE_EXECUTABLES = new Set(["npm", "node", "pnpm", "yarn", "npx"]);
 
+/**
+ * Interpreter basenames allowed only as project-local relative paths under
+ * `.venv/` or `venv/` (see {@link isAllowedProjectLocalInterpreter}).
+ * Bare names (PATH lookup) and absolute/outside-project paths stay rejected.
+ * @type {Set<string>}
+ */
+export const ALLOWED_PROJECT_LOCAL_INTERPRETERS = new Set(["python", "python3"]);
+
+/** Relative venv roots that may host an allowed interpreter (posix-normalized). */
+const PROJECT_LOCAL_VENV_PREFIXES = [".venv/", "venv/"];
+
 const SHELL_METACHAR_PATTERN = /[;|&`<>]|>>|\$\(|\$\{/;
 
 export class EvidenceCommandError extends Error {
@@ -58,11 +69,57 @@ export function parseEvidenceCommandArgv(command) {
 	}
 
 	const executable = path.basename(argv[0]);
-	if (!ALLOWED_EVIDENCE_EXECUTABLES.has(executable)) {
-		throw new EvidenceCommandError(`evidence executable not allowed: ${executable}`);
+	if (ALLOWED_EVIDENCE_EXECUTABLES.has(executable)) {
+		return argv;
+	}
+	if (isAllowedProjectLocalInterpreter(argv[0])) {
+		return argv;
 	}
 
-	return argv;
+	throw new EvidenceCommandError(`evidence executable not allowed: ${executable}`);
+}
+
+/**
+ * Allow project-local interpreters for gate evidence (e.g. `.venv/bin/python`).
+ *
+ * Exact rule: first token must be a relative path (not absolute), with no `..`
+ * segments after posix normalization, whose normalized form starts with
+ * `.venv/` or `venv/`, and whose basename is in
+ * {@link ALLOWED_PROJECT_LOCAL_INTERPRETERS} (`python` or `python3`).
+ * Rejects bare interpreter names and absolute/outside-project paths.
+ *
+ * @param {string} firstToken
+ * @returns {boolean}
+ */
+export function isAllowedProjectLocalInterpreter(firstToken) {
+	if (typeof firstToken !== "string" || !firstToken) {
+		return false;
+	}
+	if (path.isAbsolute(firstToken)) {
+		return false;
+	}
+
+	const posixToken = firstToken.replaceAll("\\", "/");
+	const segments = posixToken.split("/");
+	if (segments.some((segment) => segment === "..")) {
+		return false;
+	}
+
+	const normalized = path.posix.normalize(posixToken);
+	if (normalized.startsWith("../") || normalized === "..") {
+		return false;
+	}
+	if (path.posix.isAbsolute(normalized)) {
+		return false;
+	}
+
+	const underVenv = PROJECT_LOCAL_VENV_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+	if (!underVenv) {
+		return false;
+	}
+
+	const basename = path.posix.basename(normalized);
+	return ALLOWED_PROJECT_LOCAL_INTERPRETERS.has(basename);
 }
 
 /**

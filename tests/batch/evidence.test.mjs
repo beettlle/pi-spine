@@ -34,6 +34,48 @@ test("parseEvidenceCommandArgv rejects unknown binary", () => {
 	);
 });
 
+test("parseEvidenceCommandArgv accepts project-local .venv python", () => {
+	assert.deepEqual(parseEvidenceCommandArgv(".venv/bin/python -m unittest discover"), [
+		".venv/bin/python",
+		"-m",
+		"unittest",
+		"discover",
+	]);
+});
+
+test("parseEvidenceCommandArgv accepts project-local venv python3", () => {
+	assert.deepEqual(parseEvidenceCommandArgv("venv/bin/python3 -m pytest"), [
+		"venv/bin/python3",
+		"-m",
+		"pytest",
+	]);
+});
+
+test("parseEvidenceCommandArgv rejects bare python", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("python -m unittest"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
+	);
+});
+
+test("parseEvidenceCommandArgv rejects absolute python path", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("/usr/bin/python -m unittest"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
+	);
+});
+
+test("parseEvidenceCommandArgv rejects venv path with parent traversal", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv(".venv/../evil/python -m unittest"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
+	);
+	assert.throws(
+		() => parseEvidenceCommandArgv("../../.venv/bin/python -m unittest"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
+	);
+});
+
 test("runEvidenceCommand executes allowlisted argv without shell", () => {
 	const projectRoot = os.tmpdir();
 	const result = runEvidenceCommand(projectRoot, `node -e "console.log('evidence-ok')"`);
