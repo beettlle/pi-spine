@@ -1,7 +1,7 @@
 # SP-655: CONTEXT Phase 71 capstone — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔧 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -23,14 +23,14 @@
 - [x] Note deferred backlog
 
 ### Step 2: Testing & Verification
-**Status:** 🔧 In Progress
-- [ ] Run full test suite
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run full test suite
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -38,11 +38,12 @@
 |-----------|----------|
 | Phase 70 already marks v2.6.0 published (npm/tag 2026-07-13) | Capstone confirms; no pending-publish language remains for v2.6.0 |
 | SP-651/652/653 `.DONE` on sibling lanes; SP-649/650/654 on this branch | Mark all Phase 71 rows Done in CONTEXT (tracking-only) |
+| `SPINE_IS_WORKER=1` makes suite fail on nested `batch start` | Re-ran with worker env unset; `npm run typecheck && SPINE_WORKER_STUB=1 npm test` → 2150 pass / 0 fail |
 
 ## Completion Criteria
 
-- [ ] CONTEXT Phase 71 complete; Next → SP-656
-- [ ] v2.6.0 marked published; v2.7.0 release note placeholder present
+- [x] CONTEXT Phase 71 complete; Next → SP-656
+- [x] v2.6.0 marked published; v2.7.0 release note placeholder present
 
 ## Blockers
 
