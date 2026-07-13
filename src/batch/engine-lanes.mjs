@@ -23,6 +23,7 @@ import {
 import { runWorker } from "./worker-host.mjs";
 import { runCodeReviewPhase, runFinalReviewPhase } from "./engine-lanes/review.mjs";
 import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
+import { resolveWorktreeSetupIgnorePaths } from "../config/spine-config-load.mjs";
 
 export {
 	buildTasksAndLanesFromPlan,
@@ -347,9 +348,7 @@ export async function runTaskOnLane({
 		}
 	}
 
-	const ignorePatterns = Array.isArray(config?.worktreeSetupIgnorePaths)
-		? config.worktreeSetupIgnorePaths
-		: [];
+	const ignorePatterns = resolveWorktreeSetupIgnorePaths(config);
 	const commitResult = commitLaneAndValidateWorktree({
 		worktreePath: wt,
 		taskBranch,

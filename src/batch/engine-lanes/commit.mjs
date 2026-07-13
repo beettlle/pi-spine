@@ -72,6 +72,8 @@ export function commitLaneAndValidateWorktree({
 		batchId,
 		taskFolder,
 		projectRoot,
+		ignorePatterns,
+		fileScopePaths,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";

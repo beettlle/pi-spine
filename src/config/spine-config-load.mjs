@@ -14,6 +14,29 @@ import { validateOrchestratorConfig } from "./spine-config-schema.mjs";
 
 export { resolveGatePostureConfig } from "./gate-posture-config.mjs";
 
+/**
+ * Default hook paths skipped at lane commit when config omits ignore paths (SP-640 / #200).
+ * Worktree setup hooks commonly `ln -s` `.venv` into lane worktrees; do not stage that symlink.
+ */
+export const DEFAULT_WORKTREE_SETUP_IGNORE_PATHS = Object.freeze([".venv"]);
+
+/**
+ * Resolve effective `worktreeSetupIgnorePaths`, always unioning defaults so hook `.venv`
+ * stays ignored. Opt in to committing an ignore path via task `fileScope`, not by clearing config.
+ *
+ * @param {Record<string, unknown> | null | undefined} config
+ * @returns {string[]}
+ */
+export function resolveWorktreeSetupIgnorePaths(config) {
+	const raw = config?.worktreeSetupIgnorePaths;
+	const configured = Array.isArray(raw)
+		? raw
+				.filter((/** @type {unknown} */ entry) => typeof entry === "string" && entry.trim())
+				.map((/** @type {unknown} */ entry) => /** @type {string} */ (entry).trim())
+		: [];
+	return [...new Set([...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS, ...configured])];
+}
+
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
 	"project",
@@ -91,6 +114,9 @@ export function loadSpineConfig(projectRoot) {
 
 	const config = structuredClone(fileResult.config);
 	applyConfigDefaults(config);
+	if (config.worktreeSetupIgnorePaths == null) {
+		config.worktreeSetupIgnorePaths = [...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS];
+	}
 
 	const contractError = validateContractConfig(config);
 	if (contractError) {

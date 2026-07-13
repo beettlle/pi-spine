@@ -15,6 +15,7 @@ import {
 	shouldEnforceStubContractAtLaneCommit,
 	verifyStubFileScopeMustChange,
 } from "./contract-verify.mjs";
+import { DEFAULT_WORKTREE_SETUP_IGNORE_PATHS } from "../config/spine-config-load.mjs";
 
 /**
  * @param {string} worktreePath
@@ -73,12 +74,49 @@ function pathMatchesIgnorePattern(filePath, pattern) {
 }
 
 /**
+ * Local fileScope check (avoid importing lane-dirty-check-git — circular via filterPorcelain).
+ *
+ * @param {string} filePath
+ * @param {string[]} [fileScopePaths]
+ */
+function isPathInFileScope(filePath, fileScopePaths) {
+	if (!filePath || !Array.isArray(fileScopePaths) || fileScopePaths.length === 0) {
+		return false;
+	}
+	const normalizedPath = filePath.replace(/\\/g, "/");
+	for (const rel of fileScopePaths) {
+		if (!rel || typeof rel !== "string") continue;
+		const normalized = rel.replace(/\\/g, "/");
+		const prefix = normalized.endsWith("/") ? normalized : `${normalized}/`;
+		if (normalizedPath === normalized || normalizedPath.startsWith(prefix)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Hook ignore path unless task fileScope explicitly lists it (SP-640 / #200).
+ *
+ * @param {string} filePath
+ * @param {string[]} ignorePatterns
+ * @param {string[]} [fileScopePaths]
+ */
+function shouldSkipHookIgnorePath(filePath, ignorePatterns, fileScopePaths) {
+	if (!Array.isArray(ignorePatterns) || ignorePatterns.length === 0) return false;
+	if (isPathInFileScope(filePath, fileScopePaths)) return false;
+	return ignorePatterns.some((pattern) => pathMatchesIgnorePattern(filePath, pattern));
+}
+
+/**
  * Drop porcelain lines whose path matches any ignore pattern (basename or full path).
+ * Paths listed in `fileScopePaths` are kept even when they match ignore patterns.
  *
  * @param {string} porcelain
  * @param {string[]} ignorePatterns
+ * @param {string[]} [fileScopePaths]
  */
-export function filterPorcelain(porcelain, ignorePatterns) {
+export function filterPorcelain(porcelain, ignorePatterns, fileScopePaths = []) {
 	if (!porcelain?.trim()) return "";
 	if (!Array.isArray(ignorePatterns) || ignorePatterns.length === 0) {
 		return porcelain;
@@ -92,8 +130,8 @@ export function filterPorcelain(porcelain, ignorePatterns) {
 			kept.push(line);
 			continue;
 		}
-		const ignored = ignorePatterns.some((pattern) => pathMatchesIgnorePattern(filePath, pattern));
-		if (!ignored) kept.push(line);
+		if (shouldSkipHookIgnorePath(filePath, ignorePatterns, fileScopePaths)) continue;
+		kept.push(line);
 	}
 	return kept.length === 0 ? "" : kept.join("\n");
 }
@@ -152,7 +190,9 @@ function listPorcelainPaths(porcelain) {
  * @param {string} params.taskFolder Absolute path to task folder (for `.DONE` check)
  * @param {string} [params.projectRoot] Main repo root for git identity resolution
  * @param {string} [params.baseBranch] Base branch for stub contract diff (default main)
- * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
+ * @param {string[]} [params.ignorePatterns] Hook paths to skip (default includes `.venv`)
+ * @param {string[]} [params.fileScopePaths] Task fileScope — paths here are never skipped
+ * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[], skippedIgnorePaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
  */
 export function commitLaneWorktree({
 	worktreePath,
@@ -162,14 +202,30 @@ export function commitLaneWorktree({
 	taskFolder,
 	projectRoot,
 	baseBranch = "main",
+	ignorePatterns,
+	fileScopePaths = [],
 }) {
 	const identityRoot = projectRoot ?? worktreePath;
+	const effectiveIgnorePatterns = Array.isArray(ignorePatterns)
+		? ignorePatterns
+		: [...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS];
 	try {
 		const porcelain = gitPorcelain(worktreePath);
 		const dirtyPaths = listPorcelainPaths(porcelain);
+		const skippedIgnorePaths = dirtyPaths.filter((filePath) =>
+			shouldSkipHookIgnorePath(filePath, effectiveIgnorePatterns, fileScopePaths),
+		);
+		const stageCandidatePaths = dirtyPaths.filter(
+			(filePath) => !shouldSkipHookIgnorePath(filePath, effectiveIgnorePatterns, fileScopePaths),
+		);
 		const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
-		if (dirtyPaths.length === 0 && ignoredUntrackedPaths.length === 0) {
-			return { ok: true, committed: false };
+		// Only-hook-noise dirty (e.g. untracked `.venv` symlink) is not a DirtyWorktree failure.
+		if (stageCandidatePaths.length === 0 && ignoredUntrackedPaths.length === 0) {
+			return {
+				ok: true,
+				committed: false,
+				skippedIgnorePaths,
+			};
 		}
 
 		const donePath = path.join(taskFolder, ".DONE");
@@ -191,7 +247,7 @@ export function commitLaneWorktree({
 					worktreePath,
 					parsedContract,
 					baseBranch,
-					dirtyPaths,
+					stageCandidatePaths,
 				);
 				if (!scopeCheck.ok) {
 					return {
@@ -203,7 +259,10 @@ export function commitLaneWorktree({
 			}
 		}
 
-		const { stageable, skipped: gitignoredDirtyPaths } = filterGitignoredPaths(worktreePath, dirtyPaths);
+		const { stageable, skipped: gitignoredDirtyPaths } = filterGitignoredPaths(
+			worktreePath,
+			stageCandidatePaths,
+		);
 		const gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
 		if (stageable.length === 0 && gitignoredPaths.length > 0) {
 			const { indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths);
@@ -212,6 +271,15 @@ export function commitLaneWorktree({
 				error: formatGitignoredRemediationMessage(indexTracked, worktreeOnly),
 				failureClass: "GitignoredDirtyWorktree",
 				gitignoredPaths,
+			};
+		}
+
+		if (stageable.length === 0) {
+			return {
+				ok: true,
+				committed: false,
+				skippedIgnorePaths,
+				skippedGitignoredPaths: gitignoredPaths,
 			};
 		}
 
@@ -228,6 +296,7 @@ export function commitLaneWorktree({
 			committed: true,
 			commitSha,
 			skippedGitignoredPaths: [...addResult.skipped, ...gitignoredPaths],
+			skippedIgnorePaths,
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
