@@ -1,6 +1,6 @@
 # SP-650: Wrong-cwd CLI surfaces — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 1
@@ -22,14 +22,14 @@
 - [x] Refactor load path if duplicated
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
-- [ ] Add wrong-cwd-cli-surfaces test
-- [ ] Run contract testCommand
-- [ ] Fix scoped failures
-- [ ] Coverage gate (≥77%)
+**Status:** ✅ Complete
+- [x] Add wrong-cwd-cli-surfaces test
+- [x] Run contract testCommand
+- [x] Fix scoped failures
+- [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Create `.DONE`
 - [ ] Close #202 when criteria met
 
@@ -41,13 +41,19 @@
 | In-scope hardcodes: `bin/spine-plan.mjs` L82, `bin/spine-tasks.mjs` L191 (tasksRoot unset), `discovery.mjs` missing-config/`!tasksRootPath` / `checkTasksValidate` without config | Wire to helper `suggestedCommand`; leave dep/schema/empty-folder `spine init` alone |
 | Out of scope: doctor, analyze, migrate, settings fallbacks | Leave per File Scope |
 | Real-pi session (`SPINE_WORKER_RUNNER` set) | Engine owns post-`.DONE` reviews; in-worker `spine_review_step` returns skipped |
+| `npm run coverage:check` inherits `SPINE_IS_WORKER=1` and aborts startBatch tests | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER …`; line coverage 89.26% |
 
 ## Completion Criteria
 
-- [ ] #202 closable
-- [ ] Shared helper is single source of truth
-- [ ] Scoped tests green
+- [x] #202 closable
+- [x] Shared helper is single source of truth
+- [x] Scoped tests green
 
 ## Blockers
 
 _None._
+
+## Verification evidence
+
+- Contract: `node --test tests/config/wrong-cwd-config-message.test.mjs tests/config/wrong-cwd-cli-surfaces.test.mjs` — 6 pass, 0 fail
+- Coverage: `Line coverage (in-scope): 89.26% (threshold: 77%)` with worker env cleared
