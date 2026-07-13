@@ -1,6 +1,6 @@
 # SP-653: Evidence allowlisted npm chains — Status
 
-**Current Step:** Step 1 — Implement allowlisted `&&` chains
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 2
@@ -16,18 +16,18 @@
 - [x] Define allowlist + &&-only chain grammar
 
 ### Step 1: Implement allowlisted `&&` chains
-**Status:** 🟡 In Progress
-- [ ] Parse/validate multi-segment allowlisted commands
-- [ ] Execute segments sequentially fail-closed
-- [ ] Keep scripts/ Phase A path working
-- [ ] Reject other metacharacters / expansions
+**Status:** ✅ Complete
+- [x] Parse/validate multi-segment allowlisted commands
+- [x] Execute segments sequentially fail-closed
+- [x] Keep scripts/ Phase A path working
+- [x] Reject other metacharacters / expansions
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Add evidence-allowlisted-chains.test.mjs
+**Status:** 🟡 In Progress
+- [x] Add evidence-allowlisted-chains.test.mjs
 - [ ] Extend evidence.test.mjs if needed
-- [ ] Run contract testCommand
-- [ ] Fix scoped failures
+- [x] Run contract testCommand
+- [x] Fix scoped failures
 - [ ] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
@@ -39,16 +39,17 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| Template already has `npm run typecheck && npm test` | Leave template unchanged; make evidence accept Phase B chains (optional restore already present) |
+| Template already has `npm run typecheck && npm test` | Leave template unchanged; evidence now accepts Phase B chains |
 | `SHELL_METACHAR_PATTERN` matches `&` so `&&` is rejected today | Strip `&&` before metachar scan; still reject lone `&` |
-| GitNexus impact on assert/parse/run: LOW | Proceed with edits |
+| GitNexus impact on assert/parse/run: LOW | Proceeded with edits |
 | Real-pi worker (`SPINE_WORKER_RUNNER` set) | Engine reviews after `.DONE`; in-worker plan review returns skipped |
+| Existing evidence.test.mjs still covers Phase A + metachar rejects | No extend required beyond new allowlisted-chains file |
 
 ## Completion Criteria
 
-- [ ] Allowlisted && chains execute
-- [ ] Other metacharacters rejected
-- [ ] Phase A scripts/ unchanged
+- [x] Allowlisted && chains execute
+- [x] Other metacharacters rejected
+- [x] Phase A scripts/ unchanged
 - [ ] #160 remains open with Phase B note
 
 ## Blockers
