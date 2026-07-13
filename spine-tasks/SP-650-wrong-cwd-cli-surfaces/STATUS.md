@@ -1,7 +1,7 @@
 # SP-650: Wrong-cwd CLI surfaces — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 - [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
-- [ ] Create `.DONE`
-- [ ] Close #202 when criteria met
+**Status:** ✅ Complete
+- [x] Create `.DONE`
+- [x] Close #202 when criteria met
 
 ## Discoveries & Decisions
 
@@ -57,3 +57,4 @@ _None._
 
 - Contract: `node --test tests/config/wrong-cwd-config-message.test.mjs tests/config/wrong-cwd-cli-surfaces.test.mjs` — 6 pass, 0 fail
 - Coverage: `Line coverage (in-scope): 89.26% (threshold: 77%)` with worker env cleared
+- Issue: #202 closed
