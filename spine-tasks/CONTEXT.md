@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 operator UX + evidence Phase B staged SP-649–655; Next → SP-656)
+**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 operator UX + evidence Phase B complete SP-649–655; Next → SP-656; v2.6.0 published)
 **Status:** Active
 **Next Task ID:** SP-656
 
@@ -1995,13 +1995,13 @@ node bin/spine.mjs plan pending
 
 | Task | Summary | Status | Deps | Closes |
 |------|---------|--------|------|--------|
-| SP-649 | Wrong-cwd config missing message | Staged | — | Partial #202 |
-| SP-650 | Wrong-cwd CLI surfaces | Staged | SP-649 | #202 |
-| SP-651 | Template evidence command drift | Staged | — | — |
-| SP-652 | Gitignore `.pi/` entry | Staged | — | — |
-| SP-653 | Evidence allowlisted npm chains | Staged | — | Partial #160 |
-| SP-654 | Runbook v2.7.0 operator UX | Staged | SP-649,650,651,653 | — |
-| SP-655 | CONTEXT Phase 71 capstone | Staged | SP-649–654 | — |
+| SP-649 | Wrong-cwd config missing message | Done | — | Partial #202 |
+| SP-650 | Wrong-cwd CLI surfaces | Done | SP-649 | #202 |
+| SP-651 | Template evidence command drift | Done | — | — |
+| SP-652 | Gitignore `.pi/` entry | Done | — | — |
+| SP-653 | Evidence allowlisted npm chains | Done | — | Partial #160 |
+| SP-654 | Runbook v2.7.0 operator UX | Done | SP-649,650,651,653 | — |
+| SP-655 | CONTEXT Phase 71 capstone | Done | SP-649–654 | — |
 
 ```bash
 spine tasks validate SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
@@ -2012,19 +2012,21 @@ node bin/spine.mjs plan SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
 
 **Phase 71 exit criteria (PRD §9):**
 
-- [ ] #202 closed
-- [ ] Template testing commands pass evidence validator
-- [ ] Doctor `.gitignore` includes `.pi/`
-- [ ] #160 Phase B narrow shipped (Phase C remains open)
-- [ ] Runbook + CONTEXT Phase 71 complete; Next Task ID → SP-656
-- [ ] `npm run release:check` green on publish HEAD
+- [x] #202 closed (implementation landed)
+- [x] Template testing commands pass evidence validator
+- [x] Doctor `.gitignore` includes `.pi/`
+- [x] #160 Phase B narrow shipped (Phase C remains open)
+- [x] Runbook + CONTEXT Phase 71 complete; Next Task ID → SP-656
+- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
 - [ ] **v2.7.0 published** — `npm version minor` (operator-gated)
 
-**Deferred:** #160 Phase C; #135; #127; #124; #120; #43.
+**Prior release:** **v2.6.0 published** — npm `2.6.0` / tag `v2.6.0` (2026-07-13); Phase 70 clear of pending publish.
+
+**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit).
 
 **Release note (placeholder — fill on publish):** v2.7.0 — Operator UX: wrong-cwd missing-config hints (#202), template/evidence parity, `.pi/` gitignore doctor hygiene, allowlisted `&&` gate-evidence chains (#160 Phase B).
 
-**Phase 71 packets staged (SP-649–655 → pending batch).**
+**Phase 71 implementation complete (SP-649–655 → v2.7.0 pending publish).** PRD: [`docs/PRD-v2.7.0-operator-ux-evidence-handoff.md`](../docs/PRD-v2.7.0-operator-ux-evidence-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.7.0/manifest.md`](_authoring/release-v2.7.0/manifest.md).
 
 ---
 

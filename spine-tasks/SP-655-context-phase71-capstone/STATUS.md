@@ -1,7 +1,7 @@
 # SP-655: CONTEXT Phase 71 capstone — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🔧 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Required files and paths exist
-- [ ] Dependencies satisfied
+**Status:** ✅ Complete
+- [x] Required files and paths exist
+- [x] Dependencies satisfied
 
 ### Step 1: Phase 71 CONTEXT update
-**Status:** ⬜ Not Started
-- [ ] Mark v2.6.0 published
-- [ ] Finalize Phase 71 SP-649–655 rows
-- [ ] Set Next Task ID → SP-656
-- [ ] Note deferred backlog
+**Status:** ✅ Complete
+- [x] Mark v2.6.0 published
+- [x] Finalize Phase 71 SP-649–655 rows
+- [x] Set Next Task ID → SP-656
+- [x] Note deferred backlog
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔧 In Progress
 - [ ] Run full test suite
 - [ ] Fix all failures
 
@@ -36,7 +36,8 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| — | — |
+| Phase 70 already marks v2.6.0 published (npm/tag 2026-07-13) | Capstone confirms; no pending-publish language remains for v2.6.0 |
+| SP-651/652/653 `.DONE` on sibling lanes; SP-649/650/654 on this branch | Mark all Phase 71 rows Done in CONTEXT (tracking-only) |
 
 ## Completion Criteria
 
