@@ -1,7 +1,7 @@
 # SP-653: Evidence allowlisted npm chains — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -31,9 +31,9 @@
 - [x] Coverage gate (≥77%) — 89.22% with worker env cleared
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
-- [ ] Create `.DONE`
-- [ ] Comment on #160 Phase B; leave open for Phase C
+**Status:** ✅ Complete
+- [x] Create `.DONE`
+- [x] Comment on #160 Phase B; leave open for Phase C — https://github.com/beettlle/pi-spine/issues/160#issuecomment-4960857137
 
 ## Discoveries & Decisions
 
@@ -51,16 +51,8 @@
 - [x] Allowlisted && chains execute
 - [x] Other metacharacters rejected
 - [x] Phase A scripts/ unchanged
-- [ ] #160 remains open with Phase B note
+- [x] #160 remains open with Phase B note
 
 ## Blockers
 
 _None._
-
-## Step 0 Notes — Phase B grammar
-
-**Allowlist (chain segments):** `npm`, `node`, `npx`, `pnpm`, `yarn` only.
-
-**Chain operator:** `&&` only, outside quotes; empty segments rejected.
-
-**Reject matrix:** `;`, `|`, lone `&`, redirects, backticks, `$` expansion; non-allowlisted segment executables; `scripts/` / venv python only as single-segment Phase A.
