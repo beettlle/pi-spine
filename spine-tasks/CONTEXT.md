@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 operator UX + evidence Phase B complete SP-649–655; Next → SP-656; v2.6.0 published)
+**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 published — SP-649–655; Next → SP-656)
 **Status:** Active
 **Next Task ID:** SP-656
 
@@ -2017,16 +2017,16 @@ node bin/spine.mjs plan SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
 - [x] Doctor `.gitignore` includes `.pi/`
 - [x] #160 Phase B narrow shipped (Phase C remains open)
 - [x] Runbook + CONTEXT Phase 71 complete; Next Task ID → SP-656
-- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
-- [ ] **v2.7.0 published** — `npm version minor` (operator-gated)
+- [x] `npm run release:check` green on publish HEAD (operator publish gate)
+- [x] **v2.7.0 published** — npm `2.7.0` / tag `v2.7.0` (2026-07-13); Release [29292811533](https://github.com/beettlle/pi-spine/actions/runs/29292811533); GitHub [v2.7.0](https://github.com/beettlle/pi-spine/releases/tag/v2.7.0)
 
-**Prior release:** **v2.6.0 published** — npm `2.6.0` / tag `v2.6.0` (2026-07-13); Phase 70 clear of pending publish.
+**Prior release:** **v2.6.0 published** — npm `2.6.0` / tag `v2.6.0` (2026-07-13); Phase 70 clear.
 
-**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit).
+**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit). Dogfood follow-ups: #205, #206, #207 (see [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../docs/release/post-mortem-v2.7.0-batch-20260713T171709.md)).
 
-**Release note (placeholder — fill on publish):** v2.7.0 — Operator UX: wrong-cwd missing-config hints (#202), template/evidence parity, `.pi/` gitignore doctor hygiene, allowlisted `&&` gate-evidence chains (#160 Phase B).
+**Release note:** v2.7.0 — Operator UX: wrong-cwd missing-config hints (#202), template/evidence parity, `.pi/` gitignore doctor hygiene, allowlisted `&&` gate-evidence chains (#160 Phase B).
 
-**Phase 71 implementation complete (SP-649–655 → v2.7.0 pending publish).** PRD: [`docs/PRD-v2.7.0-operator-ux-evidence-handoff.md`](../docs/PRD-v2.7.0-operator-ux-evidence-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.7.0/manifest.md`](_authoring/release-v2.7.0/manifest.md).
+**Phase 71 complete (SP-649–655 → v2.7.0 published).** PRD: [`docs/PRD-v2.7.0-operator-ux-evidence-handoff.md`](../docs/PRD-v2.7.0-operator-ux-evidence-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.7.0/manifest.md`](_authoring/release-v2.7.0/manifest.md).
 
 ---
 
