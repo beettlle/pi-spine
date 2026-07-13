@@ -43,8 +43,12 @@ export const TASKPLANE_COMPAT_TASKS_ROOT = "taskplane-tasks";
 export const TASKPLANE_COMPAT_PRESET = "taskplane-compat";
 export const LEGACY_TASKPLANE_PRESET_ALIASES = [TASKPLANE_COMPAT_PRESET];
 
-export const SPINE_INIT_TESTING_COMMAND = "npm run typecheck && npm test";
+/** Phase-A-safe evidence argv (no shell metacharacters); matches templates/spine-config.json. */
+export const SPINE_INIT_BUILD_COMMAND = "npm run typecheck";
+export const SPINE_INIT_TEST_COMMAND = "npm test";
 export const SPINE_INIT_COVERAGE_COMMAND = "npm run coverage:check";
+/** @deprecated Prefer SPINE_INIT_BUILD_COMMAND / SPINE_INIT_TEST_COMMAND. */
+export const SPINE_INIT_TESTING_COMMAND = SPINE_INIT_TEST_COMMAND;
 
 export const SPINE_GITIGNORE_ENTRIES = [
 	".pi/",
@@ -166,8 +170,8 @@ export function parseInitArgs(args) {
 
 /** Apply production-ready defaults for every greenfield init. */
 export function applySpineInitDefaults(config) {
-	config.testing.build = SPINE_INIT_TESTING_COMMAND;
-	config.testing.test = SPINE_INIT_TESTING_COMMAND;
+	config.testing.build = SPINE_INIT_BUILD_COMMAND;
+	config.testing.test = SPINE_INIT_TEST_COMMAND;
 	config.testing.testWithCoverage = SPINE_INIT_COVERAGE_COMMAND;
 	config.dashboard = { ...(config.dashboard ?? {}), port: 8109 };
 	config.gates = {

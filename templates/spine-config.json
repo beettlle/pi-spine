@@ -9,8 +9,8 @@
   },
   "baseBranch": "main",
   "testing": {
-    "build": "npm run typecheck && npm test",
-    "test": "npm run typecheck && npm test",
+    "build": "npm run typecheck",
+    "test": "npm test",
     "testWithCoverage": "npm run coverage:check"
   },
   "agents": {
