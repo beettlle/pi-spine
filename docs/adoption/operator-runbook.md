@@ -1260,7 +1260,7 @@ Use the **checkout CLI** for dogfood on this repo: `node bin/spine.mjs …` (or 
 | [#197](https://github.com/beettlle/pi-spine/issues/197) | `state_drift` suggests `resume --force` but detached resume rejects `phase=running` | Eligibility uses terminal-success / `doneInLane` — **no manual `pause` first** (SP-635) |
 | [#198](https://github.com/beettlle/pi-spine/issues/198) | Resume engine hangs after host integrate; `batch complete` blocked by live PID | Engine finalizes / exits; diagnose shows `engine_still_running` limbo — not “running reviews” (SP-636/SP-637) |
 | [#199](https://github.com/beettlle/pi-spine/issues/199) | Gate evidence rejects `python` | Allow project-local `.venv/bin/python` / `venv/bin/python3` relative paths; bare `python` still rejected (SP-638) |
-| [#160](https://github.com/beettlle/pi-spine/issues/160) Phase A | Need stet/external CLI at gate | Point `testing.*` at `scripts/…` wrappers — validated sandbox, no shell metachar widen (SP-639) |
+| [#160](https://github.com/beettlle/pi-spine/issues/160) Phase A | Need stet/external CLI at gate | Point `testing.*` at `scripts/…` wrappers — validated sandbox, no shell metachar widen (SP-639). **Phase B** allowlisted `&&` — see [v2.7.0 operator UX](#v270-operator-ux--evidence-phase-b-202-160) (SP-653) |
 | [#200](https://github.com/beettlle/pi-spine/issues/200) | Lane commit stages hook `.venv` symlink | Default ignore includes `.venv`; lane commit skips hook noise (SP-640) |
 | [#201](https://github.com/beettlle/pi-spine/issues/201) | `batch complete` archives while lane commits never landed | Complete **refuses** when `doneInLane && !doneOnMain`; diagnose suggests `spine batch salvage --batch <id> --lane <n> --integrate` (SP-644/SP-645) |
 | [#203](https://github.com/beettlle/pi-spine/issues/203) | Multi-lane `worker_orphaned` with **dead** engine PID | Classify `engine_orphaned` + single `spine batch retry <taskId>` (or abort); no `.spine/runtime` surgery (SP-646/SP-647) |
@@ -1287,6 +1287,75 @@ Gate evidence examples (consumer Python):
   "test": ".venv/bin/python -m unittest discover -s tests",
   "testWithCoverage": "scripts/run-coverage.sh"
 }
+```
+
+### v2.7.0 operator UX + evidence Phase B (#202, #160)
+
+Hygiene for wrong-cwd messaging, template/evidence parity, doctor `.gitignore`, and allowlisted `&&` gate evidence. Batches stay **detached-first** ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)) — see [Detached-first policy](#detached-first-policy-default).
+
+#### Wrong cwd / missing config (#202)
+
+When `.spine/spine-config.json` is missing under the resolved project root, CLI and load paths print the **resolved root** (cwd/`$PWD`) and suggest changing to the project root **or** running `spine init` here — not bare `spine init` alone (`missingConfigHint`; SP-649/SP-650).
+
+**Symptom:** `spine plan`, `spine tasks`, `spine preflight`, or config load fails with “not found under …” while you thought you were at repo root.
+
+**Remediation:**
+
+```bash
+pwd   # confirm you are in the consumer (or pi-spine) repo root that has .spine/
+cd /absolute/path/to/your-project
+spine doctor
+# Only if this directory should become a spine project:
+spine init
+```
+
+`suggestedCommand` from diagnose/load looks like `cd <resolvedRoot>  # if wrong directory — or run: spine init`. Do **not** run `spine init` in a random subdirectory to “fix” a wrong cwd.
+
+#### Template vs evidence commands (#160 Phase A + Phase B)
+
+Gate evidence runs config `testing.build` / `testing.test` / `testing.testWithCoverage` through a **no-shell** argv executor (`src/batch/evidence-command.mjs`). Shape must match the validator:
+
+| Shape | Example | Notes |
+|-------|---------|-------|
+| Phase A — `scripts/` wrapper | `"testWithCoverage": "scripts/run-coverage.sh"` | Relative path under `scripts/`; no shell metacharacters (SP-639) |
+| Phase A — single allowlisted argv | `"build": "npm run typecheck"`, `"test": "npm test"` | First token must be `npm` / `node` / `npx` / `pnpm` / `yarn` (or project-local `.venv/bin/python`) |
+| Phase B — allowlisted `&&` only | `"build": "npm run typecheck && npm test"` | Each segment allowlisted; join with `&&` only (SP-653; **partial** [#160](https://github.com/beettlle/pi-spine/issues/160)) |
+
+**Reject (fail-closed):** `;`, `|`, redirects (`>`, `<`), backticks, `$VAR` / `$(…)` / `${…}`, lone `&`. Phase C (`testing.review` slot) remains deferred.
+
+Greenfield `spine init` templates use Phase B chains (`npm run typecheck && npm test`) once SP-653 is on the installed CLI. If an older template or hand-edited config still uses rejected metacharacters, either switch to Phase-A-safe single commands / `scripts/…` wrappers or upgrade to a CLI with Phase B.
+
+```json
+"testing": {
+  "build": "npm run typecheck && npm test",
+  "test": "npm run typecheck && npm test",
+  "testWithCoverage": "npm run coverage:check"
+}
+```
+
+#### Doctor `.pi/` gitignore hygiene
+
+`spine doctor` checks that required spine runtime entries appear in `.gitignore` (matching `SPINE_GITIGNORE_ENTRIES`). Ensure **`.pi/`** is listed (alongside `.spine/runtime/`, `.spine/batch-state.json`, …) so the “spine runtime entries” / missing-entry warning stays green (SP-652). Fresh `spine init` appends the full set; older repos may need a one-line add:
+
+```bash
+# from project root — only if doctor reports .pi/ missing
+echo '.pi/' >> .gitignore
+git add .gitignore && git commit -m "chore: ignore .pi/ for spine doctor parity"
+spine doctor
+```
+
+#### PATH / `npm link` / checkout CLI
+
+Developing or dogfooding pi-spine: prefer **`node bin/spine.mjs …` from the checkout** so PATH cannot serve a stale global binary. Consumer pilots: re-`npm link` (or reinstall) after `git pull` / version bumps. `spine version` and `spine doctor` warn on PATH/global skew ([#204](https://github.com/beettlle/pi-spine/issues/204)); see also [`node bin/spine.mjs` vs global `spine`](#node-binspinemjs-vs-global-spine).
+
+```bash
+# Checkout dogfood (this repo)
+node bin/spine.mjs version
+node bin/spine.mjs doctor
+
+# After checkout updates — refresh global link if you use PATH `spine`
+cd /absolute/path/to/pi-spine && npm link
+which spine && spine version
 ```
 
 ### Orphan running (zombie batch)
@@ -1609,7 +1678,7 @@ See [stet feedback loop brief](../features/stet-feedback-loop-brief.md) for v1.5
 
 ### Gate evidence
 
-Gate-level stet review via `testing.build` is **not supported** until [#160](https://github.com/beettlle/pi-spine/issues/160). Use contract `testCommand` (per-task) or manual operator review before integrate.
+Gate evidence commands (`testing.build` / `testing.test` / …) accept Phase A single allowlisted argv or `scripts/…` wrappers, plus Phase B allowlisted `&&` chains (see [v2.7.0 operator UX + evidence Phase B](#v270-operator-ux--evidence-phase-b-202-160)). Gate-level **stet** review via a dedicated `testing.review` slot is still deferred ([#160](https://github.com/beettlle/pi-spine/issues/160) Phase C). Use contract `testCommand` (per-task) or manual operator review for stet until Phase C.
 
 ---
 

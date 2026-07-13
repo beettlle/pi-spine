@@ -1,28 +1,28 @@
 # SP-654: Runbook v2.7.0 operator UX — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
-**Iteration:** 0
+**Iteration:** 1
 **Size:** S
 
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Required files and paths exist
-- [ ] Dependencies satisfied
+**Status:** ✅ Complete
+- [x] Required files and paths exist
+- [x] Dependencies satisfied
 
 ### Step 1: Add operator UX + evidence Phase B section
-**Status:** ⬜ Not Started
-- [ ] Document wrong-cwd (#202)
-- [ ] Document evidence Phase B (#160)
-- [ ] Document .pi/ gitignore + PATH reminder
+**Status:** ✅ Complete
+- [x] Document wrong-cwd (#202)
+- [x] Document evidence Phase B (#160)
+- [x] Document .pi/ gitignore + PATH reminder
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 - [ ] Run full test suite
 - [ ] Fix all failures
 
@@ -35,11 +35,12 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| — | — |
+| SP-649/SP-650 landed on this lane (`missingConfigHint`); SP-651/SP-653/SP-652 completed in parallel lanes of the same batch | Document FR-REL270-06 against dependency outcomes + PRD; docs-only file scope does not merge those lanes |
+| Gate evidence subsection still said #160 unsupported | Updated to Phase A/B + Phase C deferred |
 
 ## Completion Criteria
 
-- [ ] Runbook covers #202, #160 Phase B, doctor `.pi/`, PATH reminder
+- [x] Runbook covers #202, #160 Phase B, doctor `.pi/`, PATH reminder
 
 ## Blockers
 
