@@ -129,7 +129,11 @@ Document #197/#198 recovery, Python evidence command shapes, and hook ignore / n
 
 ### FR-REL260-08 — CONTEXT capstone (SP-642)
 
-Phase 70 table, Next Task ID → SP-643, PRD + manifest links, release note, deferred backlog.
+Phase 70 table, Next Task ID → SP-644, PRD + manifest links, release note, deferred backlog.
+
+### FR-REL260-09 — CLI default PI_SPINE_ROOT (SP-643)
+
+When `PI_SPINE_ROOT` is unset, CLI defaults it to `process.cwd()` so doctor/preflight do not require a manual export. Keep `resolvePiSpineRoot` worker package-root semantics. Related dogfood: #203.
 
 ---
 
@@ -144,14 +148,15 @@ Phase 70 table, Next Task ID → SP-643, PRD + manifest links, release note, def
 | SP-639 | evidence-scripts-executor | FR-REL260-05 | S | SP-638 | Partial #160 |
 | SP-640 | lane-commit-ignore-hook-venv | FR-REL260-06 | S | — | **Closes #200** |
 | SP-641 | runbook-v260-consumer-resume | FR-REL260-07 | S | SP-635, SP-637, SP-638, SP-640 | — |
-| SP-642 | context-phase70-capstone | FR-REL260-08 | S | SP-635–641 | — |
+| SP-642 | context-phase70-capstone | FR-REL260-08 | S | SP-635–641, SP-643 | — |
+| SP-643 | cli-default-pi-spine-root | FR-REL260-09 | S | — | #203 ergonomics |
 
 ---
 
 ## 8. Wave run order
 
 ```text
-Wave 0 (parallel): SP-635, SP-636, SP-638, SP-640
+Wave 0 (parallel): SP-635, SP-636, SP-638, SP-640, SP-643
 Wave 1: SP-637 (deps SP-636), SP-639 (deps SP-638)
 Wave 2: SP-641
 Cap: SP-642
@@ -170,7 +175,8 @@ Cap: SP-642
 - [ ] #199 closed — Python venv evidence commands run  
 - [ ] #200 closed — `.venv` hook symlink not committed  
 - [ ] #160 Phase A shipped (B/C remain open or noted)  
-- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-643  
+- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-644  
+- [ ] SP-643 — unset `PI_SPINE_ROOT` defaults to cwd (#203 ergonomics)  
 - [ ] `npm run release:check` green on publish HEAD  
 - [ ] `npm version minor` → v2.6.0 published (operator-gated)  
 
@@ -179,7 +185,7 @@ Cap: SP-642
 ## 10. Workflow after this document
 
 ```text
-Packets: SP-635–642 (new)
+Packets: SP-635–643 (new)
 Manifest: spine-tasks/_authoring/release-v2.6.0/manifest.md
 ```
 

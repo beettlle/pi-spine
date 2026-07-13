@@ -19,9 +19,9 @@ Ceilings: skills/spine-release-operator/references/release-profiles.md
 | Bucket | Selected | Profile ceiling | Status |
 |--------|----------|-----------------|--------|
 | Documentation | 2 (runbook + CONTEXT) | ≤4 | PASS |
-| Bug fixes | 4 issues (#197–#200) | ≤5 | PASS |
+| Bug fixes | 5 issues (#197–#200, #203 ergonomics) | ≤5 | PASS |
 | Enhancements | 1 issue (#160 Phase A) | 1–2 | PASS |
-| **Total tasks** | 8 (all S) | ≤15 | PASS |
+| **Total tasks** | 9 (all S) | ≤15 | PASS |
 
 **Profile audit:** PASS
 
@@ -38,15 +38,16 @@ Ceilings: skills/spine-release-operator/references/release-profiles.md
 | SP-639 | #160 | enh | S | Evidence scripts/ executor | Partial #160 Phase A |
 | SP-640 | #200 | bug | S | Lane commit ignore hook .venv | Closes #200 |
 | SP-641 | — | doc | S | Runbook v2.6.0 | deps SP-635,637,638,640 |
-| SP-642 | — | doc | S | CONTEXT Phase 70 capstone | deps SP-635–641 |
+| SP-642 | — | doc | S | CONTEXT Phase 70 capstone | deps SP-635–641,SP-643 |
+| SP-643 | #203 | bug | S | CLI default PI_SPINE_ROOT cwd | Dogfood ergonomics; closes unset-env friction |
 
-**Release scope ID:** `SP-635,SP-636,SP-637,SP-638,SP-639,SP-640,SP-641,SP-642`
+**Release scope ID:** `SP-635,SP-636,SP-637,SP-638,SP-639,SP-640,SP-641,SP-642,SP-643`
 
 ---
 
 ## Gaps requiring new packets
 
-All eight are new packets (lean create-spine-tasks).
+All nine are new packets (lean create-spine-tasks). SP-643 added mid-dogfood after #203.
 
 ---
 
@@ -66,7 +67,7 @@ All eight are new packets (lean create-spine-tasks).
 ## Wave plan snapshot
 
 ```text
-Wave 0: SP-635, SP-636, SP-638, SP-640
+Wave 0: SP-635, SP-636, SP-638, SP-640, SP-643
 Wave 1: SP-637, SP-639
 Wave 2: SP-641
 Cap: SP-642

@@ -64,9 +64,8 @@ When tasks are terminal-success, orch is merged, and a resume engine PID is stil
 
 - [ ] Add/extend regression for headline + diagnosis code
 - [ ] Run contract `testCommand`
-- [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
-- [ ] Run coverage gate: `npm run coverage:check` — **≥77% line coverage**
-- [ ] Fix all failures
+- [ ] Run contract `testCommand` only (scoped) — do **not** run full `npm test` or `npm run coverage:check` in the lane (parallel waves overload the host; integrate / `npm run release:check` owns full suite + coverage)
+- [ ] Fix all failures from the scoped contract command
 
 ### Step 3: Documentation & Delivery
 

@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-12 (Phase 70 v2.6.0 consumer resume staged; Next → SP-643 after capstone)
+**Last Updated:** 2026-07-12 (Phase 70 v2.6.0 + SP-643 PI_SPINE_ROOT default; Next → SP-644 after capstone)
 **Status:** Active
-**Next Task ID:** SP-643
+**Next Task ID:** SP-644
 
 ---
 
@@ -1956,7 +1956,8 @@ spine run sequence SP-623,SP-624,SP-625,SP-626,SP-627,SP-628,SP-629,SP-630,SP-63
 | SP-639 | Evidence scripts/ executor | Pending | SP-638 | Partial #160 |
 | SP-640 | Lane commit ignore hook .venv | Pending | — | #200 |
 | SP-641 | Runbook v2.6.0 consumer resume | Pending | SP-635,637,638,640 | — |
-| SP-642 | CONTEXT Phase 70 capstone | Pending | SP-635–641 | — |
+| SP-642 | CONTEXT Phase 70 capstone | Pending | SP-635–641,SP-643 | — |
+| SP-643 | CLI default PI_SPINE_ROOT to cwd | Pending | — | #203 ergonomics |
 
 ```bash
 spine tasks validate pending
@@ -1964,17 +1965,18 @@ spine plan pending
 spine batch start pending
 ```
 
-**Wave plan:** Wave 0 SP-635/636/638/640; Wave 1 SP-637/639; Wave 2 SP-641; Cap SP-642.
+**Wave plan:** Wave 0 SP-635/636/638/640/643; Wave 1 SP-637/639; Wave 2 SP-641; Cap SP-642.
 
 **Phase 70 exit criteria (PRD §9):**
 
 - [ ] #197–#200 closed
 - [ ] #160 Phase A shipped
-- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-643
+- [ ] CLI defaults unset `PI_SPINE_ROOT` to cwd (SP-643 / #203 ergonomics)
+- [ ] Runbook + CONTEXT Phase 70 complete; Next Task ID → SP-644
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] **v2.6.0 published** — `npm version minor` (operator-gated)
 
-**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A).
+**Release note (placeholder — fill on publish):** v2.6.0 — Consumer reliability: resume eligibility (#197), post-integrate resume limbo (#198), Python gate evidence (#199), hook `.venv` ignore (#200), scripts/ evidence executor (#160 Phase A), CLI `PI_SPINE_ROOT` cwd default (#203 ergonomics).
 
 ---
 
