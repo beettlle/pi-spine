@@ -26,8 +26,8 @@ test("init --preset taskplane-compat --tasks-root taskplane-tasks --dry-run prod
 
 		const config = result.config;
 		assert.equal(config.paths.tasksRoot, "taskplane-tasks");
-		assert.equal(config.testing.test, "npm run typecheck && npm test");
-		assert.equal(config.testing.build, "npm run typecheck && npm test");
+		assert.equal(config.testing.test, "npm test");
+		assert.equal(config.testing.build, "npm run typecheck");
 		assert.equal(config.dashboard.port, 8109);
 		assert.equal(config.gates.requireBeforeIntegrate, true);
 		assert.equal(config.lanes.maxParallel, 3);
@@ -54,7 +54,8 @@ test("plain init applies spine defaults without preset flag", async () => {
 		const result = runInit(projectRoot, ["--dry-run"]);
 		assert.equal(result.ok, true);
 		assert.equal(result.config.paths.tasksRoot, "spine-tasks");
-		assert.equal(result.config.testing.test, "npm run typecheck && npm test");
+		assert.equal(result.config.testing.test, "npm test");
+		assert.equal(result.config.testing.build, "npm run typecheck");
 		assert.equal(result.config.gates.requireBeforeIntegrate, true);
 		assert.equal(result.config.lanes.maxParallel, 3);
 	} finally {

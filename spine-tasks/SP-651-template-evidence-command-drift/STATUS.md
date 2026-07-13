@@ -1,6 +1,6 @@
 # SP-651: Template evidence command drift — Status
 
-**Current Step:** Step 1 — Fix template + regression test
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 1
@@ -16,17 +16,17 @@
 - [x] Choose Phase-A-safe replacements
 
 ### Step 1: Fix template + regression test
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 - [x] Update templates/spine-config.json
 - [x] Add template-evidence-commands.test.mjs
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Run contract testCommand
-- [ ] Fix scoped failures
+**Status:** ✅ Complete
+- [x] Run contract testCommand
+- [x] Fix scoped failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Create `.DONE`
 
 ## Discoveries & Decisions
@@ -35,14 +35,16 @@
 |-----------|----------|
 | Template `testing.build`/`testing.test` = `npm run typecheck && npm test` → `EvidenceCommandError: evidence command contains shell metacharacters` | Confirmed Phase A reject |
 | Prefer split allowlisted argv (`npm run typecheck` / `npm test`); matches dogfood `.spine/spine-config.json` | Use split |
-| `SPINE_INIT_TESTING_COMMAND` + `applySpineInitDefaults` + `spine-config-testing.test.mjs` mirror the combined `&&` string | Expand minimally to constants + mirror test (logically required; ask_question UI unavailable — default expand-split). Kept deprecated `SPINE_INIT_TESTING_COMMAND` alias → test command. |
+| `SPINE_INIT_TESTING_COMMAND` + `applySpineInitDefaults` + mirror/init tests hardcoded `&&` | Expanded to constants + init tests (logically required). Deprecated alias → `npm test`. |
 | Plan review at Step 0 | `skipped: true` (real-pi; engine reviews after `.DONE`) |
 | GitNexus impact on `applySpineInitDefaults` / `parseEvidenceCommandArgv` | LOW risk |
+| Contract `testCommand` | pass 2/2 |
+| `npm test` with worker env cleared | 2145 pass / 1 fail — flaky `contract-stall-override` timing (unrelated to SP-651) |
 
 ## Completion Criteria
 
-- [ ] Template testing commands pass evidence validator
-- [ ] Regression test green
+- [x] Template testing commands pass evidence validator
+- [x] Regression test green
 
 ## Blockers
 

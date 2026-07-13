@@ -37,7 +37,8 @@ test("fresh init creates config, agents, tasks root, and gitignore entries", asy
 		assert.ok(fs.existsSync(configPath));
 		const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 		assert.equal(config.paths.tasksRoot, DEFAULT_TASKS_ROOT);
-		assert.equal(config.testing.test, "npm run typecheck && npm test");
+		assert.equal(config.testing.test, "npm test");
+		assert.equal(config.testing.build, "npm run typecheck");
 		assert.equal(config.gates.requireBeforeIntegrate, true);
 		assert.equal(config.lanes.maxParallel, 3);
 		assert.equal(config.dashboard.port, 8109);
