@@ -3,7 +3,12 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { saveGateRecord } from "../../src/batch/gate.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
+import {
+	ensureLandLoopFinalizedAfterGateOrIntegrate,
+	finalizeAttachedLandLoopBeforeExit,
+} from "../../src/batch/post-merge-limbo.mjs";
 import { resumeBatch } from "../../src/batch/resume.mjs";
 import {
 	createInitialBatchState,
@@ -150,6 +155,151 @@ test("resumeBatch multi path requires existing lane worktrees", async () => {
 		assert.equal(result.ok, false);
 		assert.equal(result.error, "worktree_missing");
 		assert.notEqual(result.error, "single_lane_required");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-636: ensureLandLoopFinalizedAfterGateOrIntegrate clears PID and emits land_loop_finalized after gate", async () => {
+	const projectRoot = await initGitRepo("spine-sp636-ensure-gate-");
+	try {
+		const batchId = "20260712T212805";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "orch-work.txt"), "merged", "utf-8");
+		execFileSync("git", ["add", "orch-work.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch work"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [["SP-630"]],
+			tasks: [
+				{
+					taskId: "SP-630",
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder: "spine-tasks/SP-630-smoke",
+					doneFileFound: true,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: projectRoot,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: ["SP-630"],
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "abc123" }];
+		state.resilience = { enginePid: process.pid, resumeForced: true };
+		saveSpineBatchState(projectRoot, state);
+
+		saveGateRecord(projectRoot, {
+			gateId: "gate-sp636",
+			batchId,
+			kind: "integrate",
+			category: "standard",
+			status: "pending",
+			openedAt: new Date().toISOString(),
+			targetRevision: "abc123",
+			evidenceRefs: [],
+			summary: "pending",
+		});
+
+		const ensured = ensureLandLoopFinalizedAfterGateOrIntegrate({
+			projectRoot,
+			state,
+			batchId,
+			resumed: true,
+			resumeForced: true,
+			source: "resume_fast_path",
+		});
+		assert.equal(ensured?.ok, true);
+		assert.equal(ensured?.changed, true);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
+		assert.equal(loadSpineBatchState(projectRoot).raw?.resilience?.enginePid, undefined);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.ok(events.some((event) => event.type === "batch.completed"));
+		assert.ok(events.some((event) => event.type === "batch.land_loop_finalized"));
+
+		const again = ensureLandLoopFinalizedAfterGateOrIntegrate({
+			projectRoot,
+			state: loadSpineBatchState(projectRoot).raw,
+			batchId,
+			resumed: true,
+			resumeForced: true,
+		});
+		assert.equal(again?.changed, false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-636: finalizeAttachedLandLoopBeforeExit finalizes when gate exists without land_loop_finalized", async () => {
+	const projectRoot = await initGitRepo("spine-sp636-exit-gate-");
+	try {
+		const batchId = "20260712T212806";
+		const orchBranch = `orch/spine-${batchId}`;
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [["SP-630"]],
+			tasks: [
+				{
+					taskId: "SP-630",
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder: "spine-tasks/SP-630-smoke",
+					doneFileFound: true,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: projectRoot,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: ["SP-630"],
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "def456" }];
+		state.resilience = { enginePid: process.pid };
+		saveSpineBatchState(projectRoot, state);
+		saveGateRecord(projectRoot, {
+			gateId: "gate-sp636-exit",
+			batchId,
+			kind: "integrate",
+			category: "standard",
+			status: "pending",
+			openedAt: new Date().toISOString(),
+			targetRevision: "def456",
+			evidenceRefs: [],
+			summary: "pending",
+		});
+
+		const handoff = finalizeAttachedLandLoopBeforeExit({
+			projectRoot,
+			signal: "SIGTERM",
+		});
+		assert.equal(handoff.handled, true);
+		assert.equal(handoff.action, "finalized_after_gate_or_integrate");
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
+		assert.equal(loadSpineBatchState(projectRoot).raw?.resilience?.enginePid, undefined);
+		assert.ok(
+			readJournalEvents(projectRoot, batchId).some(
+				(event) => event.type === "batch.land_loop_finalized",
+			),
+		);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

@@ -122,6 +122,105 @@ export function finalizeAttachedPostMergeLimbo({ projectRoot, state, batchId, or
 }
 
 /**
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} type
+ */
+function journalHasEventType(projectRoot, batchId, type) {
+	if (!batchId) return false;
+	return readJournalEvents(projectRoot, batchId).some((event) => event.type === type);
+}
+
+/**
+ * Idempotent land-loop close after gate open or host integrate (#198 / SP-636).
+ * Clears engine PID and emits `batch.land_loop_finalized` so `spine batch complete`
+ * is not blocked while a resume engine is still mid-evidence or lingering.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state
+ * @param {string} params.batchId
+ * @param {boolean} [params.resumed]
+ * @param {boolean} [params.resumeForced]
+ * @param {string} [params.source]
+ * @returns {{ ok: true, changed: boolean, batchId: string, exitCode: 0, shouldExit: boolean } | null}
+ */
+export function ensureLandLoopFinalizedAfterGateOrIntegrate({
+	projectRoot,
+	state,
+	batchId,
+	resumed = false,
+	resumeForced = false,
+	source = "ensure_after_gate_or_integrate",
+}) {
+	if (!state || typeof state !== "object" || !batchId) {
+		return null;
+	}
+
+	const gateRecord = loadGateRecord(projectRoot, batchId);
+	const integrateCompleted = journalHasEventType(projectRoot, batchId, "integrate.completed");
+	const gateApproved = gateRecord != null && String(gateRecord.status ?? "") === "approved";
+	const phaseCompleted = String(state.phase ?? "") === "completed";
+
+	if (!gateRecord && !integrateCompleted && !phaseCompleted) {
+		return null;
+	}
+
+	let changed = false;
+	const taskIds = (state.tasks ?? []).map((task) => task.taskId);
+
+	if (!phaseCompleted) {
+		state.endedAt = state.endedAt ?? Date.now();
+		state.phase = "completed";
+		changed = true;
+	}
+
+	if (!journalHasEventType(projectRoot, batchId, "batch.completed")) {
+		appendJournalEvent(projectRoot, batchId, "batch.completed", {
+			taskIds,
+			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+			resumed,
+			postMergeLimbo: !resumed,
+			resumeForced,
+			source,
+		});
+		changed = true;
+	}
+
+	if (state.resilience?.enginePid != null) {
+		clearBatchEnginePid(state);
+		changed = true;
+	}
+
+	if (!journalHasEventType(projectRoot, batchId, "batch.land_loop_finalized")) {
+		const finalizeSource = integrateCompleted
+			? "host_integrate"
+			: gateApproved
+				? "host_gate_approved"
+				: source;
+		appendJournalEvent(projectRoot, batchId, "batch.land_loop_finalized", {
+			resumed,
+			resumeForced,
+			gateId: gateRecord?.gateId ?? null,
+			source: finalizeSource,
+		});
+		changed = true;
+	}
+
+	if (changed) {
+		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	}
+
+	return {
+		ok: true,
+		changed,
+		batchId,
+		exitCode: 0,
+		shouldExit: integrateCompleted || gateApproved,
+	};
+}
+
+/**
  * Open integrate gate or spawn detached resume before attached engine exit (SP-378, GitHub #59).
  *
  * @param {object} params
@@ -148,10 +247,24 @@ export function finalizeAttachedLandLoopBeforeExit({
 	const state = loaded.raw;
 	const batchId = String(state.batchId ?? "");
 	const orchBranch = String(state.orchBranch ?? "");
+	const gateExists = loadGateRecord(projectRoot, batchId) != null;
+	const integrateCompleted = journalHasEventType(projectRoot, batchId, "integrate.completed");
 
-	if (String(state.phase ?? "") === "completed" || loadGateRecord(projectRoot, batchId)) {
+	if (String(state.phase ?? "") === "completed" || gateExists || integrateCompleted) {
+		const ensured = ensureLandLoopFinalizedAfterGateOrIntegrate({
+			projectRoot,
+			state,
+			batchId,
+			resumed: true,
+			source: integrateCompleted ? "host_integrate" : "attached_exit_after_gate",
+		});
 		attachedExitFinalizeInFlight = false;
-		return { handled: true, action: "already_finalized", batchId };
+		return {
+			handled: true,
+			action: ensured?.changed ? "finalized_after_gate_or_integrate" : "already_finalized",
+			batchId,
+			result: ensured,
+		};
 	}
 
 	hydrateMergeResultsFromJournal({ projectRoot, state, batchId });
@@ -307,6 +420,10 @@ export function tryFinalizePostMergeLimbo({
  * Open integrate gate and mark batch completed (idempotent gate open).
  * Shared by engine completion and resume post-merge limbo fast path (SP-204, SP-280).
  *
+ * Clear engine PID before gate open so extended evidence (often `npm test`) cannot
+ * leave a live PID blocking `batch complete` while the gate record already exists (#198).
+ * Journal order keeps `gate.opened` before `batch.completed`.
+ *
  * @param {object} params
  */
 export function finalizeBatchForIntegrate({
@@ -321,10 +438,15 @@ export function finalizeBatchForIntegrate({
 	const summaryTask =
 		taskIds.length === 1 ? taskIds[0] : `${taskIds.length} tasks (${taskIds.join(", ")})`;
 	const alreadyCompleted = String(state.phase ?? "") === "completed";
+	const landLoopSource = resumed ? "resume_fast_path" : "engine_land_loop";
 
 	if (!alreadyCompleted) {
 		state.endedAt = Date.now();
 	}
+
+	// Persist PID clear before evidence collection can hang (#198 / SP-636).
+	clearBatchEnginePid(state);
+	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
 	const gateResult = openIntegrateGateAfterBatchComplete({
 		projectRoot,
@@ -332,30 +454,18 @@ export function finalizeBatchForIntegrate({
 		batchState: { ...state, phase: "completed" },
 	});
 
-	if (!alreadyCompleted) {
+	// Idempotent close: reporter may have already finalized while evidence was still running.
+	if (!alreadyCompleted && String(state.phase ?? "") !== "completed") {
 		state.phase = "completed";
-		appendJournalEvent(projectRoot, batchId, "batch.completed", {
-			taskIds,
-			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
-			resumed,
-			postMergeLimbo: !resumed,
-			resumeForced,
-		});
 	}
-
-	clearBatchEnginePid(state);
-
-	const gateRecord = loadGateRecord(projectRoot, batchId);
-	if (gateRecord) {
-		appendJournalEvent(projectRoot, batchId, "batch.land_loop_finalized", {
-			resumed,
-			resumeForced,
-			gateId: gateRecord.gateId ?? gateResult?.gate?.gateId ?? null,
-			source: resumed ? "resume_fast_path" : "engine_land_loop",
-		});
-	}
-
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	ensureLandLoopFinalizedAfterGateOrIntegrate({
+		projectRoot,
+		state,
+		batchId,
+		resumed,
+		resumeForced,
+		source: landLoopSource,
+	});
 
 	const completionLabel = resumed ? "resumed and completed" : "completed";
 	const nextSteps = resumed
@@ -370,6 +480,7 @@ export function finalizeBatchForIntegrate({
 		taskId: taskIds.length === 1 ? taskIds[0] : undefined,
 		orchBranch,
 		mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+		gateResult,
 		output:
 			`Batch ${batchId} ${completionLabel}: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
 			nextSteps,

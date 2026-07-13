@@ -5,6 +5,7 @@
  */
 
 import {
+	ensureLandLoopFinalizedAfterGateOrIntegrate,
 	finalizeAttachedLandLoopBeforeExit,
 	finalizeResumedBatchForIntegrate,
 	isPostMergeLimbo,
@@ -12,7 +13,7 @@ import {
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { terminateStaleDetachedEngine } from "./resume-engine.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
-import { readJournalEventsCached } from "./journal.mjs";
+import { readJournalEvents, readJournalEventsCached } from "./journal.mjs";
 import { enforceOperatorPauseOnDisk } from "./pause.mjs";
 import { loadSpineBatchState, saveSpineBatchState } from "./state.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
@@ -24,6 +25,75 @@ import {
 } from "./attached-runner-reconcile.mjs";
 
 export { DEFAULT_ATTACHED_MILESTONE_POLL_MS } from "../config/spine-config-schema.mjs";
+
+/** Journal types that mean the land loop is done and a stuck resume engine should exit (#198). */
+const HOST_LAND_LOOP_EXIT_TYPES = new Set([
+	"integrate.completed",
+	"gate.approved",
+]);
+
+/** Journal types that mean gate/integrate artifacts exist and finalize should run. */
+const LAND_LOOP_ENSURE_TYPES = new Set([
+	"gate.opened",
+	"gate.approved",
+	"integrate.completed",
+	"batch.land_loop_finalized",
+]);
+
+/**
+ * When host opens/approves the gate or integrates while this engine is mid-evidence,
+ * finalize land-loop artifacts and exit so we are not a zombie PID (#198 / SP-636).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.event
+ * @param {(code?: number) => void} [params.exitProcess]
+ */
+export function maybeFinalizeAttachedEngineAfterHostLandLoop({
+	projectRoot,
+	event,
+	exitProcess = (code) => process.exit(code),
+}) {
+	const type = String(event?.type ?? "");
+	if (!LAND_LOOP_ENSURE_TYPES.has(type)) {
+		return { handled: false, reason: "not_land_loop_event" };
+	}
+
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw?.batchId) {
+		return { handled: false, reason: "no_active_batch" };
+	}
+
+	const state = loaded.raw;
+	const batchId = String(state.batchId);
+	const resumed = readJournalEvents(projectRoot, batchId).some(
+		(entry) => entry.type === "batch.resumed",
+	);
+	const ensured = ensureLandLoopFinalizedAfterGateOrIntegrate({
+		projectRoot,
+		state,
+		batchId,
+		resumed,
+		resumeForced: Boolean(state.resilience?.resumeForced),
+		source: "attached_milestone_host_land_loop",
+	});
+
+	if (!ensured) {
+		return { handled: false, reason: "ensure_not_applicable" };
+	}
+
+	if (HOST_LAND_LOOP_EXIT_TYPES.has(type) || ensured.shouldExit) {
+		exitProcess(0);
+		return { handled: true, action: "exited_after_host_land_loop", batchId, result: ensured };
+	}
+
+	return {
+		handled: true,
+		action: ensured.changed ? "finalized_after_gate_opened" : "already_finalized",
+		batchId,
+		result: ensured,
+	};
+}
 
 /** @type {boolean} */
 let attachedExitHandlersInstalled = false;
@@ -109,12 +179,14 @@ export function formatAttachedMilestoneLine(event) {
  * @param {string} params.projectRoot
  * @param {(line: string) => void} [params.write]
  * @param {number} [params.pollIntervalMs]
+ * @param {(code?: number) => void} [params.exitProcess]
  * @returns {Promise<{ stop: () => Promise<void> }>}
  */
 export async function startAttachedMilestoneReporter({
 	projectRoot,
 	write = (line) => process.stdout.write(line),
 	pollIntervalMs,
+	exitProcess = (code) => process.exit(code),
 }) {
 	const configResult = loadSpineConfig(projectRoot);
 	const resolvedPollMs =
@@ -124,6 +196,26 @@ export async function startAttachedMilestoneReporter({
 	const printed = new Set();
 	let batchId = null;
 	let stopped = false;
+
+	const emitAndMaybeFinalize = (event) => {
+		const key = milestoneEventKey(event);
+		if (printed.has(key)) return;
+		const type = String(event.type ?? "");
+		const isMilestone = ATTACHED_LAND_LOOP_MILESTONE_TYPES.has(type);
+		const isLandLoopEnsure = LAND_LOOP_ENSURE_TYPES.has(type);
+		if (!isMilestone && !isLandLoopEnsure) return;
+		printed.add(key);
+		if (isMilestone) {
+			write(formatAttachedMilestoneLine(event));
+		}
+		if (isLandLoopEnsure) {
+			maybeFinalizeAttachedEngineAfterHostLandLoop({
+				projectRoot,
+				event,
+				exitProcess,
+			});
+		}
+	};
 
 	const loop = async () => {
 		while (!stopped) {
@@ -135,11 +227,7 @@ export async function startAttachedMilestoneReporter({
 			if (batchId) {
 				const events = readJournalEventsCached(projectRoot, batchId);
 				for (const event of events) {
-					const key = milestoneEventKey(event);
-					if (printed.has(key)) continue;
-					if (!ATTACHED_LAND_LOOP_MILESTONE_TYPES.has(String(event.type ?? ""))) continue;
-					printed.add(key);
-					write(formatAttachedMilestoneLine(event));
+					emitAndMaybeFinalize(event);
 				}
 			}
 			await sleep(resolvedPollMs);
@@ -155,11 +243,7 @@ export async function startAttachedMilestoneReporter({
 			if (batchId) {
 				const events = readJournalEventsCached(projectRoot, batchId);
 				for (const event of events) {
-					const key = milestoneEventKey(event);
-					if (printed.has(key)) continue;
-					if (!ATTACHED_LAND_LOOP_MILESTONE_TYPES.has(String(event.type ?? ""))) continue;
-					printed.add(key);
-					write(formatAttachedMilestoneLine(event));
+					emitAndMaybeFinalize(event);
 				}
 			}
 		},
