@@ -1,7 +1,7 @@
 # SP-649: Wrong-cwd config missing message — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,8 +29,8 @@
 - [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
