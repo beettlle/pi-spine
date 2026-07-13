@@ -1,7 +1,7 @@
 # SP-654: Runbook v2.7.0 operator UX — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -22,14 +22,14 @@
 - [x] Document .pi/ gitignore + PATH reminder
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
-- [ ] Run full test suite
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run full test suite
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -37,6 +37,7 @@
 |-----------|----------|
 | SP-649/SP-650 landed on this lane (`missingConfigHint`); SP-651/SP-653/SP-652 completed in parallel lanes of the same batch | Document FR-REL270-06 against dependency outcomes + PRD; docs-only file scope does not merge those lanes |
 | Gate evidence subsection still said #160 unsupported | Updated to Phase A/B + Phase C deferred |
+| `SPINE_WORKER_STUB=1 npm test` inherits `SPINE_IS_WORKER=1` and fails startBatch tests (#132) | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm test` → 2150 pass / 0 fail |
 
 ## Completion Criteria
 
