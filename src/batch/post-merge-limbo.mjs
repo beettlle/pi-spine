@@ -454,9 +454,11 @@ export function finalizeBatchForIntegrate({
 		batchState: { ...state, phase: "completed" },
 	});
 
-	// Idempotent close: reporter may have already finalized while evidence was still running.
-	if (!alreadyCompleted && String(state.phase ?? "") !== "completed") {
+	// Always mark completed in memory before ensure so a prior land-loop journal
+	// (e.g. start then pause/resume) still persists phase: completed on disk.
+	if (!alreadyCompleted) {
 		state.phase = "completed";
+		state.endedAt = state.endedAt ?? Date.now();
 	}
 	ensureLandLoopFinalizedAfterGateOrIntegrate({
 		projectRoot,
@@ -466,6 +468,8 @@ export function finalizeBatchForIntegrate({
 		resumeForced,
 		source: landLoopSource,
 	});
+	// Ensure may no-op when journal events already exist; always persist phase/PID.
+	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
 
 	const completionLabel = resumed ? "resumed and completed" : "completed";
 	const nextSteps = resumed

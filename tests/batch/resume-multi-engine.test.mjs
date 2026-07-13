@@ -4,10 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { saveGateRecord } from "../../src/batch/gate.mjs";
-import { readJournalEvents } from "../../src/batch/journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import {
 	ensureLandLoopFinalizedAfterGateOrIntegrate,
 	finalizeAttachedLandLoopBeforeExit,
+	finalizeBatchForIntegrate,
 } from "../../src/batch/post-merge-limbo.mjs";
 import { resumeBatch } from "../../src/batch/resume.mjs";
 import {
@@ -237,6 +238,76 @@ test("SP-636: ensureLandLoopFinalizedAfterGateOrIntegrate clears PID and emits l
 			resumeForced: true,
 		});
 		assert.equal(again?.changed, false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-636: finalizeBatchForIntegrate persists completed after prior land_loop_finalized", async () => {
+	const projectRoot = await initGitRepo("spine-sp636-repersist-");
+	try {
+		const batchId = "20260712T212809";
+		const orchBranch = `orch/spine-${batchId}`;
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [["SP-630"]],
+			tasks: [
+				{
+					taskId: "SP-630",
+					laneNumber: 1,
+					status: "succeeded",
+					taskFolder: "spine-tasks/SP-630-smoke",
+					doneFileFound: true,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: projectRoot,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: ["SP-630"],
+				},
+			],
+		});
+		state.phase = "completed";
+		state.mergeResults = [{ waveIndex: 0, status: "succeeded", mergeCommit: "ccc333" }];
+		saveSpineBatchState(projectRoot, state);
+		saveGateRecord(projectRoot, {
+			gateId: "gate-prior-finalize",
+			batchId,
+			kind: "integrate",
+			category: "standard",
+			status: "pending",
+			openedAt: new Date().toISOString(),
+			targetRevision: "ccc333",
+			evidenceRefs: [],
+			summary: "pending",
+		});
+		appendJournalEvent(projectRoot, batchId, "batch.completed", { resumed: false });
+		appendJournalEvent(projectRoot, batchId, "batch.land_loop_finalized", {
+			source: "engine_land_loop",
+		});
+
+		// Simulate pause → resume leaving phase running while prior finalize journal remains.
+		state.phase = "running";
+		state.endedAt = null;
+		state.resilience = { enginePid: process.pid };
+		saveSpineBatchState(projectRoot, state);
+
+		const result = finalizeBatchForIntegrate({
+			projectRoot,
+			state,
+			batchId,
+			orchBranch,
+			resumed: true,
+			resumeForced: true,
+		});
+		assert.equal(result.ok, true);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
+		assert.equal(loadSpineBatchState(projectRoot).raw?.resilience?.enginePid, undefined);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
