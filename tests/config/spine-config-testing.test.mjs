@@ -5,8 +5,9 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import {
+	SPINE_INIT_BUILD_COMMAND,
 	SPINE_INIT_COVERAGE_COMMAND,
-	SPINE_INIT_TESTING_COMMAND,
+	SPINE_INIT_TEST_COMMAND,
 	loadSpineConfigTemplate,
 	runInit,
 } from "../../bin/spine-init.mjs";
@@ -14,8 +15,8 @@ import { buildTestingEvidenceDoctorChecks } from "../../bin/spine-doctor.mjs";
 
 test("spine-config template defaults mirror package.json script patterns", () => {
 	const template = loadSpineConfigTemplate();
-	assert.equal(template.testing.build, SPINE_INIT_TESTING_COMMAND);
-	assert.equal(template.testing.test, SPINE_INIT_TESTING_COMMAND);
+	assert.equal(template.testing.build, SPINE_INIT_BUILD_COMMAND);
+	assert.equal(template.testing.test, SPINE_INIT_TEST_COMMAND);
 	assert.equal(template.testing.testWithCoverage, SPINE_INIT_COVERAGE_COMMAND);
 	assert.equal(template.agents.worker.model, "cursor/auto");
 	assert.equal(template.agents.reviewer.model, "cursor/auto");
@@ -27,8 +28,8 @@ test("init applies testing defaults including coverage command", async () => {
 	try {
 		const result = runInit(projectRoot, ["--dry-run"]);
 		assert.equal(result.ok, true);
-		assert.equal(result.config.testing.build, SPINE_INIT_TESTING_COMMAND);
-		assert.equal(result.config.testing.test, SPINE_INIT_TESTING_COMMAND);
+		assert.equal(result.config.testing.build, SPINE_INIT_BUILD_COMMAND);
+		assert.equal(result.config.testing.test, SPINE_INIT_TEST_COMMAND);
 		assert.equal(result.config.testing.testWithCoverage, SPINE_INIT_COVERAGE_COMMAND);
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
