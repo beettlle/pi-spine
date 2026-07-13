@@ -1,6 +1,7 @@
 /**
  * Safe argv execution for config-derived integrate-gate evidence commands.
  * Allowlisted executables only; rejects shell metacharacters (no shell: true).
+ * Phase B: allowlisted package-manager segments may be joined with `&&` only.
  */
 
 import path from "node:path";
@@ -28,6 +29,10 @@ const PROJECT_LOCAL_VENV_PREFIXES = [".venv/", "venv/"];
 /** Relative prefix for validated gate-evidence scripts (posix-normalized). */
 const EVIDENCE_SCRIPTS_PREFIX = "scripts/";
 
+/**
+ * Forbidden shell metacharacters. Checked after stripping allowlisted `&&`
+ * chain separators so a lone `&` still fails closed.
+ */
 const SHELL_METACHAR_PATTERN = /[;|&`<>]|>>|\$\(|\$\{/;
 
 export class EvidenceCommandError extends Error {
@@ -52,22 +57,113 @@ export function assertSafeEvidenceCommand(command) {
 	if (/[\r\n]/.test(trimmed)) {
 		throw new EvidenceCommandError("evidence command contains newlines");
 	}
-	if (SHELL_METACHAR_PATTERN.test(trimmed)) {
+
+	// Allow `&&` as the only chain operator; strip it before metachar / `$` scans.
+	const withoutChains = trimmed.replaceAll("&&", " ");
+	if (SHELL_METACHAR_PATTERN.test(withoutChains)) {
 		throw new EvidenceCommandError("evidence command contains shell metacharacters");
 	}
-	if (/\$/.test(trimmed)) {
+	if (/\$/.test(withoutChains)) {
 		throw new EvidenceCommandError("evidence command contains shell variable expansion");
 	}
 }
 
 /**
+ * Split an evidence command on `&&` outside quotes (Phase B chain grammar).
+ * @param {string} line
+ * @returns {string[]}
+ */
+function splitEvidenceChainSegments(line) {
+	/** @type {string[]} */
+	const segments = [];
+	let current = "";
+	/** @type {"'" | '"' | null} */
+	let quote = null;
+
+	for (let i = 0; i < line.length; i++) {
+		const ch = line[i];
+		if (quote) {
+			// Preserve escapes so tokenizeCommandLine can re-parse the segment.
+			if (ch === "\\" && quote === '"' && i + 1 < line.length) {
+				current += ch;
+				i += 1;
+				current += line[i];
+				continue;
+			}
+			current += ch;
+			if (ch === quote) {
+				quote = null;
+			}
+			continue;
+		}
+
+		if (ch === "'" || ch === '"') {
+			quote = ch;
+			current += ch;
+			continue;
+		}
+
+		if (ch === "&" && line[i + 1] === "&") {
+			segments.push(current.trim());
+			current = "";
+			i += 1;
+			continue;
+		}
+
+		current += ch;
+	}
+
+	if (quote) {
+		throw new EvidenceCommandError("unclosed quote in evidence command");
+	}
+
+	segments.push(current.trim());
+	return segments;
+}
+
+/**
+ * Parse a config testing command into one or more argv arrays without a shell.
+ * Multi-segment results are allowlisted `&&` chains (Phase B).
+ * @param {string} command
+ * @returns {string[][]}
+ */
+export function parseEvidenceCommandChain(command) {
+	assertSafeEvidenceCommand(command);
+	const segments = splitEvidenceChainSegments(command.trim());
+	if (segments.length === 0) {
+		throw new EvidenceCommandError("empty evidence command");
+	}
+	if (segments.some((segment) => !segment)) {
+		throw new EvidenceCommandError("empty evidence command chain segment");
+	}
+
+	const chainMode = segments.length > 1;
+	return segments.map((segment) => parseEvidenceSegmentArgv(segment, chainMode));
+}
+
+/**
  * Parse a config testing command into argv without invoking a shell.
+ * Single-segment only; use {@link parseEvidenceCommandChain} for `&&` chains.
  * @param {string} command
  * @returns {string[]}
  */
 export function parseEvidenceCommandArgv(command) {
-	assertSafeEvidenceCommand(command);
-	const argv = tokenizeCommandLine(command.trim());
+	const chain = parseEvidenceCommandChain(command);
+	if (chain.length !== 1) {
+		throw new EvidenceCommandError(
+			"evidence command && chains must use parseEvidenceCommandChain or runEvidenceCommand",
+		);
+	}
+	return chain[0];
+}
+
+/**
+ * @param {string} segment
+ * @param {boolean} chainMode
+ * @returns {string[]}
+ */
+function parseEvidenceSegmentArgv(segment, chainMode) {
+	const argv = tokenizeCommandLine(segment);
 	if (argv.length === 0) {
 		throw new EvidenceCommandError("empty evidence command");
 	}
@@ -76,10 +172,13 @@ export function parseEvidenceCommandArgv(command) {
 	if (ALLOWED_EVIDENCE_EXECUTABLES.has(executable)) {
 		return argv;
 	}
-	if (isAllowedProjectLocalInterpreter(argv[0])) {
+
+	// Phase A single-segment paths stay available; multi-segment chains are
+	// package-manager / node allowlist only (FR-REL270-05).
+	if (!chainMode && isAllowedProjectLocalInterpreter(argv[0])) {
 		return argv;
 	}
-	if (isAllowedEvidenceScriptsPath(argv[0])) {
+	if (!chainMode && isAllowedEvidenceScriptsPath(argv[0])) {
 		return argv;
 	}
 
@@ -247,16 +346,21 @@ export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) 
 	if (!command) return { ok: false, skipped: true, output: "" };
 
 	try {
-		const argv = parseEvidenceCommandArgv(command);
-		const execArgv = resolveEvidenceScriptsArgv(projectRoot, argv);
-		const output = execFileSync(execArgv[0], execArgv.slice(1), {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 10 * 60 * 1000,
-			maxBuffer: maxBytes,
-		});
-		return { ok: true, skipped: false, output: String(output ?? "") };
+		const chain = parseEvidenceCommandChain(command);
+		/** @type {string[]} */
+		const outputs = [];
+		for (const argv of chain) {
+			const execArgv = resolveEvidenceScriptsArgv(projectRoot, argv);
+			const output = execFileSync(execArgv[0], execArgv.slice(1), {
+				cwd: projectRoot,
+				encoding: "utf-8",
+				stdio: ["ignore", "pipe", "pipe"],
+				timeout: 10 * 60 * 1000,
+				maxBuffer: maxBytes,
+			});
+			outputs.push(String(output ?? ""));
+		}
+		return { ok: true, skipped: false, output: outputs.join("") };
 	} catch (err) {
 		if (err instanceof EvidenceCommandError) {
 			return {
