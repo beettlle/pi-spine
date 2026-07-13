@@ -9,6 +9,7 @@ import path from 'node:path';
 import { c, isCliEntrypoint, writeCommandResult } from './spine-cli/shared.mjs';
 import { loadSpineConfig } from './spine-config.mjs';
 import { resolveTasksRootPath } from '../src/config/env-overrides.mjs';
+import { missingConfigHint } from '../src/config/missing-config-hint.mjs';
 import { analyzeTasksScope } from '../src/tasks/analyze/index.mjs';
 import {
 	collectPromptValidationFailure,
@@ -188,7 +189,7 @@ export async function runSpineTasksValidate({
 	const tasksRoot = resolveTasksRootPath(projectRoot, config);
 	if (!tasksRoot) {
 		throwTasksValidateError('Cannot validate tasks: tasksRoot not configured', {
-			suggestedCommand: 'spine init',
+			suggestedCommand: missingConfigHint(projectRoot).suggestedCommand,
 		});
 	}
 
