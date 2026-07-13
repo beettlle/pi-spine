@@ -61,24 +61,66 @@ export function detectPostMergeLimboForResume({ projectRoot, state }) {
 export { hasPendingWaveMerge } from "./merge/wave-merge-state.mjs";
 
 /**
- * Whether every task is terminal-success (or skipped) for #196 drift recovery.
+ * Terminal-success evidence for force-resume eligibility (#196 / #197).
+ * Prefer classification / done* markers over raw `status === "succeeded"` only —
+ * diagnose and salvage use the same signals when the status cache lags.
+ *
+ * @param {object|null|undefined} task
+ */
+function isTerminalSuccessForResume(task) {
+	const status = String(task?.status ?? "").toLowerCase();
+	if (status === "succeeded" || status === "skipped") return true;
+	if (task?.doneInLane === true || task?.doneFileFound === true || task?.doneOnMain === true) {
+		return true;
+	}
+	return String(task?.classification ?? "").toLowerCase() === "terminal-success";
+}
+
+/**
+ * Whether every task is terminal-success (or skipped) for drift recovery (#196 / #197).
  *
  * @param {object|null|undefined} state
  */
 function allTasksTerminalSuccessForResume(state) {
 	const tasks = state?.tasks ?? [];
 	if (tasks.length < 1) return false;
-	return tasks.every((task) => {
-		const status = String(task?.status ?? "").toLowerCase();
-		return status === "succeeded" || status === "skipped";
-	});
+	return tasks.every((task) => isTerminalSuccessForResume(task));
+}
+
+/**
+ * Pending wave merge for resume eligibility.
+ *
+ * Status-only `hasPendingWaveMerge` misses #197 when tasks are still `status: running`
+ * but classification / doneInLane already show terminal success. In that case treat any
+ * wave without a succeeded mergeResults row as pending merge (same intent as
+ * findFirstWaveNeedingMerge, without widening wave-merge-state blast radius).
+ *
+ * @param {object|null|undefined} state
+ */
+function hasPendingWaveMergeForResume(state) {
+	if (hasPendingWaveMerge(state)) return true;
+	if (!allTasksTerminalSuccessForResume(state)) return false;
+	const wavePlan = state?.wavePlan ?? [];
+	if (wavePlan.length < 1) return false;
+	const mergeResults = state?.mergeResults ?? [];
+	const succeeded = new Set(
+		mergeResults
+			.filter((entry) => String(entry?.status ?? "").toLowerCase() === "succeeded")
+			.map((entry) => Number(entry.waveIndex))
+			.filter((waveIndex) => Number.isFinite(waveIndex)),
+	);
+	for (let waveIndex = 0; waveIndex < wavePlan.length; waveIndex++) {
+		if (!succeeded.has(waveIndex)) return true;
+	}
+	return false;
 }
 
 /**
  * Assess whether a running-phase batch may resume after a dead detached engine (SP-296).
  *
- * Also covers SP-613 / #196: pidless engine + all tasks terminal-success + pending wave
- * merge (doneInLane healed, enginePid cleared) must not dead-end on phase=running.
+ * Also covers SP-613 / #196 and SP-635 / #197: pidless engine + all tasks terminal-success
+ * (status healed or classification/doneInLane) + pending wave merge must not dead-end on
+ * phase=running.
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -101,11 +143,11 @@ export function assessRunningPhaseResumeEligibility({ projectRoot, state }) {
 	const enginePid = readBatchEnginePid(state);
 	const enginePidDead = enginePid != null && !isProcessAlive(enginePid);
 	const pidlessEngineOrphan = enginePid == null && orphanRunning?.kind === "engine";
-	// Dead/missing engine with work finished but merge not landed — agent-safe detached resume (#196).
+	// Dead/missing engine with work finished but merge not landed — agent-safe detached resume (#196 / #197).
 	const pidlessTerminalSuccessPendingMerge =
 		enginePid == null &&
 		allTasksTerminalSuccessForResume(state) &&
-		hasPendingWaveMerge(state);
+		hasPendingWaveMergeForResume(state);
 	const engineConfirmedDead =
 		enginePidDead || pidlessEngineOrphan || pidlessTerminalSuccessPendingMerge;
 

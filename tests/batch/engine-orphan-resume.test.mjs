@@ -298,3 +298,70 @@ test("dead engine + doneInLane heal + cleared PID allows force resume without at
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("pidless status=running + doneInLane classification allows force resume without pause (#197)", async () => {
+	const projectRoot = await initGitRepo("spine-drift-197-terminal-class-");
+	try {
+		const batchId = "20260712T197613";
+		const taskId = "SP-635";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		const lane = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "running",
+					classification: "terminal-success",
+					doneInLane: true,
+					taskFolder: `spine-tasks/${taskId}-smoke`,
+					startedAt: Date.now() - 60_000,
+					doneFileFound: false,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: lane.worktreePath,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: [taskId],
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [];
+		clearBatchEnginePid(state);
+		saveSpineBatchState(projectRoot, state);
+
+		assert.equal(
+			buildSuggestedCommand("state_drift", {
+				failedTaskId: taskId,
+				phase: "running",
+				staleEnginePid: true,
+				allTasksTerminalSuccess: true,
+			}),
+			"spine batch resume --force",
+		);
+
+		const eligibility = assessRunningPhaseResumeEligibility({
+			projectRoot,
+			state: loadSpineBatchState(projectRoot).raw,
+		});
+		assert.equal(eligibility.engineConfirmedDead, true);
+		assert.equal(eligibility.allowOrphanResume, true);
+		assert.equal(eligibility.terminalSuccessPendingMerge, true);
+
+		const validated = validateMultiTaskResume({ projectRoot, force: true });
+		assert.equal(validated.ok, true, validated.output ?? validated.error);
+		assert.doesNotMatch(validated.output ?? "", /phase running/i);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

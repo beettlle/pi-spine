@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import test from "node:test";
-import { validateMultiTaskResume } from "../../src/batch/resume-multi.mjs";
+import {
+	assessRunningPhaseResumeEligibility,
+	validateMultiTaskResume,
+} from "../../src/batch/resume-multi-validate.mjs";
 import { validateResumeBatch } from "../../src/batch/resume.mjs";
 import {
+	clearBatchEnginePid,
 	createInitialBatchState,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
@@ -285,6 +289,125 @@ test("validateResumeBatch delegates to multi validator for single-task batch", a
 		assert.equal(result.ok, true);
 		assert.equal(result.taskId, taskId);
 		assert.equal(result.pendingTasks.length, 1);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("pidless running + terminal-success classification allows force resume without pause (#197)", async () => {
+	const projectRoot = await initGitRepo("spine-resume-197-terminal-class-");
+	try {
+		const batchId = "20260712T197635";
+		const taskId = "SP-635";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		const lane = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "running",
+					classification: "terminal-success",
+					doneInLane: true,
+					taskFolder: path.join("spine-tasks", `${taskId}-smoke`),
+					startedAt: Date.now() - 60_000,
+					endedAt: null,
+					doneFileFound: false,
+					exitReason: null,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: lane.worktreePath,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: [taskId],
+					lastHeartbeatAt: null,
+				},
+			],
+		});
+		state.phase = "running";
+		state.mergeResults = [];
+		clearBatchEnginePid(state);
+		saveSpineBatchState(projectRoot, state);
+
+		const eligibility = assessRunningPhaseResumeEligibility({ projectRoot, state });
+		assert.equal(eligibility.engineConfirmedDead, true);
+		assert.equal(eligibility.allowOrphanResume, true);
+		assert.equal(eligibility.terminalSuccessPendingMerge, true);
+
+		const rejectedWithoutForce = validateMultiTaskResume({ projectRoot, force: false });
+		// Force is still required for the agent-safe path; without it, orphan may or may not
+		// admit — assert force path is what diagnose suggests (#197).
+		const forced = validateMultiTaskResume({ projectRoot, force: true });
+		assert.equal(forced.ok, true, forced.output ?? forced.error);
+		assert.equal(forced.engineConfirmedDead, true);
+		assert.doesNotMatch(forced.output ?? "", /phase running/i);
+		assert.ok(
+			rejectedWithoutForce.ok === true || rejectedWithoutForce.error === "cannot_resume",
+			"non-force result must be ok or cannot_resume",
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("pidless running without terminal signals rejects terminal-success shortcut", async () => {
+	const projectRoot = await initGitRepo("spine-resume-197-fail-closed-");
+	try {
+		const batchId = "20260712T197636";
+		const taskId = "SP-635B";
+		const orchBranch = `orch/spine-${batchId}`;
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		const lane = provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch,
+			wavePlan: [[taskId]],
+			tasks: [
+				{
+					taskId,
+					laneNumber: 1,
+					status: "running",
+					taskFolder: path.join("spine-tasks", `${taskId}-smoke`),
+					startedAt: Date.now(),
+					endedAt: null,
+					doneFileFound: false,
+					exitReason: null,
+				},
+			],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: lane.worktreePath,
+					branch: laneTaskBranch(batchId, 1),
+					taskIds: [taskId],
+					lastHeartbeatAt: null,
+				},
+			],
+		});
+		state.phase = "running";
+		clearBatchEnginePid(state);
+		saveSpineBatchState(projectRoot, state);
+
+		const eligibility = assessRunningPhaseResumeEligibility({ projectRoot, state });
+		assert.equal(eligibility.terminalSuccessPendingMerge, false);
+		// Without dead-PID orphan journal signals, force resume must still fail closed.
+		assert.equal(eligibility.engineConfirmedDead, false);
+		const forced = validateMultiTaskResume({ projectRoot, force: true });
+		assert.equal(forced.ok, false);
+		assert.equal(forced.error, "cannot_resume");
+		assert.match(forced.output ?? "", /phase running/i);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
