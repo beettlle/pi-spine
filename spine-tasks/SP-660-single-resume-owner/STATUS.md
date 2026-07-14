@@ -1,6 +1,6 @@
 # SP-660: Single resume owner — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 1
@@ -22,13 +22,13 @@
 - [x] Add paired detached/attached tests
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 - [x] Run contract testCommand
-- [ ] Fix scoped failures
-- [ ] Coverage gate (≥77%)
+- [x] Fix scoped failures
+- [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 - [ ] Create `.DONE`
 - [ ] Close #207 when criteria met
 
@@ -40,6 +40,7 @@
 | SP-533 covers lock-held concurrency but not live-engine ownership after handoff unlock / across detached→attached pairing. | Fail-fast when live `enginePid` owns `running`/`gating`; preserve paused/failed force orphan. |
 | Real logic lives in `attached-runner-reconcile.mjs` / `detached-run.mjs` (facades re-export). | Edited reconcile + detached-run; touched facades/comments for File Scope. |
 | GitNexus impact: CRITICAL on `enforceAttachedEngineSingleOwner` | Narrow phase-gated change; paused orphan path preserved. |
+| `npm run coverage:check` inside worker inherits `SPINE_IS_WORKER=1` and false-fails 43 suite tests | Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER`; line coverage 89.15%. |
 
 ## Completion Criteria
 
@@ -53,4 +54,4 @@ _None._
 
 ## Notes (Plan — Review Level 1)
 
-Implemented per plan. Contract: 12/12 green. Coverage pending.
+Implemented per plan. Contract: 12/12 green. Coverage: 89.15% (≥77%).
