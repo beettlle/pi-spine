@@ -1,7 +1,7 @@
 # SP-659: `graphify-out` regenerate-after-clean race — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -22,15 +22,15 @@
 - [x] Add regenerate-after-clean fixture
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 - [x] Run contract testCommand
 - [x] Fix scoped failures
-- [ ] Coverage gate (≥77%)
+- [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Create `.DONE`
-- [ ] Close #206 when criteria met
+**Status:** ✅ Complete
+- [x] Create `.DONE`
+- [x] Close #206 when criteria met
 
 ## Discoveries & Decisions
 
@@ -42,11 +42,12 @@
 | `commitLaneWorktree` impact HIGH | Narrow fix: re-sanitize once when fail-closed on worktree-only marked artifacts; re-sanitize after successful commit for post-commit hooks |
 | Multi-pass sanitize blew >500 LOC | Keep race fix in `lane-commit.mjs` only; restore single-pass sanitize |
 | `gitignored-index-detect` used marked `coverage/` | Retarget to unmarked `.cache-local/` so fail-closed remediation assertions remain valid |
+| Coverage gate | 88.96% line coverage (threshold 77%); scoped + full suite green with worker env cleared |
 
 ## Completion Criteria
 
 - [x] Race-safe graphify-out land
-- [ ] #206 closable
+- [x] #206 closable
 - [x] Scoped tests green
 
 ## Blockers
