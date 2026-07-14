@@ -47,11 +47,11 @@ Depends on SP-656 so marker/list edits on `lane-dirty-check*.mjs` do not collide
 | Field | Value |
 |-------|-------|
 | testCommand | `node --test tests/batch/graphify-out-dirty.test.mjs tests/batch/graphify-out-regenerate-race.test.mjs` |
-| fileScopeMustChange | `spine-tasks/SP-659-graphify-out-regenerate-race/STATUS.md`, `tests/batch/graphify-out-regenerate-race.test.mjs` |
+| fileScopeMustChange | `tests/batch/graphify-out-regenerate-race.test.mjs` |
 
 ## Amendments
 
-- **2026-07-13 (operator):** After SP-656 landed, `src/batch/lane-dirty-check.mjs` was already changed on main (`.pi-smart-router` markers). Redirected `fileScopeMustChange` to STATUS.md + the new race fixture so preflight `prelanded-file-scope` clears. Race-safe re-clean implementation may still edit File Scope paths including `lane-dirty-check.mjs` / `lane-commit.mjs`.
+- **2026-07-13 (operator):** After SP-656 landed, `src/batch/lane-dirty-check.mjs` was already changed on main (`.pi-smart-router` markers). Redirected `fileScopeMustChange` to the new race fixture only so preflight `prelanded-file-scope` clears (STATUS.md/PROMPT.md edits alone would re-trip the gate). Race-safe re-clean implementation may still edit File Scope paths including `lane-dirty-check.mjs` / `lane-commit.mjs` and update STATUS.md.
 
 ## Steps
 
