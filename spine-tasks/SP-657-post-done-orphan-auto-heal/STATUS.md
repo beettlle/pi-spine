@@ -1,7 +1,7 @@
 # SP-657: Post-DONE orphan auto-heal — Status
 
 **Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,9 +11,9 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Reproduce .DONE + dead worker/engine → merge_blocked today
-- [ ] Inventory skippedDoneOnDisk sites
+**Status:** 🔄 In Progress
+- [x] Reproduce .DONE + dead worker/engine → merge_blocked today
+- [x] Inventory skippedDoneOnDisk sites
 
 ### Step 1: Auto-heal before merge_blocked
 **Status:** ⬜ Not Started
@@ -36,7 +36,10 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| — | — |
+| Today `reconcileOrphanRunningState` always marks orphaned running tasks `failed` (`worker_orphaned`/`engine_orphaned`); retry then lands them in merge_blocked failed set | Auto-heal those tasks to `succeeded` with `skippedDoneOnDisk` when `laneDoneMarkerReadyForPromote` before failing |
+| `skippedDoneOnDisk` emitters: `resume-multi-lanes.mjs` (markTaskCompleteFromDisk), `journal-rebuild-drift.mjs` (done_in_lane_terminal), `attached-runner-reconcile.mjs` (paused-resume promote) | Reuse attached-runner/resume journal shape (`skippedDoneOnDisk: true`, `reconciled: true`) inside reconcile-orphan — no new heal mechanism |
+| Drift heal in reconcileBatch needs journal terminal artifacts; post-DONE orphan often lacks them (finalize never ran) | Gate on `laneDoneMarkerReadyForPromote` (committed lane `.DONE` / fail-closed), same promote gate as resume/attached |
+| Real-pi session: plan review nested spawn skipped by design | Proceed after Step 0; engine reviews after `.DONE` |
 
 ## Completion Criteria
 
