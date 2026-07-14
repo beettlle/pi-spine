@@ -28,6 +28,20 @@ import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { journalHasTaskCompleted } from "./resume-common.mjs";
 
 /**
+ * True when the batch still has in-flight work owned by a live engine.
+ * Terminal-success / post-merge limbo batches must remain --force recoverable.
+ *
+ * @param {object|null|undefined} state
+ */
+function batchHasActiveTaskWork(state) {
+	const tasks = state?.tasks ?? [];
+	return tasks.some((task) => {
+		const status = String(task?.status ?? "");
+		return status === "running" || status === "pending";
+	});
+}
+
+/**
  * @param {string} projectRoot
  * @param {string} batchId
  */
@@ -123,8 +137,16 @@ export function releaseResumeHandoffLock(projectRoot, batchId) {
 }
 
 /**
+ * Phases where a live recorded enginePid is the single resume/batch owner.
+ * Force orphan handoff remains allowed from paused/failed recoveries (SP-434).
+ * @type {ReadonlySet<string>}
+ */
+const LIVE_RESUME_OWNER_PHASES = new Set(["running", "gating"]);
+
+/**
  * Reject a second attached engine when resilience.enginePid is alive (SP-434, GitHub #89).
  * Serialized forced resume handoff when another resume --force is in flight (SP-533, #167).
+ * Fail-fast while a live engine already owns a running batch (SP-660, #207).
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -139,13 +161,41 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 	}
 
 	const batchId = String(state.batchId ?? "");
+	const fromPhase = String(state.phase ?? "");
+	const enginePid = readBatchEnginePid(state);
 	/** @type {(() => void) | undefined} */
 	let releaseResumeLock;
 
+	// Detached resume child already recorded as engine owner — do not re-journal handoff (SP-660).
+	if (force && operation === "resume" && enginePid != null && enginePid === process.pid) {
+		return { ok: true };
+	}
+
 	if (force && operation === "resume") {
+		// Live owner still driving active task work: refuse a second --force (dual engines).
+		// Terminal-success / post-merge limbo (no active task work) stays --force recoverable.
+		if (
+			enginePid != null &&
+			enginePid !== process.pid &&
+			isProcessAlive(enginePid) &&
+			LIVE_RESUME_OWNER_PHASES.has(fromPhase) &&
+			batchHasActiveTaskWork(state)
+		) {
+			const output =
+				`Batch resume engine already owns this batch (PID ${enginePid}, batch ${batchId}, phase ${fromPhase}).\n` +
+				`Wait for that engine to finish, or stop it before starting another resume --force.\n`;
+			return {
+				ok: false,
+				exitCode: 1,
+				error: "concurrent_resume_blocked",
+				output,
+				batchId,
+				enginePid,
+			};
+		}
+
 		const lock = tryAcquireResumeHandoffLock(projectRoot, batchId);
 		if (!lock.ok) {
-			const enginePid = readBatchEnginePid(state);
 			const holderPid = lock.holderPid ?? null;
 			const output =
 				`Another batch resume --force is already in progress (batch ${batchId}` +
@@ -167,12 +217,10 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 		});
 	}
 
-	const enginePid = readBatchEnginePid(state);
 	if (enginePid == null || enginePid === process.pid || !isProcessAlive(enginePid)) {
 		return releaseResumeLock ? { ok: true, releaseResumeLock } : { ok: true };
 	}
 
-	const fromPhase = String(state.phase ?? "");
 	if (force) {
 		const terminateResult = terminateStaleDetachedEngine({
 			projectRoot,

@@ -269,60 +269,67 @@ export async function resumeBatchDetached({
 	// wave merge (#196); spawn the attached engine argv in detached mode (no --attached).
 	const argv = buildAttachedBatchResumeArgv({ force });
 	const { enginePid, logPath } = spawnDetachedBatchEngine({ projectRoot, spineBin, argv });
-	releaseResumeLock?.();
+	// Record the child owner before unlocking so a second resume --force cannot race in (SP-660 / #207).
+	persistDetachedEnginePid(projectRoot, enginePid);
 	const waitTimeoutMs = resolveDetachedWaitTimeoutMs(waitTerminal);
-	const wait = await waitForDetachedBatchResume({
-		projectRoot,
-		batchId,
-		updatedAtBefore: updatedAt,
-		taskId,
-		waitTerminal,
-		timeoutMs: waitTimeoutMs,
-	});
+	try {
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore: updatedAt,
+			taskId,
+			waitTerminal,
+			timeoutMs: waitTimeoutMs,
+		});
 
-	if (!wait.ok) {
-		/** @type {Record<string, unknown>} */
+		if (!wait.ok) {
+			/** @type {Record<string, unknown>} */
+			const payload = {
+				ok: false,
+				detached: true,
+				operation: "resume",
+				batchId,
+				taskId,
+				enginePid,
+				logPath,
+				error: wait.error,
+				lastError: wait.lastError ?? null,
+				output:
+					wait.error === "timeout_waiting_for_resume"
+						? "Engine may still be running or orphaned — run `spine status --diagnose`."
+						: `Batch resume failed (phase=${wait.phase ?? "unknown"}).`,
+				suggestedCommand: "spine status --diagnose",
+			};
+			attachDetachedFailureDiagnostics(payload, { projectRoot, batchId, taskId, logPath });
+			return {
+				ok: false,
+				exitCode: 1,
+				output: formatDetachedEngineOutput(payload, json),
+				result: payload,
+			};
+		}
+
 		const payload = {
-			ok: false,
+			ok: true,
 			detached: true,
 			operation: "resume",
-			batchId,
+			status: wait.status ?? "engine_started",
+			batchId: wait.batchId,
 			taskId,
+			phase: wait.phase,
 			enginePid,
 			logPath,
-			error: wait.error,
-			lastError: wait.lastError ?? null,
-			output:
-				wait.error === "timeout_waiting_for_resume"
-					? "Engine may still be running or orphaned — run `spine status --diagnose`."
-					: `Batch resume failed (phase=${wait.phase ?? "unknown"}).`,
 			suggestedCommand: "spine status --diagnose",
 		};
-		attachDetachedFailureDiagnostics(payload, { projectRoot, batchId, taskId, logPath });
 		return {
-			ok: false,
-			exitCode: 1,
+			ok: true,
+			exitCode: 0,
 			output: formatDetachedEngineOutput(payload, json),
 			result: payload,
 		};
+	} finally {
+		// Hold the handoff lock across spawn+wait so paired attached/detached shells cannot
+		// start a second --force while this owner is taking ownership (SP-660 / #207).
+		releaseResumeLock?.();
 	}
-
-	const payload = {
-		ok: true,
-		detached: true,
-		operation: "resume",
-		status: wait.status ?? "engine_started",
-		batchId: wait.batchId,
-		taskId,
-		phase: wait.phase,
-		enginePid,
-		logPath,
-		suggestedCommand: "spine status --diagnose",
-	};
-	return {
-		ok: true,
-		exitCode: 0,
-		output: formatDetachedEngineOutput(payload, json),
-		result: payload,
-	};
 }
