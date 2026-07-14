@@ -1,7 +1,7 @@
 # SP-658: Diagnose headline honesty — Status
 
 **Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,9 +11,9 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Read buildHeadline preference branches
-- [ ] Find existing #195 tests to extend
+**Status:** 🔄 In Progress
+- [x] Read buildHeadline preference branches
+- [x] Find existing #195 tests to extend
 
 ### Step 1: Headline preference + tests
 **Status:** ⬜ Not Started
@@ -36,7 +36,9 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| — | — |
+| `buildHeadline` early-returns on `mergeGitignoredFailure` unless gate-ready (#195); orphan diagnoses still lose to stale gitignored | Extend demotion for orphan diagnoses (`worker_orphaned` / `engine_orphaned`) + mirror in `buildSuggestedCommand` |
+| #195 tests live in `tests/batch/diagnosis.test.mjs` and `merge-failure-diagnosis.test.mjs` | New scoped file `diagnosis-headline-honesty.test.mjs` extends that preference, not a fork of reconcile fixtures |
+| Reconcile keeps `signals.mergeGitignoredFailure` true while demoting ctx only for gate-ready | Fix in `buildHeadline`/`buildSuggestedCommand` so signals stay; file scope excludes reconcile |
 
 ## Completion Criteria
 
