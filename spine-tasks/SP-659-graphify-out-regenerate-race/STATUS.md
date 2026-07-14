@@ -36,7 +36,7 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| — | — |
+| SP-656 already changed `lane-dirty-check.mjs` on main | Operator amended Contract `fileScopeMustChange` to STATUS.md + new race test (see PROMPT ## Amendments) |
 
 ## Completion Criteria
 
