@@ -876,7 +876,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | `GitignoredDirtyWorktree` (index-tracked) | Gitignored paths are in the git index — error message suggests `git rm --cached` on the task branch. Common with force-added `coverage/` or `__pycache__`. |
-| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`, `graphify-out/`, `.review/`, `.spine/runtime/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95), [SP-463](https://github.com/beettlle/pi-spine/issues/113), [#189](https://github.com/beettlle/pi-spine/issues/189)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts, graphify post-commit hook rebuilds `graphify-out/`, or stet review writes `.review/lock` and session files. |
+| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`, `graphify-out/`, `.review/`, `.pi-smart-router/`, `.spine/runtime/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95), [SP-463](https://github.com/beettlle/pi-spine/issues/113), [#189](https://github.com/beettlle/pi-spine/issues/189), [#205](https://github.com/beettlle/pi-spine/issues/205) / SP-656). Marked roots are **re-cleaned** after commit hooks that regenerate them ([#206](https://github.com/beettlle/pi-spine/issues/206) / SP-659 — see [v2.8.0 dogfood land](#v280-dogfood-land-recovery-205206207)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts, graphify post-commit hook rebuilds `graphify-out/`, Pi WAL under `.pi-smart-router/`, or stet review writes `.review/lock` and session files. |
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
 | `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)). Ensure `graphify-out/` is in `.gitignore`; if it was previously tracked, run `git rm -r --cached graphify-out/` once on the repo |
@@ -1356,6 +1356,80 @@ node bin/spine.mjs doctor
 # After checkout updates — refresh global link if you use PATH `spine`
 cd /absolute/path/to/pi-spine && npm link
 which spine && spine version
+```
+
+### v2.8.0 dogfood land recovery (#205/#206/#207)
+
+Operator-facing recovery from the v2.7.0 batch that needed heavy manual heal (`20260713T171709`). Product fixes landed in SP-656–660; this section is the procedural summary. Deep timeline and failure taxonomy: [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../release/post-mortem-v2.7.0-batch-20260713T171709.md).
+
+**Recovery order (when land fails after Steps look done):**
+
+1. **`GitignoredDirtyWorktree` (F1)** — worktree-only regenerating artifacts → trust auto-clean / re-clean; if still stuck, `git clean -fdX` in the **lane** worktree → `spine batch retry <taskId>` → **detached** `spine batch resume --force`.
+2. **Post-DONE orphan (F2/F3)** — lane has `.DONE` but task stayed `running` / `merge_blocked` with dead PIDs → engine should auto-heal (`skippedDoneOnDisk`); if not, `spine status --diagnose` (trust the **current** headline) → `spine batch retry <taskId>` then detached `resume --force`.
+3. **Never** start a second resume engine while one is alive (F4) — single owner; see below.
+
+#### F1 — `.pi-smart-router` auto-clean (#205 partial / SP-656)
+
+**Symptom:** Lane fails land with `GitignoredDirtyWorktree` on `.pi-smart-router/state.db-shm` / `.pi-smart-router/state.db-wal` (or other files under `.pi-smart-router/`) after the worker finished Steps.
+
+**Behavior (v2.8.0+):** `.pi-smart-router/` is in `GITIGNORED_ARTIFACT_MARKERS` / auto-clean roots (same class as `.review/` / #189). Lane sanitize runs `git clean -fdX` on marked roots before the dirty gate — operator should not need `git rm --cached` for worktree-only Pi WAL files.
+
+**If land still fails on this class:** clean the lane worktree and retry (do not deep-dive diagnose for gitignore index remediation when porcelain is worktree-only ignored paths):
+
+```bash
+# From repo root — replace <batchId> / lane-N with diagnose paths
+git -C .worktrees/spine-<batchId>/lane-N clean -fdX
+spine batch retry <taskId>
+spine batch resume --force   # detached — see Detached-first below
+spine status --diagnose
+```
+
+#### F1 — `graphify-out` regenerate / re-clean race (#206 / SP-659)
+
+**Symptom:** Docs-only (or any) task completes Steps / `.DONE`, then fails land with `GitignoredDirtyWorktree` on `graphify-out/**` even though `graphify-out/` was already a marked auto-clean root (#113 / SP-463). Cause: graphify **post-commit** hook regenerates files **after** the first sanitize.
+
+**Behavior (v2.8.0+):** Lane commit **re-cleans** marked gitignored artifacts after the pre-commit dirty check and again after `git commit` (hook churn). Operator should rarely need manual `git clean -fdX` for this race.
+
+**If it still fails** (hook timing / exotic regenerator): same lane `git clean -fdX` → `retry` → detached `resume --force` sequence as above. Ensure `graphify-out/` is gitignored; see [Graphify post-commit hook vs spine batches](#graphify-post-commit-hook-vs-spine-batches).
+
+#### F2/F3 — Post-DONE orphan auto-heal + diagnose headline honesty (#205 / SP-657, SP-658)
+
+**Symptom (v2.7.0 dogfood):** Worker finished Steps and left `.DONE` on disk; engine/worker died; reconcile labeled `worker_orphaned`; wave hit `merge_blocked` for hours. Meanwhile `spine status --diagnose` headlined **stale** gitignored / pending-lane-land remediation even when the primary problem was orphan or the batch was already gating.
+
+**Behavior (v2.8.0+):**
+
+| Concern | Product behavior | Operator action |
+|---------|------------------|-----------------|
+| Post-DONE + dead worker/engine | Reconcile **auto-heals** via `skippedDoneOnDisk` **before** `merge_blocked` when lane `.DONE` / terminal-success evidence is complete (SP-657) | Prefer waiting for heal / following `suggestedCommand`; avoid inventing a gitignored fix when `.DONE` exists |
+| Diagnose headline | Headline = **latest primary failure** (orphan, gate-ready, …); historical gitignored signals stay in diagnose **signals**, not the headline (SP-658; #195 follow-up) | Trust headline + `suggestedCommand`; do not run stale `git rm --cached … .pi-smart-router…` when headline says orphan/gating |
+
+```bash
+spine status --diagnose    # headline should match current primary failure
+spine journal follow       # look for skippedDoneOnDisk / task.completed after heal
+# Only if heal did not run and diagnose still names a task:
+spine batch retry <taskId>
+spine batch resume --force
+```
+
+#### F4 — Single resume owner (#207 / SP-660) + detached-first (#163)
+
+**Symptom (v2.7.0 dogfood):** Recovery logged **paired** `batch.resume_handoff_started` events (detached + attached) for the same retry; leftover resume PIDs needed `kill -9` after `batch complete`.
+
+**Behavior (v2.8.0+):** One live engine owns the batch. A second `resume --force` (attached or detached) while the handoff lock / recorded `enginePid` is alive **fails fast** (`attached_engine_already_running` / concurrent-resume class) — no dual engines, no silent second handoff pair (SP-660; strengthens #167).
+
+**Operator rules (restated):**
+
+1. Prefer **true detached** start/resume + `spine wait` / `spine status --diagnose` — see [Detached-first policy](#detached-first-policy-default) ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)).
+2. **Never** background `spine batch start|resume --attached` from Cursor Agent shells, pi workers, or CI — parent exit orphans the engine.
+3. Do **not** run a second resume while the first engine PID is still alive; wait for diagnose or `spine wait`, then retry once if needed.
+4. Human TTY `--attached` only when the shell stays foreground for the full batch; otherwise detached.
+
+```bash
+# Recover / continue — one owner, detached
+spine batch retry <taskId>          # when diagnose / failed task requires it
+spine batch resume --force          # detached default
+spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
+spine status --diagnose
 ```
 
 ### Orphan running (zombie batch)
@@ -2087,3 +2161,4 @@ spine next --execute       # run suggested dismiss/preflight (careful)
 | [stall-recovery-improvements-brief.md](../features/stall-recovery-improvements-brief.md) | Stall epic (SAT-020), FR-STALL-* |
 | [integrate-conflict-recovery.md](../design/integrate-conflict-recovery.md) | FR-SHIP-12 spike — merger-agent defer, manual integrate conflicts |
 | [flutter-worktree-guide.md](./flutter-worktree-guide.md) | Flutter — gitignored assets, analyzer scope, worktree setup hook |
+| [post-mortem-v2.7.0-batch-20260713T171709.md](../release/post-mortem-v2.7.0-batch-20260713T171709.md) | v2.7.0 land dogfood — F1–F4 taxonomy; basis for [v2.8.0 dogfood land](#v280-dogfood-land-recovery-205206207) |
