@@ -1,6 +1,6 @@
 # SP-656: `.pi-smart-router` auto-clean markers — Status
 
-**Current Step:** Step 1 — Add markers + tests
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 1
@@ -16,21 +16,21 @@
 - [x] Confirm `.review/` pattern to mirror
 
 ### Step 1: Add markers + tests
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 - [x] Add markers to both GITIGNORED_ARTIFACT_MARKERS arrays
 - [x] Add/extend tests for match + sanitize
 - [x] Keep marker lists identical for this entry
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Run contract testCommand
-- [ ] Fix scoped failures
-- [ ] Coverage gate (≥77%)
+**Status:** ✅ Complete
+- [x] Run contract testCommand
+- [x] Fix scoped failures
+- [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Create `.DONE`
-- [ ] Do not close #205
+- [x] Do not close #205
 
 ## Discoveries & Decisions
 
@@ -40,6 +40,7 @@
 | `pi-smart-router-dirty.test.mjs` does not exist yet | Create new test file in File Scope |
 | Real-pi session (`SPINE_WORKER_RUNNER` set) | Plan review via tool returns skipped; engine reviews after `.DONE` |
 | `.pi-smart-router/` already in root `.gitignore` | Sanitize tests can rely on that ignore pattern |
+| `coverage:check` with `SPINE_IS_WORKER=1` aborts (~43 startBatch fails) | Re-run with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` → 88.77% lines |
 
 ## Plan (Review Level 1)
 
@@ -50,9 +51,9 @@
 
 ## Completion Criteria
 
-- [ ] `.pi-smart-router/` auto-clean on both marker lists
-- [ ] Scoped tests green
-- [ ] #205 still open
+- [x] `.pi-smart-router/` auto-clean on both marker lists
+- [x] Scoped tests green
+- [x] #205 still open
 
 ## Blockers
 
