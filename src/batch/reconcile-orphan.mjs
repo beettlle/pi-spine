@@ -1,23 +1,29 @@
 // @ts-nocheck
-/** Orphan reconcile helpers (SP-606 / #192). */
+/** Orphan reconcile helpers (SP-606 / #192). Post-DONE heal: SP-657 / #205. */
 
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
+import { isProcessAlive } from "../process/liveness.mjs";
+import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
 import {
 	appendJournalEvent,
 	readJournalEvents,
 } from "./journal.mjs";
+import { laneDoneMarkerReadyForPromote } from "./journal-rebuild.mjs";
 import {
 	detectOrphanRunning,
 	journalEventsSinceResume,
 } from "./orphan-detect.mjs";
-import { isProcessAlive } from "../process/liveness.mjs";
+import { reconcileBatch } from "./reconcile-batch.mjs";
+import { journalHasTaskCompleted } from "./resume-common.mjs";
 import {
 	clearBatchEnginePid,
 	readBatchEnginePid,
+	recordTaskSucceeded,
 	recomputeTaskCounters,
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
-import { reconcileBatch } from "./reconcile-batch.mjs";
 
 /**
  * @param {object} ctx
@@ -72,12 +78,75 @@ function journalHasTaskEvent(journalEvents, taskId, eventType) {
 }
 
 /**
+ * True when lane has committed `.DONE` ready for skip-done / skippedDoneOnDisk promote.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.task
+ * @param {unknown[]} params.lanes
+ * @param {string|null} params.tasksRoot
+ */
+function orphanTaskReadyForSkipDoneHeal({ projectRoot, batchId, task, lanes, tasksRoot }) {
+	const classified = classifyTaskDoneSemantics(task, {
+		tasksRoot,
+		projectRoot,
+		batchId,
+		lanes,
+	});
+	return laneDoneMarkerReadyForPromote({
+		projectRoot,
+		batchId,
+		task,
+		lanes,
+		classified,
+	});
+}
+
+/**
+ * Promote a post-DONE orphaned running task via skippedDoneOnDisk semantics
+ * (mirrors attached-runner / resume-multi skip-done journal shape).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.state
+ * @param {object} params.task
+ * @param {object[]} params.journalEvents
+ * @returns {boolean}
+ */
+function healPostDoneOrphanTask({ projectRoot, batchId, state, task, journalEvents }) {
+	const taskId = String(task?.taskId ?? "");
+	if (!taskId) return false;
+	if (String(task.status ?? "") !== "running") return false;
+
+	if (!recordTaskSucceeded(state, taskId, { doneFileFound: true, exitReason: "done" })) {
+		return false;
+	}
+
+	if (!journalHasTaskCompleted(journalEvents, taskId)) {
+		const lane = findLaneForOrphanReconcile(state.lanes, task.laneNumber);
+		appendJournalEvent(projectRoot, batchId, "task.completed", {
+			taskId,
+			laneNumber: task.laneNumber ?? null,
+			laneId: lane?.laneId ?? null,
+			reconciled: true,
+			skippedDoneOnDisk: true,
+		});
+	}
+
+	return true;
+}
+
+/**
  * Transition orphan running tasks to failed so retry/resume paths succeed (SP-315 / #20).
+ * When lane `.DONE` is committed (fail-closed promote gate), heal to succeeded with
+ * `skippedDoneOnDisk` instead of failing into merge_blocked (SP-657 / #205).
  *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {object} params.state
- * @returns {{ reconciled: boolean, taskId?: string|null, kind?: string, exitReason?: string }}
+ * @returns {{ reconciled: boolean, taskId?: string|null, kind?: string, exitReason?: string, healedTaskIds?: string[] }}
  */
 export function reconcileOrphanRunningState({ projectRoot, state }) {
 	if (!state || typeof state !== "object") {
@@ -108,7 +177,7 @@ export function reconcileOrphanRunningState({ projectRoot, state }) {
 
 	const exitReason = orphanRunning.kind === "engine" ? "engine_orphaned" : "worker_orphaned";
 	/** @type {string[]} */
-	const taskIdsToFail =
+	const taskIdsToConsider =
 		orphanRunning.kind === "lane" && orphanRunning.taskId
 			? [orphanRunning.taskId]
 			: classifiedTasks
@@ -116,22 +185,55 @@ export function reconcileOrphanRunningState({ projectRoot, state }) {
 					.map((task) => task.taskId)
 					.filter(Boolean);
 
-	if (taskIdsToFail.length === 0) {
+	if (taskIdsToConsider.length === 0) {
 		return { reconciled: false };
 	}
 
+	const configResult = loadSpineConfig(projectRoot);
+	const tasksRoot = resolveTasksRoot(projectRoot, configResult);
+	const lanes = state.lanes ?? [];
+
 	const now = Date.now();
 	let changed = false;
+	/** @type {string[]} */
+	const healedTaskIds = [];
+	/** @type {string[]} */
+	const taskIdsFailed = [];
 
-	for (const taskId of taskIdsToFail) {
+	for (const taskId of taskIdsToConsider) {
 		const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
 		if (!task || task.status !== "running") continue;
+
+		if (
+			orphanTaskReadyForSkipDoneHeal({
+				projectRoot,
+				batchId,
+				task,
+				lanes,
+				tasksRoot,
+			})
+		) {
+			if (
+				healPostDoneOrphanTask({
+					projectRoot,
+					batchId,
+					state,
+					task,
+					journalEvents,
+				})
+			) {
+				healedTaskIds.push(taskId);
+				changed = true;
+			}
+			continue;
+		}
 
 		task.status = "failed";
 		task.endedAt = now;
 		task.exitReason = exitReason;
 		updateSegmentForTask(state, taskId, "failed");
 		changed = true;
+		taskIdsFailed.push(taskId);
 
 		if (!journalHasTaskEvent(scopedJournalEvents, taskId, "task.failed")) {
 			const lane = findLaneForOrphanReconcile(state.lanes, task.laneNumber);
@@ -179,20 +281,21 @@ export function reconcileOrphanRunningState({ projectRoot, state }) {
 	}
 
 	recomputeTaskCounters(state);
-	if (String(state.phase ?? "") === "running") {
+	if (taskIdsFailed.length > 0 && String(state.phase ?? "") === "running") {
 		state.phase = "failed";
 		state.endedAt = state.endedAt ?? now;
 		state.lastError =
-			state.lastError ?? `Orphan reconcile: ${exitReason} (task ${taskIdsToFail.join(", ")})`;
+			state.lastError ??
+			`Orphan reconcile: ${exitReason} (task ${taskIdsFailed.join(", ")})`;
 	}
 
 	saveSpineBatchState(projectRoot, state);
 
 	return {
 		reconciled: true,
-		taskId: orphanRunning.taskId ?? taskIdsToFail[0] ?? null,
+		taskId: orphanRunning.taskId ?? healedTaskIds[0] ?? taskIdsFailed[0] ?? null,
 		kind: orphanRunning.kind,
 		exitReason,
+		healedTaskIds,
 	};
 }
-

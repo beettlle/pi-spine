@@ -1,6 +1,6 @@
 # SP-657: Post-DONE orphan auto-heal — Status
 
-**Current Step:** Step 0 — Preflight
+**Current Step:** Step 1 — Auto-heal before merge_blocked
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-07-13
 **Review Level:** 2
@@ -11,15 +11,15 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 - [x] Reproduce .DONE + dead worker/engine → merge_blocked today
 - [x] Inventory skippedDoneOnDisk sites
 
 ### Step 1: Auto-heal before merge_blocked
-**Status:** ⬜ Not Started
-- [ ] Heal via skip-done path before failed merge_blocked
-- [ ] Reuse skippedDoneOnDisk / resume-multi semantics
-- [ ] Add post-DONE orphan heal fixture
+**Status:** 🔄 In Progress
+- [x] Heal via skip-done path before failed merge_blocked
+- [x] Reuse skippedDoneOnDisk / resume-multi semantics
+- [x] Add post-DONE orphan heal fixture
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
@@ -43,8 +43,8 @@
 
 ## Completion Criteria
 
-- [ ] Post-DONE orphan not in merge_blocked failed set when evidence present
-- [ ] Reuses skip-done semantics
+- [x] Post-DONE orphan not in merge_blocked failed set when evidence present
+- [x] Reuses skip-done semantics
 - [ ] Scoped tests green
 
 ## Blockers
