@@ -1,6 +1,7 @@
 // @ts-nocheck
 /**
  * Batch pause and resume for single-lane batches (TP-015, PRD §18.2).
+ * Single-owner gate is enforceAttachedEngineSingleOwner (SP-660 / #207).
  */
 
 import path from "node:path";
