@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 71 v2.7.0 published — SP-649–655; Next → SP-656)
+**Last Updated:** 2026-07-13 (Phase 72 v2.8.0 packets staged — SP-656–662; Next → SP-663)
 **Status:** Active
-**Next Task ID:** SP-656
+**Next Task ID:** SP-663
 
 ---
 
@@ -2022,11 +2022,49 @@ node bin/spine.mjs plan SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
 
 **Prior release:** **v2.6.0 published** — npm `2.6.0` / tag `v2.6.0` (2026-07-13); Phase 70 clear.
 
-**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit). Dogfood follow-ups: #205, #206, #207 (see [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../docs/release/post-mortem-v2.7.0-batch-20260713T171709.md)).
+**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit). Dogfood follow-ups picked up in Phase 72: #205, #206, #207.
 
 **Release note:** v2.7.0 — Operator UX: wrong-cwd missing-config hints (#202), template/evidence parity, `.pi/` gitignore doctor hygiene, allowlisted `&&` gate-evidence chains (#160 Phase B).
 
 **Phase 71 complete (SP-649–655 → v2.7.0 published).** PRD: [`docs/PRD-v2.7.0-operator-ux-evidence-handoff.md`](../docs/PRD-v2.7.0-operator-ux-evidence-handoff.md). Manifest: [`spine-tasks/_authoring/release-v2.7.0/manifest.md`](_authoring/release-v2.7.0/manifest.md).
+
+### Phase 72 — v2.8.0 dogfood land reliability (SP-REL280)
+
+**Source:** [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../docs/release/post-mortem-v2.7.0-batch-20260713T171709.md) §7 P0  
+**Manifest:** [`spine-tasks/_authoring/release-v2.8.0/manifest.md`](_authoring/release-v2.8.0/manifest.md)  
+**Operator approved scope:** yes (2026-07-13 — hygiene + bugs only; 0 enhancements)
+
+| Task | Summary | Status | Deps | Closes |
+|------|---------|--------|------|--------|
+| SP-656 | `.pi-smart-router` auto-clean markers | Pending | — | Partial #205 |
+| SP-657 | Post-DONE orphan auto-heal | Pending | — | Partial #205 |
+| SP-658 | Diagnose headline honesty | Pending | SP-657 | #205 |
+| SP-659 | `graphify-out` regenerate-after-clean | Pending | SP-656 | #206 |
+| SP-660 | Single resume owner | Pending | — | #207 |
+| SP-661 | Runbook v2.8.0 dogfood land | Pending | SP-656–660 | — |
+| SP-662 | CONTEXT Phase 72 capstone | Pending | SP-656–661 | — |
+
+```bash
+spine tasks validate SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
+node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
+```
+
+**Wave plan (sketch):** Wave 0 SP-656/660/657; Wave 1 SP-659/658; Wave 2 SP-661; Cap SP-662.
+
+**Phase 72 exit criteria:**
+
+- [ ] #205 closed (SP-656 + SP-657 + SP-658)
+- [ ] #206 closed (SP-659)
+- [ ] #207 closed (SP-660)
+- [ ] Runbook + CONTEXT Phase 72 complete; Next Task ID → SP-663
+- [ ] `npm run release:check` green on publish HEAD (operator publish gate)
+- [ ] **v2.8.0 publish** — awaiting operator approve publish (minor)
+
+**Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit).
+
+**Release note (placeholder):** v2.8.0 — Dogfood land: `.pi-smart-router` auto-clean + post-DONE orphan heal + diagnose honesty (#205), `graphify-out` regenerate-after-clean (#206), single resume owner (#207).
+
+**Phase 72 packets staged (SP-656–662) — execution pending.**
 
 ---
 
