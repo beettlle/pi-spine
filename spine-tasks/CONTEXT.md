@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 72 v2.8.0 packets staged — SP-656–662; Next → SP-663)
+**Last Updated:** 2026-07-13 (Phase 72 v2.8.0 implementation complete — SP-656–662; Next → SP-663; publish operator-gated)
 **Status:** Active
 **Next Task ID:** SP-663
 
@@ -2036,35 +2036,35 @@ node bin/spine.mjs plan SP-649,SP-650,SP-651,SP-652,SP-653,SP-654,SP-655
 
 | Task | Summary | Status | Deps | Closes |
 |------|---------|--------|------|--------|
-| SP-656 | `.pi-smart-router` auto-clean markers | Pending | — | Partial #205 |
-| SP-657 | Post-DONE orphan auto-heal | Pending | — | Partial #205 |
-| SP-658 | Diagnose headline honesty | Pending | SP-657 | #205 |
-| SP-659 | `graphify-out` regenerate-after-clean | Pending | SP-656 | #206 |
-| SP-660 | Single resume owner | Pending | — | #207 |
-| SP-661 | Runbook v2.8.0 dogfood land | Pending | SP-656–660 | — |
-| SP-662 | CONTEXT Phase 72 capstone | Pending | SP-656–661 | — |
+| SP-656 | `.pi-smart-router` auto-clean markers | Done | — | Partial #205 |
+| SP-657 | Post-DONE orphan auto-heal | Done | — | Partial #205 |
+| SP-658 | Diagnose headline honesty | Done | SP-657 | #205 |
+| SP-659 | `graphify-out` regenerate-after-clean | Done | SP-656 | #206 |
+| SP-660 | Single resume owner | Done | — | #207 |
+| SP-661 | Runbook v2.8.0 dogfood land | Done | SP-656–660 | — |
+| SP-662 | CONTEXT Phase 72 capstone | Done | SP-656–661 | — |
 
 ```bash
 spine tasks validate SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 ```
 
-**Wave plan (sketch):** Wave 0 SP-656/660/657; Wave 1 SP-659/658; Wave 2 SP-661; Cap SP-662.
+**Wave plan:** Wave 0 SP-656/660/657; Wave 1 SP-659/658; Wave 2 SP-661; Cap SP-662.
 
 **Phase 72 exit criteria:**
 
-- [ ] #205 closed (SP-656 + SP-657 + SP-658)
-- [ ] #206 closed (SP-659)
-- [ ] #207 closed (SP-660)
-- [ ] Runbook + CONTEXT Phase 72 complete; Next Task ID → SP-663
+- [x] #205 closed (implementation landed — SP-656 + SP-657 + SP-658)
+- [x] #206 closed (implementation landed — SP-659)
+- [x] #207 closed (implementation landed — SP-660)
+- [x] Runbook + CONTEXT Phase 72 complete; Next Task ID → SP-663
 - [ ] `npm run release:check` green on publish HEAD (operator publish gate)
-- [ ] **v2.8.0 publish** — awaiting operator approve publish (minor)
+- [ ] **v2.8.0 published** — awaiting operator approve publish (minor); do **not** claim published until bump + tag
 
 **Deferred backlog:** #160 Phase C (`testing.review` slot); #135 (Dashboard DAG); #127 (Mailbox steering); #124 (Parallel wave strategies); #120 (Journal integrity); #43 (Monitoring toolkit).
 
-**Release note (placeholder):** v2.8.0 — Dogfood land: `.pi-smart-router` auto-clean + post-DONE orphan heal + diagnose honesty (#205), `graphify-out` regenerate-after-clean (#206), single resume owner (#207).
+**Release note (placeholder — not published):** v2.8.0 — Dogfood land: `.pi-smart-router` auto-clean + post-DONE orphan heal + diagnose honesty (#205), `graphify-out` regenerate-after-clean (#206), single resume owner (#207).
 
-**Phase 72 packets staged (SP-656–662) — execution pending.**
+**Phase 72 implementation complete (SP-656–662). Publish remains operator-gated.** Manifest: [`spine-tasks/_authoring/release-v2.8.0/manifest.md`](_authoring/release-v2.8.0/manifest.md). Post-mortem: [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../docs/release/post-mortem-v2.7.0-batch-20260713T171709.md).
 
 ---
 
