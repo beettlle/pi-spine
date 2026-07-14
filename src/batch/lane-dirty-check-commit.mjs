@@ -35,6 +35,8 @@ export const GITIGNORED_ARTIFACT_MARKERS = [
 	"graphify-out/",
 	"/.review/",
 	".review/",
+	"/.pi-smart-router/",
+	".pi-smart-router/",
 	"/.spine/runtime/",
 	".spine/runtime/",
 ];
@@ -149,6 +151,9 @@ function gitignoredArtifactRootForPath(filePath) {
 	}
 	if (normalized === ".review" || normalized.startsWith(".review/")) {
 		return ".review";
+	}
+	if (normalized === ".pi-smart-router" || normalized.startsWith(".pi-smart-router/")) {
+		return ".pi-smart-router";
 	}
 	if (normalized === ".spine/runtime" || normalized.startsWith(".spine/runtime/")) {
 		return ".spine/runtime";
