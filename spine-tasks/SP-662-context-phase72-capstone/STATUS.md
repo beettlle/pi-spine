@@ -1,7 +1,7 @@
 # SP-662: CONTEXT Phase 72 capstone — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -23,14 +23,14 @@
 - [x] Note deferred backlog
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
-- [ ] Run full stub test suite
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run full stub test suite
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -38,6 +38,7 @@
 |-----------|----------|
 | Next Task ID already SP-663; Phase 72 table still Pending | Capstone marks SP-656–662 Done; leave publish gate unchecked |
 | All deps SP-656–661 have `.DONE` on disk | Proceed with CONTEXT finalize |
+| Full suite under `SPINE_IS_WORKER=1` → nested_batch_spawn_blocked | Re-ran with `env -u SPINE_IS_WORKER` per runbook §9; 2184/2184 pass |
 
 ## Completion Criteria
 
