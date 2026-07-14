@@ -1,7 +1,7 @@
 # SP-661: Runbook v2.8.0 dogfood land — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -24,14 +24,14 @@
 - [x] Link post-mortem
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
-- [ ] Run full stub test suite
-- [ ] Fix all failures
+**Status:** ✅ Complete
+- [x] Run full stub test suite
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Must Update docs modified
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Must Update docs modified
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -40,6 +40,7 @@
 | SP-656–660 all have `.DONE` on this worktree | Dependencies satisfied; proceed with docs |
 | Place new section after v2.7.0 operator UX (§6) | Matches existing release-hygiene pattern; cross-link post-mortem |
 | Also refreshed GitignoredDirtyWorktree table + Related docs | In-scope operator-runbook.md only; keeps F1 discoverable from land-loop table |
+| First `npm test` failed with nested_batch_spawn_blocked | Unset `SPINE_IS_WORKER` (+ batch worker env) for suite; keep `SPINE_WORKER_STUB=1` |
 
 ## Completion Criteria
 
