@@ -16,11 +16,13 @@ export { buildAlternatives } from "./diagnosis-alternatives.mjs";
 import {
 	buildMergeFailureHeadline,
 	buildGitignoredMergeRepairCommand,
+	shouldPreferPrimaryOverGitignoredHeadline,
 } from "./diagnosis-merge-failure.mjs";
 export {
 	buildMergeFailureHeadline,
 	buildGitignoredMergeRepairCommand,
 	inferMergeGitignoredFailure,
+	shouldPreferPrimaryOverGitignoredHeadline,
 	summarizeMergeFailures,
 } from "./diagnosis-merge-failure.mjs";
 import { buildRunningTailHeadline, isPostIntegrateEngineLimbo, buildPostIntegrateEngineLimboHeadline } from "./diagnosis-tail-state.mjs";
@@ -126,14 +128,14 @@ const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
  * @param {object[]} [ctx.pendingLaneLandTasks]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
-	const preferGateReady = isGateReadyHeadlineContext(diagnosis, ctx);
-	// Prefer gate-approve / land-loop next step over recovered merge/gitignored repair (#195).
-	if (ctx.mergeGitignoredFailure && !preferGateReady) {
+	const preferPrimaryOverGitignored = shouldPreferPrimaryOverGitignoredHeadline(diagnosis, ctx);
+	// Prefer gate-approve / orphan primary over recovered merge/gitignored repair (#195 / #205).
+	if (ctx.mergeGitignoredFailure && !preferPrimaryOverGitignored) {
 		return buildGitignoredMergeRepairCommand(ctx.taskBranch, ctx.gitignoredPaths);
 	}
 	if (
 		ctx.mergeFailed &&
-		!preferGateReady &&
+		!preferPrimaryOverGitignored &&
 		(diagnosis === "failed" || diagnosis === "needs_retry")
 	) {
 		return "spine batch resume --force";
@@ -291,16 +293,16 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
  */
 export function buildHeadline(diagnosis, ctx = {}) {
 	const batchLabel = ctx.batchId ? `Batch ${ctx.batchId}` : "Batch";
-	const preferGateReady = isGateReadyHeadlineContext(diagnosis, ctx);
+	const preferPrimaryOverGitignored = shouldPreferPrimaryOverGitignoredHeadline(diagnosis, ctx);
 
-	// Historical merge/gitignored signals stay in diagnose signals — not the primary headline (#195).
-	if (ctx.mergeGitignoredFailure && !preferGateReady) {
+	// Historical merge/gitignored signals stay in diagnose signals — not the primary headline (#195 / #205).
+	if (ctx.mergeGitignoredFailure && !preferPrimaryOverGitignored) {
 		return `${batchLabel} merge blocked by gitignored paths on a lane branch — drop cached ignored files, then resume`;
 	}
 
 	if (
 		ctx.mergeFailed &&
-		!preferGateReady &&
+		!preferPrimaryOverGitignored &&
 		(diagnosis === "failed" || diagnosis === "needs_retry")
 	) {
 		return buildMergeFailureHeadline(batchLabel, ctx);

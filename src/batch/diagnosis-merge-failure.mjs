@@ -7,8 +7,30 @@ import {
 	isGitignoredArtifactPath,
 	listGitignoredArtifactRoots,
 } from "./lane-dirty-check.mjs";
+import { isGateReadyHeadlineContext } from "./diagnosis-gate-ready.mjs";
 
 const GITIGNORED_MERGE_FAILURE_CLASSES = new Set(["merge_failed_gitignored", "GitignoredDirtyWorktree"]);
+
+/** Diagnoses that outrank historical GitignoredDirtyWorktree / merge-gitignored remediation (#205). */
+const PRIMARY_OVER_GITIGNORED_DIAGNOSES = new Set(["worker_orphaned", "engine_orphaned"]);
+
+/**
+ * Prefer gate-ready / orphan (latest primary failure) over stale gitignored merge headlines (#195 / #205).
+ * Keep mergeGitignoredFailure in diagnose signals; only demote the headline/command preference.
+ *
+ * @param {string} diagnosis
+ * @param {object} [ctx]
+ * @returns {boolean}
+ */
+export function shouldPreferPrimaryOverGitignoredHeadline(diagnosis, ctx = {}) {
+	if (isGateReadyHeadlineContext(diagnosis, ctx)) {
+		return true;
+	}
+	if (PRIMARY_OVER_GITIGNORED_DIAGNOSES.has(diagnosis)) {
+		return true;
+	}
+	return false;
+}
 
 /**
  * @param {object} [ctx]
