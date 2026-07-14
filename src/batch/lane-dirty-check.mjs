@@ -317,52 +317,38 @@ function listIgnoredUntrackedPaths(worktreePath) {
 	return output.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-/** Max clean passes when hooks regenerate marked artifacts during sanitize (SP-659 / #206). */
-export const GITIGNORED_ARTIFACT_RECLEAN_PASSES = 2;
-
 /**
  * Auto-clean worktree-only gitignored artifacts under known dirs before lane dirty gate.
- * Runs a bounded second pass so immediate regenerate-after-clean churn is cleared.
  *
  * @param {string} worktreePath
- * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean, maxPasses?: number }} [options]
+ * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean }} [options]
  * @returns {{ cleanedRoots: string[] }}
  */
 export function sanitizeGitignoredArtifactsBeforeLaneCommit(
 	worktreePath,
-	{ projectRoot, porcelain, enabled = true, maxPasses = GITIGNORED_ARTIFACT_RECLEAN_PASSES } = {},
+	{ projectRoot, porcelain, enabled = true } = {},
 ) {
 	if (!enabled) return { cleanedRoots: [] };
 
 	const identityRoot = projectRoot ?? worktreePath;
-	const passLimit = Math.max(1, Number(maxPasses) || 1);
-	const cleaned = new Set();
-
-	for (let pass = 0; pass < passLimit; pass++) {
-		const rawPorcelain = pass === 0 && typeof porcelain === "string" ? porcelain : "";
-		const dirtyPaths = listPorcelainPaths(rawPorcelain);
-		const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
-		const gitignoredCandidates = [...new Set([...dirtyPaths, ...ignoredUntrackedPaths])];
-		if (gitignoredCandidates.length === 0) {
-			break;
-		}
-
-		const { worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredCandidates);
-		const artifactRoots = listGitignoredArtifactRoots(worktreeOnly);
-		if (artifactRoots.length === 0) {
-			break;
-		}
-
-		for (const root of artifactRoots) {
-			gitExec(worktreePath, ["clean", "-fdX", "--", root], {
-				projectRoot: identityRoot,
-				throwOnError: false,
-			});
-			cleaned.add(root);
-		}
+	const rawPorcelain = typeof porcelain === "string" ? porcelain : "";
+	const dirtyPaths = listPorcelainPaths(rawPorcelain);
+	const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
+	const gitignoredCandidates = [...new Set([...dirtyPaths, ...ignoredUntrackedPaths])];
+	if (gitignoredCandidates.length === 0) {
+		return { cleanedRoots: [] };
 	}
 
-	return { cleanedRoots: [...cleaned].sort() };
+	const { worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredCandidates);
+	const artifactRoots = listGitignoredArtifactRoots(worktreeOnly);
+	for (const root of artifactRoots) {
+		gitExec(worktreePath, ["clean", "-fdX", "--", root], {
+			projectRoot: identityRoot,
+			throwOnError: false,
+		});
+	}
+
+	return { cleanedRoots: artifactRoots };
 }
 
 export function classifyGitignoredPaths(worktreePath, gitignoredPaths) {

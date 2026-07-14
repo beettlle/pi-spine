@@ -23,8 +23,8 @@
 
 ### Step 2: Testing & Verification
 **Status:** 🔄 In Progress
-- [ ] Run contract testCommand
-- [ ] Fix scoped failures
+- [x] Run contract testCommand
+- [x] Fix scoped failures
 - [ ] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
@@ -40,13 +40,14 @@
 | `graphify-out/` already in `GITIGNORED_ARTIFACT_MARKERS` | Confirm — markers present; race is post-sanitize regen before GitignoredDirtyWorktree |
 | Race window | `commitLaneAndValidateWorktree` sanitizes once, then `commitLaneWorktree` re-lists ignored; regen between them → fail |
 | `commitLaneWorktree` impact HIGH | Narrow fix: re-sanitize once when fail-closed on worktree-only marked artifacts; re-sanitize after successful commit for post-commit hooks |
-| Step 0 commit triggered graphify post-commit hook | Live evidence of regenerating `graphify-out/` after git commit |
+| Multi-pass sanitize blew >500 LOC | Keep race fix in `lane-commit.mjs` only; restore single-pass sanitize |
+| `gitignored-index-detect` used marked `coverage/` | Retarget to unmarked `.cache-local/` so fail-closed remediation assertions remain valid |
 
 ## Completion Criteria
 
-- [ ] Race-safe graphify-out land
+- [x] Race-safe graphify-out land
 - [ ] #206 closable
-- [ ] Scoped tests green
+- [x] Scoped tests green
 
 ## Blockers
 
