@@ -7,7 +7,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { filterGitignoredPaths, gitAddFilteredPaths } from "./git-helpers.mjs";
-import { classifyGitignoredPaths, formatGitignoredRemediationMessage } from "./lane-dirty-check.mjs";
+import {
+	classifyGitignoredPaths,
+	formatGitignoredRemediationMessage,
+	isGitignoredArtifactPath,
+	sanitizeGitignoredArtifactsBeforeLaneCommit,
+} from "./lane-dirty-check.mjs";
 import { gitExec } from "./git-exec.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import {
@@ -263,14 +268,43 @@ export function commitLaneWorktree({
 			worktreePath,
 			stageCandidatePaths,
 		);
-		const gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
+		let gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
 		if (stageable.length === 0 && gitignoredPaths.length > 0) {
-			const { indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths);
+			let { indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths);
+			// SP-659 / #206: marked artifacts may regenerate after the pre-commit sanitize.
+			// Re-clean once before fail-closed GitignoredDirtyWorktree.
+			const worktreeOnlyMarkedArtifacts =
+				indexTracked.length === 0 &&
+				worktreeOnly.length > 0 &&
+				worktreeOnly.every((filePath) => isGitignoredArtifactPath(filePath));
+			if (worktreeOnlyMarkedArtifacts) {
+				sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
+					projectRoot: identityRoot,
+				});
+				gitignoredPaths = listIgnoredUntrackedPaths(worktreePath);
+				if (gitignoredPaths.length === 0) {
+					return {
+						ok: true,
+						committed: false,
+						skippedIgnorePaths,
+						skippedGitignoredPaths: [...gitignoredDirtyPaths, ...ignoredUntrackedPaths],
+					};
+				}
+				({ indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths));
+			}
+			if (indexTracked.length === 0 && worktreeOnly.length === 0) {
+				return {
+					ok: true,
+					committed: false,
+					skippedIgnorePaths,
+					skippedGitignoredPaths: gitignoredPaths,
+				};
+			}
 			return {
 				ok: false,
 				error: formatGitignoredRemediationMessage(indexTracked, worktreeOnly),
 				failureClass: "GitignoredDirtyWorktree",
-				gitignoredPaths,
+				gitignoredPaths: [...indexTracked, ...worktreeOnly],
 			};
 		}
 
@@ -291,6 +325,10 @@ export function commitLaneWorktree({
 		const message = `feat(${taskId}): batch ${batchId} worker completion`;
 		git(worktreePath, ["commit", "-m", message], identityRoot);
 		const commitSha = git(worktreePath, ["rev-parse", "HEAD"], identityRoot);
+		// SP-659 / #206: post-commit hooks may regenerate marked gitignored artifacts.
+		sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
+			projectRoot: identityRoot,
+		});
 		return {
 			ok: true,
 			committed: true,

@@ -121,7 +121,9 @@ test("commitLaneWorktree: worktree-only gitignored does not suggest git rm --cac
 		const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
 		const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
 
-		fs.writeFileSync(path.join(projectRoot, ".gitignore"), "coverage/\n", "utf-8");
+		// Unmarked gitignored path (not in GITIGNORED_ARTIFACT_MARKERS) so land still fail-closes
+		// after SP-659 re-clean of marked roots like coverage/.
+		fs.writeFileSync(path.join(projectRoot, ".gitignore"), ".cache-local/\n", "utf-8");
 		execCommit(projectRoot, "gitignore");
 
 		execFileSync("git", ["branch", `orch/spine-${batchId}`, "main"], {
@@ -140,8 +142,8 @@ test("commitLaneWorktree: worktree-only gitignored does not suggest git rm --cac
 		execCommit(worktreePath, "commit task done");
 
 		// Now create worktree-only gitignored artifacts (never in index).
-		fs.mkdirSync(path.join(worktreePath, "coverage"), { recursive: true });
-		fs.writeFileSync(path.join(worktreePath, "coverage", "lcov.info"), "SF:src\n", "utf-8");
+		fs.mkdirSync(path.join(worktreePath, ".cache-local"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, ".cache-local", "blob.bin"), "x\n", "utf-8");
 
 		const result = commitLaneWorktree({
 			worktreePath,
@@ -220,9 +222,11 @@ test("regression: SP-011 worktree-only coverage after npm test does not suggest 
 		const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
 		const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
 
+		// Marked coverage/ is auto-re-cleaned (SP-471/SP-659). Use an unmarked gitignored
+		// path to assert remediation text still distinguishes worktree-only vs index-tracked.
 		fs.writeFileSync(
 			path.join(projectRoot, ".gitignore"),
-			"coverage/\nextension/coverage/\nnode_modules/\n",
+			".cache-local/\ncoverage/\nextension/coverage/\nnode_modules/\n",
 			"utf-8",
 		);
 		execCommit(projectRoot, "gitignore");
@@ -242,18 +246,17 @@ test("regression: SP-011 worktree-only coverage after npm test does not suggest 
 		fs.writeFileSync(path.join(taskFolder, ".DONE"), "done\n", "utf-8");
 		execCommit(worktreePath, "commit task done");
 
-		// Simulate npm test generating coverage artifacts (worktree-only, never in index).
-		const covDir = path.join(worktreePath, "coverage");
-		fs.mkdirSync(covDir, { recursive: true });
-		fs.writeFileSync(path.join(covDir, "lcov.info"), "TN:\nSF:src/app.mjs\nend_of_record\n", "utf-8");
-		fs.writeFileSync(path.join(covDir, "coverage-summary.json"), "{}\n", "utf-8");
+		const cacheDir = path.join(worktreePath, ".cache-local");
+		fs.mkdirSync(cacheDir, { recursive: true });
+		fs.writeFileSync(path.join(cacheDir, "a.bin"), "1\n", "utf-8");
+		fs.writeFileSync(path.join(cacheDir, "b.bin"), "2\n", "utf-8");
 
 		const classified = classifyGitignoredPaths(worktreePath, [
-			"coverage/lcov.info",
-			"coverage/coverage-summary.json",
+			".cache-local/a.bin",
+			".cache-local/b.bin",
 		]);
-		assert.equal(classified.indexTracked.length, 0, "coverage should not be in index");
-		assert.equal(classified.worktreeOnly.length, 2, "coverage should be worktree-only");
+		assert.equal(classified.indexTracked.length, 0, "cache should not be in index");
+		assert.equal(classified.worktreeOnly.length, 2, "cache should be worktree-only");
 
 		const result = commitLaneWorktree({
 			worktreePath,
