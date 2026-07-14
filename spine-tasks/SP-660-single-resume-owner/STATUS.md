@@ -1,7 +1,7 @@
 # SP-660: Single resume owner — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,9 +28,9 @@
 - [x] Coverage gate (≥77%)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
-- [ ] Create `.DONE`
-- [ ] Close #207 when criteria met
+**Status:** ✅ Complete
+- [x] Create `.DONE`
+- [x] Close #207 when criteria met
 
 ## Discoveries & Decisions
 
@@ -45,7 +45,7 @@
 ## Completion Criteria
 
 - [x] Single resume owner fail-fast
-- [ ] #207 closable
+- [x] #207 closable
 - [x] Scoped tests green
 
 ## Blockers
@@ -54,4 +54,4 @@ _None._
 
 ## Notes (Plan — Review Level 1)
 
-Implemented per plan. Contract: 12/12 green. Coverage: 89.15% (≥77%).
+Implemented per plan. Contract: 12/12 green. Coverage: 89.15% (≥77%). Issue #207 closed.
