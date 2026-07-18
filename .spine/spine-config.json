@@ -15,15 +15,27 @@
   },
   "agents": {
     "worker": {
-      "model": "cursor/auto",
+      "model": "zai/glm-5.2",
       "thinking": "high"
     },
     "reviewer": {
-      "model": "cursor/auto",
-      "thinking": "medium"
+      "model": "google/gemini-3.1-pro-preview",
+      "thinking": "high",
+      "plan": {
+        "model": "google/gemini-flash-latest",
+        "thinking": "low"
+      },
+      "code": {
+        "model": "kimi-coding/kimi-k2-thinking",
+        "thinking": "high"
+      },
+      "final": {
+        "model": "google/gemini-3.1-pro-preview",
+        "thinking": "high"
+      }
     },
     "supervisor": {
-      "model": "inherit",
+      "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
     }
   },
