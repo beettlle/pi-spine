@@ -101,22 +101,6 @@ Document level and score in PROMPT under `## Review Level`.
 - **Environment** — Include project test command; stub CI: `SPINE_WORKER_STUB=1` when documenting CI-only runs.
 - **Git Commit Convention** — `feat(SP-###): …` at step boundaries.
 
-### Cross-model reviewer context asymmetry (FR-REV-08)
-
-When worker and reviewer use different models, PROMPT must be **self-contained** for the independent reviewer spawn. Reviewers receive a bounded rule subset — not `referenceDocs`, not worker execution rules, and capped at 16 KiB.
-
-| Worker sees | Reviewer sees |
-|-------------|---------------|
-| `taskplane-worker-cursor.mdc`, glob-matched language rules | Bounded `profile.reviewer.*` subset; worker/authoring rules excluded |
-| `referenceDocs` (e.g. `docs/constitution.md`) | **Not** auto-loaded |
-| Full PROMPT + STATUS, accumulated context | Fresh spawn (FR-REV-04); review request + diff + Contract only |
-
-❌ Bad: Acceptance criteria only in `referenceDocs` or domain plans the reviewer cannot see
-✅ Good: Criteria in PROMPT `## Mission`, `## Contract`, and step checkboxes
-⚠️ Why: Cross-model reviewers APPROVE code but `contract_failed` or `review_exhausted` loops when Contract or PROMPT context is insufficient
-🔧 Fix: Quote critical spec references in PROMPT; use scoped `testCommand` matching the Testing step; see [contract-template.md § Cross-model authoring](../../skills/create-spine-tasks/references/contract-template.md#cross-model-authoring-worker--reviewer)
-**Detect:** Acceptance criteria only in external docs; `testCommand` is unscoped full-suite; reviewer can't verify "done means" from PROMPT alone
-
 ### PROMPT must NOT contain
 
 ❌ Bad: "Run in lane worktree", "call spine_review_step", "wait for gate", "open dashboard"
@@ -147,7 +131,6 @@ When worker and reviewer use different models, PROMPT must be **self-contained**
 - [ ] `dependencies.json` edges match PROMPT Dependencies
 - [ ] Review level assigned; size S/M/L (XL split)
 - [ ] File scopes disjoint for parallel wave mates
-- [ ] When parallelism intended: `spine plan` shows `N lanes in parallel` (or explain serial collapse from scopes/deps)
 - [ ] No `.DONE`, `.reviews/`, runtime `.spine/` edits
 - [ ] Handoff path to `PROMPT.md` reported
 
@@ -200,7 +183,7 @@ spine tasks validate
 spine tasks analyze
 spine plan pending    # or: spine plan all
 spine preflight
-spine batch start pending          # detached — omit --attached; then spine status --diagnose
+spine batch start pending --attached   # first run: attached until trusted
 ```
 
 ## External references

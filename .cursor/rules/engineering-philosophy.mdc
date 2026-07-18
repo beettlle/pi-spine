@@ -52,28 +52,6 @@ alwaysApply: false
 
 ---
 
-### 1.1c YAGNI / Reuse First (CRIT)
-
-**CRITICAL:** Before writing new code, climb this ladder and stop at the first rung that works. YAGNI: you aren't gonna need it.
-
-```
-1. Does this need to exist?        → no: skip it
-2. Already in this codebase?       → reuse it, don't rewrite
-3. Stdlib or native platform?      → use it
-4. Installed dependency?           → use it
-5. Only then: minimum that works
-```
-
-❌ Bad: New helper, abstraction, or dependency for a one-off; feature flags and config for hypothetical futures
-✅ Good: Reuse existing code; delete or simplify before adding; write only what the task requires today
-⚠️ Why: Unbuilt features and duplicate code are liabilities; agents over-build when no ordered stop rule exists
-🔧 Fix: Read the code the change touches first — lazy about the solution, never about reading; then pick the highest rung that holds
-📍 See: `general-llm-anti-patterns.mdc` sections 0.2–0.3 (Premature Abstraction, Hypothetical Futures), `owasp-secure-coding-practices.mdc` (validation and security are never cut for brevity)
-
-**Detect:** New files for logic that exists nearby, dependencies added before checking stdlib/codebase, "we might need this later" without a concrete task
-
----
-
 ### 1.2 Boring Technology Wins (CRIT)
 
 **CRITICAL:** Choose tools with decade-long track records over trendy alternatives.

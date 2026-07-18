@@ -19,10 +19,6 @@ When the user asks to dismiss findings, run stet, or triage reviews, use the com
 | `stet status` | Show session status |
 | `stet dismiss <id> [reason]` | Mark finding dismissed; prefer giving a reason (feeds optimize/shadowing). Also: `stet rerun`, `stet cleanup`, `stet optimize`. |
 
-## When history.jsonl is missing
-
-`.review/history.jsonl` is created only on feedback: dismiss, auto-dismiss during re-review, or finish when findings existed. Zero-finding contract runs with `--auto-finish-zero` do not append history. Absence of the file does not mean stet was skipped. See `docs/features/stet-feedback-loop-brief.md`.
-
 ## Dismiss reasons
 
 Valid values for `stet dismiss <id> <reason>`: `false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`.

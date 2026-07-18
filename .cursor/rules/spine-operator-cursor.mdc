@@ -39,7 +39,7 @@ Apply when the user:
 | Land | `spine integrate` |
 | Observe | `spine status`, `spine status --diagnose`, `spine journal`, `spine dashboard`, `spine next` |
 
-**Attached vs detached:** From Cursor Agent, use **detached** `spine batch start|resume` (omit `--attached`); monitor with `spine status --diagnose` and `spine wait`. Use `--attached` only from a persistent interactive terminal you keep in foreground. See [skills/spine-autonomous-operator/references/agent-shell-batch-policy.md](../../skills/spine-autonomous-operator/references/agent-shell-batch-policy.md).
+**Attached vs detached:** Prefer `spine batch start <scope> --attached` until the operator trusts detached recovery. After detached start, always run `spine status --diagnose`.
 
 **Stub workers (CI / no pi):** `SPINE_WORKER_STUB=1 spine batch start <id>`.
 
