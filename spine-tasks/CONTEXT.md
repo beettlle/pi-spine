@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-07-13 (Phase 72 v2.8.0 implementation complete — SP-656–662; Next → SP-663; publish operator-gated)
 **Status:** Active
-**Next Task ID:** SP-668
+**Next Task ID:** SP-674
 
 ---
 
@@ -2076,9 +2076,18 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-666 | Runbook hybrid models | Done | SP-664 |
 | SP-667 | CONTEXT Phase 73 capstone | Done | SP-663–666 |
 
----
+### Phase 74 — v2.10.0 release
 
-## Priority backlog
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-668 | Auto-stage untracked files before contract verify | Staged | — |
+| SP-672 | Execution-only task type in PROMPT frontmatter | Staged | — |
+| SP-669 | Parse Matrix section from PROMPT.md and expand in planner | Staged | SP-672 |
+| SP-670 | Substitute matrix variables in contract and steps | Staged | SP-669 |
+| SP-671 | Execute matrix sub-lanes in parallel worktrees | Staged | SP-670, SP-672 |
+| SP-673 | Document parametric matrix and execution-only tasks | Staged | SP-671, SP-672 |
+
+---
 
 | Priority | Requirement | Phase | Status |
 |----------|-------------|-------|--------|
