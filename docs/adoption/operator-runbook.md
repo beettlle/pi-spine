@@ -251,6 +251,145 @@ Set `contract.testRetries: 0` to disable retry (pre-SP-485 behavior). For flaky 
 
 Authoring guidance: [create-spine-tasks skill](../../skills/create-spine-tasks/SKILL.md) and [upstream-execution-workflow.md](./upstream-execution-workflow.md).
 
+### 2.4 Matrix tasks (parametric sub-lanes)
+
+A matrix task fans out one `PROMPT.md` into **parallel sub-lanes**, one per row of a `## Matrix` table. Each row supplies its own parameter values, and `{matrix.<column>}` placeholders in the contract and steps are substituted per row. Matrix tasks are useful for running the same procedure against multiple targets (environments, files, test targets) without copying the PROMPT.
+
+#### Matrix syntax
+
+Add a `## Matrix` section after the front matter. It is a markdown table whose columns are parameter names and whose rows are parameter sets. If the first column is named `run_id`, its value is used as the row identifier; otherwise the row values are joined with underscores.
+
+```markdown
+## Matrix
+
+| run_id | target_region | image_tag |
+|--------|---------------|-----------|
+| us_east | us-east-1 | v1.2.3 |
+| eu_west | eu-west-1 | v1.2.3 |
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `scripts/deploy-{matrix.target_region}.sh {matrix.image_tag}` |
+| runCommand | `scripts/deploy-{matrix.target_region}.sh {matrix.image_tag}` |
+| fileScopeMustChange | `spine-tasks/{taskId}/STATUS.md` |
+
+## Steps
+
+### Step 1: Deploy to {matrix.target_region}
+
+- [ ] Run `scripts/deploy-{matrix.target_region}.sh {matrix.image_tag}`
+- [ ] Verify the deployment in {matrix.target_region}
+```
+
+#### Substitution rules
+
+- Placeholder syntax: `{matrix.<column>}` only. `<column>` matches letters, digits, underscores, and hyphens (e.g. `{matrix.run_id}`, `{matrix.target_region}`).
+- Placeholders are substituted in string contract fields and step bodies (`testCommand`, `runCommand`, `fileScopeMustChange`, `fileScopeMustNotChange`, `artifactsMustExist`).
+- Substitution is **fail-loud**: a `{matrix.X}` reference whose column is absent from the row throws a parse error before the sub-lane runs. A placeholder that reaches substitution with no row at all also fails.
+- Non-matrix tasks are unchanged — if no row is supplied, `applyMatrixRowToContract` returns the contract verbatim.
+
+#### Plan output and sub-lane naming
+
+`spine plan` lists matrix tasks as virtual sub-lanes:
+
+```text
+Wave 0
+  lane-1: SP-100[us_east]  deploy to us-east-1
+  lane-2: SP-100[eu_west]  deploy to eu-west-1
+```
+
+If `run_id` is provided, the sub-lane ID is `SP-100[us_east]`; otherwise it is `SP-100[us-east-1_v1.2.3]`. The parent task (`SP-100`) remains a single task in the batch state; rows fan out internally in the engine.
+
+#### Status and failure behavior
+
+- `spine status` reports the parent task's **aggregated** state. Per-row status is stored in `task.matrixRows[]` and emitted as `matrix.sub_lane.started/completed/failed` journal events.
+- The parent task succeeds only if **all rows** succeed. If any row fails, the parent task fails with `matrix_sub_lane_failed:<rowIds>` and the failing row IDs are surfaced in the diagnosis.
+- Rows run in parallel up to `lanes.maxParallel`. Each row gets its own git worktree (`lane-{n}-{parentTaskSlug}-{rowSlug}`), so row output is isolated and then merged back into the lane branch.
+- A failing row's worktree is cleaned up; the remaining rows finish (or are aborted) before the parent is marked failed.
+
+#### Caveats
+
+- **Execute-type rows are fully substituted and tested.** For `Type: execute` matrix tasks, the engine substitutes `runCommand` (or `testCommand`) and runs the shell command in each row worktree.
+- **LLM-type rows:** `runMatrixSubLane` delegates to the normal LLM worker in each row worktree, but per-row agent-prompt substitution (the substituted `PROMPT.md` served to the worker) is an advanced path. Verify the worker actually receives the row-specific values before relying on LLM matrix tasks in production.
+- **Planner packing:** `buildPlan` currently does not copy `matrix`/`matrixColumns` into `tasksById`, so the planner treats the parent task as a single task. The engine fans out rows at run time. Cross-task lane packing may therefore underestimate the total parallel work when many matrix rows are present.
+- Matrix tasks are best for **deterministic, scoped** automation. Avoid large matrix tables that exceed your machine's parallel capacity or produce overlapping file-scope changes across rows.
+
+### 2.5 Execution-only tasks (Type: execute)
+
+An execution-only task bypasses the LLM worker and runs a shell command directly in the lane worktree. Use it for deterministic steps that do not need reasoning, planning, or code review: CI checks, generated-file refreshes, deployment scripts, or mechanical validation.
+
+#### Frontmatter syntax
+
+Set `Type: execute` in the task frontmatter. The default type is `llm`.
+
+```markdown
+# Task: SP-101 — Regenerate API client stubs
+**Created:** 2026-07-19
+**Size:** S
+**Type:** execute
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `npm run generate-api-client && git diff --stat` |
+| testCommand | `npm run typecheck` |
+| fileScopeMustChange | `src/api-client/**` |
+
+## Steps
+
+### Step 1: Generate and verify
+
+- [ ] Run the generation command
+- [ ] Confirm changed files are in `src/api-client/`
+```
+
+#### Execution behavior
+
+- The engine reads `runCommand` from the Contract. If `runCommand` is missing, it falls back to `testCommand`.
+- The command is executed via `/bin/sh -c` inside the lane worktree, with the same environment as an LLM worker subprocess.
+- **Exit 0:** the engine touches `.DONE` for the task and marks it succeeded (subject to contract verification).
+- **Non-zero exit, hang, or crash:** the task fails normally and is reported as `needs_retry`.
+- The command's stdout/stderr are captured in the worker output log for the lane.
+
+#### When to use execution-only vs. LLM tasks
+
+| Use execution-only | Use LLM |
+|--------------------|---------|
+| Deterministic scripts (`npm run generate`, `scripts/lint.sh`) | Design, refactoring, or reasoning about code |
+| Deployment / provisioning against known targets | Tasks requiring planning or cross-file judgment |
+| Mechanical validation that already has a CLI | Tasks that need step-by-step STATUS checkpointing |
+| Matrix rows with simple shell commands | Matrix rows requiring agent adaptation per row |
+
+#### Lane isolation and contract verification still apply
+
+- The task still runs in its own lane worktree, still respects `lanes.maxParallel`, and still participates in dependency waves.
+- `fileScopeMustChange`, `fileScopeMustNotChange`, and `testCommand` Contract verification still run at the end of the task.
+- The execution-only path does **not** run plan, code, or final review phases. It is a direct command runner with the same delivery and merge semantics as an LLM task.
+- If the command needs secrets, load them from the environment exactly as you would for a CI script; pi-spine does not inject extra credentials beyond the shell environment.
+
+#### Execution-only with matrix tasks
+
+Combine `Type: execute` with `## Matrix` to run the same shell command across many parameter sets in parallel. The engine substitutes `{matrix.<column>}` into `runCommand` per row and runs each row in its own worktree. This is the most tested and deterministic matrix path.
+
+```markdown
+## Matrix
+
+| run_id | target |
+|--------|--------|
+| prod_a | production-a |
+| prod_b | production-b |
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `scripts/promote.sh {matrix.target}` |
+| fileScopeMustChange | `spine-tasks/SP-102/STATUS.md` |
+```
+
 **Environment overrides** (optional, FR-CFG-04):
 
 ```bash

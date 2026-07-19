@@ -410,15 +410,48 @@ spine tasks analyze pending --json
 
 Exit codes: `0` when no blocking findings (warnings alone exit 0); `1` when blocking issues exist.
 
-### Task Discovery
+### Task Types
 
-```bash
-# List discovered tasks
-spine tasks list
+#### Matrix tasks (`## Matrix`)
 
-# Show task details
-spine tasks show TP-012
+Parametric tasks fan out one row per matrix table row into parallel sub-lanes. Use `{matrix.<column>}` placeholders in the contract and steps.
+
+```markdown
+## Matrix
+
+| run_id | target_region |
+|--------|---------------|
+| us_east | us-east-1 |
+| eu_west | eu-west-1 |
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | `scripts/deploy-{matrix.target_region}.sh` |
+| fileScopeMustChange | `spine-tasks/{taskId}/STATUS.md` |
 ```
+
+`spine plan` shows virtual sub-lanes like `SP-100[us_east]`. The parent task succeeds only if **all rows** succeed. See [operator-runbook.md §2.4 Matrix tasks](./adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes) for full syntax and caveats.
+
+#### Execution-only tasks (`Type: execute`)
+
+Bypass the LLM worker and run a shell command directly in the lane worktree.
+
+```markdown
+# Task: SP-101 — Regenerate API client stubs
+**Type:** execute
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `npm run generate-api-client` |
+| testCommand | `npm run typecheck` |
+| fileScopeMustChange | `src/api-client/**` |
+```
+
+Exit 0 touches `.DONE`; non-zero fails the task. Lane isolation, `maxParallel`, and contract verification still apply. See [operator-runbook.md §2.5 Execution-only tasks](./adoption/operator-runbook.md#25-execution-only-tasks-type-execute).
 
 ---
 

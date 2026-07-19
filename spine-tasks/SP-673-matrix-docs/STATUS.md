@@ -11,30 +11,30 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Required files and paths exist
-- [ ] SP-671 and SP-672 landed on `main`
+- [x] Required files and paths exist
+- [x] SP-671 and SP-672 landed on `main`
 
 ---
 
 ### Step 1: Add matrix task documentation
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Add `## Matrix` syntax section
-- [ ] Provide example PROMPT snippet
-- [ ] Explain `spine plan` sub-lane output
-- [ ] Document failure behavior
+- [x] Add `## Matrix` syntax section
+- [x] Provide example PROMPT snippet
+- [x] Explain `spine plan` sub-lane output
+- [x] Document failure behavior
 
 ---
 
 ### Step 2: Add execution-only task documentation
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Add `Type: execute` frontmatter section
-- [ ] Provide example PROMPT
-- [ ] Explain use cases and caveats
-- [ ] Document lane isolation and contract verify still apply
+- [x] Add `Type: execute` frontmatter section
+- [x] Provide example PROMPT
+- [x] Explain use cases and caveats
+- [x] Document lane isolation and contract verify still apply
 
 ---
 
