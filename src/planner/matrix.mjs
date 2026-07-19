@@ -82,13 +82,21 @@ const MATRIX_VAR_RE = /\{matrix\.([a-zA-Z0-9_-]+)\}/g;
  */
 export function substituteMatrixVariables(template, row) {
 	const text = String(template ?? "");
-	const hasRow = Boolean(row && typeof row === "object");
 
+	// No row: a template without placeholders (non-matrix task) is returned verbatim.
+	// A leftover {matrix.X} with no row is an authoring error — fail loud.
+	if (!row) {
+		return text.replace(MATRIX_VAR_RE, (match, column) => {
+			throw new Error(`Unknown matrix variable reference: {matrix.${column}}`);
+		});
+	}
+
+	const values = row;
 	return text.replace(MATRIX_VAR_RE, (match, column) => {
-		if (!hasRow || !Object.prototype.hasOwnProperty.call(row, column)) {
+		if (!Object.prototype.hasOwnProperty.call(values, column)) {
 			throw new Error(`Unknown matrix variable reference: {matrix.${column}}`);
 		}
-		const value = row[column];
+		const value = values[column];
 		return value == null ? "" : String(value);
 	});
 }

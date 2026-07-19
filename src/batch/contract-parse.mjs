@@ -11,6 +11,7 @@ import {
 	isBaseScopeSatisfied,
 	isStubPrelandedFileScopeSatisfied,
 } from "./contract-prelanded.mjs";
+import { substituteMatrixVariables } from "../planner/matrix.mjs";
 
 /**
  * @param {string} taskId
@@ -240,4 +241,58 @@ export function verifyStubFileScopeMustChange(
 		failures.push(`Contract fileScopeMustChange: no matching changes for ${pattern}`);
 	}
 	return { ok: failures.length === 0, failures };
+}
+
+/**
+ * Substitute `{matrix.<column>}` placeholders in a single scalar contract field.
+ * @param {string | null | undefined} value
+ * @param {Record<string, string>} row
+ * @returns {string | null | undefined}
+ */
+function substituteContractScalar(value, row) {
+	return value == null ? value : substituteMatrixVariables(value, row);
+}
+
+/**
+ * Substitute `{matrix.<column>}` placeholders across each path in a contract list field.
+ * @param {string[] | null | undefined} values
+ * @param {Record<string, string>} row
+ * @returns {string[] | null | undefined}
+ */
+function substituteContractList(values, row) {
+	if (!Array.isArray(values)) {
+		return values;
+	}
+	return values.map((pattern) => substituteMatrixVariables(pattern, row));
+}
+
+/**
+ * Apply a matrix row to a parsed contract, substituting `{matrix.<column>}`
+ * placeholders in `testCommand`, `runCommand`, `fileScopeMustChange`,
+ * `fileScopeMustNotChange`, and `artifactsMustExist`. Numeric and boolean fields
+ * (`minLineCoverage`, `stallTimeoutMinutes`, `extendGraceOnFileScope`) are passed
+ * through unchanged.
+ *
+ * Returns a new parsed contract object; the input is returned unchanged when no
+ * row is supplied so non-matrix tasks keep their parsed contract verbatim. Throws
+ * on unknown `{matrix.X}` references (fail-loud) — `substituteMatrixVariables` owns
+ * the validation.
+ *
+ * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
+ * @param {Record<string, string> | null | undefined} row Matrix row values keyed by column.
+ * @returns {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>}
+ */
+export function applyMatrixRowToContract(parsedContract, row) {
+	if (!parsedContract || !row || Object.keys(row).length === 0) {
+		return parsedContract;
+	}
+
+	return {
+		...parsedContract,
+		testCommand: substituteContractScalar(parsedContract.testCommand, row),
+		runCommand: substituteContractScalar(parsedContract.runCommand, row),
+		fileScopeMustChange: substituteContractList(parsedContract.fileScopeMustChange, row),
+		fileScopeMustNotChange: substituteContractList(parsedContract.fileScopeMustNotChange, row),
+		artifactsMustExist: substituteContractList(parsedContract.artifactsMustExist, row),
+	};
 }

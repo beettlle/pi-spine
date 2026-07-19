@@ -23,10 +23,12 @@ export {
 	shouldRunContractVerify,
 	shouldRunContractVerifyForWorker,
 	verifyStubFileScopeMustChange,
+	applyMatrixRowToContract,
 } from "./contract-parse.mjs";
 
 import { verifyContract as _verifyContract } from "./contract-exec.mjs";
 import { stageUntrackedScopeFiles } from "./lane-dirty-check-git.mjs";
+import { applyMatrixRowToContract } from "./contract-parse.mjs";
 
 export {
 	CONTRACT_TEST_COMMAND_MAX_BUFFER,
@@ -42,13 +44,23 @@ export {
 
 /**
  * Verify contract and auto-stage untracked scope files before verification.
- * 
+ *
+ * When `config.matrixRow` is supplied (a matrix sub-lane), `{matrix.<column>}`
+ * placeholders in `testCommand`, `fileScopeMustChange`, and other string/list
+ * contract fields are substituted with the row values before staging and
+ * verification. Omit `config.matrixRow` for non-matrix tasks — the parsed
+ * contract is used verbatim, preserving existing behavior.
+ *
  * @param {string} worktreePath 
  * @param {object} parsedContract 
  * @param {object} [config] 
  */
 export function verifyContract(worktreePath, parsedContract, config = {}) {
-	const stageResult = stageUntrackedScopeFiles(worktreePath, parsedContract.fileScopeMustChange || []);
+	const effectiveContract = config?.matrixRow
+		? applyMatrixRowToContract(parsedContract, config.matrixRow)
+		: parsedContract;
+
+	const stageResult = stageUntrackedScopeFiles(worktreePath, effectiveContract.fileScopeMustChange || []);
 	
 	if (stageResult.error) {
 		return {
@@ -63,5 +75,5 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 		};
 	}
 
-	return _verifyContract(worktreePath, parsedContract, config);
+	return _verifyContract(worktreePath, effectiveContract, config);
 }

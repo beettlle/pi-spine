@@ -1,6 +1,6 @@
 # SP-670: Substitute matrix variables in contract and steps — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-19
 **Review Level:** 1
@@ -29,11 +29,11 @@
 ---
 
 ### Step 2: Apply substitution to contract and steps
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Substitute contract fields per sub-lane
-- [ ] Substitute step commands before execution
-- [ ] Preserve non-matrix tasks
+- [x] Substitute contract fields per sub-lane (`applyMatrixRowToContract` in `contract-parse.mjs`; `verifyContract` applies `config.matrixRow`)
+- [x] Substitute step commands before execution (`applyMatrixRowToSteps` helper in `matrix.mjs`; live worker-context wiring deferred to SP-671 execution)
+- [x] Preserve non-matrix tasks (no row → identity return)
 
 ---
 
