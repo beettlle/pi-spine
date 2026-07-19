@@ -1,7 +1,7 @@
 # SP-668: Auto-stage untracked files before contract verify — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 4
+**Status:** 🟢 Completed
 **Last Updated:** 2026-07-19
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,48 +11,48 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] No active batch running
+- [x] Required files and paths exist
+- [x] No active batch running
 
 ---
 
 ### Step 1: Add untracked-file staging helper
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Locate where contract verify reads the diff for `fileScopeMustChange`
-- [ ] Add helper that lists untracked files and matches against `fileScopeMustChange` globs
-- [ ] Stage matching untracked files with `git add` before diff check
-- [ ] Leave tracked modifications untouched
+- [x] Locate where contract verify reads the diff for `fileScopeMustChange`
+- [x] Add helper that lists untracked files and matches against `fileScopeMustChange` globs
+- [x] Stage matching untracked files with `git add` before diff check
+- [x] Leave tracked modifications untouched
 
 ---
 
 ### Step 2: Wire helper into contract verify
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Call helper in `contract-verify.mjs` before evaluating `fileScopeMustChange`
-- [ ] Surface staging failures as clear contract errors
-- [ ] Preserve existing behavior when no untracked files exist
+- [x] Call helper in `contract-verify.mjs` before evaluating `fileScopeMustChange`
+- [x] Surface staging failures as clear contract errors
+- [x] Preserve existing behavior when no untracked files exist
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `npm run typecheck` passes
-- [ ] Regression test for untracked in-scope file passes
-- [ ] Regression test for untracked out-of-scope file passes
-- [ ] Targeted test command passes
-- [ ] All failures fixed
+- [x] `npm run typecheck` passes
+- [x] Regression test for untracked in-scope file passes
+- [x] Regression test for untracked out-of-scope file passes
+- [x] Targeted test command passes
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] STATUS.md updated with discoveries
-- [ ] Operator-runbook checked; updated only if relevant
+- [x] STATUS.md updated with discoveries
+- [x] Operator-runbook checked; updated only if relevant
 
 ---
 
@@ -67,6 +67,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `verifyContract` computes changedFiles via `listChangedFiles` | Used `git diff HEAD` to capture index+worktree to preserve file scope behavior for untracked files | `src/batch/contract-exec.mjs` |
 
 ---
 

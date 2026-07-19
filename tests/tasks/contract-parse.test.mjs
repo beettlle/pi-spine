@@ -146,6 +146,7 @@ test("parseContract returns hasSection false when Contract heading is absent", (
 test("CONTRACT_FIELD_NAMES lists all normative contract fields", () => {
 	assert.deepEqual(CONTRACT_FIELD_NAMES, [
 		"testCommand",
+		"runCommand",
 		"fileScopeMustChange",
 		"fileScopeMustNotChange",
 		"minLineCoverage",

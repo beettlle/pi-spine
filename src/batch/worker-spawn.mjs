@@ -168,6 +168,55 @@ export function spawnWorkerChild({
 }
 
 /**
+ * @param {object} params
+ * @param {string} params.worktreePath
+ * @param {string} params.taskFolder
+ * @param {string} params.command
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {number} [params.laneNumber]
+ * @param {string} [params.taskId]
+ * @param {string} [params.laneCorrelationId]
+ * @param {string[]} [params.fileScopePaths]
+ * @param {object} [params.config]
+ */
+export function spawnExecutionOnlyHandle({
+	worktreePath,
+	taskFolder,
+	command,
+	projectRoot,
+	batchId,
+	laneNumber,
+	taskId,
+	laneCorrelationId,
+	fileScopePaths = [],
+	config = {},
+}) {
+	const env = buildWorkerChildEnv({
+		taskFolder,
+		worktreePath,
+		projectRoot,
+		batchId,
+		laneNumber,
+		taskId,
+		laneCorrelationId,
+		fileScopePaths,
+		config,
+	});
+	
+	// Create a wrapper script that runs the command and then creates .DONE
+	// This matches the behavior expected by the heartbeat loop.
+	// We run `/bin/sh -c "<command> && touch .DONE"`
+	const script = `${command} && touch "${path.join(taskFolder, ".DONE")}"`;
+	
+	return spawn("/bin/sh", ["-c", script], {
+		cwd: worktreePath,
+		env,
+		stdio: ["ignore", "pipe", "pipe"],
+	});
+}
+
+/**
  * @param {WorkerChildHandle} child
  * @param {() => void} onPreflightComplete
  */
