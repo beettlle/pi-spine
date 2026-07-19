@@ -1,0 +1,22 @@
+SP-666 complete.
+
+Added "Hybrid model recipes (worker ≠ reviewer)" section to
+docs/adoption/operator-runbook.md (line 423), between the existing
+"Cross-model PROMPT authoring" and "Orchestrator process model" sections.
+
+Contents:
+- Recipe selection table (cost saver / quality first / strong final only).
+- Recipe 1: cheap worker + strong reviewer (cost saver).
+- Recipe 2: strong worker + cheap reviewer (quality first).
+- Recipe 3: per-review-type overrides for cheap plan/code review + strong final.
+- Pre-batch checklist and role-inspection commands.
+
+Cross-references existing notes:
+- #agent-model-pins-pi-inheritance-vs-spine-config
+- #cross-model-prompt-authoring-issue-84
+- contract-template.md#cross-model-authoring-worker--reviewer
+
+Verification:
+- testCommand `true` -> exit 0.
+- 158 code fences (balanced); headings properly nested.
+- Only docs/adoption/operator-runbook.md + STATUS.md changed (src/**, bin/** untouched).
