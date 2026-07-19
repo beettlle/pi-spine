@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T02:10:10.215Z",
+  "generatedAt": "2026-07-19T00:53:37.351Z",
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
@@ -321,6 +321,23 @@
       "description": "Execute a Taskplane-style task packet in Cursor: read PROMPT.md and STATUS.md, stay within File Scope, update checkboxes honestly, run verification before claiming done. Use when implementing or executing a task—not when creating new task packets.",
       "globs": [],
       "parseStatus": "ok"
+    },
+    {
+      "relPath": "tufte-visualization.mdc",
+      "spineClass": "manual",
+      "alwaysApply": false,
+      "description": "Tufte-aligned analytical visualization: data-ink, lie factor, chartjunk, comparisons, tables/charts, dashboards",
+      "globs": [],
+      "parseStatus": "warn",
+      "warnings": [
+        "ignored non key-value line: - \"**/*chart*.{ts,tsx,js,jsx,py,r,swift}\"",
+        "ignored non key-value line: - \"**/*plot*.{ts,tsx,js,jsx,py,r}\"",
+        "ignored non key-value line: - \"**/*dashboard*/**\"",
+        "ignored non key-value line: - \"**/*analytics*/**\"",
+        "ignored non key-value line: - \"**/*visualization*/**\"",
+        "ignored non key-value line: - \"**/notebooks/**/*\"",
+        "ignored non key-value line: - \"**/reports/**/*\""
+      ]
     }
   ],
   "excluded": [
