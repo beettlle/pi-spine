@@ -1,6 +1,14 @@
 /**
  * Block until reconcile diagnosis reaches a target set (issue #46, SP-362).
+ *
+ * Batch-scoped since #215: the wait records the batch id at start and exits with a
+ * distinct `archived`/`superseded` status if another operator session integrates or
+ * supersedes that batch while we are waiting — it never re-diagnoses the newly active
+ * batch or re-drives land/recovery prompts for it.
  */
+
+import fs from "node:fs";
+import path from "node:path";
 
 import { reconcileBatch } from "../batch/reconcile.mjs";
 import { parseUntilDiagnoses, reconciliationMatchesUntil } from "./spine-wait.mjs";
@@ -87,6 +95,78 @@ export function parseWaitArgs(argv) {
 	return args;
 }
 
+/** Exit code when the waited-on batch was archived or superseded by another session (#215). */
+export const WAIT_SUPERSEDED_EXIT_CODE = 2;
+
+/**
+ * Read the archived batch-state for a scoped batch id (#215). Archived batches are copied
+ * to `.spine/runtime/{batchId}/archive/batch-state.json` on integrate/complete (see
+ * `src/batch/lifecycle-archive.mjs`). Lets wait report the real terminal phase instead of
+ * the newly active batch. Leaf read — never throws.
+ *
+ * @param {string} projectRoot
+ * @param {string} scopedBatchId
+ * @returns {{ archivedPhase: string | null, archivedAt: string | null }}
+ */
+function readArchivedBatchRecord(projectRoot, scopedBatchId) {
+	try {
+		const archivePath = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			scopedBatchId,
+			"archive",
+			"batch-state.json",
+		);
+		if (!fs.existsSync(archivePath)) {
+			return { archivedPhase: null, archivedAt: null };
+		}
+		const raw = JSON.parse(fs.readFileSync(archivePath, "utf-8"));
+		const archivedPhase =
+			raw && typeof raw === "object" && raw.phase != null ? String(raw.phase) : null;
+		const archivedAt =
+			raw && typeof raw === "object" && raw.endedAt != null ? String(raw.endedAt) : null;
+		return { archivedPhase, archivedAt };
+	} catch {
+		return { archivedPhase: null, archivedAt: null };
+	}
+}
+
+/**
+ * Human headline for the batch-scoped supersede/archived exit (#215). Ambiguous-free: it
+ * names the scoped batch and never references the new active batch's recovery state.
+ */
+function formatSupersededHeadline({ scopedBatchId, activeBatchId, batchScope, archive }) {
+	if (batchScope === "archived") {
+		const phaseSuffix = archive.archivedPhase ? ` (archived as ${archive.archivedPhase})` : "";
+		return `Batch ${scopedBatchId} was archived${phaseSuffix} by another session — no longer the active batch`;
+	}
+	return `Batch ${scopedBatchId} was superseded by batch ${activeBatchId} — no longer the active batch`;
+}
+
+/**
+ * Build the batch-scoped snapshot emitted when the waited-on batch was archived or
+ * superseded (#215). Scoped to the original batch id; never reflects the new active batch.
+ */
+function buildSupersededSnapshot({ scopedBatchId, activeBatchId, batchScope, archive, observedAt }) {
+	const snapshot = buildWatchSnapshot(
+		{
+			diagnosis: null,
+			batchId: scopedBatchId,
+			phase: archive.archivedPhase,
+			macroPhase: "archived",
+			macroPhaseLabel: archive.archivedPhase ? `Archived (${archive.archivedPhase})` : "Archived",
+			headline: formatSupersededHeadline({ scopedBatchId, activeBatchId, batchScope, archive }),
+			suggestedCommand: "spine status --diagnose",
+		},
+		observedAt,
+	);
+	snapshot.activeBatchId = activeBatchId;
+	snapshot.batchScope = batchScope;
+	snapshot.archivedPhase = archive.archivedPhase;
+	return snapshot;
+}
+
 /**
  * @param {object} options
  * @param {string} options.projectRoot
@@ -110,6 +190,7 @@ export async function runSpineWait(options) {
 		sleepFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 		nowFn = () => Date.now(),
 		writeStdout = (text) => process.stdout.write(text),
+		writeStderr = (text) => process.stderr.write(text),
 	} = options;
 
 	const startedAt = nowFn();
@@ -122,23 +203,90 @@ export async function runSpineWait(options) {
 	};
 	process.on("SIGINT", onSigInt);
 
+	/**
+	 * Batch id this wait is scoped to (#215). Captured from the first reconcile that
+	 * observes an active batch so the wait never reports on a batch another operator
+	 * session integrated/superseded while we were waiting.
+	 */
+	let scopedBatchId = null;
+	let scopedBatchIdCaptured = false;
+
 	try {
 		while (running) {
 			const result = reconcileFn({ projectRoot });
+			if (!scopedBatchIdCaptured) {
+				const candidate = result.batchId ?? null;
+				if (candidate != null) {
+					scopedBatchId = candidate;
+					scopedBatchIdCaptured = true;
+				}
+			}
 			const diagnosis = result.diagnosis ?? null;
+
+			// Batch-scoped guard (#215): the active batch drifted away from the one we
+			// started waiting on, so another session integrated/superseded it. Exit promptly
+			// with a distinct status instead of re-diagnosing the new batch and re-driving
+			// land/recovery prompts for it. This check runs before the match check on
+			// purpose — any match against the new batch would be a false positive.
+			if (scopedBatchId != null && (result.batchId ?? null) !== scopedBatchId) {
+				const activeBatchId = result.batchId ?? null;
+				const batchScope = activeBatchId == null ? "archived" : "superseded";
+				const archive = readArchivedBatchRecord(projectRoot, scopedBatchId);
+				const observedAt = nowFn();
+				if (json) {
+					writeStdout(
+						`${JSON.stringify(
+							buildSupersededSnapshot({
+								scopedBatchId,
+								activeBatchId,
+								batchScope,
+								archive,
+								observedAt,
+							}),
+						)}\n`,
+					);
+				} else {
+					writeStderr(
+						`${formatSupersededHeadline({ scopedBatchId, activeBatchId, batchScope, archive })}\n`,
+					);
+				}
+				return {
+					exitCode: WAIT_SUPERSEDED_EXIT_CODE,
+					matched: false,
+					diagnosis: null,
+					timedOut: false,
+					superseded: true,
+					batchScope,
+					batchId: scopedBatchId,
+					activeBatchId,
+					archivedPhase: archive.archivedPhase,
+				};
+			}
 
 			if (reconciliationMatchesUntil(result, untilDiagnoses)) {
 				if (json) {
 					writeStdout(`${JSON.stringify(buildWatchSnapshot(result, nowFn()))}\n`);
 				}
-				return { exitCode: 0, matched: true, diagnosis, timedOut: false };
+				return {
+					exitCode: 0,
+					matched: true,
+					diagnosis,
+					timedOut: false,
+					batchId: scopedBatchId,
+				};
 			}
 
 			if (deadline != null && nowFn() >= deadline) {
 				if (json) {
 					writeStdout(`${JSON.stringify(buildWatchSnapshot(result, nowFn()))}\n`);
 				}
-				return { exitCode: 1, matched: false, diagnosis, timedOut: true };
+				return {
+					exitCode: 1,
+					matched: false,
+					diagnosis,
+					timedOut: true,
+					batchId: scopedBatchId,
+				};
 			}
 
 			await sleepFn(intervalSec * 1000);
