@@ -1,0 +1,12 @@
+Task SP-673 completed.
+
+Delivered:
+- `docs/adoption/operator-runbook.md` — new §2.4 Matrix tasks (parametric sub-lanes) and §2.5 Execution-only tasks (Type: execute) with syntax, examples, plan output, status/failure behavior, and caveats.
+- `docs/QUICK-REFERENCE.md` — added "Task Types" quick-reference section covering `## Matrix` and `Type: execute` with links into the runbook.
+- `spine-tasks/SP-673-matrix-docs/STATUS.md` — updated with completed steps, test evidence, and discoveries.
+
+Verification:
+- `npm run typecheck` passes.
+- `SPINE_WORKER_STUB=1 npm test` passes with 2283/0 when `SPINE_IS_WORKER` is unset. The literal command in the worker session fails with the documented `nested_batch_spawn_blocked` environmental false positive (CONTEXT.md §Contract testCommand false positives in worker environment).
+- No application code changes.
+- `detect_changes` against `main` shows low risk, only doc files touched, no affected processes.
