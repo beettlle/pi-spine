@@ -315,7 +315,9 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	try {
 		const stdout = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd: worktreePath, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
 		indexAndWorktreeFiles = stdout.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-	} catch (e) {}
+	} catch {
+		// Ignore git diff failures; fall back to committedFiles only.
+	}
 
 	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
