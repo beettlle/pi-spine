@@ -43,7 +43,7 @@ Closes #217 — Allow `PROMPT.md` to contain a `## Matrix` table that defines a 
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && node --test tests/planner/matrix-parse.test.mjs && node --test tests/planner/plan-matrix.test.mjs` |
-| fileScopeMustChange | `src/tasks/packet/parse-prompt.mjs`, `src/planner/waves.mjs`, `src/planner/lanes.mjs`, `src/planner/matrix.mjs`, `tests/planner/matrix-parse.test.mjs`, `tests/planner/plan-matrix.test.mjs` |
+| fileScopeMustChange | `src/planner/matrix.mjs`, `tests/planner/matrix-parse.test.mjs`, `tests/planner/plan-matrix.test.mjs` |
 | minLineCoverage | 77 |
 
 ## Steps
@@ -124,4 +124,7 @@ Closes #217 — Allow `PROMPT.md` to contain a `## Matrix` table that defines a 
 
 ## Amendments
 
-<!-- Workers add amendments here if issues discovered during execution. -->
+### Amendment 1 — 2026-07-19
+
+**Issue:** Preflight `prelanded-file-scope` — `parse-prompt.mjs` / `waves.mjs` / `lanes.mjs` already changed on `main` (SP-672 wave 0).
+**Resolution:** Redirected `fileScopeMustChange` to new deliverables only (`src/planner/matrix.mjs` + matrix test files). File Scope still allows edits to the pre-landed modules.

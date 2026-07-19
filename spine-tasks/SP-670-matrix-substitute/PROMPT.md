@@ -41,7 +41,7 @@ Closes #217 — Replace `{matrix.var}` placeholders inside a matrix task's `## S
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && node --test tests/planner/matrix-subst.test.mjs && node --test tests/batch/contract-matrix-subst.test.mjs` |
-| fileScopeMustChange | `src/planner/matrix.mjs`, `src/batch/contract-verify.mjs`, `src/batch/contract-parse.mjs`, `tests/planner/matrix-subst.test.mjs`, `tests/batch/contract-matrix-subst.test.mjs` |
+| fileScopeMustChange | `src/planner/matrix.mjs`, `tests/planner/matrix-subst.test.mjs`, `tests/batch/contract-matrix-subst.test.mjs` |
 | minLineCoverage | 77 |
 
 ## Steps
@@ -120,4 +120,7 @@ Closes #217 — Replace `{matrix.var}` placeholders inside a matrix task's `## S
 
 ## Amendments
 
-<!-- Workers add amendments here if issues discovered during execution. -->
+### Amendment 1 — 2026-07-19
+
+**Issue:** Preflight `prelanded-file-scope` — `contract-verify.mjs` already changed on `main` (SP-668 wave 0).
+**Resolution:** Redirected `fileScopeMustChange` to matrix substitution deliverables (`src/planner/matrix.mjs` + subst tests). File Scope still allows edits to contract-verify/parse.
