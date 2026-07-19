@@ -344,6 +344,10 @@ export function summarizeJournalEvent(event) {
 	}
 	if (payload.workerOutputLogRef) parts.push(`→ ${payload.workerOutputLogRef}`);
 	if (payload.exitReason) parts.push(String(payload.exitReason));
+	if (payload.rowId) parts.push(`row ${payload.rowId}`);
+	if (Array.isArray(payload.failedRowIds) && payload.failedRowIds.length > 0) {
+		parts.push(`failed row(s): ${payload.failedRowIds.join(", ")}`);
+	}
 	if (payload.mergeCommit) parts.push(`merge ${String(payload.mergeCommit).slice(0, 8)}`);
 	if (payload.baseBranch && payload.orchBranch) {
 		parts.push(`${payload.baseBranch} → ${payload.orchBranch}`);
@@ -413,6 +417,7 @@ export function extractJournalDiagnosisHints(events) {
 		"batch.failed",
 		"batch.merge_blocked",
 		"task.failed",
+		"matrix.task_failed",
 		"review.crash_recovered",
 		"review.skipped_fresh_artifact",
 		"review.resumed",
