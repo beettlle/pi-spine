@@ -15,7 +15,7 @@
   },
   "agents": {
     "worker": {
-      "model": "google/gemini-3.1-pro-preview",
+      "model": "zai/glm-5.2",
       "thinking": "high"
     },
     "reviewer": {
@@ -26,7 +26,7 @@
         "thinking": "low"
       },
       "code": {
-        "model": "google/gemini-3.1-pro-preview",
+        "model": "kimi-coding/kimi-for-coding",
         "thinking": "high"
       },
       "final": {
@@ -37,6 +37,65 @@
     "supervisor": {
       "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
+    },
+    "activeProfile": "default",
+    "profiles": {
+      "default": {
+        "worker": {
+          "model": "zai/glm-5.2",
+          "thinking": "high"
+        },
+        "reviewer": {
+          "model": "google/gemini-3.1-pro-preview",
+          "thinking": "high",
+          "plan": {
+            "model": "google/gemini-flash-latest",
+            "thinking": "low"
+          },
+          "code": {
+            "model": "kimi-coding/kimi-for-coding",
+            "thinking": "high"
+          },
+          "final": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          }
+        },
+        "supervisor": {
+          "model": "google/gemini-flash-lite-latest",
+          "thinking": "off"
+        }
+      },
+      "hard": {
+        "worker": {
+          "model": "kimi-coding/kimi-k2-thinking",
+          "thinking": "high"
+        },
+        "reviewer": {
+          "model": "google/gemini-3.1-pro-preview",
+          "thinking": "high",
+          "plan": {
+            "model": "google/gemini-flash-latest",
+            "thinking": "low"
+          },
+          "code": {
+            "model": "kimi-coding/kimi-k2-thinking",
+            "thinking": "high"
+          },
+          "final": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          }
+        },
+        "supervisor": {
+          "model": "google/gemini-flash-lite-latest",
+          "thinking": "off"
+        }
+      }
+    },
+    "escalatePolicy": {
+      "enabled": true,
+      "toProfile": "hard"
     }
   },
   "lanes": {
