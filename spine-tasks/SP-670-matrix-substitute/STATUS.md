@@ -1,7 +1,7 @@
 # SP-670: Substitute matrix variables in contract and steps — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-07-19
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Required files and paths exist
-- [ ] SP-669 landed on `main`
+- [x] Required files and paths exist
+- [x] SP-669 landed on `main` (commits 12079c3b, cc80a657 on `main`; `parseMatrixTable`/`deriveMatrixRowId` present)
 
 ---
 
 ### Step 1: Implement substitution helper
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add `substituteMatrixVariables(template, row)` to `src/planner/matrix.mjs`
-- [ ] Replace `{matrix.column}` with row value
-- [ ] Fail loudly on unknown column
-- [ ] Preserve non-matrix behavior
+- [x] Add `substituteMatrixVariables(template, row)` to `src/planner/matrix.mjs`
+- [x] Replace `{matrix.column}` with row value
+- [x] Fail loudly on unknown column
+- [x] Preserve non-matrix behavior
 
 ---
 
@@ -85,4 +85,9 @@
 
 ## Notes
 
-*Reserved for execution notes*
+*Plan (Review Level 1):* Add pure additive substitution helpers; do NOT modify CRITICAL-risk `parseContract`.
+- `substituteMatrixVariables(template, row)` in `src/planner/matrix.mjs` — fail-loud on unknown `{matrix.X}`; unchanged when no row+no placeholders (non-matrix safe).
+- `applyMatrixRowToContract(parsedContract, row)` in `src/batch/contract-parse.mjs`, re-exported from `contract-verify.mjs` — substitutes testCommand/runCommand/fileScopeMustChange/fileScopeMustNotChange/artifactsMustExist; returns input unchanged when no row.
+- `applyMatrixRowToSteps(steps, row)` in `src/planner/matrix.mjs` for parsed step bodies.
+- `verifyContract` gets a backward-compatible `config.matrixRow` hook (additive; no current caller passes it → existing behavior 100% preserved).
+- `matrixRow` does not yet flow planner→engine; live worker-context wiring is SP-671 (execution).

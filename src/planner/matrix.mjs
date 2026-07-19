@@ -64,3 +64,51 @@ export function deriveMatrixRowId(row, columns) {
 	}
 	return columns.map(col => row[col]).join('_').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
+
+/** Matches `{matrix.<column>}` placeholders. Column names are `[a-zA-Z0-9_-]+`. */
+const MATRIX_VAR_RE = /\{matrix\.([a-zA-Z0-9_-]+)\}/g;
+
+/**
+ * Substitute `{matrix.<column>}` placeholders in a template string with the
+ * matching value from a matrix row.
+ *
+ * Fails loud (throws) on any reference whose column is absent from the row, so a
+ * typo such as `{matrix.rnu_id}` never silently reaches execution. When no row is
+ * supplied, text without placeholders is returned unchanged (non-matrix tasks).
+ *
+ * @param {string} template Arbitrary text (PROMPT body, contract field, step command).
+ * @param {Record<string, string> | null | undefined} row Matrix row values keyed by column.
+ * @returns {string}
+ */
+export function substituteMatrixVariables(template, row) {
+	const text = String(template ?? "");
+	const hasRow = Boolean(row && typeof row === "object");
+
+	return text.replace(MATRIX_VAR_RE, (match, column) => {
+		if (!hasRow || !Object.prototype.hasOwnProperty.call(row, column)) {
+			throw new Error(`Unknown matrix variable reference: {matrix.${column}}`);
+		}
+		const value = row[column];
+		return value == null ? "" : String(value);
+	});
+}
+
+/**
+ * Substitute `{matrix.<column>}` placeholders in parsed step titles and bodies.
+ * Returns a new steps array; the input is returned unchanged when no row is
+ * supplied (non-matrix tasks are untouched).
+ *
+ * @param {Array<{ number: number, title: string, body: string }>} steps Parsed steps from `parsePrompt`.
+ * @param {Record<string, string> | null | undefined} row Matrix row values keyed by column.
+ * @returns {Array<{ number: number, title: string, body: string }>}
+ */
+export function applyMatrixRowToSteps(steps, row) {
+	if (!Array.isArray(steps) || !row || Object.keys(row).length === 0) {
+		return steps;
+	}
+	return steps.map((step) => ({
+		...step,
+		title: substituteMatrixVariables(step.title, row),
+		body: substituteMatrixVariables(step.body, row),
+	}));
+}
