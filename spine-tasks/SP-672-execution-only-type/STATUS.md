@@ -11,57 +11,57 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Required files and paths exist
-- [ ] No active batch running
+- [x] Required files and paths exist
+- [x] No active batch running
 
 ---
 
 ### Step 1: Parse `Type: execute` frontmatter
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Locate frontmatter parser in `parse-prompt.mjs`
-- [ ] Add `Type` key with default `llm`
-- [ ] Expose `type` in parsed task object
-- [ ] Validate execute tasks have runnable command
+- [x] Locate frontmatter parser in `parse-prompt.mjs`
+- [x] Add `Type` key with default `llm`
+- [x] Expose `type` in parsed task object
+- [x] Validate execute tasks have runnable command
 
 ---
 
 ### Step 2: Add execution-only runner path
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Add shell-command runner path
-- [ ] Reuse worktree/env/heartbeat
-- [ ] Match stdout/stderr/exit capture
+- [x] Add shell-command runner path
+- [x] Reuse worktree/env/heartbeat
+- [x] Match stdout/stderr/exit capture
 
 ---
 
 ### Step 3: Wire engine to choose runner
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Branch on `task.type === 'execute'` in engine
-- [ ] Preserve lane isolation and maxParallel
-- [ ] Keep `.DONE` and contract verify flow
+- [x] Branch on `task.type === 'execute'` in engine
+- [x] Preserve lane isolation and maxParallel
+- [x] Keep `.DONE` and contract verify flow
 
 ---
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] `npm run typecheck` passes
-- [ ] Execution-only test fixture runs
-- [ ] Existing LLM task behavior unchanged
-- [ ] Targeted test command passes
-- [ ] All failures fixed
+- [x] `npm run typecheck` passes
+- [x] Execution-only test fixture runs
+- [x] Existing LLM task behavior unchanged
+- [x] Targeted test command passes
+- [x] All failures fixed
 
 ---
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] STATUS.md updated
-- [ ] Notes captured for SP-673 runbook update
+- [x] STATUS.md updated
+- [x] Notes captured for SP-673 runbook update
 
 ---
 
@@ -76,6 +76,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `runCommand` isn't fully supported in fallback parser object causing typecheck failure | Updated `parseContract` JSDoc and `worker-host.mjs` fallback struct | `worker-host.mjs` |
+| `startBatch` test fails due to worker environment detection | Used stripped `SPINE_IS_WORKER` inside the execution-only unit test | `tests/batch/execution-only.test.mjs` |
 
 ---
 
@@ -84,6 +86,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-07-19 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-07-19 | Step 1 Completed | Added `type` parsing and `runCommand` to Contract fields |
+| 2026-07-19 | Step 2, 3, 4 Completed | Wired `spawnExecutionOnlyHandle`, executed tests |
+| 2026-07-19 | Step 5 Completed | Documented runbook behavior |
 
 ---
 
@@ -95,4 +100,9 @@
 
 ## Notes
 
-*Reserved for execution notes*
+**For SP-673 Runbook Update:**
+- When `Type: execute` is present, the engine bypasses the LLM worker.
+- It executes `runCommand` (or `testCommand` if `runCommand` is missing) via `/bin/sh -c` inside the lane worktree.
+- If the command succeeds (exit 0), the engine automatically touches `.DONE` for it.
+- If it exits non-zero, hangs, or crashes, it fails the task normally.
+- Max parallel lanes, environment isolation, and contract verification checks all apply to execution-only tasks.
