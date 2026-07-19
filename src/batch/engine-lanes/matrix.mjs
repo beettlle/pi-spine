@@ -1,0 +1,314 @@
+// @ts-nocheck
+/**
+ * Matrix sub-lane execution (SP-671 / #217).
+ *
+ * Because `buildPlan` does not propagate `matrix` into its `tasksById`, the
+ * planner's virtual sub-lane expansion is inert in production. The engine
+ * therefore drives matrix execution itself: when a task's packet declares a
+ * `## Matrix` table, each row is run as an independent sub-lane in its own
+ * worktree, the substituted command (execution-only or LLM worker) runs per
+ * row, and the parent task aggregates the per-row outcomes.
+ *
+ * A matrix task succeeds only when every row succeeds; any failed row fails the
+ * whole task and surfaces the failing row id. Rows respect `lanes.maxParallel`.
+ */
+
+import fs from "node:fs";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import { batchWorktreeDir } from "../worktree.mjs";
+import { loadTaskPacket } from "../../tasks/packet/index.mjs";
+import {
+	deriveMatrixRowId,
+	substituteMatrixVariables,
+} from "../../planner/matrix.mjs";
+import { gitExec } from "../git-exec.mjs";
+import { normalizeLaneWorktreeGitPaths } from "../worktree.mjs";
+import { appendJournalEvent } from "../journal.mjs";
+
+/**
+ * Read a task folder's packet and extract its matrix rows, or null when the
+ * task is not a matrix task.
+ *
+ * @param {string} taskFolderPath Absolute path to the task folder (parent for matrix).
+ * @returns {{ rows: Array<{ rowId: string, values: Record<string,string> }>, columns: string[], type: string } | null}
+ */
+export function loadMatrixTaskRows(taskFolderPath) {
+	if (!taskFolderPath || !fs.existsSync(path.join(taskFolderPath, "PROMPT.md"))) {
+		return null;
+	}
+	let packet;
+	try {
+		packet = loadTaskPacket(taskFolderPath);
+	} catch {
+		return null;
+	}
+	const prompt = packet?.prompt;
+	const matrix = Array.isArray(prompt?.matrix) ? prompt.matrix : null;
+	if (!matrix || matrix.length === 0) return null;
+	const columns = Array.isArray(prompt.matrixColumns) ? prompt.matrixColumns : [];
+	const rows = matrix.map((values) => ({
+		rowId: deriveMatrixRowId(values, columns),
+		values,
+	}));
+	return { rows, columns, type: prompt.type === "execute" ? "execute" : "llm" };
+}
+
+/**
+ * Slugify a token for use in worktree dir names and git branch names.
+ * Keeps it filesystem- and ref-safe: lowercase, `[a-z0-9_]+`, `_` for separators.
+ *
+ * @param {string} token
+ * @returns {string}
+ */
+export function slugifyMatrixToken(token) {
+	return String(token ?? "")
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "") || "row";
+}
+
+/**
+ * Deterministic worktree directory name for a matrix sub-lane.
+ * Matches the PROMPT example shape `lane-1-sp-669-a_shell_a`.
+ *
+ * @param {number} laneNumber
+ * @param {string} parentTaskId
+ * @param {string} rowId
+ * @returns {string}
+ */
+export function matrixWorktreeDir(laneNumber, parentTaskId, rowId) {
+	const parentSlug = slugifyMatrixToken(parentTaskId);
+	const rowSlug = slugifyMatrixToken(rowId);
+	return `lane-${laneNumber}-${parentSlug}-${rowSlug}`;
+}
+
+/**
+ * Absolute worktree path for a matrix sub-lane, nested under the batch worktree dir.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string} parentTaskId
+ * @param {string} rowId
+ * @returns {string}
+ */
+export function matrixWorktreePath(projectRoot, batchId, laneNumber, parentTaskId, rowId) {
+	const dir = matrixWorktreeDir(laneNumber, parentTaskId, rowId);
+	return path.join(projectRoot, ".worktrees", `spine-${batchId}`, dir);
+}
+
+/**
+ * Deterministic git branch name for a matrix sub-lane.
+ *
+ * @param {string} batchId
+ * @param {number} laneNumber
+ * @param {string} parentTaskId
+ * @param {string} rowId
+ * @returns {string}
+ */
+export function matrixSubLaneBranch(batchId, laneNumber, parentTaskId, rowId) {
+	const parentSlug = slugifyMatrixToken(parentTaskId);
+	const rowSlug = slugifyMatrixToken(rowId);
+	return `task/spine-matrix-${laneNumber}-${batchId}-${parentSlug}-${rowSlug}`;
+}
+
+/**
+ * Provision a dedicated worktree for a matrix sub-lane off `baseRef` (the lane
+ * task branch). Reuses git-worktree provisioning + gitdir normalization so host
+ * and devcontainer git both stay healthy (SP-101).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {number} params.laneNumber
+ * @param {string} params.parentTaskId
+ * @param {string} params.rowId
+ * @param {string} params.baseRef Git ref the row worktree branches from.
+ * @returns {{ worktreePath: string, branch: string }}
+ */
+export function provisionMatrixSubLaneWorktree({
+	projectRoot,
+	batchId,
+	laneNumber,
+	parentTaskId,
+	rowId,
+	baseRef,
+}) {
+	const worktreePath = matrixWorktreePath(projectRoot, batchId, laneNumber, parentTaskId, rowId);
+	const branch = matrixSubLaneBranch(batchId, laneNumber, parentTaskId, rowId);
+	if (fs.existsSync(worktreePath)) {
+		throw new Error(`Matrix sub-lane worktree already exists: ${worktreePath}`);
+	}
+	fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
+	gitExec(projectRoot, ["worktree", "add", "-b", branch, worktreePath, baseRef]);
+	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
+	return { worktreePath, branch };
+}
+
+/**
+ * Remove a matrix sub-lane worktree and its branch. Idempotent.
+ *
+ * @param {string} projectRoot
+ * @param {string} worktreePath
+ * @param {string} [branch]
+ */
+export function removeMatrixSubLaneWorktree(projectRoot, worktreePath, branch) {
+	if (worktreePath && fs.existsSync(worktreePath)) {
+		try {
+			gitExec(projectRoot, ["worktree", "remove", "--force", worktreePath], {
+				throwOnError: false,
+			});
+		} catch {
+			fs.rmSync(worktreePath, { recursive: true, force: true, maxRetries: 3 });
+		}
+	}
+	if (branch) {
+		gitExec(projectRoot, ["branch", "-D", branch], { throwOnError: false });
+	}
+}
+
+/**
+ * Run a shell command in a directory, resolving with exit code and combined output.
+ * Uses async spawn so concurrent rows genuinely overlap (required for maxParallel).
+ *
+ * @param {string} cwd
+ * @param {string} command
+ * @returns {Promise<{ exitCode: number, output: string }>}
+ */
+export function runShellInDir(cwd, command) {
+	return new Promise((resolve) => {
+		const child = spawn("/bin/sh", ["-c", command], {
+			cwd,
+			env: process.env,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		let output = "";
+		const append = (chunk) => {
+			output += chunk.toString();
+		};
+		child.stdout?.on("data", append);
+		child.stderr?.on("data", append);
+		child.on("error", (err) => {
+			resolve({ exitCode: 1, output: output + String(err) });
+		});
+		child.on("close", (code) => {
+			resolve({ exitCode: code ?? 1, output });
+		});
+	});
+}
+
+/**
+ * Generic concurrency-limited map. Runs `workerFn` over `items` with at most
+ * `limit` in flight. Returns per-index results and the peak concurrency observed.
+ * A worker that throws yields an Error in its result slot (does not abort siblings).
+ *
+ * @template T, R
+ * @param {T[]} items
+ * @param {number} limit
+ * @param {(item: T, index: number) => Promise<R>} workerFn
+ * @returns {Promise<{ results: R[], peakConcurrency: number }>}
+ */
+export async function runConcurrent(items, limit, workerFn) {
+	const effectiveLimit = Math.max(1, Math.floor(Number(limit) || 1));
+	/** @type {R[]} */
+	const results = new Array(items.length);
+	let cursor = 0;
+	let active = 0;
+	let peak = 0;
+
+	async function runOne() {
+		while (cursor < items.length) {
+			const index = cursor;
+			cursor += 1;
+			active += 1;
+			if (active > peak) peak = active;
+			try {
+				results[index] = await workerFn(items[index], index);
+			} catch (err) {
+				results[index] = /** @type {R} */ (err);
+			} finally {
+				active -= 1;
+			}
+		}
+	}
+
+	const runnerCount = Math.min(effectiveLimit, items.length);
+	await Promise.all(Array.from({ length: runnerCount }, () => runOne()));
+	return { results, peakConcurrency: peak };
+}
+
+/**
+ * Substitute `{matrix.<column>}` placeholders in a command string for a row.
+ * Returns the original command when no row is supplied (defensive).
+ *
+ * @param {string} command
+ * @param {Record<string,string>} rowValues
+ * @returns {string}
+ */
+export function substituteRowCommand(command, rowValues) {
+	if (!rowValues || Object.keys(rowValues).length === 0) return command;
+	return substituteMatrixVariables(command, rowValues);
+}
+
+/**
+ * Derive the aggregate outcome for a parent matrix task from its per-row results.
+ *
+ * @param {Array<{ rowId: string, ok: boolean }>} rowResults
+ * @returns {{ ok: boolean, failedRowIds: string[] }}
+ */
+export function aggregateMatrixOutcomes(rowResults) {
+	const failedRowIds = rowResults
+		.filter((row) => row && row.ok === false)
+		.map((row) => row.rowId)
+		.filter(Boolean);
+	return { ok: failedRowIds.length === 0, failedRowIds };
+}
+
+/**
+ * Record a matrix lifecycle journal event. Thin wrapper so callers stay terse
+ * and the `matrix.*` event types are centralized.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} type
+ * @param {Record<string, unknown>} payload
+ */
+export function recordMatrixEvent(projectRoot, batchId, type, payload) {
+	return appendJournalEvent(projectRoot, batchId, type, payload);
+}
+
+/**
+ * Test whether a batch worktree dir name is a matrix sub-lane (not a plain lane).
+ * Plain lanes are exactly `lane-<n>`; sub-lanes are `lane-<n>-<slug>-<slug>`.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function isMatrixSubLaneWorktreeDir(name) {
+	return /^lane-\d+-.+-.+$/.test(name);
+}
+
+/**
+ * Remove every matrix sub-lane worktree for a batch (defensive cleanup on batch
+ * failure/abort). Plain lane worktrees are left to `removeLaneWorktrees`.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+export function removeAllMatrixSubLaneWorktrees(projectRoot, batchId) {
+	const dir = batchWorktreeDir(projectRoot, batchId);
+	if (!fs.existsSync(dir)) return;
+	for (const entry of fs.readdirSync(dir)) {
+		if (!isMatrixSubLaneWorktreeDir(entry)) continue;
+		const wtPath = path.join(dir, entry);
+		try {
+			gitExec(projectRoot, ["worktree", "remove", "--force", wtPath], {
+				throwOnError: false,
+			});
+		} catch {
+			fs.rmSync(wtPath, { recursive: true, force: true, maxRetries: 3 });
+		}
+	}
+}

@@ -14,13 +14,45 @@ import {
 	sanitizeGitignoredArtifactsBeforeLaneCommit,
 } from "./lane-dirty-check.mjs";
 import { gitExec } from "./git-exec.mjs";
-import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
+import { substituteMatrixVariables } from "../planner/matrix.mjs";
 import {
 	hasReleaseCriticalContract,
 	shouldEnforceStubContractAtLaneCommit,
 	verifyStubFileScopeMustChange,
 } from "./contract-verify.mjs";
 import { DEFAULT_WORKTREE_SETUP_IGNORE_PATHS } from "../config/spine-config-load.mjs";
+
+/**
+ * Expand `{matrix.<column>}` fileScopeMustChange patterns across every matrix row
+ * so the stub file-scope check matches concrete per-row output paths. Non-matrix
+ * patterns (and non-matrix tasks) pass through unchanged.
+ *
+ * @param {string[]} patterns
+ * @param {Array<Record<string, string>>} matrixRows
+ * @returns {string[]}
+ */
+export function expandMatrixFileScopePatterns(patterns, matrixRows) {
+	if (!Array.isArray(patterns) || patterns.length === 0) return patterns;
+	if (!Array.isArray(matrixRows) || matrixRows.length === 0) return patterns;
+	/** @type {Set<string>} */
+	const expanded = new Set();
+	for (const pattern of patterns) {
+		let anySubstituted = false;
+		if (typeof pattern === "string" && pattern.includes("{matrix.")) {
+			for (const row of matrixRows) {
+				try {
+					expanded.add(substituteMatrixVariables(pattern, row));
+					anySubstituted = true;
+				} catch {
+					// Unknown column reference — fall through to keep the original pattern.
+				}
+			}
+		}
+		if (!anySubstituted) expanded.add(pattern);
+	}
+	return [...expanded];
+}
 
 /**
  * @param {string} worktreePath
@@ -244,13 +276,31 @@ export function commitLaneWorktree({
 
 		if (shouldEnforceStubContractAtLaneCommit(donePath)) {
 			const promptPath = path.join(taskFolder, "PROMPT.md");
-			const parsedContract = fs.existsSync(promptPath)
-				? parseContract(fs.readFileSync(promptPath, "utf-8"))
+			const promptText = fs.existsSync(promptPath)
+				? fs.readFileSync(promptPath, "utf-8")
+				: "";
+			const parsedContract = promptText
+				? parseContract(promptText)
 				: { fileScopeMustChange: [] };
 			if (hasReleaseCriticalContract(parsedContract)) {
+				// Matrix tasks carry `{matrix.<column>}` placeholders in fileScopeMustChange.
+				// Expand them across every matrix row so the stub check matches the
+				// concrete per-row output paths the rows actually produced.
+				const prompt = promptText ? parsePrompt(promptText) : null;
+				const matrixRows = Array.isArray(prompt?.matrix) ? prompt.matrix : [];
+				const effectiveContract =
+					matrixRows.length > 0
+						? {
+								...parsedContract,
+								fileScopeMustChange: expandMatrixFileScopePatterns(
+									parsedContract.fileScopeMustChange,
+									matrixRows,
+								),
+						  }
+						: parsedContract;
 				const scopeCheck = verifyStubFileScopeMustChange(
 					worktreePath,
-					parsedContract,
+					effectiveContract,
 					baseBranch,
 					stageCandidatePaths,
 				);
