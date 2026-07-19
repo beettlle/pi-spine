@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -27,10 +28,13 @@ import {
 	resolveStaticAsset,
 } from "../../src/dashboard/server.mjs";
 import {
+	buildDashboardSnapshot,
 	buildLaneRecentEvents,
 	buildLaneRows,
+	enrichLaneRowsWithRunningTaskTitle,
 	lanesHaveActiveTasks,
 	resolveLaneWorkerLog,
+	resolveRunningTaskTitles,
 	resolveTailActivityFromJournal,
 	resolveTailActivityLabel,
 } from "../../src/dashboard/snapshot.mjs";
@@ -48,6 +52,15 @@ const THROUGHPUT_BASE_TS = Date.parse("2026-06-20T12:00:00.000Z");
 
 function loadBatchStateFixture(name) {
 	return JSON.parse(fs.readFileSync(path.join(BATCH_STATE_FIXTURES, name), "utf-8"));
+}
+
+function writeSpineBatchState(projectRoot, fixture) {
+	fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+	fs.writeFileSync(
+		path.join(projectRoot, ".spine", "batch-state.json"),
+		JSON.stringify(fixture, null, 2),
+		"utf-8",
+	);
 }
 
 function journalForMultiLaneThroughputFixture() {
@@ -936,4 +949,119 @@ test("dashboard server HTML includes journal lane filter", async () => {
 		await new Promise((resolve) => server.close(resolve));
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("snapshot payload attaches running task title parsed from PROMPT.md (#214)", async () => {
+	const projectRoot = await initGitRepo("spine-dash-title-");
+	try {
+		const base = loadBatchStateFixture("running-batch.json");
+		const fixture = {
+			...base,
+			currentWaveIndex: 1,
+			totalWaves: 2,
+			wavePlan: [["TP-001"], ["TP-002", "TP-003"]],
+			lanes: [
+				{
+					laneNumber: 1,
+					laneId: "lane-1",
+					worktreePath: path.join(projectRoot, ".worktrees", "spine-test", "lane-1"),
+					branch: `task/spine-lane-1-${base.batchId}`,
+					taskIds: ["TP-001", "TP-002"],
+					lastHeartbeatAt: Date.now(),
+				},
+				{
+					laneNumber: 2,
+					laneId: "lane-2",
+					worktreePath: path.join(projectRoot, ".worktrees", "spine-test", "lane-2"),
+					branch: `task/spine-lane-2-${base.batchId}`,
+					taskIds: ["TP-003"],
+					lastHeartbeatAt: Date.now(),
+				},
+			],
+			tasks: base.tasks.map((task, index) => ({
+				...task,
+				laneNumber: index === 2 ? 2 : 1,
+			})),
+		};
+		writeSpineBatchState(projectRoot, fixture);
+
+		// PROMPT.md for the running task TP-002 carries the title (PRD §13.4 em dash).
+		const promptDir = path.join(projectRoot, "spine-tasks", "TP-002-beta");
+		fs.mkdirSync(promptDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(promptDir, "PROMPT.md"),
+			"# Task: TP-002 — Show running task title in dashboard\n\n## Mission\nRender it.\n",
+			"utf-8",
+		);
+
+		const snapshot = buildDashboardSnapshot(projectRoot);
+		const lane1 = snapshot.lanes.find((lane) => lane.laneId === "lane-1");
+		assert.equal(lane1?.runningTaskId, "TP-002");
+		assert.equal(lane1?.runningTaskTitle, "Show running task title in dashboard");
+		// Lane without a resolvable title degrades gracefully to null.
+		const lane2 = snapshot.lanes.find((lane) => lane.laneId === "lane-2");
+		assert.equal(lane2?.runningTaskTitle, null);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("resolveRunningTaskTitles degrades to null when PROMPT.md is unresolvable", () => {
+	// Missing tasks root / missing folder / unparseable all yield null, never throw.
+	const titles = resolveRunningTaskTitles("/nonexistent-sp665-root", "spine-tasks", [
+		{ taskId: "SP-999", taskFolder: "SP-999-missing" },
+	]);
+	assert.equal(titles.get("SP-999"), null);
+	// taskFolder null against a missing tasks root exercises the readdir catch path.
+	const scanned = resolveRunningTaskTitles("/nonexistent-sp665-root", "spine-tasks", [
+		{ taskId: "SP-000", taskFolder: null },
+	]);
+	assert.equal(scanned.get("SP-000"), null);
+	assert.equal(resolveRunningTaskTitles("/tmp", null, [{ taskId: "X-1" }]).size, 0);
+
+	const lanes = enrichLaneRowsWithRunningTaskTitle(
+		[
+			{ laneId: "lane-1", runningTaskId: "SP-999" },
+			{ laneId: "lane-2", runningTaskId: null },
+		],
+		titles,
+	);
+	assert.equal(lanes[0].runningTaskTitle, null);
+	assert.equal(lanes[1].runningTaskTitle, null);
+});
+
+test("resolveRunningTaskTitles scans tasks root when batch state omits taskFolder", () => {
+	const tasksRoot = fs.mkdtempSync(path.join(os.tmpdir(), "sp665-scan-"));
+	try {
+		const folder = path.join(tasksRoot, "SP-424-scan-fallback");
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(
+			path.join(folder, "PROMPT.md"),
+			"# Task: SP-424 — Title resolved via directory scan\n\n## Mission\nScan.\n",
+			"utf-8",
+		);
+		// taskFolder null triggers the `${taskId}-*` fallback scan.
+		const titles = resolveRunningTaskTitles(path.dirname(tasksRoot), path.basename(tasksRoot), [
+			{ taskId: "SP-424", taskFolder: null },
+		]);
+		assert.equal(titles.get("SP-424"), "Title resolved via directory scan");
+	} finally {
+		fs.rmSync(tasksRoot, { recursive: true, force: true });
+	}
+});
+
+test("dashboard.js running cell renders task id and title with em dash", () => {
+	const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.js"), "utf-8");
+	assert.match(dashboardJs, /function formatRunningCell\(taskId, title\)/);
+	assert.match(dashboardJs, /`▶ \$\{taskId\} — \$\{title\}`/);
+	assert.match(dashboardJs, /function runningCellAriaLabel\(taskId, title\)/);
+	assert.match(dashboardJs, /Running task \$\{taskId\} — \$\{title\}/);
+	assert.match(dashboardJs, /runningTitleById/);
+	assert.match(dashboardJs, /rawLane\.runningTaskTitle/);
+});
+
+test("dashboard.css wraps long running-cell titles instead of overflowing", () => {
+	const dashboardCss = fs.readFileSync(path.join(PUBLIC_DIR, "dashboard.css"), "utf-8");
+	assert.match(dashboardCss, /td\.col-running/);
+	assert.match(dashboardCss, /overflow-wrap/);
 });

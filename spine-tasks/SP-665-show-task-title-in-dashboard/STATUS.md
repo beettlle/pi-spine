@@ -1,15 +1,15 @@
 ### Step 0: Dashboard Snapshot Payload
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Include title in snapshot payload.
+- [x] Include title in snapshot payload.
 
 ### Step 1: UI updates
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update `src/dashboard/public/dashboard.js`.
+- [x] Update `src/dashboard/public/dashboard.js`.
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Tests pass
-- [ ] Coverage ≥ 77%
+- [x] Tests pass
+- [x] Coverage ≥ 77%

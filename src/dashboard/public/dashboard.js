@@ -161,10 +161,17 @@ function renderWaves(waves) {
 	}
 }
 
-/** @param {string|null|undefined} taskId */
-function formatRunningCell(taskId) {
+/**
+ * Running cell text. Shows the task title alongside the id when the snapshot
+ * payload resolved one (PRD §16, #214); falls back to the id-only form when the
+ * title is unavailable so the cell never goes blank.
+ *
+ * @param {string|null|undefined} taskId
+ * @param {string|null|undefined} title
+ */
+function formatRunningCell(taskId, title) {
 	if (!taskId) return "—";
-	return `▶ ${taskId}`;
+	return title ? `▶ ${taskId} — ${title}` : `▶ ${taskId}`;
 }
 
 /** @param {string[]} taskIds */
@@ -173,10 +180,16 @@ function formatQueuedCell(taskIds) {
 	return taskIds.map((id) => `○ ${id}`).join(", ");
 }
 
-/** @param {string|null|undefined} taskId */
-function runningCellAriaLabel(taskId) {
+/**
+ * Accessible label for the running cell. Mirrors the visible text so screen
+ * readers announce the task title, not just the id.
+ *
+ * @param {string|null|undefined} taskId
+ * @param {string|null|undefined} title
+ */
+function runningCellAriaLabel(taskId, title) {
 	if (!taskId) return "No running task";
-	return `Running task ${taskId}`;
+	return title ? `Running task ${taskId} — ${title}` : `Running task ${taskId}`;
 }
 
 /** @param {string[]} taskIds */
@@ -218,6 +231,15 @@ function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 		tbody.appendChild(tr);
 		return;
 	}
+	// The lane-table VM projection (view.mjs) does not carry the title, so look it
+	// up from the raw snapshot payload where Step 0 attaches `runningTaskTitle`.
+	/** @type {Map<string, string>} */
+	const runningTitleById = new Map();
+	for (const rawLane of lastSnapshot?.lanes ?? []) {
+		if (rawLane?.runningTaskId != null && rawLane.runningTaskTitle) {
+			runningTitleById.set(String(rawLane.runningTaskId), rawLane.runningTaskTitle);
+		}
+	}
 	for (const lane of lanes) {
 		const tr = document.createElement("tr");
 		tr.className = "lane-row";
@@ -253,7 +275,11 @@ function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 		} else {
 			statusLabel = lane.status;
 		}
-		const runningText = formatRunningCell(lane.runningTaskId);
+		const runningTitle =
+			lane.runningTaskId != null
+				? runningTitleById.get(String(lane.runningTaskId))
+				: undefined;
+		const runningText = formatRunningCell(lane.runningTaskId, runningTitle);
 		const queuedText = formatQueuedCell(lane.queuedTaskIds ?? []);
 		const cellSpecs = [
 			{ text: lane.laneId, className: "", ariaLabel: null },
@@ -262,7 +288,7 @@ function renderLanes(lanes, laneTableSummary, tailActivity, expandedLaneId) {
 			{
 				text: runningText,
 				className: "lane-task-running",
-				ariaLabel: runningCellAriaLabel(lane.runningTaskId),
+				ariaLabel: runningCellAriaLabel(lane.runningTaskId, runningTitle),
 			},
 			{
 				text: queuedText,
