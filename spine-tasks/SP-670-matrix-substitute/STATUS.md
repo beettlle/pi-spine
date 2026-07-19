@@ -1,6 +1,6 @@
 # SP-670: Substitute matrix variables in contract and steps — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-19
 **Review Level:** 1
@@ -38,12 +38,13 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `npm run typecheck` passes
-- [ ] Unit tests for substitution helper pass
-- [ ] Integration tests for contract substitution pass
-- [ ] All failures fixed
+- [x] `npm run typecheck` passes
+- [x] Unit tests for substitution helper pass (`tests/planner/matrix-subst.test.mjs`, 12 tests)
+- [x] Integration tests for contract substitution pass (`tests/batch/contract-matrix-subst.test.mjs`, 10 tests)
+- [x] All failures fixed (scoped verifyContract tests to file-scope substitution)
+- [x] Changed-code line coverage 100% (new functions fully covered); lint `--max-warnings 0` clean; no regression in 35 existing matrix/contract tests
 
 ---
 
