@@ -30,6 +30,7 @@ Closes #219 — Before running contract verification, automatically stage any un
 ## File Scope
 
 - `src/batch/contract-verify.mjs`
+- `src/batch/contract-exec.mjs`
 - `src/batch/lane-dirty-check-git.mjs`
 - `tests/batch/contract-untracked-files.test.mjs`
 
@@ -40,6 +41,8 @@ Closes #219 — Before running contract verification, automatically stage any un
 | testCommand | `npm run typecheck && node --test tests/batch/contract-untracked-files.test.mjs` |
 | fileScopeMustChange | `src/batch/contract-verify.mjs`, `src/batch/lane-dirty-check-git.mjs`, `tests/batch/contract-untracked-files.test.mjs` |
 | minLineCoverage | 77 |
+
+> **Retry note (batch 20260719T204218):** Prior attempt left `tests/batch/contract-untracked-files.test.mjs` **untracked** (`??`), so `fileScopeMustChange` failed. Before `.DONE`, `git add` **and commit** that test file (and any other deliverables). Auto-stage alone is not enough if the verify baseline is `main...HEAD`.
 
 ## Steps
 
@@ -70,8 +73,9 @@ Closes #219 — Before running contract verification, automatically stage any un
 ### Step 3: Testing & Verification
 
 - [ ] Run `npm run typecheck`
-- [ ] Add regression test that creates a new file matching `fileScopeMustChange`, leaves it untracked, and asserts contract verification succeeds
+- [ ] Add regression test at `tests/batch/contract-untracked-files.test.mjs` that creates a new file matching `fileScopeMustChange`, leaves it untracked, and asserts contract verification succeeds
 - [ ] Add test that an untracked file **outside** `fileScopeMustChange` is **not** staged and does not affect verification
+- [ ] `git add` and **commit** `tests/batch/contract-untracked-files.test.mjs` so it appears in `main...HEAD` (required for `fileScopeMustChange`)
 - [ ] Run `node --test tests/batch/contract-untracked-files.test.mjs`
 - [ ] Fix all failures
 
