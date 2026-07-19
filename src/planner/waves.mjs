@@ -4,6 +4,7 @@
  */
 
 import { fileScopesOverlap, findWaveFileScopeOverlaps } from './file-scope.mjs';
+import { deriveMatrixRowId } from './matrix.mjs';
 
 /**
  * @param {string[]} taskScope
@@ -27,9 +28,35 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 	const planned = [];
 
 	for (let waveIndex = 0; waveIndex < waves.length; waveIndex++) {
-		const waveTaskIds = waves[waveIndex];
+		const rawWaveTaskIds = waves[waveIndex];
+		const waveTaskIds = [];
 
-		/** @type {{ taskScopes: string[][] }} */
+		for (const taskId of rawWaveTaskIds) {
+			const task = tasksById[taskId];
+			if (!task) {
+				throw new Error(`Missing task packet for ${taskId} during lane assignment`);
+			}
+
+			if (task.matrix && Array.isArray(task.matrix) && task.matrix.length > 0) {
+				for (const row of task.matrix) {
+					const rowId = deriveMatrixRowId(row, task.matrixColumns || []);
+					const subTaskId = `${taskId}[${rowId}]`;
+					waveTaskIds.push(subTaskId);
+					if (!tasksById[subTaskId]) {
+						tasksById[subTaskId] = {
+							...task,
+							taskId: subTaskId,
+							matrixRow: row,
+							parentTaskId: taskId
+						};
+					}
+				}
+			} else {
+				waveTaskIds.push(taskId);
+			}
+		}
+
+		/** @type {{ taskScopes: string[][], taskIds: string[] }} */
 		const virtualLanes = [];
 
 		/** @type {Record<string, { virtualLane: number, tick: number, laneInTick: number }>} */
@@ -39,18 +66,22 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 
 		for (const taskId of waveTaskIds) {
 			const task = tasksById[taskId];
-			if (!task) {
-				throw new Error(`Missing task packet for ${taskId} during lane assignment`);
-			}
-
+			
 			const taskScope = Array.isArray(task.fileScope) ? task.fileScope : [];
 
 			let placed = false;
 			for (let i = 0; i < virtualLanes.length; i++) {
 				const lane = virtualLanes[i];
-				if (taskOverlapsLane(taskScope, lane.taskScopes)) {
+				
+				const hasSameParent = lane.taskIds.some(id => {
+					const other = tasksById[id];
+					return other && other.parentTaskId && other.parentTaskId === task.parentTaskId;
+				});
+
+				if (!hasSameParent && taskOverlapsLane(taskScope, lane.taskScopes)) {
 					virtualLaneForTask[taskId] = i;
 					lane.taskScopes.push(taskScope);
+					lane.taskIds.push(taskId);
 					placed = true;
 					break;
 				}
@@ -58,7 +89,7 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 
 			if (!placed) {
 				const i = virtualLanes.length;
-				virtualLanes.push({ taskScopes: [taskScope] });
+				virtualLanes.push({ taskScopes: [taskScope], taskIds: [taskId] });
 				virtualLaneForTask[taskId] = i;
 			}
 		}

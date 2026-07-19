@@ -99,12 +99,12 @@ Closes #217 — Allow `PROMPT.md` to contain a `## Matrix` table that defines a 
 
 ## Completion Criteria
 
-- [ ] `## Matrix` table is parsed into row objects
-- [ ] Tasks with a matrix are expanded into virtual sub-lanes in `spine plan`
-- [ ] Non-matrix tasks are unchanged
-- [ ] Planner respects maxParallel and serial dependencies
-- [ ] All tests pass and coverage is ≥77% on changed code
-- [ ] STATUS.md updated
+- [x] `## Matrix` table is parsed into row objects
+- [x] Tasks with a matrix are expanded into virtual sub-lanes in `spine plan`
+- [x] Non-matrix tasks are unchanged
+- [x] Planner respects maxParallel and serial dependencies
+- [x] All tests pass and coverage is ≥77% on changed code
+- [x] STATUS.md updated
 
 ## Git Commit Convention
 

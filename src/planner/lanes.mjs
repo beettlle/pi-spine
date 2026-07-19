@@ -2,6 +2,8 @@
  * FR-SCHED-03/04: greedy lane assignment subject to file-scope disjointness.
  */
 
+import { deriveMatrixRowId } from './matrix.mjs';
+
 function normalizeFileScopePath(p) {
 	let s = String(p ?? '').trim();
 	if (!s) return null;
@@ -40,9 +42,36 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 	const planned = [];
 
 	for (let waveIndex = 0; waveIndex < waves.length; waveIndex++) {
-		const waveTaskIds = waves[waveIndex];
+		const rawWaveTaskIds = waves[waveIndex];
+		const waveTaskIds = [];
 
-		/** @type {{ lanePaths: string[] }} */
+		// Expand matrix tasks
+		for (const taskId of rawWaveTaskIds) {
+			const task = tasksById[taskId];
+			if (!task) {
+				throw new Error(`Missing task packet for ${taskId} during lane assignment`);
+			}
+
+			if (task.matrix && Array.isArray(task.matrix) && task.matrix.length > 0) {
+				for (const row of task.matrix) {
+					const rowId = deriveMatrixRowId(row, task.matrixColumns || []);
+					const subTaskId = `${taskId}[${rowId}]`;
+					waveTaskIds.push(subTaskId);
+					if (!tasksById[subTaskId]) {
+						tasksById[subTaskId] = {
+							...task,
+							taskId: subTaskId,
+							matrixRow: row,
+							parentTaskId: taskId
+						};
+					}
+				}
+			} else {
+				waveTaskIds.push(taskId);
+			}
+		}
+
+		/** @type {{ lanePaths: string[], taskIds: string[] }} */
 		const virtualLanes = [];
 
 		/** @type {Record<string, { virtualLane: number, tick: number, laneInTick: number }>} */
@@ -53,10 +82,7 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 		// Greedy packing into virtual lanes.
 		for (const taskId of waveTaskIds) {
 			const task = tasksById[taskId];
-			if (!task) {
-				throw new Error(`Missing task packet for ${taskId} during lane assignment`);
-			}
-
+			
 			const taskPaths = (task.fileScope ?? [])
 				.map(normalizeFileScopePath)
 				.filter(Boolean);
@@ -64,10 +90,18 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 			let placed = false;
 			for (let i = 0; i < virtualLanes.length; i++) {
 				const lane = virtualLanes[i];
-				if (taskOverlapsLane(taskPaths, lane.lanePaths)) {
+				
+				// Matrix sub-tasks of the same parent task do not conflict with each other
+				const hasSameParent = lane.taskIds.some(id => {
+					const other = tasksById[id];
+					return other && other.parentTaskId && other.parentTaskId === task.parentTaskId;
+				});
+
+				if (!hasSameParent && taskOverlapsLane(taskPaths, lane.lanePaths)) {
 					virtualLaneForTask[taskId] = i;
 					// Append to lane paths so future tasks are checked against everything already assigned.
 					lane.lanePaths.push(...taskPaths);
+					lane.taskIds.push(taskId);
 					placed = true;
 					break;
 				}
@@ -75,7 +109,7 @@ export function assignLanesToWaves({ waves, tasksById, maxParallel, queueExcess 
 
 			if (!placed) {
 				const i = virtualLanes.length;
-				virtualLanes.push({ lanePaths: [...taskPaths] });
+				virtualLanes.push({ lanePaths: [...taskPaths], taskIds: [taskId] });
 				virtualLaneForTask[taskId] = i;
 			}
 		}
