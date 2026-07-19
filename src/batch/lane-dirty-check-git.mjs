@@ -8,6 +8,8 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
 import { filterPorcelain } from "./lane-commit.mjs";
 import { runWorktreeSetupHook } from "./worktree.mjs";
+import { execFileSync } from "node:child_process";
+import { matchesContractPattern } from "./contract-parse.mjs";
 
 /**
  * Path segments that identify generated coverage report artifacts.
@@ -295,4 +297,65 @@ export function filterOutOfScopeCoveragePorcelain(porcelain, fileScopePaths, ign
 		kept.push(line);
 	}
 	return kept.length === 0 ? "" : kept.join("\n");
+}
+
+/**
+ * Stages untracked files matching fileScopeMustChange patterns so workers are not penalized
+ * for forgetting to `git add` new files before contract verification (SP-668 / #219).
+ *
+ * @param {string} worktreePath
+ * @param {string[]} fileScopeMustChange
+ * @returns {{ stagedCount: number, error?: string }}
+ */
+export function stageUntrackedScopeFiles(worktreePath, fileScopeMustChange = []) {
+	if (!Array.isArray(fileScopeMustChange) || fileScopeMustChange.length === 0) {
+		return { stagedCount: 0 };
+	}
+
+	let porcelain;
+	try {
+		porcelain = execFileSync("git", ["status", "--porcelain", "-uall"], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"]
+		});
+	} catch (error) {
+		return { stagedCount: 0, error: `git status failed: ${error.message}` };
+	}
+
+	const toStage = [];
+	for (const line of porcelain.split("\n")) {
+		if (!line.trim()) continue;
+		const status = line.slice(0, 2);
+		if (status !== "??") continue;
+
+		let filePath = extractPorcelainPath(line);
+		if (!filePath) continue;
+		if (filePath.startsWith('"') && filePath.endsWith('"')) {
+			filePath = filePath.slice(1, -1);
+		}
+
+		const matched = fileScopeMustChange.some((pattern) =>
+			pattern.endsWith("/") ? filePath.startsWith(pattern) : matchesContractPattern(filePath, pattern)
+		);
+
+		if (matched) {
+			toStage.push(filePath);
+		}
+	}
+
+	if (toStage.length === 0) {
+		return { stagedCount: 0 };
+	}
+
+	try {
+		execFileSync("git", ["add", "--", ...toStage], {
+			cwd: worktreePath,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"]
+		});
+		return { stagedCount: toStage.length };
+	} catch (error) {
+		return { stagedCount: 0, error: `git add failed: ${error.message}` };
+	}
 }
