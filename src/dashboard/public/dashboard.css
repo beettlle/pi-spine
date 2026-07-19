@@ -78,6 +78,9 @@ body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); 
 .table-wrap { overflow-x: auto; }
 .lane-task-running { color: var(--running); font-weight: 600; }
 .lane-task-queued { color: var(--text); }
+/* Running cell now carries the task title (#214): cap its width and let long
+   titles wrap rather than stretching the lane table off-screen. */
+.lane-table td.col-running { max-width: 22rem; overflow-wrap: anywhere; }
 @media (max-width: 720px) {
   .lane-table th.col-running,
   .lane-table th.col-queued,
