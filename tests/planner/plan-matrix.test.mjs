@@ -4,7 +4,7 @@ import { assignLanesToWaves as assignLanesToWavesLanes } from '../../src/planner
 import { assignLanesToWaves as assignLanesToWavesWaves } from '../../src/planner/waves.mjs';
 
 function runPlannerTest(assignLanes) {
-	test(`matrix expansion in planner (${assignLanes.name})`, t => {
+	test(`matrix expansion in planner (${assignLanes.name})`, () => {
 		const tasksById = {
 			'SP-100': {
 				taskId: 'SP-100',
@@ -44,7 +44,7 @@ function runPlannerTest(assignLanes) {
 		assert.ok(result[0].virtualLaneCount >= 2);
 	});
 
-	test(`non-matrix tasks are unchanged (${assignLanes.name})`, t => {
+	test(`non-matrix tasks are unchanged (${assignLanes.name})`, () => {
 		const tasksById = {
 			'SP-100': { taskId: 'SP-100', fileScope: ['src/a.js'] }
 		};

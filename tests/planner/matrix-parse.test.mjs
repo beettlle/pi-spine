@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert';
 import { parseMatrixTable, deriveMatrixRowId } from '../../src/planner/matrix.mjs';
 
-test('parseMatrixTable: valid table', t => {
+test('parseMatrixTable: valid table', () => {
 	const md = `
 | run_id | lang | env     |
 |--------|------|---------|
@@ -20,13 +20,13 @@ test('parseMatrixTable: valid table', t => {
 	assert.strictEqual(result.rows[1]['env'], 'native');
 });
 
-test('parseMatrixTable: empty or malformed table', t => {
+test('parseMatrixTable: empty or malformed table', () => {
 	assert.deepStrictEqual(parseMatrixTable(''), { rows: [], columns: [] });
 	assert.deepStrictEqual(parseMatrixTable('no table here'), { rows: [], columns: [] });
 	assert.deepStrictEqual(parseMatrixTable('| single line |\n'), { rows: [], columns: [] });
 });
 
-test('parseMatrixTable: handles empty cells', t => {
+test('parseMatrixTable: handles empty cells', () => {
 	const md = `
 | run_id | val |
 |--------|-----|
@@ -39,12 +39,12 @@ test('parseMatrixTable: handles empty cells', t => {
 	assert.strictEqual(result.rows[1]['val'], 'foo');
 });
 
-test('deriveMatrixRowId: prefers run_id', t => {
+test('deriveMatrixRowId: prefers run_id', () => {
 	const id = deriveMatrixRowId({ run_id: 'test-1', other: 'foo' }, ['run_id', 'other']);
 	assert.strictEqual(id, 'test-1');
 });
 
-test('deriveMatrixRowId: fallbacks to values', t => {
+test('deriveMatrixRowId: fallbacks to values', () => {
 	const id = deriveMatrixRowId({ a: 'foo', b: 'bar-baz' }, ['a', 'b']);
 	assert.strictEqual(id, 'foo_bar-baz');
 });
