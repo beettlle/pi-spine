@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -12,6 +13,7 @@ import {
 	parseWaitArgs,
 	reconciliationMatchesUntil,
 	runSpineWait,
+	WAIT_SUPERSEDED_EXIT_CODE,
 } from "../../src/cli/wait.mjs";
 import { DEFAULT_WATCH_INTERVAL_SEC } from "../../src/cli/watch.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -272,4 +274,185 @@ test("spine help lists wait command", () => {
 	const result = runSpine(["help"]);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 	assert.match(result.stdout, /spine wait/);
+});
+
+// --- Batch-scoped wait (#215) --------------------------------------------------
+// When another operator session integrates/supersedes the batch a wait started on,
+// the wait must exit promptly with a distinct status and never report the newly
+// active batch's diagnosis (which would re-drive land/recovery prompts).
+
+function reconcileThatDrifts(firstResult, secondResult) {
+	let calls = 0;
+	return () => {
+		calls += 1;
+		return calls === 1 ? firstResult : secondResult;
+	};
+}
+
+test("runSpineWait exits superseded when the active batch id changes mid-wait (#215)", async () => {
+	const stderr = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		// Include needs_retry so that, without the batch-scoped guard, the new batch
+		// would falsely match and re-drive a recovery prompt.
+		untilDiagnoses: new Set(["completed", "needs_retry"]),
+		intervalSec: 1,
+		reconcileFn: reconcileThatDrifts(
+			{ diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" },
+			{ diagnosis: "needs_retry", batchId: "b2", headline: "b2 needs retry", suggestedCommand: "spine batch retry SP-9" },
+		),
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, WAIT_SUPERSEDED_EXIT_CODE);
+	assert.equal(result.matched, false);
+	assert.equal(result.superseded, true);
+	assert.equal(result.batchScope, "superseded");
+	// Output is strictly scoped to the batch we waited on — never the new one.
+	assert.equal(result.batchId, "b1");
+	assert.equal(result.activeBatchId, "b2");
+	assert.equal(result.diagnosis, null);
+	const human = stderr.join("");
+	assert.ok(human.includes("b1"));
+	assert.ok(human.toLowerCase().includes("superseded"));
+	assert.ok(!human.includes("needs_retry"));
+});
+
+test("runSpineWait exits archived when the batch state disappears mid-wait (#215)", async () => {
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 1,
+		reconcileFn: reconcileThatDrifts(
+			{ diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" },
+			{ diagnosis: null, batchId: null, macroPhase: "idle", headline: "No active batch", suggestedCommand: "spine preflight" },
+		),
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, WAIT_SUPERSEDED_EXIT_CODE);
+	assert.equal(result.batchScope, "archived");
+	assert.equal(result.batchId, "b1");
+	assert.equal(result.activeBatchId, null);
+	assert.equal(result.diagnosis, null);
+});
+
+test("runSpineWait --json snapshot is scoped to the original batch on supersede (#215)", async () => {
+	const stdout = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed", "needs_retry"]),
+		intervalSec: 1,
+		json: true,
+		nowFn: () => 4242,
+		reconcileFn: reconcileThatDrifts(
+			{ diagnosis: "running", batchId: "b1", headline: "b1", suggestedCommand: "spine status" },
+			{ diagnosis: "needs_retry", batchId: "b2", headline: "b2", suggestedCommand: "spine batch retry SP-9" },
+		),
+		sleepFn: async () => {},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, WAIT_SUPERSEDED_EXIT_CODE);
+	assert.equal(stdout.length, 1);
+	const snapshot = JSON.parse(stdout[0]);
+	assert.equal(snapshot.batchId, "b1");
+	assert.equal(snapshot.activeBatchId, "b2");
+	assert.equal(snapshot.batchScope, "superseded");
+	assert.equal(snapshot.diagnosis, null);
+	assert.equal(snapshot.observedAt, 4242);
+});
+
+test("runSpineWait does not flag supersede when the same batch changes diagnosis (#215)", async () => {
+	let calls = 0;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 1,
+		reconcileFn: () => {
+			calls += 1;
+			return {
+				diagnosis: calls < 2 ? "running" : "completed",
+				batchId: "b1",
+				headline: "b1",
+				suggestedCommand: "spine status",
+			};
+		},
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(result.batchId, "b1");
+	assert.equal(result.superseded, undefined);
+});
+
+test("runSpineWait reports the archived phase from the archived batch-state (#215)", async () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-wait-archive-"));
+	try {
+		fs.mkdirSync(path.join(tmp, ".spine", "runtime", "b1", "archive"), { recursive: true });
+		fs.writeFileSync(
+			path.join(tmp, ".spine", "runtime", "b1", "archive", "batch-state.json"),
+			JSON.stringify({ batchId: "b1", phase: "completed", endedAt: "2026-07-14T01:00:00Z" }),
+		);
+		const stdout = [];
+		const result = await runSpineWait({
+			projectRoot: tmp,
+			untilDiagnoses: new Set(["completed"]),
+			intervalSec: 1,
+			json: true,
+			nowFn: () => 1,
+			reconcileFn: reconcileThatDrifts(
+				{ diagnosis: "running", batchId: "b1", headline: "b1", suggestedCommand: "spine status" },
+				{ diagnosis: null, batchId: null, macroPhase: "idle", headline: "idle", suggestedCommand: "spine preflight" },
+			),
+			sleepFn: async () => {},
+			writeStdout: (text) => stdout.push(text),
+			writeStderr: () => {},
+		});
+
+		assert.equal(result.batchScope, "archived");
+		assert.equal(result.archivedPhase, "completed");
+		const snapshot = JSON.parse(stdout[0]);
+		assert.equal(snapshot.archivedPhase, "completed");
+		assert.equal(snapshot.phase, "completed");
+		assert.match(snapshot.headline, /completed/);
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("runSpineWait tolerates a corrupt archived batch-state (#215)", async () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-wait-corrupt-"));
+	try {
+		fs.mkdirSync(path.join(tmp, ".spine", "runtime", "b1", "archive"), { recursive: true });
+		fs.writeFileSync(
+			path.join(tmp, ".spine", "runtime", "b1", "archive", "batch-state.json"),
+			"{not valid json",
+		);
+		const result = await runSpineWait({
+			projectRoot: tmp,
+			untilDiagnoses: new Set(["completed"]),
+			intervalSec: 1,
+			reconcileFn: reconcileThatDrifts(
+				{ diagnosis: "running", batchId: "b1", headline: "b1", suggestedCommand: "spine status" },
+				{ diagnosis: null, batchId: null, macroPhase: "idle", headline: "idle", suggestedCommand: "spine preflight" },
+			),
+			sleepFn: async () => {},
+			writeStdout: () => {},
+			writeStderr: () => {},
+		});
+
+		assert.equal(result.batchScope, "archived");
+		assert.equal(result.archivedPhase, null);
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
 });
