@@ -1,9 +1,9 @@
 ### Step 0: Runbook documentation
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Add hybrid recipes section.
+- [x] Add hybrid recipes section.
 
 ### Step 1: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Ensure Markdown renders correctly.
+- [x] Ensure Markdown renders correctly. (158 code fences balanced; headings nested; only scoped file changed; `testCommand` `true` exit 0)

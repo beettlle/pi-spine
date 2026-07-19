@@ -420,6 +420,85 @@ spine rules select --role reviewer --review-type code --task SP-042
 
 **Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and the hook template copied by `spine init` to `scripts/spine-worktree-setup-flutter.sh` ([#80](https://github.com/beettlle/pi-spine/issues/80) / SP-459).
 
+### Hybrid model recipes (worker ≠ reviewer)
+
+Closes [#210](https://github.com/beettlle/pi-spine/issues/210). Hybrid setups run the worker and reviewer on **different models** so you trade cost vs. quality deliberately instead of paying one model everywhere. Every recipe below reuses the same two knobs already covered in [Agent model pins](#agent-model-pins-pi-inheritance-vs-spine-config) — `agents.worker.model` and `agents.reviewer.model` — plus optional per-review-type overrides. Set them once, then start batches normally; the worker subprocess and reviewer subprocess each receive their own `pi --model` (and `pi --thinking`).
+
+**Recipe selection:**
+
+| Goal | Worker | Reviewer | When to use |
+|------|--------|----------|-------------|
+| **Cost saver** | cheaper / faster | stronger | Routine backlog and large waves — the reviewer is your quality backstop |
+| **Quality first** | stronger | cheaper / faster | High-stakes refactors or novel code where review is mostly mechanical contract + convention checking |
+| **Strong final only** | cheaper / faster | cheap for plan/code, strong for final | Maximize review throughput while keeping the final gate rigorous |
+
+Use canonical pi model ids from `pi --list-models` (e.g. `cursor/auto`, `google/gemini-3.1-pro-preview`, `anthropic/claude-sonnet-4`). `spine doctor` fails on TUI display labels or unknown ids — see [Agent model pins](#agent-model-pins-pi-inheritance-vs-spine-config).
+
+#### Recipe 1 — Cheap worker, strong reviewer (cost saver)
+
+The worker does the bulk implementation on a fast, inexpensive model; a stronger model reviews every plan, code change, and the final contract. This is the most cost-effective hybrid — the reviewer catches what the cheaper worker misses.
+
+```bash
+# Worker: fast / cheap model for implementation
+spine settings set agents.worker.model cursor/auto
+# Reviewer: stronger model + high reasoning on every review pass (plan, code, final)
+spine settings set agents.reviewer.model google/gemini-3.1-pro-preview
+spine settings set agents.reviewer.thinking high
+
+spine doctor   # both pins must resolve to canonical ids before a real-pi batch
+```
+
+#### Recipe 2 — Strong worker, cheap reviewer (quality first)
+
+The strong model authors and self-checks the implementation; a cheaper model runs reviews as a mechanical contract + convention check. Use when implementation correctness is the priority and review rarely rejects on logic.
+
+```bash
+spine settings set agents.worker.model google/gemini-3.1-pro-preview
+spine settings set agents.worker.thinking high
+spine settings set agents.reviewer.model cursor/auto
+spine settings set agents.reviewer.thinking low
+
+spine doctor
+```
+
+#### Recipe 3 — Cheap plan/code review, strong final review
+
+Per-review-type overrides win over the top-level pin: `agents.reviewer.{plan,code,final}.model` is checked first, then `agents.reviewer.model` (`agent-model-resolve.mjs`). Keep plan and code review cheap and fast, but spend the strong model only on the **final** review — the last gate before integrate. This maximizes review throughput without weakening the final decision.
+
+```bash
+spine settings set agents.worker.model cursor/auto
+
+# Cheap, fast plan + code review
+spine settings set agents.reviewer.plan.model cursor/auto
+spine settings set agents.reviewer.code.model cursor/auto
+
+# Strong model + high reasoning only on the final gate
+spine settings set agents.reviewer.final.model google/gemini-3.1-pro-preview
+spine settings set agents.reviewer.final.thinking high
+
+spine doctor
+```
+
+Any unset `agents.reviewer.{plan|code|final}.model` falls back to `agents.reviewer.model`. Recipe 1 and Recipe 3 use the same engine path — Recipe 3 just narrows the strong model to the final review.
+
+#### Before every hybrid batch
+
+1. **Use canonical ids** — `pi --list-models` prints them; `spine doctor` fails on display labels. See [Agent model pins](#agent-model-pins-pi-inheritance-vs-spine-config).
+2. **Confirm the pins resolved** — run `spine doctor`; it probes `inherit` providers and warns on mismatched ids.
+3. **Scope `testCommand`** — cross-model reviewers spawn as fresh sessions, and an unscoped full-suite command is the most common `contract_failed` cause. See [Cross-model PROMPT authoring](#cross-model-prompt-authoring-issue-84) and [contract-template.md § Cross-model authoring](../../skills/create-spine-tasks/references/contract-template.md#cross-model-authoring-worker--reviewer) for the decision table.
+4. **Self-contained PROMPT** — quote acceptance criteria and "done means" in `## Mission`, `## Contract`, and step checkboxes. The reviewer does not inherit the worker's `referenceDocs` or execution rules.
+
+#### Inspecting what each role will run
+
+```bash
+spine settings show agents.worker.model
+spine settings show agents.reviewer.model
+spine settings show agents.reviewer.final.model   # empty → falls back to agents.reviewer.model
+
+# Preview the bounded rule subset a cross-model reviewer receives
+spine rules select --role reviewer --review-type final --task SP-042
+```
+
 ### Orchestrator process model ([#98](https://github.com/beettlle/pi-spine/issues/98))
 
 pi-spine is a **transparent orchestrator**: most CPU belongs to LLM workers (pi/Cursor), reviewers, and project harnesses (`testCommand`, `buildCommand`). Spine poll paths (reconcile, journal reads, dashboard SSE, attached milestone loops) should stay **idle-light** when lanes are not actively working.
