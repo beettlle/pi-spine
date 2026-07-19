@@ -1,0 +1,25 @@
+Task: SP-670 — Substitute matrix variables in contract and steps
+
+Status: COMPLETE
+Closes: #217
+
+Deliverables:
+- src/planner/matrix.mjs: substituteMatrixVariables(template, row) + applyMatrixRowToSteps(steps, row)
+- src/batch/contract-parse.mjs: applyMatrixRowToContract(parsedContract, row) (+ scalar/list helpers)
+- src/batch/contract-verify.mjs: re-export applyMatrixRowToContract; verifyContract honors optional config.matrixRow (additive, backward-compatible)
+- tests/planner/matrix-subst.test.mjs (12 tests)
+- tests/batch/contract-matrix-subst.test.mjs (10 tests)
+
+Verification:
+- npm run typecheck: clean
+- node --test tests/planner/matrix-subst.test.mjs: 12 pass
+- node --test tests/batch/contract-matrix-subst.test.mjs: 10 pass
+- eslint --max-warnings 0 on changed files: clean
+- changed-code line coverage: 100% (new functions fully covered)
+- no regression in 35 existing matrix/contract tests
+- detect_changes vs main: low risk, 6 files all within File Scope
+
+Notes:
+- parseContract (CRITICAL risk) left untouched; substitution is a post-parse step.
+- matrixRow does not yet flow planner->engine; live worker-context wiring is SP-671 (execution). verifyContract already honors config.matrixRow.
+- Substitution syntax decisions captured for SP-673 runbook in STATUS.md Notes.
