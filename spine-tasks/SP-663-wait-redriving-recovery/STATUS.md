@@ -10,10 +10,10 @@
 - [x] Update `tests/cli/wait.test.mjs` to simulate batch archiving under a wait.
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] `npm test` passes
-- [ ] `npm run coverage:check` ensures ≥77% line coverage
+- [x] `npm test` passes
+- [x] `npm run coverage:check` ensures ≥77% line coverage
 
 ## Discoveries
 
