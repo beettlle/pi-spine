@@ -1,7 +1,5 @@
 // @ts-check
-/**
- * pi-spine batch engine (Phase 2 single-lane, Phase 3 multi-lane + §17.4 merge policy).
- */
+/** pi-spine batch engine (Phase 2 single-lane, Phase 3 multi-lane + §17.4 merge policy). */
 
 import fs from "node:fs";
 import path from "node:path";
@@ -76,7 +74,6 @@ export {
 export { loadTaskFileScopePaths, mergeLaneToOrch } from "./engine-lanes.mjs";
 export { detectNestedWorkerContext } from "./batch-guards.mjs";
 
-/** Widened so terminal transitions can assign endedAt/lastError without casts. */
 /** @typedef {Omit<ReturnType<typeof createInitialBatchState>, "endedAt" | "lastError"> & { endedAt: number | null; lastError: string | null }} SpineBatchState */
 
 /**
