@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-07-13 (Phase 72 v2.8.0 implementation complete — SP-656–662; Next → SP-663; publish operator-gated)
 **Status:** Active
-**Next Task ID:** SP-663
+**Next Task ID:** SP-668
 
 ---
 
@@ -2065,6 +2065,16 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note (placeholder — not published):** v2.8.0 — Dogfood land: `.pi-smart-router` auto-clean + post-DONE orphan heal + diagnose honesty (#205), `graphify-out` regenerate-after-clean (#206), single resume owner (#207).
 
 **Phase 72 implementation complete (SP-656–662). Publish remains operator-gated.** Manifest: [`spine-tasks/_authoring/release-v2.8.0/manifest.md`](_authoring/release-v2.8.0/manifest.md). Post-mortem: [`docs/release/post-mortem-v2.7.0-batch-20260713T171709.md`](../docs/release/post-mortem-v2.7.0-batch-20260713T171709.md).
+
+### Phase 73 — v2.9.0 release
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-663 | Wait redriving recovery | Done | — |
+| SP-664 | Named agent model profiles | Done | — |
+| SP-665 | Show task title in dashboard | Done | — |
+| SP-666 | Runbook hybrid models | Done | SP-664 |
+| SP-667 | CONTEXT Phase 73 capstone | Done | SP-663–666 |
 
 ---
 

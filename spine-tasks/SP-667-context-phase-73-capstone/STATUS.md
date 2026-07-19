@@ -1,10 +1,10 @@
 ### Step 0: CONTEXT.md update
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Add Phase 73 block.
-- [ ] Update Next Task ID.
+- [x] Add Phase 73 block.
+- [x] Update Next Task ID.
 
 ### Step 1: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] Check format.
+- [x] Check format.
