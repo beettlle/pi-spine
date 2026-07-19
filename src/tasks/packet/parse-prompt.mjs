@@ -21,6 +21,7 @@ const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
 /** Normative contract table fields per handoff §4.1. */
 export const CONTRACT_FIELD_NAMES = Object.freeze([
 	"testCommand",
+	"runCommand",
 	"fileScopeMustChange",
 	"fileScopeMustNotChange",
 	"minLineCoverage",
@@ -65,11 +66,14 @@ export function parsePrompt(markdown) {
 
 	const missingSections = REQUIRED_SECTIONS.filter((name) => !sections[name]);
 	const size = parseSizeLineFromMarkdown(markdown);
+	const typeMatch = /^\*\*Type:\*\*\s*(llm|execute)\s*$/im.exec(markdown);
+	const type = typeMatch ? typeMatch[1].toLowerCase() : "llm";
 
 	return {
 		taskId,
 		title,
 		size,
+		type,
 		headingLine,
 		sections,
 		steps,
@@ -112,6 +116,13 @@ export function validatePrompt(markdown) {
 	}
 
 	errors.push(...collectDuplicateStepNumberErrors(prompt.steps));
+
+	if (prompt.type === "execute") {
+		const contract = parseContract(markdown);
+		if (!contract.testCommand && !contract.runCommand) {
+			errors.push("Type: execute tasks require a testCommand or runCommand in the ## Contract section");
+		}
+	}
 
 	return { ok: errors.length === 0, errors, prompt };
 }
@@ -171,6 +182,7 @@ export function parseContract(markdown) {
 	/** @type {ReturnType<typeof parseContract>} */
 	const parsed = {
 		testCommand: null,
+		runCommand: null,
 		fileScopeMustChange: [],
 		fileScopeMustNotChange: [],
 		minLineCoverage: null,
@@ -295,6 +307,19 @@ function applyContractField(parsed, field, rawValue) {
 				return;
 			}
 			parsed.testCommand = command;
+			return;
+		}
+		case "runCommand": {
+			const command = parseContractScalar(value);
+			if (command.includes("\n")) {
+				parsed.errors.push("Contract runCommand must not contain newlines");
+				return;
+			}
+			if (command.length > TEST_COMMAND_MAX_LENGTH) {
+				parsed.errors.push(`Contract runCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
+				return;
+			}
+			parsed.runCommand = command;
 			return;
 		}
 		case "fileScopeMustChange":
