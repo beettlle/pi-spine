@@ -42,6 +42,7 @@ import { filterPlanToWave } from "../planner/wave-scope.mjs";
 import {
 	buildTasksAndLanesFromPlan,
 	mergeWaveLanesToOrch,
+	removeAllMatrixSubLaneWorktrees,
 	runTaskOnLane,
 	skipTaskDoneOnDisk,
 	transitionPhase,
@@ -492,6 +493,7 @@ export async function startBatch({
 			extra: { error: message },
 		});
 		saveEngineBatchState(projectRoot, state);
+		removeAllMatrixSubLaneWorktrees(projectRoot, batchId);
 		removeLaneWorktrees(projectRoot, batchId, maxLaneNumber);
 		return { ok: false, exitCode: 1, batchId, error: message };
 	}
