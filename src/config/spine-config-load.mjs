@@ -10,7 +10,7 @@ import { validateWorkerBackendConfig } from "./worker-backend.mjs";
 import { validateWorkerContextConfig } from "./worker-context.mjs";
 import { validateWorkerLaunchScriptConfig } from "./worker-launch-script.mjs";
 import { validateWorktreeSetupHookConfig } from "./worktree-setup-hook.mjs";
-import { validateOrchestratorConfig } from "./spine-config-schema.mjs";
+import { validateOrchestratorConfig, validateAgentProfilesConfig } from "./spine-config-schema.mjs";
 import { missingConfigHint } from "./missing-config-hint.mjs";
 
 export { resolveGatePostureConfig } from "./gate-posture-config.mjs";
@@ -221,6 +221,11 @@ export function validateSpineConfig(config) {
 	const orchestratorError = validateOrchestratorConfig(config);
 	if (orchestratorError) {
 		return orchestratorError;
+	}
+
+	const profilesError = validateAgentProfilesConfig(config);
+	if (profilesError) {
+		return profilesError;
 	}
 
 	if (config.worktreeSetupIgnorePaths != null) {
