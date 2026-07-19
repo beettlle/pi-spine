@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync, execFileSync } from "node:child_process";
 import micromatch from "micromatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import {
@@ -309,7 +309,15 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	const checks = [];
 	const baseBranch = config?.baseBranch ?? "main";
 	const sinceCommit = config?.sinceCommit ?? config?.taskStartCommit ?? undefined;
-	const changedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
+	const committedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
+	
+	let indexAndWorktreeFiles = [];
+	try {
+		const stdout = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd: worktreePath, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
+		indexAndWorktreeFiles = stdout.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+	} catch (e) {}
+
+	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
 	prepareContractVerifyEnvironment(worktreePath, parsedContract, config);
 

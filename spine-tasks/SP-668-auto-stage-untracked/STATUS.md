@@ -38,21 +38,21 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `npm run typecheck` passes
-- [ ] Regression test for untracked in-scope file passes
-- [ ] Regression test for untracked out-of-scope file passes
-- [ ] Targeted test command passes
-- [ ] All failures fixed
+- [x] `npm run typecheck` passes
+- [x] Regression test for untracked in-scope file passes
+- [x] Regression test for untracked out-of-scope file passes
+- [x] Targeted test command passes
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] STATUS.md updated with discoveries
-- [ ] Operator-runbook checked; updated only if relevant
+- [x] STATUS.md updated with discoveries
+- [x] Operator-runbook checked; updated only if relevant
 
 ---
 
@@ -67,6 +67,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `verifyContract` computes changedFiles via `listChangedFiles` | Used `git diff HEAD` to capture index+worktree to preserve file scope behavior for untracked files | `src/batch/contract-exec.mjs` |
 
 ---
 

@@ -314,7 +314,7 @@ export function stageUntrackedScopeFiles(worktreePath, fileScopeMustChange = [])
 
 	let porcelain;
 	try {
-		porcelain = execFileSync("git", ["status", "--porcelain"], {
+		porcelain = execFileSync("git", ["status", "--porcelain", "-uall"], {
 			cwd: worktreePath,
 			encoding: "utf-8",
 			stdio: ["ignore", "pipe", "pipe"]
