@@ -3,6 +3,8 @@
  * Thin assembly: `buildDashboardSnapshot` composes snapshot-lanes and snapshot-waves.
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { deriveMacroPhase, macroPhaseLabel } from "../batch/macro-phase.mjs";
 import {
 	classifyTasks,
@@ -28,6 +30,7 @@ import {
 	readMetricsLines,
 } from "../batch/metrics.mjs";
 import { consumeDashboardInvalidateSignal } from "./cache-invalidate.mjs";
+import { parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { buildLaneRows } from "./snapshot-lanes.mjs";
 import {
 	buildDefaultViewStatus,
@@ -110,6 +113,97 @@ export function enrichLaneRowsWithSubprocessHeartbeat(lanes, journalEvents, now 
 }
 
 /**
+ * In-memory cache of parsed task titles keyed by absolute PROMPT.md path.
+ * Titles are immutable per file; mtime invalidates the entry so edits show up.
+ * Keyed by path (not taskId) so distinct project roots never cross-contaminate.
+ * @type {Map<string, { mtimeMs: number, title: string | null }>}
+ */
+const taskTitleCache = new Map();
+
+/**
+ * Read and parse a single PROMPT.md title with mtime-aware caching.
+ * Any read/parse failure degrades gracefully to null (PRD: graceful fallback).
+ *
+ * @param {string} promptPath Absolute path to a task PROMPT.md
+ * @returns {string | null}
+ */
+function readTaskTitleFromPrompt(promptPath) {
+	try {
+		const stat = fs.statSync(promptPath);
+		const cached = taskTitleCache.get(promptPath);
+		if (cached && cached.mtimeMs === stat.mtimeMs) return cached.title;
+		const title = parsePrompt(fs.readFileSync(promptPath, "utf-8")).title ?? null;
+		taskTitleCache.set(promptPath, { mtimeMs: stat.mtimeMs, title });
+		return title;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Resolve the absolute PROMPT.md path for a task. Uses the batch's `taskFolder`
+ * when present, falling back to scanning the tasks root for `${taskId}-*`.
+ *
+ * @param {string} tasksRootPath Absolute tasks root directory
+ * @param {string} taskId
+ * @param {string | null | undefined} taskFolder
+ * @returns {string | null}
+ */
+function resolveTaskPromptPath(tasksRootPath, taskId, taskFolder) {
+	if (taskFolder) {
+		return path.join(tasksRootPath, taskFolder, "PROMPT.md");
+	}
+	try {
+		for (const name of fs.readdirSync(tasksRootPath)) {
+			if (name.startsWith(`${taskId}-`)) {
+				return path.join(tasksRootPath, name, "PROMPT.md");
+			}
+		}
+	} catch {
+		// Tasks root missing or unreadable — degrade to no title.
+	}
+	return null;
+}
+
+/**
+ * Build a taskId → title map by parsing each task's PROMPT.md.
+ *
+ * @param {string} projectRoot
+ * @param {string | null | undefined} tasksRoot Configured tasks root (relative to projectRoot)
+ * @param {Array<{ taskId?: unknown, taskFolder?: string | null }> | null | undefined} tasks
+ * @returns {Map<string, string | null>}
+ */
+export function resolveRunningTaskTitles(projectRoot, tasksRoot, tasks) {
+	const titles = new Map();
+	if (!projectRoot || !tasksRoot || !Array.isArray(tasks)) return titles;
+	const tasksRootPath = path.join(projectRoot, tasksRoot);
+	for (const task of tasks) {
+		const taskId = task?.taskId != null ? String(task.taskId) : "";
+		if (!taskId || titles.has(taskId)) continue;
+		const promptPath = resolveTaskPromptPath(tasksRootPath, taskId, task?.taskFolder ?? null);
+		titles.set(taskId, promptPath ? readTaskTitleFromPrompt(promptPath) : null);
+	}
+	return titles;
+}
+
+/**
+ * Attach `runningTaskTitle` to each lane row from the resolved title map.
+ * Lanes without a running task (or an unresolvable title) get null.
+ *
+ * @param {object[]} lanes
+ * @param {Map<string, string | null>} taskTitles
+ */
+export function enrichLaneRowsWithRunningTaskTitle(lanes, taskTitles) {
+	return (lanes ?? []).map((lane) => {
+		const title =
+			lane?.runningTaskId != null
+				? (taskTitles.get(String(lane.runningTaskId)) ?? null)
+				: null;
+		return { ...lane, runningTaskTitle: title };
+	});
+}
+
+/**
  * @param {string} projectRoot
  */
 export function buildDashboardSnapshot(projectRoot) {
@@ -176,19 +270,22 @@ export function buildDashboardSnapshot(projectRoot) {
 	}
 
 	const lanes = enrichLaneRowsWithSubprocessHeartbeat(
-		buildLaneRows({
-			lanes: batch?.lanes ?? [],
-			classifiedTasks,
-			stallConfig,
-			currentWaveTaskIds,
-			journalTail,
-			journalEvents,
-			metricsLines,
-			projectRoot,
-			batchId: reconciliation.batchId,
-			now,
-			diagnosis: reconciliation.diagnosis,
-		}),
+		enrichLaneRowsWithRunningTaskTitle(
+			buildLaneRows({
+				lanes: batch?.lanes ?? [],
+				classifiedTasks,
+				stallConfig,
+				currentWaveTaskIds,
+				journalTail,
+				journalEvents,
+				metricsLines,
+				projectRoot,
+				batchId: reconciliation.batchId,
+				now,
+				diagnosis: reconciliation.diagnosis,
+			}),
+			resolveRunningTaskTitles(projectRoot, config?.paths?.tasksRoot ?? null, batch?.tasks),
+		),
 		journalEvents,
 		now,
 	);

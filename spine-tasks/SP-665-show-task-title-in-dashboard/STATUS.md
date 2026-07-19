@@ -1,7 +1,7 @@
 ### Step 0: Dashboard Snapshot Payload
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Include title in snapshot payload.
+- [x] Include title in snapshot payload.
 
 ### Step 1: UI updates
 **Status:** ⬜ Not Started
