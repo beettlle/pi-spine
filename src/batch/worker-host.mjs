@@ -10,7 +10,7 @@ import {
 	resolveWorkerPiTimeoutMs,
 	parseTaskSizeFromFolder,
 } from "./task-stall-budget.mjs";
-import { parseContract } from "../tasks/packet/parse-prompt.mjs";
+import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
@@ -22,6 +22,7 @@ import {
 	resolveWorkerLaunchScript,
 	resolveWorkerPhase,
 	spawnWorkerHandle,
+	spawnExecutionOnlyHandle,
 	terminateHungWorkerChild,
 	CHILD_DONE_TIMEOUT_MS,
 } from "./worker-spawn.mjs";
@@ -203,32 +204,48 @@ export async function runWorker({
 
 	const taskSize = parseTaskSizeFromFolder(taskFolder);
 	const promptPath = path.join(taskFolder, "PROMPT.md");
-	const contract = fs.existsSync(promptPath)
-		? parseContract(fs.readFileSync(promptPath, "utf-8"))
-		: { stallTimeoutMinutes: null, extendGraceOnFileScope: null };
+	const promptText = fs.existsSync(promptPath) ? fs.readFileSync(promptPath, "utf-8") : "";
+	const parsedPrompt = promptText ? parsePrompt(promptText) : null;
+	const contract = promptText ? parseContract(promptText) : { stallTimeoutMinutes: null, extendGraceOnFileScope: null, runCommand: null, testCommand: null };
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
 
-	const child = spawnWorkerHandle({
-		worktreePath,
-		taskFolder,
-		useStub,
-		timeoutMs: piTimeoutMs,
-		piTimeoutMs,
-		projectRoot,
-		batchId,
-		laneNumber,
-		taskId,
-		laneCorrelationId,
-		fileScopePaths,
-		config,
-		workerBackendDeps,
-	});
+	const isExecute = parsedPrompt?.type === "execute";
+	const runCommand = contract.runCommand || contract.testCommand;
+
+	const child = isExecute
+		? spawnExecutionOnlyHandle({
+				worktreePath,
+				taskFolder,
+				command: runCommand || "echo 'No runCommand or testCommand provided' && exit 1",
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				laneCorrelationId,
+				fileScopePaths,
+				config,
+			})
+		: spawnWorkerHandle({
+				worktreePath,
+				taskFolder,
+				useStub,
+				timeoutMs: piTimeoutMs,
+				piTimeoutMs,
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				laneCorrelationId,
+				fileScopePaths,
+				config,
+				workerBackendDeps,
+			});
 	const workerChild = /** @type {WorkerChildHandle} */ (child);
-	let childPastPreflight = !useLaunchScript;
+	let childPastPreflight = isExecute ? true : !useLaunchScript;
 	/** @type {WorkerPhase} */
-	const initialWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
+	const initialWorkerPhase = isExecute ? "pi" : resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
 	markChildPastPreflight(workerChild, () => {
 		childPastPreflight = true;
 	});
