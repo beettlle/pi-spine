@@ -160,6 +160,7 @@ function collectDuplicateStepNumberErrors(steps) {
  * @param {string} markdown PROMPT.md contents
  * @returns {{
  *   testCommand: string | null,
+ *   runCommand: string | null,
  *   fileScopeMustChange: string[],
  *   fileScopeMustNotChange: string[],
  *   minLineCoverage: number | null,
