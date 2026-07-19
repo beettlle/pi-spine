@@ -9,6 +9,7 @@ import {
 } from "../../src/config/settings-fields.mjs";
 
 const EXPECTED_PATHS = [
+	"agents.activeProfile",
 	"agents.reviewer.code.model",
 	"agents.reviewer.code.thinking",
 	"agents.reviewer.final.model",
@@ -185,4 +186,16 @@ test("validateSettingValue rejects unknown path", () => {
 	const result = validateSettingValue("project.name", "x");
 	assert.equal(result.ok, false);
 	if (!result.ok) assert.match(result.error, /Unknown setting path/);
+});
+
+test("agents.activeProfile accepts a profile name string", () => {
+	const result = validateSettingValue("agents.activeProfile", "hard");
+	assert.equal(result.ok, true);
+	if (result.ok) assert.equal(result.normalizedValue, "hard");
+});
+
+test("agents.activeProfile allows an empty value to clear the profile", () => {
+	const result = validateSettingValue("agents.activeProfile", "");
+	assert.equal(result.ok, true);
+	if (result.ok) assert.equal(result.normalizedValue, "");
 });

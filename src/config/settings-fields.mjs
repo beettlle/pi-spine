@@ -132,6 +132,12 @@ export const SETTINGS_FIELDS = Object.freeze([
 		type: "boolean",
 	},
 	{
+		path: "agents.activeProfile",
+		label: "Active agent model profile",
+		type: "string",
+		optional: true,
+	},
+	{
 		path: "dashboard.port",
 		label: "Dashboard port",
 		type: "number",

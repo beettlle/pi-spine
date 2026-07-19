@@ -181,6 +181,66 @@ test("buildAgentModelIdsDoctorCheck skips inherit and empty values", () => {
 	assert.equal(check.ok, true);
 });
 
+test("buildAgentModelIdsDoctorCheck validates model ids inside named profiles", () => {
+	const check = buildAgentModelIdsDoctorCheck({
+		config: {
+			agents: {
+				worker: { model: "cursor/auto" },
+				profiles: {
+					default: { worker: { model: "bad-model-no-provider" } },
+				},
+			},
+		},
+	});
+	assert.equal(check.ok, false);
+	assert.match(check.detail, /agents\.profiles\.default\.worker\.model/);
+	assert.match(check.detail, /invalid model id/);
+});
+
+test("buildAgentModelIdsDoctorCheck reports the canonical fix path for a profile display label", () => {
+	const check = buildAgentModelIdsDoctorCheck({
+		config: {
+			agents: {
+				profiles: {
+					hard: { reviewer: { plan: { model: "gemini-3.1-pro-preview [google]" } } },
+				},
+			},
+		},
+	});
+	assert.equal(check.ok, false);
+	assert.match(check.detail, /agents\.profiles\.hard\.reviewer\.plan\.model/);
+	assert.ok(check.suggestedCommand);
+	assert.match(
+		check.suggestedCommand,
+		/spine settings set agents\.profiles\.hard\.reviewer\.plan\.model google\/gemini-3\.1-pro-preview/,
+	);
+});
+
+test("buildAgentModelIdsDoctorCheck passes when all profiles use canonical ids", () => {
+	const check = buildAgentModelIdsDoctorCheck({
+		config: {
+			agents: {
+				profiles: {
+					default: { worker: { model: "cursor/auto" } },
+					hard: { reviewer: { model: "google/gemini-3.1-pro-preview" } },
+				},
+			},
+		},
+	});
+	assert.equal(check.ok, true);
+});
+
+test("buildAgentModelIdsDoctorCheck skips non-object profile entries", () => {
+	const check = buildAgentModelIdsDoctorCheck({
+		config: {
+			agents: {
+				profiles: { broken: "not-an-object" },
+			},
+		},
+	});
+	assert.equal(check.ok, true);
+});
+
 // --- settings-set.mjs integration tests ---
 
 /** Valid base config for settings-set tests (validateSpineConfig requires full schema). */
