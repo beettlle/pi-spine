@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { parseSizeLineFromMarkdown } from "./size-line.mjs";
 
+import { parseMatrixTable } from "../../planner/matrix.mjs";
+
 /** PRD §13.4 — em dash (U+2014) required between ID and title. */
 export const TASK_HEADING_RE = /^# Task: ([A-Z][A-Z0-9]*-\d+) — (.+)$/m;
 
@@ -13,7 +15,7 @@ const REQUIRED_SECTIONS = [
 	"Do NOT",
 ];
 
-const OPTIONAL_SECTIONS = ["Testing", "Context to Read First", "Environment", "Documentation Requirements"];
+const OPTIONAL_SECTIONS = ["Testing", "Context to Read First", "Environment", "Documentation Requirements", "Matrix"];
 
 const H2_SECTION_RE = /^## (.+)$/gm;
 const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
@@ -68,6 +70,16 @@ export function parsePrompt(markdown) {
 	const size = parseSizeLineFromMarkdown(markdown);
 	const typeMatch = /^\*\*Type:\*\*\s*(llm|execute)\s*$/im.exec(markdown);
 	const type = typeMatch ? typeMatch[1].toLowerCase() : "llm";
+	
+	let matrix = null;
+	let matrixColumns = null;
+	if (sections.Matrix) {
+		const parsedMatrix = parseMatrixTable(sections.Matrix);
+		if (parsedMatrix.rows.length > 0) {
+			matrix = parsedMatrix.rows;
+			matrixColumns = parsedMatrix.columns;
+		}
+	}
 
 	return {
 		taskId,
@@ -83,6 +95,7 @@ export function parsePrompt(markdown) {
 		missingSections,
 		requiredSections: REQUIRED_SECTIONS,
 		optionalSections: OPTIONAL_SECTIONS,
+		...(matrix ? { matrix, matrixColumns } : {})
 	};
 }
 
