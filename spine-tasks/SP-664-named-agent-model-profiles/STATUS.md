@@ -6,11 +6,11 @@
 - [x] Add optional `agents.escalatePolicy` to schema.
 
 ### Step 1: Implementation
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update `load.mjs` (spine-config-load.mjs) to apply activeProfile.
-- [ ] Update `doctor.mjs` (agent-models.mjs) to validate profile model IDs.
-- [ ] Update `settings.mjs` (settings-fields.mjs) to support activeProfile switching.
+- [x] Update `load.mjs` (spine-config-load.mjs) to apply activeProfile.
+- [x] Update `doctor.mjs` (agent-models.mjs) to validate profile model IDs.
+- [x] Update `settings.mjs` (settings-fields.mjs) to support activeProfile switching.
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started

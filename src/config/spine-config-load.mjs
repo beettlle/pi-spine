@@ -38,6 +38,82 @@ export function resolveWorktreeSetupIgnorePaths(config) {
 	return [...new Set([...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS, ...configured])];
 }
 
+// --- Named agent model profile resolution (SP-664 / GitHub #216) ---
+
+/** Agent sections that a named profile may override on top of the base agents config. */
+const AGENT_SECTIONS = Object.freeze(["worker", "reviewer", "supervisor"]);
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isPlainObject(value) {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Deep-merge `override` over `base` for a single agent section.
+ *
+ * Profile values win; base fills gaps. Recurses into plain objects so a profile's
+ * nested reviewer `plan`/`code`/`final` pins merge without clobbering siblings
+ * left at their base value.
+ *
+ * @param {unknown} base
+ * @param {Record<string, unknown>} override
+ * @returns {Record<string, unknown>}
+ */
+function deepMergeAgentSection(base, override) {
+	const out = isPlainObject(base) ? structuredClone(base) : {};
+	for (const [key, value] of Object.entries(override)) {
+		if (isPlainObject(value) && isPlainObject(out[key])) {
+			out[key] = deepMergeAgentSection(out[key], value);
+		} else if (isPlainObject(value)) {
+			out[key] = structuredClone(value);
+		} else {
+			out[key] = value;
+		}
+	}
+	return out;
+}
+
+/**
+ * Resolve the named active agent profile over the base `agents` config.
+ *
+ * Each profile mirrors the base `worker`/`reviewer`/`supervisor` shape. When
+ * `agents.activeProfile` names a defined `agents.profiles` entry, that profile is
+ * deep-merged over the base agents (profile wins, base fills gaps) so downstream
+ * consumers — worker/reviewer/supervisor spawns and `spine doctor` — observe the
+ * effective configuration rather than the raw base.
+ *
+ * Pure: returns a new config object and never mutates the input. No-op when no
+ * active profile is set or the named profile does not exist.
+ *
+ * @param {Record<string, any>} config Effective config (defaults + env already applied).
+ * @returns {Record<string, any>} Config with the active profile resolved into `agents`.
+ */
+export function applyActiveAgentProfile(config) {
+	const result = structuredClone(config);
+	const agents = result?.agents;
+	if (!isPlainObject(agents)) return result;
+
+	const active = agents.activeProfile;
+	if (typeof active !== "string" || active.trim() === "") return result;
+
+	const profiles = agents.profiles;
+	if (!isPlainObject(profiles)) return result;
+
+	const profile = profiles[active.trim()];
+	if (!isPlainObject(profile)) return result;
+
+	for (const section of AGENT_SECTIONS) {
+		const override = profile[section];
+		if (isPlainObject(override)) {
+			agents[section] = deepMergeAgentSection(agents[section], override);
+		}
+	}
+	return result;
+}
+
 const REQUIRED_TOP_LEVEL = [
 	"configVersion",
 	"project",
@@ -141,9 +217,13 @@ export function loadSpineConfig(projectRoot) {
 	// Soft attach: posture merge fails closed inside the helper and never rejects load.
 	const gatePostureConfig = resolveGatePostureConfig(envResult.config);
 
+	// SP-664 / #216: resolve the named active agent profile over the base agents config
+	// so spawns and doctor observe effective (base + profile) model pins.
+	const resolvedConfig = applyActiveAgentProfile(envResult.config);
+
 	return {
 		configPath: fileResult.configPath,
-		config: envResult.config,
+		config: resolvedConfig,
 		fileConfig: config,
 		gatePostureConfig,
 		sources: envResult.sources,
