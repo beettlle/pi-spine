@@ -25,6 +25,9 @@ export {
 	verifyStubFileScopeMustChange,
 } from "./contract-parse.mjs";
 
+import { verifyContract as _verifyContract } from "./contract-exec.mjs";
+import { stageUntrackedScopeFiles } from "./lane-dirty-check-git.mjs";
+
 export {
 	CONTRACT_TEST_COMMAND_MAX_BUFFER,
 	CONTRACT_TEST_DEFAULT_RETRIES,
@@ -34,6 +37,31 @@ export {
 	isRefusedNpmTestDashDashCommand,
 	prepareContractVerifyEnvironment,
 	runContractTestCommand,
-	verifyContract,
 	writeContractFailureLog,
 } from "./contract-exec.mjs";
+
+/**
+ * Verify contract and auto-stage untracked scope files before verification.
+ * 
+ * @param {string} worktreePath 
+ * @param {object} parsedContract 
+ * @param {object} [config] 
+ */
+export function verifyContract(worktreePath, parsedContract, config = {}) {
+	const stageResult = stageUntrackedScopeFiles(worktreePath, parsedContract.fileScopeMustChange || []);
+	
+	if (stageResult.error) {
+		return {
+			ok: false,
+			checks: [
+				{
+					field: "fileScopeMustChange",
+					ok: false,
+					message: `Failed to auto-stage untracked scope files: ${stageResult.error}`,
+				},
+			],
+		};
+	}
+
+	return _verifyContract(worktreePath, parsedContract, config);
+}
