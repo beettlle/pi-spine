@@ -1,0 +1,20 @@
+tests/batch/attached-post-merge-sigterm.test.mjs
+  s_1bb9d3f38617c8::t_91b1d02dcf918a 24
+  s_1bb9d3f38617c8::t_96b00dfe21cc29 135,163,188,207,231,263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9b48f3774c03929440dfb603c4bdefe04673d953",
+  "prompts": {},
+  "sessions": {
+    "s_1bb9d3f38617c8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-d076f711-fc4e-4843-a353-e4ce0ed3fa11",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
