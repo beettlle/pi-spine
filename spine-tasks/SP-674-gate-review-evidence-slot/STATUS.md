@@ -1,6 +1,6 @@
 # SP-674: Gate testing.review evidence slot — Status
 
-**Current Step:** Step 1: Config + resolve review command
+**Current Step:** Step 4: Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-20
 **Review Level:** 1
@@ -46,9 +46,9 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Completed
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
