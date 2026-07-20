@@ -142,5 +142,7 @@ export function resolveTestingCommands(config, projectRoot) {
 			(typeof spineTesting.testWithCoverage === "string" && spineTesting.testWithCoverage.trim()) ||
 			(typeof taskplane.testWithCoverage === "string" && taskplane.testWithCoverage.trim()) ||
 			"",
+		review:
+			(typeof spineTesting.review === "string" && spineTesting.review.trim()) || "",
 	};
 }
