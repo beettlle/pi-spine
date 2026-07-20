@@ -5,7 +5,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import {
 	attemptPostMergeLandLoopHandoff,
@@ -22,7 +21,7 @@ import {
 	loadSpineBatchState,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const BATCH_ID = "20260620T194352";
 const TASK_W0_A = "SP-311";
@@ -133,7 +132,7 @@ test("batch 20260620T194352 fixture is post-merge limbo without gate", async () 
 		assert.equal(isPostMergeLimbo(state), true);
 		assert.equal(fs.existsSync(gateRecordPath(projectRoot, BATCH_ID)), false);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -161,7 +160,7 @@ test("attemptPostMergeLandLoopHandoff finalizes in-process after SIGTERM-shaped 
 		assert.ok(events.some((event) => event.type === "engine.attached_post_merge_handoff"));
 		assert.equal(String(orchBranch).length > 0, true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -186,7 +185,7 @@ test("finalizeAttachedPostMergeLimbo is idempotent when gate already open", asyn
 		assert.equal(second, null);
 		assert.equal(readJournalEvents(projectRoot, BATCH_ID).filter((e) => e.type === "gate.opened").length, 1);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -205,7 +204,7 @@ test("resume after orphan_terminated journal opens gate for batch 20260620T19435
 		assert.ok(events.some((event) => event.type === "gate.opened"));
 		assert.ok(events.some((event) => event.type === "batch.completed"));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -229,7 +228,7 @@ test("installAttachedEngineShutdownHandlers finalizes on SIGTERM without manual 
 		process.exit = previousExit;
 		process.removeAllListeners("SIGTERM");
 		process.removeAllListeners("SIGINT");
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -261,6 +260,6 @@ test("terminateStaleDetachedEngine during post-merge limbo still allows resume f
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
