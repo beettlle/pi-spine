@@ -1,0 +1,150 @@
+spine-tasks/SP-079-spine-cli-router-split/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/TP-044-adoption-fixture-bootstrap/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-086-task-sizing-guardrails/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-071-ci-checkpoint-warning-git-fix/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-077-worker-launch-sandbox/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-074-engine-strangler-scope-lanes/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-063-worker-review-levels/STATUS.md
+  s_6909114266da53::t_968201a238efb2 4,6
+src/planner/format-plan.mjs
+  s_6909114266da53::t_e5d15736628e9d 5-6
+  s_6909114266da53::t_f5b29dff2c0f4e 131
+spine-tasks/SP-069-agent-template-drift-test/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/TP-047-stub-free-dogfood-signoff/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/SP-069-agent-template-drift-test/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-054-create-spine-tasks-skill/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-059-stall-salvage-auto-commit/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-068-prd-appendix-c/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-082-orphan-running-reconciliation/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-066-supervisor-v1-stub/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/TP-046-env-overrides-fr-cfg-04/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+tests/doctor/batch-size-guidance.test.mjs
+  s_6909114266da53::t_dab0addb8757a4 1-151
+spine-tasks/TP-047-stub-free-dogfood-signoff/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-084-heartbeat-worker-phase/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-082-orphan-running-reconciliation/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/TP-043-local-install-no-publish/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/SP-083-detached-resume-semantics/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3,6
+spine-tasks/TP-044-adoption-fixture-bootstrap/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/TP-045-taskplane-coexistence-guard/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/SP-085-orphan-incident-fixture/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-076-resume-dry-core/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-085-orphan-incident-fixture/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-088-task-size-stall-budget/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3,5-6
+spine-tasks/SP-062-worker-execution-discipline/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-067-runner-hint-dedup/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-063-worker-review-levels/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-078-error-path-test-hardening/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-081-cursor-rules-repo-commit/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/SP-053-init-context-scaffold/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-052-compat-layer-rename/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-070-journal-attach-test-isolation/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-071-ci-checkpoint-warning-git-fix/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/TP-046-env-overrides-fr-cfg-04/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/SP-067-runner-hint-dedup/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/SP-077-worker-launch-sandbox/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-074-engine-strangler-scope-lanes/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-087-real-pi-stall-defaults/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3,5-6
+spine-tasks/CONTEXT.md
+  s_6909114266da53::t_968201a238efb2 136-141,150-152,162,171-181,191,193-200,240-242,252-255
+spine-tasks/SP-064-commit-convention-align/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-083-detached-resume-semantics/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-065-reviewer-template-depth/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-080-ci-doctor-pr-template/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/TP-048-real-pi-worker-e2e/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,4,6
+spine-tasks/SP-087-real-pi-stall-defaults/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-076-resume-dry-core/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+src/doctor/batch-size-guidance.mjs
+  s_6909114266da53::t_869aff997b24d2 1-72
+spine-tasks/SP-075-prompt-parse-fail-loud/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-086-task-sizing-guardrails/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3,6
+spine-tasks/SP-059-stall-salvage-auto-commit/STATUS.md
+  s_6909114266da53::t_968201a238efb2 1,3-4,6
+spine-tasks/SP-072-evidence-exec-hardening/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-4,6
+spine-tasks/SP-075-prompt-parse-fail-loud/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-078-error-path-test-hardening/STATUS.md
+  s_6909114266da53::t_968201a238efb2 3-6
+spine-tasks/SP-079-spine-cli-router-split/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/TP-045-taskplane-coexistence-guard/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/TP-048-real-pi-worker-e2e/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-072-evidence-exec-hardening/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-088-task-size-stall-budget/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-061-code-coverage-policy/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/TP-043-local-install-no-publish/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+spine-tasks/SP-081-cursor-rules-repo-commit/.DONE
+  s_6909114266da53::t_968201a238efb2 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "7fff50823e501bca04981f55ed177ab99a06195b",
+  "prompts": {},
+  "sessions": {
+    "s_6909114266da53": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e942c-d65f-7715-9444-cb2e35d92e3f",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

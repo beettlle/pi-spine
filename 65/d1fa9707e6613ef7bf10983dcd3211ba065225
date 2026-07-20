@@ -1,0 +1,29 @@
+taskplane-tasks/TP-012-single-lane-worker/PROMPT.md
+  s_cc44f834948ce7::t_2be89bcabf20e0 1-183
+taskplane-tasks/CONTEXT.md
+  s_cc44f834948ce7::t_a3eabfd44861b2 86-87
+  s_cc44f834948ce7::t_7cef569970978e 5
+  s_cc44f834948ce7::t_a7dcae50488b31 48-49
+  s_cc44f834948ce7::t_08ea85d5c6247b 139
+  s_cc44f834948ce7::t_982c2417e9bd12 102
+taskplane-tasks/dependencies.json
+  s_cc44f834948ce7::t_bdb2e72c8dc749 24-29
+taskplane-tasks/TP-012-single-lane-worker/STATUS.md
+  s_cc44f834948ce7::t_2be89bcabf20e0 1-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "65d1fa9707e6613ef7bf10983dcd3211ba065225",
+  "prompts": {},
+  "sessions": {
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

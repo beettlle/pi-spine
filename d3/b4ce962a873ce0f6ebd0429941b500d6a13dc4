@@ -1,0 +1,63 @@
+extensions/spine-orchestrator.ts
+  s_3d4516eb80cddc::t_75f67ba9141fc3 1-10
+tsconfig.json
+  s_3d4516eb80cddc::t_75f67ba9141fc3 1-12
+bin/get-version.mjs
+  s_3d4516eb80cddc::t_2de3419f94e527 1-22
+.pi/agents/supervisor.md
+  ai_agent 1-33
+package-lock.json
+  ai_agent 1-62
+bin/spine.mjs
+  s_9dce35a65bd933::t_6d9392728e13a7 163,168-170
+  s_3d4516eb80cddc::t_ea11414107584a 1-18,20-162,164-167,171-423
+pi-spine-PRD.md
+  s_cc44f834948ce7::t_e3d9f9d9df0155 197
+  s_cc44f834948ce7::t_03f4354e946fb0 100
+  s_cc44f834948ce7::t_6c2c6bdb02739e 1188-1196
+  s_cc44f834948ce7::t_1c0e3ec07ccbd5 237
+  s_cc44f834948ce7::t_48c6c17534a24c 116
+  s_cc44f834948ce7::t_2ad8e186e2f616 297-299
+  s_cc44f834948ce7::t_f394c3a5d59071 1107-1111
+  s_cc44f834948ce7::t_7ae85eaa5bd7d7 1278
+.gitignore
+  s_cc44f834948ce7::t_2af4ea65861978 14-23
+.pi/taskplane.json
+  ai_agent 2-7
+bin/spine-config.mjs
+  s_3d4516eb80cddc::t_2de3419f94e527 1-105
+package.json
+  s_3d4516eb80cddc::t_dc4197a74bc71f 1-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d3b4ce962a873ce0f6ebd0429941b500d6a13dc4",
+  "prompts": {},
+  "sessions": {
+    "s_3d4516eb80cddc": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8059-dab2-7a03-ab12-e2dfaebbc1f0",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_9dce35a65bd933": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8059-9f01-7c66-8368-c468f6ccbc37",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

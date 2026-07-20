@@ -1,0 +1,29 @@
+taskplane-tasks/dependencies.json
+  s_ca0db411fbc320::t_5fe3c87e677023 60-68
+taskplane-tasks/TP-025-dashboard-ui/PROMPT.md
+  ai_agent 1-86
+taskplane-tasks/TP-025-dashboard-ui/STATUS.md
+  ai_agent 1-5
+taskplane-tasks/TP-026-dashboard-parity/PROMPT.md
+  ai_agent 1-80
+taskplane-tasks/CONTEXT.md
+  s_ca0db411fbc320::t_5fe3c87e677023 5,62,66-68,87,94-96,109-110,141-143
+taskplane-tasks/TP-026-dashboard-parity/STATUS.md
+  ai_agent 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "e2bcb913388081814d0d0ffbf5764af2a5e38022",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

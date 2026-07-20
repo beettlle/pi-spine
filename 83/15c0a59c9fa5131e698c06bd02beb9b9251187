@@ -1,0 +1,23 @@
+spine-tasks/SP-119-docs-task-prompt-testing-step/STATUS.md
+  s_8863c00a3b4a5d::t_b33192e23ab882 1-7
+spine-tasks/SP-119-docs-task-prompt-testing-step/PROMPT.md
+  s_8863c00a3b4a5d::t_b33192e23ab882 1-58
+spine-tasks/dependencies.json
+  s_8863c00a3b4a5d::t_935835c418b0bb 247-248
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8315c0a59c9fa5131e698c06bd02beb9b9251187",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

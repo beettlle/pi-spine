@@ -1,0 +1,41 @@
+taskplane-tasks/TP-029-phase6-compat-validation/STATUS.md
+  s_14d12b2a61ce27::t_8a42551337843b 3,5,9-12,16,20
+src/batch/worker-host.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 127-129,208
+taskplane-tasks/TP-029-phase6-compat-validation/.DONE
+  s_14d12b2a61ce27::t_81aaee3ad549b2 1-2
+taskplane-tasks/CONTEXT.md
+  s_14d12b2a61ce27::t_544d2483e7496c 11
+  s_14d12b2a61ce27::t_1b10777090dae1 103
+  s_14d12b2a61ce27::t_34389cc1f7834e 109,111
+tests/compat/incidents.test.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 1-356
+src/batch/heartbeat.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 51-68,71,73,89-91,99-101,104,134,157
+tests/batch/integration-abc.test.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 1-194
+docs/compatibility/phase6-dogfood-report.md
+  s_14d12b2a61ce27::t_d4c93b496c28f4 1-62
+tests/batch/heartbeat.test.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 51-83
+docs/compatibility/taskplane-gap-list.md
+  s_14d12b2a61ce27::t_d4c93b496c28f4 12,25-29
+src/batch/engine.mjs
+  s_14d12b2a61ce27::t_d4c93b496c28f4 9,473-479,501
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "63b6988ba2bf37acbf844efa33bf6b4fc2140106",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

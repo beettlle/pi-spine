@@ -1,0 +1,9 @@
+spine-tasks/SP-098-resume-orphan-incident-fixture/STATUS.md
+  ai_agent 3-4,7,14,16-17,22,24,29,31-33,38,40-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "70e3e85929f3cbde6e1befdb532419ec2da97633",
+  "prompts": {}
+}

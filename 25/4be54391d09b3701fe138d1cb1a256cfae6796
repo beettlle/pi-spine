@@ -1,0 +1,47 @@
+taskplane-tasks/dependencies.json
+  s_ca0db411fbc320::t_5d7e16928638ac 39-47
+  s_ca0db411fbc320::t_00e982f27ec6bf 36-38
+taskplane-tasks/TP-018-abort-archive/PROMPT.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-59
+taskplane-tasks/TP-019-multi-lane/PROMPT.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-59
+taskplane-tasks/TP-016-integrate-validation/STATUS.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-15
+taskplane-tasks/CONTEXT.md
+  s_ca0db411fbc320::t_afdf5cd0a98e4a 125
+  s_ca0db411fbc320::t_05d74994971f7c 5
+  s_ca0db411fbc320::t_1fb8dac565debf 56,60-61
+  s_ca0db411fbc320::t_798dc5e221b9c7 121-124
+  s_ca0db411fbc320::t_e9682f3120cd36 120
+  s_ca0db411fbc320::t_5fdf6d8736b81e 100-105,107
+  s_ca0db411fbc320::t_f247def674c432 157-160
+  s_ca0db411fbc320::t_27e66885654d7b 12
+  s_ca0db411fbc320::t_b53c1da494ceaf 58,62-74
+  s_ca0db411fbc320::t_74178be1ca685b 138
+taskplane-tasks/TP-017-retry-skip/STATUS.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-12
+taskplane-tasks/TP-016-integrate-validation/PROMPT.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-69
+taskplane-tasks/TP-018-abort-archive/STATUS.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-3
+taskplane-tasks/TP-017-retry-skip/PROMPT.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-54
+taskplane-tasks/TP-019-multi-lane/STATUS.md
+  s_ca0db411fbc320::t_b23dcfa7b60588 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "254be54391d09b3701fe138d1cb1a256cfae6796",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+.github/workflows/ci.yml
+  s_f1d1097b6a7c0d::t_90a5b9725ff505 32-35
+tests/batch/checkpoint-warning.test.mjs
+  s_f1d1097b6a7c0d::t_73aecb9c98ea63 112
+  s_f1d1097b6a7c0d::t_a5b5a33c510960 172
+  s_f1d1097b6a7c0d::t_767832fcff9360 6
+tests/helpers/git-fixture.mjs
+  s_f1d1097b6a7c0d::t_90480b6a8085e7 29
+  s_f1d1097b6a7c0d::t_049452770cd7a7 13-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "643a47a776819f6a810033a2d013712364689d25",
+  "prompts": {},
+  "sessions": {
+    "s_f1d1097b6a7c0d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8ee1-2b9d-748e-a16c-16cd17320a24",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

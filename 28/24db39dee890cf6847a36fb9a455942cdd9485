@@ -1,0 +1,21 @@
+spine-tasks/SP-122-preflight-scope-prompt-validation/PROMPT.md
+  s_8863c00a3b4a5d::t_b56a5790e969e5 1-50
+spine-tasks/SP-122-preflight-scope-prompt-validation/STATUS.md
+  s_8863c00a3b4a5d::t_b56a5790e969e5 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2824db39dee890cf6847a36fb9a455942cdd9485",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

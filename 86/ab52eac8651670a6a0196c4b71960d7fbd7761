@@ -1,0 +1,15 @@
+docs/incidents/20260603-orphan-running-resume.md
+  ai_agent 1-108
+tests/fixtures/incidents/orphan-running-resume.json
+  ai_agent 1-98
+tests/fixtures/incidents/README.md
+  ai_agent 1-9
+tests/batch/orphan-reconcile.test.mjs
+  ai_agent 5,20-42,50-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "86ab52eac8651670a6a0196c4b71960d7fbd7761",
+  "prompts": {}
+}

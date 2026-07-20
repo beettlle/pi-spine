@@ -1,0 +1,33 @@
+taskplane-tasks/TP-022-honest-postmortem/PROMPT.md
+  s_ca0db411fbc320::t_367751e421a057 1-66
+taskplane-tasks/TP-022-honest-postmortem/STATUS.md
+  s_ca0db411fbc320::t_367751e421a057 1-3
+taskplane-tasks/TP-021-integrate-gate/STATUS.md
+  s_ca0db411fbc320::t_367751e421a057 1-3
+taskplane-tasks/TP-020-review-fail-closed/PROMPT.md
+  s_ca0db411fbc320::t_367751e421a057 1-75
+taskplane-tasks/TP-020-review-fail-closed/STATUS.md
+  s_ca0db411fbc320::t_367751e421a057 1-5
+taskplane-tasks/dependencies.json
+  s_ca0db411fbc320::t_914798fd26f977 48-56
+taskplane-tasks/TP-021-integrate-gate/PROMPT.md
+  s_ca0db411fbc320::t_367751e421a057 1-69
+taskplane-tasks/CONTEXT.md
+  s_ca0db411fbc320::t_9c00118a7d2545 5-6,12,14,18,36,42,44,48-50,52,56-60,62,66-68,72-74,78,80-83,87,89-93,97,101-105,116,125-127,133-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "16c7f43a1e3d7804920e87a01acbf6d9b3c67b37",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

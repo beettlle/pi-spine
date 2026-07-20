@@ -1,0 +1,21 @@
+tests/spine-preflight.test.mjs
+  s_14d12b2a61ce27::t_97d7d8c2e77715 80,82-83
+package-lock.json
+  ai_agent 563
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "23e7026dd9125a1300dcde75cb8044afcb3e7e29",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

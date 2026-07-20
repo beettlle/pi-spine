@@ -1,0 +1,19 @@
+src/batch/lane-commit.mjs
+  s_aa37de32047f01::t_13a5049f8060a8 136-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1d64da1769502f492e3c394865c062c4aabf4b88",
+  "prompts": {},
+  "sessions": {
+    "s_aa37de32047f01": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e98a3-3e1e-7cd4-9122-c7343f4a672c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

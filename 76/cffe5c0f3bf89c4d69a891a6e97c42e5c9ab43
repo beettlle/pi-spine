@@ -1,0 +1,19 @@
+taskplane-tasks/TP-002-spine-init/STATUS.md
+  s_cc44f834948ce7::t_ed0c528a27e3a6 3-5,8,14,16-17,22,24-25,30,32-34,39,41-42,47,49-51,56,58-59,74-75,84-89,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "76cffe5c0f3bf89c4d69a891a6e97c42e5c9ab43",
+  "prompts": {},
+  "sessions": {
+    "s_cc44f834948ce7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8051-99c5-7fcc-922f-25768e82dfb3",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+bin/spine.mjs
+  ai_agent 489-501,552,591,651-652
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "98c8b6df907ce929400dd40465be76d7386fa06a",
+  "prompts": {}
+}

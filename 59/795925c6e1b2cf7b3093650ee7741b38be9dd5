@@ -1,0 +1,56 @@
+taskplane-tasks/TP-050-create-agent-session-spike/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-83
+taskplane-tasks/TP-049-operator-runbook/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-72
+taskplane-tasks/CONTEXT.md
+  s_14d12b2a61ce27::t_6e2b4f7b4bbcf6 5,11
+  s_14d12b2a61ce27::t_5e20026201efc7 113,121,130,132-147,149-151,154,156,158,160-162,164,166-170,173
+  s_14d12b2a61ce27::t_fea2f34915f854 191,194-199
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-81
+taskplane-tasks/TP-045-taskplane-coexistence-guard/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-19
+taskplane-tasks/TP-047-stub-free-dogfood-signoff/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-19
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-76
+taskplane-tasks/TP-043-local-install-no-publish/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-83
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-24
+taskplane-tasks/TP-046-env-overrides-fr-cfg-04/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-16
+taskplane-tasks/TP-048-real-pi-worker-e2e/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-16
+taskplane-tasks/TP-049-operator-runbook/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-16
+taskplane-tasks/TP-044-adoption-fixture-bootstrap/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-86
+taskplane-tasks/TP-045-taskplane-coexistence-guard/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-80
+taskplane-tasks/TP-048-real-pi-worker-e2e/PROMPT.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-76
+taskplane-tasks/TP-043-local-install-no-publish/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-22
+taskplane-tasks/TP-050-create-agent-session-spike/STATUS.md
+  s_14d12b2a61ce27::t_1deccf4c027392 1-19
+docs/adoption/real-project-readiness.md
+  s_14d12b2a61ce27::t_f93b513efd1840 1-14,16-18,20
+  s_14d12b2a61ce27::t_1deccf4c027392 15,19,21-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "59795925c6e1b2cf7b3093650ee7741b38be9dd5",
+  "prompts": {},
+  "sessions": {
+    "s_14d12b2a61ce27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8975-69c8-731a-9341-5fb087647648",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

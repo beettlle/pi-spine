@@ -1,0 +1,30 @@
+taskplane-tasks/CONTEXT.md
+  s_ca0db411fbc320::t_a8b22df6929d2b 5
+  s_ca0db411fbc320::t_2ea6ec597697e1 52-58
+  s_ca0db411fbc320::t_34900e6f5a772b 12
+  s_ca0db411fbc320::t_31b2bef7fac18b 110-111
+  s_ca0db411fbc320::t_3eb01c07d3472d 146-147
+  s_ca0db411fbc320::t_4004d929567dcb 92-94,97
+taskplane-tasks/dependencies.json
+  s_ca0db411fbc320::t_6ce04f6fda0c1e 33-35
+taskplane-tasks/TP-015-segments-resume-commit/PROMPT.md
+  s_ca0db411fbc320::t_0da7541ffaaf45 1-135
+taskplane-tasks/TP-015-segments-resume-commit/STATUS.md
+  s_ca0db411fbc320::t_d9de9949ae5dda 1-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "6c1684ab3cc4c074d43c1b1de7843b33354fb341",
+  "prompts": {},
+  "sessions": {
+    "s_ca0db411fbc320": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e84d8-75d3-7890-b1c8-a76d869c3fbc",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+spine-tasks/CONTEXT.md
+  s_45f9b7246cd93f::t_3e655f882f47ab 285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "cfe0c0785e0ce4b143dcf8f99f55a46a9def7f26",
+  "prompts": {},
+  "sessions": {
+    "s_45f9b7246cd93f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9531-9122-7477-9366-77055d9c54ee",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

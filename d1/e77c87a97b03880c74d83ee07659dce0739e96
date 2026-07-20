@@ -1,0 +1,46 @@
+spine-tasks/SP-093-cursor-rules-cli-init/STATUS.md
+  s_6909114266da53::t_4211c0850c581a 1-7
+spine-tasks/dependencies.json
+  s_6909114266da53::t_8331d3447dbbb8 187-204
+spine-tasks/SP-094-cursor-rules-docs/PROMPT.md
+  s_6909114266da53::t_4211c0850c581a 1-62
+spine-tasks/SP-093-cursor-rules-cli-init/PROMPT.md
+  s_6909114266da53::t_4211c0850c581a 1-66
+spine-tasks/SP-090-cursor-rules-discover-manifest/PROMPT.md
+  s_6909114266da53::t_c1e7dbf8f1b0b6 1-95
+spine-tasks/SP-091-cursor-rules-select-globs/STATUS.md
+  s_6909114266da53::t_1d169fbd220bd9 1-27
+spine-tasks/SP-094-cursor-rules-docs/STATUS.md
+  s_6909114266da53::t_4211c0850c581a 1-7
+spine-tasks/SP-089-cursor-rules-parser-foundation/STATUS.md
+  s_6909114266da53::t_06eeee7a1e66cb 1-48
+spine-tasks/CONTEXT.md
+  s_6909114266da53::t_13a81c97beb2d6 208-235
+  s_6909114266da53::t_89dc98340e434d 5
+spine-tasks/SP-089-cursor-rules-parser-foundation/PROMPT.md
+  s_6909114266da53::t_06eeee7a1e66cb 1-99
+spine-tasks/SP-092-cursor-rules-worker-integration/PROMPT.md
+  s_6909114266da53::t_4211c0850c581a 1-78
+spine-tasks/SP-090-cursor-rules-discover-manifest/STATUS.md
+  s_6909114266da53::t_c1e7dbf8f1b0b6 1-46
+spine-tasks/SP-092-cursor-rules-worker-integration/STATUS.md
+  s_6909114266da53::t_4211c0850c581a 1-7
+spine-tasks/SP-091-cursor-rules-select-globs/PROMPT.md
+  s_6909114266da53::t_1d169fbd220bd9 1-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d1e77c87a97b03880c74d83ee07659dce0739e96",
+  "prompts": {},
+  "sessions": {
+    "s_6909114266da53": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e942c-d65f-7715-9444-cb2e35d92e3f",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

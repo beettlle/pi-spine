@@ -1,0 +1,34 @@
+tests/batch/heartbeat.test.mjs
+  s_ce96539baf8f8d::t_3bb6b96612c192 8,13-14,20,77-183
+  s_ce96539baf8f8d::t_df2ecc275fbe33 16
+  s_ce96539baf8f8d::t_453e120a2f4e08 50,55,66
+  s_ce96539baf8f8d::t_3b5b6af329c4a1 23-49,51-54,56-65,67-76
+tests/dashboard/snapshot.test.mjs
+  s_ce96539baf8f8d::t_3bb6b96612c192 10-11,15-16,34-107
+src/dashboard/snapshot.mjs
+  s_ce96539baf8f8d::t_3bb6b96612c192 146-186,193,196-215,324,326-327,347
+src/batch/worker-host.mjs
+  s_ce96539baf8f8d::t_6ea70a90699fb7 423
+  s_ce96539baf8f8d::t_3bb6b96612c192 18,104,164-188,293-295,342-346,388-400,445-449,457-458
+src/batch/heartbeat.mjs
+  s_ce96539baf8f8d::t_5202583f600a66 281,289,291
+  s_ce96539baf8f8d::t_3bb6b96612c192 19-31,307-354,363-364,366,371-373
+src/dashboard/view.mjs
+  s_ce96539baf8f8d::t_3bb6b96612c192 161-168,179-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4c238e991c9bbc81c7012077aed320464473bfd7",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

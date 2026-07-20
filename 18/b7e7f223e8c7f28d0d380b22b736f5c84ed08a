@@ -1,0 +1,21 @@
+package.json
+  s_ce96539baf8f8d::t_3efdf20fe924e7 32
+tests/agents/template-drift.test.mjs
+  s_ce96539baf8f8d::t_fe190f988e6b2d 1-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "18b7e7f223e8c7f28d0d380b22b736f5c84ed08a",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

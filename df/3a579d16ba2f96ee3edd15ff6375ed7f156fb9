@@ -1,0 +1,107 @@
+src/config/worktree-setup-hook.mjs
+  s_aa37de32047f01::t_1209433d71d5d7 1-122
+docs/incidents/20260605-lane-worktree-devcontainer.md
+  s_aa37de32047f01::t_88467b375e3dce 1-102
+src/batch/journal.mjs
+  s_aa37de32047f01::t_8cdd7292abfca6 224-226
+  s_aa37de32047f01::t_a86239233ddcb9 292,294
+tests/batch/lane-commit.test.mjs
+  s_aa37de32047f01::t_13b81e2a4e8a22 6-10
+  s_aa37de32047f01::t_cc133bbf65b4a2 102-124
+tests/batch/diagnosis-launch-failed.test.mjs
+  s_aa37de32047f01::t_431ec038eef6cb 1-156
+src/config/pi-spine-root.mjs
+  s_aa37de32047f01::t_274ce3e39b5050 1-93
+tests/batch/worker-host-env.test.mjs
+  s_aa37de32047f01::t_9f210989ed858b 1-5,7,9-36,39,45,51-53,61,63-64
+  ai_agent 6,8,37-38,40-44,46-50,54-60,62
+src/batch/lane-commit.mjs
+  s_aa37de32047f01::t_d74d6af9462298 76,90
+  s_aa37de32047f01::t_3142464e7d88f4 41-75,77-89,91-92
+src/batch/diagnosis.mjs
+  s_aa37de32047f01::t_ad2df73ada5466 174-175,186-196
+  s_aa37de32047f01::t_1fd7555c88ed02 43-44,47,71-91,103,110-112
+  s_aa37de32047f01::t_8d90e97d2b5276 23-42,45-46,48-70,108-109,113-115,122-123,131-136
+  s_aa37de32047f01::t_c6f30e6d2eef81 92-102,104-107
+src/batch/engine-scope.mjs
+  s_aa37de32047f01::t_846ff77bd1d84e 186,196-197
+  s_aa37de32047f01::t_6be1b689dbde9c 142,144,147,150-152,155-157
+tests/batch/engine.test.mjs
+  s_aa37de32047f01::t_ae12f28b88e32f 379-380
+tests/batch/engine-lanes-commit-order.test.mjs
+  s_aa37de32047f01::t_c2b1fede3e31f8 111
+  s_aa37de32047f01::t_7530fe87ff47f8 1-87,102-110,112-205
+  s_aa37de32047f01::t_cc28fd261334a2 88
+  s_aa37de32047f01::t_0cbe148a9e8ca0 89-101
+tests/fixtures/incidents/lane-worktree-devcontainer.json
+  s_aa37de32047f01::t_d0f222cbafbe23 1-82
+src/batch/engine-lanes.mjs
+  s_aa37de32047f01::t_6bc1ae053c7dfc 10-15
+  s_aa37de32047f01::t_dcd40829964ce2 418-424
+  s_aa37de32047f01::t_86de9da7d13419 425-427,442-450,465,467-468,475-483,487,491-503
+src/batch/worker-host.mjs
+  s_aa37de32047f01::t_2f758b0db97fa7 27,84,269-276
+  s_aa37de32047f01::t_e4f485f1d1bcb0 561-577
+  s_aa37de32047f01::t_3ce307798da8a5 67,69,98-128
+templates/spine-config.json
+  s_aa37de32047f01::t_032df52df38272 44
+bin/spine-preflight.mjs
+  s_aa37de32047f01::t_76988dccf313f6 13
+  s_aa37de32047f01::t_483c656a35ba7c 438-461
+  s_aa37de32047f01::t_fc42cc3ce42e04 11-12,280-309,537
+  s_aa37de32047f01::t_756d32e80b0def 539
+src/batch/resume-multi.mjs
+  s_aa37de32047f01::t_3229ba77460444 453-455,470-479,496,498-499,506-515,519,525-537
+  s_aa37de32047f01::t_4e12d16c4d62bd 709,712
+  s_aa37de32047f01::t_4fa5d88d86752a 24
+  s_aa37de32047f01::t_b78ae8cffc5ddc 171-188
+  s_aa37de32047f01::t_cd0cd74bc4a2b0 35-40
+  s_aa37de32047f01::t_e49e265bc3f4cf 241,244,250-322,344
+src/batch/reconcile.mjs
+  s_aa37de32047f01::t_08ad9a5b337f60 10
+  s_aa37de32047f01::t_0b527064ca3379 308-355,377,379,382-384,387,389,400,404,408,413,415,419,423,427,431,434
+  s_aa37de32047f01::t_513958b5394099 560,575-576
+bin/spine-config.mjs
+  s_aa37de32047f01::t_66ca267a816bf1 157-161
+  s_aa37de32047f01::t_0b6648e06fa0ef 162-180
+  s_aa37de32047f01::t_fdd072ef7ac79a 8
+src/batch/worktree.mjs
+  s_aa37de32047f01::t_04eee21fb8ff72 173-236
+  s_aa37de32047f01::t_062e0d72519b54 25-92
+  s_aa37de32047f01::t_02a82fb9383cc6 142
+  s_aa37de32047f01::t_83418e5b30c0bc 7-10
+tests/batch/worktree-git-paths.test.mjs
+  s_aa37de32047f01::t_041b9c8d0c7413 1-183
+tests/batch/worker-host.test.mjs
+  s_aa37de32047f01::t_081de98637ea92 96-141
+  s_aa37de32047f01::t_19b0114056d2a2 8
+src/batch/engine.mjs
+  s_aa37de32047f01::t_c4d42f573baede 25,27
+  s_aa37de32047f01::t_5583157827d75d 175-212
+src/batch/agent-session-worker.mjs
+  s_aa37de32047f01::t_6af7004007783b 7,169,183-184
+src/batch/resume.mjs
+  s_aa37de32047f01::t_f3fa3f36457ef3 296-381,394
+  s_aa37de32047f01::t_c59ad9f8d2e198 206,209
+  s_aa37de32047f01::t_adbc68061b2a47 13
+tests/batch/worktree-setup-hook.test.mjs
+  s_aa37de32047f01::t_d0f8defc947ce9 135-138
+  s_aa37de32047f01::t_eb636b1ee328ee 5-6
+  s_aa37de32047f01::t_aaf5ab2c841a17 1-4,7-134,139-229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "df3a579d16ba2f96ee3edd15ff6375ed7f156fb9",
+  "prompts": {},
+  "sessions": {
+    "s_aa37de32047f01": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e98a3-3e1e-7cd4-9122-c7343f4a672c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

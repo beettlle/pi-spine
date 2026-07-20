@@ -1,0 +1,89 @@
+spine-tasks/SP-110-glob-scope-regex-escape/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-48
+spine-tasks/SP-113-resume-multi-strangler/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-106-audit-batch-reliability/PROMPT.md
+  s_8863c00a3b4a5d::t_9120440f6d0193 1-112
+spine-tasks/SP-107-audit-core-architecture/.DONE
+  s_8863c00a3b4a5d::t_f8eac4c152974d 1
+.spine/rules-manifest.json
+  s_8863c00a3b4a5d::t_00fabc86a68af0 2
+spine-tasks/SP-108-audit-adoption-tests/.DONE
+  s_8863c00a3b4a5d::t_dbeae2d3354134 1
+spine-tasks/SP-107-audit-core-architecture/PROMPT.md
+  s_8863c00a3b4a5d::t_4e41fe136c7818 1-97
+spine-tasks/SP-113-resume-multi-strangler/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-56
+spine-tasks/SP-114-coverage-test-globs-parity/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-46
+spine-tasks/SP-118-adoption-docs-hygiene/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-57
+spine-tasks/SP-108-audit-adoption-tests/PROMPT.md
+  s_8863c00a3b4a5d::t_4e41fe136c7818 1-82
+spine-tasks/SP-111-orphan-pidless-ghost/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-54
+spine-tasks/SP-117-detached-enginepid-symmetry/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-112-spine-config-testing-defaults/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-54
+spine-tasks/SP-116-batch-state-io-git-errors/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-52
+spine-tasks/SP-118-adoption-docs-hygiene/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-109-planner-prompt-validation/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-107-audit-core-architecture/AUDIT-REPORT.md
+  s_8863c00a3b4a5d::t_2664313d061a17 1-303
+spine-tasks/SP-110-glob-scope-regex-escape/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-115-orphan-diagnosis-taxonomy/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-52
+spine-tasks/SP-109-planner-prompt-validation/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-70
+spine-tasks/SP-114-coverage-test-globs-parity/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-112-spine-config-testing-defaults/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-117-detached-enginepid-symmetry/PROMPT.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-49
+spine-tasks/dependencies.json
+  s_8863c00a3b4a5d::t_4b929891aa27cc 230,242,246
+  s_8863c00a3b4a5d::t_2b2e261aea1280 231-241,243-245,247
+spine-tasks/SP-107-audit-core-architecture/STATUS.md
+  s_8863c00a3b4a5d::t_f8eac4c152974d 1-29
+spine-tasks/SP-106-audit-batch-reliability/AUDIT-REPORT.md
+  s_8863c00a3b4a5d::t_d4c3164af1a3ae 1-245
+spine-tasks/SP-108-audit-adoption-tests/STATUS.md
+  s_8863c00a3b4a5d::t_b8b475c945c2c5 1-49
+spine-tasks/SP-106-audit-batch-reliability/STATUS.md
+  s_8863c00a3b4a5d::t_d4c3164af1a3ae 1-74
+spine-tasks/SP-111-orphan-pidless-ghost/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/SP-115-orphan-diagnosis-taxonomy/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+spine-tasks/CONTEXT.md
+  s_8863c00a3b4a5d::t_7a54531fe75b5f 410
+  s_8863c00a3b4a5d::t_68ffa6d40c87f6 295-329
+  s_8863c00a3b4a5d::t_e307e3d864c174 336-340
+  s_8863c00a3b4a5d::t_0aafbe993259cd 5
+spine-tasks/SP-108-audit-adoption-tests/AUDIT-REPORT.md
+  s_8863c00a3b4a5d::t_1e1e1b7d2c6a1d 1-196
+spine-tasks/SP-116-batch-state-io-git-errors/STATUS.md
+  s_8863c00a3b4a5d::t_0c5c55f53005dd 1-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2155d4b0cf9fb0d4e6d91f1712d0e558e55bf26b",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/2-20260605T214237.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-47
+docs/adoption/operator-runbook.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 500
+spine-tasks/SP-121-rules-manifest-merge-autoresolve/STATUS.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-2,4-24
+src/config/cursor-rules/discover.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 281-361
+spine-tasks/SP-120-batch-retry-state-drift/STATUS.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1,3-22
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/2-20260605T221513.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-89
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/3-20260605T222236.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-66
+spine-tasks/SP-121-rules-manifest-merge-autoresolve/.reviews/1-20260605T222407.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-38
+src/doctor/rules-manifest.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 10,16-17
+tests/fixtures/incidents/README.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 11,21
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/2-20260605T220808.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-45
+tests/batch/retry-state-drift.test.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-154
+src/batch/resume-common.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 9,16
+src/batch/state.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 467-552
+src/batch/engine-lanes.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 9-14,25-26,36-78,80-128,130-144,159-160,162,175-198,212-214,221,223,407-415,617
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/3-20260605T222148.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-47
+src/batch/retry.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 9-10,117,219
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/2-20260605T220044.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-89
+tests/batch/rules-manifest-merge.test.mjs
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-244
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/1-20260605T213632.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-38
+spine-tasks/SP-120-batch-retry-state-drift/.reviews/1-20260605T213536.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-33
+tests/fixtures/incidents/retry-clears-failed-classification.json
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-111
+.spine/rules-manifest.json
+  ai_agent 2
+docs/incidents/20260605-retry-state-drift.md
+  s_8863c00a3b4a5d::t_a640e8c0b8d9a1 1-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "9d0744faf4aa63dd66033af9a50af023aa119ddc",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

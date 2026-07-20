@@ -1,0 +1,19 @@
+.cursor/rules/taskplane-worker-cursor.mdc
+  ai_agent 85,98-99
+.cursor/rules/engineering-philosophy.mdc
+  ai_agent 240-253
+.cursor/rules/critical-rules-quick-reference.mdc
+  ai_agent 19-31,197
+.cursor/rules/general-llm-anti-patterns.mdc
+  ai_agent 892-936,1194
+.cursor/rules/cursor-integration.mdc
+  ai_agent 66-79
+.cursor/rules/git-workflow-and-pr.mdc
+  ai_agent 114-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "71eb21f7574324cba4da9253b4c9c0eb7165d982",
+  "prompts": {}
+}

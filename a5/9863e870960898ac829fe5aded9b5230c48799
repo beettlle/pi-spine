@@ -1,0 +1,29 @@
+spine-tasks/SP-121-rules-manifest-merge-autoresolve/PROMPT.md
+  s_8863c00a3b4a5d::t_37aca6a769eadf 1-51
+spine-tasks/SP-121-rules-manifest-merge-autoresolve/STATUS.md
+  s_8863c00a3b4a5d::t_37aca6a769eadf 1-3
+spine-tasks/CONTEXT.md
+  s_8863c00a3b4a5d::t_2a587771ac592c 313-323
+.spine/rules-manifest.json
+  s_8863c00a3b4a5d::t_3160d6cc2915dd 2
+spine-tasks/SP-120-batch-retry-state-drift/PROMPT.md
+  s_8863c00a3b4a5d::t_37aca6a769eadf 1-53
+spine-tasks/SP-120-batch-retry-state-drift/STATUS.md
+  s_8863c00a3b4a5d::t_37aca6a769eadf 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "a59863e870960898ac829fe5aded9b5230c48799",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

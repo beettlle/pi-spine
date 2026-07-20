@@ -1,0 +1,38 @@
+spine-tasks/SP-098-resume-orphan-incident-fixture/STATUS.md
+  s_8df41865029927::t_13f98311b6a64a 1-65
+spine-tasks/SP-095-orphan-detect-resume-scope/PROMPT.md
+  s_8df41865029927::t_1c6a66f606babb 1-109
+spine-tasks/SP-096-resume-per-lane-sequential/STATUS.md
+  s_8df41865029927::t_633d6940dc2225 1-81
+spine-tasks/SP-097-resume-engine-crash-surface/STATUS.md
+  s_8df41865029927::t_a6df58e5051c99 1-83
+spine-tasks/SP-098-resume-orphan-incident-fixture/PROMPT.md
+  s_8df41865029927::t_e61804d8d608cd 1-81
+spine-tasks/SP-097-resume-engine-crash-surface/PROMPT.md
+  s_8df41865029927::t_3ea394eefb7182 1-110
+spine-tasks/SP-095-orphan-detect-resume-scope/STATUS.md
+  s_8df41865029927::t_00080216835a67 1-85
+spine-tasks/CONTEXT.md
+  s_8df41865029927::t_364976ac24b5ec 262-278
+  s_8df41865029927::t_5f6b4a65c51c27 3,5
+spine-tasks/dependencies.json
+  s_8df41865029927::t_c07e0a61562ab9 205-213
+spine-tasks/SP-096-resume-per-lane-sequential/PROMPT.md
+  s_8df41865029927::t_c5940d4d856618 1-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "235f05d5ef45318d308fa4241ff3c2c7fd9640f8",
+  "prompts": {},
+  "sessions": {
+    "s_8df41865029927": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e94c0-854f-75c6-b222-0c6faf6b4951",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

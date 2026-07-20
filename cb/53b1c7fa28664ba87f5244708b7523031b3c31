@@ -1,0 +1,40 @@
+spine-tasks/SP-084-heartbeat-worker-phase/PROMPT.md
+  s_ce96539baf8f8d::t_aef43609847814 1-59
+spine-tasks/SP-083-detached-resume-semantics/STATUS.md
+  s_ce96539baf8f8d::t_aef43609847814 1-4
+spine-tasks/dependencies.json
+  s_ce96539baf8f8d::t_438136ccbe6543 172-180
+spine-tasks/SP-085-orphan-incident-fixture/STATUS.md
+  s_ce96539baf8f8d::t_aef43609847814 1-4
+.spine/spine-config.json
+  s_ce96539baf8f8d::t_6409640c726c24 31
+spine-tasks/SP-082-orphan-running-reconciliation/PROMPT.md
+  s_ce96539baf8f8d::t_aef43609847814 1-108
+spine-tasks/SP-082-orphan-running-reconciliation/STATUS.md
+  s_ce96539baf8f8d::t_aef43609847814 1-4
+spine-tasks/SP-083-detached-resume-semantics/PROMPT.md
+  s_ce96539baf8f8d::t_aef43609847814 1-70
+spine-tasks/CONTEXT.md
+  s_ce96539baf8f8d::t_551102ea0ca422 5
+  s_ce96539baf8f8d::t_5e6b2191e24205 208-224
+spine-tasks/SP-085-orphan-incident-fixture/PROMPT.md
+  s_ce96539baf8f8d::t_aef43609847814 1-49
+spine-tasks/SP-084-heartbeat-worker-phase/STATUS.md
+  s_ce96539baf8f8d::t_aef43609847814 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "cb53b1c7fa28664ba87f5244708b7523031b3c31",
+  "prompts": {},
+  "sessions": {
+    "s_ce96539baf8f8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e8f6c-7d7c-77b6-96dc-dab3ab658215",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}

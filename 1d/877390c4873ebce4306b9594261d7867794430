@@ -1,0 +1,19 @@
+spine-tasks/SP-118-adoption-docs-hygiene/PROMPT.md
+  s_8863c00a3b4a5d::t_86fec7818d01cf 45-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1d877390c4873ebce4306b9594261d7867794430",
+  "prompts": {},
+  "sessions": {
+    "s_8863c00a3b4a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019e9908-b1d1-79d9-8c63-2a96d4d8636e",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
