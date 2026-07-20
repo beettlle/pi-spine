@@ -5,7 +5,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import { installAttachedExitFinalizeHandlers } from "../../src/batch/attached-runner.mjs";
 import { gateRecordPath } from "../../src/batch/gate.mjs";
@@ -22,7 +21,7 @@ import {
 	loadBatch20260630OrphanFixture,
 	materializeBatch20260630OrphanFixture,
 } from "../helpers/batch-20260630T212050-fixture.mjs";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const BATCH_ID = BATCH_20260630T212050_ID;
 const FIXTURE_PATH = path.join(
@@ -50,7 +49,7 @@ test("batch 20260630T212050 journal fixture is limbo via resume detect but not b
 		assert.equal(detectPostMergeLimboForResume({ projectRoot, state }), true);
 		assert.equal(fs.existsSync(gateRecordPath(projectRoot, BATCH_ID)), false);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -62,7 +61,7 @@ test("hydrateMergeResultsFromJournal enables state limbo detection for batch 202
 		assert.equal(hydrateMergeResultsFromJournal({ projectRoot, state, batchId: BATCH_ID }), true);
 		assert.equal(isPostMergeLimbo(state), true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -87,7 +86,7 @@ test("finalizeAttachedLandLoopBeforeExit opens gate for batch 20260630T212050 jo
 		assert.ok(handoffIndex > mergeIndex);
 		assert.ok(gateIndex > mergeIndex);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -111,6 +110,6 @@ test("installAttachedExitFinalizeHandlers finalizes journal limbo on SIGTERM wit
 		process.exit = previousExit;
 		process.removeAllListeners("SIGTERM");
 		process.removeAllListeners("SIGINT");
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });

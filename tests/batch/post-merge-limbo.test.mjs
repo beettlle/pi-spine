@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 import { buildSuggestedCommand } from "../../src/batch/diagnosis.mjs";
 import { gateRecordPath } from "../../src/batch/gate.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
@@ -116,7 +115,7 @@ test("finalizeBatchForIntegrate opens gate from post-merge limbo without resume"
 		assert.equal(completed[0]?.payload?.resumed, false);
 		assert.equal(completed[0]?.payload?.postMergeLimbo, true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -165,6 +164,6 @@ test("resumeMultiTaskBatch opens gate from post-merge limbo without re-running t
 		assert.equal(gateOpened.length, 1, "gate.opened should not duplicate");
 		assert.ok(events.some((event) => event.type === "batch.completed"));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });

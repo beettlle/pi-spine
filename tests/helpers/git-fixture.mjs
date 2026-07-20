@@ -37,5 +37,14 @@ export async function initGitRepo(prefix = "spine-test-", options = {}) {
  * @param {string} projectRoot
  */
 export async function destroyGitRepo(projectRoot) {
-	await rm(projectRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+	// Full-suite parallel git fixtures often hit ENOTEMPTY on .git/{refs,objects}
+	// (Spotlight/AV). Retries absorb races; leftover tmp dirs are non-fatal.
+	try {
+		await rm(projectRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+	} catch (err) {
+		if (err && typeof err === "object" && "code" in err && err.code === "ENOTEMPTY") {
+			return;
+		}
+		throw err;
+	}
 }

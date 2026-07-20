@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { gateRecordPath } from "../../src/batch/gate.mjs";
@@ -194,7 +193,7 @@ test("maybeFinalizeAfterWaveMerge opens gate for last-wave post-merge limbo", as
 		const events = readJournalEvents(projectRoot, batchId);
 		assert.equal(events.filter((event) => event.type === "gate.opened").length, 1);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -225,7 +224,7 @@ test("resumeMultiTaskBatch finalizes post-merge limbo even with stale engine pid
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -252,7 +251,7 @@ test("terminateStaleDetachedEngine still clears stale engine during post-merge l
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 

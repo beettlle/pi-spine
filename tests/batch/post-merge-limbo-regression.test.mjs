@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import { finalizeResumePostMergeLimbo } from "../../src/batch/attached-runner.mjs";
 import {
@@ -26,7 +25,7 @@ import {
 	loadSpineBatchState,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const BATCH_ID = "20260629T021550";
 const TASK_IDS = [
@@ -127,7 +126,7 @@ test("batch 20260629T021550 fixture is post-merge limbo without gate", async () 
 		assert.equal(shouldResumePostMergeLimbo(state), true);
 		assert.equal(fs.existsSync(gateRecordPath(projectRoot, BATCH_ID)), false);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -146,7 +145,7 @@ test("attemptPostMergeLandLoopHandoff finalizes batch 20260629T021550 limbo afte
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
 		assert.ok(fs.existsSync(gateRecordPath(projectRoot, BATCH_ID)));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -182,7 +181,7 @@ test("resumeBatchDetached --force finalizes post-merge limbo without spawning en
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -207,7 +206,7 @@ test("resumeBatch attached path finalizes batch 20260629T021550 limbo immediatel
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -221,7 +220,7 @@ test("resumeMultiTaskBatch still finalizes batch 20260629T021550 after orphan_te
 		assert.equal(result.ok, true, result.output ?? result.error);
 		assert.ok(fs.existsSync(gateRecordPath(projectRoot, BATCH_ID)));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -250,6 +249,6 @@ test("finalizeResumePostMergeLimbo clears stale engine pid during post-merge lim
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
