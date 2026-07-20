@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-13 (Phase 72 v2.8.0 implementation complete — SP-656–662; Next → SP-663; publish operator-gated)
+**Last Updated:** 2026-07-20 (Phase 74 v2.10.0 published — SP-668–673; Next → SP-674)
 **Status:** Active
 **Next Task ID:** SP-674
 
@@ -2080,12 +2080,25 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-668 | Auto-stage untracked files before contract verify | Staged | — |
-| SP-672 | Execution-only task type in PROMPT frontmatter | Staged | — |
-| SP-669 | Parse Matrix section from PROMPT.md and expand in planner | Staged | SP-672 |
-| SP-670 | Substitute matrix variables in contract and steps | Staged | SP-669 |
-| SP-671 | Execute matrix sub-lanes in parallel worktrees | Staged | SP-670, SP-672 |
-| SP-673 | Document parametric matrix and execution-only tasks | Staged | SP-671, SP-672 |
+| SP-668 | Auto-stage untracked files before contract verify | Done | — |
+| SP-672 | Execution-only task type in PROMPT frontmatter | Done | — |
+| SP-669 | Parse Matrix section from PROMPT.md and expand in planner | Done | SP-672 |
+| SP-670 | Substitute matrix variables in contract and steps | Done | SP-669 |
+| SP-671 | Execute matrix sub-lanes in parallel worktrees | Done | SP-670, SP-672 |
+| SP-673 | Document parametric matrix and execution-only tasks | Done | SP-671, SP-672 |
+
+**Phase 74 exit criteria:**
+
+- [x] #219 closed (SP-668)
+- [x] #217 closed (SP-669–671)
+- [x] #218 closed (SP-672; docs SP-673)
+- [x] Runbook + CONTEXT Phase 74 complete; Next Task ID → SP-674
+- [x] `npm run release:check` green on publish HEAD
+- [x] **v2.10.0 published** — tag `v2.10.0`, npm `pi-spine@2.10.0` (2026-07-20); Release [29720019872](https://github.com/beettlle/pi-spine/actions/runs/29720019872); GitHub [v2.10.0](https://github.com/beettlle/pi-spine/releases/tag/v2.10.0)
+
+**Release note:** v2.10.0 — Parametric matrix tasks (`## Matrix` parse/substitute/execute, #217), execution-only `Type: execute` tasks (#218), auto-stage untracked fileScope files before contract verify (#219), operator runbook docs.
+
+**Phase 74 complete and published (SP-668–673 → v2.10.0).** Manifest: [`spine-tasks/_authoring/release-v2.10.0/manifest.md`](_authoring/release-v2.10.0/manifest.md).
 
 ---
 
