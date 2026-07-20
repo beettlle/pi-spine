@@ -1,0 +1,61 @@
+spine-tasks/_authoring/release-v2.11.0/manifest.md
+  s_970e616ca1243c::t_c12c9276466cd2 1-73,99-139
+  s_970e616ca1243c::t_a8ed1ad58b1a1c 74-98
+spine-tasks/SP-680-quota-html-report/PROMPT.md
+  s_970e616ca1243c::t_eea97ee37df74f 1-91
+spine-tasks/SP-674-gate-review-evidence-slot/STATUS.md
+  s_970e616ca1243c::t_5acb53d98dc763 1-51
+spine-tasks/SP-678-quota-snapshot-builder/PROMPT.md
+  s_970e616ca1243c::t_8c7bb351b3cb56 1-94
+spine-tasks/SP-679-metrics-quota-cli/PROMPT.md
+  s_970e616ca1243c::t_22bcd92707dd3d 1-95
+spine-tasks/SP-681-quota-provider-probes/STATUS.md
+  s_970e616ca1243c::t_9bb55654f2f816 1-48
+spine-tasks/SP-676-metrics-usage-fields/PROMPT.md
+  s_970e616ca1243c::t_e8fde3380491a6 1-94
+spine-tasks/SP-682-rel211-metrics-stet-docs/STATUS.md
+  s_970e616ca1243c::t_c4e5b8c54f4f95 1-48
+spine-tasks/SP-678-quota-snapshot-builder/STATUS.md
+  s_970e616ca1243c::t_a845f49d1fd12c 1-49
+spine-tasks/SP-674-gate-review-evidence-slot/PROMPT.md
+  s_970e616ca1243c::t_aeb5e603e2b8e2 1-102
+spine-tasks/SP-677-metrics-usage-rollups/PROMPT.md
+  s_970e616ca1243c::t_0f250efc8c3f86 1-96
+spine-tasks/SP-677-metrics-usage-rollups/STATUS.md
+  s_970e616ca1243c::t_3bec4e57dfc940 1-48
+spine-tasks/SP-675-stet-review-script-docs/STATUS.md
+  s_970e616ca1243c::t_51bf3c009482b0 1-49
+spine-tasks/SP-679-metrics-quota-cli/STATUS.md
+  s_970e616ca1243c::t_d9725f76170a59 1-48
+spine-tasks/SP-681-quota-provider-probes/PROMPT.md
+  s_970e616ca1243c::t_b5458c0f308d4b 1-94
+spine-tasks/CONTEXT.md
+  s_970e616ca1243c::t_37d7a5c401337c 3,5
+  s_970e616ca1243c::t_5e3f84be2e1ca2 2103-2129
+spine-tasks/SP-676-metrics-usage-fields/STATUS.md
+  s_970e616ca1243c::t_68163d951c3712 1-49
+spine-tasks/SP-675-stet-review-script-docs/PROMPT.md
+  s_970e616ca1243c::t_4f587987e3fda9 1-100
+spine-tasks/SP-680-quota-html-report/STATUS.md
+  s_970e616ca1243c::t_8109be63c526e8 1-48
+spine-tasks/SP-682-rel211-metrics-stet-docs/PROMPT.md
+  s_970e616ca1243c::t_9682bc731bc1da 1-97
+spine-tasks/dependencies.json
+  s_970e616ca1243c::t_bee92766e477ec 1794-1820
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "adede1d1b032def5fe58466a970773e775c5ce75",
+  "prompts": {},
+  "sessions": {
+    "s_970e616ca1243c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-23d71968-07b4-48b4-8383-c1568c733910",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
