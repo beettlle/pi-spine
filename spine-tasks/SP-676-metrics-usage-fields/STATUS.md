@@ -1,6 +1,6 @@
 # SP-676: Run-metrics usage fields — Status
 
-**Current Step:** 3
+**Current Step:** 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-07-20
 **Review Level:** 1
@@ -27,12 +27,12 @@
 - [x] Capture wired: `buildTaskMetricRecord` carries usage fields when present on task; omitted when absent.
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Scoped contract passing
+- [x] Scoped contract passing: `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/run-metrics.test.mjs` — 14/14 pass
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] `.DONE` created
 
@@ -42,4 +42,5 @@
 - `buildTaskMetricRecord` adds `tokensIn`, `tokensOut`, `estimatedUsd`, `role` only when present on task.
 - No existing source populates these fields yet, so records omit them when absent (no fake costs).
 - No docs updates required (must-update: none).
+- GitNexus detect_changes: low risk, 2 symbols touched, no affected processes.
 (worker discoveries)
