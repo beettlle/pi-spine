@@ -126,7 +126,7 @@ test("resolveTaskMetricOutcome maps skipped_done_on_disk to skipped", () => {
 	assert.equal(resolveTaskMetricOutcome({ status: "failed", exitReason: "needs_replan" }), "failed");
 });
 
-test("appendTaskMetric redacts secret-like fields and omits prompt text", async () => {
+test("appendTaskMetric redacts secret-like fields and preserves usage counts", async () => {
 	await withProject((projectRoot) => {
 		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
 		appendTaskMetric(
@@ -144,6 +144,9 @@ test("appendTaskMetric redacts secret-like fields and omits prompt text", async 
 				outcome: "failed",
 				promptText: "secret prompt",
 				apiToken: "abc123",
+				tokensIn: 1234,
+				tokensOut: 567,
+				estimatedUsd: 0.0123,
 			},
 			config,
 		);
@@ -152,6 +155,10 @@ test("appendTaskMetric redacts secret-like fields and omits prompt text", async 
 		assert.doesNotMatch(raw, /secret prompt/);
 		assert.doesNotMatch(raw, /abc123/);
 		assert.match(raw, /\[REDACTED\]/);
+		const parsed = JSON.parse(raw.trim());
+		assert.equal(parsed.tokensIn, 1234);
+		assert.equal(parsed.tokensOut, 567);
+		assert.equal(parsed.estimatedUsd, 0.0123);
 	});
 });
 
