@@ -1,0 +1,7 @@
+SP-676 complete.
+
+- Added optional usage fields (tokensIn, tokensOut, estimatedUsd, role) to task metric records when present on the task object.
+- Fixed redaction to preserve usage keys via a USAGE_KEYS allow-list while still redacting apiToken/prompt/secret/password/key fields.
+- Verified scoped contract command: npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/run-metrics.test.mjs (14/14 pass).
+- No fake costs invented; fields are omitted when absent.
+- GitNexus detect_changes: low risk, 2 symbols touched, no affected processes.

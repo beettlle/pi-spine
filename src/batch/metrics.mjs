@@ -10,6 +10,7 @@ import { METRICS_DEFAULTS } from "../config/defaults.mjs";
 import { readReviewLevel } from "./review.mjs";
 
 const REDACT_KEY_PATTERN = /key|token|secret|password|prompt/i;
+const USAGE_KEYS = new Set(["tokensIn", "tokensOut", "estimatedUsd"]);
 
 /**
  * @param {object} config
@@ -91,7 +92,7 @@ function redactMetricValue(value) {
 	/** @type {Record<string, unknown>} */
 	const out = {};
 	for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (value))) {
-		if (REDACT_KEY_PATTERN.test(key)) {
+		if (REDACT_KEY_PATTERN.test(key) && !USAGE_KEYS.has(key)) {
 			out[key] = "[REDACTED]";
 		} else if (entry && typeof entry === "object") {
 			out[key] = redactMetricValue(entry);
@@ -172,6 +173,10 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, 
 	if (task.finalAttempts != null) record.finalAttempts = task.finalAttempts;
 	if (task.contractOk != null) record.contractOk = task.contractOk;
 	if (task.stallKilled === true) record.stallKilled = true;
+	if (Number.isFinite(task.tokensIn)) record.tokensIn = task.tokensIn;
+	if (Number.isFinite(task.tokensOut)) record.tokensOut = task.tokensOut;
+	if (Number.isFinite(task.estimatedUsd)) record.estimatedUsd = task.estimatedUsd;
+	if (typeof task.role === "string") record.role = task.role;
 
 	return sanitizeMetricRecord(record);
 }
