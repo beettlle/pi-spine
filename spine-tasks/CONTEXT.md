@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-20 (Phase 74 v2.10.0 published — SP-668–673; Next → SP-674)
+**Last Updated:** 2026-07-20 (Phase 75 v2.11.0 staged — SP-674–682; Next → SP-683)
 **Status:** Active
-**Next Task ID:** SP-674
+**Next Task ID:** SP-683
 
 ---
 
@@ -2099,6 +2099,33 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.10.0 — Parametric matrix tasks (`## Matrix` parse/substitute/execute, #217), execution-only `Type: execute` tasks (#218), auto-stage untracked fileScope files before contract verify (#219), operator runbook docs.
 
 **Phase 74 complete and published (SP-668–673 → v2.10.0).** Manifest: [`spine-tasks/_authoring/release-v2.10.0/manifest.md`](_authoring/release-v2.10.0/manifest.md).
+
+### Phase 75 — v2.11.0 release (stet gate review + metrics usage + quota headroom)
+
+**Authoring:** 2026-07-20 · Manifest: [`spine-tasks/_authoring/release-v2.11.0/manifest.md`](_authoring/release-v2.11.0/manifest.md)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-674 | Gate `testing.review` evidence slot | Pending | — |
+| SP-675 | Stet review script + Approach 2 docs | Pending | SP-674 |
+| SP-676 | Run-metrics usage fields | Pending | — |
+| SP-677 | `spine metrics show` usage rollups | Pending | SP-676 |
+| SP-678 | Quota snapshot builder | Pending | SP-676 |
+| SP-679 | `spine metrics quota` CLI | Pending | SP-677, SP-678 |
+| SP-680 | Quota HTML report renderer | Pending | SP-678 |
+| SP-681 | Optional quota provider probes | Pending | SP-678 |
+| SP-682 | QUICK-REFERENCE + runbook metrics/stet docs | Pending | SP-675, SP-677, SP-679, SP-680 |
+
+**Phase 75 exit criteria:**
+
+- [ ] #160 closed (SP-674–675)
+- [ ] #208 closed (SP-676–677)
+- [ ] #220 closed (SP-678–681)
+- [ ] Runbook + CONTEXT Phase 75 complete; Next Task ID → SP-683
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.11.0 published** — awaiting operator publish gate
+
+**Release note placeholder:** v2.11.0 — Gate `testing.review` for stet/external review CLIs (#160), run-metrics usage/cost rollups (#208), provider quota headroom CLI + HTML (#220).
 
 ---
 
