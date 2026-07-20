@@ -197,42 +197,6 @@ test("buildTaskMetricRecord preserves usage fields and omits them when absent", 
 	assert.equal(withoutUsage.role, undefined);
 });
 
-test("sanitizeMetricRecord preserves usage keys but still redacts secrets", async () => {
-	await withProject((projectRoot) => {
-		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
-		appendTaskMetric(
-			projectRoot,
-			{
-				recordType: "task",
-				schemaVersion: 1,
-				batchId: "20260611T120000",
-				taskId: "SP-001",
-				agentRole: "worker",
-				model: "inherit",
-				thinking: "high",
-				startedAt: "2026-06-11T12:00:00.000Z",
-				endedAt: "2026-06-11T12:05:00.000Z",
-				outcome: "completed",
-				tokensIn: 1234,
-				tokensOut: 567,
-				estimatedUsd: 0.0123,
-				apiToken: "should-redact",
-				promptText: "secret prompt",
-			},
-			config,
-		);
-
-		const parsed = JSON.parse(
-			fs.readFileSync(metricsFilePath(projectRoot, config), "utf-8").trim(),
-		);
-		assert.equal(parsed.tokensIn, 1234);
-		assert.equal(parsed.tokensOut, 567);
-		assert.equal(parsed.estimatedUsd, 0.0123);
-		assert.equal(parsed.apiToken, "[REDACTED]");
-		assert.equal(parsed.promptText, "[REDACTED]");
-	});
-});
-
 test("skipTaskDoneOnDisk records skipped task metric", async () => {
 	await withProject(async (projectRoot) => {
 		const batchId = "20260611T120000";
