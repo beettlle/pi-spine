@@ -1,0 +1,19 @@
+tests/batch/run-metrics.test.mjs
+  s_1bb9d3f38617c8::t_cb6d5800f41967 129,147-149,158-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b691e64ab10f72514fe0ef4b224857374bbad2dd",
+  "prompts": {},
+  "sessions": {
+    "s_1bb9d3f38617c8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-d076f711-fc4e-4843-a353-e4ce0ed3fa11",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
