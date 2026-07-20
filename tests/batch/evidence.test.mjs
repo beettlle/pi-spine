@@ -270,3 +270,134 @@ test("collectEvidenceBundle writes rejected output for unsafe testing.test", asy
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("collectEvidenceBundle writes review-output.txt when testing.review is set", async () => {
+	const fs = await import("node:fs");
+	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
+	const { collectEvidenceBundle, evidenceDir } = await import("../../src/batch/evidence.mjs");
+
+	const projectRoot = await initGitRepo("spine-evidence-review-");
+	const batchId = "20260604T120000";
+	try {
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify(
+				{
+					configVersion: 1,
+					baseBranch: "main",
+					testing: {
+						test: "",
+						build: "",
+						testWithCoverage: "",
+						review: `node -e "console.log('review-ok')"`,
+					},
+					gates: { collectTestEvidence: false, collectBuildEvidence: false },
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
+
+		const { evidenceRefs } = collectEvidenceBundle({
+			projectRoot,
+			batchId,
+			batchState: { batchId, phase: "completed", baseBranch: "main" },
+			config: JSON.parse(fs.readFileSync(path.join(projectRoot, ".spine", "spine-config.json"), "utf-8")),
+		});
+
+		const outputPath = path.join(evidenceDir(projectRoot, batchId), "review-output.txt");
+		assert.ok(fs.existsSync(outputPath));
+		assert.ok(evidenceRefs.includes("evidence/review-output.txt"));
+		const output = fs.readFileSync(outputPath, "utf-8");
+		assert.match(output, /review-ok/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("collectEvidenceBundle omits review output when testing.review is unset", async () => {
+	const fs = await import("node:fs");
+	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
+	const { collectEvidenceBundle, evidenceDir } = await import("../../src/batch/evidence.mjs");
+
+	const projectRoot = await initGitRepo("spine-evidence-no-review-");
+	const batchId = "20260605T120000";
+	try {
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify(
+				{
+					configVersion: 1,
+					baseBranch: "main",
+					testing: { test: "", build: "", testWithCoverage: "", review: "" },
+					gates: { collectTestEvidence: false, collectBuildEvidence: false },
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
+
+		const { evidenceRefs } = collectEvidenceBundle({
+			projectRoot,
+			batchId,
+			batchState: { batchId, phase: "completed", baseBranch: "main" },
+			config: JSON.parse(fs.readFileSync(path.join(projectRoot, ".spine", "spine-config.json"), "utf-8")),
+		});
+
+		const outputPath = path.join(evidenceDir(projectRoot, batchId), "review-output.txt");
+		assert.equal(fs.existsSync(outputPath), false);
+		assert.equal(evidenceRefs.includes("evidence/review-output.txt"), false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("collectEvidenceBundle writes rejected output for unsafe testing.review", async () => {
+	const fs = await import("node:fs");
+	const { initGitRepo, destroyGitRepo } = await import("../helpers/git-fixture.mjs");
+	const { collectEvidenceBundle, evidenceDir } = await import("../../src/batch/evidence.mjs");
+
+	const projectRoot = await initGitRepo("spine-evidence-review-reject-");
+	const batchId = "20260606T120000";
+	try {
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify(
+				{
+					configVersion: 1,
+					baseBranch: "main",
+					testing: {
+						test: "",
+						build: "",
+						testWithCoverage: "",
+						review: "npm test; rm -rf /",
+					},
+					gates: { collectTestEvidence: false, collectBuildEvidence: false },
+				},
+				null,
+				2,
+			),
+			"utf-8",
+		);
+
+		const { evidenceRefs } = collectEvidenceBundle({
+			projectRoot,
+			batchId,
+			batchState: { batchId, phase: "completed", baseBranch: "main" },
+			config: JSON.parse(fs.readFileSync(path.join(projectRoot, ".spine", "spine-config.json"), "utf-8")),
+		});
+
+		const outputPath = path.join(evidenceDir(projectRoot, batchId), "review-output.txt");
+		assert.ok(fs.existsSync(outputPath));
+		assert.ok(evidenceRefs.includes("evidence/review-output.txt"));
+		const output = fs.readFileSync(outputPath, "utf-8");
+		assert.match(output, /\[rejected\].*metacharacters/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

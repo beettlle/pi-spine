@@ -138,6 +138,12 @@ export function collectExtendedEvidenceBundle(ctx) {
 		evidenceRefs.push("evidence/coverage-output.txt");
 	}
 
+	if (testing.review) {
+		const result = runEvidenceCommand(projectRoot, testing.review);
+		writeTextAtomic(path.join(dir, "review-output.txt"), `${result.output}\n`);
+		evidenceRefs.push("evidence/review-output.txt");
+	}
+
 	return { evidenceDir: dir, evidenceRefs };
 }
 
