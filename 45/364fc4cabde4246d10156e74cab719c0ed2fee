@@ -1,0 +1,21 @@
+src/batch/gate-evidence-collect.mjs
+  s_4b5eac3124b1e5::t_6e0430be3270f1 141-146
+src/batch/gate-evidence-read.mjs
+  s_4b5eac3124b1e5::t_ac7530838405f1 145-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "45364fc4cabde4246d10156e74cab719c0ed2fee",
+  "prompts": {},
+  "sessions": {
+    "s_4b5eac3124b1e5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8e5b097e-f6b2-4122-8f09-2d3d2728246b",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
