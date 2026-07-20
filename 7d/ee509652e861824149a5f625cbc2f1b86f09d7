@@ -1,0 +1,27 @@
+tests/helpers/git-fixture.mjs
+  s_1bb9d3f38617c8::t_22b2d9a2c08883 40-49
+tests/batch/post-merge-limbo.test.mjs
+  s_1bb9d3f38617c8::t_10073784117f01 5,118,167
+tests/batch/post-merge-limbo-regression.test.mjs
+  s_1bb9d3f38617c8::t_10073784117f01 28,129,148,184,209,223,252
+tests/batch/attached-gate-limbo.test.mjs
+  s_1bb9d3f38617c8::t_10073784117f01 196,227,254
+tests/batch/post-merge-limbo-20260630.test.mjs
+  s_1bb9d3f38617c8::t_10073784117f01 24,52,64,89,113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "7dee509652e861824149a5f625cbc2f1b86f09d7",
+  "prompts": {},
+  "sessions": {
+    "s_1bb9d3f38617c8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-d076f711-fc4e-4843-a353-e4ce0ed3fa11",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
