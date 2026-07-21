@@ -1,0 +1,19 @@
+tests/metrics/quota-probes.test.mjs
+  s_a48e4129f5d40f::t_1dc6e5b940471e 1-366
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "afa228425807e230c8698ca141ee120de137df0a",
+  "prompts": {},
+  "sessions": {
+    "s_a48e4129f5d40f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-105e770b-4a60-4c25-839d-5e9c4319c402",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
