@@ -1,7 +1,7 @@
 # SP-678: Quota snapshot builder — Status
 
 **Current Step:** Step 4 — Documentation & Delivery
-**Status:** 🟡 In Progress (tests passing, awaiting .DONE marker)
+**Status:** ✅ Done
 **Last Updated:** 2026-07-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -41,9 +41,9 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Done
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
