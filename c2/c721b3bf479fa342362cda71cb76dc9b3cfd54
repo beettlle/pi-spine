@@ -1,0 +1,19 @@
+src/metrics/quota-snapshot.mjs
+  s_a48e4129f5d40f::t_4af3d2176d0ec2 11-16,168,186,190,224,226-227,236-247,249,252-253,258,261-262,265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c2c721b3bf479fa342362cda71cb76dc9b3cfd54",
+  "prompts": {},
+  "sessions": {
+    "s_a48e4129f5d40f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-105e770b-4a60-4c25-839d-5e9c4319c402",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
