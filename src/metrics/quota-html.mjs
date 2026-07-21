@@ -219,7 +219,6 @@ function renderBurnEta(sortedPools) {
 	const rows = poolsWithLimit
 		.map((pool) => {
 			const headroom = /** @type {number} */ (remainingHeadroom(pool));
-			const usage = pool.usage || {};
 			const score = burnScore(pool);
 			const eta = score > 0 && headroom > 0 ? "estimable" : "at or over limit";
 			return `
