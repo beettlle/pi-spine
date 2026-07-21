@@ -38,7 +38,7 @@ Partial #220 — Build a privacy-safe quota/headroom **snapshot** from `spine-co
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/metrics/quota-snapshot.test.mjs` |
-| fileScopeMustChange | `src/metrics/quota-snapshot.mjs`, `tests/metrics/quota-snapshot.test.mjs` |
+| fileScopeMustChange | `tests/metrics/quota-snapshot.test.mjs` |
 
 ## Steps
 
@@ -92,3 +92,7 @@ Partial #220 — Build a privacy-safe quota/headroom **snapshot** from `spine-co
 ## Git Commit Convention
 
 - `feat(SP-678): quota snapshot builder (#220)`
+
+## Amendments
+
+- **2026-07-21 (pre-landed salvage):** WIP `src/metrics/quota-snapshot.mjs` already on `main` from aborted batch `20260720T235540`. Redirected `fileScopeMustChange` to `tests/metrics/quota-snapshot.test.mjs` (create + pass fixtures). Polish `quota-snapshot.mjs` only if tests require it.

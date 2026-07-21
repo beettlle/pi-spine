@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-20 (Phase 75 v2.11.0 staged — SP-674–682; Next → SP-683)
+**Last Updated:** 2026-07-21 (Phase 75 v2.11.0 resuming — SP-674/676/677 done; SP-675/678–682 pending; Next → SP-683)
 **Status:** Active
 **Next Task ID:** SP-683
 

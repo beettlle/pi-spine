@@ -40,7 +40,7 @@ Partial #220 — Add `spine metrics quota` that builds the SP-678 snapshot, writ
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/metrics/quota-cli.test.mjs` |
-| fileScopeMustChange | `bin/spine.mjs`, `src/metrics/quota-cli.mjs`, `tests/metrics/quota-cli.test.mjs` |
+| fileScopeMustChange | `src/metrics/quota-cli.mjs`, `tests/metrics/quota-cli.test.mjs` |
 
 ## Steps
 
@@ -93,3 +93,7 @@ Partial #220 — Add `spine metrics quota` that builds the SP-678 snapshot, writ
 ## Git Commit Convention
 
 - `feat(SP-679): spine metrics quota CLI (#220)`
+
+## Amendments
+
+- **2026-07-21 (pre-landed salvage):** `bin/spine.mjs` already changed on `main` for SP-677 usage rollups. Redirected `fileScopeMustChange` to new `quota-cli` module + tests; still wire `cmdMetrics` quota subcommand in `bin/spine.mjs` as needed for the CLI.

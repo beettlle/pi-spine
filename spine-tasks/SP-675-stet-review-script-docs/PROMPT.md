@@ -30,7 +30,6 @@ Partial #160 — Ship `scripts/spine-evidence-review.sh` (stet start/run/finish 
 
 ## File Scope
 
-- `scripts/spine-evidence-review.sh`
 - `docs/stet-overview.md`
 - `docs/features/stet-feedback-loop-brief.md`
 - `docs/adoption/operator-runbook.md`
@@ -40,7 +39,7 @@ Partial #160 — Ship `scripts/spine-evidence-review.sh` (stet start/run/finish 
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `scripts/spine-evidence-review.sh`, `docs/stet-overview.md` |
+| fileScopeMustChange | `docs/stet-overview.md`, `docs/features/stet-feedback-loop-brief.md`, `docs/adoption/operator-runbook.md` |
 | fileScopeMustNotChange | `src/**`, `bin/**` |
 
 ## Steps
@@ -98,3 +97,7 @@ Partial #160 — Ship `scripts/spine-evidence-review.sh` (stet start/run/finish 
 ## Git Commit Convention
 
 - `docs(SP-675): stet gate evidence script + Approach 2 (#160)`
+
+## Amendments
+
+- **2026-07-21 (pre-landed salvage):** `scripts/spine-evidence-review.sh` already on `main` from aborted batch `20260720T235540`. Redirected `fileScopeMustChange` to remaining Approach 2 documentation paths only.
