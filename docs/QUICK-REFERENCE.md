@@ -473,6 +473,42 @@ spine metrics show --last 5
 spine metrics show --json
 ```
 
+When usage fields (`tokensIn`, `tokensOut`, `estimatedUsd`) are present in `.spine/run-metrics.jsonl`, the output appends three rollup tables:
+
+- **Usage by batch**
+- **Usage by model**
+- **Usage by role**
+
+Records with missing usage are omitted from rollups so totals stay clean. Cost and token columns are shown only when the underlying records carry them; nothing is invented.
+
+### Quota Snapshots
+
+```bash
+# Write timestamped JSON report and print a short human summary
+spine metrics quota
+
+# Emit snapshot JSON to stdout (automation / CI)
+spine metrics quota --json
+
+# Also write a self-contained HTML report beside the JSON file
+spine metrics quota --open
+```
+
+Report paths:
+
+- JSON: `.spine/reports/quota-snapshot-<ISO-timestamp>.json`
+- HTML: `.spine/reports/quota-snapshot-<ISO-timestamp>.html` (only with `--open`)
+
+The snapshot joins the active agent model configuration from `.spine/spine-config.json` with observed task usage from `.spine/run-metrics.jsonl`. Each pool shows one of the following source values:
+
+| Source | Meaning |
+|--------|---------|
+| `estimate` | Observed task usage was aggregated for that provider pool. |
+| `absent` | No tasks were recorded for that pool in the metrics file. |
+| `live` | Reserved for optional provider-probe enrichment (future probe adapters). |
+
+Remaining headroom, burn rate, and ETA are reported as **unknown** when provider limits are not configured. No fake cost, invented remaining quota, or guessed percentage is emitted. API keys and prompt bodies are never written into the report.
+
 ### Progress Reporting
 
 ```bash

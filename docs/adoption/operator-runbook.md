@@ -1986,6 +1986,57 @@ Gate evidence commands also accept Phase A single allowlisted argv or `scripts/�
 
 ---
 
+## 8.2 Quota snapshots and provider probes (v2.11.0)
+
+v2.11.0+ adds `spine metrics quota` (SP-678–SP-680) to build a privacy-safe quota snapshot from the active agent model configuration and `.spine/run-metrics.jsonl`.
+
+```bash
+# Write a timestamped JSON report and print a short human summary
+spine metrics quota
+
+# Emit snapshot JSON to stdout
+spine metrics quota --json
+
+# Also write a self-contained HTML report beside the JSON file
+spine metrics quota --open
+```
+
+Report paths:
+
+- JSON: `.spine/reports/quota-snapshot-<ISO-timestamp>.json`
+- HTML: `.spine/reports/quota-snapshot-<ISO-timestamp>.html` (only with `--open`)
+
+The JSON report includes a `snapshotSource` (`estimate` / `absent` / `live`) and a per-provider `pools` map. Each pool shows expected models (from `spine-config.json`), observed models (from metrics), task count, duration, tokens, estimated cost, and drift. Reports are runtime artifacts under `.spine/reports/` and are never committed.
+
+### Credential classes
+
+Provider probes (SP-681) distinguish two credential classes:
+
+- **Inference credentials** — the API keys used by worker/reviewer models during task execution (e.g., Z.ai, Kimi, Google provider keys in `~/.pi/agent/auth.json`). When a provider exposes a usage endpoint, probes may use these credentials read-only to enrich the snapshot with live usage.
+- **Admin credentials** — separate Cursor Admin/Enterprise analytics or provider account keys that can see account-wide quota and billing. Probes that require admin credentials only run when an explicit admin key is configured.
+
+Spine never reads credentials itself; probes run as optional adapters and fail closed. Inference keys are never promoted to admin endpoints.
+
+### Degrade matrix
+
+All probes are optional and fail-closed:
+
+| Probe result | Pool source | Remaining headroom |
+|--------------|-------------|-------------------|
+| Provider returns usage and a configured limit | `live` | Computed (`limit - used`) |
+| Provider auth missing / not configured | `estimate` or `absent` | `unknown` |
+| Provider returns 403 (non-Enterprise, disallowed) | `absent` | `unknown` |
+| Provider probe hard failure | `estimate` or `absent` | `unknown` |
+
+Headroom, burn rate, and ETA are reported as **unknown** when limits are not available. No fake cost, invented remaining percentage, or guessed quota is emitted.
+
+### Cross-links
+
+- See [docs/QUICK-REFERENCE.md](../QUICK-REFERENCE.md) for `spine metrics show` usage rollups and `spine metrics quota` CLI flags.
+- See [docs/stet-overview.md](../stet-overview.md) for the `testing.review` Approach 2 stet integration.
+
+---
+
 ## 9. Troubleshooting
 
 ### Dev verification (pi-spine repo)
