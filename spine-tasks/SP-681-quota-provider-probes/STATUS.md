@@ -1,8 +1,8 @@
 # SP-681: Optional quota provider probes — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-20
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-07-21
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,38 +11,35 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Snapshot extension points confirmed
-
----
+- [x] Snapshot extension points confirmed
+- [x] List degrade modes (`live` | `estimate` | `absent`)
 
 ### Step 1: Probe adapters
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fail-closed adapters + mocked tests
-
----
+- [x] Fail-closed adapters + mocked tests
 
 ### Step 2: Snapshot integration
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Source modes merged; secrets redacted
-
----
+- [x] Source modes merged; secrets redacted
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Scoped contract passing
-
----
+- [x] Scoped contract passing
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
-(worker discoveries)
+Plan review skipped (worker session; batch engine runs review after .DONE per SP-195).
+- Implemented `src/metrics/quota-probes.mjs` with fail-closed optional adapters for zai, kimi-coding, and cursor (admin-only).
+- Extended `src/metrics/quota-snapshot.mjs` to accept `probeResults` and merge `live` source/usage/limit while falling back to `estimate`/`absent`.
+- Added `tests/metrics/quota-probes.test.mjs` with mocked fetch fixtures; no live network required.
+- Verified with `npm run typecheck` and scoped contract test command.
