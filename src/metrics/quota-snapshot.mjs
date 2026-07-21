@@ -8,10 +8,12 @@
  * explicit usage fields (`tokensIn`, `tokensOut`, `estimatedUsd`) when present and
  * falling back to duration-based attribution when they are absent.
  *
- * No live provider probes are used here — that is SP-681. Snapshots produced
- * by this module report `source: "estimate"` when observed metrics exist and
- * `source: "absent"` when a pool has no observed burn. `source: "live"` is
- * reserved for probe-enriched snapshots.
+ * Optional live provider probe results (SP-681) are merged in when supplied.
+ * Snapshots produced by this module report:
+ *
+ * - `source: "live"` when a probe successfully enriched the pool,
+ * - `source: "estimate"` when observed metrics exist but no live probe is present,
+ * - `source: "absent"` when a pool has no observed burn and no live probe.
  */
 
 import { metricsFilePath, readMetricsLines } from "../batch/metrics.mjs";
@@ -163,6 +165,7 @@ function buildPoolDrift(expectedModels, observedModels) {
  * @property {string[]} expectedModels
  * @property {string[]} observedModels
  * @property {PoolUsage} usage
+ * @property {number} [limit]
  * @property {{unexpectedModels: string[], missingModels: string[]}} drift
  */
 
@@ -180,10 +183,11 @@ function buildPoolDrift(expectedModels, observedModels) {
  * @param {string} params.projectRoot
  * @param {object} params.config
  * @param {object[]} [params.metricsLines]
+ * @param {Record<string, import("./quota-probes.mjs").ProbeResult>} [params.probeResults]
  * @param {number | string | Date} [params.now]
  * @returns {QuotaSnapshot}
  */
-export function buildQuotaSnapshot({ projectRoot, config, metricsLines, now = Date.now() }) {
+export function buildQuotaSnapshot({ projectRoot, config, metricsLines, probeResults, now = Date.now() }) {
 	const resolvedNow = new Date(now).toISOString();
 
 	let lines = metricsLines;
@@ -217,8 +221,10 @@ export function buildQuotaSnapshot({ projectRoot, config, metricsLines, now = Da
 	}
 
 	const poolIds = new Set([...expectedByPool.keys(), ...observedByPool.keys()]);
+	let overallHasLive = false;
 	let overallHasEstimate = false;
-	let overallHasAbsent = false;
+
+	const probeByPool = probeResults && typeof probeResults === "object" ? probeResults : {};
 
 	/** @type {Record<string, PoolSnapshot>} */
 	const pools = {};
@@ -227,22 +233,36 @@ export function buildQuotaSnapshot({ projectRoot, config, metricsLines, now = Da
 		const observedEntry = observedByPool.get(poolId);
 		const observedRecords = observedEntry?.records ?? [];
 		const observedSet = observedEntry?.models ?? new Set();
-		const source = observedRecords.length > 0 ? "estimate" : "absent";
+		let source = observedRecords.length > 0 ? "estimate" : "absent";
 
+		const probe = probeByPool[poolId];
+		/** @type {PoolUsage} */
+		let usage = aggregatePoolUsage(observedRecords);
+		let limit;
+
+		if (probe?.source === "live") {
+			source = "live";
+			usage = probe.usage && typeof probe.usage === "object" ? probe.usage : usage;
+			if (Number.isFinite(probe.limit) && probe.limit >= 0) limit = probe.limit;
+		}
+
+		if (source === "live") overallHasLive = true;
 		if (source === "estimate") overallHasEstimate = true;
-		if (source === "absent") overallHasAbsent = true;
 
-		pools[poolId] = {
+		/** @type {PoolSnapshot} */
+		const pool = {
 			poolId,
 			source,
 			expectedModels: [...expectedSet].sort(),
 			observedModels: [...observedSet].sort(),
-			usage: aggregatePoolUsage(observedRecords),
+			usage,
 			drift: buildPoolDrift([...expectedSet], [...observedSet]),
 		};
+		if (limit !== undefined) pool.limit = limit;
+		pools[poolId] = pool;
 	}
 
-	const snapshotSource = overallHasEstimate ? "estimate" : overallHasAbsent ? "absent" : "absent";
+	const snapshotSource = overallHasLive ? "live" : overallHasEstimate ? "estimate" : "absent";
 
 	return {
 		generatedAt: resolvedNow,
