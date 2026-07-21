@@ -1,0 +1,3 @@
+Salvaged + verified on main 2026-07-21 from aborted batch 20260721T195712.
+Contract: typecheck + quota-cli.test.mjs 7/7 pass.
+Partial #220 CLI (`spine metrics quota`).

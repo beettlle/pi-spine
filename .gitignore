@@ -35,6 +35,7 @@ hb-step-*/
 .spine/batch-state.json
 .spine/batch-history.json
 .spine/run-metrics.jsonl
+.spine/reports/
 .spine/handoff.md
 .pi-smart-router/
 

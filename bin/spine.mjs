@@ -169,51 +169,62 @@ async function cmdIssue(args) {
 
 async function cmdMetrics(args) {
 	const sub = args[0];
-	if (sub !== "show") {
-		die(`Unknown metrics subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine metrics show${c.reset} for usage.`);
-	}
-
-	const projectRoot = process.cwd();
-	const json = args.includes("--json");
-	let batchId = null;
-	let last = null;
-	for (let i = 1; i < args.length; i++) {
-		const arg = args[i];
-		if (arg === "--batch") batchId = args[++i] ?? null;
-		else if (arg === "--last") last = Number(args[++i]);
-	}
-
-	const configResult = loadSpineConfig(projectRoot);
-	const config = configResult.config ?? {};
-	const {
-		filterMetricsLines,
-		formatMetricsTable,
-		metricsFilePath,
-		readMetricsLines,
-	} = await import("../src/batch/metrics.mjs");
-	const { rollupMetrics, formatMetricsRollups } = await import("../src/batch/metrics-rollup.mjs");
-	const filePath = metricsFilePath(projectRoot, config);
-
-	if (!fs.existsSync(filePath)) {
-		if (json) {
-			process.stdout.write(`${JSON.stringify({ lines: [] }, null, 2)}\n`);
-			process.exit(1);
+	if (sub === "show") {
+		const projectRoot = process.cwd();
+		const json = args.includes("--json");
+		let batchId = null;
+		let last = null;
+		for (let i = 1; i < args.length; i++) {
+			const arg = args[i];
+			if (arg === "--batch") batchId = args[++i] ?? null;
+			else if (arg === "--last") last = Number(args[++i]);
 		}
-		die(`Metrics file not found: ${path.relative(projectRoot, filePath)}\n`);
-	}
 
-	const lines = filterMetricsLines(readMetricsLines(filePath), {
-		batchId: batchId ?? undefined,
-		last: last ?? undefined,
-	});
-	const rollups = rollupMetrics(lines);
+		const configResult = loadSpineConfig(projectRoot);
+		const config = configResult.config ?? {};
+		const {
+			filterMetricsLines,
+			formatMetricsTable,
+			metricsFilePath,
+			readMetricsLines,
+		} = await import("../src/batch/metrics.mjs");
+		const { rollupMetrics, formatMetricsRollups } = await import("../src/batch/metrics-rollup.mjs");
+		const filePath = metricsFilePath(projectRoot, config);
 
-	if (json) {
-		process.stdout.write(`${JSON.stringify({ lines, rollups }, null, 2)}\n`);
+		if (!fs.existsSync(filePath)) {
+			if (json) {
+				process.stdout.write(`${JSON.stringify({ lines: [] }, null, 2)}\n`);
+				process.exit(1);
+			}
+			die(`Metrics file not found: ${path.relative(projectRoot, filePath)}\n`);
+		}
+
+		const lines = filterMetricsLines(readMetricsLines(filePath), {
+			batchId: batchId ?? undefined,
+			last: last ?? undefined,
+		});
+		const rollups = rollupMetrics(lines);
+
+		if (json) {
+			process.stdout.write(`${JSON.stringify({ lines, rollups }, null, 2)}\n`);
+			return;
+		}
+
+		process.stdout.write(formatMetricsTable(lines) + formatMetricsRollups(rollups));
 		return;
 	}
 
-	process.stdout.write(formatMetricsTable(lines) + formatMetricsRollups(rollups));
+	if (sub === "quota") {
+		const { runQuotaReport } = await import("../src/metrics/quota-cli.mjs");
+		const result = runQuotaReport({ projectRoot: process.cwd(), args: args.slice(1) });
+		process.stdout.write(result.output);
+		if (result.exitCode !== 0) process.exit(result.exitCode);
+		return;
+	}
+
+	die(
+		`Unknown metrics subcommand: ${sub ?? "(none)"}\nRun ${c.cyan}spine metrics show${c.reset} or ${c.cyan}spine metrics quota${c.reset} for usage.`,
+	);
 }
 
 async function cmdReport(args) {
@@ -290,7 +301,7 @@ ${c.bold}Commands:${c.reset}
  ${c.cyan}run${c.reset}             Start batch or planner wave sequence (PRD §15.2, #54)
  ${c.cyan}handoff${c.reset}          Write operator handoff note (FR-UXB-05)
  ${c.cyan}issue draft${c.reset}     Build GitHub issue draft from project state (#60)
- ${c.cyan}metrics${c.reset}         Show run metrics JSONL (FR-UXB-06)
+ ${c.cyan}metrics${c.reset}         Show run metrics and quota snapshots (FR-UXB-06)
  ${c.cyan}review step${c.reset}    Spawn reviewer for a task step (FR-REV)
  ${c.cyan}report progress${c.reset}  Emit task.step_completed to batch journal (FR-WORK-09)
  ${c.cyan}gate${c.reset}            Inspect or resolve integrate gate (FR-GATE)
@@ -350,6 +361,7 @@ ${c.bold}Examples:${c.reset}
   spine handoff [--batch ID] [--json]          # operator handoff note
   spine issue draft [--type bug] [--json]      # GitHub issue draft from diagnose state
   spine metrics show [--batch ID] [--last N]   # read run-metrics.jsonl (usage rollups when present)
+  spine metrics quota [--json] [--open]        # write .spine/reports/quota-snapshot-*.json
   spine review step --step N [--type plan|code|final] # step or final review
   spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM
