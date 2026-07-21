@@ -1,0 +1,20 @@
+spine-tasks/SP-682-rel211-metrics-stet-docs/PROMPT.md
+  s_f52fd2d6e79f87::t_2205f2ba6892b1 98-101
+  s_f52fd2d6e79f87::t_cd7cdccb69ee77 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b7b77a8f86584c71b58873d563290a050e8aa604",
+  "prompts": {},
+  "sessions": {
+    "s_f52fd2d6e79f87": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2efde1ab-7679-411e-b51a-421c74604ed3",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
