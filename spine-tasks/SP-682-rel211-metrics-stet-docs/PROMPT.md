@@ -41,7 +41,7 @@ Partial #160, Partial #208, Partial #220 — Update `docs/QUICK-REFERENCE.md` Me
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `docs/QUICK-REFERENCE.md`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `docs/QUICK-REFERENCE.md` |
 | fileScopeMustNotChange | `src/**`, `bin/**` |
 
 ## Steps
@@ -95,3 +95,7 @@ Partial #160, Partial #208, Partial #220 — Update `docs/QUICK-REFERENCE.md` Me
 ## Git Commit Convention
 
 - `docs(SP-682): metrics quota and stet gate evidence (#208 #220 #160)`
+
+## Amendments
+
+- **2026-07-21 (pre-landed):** `docs/adoption/operator-runbook.md` already updated by SP-675 for stet Approach 2 / `testing.review`. Redirected `fileScopeMustChange` to `docs/QUICK-REFERENCE.md` (usage rollups + `spine metrics quota`). Still update runbook quota/credentials sections if missing when documenting — keep runbook in File Scope.
