@@ -1,0 +1,3 @@
+Salvaged + verified on main 2026-07-21 from aborted batch 20260720T235540.
+Contract: typecheck + run-metrics.test.mjs 18/18 pass.
+Closes #208 with SP-676.

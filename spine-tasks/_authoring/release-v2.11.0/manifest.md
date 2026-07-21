@@ -6,6 +6,19 @@
 **Bump type:** minor
 **Profile:** minor
 **Operator approved scope:** yes (2026-07-20 — approve_plus_208)
+**Execution status:** **RESUMING** (2026-07-21) — Kimi/Z.ai headroom restored; salvage-aware full scope
+
+### Pause / resume log
+
+| Item | Status |
+|------|--------|
+| Wave 0 (SP-674, SP-676) | Done on `main` (batch `20260720T211047`) |
+| Post-integrate `release:check` | Green after local hygiene (`b691e64a`, `9b48f377`, `7dee5096`) |
+| Wave 1 batch `20260720T235540` | **Aborted** (Kimi 403); salvage applied on resume |
+| SP-677 salvage | **Done on `main`** (rollup short-circuit fix + scoped tests 18/18 + `.DONE`) |
+| SP-675 / SP-678 salvage | WIP on `main` (script + `quota-snapshot.mjs`); finish via new batch |
+| Mid-release bugs filed | [#221](https://github.com/beettlle/pi-spine/issues/221), [#222](https://github.com/beettlle/pi-spine/issues/222), [#223](https://github.com/beettlle/pi-spine/issues/223) |
+| Resume path | Fresh detached batches for remaining pending (SP-675, SP-678–682); wait includes `gate_open,needs_approval,post_merge_limbo` (#221) |
 
 ---
 

@@ -191,6 +191,7 @@ async function cmdMetrics(args) {
 		metricsFilePath,
 		readMetricsLines,
 	} = await import("../src/batch/metrics.mjs");
+	const { rollupMetrics, formatMetricsRollups } = await import("../src/batch/metrics-rollup.mjs");
 	const filePath = metricsFilePath(projectRoot, config);
 
 	if (!fs.existsSync(filePath)) {
@@ -205,13 +206,14 @@ async function cmdMetrics(args) {
 		batchId: batchId ?? undefined,
 		last: last ?? undefined,
 	});
+	const rollups = rollupMetrics(lines);
 
 	if (json) {
-		process.stdout.write(`${JSON.stringify({ lines }, null, 2)}\n`);
+		process.stdout.write(`${JSON.stringify({ lines, rollups }, null, 2)}\n`);
 		return;
 	}
 
-	process.stdout.write(formatMetricsTable(lines));
+	process.stdout.write(formatMetricsTable(lines) + formatMetricsRollups(rollups));
 }
 
 async function cmdReport(args) {
@@ -347,7 +349,7 @@ ${c.bold}Examples:${c.reset}
   spine batch complete --detect-manual-merge    # complete after manual git merge
   spine handoff [--batch ID] [--json]          # operator handoff note
   spine issue draft [--type bug] [--json]      # GitHub issue draft from diagnose state
-  spine metrics show [--batch ID] [--last N]   # read run-metrics.jsonl
+  spine metrics show [--batch ID] [--last N]   # read run-metrics.jsonl (usage rollups when present)
   spine review step --step N [--type plan|code|final] # step or final review
   spine report progress --step N               # journal step progress (worker shell-out)
  spine gate [approve|reject|status]            # integrate gate FSM

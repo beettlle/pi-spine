@@ -2106,11 +2106,11 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-674 | Gate `testing.review` evidence slot | Pending | — |
-| SP-675 | Stet review script + Approach 2 docs | Pending | SP-674 |
-| SP-676 | Run-metrics usage fields | Pending | — |
-| SP-677 | `spine metrics show` usage rollups | Pending | SP-676 |
-| SP-678 | Quota snapshot builder | Pending | SP-676 |
+| SP-674 | Gate `testing.review` evidence slot | Done | — |
+| SP-675 | Stet review script + Approach 2 docs | Pending (script salvaged) | SP-674 |
+| SP-676 | Run-metrics usage fields | Done | — |
+| SP-677 | `spine metrics show` usage rollups | Done (salvaged) | SP-676 |
+| SP-678 | Quota snapshot builder | Pending (WIP salvaged) | SP-676 |
 | SP-679 | `spine metrics quota` CLI | Pending | SP-677, SP-678 |
 | SP-680 | Quota HTML report renderer | Pending | SP-678 |
 | SP-681 | Optional quota provider probes | Pending | SP-678 |

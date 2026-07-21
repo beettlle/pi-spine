@@ -20,6 +20,7 @@ import {
 	recordBatchTerminalMetric,
 	resolveTaskMetricOutcome,
 } from "../../src/batch/metrics.mjs";
+import { formatMetricsRollups, rollupMetrics } from "../../src/batch/metrics-rollup.mjs";
 import { dismissBatch } from "../../src/batch/lifecycle.mjs";
 import { createInitialBatchState } from "../../src/batch/state.mjs";
 
@@ -422,5 +423,176 @@ test("spine metrics show CLI filters by batch id", async () => {
 		const parsed = JSON.parse(output);
 		assert.equal(parsed.lines.length, 1);
 		assert.equal(parsed.lines[0].batchId, "batch-a");
+	});
+});
+
+test("rollupMetrics aggregates usage by batch, model, and role", () => {
+	const lines = [
+		{
+			recordType: "task",
+			batchId: "b1",
+			model: "model-a",
+			role: "worker",
+			tokensIn: 100,
+			tokensOut: 50,
+			estimatedUsd: 0.001,
+		},
+		{
+			recordType: "task",
+			batchId: "b1",
+			model: "model-a",
+			role: "reviewer",
+			tokensIn: 200,
+			tokensOut: 100,
+			estimatedUsd: 0.002,
+		},
+		{
+			recordType: "task",
+			batchId: "b2",
+			model: "model-b",
+			agentRole: "worker",
+			tokensIn: 300,
+			tokensOut: 150,
+			estimatedUsd: 0.003,
+		},
+	];
+	const rollups = rollupMetrics(lines);
+	assert.ok(rollups);
+	assert.equal(rollups.byBatch["b1"].tokensIn, 300);
+	assert.equal(rollups.byBatch["b1"].tokensOut, 150);
+	assert.equal(rollups.byBatch["b1"].estimatedUsd, 0.003);
+	assert.equal(rollups.byBatch["b1"].count, 2);
+	assert.equal(rollups.byBatch["b2"].tokensIn, 300);
+	assert.equal(rollups.byModel["model-a"].tokensIn, 300);
+	assert.equal(rollups.byModel["model-b"].tokensIn, 300);
+	assert.equal(rollups.byRole["worker"].tokensIn, 400);
+	assert.equal(rollups.byRole["reviewer"].tokensIn, 200);
+});
+
+test("rollupMetrics returns null when no usage fields are present", () => {
+	const lines = [
+		{
+			recordType: "task",
+			batchId: "b1",
+			model: "model-a",
+			role: "worker",
+			outcome: "completed",
+		},
+		{ recordType: "batch", batchId: "b1", taskCount: 1 },
+	];
+	assert.equal(rollupMetrics(lines), null);
+});
+
+test("formatMetricsRollups prints tables when usage present", () => {
+	const rollups = rollupMetrics([
+		{
+			recordType: "task",
+			batchId: "b1",
+			model: "model-a",
+			role: "worker",
+			tokensIn: 100,
+			tokensOut: 50,
+			estimatedUsd: 0.001,
+		},
+	]);
+	const output = formatMetricsRollups(rollups);
+	assert.match(output, /Usage by batch/);
+	assert.match(output, /b1/);
+	assert.match(output, /100/);
+	assert.match(output, /50/);
+	assert.match(output, /Usage by model/);
+	assert.match(output, /Usage by role/);
+});
+
+test("spine metrics show --json includes usage rollups when present", async () => {
+	await withProject(async (projectRoot) => {
+		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify({ project: { name: "test" }, metrics: config.metrics }, null, 2),
+		);
+		appendTaskMetric(
+			projectRoot,
+			buildTaskMetricRecord({
+				batchId: "batch-a",
+				task: {
+					taskId: "SP-001",
+					status: "succeeded",
+					tokensIn: 100,
+					tokensOut: 50,
+					estimatedUsd: 0.001,
+					role: "worker",
+				},
+				config,
+			}),
+			config,
+		);
+		appendTaskMetric(
+			projectRoot,
+			buildTaskMetricRecord({
+				batchId: "batch-a",
+				task: {
+					taskId: "SP-002",
+					status: "succeeded",
+					tokensIn: 200,
+					tokensOut: 100,
+					estimatedUsd: 0.002,
+					role: "reviewer",
+				},
+				config,
+			}),
+			config,
+		);
+
+		const spineBin = path.resolve(
+			path.dirname(fileURLToPath(import.meta.url)),
+			"../../bin/spine.mjs",
+		);
+		const output = execFileSync(
+			process.execPath,
+			[spineBin, "metrics", "show", "--json"],
+			{ cwd: projectRoot, encoding: "utf-8" },
+		);
+		const parsed = JSON.parse(output);
+		assert.equal(parsed.lines.length, 2);
+		assert.ok(parsed.rollups);
+		assert.equal(parsed.rollups.byBatch["batch-a"].tokensIn, 300);
+		assert.equal(parsed.rollups.byBatch["batch-a"].count, 2);
+		assert.equal(parsed.rollups.byRole["worker"].tokensIn, 100);
+		assert.equal(parsed.rollups.byRole["reviewer"].tokensIn, 200);
+	});
+});
+
+test("spine metrics show --json keeps rollups null when usage is absent", async () => {
+	await withProject(async (projectRoot) => {
+		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify({ project: { name: "test" }, metrics: config.metrics }, null, 2),
+		);
+		appendTaskMetric(
+			projectRoot,
+			buildTaskMetricRecord({
+				batchId: "batch-a",
+				task: { taskId: "SP-001", status: "succeeded" },
+				config,
+			}),
+			config,
+		);
+
+		const spineBin = path.resolve(
+			path.dirname(fileURLToPath(import.meta.url)),
+			"../../bin/spine.mjs",
+		);
+		const output = execFileSync(
+			process.execPath,
+			[spineBin, "metrics", "show", "--json"],
+			{ cwd: projectRoot, encoding: "utf-8" },
+		);
+		const parsed = JSON.parse(output);
+		assert.equal(parsed.lines.length, 1);
+		assert.equal(parsed.rollups, null);
 	});
 });

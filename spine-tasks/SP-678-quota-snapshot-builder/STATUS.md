@@ -1,8 +1,8 @@
 # SP-678: Quota snapshot builder — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-07-20
+**Current Step:** Step 1 — Snapshot schema + join
+**Status:** 🟡 In Progress (WIP `quota-snapshot.mjs` salvaged to main; tests missing)
+**Last Updated:** 2026-07-21
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,24 +11,25 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Pool mapping sketched
-- [ ] SP-676 fields confirmed
+- [x] Pool mapping sketched (`zai`, `kimi-coding`, `google`, `cursor`)
+- [x] SP-676 usage fields confirmed
 
 ---
 
 ### Step 1: Snapshot schema + join
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] `buildQuotaSnapshot` implemented
+- [x] WIP `src/metrics/quota-snapshot.mjs` on main (salvaged from 20260720T235540)
+- [ ] Verify against acceptance / polish as needed
 
 ---
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started
 
-- [ ] Fixture tests + no-secrets asserts
+- [ ] `tests/metrics/quota-snapshot.test.mjs` fixture tests + no-secrets asserts
 
 ---
 
@@ -46,4 +47,4 @@
 
 ## Notes
 
-(worker discoveries)
+Salvaged module only — no unit tests yet. Fresh wave should finish tests + contract, not rewrite from scratch.
