@@ -38,7 +38,7 @@ export function resolvePoolId(model) {
 
 	const [provider] = model.split("/");
 	if (provider && POOL_PREFIXES.has(provider)) return provider;
-	if (provider) return provider;
+	if (provider) return "unknown";
 
 	// Cursor Admin/Enterprise quotas are not keyed by model name, so we keep a
 	// dedicated cursor pool even when no model slug is present.
