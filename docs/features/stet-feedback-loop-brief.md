@@ -146,7 +146,7 @@ Dismiss reasons: see `.cursor/rules/stet-integration.mdc`.
 
 ### P2 — Integration expansion
 
-- Gate-level stet evidence (Approach 2 in `docs/stet-overview.md`) once [#160](https://github.com/beettlle/pi-spine/issues/160) is addressed.
+- [x] Gate-level stet evidence (Approach 2 in `docs/stet-overview.md`) is supported via `testing.review` (SP-674) and `scripts/spine-evidence-review.sh` (SP-675).
 - Tiered strictness by task size (Approach 5) via create-spine-tasks skill / contract templates.
 
 ---
@@ -155,7 +155,7 @@ Dismiss reasons: see `.cursor/rules/stet-integration.mdc`.
 
 1. **Commit history.jsonl?** Stet upstream allows committing `.review/` state; pi-spine currently gitignores only lock/session/baseline ref. Should team commit `history.jsonl` and `system_prompt_optimized.txt` for shared optimizer state?
 2. **Auto-finish vs triage:** Should contract verify fail (not auto-finish) when findings exist, forcing operator triage before session cleanup?
-3. **Gate-level stet:** Block on #160 or ship P1 contract-only improvements first?
+3. **Gate-level stet:** Resolved — ship via `testing.review` (SP-674) and `scripts/spine-evidence-review.sh` (SP-675); contract-only improvements remain available for per-task enforcement.
 4. **Cross-repo history:** Lane worktrees share repo-root `.review/` — confirm history accumulates across lanes as intended.
 
 ---

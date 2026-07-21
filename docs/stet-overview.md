@@ -71,34 +71,29 @@ Stet exits non-zero if it encounters errors, failing the contract. The `--auto-f
 
 ---
 
-### 2. Gate Evidence Enrichment
+### 2. Gate Evidence Enrichment (supported)
 
-Hook into: Gate evidence collection via testing.build
+Hook into: Gate evidence collection via `testing.review` (SP-674)
 
-Add stet review output as evidence the operator sees before approving the gate. This doesn't block individual tasks -- it provides an aggregate review of the entire wave's diff before landing on main.
+Add stet review output as evidence the operator sees before approving the integrate gate. This doesn't block individual tasks -- it provides an aggregate review of the entire wave's diff before landing on main.
 
-In spine-config.json:
+In `spine-config.json`, set the optional `testing.review` slot to the provided wrapper:
 
 ```json
 {
   "testing": {
-    "build": "npm run typecheck && stet start main --allow-dirty --quiet && stet run --json --strictness default > .spine/runtime/evidence/stet-review.json && stet finish --quiet"
+    "build": "npm run typecheck",
+    "test": "npm test",
+    "review": "scripts/spine-evidence-review.sh"
   }
 }
 ```
 
-Or keep the existing build command and add a wrapper script that runs both:
+`scripts/spine-evidence-review.sh` runs `stet start main`, `stet run --json`, and `stet finish`, writing the JSON review output to the gate evidence bundle. It exits non-zero only on a stet hard failure; active findings are evidence, not a failure. If `stet` is not on `PATH`, the script prints a clear skip message and exits 0 so the gate does not fail on environments without stet installed.
 
-```bash
-# scripts/spine-evidence-build.sh
-#!/bin/bash
-npm run typecheck
-stet start main --allow-dirty --quiet
-stet run --json --strictness default | tee .spine/runtime/evidence/stet-review.json
-stet finish --quiet
-```
+You can also use `testing.build` with a wrapper script that combines build and stet, but the dedicated `testing.review` slot is cleaner and keeps the stet report separate from build/test evidence.
 
-The gate operator (you or Cursor) reviews stet-review.json alongside the diff-stat and test output before `spine gate approve`.
+The gate operator (you or Cursor) reviews the `review-output.txt` evidence alongside the diff-stat and test output before `spine gate approve`. See [docs/adoption/operator-runbook.md §8.1 Gate evidence](../adoption/operator-runbook.md#gate-evidence).
 
 **Pros:** Zero impact on individual task runtime; reviews the merged result of all lanes; operator makes informed decision. No task PROMPT changes needed.
 

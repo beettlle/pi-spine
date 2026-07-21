@@ -1970,7 +1970,19 @@ See [stet feedback loop brief](../features/stet-feedback-loop-brief.md) for v1.5
 
 ### Gate evidence
 
-Gate evidence commands (`testing.build` / `testing.test` / …) accept Phase A single allowlisted argv or `scripts/…` wrappers, plus Phase B allowlisted `&&` chains (see [v2.7.0 operator UX + evidence Phase B](#v270-operator-ux--evidence-phase-b-202-160)). Gate-level **stet** review via a dedicated `testing.review` slot is still deferred ([#160](https://github.com/beettlle/pi-spine/issues/160) Phase C). Use contract `testCommand` (per-task) or manual operator review for stet until Phase C.
+v2.11.0+ adds an optional `testing.review` evidence slot (SP-674). Set it to `scripts/spine-evidence-review.sh` to attach a stet review of the full wave diff to the integrate gate evidence bundle:
+
+```json
+{
+  "testing": {
+    "review": "scripts/spine-evidence-review.sh"
+  }
+}
+```
+
+The script runs `stet start main`, `stet run --json`, and `stet finish` and emits the JSON review output to stdout; the engine captures this into the gate evidence bundle as `evidence/review-output.txt`. Active findings are evidence, not a gate failure — the operator reviews them before `spine gate approve`. If `stet` is not on `PATH`, the script prints a clear skip message and exits 0 so the gate does not fail on environments without stet installed.
+
+Gate evidence commands also accept Phase A single allowlisted argv or `scripts/…` wrappers, plus Phase B allowlisted `&&` chains (see [v2.7.0 operator UX + evidence Phase B](#v270-operator-ux--evidence-phase-b-202-160)). Use `testing.review` for a dedicated review artifact; use `testing.build` with a wrapper if you prefer to combine build and review.
 
 ---
 

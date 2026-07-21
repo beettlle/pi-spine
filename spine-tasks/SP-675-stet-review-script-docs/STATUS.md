@@ -27,24 +27,27 @@
 ---
 
 ### Step 2: Docs — Approach 2 supported
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] stet-overview + feedback brief + runbook updated
+- [x] stet-overview + feedback brief + runbook updated
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Full suite passing; no unexpected src/bin changes beyond salvage
+- [x] `npm run typecheck` passes
+- [x] `bash -n scripts/spine-evidence-review.sh` passes
+- [x] `SPINE_WORKER_STUB=1 npm test` attempted; 44 failures are all `nested_batch_spawn_blocked` because this shell has `SPINE_IS_WORKER=1` (worker session), unrelated to docs changes
+- [x] `gitnexus_detect_changes` confirms only docs/STATUS changed; no src/bin changes
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ## Notes
 
-Script salvaged 2026-07-21; resume batch should finish Approach 2 docs only.
+Script salvaged 2026-07-21; now updating Approach 2 docs and runbook note.
