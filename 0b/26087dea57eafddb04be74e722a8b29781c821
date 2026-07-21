@@ -1,0 +1,49 @@
+spine-tasks/_authoring/release-v2.11.0/manifest.md
+  s_8e703b73477510::t_1bb96d7525d3b1 9,11,17-21
+  s_716417267a4c74::t_f95fbc0401d7a7 10,12-16
+bin/spine.mjs
+  s_8e703b73477510::t_d25147691d9f0e 194,209,212,216,352
+tests/batch/run-metrics.test.mjs
+  s_8e703b73477510::t_d25147691d9f0e 23,428-598
+spine-tasks/SP-677-metrics-usage-rollups/STATUS.md
+  s_8e703b73477510::t_47ab15e21bc586 3-5,14,16,21,23-24,29,31,36,38-39,44,46,50
+src/metrics/quota-snapshot.mjs
+  s_8e703b73477510::t_d25147691d9f0e 1-252
+spine-tasks/SP-678-quota-snapshot-builder/STATUS.md
+  s_8e703b73477510::t_c1f01d10f4310b 3-5,14,16-17,22,24-25,32,50
+spine-tasks/SP-677-metrics-usage-rollups/.DONE
+  s_8e703b73477510::t_74960d3b4cccb6 1-3
+spine-tasks/CONTEXT.md
+  s_8e703b73477510::t_b0bd0061d128fd 2109-2113
+scripts/spine-evidence-review.sh
+  s_8e703b73477510::t_d25147691d9f0e 1-59
+spine-tasks/SP-675-stet-review-script-docs/STATUS.md
+  s_8e703b73477510::t_5f53ee714ec908 3-5,14,16-17,22,24-25,39,50
+src/batch/metrics-rollup.mjs
+  s_8e703b73477510::t_d25147691d9f0e 1-26,32-119
+  s_8e703b73477510::t_bc49daa7f4b90d 27-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "0b26087dea57eafddb04be74e722a8b29781c821",
+  "prompts": {},
+  "sessions": {
+    "s_716417267a4c74": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-df033a20-5cb6-4df9-bb21-787d583396f5",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_8e703b73477510": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-fff0e81a-9658-4daa-8df6-0d17accaab19",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
