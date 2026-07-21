@@ -1,0 +1,28 @@
+spine-tasks/SP-678-quota-snapshot-builder/PROMPT.md
+  s_8e703b73477510::t_70ab8de44b4c39 95-98
+  s_8e703b73477510::t_6c326cf77e3e92 41
+spine-tasks/SP-675-stet-review-script-docs/PROMPT.md
+  s_8e703b73477510::t_d9b9885dfbc86d 100-103
+  s_8e703b73477510::t_0747812cbda9d3 42
+spine-tasks/SP-679-metrics-quota-cli/PROMPT.md
+  s_8e703b73477510::t_f720c8333ca126 43
+  s_8e703b73477510::t_fb8b83168429b5 96-99
+spine-tasks/CONTEXT.md
+  s_8e703b73477510::t_b1351be80cc289 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "fde862115a7c4c2b9df66e0b71ffe0d248f57c6e",
+  "prompts": {},
+  "sessions": {
+    "s_8e703b73477510": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-fff0e81a-9658-4daa-8df6-0d17accaab19",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
