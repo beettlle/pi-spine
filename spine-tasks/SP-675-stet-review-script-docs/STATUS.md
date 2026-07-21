@@ -27,14 +27,14 @@
 ---
 
 ### Step 2: Docs — Approach 2 supported
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] stet-overview + feedback brief + runbook updated
+- [x] stet-overview + feedback brief + runbook updated
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Full suite passing; no unexpected src/bin changes beyond salvage
 
@@ -47,4 +47,4 @@
 
 ## Notes
 
-Script salvaged 2026-07-21; resume batch should finish Approach 2 docs only.
+Script salvaged 2026-07-21; now updating Approach 2 docs and runbook note.
