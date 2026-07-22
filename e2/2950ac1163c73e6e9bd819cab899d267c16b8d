@@ -1,0 +1,19 @@
+spine-tasks/SP-685-destroy-gitrepo-enotempty/STATUS.md
+  s_94a4a8094dbbd3::t_b8c4a9d4330df1 14-16,38-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "e22950ac1163c73e6e9bd819cab899d267c16b8d",
+  "prompts": {},
+  "sessions": {
+    "s_94a4a8094dbbd3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-9842f0d0-1964-4024-9a98-8b1ea68887ea",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
