@@ -35,12 +35,17 @@ export async function initGitRepo(prefix = "spine-test-", options = {}) {
 
 /**
  * @param {string} projectRoot
+ * @param {{ rm?: (path: string, options: object) => Promise<void> }} [options]
  */
-export async function destroyGitRepo(projectRoot) {
-	// Full-suite parallel git fixtures often hit ENOTEMPTY on .git/{refs,objects}
-	// (Spotlight/AV). Retries absorb races; leftover tmp dirs are non-fatal.
+export async function destroyGitRepo(projectRoot, options = {}) {
+	const rmImpl = options.rm ?? rm;
+	// macOS Spotlight / antivirus scanners may keep .git/{refs,objects}/pack handles
+	// open briefly while fs.rm is running, causing ENOTEMPTY even after bounded retries.
+	// If the directory still cannot be removed after maxRetries, swallow the residual
+	// ENOTEMPTY so a successful test run is not turned red. The OS tmp cleaner will
+	// reclaim the leftover directory later.
 	try {
-		await rm(projectRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+		await rmImpl(projectRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 	} catch (err) {
 		if (err && typeof err === "object" && "code" in err && err.code === "ENOTEMPTY") {
 			return;
