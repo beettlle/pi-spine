@@ -11,14 +11,16 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Reproduce #221 signal shape
-- [ ] Trace RUNNING_PHASES fallthrough
+**Status:** ✅ Complete
+- [x] Reproduce #221 signal shape
+- [x] Trace RUNNING_PHASES fallthrough
+
+**Discoveries:** `deriveDiagnosis` falls through to `RUNNING_PHASES` because `isPostMergeLimbo` requires raw task status `"succeeded"`; when tasks are classified `terminal-success` via `doneFileFound` but raw status is still `"running"`, `postMergeLimbo` is false and the existing `needs_integrate` branches don't match `phase: running` with `mergeResultsEmpty: false`.
 
 ### Step 1: Diagnose needs_integrate for gate-pending land loop
-**Status:** ⬜ Not Started
-- [ ] Return needs_integrate for orch-ahead terminal-success land loop
-- [ ] suggestedCommand spine gate approve when gate pending
+**Status:** 🔄 In Progress
+- [x] Return needs_integrate for orch-ahead terminal-success land loop
+- [x] suggestedCommand spine gate approve when gate pending
 - [ ] Fail-closed for truly running workers
 
 ### Step 2: Testing & Verification
@@ -36,7 +38,7 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| | |
+| `isPostMergeLimbo` requires raw task status `"succeeded"`; tasks classified `terminal-success` via `doneFileFound` with raw status `"running"` leave `postMergeLimbo` false. | Add a `deriveDiagnosis` branch before `RUNNING_PHASES` fallthrough based on `allTasksTerminalSuccess` + orch ahead + no active workers, set `signals.postMergeLimbo = true`, and make `buildSuggestedCommand` prefer `spine gate approve` when `integrateGateOpen`. |
 
 ## Completion Criteria
 

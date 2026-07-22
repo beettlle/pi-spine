@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { deriveDiagnosis } from "../../src/batch/reconcile-diagnosis.mjs";
 import {
 	buildHeadline,
 	buildRunningTailHeadline,
@@ -162,6 +163,43 @@ test("buildSuggestedCommand prefers gate approve over stale gitignored repair (#
 	});
 	assert.equal(command, "spine gate approve");
 	assert.doesNotMatch(command, /git rm/);
+});
+
+test("buildSuggestedCommand returns gate approve when integrateGateOpen is true (#221)", () => {
+	const command = buildSuggestedCommand("needs_integrate", {
+		phase: "running",
+		postMergeLimbo: true,
+		integrateGateOpen: true,
+	});
+	assert.equal(command, "spine gate approve");
+});
+
+test("deriveDiagnosis returns needs_integrate for gate-pending terminal-success land loop (#221)", () => {
+	const signals = {
+		phase: "running",
+		endedAt: null,
+		failedTasks: 0,
+		allTasksTerminalSuccess: true,
+		hasRunningTasks: false,
+		hasPendingTasks: false,
+		hasFailedTasks: false,
+		hasSegmentDrift: false,
+		failedTaskId: null,
+		mergeResultsEmpty: false,
+		git: {
+			orchBranchExists: true,
+			orchMergedToBase: false,
+		},
+		tasks: [{ taskId: "SP-221", classification: "terminal-success" }],
+		raw: {
+			tasks: [{ taskId: "SP-221", status: "running", doneFileFound: true }],
+			mergeResults: [{ status: "succeeded" }],
+			phase: "running",
+		},
+	};
+	const result = deriveDiagnosis(signals);
+	assert.equal(result.diagnosis, "needs_integrate");
+	assert.equal(signals.postMergeLimbo, true);
 });
 
 test("buildHeadline still surfaces gitignored merge when not gate-ready", () => {

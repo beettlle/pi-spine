@@ -232,10 +232,10 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "needs_merge":
 			return "spine batch resume --force";
 		case "needs_integrate":
+			if (ctx.integrateGateOpen) {
+				return "spine gate approve";
+			}
 			if (ctx.postMergeLimbo && ctx.phase === "running") {
-				if (ctx.integrateGateOpen) {
-					return "spine gate approve";
-				}
 				if (ctx.stalePathSpine) {
 					return "node bin/spine.mjs batch resume --attached";
 				}
