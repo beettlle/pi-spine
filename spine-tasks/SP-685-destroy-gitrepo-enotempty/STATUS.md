@@ -11,9 +11,9 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm destroyGitRepo behavior
-- [ ] Find ad-hoc rm on temp git roots in File Scope
+**Status:** ✅ In Progress
+- [x] Confirm destroyGitRepo behavior
+- [x] Find ad-hoc rm on temp git roots in File Scope
 
 ### Step 1: Harden shared teardown + route hot suites
 **Status:** ⬜ Not Started
@@ -35,7 +35,8 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| | |
+| `destroyGitRepo` already uses `maxRetries: 10` and swallows `ENOTEMPTY`. | Keep existing behavior; add injection point for testability and improve comment. |
+| File Scope suites (attached-post-merge-sigterm, post-merge-limbo, -regression, -20260630) already tear down via `destroyGitRepo`. | No migration needed; verify no ad-hoc `rm` remains. |
 
 ## Completion Criteria
 
