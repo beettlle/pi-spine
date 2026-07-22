@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-21 (Phase 75 v2.11.0 resuming — SP-674/676/677 done; SP-675/678–682 pending; Next → SP-683)
+**Last Updated:** 2026-07-22 (Phase 75 v2.11.0 published; Next → SP-683)
 **Status:** Active
 **Next Task ID:** SP-683
 
@@ -2107,25 +2107,27 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-674 | Gate `testing.review` evidence slot | Done | — |
-| SP-675 | Stet review script + Approach 2 docs | Pending (script salvaged) | SP-674 |
+| SP-675 | Stet review script + Approach 2 docs | Done | SP-674 |
 | SP-676 | Run-metrics usage fields | Done | — |
 | SP-677 | `spine metrics show` usage rollups | Done (salvaged) | SP-676 |
-| SP-678 | Quota snapshot builder | Pending (WIP salvaged) | SP-676 |
-| SP-679 | `spine metrics quota` CLI | Pending | SP-677, SP-678 |
-| SP-680 | Quota HTML report renderer | Pending | SP-678 |
-| SP-681 | Optional quota provider probes | Pending | SP-678 |
-| SP-682 | QUICK-REFERENCE + runbook metrics/stet docs | Pending | SP-675, SP-677, SP-679, SP-680 |
+| SP-678 | Quota snapshot builder | Done | SP-676 |
+| SP-679 | `spine metrics quota` CLI | Done (salvaged) | SP-677, SP-678 |
+| SP-680 | Quota HTML report renderer | Done (salvaged) | SP-678 |
+| SP-681 | Optional quota provider probes | Done | SP-678 |
+| SP-682 | QUICK-REFERENCE + runbook metrics/stet docs | Done | SP-675, SP-677, SP-679, SP-680 |
 
 **Phase 75 exit criteria:**
 
-- [ ] #160 closed (SP-674–675)
-- [ ] #208 closed (SP-676–677)
-- [ ] #220 closed (SP-678–681)
-- [ ] Runbook + CONTEXT Phase 75 complete; Next Task ID → SP-683
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] **v2.11.0 published** — awaiting operator publish gate
+- [x] #160 closed (SP-674–675)
+- [x] #208 closed (SP-676–677)
+- [x] #220 closed (SP-678–681)
+- [x] Runbook + CONTEXT Phase 75 complete; Next Task ID → SP-683
+- [x] `npm run release:check` green on publish HEAD (`865c73cc`)
+- [x] **v2.11.0 published** — tag `v2.11.0`, npm `pi-spine@2.11.0` (2026-07-22); Release [29939390891](https://github.com/beettlle/pi-spine/actions/runs/29939390891); GitHub [v2.11.0](https://github.com/beettlle/pi-spine/releases/tag/v2.11.0)
 
-**Release note placeholder:** v2.11.0 — Gate `testing.review` for stet/external review CLIs (#160), run-metrics usage/cost rollups (#208), provider quota headroom CLI + HTML (#220).
+**Release note:** v2.11.0 — Gate `testing.review` for stet/external review CLIs (#160), run-metrics usage/cost rollups (#208), provider quota headroom CLI + HTML + optional probes (#220).
+
+**Phase 75 complete and published (SP-674–682 → v2.11.0).** Manifest: [`spine-tasks/_authoring/release-v2.11.0/manifest.md`](_authoring/release-v2.11.0/manifest.md).
 
 ---
 

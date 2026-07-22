@@ -141,12 +141,12 @@ Then (after each wave lands):
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity) — `865c73cc` / preversion
+- [x] `git status` clean (rules-manifest generatedAt drift discarded before bump)
+- [x] Operator approved publish bump type: minor
+- [x] `npm version minor` + `git push && git push --tags` — tag `v2.11.0`
+- [x] `release.yml` succeeded — [29939390891](https://github.com/beettlle/pi-spine/actions/runs/29939390891)
+- [x] Post-publish smoke: `npm view pi-spine@2.11.0` → `2.11.0`; GitHub Release [v2.11.0](https://github.com/beettlle/pi-spine/releases/tag/v2.11.0) (global PATH still 2.10.0 until `npm i -g pi-spine@2.11.0`)
