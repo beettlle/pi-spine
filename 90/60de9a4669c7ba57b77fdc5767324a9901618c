@@ -1,0 +1,19 @@
+docs/release/npm-publish.md
+  s_94a4a8094dbbd3::t_1fcf54b09893b1 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9060de9a4669c7ba57b77fdc5767324a9901618c",
+  "prompts": {},
+  "sessions": {
+    "s_94a4a8094dbbd3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-9842f0d0-1964-4024-9a98-8b1ea68887ea",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
