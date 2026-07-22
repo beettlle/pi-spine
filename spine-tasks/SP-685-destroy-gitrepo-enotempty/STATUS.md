@@ -1,7 +1,7 @@
 # SP-685: Harden destroyGitRepo ENOTEMPTY teardown — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Completed
 **Last Updated:** 2026-07-22
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,8 +28,8 @@
 - [x] Fix scoped failures
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
-- [ ] Create `.DONE`
+**Status:** ✅ Completed
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -40,10 +40,10 @@
 
 ## Completion Criteria
 
-- [ ] Shared destroyGitRepo teardown for in-scope temp git fixtures
-- [ ] Residual ENOTEMPTY does not fail the suite
-- [ ] Helper documents macOS caveat
-- [ ] Regression covers swallow behavior
+- [x] Shared destroyGitRepo teardown for in-scope temp git fixtures
+- [x] Residual ENOTEMPTY does not fail the suite
+- [x] Helper documents macOS caveat
+- [x] Regression covers swallow behavior
 
 ## Blockers
 
