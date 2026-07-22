@@ -1,7 +1,7 @@
 # SP-684: Wait/skill land-loop recipes after #221 — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-07-22
 **Review Level:** 0
 **Review Counter:** 0
@@ -27,8 +27,8 @@
 - [x] Spot-check skill text vs SP-683
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔄 In Progress
-- [ ] Create `.DONE`
+**Status:** ✅ Complete
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -47,4 +47,4 @@
 
 ## Blockers
 
-_None yet._
+_None._
