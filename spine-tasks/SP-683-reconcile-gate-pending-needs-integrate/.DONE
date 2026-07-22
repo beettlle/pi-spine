@@ -1,0 +1,11 @@
+SP-683 completed.
+
+Changes:
+- src/batch/reconcile-diagnosis.mjs: added land-loop branch before RUNNING_PHASES fallthrough that returns needs_integrate when all tasks are terminal-success, orch branch exists and is ahead of base, and no tasks are running/pending. Sets signals.postMergeLimbo so downstream gate logic treats the batch as gate-ready (#221).
+- src/batch/diagnosis.mjs: buildSuggestedCommand for needs_integrate now returns "spine gate approve" whenever integrateGateOpen is true.
+- tests/batch/diagnosis.test.mjs: regression test for #221 signal shape and buildSuggestedCommand gate-approve behavior.
+- tests/cli/spine-wait-diagnosis.test.mjs: regression test that needs_integrate satisfies the standard --until list without land-loop pseudos.
+
+Verification:
+- npm run typecheck passed.
+- SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/diagnosis.test.mjs tests/cli/spine-wait-diagnosis.test.mjs — 26 tests passed, 0 failed.
