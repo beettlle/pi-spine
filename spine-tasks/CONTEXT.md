@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-22 (Phase 75 v2.11.0 published; Next → SP-683)
+**Last Updated:** 2026-07-22 (Phase 76 v2.12.0 authoring; Next → SP-687)
 **Status:** Active
-**Next Task ID:** SP-683
+**Next Task ID:** SP-687
 
 ---
 
@@ -2128,6 +2128,28 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.11.0 — Gate `testing.review` for stet/external review CLIs (#160), run-metrics usage/cost rollups (#208), provider quota headroom CLI + HTML + optional probes (#220).
 
 **Phase 75 complete and published (SP-674–682 → v2.11.0).** Manifest: [`spine-tasks/_authoring/release-v2.11.0/manifest.md`](_authoring/release-v2.11.0/manifest.md).
+
+### Phase 76 — v2.12.0 release (mid-release dogfood bugs #221–#223)
+
+**Authoring:** 2026-07-22 · Manifest: [`spine-tasks/_authoring/release-v2.12.0/manifest.md`](_authoring/release-v2.12.0/manifest.md)
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-683 | Reconcile `needs_integrate` when gate pending | Pending | — |
+| SP-684 | Wait/skill land-loop recipes after diagnose fix | Pending | SP-683 |
+| SP-685 | Harden `destroyGitRepo` ENOTEMPTY teardown | Pending | — |
+| SP-686 | Coverage-safe metrics redaction test layout | Pending | — |
+
+**Phase 76 exit criteria:**
+
+- [ ] #221 closed (SP-683–684)
+- [ ] #223 closed (SP-685)
+- [ ] #222 closed (SP-686)
+- [ ] Runbook + CONTEXT Phase 76 complete; Next Task ID → SP-687
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.12.0 published** (operator-gated)
+
+**Deferred:** #213, #212, #211, #209, #135, #127, #124, #120, #43 (enhancement budget declined this release).
 
 ---
 
