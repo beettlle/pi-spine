@@ -16,19 +16,19 @@
 - [x] Find ad-hoc rm on temp git roots in File Scope
 
 ### Step 1: Harden shared teardown + route hot suites
-**Status:** ⬜ Not Started
-- [ ] Bounded retries + swallow residual ENOTEMPTY
-- [ ] Limbo/SIGTERM use destroyGitRepo only
-- [ ] Document macOS Spotlight/AV caveat
+**Status:** ✅ Completed
+- [x] Bounded retries + swallow residual ENOTEMPTY
+- [x] Limbo/SIGTERM use destroyGitRepo only
+- [x] Document macOS Spotlight/AV caveat
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] git-fixture-teardown regression
-- [ ] Contract testCommand
-- [ ] Fix scoped failures
+**Status:** ✅ Completed
+- [x] git-fixture-teardown regression
+- [x] Contract testCommand
+- [x] Fix scoped failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Create `.DONE`
 
 ## Discoveries & Decisions
