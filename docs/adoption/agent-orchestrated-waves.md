@@ -79,6 +79,8 @@ git push origin main
 
 Increment `$WAVE` and repeat until `spine plan pending` shows no remaining waves.
 
+> **Wait recipe note:** With SP-683, gate-pending land loops report the taxonomy diagnosis `needs_integrate`, so the default `--until` list above wakes on that diagnosis. The [operator runbook](./operator-runbook.md) documents optional land-loop pseudo-diagnoses (`gate_open`, `needs_approval`, `post_merge_limbo`) as belt-and-suspenders waits when you need finer-grained blocking inside the land loop itself.
+
 ---
 
 ## Multi-wave strategy

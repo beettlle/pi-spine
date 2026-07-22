@@ -117,6 +117,8 @@ git push origin <baseBranch>   # when remote sync desired
 
 Increment `WAVE` and repeat until `spine plan pending` shows no remaining waves.
 
+> **Wait recipe note:** With SP-683, gate-pending land loops report the taxonomy diagnosis `needs_integrate`, so the default `--until` list above wakes on that diagnosis. The operator runbook documents optional land-loop pseudo-diagnoses (`gate_open`, `needs_approval`, `post_merge_limbo`) as belt-and-suspenders waits when you need finer-grained blocking inside the land loop itself.
+
 **Optional script template:** `spine run sequence pending --attached --dry-run` — execute each printed block with judgment; do **not** chain `--auto-approve-gate` with real pi workers.
 
 Full reference: [references/outer-loop.md](references/outer-loop.md).
