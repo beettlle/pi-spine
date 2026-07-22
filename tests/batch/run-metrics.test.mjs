@@ -127,6 +127,10 @@ test("resolveTaskMetricOutcome maps skipped_done_on_disk to skipped", () => {
 	assert.equal(resolveTaskMetricOutcome({ status: "failed", exitReason: "needs_replan" }), "failed");
 });
 
+// Regression guard for #222: keep usage-redaction asserts in this owning suite.
+// Do not split them into a separate file; V8 coverage attribution collapsed
+// unrelated module coverage when they lived in tests/batch/run-metrics-usage-redaction.test.mjs.
+// See docs/release/test-layout-coverage-notes.md.
 test("appendTaskMetric redacts secret-like fields and preserves usage counts", async () => {
 	await withProject((projectRoot) => {
 		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };

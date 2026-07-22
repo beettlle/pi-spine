@@ -11,15 +11,15 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm asserts in run-metrics.test.mjs
-- [ ] Check for leftover separate usage-redaction files
+**Status:** ✅ Completed
+- [x] Confirm asserts in run-metrics.test.mjs
+- [x] Check for leftover separate usage-redaction files
 
 ### Step 1: Document layout + keep asserts green
-**Status:** ⬜ Not Started
-- [ ] Add docs/release/test-layout-coverage-notes.md
-- [ ] In-file #222 comment
-- [ ] Keep usage-count asserts
+**Status:** ✅ Completed
+- [x] Add docs/release/test-layout-coverage-notes.md
+- [x] In-file #222 comment
+- [x] Keep usage-count asserts
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started

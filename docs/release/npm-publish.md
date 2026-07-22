@@ -9,6 +9,7 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    npm run release:check
    ```
    Equivalent to: `typecheck` → `lint` → `SPINE_WORKER_STUB=1 npm test` → `coverage:check`.
+   See [test-layout-coverage-notes.md](test-layout-coverage-notes.md) for coverage-safe test layout guidance that affects the coverage gate.
 2. **Bump version and tag** — uses npm's built-in versioning:
    ```bash
    npm version patch   # or minor / major
