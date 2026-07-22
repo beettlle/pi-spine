@@ -22,13 +22,13 @@
 - [x] Keep usage-count asserts
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Contract testCommand
-- [ ] Fix scoped failures
+**Status:** ✅ Completed
+- [x] Contract testCommand
+- [x] Fix scoped failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Create `.DONE`
+**Status:** ✅ Completed
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
