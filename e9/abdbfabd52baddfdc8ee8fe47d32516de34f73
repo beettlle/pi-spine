@@ -1,0 +1,49 @@
+spine-tasks/SP-684-wait-skill-land-loop-recipes/PROMPT.md
+  s_6feecdcaa3ffef::t_025956963cf524 1-94
+spine-tasks/SP-686-coverage-metrics-test-layout/PROMPT.md
+  s_6feecdcaa3ffef::t_fd9b3601c27d03 1-90
+spine-tasks/dependencies.json
+  s_6feecdcaa3ffef::t_18b53266a4e1ec 3,1821-1827
+spine-tasks/CONTEXT.md
+  s_6feecdcaa3ffef::t_b8c8e93098bb21 2132-2153
+  s_6feecdcaa3ffef::t_a4778fa53c315f 3,5
+spine-tasks/SP-684-wait-skill-land-loop-recipes/STATUS.md
+  s_6feecdcaa3ffef::t_46308b4f6dcf4e 1-46
+spine-tasks/_authoring/release-v2.12.0/manifest.md
+  s_955bfaf768da06::t_011490c3066240 1-7,9-11,13-15,20,22-24,26-28,37,39,46,48,54-59,61-62,73-79,89-93,97-102,104,107-111
+  s_6feecdcaa3ffef::t_e5db23468dd937 8,12,16-19,21,25,29-36,38,40-45,47,49-53,60,63-72,80-88,94-96,103,105-106
+spine-tasks/SP-686-coverage-metrics-test-layout/STATUS.md
+  s_6feecdcaa3ffef::t_cd83a344dcabc0 1-47
+spine-tasks/SP-685-destroy-gitrepo-enotempty/PROMPT.md
+  s_6feecdcaa3ffef::t_ec13949d30975e 1-96
+spine-tasks/SP-685-destroy-gitrepo-enotempty/STATUS.md
+  s_6feecdcaa3ffef::t_3594081d8a76e1 1-49
+spine-tasks/SP-683-reconcile-gate-pending-needs-integrate/STATUS.md
+  s_6feecdcaa3ffef::t_fa1747db53f080 1-49
+spine-tasks/SP-683-reconcile-gate-pending-needs-integrate/PROMPT.md
+  s_6feecdcaa3ffef::t_43427e97e8c163 1-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "e9abdbfabd52baddfdc8ee8fe47d32516de34f73",
+  "prompts": {},
+  "sessions": {
+    "s_6feecdcaa3ffef": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a0c9cc21-3bc2-4c47-a6b0-ae15d120e084",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_955bfaf768da06": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7935c4f6-dd0d-4685-85b3-88738f1fe69b",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
