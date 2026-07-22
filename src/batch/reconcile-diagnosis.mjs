@@ -433,6 +433,21 @@ export function deriveDiagnosis(signals) {
 		return withFailureContext("paused", null, signals);
 	}
 
+	// Terminal-success land loop waiting for an integrate gate while the engine phase
+	// is still "running". Mark post-merge limbo so downstream suggestedCommand and
+	// macro-phase treat this as gate-ready rather than falling through to "running" (#221).
+	if (
+		RUNNING_PHASES.has(phase) &&
+		allTasksTerminalSuccess &&
+		git.orchBranchExists &&
+		!git.orchMergedToBase &&
+		!hasRunningTasks &&
+		!hasPendingTasks
+	) {
+		signals.postMergeLimbo = true;
+		return withFailureContext("needs_integrate", null, signals);
+	}
+
 	if (RUNNING_PHASES.has(phase) || hasRunningTasks || hasPendingTasks) {
 		return withFailureContext("running", null, signals);
 	}

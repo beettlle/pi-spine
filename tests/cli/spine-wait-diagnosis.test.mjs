@@ -63,6 +63,23 @@ test("reconciliationMatchesUntil matches taxonomy diagnosis unchanged", () => {
 	assert.equal(reconciliationMatchesUntil(result, until), true);
 });
 
+test("reconciliationMatchesUntil satisfies standard until list with needs_integrate (#221)", () => {
+	const until = new Set([
+		"completed",
+		"failed",
+		"needs_integrate",
+		"needs_retry",
+		"aborted",
+	]);
+	const result = {
+		diagnosis: "needs_integrate",
+		suggestedCommand: "spine gate approve",
+		macroPhase: "gating",
+		headline: "Batch b1 gate opened — approve to continue land loop",
+	};
+	assert.equal(reconciliationMatchesUntil(result, until), true);
+});
+
 test("sanitizeRetrySuggestedCommand replaces bare retry --force with task id", () => {
 	assert.equal(
 		sanitizeRetrySuggestedCommand("spine batch retry --force", "SP-014"),
