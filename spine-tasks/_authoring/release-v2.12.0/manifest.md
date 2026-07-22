@@ -66,9 +66,18 @@ test "${PIPESTATUS[0]}" -eq 0
 ## Wave plan snapshot
 
 ```text
-(expected after authoring)
-Wave 0: SP-683, SP-685, SP-686 (parallel — disjoint scopes)
-Wave 1: SP-684 (depends on SP-683)
+Spine plan — ids
+4 task(s) · 2 wave(s) · maxParallel 4
+
+Wave 0 · 3 tasks · 3 lanes in parallel
+  Lane 1: SP-683 — Reconcile gate-pending needs_integrate
+  Lane 2: SP-685 — Harden destroyGitRepo ENOTEMPTY teardown
+  Lane 3: SP-686 — Coverage-safe metrics redaction test layout
+
+Wave 1 · 1 task
+  Lane 1: SP-684 — Wait/skill land-loop recipes after #221
+
+Start: spine batch start SP-683,SP-684,SP-685,SP-686 --wave 0
 ```
 
 ---
