@@ -294,6 +294,8 @@ spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeou
 
 Optional pi watchdog: `LoopCreate` every 2m, `readOnly: true`, `maxFires: 50` — see pi-async-orchestration.
 
+> **Wait recipe note:** With SP-683, gate-pending land loops report the taxonomy diagnosis `needs_integrate`, so the default `--until` lists above wake on that diagnosis. The operator runbook documents optional land-loop pseudo-diagnoses (`gate_open`, `needs_approval`, `post_merge_limbo`) as belt-and-suspenders waits when you need finer-grained blocking inside the land loop itself.
+
 **Do not** start wave N+1 until wave N is integrated on `main`.
 
 Wave sizing: prefer ≤4 M-sized tasks per wave; serialize hot shared files.
