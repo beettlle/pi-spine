@@ -1,0 +1,23 @@
+coverage/tmp/coverage-18220-1784822628600-0.json
+  s_97bae7f1efc673::t_5743f90481d4b4 1
+coverage/tmp/coverage-18221-1784822628936-0.json
+  s_97bae7f1efc673::t_055ed821f1607b 1
+coverage/tmp/coverage-18288-1784822628923-0.json
+  s_97bae7f1efc673::t_f0b56e61aef2c9 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4bd6a5c02e0d9c8a0464df9b4a7ef0e5206d3e16",
+  "prompts": {},
+  "sessions": {
+    "s_97bae7f1efc673": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-48f33827-8411-456b-b350-c6feb6a87c32",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
