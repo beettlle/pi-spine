@@ -1,0 +1,19 @@
+spine-tasks/SP-689-dashboard-snapshot-deps-edges/STATUS.md
+  s_577fcdc7eb1566::t_ff3a53743bee27 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4b34cf6738a8b4a478442fcee82ddf29251d4690",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
