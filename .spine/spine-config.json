@@ -15,7 +15,7 @@
   },
   "agents": {
     "worker": {
-      "model": "kimi-coding/kimi-k2-thinking",
+      "model": "zai/glm-5.2",
       "thinking": "high"
     },
     "reviewer": {
@@ -26,7 +26,7 @@
         "thinking": "low"
       },
       "code": {
-        "model": "kimi-coding/kimi-for-coding",
+        "model": "kimi-coding/kimi-k2-thinking",
         "thinking": "high"
       },
       "final": {
@@ -38,7 +38,7 @@
       "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
     },
-    "activeProfile": "hard",
+    "activeProfile": "default",
     "profiles": {
       "default": {
         "worker": {
@@ -53,7 +53,7 @@
             "thinking": "low"
           },
           "code": {
-            "model": "kimi-coding/kimi-for-coding",
+            "model": "kimi-coding/kimi-k2-thinking",
             "thinking": "high"
           },
           "final": {
@@ -79,7 +79,7 @@
             "thinking": "low"
           },
           "code": {
-            "model": "kimi-coding/kimi-k2-thinking",
+            "model": "google/gemini-3.1-pro-preview",
             "thinking": "high"
           },
           "final": {
