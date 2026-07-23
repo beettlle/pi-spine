@@ -1,0 +1,23 @@
+spine-tasks/SP-691-dashboard-mermaid-dag-ui/.DONE
+  s_553b67bdce6400::t_f6db1ffe6a12f8 1
+spine-tasks/SP-691-dashboard-mermaid-dag-ui/STATUS.md
+  s_553b67bdce6400::t_3d28467d82baa0 5,16,19-21
+tests/dashboard/ui-contract.test.mjs
+  s_553b67bdce6400::t_fe043421c760a1 1167-1251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "0db2c630db400e94aa2c42b1ccb1a26642a770ca",
+  "prompts": {},
+  "sessions": {
+    "s_553b67bdce6400": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7ba31edd-b892-40b2-8b30-ffb26c576240",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
