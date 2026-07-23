@@ -2135,19 +2135,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-683 | Reconcile `needs_integrate` when gate pending | Pending | — |
-| SP-684 | Wait/skill land-loop recipes after diagnose fix | Pending | SP-683 |
-| SP-685 | Harden `destroyGitRepo` ENOTEMPTY teardown | Pending | — |
-| SP-686 | Coverage-safe metrics redaction test layout | Pending | — |
+| SP-683 | Reconcile `needs_integrate` when gate pending | Done | — |
+| SP-684 | Wait/skill land-loop recipes after diagnose fix | Done | SP-683 |
+| SP-685 | Harden `destroyGitRepo` ENOTEMPTY teardown | Done | — |
+| SP-686 | Coverage-safe metrics redaction test layout | Done | — |
 
 **Phase 76 exit criteria:**
 
-- [ ] #221 closed (SP-683–684)
-- [ ] #223 closed (SP-685)
-- [ ] #222 closed (SP-686)
-- [ ] Runbook + CONTEXT Phase 76 complete; Next Task ID → SP-687
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] **v2.12.0 published** (operator-gated)
+- [x] #221 closed (SP-683–684)
+- [x] #223 closed (SP-685)
+- [x] #222 closed (SP-686)
+- [x] Runbook + CONTEXT Phase 76 complete; Next Task ID → SP-687
+- [x] `npm run release:check` green on publish HEAD (`de6f73d9` / `cd3dfd19`)
+- [x] **v2.12.0 published** — tag `v2.12.0`, npm `pi-spine@2.12.0` (2026-07-22)
+
+**Release note:** v2.12.0 — Reconcile gate-pending `needs_integrate` diagnosis & land-loop wait recipes (#221), hardened `destroyGitRepo` fixture teardown for `ENOTEMPTY` (#223), coverage-safe metrics redaction test layout guidance (#222).
+
+**Phase 76 complete and published (SP-683–686 → v2.12.0).** Manifest: [`spine-tasks/_authoring/release-v2.12.0/manifest.md`](_authoring/release-v2.12.0/manifest.md).
 
 **Deferred:** #213, #212, #211, #209, #135, #127, #124, #120, #43 (enhancement budget declined this release).
 

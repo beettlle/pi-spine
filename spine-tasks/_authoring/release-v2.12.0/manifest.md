@@ -114,11 +114,11 @@ Start: spine batch start SP-683,SP-684,SP-685,SP-686 --wave 0
   - Wave 1: `/tmp/pi-spine-post-integrate-wave-1.log` (monitor exit 0; coverage 89.09%)
 - [x] `spine preflight` green (after second `spine batch complete` cleared leftover completed state)
 - [x] `npm run release:check` green on final `HEAD` `0363a101` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`) — **blocked until `git push origin main`** (local ahead 19; no CI run for `0363a101` yet)
-- [ ] `git status` clean — `.spine/rules-manifest.json` generatedAt-only drift (ignored by preflight; optional restore)
-- [ ] Operator approved publish bump type: **minor** (2.11.0 → 2.12.0)
-- [ ] `npm version minor` + `git push && git push --tags` (only after CI green on pushed HEAD)
-- [ ] `release.yml` succeeded
+- [x] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`) — run `29969075636` succeeded on `de6f73d9`
+- [x] `git status` clean
+- [x] Operator approved publish bump type: **minor** (2.11.0 → 2.12.0)
+- [x] `npm version minor` + `git push && git push --tags` — created commit `cd3dfd19`, tag `v2.12.0`
+- [ ] `release.yml` succeeded (watching run `29969761072`)
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 
 ### Batches
