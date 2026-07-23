@@ -1,0 +1,33 @@
+tests/batch/worker-output.test.mjs
+  s_e080bb12465911::t_c9ed1e2aa2b681 116-143
+  s_e080bb12465911::t_a42384311150b8 9,16
+src/batch/worker-output.mjs
+  s_e080bb12465911::t_15ac90a88a4ea3 352-354,362-363
+src/doctor/run-doctor-checks.mjs
+  s_e080bb12465911::t_4e254bc6c0c7e0 171
+  s_e080bb12465911::t_0bae6b27b21f97 169-170,172-177
+  s_e080bb12465911::t_03b07ce12f5460 24
+tests/batch/detached-start-land-loop.test.mjs
+  s_e080bb12465911::t_ff33af7c3b7cfa 186
+  s_e080bb12465911::t_aa2681a0af020d 141
+  s_e080bb12465911::t_e3ad73c6b683b6 238
+  s_e080bb12465911::t_df1e2d68024cc5 22
+tests/doctor/stall-config.test.mjs
+  s_e080bb12465911::t_406799430dfb20 43-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b76bc4a7f1bc785284116e9338ff358dd7b28cb0",
+  "prompts": {},
+  "sessions": {
+    "s_e080bb12465911": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-29f20728-38bc-4dc8-9305-01edf5c19acb",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
