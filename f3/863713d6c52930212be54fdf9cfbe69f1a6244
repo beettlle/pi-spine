@@ -1,0 +1,31 @@
+spine-tasks/CONTEXT.md
+  s_577fcdc7eb1566::t_b5c4b97d56c923 3,5
+spine-tasks/SP-691-dashboard-mermaid-dag-ui/PROMPT.md
+  s_577fcdc7eb1566::t_241663c2d08dac 1-66
+spine-tasks/_authoring/release-v3.0.0/manifest.md
+  s_577fcdc7eb1566::t_c87a0b9e823e79 18-19,31,33,35,42-45,63,72,76-78,80-83,102-103,109
+spine-tasks/SP-691-dashboard-mermaid-dag-ui/STATUS.md
+  s_577fcdc7eb1566::t_6aed3833405818 1-19
+spine-tasks/SP-689-dashboard-snapshot-deps-edges/PROMPT.md
+  s_577fcdc7eb1566::t_6dd6c0a4051635 1-60
+spine-tasks/dependencies.json
+  s_577fcdc7eb1566::t_0f29a51f202d6d 1831-1834
+spine-tasks/SP-689-dashboard-snapshot-deps-edges/STATUS.md
+  s_577fcdc7eb1566::t_5e465d6cb8e6e4 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "f3863713d6c52930212be54fdf9cfbe69f1a6244",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
