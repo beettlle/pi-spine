@@ -1,0 +1,40 @@
+spine-tasks/CONTEXT.md
+  s_577fcdc7eb1566::t_cfc00594bf1b3b 3,5
+spine-tasks/SP-687-journal-checksums-atomic-writes/PROMPT.md
+  s_577fcdc7eb1566::t_a6ed068fe08618 1-67
+spine-tasks/SP-688-parallel-wave-strategies/PROMPT.md
+  s_577fcdc7eb1566::t_afb489f07e207c 1-68
+spine-tasks/SP-689-dashboard-mermaid-task-dag/PROMPT.md
+  s_577fcdc7eb1566::t_ad7b4a0889d801 1-73
+spine-tasks/SP-690-harden-llm-structured-parsers/PROMPT.md
+  s_577fcdc7eb1566::t_9e3a9d7dd98bca 1-69
+spine-tasks/SP-690-harden-llm-structured-parsers/STATUS.md
+  s_577fcdc7eb1566::t_1a8de861834278 1-19
+spine-tasks/_authoring/release-v3.0.0/manifest.md
+  s_577fcdc7eb1566::t_ee2025b8cbf5f6 1-114
+spine-tasks/SP-687-journal-checksums-atomic-writes/STATUS.md
+  s_577fcdc7eb1566::t_520a06c57b33a6 1-20
+spine-tasks/SP-689-dashboard-mermaid-task-dag/STATUS.md
+  s_577fcdc7eb1566::t_471a8c1618f536 1-22
+spine-tasks/dependencies.json
+  s_577fcdc7eb1566::t_429d61f76674b8 1827
+  s_577fcdc7eb1566::t_5f2eaa1c226434 1828-1831
+spine-tasks/SP-688-parallel-wave-strategies/STATUS.md
+  s_577fcdc7eb1566::t_49334b9676f924 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "bcf66702d80d144a844ad6edd64d7b18b2b5cf3b",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
