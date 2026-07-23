@@ -1,0 +1,19 @@
+.spine/spine-config.json
+  s_577fcdc7eb1566::t_1202f8cd140eef 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "52f4f5c22199e71bb219ff4c648bf0e4641eb917",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
