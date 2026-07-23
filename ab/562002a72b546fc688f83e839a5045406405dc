@@ -1,0 +1,21 @@
+CLAUDE.md
+  s_577fcdc7eb1566::t_9b0504ddf9b25b 4
+AGENTS.md
+  s_577fcdc7eb1566::t_9b0504ddf9b25b 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ab562002a72b546fc688f83e839a5045406405dc",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
