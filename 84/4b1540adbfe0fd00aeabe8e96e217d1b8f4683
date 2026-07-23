@@ -1,0 +1,45 @@
+src/batch/journal.mjs
+  s_577fcdc7eb1566::t_e102f402477e09 215
+  s_577fcdc7eb1566::t_5e4b80bcf90ec6 198,216-222
+  s_62c18266d5080d::t_a58853f7b69cff 9
+  s_62c18266d5080d::t_327c0ebd46ab07 201
+  s_62c18266d5080d::t_70fda5f0e848aa 200
+  s_577fcdc7eb1566::t_d1e4dc5fe99ed0 223-224
+spine-tasks/SP-687-journal-checksums-atomic-writes/STATUS.md
+  s_62c18266d5080d::t_bba53e5d44175c 5,10,13,16,19-20
+spine-tasks/SP-687-journal-checksums-atomic-writes/.DONE
+  s_577fcdc7eb1566::t_63b1c809a2011d 1
+src/fs/atomic-write.mjs
+  s_62c18266d5080d::t_ff9079a7895d39 9-12,21-37,57-58,76-77,90-126
+  s_577fcdc7eb1566::t_708dab27bce22c 42-44,46,52-54,59-75
+  s_62c18266d5080d::t_66e515b2627ae9 38
+  s_62c18266d5080d::t_d065b9d27645c4 127
+tests/batch/journal.test.mjs
+  s_577fcdc7eb1566::t_1aa728cc5a871f 17,137-165
+  s_62c18266d5080d::t_eacb92bed67e58 19
+  s_62c18266d5080d::t_4a88ee7494da17 166-178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "844b1540adbfe0fd00aeabe8e96e217d1b8f4683",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "gemini-flash-latest"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_62c18266d5080d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-4c0d2932-2c89-4c33-985a-b21a2f16ecc4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
