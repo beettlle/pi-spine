@@ -1,0 +1,33 @@
+tests/helpers/child-env.test.mjs
+  s_cacf0d4113b99d::t_862b6c4ea71736 1-34
+tests/batch/detached-start-land-loop.test.mjs
+  s_cacf0d4113b99d::t_ffab08cbf75ac5 212,219
+  s_cacf0d4113b99d::t_9174becf4df917 22-25
+tests/helpers/child-env.mjs
+  s_cacf0d4113b99d::t_23c372f7b79bb2 1-61
+tests/batch/attached-batch-exit.test.mjs
+  s_cacf0d4113b99d::t_eaf437fee899e5 109,128,141-146,160
+  s_cacf0d4113b99d::t_2c07c447102f49 20-24
+tests/batch/detached-start.test.mjs
+  s_cacf0d4113b99d::t_7893ce73cbe13c 110,123
+  s_cacf0d4113b99d::t_d30eca768e9244 378,392
+  s_cacf0d4113b99d::t_cc1543c84ca38b 23-26,28
+scripts/run-coverage.mjs
+  s_cacf0d4113b99d::t_8394071e94471f 23-29,34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "c9a799dd524aa86fa6923097ca25beea82cf3e97",
+  "prompts": {},
+  "sessions": {
+    "s_cacf0d4113b99d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-75efaab9-08eb-4643-9f44-668e5fc103b8",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
