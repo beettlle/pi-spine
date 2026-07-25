@@ -1,0 +1,136 @@
+# Release manifest — v2.12.1
+
+**Created:** 2026-07-25
+**Current version:** 2.12.0
+**Target version:** v2.12.1
+**Bump type:** patch
+**Profile:** patch
+**Operator approved scope:** yes (2026-07-25)
+
+---
+
+## Stabilization context
+
+Abandoned unpublished `v3.0.0` attempt (34 local commits) preserved on:
+
+`backup/v3.0.0-abandoned-20260725` @ `c9a799dd`
+
+Local `main` reset to CI-green `origin/main` (`489b615f` + hygiene `d3143dfe`).
+
+**Root causes of the failed major attempt (do not reintroduce):**
+
+1. Started Phase 4 without explicit "approve release scope"
+2. Labeled incomplete helpers as shipped (wave strategies / checksum verify unused by production)
+3. Journal rewrite-append increased runtime risk without integrity wiring
+4. Out-of-scope model-config thrash + flake chase commits mixed into release branch
+5. Critical blast radius (54 files) before publish gates
+
+This release is **patch / bugs-only** to restore operator trust.
+
+---
+
+## Composition audit
+
+| Bucket | Selected | Profile limit | Status |
+|--------|----------|---------------|--------|
+| Documentation | 1 (QUICK-REFERENCE live wording inside #237) | 1–2 small | PASS |
+| Bug fixes | 4 (#237, #224, #226, #227) | 3–5 | PASS |
+| Enhancements | **0** | 0 | PASS |
+| **Total tasks** | 4 | 5–8 | PASS |
+
+**Profile audit:** PASS
+
+---
+
+## Selected tasks
+
+| SP-ID | Issue | Bucket | Size | Title | Notes |
+|-------|-------|--------|------|-------|-------|
+| SP-687 | #237 | bug | S | Wire `runQuotaProbes` into `spine metrics quota` | Closes #237; includes QUICK-REFERENCE fix |
+| SP-688 | #224 | bug | S | Run `worktreeSetupHook` for matrix sub-lanes | Closes #224 |
+| SP-689 | #226 | bug | S | Propagate matrix fields through `buildPlan` | Closes #226 |
+| SP-690 | #227 | bug | S | Cap nested matrix concurrency to remaining slots | Closes #227; depends on SP-688 (shared matrix files) |
+
+**Release scope ID:** `SP-687,SP-688,SP-689,SP-690`
+
+---
+
+## Sequence runner (Phase 4)
+
+```bash
+spine tasks validate SP-687 SP-688 SP-689 SP-690
+spine plan SP-687,SP-688,SP-689,SP-690
+spine run sequence SP-687,SP-688,SP-689,SP-690 --dry-run
+spine batch start SP-687,SP-688,SP-689,SP-690 --wave N   # detached
+```
+
+**Regression gate** (after each integrate):
+
+```bash
+npm run release:check 2>&1 | tee /tmp/pi-spine-post-integrate-wave-${WAVE:-main}.log
+test "${PIPESTATUS[0]}" -eq 0
+```
+
+---
+
+## Gaps requiring new packets
+
+| Issue | Bucket | Proposed SP-ID | Author with |
+|-------|--------|----------------|-------------|
+| #237 | bug | SP-687 | create-spine-tasks (lean) |
+| #224 | bug | SP-688 | create-spine-tasks (lean) |
+| #226 | bug | SP-689 | create-spine-tasks (lean) |
+| #227 | bug | SP-690 | create-spine-tasks (lean); dep SP-688 |
+
+---
+
+## Wave plan snapshot (expected)
+
+```text
+Wave 0 · parallel (disjoint scopes)
+  Lane 1: SP-687 — quota probe CLI wiring (#237)
+  Lane 2: SP-689 — buildPlan matrix propagation (#226)
+  Lane 3: SP-688 — matrix worktreeSetupHook (#224)
+
+Wave 1 · serial after SP-688
+  Lane 1: SP-690 — nested maxParallel throttle (#227)
+```
+
+Exact packing confirmed after packets land via `spine plan`.
+
+---
+
+## Deferred backlog
+
+| Item | Type | Rationale |
+|------|------|-----------|
+| Abandoned SP-687–691 on backup branch | enh | Incomplete / unwired; salvage later only with production wiring + approval |
+| #120 / #124 / #135 / #213 | enh | P3 enhancements; not patch profile |
+| #212 / #211 / #209 / #127 / #43 | enh/epic | Deferred |
+| #225 / #228–#232 / #238 | matrix epic / features | After #224/#226/#227 stabilize matrix baseline |
+| #120 journal checksums | enh | Prior attempt left verify unused — redesign before shipping |
+
+---
+
+## Risks and blockers
+
+- SP-688 and SP-690 share `src/batch/engine-lanes/matrix*.mjs` — **must serialize** (dependency edge).
+- #227 interim throttle may be superseded by #228 first-class row scheduling — document as interim in runbook.
+- Do **not** change `.spine/spine-config.json` model pins in this release.
+- Do **not** ship helpers without production call sites (lesson from abandoned v3).
+
+---
+
+## Publish checklist (Phase 5–6)
+
+- [ ] All release-scoped tasks `.DONE` on `main` (SP-687–690)
+- [ ] Post-integrate `release:check` green after **each wave**
+- [ ] `spine preflight` green
+- [ ] `npm run release:check` green on final `HEAD`
+- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
+- [ ] `git status` clean
+- [ ] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1)
+- [ ] `npm version patch` + `git push && git push --tags`
+- [ ] `release.yml` succeeded
+- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [ ] Close #237, #224, #226, #227 when shipped

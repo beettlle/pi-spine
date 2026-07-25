@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-07-22 (Phase 76 v2.12.0 authoring; Next → SP-687)
+**Last Updated:** 2026-07-25 (Phase 77 v2.12.1 authoring; Next → SP-691)
 **Status:** Active
-**Next Task ID:** SP-687
+**Next Task ID:** SP-691
 
 ---
 
@@ -2154,6 +2154,31 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Phase 76 complete and published (SP-683–686 → v2.12.0).** Manifest: [`spine-tasks/_authoring/release-v2.12.0/manifest.md`](_authoring/release-v2.12.0/manifest.md).
 
 **Deferred:** #213, #212, #211, #209, #135, #127, #124, #120, #43 (enhancement budget declined this release).
+
+### Phase 77 — v2.12.1 stabilization (matrix + quota bugs; abandon unpublished v3)
+
+**Authoring:** 2026-07-25 · Manifest: [`spine-tasks/_authoring/release-v2.12.1/manifest.md`](_authoring/release-v2.12.1/manifest.md)
+
+**Rollback note:** Abandoned unpublished v3.0.0 tip preserved on `backup/v3.0.0-abandoned-20260725` (`c9a799dd`). Local `main` reset to CI-green `origin/main` before this phase.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-687 | Wire `runQuotaProbes` into metrics quota CLI | Pending | — |
+| SP-688 | Run `worktreeSetupHook` for matrix sub-lanes | Pending | — |
+| SP-689 | Propagate matrix fields through `buildPlan` | Pending | — |
+| SP-690 | Cap nested matrix concurrency to remaining slots | Pending | SP-688 |
+
+**Phase 77 exit criteria:**
+
+- [ ] #237 closed (SP-687)
+- [ ] #224 closed (SP-688)
+- [ ] #226 closed (SP-689)
+- [ ] #227 closed (SP-690)
+- [ ] Operator approved scope (2026-07-25)
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.12.1 published** — tag + npm (pending)
+
+**Deferred:** abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
 
 ---
 
