@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { buildQuotaSnapshot } from "./quota-snapshot.mjs";
+import { runQuotaProbes } from "./quota-probes.mjs";
 import { renderQuotaHtml, writeHtmlBesideJson } from "./quota-html.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 
@@ -71,14 +72,23 @@ function formatHumanSummary(snapshot, reportPath) {
 /**
  * Run the `spine metrics quota` command.
  *
+ * Optional provider probes are run before the snapshot is built so live usage
+ * can enrich a pool when credentials and the probe succeed. Probes fail closed
+ * to `absent` on missing credentials, network errors, or non-ok responses, so
+ * the snapshot degrades to estimate/absent rather than inventing limits or
+ * keys. The `authPath`/`fetch` params exist primarily for tests, which point
+ * `authPath` at a fixture and inject a mocked `fetch` instead of the network.
+ *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {object} [params.config]
  * @param {string[]} [params.args]
  * @param {number | string | Date} [params.now]
- * @returns {{ output: string, exitCode: number, reportPath: string | null }}
+ * @param {string} [params.authPath] Forwarded to `runQuotaProbes`.
+ * @param {typeof globalThis.fetch} [params.fetch] Forwarded to `runQuotaProbes`.
+ * @returns {Promise<{ output: string, exitCode: number, reportPath: string | null }>}
  */
-export function runQuotaReport({ projectRoot, config, args = [], now = Date.now(), metricsLines }) {
+export async function runQuotaReport({ projectRoot, config, args = [], now = Date.now(), metricsLines, authPath, fetch } = {}) {
 	const json = args.includes("--json");
 	const open = args.includes("--open");
 
@@ -95,7 +105,15 @@ export function runQuotaReport({ projectRoot, config, args = [], now = Date.now(
 		resolvedConfig = configResult.config;
 	}
 
-	const snapshot = buildQuotaSnapshot({ projectRoot, config: resolvedConfig, metricsLines, now });
+	// Production path: invoke provider probes so live usage can enrich pools.
+	// Adapters fail closed to "absent", so a missing/invalid auth file or network
+	// error leaves the snapshot at estimate/absent without inventing limits.
+	const probeOptions = {};
+	if (authPath !== undefined) probeOptions.authPath = authPath;
+	if (fetch !== undefined) probeOptions.fetch = fetch;
+	const probeResults = await runQuotaProbes(probeOptions);
+
+	const snapshot = buildQuotaSnapshot({ projectRoot, config: resolvedConfig, metricsLines, probeResults, now });
 
 	if (json) {
 		return {

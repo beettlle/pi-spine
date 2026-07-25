@@ -7,6 +7,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 
 import { runQuotaReport } from "../../src/metrics/quota-cli.mjs";
 
+// Path guaranteed to be absent so the estimate/absent tests fail closed to
+// "absent" probes deterministically, without touching the network or the
+// operator's real ~/.pi/agent/auth.json.
+const NO_AUTH_PATH = path.join(os.tmpdir(), "spine-sp687-missing-auth.json");
+
 const baseConfig = () => ({
 	configVersion: 1,
 	project: { name: "quota-cli-fixture", description: "" },
@@ -71,7 +76,7 @@ async function setupProject(config) {
 test("runQuotaReport writes a timestamped JSON report and human summary by default", async () => {
 	const root = await setupProject(baseConfig());
 	try {
-		const result = runQuotaReport({ projectRoot: root, now: "2026-07-21T12:34:56.789Z" });
+		const result = await runQuotaReport({ projectRoot: root, authPath: NO_AUTH_PATH, now: "2026-07-21T12:34:56.789Z" });
 		assert.equal(result.exitCode, 0);
 		assert.ok(result.reportPath);
 		assert.ok(result.reportPath.startsWith(path.join(root, ".spine", "reports")));
@@ -93,7 +98,7 @@ test("runQuotaReport writes a timestamped JSON report and human summary by defau
 test("runQuotaReport --json prints snapshot to stdout without writing a file", async () => {
 	const root = await setupProject(baseConfig());
 	try {
-		const result = runQuotaReport({ projectRoot: root, args: ["--json"], now: "2026-07-21T12:34:56.789Z" });
+		const result = await runQuotaReport({ projectRoot: root, args: ["--json"], authPath: NO_AUTH_PATH, now: "2026-07-21T12:34:56.789Z" });
 		assert.equal(result.exitCode, 0);
 		assert.equal(result.reportPath, null);
 
@@ -111,9 +116,10 @@ test("runQuotaReport --json prints snapshot to stdout without writing a file", a
 test("runQuotaReport --open writes HTML beside the JSON report", async () => {
 	const root = await setupProject(baseConfig());
 	try {
-		const result = runQuotaReport({
+		const result = await runQuotaReport({
 			projectRoot: root,
 			args: ["--open"],
+			authPath: NO_AUTH_PATH,
 			now: "2026-07-21T12:34:56.789Z",
 		});
 		assert.equal(result.exitCode, 0);
@@ -132,7 +138,7 @@ test("runQuotaReport --open writes HTML beside the JSON report", async () => {
 test("runQuotaReport returns an error when config is missing", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-cli-"));
 	try {
-		const result = runQuotaReport({ projectRoot: root });
+		const result = await runQuotaReport({ projectRoot: root });
 		assert.equal(result.exitCode, 1);
 		assert.equal(result.reportPath, null);
 		assert.ok(result.output.includes("Error:"));
@@ -143,9 +149,10 @@ test("runQuotaReport returns an error when config is missing", async () => {
 
 test("runQuotaReport accepts an explicit config and bypasses the file system", async () => {
 	const config = baseConfig();
-	const result = runQuotaReport({
+	const result = await runQuotaReport({
 		projectRoot: "/tmp",
 		config,
+		authPath: NO_AUTH_PATH,
 		metricsLines: [
 			{ recordType: "task", model: "zai/glm-5.2", durationMs: 100 },
 		],
@@ -165,10 +172,11 @@ test("runQuotaReport never leaks secrets or prompt bodies", async () => {
 	config.agents.worker.prompt = "secret prompt body";
 	config.secretToken = "super-secret";
 
-	const result = runQuotaReport({
+	const result = await runQuotaReport({
 		projectRoot: "/tmp",
 		config,
 		args: ["--json"],
+		authPath: NO_AUTH_PATH,
 		metricsLines: [
 			{ recordType: "task", model: "zai/glm-5.2", durationMs: 100, apiKey: "sk-hidden", prompt: "leak me" },
 		],
@@ -188,10 +196,11 @@ test("runQuotaReport never leaks secrets or prompt bodies", async () => {
 
 test("runQuotaReport --json with no observed metrics returns absent snapshot", async () => {
 	const config = baseConfig();
-	const result = runQuotaReport({
+	const result = await runQuotaReport({
 		projectRoot: "/tmp",
 		config,
 		args: ["--json"],
+		authPath: NO_AUTH_PATH,
 		metricsLines: [],
 		now: "2026-07-21T12:34:56.789Z",
 	});
@@ -201,5 +210,49 @@ test("runQuotaReport --json with no observed metrics returns absent snapshot", a
 	assert.equal(snapshot.snapshotSource, "absent");
 	for (const pool of Object.values(snapshot.pools)) {
 		assert.equal(pool.source, "absent");
+	}
+});
+
+test("runQuotaReport enriches pools with live probes under mocked fetch", async () => {
+	const root = await setupProject(baseConfig());
+	try {
+		// Fixture auth carries a Z.ai key. The key value must never surface in output.
+		const authPath = path.join(root, "auth.json");
+		fs.writeFileSync(authPath, JSON.stringify({ zai: { key: "probe-key-do-not-leak" } }), "utf-8");
+
+		// Mocked fetch: live usage for the Z.ai quota endpoint; everything else 404s
+		// so adapters fail closed. kimi-coding and cursor have no creds here, so only
+		// the zai probe reaches the network mock.
+		const mockFetch = async (url) => {
+			if (String(url).includes("/quota/limit")) {
+				return {
+					ok: true,
+					text: async () => JSON.stringify({ used: 12345, total: 50000 }),
+				};
+			}
+			return { ok: false, text: async () => "" };
+		};
+
+		const result = await runQuotaReport({
+			projectRoot: root,
+			args: ["--json"],
+			authPath,
+			fetch: mockFetch,
+			now: "2026-07-21T12:34:56.789Z",
+		});
+
+		assert.equal(result.exitCode, 0);
+		const snapshot = JSON.parse(result.output);
+		// zai had observed metrics (estimate baseline); the live probe promotes it.
+		assert.equal(snapshot.snapshotSource, "live");
+		assert.equal(snapshot.pools.zai.source, "live");
+		assert.equal(snapshot.pools.zai.usage.tokensOut, 12345);
+		assert.equal(snapshot.pools.zai.limit, 50000);
+		// Probes must never leak the credential or any prompt body into JSON output.
+		assert.ok(!result.output.includes("probe-key-do-not-leak"));
+		assert.ok(!result.output.includes("apiKey"));
+		assert.ok(!result.output.includes("prompt"));
+	} finally {
+		await rm(root, { recursive: true, force: true });
 	}
 });
