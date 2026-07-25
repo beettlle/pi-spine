@@ -1,0 +1,21 @@
+AGENTS.md
+  s_cbe48e94ad893f::t_d4b488150a87cb 4
+CLAUDE.md
+  s_cbe48e94ad893f::t_7f4eb2d0342744 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d3143dfe73df8e22d8b3148300d9c67f3ea0102e",
+  "prompts": {},
+  "sessions": {
+    "s_cbe48e94ad893f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-995962c5-3ef5-4feb-9d60-0537e04dccdb",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
