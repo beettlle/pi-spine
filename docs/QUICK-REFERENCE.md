@@ -505,7 +505,7 @@ The snapshot joins the active agent model configuration from `.spine/spine-confi
 |--------|---------|
 | `estimate` | Observed task usage was aggregated for that provider pool. |
 | `absent` | No tasks were recorded for that pool in the metrics file. |
-| `live` | Reserved for optional provider-probe enrichment (future probe adapters). |
+| `live` | A provider probe succeeded and enriched the pool with live usage. Probes read credentials from `~/.pi/agent/auth.json` and fail closed to `estimate`/`absent` when credentials are missing or the request fails. |
 
 Remaining headroom, burn rate, and ETA are reported as **unknown** when provider limits are not configured. No fake cost, invented remaining quota, or guessed percentage is emitted. API keys and prompt bodies are never written into the report.
 

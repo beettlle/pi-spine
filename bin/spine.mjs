@@ -216,7 +216,7 @@ async function cmdMetrics(args) {
 
 	if (sub === "quota") {
 		const { runQuotaReport } = await import("../src/metrics/quota-cli.mjs");
-		const result = runQuotaReport({ projectRoot: process.cwd(), args: args.slice(1) });
+		const result = await runQuotaReport({ projectRoot: process.cwd(), args: args.slice(1) });
 		process.stdout.write(result.output);
 		if (result.exitCode !== 0) process.exit(result.exitCode);
 		return;
