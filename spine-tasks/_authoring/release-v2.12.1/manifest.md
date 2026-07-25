@@ -87,16 +87,16 @@ test "${PIPESTATUS[0]}" -eq 0
 ## Wave plan snapshot (expected)
 
 ```text
-Wave 0 · parallel (disjoint scopes)
-  Lane 1: SP-687 — quota probe CLI wiring (#237)
-  Lane 2: SP-689 — buildPlan matrix propagation (#226)
-  Lane 3: SP-688 — matrix worktreeSetupHook (#224)
+Wave 0 · 3 tasks · 3 lanes in parallel
+  Lane 1: SP-687 — Wire runQuotaProbes into spine metrics quota
+  Lane 2: SP-688 — Run worktreeSetupHook for matrix sub-lanes
+  Lane 3: SP-689 — Propagate matrix fields through buildPlan
 
-Wave 1 · serial after SP-688
-  Lane 1: SP-690 — nested maxParallel throttle (#227)
+Wave 1 · 1 task
+  Lane 1: SP-690 — Cap nested matrix concurrency to remaining slots
 ```
 
-Exact packing confirmed after packets land via `spine plan`.
+Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 
 ---
 
