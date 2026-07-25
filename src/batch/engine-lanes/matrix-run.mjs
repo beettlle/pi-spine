@@ -13,6 +13,7 @@ import {
 	recordMatrixEvent,
 	removeMatrixSubLaneWorktree,
 	runConcurrent,
+	runMatrixSubLaneSetupHook,
 	runShellInDir,
 	substituteRowCommand,
 } from "./matrix.mjs";
@@ -102,6 +103,41 @@ export async function runMatrixSubLane({
 		branch,
 		worktreePath,
 	});
+
+	// Mirror the parent-lane provision→hook sequence: the row worktree is freshly
+	// provisioned off the lane branch, so gitignored toolchains/assets (e.g.
+	// `.venv`) that the row's runCommand depends on are absent until the hook
+	// links them in. Fail closed on hook failure so the row reports the missing
+	// setup rather than masking it as a runCommand failure (#224).
+	try {
+		runMatrixSubLaneSetupHook({
+			projectRoot,
+			worktreePath,
+			batchId,
+			laneNumber,
+			taskId,
+			rowId,
+			correlationId: laneCorrelationId,
+			config,
+		});
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.failed", {
+			taskId,
+			laneNumber,
+			rowId,
+			correlationId: laneCorrelationId,
+			error: `setup hook failed: ${message}`,
+		});
+		return {
+			rowId,
+			ok: false,
+			exitCode: 1,
+			output: `worktree setup hook failed: ${message}`,
+			worktreePath,
+			branch,
+		};
+	}
 
 	/** @type {{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string }} */
 	let result;

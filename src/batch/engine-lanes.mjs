@@ -67,6 +67,7 @@ export {
 	removeAllMatrixSubLaneWorktrees,
 	removeMatrixSubLaneWorktree,
 	runConcurrent,
+	runMatrixSubLaneSetupHook,
 	runShellInDir,
 } from "./engine-lanes/matrix.mjs";
 

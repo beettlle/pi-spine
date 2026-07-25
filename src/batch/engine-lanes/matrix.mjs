@@ -23,7 +23,11 @@ import {
 	substituteMatrixVariables,
 } from "../../planner/matrix.mjs";
 import { gitExec } from "../git-exec.mjs";
-import { normalizeLaneWorktreeGitPaths } from "../worktree.mjs";
+import {
+	normalizeLaneWorktreeGitPaths,
+	runWorktreeSetupHook,
+} from "../worktree.mjs";
+import { resolveWorktreeSetupHook } from "../../config/worktree-setup-hook.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 
 /**
@@ -145,6 +149,88 @@ export function provisionMatrixSubLaneWorktree({
 	gitExec(projectRoot, ["worktree", "add", "-b", branch, worktreePath, baseRef]);
 	normalizeLaneWorktreeGitPaths({ projectRoot, worktreePath });
 	return { worktreePath, branch };
+}
+
+/**
+ * Run the configured `worktreeSetupHook` for a matrix sub-lane worktree, mirroring
+ * the parent-lane provision→hook sequence (SP-688 / #224).
+ *
+ * Each matrix row runs in its own freshly-provisioned worktree, so gitignored
+ * toolchains (e.g. `.venv`) and symlinked assets that live on the main checkout
+ * would be absent there — the hook links them in before the row's runCommand /
+ * worker executes. Without this, rows that depend on those assets fail in ways
+ * that never reproduce on a parent lane, masking the missing setup.
+ *
+ * Journals `matrix.sub_lane.setup_hook.*` lifecycle events. When a hook is
+ * configured it runs with the same env (SPINE_PROJECT_ROOT / SPINE_WORKTREE /
+ * SPINE_BATCH_ID / SPINE_LANE_NUMBER) and JSON-stdout contract as parent lanes.
+ * On hook failure it rethrows so the caller surfaces the failure on the matrix
+ * row (fail closed — never silently continue into runCommand). When no hook is
+ * configured it is a no-op (skipped).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.worktreePath
+ * @param {string} params.batchId
+ * @param {number} params.laneNumber
+ * @param {string} params.taskId
+ * @param {string} params.rowId
+ * @param {string} [params.correlationId]
+ * @param {object} [params.config]
+ * @returns {{ ok: boolean, skipped?: boolean, durationMs?: number }}
+ */
+export function runMatrixSubLaneSetupHook({
+	projectRoot,
+	worktreePath,
+	batchId,
+	laneNumber,
+	taskId,
+	rowId,
+	correlationId,
+	config = {},
+}) {
+	const hookPath = resolveWorktreeSetupHook(projectRoot, config);
+	if (!hookPath) {
+		return { ok: true, skipped: true };
+	}
+
+	recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.setup_hook.started", {
+		taskId,
+		laneNumber,
+		rowId,
+		correlationId,
+		worktreePath,
+		hookPath,
+	});
+	try {
+		const hookResult = runWorktreeSetupHook({
+			projectRoot,
+			worktreePath,
+			batchId,
+			laneNumber,
+			config,
+		});
+		recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.setup_hook.completed", {
+			taskId,
+			laneNumber,
+			rowId,
+			correlationId,
+			worktreePath,
+			durationMs: hookResult.durationMs,
+		});
+		return { ok: true, durationMs: hookResult.durationMs };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.setup_hook.failed", {
+			taskId,
+			laneNumber,
+			rowId,
+			correlationId,
+			worktreePath,
+			error: message,
+		});
+		throw err;
+	}
 }
 
 /**
