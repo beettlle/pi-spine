@@ -1,0 +1,49 @@
+spine-tasks/SP-690-matrix-nested-maxparallel-throttle/STATUS.md
+  s_b55f4a1c57b88b::t_ea7a0dbcba1afe 1-25
+spine-tasks/dependencies.json
+  s_b55f4a1c57b88b::t_6b619e73113a3c 1827-1833
+spine-tasks/SP-689-buildplan-matrix-propagation/STATUS.md
+  s_b55f4a1c57b88b::t_53cb897230b458 1-26
+spine-tasks/SP-687-quota-probe-cli-wiring/PROMPT.md
+  s_b55f4a1c57b88b::t_bb3a6fc588a9bf 1-102
+spine-tasks/SP-688-matrix-worktree-setup-hook/PROMPT.md
+  s_b55f4a1c57b88b::t_528e23ef6c3dd3 1-94
+spine-tasks/SP-689-buildplan-matrix-propagation/PROMPT.md
+  s_b55f4a1c57b88b::t_aff1a683861958 1-99
+spine-tasks/CONTEXT.md
+  s_b55f4a1c57b88b::t_45346892f49c64 3,5
+  s_b55f4a1c57b88b::t_ff9833e270dc4b 2158-2182
+spine-tasks/_authoring/release-v2.12.1/manifest.md
+  s_cbe48e94ad893f::t_0d49fe826557bc 1-7,9-136
+  s_b55f4a1c57b88b::t_3fc79156293fa2 8
+spine-tasks/SP-688-matrix-worktree-setup-hook/STATUS.md
+  s_b55f4a1c57b88b::t_96c451228412e0 1-24
+spine-tasks/SP-690-matrix-nested-maxparallel-throttle/PROMPT.md
+  s_b55f4a1c57b88b::t_4ca2de048b8841 1-97
+spine-tasks/SP-687-quota-probe-cli-wiring/STATUS.md
+  s_b55f4a1c57b88b::t_18c3cd500a2423 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "ceb836523cf235d8bc7d811f1df2f2d22cc3aae2",
+  "prompts": {},
+  "sessions": {
+    "s_b55f4a1c57b88b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8dfe2933-a201-4983-bb7d-822d4ae99ff1",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_cbe48e94ad893f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-995962c5-3ef5-4feb-9d60-0537e04dccdb",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
