@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { assignLanesToWaves as assignLanesToWavesLanes } from '../../src/planner/lanes.mjs';
 import { assignLanesToWaves as assignLanesToWavesWaves } from '../../src/planner/waves.mjs';
+import { buildPlan } from '../../src/planner/index.mjs';
 
 function runPlannerTest(assignLanes) {
 	test(`matrix expansion in planner (${assignLanes.name})`, () => {
@@ -57,3 +62,106 @@ function runPlannerTest(assignLanes) {
 
 runPlannerTest(assignLanesToWavesLanes);
 runPlannerTest(assignLanesToWavesWaves);
+
+/**
+ * Minimal valid PROMPT.md carrying a `## Matrix` table (rows: alpha, beta).
+ * Exercises the real parse → buildPlan → planWaves path so the regression
+ * proves matrix fields are propagated end-to-end (issue #226).
+ */
+function matrixPromptMarkdown(taskId) {
+	return `# Task: ${taskId} — Matrix deploy fixture
+
+## Mission
+Deploy the same procedure to multiple targets via a matrix table.
+
+## Dependencies
+- **None**
+
+## File Scope
+- \`src/matrix-deploy.js\`
+
+## Matrix
+
+| run_id | target |
+|--------|--------|
+| alpha  | east   |
+| beta   | west   |
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`scripts/deploy.sh {matrix.target}\` |
+
+## Steps
+### Step 0: Done
+- [ ] one
+
+### Step 1: Testing & Verification
+- [ ] run \`scripts/deploy.sh {matrix.target}\`
+
+## Testing
+- Run \`scripts/deploy.sh {matrix.target}\` per row.
+
+## Completion Criteria
+- [ ] both rows deployed
+
+## Do NOT
+- touch unrelated files
+`;
+}
+
+const PLAN_CONFIG = { lanes: { maxParallel: 2, queueExcess: true } };
+
+async function createMatrixFixture() {
+	const root = await mkdtemp(path.join(os.tmpdir(), 'spine-plan-matrix-'));
+	const tasksRoot = path.join(root, 'spine-tasks');
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	fs.writeFileSync(
+		path.join(tasksRoot, 'dependencies.json'),
+		JSON.stringify({ version: 1, tasks: {} }, null, 2),
+		'utf-8',
+	);
+	const folder = path.join(tasksRoot, 'MM-200-matrix-fixture');
+	fs.mkdirSync(folder, { recursive: true });
+	fs.writeFileSync(path.join(folder, 'PROMPT.md'), matrixPromptMarkdown('MM-200'), 'utf-8');
+	return { root, tasksRoot };
+}
+
+test('real buildPlan expands ## Matrix rows into virtual sub-lanes (#226)', async () => {
+	const { root, tasksRoot } = await createMatrixFixture();
+	try {
+		const plan = buildPlan({
+			scope: ['MM-200'],
+			config: PLAN_CONFIG,
+			tasksRoot,
+		});
+
+		// The planner expanded the parent MM-200 into per-row virtual sub-lanes
+		// (run_id column => alpha, beta). This only works because buildPlan now
+		// copies matrix/matrixColumns into tasksById for planWaves to consume.
+		assert.deepStrictEqual(plan.waves[0].taskIds, ['MM-200[alpha]', 'MM-200[beta]']);
+
+		// Sibling rows share a parent, so they never conflict with each other and
+		// each lands in its own virtual lane; with maxParallel 2 both fit in tick 0.
+		assert.strictEqual(plan.waves[0].virtualLaneCount, 2);
+		assert.strictEqual(plan.waves[0].ticks.length, 1);
+		const tick0Lanes = plan.waves[0].ticks[0].lanes.filter((ids) => ids.length > 0);
+		assert.strictEqual(tick0Lanes.length, 2);
+		assert.deepStrictEqual(
+			new Set(tick0Lanes.flat()),
+			new Set(['MM-200[alpha]', 'MM-200[beta]']),
+		);
+		assert.notStrictEqual(
+			plan.waves[0].laneAssignments['MM-200[alpha]'].laneInTick,
+			plan.waves[0].laneAssignments['MM-200[beta]'].laneInTick,
+			'sibling rows must occupy distinct lane slots',
+		);
+
+		// The parent task itself remains a single entry in the plan task map.
+		assert.ok(plan.tasks['MM-200'], 'parent task MM-200 should remain in plan.tasks');
+		assert.strictEqual(plan.tasks['MM-200'].taskId, 'MM-200');
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});

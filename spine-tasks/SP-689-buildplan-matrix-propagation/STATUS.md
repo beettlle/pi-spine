@@ -36,9 +36,9 @@
 - [ ] Deduplicate `lanes.mjs` duplicate into thin re-export
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Real `buildPlan` matrix expansion regression
-- [ ] Contract `testCommand` green
+**Status:** ✅ Done
+- [x] Real `buildPlan` matrix expansion regression (fixture `MM-200` with `## Matrix`)
+- [x] Contract `testCommand` green (5/5); full planner suite 83/83
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
