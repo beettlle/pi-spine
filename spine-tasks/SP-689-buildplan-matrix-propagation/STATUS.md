@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Overall Status:** 🟡 In Progress
+**Overall Status:** ✅ Complete
 
 ## Plan (Review Level 1 — Plan Only)
 
@@ -41,9 +41,9 @@
 - [x] Contract `testCommand` green (5/5); full planner suite 83/83
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Runbook §2.4 update
-- [ ] `.DONE`
+**Status:** ✅ Done
+- [x] Runbook §2.4 update (planner packing caveat now reflects plan-time expansion)
+- [x] `.DONE`
 
 ## Discoveries
 
