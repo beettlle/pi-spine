@@ -26,6 +26,7 @@ import {
 	matrixWorktreeDir,
 	matrixWorktreePath,
 	runConcurrent,
+	runMatrixSubLaneSetupHook,
 	runShellInDir,
 	slugifyMatrixToken,
 } from "../../src/batch/engine-lanes/matrix.mjs";
@@ -220,6 +221,96 @@ test("runShellInDir resolves exit code and output", async () => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Unit: runMatrixSubLaneSetupHook (SP-688 / #224)                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Write an executable hook script under <root>/scripts/ and return its rel path.
+ *
+ * @param {string} root
+ * @param {string} body
+ * @returns {string}
+ */
+function writeExecutableHook(root, body) {
+	const rel = "scripts/spine-worktree-setup.sh";
+	const hookPath = path.join(root, rel);
+	fs.mkdirSync(path.dirname(hookPath), { recursive: true });
+	fs.writeFileSync(hookPath, body, "utf-8");
+	fs.chmodSync(hookPath, 0o755);
+	return rel;
+}
+
+test("runMatrixSubLaneSetupHook is a no-op when no hook is configured", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-hook-skip-");
+	try {
+		const result = runMatrixSubLaneSetupHook({
+			projectRoot,
+			worktreePath: projectRoot,
+			batchId: "batch-test",
+			laneNumber: 1,
+			taskId: "TP-900",
+			rowId: "a",
+			correlationId: "corr",
+			config: {}, // no worktreeSetupHook configured
+		});
+		assert.equal(result.ok, true);
+		assert.equal(result.skipped, true);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runMatrixSubLaneSetupHook fail-closed: throws and journals failed when hook returns ok:false", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-hook-fail-");
+	const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "spine-matrix-hook-wt-"));
+	try {
+		const hookRel = writeExecutableHook(
+			projectRoot,
+			'#!/bin/sh\necho \'{"ok":false,"error":"venv link failed"}\'\n',
+		);
+
+		assert.throws(
+			() =>
+				runMatrixSubLaneSetupHook({
+					projectRoot,
+					worktreePath: worktree,
+					batchId: "batch-test",
+					laneNumber: 1,
+					taskId: "TP-901",
+					rowId: "a",
+					correlationId: "corr",
+					config: { worktreeSetupHook: hookRel },
+				}),
+			(err) => {
+				assert.match(err.message, /venv link failed/);
+				return true;
+			},
+		);
+
+		// Fail-closed evidence: the failed lifecycle event is journaled with the row id.
+		const journalPath = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			"batch-test",
+			"journal",
+			"events.jsonl",
+		);
+		const events = fs.readFileSync(journalPath, "utf-8")
+			.split("\n")
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const failed = events.find((e) => e.type === "matrix.sub_lane.setup_hook.failed");
+		assert.ok(failed, "matrix.sub_lane.setup_hook.failed should be journaled");
+		assert.equal(failed.payload.rowId, "a");
+		assert.match(failed.payload.error, /venv link failed/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+		fs.rmSync(worktree, { recursive: true, force: true });
+	}
+});
+
+/* ------------------------------------------------------------------ */
 /* E2E: matrix execute task produces one output per row                */
 /* ------------------------------------------------------------------ */
 
@@ -363,10 +454,95 @@ test("E2E: maxParallel=1 runs rows serially (still produces both outputs)", asyn
 });
 
 /* ------------------------------------------------------------------ */
+/* E2E: matrix sub-lanes run worktreeSetupHook before the row command  */
+/* (SP-688 / #224)                                                     */
+/* ------------------------------------------------------------------ */
+
+test("E2E: matrix sub-lanes run worktreeSetupHook before the row command", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-hook-e2e-");
+	try {
+		const taskId = "TP-304";
+		const folder = path.join(projectRoot, "spine-tasks", `${taskId}-matrix`);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(path.join(folder, "PROMPT.md"), hookMatrixPrompt(taskId), "utf-8");
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+			"utf-8",
+		);
+
+		// The hook materializes a gitignored marker (the `.venv` analogue). The row
+		// command consumes it. Because the marker is gitignored it never dirties a
+		// worktree, and because the lane branch never commits it, the marker can
+		// only appear in a row's output if the hook ran in THAT sub-lane worktree
+		// before the row command read it.
+		fs.writeFileSync(path.join(projectRoot, ".gitignore"), "hook-marker.txt\n", "utf-8");
+		const hookRel = writeExecutableHook(
+			projectRoot,
+			'#!/bin/sh\nprintf "HOOK_OK" > "$SPINE_WORKTREE/hook-marker.txt"\necho \'{"ok":true}\'\n',
+		);
+
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+
+		configureForBatch(projectRoot, {
+			maxParallel: 2,
+			worktreeSetupHook: hookRel,
+		});
+
+		const oldIsWorker = process.env.SPINE_IS_WORKER;
+		delete process.env.SPINE_IS_WORKER;
+		const batchResult = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+		if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+		assert.ok(
+			batchResult.ok,
+			`batch should succeed with hook; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+		);
+
+		// Each row's output carries hook evidence: the marker is only present when
+		// the hook ran in that sub-lane worktree before the row command consumed it.
+		const fileA = execFileSync("git", ["show", `${batchResult.orchBranch}:out/a.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		const fileB = execFileSync("git", ["show", `${batchResult.orchBranch}:out/b.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		assert.match(fileA, /HOOK_OK.*alpha/, "row a output must carry hook marker evidence");
+		assert.match(fileB, /HOOK_OK.*beta/, "row b output must carry hook marker evidence");
+
+		// Direct journal evidence the hook ran on the production matrix sub-lane path.
+		const journalPath = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			batchResult.batchId,
+			"journal",
+			"events.jsonl",
+		);
+		const events = fs.readFileSync(journalPath, "utf-8")
+			.split("\n")
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const hookCompleted = events.filter(
+			(e) => e.type === "matrix.sub_lane.setup_hook.completed",
+		);
+		assert.ok(
+			hookCompleted.length >= 2,
+			`setup_hook.completed should fire for each matrix row; got ${hookCompleted.length}`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/* ------------------------------------------------------------------ */
 /* Fixtures + helpers                                                  */
 /* ------------------------------------------------------------------ */
 
-function configureForBatch(projectRoot, { maxParallel }) {
+function configureForBatch(projectRoot, { maxParallel, worktreeSetupHook } = {}) {
 	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
 	const existing = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 	fs.writeFileSync(
@@ -376,6 +552,7 @@ function configureForBatch(projectRoot, { maxParallel }) {
 			workerBackend: "agentSession",
 			lanes: { ...existing.lanes, maxParallel },
 			integrate: { requireGate: false, enforceCoverageLimit: false },
+			...(worktreeSetupHook ? { worktreeSetupHook } : {}),
 		}),
 		"utf-8",
 	);
@@ -460,6 +637,48 @@ Row b exits non-zero.
 
 ## Do NOT
 - Succeed when a row fails
+`;
+}
+
+function hookMatrixPrompt(taskId) {
+	return `# Task: ${taskId} — Matrix hook
+**Size:** S
+**Type:** execute
+
+## Mission
+Each row consumes a worktreeSetupHook-provided marker, proving the hook runs
+in the matrix sub-lane worktree before the row command (SP-688 / #224).
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/\`
+
+## Matrix
+| run_id | value |
+|-------|-------|
+| a | alpha |
+| b | beta |
+
+## Steps
+### Step 1: Run per row
+
+## Contract
+| Field | Value |
+|-------|-------|
+| runCommand | \`test -f hook-marker.txt && mkdir -p out && echo "$(cat hook-marker.txt) {matrix.value}" > out/{matrix.run_id}.txt\` |
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Each row reads the hook-provided marker into its output.
+
+## Completion Criteria
+- [ ] Both rows carry hook evidence
+
+## Do NOT
+- Fail
 `;
 }
 

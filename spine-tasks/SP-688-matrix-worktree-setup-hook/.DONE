@@ -1,0 +1,9 @@
+SP-688 complete.
+
+Matrix sub-lane provision now runs worktreeSetupHook (mirrors parent-lane provision→hook sequence):
+- src/batch/engine-lanes/matrix.mjs: new runMatrixSubLaneSetupHook helper (no-op when unconfigured; journals matrix.sub_lane.setup_hook.{started,completed,failed}; rethrows on failure).
+- src/batch/engine-lanes/matrix-run.mjs: runMatrixSubLane calls the helper after provision + matrix.sub_lane.started, failing the row (ok:false) on hook failure before execute.
+- src/batch/engine-lanes.mjs: re-export the helper.
+- tests/batch/matrix-execution.test.mjs: E2E regression (gitignored marker lands in each row output + setup_hook.completed per row) + 2 helper unit tests.
+
+Verified: npm run typecheck clean; contract testCommand 21/21 pass. Parent-lane hook unchanged.
