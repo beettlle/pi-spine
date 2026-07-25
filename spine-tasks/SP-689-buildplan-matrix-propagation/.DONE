@@ -1,0 +1,20 @@
+SP-689 complete — matrix fields propagated through buildPlan (#226).
+
+Changes:
+- src/planner/index.mjs: buildPlan now copies matrix/matrixColumns from the parsed
+  prompt into tasksById (conditional spread, mirroring parsePrompt's emission), so
+  planWaves/assignLanesToWaves expands virtual SP-X[rowId] sub-lanes at plan time.
+- src/planner/lanes.mjs: collapsed the divergent assignLanesToWaves (directory-prefix
+  overlap only) into a thin re-export of the canonical glob-aware impl in waves.mjs.
+  Production already used waves.mjs; lanes.mjs was test-only. Single source of truth.
+- tests/planner/plan-matrix.test.mjs: added a real buildPlan regression (fixture task
+  MM-200 with a ## Matrix table) proving SP-X[rowId] virtual sub-lanes expand end-to-end.
+- docs/adoption/operator-runbook.md §2.4: rewrote the "Planner packing" caveat to match
+  the new plan-time expansion (was stale: said buildPlan did not copy matrix fields).
+
+Verification:
+- Contract testCommand green: `npm run typecheck` clean +
+  `node --test tests/planner/plan-matrix.test.mjs` => 5/5 pass.
+- Full planner suite: 83/83 pass (lanes.mjs re-export behavior-preserving).
+- Impact: buildPlan HIGH-risk callers (startBatch/buildSequencePlan/runPreflightPlanCheck)
+  unaffected — change is additive; only the matrix expansion path is enabled.
