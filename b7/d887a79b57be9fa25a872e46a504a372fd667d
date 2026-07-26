@@ -1,0 +1,21 @@
+spine-tasks/SP-690-matrix-nested-maxparallel-throttle/STATUS.md
+  s_147eea059d9bbb::t_2b4137b635f34b 9-10
+spine-tasks/SP-690-matrix-nested-maxparallel-throttle/PROMPT.md
+  s_147eea059d9bbb::t_656b9685ccf9d3 40,42,49,67-68,89,107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b7d887a79b57be9fa25a872e46a504a372fd667d",
+  "prompts": {},
+  "sessions": {
+    "s_147eea059d9bbb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e4d0b092-b189-4f04-9358-b7f9a9b8eafa",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
