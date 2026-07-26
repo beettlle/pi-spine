@@ -4,7 +4,7 @@
 
 **Overall Status:** ⬜ Not Started
 
-**Operator amendment:** SP-688 pre-landed changes in the shared matrix paths. Contract delivery proof now targets this `STATUS.md`; production wiring, regression coverage, and runbook updates remain required.
+**Operator amendment:** SP-688 pre-landed changes in the shared matrix paths. Contract delivery proof now targets this task's `.DONE`; production wiring, regression coverage, and runbook updates remain required.
 
 ## Steps
 
