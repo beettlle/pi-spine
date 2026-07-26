@@ -34,9 +34,9 @@ This release is **patch / bugs-only** to restore operator trust.
 | Bucket | Selected | Profile limit | Status |
 |--------|----------|---------------|--------|
 | Documentation | 1 (QUICK-REFERENCE live wording inside #237) | 1–2 small | PASS |
-| Bug fixes | 4 (#237, #224, #226, #227) | 3–5 | PASS |
+| Bug fixes | 3 shipped (#237, #224, #227); #226 deferred after regression | 3–5 | PASS |
 | Enhancements | **0** | 0 | PASS |
-| **Total tasks** | 4 | 5–8 | PASS |
+| **Total tasks** | 4 executed; 3 fixes shipped | 5–8 | Operator-approved stabilization exception |
 
 **Profile audit:** PASS
 
@@ -48,8 +48,8 @@ This release is **patch / bugs-only** to restore operator trust.
 |-------|-------|--------|------|-------|-------|
 | SP-687 | #237 | bug | S | Wire `runQuotaProbes` into `spine metrics quota` | Closes #237; includes QUICK-REFERENCE fix |
 | SP-688 | #224 | bug | S | Run `worktreeSetupHook` for matrix sub-lanes | Closes #224 |
-| SP-689 | #226 | bug | S | Propagate matrix fields through `buildPlan` | Closes #226 |
-| SP-690 | #227 | bug | S | Cap nested matrix concurrency to remaining slots | Closes #227; depends on SP-688 (shared matrix files) |
+| SP-689 | #226 | bug | S | Propagate matrix fields through `buildPlan` | Executed in Wave 0, then rolled back during SP-690 recovery because virtual row IDs caused production `task_not_found`; #226 deferred |
+| SP-690 | #227 | bug | S | Cap nested matrix concurrency to remaining slots | Closes #227; also restores parent-task planning after SP-689 regression |
 
 **Release scope ID:** `SP-687,SP-688,SP-689,SP-690`
 
@@ -79,7 +79,7 @@ test "${PIPESTATUS[0]}" -eq 0
 |-------|--------|----------------|-------------|
 | #237 | bug | SP-687 | create-spine-tasks (lean) |
 | #224 | bug | SP-688 | create-spine-tasks (lean) |
-| #226 | bug | SP-689 | create-spine-tasks (lean) |
+| #226 | bug | SP-689 | Deferred to #228-compatible planner/engine design after Wave 1 regression |
 | #227 | bug | SP-690 | create-spine-tasks (lean); dep SP-688 |
 
 ---
@@ -105,6 +105,7 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 | Item | Type | Rationale |
 |------|------|-----------|
 | Abandoned SP-687–691 on backup branch | enh | Incomplete / unwired; salvage later only with production wiring + approval |
+| #226 | bug | SP-689 plan-time virtual row IDs were incompatible with the current parent-task engine; retry with #228 first-class scheduling |
 | #120 / #124 / #135 / #213 | enh | P3 enhancements; not patch profile |
 | #212 / #211 / #209 / #127 / #43 | enh/epic | Deferred |
 | #225 / #228–#232 / #238 | matrix epic / features | After #224/#226/#227 stabilize matrix baseline |
@@ -133,4 +134,4 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Close #237, #224, #226, #227 when shipped
+- [ ] Close #237, #224, #227 when shipped; keep #226 open/deferred

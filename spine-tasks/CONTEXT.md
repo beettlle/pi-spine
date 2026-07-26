@@ -2163,22 +2163,22 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-687 | Wire `runQuotaProbes` into metrics quota CLI | Pending | — |
-| SP-688 | Run `worktreeSetupHook` for matrix sub-lanes | Pending | — |
-| SP-689 | Propagate matrix fields through `buildPlan` | Pending | — |
-| SP-690 | Cap nested matrix concurrency to remaining slots | Pending | SP-688 |
+| SP-687 | Wire `runQuotaProbes` into metrics quota CLI | Done | — |
+| SP-688 | Run `worktreeSetupHook` for matrix sub-lanes | Done | — |
+| SP-689 | Propagate matrix fields through `buildPlan` | Rolled back; #226 deferred | — |
+| SP-690 | Cap nested matrix concurrency to remaining slots | Done | SP-688 |
 
 **Phase 77 exit criteria:**
 
 - [ ] #237 closed (SP-687)
 - [ ] #224 closed (SP-688)
-- [ ] #226 closed (SP-689)
+- [x] #226 deferred after plan-time virtual row IDs caused production `task_not_found`; parent-task planning restored in SP-690
 - [ ] #227 closed (SP-690)
-- [ ] Operator approved scope (2026-07-25)
+- [x] Operator approved scope (2026-07-25)
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] **v2.12.1 published** — tag + npm (pending)
 
-**Deferred:** abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
+**Deferred:** #226 until #228-compatible planner/engine scheduling; abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
 
 ---
 
