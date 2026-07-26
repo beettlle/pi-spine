@@ -31,6 +31,6 @@
 - [x] Fix all failures from the scoped contract command — 4 baseline `task_not_found` E2E failures → 0
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
-- [ ] Runbook interim invariant note
-- [ ] `.DONE`
+**Status:** ✅ Done
+- [x] Document interim global in-flight ≤ `maxParallel` invariant and that #228 may supersede the throttle — `docs/adoption/operator-runbook.md` §2.4 (plan output, concurrency, planner-packing caveat) + `docs/QUICK-REFERENCE.md` matrix note
+- [x] Create `.DONE`
