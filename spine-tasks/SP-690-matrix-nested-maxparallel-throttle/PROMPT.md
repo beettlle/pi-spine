@@ -45,7 +45,7 @@ Closes #227 — Enforce the interim invariant that global in-flight workers (non
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/matrix-run.mjs`, `tests/batch/matrix-execution.test.mjs`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `spine-tasks/SP-690-matrix-nested-maxparallel-throttle/STATUS.md` |
 
 ## Steps
 
@@ -95,3 +95,7 @@ Closes #227 — Enforce the interim invariant that global in-flight workers (non
 ## Git Commit Convention
 
 - `fix(SP-690): throttle nested matrix concurrency to remaining slots (#227)`
+
+## Amendments
+
+- **2026-07-25 (pre-landed shared scope):** SP-688 changed the shared matrix execution tests and implementation paths before this dependent task started. Redirected `fileScopeMustChange` to `STATUS.md` so contract verification measures SP-690 delivery rather than SP-688's landed diff. SP-690 must still wire the throttle into the production matrix path, add the overshoot regression, and update the runbook as required above.

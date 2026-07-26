@@ -4,6 +4,8 @@
 
 **Overall Status:** ⬜ Not Started
 
+**Operator amendment:** SP-688 pre-landed changes in the shared matrix paths. Contract delivery proof now targets this `STATUS.md`; production wiring, regression coverage, and runbook updates remain required.
+
 ## Steps
 
 ### Step 0: Preflight
