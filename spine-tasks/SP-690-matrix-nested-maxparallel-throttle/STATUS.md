@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Overall Status:** ⬜ Not Started
+**Overall Status:** 🟡 In Progress
 
 **Operator amendment:** SP-688 pre-landed changes in the shared matrix paths. Contract delivery proof now targets this task's `.DONE`; production wiring, regression coverage, and runbook updates remain required.
 
@@ -11,17 +11,24 @@
 ## Steps
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm nested full-`maxParallel` overshoot and SP-688 landed
+**Status:** ✅ Done
+- [x] Confirm nested full-`maxParallel` overshoot and SP-688 landed
+  - `engine-lanes.mjs` passes `maxParallel: config?.lanes?.maxParallel ?? 1` into `runMatrixTaskOnLane` → `runConcurrent` (parent lane held in parallel).
+  - SP-688 landed: commit f256c7b5 (#224 setup hook) present in history; `runMatrixSubLaneSetupHook` wired into `runMatrixSubLane`.
 
 ### Step 1: Throttle nested matrix concurrency
-**Status:** ⬜ Not Started
-- [ ] Apply remaining-slot limit on production matrix path
+**Status:** ✅ Done
+- [x] Compute remaining slots when parent holds a lane (interim: `max(1, maxParallel - 1)`, parent lane = 1 occupied slot) — `matrixRowConcurrencyLimit` in `matrix-run.mjs`
+- [x] Pass throttled limit into `runConcurrent` from production `runTaskOnLane` caller — `engine-lanes.mjs` now calls `matrixRowConcurrencyLimit(global, 1)` and passes the result as `maxParallel`
+- [x] Preserve fail-closed row failure behavior; matrix abort semantics untouched (only the concurrency VALUE changed)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
-- [ ] Regression for overshoot / remaining slots
-- [ ] Contract `testCommand` green
+**Status:** ✅ Done
+- [x] Remove SP-689's incompatible `buildPlan` matrix propagation so production execution retains the parent task ID until #228 adds first-class row scheduling
+- [x] Update the planner regression to assert matrix metadata does not create engine-visible virtual task IDs (`plan-matrix.test.mjs`)
+- [x] Regression: mixed wave (matrix + sibling) cannot exceed `lanes.maxParallel` — E2E asserts `matrix.task_started.maxParallel === 1` (global 2) + unit formula tests for `matrixRowConcurrencyLimit`
+- [x] Run contract `testCommand` only (scoped) — 30/30 pass (typecheck clean)
+- [x] Fix all failures from the scoped contract command — 4 baseline `task_not_found` E2E failures → 0
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started

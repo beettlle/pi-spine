@@ -25,7 +25,7 @@ import { runCodeReviewPhase, runFinalReviewPhase } from "./engine-lanes/review.m
 import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 import { resolveWorktreeSetupIgnorePaths } from "../config/spine-config-load.mjs";
 import { loadMatrixTaskRows } from "./engine-lanes/matrix.mjs";
-import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
+import { runMatrixTaskOnLane, matrixRowConcurrencyLimit } from "./engine-lanes/matrix-run.mjs";
 
 export {
 	buildTasksAndLanesFromPlan,
@@ -71,7 +71,7 @@ export {
 	runShellInDir,
 } from "./engine-lanes/matrix.mjs";
 
-export { runMatrixTaskOnLane, runMatrixSubLane } from "./engine-lanes/matrix-run.mjs";
+export { runMatrixTaskOnLane, runMatrixSubLane, matrixRowConcurrencyLimit } from "./engine-lanes/matrix-run.mjs";
 
 /**
  * @param {string} fromPhase
@@ -147,6 +147,15 @@ export async function runTaskOnLane({
 	// Non-matrix tasks fall through to the single-worker path below.
 	const matrixRows = loadMatrixTaskRows(path.join(projectRoot, taskFolderRel));
 	if (matrixRows) {
+		// SP-690 / #227: the parent matrix task already occupies this lane, so its
+		// nested rows must not reuse the parent's slot. Cap rows to the remaining
+		// free slots so global in-flight workers (siblings + rows) stay within
+		// `lanes.maxParallel`. Interim invariant — #228 first-class row scheduling
+		// supersedes it.
+		const matrixMaxParallel = matrixRowConcurrencyLimit(
+			config?.lanes?.maxParallel ?? 1,
+			1,
+		);
 		return runMatrixTaskOnLane({
 			projectRoot,
 			state,
@@ -159,7 +168,7 @@ export async function runTaskOnLane({
 			laneCorrelationId,
 			fileScopePaths,
 			matrix: matrixRows,
-			maxParallel: config?.lanes?.maxParallel ?? 1,
+			maxParallel: matrixMaxParallel,
 		});
 	}
 

@@ -34,6 +34,32 @@ import { verifyContract } from "../contract-verify.mjs";
 import { gitExec } from "../git-exec.mjs";
 
 /**
+ * SP-690 / #227 — interim throttle for nested matrix row concurrency.
+ *
+ * A matrix task runs ON a lane the batch has already counted against
+ * `lanes.maxParallel`. While that parent lane is held, the rows it fans out
+ * must not reuse the parent's slot — otherwise global in-flight workers
+ * (sibling lane workers + matrix rows) can exceed `lanes.maxParallel`.
+ *
+ * Caps the rows to the remaining free slots: `max(1, globalMaxParallel -
+ * occupiedLaneSlots)`, never below 1 so a matrix task always makes forward
+ * progress. `occupiedLaneSlots` defaults to 1 (the parent matrix lane).
+ *
+ * This is an interim invariant. First-class row scheduling (#228) supersedes
+ * it by scheduling rows as real lane occupants instead of nested workers,
+ * which also closes the concurrent-sibling edge case for `maxParallel > 2`.
+ *
+ * @param {number} globalMaxParallel  Configured `lanes.maxParallel`.
+ * @param {number} [occupiedLaneSlots]  Lane slots already in use (≥ 1: the parent).
+ * @returns {number} Row concurrency limit, at least 1.
+ */
+export function matrixRowConcurrencyLimit(globalMaxParallel, occupiedLaneSlots = 1) {
+	const max = Math.max(1, Math.floor(Number(globalMaxParallel) || 1));
+	const occupied = Math.max(0, Math.floor(Number(occupiedLaneSlots) || 0));
+	return Math.max(1, max - occupied);
+}
+
+/**
  * Read the `## Contract` table from a parent task folder (un-substituted).
  *
  * @param {string} parentTaskFolderAbs

@@ -60,11 +60,6 @@ export function buildPlan({ scope, config, tasksRoot, projectRoot }) {
 			dependencies: mergedDeps,
 			missionText: prompt.sections?.Mission ?? '',
 			folderName: path.basename(discoveredTask.folderPath),
-			// Propagate parsed matrix fields so planWaves/assignLanesToWaves expands
-			// virtual `SP-X[rowId]` sub-lanes at plan time instead of only at run
-			// time in the engine (issue #226). Spread conditionally to mirror
-			// parsePrompt's emission so non-matrix tasks gain no new keys.
-			...(prompt.matrix ? { matrix: prompt.matrix, matrixColumns: prompt.matrixColumns } : {}),
 		};
 	}
 
