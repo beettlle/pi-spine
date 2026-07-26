@@ -1,0 +1,20 @@
+SP-690 complete.
+
+Throttle: src/batch/engine-lanes/matrix-run.mjs exports matrixRowConcurrencyLimit(global, occupied=1)
+  = max(1, globalMaxParallel - occupiedLaneSlots). The production caller runTaskOnLane
+  (src/batch/engine-lanes.mjs) now passes max(1, lanes.maxParallel - 1) into runMatrixTaskOnLane
+  instead of the raw global maxParallel, so nested matrix rows reserve the parent lane's slot.
+
+Planner: src/planner/index.mjs no longer copies prompt.matrix/matrixColumns into tasksById,
+  so production plans retain the parent matrix task ID and no virtual SP-X[rowId] IDs reach
+  the batch engine (deferred to first-class row scheduling, #228).
+
+Regression: tests/batch/matrix-execution.test.mjs adds unit tests for matrixRowConcurrencyLimit
+  and an E2E mixed wave (matrix + sibling, global maxParallel 2) asserting both succeed and the
+  production matrix.task_started journal event records the throttled maxParallel (1).
+  tests/planner/plan-matrix.test.mjs asserts no engine-visible virtual row IDs.
+
+Contract testCommand: typecheck clean; 30/30 pass (was 26 with 4 task_not_found failures).
+
+Docs: docs/adoption/operator-runbook.md §2.4 + docs/QUICK-REFERENCE.md document the interim
+  global in-flight <= lanes.maxParallel invariant and that #228 supersedes the throttle.

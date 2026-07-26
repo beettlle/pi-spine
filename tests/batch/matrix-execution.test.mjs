@@ -18,6 +18,7 @@ import test from "node:test";
 
 import { startBatch } from "../../src/batch/engine.mjs";
 import { expandMatrixFileScopePatterns } from "../../src/batch/lane-commit.mjs";
+import { matrixRowConcurrencyLimit } from "../../src/batch/engine-lanes.mjs";
 import {
 	aggregateMatrixOutcomes,
 	isMatrixSubLaneWorktreeDir,
@@ -200,6 +201,29 @@ test("aggregateMatrixOutcomes: any failure surfaces failing row ids", () => {
 	]);
 	assert.equal(out.ok, false);
 	assert.deepEqual(out.failedRowIds, ["b", "c"]);
+});
+
+/* ------------------------------------------------------------------ */
+/* Unit: matrixRowConcurrencyLimit (SP-690 / #227)                     */
+/* ------------------------------------------------------------------ */
+
+test("matrixRowConcurrencyLimit reserves the parent lane slot (default 1)", () => {
+	// global maxParallel 2 with the parent lane held => rows get the 1 remaining slot.
+	assert.equal(matrixRowConcurrencyLimit(2), 1);
+	assert.equal(matrixRowConcurrencyLimit(2, 1), 1);
+});
+
+test("matrixRowConcurrencyLimit scales remaining slots with maxParallel", () => {
+	assert.equal(matrixRowConcurrencyLimit(4, 1), 3);
+	assert.equal(matrixRowConcurrencyLimit(8, 1), 7);
+	assert.equal(matrixRowConcurrencyLimit(3, 2), 1);
+});
+
+test("matrixRowConcurrencyLimit never drops below 1 (forward progress)", () => {
+	assert.equal(matrixRowConcurrencyLimit(1, 1), 1, "single lane: still 1 row at a time");
+	assert.equal(matrixRowConcurrencyLimit(2, 5), 1, "more occupied slots than lanes: clamp to 1");
+	assert.equal(matrixRowConcurrencyLimit(0), 1, "missing/zero config: clamp to 1");
+	assert.equal(matrixRowConcurrencyLimit(undefined), 1);
 });
 
 /* ------------------------------------------------------------------ */
@@ -448,6 +472,105 @@ test("E2E: maxParallel=1 runs rows serially (still produces both outputs)", asyn
 		});
 		assert.match(fileA, /alpha/);
 		assert.match(fileB, /beta/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/* ------------------------------------------------------------------ */
+/* E2E: mixed wave (matrix + sibling) throttles rows to remaining      */
+/* slots so global in-flight <= lanes.maxParallel (SP-690 / #227)      */
+/* ------------------------------------------------------------------ */
+
+test("E2E: mixed wave throttles matrix rows to remaining slots (#227)", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-throttle-");
+	try {
+		const matrixTaskId = "TP-400";
+		const siblingTaskId = "TP-401";
+		const matrixFolder = path.join(projectRoot, "spine-tasks", `${matrixTaskId}-matrix`);
+		const siblingFolder = path.join(projectRoot, "spine-tasks", `${siblingTaskId}-sibling`);
+		fs.mkdirSync(matrixFolder, { recursive: true });
+		fs.mkdirSync(siblingFolder, { recursive: true });
+		fs.writeFileSync(path.join(matrixFolder, "PROMPT.md"), matrixPrompt(matrixTaskId), "utf-8");
+		// Sibling is a plain execute task with a non-overlapping file scope so the
+		// planner assigns it to a different lane in the same tick (maxParallel 2).
+		fs.writeFileSync(
+			path.join(siblingFolder, "PROMPT.md"),
+			siblingPrompt(siblingTaskId),
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({
+				version: 1,
+				tasks: { [matrixTaskId]: [], [siblingTaskId]: [] },
+			}),
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+
+		// Two lanes run concurrently: the matrix lane (2 rows) and the sibling
+		// lane. Without the throttle the matrix would claim both slots (2 rows) on
+		// top of the sibling = 3 in-flight > maxParallel. SP-690 reserves the
+		// parent lane's slot so the matrix fans out into the 1 remaining slot.
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const oldIsWorker = process.env.SPINE_IS_WORKER;
+		delete process.env.SPINE_IS_WORKER;
+		const batchResult = await startBatch({
+			projectRoot,
+			scope: [matrixTaskId, siblingTaskId],
+			skipPreflight: true,
+		});
+		if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+		assert.ok(
+			batchResult.ok,
+			`mixed wave should succeed; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+		);
+
+		// Both lanes produced output: the matrix rows AND the sibling task.
+		const fileA = execFileSync("git", ["show", `${batchResult.orchBranch}:out/a.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		const fileB = execFileSync("git", ["show", `${batchResult.orchBranch}:out/b.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		const sibling = execFileSync(
+			"git",
+			["show", `${batchResult.orchBranch}:out2/sibling.txt`],
+			{ cwd: projectRoot, encoding: "utf-8" },
+		);
+		assert.match(fileA, /alpha/);
+		assert.match(fileB, /beta/);
+		assert.match(sibling, /sibling-ran/);
+
+		// Production-wiring proof: the matrix task_started event records the
+		// THROTTLED maxParallel (1), not the configured global maxParallel (2),
+		// so the parent lane's slot is reserved for the sibling.
+		const journalPath = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			batchResult.batchId,
+			"journal",
+			"events.jsonl",
+		);
+		const events = fs
+			.readFileSync(journalPath, "utf-8")
+			.split("\n")
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const matrixStarted = events.find((e) => e.type === "matrix.task_started");
+		assert.ok(matrixStarted, "matrix.task_started should be recorded");
+		assert.equal(
+			matrixStarted.payload.maxParallel,
+			1,
+			`matrix rows must be throttled to the 1 remaining slot (global maxParallel 2, parent lane held); got ${matrixStarted.payload.maxParallel}`,
+		);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -708,6 +831,43 @@ Not a matrix task.
 
 ## Testing
 Run it.
+
+## Completion Criteria
+- [ ] Done
+
+## Do NOT
+- Fail
+`;
+}
+
+function siblingPrompt(taskId) {
+	return `# Task: ${taskId} — Sibling
+**Size:** S
+**Type:** execute
+
+## Mission
+A non-matrix sibling task that runs on its own lane in the same wave as a
+matrix task. Non-overlapping file scope (out2/) so the planner assigns it to a
+distinct lane, exercising the SP-690 mixed-wave throttle.
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out2/\`
+
+## Steps
+### Step 1: Run
+
+## Contract
+| Field | Value |
+|-------|-------|
+| runCommand | \`mkdir -p out2 && echo sibling-ran > out2/sibling.txt\` |
+| fileScopeMustChange | \`out2/sibling.txt\` |
+| testCommand | \`test -f out2/sibling.txt\` |
+
+## Testing
+Write the sibling marker.
 
 ## Completion Criteria
 - [ ] Done

@@ -128,7 +128,7 @@ async function createMatrixFixture() {
 	return { root, tasksRoot };
 }
 
-test('real buildPlan expands ## Matrix rows into virtual sub-lanes (#226)', async () => {
+test('real buildPlan keeps the parent matrix task ID; no engine-visible virtual row IDs (#226 / #228)', async () => {
 	const { root, tasksRoot } = await createMatrixFixture();
 	try {
 		const plan = buildPlan({
@@ -137,28 +137,24 @@ test('real buildPlan expands ## Matrix rows into virtual sub-lanes (#226)', asyn
 			tasksRoot,
 		});
 
-		// The planner expanded the parent MM-200 into per-row virtual sub-lanes
-		// (run_id column => alpha, beta). This only works because buildPlan now
-		// copies matrix/matrixColumns into tasksById for planWaves to consume.
-		assert.deepStrictEqual(plan.waves[0].taskIds, ['MM-200[alpha]', 'MM-200[beta]']);
+		// SP-690 (#226 deferred): buildPlan must NOT propagate `matrix` fields into
+		// `tasksById`. The engine fans rows out itself at run time via
+		// `runMatrixTaskOnLane`; expanding `MM-200[alpha]`/`MM-200[beta]` at plan
+		// time would expose virtual row IDs to the batch engine, which does not yet
+		// know how to schedule them (#228) and fails with `task_not_found`.
+		// The wave carries only the parent task ID.
+		assert.deepStrictEqual(plan.waves[0].taskIds, ['MM-200']);
+		for (const wave of plan.waves) {
+			for (const id of wave.taskIds) {
+				assert.ok(
+					!/\[/.test(id),
+					`no virtual row ID should reach the plan; found ${id}`,
+				);
+			}
+		}
 
-		// Sibling rows share a parent, so they never conflict with each other and
-		// each lands in its own virtual lane; with maxParallel 2 both fit in tick 0.
-		assert.strictEqual(plan.waves[0].virtualLaneCount, 2);
-		assert.strictEqual(plan.waves[0].ticks.length, 1);
-		const tick0Lanes = plan.waves[0].ticks[0].lanes.filter((ids) => ids.length > 0);
-		assert.strictEqual(tick0Lanes.length, 2);
-		assert.deepStrictEqual(
-			new Set(tick0Lanes.flat()),
-			new Set(['MM-200[alpha]', 'MM-200[beta]']),
-		);
-		assert.notStrictEqual(
-			plan.waves[0].laneAssignments['MM-200[alpha]'].laneInTick,
-			plan.waves[0].laneAssignments['MM-200[beta]'].laneInTick,
-			'sibling rows must occupy distinct lane slots',
-		);
-
-		// The parent task itself remains a single entry in the plan task map.
+		// The parent task is a single entry in the plan task map; the matrix table
+		// is read by the engine at run time, not by the planner.
 		assert.ok(plan.tasks['MM-200'], 'parent task MM-200 should remain in plan.tasks');
 		assert.strictEqual(plan.tasks['MM-200'].taskId, 'MM-200');
 	} finally {
