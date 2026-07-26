@@ -6,6 +6,8 @@
 
 **Operator amendment:** SP-688 pre-landed changes in the shared matrix paths. Contract delivery proof now targets this task's `.DONE`; production wiring, regression coverage, and runbook updates remain required.
 
+**Retry amendment:** Wave 1 exposed SP-689's incompatible virtual-row planning (`task_not_found`). Retry must restore parent-task planning, retain the SP-690 throttle, and pass planner plus matrix E2E tests.
+
 ## Steps
 
 ### Step 0: Preflight
