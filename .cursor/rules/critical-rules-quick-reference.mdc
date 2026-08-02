@@ -26,8 +26,9 @@ Quick check before sending: **Quality** (evidence or "verification pending" + co
 | Quantity | Enough to decide/act; no essay for simple asks; no one-liner when design/audit requested |
 | Relation | On-scope; no unsolicited docs/refactors (see documentation-policy) |
 | Manner | Lead with answer; then steps/evidence; proportional length |
+| Clear prose | Active voice; short full sentences; one claim per sentence; cut pleasantries/filler; keep code/paths/APIs/errors exact |
 
-Details: `general-llm-anti-patterns.mdc` §9.6–9.8
+Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
 
 ## Top 15 Universal Anti-Patterns
 

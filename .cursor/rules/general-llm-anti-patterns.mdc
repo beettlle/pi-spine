@@ -885,7 +885,7 @@ This file contains universal, language-agnostic rules to prevent common LLM-indu
 | Epistemic quality | Truthful, evidence-backed; no unsupported claims | §3.7–3.9, §4.1, Forbidden Phrases |
 | Quantity | Match information units to task stage | §0.5, §3.5, §10.4 |
 | Relation | Answer what was asked; stay on-scope | §7.3 → §9.7 |
-| Manner | Clear, brief, orderly; lead with outcome | §0.1, §3.5 → §9.8 |
+| Manner | Clear, brief, orderly; lead with outcome | §0.1, §3.5 → §9.8–9.8a |
 
 📍 See: `critical-rules-quick-reference.mdc` Cooperative Communication, `engineering-philosophy.mdc` §2.7
 
@@ -915,9 +915,23 @@ This file contains universal, language-agnostic rules to prevent common LLM-indu
 ✅ Good: Outcome first; proportional depth (yes/no → short; audit → structured evidence); changed lines only in code citations
 ⚠️ Why: Readers need the result first; verbosity hides signal; under-answer hides verification status
 🔧 Fix: Answer-first; 1–3 sentence summary of what changed and why; cite paths in backticks; state verification pending with commands attempted
-📍 See: §3.5 Formatting Trap, §0.5 Chain-of-Thought Over-Use, `critical-rules-quick-reference.mdc` Output Format
+📍 See: §3.5 Formatting Trap, §0.5 Chain-of-Thought Over-Use, §9.8a Clear Technical Prose, `critical-rules-quick-reference.mdc` Output Format
 
 **Detect:** Long lead-ins, full-file echoes, no clear takeaway, generic completion without paths/evidence, unstructured prose for structured data
+
+---
+
+### 9.8a Clear Technical Prose (Manner) (CRIT)
+
+**CRITICAL:** Prefer active voice, short full sentences, and plain words in chat, commits, PRs, and STATUS; keep code, paths, APIs, and errors exact. Scope: agent↔user and review prose—not identifiers or domain jargon.
+
+❌ Bad: `Sure! I'd be happy to help. We should leverage initiating the migration in order to seamlessly...` (pleasantries, filler, synonym padding, stock metaphor)
+✅ Good: `Auth middleware compares expiry with <. Use <=. Fix in auth.ts.` (active, one claim per sentence, short verbs)
+⚠️ Why: Filler and synonym chains hide the action; broken fragments and dropped articles create ambiguity; exact terms prevent mis-edits
+🔧 Fix: Cut filler/pleasantries/stock metaphors; one instruction or claim per sentence; prefer one everyday verb (`start` not `initiate`/`commence`); keep articles and full sentences; expand to full prose for security, irreversible ops, or ambiguous step order; keep precise technical terms when they are the accurate word
+📍 See: §9.8 Orderly Responses, §0.5 Chain-of-Thought Over-Use, `engineering-philosophy.mdc` §2.7, `critical-rules-quick-reference.mdc` Cooperative Communication
+
+**Detect:** Pleasantries (`happy to help`, `certainly`), filler (`just`/`really`/`basically`/`actually`/`simply`), synonym padding (`implement a solution for`), stock metaphors, article-less fragments as default, tool-call narration, invented prose abbreviations (`cfg`/`impl`)
 
 ---
 
@@ -1178,7 +1192,7 @@ These six patterns represent the most critical "making it work vs. making it rig
 5. **Zero-Hallucination Policy** - Verify all APIs
 6. **Hardcoded Secrets** - Use environment variables
 
-**Quick Ref:** Arch: Ghost layers, fake abstractions, dead code, logic leakage, state confusion, god objects, file size limit, Strangler Fig | Perf: O(N²), unoptimized hot paths, performance blindness | Quality: Duplication, defensive comments, context blindness, over/under-engineering, formatting, magic values, warning dismissal | API: Hallucination, dependency issues, workaround-first | Security: Hardcoded secrets, missing validation, silent failures, resource leaks, error handling, global state | Testing: Mock mismatches, missing error paths, incomplete coverage, flaky tests | Context: Ignoring patterns, context window limitations, ambiguity intolerance, large context strategies, exhaustion patterns | Process: Pre-execution planning, AST-based detection | Agent: UI-first, verbose prompts, pattern propagation, multi-agent coordination, feedback loops, cooperative communication (9.6–9.8) | Modern LLM: Reasoning mode misuse, long context waste, multimodal misuse, structured output overuse, tool use anti-patterns, extended reasoning, large context misuse | Operations: Logging anti-patterns, metrics anti-patterns, error tracking, observability blindness | File naming: no spaces, safe chars, dates YYYY-MM-DD, consistency, productivity pattern (subject_date_code)
+**Quick Ref:** Arch: Ghost layers, fake abstractions, dead code, logic leakage, state confusion, god objects, file size limit, Strangler Fig | Perf: O(N²), unoptimized hot paths, performance blindness | Quality: Duplication, defensive comments, context blindness, over/under-engineering, formatting, magic values, warning dismissal | API: Hallucination, dependency issues, workaround-first | Security: Hardcoded secrets, missing validation, silent failures, resource leaks, error handling, global state | Testing: Mock mismatches, missing error paths, incomplete coverage, flaky tests | Context: Ignoring patterns, context window limitations, ambiguity intolerance, large context strategies, exhaustion patterns | Process: Pre-execution planning, AST-based detection | Agent: UI-first, verbose prompts, pattern propagation, multi-agent coordination, feedback loops, cooperative communication (9.6–9.8a) | Modern LLM: Reasoning mode misuse, long context waste, multimodal misuse, structured output overuse, tool use anti-patterns, extended reasoning, large context misuse | Operations: Logging anti-patterns, metrics anti-patterns, error tracking, observability blindness | File naming: no spaces, safe chars, dates YYYY-MM-DD, consistency, productivity pattern (subject_date_code)
 
 **For language-specific implementations:** See your project's language-specific anti-trap rules file for concrete detection patterns and code examples in your target language.
 
