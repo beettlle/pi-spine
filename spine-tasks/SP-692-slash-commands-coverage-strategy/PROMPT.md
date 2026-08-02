@@ -60,8 +60,9 @@ Closes #245 — Document the approved long-term strategy for full-suite V8 under
 
 ### Step 2: Testing & Verification
 
-- [ ] Confirm both docs contain the strategy language (docs-only contract)
-- [ ] Run `npm run typecheck && SPINE_WORKER_STUB=1 npm test` from repo root
+- [ ] Confirm both docs contain the strategy language (docs-only contract `testCommand: true`)
+- [ ] Grep both File Scope docs for `#245` and `isolation re-verify` (or equivalent strategy wording)
+- [ ] Do **not** run full `npm test` / `coverage:check` in the lane — docs-only; integrate gate owns regression
 
 ### Step 3: Documentation & Delivery
 
