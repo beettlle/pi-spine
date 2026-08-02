@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { configureGitIdentity } from "../helpers/git-fixture.mjs";
@@ -97,7 +98,7 @@ test("shouldEmitCheckpointWarning after activity without checkpoint threshold", 
 });
 
 test("resolveScopedDirtyPaths limits porcelain to file scope and task folder", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "cp-warn-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cp-warn-"));
 	const taskFolder = path.join(dir, "spine-tasks", "TP-1");
 	const scoped = path.join(dir, "src", "scoped.txt");
 	const other = path.join(dir, "other.txt");
@@ -122,7 +123,7 @@ test("resolveScopedDirtyPaths limits porcelain to file scope and task folder", (
 });
 
 test("lane.checkpoint_warning journal event and diagnose hints", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "cp-journal-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cp-journal-"));
 	const batchId = "20260603T120000";
 	try {
 		appendJournalEvent(projectRoot, batchId, "lane.checkpoint_warning", {
@@ -159,7 +160,7 @@ test("extractJournalDiagnosisHints omits stale checkpoint_warning older than 30 
 });
 
 test("collectProgressSignals includes dirtyPaths for scoped changes", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "cp-signals-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cp-signals-"));
 	const taskFolder = path.join(dir, "spine-tasks", "TP-2");
 	const scoped = path.join(dir, "src", "x.txt");
 	fs.mkdirSync(path.dirname(scoped), { recursive: true });

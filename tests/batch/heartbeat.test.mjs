@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -94,7 +95,7 @@ test("buildHeartbeatPayloadFields omits stale checkpoint signals during launchin
 });
 
 test("recordLaneHeartbeat journals kind and phase", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-kind-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hb-kind-"));
 	const batchId = "20260603T120000";
 	const signals = collectProgressSignals({
 		worktreePath: projectRoot,
@@ -120,7 +121,7 @@ test("recordLaneHeartbeat journals kind and phase", () => {
 });
 
 test("runWorker launching heartbeat does not journal stale STATUS mtime on fast-fail retry", async () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-retry-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hb-retry-"));
 	const batchId = "20260603T130000";
 	const taskId = "TP-084";
 	const taskFolder = path.join(projectRoot, "spine-tasks", `${taskId}-retry`);
@@ -197,7 +198,7 @@ test("resolveStallConfig applies lane overrides", () => {
 });
 
 test("progressSignalsChanged detects STATUS mtime updates", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-"));
 	const statusPath = path.join(dir, "STATUS.md");
 	fs.writeFileSync(statusPath, "a", "utf-8");
 	const first = collectProgressSignals({ worktreePath: dir, taskFolder: dir });
@@ -257,7 +258,7 @@ test("findLatestStepCompletedMs returns newest matching task.step_completed", ()
 });
 
 test("progressSignalsChanged detects journal task.step_completed (silent tools)", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-step-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hb-step-"));
 	const batchId = "20260602T140000";
 	const taskFolder = path.join(projectRoot, "task");
 	fs.mkdirSync(taskFolder, { recursive: true });
@@ -303,7 +304,7 @@ test("progressSignalsChanged detects journal task.step_completed (silent tools)"
 });
 
 test("activitySignalsChanged detects file-scope mtime updates (FR-WORK-10 / FR-STALL-02)", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-scope-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-scope-"));
 	const scopeFile = path.join(dir, "src", "touch.txt");
 	fs.mkdirSync(path.dirname(scopeFile), { recursive: true });
 	fs.writeFileSync(scopeFile, "a", "utf-8");

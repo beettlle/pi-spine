@@ -20,7 +20,7 @@
 .worktrees/
 .taskplane-tasks/
 
-# Ephemeral dirs from batch tests (mkdtemp under cwd — do not commit)
+# Ephemeral dirs from batch tests (legacy cwd mkdtemp leftovers — do not commit)
 cp-signals-*/
 salvage-scope-*/
 cp-warn-*/
@@ -28,6 +28,10 @@ cp-journal-*/
 hb-*/
 hb-scope-*/
 hb-step-*/
+wtrp-*/
+rg-*/
+rp-*/
+snap-*/
 
 # pi-spine runtime artifacts
 .pi/

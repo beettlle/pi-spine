@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -60,7 +61,7 @@ test("findLatestSubprocessSignal returns active subprocess and respects ended ma
 });
 
 test("collectProgressSignals includes subprocess from journal without extra git polling", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-subprocess-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hb-subprocess-"));
 	const batchId = "20260708T190000";
 	const taskFolder = path.join(projectRoot, "spine-tasks", "SP-548");
 	fs.mkdirSync(taskFolder, { recursive: true });
@@ -84,7 +85,7 @@ test("collectProgressSignals includes subprocess from journal without extra git 
 });
 
 test("recordLaneHeartbeat journals subprocess phase and command", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-subprocess-journal-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hb-subprocess-journal-"));
 	const batchId = "20260708T191000";
 	const taskFolder = path.join(projectRoot, "spine-tasks", "SP-548");
 	fs.mkdirSync(taskFolder, { recursive: true });

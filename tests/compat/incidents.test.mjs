@@ -280,7 +280,7 @@ test("I-06 retry refused while batch phase is executing or merging", async () =>
 });
 
 test("I-07 stall logic uses STATUS, lane commit, and file-scope mtime signals", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-i07-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-i07-"));
 	const statusPath = path.join(dir, "STATUS.md");
 	const scopeFile = path.join(dir, "src", "scoped.txt");
 	fs.mkdirSync(path.dirname(scopeFile), { recursive: true });

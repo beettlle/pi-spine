@@ -35,7 +35,7 @@ test("registerSpineWorkerTools registers all three PRD worker tools", () => {
 });
 
 test("executeSpineReportProgress appends task.step_completed via tool handler", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "wtrp-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "wtrp-"));
 	const batchId = "20260602T160000";
 	const prev = {
 		projectRoot: process.env.SPINE_PROJECT_ROOT,

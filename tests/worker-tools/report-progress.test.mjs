@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { runSpineReportProgress, parseReportProgressArgs } from "../../bin/spine-report-progress.mjs";
@@ -21,7 +22,7 @@ test("parseReportProgressArgs reads step and checkbox flags", () => {
 });
 
 test("reportTaskProgress appends task.step_completed with metadata", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rp-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rp-"));
 	const batchId = "20260602T120000";
 	const events = [];
 
@@ -73,7 +74,7 @@ test("reportTaskProgress appends task.step_completed with metadata", () => {
 });
 
 test("reportTaskProgress writes journal line on disk", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rp-disk-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rp-disk-"));
 	const batchId = "20260602T130000";
 
 	const result = reportTaskProgress({
@@ -129,7 +130,7 @@ test("runSpineReportProgress returns non-zero when batchId missing", () => {
 });
 
 test("runSpineReportProgress does not write with attach env when attach suppressed", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rp-attach-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rp-attach-"));
 	const batchId = "20260603Tprogress001";
 	const prev = {
 		attach: process.env.SPINE_JOURNAL_ATTACH,

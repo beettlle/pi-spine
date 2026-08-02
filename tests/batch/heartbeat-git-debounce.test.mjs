@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { configureGitIdentity } from "../helpers/git-fixture.mjs";
@@ -12,7 +13,7 @@ import {
 } from "../../src/batch/heartbeat.mjs";
 
 test("collectProgressSignals skips git porcelain when file-scope mtimes are stable", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-git-debounce-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-git-debounce-"));
 	const taskFolder = path.join(dir, "spine-tasks", "SP-455");
 	const scoped = path.join(dir, "src", "scoped.txt");
 	fs.mkdirSync(path.dirname(scoped), { recursive: true });
@@ -53,7 +54,7 @@ test("collectProgressSignals skips git porcelain when file-scope mtimes are stab
 });
 
 test("collectProgressSignals runs git porcelain when a scoped file is touched", () => {
-	const dir = fs.mkdtempSync(path.join(fs.realpathSync("."), "hb-git-debounce-touch-"));
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-git-debounce-touch-"));
 	const taskFolder = path.join(dir, "spine-tasks", "SP-455");
 	const scoped = path.join(dir, "src", "scoped.txt");
 	fs.mkdirSync(path.dirname(scoped), { recursive: true });

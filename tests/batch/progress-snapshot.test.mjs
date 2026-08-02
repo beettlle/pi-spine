@@ -72,7 +72,7 @@ test("shouldEmitProgressSnapshot respects interval", () => {
 });
 
 test("recordLaneProgressSnapshot journals bounded payload", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "snap-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "snap-"));
 	const batchId = "20260629T120000";
 	const signals = collectProgressSignals({
 		worktreePath: projectRoot,

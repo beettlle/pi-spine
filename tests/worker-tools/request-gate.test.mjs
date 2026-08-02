@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { saveGateRecord } from "../../src/batch/gate.mjs";
@@ -13,7 +14,7 @@ test("requestWorkerGate fails closed without batch context", () => {
 });
 
 test("requestWorkerGate returns not_supported for integrate gate", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rg-int-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rg-int-"));
 	const batchId = "20260602T140000";
 	saveGateRecord(projectRoot, {
 		gateId: "gate-1",
@@ -36,7 +37,7 @@ test("requestWorkerGate returns not_supported for integrate gate", () => {
 });
 
 test("requestWorkerGate returns not_supported when no gate record (manual deferred)", () => {
-	const projectRoot = fs.mkdtempSync(path.join(fs.realpathSync("."), "rg-man-"));
+	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "rg-man-"));
 	const batchId = "20260602T150000";
 
 	const result = requestWorkerGate({ projectRoot, batchId });
