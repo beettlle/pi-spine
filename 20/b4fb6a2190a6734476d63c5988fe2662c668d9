@@ -1,0 +1,16 @@
+spine-tasks/SP-691-release-scope-model-pin-gates/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-691-release-scope-model-pin-gates/STATUS.md
+  h_2a17159c706ba1 3-4,32-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "20b4fb6a2190a6734476d63c5988fe2662c668d9",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
