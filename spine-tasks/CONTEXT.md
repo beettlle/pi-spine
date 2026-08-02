@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-07-25 (Phase 77 v2.12.1 authoring; Next → SP-691)
+**Last Updated:** 2026-08-02 (Phase 77 v2.12.1 published; Next → SP-691)
 **Status:** Active
 **Next Task ID:** SP-691
 
@@ -2170,13 +2170,13 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Phase 77 exit criteria:**
 
-- [ ] #237 closed (SP-687)
-- [ ] #224 closed (SP-688)
+- [x] #237 closed (SP-687)
+- [x] #224 closed (SP-688)
 - [x] #226 deferred after plan-time virtual row IDs caused production `task_not_found`; parent-task planning restored in SP-690
-- [ ] #227 closed (SP-690)
+- [x] #227 closed (SP-690)
 - [x] Operator approved scope (2026-07-25)
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] **v2.12.1 published** — tag + npm (pending)
+- [x] `npm run release:check` green on publish HEAD
+- [x] **v2.12.1 published** — tag `v2.12.1` @ `f519d4f5`; npm `2.12.1` (2026-08-02); release run [30770173115](https://github.com/beettlle/pi-spine/actions/runs/30770173115)
 
 **Deferred:** #226 until #228-compatible planner/engine scheduling; abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
 

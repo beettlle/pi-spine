@@ -128,12 +128,12 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 - [x] Post-integrate `release:check` green after **each wave**
 - [x] `spine preflight` green (idle; 2026-08-02)
 - [x] `npm run release:check` green on final pre-push `HEAD` — log `/tmp/pi-spine-release-check-v2.12.1-final.log` (`release_check_exit=0`; coverage ~89.25%; includes coverage-gate fix `a6d763d1`)
-- [x] CI workflow green on `HEAD` — run [`30769287684`](https://github.com/beettlle/pi-spine/actions/runs/30769287684) success on `f0561e12`
-- [x] `git status` clean / synced with `origin/main` at `f0561e12`
-- [ ] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1) — reconfirm after coverage-gate commit
-- [ ] `npm version patch` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Close #237, #224, #227 when shipped; keep #226 open/deferred
+- [x] CI workflow green on `HEAD` — run [`30769287684`](https://github.com/beettlle/pi-spine/actions/runs/30769287684) success on `f0561e12`; checklist HEAD `5c296f01` also green ([`30769633025`](https://github.com/beettlle/pi-spine/actions/runs/30769633025))
+- [x] `git status` clean / synced with `origin/main` at publish commit `f519d4f5`
+- [x] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1)
+- [x] `npm version patch` + `git push && git push --tags` — tag `v2.12.1` @ `f519d4f5`
+- [x] `release.yml` succeeded — [`30770173115`](https://github.com/beettlle/pi-spine/actions/runs/30770173115)
+- [x] Post-publish smoke — `npm install -g pi-spine@2.12.1`; `spine version` / `spine doctor` exit 0 (first install hit npm registry lag `ETARGET`; retry succeeded)
+- [x] Close #237, #224, #227 when shipped; keep #226 open/deferred
 
 **Phase 5 note (2026-08-02):** Publish was blocked by V8 under-reporting `extensions/spine/slash-commands.ts` (~19.9% full-suite / ~90% narrow-include). Fixed via isolation re-verify + `tests/metrics` glob wiring (`a6d763d1`).
