@@ -1,0 +1,35 @@
+tests/coverage/policy.test.mjs
+  s_14a20c9325904d::t_a0bf10dd223b4b 11
+  s_14a20c9325904d::t_d271180002e5fe 38-52
+scripts/run-coverage.mjs
+  s_5b7f44989b2f31::t_d57ba9d90667a9 27-28,30-31,35,83-87
+  s_14a20c9325904d::t_4bcf008966452c 13,19,25-26,29,32-34,36-82,88-120,123-130,132,136,139,151-157,167,181
+scripts/coverage-policy.mjs
+  s_14a20c9325904d::t_d566eb882fe21a 17-29,47
+package.json
+  s_14a20c9325904d::t_2cae35e63c7daa 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a6d763d13846313977fc1c9ecf62af408287fb0c",
+  "prompts": {},
+  "sessions": {
+    "s_14a20c9325904d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e4b4dc50-0c34-4226-b3c8-490c16f9f0e0",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_5b7f44989b2f31": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ff34860f-107a-42bb-b998-7d9b4cb8a659",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
