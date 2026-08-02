@@ -1,0 +1,25 @@
+docs/release/post-mortem-v2.12.1.md
+  s_3e65236408b5a9::t_747f64396be585 1-276
+spine-tasks/_authoring/release-v2.12.1/manifest.md
+  s_3e65236408b5a9::t_998434acf34457 140-141
+spine-tasks/CONTEXT.md
+  s_3e65236408b5a9::t_0a153ca89c71e3 2183-2184
+docs/release/README.md
+  s_3e65236408b5a9::t_35291929580648 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "df5ea3b632e2cd42fcfc47a8f7487089189598a3",
+  "prompts": {},
+  "sessions": {
+    "s_3e65236408b5a9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2f0f2eab-962d-4eee-a55f-6930bcb7549d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
