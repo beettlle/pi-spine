@@ -124,14 +124,16 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main` (SP-687–690)
-- [ ] Post-integrate `release:check` green after **each wave**
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1)
+- [x] All release-scoped tasks `.DONE` on `main` (SP-687–690; SP-689 product change rolled back — #226 deferred)
+- [x] Post-integrate `release:check` green after **each wave**
+- [x] `spine preflight` green (idle; 2026-08-02)
+- [x] `npm run release:check` green on final pre-push `HEAD` — log `/tmp/pi-spine-release-check-v2.12.1-final.log` (`release_check_exit=0`; coverage ~89.25%; includes coverage-gate fix `a6d763d1`)
+- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`) — pending after push
+- [ ] `git status` clean — pending after push (local was ahead of origin)
+- [ ] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1) — reconfirm after coverage-gate commit
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 - [ ] Close #237, #224, #227 when shipped; keep #226 open/deferred
+
+**Phase 5 note (2026-08-02):** Publish was blocked by V8 under-reporting `extensions/spine/slash-commands.ts` (~19.9% full-suite / ~90% narrow-include). Fixed via isolation re-verify + `tests/metrics` glob wiring (`a6d763d1`).
