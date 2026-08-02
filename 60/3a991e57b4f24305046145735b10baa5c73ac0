@@ -1,0 +1,42 @@
+spine-tasks/SP-694-test-globs-suite-dir-guard/STATUS.md
+  s_796c21772634db::t_2b160000552550 1-48
+spine-tasks/SP-691-release-scope-model-pin-gates/PROMPT.md
+  s_796c21772634db::t_d495cd746f3606 1-100
+spine-tasks/CONTEXT.md
+  s_796c21772634db::t_9090ad76a65cd7 2185-2210
+  s_796c21772634db::t_f4a4fb40229f9e 5
+spine-tasks/SP-692-slash-commands-coverage-strategy/STATUS.md
+  s_796c21772634db::t_04c23dcca9bd5a 1-47
+spine-tasks/dependencies.json
+  s_796c21772634db::t_2ec1cb42baeb65 1833-1839
+spine-tasks/SP-694-test-globs-suite-dir-guard/PROMPT.md
+  s_796c21772634db::t_a1bfdeb368a0e7 1-90
+spine-tasks/SP-693-post-publish-smoke-retry/PROMPT.md
+  s_796c21772634db::t_d65b747778ea89 1-96
+spine-tasks/_authoring/release-v2.12.2/manifest.md
+  s_796c21772634db::t_32261d3499b75a 8
+  s_796c21772634db::t_2e7c304340d62c 81,84-90,93,95
+  s_796c21772634db::t_08d6be65f1fbde 1-7,9-80,82-83,91-92,94,96-141
+spine-tasks/SP-692-slash-commands-coverage-strategy/PROMPT.md
+  s_796c21772634db::t_08c81f2fef82f0 1-94
+spine-tasks/SP-693-post-publish-smoke-retry/STATUS.md
+  s_796c21772634db::t_40679140b69655 1-49
+spine-tasks/SP-691-release-scope-model-pin-gates/STATUS.md
+  s_796c21772634db::t_bcc0f7c31c89c5 1-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "603a991e57b4f24305046145735b10baa5c73ac0",
+  "prompts": {},
+  "sessions": {
+    "s_796c21772634db": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8132c307-23de-4247-ac9a-1b9756b52ea6",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
