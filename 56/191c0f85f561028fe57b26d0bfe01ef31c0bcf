@@ -1,0 +1,18 @@
+scripts/coverage-policy.mjs
+  h_2a17159c706ba1 58-89
+spine-tasks/SP-694-test-globs-suite-dir-guard/STATUS.md
+  h_2a17159c706ba1 3-4,14-16,19-23,26-28,34-48,53-55,59-61
+tests/coverage/policy.test.mjs
+  h_2a17159c706ba1 2,12,71-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "56191c0f85f561028fe57b26d0bfe01ef31c0bcf",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
