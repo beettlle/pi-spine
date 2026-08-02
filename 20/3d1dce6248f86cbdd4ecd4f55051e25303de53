@@ -1,0 +1,18 @@
+docs/release/post-mortem-v2.12.1.md
+  h_2a17159c706ba1 161-162,211
+docs/release/test-layout-coverage-notes.md
+  h_2a17159c706ba1 3-7,30-62
+spine-tasks/SP-692-slash-commands-coverage-strategy/STATUS.md
+  h_2a17159c706ba1 3-4,14-16,19-22,25,37-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "203d1dce6248f86cbdd4ecd4f55051e25303de53",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
