@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-08-02 (Phase 77 v2.12.1 published; Next → SP-691)
 **Status:** Active
-**Next Task ID:** SP-691
+**Next Task ID:** SP-695
 
 ---
 
@@ -2181,6 +2181,32 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Deferred:** #226 until #228-compatible planner/engine scheduling; abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
 
 **Engineering post-mortem:** [`docs/release/post-mortem-v2.12.1.md`](../docs/release/post-mortem-v2.12.1.md) — findings F1–F10 and follow-up issues #245–#249.
+
+### Phase 78 — v2.12.2 post-mortem follow-ups (#245–#249)
+
+**Authoring:** 2026-08-02 · Manifest: [`spine-tasks/_authoring/release-v2.12.2/manifest.md`](_authoring/release-v2.12.2/manifest.md)
+
+**Profile:** patch with operator override (docs + #245 strategy + #246 suite-dir guard; defer #248 doctor and #245 V8 root-cause).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-691 | Release-operator scope approval + model-pin gates | Pending | — |
+| SP-692 | Document slash-commands V8 coverage strategy | Pending | — |
+| SP-693 | Post-publish smoke ETARGET retry | Pending | SP-691 |
+| SP-694 | Guard TEST_GLOBS covers every suite directory | Pending | — |
+
+**Phase 78 exit criteria:**
+
+- [ ] #249 closed (SP-691)
+- [ ] #248 closed docs ACs (SP-691; doctor/preflight deferred)
+- [ ] #245 closed strategy path (SP-692)
+- [ ] #247 closed (SP-693)
+- [ ] #246 closed (SP-694)
+- [ ] Operator approved scope (2026-08-02)
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] **v2.12.2 published** — fill on publish
+
+**Deferred:** #248 optional doctor/preflight; #245 V8 attribution root-cause; #226/#228 matrix planner redesign.
 
 ---
 
