@@ -128,8 +128,8 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 - [x] Post-integrate `release:check` green after **each wave**
 - [x] `spine preflight` green (idle; 2026-08-02)
 - [x] `npm run release:check` green on final pre-push `HEAD` — log `/tmp/pi-spine-release-check-v2.12.1-final.log` (`release_check_exit=0`; coverage ~89.25%; includes coverage-gate fix `a6d763d1`)
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`) — pending after push
-- [ ] `git status` clean — pending after push (local was ahead of origin)
+- [x] CI workflow green on `HEAD` — run [`30769287684`](https://github.com/beettlle/pi-spine/actions/runs/30769287684) success on `f0561e12`
+- [x] `git status` clean / synced with `origin/main` at `f0561e12`
 - [ ] Operator approved publish bump type: **patch** (2.12.0 → 2.12.1) — reconfirm after coverage-gate commit
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded
