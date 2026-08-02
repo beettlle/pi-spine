@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -9,6 +9,7 @@ import {
 	COVERAGE_INCLUDES,
 	FILE_COVERAGE_THRESHOLDS,
 	FILE_COVERAGE_VERIFY_TESTS,
+	SUITE_DIR_ALLOWLIST,
 	TEST_GLOBS,
 } from "../../scripts/coverage-policy.mjs";
 import {
@@ -64,6 +65,61 @@ test("TEST_GLOBS has bidirectional parity with package.json test script", () => 
 		TEST_GLOBS,
 		npmTestGlobs,
 		"TEST_GLOBS must match package.json test entrypoints exactly",
+	);
+});
+
+/**
+ * Direct child directories of tests/ that hold at least one `*.test.mjs` file.
+ * These are the "suite directories" the discovery guard must account for.
+ */
+function listSuiteDirs() {
+	const entries = readdirSync(path.join(REPO_ROOT, "tests"), {
+		withFileTypes: true,
+	});
+	return entries
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => `tests/${entry.name}`)
+		.filter((dir) =>
+			readdirSync(path.join(REPO_ROOT, dir)).some((file) =>
+				file.endsWith(".test.mjs"),
+			),
+		)
+		.sort();
+}
+
+/** Suite directories backed by a `tests/<dir>/*.test.mjs` entry in TEST_GLOBS. */
+function coveredSuiteDirs() {
+	const covered = new Set();
+	for (const glob of TEST_GLOBS) {
+		const match = glob.match(/^tests\/([^/]+)\/\*\.test\.mjs$/);
+		if (match) {
+			covered.add(`tests/${match[1]}`);
+		}
+	}
+	return covered;
+}
+
+test("TEST_GLOBS covers every non-empty tests/ suite directory (#246)", () => {
+	const suiteDirs = listSuiteDirs();
+	const covered = coveredSuiteDirs();
+	const allowed = new Set(SUITE_DIR_ALLOWLIST);
+	const missing = suiteDirs.filter(
+		(dir) => !covered.has(dir) && !allowed.has(dir),
+	);
+	assert.equal(
+		missing.length,
+		0,
+		`tests/ suite directories with *.test.mjs must be in TEST_GLOBS or SUITE_DIR_ALLOWLIST, otherwise they silently never run (v2.12.1 metrics-suite gap; #246 / post-mortem-v2.12.1 §F5). Unaccounted: ${missing.join(", ")}. Add the glob to TEST_GLOBS + package.json "test", or document the exclusion in SUITE_DIR_ALLOWLIST.`,
+	);
+});
+
+test("SUITE_DIR_ALLOWLIST only contains existing suite dirs that actually have tests", () => {
+	const suiteDirs = new Set(listSuiteDirs());
+	const stale = SUITE_DIR_ALLOWLIST.filter((dir) => !suiteDirs.has(dir));
+	assert.equal(
+		stale.length,
+		0,
+		`SUITE_DIR_ALLOWLIST must not hold stale entries (no longer a non-empty suite dir): ${stale.join(", ")}. Remove them or move the directory back into TEST_GLOBS.`,
 	);
 });
 

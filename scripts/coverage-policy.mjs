@@ -55,3 +55,35 @@ export const TEST_GLOBS = [
 	"tests/coverage/*.test.mjs",
 	"tests/extensions/*.test.mjs",
 ];
+
+/**
+ * Suite directories under tests/ intentionally excluded from TEST_GLOBS (and
+ * therefore from the default `npm test` / `release:check` run).
+ *
+ * The discovery guard in tests/coverage/policy.test.mjs fails when a non-empty
+ * `tests/<dir>/` (one containing `*.test.mjs`) is absent from TEST_GLOBS unless
+ * the directory is listed here. This closes the v2.12.1 metrics-suite gap, where
+ * a new suite directory was added but never wired into the globs and the
+ * bidirectional-parity test could not detect it (#246 / post-mortem-v2.12.1 §F5).
+ *
+ * Usage: prefer adding a new suite to TEST_GLOBS **and** the package.json `test`
+ * script so it runs by default. Only list a directory here when its `.test.mjs`
+ * files are genuinely out-of-band (static/architectural checks, shared
+ * fixtures, low-level util, or on-demand script-integration suites). The guard
+ * also asserts every allow-listed directory still exists and still holds tests,
+ * so stale entries fail loudly instead of accumulating.
+ */
+export const SUITE_DIR_ALLOWLIST = Object.freeze([
+	// Static architecture checks (import-cycle detection, reconcile-fixture verify).
+	"tests/arch",
+	// Shared scenario fixtures + scenario-registry probe, not a standalone suite.
+	"tests/fixtures",
+	// Low-level atomic-write util unit test.
+	"tests/fs",
+	// Test-helper infrastructure (git/scenario fixtures); guards helper internals.
+	"tests/helpers",
+	// On-demand script-integration suites (release proof gate, best-of-n, stet).
+	"tests/scripts",
+	// Low-level command-exists util unit test.
+	"tests/util",
+]);
