@@ -2180,6 +2180,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Deferred:** #226 until #228-compatible planner/engine scheduling; abandoned v3 enhancement packets; #225/#228–#232/#238 matrix epic features; P3 enhancements #120/#124/#135/#213/#212/#211/#209/#127/#43.
 
+**Engineering post-mortem:** [`docs/release/post-mortem-v2.12.1.md`](../docs/release/post-mortem-v2.12.1.md) — findings F1–F10 and follow-up issues #245–#249.
+
 ---
 
 | Priority | Requirement | Phase | Status |

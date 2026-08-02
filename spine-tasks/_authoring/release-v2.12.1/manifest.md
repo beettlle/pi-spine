@@ -137,3 +137,5 @@ Confirmed via `spine plan SP-687,SP-688,SP-689,SP-690` after packet authoring.
 - [x] Close #237, #224, #227 when shipped; keep #226 open/deferred
 
 **Phase 5 note (2026-08-02):** Publish was blocked by V8 under-reporting `extensions/spine/slash-commands.ts` (~19.9% full-suite / ~90% narrow-include). Fixed via isolation re-verify + `tests/metrics` glob wiring (`a6d763d1`).
+
+**Engineering post-mortem:** [`docs/release/post-mortem-v2.12.1.md`](../../../docs/release/post-mortem-v2.12.1.md) (findings F1–F10; follow-ups #245–#249).

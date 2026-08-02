@@ -6,6 +6,7 @@ Operator guides for pi-spine semver releases, publish gates, and harness executi
 
 | Document | Purpose |
 |----------|---------|
+| [`post-mortem-v2.12.1.md`](post-mortem-v2.12.1.md) | v2.12.1 release post-mortem (gates, matrix rollback, coverage V8, model amplifiers) |
 | [`manifest-v1.10.0-example.md`](manifest-v1.10.0-example.md) | Release sequence manifest **format reference** and filled v1.10.0 harness example (FR-STA-25) |
 | [`npm-publish.md`](npm-publish.md) | npm publish workflow and post-publish smoke |
 | [`v1.0-checklist.md`](v1.0-checklist.md) | v1.0 release checklist (historical) |
