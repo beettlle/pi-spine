@@ -1,7 +1,7 @@
 # SP-691: Release-operator scope approval and model-pin gates — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-08-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -29,8 +29,8 @@
 - [x] Full suite (docs-only)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
-- [ ] Create `.DONE`
+**Status:** ✅ Done
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
