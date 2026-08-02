@@ -1,0 +1,19 @@
+spine-tasks/SP-692-slash-commands-coverage-strategy/PROMPT.md
+  s_796c21772634db::t_afcd6afa54dd07 63-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d96a6c0740f6aa3230a664f7cdde470781efd547",
+  "prompts": {},
+  "sessions": {
+    "s_796c21772634db": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8132c307-23de-4247-ac9a-1b9756b52ea6",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
