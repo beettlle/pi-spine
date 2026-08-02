@@ -14,6 +14,19 @@ export const FILE_COVERAGE_THRESHOLDS = Object.freeze({
 	"extensions/spine/slash-commands.ts": 70,
 });
 
+/**
+ * Owning test globs for FILE_COVERAGE_THRESHOLDS isolation re-verify.
+ * Full-suite V8 attribution can under-report these modules (#222); when that
+ * happens, run-coverage.mjs re-checks coverage against these focused suites.
+ */
+export const FILE_COVERAGE_VERIFY_TESTS = Object.freeze({
+	"extensions/spine/slash-commands.ts": Object.freeze([
+		"tests/extensions/*.test.mjs",
+		"tests/slash-commands.test.mjs",
+		"tests/spine-settings-slash.test.mjs",
+	]),
+});
+
 /** Globs passed to Node --test-coverage-include (in-scope production code). */
 export const COVERAGE_INCLUDES = [
 	"src/**/*.mjs",
@@ -31,6 +44,7 @@ export const TEST_GLOBS = [
 	"tests/config/cursor-rules/*.test.mjs",
 	"tests/planner/*.test.mjs",
 	"tests/batch/*.test.mjs",
+	"tests/metrics/*.test.mjs",
 	"tests/agents/*.test.mjs",
 	"tests/adoption/*.test.mjs",
 	"tests/dashboard/*.test.mjs",

@@ -8,6 +8,7 @@ import {
 	COVERAGE_THRESHOLD,
 	COVERAGE_INCLUDES,
 	FILE_COVERAGE_THRESHOLDS,
+	FILE_COVERAGE_VERIFY_TESTS,
 	TEST_GLOBS,
 } from "../../scripts/coverage-policy.mjs";
 import {
@@ -32,6 +33,21 @@ test("COVERAGE_INCLUDES scopes src, bin, and extensions", () => {
 
 test("FILE_COVERAGE_THRESHOLDS enforces slash-commands.ts floor", () => {
 	assert.equal(FILE_COVERAGE_THRESHOLDS["extensions/spine/slash-commands.ts"], 70);
+});
+
+test("FILE_COVERAGE_VERIFY_TESTS covers every FILE_COVERAGE_THRESHOLDS path", () => {
+	for (const filePath of Object.keys(FILE_COVERAGE_THRESHOLDS)) {
+		const globs = FILE_COVERAGE_VERIFY_TESTS[filePath];
+		assert.ok(Array.isArray(globs), `missing verify globs for ${filePath}`);
+		assert.ok(globs.length > 0, `empty verify globs for ${filePath}`);
+	}
+});
+
+test("TEST_GLOBS includes metrics suite", () => {
+	assert.ok(
+		TEST_GLOBS.includes("tests/metrics/*.test.mjs"),
+		"tests/metrics/*.test.mjs must be in TEST_GLOBS so SP-687+ quota tests run in release:check",
+	);
 });
 
 function extractTestGlobsFromScript(testScript) {
