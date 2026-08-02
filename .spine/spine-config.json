@@ -15,7 +15,7 @@
   },
   "agents": {
     "worker": {
-      "model": "zai/glm-5.2",
+      "model": "kimi-coding/k3",
       "thinking": "high"
     },
     "reviewer": {
@@ -26,7 +26,7 @@
         "thinking": "low"
       },
       "code": {
-        "model": "kimi-coding/kimi-k2-thinking",
+        "model": "google/gemini-3.1-pro-preview",
         "thinking": "high"
       },
       "final": {
@@ -42,7 +42,7 @@
     "profiles": {
       "default": {
         "worker": {
-          "model": "zai/glm-5.2",
+          "model": "kimi-coding/k3",
           "thinking": "high"
         },
         "reviewer": {
@@ -53,7 +53,7 @@
             "thinking": "low"
           },
           "code": {
-            "model": "kimi-coding/kimi-k2-thinking",
+            "model": "google/gemini-3.1-pro-preview",
             "thinking": "high"
           },
           "final": {
@@ -80,6 +80,32 @@
           },
           "code": {
             "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          },
+          "final": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          }
+        },
+        "supervisor": {
+          "model": "google/gemini-flash-lite-latest",
+          "thinking": "off"
+        }
+      },
+      "budget": {
+        "worker": {
+          "model": "zai/glm-5.2",
+          "thinking": "high"
+        },
+        "reviewer": {
+          "model": "google/gemini-3.1-pro-preview",
+          "thinking": "high",
+          "plan": {
+            "model": "google/gemini-flash-latest",
+            "thinking": "low"
+          },
+          "code": {
+            "model": "kimi-coding/kimi-k2-thinking",
             "thinking": "high"
           },
           "final": {
