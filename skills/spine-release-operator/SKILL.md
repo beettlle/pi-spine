@@ -53,6 +53,9 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** use `| tail` or `| head` alone to judge `release:check` pass/fail — verify exit code (`$?` or `${PIPESTATUS[0]}`)
 - **Never** `git push origin main` during a release until post-integrate `release:check` exits 0 on current `HEAD`
 - **Do not** execute tasks outside the approved manifest scope
+- **Never** start Phase 4 (execute) without **recorded scope approval** — the release manifest must show `Operator approved scope: yes` from the Phase 2 gate. Refuse the first wave when approval is missing or `no` (F1, [#249](https://github.com/beettlle/pi-spine/issues/249))
+- **Never** mid-release-edit `.spine/spine-config.json` agent pins (`agents.worker.model` / `agents.reviewer.model`) while a batch is running or integrated work is still unpublished. Pin **one worker** per release; escalate models **only** on content/contract failure — never on quota/403 or launch storms, which make releases worse (F7, [#248](https://github.com/beettlle/pi-spine/issues/248)). To override mid-release, first record the reason and date in the release manifest
+- **Always** push/sync `main` to `origin` after each land loop once the post-integrate regression gate is green — do not let `main` drift far ahead of `origin` during a release (F8, [#249](https://github.com/beettlle/pi-spine/issues/249))
 - **Do not** start a second batch while another batch is **running** on this repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
 - **Release and agent batches:** use **detached** `spine batch start|resume` (omit `--attached`); monitor with MonitorCreate, `spine wait`, or `spine status --diagnose` ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)) — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md)
@@ -245,6 +248,12 @@ git commit -m "chore(spine): release v{TARGET} task packets"
 
 ## Phase 4 — Execute release scope
 
+### Scope-approval gate (HARD STOP — blocking)
+
+Before the first wave, confirm the release manifest records **`Operator approved scope: yes`** (Phase 2 gate). **HARD STOP:** do not start any wave when approval is missing or `no`. This closes F1 from the [v2.12.1 post-mortem](../../docs/release/post-mortem-v2.12.1.md) ([#249](https://github.com/beettlle/pi-spine/issues/249)).
+
+**Model pin:** one worker pin for the release — do not mid-release-edit `.spine/spine-config.json` agent pins. Escalate models only on content/contract failure, never quota/403 or launch storms (F7, [#248](https://github.com/beettlle/pi-spine/issues/248)). A doctor/preflight quota-risk escalate signal is intentionally **out of scope** for this release — deferred to a later release ([#248](https://github.com/beettlle/pi-spine/issues/248) optional AC).
+
 **Detached-first:** See [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md). Omit `--attached` for release waves unless the operator shell is a persistent interactive terminal that blocks until batch completion.
 
 **Scope:** manifest tasks only — build a comma-separated release scope ID list.
@@ -328,6 +337,16 @@ Full reference: [post-integrate-regression-gate.md](references/post-integrate-re
 **If non-zero:** fix on `main`, commit, re-run gate. Do **not** start wave N+1, push, or proceed to Phase 5 until green.
 
 **Do not** judge pass/fail from `tail` output — `tail` exits 0 even when `release:check` failed.
+
+### 4.3b Push/sync `main` to `origin` (F8)
+
+When **remote publish** is the goal, push `main` after each land loop once §4.3a is green:
+
+```bash
+git push origin main
+```
+
+Do not let `main` drift far ahead of `origin` between waves — v2.12.1 ran **24 commits ahead** of `origin` at Phase 5 (F8, [#249](https://github.com/beettlle/pi-spine/issues/249)). Local-only releases may defer this push; record the deferral in the manifest publish checklist.
 
 ### 4.4 Recovery
 
@@ -486,6 +505,7 @@ spine status --diagnose (do not collide with running batch) →
 preflight → for each wave: MonitorCreate batch start (or foreground) → onDone diagnose →
 gate approve → integrate → npm install → batch complete →
 post-integrate release:check (exit 0 required; no tail-only verification) →
+git push origin main when remote publish is the goal (F8) →
 MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval.
 resume --attached --force stays foreground. Post final report with composition table.
 ```

@@ -535,6 +535,18 @@ spine settings set agents.reviewer.model inherit
 
 Only use `inherit` when you intentionally want batch workers to follow your pi TUI model selection.
 
+#### Release cycles: scope approval, one pin, push after land loop
+
+For **curated release cycles** (see [spine-release-operator](../../skills/spine-release-operator/SKILL.md)), the policy is stricter than per-batch pinning:
+
+- **Scope approval is a hard gate before execution (Phase 4).** Do not start release execution without a recorded `Operator approved scope: yes` in the release manifest. v2.12.1 started Phase 4 without it (F1).
+- **Pin one worker for the release.** Do not mid-release-edit `.spine/spine-config.json` agent pins while a batch is running or integrated work is unpublished. Quota/403 aborts and launch storms are not reasons to swap models mid-release — escalation into quota-starved providers made v2.12.1 worse (F7). Escalate only on content/contract failure; record any override in the manifest first ([#248](https://github.com/beettlle/pi-spine/issues/248)).
+- **Push/sync `main` after each land loop** when remote publish is the goal — v2.12.1 drifted 24 commits ahead of `origin` (F8). Post-integrate `release:check` green is the precondition ([#249](https://github.com/beettlle/pi-spine/issues/249)).
+
+**Out of scope (deferred):** a `spine doctor`/preflight quota-risk escalate signal ([#248](https://github.com/beettlle/pi-spine/issues/248) optional AC) is intentionally not implemented this release; the one-pin policy above is the policy-level mitigation until then.
+
+Full release-phase procedure: [spine-release-operator/SKILL.md](../../skills/spine-release-operator/SKILL.md). Post-mortem: [`docs/release/post-mortem-v2.12.1.md`](../release/post-mortem-v2.12.1.md) §§F1/F7/F8.
+
 ### Cross-model PROMPT authoring (issue #84)
 
 When worker and reviewer use **different models** (e.g. worker `cursor/auto`, reviewer `google/gemini-3.1-pro-preview`), PROMPT and Contract shape directly affect review outcomes. The most common cross-model failure pattern is `review_exhausted` / `contract_failed` caused by broad `testCommand` or missing reviewer context — not code quality rejection.

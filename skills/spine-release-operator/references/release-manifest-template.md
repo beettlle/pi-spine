@@ -6,6 +6,8 @@
 **Bump type:** patch | minor | major
 **Profile:** patch | minor | major
 **Operator approved scope:** no | yes ({date})
+**Worker model pin:** {provider/id, set once} — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
+**Agent pin override:** none | yes ({date}, {reason}) — record before any mid-release pin change
 
 ---
 
@@ -62,9 +64,11 @@ Do **not** use `| tail` alone for pass/fail — verify exit code.
 
 **Operator gates** (human only — sequence does not auto-approve without explicit flags):
 
-1. Approve this manifest (operator sign-off on scope)
+1. **Approve this manifest** (operator sign-off on scope) — set `Operator approved scope: yes` above. **Phase 4 HARD STOP** without it (F1, [#249](https://github.com/beettlle/pi-spine/issues/249))
 2. `spine gate approve` per integrate wave
 3. Publish approval before `npm version <bump>`
+
+**Model pin policy ([#248](https://github.com/beettlle/pi-spine/issues/248)):** one worker pin for the release. Do not mid-release-edit `.spine/spine-config.json` agent pins; escalate models only on content/contract failure, never quota/403 or launch storms. Any in-release override must be recorded in `Agent pin override` above **before** applying. See [post-mortem F7](../../../docs/release/post-mortem-v2.12.1.md).
 
 **Proof gate:** optional pre-publish dry-run (e.g. patch scope with operator touching only gate approve + publish approval; no `npm publish` during proof).
 
