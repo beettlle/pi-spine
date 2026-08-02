@@ -1,0 +1,20 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 538-547
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 56-58,251-256,341-350,508
+skills/spine-release-operator/references/release-manifest-template.md
+  h_2a17159c706ba1 9-10,67,71-72
+spine-tasks/SP-691-release-scope-model-pin-gates/STATUS.md
+  h_2a17159c706ba1 3-4,14-16,19-24,27-29,32,39-41,45-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "6d957cff19a5f59e90de5913020f34bef4d27c31",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
