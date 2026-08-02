@@ -1,0 +1,37 @@
+tests/worker-tools/report-progress.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 3,25,77,133
+tests/batch/heartbeat.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 4,98,124,201,261,307
+tests/batch/heartbeat-git-debounce.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 4,16,57
+tests/compat/incidents.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 283
+tests/worker-tools/worker-tools-registration.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 38
+tests/batch/heartbeat-subprocess.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 3,64,88
+tests/batch/checkpoint-warning.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 4,101,126,163
+.gitignore
+  s_3e65236408b5a9::t_4380aa271a6d90 23,31-34
+tests/worker-tools/request-gate.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 3,17,40
+tests/batch/progress-snapshot.test.mjs
+  s_3e65236408b5a9::t_1c90cff9f6a486 75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "fda4a42b71e6e7ab29b600011971fbcbf06eacbb",
+  "prompts": {},
+  "sessions": {
+    "s_3e65236408b5a9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2f0f2eab-962d-4eee-a55f-6930bcb7549d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
