@@ -1,0 +1,21 @@
+SP-694 complete.
+
+## What changed
+- `scripts/coverage-policy.mjs`: added `SUITE_DIR_ALLOWLIST` (6 pre-existing
+  intentional exclusions: arch, fixtures, fs, helpers, scripts, util) with a
+  header documenting the allow-list mechanism and per-entry reasons.
+- `tests/coverage/policy.test.mjs`: added `TEST_GLOBS covers every non-empty
+  tests/ suite directory (#246)` discovery guard (scans `tests/*/` for non-empty
+  suite dirs, fails if any is absent from TEST_GLOBS AND SUITE_DIR_ALLOWLIST) +
+  a companion test that rejects stale allow-list entries.
+
+## Verification (scoped contract testCommand)
+- `npm run typecheck` → exit 0
+- `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/coverage/policy.test.mjs`
+  → 13/13 pass (11 existing + 2 new)
+- eslint --max-warnings 0 on both files → exit 0
+- Negative proof: a probe dir `tests/__sp694_probe/` (now removed) made the guard
+  fail with exit 1 ("Unaccounted: tests/__sp694_probe"), confirming the guard
+  catches omitted suite directories.
+
+Closes #246.
