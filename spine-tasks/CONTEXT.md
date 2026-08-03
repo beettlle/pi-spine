@@ -2190,21 +2190,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-691 | Release-operator scope approval + model-pin gates | Pending | — |
-| SP-692 | Document slash-commands V8 coverage strategy | Pending | — |
-| SP-693 | Post-publish smoke ETARGET retry | Pending | SP-691 |
-| SP-694 | Guard TEST_GLOBS covers every suite directory | Pending | — |
+| SP-691 | Release-operator scope approval + model-pin gates | Done | — |
+| SP-692 | Document slash-commands V8 coverage strategy | Done | — |
+| SP-693 | Post-publish smoke ETARGET retry | Done | SP-691 |
+| SP-694 | Guard TEST_GLOBS covers every suite directory | Done | — |
 
 **Phase 78 exit criteria:**
 
-- [ ] #249 closed (SP-691)
-- [ ] #248 closed docs ACs (SP-691; doctor/preflight deferred)
-- [ ] #245 closed strategy path (SP-692)
-- [ ] #247 closed (SP-693)
-- [ ] #246 closed (SP-694)
-- [ ] Operator approved scope (2026-08-02)
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] **v2.12.2 published** — fill on publish
+- [x] #249 closed (SP-691)
+- [x] #248 closed docs ACs (SP-691; doctor/preflight deferred)
+- [x] #245 closed strategy path (SP-692)
+- [x] #247 closed (SP-693)
+- [x] #246 closed (SP-694)
+- [x] Operator approved scope (2026-08-02)
+- [x] `npm run release:check` green on publish HEAD (`26c4d60a` / tag `8b8697c8`)
+- [x] **v2.12.2 published** — tag `v2.12.2`, npm `pi-spine@2.12.2` (2026-08-03); Release [30791394158](https://github.com/beettlle/pi-spine/actions/runs/30791394158); CI [30791392837](https://github.com/beettlle/pi-spine/actions/runs/30791392837)
+
+**Release note:** v2.12.2 — Release-operator scope-approval / model-pin hard gates (#249/#248), slash-commands V8 coverage strategy docs (#245), TEST_GLOBS suite-dir discovery guard (#246), post-publish smoke ETARGET retry (#247).
 
 **Deferred:** #248 optional doctor/preflight; #245 V8 attribution root-cause; #226/#228 matrix planner redesign.
 

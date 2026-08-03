@@ -70,7 +70,10 @@ while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
 done
 
 log "install succeeded; verifying CLI"
-installed_version="$(spine version 2>&1 | head -n 1)" || true
+# Capture full `spine version` output. Do not pipe through `head` under
+# `set -o pipefail` — SIGPIPE can leave the capture empty even when the
+# CLI printed the version on the first line.
+installed_version="$(spine version 2>&1)" || true
 echo "$installed_version"
 if ! grep -Fq "$VERSION" <<<"$installed_version"; then
   log "FAIL: 'spine version' output does not contain ${VERSION}"

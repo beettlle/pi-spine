@@ -129,13 +129,13 @@ Carry forward from v2.12.1:
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI workflow green on `HEAD` (`ci.yml`)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: **patch**
-- [ ] `npm version patch` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke with ETARGET retry (after #247 lands)
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (log: `/tmp/pi-spine-post-integrate-wave-final.log`, exit 0)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (preversion + CI parity)
+- [x] CI workflow green on `HEAD` (`ci.yml` [30775471082](https://github.com/beettlle/pi-spine/actions/runs/30775471082) @ `26c4d60a`; post-tag [30791392837](https://github.com/beettlle/pi-spine/actions/runs/30791392837) @ `8b8697c8`)
+- [x] `git status` clean (at bump; rules-manifest drift discarded)
+- [x] Operator approved publish bump type: **patch**
+- [x] `npm version patch` + `git push && git push --tags` → `v2.12.2` @ `8b8697c8`
+- [x] `release.yml` succeeded ([30791394158](https://github.com/beettlle/pi-spine/actions/runs/30791394158))
+- [x] Post-publish smoke with ETARGET retry (`scripts/post-publish-smoke.sh 2.12.2` exit 0; log `/tmp/pi-spine-post-publish-smoke-2.12.2.log`)
