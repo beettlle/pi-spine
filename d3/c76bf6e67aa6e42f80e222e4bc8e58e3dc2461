@@ -1,0 +1,16 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1757-1758
+spine-tasks/SP-695-engine-plan-review-phase/STATUS.md
+  h_2a17159c706ba1 22,24-26,31,33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d3c76bf6e67aa6e42f80e222e4bc8e58e3dc2461",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
