@@ -19,19 +19,19 @@
 ---
 
 ### Step 1: Add runPlanReviewPhase and wire callers
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Implement + export `runPlanReviewPhase`
-- [ ] Wire `engine-lanes.mjs` and `resume-lane-reviews.mjs` before code/final
-- [ ] Align skip/runbook messaging
+- [x] Implement + export `runPlanReviewPhase`
+- [x] Wire `engine-lanes.mjs` and `resume-lane-reviews.mjs` before code/final
+- [x] Align skip/runbook messaging
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Plan-phase regressions for success + resume
-- [ ] Scoped contract command green
+- [x] Plan-phase regressions for success + resume
+- [x] Scoped contract command green
 - [ ] FULL suite + coverage gate green
 
 ---
