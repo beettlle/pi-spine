@@ -30,13 +30,19 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    - Fails if CI failed on that commit — release does not bypass a red main build.
    - Runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
    - Creates a GitHub Release with auto-generated notes via `gh release create --generate-notes`.
-5. **Post-publish smoke** — verify install and CLI:
+5. **Post-publish smoke** — verify install and CLI. Prefer the bounded retry wrapper (handles registry lag, see below):
+   ```bash
+   scripts/post-publish-smoke.sh <version>
+   ```
+   Manual equivalent:
    ```bash
    npm install -g pi-spine@<version>
    spine version
    spine doctor
    pi install npm:pi-spine
    ```
+
+   **Registry lag (`ETARGET` / "No matching version found"):** a green `release.yml` run does not mean the version is immediately installable — the first global install can fail with `ETARGET` / E404 while the registry propagates, even when `npm view` already lists the version (post-mortem F9, [#247](https://github.com/beettlle/pi-spine/issues/247)). Retry with **bounded** exponential backoff (e.g. 5s → 10s → 20s, capped at 60s, max 6 attempts; `scripts/post-publish-smoke.sh <version>` does this for you). Only `ETARGET`/404-class errors count as lag — any other install error is a real failure; do not retry it as lag. If the version is still not installable after the retries exhaust, **fail closed**: treat it as a real missing-version failure and investigate the publish instead of waiting longer.
 
 ## Manual re-publish (workflow_dispatch)
 
@@ -60,7 +66,7 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
 - [ ] `release.yml` succeeded
-- [ ] Post-publish smoke: global install + `spine doctor`
+- [ ] Post-publish smoke: global install + `spine doctor` — retry on `ETARGET`/404 registry lag (bounded, see step 5 / `scripts/post-publish-smoke.sh`); fail closed after retries exhaust
 - [ ] Real-pi adoption E2E report filed (optional but recommended)
 
 ## Dry-run pack (local inspection)
