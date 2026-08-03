@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-02 (Phase 77 v2.12.1 published; Next → SP-691)
+**Last Updated:** 2026-08-03 (Phase 78 v2.12.2 published; Next → SP-695)
 **Status:** Active
 **Next Task ID:** SP-695
 
