@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-03 (Phase 78 v2.12.2 published; Next → SP-695)
+**Last Updated:** 2026-08-03 (Phase 79 v2.12.3 authoring; Next → SP-699)
 **Status:** Active
-**Next Task ID:** SP-695
+**Next Task ID:** SP-699
 
 ---
 
@@ -2209,6 +2209,34 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.12.2 — Release-operator scope-approval / model-pin hard gates (#249/#248), slash-commands V8 coverage strategy docs (#245), TEST_GLOBS suite-dir discovery guard (#246), post-publish smoke ETARGET retry (#247).
 
 **Deferred:** #248 optional doctor/preflight; #245 V8 attribution root-cause; #226/#228 matrix planner redesign.
+
+---
+
+### Phase 79 — v2.12.3 plan review + matrix first-class rows (#250, #226, #228)
+
+**Authoring:** 2026-08-03 · Manifest: [`spine-tasks/_authoring/release-v2.12.3/manifest.md`](_authoring/release-v2.12.3/manifest.md)
+
+**Profile:** patch with operator override (#250 + coupled #226+#228; defer matrix epic children #225/#229–#232).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-695 | Engine-owned plan review phase after worker `.DONE` | Pending | — |
+| SP-697 | First-class matrix row lane competitors (schedule core) | Pending | SP-695 |
+| SP-698 | Matrix parent aggregation + supersede SP-690 docs | Pending | SP-697 |
+| SP-696 | Re-propagate matrix fields through `buildPlan` | Pending | SP-698 |
+
+**Phase 79 exit criteria:**
+
+- [ ] #250 closed (SP-695)
+- [ ] #228 closed (SP-697 + SP-698)
+- [ ] #226 closed (SP-696; after engine readiness)
+- [ ] Operator approved scope (2026-08-03)
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] v2.12.3 published
+
+**Release note (draft):** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); `buildPlan` matrix propagation restored (#226).
+
+**Deferred:** #225 epic remainder; #229–#232 matrix children; #238 quota pools; other enhancement backlog.
 
 ---
 
