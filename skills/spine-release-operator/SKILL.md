@@ -458,13 +458,21 @@ gh run list --workflow release.yml --limit 3
 
 **pi async:** `MonitorCreate` with `gh run watch --exit-status <run-id>`, `timeout: 1800000`, `onDone` to report conclusion and run smoke tests if green.
 
-Post-publish smoke per `docs/release/npm-publish.md`:
+Post-publish smoke per `docs/release/npm-publish.md` — **retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)):** the first `npm install -g` right after a successful `release.yml` run can fail with `ETARGET` / "No matching version found" while the registry propagates, even when `npm view` already lists the version. Prefer the bounded wrapper:
+
+```bash
+scripts/post-publish-smoke.sh <version>
+```
+
+Manual equivalent (bounded retries on `ETARGET`/404-class errors only — 5s/10s/20s backoff capped at 60s, max 6 attempts; non-lag install errors fail immediately and exhausted retries fail closed, never masked as lag):
 
 ```bash
 npm install -g pi-spine@<version>
 spine version
 spine doctor
 ```
+
+If retries exhaust, **STOP** — treat it as a real missing-version failure and investigate the publish; do not keep waiting silently.
 
 Update `spine-tasks/CONTEXT.md` release note (version + date).
 
