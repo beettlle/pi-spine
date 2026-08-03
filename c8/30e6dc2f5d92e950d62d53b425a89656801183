@@ -1,0 +1,21 @@
+spine-tasks/SP-692-slash-commands-coverage-strategy/STATUS.md
+  s_49642b435bf9e5::t_132c99f76011e5 3-4,25-28,31-32,40,44-46,50
+spine-tasks/SP-692-slash-commands-coverage-strategy/.DONE
+  s_49642b435bf9e5::t_b417fff67d124a 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "c830e6dc2f5d92e950d62d53b425a89656801183",
+  "prompts": {},
+  "sessions": {
+    "s_49642b435bf9e5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-acfebe38-56c4-44ea-a657-07e6e433b68b",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
