@@ -1,0 +1,14 @@
+spine-tasks/SP-693-post-publish-smoke-retry/STATUS.md
+  h_2a17159c706ba1 3-4,19-23,26-28,31-32,40,44-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "7e32b6141b59603d3892b656bc1212c2430323d6",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
