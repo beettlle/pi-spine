@@ -1,0 +1,27 @@
+docs/release/npm-publish.md
+  s_2f8f5106613ff8::t_50303dfd453e2a 33-37,45-46,69
+scripts/post-publish-smoke.sh
+  s_2f8f5106613ff8::t_2976fd6e08cef4 1-81
+skills/spine-release-operator/SKILL.md
+  s_2f8f5106613ff8::t_59e211ed4f4527 461-467,475-476
+spine-tasks/SP-693-post-publish-smoke-retry/.reviews/final-20260803T003008.md
+  s_2f8f5106613ff8::t_2e14d327faa682 1-11
+spine-tasks/SP-693-post-publish-smoke-retry/STATUS.md
+  s_2f8f5106613ff8::t_ef1a77e3710e5a 3-5,7,14-16,19-23,26-28,31-32,38-40,44-47,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "26c4d60a8f21df7dc3f6b2811f4b67521b989ee3",
+  "prompts": {},
+  "sessions": {
+    "s_2f8f5106613ff8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-b04f12e8-5fa6-476a-8731-8854b3c4a287",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
