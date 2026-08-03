@@ -158,6 +158,8 @@ Sub-lanes lacked `.venv` / hook env that parent lanes received.
 
 Isolation re-verify with **narrow include** unblocked publish; it does **not** fix underlying V8 attribution.
 
+**Strategy documented in v2.12.2** ([`test-layout-coverage-notes.md` FR-SHIP-06 section](test-layout-coverage-notes.md)): isolation re-verify stays as the **required publish gate** for FR-SHIP-06; the per-file floor (`70%`) is unchanged; root-cause V8 attribution ([#245](https://github.com/beettlle/pi-spine/issues/245)) remains **open follow-up**, not part of the publish path. Operators: the full-suite line % for this module can under-report — trust the `release:check` exit code (isolation re-verify), not the raw full-suite figure.
+
 ### F7 — Model / provider instability during release waves
 
 **Area:** Config / ops  
@@ -206,7 +208,7 @@ Shapes runbooks and detached-first policy; not the v2.12.1 publish blocker. Do n
 
 | Pri | Finding | Issue | Owner area | Next action |
 |-----|---------|-------|------------|-------------|
-| P0 | F6 V8 slash-commands under-report | [#245](https://github.com/beettlle/pi-spine/issues/245) | Coverage tooling | Root-cause V8 attribution; keep isolation re-verify until then |
+| P0 | F6 V8 slash-commands under-report | [#245](https://github.com/beettlle/pi-spine/issues/245) | Coverage tooling | **Strategy documented v2.12.2** — keep isolation re-verify (publish gate); root-cause V8 attribution remains open follow-up; do not weaken per-file floor |
 | P1 | F2 matrix plan virtual IDs | [#226](https://github.com/beettlle/pi-spine/issues/226) + [#228](https://github.com/beettlle/pi-spine/issues/228) | Planner/engine | Design with first-class row scheduling; do not re-land SP-689 shape |
 | P1 | F7 model pin / quota escalate | [#248](https://github.com/beettlle/pi-spine/issues/248) | Release ops / config | Pin one worker per release; escalate policy |
 | P2 | F5 suite-dir glob discovery | [#246](https://github.com/beettlle/pi-spine/issues/246) | CI hygiene | Fail if `tests/<dir>` missing from globs |
