@@ -1,7 +1,7 @@
 # SP-695: Engine-owned plan review phase after worker .DONE — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-08-03
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm plan required for RL≥1 but no engine plan phase
-- [ ] Confirm resume path mirrors the gap
+- [x] Confirm plan required for RL≥1 but no engine plan phase
+- [x] Confirm resume path mirrors the gap
 
 ---
 
