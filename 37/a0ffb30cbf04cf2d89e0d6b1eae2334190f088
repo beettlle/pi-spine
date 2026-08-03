@@ -1,0 +1,20 @@
+docs/release/npm-publish.md
+  h_2a17159c706ba1 33-37,45-46,69
+scripts/post-publish-smoke.sh
+  h_2a17159c706ba1 1-81
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 461-467,475-476
+spine-tasks/SP-693-post-publish-smoke-retry/STATUS.md
+  h_2a17159c706ba1 3-5,7,14-16,19,38-39,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "37a0ffb30cbf04cf2d89e0d6b1eae2334190f088",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
