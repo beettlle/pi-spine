@@ -44,13 +44,15 @@ Closes #250 — Real-pi batches never run plan review: in-worker plan spawn is s
 - `src/batch/resume-lane-reviews.mjs`
 - `tests/batch/engine-code-review.test.mjs`
 - `tests/batch/resume-lane-reviews.test.mjs`
+- `tests/batch/final-review-honor.test.mjs`
+- `tests/batch/final-verdict.test.mjs`
 - `docs/adoption/operator-runbook.md`
 
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/engine-code-review.test.mjs tests/batch/resume-lane-reviews.test.mjs` |
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/engine-code-review.test.mjs tests/batch/resume-lane-reviews.test.mjs tests/batch/final-review-honor.test.mjs tests/batch/final-verdict.test.mjs` |
 | fileScopeMustChange | `src/batch/engine-lanes/review.mjs`, `src/batch/engine-lanes.mjs`, `src/batch/resume-lane-reviews.mjs` |
 
 ## Steps
@@ -73,6 +75,7 @@ Closes #250 — Real-pi batches never run plan review: in-worker plan spawn is s
 ### Step 2: Testing & Verification
 
 - [ ] Extend or add tests proving RL≥1 runs plan phase after `.DONE` (stub path) and resume path includes plan
+- [ ] Update `tests/batch/final-review-honor.test.mjs` and `tests/batch/final-verdict.test.mjs` stub verdict sequences so the added plan review consumes its own verdict (5 known failures — see Amendments)
 - [ ] Run contract `testCommand` only (scoped)
 - [ ] Fix all failures from the scoped contract command
 - [ ] Run FULL test suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
@@ -110,3 +113,7 @@ Closes #250 — Real-pi batches never run plan review: in-worker plan spawn is s
 ## Git Commit Convention
 
 - `fix(SP-695): engine-owned plan review phase after worker success (#250)`
+
+## Amendments (Added During Execution)
+
+- **2026-08-05 (retry 2 recovery):** The first two attempts ended `worker_done_missing`. Implementation and scoped tests were green, but the added plan phase consumes a stub reviewer verdict that `tests/batch/final-review-honor.test.mjs` and `tests/batch/final-verdict.test.mjs` expected the final phase to receive, so the full suite failed 5 tests in files outside the original File Scope (2352 pass / 5 fail). Both files are now in File Scope and in the Contract `testCommand`. Fix those stub verdict sequences — do not weaken the plan phase to satisfy them.
