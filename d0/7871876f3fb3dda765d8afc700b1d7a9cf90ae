@@ -1,0 +1,21 @@
+spine-tasks/SP-695-engine-plan-review-phase/PROMPT.md
+  s_1dbea3a0ca122d::t_43ffb25c5f86c5 47-48,55
+  s_1dbea3a0ca122d::t_8e068e2293d915 78
+  s_1dbea3a0ca122d::t_6f9e34ff698868 116-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "d07871876f3fb3dda765d8afc700b1d7a9cf90ae",
+  "prompts": {},
+  "sessions": {
+    "s_1dbea3a0ca122d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-b0ea1c68-0947-4f08-a088-69c09dab15ce",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
