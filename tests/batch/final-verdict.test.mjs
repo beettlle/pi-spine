@@ -240,7 +240,10 @@ test("runTaskOnLane journals task.verdict_recorded on PASS final review", async 
 		assert.equal(result.ok, true, result.output ?? result.error);
 		const events = readJournalEvents(projectRoot, batchId);
 		const verdictEvent = events.find(
-			(event) => event.type === "task.verdict_recorded" && event.taskId === taskId,
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "final",
 		);
 		assert.ok(verdictEvent, "expected task.verdict_recorded");
 		assert.equal(verdictEvent.payload?.verdict, "PASS");
@@ -293,7 +296,12 @@ test("runTaskOnLane re-invokes worker after REVISE and succeeds on PASS", async 
 		assert.equal(task.finalAttempts, 2);
 		const events = readJournalEvents(projectRoot, batchId);
 		const verdicts = events
-			.filter((event) => event.type === "task.verdict_recorded" && event.taskId === taskId)
+			.filter(
+				(event) =>
+					event.type === "task.verdict_recorded" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "final",
+			)
 			.map((event) => event.payload?.verdict);
 		assert.deepEqual(verdicts, ["REVISE", "PASS"]);
 		assert.equal(
@@ -406,7 +414,10 @@ test("runTaskOnLane fails with needs_replan and does not keep .DONE", async () =
 		assert.equal(fs.existsSync(path.join(wt, taskFolderRel, ".DONE")), false);
 		const events = readJournalEvents(projectRoot, batchId);
 		const verdictEvent = events.find(
-			(event) => event.type === "task.verdict_recorded" && event.taskId === taskId,
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "final",
 		);
 		assert.equal(verdictEvent?.payload?.verdict, "REPLAN");
 	} finally {

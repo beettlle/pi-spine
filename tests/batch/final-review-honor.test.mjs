@@ -234,7 +234,10 @@ test("runTaskOnLane honors pre-existing worker final review without spawn failur
 			false,
 		);
 		const verdictEvent = events.find(
-			(event) => event.type === "task.verdict_recorded" && event.taskId === taskId,
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "final",
 		);
 		assert.equal(verdictEvent?.payload?.verdict, "PASS");
 		assert.equal(verdictEvent?.payload?.honored, true);
@@ -295,11 +298,19 @@ test("runTaskOnLane honors journal review.completed final PASS without duplicate
 		assert.equal(result.ok, true, result.output ?? result.error);
 		const events = readJournalEvents(projectRoot, batchId);
 		assert.equal(
-			events.filter((event) => event.type === "review.started" && event.taskId === taskId).length,
+			events.filter(
+				(event) =>
+					event.type === "review.started" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "final",
+			).length,
 			0,
 		);
 		const verdictEvent = events.find(
-			(event) => event.type === "task.verdict_recorded" && event.taskId === taskId,
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "final",
 		);
 		assert.equal(verdictEvent?.payload?.honored, true);
 		assert.equal(verdictEvent?.payload?.honorSource, "journal");
