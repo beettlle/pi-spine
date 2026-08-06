@@ -1,0 +1,19 @@
+.github/workflows/ci.yml
+  s_38dcd7c40bd209::t_093731c393013f 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "edb7919d3b335ea1f777aa16a2bad7f1afeb2161",
+  "prompts": {},
+  "sessions": {
+    "s_38dcd7c40bd209": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-d7ef6322-8a89-4753-941c-e702b6d5d080",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
