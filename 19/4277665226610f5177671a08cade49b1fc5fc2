@@ -1,0 +1,16 @@
+spine-tasks/SP-695-engine-plan-review-phase/.reviews/3-20260806T014229.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-695-engine-plan-review-phase/.reviews/final-20260806T014716.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "194277665226610f5177671a08cade49b1fc5fc2",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
