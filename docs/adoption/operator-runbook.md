@@ -299,22 +299,23 @@ Wave 0
   lane-1: SP-100  deploy to multiple regions (matrix: us_east, eu_west)
 ```
 
-Row fan-out happens only in the engine at run time (see [Concurrency](#concurrency-and-failure-behavior) below). The `SP-100[rowId]` virtual sub-lane shape is reserved for first-class row scheduling (#228), which will one day let the planner and engine schedule each row as a real lane occupant.
+Row fan-out happens only in the engine at run time (see [Concurrency](#concurrency-and-failure-behavior) below). Plan output still shows one parent line; first-class row scheduling (#228, SP-697/SP-698) makes each row a real lane-pool occupant at run time without changing the `spine plan` shape.
 
 #### Concurrency and failure behavior
 
 - `spine status` reports the parent task's **aggregated** state. Per-row status is stored in `task.matrixRows[]` and emitted as `matrix.sub_lane.started/completed/failed` journal events.
 - The parent task succeeds only if **all rows** succeed. If any row fails, the parent task fails with `matrix_sub_lane_failed:<rowIds>` and the failing row IDs are surfaced in the diagnosis.
-- Rows run in parallel up to `max(1, lanes.maxParallel - 1)` (interim throttle, SP-690 / #227). The parent matrix task already occupies one lane slot, so its rows are capped to the remaining free slots so global in-flight workers (sibling lane workers + matrix rows) do not exceed `lanes.maxParallel`. Each row gets its own git worktree (`lane-{n}-{parentTaskSlug}-{rowSlug}`), so row output is isolated and then merged back into the lane branch.
+- Rows are scheduled as **first-class lane occupants** (#228, SP-697/SP-698; supersedes the SP-690 nested throttle). The parent matrix task holds **no** lane slot while its rows run: each active row acquires a slot from the global pool sized `lanes.maxParallel`, competing with sibling lane tasks, so global in-flight workers never exceed `lanes.maxParallel`. The acquired slot number is the row's lane identity — each row gets its own git worktree (`lane-{n}-{parentTaskSlug}-{rowSlug}`), so row output is isolated and then merged back into the lane branch.
 - A failing row's worktree is cleaned up; the remaining rows finish (or are aborted) before the parent is marked failed.
 
-> **Interim invariant vs. first-class scheduling.** The `max(1, maxParallel - 1)` cap reserves the parent lane's slot, which keeps global in-flight within `lanes.maxParallel` for the common mixed wave (one matrix task plus one sibling per tick). It is conservative and does not fully account for multiple concurrent siblings at `maxParallel > 2`; that edge case is closed when #228 teaches the engine to schedule rows as real lane occupants instead of nested workers.
+> **Superseded: SP-690 nested throttle.** The interim `max(1, maxParallel - 1)` row cap (SP-690 / #227) reserved the parent lane's slot and under-utilized the pool at higher parallelism. First-class row scheduling (#228) replaces it: the parent releases its slot and rows compete for the global pool alongside sibling lanes, so the pool is fully utilized and the in-flight invariant holds at any `lanes.maxParallel`.
 
 #### Caveats
 
 - **Execute-type rows are fully substituted and tested.** For `Type: execute` matrix tasks, the engine substitutes `runCommand` (or `testCommand`) and runs the shell command in each row worktree.
 - **LLM-type rows:** `runMatrixSubLane` delegates to the normal LLM worker in each row worktree, but per-row agent-prompt substitution (the substituted `PROMPT.md` served to the worker) is an advanced path. Verify the worker actually receives the row-specific values before relying on LLM matrix tasks in production.
-- **Planner packing (interim):** the planner treats a matrix task as a single task. `buildPlan` does **not** expand `## Matrix` rows into virtual `SP-X[rowId]` sub-lanes — SP-690 (#227) reverted the SP-689 plan-time expansion (#226) that exposed virtual row IDs to the batch engine before it could schedule them (causing `task_not_found`). Row fan-out happens only in the engine at run time. First-class row scheduling (#228) will teach the planner and engine to schedule rows as real lane occupants and supersede the nested-concurrency throttle.
+- **Planner packing:** the planner treats a matrix task as a single task. `buildPlan` does **not** expand `## Matrix` rows into virtual `SP-X[rowId]` sub-lanes — SP-690 (#227) reverted the SP-689 plan-time expansion (#226) that exposed virtual row IDs to the batch engine before it could schedule them (causing `task_not_found`), and SP-696 keeps that revert in place. Row fan-out happens only in the engine at run time, where rows now schedule as first-class lane-pool occupants (#228).
+- **Deferred follow-ups:** matrix environment propagation (#229), per-row status APIs (#230), `maxFailedIndexes` partial-failure tolerance (#231), and full PROMPT-body substitution for LLM rows (#232) remain deferred. The default — and only — parent success policy is that all rows succeed.
 - Matrix tasks are best for **deterministic, scoped** automation. Avoid large matrix tables that exceed your machine's parallel capacity or produce overlapping file-scope changes across rows.
 
 ### 2.5 Execution-only tasks (Type: execute)
