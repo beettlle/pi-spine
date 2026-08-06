@@ -24,8 +24,12 @@ import { runWorker } from "./worker-host.mjs";
 import { runCodeReviewPhase, runFinalReviewPhase, runPlanReviewPhase } from "./engine-lanes/review.mjs";
 import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 import { resolveWorktreeSetupIgnorePaths } from "../config/spine-config-load.mjs";
-import { loadMatrixTaskRows } from "./engine-lanes/matrix.mjs";
-import { runMatrixTaskOnLane, matrixRowConcurrencyLimit } from "./engine-lanes/matrix-run.mjs";
+import {
+	acquireLaneSlot,
+	loadMatrixTaskRows,
+	releaseLaneSlot,
+} from "./engine-lanes/matrix.mjs";
+import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
 
 export {
 	buildTasksAndLanesFromPlan,
@@ -58,6 +62,7 @@ export {
 } from "./engine-lanes/orch-sync.mjs";
 
 export {
+	acquireLaneSlot,
 	aggregateMatrixOutcomes,
 	isMatrixSubLaneWorktreeDir,
 	loadMatrixTaskRows,
@@ -65,6 +70,7 @@ export {
 	matrixWorktreeDir,
 	matrixWorktreePath,
 	provisionMatrixSubLaneWorktree,
+	releaseLaneSlot,
 	removeAllMatrixSubLaneWorktrees,
 	removeMatrixSubLaneWorktree,
 	runConcurrent,
@@ -72,7 +78,7 @@ export {
 	runShellInDir,
 } from "./engine-lanes/matrix.mjs";
 
-export { runMatrixTaskOnLane, runMatrixSubLane, matrixRowConcurrencyLimit } from "./engine-lanes/matrix-run.mjs";
+export { runMatrixTaskOnLane, runMatrixSubLane } from "./engine-lanes/matrix-run.mjs";
 
 /**
  * @param {string} fromPhase
@@ -123,11 +129,6 @@ export async function runTaskOnLane({
 	taskFolderRel,
 	laneCorrelationId,
 }) {
-	const taskId = task.taskId;
-	const laneNumber = lane.laneNumber;
-	const wt = lane.worktreePath;
-	const taskBranch = lane.branch;
-	const taskFolderInWorktree = path.join(wt, taskFolderRel);
 	const scopeResult = loadTaskFileScopePaths(path.join(projectRoot, taskFolderRel));
 	if (!scopeResult.ok) {
 		return recordPromptParseFailure({
@@ -144,19 +145,14 @@ export async function runTaskOnLane({
 	}
 	const fileScopePaths = scopeResult.fileScopePaths;
 
-	// Matrix tasks fan out into per-row sub-lane worktrees (SP-671 / #217).
-	// Non-matrix tasks fall through to the single-worker path below.
+	// Matrix tasks fan out into per-row lane-pool competitors (SP-697 / #228,
+	// supersedes the SP-690 nested throttle). The parent lane is NOT held during
+	// the sweep: each active row acquires a slot from the global pool inside
+	// runMatrixTaskOnLane. Non-matrix tasks hold one slot for their whole
+	// duration below, so rows and sibling lanes compete for the same pool and
+	// global in-flight workers never exceed `lanes.maxParallel`.
 	const matrixRows = loadMatrixTaskRows(path.join(projectRoot, taskFolderRel));
 	if (matrixRows) {
-		// SP-690 / #227: the parent matrix task already occupies this lane, so its
-		// nested rows must not reuse the parent's slot. Cap rows to the remaining
-		// free slots so global in-flight workers (siblings + rows) stay within
-		// `lanes.maxParallel`. Interim invariant — #228 first-class row scheduling
-		// supersedes it.
-		const matrixMaxParallel = matrixRowConcurrencyLimit(
-			config?.lanes?.maxParallel ?? 1,
-			1,
-		);
 		return runMatrixTaskOnLane({
 			projectRoot,
 			state,
@@ -169,10 +165,52 @@ export async function runTaskOnLane({
 			laneCorrelationId,
 			fileScopePaths,
 			matrix: matrixRows,
-			maxParallel: matrixMaxParallel,
+			maxParallel: config?.lanes?.maxParallel ?? 1,
 		});
 	}
 
+	const laneSlot = await acquireLaneSlot(state, config?.lanes?.maxParallel ?? 1);
+	try {
+		return await runNonMatrixTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch,
+			config,
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId,
+			fileScopePaths,
+		});
+	} finally {
+		releaseLaneSlot(state, laneSlot);
+	}
+}
+
+/**
+ * Single-worker (non-matrix) lane task path. Caller holds a global lane slot
+ * for the duration of this call.
+ *
+ * @param {object} params
+ */
+async function runNonMatrixTaskOnLane({
+	projectRoot,
+	state,
+	batchId,
+	baseBranch,
+	config,
+	task,
+	lane,
+	taskFolderRel,
+	laneCorrelationId,
+	fileScopePaths,
+}) {
+	const taskId = task.taskId;
+	const laneNumber = lane.laneNumber;
+	const wt = lane.worktreePath;
+	const taskBranch = lane.branch;
+	const taskFolderInWorktree = path.join(wt, taskFolderRel);
 	const syncResult = ensureLaneSyncedForSharedScopeDeps({
 		projectRoot,
 		state,

@@ -286,6 +286,84 @@ export function runShellInDir(cwd, command) {
 }
 
 /**
+ * Global lane-slot pool (SP-697 / #228).
+ *
+ * First-class matrix row scheduling replaces the SP-690 nested throttle: every
+ * active worker in a batch — a plain lane task or a matrix row — occupies
+ * exactly one slot of a pool sized `lanes.maxParallel`. Non-matrix tasks hold
+ * their slot for the whole task; a matrix parent task holds NO slot while its
+ * rows run, so the rows compete for the same global pool as sibling lanes and
+ * global in-flight workers can never exceed `lanes.maxParallel`.
+ *
+ * The slot number doubles as the row's scheduling identity: rows provision
+ * their worktree/branch with it, so concurrent rows always land on distinct
+ * `lane-{n}-…` worktrees with real lane diversity.
+ *
+ * Pools are keyed by the live batch state object (never serialized — the map
+ * is module-level and state-keyed), so a resume with a fresh state object
+ * starts with a fresh pool.
+ *
+ * @type {WeakMap<object, { max: number, inUse: Set<number>, waiters: Array<(slot: number) => void> }>}
+ */
+const laneSlotPools = new WeakMap();
+
+/**
+ * @param {object} state  Live batch state (pool key).
+ * @param {number} maxParallel  Configured `lanes.maxParallel`.
+ * @returns {{ max: number, inUse: Set<number>, waiters: Array<(slot: number) => void> }}
+ */
+function getLaneSlotPool(state, maxParallel) {
+	let pool = laneSlotPools.get(state);
+	if (!pool) {
+		pool = {
+			max: Math.max(1, Math.floor(Number(maxParallel) || 1)),
+			inUse: new Set(),
+			waiters: [],
+		};
+		laneSlotPools.set(state, pool);
+	}
+	return pool;
+}
+
+/**
+ * Acquire a lane slot from the global pool, waiting until one frees up.
+ * Returns the lowest free slot number in `1..maxParallel`.
+ *
+ * @param {object} state  Live batch state (pool key).
+ * @param {number} maxParallel  Configured `lanes.maxParallel`.
+ * @returns {Promise<number>} Acquired slot number; pass to `releaseLaneSlot`.
+ */
+export function acquireLaneSlot(state, maxParallel) {
+	const pool = getLaneSlotPool(state, maxParallel);
+	for (let slot = 1; slot <= pool.max; slot++) {
+		if (!pool.inUse.has(slot)) {
+			pool.inUse.add(slot);
+			return Promise.resolve(slot);
+		}
+	}
+	return new Promise((resolve) => {
+		pool.waiters.push(resolve);
+	});
+}
+
+/**
+ * Release a lane slot back to the pool, waking the oldest waiter (FIFO) if any.
+ *
+ * @param {object} state  Live batch state (pool key).
+ * @param {number} slot  Slot number previously returned by `acquireLaneSlot`.
+ */
+export function releaseLaneSlot(state, slot) {
+	const pool = laneSlotPools.get(state);
+	if (!pool || !pool.inUse.has(slot)) return;
+	pool.inUse.delete(slot);
+	const next = pool.waiters.shift();
+	if (next) {
+		pool.inUse.add(slot);
+		next(slot);
+	}
+}
+
+/**
  * Generic concurrency-limited map. Runs `workerFn` over `items` with at most
  * `limit` in flight. Returns per-index results and the peak concurrency observed.
  * A worker that throws yields an Error in its result slot (does not abort siblings).
