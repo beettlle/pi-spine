@@ -1,54 +1,52 @@
-# SP-696: Re-propagate matrix fields through buildPlan — Status
+# SP-696: Supersede #226 (docs/verify) — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-08-03
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-08-06
 **Review Level:** 1
 **Review Counter:** 0
-**Iteration:** 0
+**Iteration:** 1
 **Size:** S
 
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-698 landed
-- [ ] Confirm buildPlan still omits matrix fields
+- [x] Confirm SP-698 landed (`.DONE`)
+- [x] Confirm buildPlan still omits matrix fields (intentional under #228 runtime fan-out)
+- [x] Empirical block recorded: batch `20260806T184913` — propagation → `task_not_found: TP-400[a]`
 
 ---
 
-### Step 1: Propagate matrix into buildPlan
-**Status:** ⬜ Not Started
+### Step 1: Docs — supersede #226
+**Status:** ✅ Complete
 
-- [ ] Copy matrix/matrixColumns into tasksById
-- [ ] Real buildPlan expands virtual row IDs
-- [ ] No task_not_found with matrix E2E
+- [x] Runbook §2.4 updated for superseded #226
+- [x] Manifest + CONTEXT Phase 79 updated for option A
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Planner + matrix execution regressions
-- [ ] Scoped + FULL suite + coverage green
+- [x] Contract checks: runbook wording + planner omits matrix
+- [x] No `src/planner/index.mjs` change
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook §2.4 updated
-- [ ] `.DONE` created
+- [x] `.DONE` created
+- [x] GitHub #226 close as superseded (operator/release step)
 
 ---
 
 ## Blockers
 
-Depends on SP-698
+None — option A supersede path.
 
 ## Notes
 
-Re-applies SP-689 after SP-697/SP-698; do not clear SP-689 `.DONE`.
-
-**2026-08-06:** Pre-landed amend — dropped runbook from `fileScopeMustChange` after SP-695; planner paths retained.
+**2026-08-06:** Original planner-propagation mission aborted after worker proof that SP-697/SP-698 did not make the engine consume virtual plan IDs. Operator chose option A: close #226 as superseded by #228; keep parent-only `buildPlan`.

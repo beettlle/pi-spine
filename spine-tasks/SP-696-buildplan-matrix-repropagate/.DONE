@@ -1,0 +1,4 @@
+SP-696 complete — 2026-08-06 (option A)
+#226 superseded by #228 (SP-697/SP-698 runtime first-class row lanes)
+No buildPlan matrix propagation (avoids task_not_found)
+Evidence: batch 20260806T184913 block; runbook §2.4 + manifest/CONTEXT updated

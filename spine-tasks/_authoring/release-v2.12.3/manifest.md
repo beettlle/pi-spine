@@ -9,6 +9,7 @@
 **Composition choice:** patch + override — #250 + coupled (#226+#228); defer matrix epic children (2026-08-03)
 **Worker model pin:** `kimi-coding/k3` (thinking: high) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** yes (2026-08-06) — removed `kimi-coding/kimi-k2-thinking` from hard/profile pins (→ `google/gemini-3.1-pro-preview`); worker stays `kimi-coding/k3`. Reason: first SP-697 attempt failed with model-pattern warning + 429 overload; operator updated `.spine/spine-config.json` mid-release.
+**SP-696 resolution (option A, 2026-08-06):** Do not re-propagate matrix through `buildPlan`. Close #226 as **superseded by #228** (runtime first-class row lanes). SP-696 amended to docs/verify; batch `20260806T184913` aborted after empirical `task_not_found` block.
 
 ---
 
@@ -52,7 +53,7 @@ GitNexus blast radius (pre-authoring):
 | SP-695 | #250 | bug | S | Engine-owned `runPlanReviewPhase` after worker `.DONE` | Closes #250; HIGH blast radius — mirror code/final; wire `engine-lanes.mjs` + `resume-lane-reviews.mjs`; honor `agents.reviewer.plan`; align skip/runbook |
 | SP-697 | #228 | enh | S | First-class matrix row lane competitors (schedule core) | Partial #228; replace nested parent-held fan-out; rows compete for `lanes.maxParallel`; distinct `laneNumber`/worktree per active row |
 | SP-698 | #228 | enh | S | Matrix parent aggregation + #224 hook + supersede SP-690 docs | Closes #228; parent succeeds iff all rows succeed; preserve worktreeSetupHook per row; update runbook; tests for fail-one-row |
-| SP-696 | #226 | bug | S | Re-propagate `matrix`/`matrixColumns` through `buildPlan` | Closes #226; **depends on SP-698** (engine schedule + aggregation first); real `buildPlan` regression tests; runbook caveat |
+| SP-696 | #226 | bug → docs | S | Supersede #226 (docs/verify; no planner virtual rows) | **Option A:** close #226 as superseded by #228; keep parent-only `buildPlan`; no engine virtual-ID redesign |
 
 **Release scope ID:** `SP-695,SP-697,SP-698,SP-696`
 
@@ -142,8 +143,9 @@ Wave 3 · 1 task
 ## Risks and blockers
 
 - **#250 HIGH risk** on review pipeline — keep SP-695 S-sized; mirror existing code/final patterns; do not change review spawn policy beyond adding plan phase
-- **#226+#228 coupling** — never integrate SP-696 alone onto `main` without SP-697 (repeat SP-690 failure mode)
-- **SP-689 already `.DONE`** — author SP-696 as a **new** packet that re-applies propagation after engine readiness; do not clear SP-689 `.DONE`
+- **#226+#228 coupling** — SP-697/SP-698 landed runtime row scheduling; SP-696 option A **does not** re-enable planner virtual rows (would repeat SP-690 `task_not_found`)
+- **SP-689 already `.DONE`** — leave history; SP-696 docs/verify supersedes the open #226 AC rather than re-applying SP-689
+- **Option A (2026-08-06):** empirical proof on batch `20260806T184913` that planner-only propagation still fails under parent-identity engine tick loop
 - No additional open bugs to fill the 3–5 bug target without inventing work
 - Stale leftover worktree dir `spine-20260802T231234` (doctor warn) — cleanup optional before batch; not blocking
 
@@ -151,7 +153,7 @@ Wave 3 · 1 task
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [x] All release-scoped tasks `.DONE` on `main` (SP-695/697/698 via batches; SP-696 option A docs/verify on main 2026-08-06)
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)

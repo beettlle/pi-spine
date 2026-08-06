@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-03 (Phase 79 v2.12.3 authoring; Next → SP-699)
+**Last Updated:** 2026-08-06 (Phase 79 v2.12.3 SP-696 option A supersede #226; Next → SP-699)
 **Status:** Active
 **Next Task ID:** SP-699
 
@@ -2220,23 +2220,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-695 | Engine-owned plan review phase after worker `.DONE` | Pending | — |
-| SP-697 | First-class matrix row lane competitors (schedule core) | Pending | SP-695 |
-| SP-698 | Matrix parent aggregation + supersede SP-690 docs | Pending | SP-697 |
-| SP-696 | Re-propagate matrix fields through `buildPlan` | Pending | SP-698 |
+| SP-695 | Engine-owned plan review phase after worker `.DONE` | Done | — |
+| SP-697 | First-class matrix row lane competitors (schedule core) | Done | SP-695 |
+| SP-698 | Matrix parent aggregation + supersede SP-690 docs | Done | SP-697 |
+| SP-696 | Supersede #226 (docs/verify; no planner virtual rows) | Done (option A) | SP-698 |
 
 **Phase 79 exit criteria:**
 
-- [ ] #250 closed (SP-695)
-- [ ] #228 closed (SP-697 + SP-698)
-- [ ] #226 closed (SP-696; after engine readiness)
-- [ ] Operator approved scope (2026-08-03)
+- [x] #250 closed (SP-695)
+- [x] #228 closed (SP-697 + SP-698) — confirm issue close on publish
+- [x] #226 closed as **superseded by #228** (SP-696 option A; no `buildPlan` re-propagation)
+- [x] Operator approved scope (2026-08-03)
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] v2.12.3 published
 
-**Release note (draft):** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); `buildPlan` matrix propagation restored (#226).
+**Release note (draft):** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); #226 superseded (parent-only `buildPlan`; runtime rows via #228).
 
-**Deferred:** #225 epic remainder; #229–#232 matrix children; #238 quota pools; other enhancement backlog.
+**Deferred:** #225 epic remainder; #229–#232 matrix children; optional future engine virtual plan-ID redesign (old option B); #238 quota pools; other enhancement backlog.
 
 ---
 
