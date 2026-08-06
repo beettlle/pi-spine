@@ -1,0 +1,16 @@
+spine-tasks/SP-697-matrix-first-class-row-lanes/.reviews/3-20260806T171053.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-697-matrix-first-class-row-lanes/.reviews/final-20260806T172712.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "46dee11dc71b7910c5b0cc59503fa5c472d3d025",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
