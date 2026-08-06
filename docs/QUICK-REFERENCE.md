@@ -432,7 +432,7 @@ Parametric tasks fan out one row per matrix table row into parallel sub-lanes. U
 | fileScopeMustChange | `spine-tasks/{taskId}/STATUS.md` |
 ```
 
-`spine plan` lists the matrix task as a single parent task; the engine fans rows out into parallel sub-lanes at run time (capped to remaining lane slots, SP-690 / #227). The parent task succeeds only if **all rows** succeed. See [operator-runbook.md §2.4 Matrix tasks](./adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes) for full syntax and caveats.
+`spine plan` lists the matrix task as a single parent task; the engine fans rows out into parallel sub-lanes at run time as first-class occupants of the global `lanes.maxParallel` pool (SP-697 / #228, superseding the SP-690 nested-slot throttle). The parent task succeeds only if **all rows** succeed; any failing row fails the parent and surfaces the failing row id. See [operator-runbook.md §2.4 Matrix tasks](./adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes) for full syntax and caveats.
 
 #### Execution-only tasks (`Type: execute`)
 

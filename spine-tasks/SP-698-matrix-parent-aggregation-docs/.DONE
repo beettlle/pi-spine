@@ -1,0 +1,4 @@
+SP-698 complete — 2026-08-06
+FULL suite: 2360/2360 pass (SPINE_WORKER_STUB=1 npm test)
+Coverage: 88.93% line (≥77%); attached/detached suites 17/17 after live-batch interference recheck
+operator recovery: verified on lane before .DONE
