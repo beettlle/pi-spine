@@ -8,9 +8,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+	acquireLaneSlot,
 	aggregateMatrixOutcomes,
 	provisionMatrixSubLaneWorktree,
 	recordMatrixEvent,
+	releaseLaneSlot,
 	removeMatrixSubLaneWorktree,
 	runConcurrent,
 	runMatrixSubLaneSetupHook,
@@ -32,32 +34,6 @@ import { resolveWorktreeSetupIgnorePaths } from "../../config/spine-config-load.
 import { parseContract } from "../../tasks/packet/parse-prompt.mjs";
 import { verifyContract } from "../contract-verify.mjs";
 import { gitExec } from "../git-exec.mjs";
-
-/**
- * SP-690 / #227 — interim throttle for nested matrix row concurrency.
- *
- * A matrix task runs ON a lane the batch has already counted against
- * `lanes.maxParallel`. While that parent lane is held, the rows it fans out
- * must not reuse the parent's slot — otherwise global in-flight workers
- * (sibling lane workers + matrix rows) can exceed `lanes.maxParallel`.
- *
- * Caps the rows to the remaining free slots: `max(1, globalMaxParallel -
- * occupiedLaneSlots)`, never below 1 so a matrix task always makes forward
- * progress. `occupiedLaneSlots` defaults to 1 (the parent matrix lane).
- *
- * This is an interim invariant. First-class row scheduling (#228) supersedes
- * it by scheduling rows as real lane occupants instead of nested workers,
- * which also closes the concurrent-sibling edge case for `maxParallel > 2`.
- *
- * @param {number} globalMaxParallel  Configured `lanes.maxParallel`.
- * @param {number} [occupiedLaneSlots]  Lane slots already in use (≥ 1: the parent).
- * @returns {number} Row concurrency limit, at least 1.
- */
-export function matrixRowConcurrencyLimit(globalMaxParallel, occupiedLaneSlots = 1) {
-	const max = Math.max(1, Math.floor(Number(globalMaxParallel) || 1));
-	const occupied = Math.max(0, Math.floor(Number(occupiedLaneSlots) || 0));
-	return Math.max(1, max - occupied);
-}
 
 /**
  * Read the `## Contract` table from a parent task folder (un-substituted).
@@ -331,15 +307,25 @@ export async function runMatrixSubLane({
 }
 
 /**
- * Run every matrix row of a task as a parallel sub-lane (SP-671).
+ * Run every matrix row of a task as a first-class lane-pool competitor
+ * (SP-697 / #228, supersedes the SP-690 nested throttle).
+ *
+ * The parent task does NOT hold a lane slot while its rows run: each active
+ * row acquires a slot from the global pool sized `lanes.maxParallel` (shared
+ * with sibling lane tasks via `acquireLaneSlot`), so rows compete with sibling
+ * lanes for the same pool and global in-flight workers never exceed
+ * `lanes.maxParallel`. The acquired slot number is the row's lane identity —
+ * its worktree/branch use it, so concurrent rows land on distinct
+ * `lane-{n}-…` worktrees.
  *
  * Each row runs in its own worktree off the lane task branch. The parent task
  * succeeds only when every row succeeds; any failure fails the task and
  * surfaces the failing row id(s). Successful row branches are merged back into
  * the lane worktree so the normal lane-commit + wave-merge carry all rows'
- * output. Concurrency is bounded by `maxParallel`.
+ * output.
  *
  * @param {object} params
+ * @param {number} params.maxParallel  Global `lanes.maxParallel` (pool size).
  */
 export async function runMatrixTaskOnLane({
 	projectRoot,
@@ -393,11 +379,16 @@ export async function runMatrixTaskOnLane({
 	});
 
 	const { results } = await runConcurrent(matrix.rows, maxParallel, async (row) => {
+		// Compete for the global lane pool: block until a slot frees (a sibling
+		// lane task or another row releasing), then run on that slot as the
+		// row's distinct lane identity. Always release so a crashed row cannot
+		// leak a slot and stall the batch.
+		const rowLaneNumber = await acquireLaneSlot(state, maxParallel);
 		try {
 			return await runMatrixSubLane({
 				projectRoot,
 				batchId,
-				laneNumber,
+				laneNumber: rowLaneNumber,
 				taskId,
 				laneBranch,
 				laneCorrelationId,
@@ -414,7 +405,7 @@ export async function runMatrixTaskOnLane({
 			const message = err instanceof Error ? err.message : String(err);
 			recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.failed", {
 				taskId,
-				laneNumber,
+				laneNumber: rowLaneNumber,
 				rowId: row.rowId,
 				correlationId: laneCorrelationId,
 				error: `sub-lane crashed: ${message}`,
@@ -425,6 +416,8 @@ export async function runMatrixTaskOnLane({
 				exitCode: 1,
 				output: `sub-lane crashed: ${message}`,
 			};
+		} finally {
+			releaseLaneSlot(state, rowLaneNumber);
 		}
 	});
 
