@@ -1,0 +1,27 @@
+spine-tasks/SP-698-matrix-parent-aggregation-docs/STATUS.md
+  s_712a1461f2f679::t_d2713e6a1a6682 52-53
+spine-tasks/SP-696-buildplan-matrix-repropagate/STATUS.md
+  s_712a1461f2f679::t_1f3f986264e9cb 53-54
+spine-tasks/SP-698-matrix-parent-aggregation-docs/PROMPT.md
+  s_712a1461f2f679::t_54af84f361d612 109-112
+  s_712a1461f2f679::t_9785728c7df5a0 52
+spine-tasks/SP-696-buildplan-matrix-repropagate/PROMPT.md
+  s_712a1461f2f679::t_d8d18061043161 112-115
+  s_712a1461f2f679::t_1e97d200655cc3 54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "9bf8711ff242baa1d028d0de5cb80ec4029b774f",
+  "prompts": {},
+  "sessions": {
+    "s_712a1461f2f679": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-090cf56e-5989-47bb-8643-bc85df2c8762",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
