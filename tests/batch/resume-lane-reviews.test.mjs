@@ -144,6 +144,27 @@ test("resumeBatch after failed retry runs contract verification before succeed",
 			contractVerified || finalPass,
 			`expected contract.verified or final PASS verdict, got: ${types.join(", ")}`,
 		);
+		const planStartedIdx = events.findIndex(
+			(event) => event.type === "review.started" && event.payload?.reviewType === "plan",
+		);
+		const codeStartedIdx = events.findIndex(
+			(event) => event.type === "review.started" && event.payload?.reviewType === "code",
+		);
+		assert.ok(
+			planStartedIdx >= 0,
+			`expected resume path to run engine plan review (SP-695), got: ${types.join(", ")}`,
+		);
+		assert.ok(
+			codeStartedIdx >= 0 && planStartedIdx < codeStartedIdx,
+			"resume path must run plan review before code review",
+		);
+		const planVerdict = events.find(
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.payload?.reviewType === "plan" &&
+				event.payload?.verdict === "APPROVE",
+		);
+		assert.ok(planVerdict, "expected plan APPROVE verdict recorded on resume path");
 		const completedIdx = types.indexOf("task.completed");
 		const reviewIdx = types.indexOf("review.started");
 		assert.ok(reviewIdx >= 0 && reviewIdx < completedIdx, "review must precede task.completed");

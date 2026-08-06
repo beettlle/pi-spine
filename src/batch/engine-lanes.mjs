@@ -21,7 +21,7 @@ import {
 	updateSegmentForTask,
 } from "./state.mjs";
 import { runWorker } from "./worker-host.mjs";
-import { runCodeReviewPhase, runFinalReviewPhase } from "./engine-lanes/review.mjs";
+import { runCodeReviewPhase, runFinalReviewPhase, runPlanReviewPhase } from "./engine-lanes/review.mjs";
 import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 import { resolveWorktreeSetupIgnorePaths } from "../config/spine-config-load.mjs";
 import { loadMatrixTaskRows } from "./engine-lanes/matrix.mjs";
@@ -40,6 +40,7 @@ export {
 	shouldRunFinalReview,
 	runEngineFinalReview,
 	runEngineCodeReview,
+	runEnginePlanReview,
 } from "./engine-lanes/review.mjs";
 
 export {
@@ -348,6 +349,23 @@ export async function runTaskOnLane({
 		taskId,
 		correlationId: laneCorrelationId,
 	});
+
+	const planReview = await runPlanReviewPhase({
+		projectRoot,
+		state,
+		batchId,
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+	});
+	if (!planReview.ok) {
+		return planReview;
+	}
 
 	const codeReview = await runCodeReviewPhase({
 		projectRoot,

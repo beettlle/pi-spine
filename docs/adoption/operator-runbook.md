@@ -1754,6 +1754,8 @@ When the real-pi **worker** finishes (`.DONE` on disk) but the batch fails with 
 
 When workers call **`spine_review_step`** inside a pi worker session, the tool returns **`skipped: true`** with exit 0 (not `isError`). Journal records **`review.skipped`** with `reason: nested_spawn_blocked` instead of **`review.failed`**. This is expected — the batch engine runs plan/code/final review after worker `.DONE`.
 
+Since SP-695 (#250), the engine-owned **plan** review phase (`runPlanReviewPhase`) actually executes after worker success for Review Level ≥ 1 — before the code (RL≥2) and final (RL≥1) phases, on both the success path and `batch resume`. It journals `review.started` / `review.completed` / `task.verdict_recorded` with `reviewType: "plan"`, honors a prior in-worker plan APPROVE from the journal or artifact instead of re-spawning, re-invokes the worker on REVISE (fail-closed on exhaustion), and uses `agents.reviewer.plan` model/thinking pins for the reviewer spawn.
+
 Workers should **not** retry or treat the skip as failure. Task PROMPTs for real-pi batches should not require in-worker review calls (see `skills/create-spine-tasks/references/prompt-template.md`).
 
 ### Resume stall after `worker.rules_selected` (SP-309 / issue #13)

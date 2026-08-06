@@ -386,6 +386,26 @@ test("runTaskOnLane skips engine code review when review level is 1", async () =
 			),
 			false,
 		);
+		const planVerdict = events.find(
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "plan",
+		);
+		assert.equal(
+			planVerdict?.payload?.verdict,
+			"APPROVE",
+			"RL1 must run engine plan review after worker .DONE (SP-695)",
+		);
+		assert.equal(
+			events.filter(
+				(event) =>
+					event.type === "review.started" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "plan",
+			).length,
+			1,
+		);
 		assert.ok(
 			events.some(
 				(event) =>
@@ -396,6 +416,209 @@ test("runTaskOnLane skips engine code review when review level is 1", async () =
 		);
 	} finally {
 		restoreEnv(prev, ["stub", "reviewStub", "finalVerdict"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runTaskOnLane runs engine plan review before code review for RL2", async () => {
+	const projectRoot = await initGitRepo("spine-plan-before-code-rl2-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		codeVerdict: process.env.SPINE_ENGINE_CODE_STUB_VERDICT,
+		finalVerdict: process.env.SPINE_ENGINE_FINAL_STUB_VERDICT,
+	};
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_ENGINE_CODE_STUB_VERDICT = "APPROVE";
+	process.env.SPINE_ENGINE_FINAL_STUB_VERDICT = "PASS";
+	try {
+		const batchId = "20260611T195012";
+		const taskId = "TP-201";
+		const { taskFolderRel } = writeCodeReviewTask(projectRoot, { taskId, suffix: "plan-before-code" });
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "plan before code fixture");
+
+		const { state, lane, task } = await provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel });
+		const result = await runTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch: "main",
+			config: {},
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId: "corr-plan-before-code",
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		const events = readJournalEvents(projectRoot, batchId);
+		const planStartedIdx = events.findIndex(
+			(event) =>
+				event.type === "review.started" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "plan",
+		);
+		const codeStartedIdx = events.findIndex(
+			(event) =>
+				event.type === "review.started" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "code",
+		);
+		assert.ok(planStartedIdx >= 0, "engine should run a plan review for RL2");
+		assert.ok(codeStartedIdx >= 0, "engine should run a code review for RL2");
+		assert.ok(
+			planStartedIdx < codeStartedIdx,
+			"plan review must precede code review after worker success",
+		);
+		const planCompleted = events.find(
+			(event) =>
+				event.type === "review.completed" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "plan",
+		);
+		assert.equal(planCompleted?.payload?.verdict, "APPROVE");
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub", "codeVerdict", "finalVerdict"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runTaskOnLane honors journal review.completed plan APPROVE without duplicate spawn", async () => {
+	const projectRoot = await initGitRepo("spine-plan-honor-journal-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		finalVerdict: process.env.SPINE_ENGINE_FINAL_STUB_VERDICT,
+	};
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_ENGINE_FINAL_STUB_VERDICT = "PASS";
+	try {
+		const batchId = "20260611T195101";
+		const taskId = "TP-202";
+		const { taskFolderRel } = writeCodeReviewTask(projectRoot, {
+			taskId,
+			reviewLevel: 1,
+			suffix: "honor-plan-journal",
+		});
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "plan honor journal fixture");
+
+		const { state, lane, task } = await provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel });
+
+		appendJournalEvent(projectRoot, batchId, "review.completed", {
+			taskId,
+			laneNumber: 1,
+			correlationId: "corr-worker-plan",
+			reviewType: "plan",
+			verdict: "APPROVE",
+			feedback: "Worker journal plan approve",
+			artifactPath: path.join(taskFolderRel, ".reviews", "0-20260611T22000000.md"),
+		});
+
+		const result = await runTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch: "main",
+			config: {},
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId: "corr-plan-honor-journal",
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.equal(
+			events.filter(
+				(event) =>
+					event.type === "review.started" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "plan",
+			).length,
+			0,
+			"honored plan verdict must not spawn a duplicate plan review",
+		);
+		const verdictEvent = events.find(
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "plan",
+		);
+		assert.equal(verdictEvent?.payload?.honored, true);
+		assert.equal(verdictEvent?.payload?.honorSource, "journal");
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub", "finalVerdict"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runTaskOnLane re-invokes worker after plan REVISE and succeeds on APPROVE", async () => {
+	const projectRoot = await initGitRepo("spine-plan-revise-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		planVerdicts: process.env.SPINE_ENGINE_PLAN_STUB_VERDICTS,
+		finalVerdict: process.env.SPINE_ENGINE_FINAL_STUB_VERDICT,
+	};
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_ENGINE_PLAN_STUB_VERDICTS = "REVISE,APPROVE";
+	process.env.SPINE_ENGINE_FINAL_STUB_VERDICT = "PASS";
+	try {
+		const batchId = "20260611T195201";
+		const taskId = "TP-203";
+		const { taskFolderRel } = writeCodeReviewTask(projectRoot, {
+			taskId,
+			reviewLevel: 1,
+			suffix: "revise-plan",
+		});
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "plan revise fixture");
+
+		const { state, lane, task, wt } = await provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel });
+		const result = await runTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch: "main",
+			config: {},
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId: "corr-plan-revise",
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.equal(task.planReviewAttempts, 2);
+		const events = readJournalEvents(projectRoot, batchId);
+		const planVerdicts = events
+			.filter(
+				(event) =>
+					event.type === "task.verdict_recorded" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "plan",
+			)
+			.map((event) => event.payload?.verdict);
+		assert.deepEqual(planVerdicts, ["REVISE", "APPROVE"]);
+		assert.equal(fs.existsSync(path.join(wt, taskFolderRel, ".DONE")), true);
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub", "planVerdicts", "finalVerdict"]);
 		await destroyGitRepo(projectRoot);
 	}
 });
