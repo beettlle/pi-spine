@@ -1,0 +1,21 @@
+spine-tasks/SP-698-matrix-parent-aggregation-docs/STATUS.md
+  s_0f201d677d220b::t_9b2e12662aafeb 3-4,22,32,34-37,42,44-45,60-61
+spine-tasks/SP-698-matrix-parent-aggregation-docs/.DONE
+  s_0f201d677d220b::t_87818ebb49841f 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "8eb28f4a604dfff04bab0013af8b2b048d86c7fb",
+  "prompts": {},
+  "sessions": {
+    "s_0f201d677d220b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-687ad3e3-4d1a-4ed7-9a31-f3cec0443c39",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
