@@ -1,0 +1,19 @@
+spine-tasks/SP-698-matrix-parent-aggregation-docs/.reviews/final-20260806T183702.md
+  s_2233c7a863834d::t_34cab6b91f93c8 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "812e40d82f1cbb48a1426817e82b08a3ba9bea5a",
+  "prompts": {},
+  "sessions": {
+    "s_2233c7a863834d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc3f7-b03c-715d-9c38-79c2778162d2",
+        "model": "auto"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
