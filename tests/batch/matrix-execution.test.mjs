@@ -18,14 +18,15 @@ import test from "node:test";
 
 import { startBatch } from "../../src/batch/engine.mjs";
 import { expandMatrixFileScopePatterns } from "../../src/batch/lane-commit.mjs";
-import { matrixRowConcurrencyLimit } from "../../src/batch/engine-lanes.mjs";
 import {
+	acquireLaneSlot,
 	aggregateMatrixOutcomes,
 	isMatrixSubLaneWorktreeDir,
 	loadMatrixTaskRows,
 	matrixSubLaneBranch,
 	matrixWorktreeDir,
 	matrixWorktreePath,
+	releaseLaneSlot,
 	runConcurrent,
 	runMatrixSubLaneSetupHook,
 	runShellInDir,
@@ -204,26 +205,69 @@ test("aggregateMatrixOutcomes: any failure surfaces failing row ids", () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* Unit: matrixRowConcurrencyLimit (SP-690 / #227)                     */
+/* Unit: lane slot pool (SP-697 / #228)                                */
 /* ------------------------------------------------------------------ */
 
-test("matrixRowConcurrencyLimit reserves the parent lane slot (default 1)", () => {
-	// global maxParallel 2 with the parent lane held => rows get the 1 remaining slot.
-	assert.equal(matrixRowConcurrencyLimit(2), 1);
-	assert.equal(matrixRowConcurrencyLimit(2, 1), 1);
+test("acquireLaneSlot hands out distinct slots up to maxParallel", async () => {
+	const state = {};
+	const slot1 = await acquireLaneSlot(state, 2);
+	const slot2 = await acquireLaneSlot(state, 2);
+	assert.equal(slot1, 1);
+	assert.equal(slot2, 2);
+	assert.notEqual(slot1, slot2, "concurrent holders must get distinct lane slots");
 });
 
-test("matrixRowConcurrencyLimit scales remaining slots with maxParallel", () => {
-	assert.equal(matrixRowConcurrencyLimit(4, 1), 3);
-	assert.equal(matrixRowConcurrencyLimit(8, 1), 7);
-	assert.equal(matrixRowConcurrencyLimit(3, 2), 1);
+test("acquireLaneSlot blocks past maxParallel until a slot is released (global cap)", async () => {
+	const state = {};
+	const slot1 = await acquireLaneSlot(state, 2);
+	const slot2 = await acquireLaneSlot(state, 2);
+
+	let thirdAcquired = false;
+	const third = acquireLaneSlot(state, 2).then((slot) => {
+		thirdAcquired = true;
+		return slot;
+	});
+	await new Promise((r) => setTimeout(r, 25));
+	assert.equal(thirdAcquired, false, "third acquire must wait while both slots are held");
+
+	releaseLaneSlot(state, slot1);
+	const slot3 = await third;
+	assert.equal(slot3, slot1, "released slot is reused by the waiter");
+	releaseLaneSlot(state, slot2);
+	releaseLaneSlot(state, slot3);
 });
 
-test("matrixRowConcurrencyLimit never drops below 1 (forward progress)", () => {
-	assert.equal(matrixRowConcurrencyLimit(1, 1), 1, "single lane: still 1 row at a time");
-	assert.equal(matrixRowConcurrencyLimit(2, 5), 1, "more occupied slots than lanes: clamp to 1");
-	assert.equal(matrixRowConcurrencyLimit(0), 1, "missing/zero config: clamp to 1");
-	assert.equal(matrixRowConcurrencyLimit(undefined), 1);
+test("acquireLaneSlot releases wake waiters FIFO", async () => {
+	const state = {};
+	const held = await acquireLaneSlot(state, 1);
+	const order = [];
+	const w1 = acquireLaneSlot(state, 1).then(() => order.push("w1"));
+	const w2 = acquireLaneSlot(state, 1).then(() => order.push("w2"));
+	releaseLaneSlot(state, held);
+	await w1;
+	releaseLaneSlot(state, 1);
+	await w2;
+	assert.deepEqual(order, ["w1", "w2"]);
+});
+
+test("acquireLaneSlot clamps a missing/zero maxParallel to a single slot", async () => {
+	const state = {};
+	const only = await acquireLaneSlot(state, 0);
+	assert.equal(only, 1);
+	let secondAcquired = false;
+	const second = acquireLaneSlot(state, undefined).then(() => {
+		secondAcquired = true;
+	});
+	await new Promise((r) => setTimeout(r, 25));
+	assert.equal(secondAcquired, false, "pool of 1 must serialize competitors");
+	releaseLaneSlot(state, only);
+	await second;
+});
+
+test("releaseLaneSlot ignores unknown slots and unknown state objects", () => {
+	const state = {};
+	assert.doesNotThrow(() => releaseLaneSlot(state, 99));
+	assert.doesNotThrow(() => releaseLaneSlot({}, 1));
 });
 
 /* ------------------------------------------------------------------ */
@@ -478,12 +522,87 @@ test("E2E: maxParallel=1 runs rows serially (still produces both outputs)", asyn
 });
 
 /* ------------------------------------------------------------------ */
-/* E2E: mixed wave (matrix + sibling) throttles rows to remaining      */
-/* slots so global in-flight <= lanes.maxParallel (SP-690 / #227)      */
+/* E2E: rows run on DISTINCT lanes as first-class pool competitors     */
+/* (SP-697 / #228): N rows with maxParallel=M run min(N,M) rows on     */
+/* distinct lane numbers concurrently; the parent holds no slot.       */
 /* ------------------------------------------------------------------ */
 
-test("E2E: mixed wave throttles matrix rows to remaining slots (#227)", async () => {
-	const projectRoot = await initGitRepo("spine-matrix-throttle-");
+test("E2E: N-row matrix with maxParallel=M runs min(N,M) rows on distinct lanes concurrently", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-first-class-");
+	try {
+		const taskId = "TP-305";
+		const folder = path.join(projectRoot, "spine-tasks", `${taskId}-matrix`);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(
+			path.join(folder, "PROMPT.md"),
+			sleepMatrixPrompt(taskId, 1),
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+
+		// N=2 rows, M=2: both rows must run concurrently on distinct lanes.
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const oldIsWorker = process.env.SPINE_IS_WORKER;
+		delete process.env.SPINE_IS_WORKER;
+		const batchResult = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+		if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+		assert.ok(
+			batchResult.ok,
+			`batch should succeed; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+		);
+
+		const events = readJournalEvents(projectRoot, batchResult.batchId);
+		const started = events.filter((e) => e.type === "matrix.sub_lane.started");
+		assert.equal(started.length, 2, "both rows should start");
+
+		// Distinct lanes: each active row holds a distinct pool slot, which the
+		// journal hoists to the entry's laneId (lane-<slot>) identity.
+		const laneIds = started.map((e) => e.laneId);
+		assert.equal(
+			new Set(laneIds).size,
+			2,
+			`rows must run on distinct lane ids; got ${JSON.stringify(laneIds)}`,
+		);
+		const worktrees = started.map((e) => e.payload.worktreePath);
+		assert.equal(
+			new Set(worktrees).size,
+			2,
+			`rows must run in distinct worktrees; got ${JSON.stringify(worktrees)}`,
+		);
+
+		// Concurrency proof (min(N,M) = 2): with each row sleeping 1s, a serial
+		// schedule completes row 1 before row 2 starts. Both started events must
+		// precede every completed event.
+		const lastStart = Math.max(...started.map((e) => Date.parse(e.timestamp)));
+		const completions = events.filter((e) => e.type === "matrix.sub_lane.completed");
+		assert.equal(completions.length, 2, "both rows should complete");
+		const firstCompletion = Math.min(...completions.map((e) => Date.parse(e.timestamp)));
+		assert.ok(
+			lastStart < firstCompletion,
+			`both rows must be in flight before either completes (concurrent on distinct lanes); ` +
+				`last start ${lastStart}, first completion ${firstCompletion}`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/* ------------------------------------------------------------------ */
+/* E2E: mixed wave (matrix + sibling) — rows compete with the sibling  */
+/* for the global pool so in-flight <= lanes.maxParallel (SP-697/#228, */
+/* supersedes the SP-690 nested throttle)                              */
+/* ------------------------------------------------------------------ */
+
+test("E2E: mixed wave keeps global in-flight <= lanes.maxParallel (#228)", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-pool-");
 	try {
 		const matrixTaskId = "TP-400";
 		const siblingTaskId = "TP-401";
@@ -491,12 +610,16 @@ test("E2E: mixed wave throttles matrix rows to remaining slots (#227)", async ()
 		const siblingFolder = path.join(projectRoot, "spine-tasks", `${siblingTaskId}-sibling`);
 		fs.mkdirSync(matrixFolder, { recursive: true });
 		fs.mkdirSync(siblingFolder, { recursive: true });
-		fs.writeFileSync(path.join(matrixFolder, "PROMPT.md"), matrixPrompt(matrixTaskId), "utf-8");
+		fs.writeFileSync(
+			path.join(matrixFolder, "PROMPT.md"),
+			sleepMatrixPrompt(matrixTaskId, 1),
+			"utf-8",
+		);
 		// Sibling is a plain execute task with a non-overlapping file scope so the
 		// planner assigns it to a different lane in the same tick (maxParallel 2).
 		fs.writeFileSync(
 			path.join(siblingFolder, "PROMPT.md"),
-			siblingPrompt(siblingTaskId),
+			sleepSiblingPrompt(siblingTaskId, 1),
 			"utf-8",
 		);
 		fs.writeFileSync(
@@ -511,9 +634,10 @@ test("E2E: mixed wave throttles matrix rows to remaining slots (#227)", async ()
 		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
 
 		// Two lanes run concurrently: the matrix lane (2 rows) and the sibling
-		// lane. Without the throttle the matrix would claim both slots (2 rows) on
-		// top of the sibling = 3 in-flight > maxParallel. SP-690 reserves the
-		// parent lane's slot so the matrix fans out into the 1 remaining slot.
+		// lane. The sibling task holds one pool slot; the matrix parent holds none,
+		// so its rows compete for the 2 global slots against the sibling. Any
+		// schedule that double-counted the parent or nested full concurrency would
+		// reach 3 in-flight.
 		configureForBatch(projectRoot, { maxParallel: 2 });
 
 		const oldIsWorker = process.env.SPINE_IS_WORKER;
@@ -548,28 +672,64 @@ test("E2E: mixed wave throttles matrix rows to remaining slots (#227)", async ()
 		assert.match(fileB, /beta/);
 		assert.match(sibling, /sibling-ran/);
 
-		// Production-wiring proof: the matrix task_started event records the
-		// THROTTLED maxParallel (1), not the configured global maxParallel (2),
-		// so the parent lane's slot is reserved for the sibling.
-		const journalPath = path.join(
-			projectRoot,
-			".spine",
-			"runtime",
-			batchResult.batchId,
-			"journal",
-			"events.jsonl",
-		);
-		const events = fs
-			.readFileSync(journalPath, "utf-8")
-			.split("\n")
-			.filter(Boolean)
-			.map((line) => JSON.parse(line));
+		const events = readJournalEvents(projectRoot, batchResult.batchId);
+
+		// Production-wiring proof: the matrix task_started event records the GLOBAL
+		// maxParallel (the pool size rows compete for), not a throttled remainder.
 		const matrixStarted = events.find((e) => e.type === "matrix.task_started");
 		assert.ok(matrixStarted, "matrix.task_started should be recorded");
 		assert.equal(
 			matrixStarted.payload.maxParallel,
-			1,
-			`matrix rows must be throttled to the 1 remaining slot (global maxParallel 2, parent lane held); got ${matrixStarted.payload.maxParallel}`,
+			2,
+			`matrix rows must compete for the global pool (maxParallel 2), not a throttled remainder; got ${matrixStarted.payload.maxParallel}`,
+		);
+
+		// Global in-flight cap: build [started, completed] intervals for the
+		// sibling task and every matrix row (each row sleeps 1s so intervals are
+		// robust to ms jitter), then sweep for the maximum overlap. The matrix
+		// parent's own task.started/completed are excluded — it holds no slot.
+		const intervals = [];
+		const rowStartByRowId = new Map();
+		let siblingStart;
+		let siblingEnd;
+		for (const e of events) {
+			const p = e.payload ?? {};
+			if (e.type === "task.started" && e.taskId === siblingTaskId) {
+				siblingStart = Date.parse(e.timestamp);
+			}
+			if (e.type === "task.completed" && e.taskId === siblingTaskId) {
+				siblingEnd = Date.parse(e.timestamp);
+			}
+			if (e.type === "matrix.sub_lane.started") {
+				rowStartByRowId.set(p.rowId, Date.parse(e.timestamp));
+			}
+			if (
+				(e.type === "matrix.sub_lane.completed" || e.type === "matrix.sub_lane.failed") &&
+				rowStartByRowId.has(p.rowId)
+			) {
+				intervals.push([rowStartByRowId.get(p.rowId), Date.parse(e.timestamp)]);
+			}
+		}
+		assert.ok(siblingStart && siblingEnd, "sibling task interval should be journaled");
+		intervals.push([siblingStart, siblingEnd]);
+		assert.equal(intervals.length, 3, "sibling + 2 matrix rows should produce 3 intervals");
+		const peak = maxConcurrentOverlap(intervals);
+		assert.ok(
+			peak <= 2,
+			`global in-flight must stay <= lanes.maxParallel (2); observed peak ${peak}`,
+		);
+		assert.ok(
+			peak === 2,
+			`rows should genuinely compete concurrently with the sibling (peak 2); got ${peak}`,
+		);
+
+		// Rows still land on distinct lane ids while active.
+		const rowStarted = events.filter((e) => e.type === "matrix.sub_lane.started");
+		const rowLanes = rowStarted.map((e) => e.laneId);
+		assert.equal(
+			new Set(rowLanes).size,
+			rowStarted.length,
+			`each row must run on a distinct lane id; got ${JSON.stringify(rowLanes)}`,
 		);
 	} finally {
 		await destroyGitRepo(projectRoot);
@@ -679,6 +839,52 @@ function configureForBatch(projectRoot, { maxParallel, worktreeSetupHook } = {})
 		}),
 		"utf-8",
 	);
+}
+
+/**
+ * Read a batch's journal events as parsed objects (ordered).
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {Array<{ type: string, timestamp: string, payload: object }>}
+ */
+function readJournalEvents(projectRoot, batchId) {
+	const journalPath = path.join(
+		projectRoot,
+		".spine",
+		"runtime",
+		batchId,
+		"journal",
+		"events.jsonl",
+	);
+	return fs
+		.readFileSync(journalPath, "utf-8")
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => JSON.parse(line));
+}
+
+/**
+ * Maximum number of simultaneously-open [start, end] intervals (epoch ms).
+ * Ends sort before starts at equal timestamps so back-to-back work does not
+ * count as overlap.
+ *
+ * @param {Array<[number, number]>} intervals
+ * @returns {number}
+ */
+function maxConcurrentOverlap(intervals) {
+	const points = [];
+	for (const [start, end] of intervals) {
+		points.push([start, 1], [end, -1]);
+	}
+	points.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+	let current = 0;
+	let peak = 0;
+	for (const [, delta] of points) {
+		current += delta;
+		if (current > peak) peak = current;
+	}
+	return peak;
 }
 
 function matrixPrompt(taskId) {
@@ -840,7 +1046,62 @@ Run it.
 `;
 }
 
-function siblingPrompt(taskId) {
+/**
+ * Matrix prompt whose rows sleep `seconds` before writing output, so journal
+ * started/completed intervals prove (or disprove) concurrent row execution.
+ *
+ * @param {string} taskId
+ * @param {number} seconds
+ */
+function sleepMatrixPrompt(taskId, seconds) {
+	return `# Task: ${taskId} — Matrix sleep
+**Size:** S
+**Type:** execute
+
+## Mission
+Rows sleep so scheduling overlap is observable in the journal.
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/\`
+
+## Matrix
+| run_id | value |
+|-------|-------|
+| a | alpha |
+| b | beta |
+
+## Steps
+### Step 1: Run per row
+
+## Contract
+| Field | Value |
+|-------|-------|
+| runCommand | \`sleep ${seconds} && mkdir -p out && echo {matrix.value} > out/{matrix.run_id}.txt\` |
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Each row sleeps, then writes its output file.
+
+## Completion Criteria
+- [ ] Both rows produce output
+
+## Do NOT
+- Fail
+`;
+}
+
+/**
+ * Sibling (non-matrix) execute prompt that sleeps `seconds`, sharing the
+ * global lane pool with a matrix wave-mate (SP-697 / #228).
+ *
+ * @param {string} taskId
+ * @param {number} seconds
+ */
+function sleepSiblingPrompt(taskId, seconds) {
 	return `# Task: ${taskId} — Sibling
 **Size:** S
 **Type:** execute
@@ -848,7 +1109,7 @@ function siblingPrompt(taskId) {
 ## Mission
 A non-matrix sibling task that runs on its own lane in the same wave as a
 matrix task. Non-overlapping file scope (out2/) so the planner assigns it to a
-distinct lane, exercising the SP-690 mixed-wave throttle.
+distinct lane, exercising first-class row lane-pool competition (SP-697 / #228).
 
 ## Dependencies
 **None**
@@ -862,7 +1123,7 @@ distinct lane, exercising the SP-690 mixed-wave throttle.
 ## Contract
 | Field | Value |
 |-------|-------|
-| runCommand | \`mkdir -p out2 && echo sibling-ran > out2/sibling.txt\` |
+| runCommand | \`sleep ${seconds} && mkdir -p out2 && echo sibling-ran > out2/sibling.txt\` |
 | fileScopeMustChange | \`out2/sibling.txt\` |
 | testCommand | \`test -f out2/sibling.txt\` |
 
