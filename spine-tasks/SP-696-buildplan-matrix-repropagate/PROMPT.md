@@ -51,7 +51,7 @@ Closes #226 — `buildPlan` must copy `matrix` and `matrixColumns` from the pars
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/planner/plan-matrix.test.mjs tests/batch/matrix-execution.test.mjs` |
-| fileScopeMustChange | `src/planner/index.mjs`, `tests/planner/plan-matrix.test.mjs`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `src/planner/index.mjs`, `tests/planner/plan-matrix.test.mjs` |
 
 ## Steps
 
@@ -109,3 +109,7 @@ Closes #226 — `buildPlan` must copy `matrix` and `matrixColumns` from the pars
 ## Git Commit Convention
 
 - `fix(SP-696): re-propagate matrix fields through buildPlan (#226)`
+
+## Amendments
+
+- **2026-08-06 (pre-landed shared scope):** SP-695 already changed `docs/adoption/operator-runbook.md` after this packet was authored. Removed that path from `fileScopeMustChange` so contract verification measures planner delivery (`src/planner/index.mjs`, `tests/planner/plan-matrix.test.mjs`). Still update runbook §2.4 under File Scope / Must Update once plan output matches virtual sub-lane reality.

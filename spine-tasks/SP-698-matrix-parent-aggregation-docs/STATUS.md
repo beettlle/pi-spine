@@ -49,3 +49,5 @@ Depends on SP-697
 ## Notes
 
 Closes #228 together with SP-697.
+
+**2026-08-06:** Pre-landed amend — `fileScopeMustChange` redirected to `docs/QUICK-REFERENCE.md` after SP-697/SP-695 touched shared matrix tests and runbook.

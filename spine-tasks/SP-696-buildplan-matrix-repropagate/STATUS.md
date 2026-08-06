@@ -50,3 +50,5 @@ Depends on SP-698
 ## Notes
 
 Re-applies SP-689 after SP-697/SP-698; do not clear SP-689 `.DONE`.
+
+**2026-08-06:** Pre-landed amend — dropped runbook from `fileScopeMustChange` after SP-695; planner paths retained.

@@ -49,7 +49,7 @@ Closes #228 — Finish first-class matrix row scheduling: parent `SP-X` succeeds
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md`, `tests/batch/matrix-execution.test.mjs` |
+| fileScopeMustChange | `docs/QUICK-REFERENCE.md` |
 
 ## Steps
 
@@ -106,3 +106,7 @@ Closes #228 — Finish first-class matrix row scheduling: parent `SP-X` succeeds
 ## Git Commit Convention
 
 - `feat(SP-698): matrix parent aggregation and supersede nested throttle docs (#228)`
+
+## Amendments
+
+- **2026-08-06 (pre-landed shared scope):** SP-697 already landed first-class row scheduling plus fail-one-row / aggregation regressions in `tests/batch/matrix-execution.test.mjs`, and SP-695 touched `docs/adoption/operator-runbook.md`. Redirected `fileScopeMustChange` to `docs/QUICK-REFERENCE.md` so contract verification measures SP-698's remaining docs delivery. Still rewrite runbook §2.4 (File Scope / Must Update) to supersede the SP-690 interim throttle, confirm aggregation/#224 hook gaps if any, and keep matrix tests in File Scope for any follow-up edits.
