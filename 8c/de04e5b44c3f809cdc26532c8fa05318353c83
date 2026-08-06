@@ -1,0 +1,22 @@
+spine-tasks/SP-697-matrix-first-class-row-lanes/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,21,23,47-48
+src/batch/engine-lanes.mjs
+  h_2a17159c706ba1 27-32,65,73,81,148-153,168-184,186-187,189,191-213
+src/batch/engine-lanes/matrix-run.mjs
+  h_2a17159c706ba1 11,15,310-319,325,328,382-386,391,408,419-420
+src/batch/engine-lanes/matrix.mjs
+  h_2a17159c706ba1 288-365
+tests/batch/matrix-execution.test.mjs
+  h_2a17159c706ba1 22,29,208,211-217,220-237,240-270,525-527,530-605,613-617,622,637-640,675-678,683-732,844-889,1049-1104,1112,1126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "8cde04e5b44c3f809cdc26532c8fa05318353c83",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
