@@ -1,0 +1,3 @@
+SP-697 complete — 2026-08-06
+FULL suite: 2360/2360 pass (SPINE_WORKER_STUB=1 npm test)
+Coverage: 89.06% line (≥77%); extensions/spine/slash-commands.ts 92% (≥70%)

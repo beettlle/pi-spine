@@ -1,8 +1,8 @@
 # SP-697: First-class matrix row lane competitors (schedule core) — Status
 
-**Current Step:** Step 1 — Schedule matrix rows as lane-pool competitors
-**Status:** 🔵 In Progress
-**Last Updated:** 2026-08-03
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** ✅ Complete
+**Last Updated:** 2026-08-06
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -25,15 +25,15 @@
 - [x] Do not touch buildPlan propagation — planner files untouched
 
 ### Step 2: Testing & Verification
-**Status:** 🔵 In Progress
+**Status:** ✅ Complete
 
 - [x] Distinct-lane + global cap regressions — scoped suite 28/28 green (new: slot-pool units, distinct-lanes E2E with overlap proof, mixed-wave global-cap E2E via journal interval sweep)
-- [ ] Scoped + FULL suite + coverage green — scoped ✅ (`npm run typecheck` + matrix-execution 28/28); FULL suite + coverage pending
+- [x] Scoped + FULL suite + coverage green — scoped ✅; FULL suite ✅ (`SPINE_WORKER_STUB=1 npm test` 2360/2360); coverage ✅ (89.06% ≥77%; slash-commands 92% ≥70%)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `.DONE` created
+- [x] `.DONE` created
 
 ---
 
@@ -46,3 +46,5 @@ None
 Partial #228 — aggregation/docs in SP-698; planner virtual rows in SP-696.
 Real-pi batch: engine runs plan/code/final reviews after `.DONE`; no in-worker review calls.
 Impact analysis (gitnexus): `runMatrixTaskOnLane` ← 1 caller (`runTaskOnLane`), `runTaskOnLane` ← engine.mjs tick loop only. LOW risk.
+
+Operator recovery (2026-08-06): Worker exited mid–FULL suite (`worker_done_missing`) after Step 1 committed. Operator re-ran FULL suite + coverage on the lane worktree (both green; `coverage:check` spawnSync hit maxBuffer so aggregate was verified via streamed dump) and created `.DONE` so retry can honor delivery and open the integrate gate.
