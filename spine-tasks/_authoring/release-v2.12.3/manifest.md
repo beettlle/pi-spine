@@ -8,7 +8,7 @@
 **Operator approved scope:** yes (2026-08-03)
 **Composition choice:** patch + override — #250 + coupled (#226+#228); defer matrix epic children (2026-08-03)
 **Worker model pin:** `kimi-coding/k3` (thinking: high) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Agent pin override:** yes (2026-08-06) — removed `kimi-coding/kimi-k2-thinking` from hard/profile pins (→ `google/gemini-3.1-pro-preview`); worker stays `kimi-coding/k3`. Reason: first SP-697 attempt failed with model-pattern warning + 429 overload; operator updated `.spine/spine-config.json` mid-release.
 
 ---
 
