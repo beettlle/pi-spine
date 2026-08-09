@@ -63,6 +63,12 @@ test("resolvePoolId maps known provider prefixes to shared pools", () => {
 	assert.equal(resolvePoolId("google/gemini-3.1-pro-preview"), "google");
 	assert.equal(resolvePoolId("cursor/admin"), "cursor");
 	assert.equal(resolvePoolId("cursor"), "cursor");
+	assert.equal(resolvePoolId("anthropic/claude-opus-4.6"), "anthropic");
+	assert.equal(resolvePoolId("anthropic/claude-sonnet-4.5"), "anthropic");
+	assert.equal(resolvePoolId("github-copilot/claude-sonnet-4.5"), "github-copilot");
+	assert.equal(resolvePoolId("github-copilot/gpt-4.1"), "github-copilot");
+	// pi model ids use `github-copilot/`, not `copilot/`; bare `copilot` stays unmapped.
+	assert.equal(resolvePoolId("copilot/gpt-4.1"), "unknown");
 });
 
 test("resolvePoolId treats empty, inherit, and unmapped providers as unknown", () => {
