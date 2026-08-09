@@ -509,6 +509,31 @@ The snapshot joins the active agent model configuration from `.spine/spine-confi
 
 Remaining headroom, burn rate, and ETA are reported as **unknown** when provider limits are not configured. No fake cost, invented remaining quota, or guessed percentage is emitted. API keys and prompt bodies are never written into the report.
 
+#### Probe credential classes
+
+Optional probes read credentials from `~/.pi/agent/auth.json`. Each pool requires a specific credential class; anything less degrades to `absent` without ever sending the weaker credential over the wire.
+
+| Pool | Credential class | Auth entry | Endpoint used |
+|------|------------------|------------|---------------|
+| `zai` | Inference API key | `{ "zai": { "key": "..." } }` | Z.ai quota monitor |
+| `kimi-coding` | Inference API key | `{ "kimi-coding": { "key": "..." } }` | Moonshot balance |
+| `cursor` | Admin key only | `{ "cursor": { "type": "admin_key", "key": "..." } }` or an `adminKey` field | Cursor teams daily usage |
+| `anthropic` | Anthropic **Admin** key only (`sk-ant-admin...`); regular inference keys (`sk-ant-api...`) are never used | `{ "anthropic": { "type": "admin_key", "key": "..." } }` or an `adminKey` field | Anthropic Admin usage report |
+| `github-copilot` | GitHub PAT **plus** explicit org or enterprise context (billing/enterprise scope); user-level entries are not probed | `{ "github-copilot": { "key": "ghp_...", "org": "my-org" } }` or `"enterprise": "my-ent"` | GitHub Copilot billing (org/enterprise) |
+
+#### Probe degrade matrix
+
+All probes fail closed. No probe invents a remaining percentage or limit, and no probe output contains secrets.
+
+| Condition | Result |
+|-----------|--------|
+| Auth file missing, unreadable, or malformed | `source: "absent"` for every pool |
+| Credential present but wrong class (e.g. Cursor regular key, Anthropic inference key, Copilot PAT without org/enterprise) | `source: "absent"`; endpoint is never called |
+| Network error, timeout, or DNS failure | `source: "absent"` with the error attached |
+| Non-OK HTTP response (401/403/404/5xx) | `source: "absent"` |
+| OK response without explicit usage/limit fields | `source: "live"`; usage stays zeroed and no `limit` is attached |
+| OK response with explicit usage/limit fields | `source: "live"` with exactly those numbers |
+
 ### Progress Reporting
 
 ```bash
