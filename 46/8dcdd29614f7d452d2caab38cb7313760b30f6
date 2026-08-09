@@ -1,0 +1,47 @@
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/STATUS.md
+  s_dc601e1b5e4b55::t_6bff8fbe733263 1-52
+spine-tasks/SP-699-post-mortem-v2-12-3/PROMPT.md
+  s_dc601e1b5e4b55::t_7e0d3df506ecce 1
+  s_dc601e1b5e4b55::t_9ef3917851ac7c 2-4
+  s_dc601e1b5e4b55::t_3c8b80bc8fc674 5-87
+spine-tasks/CONTEXT.md
+  s_dc601e1b5e4b55::t_26fe042285db09 2243-2250,2252-2270
+  s_dc601e1b5e4b55::t_2f8737ab4ad017 3,5
+  s_dc601e1b5e4b55::t_6683eb83defdc2 2251
+spine-tasks/SP-701-quota-pools-anthropic-copilot/PROMPT.md
+  s_dc601e1b5e4b55::t_40463add29e2e9 1-89
+spine-tasks/dependencies.json
+  s_dc601e1b5e4b55::t_9ce90c96b53d90 1849-1854
+spine-tasks/SP-701-quota-pools-anthropic-copilot/STATUS.md
+  s_dc601e1b5e4b55::t_804db3811ede22 1-51
+spine-tasks/_authoring/release-v2.13.0/manifest.md
+  s_dc601e1b5e4b55::t_60a775d5bef252 53
+  s_dc601e1b5e4b55::t_d8972d712fbb1b 1-52,54-111,121,124-172
+  s_dc601e1b5e4b55::t_88a154650e1d5d 112-120,122-123
+spine-tasks/SP-700-doctor-quota-risk-warn/PROMPT.md
+  s_dc601e1b5e4b55::t_a103964ffef3dd 1-99
+spine-tasks/SP-700-doctor-quota-risk-warn/STATUS.md
+  s_dc601e1b5e4b55::t_cc905dfe5ad5c4 1-53
+spine-tasks/SP-699-post-mortem-v2-12-3/STATUS.md
+  s_dc601e1b5e4b55::t_eafc81f423706e 1
+  s_dc601e1b5e4b55::t_e0bb44272c24a7 2-4
+  s_dc601e1b5e4b55::t_77be824894ee30 5-50
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/PROMPT.md
+  s_dc601e1b5e4b55::t_1b84a8885cf29d 1-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "468dcdd29614f7d452d2caab38cb7313760b30f6",
+  "prompts": {},
+  "sessions": {
+    "s_dc601e1b5e4b55": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-16429f0e-0a95-4a98-b527-43c5c045917f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
