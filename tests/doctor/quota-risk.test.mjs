@@ -15,10 +15,12 @@ import {
 const NOW = Date.parse("2026-08-09T12:00:00.000Z");
 
 function baseConfig(overrides = {}) {
+	// Default pins must resolve to pool "unknown" so clear/skip cases stay
+	// valid after SP-701 mapped anthropic + github-copilot into POOL_PREFIXES.
 	return {
 		agents: {
-			worker: { model: "anthropic/claude-sonnet-4" },
-			reviewer: { model: "anthropic/claude-opus-4" },
+			worker: { model: "openai/gpt-4" },
+			reviewer: { model: "openai/gpt-4o" },
 			...overrides,
 		},
 	};
