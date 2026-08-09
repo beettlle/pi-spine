@@ -1,0 +1,20 @@
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 58
+src/doctor/quota-risk.mjs
+  h_2a17159c706ba1 1-229
+src/doctor/run-doctor-checks.mjs
+  h_2a17159c706ba1 36-37,413-428
+tests/doctor/quota-risk.test.mjs
+  h_2a17159c706ba1 1-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a33fceba96474e9166b088e306fac544f3e5633a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
