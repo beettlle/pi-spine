@@ -33,6 +33,8 @@ import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
+import { buildQuotaRiskDoctorCheck } from "./quota-risk.mjs";
+import { metricsFilePath, readMetricsLines } from "../batch/metrics.mjs";
 import {
 	buildCheckoutVersionSkewDoctorCheck,
 	buildDuplicateInstallDoctorCheck,
@@ -408,6 +410,22 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		for (const testingCheck of buildTestingEvidenceDoctorChecks(configResult.config)) {
 			checks.push(testingCheck);
 		}
+		let quotaMetricsLines;
+		try {
+			quotaMetricsLines = readMetricsLines(
+				metricsFilePath(projectRoot, configResult.config),
+				{ skipInvalid: true },
+			);
+		} catch {
+			// Unreadable metrics degrade to pin-only evaluation; the check still warns on absent headroom.
+			quotaMetricsLines = undefined;
+		}
+		checks.push(
+			buildQuotaRiskDoctorCheck({
+				config: configResult.config,
+				metricsLines: quotaMetricsLines,
+			}),
+		);
 		const concurrentDevCheck = buildConcurrentDevDoctorCheck({
 			projectRoot,
 			config: configResult.config,
