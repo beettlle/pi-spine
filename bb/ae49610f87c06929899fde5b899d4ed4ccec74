@@ -1,0 +1,16 @@
+spine-tasks/SP-701-quota-pools-anthropic-copilot/.reviews/0-20260809T223008.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-701-quota-pools-anthropic-copilot/.reviews/final-20260809T223526.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "bbae49610f87c06929899fde5b899d4ed4ccec74",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
