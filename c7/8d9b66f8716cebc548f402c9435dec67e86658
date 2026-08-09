@@ -1,0 +1,18 @@
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/.reviews/0-20260809T233110.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/.reviews/final-20260809T233123.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/STATUS.md
+  h_2a17159c706ba1 3-4,26-28,31-32,51-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c78d9b66f8716cebc548f402c9435dec67e86658",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
