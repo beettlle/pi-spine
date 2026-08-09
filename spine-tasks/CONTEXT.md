@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-06 (Phase 79 v2.12.3 SP-696 option A supersede #226; Next → SP-699)
+**Last Updated:** 2026-08-09 (Phase 80 v2.13.0 painless ops authored SP-699–SP-702; Next → SP-703)
 **Status:** Active
-**Next Task ID:** SP-699
+**Next Task ID:** SP-703
 
 ---
 
@@ -2237,6 +2237,34 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note (draft):** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); #226 superseded (parent-only `buildPlan`; runtime rows via #228).
 
 **Deferred:** #225 epic remainder; #229–#232 matrix children; optional future engine virtual plan-ID redesign (old option B); #238 quota pools; other enhancement backlog.
+
+---
+
+### Phase 80 — v2.13.0 painless ops (#251, #238 + post-mortem)
+
+**Authoring:** 2026-08-09 · Manifest: [`spine-tasks/_authoring/release-v2.13.0/manifest.md`](_authoring/release-v2.13.0/manifest.md)
+
+**Profile:** minor — composition A (painless ops). Operator approved scope 2026-08-09. Worker pin: `kimi-coding/k3` (no mid-release pin edits).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-699 | Post-mortem v2.12.3 release process (`SP-699-post-mortem-v2-12-3`) | Pending | — |
+| SP-700 | Doctor/preflight quota-risk escalate warning | Pending | — |
+| SP-701 | Map anthropic + github-copilot quota pool IDs | Pending | — |
+| SP-702 | Optional anthropic/copilot probes + QUICK-REFERENCE | Pending | SP-701 |
+
+**Phase 80 exit criteria:**
+
+- [ ] Operator approved scope (2026-08-09)
+- [ ] SP-699–SP-702 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #251 closed; #238 closed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD; v2.13.0 published
+
+**Release note (draft):** v2.13.0 — v2.12.3 post-mortem; advisory doctor quota-risk warn (#251); anthropic/github-copilot quota pools + optional probes (#238).
+
+**Deferred:** #225/#229–#232 matrix children; #209–#213 P3 backlog; other enhancements.
 
 ---
 
