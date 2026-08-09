@@ -1,0 +1,14 @@
+spine-tasks/SP-700-doctor-quota-risk-warn/STATUS.md
+  h_2a17159c706ba1 3-4,14-16,19-23,26-29,50-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "3822743f300b44f4b260afb06c4fa1213df46299",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
