@@ -245,6 +245,194 @@ test("runQuotaProbes does not invent a remaining limit", async () => {
 	}
 });
 
+test("runQuotaProbes returns live usage for the Anthropic Admin probe", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			anthropic: { type: "admin_key", key: "sk-ant-admin-secret" },
+		}),
+	);
+	try {
+		let seenHeaders;
+		const fetch = async (url, init) => {
+			seenHeaders = init?.headers;
+			assert.equal(url, "https://api.anthropic.com/v1/organizations/usage_report/messages");
+			return {
+				ok: true,
+				status: 200,
+				text: async () => JSON.stringify({ used: 4200 }),
+				json: async () => ({ used: 4200 }),
+			};
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.anthropic] });
+
+		assert.equal(results.anthropic.source, "live");
+		assert.equal(results.anthropic.usage.tokensOut, 4200);
+		assert.equal("limit" in results.anthropic, false);
+		assert.equal(seenHeaders["x-api-key"], "sk-ant-admin-secret");
+		assert.equal(seenHeaders["anthropic-version"], "2023-06-01");
+		assert.equal(JSON.stringify(results).includes("sk-ant-admin-secret"), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes does not probe Anthropic with a regular inference key", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			anthropic: { type: "api_key", key: "sk-ant-api-inference-key" },
+		}),
+	);
+	try {
+		let fetchCalled = false;
+		const fetch = () => {
+			fetchCalled = true;
+			return Promise.resolve({ ok: true, status: 200, text: async () => "{}", json: async () => ({}) });
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.anthropic] });
+
+		assert.equal(results.anthropic.source, "absent");
+		assert.equal(fetchCalled, false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes probes Anthropic with an adminKey field and degrades on 403", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			anthropic: { type: "api_key", key: "sk-ant-api-inference-key", adminKey: "sk-ant-admin-secret" },
+		}),
+	);
+	try {
+		const fetch = createMockFetch([
+			{ url: "https://api.anthropic.com/v1/organizations/usage_report/messages", status: 403, body: {} },
+		]);
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.anthropic] });
+
+		assert.equal(results.anthropic.source, "absent");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes returns live billing data for the GitHub Copilot org probe", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			"github-copilot": { type: "pat", key: "ghp-secret-token", org: "acme-org" },
+		}),
+	);
+	try {
+		let seenHeaders;
+		const fetch = async (url, init) => {
+			seenHeaders = init?.headers;
+			assert.equal(url, "https://api.github.com/orgs/acme-org/copilot/billing");
+			return {
+				ok: true,
+				status: 200,
+				text: async () => JSON.stringify({ used: 120, limit: 300 }),
+				json: async () => ({ used: 120, limit: 300 }),
+			};
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.githubCopilot] });
+
+		assert.equal(results["github-copilot"].source, "live");
+		assert.equal(results["github-copilot"].usage.tokensOut, 120);
+		assert.equal(results["github-copilot"].limit, 300);
+		assert.equal(seenHeaders.Authorization, "Bearer ghp-secret-token");
+		assert.equal(seenHeaders["X-GitHub-Api-Version"], "2022-11-28");
+		assert.equal(JSON.stringify(results).includes("ghp-secret-token"), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes supports the GitHub Copilot enterprise context", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			"github-copilot": { type: "pat", key: "ghp-secret-token", enterprise: "acme-ent" },
+		}),
+	);
+	try {
+		const fetch = createMockFetch([
+			{ url: "https://api.github.com/enterprises/acme-ent/copilot/billing", status: 200, body: { used: 55 } },
+		]);
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.githubCopilot] });
+
+		assert.equal(results["github-copilot"].source, "live");
+		assert.equal(results["github-copilot"].usage.tokensOut, 55);
+		assert.equal("limit" in results["github-copilot"], false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes does not probe GitHub Copilot without org/enterprise scope", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			"github-copilot": { type: "pat", key: "ghp-secret-token" },
+		}),
+	);
+	try {
+		let fetchCalled = false;
+		const fetch = () => {
+			fetchCalled = true;
+			return Promise.resolve({ ok: true, status: 200, text: async () => "{}", json: async () => ({}) });
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.githubCopilot] });
+
+		assert.equal(results["github-copilot"].source, "absent");
+		assert.equal(fetchCalled, false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runQuotaProbes degrades GitHub Copilot to absent on 404 and network errors", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			"github-copilot": { type: "pat", key: "ghp-secret-token", org: "acme-org" },
+		}),
+	);
+	try {
+		const fetch404 = createMockFetch([
+			{ url: "https://api.github.com/orgs/acme-org/copilot/billing", status: 404, body: {} },
+		]);
+		const notFound = await runQuotaProbes({ authPath, fetch: fetch404, providers: [PROBE_POOLS.githubCopilot] });
+		assert.equal(notFound["github-copilot"].source, "absent");
+
+		const fetchNetErr = createMockFetch([
+			{ url: "https://api.github.com/orgs/acme-org/copilot/billing", status: 200, reject: "network failure" },
+		]);
+		const netErr = await runQuotaProbes({ authPath, fetch: fetchNetErr, providers: [PROBE_POOLS.githubCopilot] });
+		assert.equal(netErr["github-copilot"].source, "absent");
+		assert.ok(netErr["github-copilot"].error);
+		assert.equal(JSON.stringify(netErr).includes("ghp-secret-token"), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("buildQuotaSnapshot merges live probe results into pool source and usage", async () => {
 	const snapshot = buildQuotaSnapshot({
 		projectRoot: "/tmp",

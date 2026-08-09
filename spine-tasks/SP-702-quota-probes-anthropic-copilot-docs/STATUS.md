@@ -1,7 +1,7 @@
 # SP-702: Optional anthropic/copilot probes + QUICK-REFERENCE — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-08-09
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm SP-701 pool IDs landed
-- [ ] Read existing fail-closed probe patterns
+**Status:** ✅ Complete
+- [x] Confirm SP-701 pool IDs landed
+- [x] Read existing fail-closed probe patterns
 
 ### Step 1: Probes + docs
-**Status:** ⬜ Not Started
-- [ ] Anthropic Admin probe (fail-closed)
-- [ ] GitHub Copilot probe (fail-closed)
-- [ ] Unit tests with mocks
-- [ ] QUICK-REFERENCE credential/degrade docs
+**Status:** ✅ Complete
+- [x] Anthropic Admin probe (fail-closed)
+- [x] GitHub Copilot probe (fail-closed)
+- [x] Unit tests with mocks
+- [x] QUICK-REFERENCE credential/degrade docs
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 - [ ] Scoped contract testCommand
 - [ ] Fix failures
 
@@ -46,6 +46,8 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-08-09 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-08-09 | Step 0 preflight | SP-701 pool IDs confirmed (anthropic, github-copilot in POOL_PREFIXES); fail-closed patterns reviewed |
+| 2026-08-09 | Step 1 probes + docs | Added probeAnthropic (Admin key only) + probeGitHubCopilot (PAT + org/enterprise), 8 new mocked tests, QUICK-REFERENCE credential classes + degrade matrix |
 
 ## Blockers
 

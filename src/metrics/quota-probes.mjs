@@ -14,6 +14,12 @@
  * Cursor is only probed when the auth file contains an explicit admin key
  * (`type: "admin_key"` or a dedicated `adminKey` field). Regular Cursor API
  * keys are not used and no undocumented dashboard HTML is scraped.
+ *
+ * Anthropic is only probed with an explicit Admin key (`type: "admin_key"`
+ * or a dedicated `adminKey` field). Regular inference keys
+ * (`sk-ant-api...`) are never sent to the Admin API. GitHub Copilot is only
+ * probed when the auth entry carries a PAT plus an explicit org or enterprise
+ * context; user-level entries without that scope degrade to `absent`.
  */
 
 import fs from "node:fs";
@@ -26,12 +32,17 @@ const PROBE_URLS = {
 	zai: "https://api.z.ai/api/monitor/usage/quota/limit",
 	"kimi-coding": "https://api.moonshot.ai/v1/users/me/balance",
 	cursor: "https://api.cursor.com/teams/daily-usage-data",
+	anthropic: "https://api.anthropic.com/v1/organizations/usage_report/messages",
 };
+
+const GITHUB_API_BASE = "https://api.github.com";
 
 export const PROBE_POOLS = {
 	zai: "zai",
 	kimiCoding: "kimi-coding",
 	cursor: "cursor",
+	anthropic: "anthropic",
+	githubCopilot: "github-copilot",
 };
 
 /**
@@ -103,21 +114,59 @@ function hasCursorAdminKey(auth) {
 }
 
 /**
- * Make a JSON GET request with a Bearer token, returning `null` on any failure
- * so adapters remain fail-closed.
+ * Return the explicit Anthropic Admin key from the auth file, or `undefined`
+ * when only a regular inference key is present. The Admin API rejects
+ * inference keys, so they are never used for the probe.
+ *
+ * @param {object | null} auth
+ * @returns {string | undefined}
+ */
+function getAnthropicAdminKey(auth) {
+	const entry = auth?.anthropic;
+	if (!entry || typeof entry !== "object") return undefined;
+	if (entry.type === "admin_key" && typeof entry.key === "string" && entry.key.length > 0) {
+		return entry.key;
+	}
+	if (typeof entry.adminKey === "string" && entry.adminKey.length > 0) return entry.adminKey;
+	return undefined;
+}
+
+/**
+ * Return the GitHub Copilot billing probe context (PAT plus an explicit org
+ * or enterprise scope), or `undefined` when either is missing. The billing
+ * endpoints are only exposed at org/enterprise level, so user-level entries
+ * without that context fail closed.
+ *
+ * @param {object | null} auth
+ * @returns {{ key: string, url: string } | undefined}
+ */
+function getCopilotBillingContext(auth) {
+	const entry = auth?.["github-copilot"];
+	if (!entry || typeof entry !== "object") return undefined;
+	const key = typeof entry.key === "string" && entry.key.length > 0 ? entry.key : undefined;
+	if (!key) return undefined;
+	if (typeof entry.org === "string" && entry.org.length > 0) {
+		return { key, url: `${GITHUB_API_BASE}/orgs/${encodeURIComponent(entry.org)}/copilot/billing` };
+	}
+	if (typeof entry.enterprise === "string" && entry.enterprise.length > 0) {
+		return { key, url: `${GITHUB_API_BASE}/enterprises/${encodeURIComponent(entry.enterprise)}/copilot/billing` };
+	}
+	return undefined;
+}
+
+/**
+ * Make a JSON GET request with arbitrary headers, returning `null` on any
+ * failure so adapters remain fail-closed.
  *
  * @param {string} url
- * @param {string} key
+ * @param {Record<string, string>} headers
  * @param {typeof globalThis.fetch} fetch
  * @returns {Promise<object | null>}
  */
-async function fetchJsonWithBearer(url, key, fetch) {
+async function fetchJsonWithHeaders(url, headers, fetch) {
 	const response = await fetch(url, {
 		method: "GET",
-		headers: {
-			Authorization: `Bearer ${key}`,
-			Accept: "application/json",
-		},
+		headers: { Accept: "application/json", ...headers },
 	});
 	if (!response.ok) return null;
 	const text = await response.text();
@@ -127,6 +176,19 @@ async function fetchJsonWithBearer(url, key, fetch) {
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Make a JSON GET request with a Bearer token, returning `null` on any failure
+ * so adapters remain fail-closed.
+ *
+ * @param {string} url
+ * @param {string} key
+ * @param {typeof globalThis.fetch} fetch
+ * @returns {Promise<object | null>}
+ */
+async function fetchJsonWithBearer(url, key, fetch) {
+	return fetchJsonWithHeaders(url, { Authorization: `Bearer ${key}` }, fetch);
 }
 
 /**
@@ -281,6 +343,96 @@ async function probeCursor(auth, fetch) {
 }
 
 /**
+ * Anthropic probe — only runs when an explicit Admin key is present in
+ * `auth.json`. Regular inference keys (`type: "api_key"`, `sk-ant-api...`)
+ * are never sent to the Admin API.
+ *
+ * Expected shape (used by mocked tests): `{ used: number }` or a `data`
+ * array whose entries carry `tokens` fields. A numeric limit is only
+ * attached when the response explicitly includes one.
+ *
+ * @param {object | null} auth
+ * @param {typeof globalThis.fetch} fetch
+ * @returns {Promise<ProbeResult>}
+ */
+async function probeAnthropic(auth, fetch) {
+	const key = getAnthropicAdminKey(auth);
+	if (!key) return { poolId: "anthropic", source: "absent" };
+
+	try {
+		const data = await fetchJsonWithHeaders(
+			PROBE_URLS.anthropic,
+			{ "x-api-key": key, "anthropic-version": "2023-06-01" },
+			fetch,
+		);
+		if (!data) return { poolId: "anthropic", source: "absent" };
+
+		/** @type {PoolUsage} */
+		const usage = { taskCount: 0, durationMs: 0 };
+		const used = extractNumber(data, ["used", "used_tokens", "total_tokens"])
+			?? extractNumber(data.data, ["used", "used_tokens", "total_tokens"]);
+		if (used !== undefined) usage.tokensOut = used;
+
+		const limit =
+			extractLimit(data, ["total", "limit"]) ??
+			extractLimit(data.data, ["total", "limit"]);
+
+		const result = { poolId: "anthropic", source: "live", usage };
+		if (limit !== undefined) result.limit = limit;
+		return result;
+	} catch (error) {
+		return { poolId: "anthropic", source: "absent", error };
+	}
+}
+
+/**
+ * GitHub Copilot probe — only runs when the auth entry carries a PAT plus
+ * an explicit org or enterprise context. User-level entries without that
+ * scope fail closed because the billing endpoints are org/enterprise-only.
+ *
+ * Expected shape (used by mocked tests): `{ used: number }` or
+ * `{ usage: { used: number } }`. Seat-only billing payloads still count as
+ * live but contribute no usage numbers. A numeric limit is only attached
+ * when the response explicitly includes one.
+ *
+ * @param {object | null} auth
+ * @param {typeof globalThis.fetch} fetch
+ * @returns {Promise<ProbeResult>}
+ */
+async function probeGitHubCopilot(auth, fetch) {
+	const context = getCopilotBillingContext(auth);
+	if (!context) return { poolId: "github-copilot", source: "absent" };
+
+	try {
+		const data = await fetchJsonWithHeaders(
+			context.url,
+			{
+				Authorization: `Bearer ${context.key}`,
+				"X-GitHub-Api-Version": "2022-11-28",
+			},
+			fetch,
+		);
+		if (!data) return { poolId: "github-copilot", source: "absent" };
+
+		/** @type {PoolUsage} */
+		const usage = { taskCount: 0, durationMs: 0 };
+		// Seat counts are deliberately not mapped into taskCount: seats are not
+		// tasks and conflating them would invent usage the API never reported.
+		const used = extractNumber(data, ["used", "used_premium_requests", "total_used"])
+			?? extractNumber(data.usage, ["used", "total"]);
+		if (used !== undefined) usage.tokensOut = used;
+
+		const limit = extractLimit(data, ["limit", "seat_limit"]);
+
+		const result = { poolId: "github-copilot", source: "live", usage };
+		if (limit !== undefined) result.limit = limit;
+		return result;
+	} catch (error) {
+		return { poolId: "github-copilot", source: "absent", error };
+	}
+}
+
+/**
  * Run the optional provider probes and return a map keyed by pool id.
  *
  * @param {object} [params]
@@ -292,7 +444,13 @@ async function probeCursor(auth, fetch) {
 export async function runQuotaProbes({
 	authPath = DEFAULT_AUTH_PATH,
 	fetch = globalThis.fetch,
-	providers = [PROBE_POOLS.zai, PROBE_POOLS.kimiCoding, PROBE_POOLS.cursor],
+	providers = [
+		PROBE_POOLS.zai,
+		PROBE_POOLS.kimiCoding,
+		PROBE_POOLS.cursor,
+		PROBE_POOLS.anthropic,
+		PROBE_POOLS.githubCopilot,
+	],
 } = {}) {
 	const auth = loadAuthCredentials(authPath);
 	/** @type {Record<string, ProbeResult>} */
@@ -305,6 +463,10 @@ export async function runQuotaProbes({
 			results["kimi-coding"] = await probeKimi(auth, fetch);
 		} else if (provider === PROBE_POOLS.cursor) {
 			results.cursor = await probeCursor(auth, fetch);
+		} else if (provider === PROBE_POOLS.anthropic) {
+			results.anthropic = await probeAnthropic(auth, fetch);
+		} else if (provider === PROBE_POOLS.githubCopilot) {
+			results["github-copilot"] = await probeGitHubCopilot(auth, fetch);
 		}
 	}
 
