@@ -1,6 +1,6 @@
 {
   "name": "pi-spine",
-  "version": "2.12.2",
+  "version": "2.12.3",
   "description": "Orchestration spine for long-running pi development",
   "keywords": [
     "pi-package",
