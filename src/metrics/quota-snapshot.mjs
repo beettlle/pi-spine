@@ -26,7 +26,7 @@ import { metricsFilePath, readMetricsLines } from "../batch/metrics.mjs";
  * pool because provider-level quotas (e.g. Z.ai, Google, Kimi) are typically
  * account- or key-wide, not model-wide.
  */
-const POOL_PREFIXES = new Set(["zai", "kimi-coding", "google", "cursor"]);
+const POOL_PREFIXES = new Set(["zai", "kimi-coding", "google", "cursor", "anthropic", "github-copilot"]);
 
 /**
  * Resolves a model identifier to a shared quota pool id.
