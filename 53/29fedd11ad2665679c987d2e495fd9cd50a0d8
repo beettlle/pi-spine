@@ -1,0 +1,24 @@
+docs/QUICK-REFERENCE.md
+  h_2a17159c706ba1 512-536
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/.reviews/0-20260809T233110.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/.reviews/final-20260809T233123.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-702-quota-probes-anthropic-copilot-docs/STATUS.md
+  h_2a17159c706ba1 3-4,14-16,19-23,26-28,31-32,49-52
+src/metrics/quota-probes.mjs
+  h_2a17159c706ba1 17-22,35,38-39,44-45,117-159,162,166,169,181-193,345-434,447-453,466-469
+tests/metrics/quota-probes.test.mjs
+  h_2a17159c706ba1 248-435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "5329fedd11ad2665679c987d2e495fd9cd50a0d8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
