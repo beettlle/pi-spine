@@ -1,7 +1,7 @@
 # SP-699: Post-mortem v2-12-3 release process — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-08-09
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,14 +11,14 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
-- [ ] Confirm post-mortem-v2.12.1 structural model
-- [ ] Read v2.12.3 manifest + Phase 79
+**Status:** ✅ Complete
+- [x] Confirm post-mortem-v2.12.1 structural model
+- [x] Read v2.12.3 manifest + Phase 79
 
 ### Step 1: Author post-mortem
-**Status:** ⬜ Not Started
-- [ ] Create post-mortem-v2.12.3.md
-- [ ] Link manifest + issues + skill rules
+**Status:** ✅ Complete
+- [x] Create post-mortem-v2.12.3.md
+- [x] Link manifest + issues + skill rules
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
