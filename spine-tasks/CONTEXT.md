@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-09 (Phase 80 v2.13.0 painless ops authored SP-699–SP-702; Next → SP-703)
+**Last Updated:** 2026-08-14 (Phase 80 v2.13.0 published; Next → SP-703)
 **Status:** Active
 **Next Task ID:** SP-703
 
@@ -2231,12 +2231,12 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] #228 closed (SP-697 + SP-698) — confirm issue close on publish
 - [x] #226 closed as **superseded by #228** (SP-696 option A; no `buildPlan` re-propagation)
 - [x] Operator approved scope (2026-08-03)
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] v2.12.3 published
+- [x] `npm run release:check` green on publish HEAD
+- [x] v2.12.3 published
 
-**Release note (draft):** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); #226 superseded (parent-only `buildPlan`; runtime rows via #228).
+**Release note:** v2.12.3 — Engine-owned plan review after `.DONE` (#250); first-class matrix row lane scheduling (#228); #226 superseded (parent-only `buildPlan`; runtime rows via #228).
 
-**Deferred:** #225 epic remainder; #229–#232 matrix children; optional future engine virtual plan-ID redesign (old option B); #238 quota pools; other enhancement backlog.
+**Deferred:** #225 epic remainder; #229–#232 matrix children; optional future engine virtual plan-ID redesign (old option B); other enhancement backlog.
 
 ---
 
@@ -2248,21 +2248,21 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-699 | Post-mortem v2.12.3 release process (`SP-699-post-mortem-v2-12-3`) | Pending | — |
-| SP-700 | Doctor/preflight quota-risk escalate warning | Pending | — |
-| SP-701 | Map anthropic + github-copilot quota pool IDs | Pending | — |
-| SP-702 | Optional anthropic/copilot probes + QUICK-REFERENCE | Pending | SP-701 |
+| SP-699 | Post-mortem v2.12.3 release process (`SP-699-post-mortem-v2-12-3`) | Done | — |
+| SP-700 | Doctor/preflight quota-risk escalate warning | Done | — |
+| SP-701 | Map anthropic + github-copilot quota pool IDs | Done | — |
+| SP-702 | Optional anthropic/copilot probes + QUICK-REFERENCE | Done | SP-701 |
 
 **Phase 80 exit criteria:**
 
-- [ ] Operator approved scope (2026-08-09)
-- [ ] SP-699–SP-702 `.DONE` and integrated on `main`
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] #251 closed; #238 closed
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD; v2.13.0 published
+- [x] Operator approved scope (2026-08-09)
+- [x] SP-699–SP-702 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after each wave
+- [x] #251 closed; #238 closed
+- [x] `npm run release:check` green on publish HEAD (`aa56622a` / tag `v2.13.0`)
+- [x] CI green on HEAD; **v2.13.0 published** — npm `pi-spine@2.13.0`; Release [31759391384](https://github.com/beettlle/pi-spine/actions/runs/31759391384)
 
-**Release note (draft):** v2.13.0 — v2.12.3 post-mortem; advisory doctor quota-risk warn (#251); anthropic/github-copilot quota pools + optional probes (#238).
+**Release note:** v2.13.0 — v2.12.3 post-mortem; advisory doctor quota-risk warn (#251); anthropic/github-copilot quota pools + optional probes (#238).
 
 **Deferred:** #225/#229–#232 matrix children; #209–#213 P3 backlog; other enhancements.
 
