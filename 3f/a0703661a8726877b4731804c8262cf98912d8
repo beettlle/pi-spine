@@ -1,0 +1,14 @@
+spine-tasks/SP-704-ci-cancelled-publish-recovery/STATUS.md
+  h_2a17159c706ba1 3,22,24-26,30,32,60-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3fa0703661a8726877b4731804c8262cf98912d8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
