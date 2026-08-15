@@ -1,0 +1,43 @@
+spine-tasks/SP-706-review-parser-fence-audit/STATUS.md
+  s_e6fd2f37d3988a::t_f31b79ff34731f 1-67
+spine-tasks/dependencies.json
+  s_e6fd2f37d3988a::t_de6105fe26d1a5 1855-1859
+spine-tasks/SP-706-review-parser-fence-audit/PROMPT.md
+  s_e6fd2f37d3988a::t_1bbe0a39987a0f 1-40,42-93
+  s_e6fd2f37d3988a::t_c62eedeb9611d9 41
+spine-tasks/CONTEXT.md
+  s_e6fd2f37d3988a::t_b9209dd19d4b33 3,5
+  s_e6fd2f37d3988a::t_4c0520a74969b4 2271-2298
+spine-tasks/SP-705-journal-checksum-append-serialize/STATUS.md
+  s_e6fd2f37d3988a::t_63500ebb50f849 1-69
+spine-tasks/SP-703-post-mortem-v2-13-0/PROMPT.md
+  s_e6fd2f37d3988a::t_00e35814f460cb 1-90
+spine-tasks/SP-704-ci-cancelled-publish-recovery/STATUS.md
+  s_e6fd2f37d3988a::t_6de177411396be 1-67
+spine-tasks/_authoring/release-v2.14.0/manifest.md
+  s_e6fd2f37d3988a::t_ba38c3427fcf6f 1-7,9-137,140,142,146-196
+  s_e6fd2f37d3988a::t_c494788882b8aa 8
+  s_e6fd2f37d3988a::t_43165638a8c1ee 138-139,141,143-145
+spine-tasks/SP-703-post-mortem-v2-13-0/STATUS.md
+  s_e6fd2f37d3988a::t_c4d4eba9f7af7a 1-66
+spine-tasks/SP-704-ci-cancelled-publish-recovery/PROMPT.md
+  s_e6fd2f37d3988a::t_dcbfa6affcf183 1-93
+spine-tasks/SP-705-journal-checksum-append-serialize/PROMPT.md
+  s_e6fd2f37d3988a::t_eaeb831e557710 1-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3da168820929b90f6e8411cbbcf192e26ce82826",
+  "prompts": {},
+  "sessions": {
+    "s_e6fd2f37d3988a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-4a01c1d5-8e97-4bb7-9821-20ddcb18aef4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
