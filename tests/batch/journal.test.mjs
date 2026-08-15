@@ -14,6 +14,7 @@ import {
 	readJournalEvents,
 	readLastTaskFailedEvent,
 	redactSecrets,
+	verifyJournalChecksum,
 } from "../../src/batch/journal.mjs";
 
 test("appendJournalEvent writes schema v1 with ISO timestamp and payload", async () => {
@@ -110,6 +111,101 @@ test("readJournalEvents reads mixed legacy and v1 lines", async () => {
 		assert.equal(events.length, 2);
 		assert.equal(events[0].type, "lane.heartbeat");
 		assert.equal(events[1].type, "task.completed");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("appendJournalEvent stamps a verifiable SHA-256 checksum on new events", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-checksum-"));
+	try {
+		const batchId = "20260815T170000";
+		const entry = appendJournalEvent(root, batchId, "batch.started", { baseBranch: "main" });
+
+		assert.equal(typeof entry.checksum, "string");
+		assert.match(entry.checksum, /^[0-9a-f]{64}$/);
+		assert.ok(verifyJournalChecksum(entry));
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 1);
+		assert.equal(events[0].checksum, entry.checksum);
+		assert.ok(verifyJournalChecksum(events[0]));
+
+		// Tampering with any field invalidates the checksum.
+		const tampered = { ...events[0], type: "batch.failed" };
+		assert.equal(verifyJournalChecksum(tampered), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("readJournalEvents loads legacy lines without checksum", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-legacy-"));
+	const batchId = "20260815T170100";
+	const journalDir = path.join(root, ".spine", "runtime", batchId, "journal");
+	try {
+		fs.mkdirSync(journalDir, { recursive: true });
+		const legacyV1 = {
+			schemaVersion: JOURNAL_SCHEMA_VERSION,
+			eventId: "legacy-v1-no-checksum",
+			type: "batch.started",
+			timestamp: "2026-08-15T17:01:00.000Z",
+			batchId,
+			payload: { baseBranch: "main" },
+		};
+		fs.writeFileSync(path.join(journalDir, "events.jsonl"), `${JSON.stringify(legacyV1)}\n`, "utf-8");
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 1);
+		assert.equal(events[0].eventId, "legacy-v1-no-checksum");
+		assert.equal(events[0].checksum, undefined);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("readJournalEvents skips checksum-mismatched lines without discarding the file", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-tamper-"));
+	const batchId = "20260815T170200";
+	try {
+		appendJournalEvent(root, batchId, "batch.started", { baseBranch: "main" });
+		appendJournalEvent(root, batchId, "task.completed", { taskId: "SP-1" });
+
+		// Corrupt the first line after writing: checksum no longer matches.
+		const filePath = path.join(root, ".spine", "runtime", batchId, "journal", "events.jsonl");
+		const lines = fs.readFileSync(filePath, "utf-8").split("\n").filter(Boolean);
+		const corrupted = { ...JSON.parse(lines[0]), type: "batch.failed" };
+		fs.writeFileSync(filePath, `${JSON.stringify(corrupted)}\n${lines[1]}\n`, "utf-8");
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 1);
+		assert.equal(events[0].type, "task.completed");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("concurrent appendJournalEvent calls do not interleave partial lines", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-conc-"));
+	const batchId = "20260815T170300";
+	try {
+		const count = 200;
+		await Promise.all(
+			Array.from({ length: count }, (_, index) =>
+				Promise.resolve().then(() =>
+					appendJournalEvent(root, batchId, "lane.heartbeat", { laneNumber: (index % 4) + 1, index }),
+				),
+			),
+		);
+
+		const filePath = path.join(root, ".spine", "runtime", batchId, "journal", "events.jsonl");
+		const lines = fs.readFileSync(filePath, "utf-8").split("\n").filter(Boolean);
+		assert.equal(lines.length, count);
+		for (const line of lines) {
+			const parsed = JSON.parse(line);
+			assert.equal(parsed.type, "lane.heartbeat");
+			assert.ok(verifyJournalChecksum(parsed));
+		}
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
