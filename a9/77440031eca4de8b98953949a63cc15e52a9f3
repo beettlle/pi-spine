@@ -1,0 +1,19 @@
+spine-tasks/SP-705-journal-checksum-append-serialize/.reviews/0-20260815T172247.md
+  s_6a183ace1683aa::t_473142656b704f 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a977440031eca4de8b98953949a63cc15e52a9f3",
+  "prompts": {},
+  "sessions": {
+    "s_6a183ace1683aa": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-b53a86b1-8856-4b3a-b388-0c00e460dd14",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
