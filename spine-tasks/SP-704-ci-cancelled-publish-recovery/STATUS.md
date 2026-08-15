@@ -1,6 +1,6 @@
 # SP-704: CI cancelled no-signal publish recovery — Status
 
-**Current Step:** Step 1: Add no-signal recovery
+**Current Step:** Step 2: Testing & Verification
 **Status:** In Progress
 **Last Updated:** 2026-08-15
 **Review Level:** 0
@@ -19,17 +19,17 @@
 
 ## Step 1: Add no-signal recovery
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Update npm-publish.md
-- [ ] Update spine-release-operator SKILL.md
-- [ ] Leave post-mortem-v2.13.0.md to SP-703
+- [x] Update npm-publish.md
+- [x] Update spine-release-operator SKILL.md
+- [x] Leave post-mortem-v2.13.0.md to SP-703
 
 ## Step 2: Testing & Verification
 
-**Status:** Not Started
+**Status:** In Progress
 
-- [ ] Both File Scope paths contain recovery
+- [x] Both File Scope paths contain recovery
 - [ ] Full suite (docs-only)
 
 ## Step 3: Documentation & Delivery
@@ -57,6 +57,8 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-15 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-08-15 | Step 0 complete | npm-publish has fail-closed CI gate; skill Phase 5 waits on in_progress/queued but lacked cancelled → workflow_dispatch recovery |
+| 2026-08-15 | Step 1 complete | Added no-signal recovery to npm-publish pre-publish checklist and skill pre-tag CI gate; committed 48aeb575 |
 
 ## Blockers
 
