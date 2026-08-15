@@ -124,6 +124,60 @@ test("parseFinalReviewVerdict omits heading summary unlike parseReviewVerdict", 
 	assert.match(workerStyle.feedback, /Tighten scope/);
 });
 
+test("parseReviewVerdict reads fence-wrapped JSON after a prose preamble", () => {
+	const result = parseReviewVerdict(
+		"I reviewed the changes and have notes below.\n\n```json\n{\"verdict\":\"REVISE\",\"feedback\":\"fix x\"}\n```\n",
+	);
+	assert.equal(result.verdict, "REVISE");
+	assert.equal(result.feedback, "fix x");
+});
+
+test("parseReviewVerdict fails closed when a json fence holds an embedded extra object", () => {
+	const result = parseReviewVerdict('```json\n{"verdict":"APPROVE"} {"extra":true}\n```\n');
+	assert.equal(result.verdict, null);
+});
+
+test("parseReviewVerdict fails closed when a json fence has trailing prose", () => {
+	const result = parseReviewVerdict('```json\n{"verdict":"APPROVE"}\nNote: ship it\n```\n');
+	assert.equal(result.verdict, null);
+});
+
+test("parseReviewVerdict fails closed on same-line and unclosed json fences", () => {
+	const sameLine = parseReviewVerdict('```json {"verdict":"APPROVE","feedback":"ok"}\n```\n');
+	assert.equal(sameLine.verdict, null);
+
+	const unclosed = parseReviewVerdict('```json\n{"verdict":"APPROVE","feedback":"ok"}\n');
+	assert.equal(unclosed.verdict, null);
+});
+
+test("parseReviewVerdict still honors a valid heading when the json fence is malformed", () => {
+	const result = parseReviewVerdict(
+		'### Verdict: REVISE\n### Summary\nFix tests.\n```json\n{"verdict":"APPROVE"} trailing junk\n```\n',
+	);
+	assert.equal(result.verdict, "REVISE");
+	assert.match(result.feedback, /Fix tests/);
+});
+
+test("parseFinalReviewVerdict fails closed on malformed json fences", () => {
+	const extraObject = parseFinalReviewVerdict('```json\n{"verdict":"PASS"} {"extra":true}\n```\n');
+	assert.equal(extraObject.verdict, null);
+
+	const trailingProse = parseFinalReviewVerdict('```json\n{"verdict":"PASS"}\nNote: ship it\n```\n');
+	assert.equal(trailingProse.verdict, null);
+
+	const preambleFence = parseFinalReviewVerdict(
+		'Final review notes.\n```json\n{"verdict":"PASS","feedback":"ok"}\n```\n',
+	);
+	assert.equal(preambleFence.verdict, "PASS");
+	assert.equal(preambleFence.feedback, "ok");
+});
+
+test("both parsers keep verdict null on unstructured garbage", () => {
+	const garbage = "asdf qwer zxcv nothing structured\n";
+	assert.equal(parseReviewVerdict(garbage).verdict, null);
+	assert.equal(parseFinalReviewVerdict(garbage).verdict, null);
+});
+
 test("shouldRunCodeReview requires review level 2 or higher", () => {
 	assert.equal(shouldRunCodeReview({ reviewLevel: 0 }), false);
 	assert.equal(shouldRunCodeReview({ reviewLevel: 1 }), false);

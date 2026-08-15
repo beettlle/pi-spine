@@ -98,6 +98,9 @@ function extractSummary(reviewContent) {
 export function parseReviewVerdict(reviewContent, options = {}) {
 	const reviewType = options.reviewType ?? "code";
 	const isFinal = reviewType === "final";
+	// A json fence signals structured-output intent; if it cannot yield a valid
+	// verdict, fail closed instead of salvaging a verdict from prose heuristics.
+	const hasJsonFence = /```json/i.test(reviewContent);
 
 	const jsonMatch = reviewContent.match(/```json\s*\n([\s\S]*?)\n```/i);
 	if (jsonMatch) {
@@ -124,6 +127,10 @@ export function parseReviewVerdict(reviewContent, options = {}) {
 			verdict: normalizeVerdict(headingMatch[1], reviewType),
 			feedback: extractSummary(reviewContent),
 		};
+	}
+
+	if (hasJsonFence) {
+		return { verdict: null, feedback: extractSummary(reviewContent) };
 	}
 
 	const lower = reviewContent.toLowerCase();
