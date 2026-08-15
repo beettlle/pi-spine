@@ -1,0 +1,21 @@
+docs/release/npm-publish.md
+  s_e6fd2f37d3988a::t_dc46854d07c36f 65-69
+skills/spine-release-operator/SKILL.md
+  s_e6fd2f37d3988a::t_131c33b932dbf3 439-447,450-451,455-457
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "48aeb575dfdadfa51b8d485622894ffa2d9d6763",
+  "prompts": {},
+  "sessions": {
+    "s_e6fd2f37d3988a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-4a01c1d5-8e97-4bb7-9821-20ddcb18aef4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
