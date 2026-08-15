@@ -1,0 +1,23 @@
+src/batch/journal-checksum.mjs
+  s_7f97faad6bfb07::t_ba0c9a26e19d98 77
+  s_7f97faad6bfb07::t_e60d80e3b90de7 1-76,78-84
+src/batch/journal.mjs
+  s_7f97faad6bfb07::t_bd4eeaf8c08b28 9-15
+  s_7f97faad6bfb07::t_4dab712e48e79b 210-213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cafff89d75a04b836e00671dd3bd02d070951f77",
+  "prompts": {},
+  "sessions": {
+    "s_7f97faad6bfb07": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7c3a1e6c-a7f7-4891-98e2-13d315c83718",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
