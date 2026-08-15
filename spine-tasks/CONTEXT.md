@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-14 (Phase 80 v2.13.0 published; Next → SP-703)
+**Last Updated:** 2026-08-15 (Phase 81 v2.14.0 staged; Next → SP-707)
 **Status:** Active
-**Next Task ID:** SP-703
+**Next Task ID:** SP-707
 
 ---
 
@@ -2265,6 +2265,34 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.13.0 — v2.12.3 post-mortem; advisory doctor quota-risk warn (#251); anthropic/github-copilot quota pools + optional probes (#238).
 
 **Deferred:** #225/#229–#232 matrix children; #209–#213 P3 backlog; other enhancements.
+
+---
+
+### Phase 81 — v2.14.0 painless ops (#120, #213 + post-mortem + CI no-signal docs)
+
+**Authoring:** 2026-08-15 · Manifest: [`spine-tasks/_authoring/release-v2.14.0/manifest.md`](_authoring/release-v2.14.0/manifest.md)
+
+**Profile:** minor — composition A (painless ops). Operator approved scope 2026-08-15. Worker pin: `kimi-coding/k3` (no mid-release pin edits). GitNexus: `appendJournalEvent` CRITICAL / `parseReviewVerdict` HIGH — packets scoped additive / audit-first.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-703 | Post-mortem v2.13.0 (`SP-703-post-mortem-v2-13-0`) | Staged | — |
+| SP-704 | CI cancelled / no-signal publish recovery | Staged | — |
+| SP-705 | Journal checksum + append serialize (#120) | Staged | — |
+| SP-706 | Review/plan JSON parser fence audit (#213) | Staged | — |
+
+**Phase 81 exit criteria:**
+
+- [ ] Operator approved scope (2026-08-15)
+- [ ] SP-703–SP-706 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #120 closed or partial recorded; #213 closed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD (cancelled = no signal → `workflow_dispatch`); **v2.14.0 published**
+
+**Release note (draft):** v2.14.0 — v2.13.0 post-mortem; CI no-signal publish recovery; journal checksum/serialize (#120); review parser fence audit (#213).
+
+**Deferred:** #225/#229–#232 matrix children; remaining P3 backlog (#209–#212); #124/#127/#135/#43.
 
 ---
 
