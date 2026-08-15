@@ -94,7 +94,7 @@
       },
       "budget": {
         "worker": {
-          "model": "zai/glm-5.2",
+          "model": "zai/glm-5.3",
           "thinking": "high"
         },
         "reviewer": {
