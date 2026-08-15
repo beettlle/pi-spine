@@ -1,7 +1,7 @@
 # SP-704: CI cancelled no-signal publish recovery — Status
 
-**Current Step:** Step 0: Not started
-**Status:** Ready
+**Current Step:** Step 1: Add no-signal recovery
+**Status:** In Progress
 **Last Updated:** 2026-08-15
 **Review Level:** 0
 **Review Counter:** 0
@@ -12,10 +12,10 @@
 
 ## Step 0: Preflight
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Confirm current npm-publish CI fail-closed language
-- [ ] Confirm skill Phase 5 missing cancelled recovery
+- [x] Confirm current npm-publish CI fail-closed language
+- [x] Confirm skill Phase 5 missing cancelled recovery
 
 ## Step 1: Add no-signal recovery
 
