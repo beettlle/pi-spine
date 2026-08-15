@@ -1,7 +1,7 @@
 # SP-703: Post-mortem v2-13-0 release process — Status
 
-**Current Step:** Step 0: Not started
-**Status:** Ready
+**Current Step:** Step 1: Author post-mortem
+**Status:** In Progress
 **Last Updated:** 2026-08-15
 **Review Level:** 0
 **Review Counter:** 0
@@ -12,10 +12,10 @@
 
 ## Step 0: Preflight
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Confirm post-mortem-v2.12.3 structural model
-- [ ] Read v2.13.0 manifest + Phase 80
+- [x] Confirm post-mortem-v2.12.3 structural model
+- [x] Read v2.13.0 manifest + Phase 80
 
 ## Step 1: Author post-mortem
 
@@ -56,6 +56,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-15 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-08-15 | Step 0 complete | Model doc, manifest, Phase 80/81, SP-704 PROMPT, skill F1/F7/F8, git evidence (batches 20260809T222822 / 20260809T225833, tag v2.13.0 @ aa56622a) |
 
 ## Blockers
 
