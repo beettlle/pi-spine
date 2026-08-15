@@ -6,6 +6,13 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import {
+	appendJsonlLineSync,
+	computeJournalChecksum,
+	verifyJournalChecksum,
+} from "./journal-checksum.mjs";
+
+export { verifyJournalChecksum };
 
 export const JOURNAL_SCHEMA_VERSION = 1;
 export const MAX_PAYLOAD_BYTES = 32 * 1024;
@@ -44,45 +51,6 @@ export const STRUCTURAL_JOURNAL_EVENT_TYPES = Object.freeze(
 );
 
 const META_KEYS = new Set(["correlationId", "laneId", "laneNumber", "taskId", "payload"]);
-
-/** Bounded retry policy for transient append failures (EBUSY/ENOENT). */
-const APPEND_RETRY_ATTEMPTS = 3;
-const APPEND_RETRY_DELAY_MS = 25;
-const RETRYABLE_APPEND_CODES = new Set(["EBUSY", "ENOENT"]);
-
-/**
- * Synchronous sleep for retry backoff. Atomics.wait is permitted on the Node
- * main thread (unlike browsers), so this works in the sync append path.
- * @param {number} ms
- */
-function sleepSync(ms) {
-	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
-/**
- * SHA-256 integrity checksum for new journal events. Computed over the
- * canonical JSON of the entry without the checksum field; the field is
- * appended last so JSON.parse preserves key order and readers can recompute
- * by stripping `checksum` and re-stringifying. Legacy lines without the
- * field remain valid.
- * @param {Record<string, unknown>} entry Entry without a checksum field.
- * @returns {string} Hex digest.
- */
-function computeJournalChecksum(entry) {
-	return crypto.createHash("sha256").update(JSON.stringify(entry), "utf-8").digest("hex");
-}
-
-/**
- * Verify a parsed journal line's checksum when present.
- * @param {Record<string, unknown>} event
- * @returns {boolean} True when checksum is absent (legacy) or matches.
- */
-export function verifyJournalChecksum(event) {
-	if (!event || typeof event !== "object") return false;
-	const { checksum, ...rest } = event;
-	if (typeof checksum !== "string" || !checksum) return true;
-	return computeJournalChecksum(rest) === checksum;
-}
 
 const REDACT_KEY_PATTERN = /key|token|secret|password/i;
 
@@ -239,37 +207,10 @@ export function appendJournalEvent(projectRoot, batchId, type, options = {}) {
 
 	const line = `${JSON.stringify(entry)}\n`;
 
-	// In-process serialization: the append below is fully synchronous — no
-	// await between line build, appendFileSync, and fsync — so concurrent
-	// callers on the event loop cannot interleave partial lines. Retry is
-	// bounded on transient EBUSY/ENOENT (e.g. directory replaced mid-append).
-	let lastError;
-	let appended = false;
-	for (let attempt = 1; attempt <= APPEND_RETRY_ATTEMPTS; attempt += 1) {
-		try {
-			if (!appended) {
-				fs.mkdirSync(path.dirname(filePath), { recursive: true });
-				fs.appendFileSync(filePath, line, "utf-8");
-				appended = true;
-			}
-
-			const fd = fs.openSync(filePath, "r+");
-			try {
-				fs.fsyncSync(fd);
-			} finally {
-				fs.closeSync(fd);
-			}
-			return entry;
-		} catch (error) {
-			lastError = error;
-			const code = error && /** @type {NodeJS.ErrnoException} */ (error).code;
-			if (!RETRYABLE_APPEND_CODES.has(code) || attempt === APPEND_RETRY_ATTEMPTS) {
-				throw error;
-			}
-			sleepSync(APPEND_RETRY_DELAY_MS);
-		}
-	}
-	throw lastError;
+	// In-process serialization: appendJsonlLineSync is fully synchronous, so
+	// concurrent event-loop callers cannot interleave partial jsonl lines.
+	appendJsonlLineSync(filePath, line);
+	return entry;
 }
 
 /**
