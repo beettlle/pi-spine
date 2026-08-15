@@ -1,7 +1,7 @@
 # SP-705: Journal checksum + append serialize — Status
 
 **Current Step:** Step 3: Documentation & Delivery
-**Status:** In Progress
+**Status:** Complete
 **Last Updated:** 2026-08-15
 **Review Level:** 1
 **Review Counter:** 0
@@ -36,9 +36,9 @@
 
 ## Step 3: Documentation & Delivery
 
-**Status:** Not Started
+**Status:** Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
