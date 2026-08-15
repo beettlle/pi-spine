@@ -62,6 +62,11 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
   # If in progress: gh run watch --exit-status <run-id>
   ```
   Fail closed if no successful CI run (release-safe profile: typecheck → lint → tests → coverage → CLI smoke — same as `ci.yml`). Do not tag commits that failed CI on `main`.
+
+  **Cancelled or absent CI is no signal** — neither green nor red (post-mortem v2.12.3 F-C). Recovery by run state:
+  - **`in_progress` / `queued`:** wait — `gh run watch --exit-status <run-id>`.
+  - **`cancelled` or no run exists for `HEAD`:** re-run **CI** via `workflow_dispatch` — `gh workflow run ci.yml` (dispatch trigger added in `edb7919d`) — then `gh run list` again and wait for `conclusion: success` on current `HEAD`.
+  - Do **not** treat a cancelled run as green or as red, and do **not** `npm version` or `git push --tags` until a green run exists on `HEAD`.
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)

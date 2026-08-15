@@ -436,13 +436,25 @@ COMMIT=$(git rev-parse HEAD)
 gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,status --limit 5
 ```
 
-**Fail closed** when no run has `conclusion: success`. If the latest run is `in_progress` or `queued`, wait:
+**Fail closed** when no run has `conclusion: success`. **Cancelled or absent CI is no signal** — neither green nor red (post-mortem v2.12.3 F-C). Branch by run state:
+
+- **`in_progress` / `queued`:** wait:
 
 ```bash
 gh run watch --exit-status <run-id>
 ```
 
-If CI **failed** or **no CI run** exists for `HEAD`, **STOP** — fix CI on `main`, re-run Phase 5, then re-attempt this gate. Do not `npm version` or `git push --tags`.
+- **`cancelled` or no run exists for `HEAD`:** re-run **CI** via `workflow_dispatch` (trigger added in `edb7919d`), then wait for `conclusion: success` on current `HEAD`:
+
+```bash
+gh workflow run ci.yml
+gh run list --workflow ci.yml --commit "$COMMIT" --json databaseId,conclusion,status --limit 5
+gh run watch --exit-status <run-id>
+```
+
+Never treat a cancelled run as green or as a reason to skip this gate.
+
+If CI **failed**, **STOP** — fix CI on `main`, re-run Phase 5, then re-attempt this gate. Do not `npm version` or `git push --tags` until a green CI run exists on `HEAD`.
 
 Only after Phase 5 **and** pre-tag CI gate pass:
 
