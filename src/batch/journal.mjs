@@ -45,6 +45,45 @@ export const STRUCTURAL_JOURNAL_EVENT_TYPES = Object.freeze(
 
 const META_KEYS = new Set(["correlationId", "laneId", "laneNumber", "taskId", "payload"]);
 
+/** Bounded retry policy for transient append failures (EBUSY/ENOENT). */
+const APPEND_RETRY_ATTEMPTS = 3;
+const APPEND_RETRY_DELAY_MS = 25;
+const RETRYABLE_APPEND_CODES = new Set(["EBUSY", "ENOENT"]);
+
+/**
+ * Synchronous sleep for retry backoff. Atomics.wait is permitted on the Node
+ * main thread (unlike browsers), so this works in the sync append path.
+ * @param {number} ms
+ */
+function sleepSync(ms) {
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * SHA-256 integrity checksum for new journal events. Computed over the
+ * canonical JSON of the entry without the checksum field; the field is
+ * appended last so JSON.parse preserves key order and readers can recompute
+ * by stripping `checksum` and re-stringifying. Legacy lines without the
+ * field remain valid.
+ * @param {Record<string, unknown>} entry Entry without a checksum field.
+ * @returns {string} Hex digest.
+ */
+function computeJournalChecksum(entry) {
+	return crypto.createHash("sha256").update(JSON.stringify(entry), "utf-8").digest("hex");
+}
+
+/**
+ * Verify a parsed journal line's checksum when present.
+ * @param {Record<string, unknown>} event
+ * @returns {boolean} True when checksum is absent (legacy) or matches.
+ */
+export function verifyJournalChecksum(event) {
+	if (!event || typeof event !== "object") return false;
+	const { checksum, ...rest } = event;
+	if (typeof checksum !== "string" || !checksum) return true;
+	return computeJournalChecksum(rest) === checksum;
+}
+
 const REDACT_KEY_PATTERN = /key|token|secret|password/i;
 
 /**
@@ -169,7 +208,6 @@ export function normalizeJournalEvent(line) {
  */
 export function appendJournalEvent(projectRoot, batchId, type, options = {}) {
 	const filePath = journalPath(projectRoot, batchId);
-	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
 	const rawPayload = extractPayload(options);
 	const payload = capPayloadSize(redactSecrets(rawPayload));
@@ -194,17 +232,44 @@ export function appendJournalEvent(projectRoot, batchId, type, options = {}) {
 	const taskId = options.taskId;
 	if (typeof taskId === "string" && taskId) entry.taskId = taskId;
 
+	// checksum: SHA-256 hex of the canonical JSON of the entry without this
+	// field. Added last so readers recompute by stripping `checksum` and
+	// re-stringifying; absent on legacy lines.
+	entry.checksum = computeJournalChecksum(entry);
+
 	const line = `${JSON.stringify(entry)}\n`;
-	fs.appendFileSync(filePath, line, "utf-8");
 
-	const fd = fs.openSync(filePath, "r+");
-	try {
-		fs.fsyncSync(fd);
-	} finally {
-		fs.closeSync(fd);
+	// In-process serialization: the append below is fully synchronous — no
+	// await between line build, appendFileSync, and fsync — so concurrent
+	// callers on the event loop cannot interleave partial lines. Retry is
+	// bounded on transient EBUSY/ENOENT (e.g. directory replaced mid-append).
+	let lastError;
+	let appended = false;
+	for (let attempt = 1; attempt <= APPEND_RETRY_ATTEMPTS; attempt += 1) {
+		try {
+			if (!appended) {
+				fs.mkdirSync(path.dirname(filePath), { recursive: true });
+				fs.appendFileSync(filePath, line, "utf-8");
+				appended = true;
+			}
+
+			const fd = fs.openSync(filePath, "r+");
+			try {
+				fs.fsyncSync(fd);
+			} finally {
+				fs.closeSync(fd);
+			}
+			return entry;
+		} catch (error) {
+			lastError = error;
+			const code = error && /** @type {NodeJS.ErrnoException} */ (error).code;
+			if (!RETRYABLE_APPEND_CODES.has(code) || attempt === APPEND_RETRY_ATTEMPTS) {
+				throw error;
+			}
+			sleepSync(APPEND_RETRY_DELAY_MS);
+		}
 	}
-
-	return entry;
+	throw lastError;
 }
 
 /**
@@ -228,6 +293,22 @@ export function exportJournalJsonl(projectRoot, batchId) {
 }
 
 /**
+ * Parse jsonl journal content into normalized events. Lines whose checksum is
+ * present but mismatches are skipped (fail-closed per-line) without
+ * discarding the rest of the file; legacy lines without checksum load as-is.
+ * @param {string} content Raw jsonl content.
+ * @returns {object[]}
+ */
+function parseJournalLines(content) {
+	return content
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => JSON.parse(line))
+		.filter((parsed) => verifyJournalChecksum(parsed))
+		.map((parsed) => normalizeJournalEvent(parsed));
+}
+
+/**
  * @param {string} projectRoot
  * @param {string} batchId
  * @returns {object[]}
@@ -236,11 +317,7 @@ export function readJournalEvents(projectRoot, batchId) {
 	const filePath = journalPath(projectRoot, batchId);
 	if (!fs.existsSync(filePath)) return [];
 
-	return fs
-		.readFileSync(filePath, "utf-8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => normalizeJournalEvent(JSON.parse(line)));
+	return parseJournalLines(fs.readFileSync(filePath, "utf-8"));
 }
 
 /**
@@ -273,11 +350,7 @@ export function readJournalEventsCached(projectRoot, batchId) {
 		return _journalCache.events;
 	}
 
-	const events = fs
-		.readFileSync(filePath, "utf-8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => normalizeJournalEvent(JSON.parse(line)));
+	const events = parseJournalLines(fs.readFileSync(filePath, "utf-8"));
 
 	_journalCache.filePath = filePath;
 	_journalCache.mtimeMs = stat.mtimeMs;
