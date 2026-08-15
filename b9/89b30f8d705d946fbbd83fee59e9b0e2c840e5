@@ -1,0 +1,14 @@
+spine-tasks/SP-706-review-parser-fence-audit/.reviews/0-20260815T172152.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b989b30f8d705d946fbbd83fee59e9b0e2c840e5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
