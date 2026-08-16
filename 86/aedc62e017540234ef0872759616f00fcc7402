@@ -1,0 +1,16 @@
+package-lock.json
+  h_2a17159c706ba1 3,9
+package.json
+  h_2a17159c706ba1 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "86aedc62e017540234ef0872759616f00fcc7402",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
