@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-15 (Phase 81 v2.14.0 staged; Next → SP-707)
+**Last Updated:** 2026-08-16 (Phase 81 v2.14.0 published; Next → SP-707)
 **Status:** Active
 **Next Task ID:** SP-707
 
@@ -2276,21 +2276,21 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-703 | Post-mortem v2.13.0 (`SP-703-post-mortem-v2-13-0`) | Staged | — |
-| SP-704 | CI cancelled / no-signal publish recovery | Staged | — |
-| SP-705 | Journal checksum + append serialize (#120) | Staged | — |
-| SP-706 | Review/plan JSON parser fence audit (#213) | Staged | — |
+| SP-703 | Post-mortem v2.13.0 (`SP-703-post-mortem-v2-13-0`) | Done | — |
+| SP-704 | CI cancelled / no-signal publish recovery | Done | — |
+| SP-705 | Journal checksum + append serialize (#120) | Done | — |
+| SP-706 | Review/plan JSON parser fence audit (#213) | Done | — |
 
 **Phase 81 exit criteria:**
 
-- [ ] Operator approved scope (2026-08-15)
-- [ ] SP-703–SP-706 `.DONE` and integrated on `main`
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] #120 closed or partial recorded; #213 closed
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD (cancelled = no signal → `workflow_dispatch`); **v2.14.0 published**
+- [x] Operator approved scope (2026-08-15)
+- [x] SP-703–SP-706 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after each wave
+- [x] #120 closed or partial recorded; #213 closed
+- [x] `npm run release:check` green on publish HEAD (`86aedc62` / tag `v2.14.0`)
+- [x] CI green on HEAD (cancelled = no signal → `workflow_dispatch`); **v2.14.0 published** — npm `pi-spine@2.14.0`; Release [31961325552](https://github.com/beettlle/pi-spine/actions/runs/31961325552)
 
-**Release note (draft):** v2.14.0 — v2.13.0 post-mortem; CI no-signal publish recovery; journal checksum/serialize (#120); review parser fence audit (#213).
+**Release note:** v2.14.0 — v2.13.0 post-mortem; CI no-signal publish recovery; journal checksum/serialize (#120); review parser fence audit (#213).
 
 **Deferred:** #225/#229–#232 matrix children; remaining P3 backlog (#209–#212); #124/#127/#135/#43.
 
