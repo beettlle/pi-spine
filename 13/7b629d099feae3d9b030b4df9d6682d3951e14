@@ -1,0 +1,49 @@
+spine-tasks/_authoring/release-v2.14.1/manifest.md
+  s_fe7c01e951355e::t_8ac60db545c263 92-93,96
+  s_fe7c01e951355e::t_2e05be933235fc 1-91,94-95,97-162
+spine-tasks/SP-710-gate-evidence-cargo-task/PROMPT.md
+  s_fe7c01e951355e::t_1f6ddcc0788d9b 1-92
+spine-tasks/dependencies.json
+  s_fe7c01e951355e::t_36c12c26c0887a 1859-1865
+spine-tasks/CONTEXT.md
+  s_fe7c01e951355e::t_d2fb63bb882196 3,5
+  s_fe7c01e951355e::t_37813327839c88 2299-2326
+spine-tasks/SP-711-lane-commit-pi-ignore/STATUS.md
+  s_fe7c01e951355e::t_f3cbba5726b295 1-55
+spine-tasks/SP-709-spine-wait-failed-match/STATUS.md
+  s_fe7c01e951355e::t_9003b22cbd5253 1-55
+spine-tasks/SP-711-lane-commit-pi-ignore/PROMPT.md
+  s_fe7c01e951355e::t_a4455dc93c6b50 1-83
+spine-tasks/SP-712-doctor-list-models-timeout/PROMPT.md
+  s_fe7c01e951355e::t_30e6193a770b77 1-86
+spine-tasks/SP-712-doctor-list-models-timeout/STATUS.md
+  s_fe7c01e951355e::t_44eca862a371ee 1-55
+spine-tasks/SP-707-post-mortem-v2-14-0/PROMPT.md
+  s_fe7c01e951355e::t_68b6d90509dae2 1-83
+spine-tasks/SP-707-post-mortem-v2-14-0/STATUS.md
+  s_fe7c01e951355e::t_06ac4fc07a1ff6 1-65
+spine-tasks/SP-709-spine-wait-failed-match/PROMPT.md
+  s_fe7c01e951355e::t_8bcd6342edd4a4 1-84
+spine-tasks/SP-710-gate-evidence-cargo-task/STATUS.md
+  s_fe7c01e951355e::t_c7c25b2e7ad2d4 1-59
+spine-tasks/SP-708-worker-runner-done-missing-output/STATUS.md
+  s_fe7c01e951355e::t_4dbe016e65cf73 1-65
+spine-tasks/SP-708-worker-runner-done-missing-output/PROMPT.md
+  s_fe7c01e951355e::t_2a4f4dfb9ff9ed 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "137b629d099feae3d9b030b4df9d6682d3951e14",
+  "prompts": {},
+  "sessions": {
+    "s_fe7c01e951355e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-1f888e4e-218d-4015-9f8a-eb469baaa25d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
