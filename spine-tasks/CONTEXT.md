@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-16 (Phase 81 v2.14.0 published; Next → SP-707)
+**Last Updated:** 2026-08-19 (Phase 82 v2.14.1 authoring; Next → SP-713)
 **Status:** Active
-**Next Task ID:** SP-707
+**Next Task ID:** SP-713
 
 ---
 
@@ -2293,6 +2293,34 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.14.0 — v2.13.0 post-mortem; CI no-signal publish recovery; journal checksum/serialize (#120); review parser fence audit (#213).
 
 **Deferred:** #225/#229–#232 matrix children; remaining P3 backlog (#209–#212); #124/#127/#135/#43.
+
+---
+
+### Phase 82 — v2.14.1 consumer bugfix patch (#252–#256)
+
+**Authoring:** 2026-08-19 · Manifest: [`spine-tasks/_authoring/release-v2.14.1/manifest.md`](_authoring/release-v2.14.1/manifest.md)
+
+**Profile:** patch — composition A (consumer bugfix). Operator approved scope: **pending**. Worker pin: `kimi-coding/k3` (do not change mid-release). Post-ship findings from git-ai batch `20260815T223806`.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-707 | Post-mortem v2.14.0 | Staged | — |
+| SP-708 | Worker-runner flush pi output on DONE-missing (#253) | Staged | — |
+| SP-709 | spine wait --until failed matches phase failed (#252) | Staged | — |
+| SP-710 | Gate evidence cargo/task allowlist (#254) | Staged | — |
+| SP-711 | Lane commit ignore .pi/.pi-smart-router (#255) | Staged | — |
+| SP-712 | Doctor ETIMEDOUT on list-models advisory (#256) | Staged | — |
+
+**Phase 82 exit criteria:**
+
+- [ ] Operator approved scope
+- [ ] SP-707–SP-712 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #252–#256 closed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD before tag; **v2.14.1 published**
+
+**Release note (planned):** v2.14.1 — consumer bugfixes from git-ai batch; post-mortem v2.14.0.
 
 ---
 
