@@ -30,7 +30,11 @@ import { reportTaskProgress } from "../src/worker-tools/report-progress.mjs";
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { loadSpineConfig } from "./spine-config.mjs";
 import { isStubDeliveryOnlyScope } from "../src/batch/contract-stub-delivery.mjs";
-import { writeWorkerDoneMarker } from "../src/batch/worker-output.mjs";
+import {
+	resolveWorkerOutputConfig,
+	truncateLiveLogBytes,
+	writeWorkerDoneMarker,
+} from "../src/batch/worker-output.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
 import { DEFAULT_TASKS_ROOT } from "../src/config/spine-init-constants.mjs";
 import {
@@ -128,6 +132,25 @@ export async function buildWorkerPiArgs({
 	});
 	piArgs.push(tailPrompt);
 	return piArgs;
+}
+
+/**
+ * SP-708 (#253): build the pi stdout/stderr flush payload for the DONE-missing path.
+ * Mirrors the non-zero exit path so operators keep salvage context when pi exits 0
+ * without writing .DONE. Each stream is byte-capped with the same truncation helper
+ * as terminal worker-output capture; the cap comes from lanes.workerOutputMaxBytes
+ * (default 262144 bytes, see resolveWorkerOutputConfig).
+ *
+ * @param {{stdout?: string|null, stderr?: string|null}} result
+ * @param {object} [config] spine-config object (lanes.workerOutputMaxBytes override)
+ * @returns {{stdout: string, stderr: string}}
+ */
+export function buildDoneMissingPiOutputFlush(result, config = {}) {
+	const maxBytes = resolveWorkerOutputConfig(config).maxBytes;
+	return {
+		stderr: truncateLiveLogBytes(result?.stderr ?? "", maxBytes),
+		stdout: truncateLiveLogBytes(result?.stdout ?? "", maxBytes),
+	};
 }
 
 /**
@@ -445,6 +468,10 @@ async function runWorkerRunner() {
 
 	if (!fs.existsSync(donePath)) {
 		console.error("pi exited but .DONE was not created");
+		// SP-708 (#253): flush capped pi output for salvage context, same as non-zero path.
+		const flush = buildDoneMissingPiOutputFlush(result, spineConfig);
+		if (flush.stderr) process.stderr.write(flush.stderr);
+		if (flush.stdout) process.stdout.write(flush.stdout);
 		process.exit(1);
 	}
 
