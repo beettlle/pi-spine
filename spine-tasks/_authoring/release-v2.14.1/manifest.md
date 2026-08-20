@@ -5,7 +5,7 @@
 **Target version:** v2.14.1
 **Bump type:** patch
 **Profile:** patch
-**Operator approved scope:** no
+**Operator approved scope:** yes (2026-08-20)
 **Composition choice:** A — Consumer bugfix patch (post-v2.14.0 git-ai batch findings)
 **Worker model pin:** `kimi-coding/k3` (thinking: high) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
