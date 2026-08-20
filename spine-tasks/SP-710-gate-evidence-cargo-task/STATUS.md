@@ -1,7 +1,7 @@
 # SP-710: Gate evidence allow cargo/task + safe PATH prefix — Status
 
-**Current Step:** Step 3: Testing & Verification
-**Status:** In Progress
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** Complete
 **Last Updated:** 2026-08-19
 **Review Level:** 1
 **Review Counter:** 0
@@ -41,7 +41,7 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** In Progress
+**Status:** Complete
 
 - [x] `npm run typecheck` — clean
 - [x] Contract tests: 45 pass / 0 fail (`evidence-cargo-task.test.mjs`, `evidence.test.mjs`), exit 0
@@ -50,7 +50,9 @@
 
 ## Step 4: Documentation & Delivery
 
-**Status:** Not Started
+**Status:** Complete
+
+- [x] `.DONE` created; completion criteria met: cargo/task accepted, bounded PATH prefix works with arbitrary `$` still rejected, doctor/preflight advisory non-blocking, closes #254
 
 ---
 
