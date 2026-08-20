@@ -1,7 +1,7 @@
 # SP-709: spine wait --until failed matches terminal batch failure — Status
 
 **Current Step:** Step 3: Documentation & Delivery
-**Status:** In Progress
+**Status:** Completed
 **Last Updated:** 2026-08-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -37,6 +37,7 @@
 **Status:** In Progress
 
 - Docs check: `skills/spine-orchestrate-waves/SKILL.md` and `docs/adoption/agent-orchestrated-waves.md` `--until` examples already include `failed`; the fix makes them work as written — no doc change needed.
+- [x] Create `.DONE`
 
 ---
 
