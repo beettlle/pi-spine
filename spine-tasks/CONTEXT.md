@@ -2300,7 +2300,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Authoring:** 2026-08-19 · Manifest: [`spine-tasks/_authoring/release-v2.14.1/manifest.md`](_authoring/release-v2.14.1/manifest.md)
 
-**Profile:** patch — composition A (consumer bugfix). Operator approved scope: **pending**. Worker pin: `kimi-coding/k3` (do not change mid-release). Post-ship findings from git-ai batch `20260815T223806`.
+**Profile:** patch — composition A (consumer bugfix). Operator approved scope 2026-08-20. Worker pin: `kimi-coding/k3` (do not change mid-release). Post-ship findings from git-ai batch `20260815T223806`.
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
@@ -2313,7 +2313,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Phase 82 exit criteria:**
 
-- [ ] Operator approved scope
+- [x] Operator approved scope (2026-08-20)
 - [ ] SP-707–SP-712 `.DONE` and integrated on `main`
 - [ ] Post-integrate `release:check` green after each wave
 - [ ] #252–#256 closed
