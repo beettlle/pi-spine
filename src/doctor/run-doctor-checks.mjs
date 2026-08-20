@@ -34,6 +34,7 @@ import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
 import { buildQuotaRiskDoctorCheck } from "./quota-risk.mjs";
+import { buildEvidenceConfigWarnDoctorChecks } from "./evidence-config-warn.mjs";
 import { metricsFilePath, readMetricsLines } from "../batch/metrics.mjs";
 import {
 	buildCheckoutVersionSkewDoctorCheck,
@@ -409,6 +410,11 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		if (!workerBackendCheck.ok) issueCount++;
 		for (const testingCheck of buildTestingEvidenceDoctorChecks(configResult.config)) {
 			checks.push(testingCheck);
+		}
+		// Advisory only (SP-710): warn when configured testing.* commands would be
+		// rejected by the no-shell evidence executor at gate time; never hard-fail.
+		for (const evidenceWarnCheck of buildEvidenceConfigWarnDoctorChecks(configResult.config)) {
+			checks.push(evidenceWarnCheck);
 		}
 		let quotaMetricsLines;
 		try {
