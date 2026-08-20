@@ -104,6 +104,14 @@ export function reconciliationMatchesUntil(result, untilDiagnoses) {
 		return true;
 	}
 
+	// `--until failed` must wake on terminal batch failure even when reconcile
+	// reports a failure-class diagnosis (worker_done_missing, worker_orphaned,
+	// engine_orphaned) instead of the literal "failed" token (#252). Explicit
+	// diagnosis tokens still match directly via the check above.
+	if (untilDiagnoses.has("failed") && result.phase === "failed") {
+		return true;
+	}
+
 	for (const pseudo of deriveWaitPseudoDiagnoses(result)) {
 		if (untilDiagnoses.has(pseudo)) {
 			return true;
