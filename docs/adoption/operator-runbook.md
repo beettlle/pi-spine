@@ -1492,6 +1492,7 @@ Use the **checkout CLI** for dogfood on this repo: `node bin/spine.mjs …` (or 
 | [#197](https://github.com/beettlle/pi-spine/issues/197) | `state_drift` suggests `resume --force` but detached resume rejects `phase=running` | Eligibility uses terminal-success / `doneInLane` — **no manual `pause` first** (SP-635) |
 | [#198](https://github.com/beettlle/pi-spine/issues/198) | Resume engine hangs after host integrate; `batch complete` blocked by live PID | Engine finalizes / exits; diagnose shows `engine_still_running` limbo — not “running reviews” (SP-636/SP-637) |
 | [#199](https://github.com/beettlle/pi-spine/issues/199) | Gate evidence rejects `python` | Allow project-local `.venv/bin/python` / `venv/bin/python3` relative paths; bare `python` still rejected (SP-638) |
+| [#254](https://github.com/beettlle/pi-spine/issues/254) | Gate evidence rejects `cargo` / `task` and `PATH="$HOME/.cargo/bin:…"` prefix | `cargo` / `task` added to the allowlist; documented `PATH="…"` prefix with bounded entries (`$PATH`, `$HOME/<relative>`, project-relative) allowed — arbitrary `$` still rejected; doctor/preflight warn (non-blocking) when `testing.*` would be rejected (SP-710) |
 | [#160](https://github.com/beettlle/pi-spine/issues/160) Phase A | Need stet/external CLI at gate | Point `testing.*` at `scripts/…` wrappers — validated sandbox, no shell metachar widen (SP-639). **Phase B** allowlisted `&&` — see [v2.7.0 operator UX](#v270-operator-ux--evidence-phase-b-202-160) (SP-653) |
 | [#200](https://github.com/beettlle/pi-spine/issues/200) | Lane commit stages hook `.venv` symlink | Default ignore includes `.venv`; lane commit skips hook noise (SP-640) |
 | [#201](https://github.com/beettlle/pi-spine/issues/201) | `batch complete` archives while lane commits never landed | Complete **refuses** when `doneInLane && !doneOnMain`; diagnose suggests `spine batch salvage --batch <id> --lane <n> --integrate` (SP-644/SP-645) |
@@ -1550,10 +1551,11 @@ Gate evidence runs config `testing.build` / `testing.test` / `testing.testWithCo
 | Shape | Example | Notes |
 |-------|---------|-------|
 | Phase A — `scripts/` wrapper | `"testWithCoverage": "scripts/run-coverage.sh"` | Relative path under `scripts/`; no shell metacharacters (SP-639) |
-| Phase A — single allowlisted argv | `"build": "npm run typecheck"`, `"test": "npm test"` | First token must be `npm` / `node` / `npx` / `pnpm` / `yarn` (or project-local `.venv/bin/python`) |
+| Phase A — single allowlisted argv | `"build": "npm run typecheck"`, `"test": "npm test"` | First token must be `npm` / `node` / `npx` / `pnpm` / `yarn` / `cargo` / `task` (or project-local `.venv/bin/python`) |
+| Documented `PATH="…"` prefix | `"test": "PATH=\"$HOME/.cargo/bin:$PATH\" cargo test"` | Entries bounded to `$PATH`, `$HOME/<relative>` toolchain dirs, and project-relative paths; other `$` expansions stay rejected (SP-710, [#254](https://github.com/beettlle/pi-spine/issues/254)) |
 | Phase B — allowlisted `&&` only | `"build": "npm run typecheck && npm test"` | Each segment allowlisted; join with `&&` only (SP-653; **partial** [#160](https://github.com/beettlle/pi-spine/issues/160)) |
 
-**Reject (fail-closed):** `;`, `|`, redirects (`>`, `<`), backticks, `$VAR` / `$(…)` / `${…}`, lone `&`. Phase C (`testing.review` slot) remains deferred.
+**Reject (fail-closed):** `;`, `|`, redirects (`>`, `<`), backticks, `$VAR` / `$(…)` / `${…}` outside the documented `PATH="…"` prefix, lone `&`. Phase C (`testing.review` slot) remains deferred.
 
 Greenfield `spine init` templates use Phase B chains (`npm run typecheck && npm test`) once SP-653 is on the installed CLI. If an older template or hand-edited config still uses rejected metacharacters, either switch to Phase-A-safe single commands / `scripts/…` wrappers or upgrade to a CLI with Phase B.
 

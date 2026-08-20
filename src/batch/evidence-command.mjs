@@ -4,6 +4,7 @@
  * Phase B: allowlisted package-manager segments may be joined with `&&` only.
  */
 
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { validateWorkerLaunchScriptPath } from "../config/worker-launch-script.mjs";
@@ -13,7 +14,15 @@ import { validateWorkerLaunchScriptPath } from "../config/worker-launch-script.m
  * Extend this set deliberately when adding new package-manager or runtime support.
  * @type {Set<string>}
  */
-export const ALLOWED_EVIDENCE_EXECUTABLES = new Set(["npm", "node", "pnpm", "yarn", "npx"]);
+export const ALLOWED_EVIDENCE_EXECUTABLES = new Set([
+	"npm",
+	"node",
+	"pnpm",
+	"yarn",
+	"npx",
+	"cargo",
+	"task",
+]);
 
 /**
  * Interpreter basenames allowed only as project-local relative paths under
@@ -34,6 +43,82 @@ const EVIDENCE_SCRIPTS_PREFIX = "scripts/";
  * chain separators so a lone `&` still fails closed.
  */
 const SHELL_METACHAR_PATTERN = /[;|&`<>]|>>|\$\(|\$\{/;
+
+/**
+ * Documented `PATH="…"` segment prefix (SP-710, #254). Only the double-quoted
+ * assignment form at the start of a segment is recognized; every colon-separated
+ * entry must pass {@link isAllowedEvidencePathEntry}.
+ */
+const PATH_PREFIX_PATTERN = /^PATH="([^"]*)"(\s+|$)/;
+
+/** Charset for a safe PATH entry (no whitespace, shell metacharacters, or `~`). */
+const SAFE_PATH_ENTRY_PATTERN = /^[A-Za-z0-9._/-]+$/;
+
+/**
+ * Bounded allowlist for `PATH="…"` prefix entries:
+ * - literal `$PATH` (preserve the inherited lookup path),
+ * - `$HOME/<relative>` toolchain dirs such as `$HOME/.cargo/bin`,
+ * - project-relative paths such as `node_modules/.bin` (resolved against the
+ *   evidence cwd, never absolute and never traversing `..`).
+ * Any other `$` expansion, absolute path, or parent traversal is rejected so the
+ * prefix cannot widen into general shell variable expansion.
+ *
+ * @param {string} entry
+ * @returns {boolean}
+ */
+export function isAllowedEvidencePathEntry(entry) {
+	if (entry === "$PATH") {
+		return true;
+	}
+	if (entry.startsWith("$HOME/")) {
+		return isSafeRelativePathEntry(entry.slice("$HOME/".length));
+	}
+	if (entry.includes("$")) {
+		return false;
+	}
+	return isSafeRelativePathEntry(entry);
+}
+
+/**
+ * @param {string} relativePath
+ * @returns {boolean}
+ */
+function isSafeRelativePathEntry(relativePath) {
+	if (!relativePath || !SAFE_PATH_ENTRY_PATTERN.test(relativePath)) {
+		return false;
+	}
+	if (path.posix.isAbsolute(relativePath) || /^[A-Za-z]:/.test(relativePath)) {
+		return false;
+	}
+	return !relativePath.split("/").some((segment) => segment === "..");
+}
+
+/**
+ * Split a validated `PATH="…"` prefix off the start of a chain segment.
+ * Returns the raw colon-separated entries plus the remaining command text.
+ *
+ * @param {string} segment
+ * @returns {{ pathEntries: string[], rest: string }}
+ */
+function splitEvidencePathPrefix(segment) {
+	const match = segment.match(PATH_PREFIX_PATTERN);
+	if (!match) {
+		return { pathEntries: [], rest: segment };
+	}
+	const pathEntries = match[1].split(":");
+	for (const entry of pathEntries) {
+		if (!isAllowedEvidencePathEntry(entry)) {
+			throw new EvidenceCommandError(
+				`evidence PATH prefix entry not allowed: ${entry}`,
+			);
+		}
+	}
+	const rest = segment.slice(match[0].length).trim();
+	if (!rest) {
+		throw new EvidenceCommandError("evidence PATH prefix without a command");
+	}
+	return { pathEntries, rest };
+}
 
 export class EvidenceCommandError extends Error {
 	/**
@@ -58,8 +143,14 @@ export function assertSafeEvidenceCommand(command) {
 		throw new EvidenceCommandError("evidence command contains newlines");
 	}
 
+	// Strip documented `PATH="…"` prefixes per `&&` segment first; the bounded
+	// entry allowlist above keeps `$HOME` / `$PATH` / project-relative dirs only.
+	// Any `$` surviving the strip is still rejected below (fail-closed).
+	const segments = splitEvidenceChainSegments(trimmed);
+	const stripped = segments.map((segment) => splitEvidencePathPrefix(segment).rest);
+
 	// Allow `&&` as the only chain operator; strip it before metachar / `$` scans.
-	const withoutChains = trimmed.replaceAll("&&", " ");
+	const withoutChains = stripped.join(" ").replaceAll("&&", " ");
 	if (SHELL_METACHAR_PATTERN.test(withoutChains)) {
 		throw new EvidenceCommandError("evidence command contains shell metacharacters");
 	}
@@ -163,7 +254,8 @@ export function parseEvidenceCommandArgv(command) {
  * @returns {string[]}
  */
 function parseEvidenceSegmentArgv(segment, chainMode) {
-	const argv = tokenizeCommandLine(segment);
+	const { rest } = splitEvidencePathPrefix(segment);
+	const argv = tokenizeCommandLine(rest);
 	if (argv.length === 0) {
 		throw new EvidenceCommandError("empty evidence command");
 	}
@@ -338,6 +430,50 @@ function tokenizeCommandLine(line) {
 }
 
 /**
+ * Expand validated PATH prefix entries into concrete directories (no shell).
+ * `$HOME` maps to `os.homedir()`, `$PATH` splices the inherited lookup path,
+ * and project-relative entries stay relative to the evidence cwd.
+ *
+ * @param {string[]} entries
+ * @returns {string[]}
+ */
+function expandEvidencePathEntries(entries) {
+	/** @type {string[]} */
+	const expanded = [];
+	for (const entry of entries) {
+		if (entry === "$PATH") {
+			if (process.env.PATH) {
+				expanded.push(...process.env.PATH.split(path.delimiter).filter(Boolean));
+			}
+			continue;
+		}
+		if (entry.startsWith("$HOME/")) {
+			expanded.push(path.join(os.homedir(), entry.slice("$HOME/".length)));
+			continue;
+		}
+		expanded.push(entry);
+	}
+	return expanded;
+}
+
+/**
+ * Collect validated `PATH="…"` prefix entries across all `&&` segments.
+ * Assumes {@link assertSafeEvidenceCommand} already ran for the command.
+ *
+ * @param {string} command
+ * @returns {string[]}
+ */
+function collectEvidencePathPrefixEntries(command) {
+	const segments = splitEvidenceChainSegments(command.trim());
+	/** @type {string[]} */
+	const entries = [];
+	for (const segment of segments) {
+		entries.push(...splitEvidencePathPrefix(segment).pathEntries);
+	}
+	return entries;
+}
+
+/**
  * @param {string} projectRoot
  * @param {string} command
  * @param {number} [maxBytes]
@@ -347,6 +483,16 @@ export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) 
 
 	try {
 		const chain = parseEvidenceCommandChain(command);
+		const pathEntries = collectEvidencePathPrefixEntries(command);
+		/** @type {NodeJS.ProcessEnv | undefined} */
+		let env;
+		if (pathEntries.length > 0) {
+			const expanded = expandEvidencePathEntries(pathEntries);
+			if (process.env.PATH) {
+				expanded.push(process.env.PATH);
+			}
+			env = { ...process.env, PATH: expanded.join(path.delimiter) };
+		}
 		/** @type {string[]} */
 		const outputs = [];
 		for (const argv of chain) {
@@ -357,6 +503,7 @@ export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) 
 				stdio: ["ignore", "pipe", "pipe"],
 				timeout: 10 * 60 * 1000,
 				maxBuffer: maxBytes,
+				...(env ? { env } : {}),
 			});
 			outputs.push(String(output ?? ""));
 		}
