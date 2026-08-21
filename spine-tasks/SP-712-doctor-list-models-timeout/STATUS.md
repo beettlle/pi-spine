@@ -1,8 +1,8 @@
 # SP-712: Doctor ETIMEDOUT on --list-models is advisory — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** Not Started
-**Last Updated:** 2026-08-19
+**Current Step:** Step 1: Advisory ETIMEDOUT handling
+**Status:** In Progress
+**Last Updated:** 2026-08-21
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -12,7 +12,10 @@
 
 ## Step 0: Preflight
 
-**Status:** Not Started
+**Status:** Complete
+
+- [x] Confirm ETIMEDOUT currently maps to `ok: false` + `pi login` — confirmed: `checkModelProvider` catch-all in `src/doctor/run-doctor-checks.mjs` (~line 196) returns `ok:false, suggestedCommand:"pi login"` for any spawn error including ETIMEDOUT
+- [x] Confirm preflight fails on any `!entry.ok` doctor row — confirmed: `src/config/spine-preflight-lib.mjs:193` filters `!entry.ok` into failed checks; `warning:true` + `ok:true` rows pass
 
 ## Step 1: Advisory ETIMEDOUT handling
 

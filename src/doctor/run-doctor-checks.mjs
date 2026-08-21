@@ -167,39 +167,73 @@ function parsePiListModelsOutput(output) {
 	return null;
 }
 
-function checkModelProvider() {
-	if (!commandExists("pi")) {
+const LIST_MODELS_TIMEOUT_MS = 30_000;
+
+function isListModelsTimeout(err) {
+	return err?.code === "ETIMEDOUT";
+}
+
+function listModelsTimeoutCheck() {
+	// Advisory (#256): a slow model catalog fetch is not an auth failure, so
+	// preflight must not hard-fail or suggest `pi login` on timeout alone.
+	return {
+		ok: true,
+		warning: true,
+		detail: `pi --list-models timed out after ${LIST_MODELS_TIMEOUT_MS / 1000}s (slow model catalog fetch) — not an auth failure`,
+		suggestedCommand: "retry spine doctor",
+	};
+}
+
+/**
+ * @param {object} [options]
+ * @param {(cmd: string, args: string[], opts: object) => any} [options.spawn]
+ * @param {(cmd: string) => boolean} [options.commandExistsFn]
+ */
+export function checkModelProvider({ spawn = spawnSync, commandExistsFn = commandExists } = {}) {
+	if (!commandExistsFn("pi")) {
 		return { ok: false, detail: "pi not installed", suggestedCommand: "https://pi.dev" };
 	}
 
+	let result;
 	try {
-		const result = spawnSync("pi", ["--list-models"], {
+		result = spawn("pi", ["--list-models"], {
 			encoding: "utf-8",
 			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 30_000,
+			timeout: LIST_MODELS_TIMEOUT_MS,
 		});
-		if (result.error) throw result.error;
-		const output = `${result.stdout ?? ""}
-${result.stderr ?? ""}`.trim();
-		const model = parsePiListModelsOutput(output);
-		if (!model) {
-			return {
-				ok: false,
-				detail: "no models available",
-				suggestedCommand: "pi login",
-			};
-		}
-		return {
-			ok: true,
-			detail: `${model.provider}/${model.id}`,
-		};
 	} catch (err) {
+		if (isListModelsTimeout(err)) return listModelsTimeoutCheck();
 		return {
 			ok: false,
 			detail: err.message,
 			suggestedCommand: "pi login",
 		};
 	}
+
+	const spawnError = result?.error;
+	if (isListModelsTimeout(spawnError)) return listModelsTimeoutCheck();
+	if (spawnError) {
+		return {
+			ok: false,
+			detail: spawnError.message,
+			suggestedCommand: "pi login",
+		};
+	}
+
+	const output = `${result?.stdout ?? ""}
+${result?.stderr ?? ""}`.trim();
+	const model = parsePiListModelsOutput(output);
+	if (!model) {
+		return {
+			ok: false,
+			detail: "no models available",
+			suggestedCommand: "pi login",
+		};
+	}
+	return {
+		ok: true,
+		detail: `${model.provider}/${model.id}`,
+	};
 }
 
 function resolveTasksRoot(projectRoot, configResult) {
@@ -328,6 +362,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	record("model provider configured", modelCheck.ok, {
 		detail: modelCheck.detail,
 		suggestedCommand: modelCheck.suggestedCommand,
+		warning: modelCheck.warning,
 	});
 
 	const configResult = loadSpineConfig(projectRoot);
