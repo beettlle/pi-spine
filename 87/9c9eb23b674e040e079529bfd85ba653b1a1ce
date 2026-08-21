@@ -1,0 +1,26 @@
+.gitignore
+  s_c99e79d756ad37::t_5910d99190b9ed 57-59
+scripts/run-coverage.mjs
+  s_c99e79d756ad37::t_4587bf1a153859 5-8,11,29-34,39-46,75,82-114,176-193,200-210,256-271
+.github/workflows/ci.yml
+  s_c99e79d756ad37::t_dc5fec6fa39f69 12,50-59
+  s_c99e79d756ad37::t_d0bfe601bbeac1 60
+.spine/rules-manifest.json
+  s_c99e79d756ad37::t_2a8f684e157518 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "879c9eb23b674e040e079529bfd85ba653b1a1ce",
+  "prompts": {},
+  "sessions": {
+    "s_c99e79d756ad37": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-5876480b-6091-4df2-849a-51e668257702",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
