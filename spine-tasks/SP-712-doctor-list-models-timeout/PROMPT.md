@@ -38,7 +38,14 @@ Closes #256 — When `spawnSync("pi", ["--list-models"])` returns ETIMEDOUT (slo
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/doctor/list-models-timeout.test.mjs` |
-| fileScopeMustChange | `src/doctor/run-doctor-checks.mjs`, `tests/doctor/list-models-timeout.test.mjs` |
+| fileScopeMustChange | `tests/doctor/list-models-timeout.test.mjs` |
+
+## Amendments
+
+### Amendment 1 — 2026-08-20 (operator)
+
+**Issue:** Preflight `prelanded-file-scope` — `src/doctor/run-doctor-checks.mjs` already changed on `main` (SP-710 Wave 0 evidence-config-warn wiring).
+**Resolution:** Redirected `fileScopeMustChange` to the new timeout test only. File Scope still allows edits to `run-doctor-checks.mjs` for the ETIMEDOUT advisory (#256).
 
 ## Steps
 
