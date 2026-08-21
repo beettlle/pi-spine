@@ -1,0 +1,18 @@
+spine-tasks/SP-712-doctor-list-models-timeout/STATUS.md
+  h_2a17159c706ba1 3-5,15-18
+src/doctor/run-doctor-checks.mjs
+  h_2a17159c706ba1 170-193,197,199,202,205,212-236,365
+tests/doctor/list-models-timeout.test.mjs
+  h_2a17159c706ba1 1-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "df7894c4b54b50300536853ffd60f7d7e4c763af",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
