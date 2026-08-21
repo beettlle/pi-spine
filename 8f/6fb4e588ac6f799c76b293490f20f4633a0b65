@@ -1,0 +1,24 @@
+tests/fixtures/migrate/taskplane-config.json
+  s_c99e79d756ad37::t_76359a74de9330 1-30
+tests/migrate/taskplane-config.test.mjs
+  s_c99e79d756ad37::t_388b519dcc6aa7 70-71
+  s_c99e79d756ad37::t_9586878f38e5a7 17-18
+tests/migrate/spine-migrate.test.mjs
+  s_c99e79d756ad37::t_08b4b59dfc15bf 14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "8f6fb4e588ac6f799c76b293490f20f4633a0b65",
+  "prompts": {},
+  "sessions": {
+    "s_c99e79d756ad37": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-5876480b-6091-4df2-849a-51e668257702",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
