@@ -22,7 +22,7 @@ test("resolveWorktreeSetupIgnorePaths defaults to .venv when unset or empty", ()
 		...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS,
 	]);
 	assert.deepEqual(resolveWorktreeSetupIgnorePaths({ worktreeSetupIgnorePaths: ["pi-spine"] }), [
-		".venv",
+		...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS,
 		"pi-spine",
 	]);
 });

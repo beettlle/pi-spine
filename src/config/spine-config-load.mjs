@@ -16,14 +16,21 @@ import { missingConfigHint } from "./missing-config-hint.mjs";
 export { resolveGatePostureConfig } from "./gate-posture-config.mjs";
 
 /**
- * Default hook paths skipped at lane commit when config omits ignore paths (SP-640 / #200).
- * Worktree setup hooks commonly `ln -s` `.venv` into lane worktrees; do not stage that symlink.
+ * Default hook paths skipped at lane commit when config omits ignore paths (SP-640 / #200,
+ * SP-711 / #255). Worktree setup hooks commonly `ln -s` `.venv` into lane worktrees, and pi
+ * worker sessions write runtime trees under `.pi/` / `.pi-smart-router/`; do not stage any of
+ * those into orch merges.
  */
-export const DEFAULT_WORKTREE_SETUP_IGNORE_PATHS = Object.freeze([".venv"]);
+export const DEFAULT_WORKTREE_SETUP_IGNORE_PATHS = Object.freeze([
+	".venv",
+	".pi",
+	".pi-smart-router",
+]);
 
 /**
  * Resolve effective `worktreeSetupIgnorePaths`, always unioning defaults so hook `.venv`
- * stays ignored. Opt in to committing an ignore path via task `fileScope`, not by clearing config.
+ * and pi session trees stay ignored. Opt in to committing an ignore path via task
+ * `fileScope`, not by clearing config.
  *
  * @param {Record<string, unknown> | null | undefined} config
  * @returns {string[]}
