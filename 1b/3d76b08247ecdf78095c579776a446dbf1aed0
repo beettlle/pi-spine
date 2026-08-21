@@ -1,0 +1,19 @@
+spine-tasks/SP-712-doctor-list-models-timeout/.reviews/0-20260821T050316.md
+  s_42795060dc9c14::t_a8df47401d436f 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1b3d76b08247ecdf78095c579776a446dbf1aed0",
+  "prompts": {},
+  "sessions": {
+    "s_42795060dc9c14": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7cc2e8e-2b51-4522-b857-0c507fe46d98",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
