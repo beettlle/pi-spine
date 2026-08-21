@@ -1,0 +1,16 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1498
+spine-tasks/SP-711-lane-commit-pi-ignore/STATUS.md
+  h_2a17159c706ba1 3,23-27,31-34,38-40,48,63-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "4db95c2c09794838548d0793b9579ed1ada3d356",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
