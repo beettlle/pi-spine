@@ -1,0 +1,19 @@
+tests/batch/lane-commit.test.mjs
+  s_42795060dc9c14::t_5dde752a072726 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "48e4e1601aafd0812887ac0b616e48fb7e5eff8d",
+  "prompts": {},
+  "sessions": {
+    "s_42795060dc9c14": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7cc2e8e-2b51-4522-b857-0c507fe46d98",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
