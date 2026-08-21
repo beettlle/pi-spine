@@ -14,7 +14,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const FIXTURE_PATH = path.join(REPO_ROOT, ".pi", "taskplane-config.json");
+// Tracked fixture — do not use gitignored `.pi/` (absent on clean CI checkouts).
+const FIXTURE_PATH = path.join(REPO_ROOT, "tests", "fixtures", "migrate", "taskplane-config.json");
 
 test("loadTaskplaneConfig reads repo fixture", () => {
 	const config = loadTaskplaneConfig(FIXTURE_PATH);
@@ -66,5 +67,6 @@ test("loadTaskplaneConfig fails loud on missing file", () => {
 
 test("DEFAULT_TASKPLANE_SOURCE_PATH matches repo layout", () => {
 	assert.equal(DEFAULT_TASKPLANE_SOURCE_PATH, ".pi/taskplane-config.json");
-	assert.ok(fs.existsSync(path.join(REPO_ROOT, DEFAULT_TASKPLANE_SOURCE_PATH)));
+	// Default path is consumer-local and gitignored; assert tracked migrate fixture instead.
+	assert.ok(fs.existsSync(FIXTURE_PATH));
 });

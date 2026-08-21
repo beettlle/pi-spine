@@ -1,0 +1,30 @@
+{
+  "configVersion": 1,
+  "taskRunner": {
+    "project": {
+      "name": "pi-spine",
+      "description": "Orchestration spine for long-running pi development — a pi package with parallel batch tooling, worktree lanes, and Taskplane-compatible task packets."
+    },
+    "paths": {
+      "tasks": "taskplane-tasks"
+    },
+    "testing": {
+      "commands": {
+        "unit": "npm run typecheck",
+        "build": "npm run typecheck"
+      }
+    },
+    "taskAreas": {
+      "general": {
+        "path": "taskplane-tasks",
+        "prefix": "TP",
+        "context": "taskplane-tasks/CONTEXT.md"
+      }
+    }
+  },
+  "orchestrator": {
+    "orchestrator": {
+      "maxLanes": 5
+    }
+  }
+}

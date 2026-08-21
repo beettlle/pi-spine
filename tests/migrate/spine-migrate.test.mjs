@@ -11,7 +11,8 @@ import {
 } from "../../bin/spine-migrate-from-taskplane.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const FIXTURE = path.join(REPO_ROOT, ".pi", "taskplane-config.json");
+// Tracked fixture — do not use gitignored `.pi/` (absent on clean CI checkouts).
+const FIXTURE = path.join(REPO_ROOT, "tests", "fixtures", "migrate", "taskplane-config.json");
 
 test("parseMigrateArgs rejects --source without value", () => {
 	assert.throws(
