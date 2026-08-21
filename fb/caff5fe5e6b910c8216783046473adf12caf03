@@ -1,0 +1,25 @@
+src/batch/evidence-path-prefix.mjs
+  s_42795060dc9c14::t_06b6cea9e1f563 1-111
+src/batch/evidence-command.mjs
+  s_42795060dc9c14::t_95aa4d2d876710 10-18
+src/batch/evidence-command-error.mjs
+  s_42795060dc9c14::t_e8855a45db2209 1-14
+.spine/rules-manifest.json
+  s_42795060dc9c14::t_68e8b2d5182dbf 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "fbcaff5fe5e6b910c8216783046473adf12caf03",
+  "prompts": {},
+  "sessions": {
+    "s_42795060dc9c14": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7cc2e8e-2b51-4522-b857-0c507fe46d98",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
