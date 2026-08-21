@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   ci:
@@ -45,6 +46,17 @@ jobs:
 
       - name: Tests with coverage (77% line minimum)
         run: npm run coverage:check --if-present
+
+      # Full TAP is omitted from the job log on Actions (truncation hides failures).
+      # run-coverage.mjs writes coverage-run.tap.log; upload on any outcome for triage.
+      - name: Upload coverage TAP log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-run-tap
+          path: coverage-run.tap.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: CLI smoke checks
         run: |

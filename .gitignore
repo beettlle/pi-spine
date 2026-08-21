@@ -54,5 +54,8 @@ graphify-out/
 .review/session.json
 .review/spine-stet-baseline.ref
 
+# Coverage suite full TAP (written by scripts/run-coverage.mjs; uploaded on CI)
+coverage-run.tap.log
+
 # Dependencies
 node_modules/
