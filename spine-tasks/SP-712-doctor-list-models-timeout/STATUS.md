@@ -45,6 +45,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-19 | Task staged | PROMPT.md and STATUS.md created for v2.14.1 release |
+| 2026-08-20 | Prelanded amend | fileScopeMustChange → list-models-timeout.test.mjs only (SP-710 touched run-doctor-checks.mjs) |
 
 ## Blockers
 
