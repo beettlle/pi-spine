@@ -1,7 +1,7 @@
 # SP-711: Lane commit ignore .pi/ and .pi-smart-router/ — Status
 
-**Current Step:** Step 3: Documentation & Delivery
-**Status:** In Progress
+**Current Step:** Done
+**Status:** Completed
 **Last Updated:** 2026-08-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,7 +35,7 @@
 
 ## Step 3: Documentation & Delivery
 
-**Status:** In Progress
+**Status:** Completed
 
 - [x] `docs/adoption/operator-runbook.md` — added #255 row noting default lane-commit ignores for pi agent runtime dirs
 
