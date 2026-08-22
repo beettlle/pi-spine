@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-19 (Phase 82 v2.14.1 authoring; Next → SP-713)
+**Last Updated:** 2026-08-22 (Phase 82 v2.14.1 published; Next → SP-713)
 **Status:** Active
 **Next Task ID:** SP-713
 
@@ -2304,23 +2304,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-707 | Post-mortem v2.14.0 | Staged | — |
-| SP-708 | Worker-runner flush pi output on DONE-missing (#253) | Staged | — |
-| SP-709 | spine wait --until failed matches phase failed (#252) | Staged | — |
-| SP-710 | Gate evidence cargo/task allowlist (#254) | Staged | — |
-| SP-711 | Lane commit ignore .pi/.pi-smart-router (#255) | Staged | — |
-| SP-712 | Doctor ETIMEDOUT on list-models advisory (#256) | Staged | — |
+| SP-707 | Post-mortem v2.14.0 | Done | — |
+| SP-708 | Worker-runner flush pi output on DONE-missing (#253) | Done | — |
+| SP-709 | spine wait --until failed matches phase failed (#252) | Done | — |
+| SP-710 | Gate evidence cargo/task allowlist (#254) | Done | — |
+| SP-711 | Lane commit ignore .pi/.pi-smart-router (#255) | Done | — |
+| SP-712 | Doctor ETIMEDOUT on list-models advisory (#256) | Done | — |
 
 **Phase 82 exit criteria:**
 
 - [x] Operator approved scope (2026-08-20)
-- [ ] SP-707–SP-712 `.DONE` and integrated on `main`
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] #252–#256 closed
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD before tag; **v2.14.1 published**
+- [x] SP-707–SP-712 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after each wave
+- [x] #252–#256 closed
+- [x] `npm run release:check` green on publish HEAD (`80d4f76c` / tag `v2.14.1`)
+- [x] CI green on HEAD before tag; **v2.14.1 published** — npm `pi-spine@2.14.1`; Release [32591899492](https://github.com/beettlle/pi-spine/actions/runs/32591899492)
 
-**Release note (planned):** v2.14.1 — consumer bugfixes from git-ai batch; post-mortem v2.14.0.
+**Release note:** v2.14.1 — Consumer bugfixes (#252–#256): worker-runner output on DONE-missing, spine wait failed match, gate evidence cargo/task, lane commit `.pi` ignore, doctor list-models ETIMEDOUT advisory; post-mortem v2.14.0; CI migrate fixture + coverage diagnostic fixes.
 
 ---
 
