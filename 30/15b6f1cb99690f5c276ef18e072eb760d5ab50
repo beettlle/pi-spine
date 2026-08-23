@@ -1,0 +1,14 @@
+scripts/coverage-policy.mjs
+  h_2a17159c706ba1 57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3015b6f1cb99690f5c276ef18e072eb760d5ab50",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
