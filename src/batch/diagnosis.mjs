@@ -337,14 +337,19 @@ export function buildHeadline(diagnosis, ctx = {}) {
 				return `${batchLabel} failed at worker launch — repair lane worktree git, then retry`;
 			}
 			if (REVIEW_SPAWN_FAILURE_EXIT_REASONS.has(ctx.exitReason ?? "")) {
-				const reviewKind =
-					ctx.exitReason === "final_review_spawn_failed" ||
-					ctx.exitReason === "final_review_timeout"
-						? "final review"
-						: "code review";
+				const isFinal = ctx.exitReason.startsWith("final_review");
+				const isTimeout = ctx.exitReason.endsWith("_timeout");
+				const reviewKind = isFinal ? "final review" : "code review";
+				
+				if (isTimeout) {
+					return ctx.failedTaskId
+						? `${batchLabel} ${reviewKind} timed out for task ${ctx.failedTaskId} — retry or increase SPINE_REVIEW_TIMEOUT_MS`
+						: `${batchLabel} reviewer spawn timed out — retry`;
+				}
+				
 				return ctx.failedTaskId
-					? `${batchLabel} ${reviewKind} timed out for task ${ctx.failedTaskId} — retry or increase SPINE_REVIEW_TIMEOUT_MS`
-					: `${batchLabel} reviewer spawn timed out — retry`;
+					? `${batchLabel} ${reviewKind} spawn failed for task ${ctx.failedTaskId} — retry`
+					: `${batchLabel} reviewer spawn failed — retry`;
 			}
 			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
