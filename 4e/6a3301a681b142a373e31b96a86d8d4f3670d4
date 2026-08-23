@@ -1,0 +1,18 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-719-wire-arch-fs-tests/.reviews/1-20260823T221029.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-719-wire-arch-fs-tests/.reviews/final-20260823T221055.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "4e6a3301a681b142a373e31b96a86d8d4f3670d4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
