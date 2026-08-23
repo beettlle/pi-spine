@@ -80,7 +80,7 @@ function loadArchivedBatchState(projectRoot, batchId) {
 function buildLaneSummary(lanes, classifiedTasks) {
 	return (lanes ?? []).map((lane) => {
 		const taskIds = lane.taskIds ?? [];
-		return redactSecrets({
+		return redactHandoffSecrets({
 			laneNumber: lane.laneNumber,
 			laneId: lane.laneId ?? `lane-${lane.laneNumber}`,
 			taskIds,
@@ -115,7 +115,7 @@ function buildRestoreCommands(reconciliation) {
  */
 function formatPendingTasks(pendingTasks) {
 	return pendingTasks.map((task) =>
-		redactSecrets({
+		redactHandoffSecrets({
 			taskId: task.taskId,
 			status: task.status ?? "pending",
 			taskFolder: task.taskFolder ?? null,

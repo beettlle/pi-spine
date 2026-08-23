@@ -8,7 +8,7 @@
 **Operator approved scope:** yes (2026-08-22)
 **Composition choice:** A — Brutal-audit hardening (P0/P1 security + reliability)
 **Worker model pin:** `kimi-coding/k3` (thinking: high) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Agent pin override:** yes (2026-08-22, Kimi quota 403 on SP-716 — `agents.activeProfile` → `hard` / `google/gemini-3.1-pro-preview` for SP-716 retry only; restore `default` after wave 0 land)
 **GitNexus:** refreshed 2026-08-22 — status up-to-date with HEAD (`a2da164`)
 
 ---
