@@ -1,0 +1,14 @@
+package.json
+  h_2a17159c706ba1 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "864d11fb98f0c27427b2d5b5dc244773b4f53a55",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
