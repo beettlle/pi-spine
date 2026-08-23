@@ -1,0 +1,16 @@
+spine-tasks/SP-718-salvage-final-review-failure/.reviews/1-20260823T220848.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-718-salvage-final-review-failure/.reviews/final-20260823T220914.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "c874359886715c0118770693c35e58e9e9726930",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
