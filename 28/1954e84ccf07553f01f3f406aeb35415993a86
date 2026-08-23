@@ -1,0 +1,22 @@
+src/batch/batch-id.mjs
+  h_2a17159c706ba1 1-103
+src/batch/engine.mjs
+  h_2a17159c706ba1 175
+src/batch/state.mjs
+  h_2a17159c706ba1 37-43
+src/cli/journal-follow.mjs
+  h_2a17159c706ba1 6,44,164-172
+src/cli/lane-logs.mjs
+  h_2a17159c706ba1 207-215
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "281954e84ccf07553f01f3f406aeb35415993a86",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
