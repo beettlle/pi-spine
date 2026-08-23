@@ -1,0 +1,18 @@
+spine-tasks/SP-715-engine-liveness-starttime/.reviews/1-20260823T011157.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-715-engine-liveness-starttime/.reviews/final-20260823T011222.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-715-engine-liveness-starttime/.reviews/final-20260823T011454.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "5f2bae03b3ca902f72b42b4e7bfc6de74c252ec6",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
