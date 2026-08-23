@@ -34,19 +34,13 @@ export {
 	clearBatchEnginePid,
 	validateBatchState,
 } from "./state-guards.mjs";
-
-/**
- * @returns {string} batchId `{YYYYMMDD}T{HHmmss}` UTC
- */
-export function generateBatchId(now = new Date()) {
-	const y = now.getUTCFullYear();
-	const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-	const d = String(now.getUTCDate()).padStart(2, "0");
-	const h = String(now.getUTCHours()).padStart(2, "0");
-	const min = String(now.getUTCMinutes()).padStart(2, "0");
-	const s = String(now.getUTCSeconds()).padStart(2, "0");
-	return `${y}${m}${d}T${h}${min}${s}`;
-}
+export {
+	BATCH_ID_PATTERN,
+	batchIdRejectionReason,
+	generateBatchId,
+	isValidBatchId,
+	validateBatchId,
+} from "./batch-id.mjs";
 
 /**
  * Reset lane stall clocks at resume handoff so dashboard does not show pre-resume heartbeats as stale.

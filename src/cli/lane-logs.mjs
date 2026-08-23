@@ -204,7 +204,15 @@ export async function runLaneLogs(options) {
 		};
 	}
 
-	const batchId = resolveFollowBatchId(projectRoot, argBatchId);
+	let batchId = null;
+	try {
+		batchId = resolveFollowBatchId(projectRoot, argBatchId);
+	} catch (error) {
+		return {
+			exitCode: 1,
+			output: `${error instanceof Error ? error.message : String(error)}\n`,
+		};
+	}
 	if (!batchId) {
 		return {
 			exitCode: 1,
