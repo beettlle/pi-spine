@@ -11,6 +11,7 @@ import {
 	computeJournalChecksum,
 	verifyJournalChecksum,
 } from "./journal-checksum.mjs";
+import { capPayloadBytes, redactSecretsDeep } from "../util/secret-redact.mjs";
 
 export { verifyJournalChecksum };
 
@@ -52,8 +53,6 @@ export const STRUCTURAL_JOURNAL_EVENT_TYPES = Object.freeze(
 
 const META_KEYS = new Set(["correlationId", "laneId", "laneNumber", "taskId", "payload"]);
 
-const REDACT_KEY_PATTERN = /key|token|secret|password/i;
-
 /**
  * @param {string} projectRoot
  * @param {string} batchId
@@ -63,46 +62,24 @@ export function journalPath(projectRoot, batchId) {
 }
 
 /**
+ * Redact secrets in a journal payload via the shared policy (SP-716):
+ * denylisted keys are masked and string values are scanned for
+ * value-shaped secrets (sk-, ghp_, bearer, connection strings, ...).
+ *
  * @param {unknown} value
  * @returns {unknown}
  */
 export function redactSecrets(value) {
-	if (value == null || typeof value !== "object") return value;
-
-	if (Array.isArray(value)) {
-		return value.map((entry) => redactSecrets(entry));
-	}
-
-	/** @type {Record<string, unknown>} */
-	const out = {};
-	for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (value))) {
-		if (REDACT_KEY_PATTERN.test(key)) {
-			out[key] = "[REDACTED]";
-		} else if (entry && typeof entry === "object") {
-			out[key] = redactSecrets(entry);
-		} else {
-			out[key] = entry;
-		}
-	}
-	return out;
+	return redactSecretsDeep(value);
 }
 
 /**
+ * Cap payload size by UTF-8 bytes (SP-716).
+ *
  * @param {Record<string, unknown>} payload
  */
 export function capPayloadSize(payload) {
-	const serialized = JSON.stringify(payload);
-	if (Buffer.byteLength(serialized, "utf-8") <= MAX_PAYLOAD_BYTES) {
-		return payload;
-	}
-
-	const truncated = {
-		_truncated: true,
-		_originalBytes: Buffer.byteLength(serialized, "utf-8"),
-		_maxBytes: MAX_PAYLOAD_BYTES,
-		preview: serialized.slice(0, MAX_PAYLOAD_BYTES - 256),
-	};
-	return truncated;
+	return capPayloadBytes(payload, MAX_PAYLOAD_BYTES);
 }
 
 /**

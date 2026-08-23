@@ -6,20 +6,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeJsonAtomic, writeTextAtomic } from "../fs/atomic-write.mjs";
+import { redactTextSecrets } from "../util/secret-redact.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 
 const DEFAULT_MAX_BYTES = 262_144;
 const DEFAULT_LIVE_LOG_MAX_BYTES = 262_144;
 const DEFAULT_TAIL_LINES = 200;
 const TRUNCATION_MARKER = "\n...[worker output truncated]...\n";
-
-const BUILTIN_REDACT_PATTERNS = [
-	/DATABASE_URL=\S+/gi,
-	/(?:postgres|mysql|mongodb)(?:\+srv)?:\/\/[^\s]+/gi,
-	/(?:bearer|token|secret|password|api[_-]?key)\s*[:=]\s*\S+/gi,
-	/sk-[a-zA-Z0-9]{20,}/g,
-	/ghp_[a-zA-Z0-9]{20,}/g,
-];
 
 /**
  * @param {object} [config]
@@ -57,19 +50,15 @@ export function resolveWorkerOutputConfig(config = {}) {
 }
 
 /**
+ * Redact value-shaped secrets in worker output via the shared policy
+ * (SP-716); caller-configured deny patterns run after the builtin set.
+ *
  * @param {string} text
  * @param {ReturnType<typeof resolveWorkerOutputConfig>} outputConfig
  */
 export function redactWorkerOutput(text, outputConfig) {
 	if (!text) return "";
-	let out = text;
-	for (const pattern of BUILTIN_REDACT_PATTERNS) {
-		out = out.replace(pattern, "[REDACTED]");
-	}
-	for (const pattern of outputConfig.denyPatterns) {
-		out = out.replace(pattern, "[REDACTED]");
-	}
-	return out;
+	return /** @type {string} */ (redactTextSecrets(String(text), outputConfig.denyPatterns));
 }
 
 /**

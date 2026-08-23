@@ -7,9 +7,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { METRICS_DEFAULTS } from "../config/defaults.mjs";
+import { redactSecretsDeep } from "../util/secret-redact.mjs";
 import { readReviewLevel } from "./review.mjs";
 
-const REDACT_KEY_PATTERN = /key|token|secret|password|prompt/i;
+// Metrics additionally redacts prompt text (worker prompts may embed
+// secrets) while preserving usage counters for cost rollup.
+const METRICS_REDACT_KEY_PATTERN = /key|token|secret|password|prompt/i;
 const USAGE_KEYS = new Set(["tokensIn", "tokensOut", "estimatedUsd"]);
 
 /**
@@ -80,34 +83,18 @@ export function isRunMetricsAppendOnlyDrift(
 }
 
 /**
- * @param {unknown} value
- * @returns {unknown}
- */
-function redactMetricValue(value) {
-	if (value == null || typeof value !== "object") return value;
-	if (Array.isArray(value)) {
-		return value.map((entry) => redactMetricValue(entry));
-	}
-
-	/** @type {Record<string, unknown>} */
-	const out = {};
-	for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (value))) {
-		if (REDACT_KEY_PATTERN.test(key) && !USAGE_KEYS.has(key)) {
-			out[key] = "[REDACTED]";
-		} else if (entry && typeof entry === "object") {
-			out[key] = redactMetricValue(entry);
-		} else {
-			out[key] = entry;
-		}
-	}
-	return out;
-}
-
-/**
+ * Redact secret-like fields via the shared policy (SP-716), keeping the
+ * metrics-specific prompt denylist and usage-counter exemptions.
+ *
  * @param {object} record
  */
 export function sanitizeMetricRecord(record) {
-	return /** @type {typeof record} */ (redactMetricValue(record));
+	return /** @type {typeof record} */ (
+		redactSecretsDeep(record, {
+			keyPattern: METRICS_REDACT_KEY_PATTERN,
+			allowedKeys: USAGE_KEYS,
+		})
+	);
 }
 
 /**
