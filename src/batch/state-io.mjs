@@ -111,6 +111,52 @@ export function resolveBatchStateFileForValidation(projectRoot, batchId = null) 
 }
 
 /**
+ * Quarantine a corrupt batch-history file instead of silently resetting it to
+ * `[]`. The audit trail is operator-facing state: losing it silently hides
+ * evidence of what batches ran, so the original bytes are preserved under
+ * `.spine/runtime/` and a loud error is emitted (#261).
+ *
+ * @param {string} projectRoot
+ * @param {string} filePath
+ * @param {string} reason
+ * @returns {string|null} quarantine path, or null if quarantine failed
+ */
+function quarantineCorruptBatchHistory(projectRoot, filePath, reason) {
+	const quarantineDir = path.join(projectRoot, ".spine", "runtime");
+	const quarantinePath = path.join(quarantineDir, `batch-history.json.corrupt.${Date.now()}`);
+	try {
+		fs.mkdirSync(quarantineDir, { recursive: true });
+		try {
+			fs.renameSync(filePath, quarantinePath);
+		} catch {
+			// Fall back to copy+unlink when rename is unsupported (e.g. cross-device).
+			fs.copyFileSync(filePath, quarantinePath);
+			fs.unlinkSync(filePath);
+		}
+	} catch (err) {
+		console.error(
+			`[spine] batch-history.json is corrupt (${reason}) and quarantine failed: ${
+				err instanceof Error ? err.message : String(err)
+			}. Refusing to overwrite the corrupt file.`,
+		);
+		return null;
+	}
+	console.error(
+		`[spine] batch-history.json is corrupt (${reason}); quarantined to ${path.relative(
+			projectRoot,
+			quarantinePath,
+		)}. Starting a fresh history — inspect the quarantined file to recover prior entries.`,
+	);
+	return quarantinePath;
+}
+
+/**
+ * Append an entry to `.spine/batch-history.json` atomically.
+ *
+ * The write goes through `writeJsonAtomic` (temp file + rename) so a crash or
+ * concurrent reader never observes a truncated history (#261). A corrupt
+ * existing file is quarantined, never silently reset to `[]`.
+ *
  * @param {string} projectRoot
  * @param {object} entry
  */
@@ -123,13 +169,25 @@ export function appendBatchHistoryEntry(projectRoot, entry) {
 	if (fs.existsSync(filePath)) {
 		try {
 			const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-			if (Array.isArray(parsed)) history = parsed;
-		} catch {
-			history = [];
+			if (Array.isArray(parsed)) {
+				history = parsed;
+			} else {
+				if (quarantineCorruptBatchHistory(projectRoot, filePath, "root value is not an array") === null) {
+					throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+				}
+			}
+		} catch (err) {
+			if (err instanceof SyntaxError) {
+				if (quarantineCorruptBatchHistory(projectRoot, filePath, err.message) === null) {
+					throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+				}
+			} else {
+				throw err;
+			}
 		}
 	}
 
 	history.push(entry);
-	fs.writeFileSync(filePath, `${JSON.stringify(history, null, 2)}\n`, "utf-8");
+	writeJsonAtomic(filePath, history);
 	return filePath;
 }
