@@ -16,47 +16,30 @@ import {
 import {
 	readJournalEvents,
 	readJournalTail,
-	redactSecrets,
 } from "../batch/journal.mjs";
+import { redactSecretsDeep, redactTextSecrets } from "../util/secret-redact.mjs";
 import { computePendingTasks } from "../batch/resume-multi-validate.mjs";
 import { formatJournalTailEntry } from "../dashboard/snapshot.mjs";
-
-const SECRET_VALUE_PATTERN =
-	/\b[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET)[A-Z0-9_]*\s*=\s*\S+|\b(sk-[A-Za-z0-9_-]{8,})\b/gi;
 
 const JOURNAL_TAIL_LIMIT = 10;
 
 /**
+ * Redact value-shaped secrets in free text via the shared policy (SP-716).
+ *
  * @param {string} text
  */
 export function redactHandoffText(text) {
-	if (typeof text !== "string") return text;
-	return text.replace(SECRET_VALUE_PATTERN, "[REDACTED]");
+	return redactTextSecrets(text);
 }
 
 /**
+ * Recursively redact denylisted keys and value-shaped secrets via the
+ * shared policy (SP-716).
+ *
  * @param {unknown} value
  */
 export function redactHandoffSecrets(value) {
-	if (value == null || typeof value !== "object") {
-		return typeof value === "string" ? redactHandoffText(value) : value;
-	}
-
-	if (Array.isArray(value)) {
-		return value.map((entry) => redactHandoffSecrets(entry));
-	}
-
-	const redacted = redactSecrets(value);
-	if (!redacted || typeof redacted !== "object") {
-		return typeof redacted === "string" ? redactHandoffText(redacted) : redacted;
-	}
-
-	/** @type {Record<string, unknown>} */
-	const out = {};
-	for (const [key, entry] of Object.entries(/** @type {Record<string, unknown>} */ (redacted))) {
-		out[key] = redactHandoffSecrets(entry);
-	}
-	return out;
+	return redactSecretsDeep(value);
 }
 
 /**

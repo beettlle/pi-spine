@@ -37,7 +37,10 @@
 
 ## Step 2: Migrate callers
 
-**Status:** Not Started
+**Status:** Completed
+
+- [x] journal.mjs, worker-output.mjs, handoff.mjs use shared module
+- [x] Metrics append path if applicable in scope
 
 ## Step 3: Testing & Verification
 
