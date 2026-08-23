@@ -1,0 +1,14 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 847
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "34f541e7d121100a073792636dc72df483d4e592",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
