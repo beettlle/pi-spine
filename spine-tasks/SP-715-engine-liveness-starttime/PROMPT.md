@@ -46,22 +46,22 @@ Closes #259 — Add `isEngineProcessAlive(pid, expectedStartedAt)` comparing sto
 
 ### Step 1: Paired liveness helper
 
-- [ ] Add `isEngineProcessAlive(pid, expectedStartedAt)` with injectable liveness probe
-- [ ] macOS: compare ps start time; Linux: `/proc/<pid>/starttime` when available
-- [ ] Windows: PID-only fallback with code comment
+- [x] Add `isEngineProcessAlive(pid, expectedStartedAt)` with injectable liveness probe
+- [x] macOS: compare ps start time; Linux: `/proc/<pid>/starttime` when available
+- [x] Windows: PID-only fallback with code comment
 
 ### Step 2: Wire engine ownership checks
 
-- [ ] Update `state-guards`, `reconcile-orphan`, and related callers to use paired check
+- [x] Update `state-guards`, `reconcile-orphan`, and related callers to use paired check
 
 ### Step 3: Testing & Verification
 
-- [ ] Add PID-reuse mismatch test
-- [ ] Run contract `testCommand` only
+- [x] Add PID-reuse mismatch test
+- [x] Run contract `testCommand` only
 
 ### Step 4: Documentation & Delivery
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ## Documentation Requirements
 
@@ -70,9 +70,9 @@ Closes #259 — Add `isEngineProcessAlive(pid, expectedStartedAt)` comparing sto
 
 ## Completion Criteria
 
-- [ ] Mismatched start time returns not-alive
-- [ ] Existing orphan-dead-engine tests pass
-- [ ] Closes #259
+- [x] Mismatched start time returns not-alive
+- [x] Existing orphan-dead-engine tests pass
+- [x] Closes #259
 
 ## Do NOT
 
