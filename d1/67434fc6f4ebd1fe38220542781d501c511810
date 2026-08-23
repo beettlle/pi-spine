@@ -1,0 +1,37 @@
+spine-tasks/SP-716-secret-redaction-unify/.reviews/1-20260823T012102.md
+  s_0c498c193aecd7::t_7526cae32b8984 1-8
+spine-tasks/SP-716-secret-redaction-unify/.reviews/final-20260823T012154.md
+  s_0c498c193aecd7::t_4ff429b4ce879f 1-11
+spine-tasks/SP-716-secret-redaction-unify/STATUS.md
+  s_0c498c193aecd7::t_6fd230a3a6dca4 4-5,11-30,33-36,40-43,47-50,54-56
+src/batch/journal.mjs
+  s_0c498c193aecd7::t_421a55ccc5fa19 14,65-68,73,77-78,82
+src/batch/metrics.mjs
+  s_0c498c193aecd7::t_64dd949f276ac1 10,13-15,86-88,92-97
+src/batch/worker-output.mjs
+  s_0c498c193aecd7::t_150029c9f3a01d 9,53-55,61
+src/cli/handoff.mjs
+  s_0c498c193aecd7::t_bfafa10415936a 20,27-28,32,36-38,42
+src/util/secret-redact.mjs
+  s_0c498c193aecd7::t_3b072bd24f7ae9 1-140
+tests/batch/journal-redaction-parity.test.mjs
+  s_0c498c193aecd7::t_8c8e809ff94812 1-110
+tests/util/secret-redact.test.mjs
+  s_0c498c193aecd7::t_c60b053187d924 1-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "d167434fc6f4ebd1fe38220542781d501c511810",
+  "prompts": {},
+  "sessions": {
+    "s_0c498c193aecd7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7f5e57c2-87a4-40fc-ae84-547bd128ae07",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
