@@ -1,0 +1,19 @@
+spine-tasks/SP-718-salvage-final-review-failure/STATUS.md
+  s_692dcf3a0287a0::t_4b921ebe930313 3-5,13,17,21,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6031021058d7b155f671da5620404162aea06bcb",
+  "prompts": {},
+  "sessions": {
+    "s_692dcf3a0287a0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a6b07059-70f0-4385-9d2f-85f70ba61552",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
