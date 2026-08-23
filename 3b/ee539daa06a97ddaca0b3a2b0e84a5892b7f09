@@ -1,0 +1,22 @@
+src/cli/handoff.mjs
+  s_0c498c193aecd7::t_f73c17acaaf666 83
+  s_0c498c193aecd7::t_2a7836f3c4c2ce 118
+spine-tasks/_authoring/release-v2.15.0/manifest.md
+  s_0c498c193aecd7::t_e4176f6f9690c1 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3bee539daa06a97ddaca0b3a2b0e84a5892b7f09",
+  "prompts": {},
+  "sessions": {
+    "s_0c498c193aecd7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7f5e57c2-87a4-40fc-ae84-547bd128ae07",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
