@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { isProcessAlive } from "../process/liveness.mjs";
+import { isEngineProcessAlive } from "../process/liveness.mjs";
 
 /** @type {ReadonlySet<string>} */
 export const ACTIVE_PHASES = new Set(["planning", "running", "paused"]);
@@ -54,16 +54,17 @@ export function evaluateBatchStateWriteGuard(projectRoot, state) {
 			const incomingBatchId = String(state.batchId ?? "");
 			const onDiskPhase = String(onDisk.phase ?? "");
 			const ownerPid = readBatchEnginePid(onDisk);
+			const ownerStartedAt = readBatchEngineStartedAt(onDisk);
 			if (
 				incomingBatchId &&
 				onDiskBatchId &&
 				incomingBatchId !== onDiskBatchId &&
 				TERMINAL_BATCH_PHASES.has(onDiskPhase) &&
-				(!ownerPid || !isProcessAlive(ownerPid))
+				(!ownerPid || !isEngineProcessAlive(ownerPid, ownerStartedAt))
 			) {
 				return { allowed: true };
 			}
-			if (ownerPid && ownerPid !== process.pid && isProcessAlive(ownerPid)) {
+			if (ownerPid && ownerPid !== process.pid && isEngineProcessAlive(ownerPid, ownerStartedAt)) {
 				return { allowed: false, reason: "stale_engine_pid" };
 			}
 		} catch {
@@ -93,6 +94,28 @@ export function readBatchEnginePid(raw) {
 	const fromResilience = Number(resilience?.enginePid);
 	if (Number.isFinite(fromResilience) && fromResilience > 0) return fromResilience;
 	const topLevel = Number(state.enginePid);
+	if (Number.isFinite(topLevel) && topLevel > 0) return topLevel;
+	return null;
+}
+
+/**
+ * Stored engine start time (epoch ms) paired with `enginePid` for PID-reuse-safe
+ * liveness checks (SP-715 / #259).
+ *
+ * @param {unknown} raw
+ * @returns {number|null}
+ */
+export function readBatchEngineStartedAt(raw) {
+	if (!raw || typeof raw !== "object") return null;
+	/** @type {Record<string, unknown>} */
+	const state = /** @type {Record<string, unknown>} */ (raw);
+	const resilience =
+		state.resilience && typeof state.resilience === "object"
+			? /** @type {Record<string, unknown>} */ (state.resilience)
+			: null;
+	const fromResilience = Number(resilience?.engineStartedAt);
+	if (Number.isFinite(fromResilience) && fromResilience > 0) return fromResilience;
+	const topLevel = Number(state.engineStartedAt);
 	if (Number.isFinite(topLevel) && topLevel > 0) return topLevel;
 	return null;
 }

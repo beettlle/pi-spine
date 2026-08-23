@@ -3,7 +3,7 @@
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
-import { isProcessAlive } from "../process/liveness.mjs";
+import { isEngineProcessAlive, isProcessAlive } from "../process/liveness.mjs";
 import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
 import {
 	appendJournalEvent,
@@ -24,6 +24,7 @@ import {
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "./state.mjs";
+import { readBatchEngineStartedAt } from "./state-guards.mjs";
 
 /**
  * @param {object} ctx
@@ -271,7 +272,7 @@ export function reconcileOrphanRunningState({ projectRoot, state }) {
 	}
 
 	const enginePid = readBatchEnginePid(state);
-	if (enginePid != null && !isProcessAlive(enginePid)) {
+	if (enginePid != null && !isEngineProcessAlive(enginePid, readBatchEngineStartedAt(state))) {
 		clearBatchEnginePid(state);
 		changed = true;
 	}
