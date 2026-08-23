@@ -1,0 +1,22 @@
+spine-tasks/SP-716-secret-redaction-unify/STATUS.md
+  h_2a17159c706ba1 40-43
+src/batch/journal.mjs
+  h_2a17159c706ba1 14,65-68,73,77-78,82
+src/batch/metrics.mjs
+  h_2a17159c706ba1 10,13-15,86-88,92-97
+src/batch/worker-output.mjs
+  h_2a17159c706ba1 9,53-55,61
+src/cli/handoff.mjs
+  h_2a17159c706ba1 20,27-28,32,36-38,42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "2317c2e9b9b7e67fba00c6508ec65bf3bb6cae63",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
