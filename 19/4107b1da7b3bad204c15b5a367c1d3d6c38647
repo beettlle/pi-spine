@@ -1,0 +1,14 @@
+src/batch/state-io.mjs
+  h_2a17159c706ba1 114-159,172-186,191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "194107b1da7b3bad204c15b5a367c1d3d6c38647",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
