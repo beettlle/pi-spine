@@ -1,0 +1,14 @@
+tests/arch/import-cycles.test.mjs
+  h_2a17159c706ba1 25-33,186-187,190,195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "607bf3ab61eaf3a59b70e5f023aa2097078fa0e5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
