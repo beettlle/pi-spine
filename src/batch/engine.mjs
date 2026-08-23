@@ -172,7 +172,7 @@ export async function startBatch({
 		};
 	}
 
-	const batchId = generateBatchId();
+	const batchId = generateBatchId(new Date(), projectRoot);
 	const baseBranch = config.baseBranch ?? "main";
 	const orchBranch = `orch/spine-${batchId}`;
 

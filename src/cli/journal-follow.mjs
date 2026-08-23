@@ -3,6 +3,7 @@
  */
 
 import fs from "node:fs";
+import { validateBatchId } from "../batch/batch-id.mjs";
 import {
 	journalPath,
 	normalizeJournalEvent,
@@ -40,7 +41,7 @@ export function formatJournalFollowLine(event) {
  * @param {string|null|undefined} batchId
  */
 export function resolveFollowBatchId(projectRoot, batchId) {
-	if (batchId) return batchId;
+	if (batchId) return validateBatchId(batchId);
 
 	const reconciliation = reconcileBatch({ projectRoot });
 	if (reconciliation.batchId) return reconciliation.batchId;
@@ -160,7 +161,15 @@ const defaultDeps = {
 export async function runJournalFollow(options) {
 	const { projectRoot, args = [], follow = true, deps = defaultDeps } = options;
 	const { batchId: argBatchId, laneId, json } = parseJournalFollowArgs(args);
-	const batchId = resolveFollowBatchId(projectRoot, argBatchId);
+	let batchId = null;
+	try {
+		batchId = resolveFollowBatchId(projectRoot, argBatchId);
+	} catch (error) {
+		return {
+			exitCode: 1,
+			output: `${error instanceof Error ? error.message : String(error)}\n`,
+		};
+	}
 
 	if (!batchId) {
 		return {
