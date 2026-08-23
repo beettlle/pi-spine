@@ -1,0 +1,60 @@
+spine-tasks/SP-714-batch-id-validation/STATUS.md
+  s_6a33b7df7667a5::t_159b1038e252cd 1-59
+spine-tasks/SP-715-engine-liveness-starttime/STATUS.md
+  s_6a33b7df7667a5::t_5888fb07a521e8 1-33
+spine-tasks/SP-716-secret-redaction-unify/PROMPT.md
+  s_6a33b7df7667a5::t_27dc67c79a01f7 1-87
+spine-tasks/SP-716-secret-redaction-unify/STATUS.md
+  s_6a33b7df7667a5::t_bcd083cb640d12 1-33
+spine-tasks/SP-715-engine-liveness-starttime/PROMPT.md
+  s_6a33b7df7667a5::t_e26b917895fdab 1-84
+spine-tasks/SP-718-salvage-final-review-failure/PROMPT.md
+  s_6a33b7df7667a5::t_dfd68177102d71 1-82
+spine-tasks/SP-719-wire-arch-fs-tests/PROMPT.md
+  s_6a33b7df7667a5::t_df7655055d3d19 1-86
+spine-tasks/SP-717-batch-history-atomic/PROMPT.md
+  s_6a33b7df7667a5::t_158e7f9da15c01 1-82
+spine-tasks/SP-714-batch-id-validation/PROMPT.md
+  s_6a33b7df7667a5::t_7377318d92a9dd 1-89
+spine-tasks/SP-713-rel215-post-mortem/STATUS.md
+  s_6a33b7df7667a5::t_d73612ce32dd42 1-59
+spine-tasks/SP-719-wire-arch-fs-tests/STATUS.md
+  s_6a33b7df7667a5::t_d9f3dd62da7baf 1-33
+spine-tasks/dependencies.json
+  s_6a33b7df7667a5::t_6213047bd8a1f4 1865-1872
+spine-tasks/SP-717-batch-history-atomic/STATUS.md
+  s_6a33b7df7667a5::t_a6fb544b4a48ae 1-33
+spine-tasks/_authoring/release-v2.15.0/manifest.md
+  s_0c498c193aecd7::t_f96fe984efc415 8
+  s_6a33b7df7667a5::t_f8682d4ced4c8a 1-7,9-164
+spine-tasks/SP-718-salvage-final-review-failure/STATUS.md
+  s_6a33b7df7667a5::t_e5b7b7abc413fc 1-33
+spine-tasks/CONTEXT.md
+  s_6a33b7df7667a5::t_a2c4f77252870b 3,5
+spine-tasks/SP-713-rel215-post-mortem/PROMPT.md
+  s_6a33b7df7667a5::t_8003af47a5ab7a 1-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "35c53a1a8c9a77f0a9d93f78dd37210a57470cfa",
+  "prompts": {},
+  "sessions": {
+    "s_0c498c193aecd7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7f5e57c2-87a4-40fc-ae84-547bd128ae07",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_6a33b7df7667a5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-97dda078-ce6c-4470-acc7-ed5640763e99",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
