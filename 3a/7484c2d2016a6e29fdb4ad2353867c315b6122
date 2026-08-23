@@ -1,0 +1,16 @@
+spine-tasks/SP-717-batch-history-atomic/.reviews/1-20260823T214852.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-717-batch-history-atomic/.reviews/final-20260823T215219.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3a7484c2d2016a6e29fdb4ad2353867c315b6122",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
