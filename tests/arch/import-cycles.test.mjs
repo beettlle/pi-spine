@@ -22,6 +22,15 @@ const BATCH_ROOT = path.join(REPO_ROOT, "src", "batch");
 const ALLOWED_CLUSTER_CYCLES = new Set([
 	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> resume-multi.mjs -> engine-lanes.mjs",
 	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> resume-multi.mjs -> engine-lanes.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> batch-state-io.mjs",
+	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
+	"batch-meta-reconstruct.mjs -> journal-rebuild.mjs -> journal-rebuild-structural.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"batch-meta-reconstruct.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
+	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> state.mjs -> batch-state-io.mjs",
 ]);
 
 /**
@@ -174,16 +183,16 @@ test("gate.mjs does not import evidence.mjs (breaks evidence gate triangle)", ()
 	);
 });
 
-test("reconcile.mjs reads gate state via gate-evidence-read leaf", () => {
-	const reconcileImports = batchImportGraph["reconcile.mjs"] ?? [];
+test("reconcile-batch.mjs reads gate state via gate-evidence-read leaf", () => {
+	const reconcileImports = batchImportGraph["reconcile-batch.mjs"] ?? [];
 	assert.ok(
 		reconcileImports.includes("gate-evidence-read.mjs"),
-		"reconcile.mjs must import gate-evidence-read.mjs for loadGateRecord",
+		"reconcile-batch.mjs must import gate-evidence-read.mjs for loadGateRecord",
 	);
 	assert.equal(
 		reconcileImports.includes("gate.mjs"),
 		false,
-		"reconcile.mjs must not import gate.mjs (avoids evidence triangle)",
+		"reconcile-batch.mjs must not import gate.mjs (avoids evidence triangle)",
 	);
 });
 
