@@ -60,6 +60,8 @@ Default detached `start`/`resume` return when the engine **starts**, not when wo
 
 **Single attached engine:** only one foreground `--attached` engine may own a batch at a time. `resilience.enginePid` is checked before attached `start`/`resume`. If that PID is still alive, the CLI fails fast with `attached_engine_already_running`. Use `spine batch resume --attached --force` to orphan the prior engine (`engine.orphan_terminated` in the journal) before handoff — do not run two `spine.mjs batch … --attached` processes for the same batch.
 
+**PID-reuse-safe engine liveness (SP-715 / #259):** engine ownership checks pair `resilience.enginePid` with `resilience.engineStartedAt` — on macOS/Linux the recorded start time is compared against the live process start time (`ps lstart` / `/proc/<pid>/starttime`), so a recycled PID owned by an unrelated process is treated as a dead engine and no longer blocks writes or skips orphan recovery. **Windows limitation:** liveness remains PID-only (`kill(pid, 0)`), so a recycled PID can still masquerade as the engine there.
+
 After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
 
 **Orphan recovery tree:**
