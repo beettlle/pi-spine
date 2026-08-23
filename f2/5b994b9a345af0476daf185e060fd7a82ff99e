@@ -1,0 +1,16 @@
+spine-tasks/SP-714-batch-id-validation/.reviews/1-20260823T011247.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-714-batch-id-validation/.reviews/final-20260823T011307.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "f25b994b9a345af0476daf185e060fd7a82ff99e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
