@@ -44,7 +44,10 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** Not Started
+**Status:** Completed
+
+- [x] Parity tests: same secret shape redacted identically across channels
+- [x] Run contract `testCommand` only
 
 ## Step 4: Documentation & Delivery
 
