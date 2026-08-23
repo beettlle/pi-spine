@@ -54,6 +54,8 @@ export const TEST_GLOBS = [
 	"tests/worker-tools/*.test.mjs",
 	"tests/coverage/*.test.mjs",
 	"tests/extensions/*.test.mjs",
+	"tests/arch/*.test.mjs",
+	"tests/fs/*.test.mjs",
 ];
 
 /**
@@ -74,12 +76,8 @@ export const TEST_GLOBS = [
  * so stale entries fail loudly instead of accumulating.
  */
 export const SUITE_DIR_ALLOWLIST = Object.freeze([
-	// Static architecture checks (import-cycle detection, reconcile-fixture verify).
-	"tests/arch",
 	// Shared scenario fixtures + scenario-registry probe, not a standalone suite.
 	"tests/fixtures",
-	// Low-level atomic-write util unit test.
-	"tests/fs",
 	// Test-helper infrastructure (git/scenario fixtures); guards helper internals.
 	"tests/helpers",
 	// On-demand script-integration suites (release proof gate, best-of-n, stet).
