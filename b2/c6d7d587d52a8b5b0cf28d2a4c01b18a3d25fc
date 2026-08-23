@@ -1,0 +1,16 @@
+docs/release/post-mortem-v2.14.1.md
+  h_2a17159c706ba1 1-243
+spine-tasks/SP-713-rel215-post-mortem/STATUS.md
+  h_2a17159c706ba1 3-5,15,17-19,45,52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "b2c6d7d587d52a8b5b0cf28d2a4c01b18a3d25fc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
