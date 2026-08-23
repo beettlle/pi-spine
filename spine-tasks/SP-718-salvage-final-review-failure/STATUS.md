@@ -1,8 +1,8 @@
 # SP-718: Salvage eligible after final-review spawn failure — Status
 
-**Current Step:** Step 1: Salvage eligibility
-**Status:** Not Started
-**Last Updated:** 2026-08-22
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** Completed
+**Last Updated:** 2026-08-23
 **Review Level:** 1
 **Size:** S
 
@@ -10,19 +10,19 @@
 
 ## Step 1: Salvage eligibility
 
-**Status:** Not Started
+**Status:** Completed
 
 ## Step 2: Diagnose copy
 
-**Status:** Not Started
+**Status:** Completed
 
 ## Step 3: Testing & Verification
 
-**Status:** Not Started
+**Status:** Completed
 
 ## Step 4: Documentation & Delivery
 
-**Status:** Not Started
+**Status:** Completed
 
 ---
 

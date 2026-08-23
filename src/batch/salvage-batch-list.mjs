@@ -12,6 +12,7 @@ import { journalPath, readJournalEvents } from "./journal.mjs";
 import { rebuildBatchStateFromJournal } from "./journal-rebuild.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
+import { classifyTaskDoneSemantics } from "./diagnosis-task-done.mjs";
 
 /** Exit reasons that block salvage even when a lane commit exists. */
 export const NON_SALVAGEABLE_EXIT_REASONS = new Set([
@@ -199,12 +200,22 @@ export function listSalvageableLanes(projectRoot, batchId) {
 	const baseBranch = String(rebuilt.baseBranch ?? seedState?.baseBranch ?? "main");
 	const committedTaskIds = laneCommittedTaskIds(journalEvents);
 	const seedTasks = seedState?.tasks;
+	const tasksRoot = seedState?.tasksRoot ?? "spine-tasks";
 
 	/** @type {Map<number, { laneNumber: number, salvageableTasks: string[], excludedTasks: string[] }>} */
 	const laneMap = new Map();
 
 	for (const rawTask of rebuilt.tasks ?? []) {
-		const task = enrichTaskWithSeedEvidence(rawTask, seedTasks);
+		let task = enrichTaskWithSeedEvidence(rawTask, seedTasks);
+		if (task.doneInLane !== true && task.doneOnMain !== true) {
+			task = classifyTaskDoneSemantics(task, {
+				projectRoot,
+				batchId: resolvedBatchId,
+				tasksRoot,
+				lanes: seedState?.lanes ?? [],
+			});
+		}
+		
 		const laneNumber = Number(task?.laneNumber);
 		if (!Number.isFinite(laneNumber) || laneNumber <= 0) continue;
 
