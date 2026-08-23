@@ -1,0 +1,20 @@
+spine-tasks/SP-715-engine-liveness-starttime/STATUS.md
+  h_2a17159c706ba1 4-5,13-15
+src/batch/reconcile-orphan.mjs
+  h_2a17159c706ba1 6,27,275
+src/batch/state-guards.mjs
+  h_2a17159c706ba1 8,57,63,67,98-119
+src/process/liveness.mjs
+  h_2a17159c706ba1 2-3,6-15,33-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3c1da54f1ef268b227e8ee597433b4944410a606",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
