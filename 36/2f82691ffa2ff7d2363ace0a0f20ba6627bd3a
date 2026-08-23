@@ -1,0 +1,18 @@
+spine-tasks/SP-716-secret-redaction-unify/STATUS.md
+  h_2a17159c706ba1 47-50
+tests/batch/journal-redaction-parity.test.mjs
+  h_2a17159c706ba1 1-110
+tests/util/secret-redact.test.mjs
+  h_2a17159c706ba1 1-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "362f82691ffa2ff7d2363ace0a0f20ba6627bd3a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
