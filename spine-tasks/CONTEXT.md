@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-22 (Phase 82 v2.14.1 published; Next → SP-713)
+**Last Updated:** 2026-08-22 (v2.15.0 release staged SP-713–719; Next → SP-720)
 **Status:** Active
-**Next Task ID:** SP-713
+**Next Task ID:** SP-720
 
 ---
 

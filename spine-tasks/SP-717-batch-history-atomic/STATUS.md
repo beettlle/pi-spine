@@ -1,0 +1,33 @@
+# SP-717: Atomic batch-history append; no silent wipe — Status
+
+**Current Step:** Step 1: Atomic history writes
+**Status:** Not Started
+**Last Updated:** 2026-08-22
+**Review Level:** 1
+**Size:** S
+
+---
+
+## Step 1: Atomic history writes
+
+**Status:** Not Started
+
+## Step 2: Corrupt file handling
+
+**Status:** Not Started
+
+## Step 3: Testing & Verification
+
+**Status:** Not Started
+
+## Step 4: Documentation & Delivery
+
+**Status:** Not Started
+
+---
+
+## Execution Log
+
+| Date | Event | Detail |
+|------|-------|--------|
+| 2026-08-22 | Task staged | v2.15.0 release packet |
