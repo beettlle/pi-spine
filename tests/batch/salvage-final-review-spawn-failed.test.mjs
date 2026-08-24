@@ -54,13 +54,13 @@ test("salvage lists commits and diagnose identifies spawn failure after final re
 			lanes: [{ laneNumber: 1, taskIds: [taskId] }],
 			tasks: [{ taskId, taskFolder: `${taskId}-smoke` }]
 		};
-		const rebuilt = rebuildBatchStateFromJournal(seedState, events);
+		void rebuildBatchStateFromJournal(seedState, events);
 
 		// For reconcileBatch, we need the seed state to be saved
 		const { saveEngineBatchState } = await import("../../src/batch/pause.mjs");
 		saveEngineBatchState(projectRoot, seedState);
 
-		const state = reconcileBatch({ projectRoot, batchId, verbose: true });
+		void reconcileBatch({ projectRoot, batchId, verbose: true });
 		const list = listSalvageableLanes(projectRoot, batchId);
 		assert.equal(list.ok, true, `salvage list should succeed: ${JSON.stringify(list)}`);
 		assert.equal(list.lanes?.length, 1, "should list 1 lane");
