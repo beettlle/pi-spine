@@ -35,7 +35,8 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 4. `spine preflight` green; **`npm run release:check` green (blocking gate)** on current `main`
 5. **CI workflow green on release commit** (release-safe profile — parity with `ci.yml`) before tag push
 6. Operator explicitly approved publish; version bumped and tag pushed (if approved)
-7. Final report with composition table, issues closed/deferred, verification output
+7. Every release-scoped `Closes #NNN` / `Closes: #NNN` issue is **CLOSED** on GitHub once its fix is on `main` (close after each land — do not wait for publish)
+8. Final report with composition table, issues closed/deferred, verification output
 
 ## Hard rules
 
@@ -57,6 +58,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** mid-release-edit `.spine/spine-config.json` agent pins (`agents.worker.model` / `agents.reviewer.model`) while a batch is running or integrated work is still unpublished. Pin **one worker** per release; escalate models **only** on content/contract failure — never on quota/403 or launch storms, which make releases worse (F7, [#248](https://github.com/beettlle/pi-spine/issues/248)). To override mid-release, first record the reason and date in the release manifest
 - **Heed** the doctor/preflight **quota-risk advisory** ([#251](https://github.com/beettlle/pi-spine/issues/251)): `spine doctor` surfaces `ok: true, warning: true` when escalate/hard worker pins target quota-constrained pools without headroom evidence, or recent run-metrics show launch-storm / quota-abort patterns. It is advisory only — never fails preflight — and does not change the mid-release pin-thrash ban above
 - **Always** push/sync `main` to `origin` after each land loop once the post-integrate regression gate is green — do not let `main` drift far ahead of `origin` during a release (F8, [#249](https://github.com/beettlle/pi-spine/issues/249))
+- **Always** close GitHub issues linked as `Closes #NNN` / `Closes: #NNN` **as soon as that task's work is on `main`** (after integrate + post-integrate `release:check` green) — do **not** defer closing until Phase 6 publish. Leave `Partial #NNN` / `Partial: #NNN` open. Phase 6 is only a final sweep for any still-open `Closes` links (v2.15.0 left #257–#261, #263 open after ship — avoid that)
 - **Do not** start a second batch while another batch is **running** on this repo
 - **Never** background `spine batch resume --attached` or `resume --attached --force` ([#163](https://github.com/beettlle/pi-spine/issues/163))
 - **Release and agent batches:** use **detached** `spine batch start|resume` (omit `--attached`); monitor with MonitorCreate, `spine wait`, or `spine status --diagnose` ([#163](https://github.com/beettlle/pi-spine/issues/163), [#185](https://github.com/beettlle/pi-spine/issues/185)) — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md)
@@ -149,7 +151,7 @@ spine tasks analyze pending
 **Map issues to tasks:**
 
 ```bash
-rg 'Closes:|Partial:' spine-tasks/*/PROMPT.md
+rg 'Closes #|Closes:|Partial #|Partial:' spine-tasks/*/PROMPT.md
 ```
 
 Read `spine-tasks/CONTEXT.md` for `Next Task ID`.
@@ -205,7 +207,7 @@ Require explicit **"approve release scope"** before Phase 3.
 For issues in manifest without SP-*:
 
 - Follow **`create-spine-tasks`** (lean mode default)
-- Mission: `Closes: #NNN` (or `Partial:` when scoped)
+- Mission: `Closes #NNN` (or `Closes: #NNN`) — use `Partial #NNN` / `Partial: #NNN` when scoped
 - Size S/M; ≤4 impl steps; Contract + Testing step
 - Update `dependencies.json`, `CONTEXT.md`, increment `Next Task ID`
 
@@ -349,6 +351,42 @@ git push origin main
 
 Do not let `main` drift far ahead of `origin` between waves — v2.12.1 ran **24 commits ahead** of `origin` at Phase 5 (F8, [#249](https://github.com/beettlle/pi-spine/issues/249)). Local-only releases may defer this push; record the deferral in the manifest publish checklist.
 
+### 4.3c Close GitHub issues for landed tasks (blocking hygiene)
+
+After §4.3a is green (and §4.3b push when remote publish is the goal), **close every open issue fully resolved by tasks that just landed** — same wave, same land loop. Do not wait for Phase 6 or npm publish.
+
+```bash
+# Issues linked from the wave's newly-.DONE tasks:
+rg -n 'Closes #|Closes: #' spine-tasks/SP-*/PROMPT.md
+
+# For each Closes #NNN (not Partial) whose SP-* is .DONE on main and still OPEN:
+gh issue view NNN --repo beettlle/pi-spine --json state,title
+gh issue close NNN --repo beettlle/pi-spine --reason completed --comment "$(cat <<EOF
+Fixed on \`main\` by **SP-XXX** (release v{TARGET}).
+
+- Commit(s): \`<sha>\` — <subject>
+- Batch: <batchId> (integrated)
+EOF
+)"
+```
+
+| Link in PROMPT Mission | Action after land |
+|------------------------|-------------------|
+| `Closes #NNN` / `Closes: #NNN` | **Close** when that task's `.DONE` is on `main` and §4.3a passed |
+| `Partial #NNN` / `Partial: #NNN` | **Leave open** — note progress in a comment if useful |
+| Manifest-mapped issue with no `Closes` line | Close only if acceptance criteria are fully met; otherwise comment + leave open |
+
+**Fail closed before next wave / Phase 5:** every release-scoped `Closes #NNN` for tasks already `.DONE` on `main` must show `state: CLOSED`. Re-check:
+
+```bash
+# Example: verify still-open Closes targets for release-scoped DONE tasks
+for n in $(rg -o 'Closes:? #([0-9]+)' -r '$1' spine-tasks/SP-*/PROMPT.md | sort -u); do
+  gh issue view "$n" --repo beettlle/pi-spine --json number,state -q '"\(.number) \(.state)"'
+done
+```
+
+Record closed issue numbers in the release manifest intake / composition notes.
+
 ### 4.4 Recovery
 
 Always: `spine status --diagnose`
@@ -489,20 +527,33 @@ If retries exhaust, **STOP** — treat it as a real missing-version failure and 
 
 Update `spine-tasks/CONTEXT.md` release note (version + date).
 
-Close GitHub issues where tasks had `Closes: #NNN` and work shipped.
+### Close remaining GitHub issues (final sweep)
+
+§4.3c should already have closed each `Closes #NNN` when its task landed. Before the final report, **sweep** any still-open issues that release-scoped DONE tasks fully resolve:
+
+```bash
+rg -n 'Closes #|Closes: #' spine-tasks/SP-*/PROMPT.md
+# For each still-OPEN Closes #NNN whose SP-* is .DONE on main:
+gh issue close NNN --repo beettlle/pi-spine --reason completed --comment "…"
+```
+
+Include the published version/tag in the close comment when closing at Phase 6 (e.g. `Shipped in **v{TARGET}**`). Leave `Partial #NNN` open.
+
+**Fail closed:** do not mark the release cycle complete while any release-scoped `Closes #NNN` issue remains OPEN.
 
 ---
 
 ## Final report (required)
 
 1. **Release manifest** — path, target version, profile, composition table
-2. **Tasks completed** — SP-IDs, waves, issues closed
-3. **Deferred backlog** — count and top items for next release
+2. **Tasks completed** — SP-IDs, waves, issues closed (list `#NNN` CLOSED with close time or comment URL)
+3. **Deferred backlog** — count and top items for next release (issues left OPEN + rationale)
 4. **Authoring changes** — new SP-* created, splits/fixes in Phase 3
 5. **Issues filed** — pi-spine GitHub links or "none"
 6. **Recovery actions** — aborts, retries, contract fixes
 7. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
 8. **Publish** — version bumped (Y/N), tag pushed (Y/N), workflow URL, or "awaiting operator approval"
+9. **Issue tracker hygiene** — confirm every release-scoped `Closes #NNN` is CLOSED (paste `gh issue view` states or list)
 
 ---
 
@@ -527,6 +578,8 @@ preflight → for each wave: MonitorCreate batch start (or foreground) → onDon
 gate approve → integrate → npm install → batch complete →
 post-integrate release:check (exit 0 required; no tail-only verification) →
 git push origin main when remote publish is the goal (F8) →
-MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval.
+close Closes #NNN issues for tasks that just landed (§4.3c; do not wait for publish) →
+MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval →
+after publish: Phase 6 issue sweep for any still-open Closes links → final report must list CLOSED issue numbers.
 resume --attached --force stays foreground. Post final report with composition table.
 ```

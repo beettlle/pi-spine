@@ -71,7 +71,7 @@ Prefer when:
 
 Exclude when:
 
-- Fixed on `main` but issue not closed
+- Fixed on `main` but issue not closed — **unless** this release will close it immediately (hygiene debt from a prior land; close in §4.3c / Phase 6 sweep before selecting new work for the same issue)
 - Requires external repo reproduction without minimal repro
 - Blocked by epic infrastructure not in this release
 

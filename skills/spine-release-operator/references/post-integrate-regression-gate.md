@@ -15,6 +15,7 @@ Run on current `main` after:
 3. **Before next wave** — do not start wave N+1 until gate passes on `main`
 4. **Before first `git push origin main`** during a release cycle
 5. **Before `npm version`** — Phase 5 `release:check` (same command; re-run if `main` moved)
+6. **After gate green** — close GitHub `Closes #NNN` issues for tasks that just landed (spine-release-operator §4.3c); do not defer until publish
 
 ---
 
