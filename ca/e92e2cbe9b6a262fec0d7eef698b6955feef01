@@ -1,0 +1,20 @@
+tests/batch/batch-id-validation.test.mjs
+  s_26f10c3784b381::t_81d75c26ab0f52 72-75,78-83,88-93
+  s_26f10c3784b381::t_45f8ca38d204f1 94-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "cae92e2cbe9b6a262fec0d7eef698b6955feef01",
+  "prompts": {},
+  "sessions": {
+    "s_26f10c3784b381": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-03b14309-1aca-4408-a5db-fbf676c7173d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
