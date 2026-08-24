@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-22 (v2.15.0 release staged SP-713–719; Next → SP-720)
+**Last Updated:** 2026-08-24 (Phase 83 v2.15.0 published; Next → SP-720)
 **Status:** Active
 **Next Task ID:** SP-720
 
@@ -2321,6 +2321,37 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] CI green on HEAD before tag; **v2.14.1 published** — npm `pi-spine@2.14.1`; Release [32591899492](https://github.com/beettlle/pi-spine/actions/runs/32591899492)
 
 **Release note:** v2.14.1 — Consumer bugfixes (#252–#256): worker-runner output on DONE-missing, spine wait failed match, gate evidence cargo/task, lane commit `.pi` ignore, doctor list-models ETIMEDOUT advisory; post-mortem v2.14.0; CI migrate fixture + coverage diagnostic fixes.
+
+---
+
+### Phase 83 — v2.15.0 brutal-audit hardening (#257–#261, #263)
+
+**Authoring:** 2026-08-22 · Manifest: [`spine-tasks/_authoring/release-v2.15.0/manifest.md`](_authoring/release-v2.15.0/manifest.md)
+
+**Profile:** minor — composition A (brutal-audit P0/P1 security + reliability). Operator approved scope 2026-08-22. Worker pin: `kimi-coding/k3`; mid-release pin override to `hard` / `google/gemini-3.1-pro-preview` for Kimi quota 403 (restored to `default` after land).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-713 | Post-mortem v2.14.1 + brutal-audit release context | Done | — |
+| SP-714 | Validate and uniquify batch IDs (#258) | Done | — |
+| SP-715 | Engine liveness pairs PID with engineStartedAt (#259) | Done | — |
+| SP-716 | Unify secret redaction across channels (#260) | Done | — |
+| SP-717 | Atomic batch-history append; no silent wipe (#261) | Done | — |
+| SP-718 | Salvage eligible after final-review spawn failure (#257) | Done | — |
+| SP-719 | Wire tests/arch and tests/fs into npm test (#263) | Done | — |
+
+**Phase 83 exit criteria:**
+
+- [x] Operator approved scope (2026-08-22)
+- [x] SP-713–SP-719 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after each wave
+- [x] #257–#261, #263 closed (or closable from landed work)
+- [x] `npm run release:check` green on publish HEAD (`f8e4366d` / tag `v2.15.0`)
+- [x] CI green on HEAD; **v2.15.0 published** — npm `pi-spine@2.15.0`; Release [32783424944](https://github.com/beettlle/pi-spine/actions/runs/32783424944); post-publish smoke OK
+
+**Release note:** v2.15.0 — Brutal-audit hardening: batch ID validation (#258), engine PID+starttime liveness (#259), unified secret redaction (#260), atomic batch-history (#261), salvage after final-review spawn failure (#257), arch/fs tests on ship gate (#263); post-mortem v2.14.1.
+
+**Deferred:** #264 global batch-state lock; #265–#271 review caps / review.mjs split / type burn-down / perf; matrix epic #225.
 
 ---
 

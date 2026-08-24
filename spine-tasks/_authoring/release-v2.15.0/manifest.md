@@ -152,13 +152,13 @@ git push origin main
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave**
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` — **verified exit 0**
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke: `scripts/post-publish-smoke.sh 2.15.0`
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave**
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` — **verified exit 0** (2487/2487; coverage 89.26%)
+- [x] CI workflow green on `HEAD` (`32783424154` success on `f8e4366d`)
+- [x] `git status` clean at tag
+- [x] Operator approved publish bump type: **minor** (2026-08-24)
+- [x] `npm version minor` + `git push && git push --tags` → `f8e4366d` / `v2.15.0`
+- [x] `release.yml` succeeded — [32783424944](https://github.com/beettlle/pi-spine/actions/runs/32783424944)
+- [x] Post-publish smoke: `scripts/post-publish-smoke.sh 2.15.0` — OK (attempt 1/6)
