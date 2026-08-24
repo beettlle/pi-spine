@@ -1,0 +1,29 @@
+skills/spine-release-operator/references/post-integrate-regression-gate.md
+  s_e1452694f50976::t_d6d9c1de945070 18
+skills/spine-release-operator/references/issue-intake-checklist.md
+  s_e1452694f50976::t_f3c587a4f60177 74
+skills/spine-release-operator/SKILL.md
+  s_e1452694f50976::t_fa5919dd27c6b7 354-389
+  s_e1452694f50976::t_5d15a8329d1f05 38-39
+  s_e1452694f50976::t_95f3c2897f0c5d 61
+  s_e1452694f50976::t_6ca6ffb8e6ee93 530-542,549-550,556
+  s_e1452694f50976::t_ed3e60fecc170a 581-583
+  s_e1452694f50976::t_6598b2deffb5b6 210
+  s_e1452694f50976::t_13bc7fae3a7d37 154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a60563e401019eed985250de74ffeb86aba27410",
+  "prompts": {},
+  "sessions": {
+    "s_e1452694f50976": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7b77eff6-be00-447d-b511-431de42baf38",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
