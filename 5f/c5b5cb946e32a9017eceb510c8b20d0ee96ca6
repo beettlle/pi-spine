@@ -1,0 +1,29 @@
+tests/batch/salvage-final-review-spawn-failed.test.mjs
+  s_692dcf3a0287a0::t_2395a9f94d3b4e 57,63
+spine-tasks/_authoring/release-v2.15.0/manifest.md
+  s_84e92766efc90b::t_7cfca3fd8dd182 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "5fc5b5cb946e32a9017eceb510c8b20d0ee96ca6",
+  "prompts": {},
+  "sessions": {
+    "s_692dcf3a0287a0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a6b07059-70f0-4385-9d2f-85f70ba61552",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_84e92766efc90b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7260850d-b0e6-42b2-9a6a-0d41aa105153",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
