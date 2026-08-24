@@ -69,12 +69,28 @@ test("generateBatchId appends a 4-hex suffix and matches the allowlist pattern",
 	assert.match(id, BATCH_ID_PATTERN);
 });
 
-test("generateBatchId produces distinct IDs across concurrent calls", () => {
+test("generateBatchId produces distinct IDs when suffix draws are unique", () => {
+	// Inject deterministic suffixes: 200 real random 4-hex draws in one UTC second
+	// collide ~26% of the time (birthday bound on 2^16), which flakes under coverage.
+	let counter = 0;
 	const ids = new Set();
 	for (let i = 0; i < 200; i += 1) {
-		ids.add(generateBatchId());
+		ids.add(
+			generateBatchId(new Date(), null, () => {
+				counter += 1;
+				return counter.toString(16).padStart(4, "0");
+			}),
+		);
 	}
 	assert.equal(ids.size, 200);
+});
+
+test("generateBatchId random suffix yields unique ids in a small sample", () => {
+	const ids = new Set();
+	for (let i = 0; i < 32; i += 1) {
+		ids.add(generateBatchId());
+	}
+	assert.ok(ids.size >= 30, `expected >=30 unique of 32, got ${ids.size}`);
 });
 
 test("state.mjs re-exports generateBatchId", () => {
