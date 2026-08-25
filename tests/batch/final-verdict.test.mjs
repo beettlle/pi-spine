@@ -122,10 +122,26 @@ async function provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel }
 	return { state, wt, orchBranch, lane: state.lanes[0], task: state.tasks[0] };
 }
 
+// Map short capture keys to real env var names. The engine no longer
+// consumes stub queue vars in-process (SP-728), so tests must restore the
+// actual SPINE_* vars to avoid leaking stale queues into later tests.
+const ENV_KEY_NAMES = {
+	stub: "SPINE_WORKER_STUB",
+	reviewStub: "SPINE_REVIEW_STUB",
+	workerRunner: "SPINE_WORKER_RUNNER",
+	planVerdict: "SPINE_ENGINE_PLAN_STUB_VERDICT",
+	planVerdicts: "SPINE_ENGINE_PLAN_STUB_VERDICTS",
+	codeVerdict: "SPINE_ENGINE_CODE_STUB_VERDICT",
+	codeVerdicts: "SPINE_ENGINE_CODE_STUB_VERDICTS",
+	finalVerdict: "SPINE_ENGINE_FINAL_STUB_VERDICT",
+	finalVerdicts: "SPINE_ENGINE_FINAL_STUB_VERDICTS",
+};
+
 function restoreEnv(prev, keys) {
 	for (const key of keys) {
-		if (prev[key] === undefined) delete process.env[key];
-		else process.env[key] = prev[key];
+		const envName = ENV_KEY_NAMES[key] ?? key;
+		if (prev[key] === undefined) delete process.env[envName];
+		else process.env[envName] = prev[key];
 	}
 }
 
