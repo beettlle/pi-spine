@@ -1,0 +1,16 @@
+spine-tasks/SP-726-set-dedup-hotpaths/.reviews/1-20260825T223628.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-726-set-dedup-hotpaths/.reviews/final-20260825T223649.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "6f8ad0530412de88554fe60c7baaa496bd35535b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
