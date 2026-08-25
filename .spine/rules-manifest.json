@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T22:13:20.512Z",
+  "generatedAt": "2026-08-25T20:35:38.597Z",
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
@@ -384,16 +384,6 @@
     {
       "relPath": "swift-6-brutal-audit.mdc",
       "reason": "excludePattern",
-      "spineClass": "excluded"
-    },
-    {
-      "relPath": "taskplane/prompt-template.md",
-      "reason": "excludeRelPath",
-      "spineClass": "excluded"
-    },
-    {
-      "relPath": "taskplane/status-template.md",
-      "reason": "excludeRelPath",
       "spineClass": "excluded"
     }
   ]
