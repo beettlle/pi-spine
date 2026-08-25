@@ -260,7 +260,8 @@ export function collectPromptJsonDepsDriftFindings(tasksById, depsJson) {
 			continue;
 		}
 
-		const missing = promptDeps.filter((depId) => !jsonDeps.includes(depId));
+		const jsonDepSet = new Set(jsonDeps);
+		const missing = promptDeps.filter((depId) => !jsonDepSet.has(depId));
 		if (missing.length === 0) continue;
 
 		findings.push({

@@ -374,11 +374,15 @@ export function mergeRulesProfile(defaults, fileProfile) {
 function normalizeRulePaths(paths) {
 	/** @type {string[]} */
 	const seen = [];
+	// Set-backed membership so dedup is O(1) per entry instead of O(N) (#271);
+	// `seen` keeps first-seen order for the return value.
+	const seenSet = new Set();
 	for (const entry of paths) {
 		const normalized = entry.trim().replace(/\\/g, "/").replace(/^\.\/+/, "");
-		if (!normalized || seen.includes(normalized)) {
+		if (!normalized || seenSet.has(normalized)) {
 			continue;
 		}
+		seenSet.add(normalized);
 		seen.push(normalized);
 	}
 	return seen;
