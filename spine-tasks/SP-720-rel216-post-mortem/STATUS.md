@@ -1,7 +1,7 @@
 # SP-720: Post-mortem v2.15.0 + release follow-on context — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-08-25
 **Review Level:** 0
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 
 ## Step 3: Documentation & Delivery
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -54,6 +54,7 @@
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Step 1 complete | `docs/release/post-mortem-v2.15.0.md` written (32211 bytes) following post-mortem-v2.14.1.md structure; evidence gathered from git history, both release manifests, CONTEXT.md Phase 83/84, gh issue/CI queries |
 | 2026-08-25 | Step 2 complete | Contract testCommand exit 0; all relative link targets verified to exist |
+| 2026-08-25 | Step 3 complete | Commit `3b86095a`; `.DONE` created |
 
 ## Blockers
 
