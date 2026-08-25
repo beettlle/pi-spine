@@ -1,0 +1,20 @@
+spine-tasks/SP-726-set-dedup-hotpaths/STATUS.md
+  h_2a17159c706ba1 3-4,19-21,25,27-28,48,56-57
+src/config/cursor-rules/profile.mjs
+  h_2a17159c706ba1 377-379,382,385
+src/tasks/analyze/index.mjs
+  h_2a17159c706ba1 263-264
+src/tasks/packet/parse-prompt.mjs
+  h_2a17159c706ba1 637-639,643-646,651-654,658-661
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2981219a1a644a395fd27443d186dd7b5d2b8b97",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
