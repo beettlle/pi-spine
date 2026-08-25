@@ -40,6 +40,11 @@ import {
 	removeDoneFile,
 	runReviewPollLoop,
 } from "./review-poll.mjs";
+import {
+	createStubVerdictQueueFromEnv,
+	shouldUseReviewStub,
+	writeStubReviewArtifact,
+} from "./review-stub.mjs";
 
 export {
 	buildFinalReviewArtifactPath,
@@ -49,54 +54,35 @@ export {
 } from "../review-shared.mjs";
 
 /**
- * @returns {"PASS"|"REVISE"|"REPLAN"}
+ * Build the in-memory stub verdict queue for a review phase (SP-728 / #262).
+ * Env is read once here; the queue is passed down via params and popped
+ * in-memory — `process.env` is never mutated.
+ *
+ * @param {"plan"|"code"|"final"} reviewType
  */
-function resolveFinalStubVerdict() {
-	const queue = process.env.SPINE_ENGINE_FINAL_STUB_VERDICTS;
-	if (queue) {
-		const parts = queue.split(",").map((entry) => entry.trim()).filter(Boolean);
-		const verdict = parts.shift() ?? "PASS";
-		process.env.SPINE_ENGINE_FINAL_STUB_VERDICTS = parts.join(",");
-		return normalizeFinalVerdict(verdict) ?? "PASS";
+function createPhaseStubVerdictQueue(reviewType) {
+	if (reviewType === "final") {
+		return createStubVerdictQueueFromEnv({
+			queueEnv: "SPINE_ENGINE_FINAL_STUB_VERDICTS",
+			singleEnv: "SPINE_ENGINE_FINAL_STUB_VERDICT",
+			normalize: normalizeFinalVerdict,
+			defaultVerdict: "PASS",
+		});
 	}
-	const single = process.env.SPINE_ENGINE_FINAL_STUB_VERDICT ?? "PASS";
-	return normalizeFinalVerdict(single) ?? "PASS";
-}
-
-/**
- * @returns {"APPROVE"|"REVISE"}
- */
-function resolveCodeStubVerdict() {
-	const queue = process.env.SPINE_ENGINE_CODE_STUB_VERDICTS;
-	if (queue) {
-		const parts = queue.split(",").map((entry) => entry.trim()).filter(Boolean);
-		const verdict = parts.shift() ?? "APPROVE";
-		process.env.SPINE_ENGINE_CODE_STUB_VERDICTS = parts.join(",");
-		return normalizeCodeVerdict(verdict) ?? "APPROVE";
+	if (reviewType === "plan") {
+		return createStubVerdictQueueFromEnv({
+			queueEnv: "SPINE_ENGINE_PLAN_STUB_VERDICTS",
+			singleEnv: "SPINE_ENGINE_PLAN_STUB_VERDICT",
+			normalize: normalizeCodeVerdict,
+			defaultVerdict: "APPROVE",
+		});
 	}
-	const single = process.env.SPINE_ENGINE_CODE_STUB_VERDICT ?? "APPROVE";
-	return normalizeCodeVerdict(single) ?? "APPROVE";
-}
-
-/**
- * @param {object} params
- */
-function writeFinalStubReviewArtifact({ artifactPath, verdict, feedback }) {
-	fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-	const body = [
-		"## Final Review",
-		"",
-		`### Verdict: ${verdict}`,
-		"",
-		"### Summary",
-		feedback || `Stub final review returned ${verdict}.`,
-		"",
-		"```json",
-		JSON.stringify({ verdict, feedback: feedback || "" }, null, 2),
-		"```",
-		"",
-	].join("\n");
-	fs.writeFileSync(artifactPath, body, "utf-8");
+	return createStubVerdictQueueFromEnv({
+		queueEnv: "SPINE_ENGINE_CODE_STUB_VERDICTS",
+		singleEnv: "SPINE_ENGINE_CODE_STUB_VERDICT",
+		normalize: normalizeCodeVerdict,
+		defaultVerdict: "APPROVE",
+	});
 }
 
 /**
@@ -109,6 +95,7 @@ export async function runEngineFinalReview({
 	attempt = 1,
 	contractVerifyResult = null,
 	journal,
+	stubVerdicts = null,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!shouldRunFinalReview({ config, reviewLevel })) {
@@ -125,20 +112,18 @@ export async function runEngineFinalReview({
 	}
 
 	const artifactPath = buildFinalReviewArtifactPath(taskFolder);
-	const useStub =
-		process.env.SPINE_REVIEW_STUB === "1" ||
-		process.env.SPINE_REVIEW_STUB === "true" ||
-		process.env.SPINE_WORKER_STUB === "1";
+	const useStub = shouldUseReviewStub();
 
 	if (useStub) {
-		const verdict = resolveFinalStubVerdict();
+		const queue = stubVerdicts ?? createPhaseStubVerdictQueue("final");
+		const verdict = queue.next();
 		const feedback =
 			verdict === "REVISE"
 				? "Stub reviewer requested changes."
 				: verdict === "REPLAN"
 					? "Stub reviewer requested replan."
 					: "Stub reviewer passed.";
-		writeFinalStubReviewArtifact({ artifactPath, verdict, feedback });
+		writeStubReviewArtifact({ artifactPath, title: "Final Review", verdict, feedback });
 		return {
 			ok: verdict === "PASS",
 			skipped: false,
@@ -162,21 +147,6 @@ export async function runEngineFinalReview({
 		journal,
 		contractVerifyResult,
 	});
-}
-
-/**
- * @returns {"APPROVE"|"REVISE"}
- */
-function resolvePlanStubVerdict() {
-	const queue = process.env.SPINE_ENGINE_PLAN_STUB_VERDICTS;
-	if (queue) {
-		const parts = queue.split(",").map((entry) => entry.trim()).filter(Boolean);
-		const verdict = parts.shift() ?? "APPROVE";
-		process.env.SPINE_ENGINE_PLAN_STUB_VERDICTS = parts.join(",");
-		return normalizeCodeVerdict(verdict) ?? "APPROVE";
-	}
-	const single = process.env.SPINE_ENGINE_PLAN_STUB_VERDICT ?? "APPROVE";
-	return normalizeCodeVerdict(single) ?? "APPROVE";
 }
 
 /**
@@ -268,6 +238,7 @@ export async function runEnginePlanReview({
 	config = {},
 	attempt = 1,
 	journal,
+	stubVerdicts = null,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!isReviewTypeRequired(reviewLevel, "plan")) {
@@ -285,13 +256,11 @@ export async function runEnginePlanReview({
 
 	const stepNumber = findPlanReviewStepNumber(taskFolder);
 	const artifactPath = buildReviewArtifactPath(taskFolder, stepNumber);
-	const useStub =
-		process.env.SPINE_REVIEW_STUB === "1" ||
-		process.env.SPINE_REVIEW_STUB === "true" ||
-		process.env.SPINE_WORKER_STUB === "1";
+	const useStub = shouldUseReviewStub();
 
 	if (useStub) {
-		const verdict = resolvePlanStubVerdict();
+		const queue = stubVerdicts ?? createPhaseStubVerdictQueue("plan");
+		const verdict = queue.next();
 		const feedback =
 			verdict === "REVISE" ? "Stub reviewer requested changes." : "Stub reviewer approved.";
 		if (journal?.projectRoot && journal?.batchId) {
@@ -305,21 +274,7 @@ export async function runEnginePlanReview({
 				artifactPath,
 			});
 		}
-		fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-		const body = [
-			"## Plan Review",
-			"",
-			`### Verdict: ${verdict}`,
-			"",
-			"### Summary",
-			feedback,
-			"",
-			"```json",
-			JSON.stringify({ verdict, feedback }, null, 2),
-			"```",
-			"",
-		].join("\n");
-		fs.writeFileSync(artifactPath, body, "utf-8");
+		writeStubReviewArtifact({ artifactPath, title: "Plan Review", verdict, feedback });
 		if (journal?.projectRoot && journal?.batchId) {
 			appendJournalEvent(journal.projectRoot, journal.batchId, "review.completed", {
 				taskId: journal.taskId,
@@ -365,6 +320,7 @@ export async function runEngineCodeReview({
 	config = {},
 	attempt = 1,
 	journal,
+	stubVerdicts = null,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!shouldRunCodeReview({ reviewLevel })) {
@@ -382,13 +338,11 @@ export async function runEngineCodeReview({
 
 	const stepNumber = findCodeReviewStepNumber(taskFolder);
 	const artifactPath = buildReviewArtifactPath(taskFolder, stepNumber);
-	const useStub =
-		process.env.SPINE_REVIEW_STUB === "1" ||
-		process.env.SPINE_REVIEW_STUB === "true" ||
-		process.env.SPINE_WORKER_STUB === "1";
+	const useStub = shouldUseReviewStub();
 
 	if (useStub) {
-		const verdict = resolveCodeStubVerdict();
+		const queue = stubVerdicts ?? createPhaseStubVerdictQueue("code");
+		const verdict = queue.next();
 		const feedback =
 			verdict === "REVISE" ? "Stub reviewer requested changes." : "Stub reviewer approved.";
 		if (journal?.projectRoot && journal?.batchId) {
@@ -402,21 +356,7 @@ export async function runEngineCodeReview({
 				artifactPath,
 			});
 		}
-		fs.mkdirSync(path.dirname(artifactPath), { recursive: true });
-		const body = [
-			"## Code Review",
-			"",
-			`### Verdict: ${verdict}`,
-			"",
-			"### Summary",
-			feedback,
-			"",
-			"```json",
-			JSON.stringify({ verdict, feedback }, null, 2),
-			"```",
-			"",
-		].join("\n");
-		fs.writeFileSync(artifactPath, body, "utf-8");
+		writeStubReviewArtifact({ artifactPath, title: "Code Review", verdict, feedback });
 		if (journal?.projectRoot && journal?.batchId) {
 			appendJournalEvent(journal.projectRoot, journal.batchId, "review.completed", {
 				taskId: journal.taskId,
@@ -677,13 +617,17 @@ async function runCodeReviewPhase({
 	});
 	if (honoredResult) return honoredResult;
 
+	// Materialize the stub queue once per phase and pass it via params so
+	// parallel lanes never share or mutate process.env stub state (SP-728).
+	const stubVerdicts = shouldUseReviewStub() ? createPhaseStubVerdictQueue("code") : null;
+
 	return await runReviewPollLoop({
 		reviewType: "code",
 		passVerdict: "APPROVE",
 		attemptField: "codeReviewAttempts",
 		attemptKey: "codeReviewAttempt",
 		maxAttempts: maxCodeReviewAttempts,
-		runEngineReview: runEngineCodeReview,
+		runEngineReview: (params) => runEngineCodeReview({ ...params, stubVerdicts }),
 		recordReviewTaskFailure: recordCodeReviewTaskFailure,
 		invalidVerdictOutput: "code review artifact missing APPROVE or REVISE verdict",
 		journalEvents,
@@ -727,6 +671,10 @@ async function runFinalReviewPhase({
 
 	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
 
+	// Materialize the stub queue once per phase and pass it via params so
+	// parallel lanes never share or mutate process.env stub state (SP-728).
+	const stubVerdicts = shouldUseReviewStub() ? createPhaseStubVerdictQueue("final") : null;
+
 	const journalEvents = readJournalEvents(projectRoot, batchId);
 	const honoredResult = honorCompletedReview({
 		reviewType: "final",
@@ -751,7 +699,7 @@ async function runFinalReviewPhase({
 		attemptField: "finalAttempts",
 		attemptKey: "finalAttempt",
 		maxAttempts: maxFinalAttempts,
-		runEngineReview: runEngineFinalReview,
+		runEngineReview: (params) => runEngineFinalReview({ ...params, stubVerdicts }),
 		recordReviewTaskFailure: recordFinalReviewTaskFailure,
 		invalidVerdictOutput: "final review artifact missing PASS, REVISE, or REPLAN verdict",
 		allowReplan: true,
@@ -852,6 +800,10 @@ async function runPlanReviewPhase({
 		config?.review?.maxFinalAttempts ??
 		REVIEW_DEFAULTS.maxFinalAttempts;
 
+	// Materialize the stub queue once per phase and pass it via params so
+	// parallel lanes never share or mutate process.env stub state (SP-728).
+	const stubVerdicts = shouldUseReviewStub() ? createPhaseStubVerdictQueue("plan") : null;
+
 	const journalEvents = readJournalEvents(projectRoot, batchId);
 	const honoredResult = honorCompletedReview({
 		reviewType: "plan",
@@ -876,7 +828,7 @@ async function runPlanReviewPhase({
 		attemptField: "planReviewAttempts",
 		attemptKey: "planReviewAttempt",
 		maxAttempts: maxPlanReviewAttempts,
-		runEngineReview: runEnginePlanReview,
+		runEngineReview: (params) => runEnginePlanReview({ ...params, stubVerdicts }),
 		recordReviewTaskFailure: recordPlanReviewTaskFailure,
 		invalidVerdictOutput: "plan review artifact missing APPROVE or REVISE verdict",
 		journalEvents,
