@@ -1,6 +1,6 @@
 # SP-724: File-scope overlap: brace globs + ext probes — Status
 
-**Current Step:** Step 2: Regression tests
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
@@ -22,14 +22,14 @@
 
 ## Step 2: Regression tests
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Unit tests for brace expansion in expandScopeEntryProbes
-- [ ] Analyze integration: overlapping brace scopes → finding emitted
+- [x] Unit tests for brace expansion in expandScopeEntryProbes
+- [x] Analyze integration: overlapping brace scopes → finding emitted
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run contract `testCommand` only
 - [ ] Fix all failures from the scoped contract command
@@ -62,6 +62,8 @@
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Step 1 started | Impact analysis via GitNexus: LOW risk (5 symbols, Planner module only). Plan: capped brace expansion + extended probe extensions in planner/file-scope.mjs; analyze delegates to glob-aware planner fileScopesOverlap |
 | 2026-08-25 | Step 1 complete | Brace expansion (cap 32 variants) + .json/.cjs/.yaml/.yml probes; analyze/index.mjs re-exports planner overlap. Smoke-checked overlap cases manually |
+| 2026-08-25 | Step 2 complete | 6 new planner unit tests + 2 analyze integration tests; contract testCommand passes (35 tests, 0 fail); typecheck clean |
+| 2026-08-25 | Docs check | docs/adoption/operator-runbook.md reviewed — no analyze overlap-semantics section exists; change is additive detection with no operator workflow change, so no doc update required |
 
 ## Blockers
 
