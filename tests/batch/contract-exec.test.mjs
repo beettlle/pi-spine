@@ -13,13 +13,13 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 
-import { isRefusedContractMetacharCommand } from "../../src/batch/contract-exec.mjs";
 import {
 	runContractTestCommand,
 	verifyContract,
 } from "../../src/batch/contract-verify.mjs";
 import {
 	findContractCommandMetacharIssue,
+	isRefusedContractMetacharCommand,
 	parseContract,
 } from "../../src/tasks/packet/parse-prompt.mjs";
 

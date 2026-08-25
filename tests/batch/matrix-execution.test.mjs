@@ -996,7 +996,7 @@ in the matrix sub-lane worktree before the row command (SP-688 / #224).
 ## Contract
 | Field | Value |
 |-------|-------|
-| runCommand | \`test -f hook-marker.txt && mkdir -p out && echo "$(cat hook-marker.txt) {matrix.value}" > out/{matrix.run_id}.txt\` |
+| runCommand | \`test -f hook-marker.txt && mkdir -p out && tr -d '\\n' < hook-marker.txt > out/{matrix.run_id}.txt && echo "{matrix.value}" >> out/{matrix.run_id}.txt\` |
 | fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
 | testCommand | \`test -f out/{matrix.run_id}.txt\` |
 

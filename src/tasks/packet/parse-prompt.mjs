@@ -113,6 +113,36 @@ export function findContractCommandMetacharIssue(command) {
 	if (quote) return "unclosed quote";
 	return null;
 }
+
+/**
+ * Defense in depth: reject shell metacharacters in contract testCommand before the
+ * shell spawns (#268). `&&` chains stay allowed (mirrors the #254 gate-evidence
+ * grammar); `$`, backticks, `;`, `|`, `||`, and lone `&` fail closed. The runtime
+ * guard is the enforcement boundary because matrix row substitution can reintroduce
+ * metacharacters after parse-time validation.
+ *
+ * @param {string} command
+ * @returns {boolean}
+ */
+export function isRefusedContractMetacharCommand(command) {
+	const trimmed = String(command ?? "").trim();
+	if (!trimmed || trimmed === "true") {
+		return false;
+	}
+	return findContractCommandMetacharIssue(trimmed) !== null;
+}
+
+/**
+ * Refusal copy for the contract verify path — deliberately distinct from the #254
+ * gate-evidence messages ("evidence command contains …").
+ *
+ * @param {string} command
+ * @returns {string}
+ */
+export function formatRefusedContractMetacharMessage(command) {
+	const issue = findContractCommandMetacharIssue(String(command ?? "").trim());
+	return `Contract testCommand refused before spawn: ${issue ?? "shell metacharacters"} (command: ${command}). Contract testCommand runs through a shell; remove $, backticks, ;, |, || or lone & — && chains are allowed (#268).`;
+}
 export const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
 const CONTRACT_EM_DASH_PLACEHOLDER_RE = /^[—\-]$/;
 const CONTRACT_NONE_VALUES = new Set([
