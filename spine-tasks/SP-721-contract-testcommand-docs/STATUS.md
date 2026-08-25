@@ -1,7 +1,7 @@
 # SP-721: Docs: contract testCommand vs gate evidence hardening — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-08-25
 **Review Level:** 0
 **Review Counter:** 0
@@ -29,9 +29,9 @@
 
 ## Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -55,6 +55,7 @@
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Step 1 complete | `docs/stet-overview.md`: extension-points table annotated + new "Contract testCommand vs gate evidence: two execution models" section (prose + comparison table, #268/#254/SP-723 cross-links). `docs/adoption/operator-runbook.md` §2.3: new "testCommand execution model" paragraph with forward-compatible authoring note |
 | 2026-08-25 | Step 2 complete | Contract testCommand passed (grep × 2, exit 0). No src/ or bin/ changes — fileScopeMustNotChange satisfied |
+| 2026-08-25 | Step 3 complete | Commit `1735e59c` (docs(SP-721)); `.DONE` created. All completion criteria met |
 
 ## Blockers
 
