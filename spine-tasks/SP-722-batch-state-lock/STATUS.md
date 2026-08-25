@@ -1,6 +1,6 @@
 # SP-722: Global inter-process lock for batch-state writers — Status
 
-**Current Step:** Step 3: Concurrent tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 2
@@ -29,10 +29,10 @@
 
 ## Step 3: Concurrent tests
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add `tests/batch/batch-state-lock.test.mjs` — concurrent writers, no lost updates
-- [ ] Keep existing resume/concurrent suites green when run in Testing step
+- [x] Add `tests/batch/batch-state-lock.test.mjs` — concurrent writers, no lost updates
+- [x] Keep existing resume/concurrent suites green when run in Testing step
 
 ## Step 4: Testing & Verification
 
