@@ -1,0 +1,18 @@
+spine-tasks/SP-722-batch-state-lock/.reviews/1-20260825T221232.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-722-batch-state-lock/.reviews/5-20260825T221249.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-722-batch-state-lock/.reviews/final-20260825T221337.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "66a2a0d8b4325559d7ad585dea6f21c3cfe1e9dc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
