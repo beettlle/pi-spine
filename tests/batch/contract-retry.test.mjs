@@ -24,7 +24,9 @@ test("testCommand fails once then succeeds on retry — contract passes", async 
 	await withWorktree((worktreePath) => {
 		const marker = path.join(worktreePath, ".retry-marker");
 		// First run creates the marker and exits 1; second run sees it and exits 0.
-		const command = `if [ -f "${marker}" ]; then exit 0; else touch "${marker}" && exit 1; fi`;
+		// Semicolons stay inside double quotes — unquoted shell sequencing (`;`)
+		// is refused before spawn since #268 (SP-723).
+		const command = `node -e "const fs=require('fs'); const m=process.argv[1]; if (fs.existsSync(m)) process.exit(0); fs.writeFileSync(m, ''); process.exit(1)" "${marker}"`;
 
 		const result = verifyContract(worktreePath, {
 			testCommand: command,
@@ -58,13 +60,13 @@ test("retry count configurable via spine-config contract.testRetries", async () 
 	await withWorktree((worktreePath) => {
 		const marker = path.join(worktreePath, ".attempt-count");
 		// Increment a counter on each call; succeed on attempt 3.
+		// Succeed on attempt 3; quoted-node form keeps retry semantics without
+		// unquoted `$` / `;` shell syntax, which contract testCommand refuses
+		// before spawn (#268 / SP-723).
 		const command = [
-			`count=0`,
-			`if [ -f "${marker}" ]; then count=$(cat "${marker}"); fi`,
-			`count=$((count + 1))`,
-			`echo $count > "${marker}"`,
-			`if [ "$count" -ge 3 ]; then exit 0; else exit 1; fi`,
-		].join("; ");
+			`node -e "const fs=require('fs'); const m=process.argv[1]; const n=Number(fs.existsSync(m) ? fs.readFileSync(m, 'utf8') : 0) + 1; fs.writeFileSync(m, String(n)); process.exit(n >= 3 ? 0 : 1)"`,
+			`"${marker}"`,
+		].join(" ");
 
 		const noRetry = verifyContract(worktreePath, {
 			testCommand: command,
@@ -90,7 +92,7 @@ test("failed output captured to .reviews/ directory", async () => {
 		fs.mkdirSync(taskFolder, { recursive: true });
 
 		const result = verifyContract(worktreePath, {
-			testCommand: "echo 'test output to stderr' >&2 && echo 'test output to stdout' && exit 1",
+			testCommand: "node -e \"console.error('test output to stderr'); console.log('test output to stdout'); process.exit(1)\"",
 			artifactsMustExist: [],
 		}, {
 			contract: { testRetries: 0, testRetryDelayMs: 0 },

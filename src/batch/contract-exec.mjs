@@ -26,6 +26,12 @@ import {
 	NPM_TEST_DASH_DASH_RE,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 } from "../tasks/validate-contract-warn.mjs";
+import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
+
+// Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
+function refusedBeforeSpawnResult(summary) {
+	return { ok: false, exitCode: 1, output: summary, summary, refusedBeforeSpawn: true };
+}
 
 /** Default stdout/stderr capture limit for contract testCommand (issue #86). */
 export const CONTRACT_TEST_COMMAND_MAX_BUFFER = 10 * 1024 * 1024;
@@ -142,6 +148,8 @@ function formatRefusedNpmTestDashDashMessage(command) {
 }
 
 /**
+
+/**
  * @param {string} worktreePath
  * @param {string} command
  * @param {{ maxBuffer?: number }} [options]
@@ -153,14 +161,10 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	}
 
 	if (isRefusedNpmTestDashDashCommand(trimmed)) {
-		const summary = formatRefusedNpmTestDashDashMessage(trimmed);
-		return {
-			ok: false,
-			exitCode: 1,
-			output: summary,
-			summary,
-			refusedBeforeSpawn: true,
-		};
+		return refusedBeforeSpawnResult(formatRefusedNpmTestDashDashMessage(trimmed));
+	}
+	if (isRefusedContractMetacharCommand(trimmed)) {
+		return refusedBeforeSpawnResult(formatRefusedContractMetacharMessage(trimmed));
 	}
 
 	const maxBuffer = options.maxBuffer ?? CONTRACT_TEST_COMMAND_MAX_BUFFER;
