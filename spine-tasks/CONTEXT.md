@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-24 (Phase 83 v2.15.0 published; Next → SP-720)
+**Last Updated:** 2026-08-25 (Phase 84 v2.16.0 authoring staged; Next → SP-731)
 **Status:** Active
-**Next Task ID:** SP-720
+**Next Task ID:** SP-731
 
 ---
 
@@ -2352,6 +2352,41 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note:** v2.15.0 — Brutal-audit hardening: batch ID validation (#258), engine PID+starttime liveness (#259), unified secret redaction (#260), atomic batch-history (#261), salvage after final-review spawn failure (#257), arch/fs tests on ship gate (#263); post-mortem v2.14.1.
 
 **Deferred:** #264 global batch-state lock; #265–#271 review caps / review.mjs split / type burn-down / perf; matrix epic #225.
+
+---
+
+### Phase 84 — v2.16.0 brutal-audit follow-on (#264–#271, #262)
+
+**Authoring:** 2026-08-25 · Manifest: [`spine-tasks/_authoring/release-v2.16.0/manifest.md`](_authoring/release-v2.16.0/manifest.md)
+
+**Profile:** minor — docs + bugs #264/#268/#269 + enhancements #265/#262/#271 (operator override: 3 enhancements > profile 1–2). Operator approved scope 2026-08-25. Worker pin: `zai/glm-5.3` (no mid-release thrash).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-720 | Post-mortem v2.15.0 + release follow-on context | Staged | — |
+| SP-721 | Docs: contract testCommand vs gate evidence (#268 Partial) | Staged | — |
+| SP-722 | Global inter-process lock for batch-state writers (#264) | Staged | — |
+| SP-723 | Harden contract testCommand (#268) | Staged | — |
+| SP-724 | File-scope brace globs + ext probes (#269) | Staged | — |
+| SP-725 | Separate review attempt caps (#265) | Staged | — |
+| SP-726 | Set-based dedup in parse/profile/analyze (#271) | Staged | SP-724 |
+| SP-727 | Extract review-poll.mjs (#262 Partial) | Staged | SP-725 |
+| SP-728 | Extract review-stub.mjs (#262 Partial) | Staged | SP-727 |
+| SP-729 | Extract review-code + review-final (#262 Partial) | Staged | SP-728 |
+| SP-730 | Extract review-plan; thin coordinator (#262) | Staged | SP-729 |
+
+**Phase 84 exit criteria:**
+
+- [x] Operator approved scope (2026-08-25)
+- [ ] SP-720–SP-730 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #264, #268, #269, #265, #271, #262 closed when landed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD; publish after operator approval
+
+**Release note (planned):** v2.16.0 — Brutal-audit follow-on: batch-state lock (#264), contract testCommand harden (#268), file-scope analyze probes (#269), review attempt caps (#265), review.mjs phase split (#262), Set dedup (#271); post-mortem v2.15.0.
+
+**Deferred:** #266–#270, matrix epic #225 / #229–#232, P3 backlog.
 
 ---
 
