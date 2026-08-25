@@ -1,6 +1,7 @@
 # SP-725: Separate maxCodeReviewAttempts / maxPlanReviewAttempts — Status
 
-**Current Step:** Step 3 — Testing & Verification
+**Current Step:** Complete
+**Status:** 🟢 Complete
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
@@ -28,16 +29,18 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command (none — passed first run: typecheck clean, 16/16)
 
 ## Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
+
+> Docs check: new keys (`review.maxCodeReviewAttempts` / `review.maxPlanReviewAttempts`) are not yet documented in `docs/` (grep confirms), and docs paths are outside File Scope — no doc edits required by "Check If Affected". Due-diligence beyond contract: 51/51 pass across engine-code-review, review-retry-reconcile, resume-lane-reviews, diagnosis-failure-class, contract-failed-terminal, settings-fields.
 
 ---
 
@@ -61,7 +64,8 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
-| 2026-08-25 | Step 2 complete | `review.mjs`: code/plan phases resolve `maxCodeReviewAttempts`/`maxPlanReviewAttempts` ?? `maxFinalAttempts` ?? default(3); final-phase `review.exhausted` now carries `reviewType: "final"` (code/plan already did). 2 new tests in `final-verdict.test.mjs` (asymmetric code=1/final=5; fallback inherit). 11/11 pass. |
+| 2026-08-25 | Step 3 complete | Contract command passed first run: `npm run typecheck` clean + 16/16 (config-defaults-v2, final-verdict). Extra due-diligence: 51/51 across 6 affected suites. |
+| 2026-08-25 | Step 4 complete | Docs not affected (new keys undocumented; docs out of scope). `.DONE` created. | `review.mjs`: code/plan phases resolve `maxCodeReviewAttempts`/`maxPlanReviewAttempts` ?? `maxFinalAttempts` ?? default(3); final-phase `review.exhausted` now carries `reviewType: "final"` (code/plan already did). 2 new tests in `final-verdict.test.mjs` (asymmetric code=1/final=5; fallback inherit). 11/11 pass. |
 
 ## Blockers
 
