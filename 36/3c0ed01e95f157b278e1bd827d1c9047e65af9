@@ -1,0 +1,18 @@
+spine-tasks/SP-725-review-attempt-caps/STATUS.md
+  h_2a17159c706ba1 3,24,26-27,31,64
+src/batch/engine-lanes/review.mjs
+  h_2a17159c706ba1 728-732,1198,1316-1320
+tests/batch/final-verdict.test.mjs
+  h_2a17159c706ba1 370-490
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "363c0ed01e95f157b278e1bd827d1c9047e65af9",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
