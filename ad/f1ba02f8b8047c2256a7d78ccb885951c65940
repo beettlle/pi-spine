@@ -1,0 +1,14 @@
+spine-tasks/SP-724-file-scope-brace-ext/STATUS.md
+  h_2a17159c706ba1 3,25,27-28,32,65-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "adf1ba02f8b8047c2256a7d78ccb885951c65940",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
