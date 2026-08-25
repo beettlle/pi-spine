@@ -49,6 +49,20 @@ export const SETTINGS_FIELDS = Object.freeze([
 		type: "boolean",
 	},
 	{
+		path: "review.maxCodeReviewAttempts",
+		label: "Max code review attempts (unset inherits maxFinalAttempts)",
+		type: "number",
+		min: 1,
+		max: 10,
+	},
+	{
+		path: "review.maxPlanReviewAttempts",
+		label: "Max plan review attempts (unset inherits maxFinalAttempts)",
+		type: "number",
+		min: 1,
+		max: 10,
+	},
+	{
 		path: "agents.worker.model",
 		label: "Worker model",
 		type: "string",

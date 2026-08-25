@@ -5,10 +5,19 @@
 
 import { ORCHESTRATOR_DEFAULTS } from "./spine-config-schema.mjs";
 
-/** @type {Readonly<{ requireFinalVerdict: boolean; maxFinalAttempts: number }>} */
+/**
+ * `maxCodeReviewAttempts` / `maxPlanReviewAttempts` default to `null` (= unset), which
+ * falls back to `maxFinalAttempts` at the phase runners (SP-725 / #265). Numeric defaults
+ * here would be merged into every loaded config by `applyConfigDefaults` and silently
+ * clobber a custom `maxFinalAttempts`, so `null` keeps existing configs behavior-identical.
+ *
+ * @type {Readonly<{ requireFinalVerdict: boolean; maxFinalAttempts: number; maxCodeReviewAttempts: number | null; maxPlanReviewAttempts: number | null }>}
+ */
 export const REVIEW_DEFAULTS = Object.freeze({
 	requireFinalVerdict: true,
 	maxFinalAttempts: 3,
+	maxCodeReviewAttempts: null,
+	maxPlanReviewAttempts: null,
 });
 
 /** @type {Readonly<{ path: string; autoWriteOn: readonly string[] }>} */
