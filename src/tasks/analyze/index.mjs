@@ -17,6 +17,10 @@ import path from 'node:path';
 import { resolveTasksRootPath } from '../../config/env-overrides.mjs';
 import { loadSpineConfig } from '../../config/spine-config-load.mjs';
 import { findCyclePath } from '../../planner/cycles.mjs';
+import {
+	fileScopesOverlap as plannerFileScopesOverlap,
+	pathsOverlap as plannerPathsOverlap,
+} from '../../planner/file-scope.mjs';
 import { buildGraph, topoWaves } from '../../planner/graph.mjs';
 import { parseScope } from '../../planner/scope.mjs';
 import {
@@ -39,46 +43,28 @@ import {
  * }} AnalyzeFinding
  */
 
-function normalizeFileScopePath(p) {
-	let s = String(p ?? '').trim();
-	if (!s) return null;
-
-	s = s.replace(/\\/g, '/');
-	if (s.startsWith('./')) s = s.slice(2);
-	s = s.replace(/\/+$/g, '');
-
-	if (s.endsWith('/*')) s = s.slice(0, -2);
-	if (s.endsWith('/**')) s = s.slice(0, -3);
-
-	return s || null;
-}
-
 /**
+ * Re-exported from the planner so `spine tasks analyze` uses the same
+ * glob-aware overlap detection (brace globs and extension probes, #269).
+ *
  * @param {string} a
  * @param {string} b
  * @returns {boolean}
  */
 export function pathsOverlap(a, b) {
-	if (a === b) return true;
-	return a.startsWith(b + '/') || b.startsWith(a + '/');
+	return plannerPathsOverlap(a, b);
 }
 
 /**
+ * Re-exported from the planner so `spine tasks analyze` flags the same brace
+ * glob and extension collisions as the wave planner (#269).
+ *
  * @param {string[]} left
  * @param {string[]} right
  * @returns {boolean}
  */
 export function fileScopesOverlap(left, right) {
-	const leftPaths = left.map(normalizeFileScopePath).filter(Boolean);
-	const rightPaths = right.map(normalizeFileScopePath).filter(Boolean);
-
-	for (const a of leftPaths) {
-		for (const b of rightPaths) {
-			if (pathsOverlap(a, b)) return true;
-		}
-	}
-
-	return false;
+	return plannerFileScopesOverlap(left, right);
 }
 
 /**

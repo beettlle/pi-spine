@@ -15,6 +15,7 @@ const PROBE_BASENAME = '__probe__';
 const SYNTHETIC_PROBE_EXTENSIONS = Object.freeze([
 	'.mjs',
 	'.js',
+	'.cjs',
 	'.ts',
 	'.tsx',
 	'.swift',
@@ -23,7 +24,89 @@ const SYNTHETIC_PROBE_EXTENSIONS = Object.freeze([
 	'.java',
 	'.rs',
 	'.md',
+	'.json',
+	'.yaml',
+	'.yml',
 ]);
+
+/**
+ * Cap on brace-expanded variants per scope entry. Bounds the synthetic probe
+ * count so wide `{a,b,c,...}` scopes cannot cause probe storms on large repos.
+ */
+const MAX_BRACE_EXPANSIONS = 32;
+
+/**
+ * Expand `{a,b}` brace groups into concrete entry variants (micromatch-style).
+ * Nested groups are expanded recursively; expansion stops at
+ * MAX_BRACE_EXPANSIONS so probe generation stays bounded.
+ *
+ * @param {string} entry
+ * @returns {string[]}
+ */
+function expandBracePattern(entry) {
+	/** @type {string[]} */
+	const results = [];
+
+	/** @param {string} text */
+	const visit = (text) => {
+		if (results.length >= MAX_BRACE_EXPANSIONS) return;
+
+		const start = text.indexOf('{');
+		if (start === -1) {
+			results.push(text);
+			return;
+		}
+
+		// Find the matching closing brace for the first group.
+		let depth = 0;
+		let end = -1;
+		for (let i = start; i < text.length; i++) {
+			if (text[i] === '{') depth++;
+			else if (text[i] === '}') {
+				depth--;
+				if (depth === 0) {
+					end = i;
+					break;
+				}
+			}
+		}
+		if (end === -1) {
+			// Unbalanced brace — treat as a literal character.
+			results.push(text);
+			return;
+		}
+
+		// Split the group body on top-level commas.
+		/** @type {string[]} */
+		const parts = [];
+		let last = start + 1;
+		depth = 0;
+		for (let i = start + 1; i < end; i++) {
+			const ch = text[i];
+			if (ch === '{') depth++;
+			else if (ch === '}') depth--;
+			else if (ch === ',' && depth === 0) {
+				parts.push(text.slice(last, i));
+				last = i + 1;
+			}
+		}
+		parts.push(text.slice(last, end));
+
+		if (parts.length <= 1) {
+			// `{a}` is not a brace set — keep the text as-is.
+			results.push(text);
+			return;
+		}
+
+		for (const part of parts) {
+			visit(text.slice(0, start) + part + text.slice(end + 1));
+			if (results.length >= MAX_BRACE_EXPANSIONS) return;
+		}
+	};
+
+	visit(entry);
+	return results;
+}
 
 /**
  * @param {string} raw: raw File Scope path or glob from PROMPT.md
@@ -66,15 +149,12 @@ function normalizeScopeEntry(raw) {
 }
 
 /**
- * Expand a single File Scope entry into concrete paths for glob overlap probes.
+ * Expand one brace-free scope entry into concrete probe paths.
  *
- * @param {string} raw
+ * @param {string} entry: normalized scope entry (no leading `./`)
  * @returns {string[]}
  */
-function expandScopeEntryProbes(raw) {
-	const entry = normalizeScopeEntry(raw);
-	if (!entry) return [];
-
+function expandSingleEntryProbes(entry) {
 	/** @type {Set<string>} */
 	const probes = new Set([entry]);
 
@@ -111,6 +191,28 @@ function expandScopeEntryProbes(raw) {
 }
 
 /**
+ * Expand a single File Scope entry into concrete paths for glob overlap probes.
+ * Brace groups (`{a,b}`) are expanded first so probes cover every alternative.
+ *
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function expandScopeEntryProbes(raw) {
+	const entry = normalizeScopeEntry(raw);
+	if (!entry) return [];
+
+	/** @type {Set<string>} */
+	const probes = new Set();
+	for (const variant of expandBracePattern(entry)) {
+		for (const probe of expandSingleEntryProbes(variant)) {
+			probes.add(probe);
+		}
+	}
+
+	return [...probes];
+}
+
+/**
  * @param {string[]} fileScope
  * @returns {string[]}
  */
@@ -136,7 +238,7 @@ export function expandFileScopeProbes(fileScope) {
  * @returns {boolean}
  */
 function patternHasGlobMeta(pattern) {
-	return /[*?[\\]/.test(pattern);
+	return /[*?[\\]{}]/.test(pattern);
 }
 
 /**
