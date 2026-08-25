@@ -42,7 +42,14 @@ Closes #271 — Replace `array.includes`-in-loop dedup with `Set` in `parse-prom
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/packet/parse-prompt.test.mjs tests/config/cursor-rules/profile.test.mjs` |
-| fileScopeMustChange | `src/tasks/packet/parse-prompt.mjs` |
+| fileScopeMustChange | `src/config/cursor-rules/profile.mjs` |
+
+## Amendments
+
+### Amendment 1 — 2026-08-25 (operator)
+
+**Issue:** Preflight `prelanded-file-scope` — `src/tasks/packet/parse-prompt.mjs` already changed on `main` (SP-723 wave 0 metachar validation #268), not Set dedup (#271).
+**Resolution:** Redirected `fileScopeMustChange` to `profile.mjs`. File Scope still includes `parse-prompt.mjs` and `analyze/index.mjs` for Set dedup delivery.
 
 ## Steps
 

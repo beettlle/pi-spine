@@ -52,6 +52,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
+| 2026-08-25 | Amendment 1 | Redirect fileScopeMustChange to profile.mjs (SP-723 pre-landed parse-prompt) |
 
 ## Blockers
 

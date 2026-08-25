@@ -8,7 +8,7 @@
 **Operator approved scope:** yes (2026-08-25)
 **Composition choice:** Brutal-audit follow-on + **all three** enhancements (#265, #262, #271) — operator override for enh budget (>2)
 **Worker model pin:** `zai/glm-5.3` (activeProfile: `default`) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Agent pin override:** yes (2026-08-25, operator `agents.activeProfile` → `allegretto` after quota snapshot showed zai pool 0 tasks / google headroom; recorded before wave 1)
 **GitNexus:** refreshed 2026-08-24 — status up-to-date with HEAD (`1729dc3c`)
 
 ---
