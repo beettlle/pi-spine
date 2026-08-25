@@ -1,0 +1,22 @@
+spine-tasks/SP-723-contract-testcommand-harden/STATUS.md
+  h_2a17159c706ba1 57-58,67
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 29-34,164,167
+src/tasks/packet/parse-prompt.mjs
+  h_2a17159c706ba1 116-145
+tests/batch/contract-exec.test.mjs
+  h_2a17159c706ba1 22
+tests/batch/matrix-execution.test.mjs
+  h_2a17159c706ba1 999
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "eb7fb02091a9dff07790ffa15a977391f02b9f21",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
