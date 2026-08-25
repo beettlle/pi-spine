@@ -21,6 +21,7 @@ import { appendJournalEvent } from "./journal.mjs";
 import { recordBatchTerminalMetric } from "./metrics.mjs";
 import { writeBatchPostMortem } from "./postmortem.mjs";
 import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
+import { withBatchStateLock } from "./batch-state-lock.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
 import { readAliveBatchEnginePid } from "./batch-state-io.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
@@ -206,55 +207,60 @@ export function dismissBatch(ctx) {
 			force,
 		});
 	}
-	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
-	const postMortemPath = writeBatchPostMortem({
-		projectRoot,
-		batchState: loaded.raw,
-		reconciliation,
-	});
-	const endedAt = Date.now();
-	appendBatchHistoryEntry(projectRoot, {
-		batchId,
-		action: "dismissed",
-		endedAt,
-		diagnosis,
-		reason: reason ?? null,
-		archivePath: path.relative(projectRoot, archivePath),
-		postMortemPath,
-	});
-	appendJournalEvent(projectRoot, batchId, "batch.dismissed", {
-		diagnosis,
-		reason: reason ?? null,
-		archivePath: path.relative(projectRoot, archivePath),
-	});
-	const configResult = loadSpineConfig(projectRoot);
-	const config = configResult.config ?? {};
-	recordBatchTerminalMetric({
-		projectRoot,
-		batchId,
-		batchState: { ...loaded.raw, endedAt },
-		diagnosis: diagnosis ?? "dismissed",
-		config,
-	});
-	cleanupBatchLaneWorktrees({
-		projectRoot,
-		batchId,
-		batchState: loaded.raw,
-		config,
-	});
-	clearCompletedBatchState(loaded.path, batchId);
-	bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
+	// Terminal dismiss write section under the global batch-state lock
+	// (SP-722 / #264): archive, history entry, and clearing the active state
+	// must not interleave with a concurrent engine save or resume writer.
+	return withBatchStateLock(projectRoot, () => {
+		const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+		const postMortemPath = writeBatchPostMortem({
+			projectRoot,
+			batchState: loaded.raw,
+			reconciliation,
+		});
+		const endedAt = Date.now();
+		appendBatchHistoryEntry(projectRoot, {
+			batchId,
+			action: "dismissed",
+			endedAt,
+			diagnosis,
+			reason: reason ?? null,
+			archivePath: path.relative(projectRoot, archivePath),
+			postMortemPath,
+		});
+		appendJournalEvent(projectRoot, batchId, "batch.dismissed", {
+			diagnosis,
+			reason: reason ?? null,
+			archivePath: path.relative(projectRoot, archivePath),
+		});
+		const configResult = loadSpineConfig(projectRoot);
+		const config = configResult.config ?? {};
+		recordBatchTerminalMetric({
+			projectRoot,
+			batchId,
+			batchState: { ...loaded.raw, endedAt },
+			diagnosis: diagnosis ?? "dismissed",
+			config,
+		});
+		cleanupBatchLaneWorktrees({
+			projectRoot,
+			batchId,
+			batchState: loaded.raw,
+			config,
+		});
+		clearCompletedBatchState(loaded.path, batchId);
+		bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
 
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId,
-		diagnosis,
-		headline: `Batch ${batchId} dismissed and archived`,
-		suggestedCommand: "spine preflight",
-		alternatives: ["spine plan all"],
-		archivePath,
-	};
+		return {
+			ok: true,
+			exitCode: 0,
+			batchId,
+			diagnosis,
+			headline: `Batch ${batchId} dismissed and archived`,
+			suggestedCommand: "spine preflight",
+			alternatives: ["spine plan all"],
+			archivePath,
+		};
+	});
 }
 
 /**
@@ -407,52 +413,57 @@ export function completeBatch(ctx) {
 
 	terminateSupervisorIfRunning(projectRoot, batchId, "batch_complete");
 
-	const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
-	const postMortemPath = writeBatchPostMortem({
-		projectRoot,
-		batchState: loaded.raw,
-		reconciliation,
-	});
-	const endedAt = Date.now();
-	appendBatchHistoryEntry(projectRoot, {
-		batchId,
-		action: "completed",
-		endedAt,
-		diagnosis: "completed",
-		detectManualMerge,
-		archivePath: path.relative(projectRoot, archivePath),
-		postMortemPath,
-	});
-	appendJournalEvent(projectRoot, batchId, "batch.completed", {
-		detectManualMerge,
-		archivePath: path.relative(projectRoot, archivePath),
-		lifecycle: "complete",
-	});
-	const configResult = loadSpineConfig(projectRoot);
-	const config = configResult.config ?? {};
-	recordBatchTerminalMetric({
-		projectRoot,
-		batchId,
-		batchState: { ...loaded.raw, endedAt },
-		diagnosis: "completed",
-		config,
-	});
-	cleanupBatchLaneWorktrees({
-		projectRoot,
-		batchId,
-		batchState: loaded.raw,
-		config,
-	});
-	clearCompletedBatchState(loaded.path, batchId);
+	// Terminal complete write section under the global batch-state lock
+	// (SP-722 / #264): archive, history entry, and clearing the active state
+	// must not interleave with a concurrent engine save or resume writer.
+	return withBatchStateLock(projectRoot, () => {
+		const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+		const postMortemPath = writeBatchPostMortem({
+			projectRoot,
+			batchState: loaded.raw,
+			reconciliation,
+		});
+		const endedAt = Date.now();
+		appendBatchHistoryEntry(projectRoot, {
+			batchId,
+			action: "completed",
+			endedAt,
+			diagnosis: "completed",
+			detectManualMerge,
+			archivePath: path.relative(projectRoot, archivePath),
+			postMortemPath,
+		});
+		appendJournalEvent(projectRoot, batchId, "batch.completed", {
+			detectManualMerge,
+			archivePath: path.relative(projectRoot, archivePath),
+			lifecycle: "complete",
+		});
+		const configResult = loadSpineConfig(projectRoot);
+		const config = configResult.config ?? {};
+		recordBatchTerminalMetric({
+			projectRoot,
+			batchId,
+			batchState: { ...loaded.raw, endedAt },
+			diagnosis: "completed",
+			config,
+		});
+		cleanupBatchLaneWorktrees({
+			projectRoot,
+			batchId,
+			batchState: loaded.raw,
+			config,
+		});
+		clearCompletedBatchState(loaded.path, batchId);
 
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId,
-		diagnosis: "completed",
-		headline: `Batch ${batchId} completed and archived`,
-		suggestedCommand: "spine preflight",
-		alternatives: ["spine plan all"],
-		archivePath,
-	};
+		return {
+			ok: true,
+			exitCode: 0,
+			batchId,
+			diagnosis: "completed",
+			headline: `Batch ${batchId} completed and archived`,
+			suggestedCommand: "spine preflight",
+			alternatives: ["spine plan all"],
+			archivePath,
+		};
+	});
 }

@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
+import { withBatchStateLock } from "./batch-state-lock.mjs";
 import {
 	clearBatchEnginePid,
 	evaluateBatchStateWriteGuard,
@@ -52,27 +53,35 @@ function archivedBatchStatePath(projectRoot, batchId) {
 }
 
 /**
+ * Persist batch state under the global batch-state lock (SP-722 / #264).
+ *
+ * The guard evaluation and the write run inside one critical section so the
+ * check-then-act pair cannot race a concurrent writer from another process
+ * (engine vs. CLI complete/resume/abort).
+ *
  * @param {string} projectRoot
  * @param {object} state
  * @param {{ bypassWriteGuard?: boolean }} [options]
  */
 export function saveSpineBatchState(projectRoot, state, options = {}) {
-	const guard = options.bypassWriteGuard
-		? { allowed: true }
-		: evaluateBatchStateWriteGuard(projectRoot, state);
-	if (!guard.allowed) {
-		const loaded = loadSpineBatchState(projectRoot);
-		return loaded.raw ?? state;
-	}
+	return withBatchStateLock(projectRoot, () => {
+		const guard = options.bypassWriteGuard
+			? { allowed: true }
+			: evaluateBatchStateWriteGuard(projectRoot, state);
+		if (!guard.allowed) {
+			const loaded = loadSpineBatchState(projectRoot);
+			return loaded.raw ?? state;
+		}
 
-	const filePath = spineBatchStatePath(projectRoot);
-	fs.mkdirSync(path.dirname(filePath), { recursive: true });
-	if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {
-		clearBatchEnginePid(state);
-	}
-	const next = { ...state, updatedAt: Date.now() };
-	writeJsonAtomic(filePath, next);
-	return next;
+		const filePath = spineBatchStatePath(projectRoot);
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {
+			clearBatchEnginePid(state);
+		}
+		const next = { ...state, updatedAt: Date.now() };
+		writeJsonAtomic(filePath, next);
+		return next;
+	});
 }
 
 /**
@@ -151,43 +160,48 @@ function quarantineCorruptBatchHistory(projectRoot, filePath, reason) {
 }
 
 /**
- * Append an entry to `.spine/batch-history.json` atomically.
+ * Append an entry to `.spine/batch-history.json` atomically under the
+ * global batch-state lock (SP-722 / #264).
  *
  * The write goes through `writeJsonAtomic` (temp file + rename) so a crash or
  * concurrent reader never observes a truncated history (#261). A corrupt
- * existing file is quarantined, never silently reset to `[]`.
+ * existing file is quarantined, never silently reset to `[]`. The full
+ * read-modify-write runs under the same lock as batch-state writes so
+ * concurrent processes cannot lose history entries.
  *
  * @param {string} projectRoot
  * @param {object} entry
  */
 export function appendBatchHistoryEntry(projectRoot, entry) {
-	const filePath = batchHistoryPath(projectRoot);
-	fs.mkdirSync(path.dirname(filePath), { recursive: true });
+	return withBatchStateLock(projectRoot, () => {
+		const filePath = batchHistoryPath(projectRoot);
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
-	/** @type {object[]} */
-	let history = [];
-	if (fs.existsSync(filePath)) {
-		try {
-			const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-			if (Array.isArray(parsed)) {
-				history = parsed;
-			} else {
-				if (quarantineCorruptBatchHistory(projectRoot, filePath, "root value is not an array") === null) {
-					throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+		/** @type {object[]} */
+		let history = [];
+		if (fs.existsSync(filePath)) {
+			try {
+				const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+				if (Array.isArray(parsed)) {
+					history = parsed;
+				} else {
+					if (quarantineCorruptBatchHistory(projectRoot, filePath, "root value is not an array") === null) {
+						throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+					}
 				}
-			}
-		} catch (err) {
-			if (err instanceof SyntaxError) {
-				if (quarantineCorruptBatchHistory(projectRoot, filePath, err.message) === null) {
-					throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+			} catch (err) {
+				if (err instanceof SyntaxError) {
+					if (quarantineCorruptBatchHistory(projectRoot, filePath, err.message) === null) {
+						throw new Error(`Refusing to append batch history: ${filePath} is corrupt and could not be quarantined`);
+					}
+				} else {
+					throw err;
 				}
-			} else {
-				throw err;
 			}
 		}
-	}
 
-	history.push(entry);
-	writeJsonAtomic(filePath, history);
-	return filePath;
+		history.push(entry);
+		writeJsonAtomic(filePath, history);
+		return filePath;
+	});
 }
