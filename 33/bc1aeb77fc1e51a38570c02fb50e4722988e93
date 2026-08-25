@@ -1,0 +1,18 @@
+spine-tasks/SP-728-review-extract-stub/.reviews/1-20260825T225301.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-728-review-extract-stub/.reviews/3-20260825T225436.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-728-review-extract-stub/.reviews/final-20260825T225805.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "33bc1aeb77fc1e51a38570c02fb50e4722988e93",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
