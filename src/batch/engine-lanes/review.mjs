@@ -16,7 +16,6 @@ import {
 	saveSpineBatchState,
 	updateSegmentForTask,
 } from "../state.mjs";
-import { runWorker } from "../worker-host.mjs";
 import {
 	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
@@ -34,12 +33,13 @@ import {
 	findFinalReviewStepNumber,
 	findLatestStepReviewArtifact,
 	readReviewLevel,
-	REVIEW_TIMEOUT_REASON,
-	resolveReviewHonorJournalEvent,
-	resolveReviewPassKind,
-	shouldEmitReviewResumed,
 	runStepReview,
 } from "../review.mjs";
+import {
+	honorCompletedReview,
+	removeDoneFile,
+	runReviewPollLoop,
+} from "./review-poll.mjs";
 
 export {
 	buildFinalReviewArtifactPath,
@@ -454,16 +454,6 @@ export async function runEngineCodeReview({
 }
 
 /**
- * @param {string} taskFolder
- */
-function removeDoneFile(taskFolder) {
-	const donePath = path.join(taskFolder, ".DONE");
-	if (fs.existsSync(donePath)) {
-		fs.unlinkSync(donePath);
-	}
-}
-
-/**
  * @param {object} params
  */
 function recordContractVerifyTaskFailure({
@@ -644,66 +634,6 @@ function recordCodeReviewTaskFailure({
 
 /**
  * @param {object} params
- * @param {string} params.projectRoot
- * @param {string} params.batchId
- * @param {object} params.task
- * @param {object} params.lane
- * @param {string} params.laneCorrelationId
- * @param {"code"|"final"} params.reviewType
- * @param {number} params.reviewAttempt
- * @param {object} params.honored
- * @param {"review.crash_recovered"|"review.skipped_fresh_artifact"|null} params.honorJournalEvent
- */
-function appendReviewHonorJournalEvents({
-	projectRoot,
-	batchId,
-	task,
-	lane,
-	laneCorrelationId,
-	reviewType,
-	reviewAttempt,
-	honored,
-	honorJournalEvent,
-}) {
-	const taskId = task.taskId;
-	const laneNumber = lane.laneNumber;
-	if (!honorJournalEvent) return;
-
-	const basePayload = {
-		taskId,
-		laneNumber,
-		laneId: lane.laneId,
-		correlationId: laneCorrelationId,
-		reviewType,
-		artifactPath: honored.artifactPath,
-		honorSource: honored.source,
-		reviewPassKind: resolveReviewPassKind(honorJournalEvent),
-	};
-
-	if (reviewType === "plan") {
-		appendJournalEvent(projectRoot, batchId, honorJournalEvent, {
-			...basePayload,
-			planReviewAttempt: reviewAttempt,
-		});
-		return;
-	}
-
-	if (reviewType === "code") {
-		appendJournalEvent(projectRoot, batchId, honorJournalEvent, {
-			...basePayload,
-			codeReviewAttempt: reviewAttempt,
-		});
-		return;
-	}
-
-	appendJournalEvent(projectRoot, batchId, honorJournalEvent, {
-		...basePayload,
-		finalAttempt: reviewAttempt,
-	});
-}
-
-/**
- * @param {object} params
  */
 async function runCodeReviewPhase({
 	projectRoot,
@@ -718,8 +648,6 @@ async function runCodeReviewPhase({
 	laneCorrelationId,
 	fileScopePaths,
 }) {
-	const taskId = task.taskId;
-	const laneNumber = lane.laneNumber;
 	const reviewLevel = readReviewLevel(taskFolderInWorktree);
 	if (!shouldRunCodeReview({ reviewLevel })) {
 		return { ok: true, skipped: true };
@@ -730,235 +658,47 @@ async function runCodeReviewPhase({
 		config?.review?.maxCodeReviewAttempts ??
 		config?.review?.maxFinalAttempts ??
 		REVIEW_DEFAULTS.maxFinalAttempts;
-	let codeReviewAttempt = task.codeReviewAttempts ?? 0;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);
-	const honored = findCompletedCodeReview({
+	const honoredResult = honorCompletedReview({
+		reviewType: "code",
+		passVerdict: "APPROVE",
+		attemptField: "codeReviewAttempts",
+		attemptKey: "codeReviewAttempt",
+		findCompletedReview: findCompletedCodeReview,
+		projectRoot,
+		state,
+		batchId,
+		task,
+		lane,
+		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
-		taskId,
 	});
-	if (honored?.verdict === "APPROVE") {
-		const honorJournalEvent = resolveReviewHonorJournalEvent({
-			journalEvents,
-			taskId,
-			reviewType: "code",
-			honorSource: honored.source,
-			reviewAttempt: codeReviewAttempt,
-		});
-		appendReviewHonorJournalEvents({
-			projectRoot,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			reviewType: "code",
-			reviewAttempt: codeReviewAttempt,
-			honored,
-			honorJournalEvent,
-		});
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "code",
-			verdict: "APPROVE",
-			feedback: honored.feedback,
-			artifactPath: honored.artifactPath,
-			codeReviewAttempt: codeReviewAttempt + 1,
-			honored: true,
-			honorSource: honored.source,
-			reviewPassKind: resolveReviewPassKind(honorJournalEvent),
-		});
-		task.codeReviewAttempts = codeReviewAttempt + 1;
-		saveSpineBatchState(projectRoot, state);
-		return { ok: true, verdict: "APPROVE", codeReviewAttempt: codeReviewAttempt + 1, honored: true };
-	}
+	if (honoredResult) return honoredResult;
 
-	const journal = {
+	return await runReviewPollLoop({
+		reviewType: "code",
+		passVerdict: "APPROVE",
+		attemptField: "codeReviewAttempts",
+		attemptKey: "codeReviewAttempt",
+		maxAttempts: maxCodeReviewAttempts,
+		runEngineReview: runEngineCodeReview,
+		recordReviewTaskFailure: recordCodeReviewTaskFailure,
+		invalidVerdictOutput: "code review artifact missing APPROVE or REVISE verdict",
+		journalEvents,
 		projectRoot,
+		state,
 		batchId,
-		taskId,
-		laneNumber,
-		correlationId: laneCorrelationId,
-	};
-
-	let reviewResumedEmitted = false;
-
-	while (true) {
-		if (
-			!reviewResumedEmitted &&
-			shouldEmitReviewResumed({ journalEvents, taskId })
-		) {
-			appendJournalEvent(projectRoot, batchId, "review.resumed", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				reviewType: "code",
-				codeReviewAttempt: codeReviewAttempt + 1,
-			});
-			reviewResumedEmitted = true;
-		}
-
-		const reviewResult = await runEngineCodeReview({
-			taskFolder: taskFolderInWorktree,
-			worktreePath: wt,
-			config,
-			attempt: codeReviewAttempt + 1,
-			journal,
-		});
-
-		if (reviewResult.spawnFailed) {
-			const spawnExitReason =
-				reviewResult.reason === REVIEW_TIMEOUT_REASON
-					? "code_review_timeout"
-					: "code_review_spawn_failed";
-			recordCodeReviewTaskFailure({
-				projectRoot,
-				state,
-				batchId,
-				task,
-				lane,
-				laneCorrelationId,
-				exitReason: spawnExitReason,
-				verdict: null,
-				codeReviewAttempt,
-				config,
-				taskFolder: taskFolderInWorktree,
-			});
-			return {
-				ok: false,
-				error: spawnExitReason,
-				output: reviewResult.error ?? "code review spawn failed",
-			};
-		}
-
-		if (reviewResult.skipped) {
-			return { ok: true, skipped: true };
-		}
-
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "code",
-			verdict: reviewResult.verdict,
-			feedback: reviewResult.feedback,
-			artifactPath: reviewResult.artifactPath,
-			codeReviewAttempt: codeReviewAttempt + 1,
-		});
-
-		if (reviewResult.verdict === "APPROVE") {
-			task.codeReviewAttempts = codeReviewAttempt + 1;
-			saveSpineBatchState(projectRoot, state);
-			return { ok: true, verdict: "APPROVE", codeReviewAttempt: codeReviewAttempt + 1 };
-		}
-
-		if (reviewResult.verdict === "REVISE") {
-			codeReviewAttempt++;
-			task.codeReviewAttempts = codeReviewAttempt;
-			saveSpineBatchState(projectRoot, state);
-
-			if (codeReviewAttempt >= maxCodeReviewAttempts) {
-				removeDoneFile(taskFolderInWorktree);
-				appendJournalEvent(projectRoot, batchId, "review.exhausted", {
-					taskId,
-					laneNumber,
-					laneId: lane.laneId,
-					correlationId: laneCorrelationId,
-					codeReviewAttempt,
-					maxCodeReviewAttempts,
-					reviewType: "code",
-				});
-				recordCodeReviewTaskFailure({
-					projectRoot,
-					state,
-					batchId,
-					task,
-					lane,
-					laneCorrelationId,
-					exitReason: "review_exhausted",
-					verdict: "REVISE",
-					codeReviewAttempt,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
-			}
-
-			removeDoneFile(taskFolderInWorktree);
-			const reworkResult = await runWorker({
-				worktreePath: wt,
-				taskFolder: taskFolderInWorktree,
-				projectRoot,
-				batchId,
-				laneNumber,
-				taskId,
-				laneBranch: taskBranch,
-				laneCorrelationId,
-				fileScopePaths,
-				config,
-				onHeartbeat: (timestamp) => {
-					lane.lastHeartbeatAt = timestamp;
-					saveSpineBatchState(projectRoot, state);
-				},
-				onWorkerPid: (pid) => {
-					if (pid > 0) {
-						lane.workerPid = pid;
-						saveSpineBatchState(projectRoot, state);
-					}
-				},
-			});
-			if (!reworkResult.ok) {
-				const aborted = reworkResult.classification === "aborted";
-				task.status = aborted ? "aborted" : "failed";
-				task.endedAt = Date.now();
-				task.exitReason = reworkResult.classification ?? "worker_failed";
-				updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
-				recomputeTaskCounters(state);
-				saveSpineBatchState(projectRoot, state);
-				recordLaneTaskMetric({
-					projectRoot,
-					batchId,
-					task,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, aborted, workerResult: reworkResult };
-			}
-
-			appendJournalEvent(projectRoot, batchId, "lane.completed", {
-				laneNumber,
-				laneId: lane.laneId,
-				taskId,
-				correlationId: laneCorrelationId,
-				phase: "code_rework",
-			});
-			continue;
-		}
-
-		recordCodeReviewTaskFailure({
-			projectRoot,
-			state,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			exitReason: "code_review_invalid_verdict",
-			verdict: reviewResult.verdict,
-			codeReviewAttempt,
-			config,
-			taskFolder: taskFolderInWorktree,
-		});
-		return {
-			ok: false,
-			error: "code_review_invalid_verdict",
-			output: "code review artifact missing APPROVE or REVISE verdict",
-		};
-	}
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+	});
 }
 
 /**
@@ -986,303 +726,98 @@ async function runFinalReviewPhase({
 	}
 
 	const maxFinalAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
-	let finalAttempt = task.finalAttempts ?? 0;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);
-	const honoredFinal = findCompletedFinalReview({
+	const honoredResult = honorCompletedReview({
+		reviewType: "final",
+		passVerdict: "PASS",
+		attemptField: "finalAttempts",
+		attemptKey: "finalAttempt",
+		findCompletedReview: findCompletedFinalReview,
+		projectRoot,
+		state,
+		batchId,
+		task,
+		lane,
+		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
-		taskId,
 	});
-	if (honoredFinal?.verdict === "PASS") {
-		const honorJournalEvent = resolveReviewHonorJournalEvent({
-			journalEvents,
-			taskId,
-			reviewType: "final",
-			honorSource: honoredFinal.source,
-			reviewAttempt: finalAttempt,
-		});
-		appendReviewHonorJournalEvents({
-			projectRoot,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			reviewType: "final",
-			reviewAttempt: finalAttempt,
-			honored: honoredFinal,
-			honorJournalEvent,
-		});
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "final",
-			verdict: "PASS",
-			feedback: honoredFinal.feedback,
-			artifactPath: honoredFinal.artifactPath,
-			finalAttempt: finalAttempt + 1,
-			honored: true,
-			honorSource: honoredFinal.source,
-			reviewPassKind: resolveReviewPassKind(honorJournalEvent),
-		});
-		task.finalAttempts = finalAttempt + 1;
-		saveSpineBatchState(projectRoot, state);
-		return { ok: true, verdict: "PASS", finalAttempt: finalAttempt + 1, honored: true };
-	}
+	if (honoredResult) return honoredResult;
 
-	const journal = {
-		projectRoot,
-		batchId,
-		taskId,
-		laneNumber,
-		correlationId: laneCorrelationId,
-	};
-
-	let reviewResumedEmitted = false;
-
-	while (true) {
-		if (
-			!reviewResumedEmitted &&
-			shouldEmitReviewResumed({ journalEvents, taskId })
-		) {
-			appendJournalEvent(projectRoot, batchId, "review.resumed", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				reviewType: "final",
-				finalAttempt: finalAttempt + 1,
-			});
-			reviewResumedEmitted = true;
-		}
-
-		let contractVerifyResult = null;
-		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
-		const parsedContract = parseContract(promptMarkdown);
-		if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
-			const journalEvents = readJournalEvents(projectRoot, batchId);
-			const sinceCommit = resolveTaskStartCommit({
-				journal: journalEvents,
-				taskId,
-				laneId: lane.laneId,
-				batchId,
-				worktreePath: wt,
-			});
-			contractVerifyResult = verifyContract(wt, parsedContract, {
-				...config,
-				baseBranch,
-				sinceCommit: sinceCommit ?? undefined,
-				projectRoot,
-				batchId,
-				taskId,
-				taskFolder: taskFolderInWorktree,
-			});
-			task.contractOk = contractVerifyResult.ok;
-			saveSpineBatchState(projectRoot, state);
-			appendJournalEvent(projectRoot, batchId, "contract.verified", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				ok: contractVerifyResult.ok,
-				checks: contractVerifyResult.checks,
-			});
-			if (!contractVerifyResult.ok) {
-				removeDoneFile(taskFolderInWorktree);
-				recordContractVerifyTaskFailure({
-					projectRoot,
-					state,
+	return await runReviewPollLoop({
+		reviewType: "final",
+		passVerdict: "PASS",
+		attemptField: "finalAttempts",
+		attemptKey: "finalAttempt",
+		maxAttempts: maxFinalAttempts,
+		runEngineReview: runEngineFinalReview,
+		recordReviewTaskFailure: recordFinalReviewTaskFailure,
+		invalidVerdictOutput: "final review artifact missing PASS, REVISE, or REPLAN verdict",
+		allowReplan: true,
+		beforeReview: async () => {
+			let contractVerifyResult = null;
+			const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
+			const parsedContract = parseContract(promptMarkdown);
+			if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
+				const events = readJournalEvents(projectRoot, batchId);
+				const sinceCommit = resolveTaskStartCommit({
+					journal: events,
+					taskId,
+					laneId: lane.laneId,
 					batchId,
-					task,
-					lane,
-					laneCorrelationId,
-					contractVerifyResult,
-					config,
+					worktreePath: wt,
+				});
+				contractVerifyResult = verifyContract(wt, parsedContract, {
+					...config,
+					baseBranch,
+					sinceCommit: sinceCommit ?? undefined,
+					projectRoot,
+					batchId,
+					taskId,
 					taskFolder: taskFolderInWorktree,
 				});
-				return { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" };
-			}
-		}
-
-		const reviewResult = await runEngineFinalReview({
-			taskFolder: taskFolderInWorktree,
-			worktreePath: wt,
-			config,
-			attempt: finalAttempt + 1,
-			contractVerifyResult,
-			journal,
-		});
-
-		if (reviewResult.spawnFailed) {
-			const spawnExitReason =
-				reviewResult.reason === REVIEW_TIMEOUT_REASON
-					? "final_review_timeout"
-					: "final_review_spawn_failed";
-			recordFinalReviewTaskFailure({
-				projectRoot,
-				state,
-				batchId,
-				task,
-				lane,
-				laneCorrelationId,
-				exitReason: spawnExitReason,
-				verdict: null,
-				finalAttempt,
-				config,
-				taskFolder: taskFolderInWorktree,
-			});
-			return {
-				ok: false,
-				error: spawnExitReason,
-				output: reviewResult.error ?? "final review spawn failed",
-			};
-		}
-
-		if (reviewResult.skipped) {
-			return { ok: true, skipped: true };
-		}
-
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "final",
-			verdict: reviewResult.verdict,
-			feedback: reviewResult.feedback,
-			artifactPath: reviewResult.artifactPath,
-			finalAttempt: finalAttempt + 1,
-		});
-
-		if (reviewResult.verdict === "PASS") {
-			task.finalAttempts = finalAttempt + 1;
-			saveSpineBatchState(projectRoot, state);
-			return { ok: true, verdict: "PASS", finalAttempt: finalAttempt + 1 };
-		}
-
-		if (reviewResult.verdict === "REPLAN") {
-			removeDoneFile(taskFolderInWorktree);
-			task.finalAttempts = finalAttempt + 1;
-			recordFinalReviewTaskFailure({
-				projectRoot,
-				state,
-				batchId,
-				task,
-				lane,
-				laneCorrelationId,
-				exitReason: "needs_replan",
-				verdict: "REPLAN",
-				finalAttempt: finalAttempt + 1,
-				config,
-				taskFolder: taskFolderInWorktree,
-			});
-			return { ok: false, exitReason: "needs_replan", verdict: "REPLAN" };
-		}
-
-		if (reviewResult.verdict === "REVISE") {
-			finalAttempt++;
-			task.finalAttempts = finalAttempt;
-			saveSpineBatchState(projectRoot, state);
-
-			if (finalAttempt >= maxFinalAttempts) {
-				removeDoneFile(taskFolderInWorktree);
-				appendJournalEvent(projectRoot, batchId, "review.exhausted", {
+				task.contractOk = contractVerifyResult.ok;
+				saveSpineBatchState(projectRoot, state);
+				appendJournalEvent(projectRoot, batchId, "contract.verified", {
 					taskId,
 					laneNumber,
 					laneId: lane.laneId,
 					correlationId: laneCorrelationId,
-					finalAttempt,
-					maxFinalAttempts,
-					reviewType: "final",
+					ok: contractVerifyResult.ok,
+					checks: contractVerifyResult.checks,
 				});
-				recordFinalReviewTaskFailure({
-					projectRoot,
-					state,
-					batchId,
-					task,
-					lane,
-					laneCorrelationId,
-					exitReason: "review_exhausted",
-					verdict: "REVISE",
-					finalAttempt,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
+				if (!contractVerifyResult.ok) {
+					removeDoneFile(taskFolderInWorktree);
+					recordContractVerifyTaskFailure({
+						projectRoot,
+						state,
+						batchId,
+						task,
+						lane,
+						laneCorrelationId,
+						contractVerifyResult,
+						config,
+						taskFolder: taskFolderInWorktree,
+					});
+					return { abort: { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" } };
+				}
 			}
-
-			removeDoneFile(taskFolderInWorktree);
-			const reworkResult = await runWorker({
-				worktreePath: wt,
-				taskFolder: taskFolderInWorktree,
-				projectRoot,
-				batchId,
-				laneNumber,
-				taskId,
-				laneBranch: taskBranch,
-				laneCorrelationId,
-				fileScopePaths,
-				config,
-				onHeartbeat: (timestamp) => {
-					lane.lastHeartbeatAt = timestamp;
-					saveSpineBatchState(projectRoot, state);
-				},
-				onWorkerPid: (pid) => {
-					if (pid > 0) {
-						lane.workerPid = pid;
-						saveSpineBatchState(projectRoot, state);
-					}
-				},
-			});
-			if (!reworkResult.ok) {
-				const aborted = reworkResult.classification === "aborted";
-				task.status = aborted ? "aborted" : "failed";
-				task.endedAt = Date.now();
-				task.exitReason = reworkResult.classification ?? "worker_failed";
-				updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
-				recomputeTaskCounters(state);
-				saveSpineBatchState(projectRoot, state);
-				recordLaneTaskMetric({
-					projectRoot,
-					batchId,
-					task,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, aborted, workerResult: reworkResult };
-			}
-
-			appendJournalEvent(projectRoot, batchId, "lane.completed", {
-				laneNumber,
-				laneId: lane.laneId,
-				taskId,
-				correlationId: laneCorrelationId,
-				phase: "final_rework",
-			});
-			continue;
-		}
-
-		recordFinalReviewTaskFailure({
-			projectRoot,
-			state,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			exitReason: "final_review_invalid_verdict",
-			verdict: reviewResult.verdict,
-			finalAttempt,
-			config,
-			taskFolder: taskFolderInWorktree,
-		});
-		return {
-			ok: false,
-			error: "final_review_invalid_verdict",
-			output: "final review artifact missing PASS, REVISE, or REPLAN verdict",
-		};
-	}
+			return { extraReviewParams: { contractVerifyResult } };
+		},
+		journalEvents,
+		projectRoot,
+		state,
+		batchId,
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+	});
 }
 
 /**
@@ -1306,8 +841,6 @@ async function runPlanReviewPhase({
 	laneCorrelationId,
 	fileScopePaths,
 }) {
-	const taskId = task.taskId;
-	const laneNumber = lane.laneNumber;
 	const reviewLevel = readReviewLevel(taskFolderInWorktree);
 	if (!isReviewTypeRequired(reviewLevel, "plan")) {
 		return { ok: true, skipped: true };
@@ -1318,235 +851,47 @@ async function runPlanReviewPhase({
 		config?.review?.maxPlanReviewAttempts ??
 		config?.review?.maxFinalAttempts ??
 		REVIEW_DEFAULTS.maxFinalAttempts;
-	let planReviewAttempt = task.planReviewAttempts ?? 0;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);
-	const honored = findCompletedPlanReview({
+	const honoredResult = honorCompletedReview({
+		reviewType: "plan",
+		passVerdict: "APPROVE",
+		attemptField: "planReviewAttempts",
+		attemptKey: "planReviewAttempt",
+		findCompletedReview: findCompletedPlanReview,
+		projectRoot,
+		state,
+		batchId,
+		task,
+		lane,
+		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
-		taskId,
 	});
-	if (honored?.verdict === "APPROVE") {
-		const honorJournalEvent = resolveReviewHonorJournalEvent({
-			journalEvents,
-			taskId,
-			reviewType: "plan",
-			honorSource: honored.source,
-			reviewAttempt: planReviewAttempt,
-		});
-		appendReviewHonorJournalEvents({
-			projectRoot,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			reviewType: "plan",
-			reviewAttempt: planReviewAttempt,
-			honored,
-			honorJournalEvent,
-		});
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "plan",
-			verdict: "APPROVE",
-			feedback: honored.feedback,
-			artifactPath: honored.artifactPath,
-			planReviewAttempt: planReviewAttempt + 1,
-			honored: true,
-			honorSource: honored.source,
-			reviewPassKind: resolveReviewPassKind(honorJournalEvent),
-		});
-		task.planReviewAttempts = planReviewAttempt + 1;
-		saveSpineBatchState(projectRoot, state);
-		return { ok: true, verdict: "APPROVE", planReviewAttempt: planReviewAttempt + 1, honored: true };
-	}
+	if (honoredResult) return honoredResult;
 
-	const journal = {
+	return await runReviewPollLoop({
+		reviewType: "plan",
+		passVerdict: "APPROVE",
+		attemptField: "planReviewAttempts",
+		attemptKey: "planReviewAttempt",
+		maxAttempts: maxPlanReviewAttempts,
+		runEngineReview: runEnginePlanReview,
+		recordReviewTaskFailure: recordPlanReviewTaskFailure,
+		invalidVerdictOutput: "plan review artifact missing APPROVE or REVISE verdict",
+		journalEvents,
 		projectRoot,
+		state,
 		batchId,
-		taskId,
-		laneNumber,
-		correlationId: laneCorrelationId,
-	};
-
-	let reviewResumedEmitted = false;
-
-	while (true) {
-		if (
-			!reviewResumedEmitted &&
-			shouldEmitReviewResumed({ journalEvents, taskId })
-		) {
-			appendJournalEvent(projectRoot, batchId, "review.resumed", {
-				taskId,
-				laneNumber,
-				laneId: lane.laneId,
-				correlationId: laneCorrelationId,
-				reviewType: "plan",
-				planReviewAttempt: planReviewAttempt + 1,
-			});
-			reviewResumedEmitted = true;
-		}
-
-		const reviewResult = await runEnginePlanReview({
-			taskFolder: taskFolderInWorktree,
-			worktreePath: wt,
-			config,
-			attempt: planReviewAttempt + 1,
-			journal,
-		});
-
-		if (reviewResult.spawnFailed) {
-			const spawnExitReason =
-				reviewResult.reason === REVIEW_TIMEOUT_REASON
-					? "plan_review_timeout"
-					: "plan_review_spawn_failed";
-			recordPlanReviewTaskFailure({
-				projectRoot,
-				state,
-				batchId,
-				task,
-				lane,
-				laneCorrelationId,
-				exitReason: spawnExitReason,
-				verdict: null,
-				planReviewAttempt,
-				config,
-				taskFolder: taskFolderInWorktree,
-			});
-			return {
-				ok: false,
-				error: spawnExitReason,
-				output: reviewResult.error ?? "plan review spawn failed",
-			};
-		}
-
-		if (reviewResult.skipped) {
-			return { ok: true, skipped: true };
-		}
-
-		appendJournalEvent(projectRoot, batchId, "task.verdict_recorded", {
-			taskId,
-			laneNumber,
-			laneId: lane.laneId,
-			correlationId: laneCorrelationId,
-			reviewType: "plan",
-			verdict: reviewResult.verdict,
-			feedback: reviewResult.feedback,
-			artifactPath: reviewResult.artifactPath,
-			planReviewAttempt: planReviewAttempt + 1,
-		});
-
-		if (reviewResult.verdict === "APPROVE") {
-			task.planReviewAttempts = planReviewAttempt + 1;
-			saveSpineBatchState(projectRoot, state);
-			return { ok: true, verdict: "APPROVE", planReviewAttempt: planReviewAttempt + 1 };
-		}
-
-		if (reviewResult.verdict === "REVISE") {
-			planReviewAttempt++;
-			task.planReviewAttempts = planReviewAttempt;
-			saveSpineBatchState(projectRoot, state);
-
-			if (planReviewAttempt >= maxPlanReviewAttempts) {
-				removeDoneFile(taskFolderInWorktree);
-				appendJournalEvent(projectRoot, batchId, "review.exhausted", {
-					taskId,
-					laneNumber,
-					laneId: lane.laneId,
-					correlationId: laneCorrelationId,
-					planReviewAttempt,
-					maxPlanReviewAttempts,
-					reviewType: "plan",
-				});
-				recordPlanReviewTaskFailure({
-					projectRoot,
-					state,
-					batchId,
-					task,
-					lane,
-					laneCorrelationId,
-					exitReason: "review_exhausted",
-					verdict: "REVISE",
-					planReviewAttempt,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, exitReason: "review_exhausted", verdict: "REVISE" };
-			}
-
-			removeDoneFile(taskFolderInWorktree);
-			const reworkResult = await runWorker({
-				worktreePath: wt,
-				taskFolder: taskFolderInWorktree,
-				projectRoot,
-				batchId,
-				laneNumber,
-				taskId,
-				laneBranch: taskBranch,
-				laneCorrelationId,
-				fileScopePaths,
-				config,
-				onHeartbeat: (timestamp) => {
-					lane.lastHeartbeatAt = timestamp;
-					saveSpineBatchState(projectRoot, state);
-				},
-				onWorkerPid: (pid) => {
-					if (pid > 0) {
-						lane.workerPid = pid;
-						saveSpineBatchState(projectRoot, state);
-					}
-				},
-			});
-			if (!reworkResult.ok) {
-				const aborted = reworkResult.classification === "aborted";
-				task.status = aborted ? "aborted" : "failed";
-				task.endedAt = Date.now();
-				task.exitReason = reworkResult.classification ?? "worker_failed";
-				updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
-				recomputeTaskCounters(state);
-				saveSpineBatchState(projectRoot, state);
-				recordLaneTaskMetric({
-					projectRoot,
-					batchId,
-					task,
-					config,
-					taskFolder: taskFolderInWorktree,
-				});
-				return { ok: false, aborted, workerResult: reworkResult };
-			}
-
-			appendJournalEvent(projectRoot, batchId, "lane.completed", {
-				laneNumber,
-				laneId: lane.laneId,
-				taskId,
-				correlationId: laneCorrelationId,
-				phase: "plan_rework",
-			});
-			continue;
-		}
-
-		recordPlanReviewTaskFailure({
-			projectRoot,
-			state,
-			batchId,
-			task,
-			lane,
-			laneCorrelationId,
-			exitReason: "plan_review_invalid_verdict",
-			verdict: reviewResult.verdict,
-			planReviewAttempt,
-			config,
-			taskFolder: taskFolderInWorktree,
-		});
-		return {
-			ok: false,
-			error: "plan_review_invalid_verdict",
-			output: "plan review artifact missing APPROVE or REVISE verdict",
-		};
-	}
+		config,
+		task,
+		lane,
+		taskFolderInWorktree,
+		wt,
+		taskBranch,
+		laneCorrelationId,
+		fileScopePaths,
+	});
 }
 
 export { runCodeReviewPhase, runFinalReviewPhase, runPlanReviewPhase };
