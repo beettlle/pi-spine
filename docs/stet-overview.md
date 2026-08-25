@@ -17,9 +17,24 @@ Stet is a local-first, LLM-powered code review CLI written in Go. It reviews git
 | Hook | When | Mechanism |
 |------|------|-----------|
 | worktreeSetupHook | Once per lane, after worktree provision | spine-config.json → script under scripts/ |
-| Contract testCommand | After worker completes, during contract verification | PROMPT.md ## Contract → arbitrary shell command |
-| Gate evidence collection | After all tasks succeed, before integrate approval | spine-config.json → testing.build/testing.test |
+| Contract testCommand | After worker completes, during contract verification | PROMPT.md ## Contract → shell command (hardening tracked in [#268](https://github.com/beettlle/pi-spine/issues/268) / SP-723) |
+| Gate evidence collection | After all tasks succeed, before integrate approval | spine-config.json → testing.build/testing.test via hardened argv allowlist ([#254](https://github.com/beettlle/pi-spine/issues/254)) |
 | Worker launch script | Wraps worker spawn | development.workerLaunchScript |
+
+## Contract testCommand vs gate evidence: two execution models
+
+The two hook paths above execute commands under **different security models**. Task authors and operators must not assume a command that works in one slot works in the other.
+
+**Contract `testCommand` (PROMPT.md `## Contract`) — shell execution.** `src/batch/contract-exec.mjs` (`runContractTestCommand`) spawns the command through the operator's shell (`spawnSync($SHELL, ["-c", …])`) in the lane worktree. Full shell semantics apply: `&&` chaining, pipes, env-var prefixes (`SPINE_WORKER_STUB=1 npm test`), and `$` expansion all work today. That is why Approaches 1 and 5 below chain stet with `npm run typecheck && … stet run …` in the contract. **This is changing:** [#268](https://github.com/beettlle/pi-spine/issues/268) / **SP-723** will reject `$`, backticks, `;`, `|`, `&&`, `||` in contract testCommand **before shell spawn**, with error copy distinct from the gate evidence path. Once SP-723 lands, write contract testCommands as single commands or `scripts/…` wrappers (see [operator-runbook §2.3](adoption/operator-runbook.md#23-contract-authoring-v20--fr-cdo-01)) instead of `&&`-chained stet invocations.
+
+**Gate evidence commands (`testing.build` / `testing.test` / `testing.testWithCoverage`, plus the `testing.review` wrapper) — hardened no-shell execution.** `src/batch/evidence-command.mjs` runs these through `execFileSync` with an allowlist ([#254](https://github.com/beettlle/pi-spine/issues/254), SP-639/SP-653/SP-710): the first token must be `npm` / `node` / `npx` / `pnpm` / `yarn` / `cargo` / `task` (or a project-local `.venv/bin/python`, or a `scripts/` wrapper), `&&` chains are allowed (Phase B), and `;`, `|`, redirects, backticks, and `$VAR` / `$(…)` expansions are rejected fail-closed (bounded `PATH="…"` prefixes excepted). Approach 2's `scripts/spine-evidence-review.sh` wrapper exists precisely because this path forbids inline shell metacharacters — put complex review logic in a script, not in the config string.
+
+| | Contract `testCommand` | Gate evidence `testing.*` |
+|---|---|---|
+| Executor | Shell (`spawnSync($SHELL, ["-c", …])`) in lane worktree | No-shell argv allowlist (`execFileSync`) at project root |
+| `&&`, `\|`, `;`, `$`, backticks | Work today; **rejected once SP-723 lands** (#268) | Rejected now (`&&` chains allowed, Phase B) |
+| Env prefixes (`VAR=… cmd`) | Work today; at risk under SP-723 | Only documented `PATH="…"` prefix (SP-710) |
+| Complex logic | Move into a `scripts/…` wrapper once SP-723 lands | Always use a `scripts/…` wrapper |
 
 ---
 
