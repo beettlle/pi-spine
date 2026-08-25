@@ -1,0 +1,20 @@
+spine-tasks/SP-722-batch-state-lock/STATUS.md
+  h_2a17159c706ba1 3,17,19-20,24,26-28
+src/batch/abort.mjs
+  h_2a17159c706ba1 9,14,41-44,50-55,222-232,234-236,238,240-248,250-260,262-269,271-282,285,287-300
+src/batch/lifecycle.mjs
+  h_2a17159c706ba1 24,210-251,253-263,416-456,458-468
+src/batch/state-io.mjs
+  h_2a17159c706ba1 9,56-61,67-74,76-84,163-164,168-170,176-190,192-198,203-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1f8e00531d164c86f5784be4de11ca2acd1ee512",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
