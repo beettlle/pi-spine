@@ -1,0 +1,80 @@
+spine-tasks/SP-727-review-extract-poll/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-61
+spine-tasks/SP-721-contract-testcommand-docs/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-38,40-83
+  s_640d2141cc6d28::t_c24e2778966cd7 39
+spine-tasks/SP-721-contract-testcommand-docs/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-62
+spine-tasks/SP-729-review-extract-code-final/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-62
+spine-tasks/SP-724-file-scope-brace-ext/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-33,36-40,42-87
+  s_640d2141cc6d28::t_c66a91f9311cfe 34-35,41
+spine-tasks/SP-725-review-attempt-caps/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-87
+spine-tasks/SP-722-batch-state-lock/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-93
+spine-tasks/SP-726-set-dedup-hotpaths/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-62
+spine-tasks/SP-730-review-extract-plan-coordinator/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-62
+spine-tasks/CONTEXT.md
+  s_640d2141cc6d28::t_564066948515fe 3,5
+  s_640d2141cc6d28::t_ca3c0fd8949f10 2358-2392
+spine-tasks/SP-723-contract-testcommand-harden/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-69
+spine-tasks/SP-723-contract-testcommand-harden/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-86
+spine-tasks/SP-726-set-dedup-hotpaths/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-83
+spine-tasks/_authoring/release-v2.16.0/manifest.md
+  s_42d57632601125::t_7fccd32aba9c0f 1-7,10-17,19,22,24-26,28-48,51,53-60,64,69-78,91-93,100-103,105,109-110,113-117,122-144,146-153,155-162,168,170-185
+  s_42d57632601125::t_3b1d60829a0d78 9,18,20-21,23,27,49-50,52,61-63,65-68,79-90,94-99,104,106-108,111-112,118-121,145,154,163-167,169
+  s_640d2141cc6d28::t_ec52e151c41722 8
+spine-tasks/SP-728-review-extract-stub/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-79
+spine-tasks/SP-727-review-extract-poll/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-78
+spine-tasks/SP-720-rel216-post-mortem/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-77
+spine-tasks/SP-730-review-extract-plan-coordinator/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-85
+spine-tasks/SP-720-rel216-post-mortem/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-62
+spine-tasks/SP-722-batch-state-lock/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-76
+spine-tasks/SP-725-review-attempt-caps/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-68
+spine-tasks/SP-729-review-extract-code-final/PROMPT.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-82
+spine-tasks/SP-724-file-scope-brace-ext/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-69
+spine-tasks/SP-728-review-extract-stub/STATUS.md
+  s_640d2141cc6d28::t_219cfe1de9cf12 1-61
+spine-tasks/dependencies.json
+  s_640d2141cc6d28::t_219cfe1de9cf12 1872-1893
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a2317f5743ffb17b752823a5ab915c980afa3690",
+  "prompts": {},
+  "sessions": {
+    "s_42d57632601125": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-10fa3854-aa8b-417d-9ee1-56ac247b290b",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_640d2141cc6d28": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f77cc43e-ad74-427d-87ec-504b28c18310",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
