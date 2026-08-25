@@ -1,6 +1,6 @@
 # SP-723: Harden contract testCommand execution — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
@@ -22,10 +22,10 @@
 
 ## Step 2: Tests
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Cover rejection cases in `tests/batch/contract-exec.test.mjs`
-- [ ] Keep happy-path valid testCommand fixtures green
+- [x] Cover rejection cases in `tests/batch/contract-exec.test.mjs`
+- [x] Keep happy-path valid testCommand fixtures green
 
 ## Step 3: Testing & Verification
 
@@ -60,6 +60,7 @@
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Step 1 complete | Scanner `findContractCommandMetacharIssue` in parse-prompt.mjs (quote-aware, `&&` chains allowed); wired into testCommand+runCommand parse validation; runtime guard `isRefusedContractMetacharCommand` in contract-exec.mjs after npm-test-- guard. Ad-hoc case matrix pass. |
+| 2026-08-25 | Step 2 complete | New `tests/batch/contract-exec.test.mjs` (10 tests, all green): rejection matrix, quote-aware allowances, no-spawn marker proof, distinct-copy assertions, guard precedence, verifyContract surfacing, parse-time testCommand/runCommand errors. |
 
 ## Blockers
 
