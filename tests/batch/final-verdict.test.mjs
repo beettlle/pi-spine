@@ -367,6 +367,127 @@ test("runTaskOnLane caps REVISE at maxFinalAttempts with review_exhausted", asyn
 	}
 });
 
+test("runTaskOnLane caps code review at maxCodeReviewAttempts independent of maxFinalAttempts (SP-725)", async () => {
+	const projectRoot = await initGitRepo("spine-code-cap-1-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		codeVerdicts: process.env.SPINE_ENGINE_CODE_STUB_VERDICTS,
+	};
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_ENGINE_CODE_STUB_VERDICTS = "REVISE";
+	try {
+		const batchId = "20260825T210000";
+		const taskId = "TP-155";
+		const { taskFolderRel } = writeFinalReviewTask(projectRoot, {
+			taskId,
+			reviewLevel: 2,
+			suffix: "code-cap-1",
+		});
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "code cap 1 fixture");
+
+		const { state, lane, task } = await provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel });
+		const result = await runTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch: "main",
+			// Asymmetric caps: code=1 while final allows 5 — code must exhaust at 1.
+			config: { review: { maxCodeReviewAttempts: 1, maxFinalAttempts: 5 } },
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId: "corr-code-cap-1",
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(task.exitReason, "review_exhausted");
+		assert.equal(task.status, "failed");
+		const events = readJournalEvents(projectRoot, batchId);
+		const exhausted = events.find(
+			(event) => event.type === "review.exhausted" && event.taskId === taskId,
+		);
+		assert.ok(exhausted, "expected review.exhausted journal event");
+		assert.equal(exhausted.payload?.reviewType, "code");
+		assert.equal(exhausted.payload?.maxCodeReviewAttempts, 1);
+		assert.equal(exhausted.payload?.codeReviewAttempt, 1);
+		assert.equal(
+			events.some(
+				(event) =>
+					event.type === "task.verdict_recorded" &&
+					event.taskId === taskId &&
+					event.payload?.reviewType === "final",
+			),
+			false,
+			"final review must not run after code review exhaustion despite maxFinalAttempts: 5",
+		);
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub", "codeVerdicts"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runTaskOnLane code review inherits maxFinalAttempts when per-phase cap unset (SP-725)", async () => {
+	const projectRoot = await initGitRepo("spine-code-cap-fallback-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		codeVerdicts: process.env.SPINE_ENGINE_CODE_STUB_VERDICTS,
+	};
+	process.env.SPINE_WORKER_STUB = "1";
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_ENGINE_CODE_STUB_VERDICTS = "REVISE,REVISE";
+	try {
+		const batchId = "20260825T210100";
+		const taskId = "TP-156";
+		const { taskFolderRel } = writeFinalReviewTask(projectRoot, {
+			taskId,
+			reviewLevel: 2,
+			suffix: "code-cap-fallback",
+		});
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "code cap fallback fixture");
+
+		const { state, lane, task } = await provisionLaneTask(projectRoot, { batchId, taskId, taskFolderRel });
+		const result = await runTaskOnLane({
+			projectRoot,
+			state,
+			batchId,
+			baseBranch: "main",
+			// New keys unset — code cap must inherit maxFinalAttempts (backward compatible).
+			config: { review: { maxFinalAttempts: 2 } },
+			task,
+			lane,
+			taskFolderRel,
+			laneCorrelationId: "corr-code-cap-fallback",
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(task.exitReason, "review_exhausted");
+		const events = readJournalEvents(projectRoot, batchId);
+		const exhausted = events.find(
+			(event) => event.type === "review.exhausted" && event.taskId === taskId,
+		);
+		assert.ok(exhausted, "expected review.exhausted journal event");
+		assert.equal(exhausted.payload?.reviewType, "code");
+		assert.equal(exhausted.payload?.maxCodeReviewAttempts, 2);
+		assert.equal(exhausted.payload?.codeReviewAttempt, 2);
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub", "codeVerdicts"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("runTaskOnLane fails with needs_replan and does not keep .DONE", async () => {
 	const projectRoot = await initGitRepo("spine-final-replan-");
 	const prev = {

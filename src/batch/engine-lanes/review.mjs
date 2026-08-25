@@ -725,7 +725,11 @@ async function runCodeReviewPhase({
 		return { ok: true, skipped: true };
 	}
 
-	const maxCodeReviewAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
+	// Per-phase cap with fallback to maxFinalAttempts when the dedicated key is unset (SP-725 / #265).
+	const maxCodeReviewAttempts =
+		config?.review?.maxCodeReviewAttempts ??
+		config?.review?.maxFinalAttempts ??
+		REVIEW_DEFAULTS.maxFinalAttempts;
 	let codeReviewAttempt = task.codeReviewAttempts ?? 0;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);
@@ -1191,6 +1195,7 @@ async function runFinalReviewPhase({
 					correlationId: laneCorrelationId,
 					finalAttempt,
 					maxFinalAttempts,
+					reviewType: "final",
 				});
 				recordFinalReviewTaskFailure({
 					projectRoot,
@@ -1308,7 +1313,11 @@ async function runPlanReviewPhase({
 		return { ok: true, skipped: true };
 	}
 
-	const maxPlanReviewAttempts = config?.review?.maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts;
+	// Per-phase cap with fallback to maxFinalAttempts when the dedicated key is unset (SP-725 / #265).
+	const maxPlanReviewAttempts =
+		config?.review?.maxPlanReviewAttempts ??
+		config?.review?.maxFinalAttempts ??
+		REVIEW_DEFAULTS.maxFinalAttempts;
 	let planReviewAttempt = task.planReviewAttempts ?? 0;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);

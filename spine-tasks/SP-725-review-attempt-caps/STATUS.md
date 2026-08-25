@@ -1,6 +1,6 @@
 # SP-725: Separate maxCodeReviewAttempts / maxPlanReviewAttempts — Status
 
-**Current Step:** Step 2 — Wire phase runners
+**Current Step:** Step 3 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
@@ -21,14 +21,14 @@
 
 ## Step 2: Wire phase runners
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Use independent caps in code / final / plan review phases
-- [ ] Journal or diagnosis names exhausted phase
+- [x] Use independent caps in code / final / plan review phases
+- [x] Journal or diagnosis names exhausted phase
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Run contract `testCommand` only
 - [ ] Fix all failures from the scoped contract command
@@ -61,7 +61,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
-| 2026-08-25 | Step 1 complete | `defaults.mjs` new keys as null; `settings-fields.mjs` two number fields (min 1, max 10); both config tests updated (settings-fields test out-of-scope but logically required). 24/24 pass. |
+| 2026-08-25 | Step 2 complete | `review.mjs`: code/plan phases resolve `maxCodeReviewAttempts`/`maxPlanReviewAttempts` ?? `maxFinalAttempts` ?? default(3); final-phase `review.exhausted` now carries `reviewType: "final"` (code/plan already did). 2 new tests in `final-verdict.test.mjs` (asymmetric code=1/final=5; fallback inherit). 11/11 pass. |
 
 ## Blockers
 
