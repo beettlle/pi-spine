@@ -15,7 +15,12 @@ import {
 } from "../../src/config/defaults.mjs";
 
 test("CONFIG_V2_SECTION_DEFAULTS match handoff §6.2", () => {
-	assert.deepEqual(REVIEW_DEFAULTS, { requireFinalVerdict: true, maxFinalAttempts: 3 });
+	assert.deepEqual(REVIEW_DEFAULTS, {
+		requireFinalVerdict: true,
+		maxFinalAttempts: 3,
+		maxCodeReviewAttempts: null,
+		maxPlanReviewAttempts: null,
+	});
 	assert.deepEqual(HANDOFF_DEFAULTS, {
 		path: ".spine/handoff.md",
 		autoWriteOn: ["session_start"],
@@ -36,6 +41,22 @@ test("applyConfigDefaults merges missing v2 sections without overwriting existin
 	assert.deepEqual(config.handoff.autoWriteOn, ["session_start"]);
 	assert.equal(config.metrics.enabled, true);
 	assert.equal(config.metrics.path, ".spine/run-metrics.jsonl");
+});
+
+test("applyConfigDefaults keeps per-phase review caps unset so they inherit maxFinalAttempts (SP-725)", () => {
+	// Existing configs that only tune maxFinalAttempts must keep identical code/plan caps.
+	const config = { review: { maxFinalAttempts: 5 } };
+	applyConfigDefaults(config);
+	assert.equal(config.review.maxCodeReviewAttempts, null);
+	assert.equal(config.review.maxPlanReviewAttempts, null);
+	assert.equal(config.review.maxFinalAttempts, 5);
+
+	// Explicit per-phase caps survive the merge untouched.
+	const tuned = { review: { maxFinalAttempts: 5, maxCodeReviewAttempts: 1, maxPlanReviewAttempts: 2 } };
+	applyConfigDefaults(tuned);
+	assert.equal(tuned.review.maxCodeReviewAttempts, 1);
+	assert.equal(tuned.review.maxPlanReviewAttempts, 2);
+	assert.equal(tuned.review.maxFinalAttempts, 5);
 });
 
 test("loadSpineConfig merges defaults for legacy config missing v2 keys", async () => {

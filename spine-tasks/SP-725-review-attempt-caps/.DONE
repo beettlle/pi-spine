@@ -1,0 +1,7 @@
+SP-725 complete — separate maxCodeReviewAttempts / maxPlanReviewAttempts (closes #265).
+
+- src/config/defaults.mjs: REVIEW_DEFAULTS gains maxCodeReviewAttempts/maxPlanReviewAttempts (null = inherit maxFinalAttempts, preserving existing-config behavior through applyConfigDefaults)
+- src/config/settings-fields.mjs: two editable number fields (min 1, max 10)
+- src/batch/engine-lanes/review.mjs: code/plan phase runners resolve per-phase cap via `?? maxFinalAttempts ?? REVIEW_DEFAULTS.maxFinalAttempts`; final-phase review.exhausted journal event now carries reviewType "final" (code/plan already did)
+- tests: config-defaults-v2 + final-verdict updated with asymmetric-cap (code=1, final=5) and fallback-inherit tests; settings-fields test EXPECTED_PATHS extended
+- Verification: contract testCommand passed first run (typecheck clean; 16/16). Due-diligence: 51/51 across engine-code-review, review-retry-reconcile, resume-lane-reviews, diagnosis-failure-class, contract-failed-terminal, settings-fields.

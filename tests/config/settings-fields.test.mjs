@@ -29,6 +29,8 @@ const EXPECTED_PATHS = [
 	"lanes.autoIntegrateBetweenWaves",
 	"lanes.maxParallel",
 	"lanes.workerBackend",
+	"review.maxCodeReviewAttempts",
+	"review.maxPlanReviewAttempts",
 ];
 
 test("SETTINGS_FIELDS lists editable paths including reviewer per-type pins", () => {
@@ -180,6 +182,22 @@ test("lanes.workerBackend accepts registered enum values", () => {
 	}
 	const invalid = validateSettingValue("lanes.workerBackend", "agentsession");
 	assert.equal(invalid.ok, false);
+});
+
+test("review per-phase attempt caps accept integers within range (SP-725)", () => {
+	for (const field of ["review.maxCodeReviewAttempts", "review.maxPlanReviewAttempts"]) {
+		const coerced = validateSettingValue(field, "2");
+		assert.equal(coerced.ok, true, field);
+		if (coerced.ok) assert.equal(coerced.normalizedValue, 2);
+
+		const low = validateSettingValue(field, 0);
+		assert.equal(low.ok, false, field);
+		if (!low.ok) assert.match(low.error, />= 1/);
+
+		const high = validateSettingValue(field, 11);
+		assert.equal(high.ok, false, field);
+		if (!high.ok) assert.match(high.error, /<= 10/);
+	}
 });
 
 test("validateSettingValue rejects unknown path", () => {
