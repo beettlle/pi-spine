@@ -1,6 +1,6 @@
 # SP-723: Harden contract testCommand execution — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
@@ -29,10 +29,10 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command
 
 ## Step 4: Documentation & Delivery
 
@@ -52,7 +52,8 @@
 
 | Date | Finding | Impact |
 |------|---------|--------|
-| | | |
+| 2026-08-25 | Scoped runtime change to `runContractTestCommand` invalidated 3 fixtures in out-of-scope `tests/batch/contract-retry.test.mjs` (unquoted `;` sequencing, `$(…)`, `>&2` lone `&`). | Rewrote fixtures to quoted `node -e` equivalents preserving retry/output-capture intent — logically required by the scoped change; contract-retry suite 10/10 green, full contract sweep 181/181. |
+| 2026-08-25 | `tests/batch/contract-verify.test.mjs:160` `printf '… | …'` fixture relies on single-quoted `\|` as data. | Scanner made single-quote-aware so quoted metachar data stays valid; no fixture change needed. |
 
 ## Execution Log
 
@@ -61,6 +62,7 @@
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Step 1 complete | Scanner `findContractCommandMetacharIssue` in parse-prompt.mjs (quote-aware, `&&` chains allowed); wired into testCommand+runCommand parse validation; runtime guard `isRefusedContractMetacharCommand` in contract-exec.mjs after npm-test-- guard. Ad-hoc case matrix pass. |
 | 2026-08-25 | Step 2 complete | New `tests/batch/contract-exec.test.mjs` (10 tests, all green): rejection matrix, quote-aware allowances, no-spawn marker proof, distinct-copy assertions, guard precedence, verifyContract surfacing, parse-time testCommand/runCommand errors. |
+| 2026-08-25 | Step 3 complete | Contract testCommand green (typecheck + 10/10). Collateral retry-fixture fixes; targeted sweep 181/181; eslint clean; full `npm test` run in progress. |
 
 ## Blockers
 
