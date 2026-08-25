@@ -1,0 +1,20 @@
+spine-tasks/SP-724-file-scope-brace-ext/STATUS.md
+  s_2271db3f239c7c::t_b0fdfc7288111f 3-4
+  s_2271db3f239c7c::t_58967d086a07a2 32,34-35,39,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2f03d9d1413469fa2626367d19a6f0e00bf972a2",
+  "prompts": {},
+  "sessions": {
+    "s_2271db3f239c7c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-dee8e343-b925-4249-8a77-a94b8d3e9bf4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
