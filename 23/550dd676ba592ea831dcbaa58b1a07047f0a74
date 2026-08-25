@@ -1,0 +1,18 @@
+spine-tasks/SP-724-file-scope-brace-ext/STATUS.md
+  h_2a17159c706ba1 3-4,17,19-21,25,55,63-64
+src/planner/file-scope.mjs
+  h_2a17159c706ba1 18,27-29,32-110,152,154,157,193-214,241
+src/tasks/analyze/index.mjs
+  h_2a17159c706ba1 20-23,47-49,55,59-61,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "23550dd676ba592ea831dcbaa58b1a07047f0a74",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
