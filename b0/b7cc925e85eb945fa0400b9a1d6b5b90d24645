@@ -1,0 +1,37 @@
+spine-tasks/SP-725-review-attempt-caps/.DONE
+  s_640d2141cc6d28::t_4e5f9dbcf179df 1-7
+spine-tasks/SP-725-review-attempt-caps/.reviews/1-20260825T210623.md
+  s_640d2141cc6d28::t_19e5d2059a901e 1-11
+spine-tasks/SP-725-review-attempt-caps/.reviews/final-20260825T210946.md
+  s_640d2141cc6d28::t_8c815388ae5af3 1-11
+spine-tasks/SP-725-review-attempt-caps/STATUS.md
+  s_640d2141cc6d28::t_3ac743981b703a 3-5,18,20-21,25,27-28,32,34-35,39,41-43,57-60,67-68
+src/batch/engine-lanes/review.mjs
+  s_640d2141cc6d28::t_d3907362bdf8d8 728-732,1198,1316-1320
+src/config/defaults.mjs
+  s_640d2141cc6d28::t_87ceeb0c411b3b 8-15,19-20
+src/config/settings-fields.mjs
+  s_640d2141cc6d28::t_9c664d4a7eac32 51-64
+tests/batch/final-verdict.test.mjs
+  s_640d2141cc6d28::t_d41cc79e263909 370-490
+tests/config/config-defaults-v2.test.mjs
+  s_640d2141cc6d28::t_24393c6405a037 18-23,46-61
+tests/config/settings-fields.test.mjs
+  s_640d2141cc6d28::t_79bf76bdf0f049 32-33,187-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "b0b7cc925e85eb945fa0400b9a1d6b5b90d24645",
+  "prompts": {},
+  "sessions": {
+    "s_640d2141cc6d28": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f77cc43e-ad74-427d-87ec-504b28c18310",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
