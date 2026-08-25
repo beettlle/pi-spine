@@ -1,7 +1,7 @@
 # SP-724: File-scope overlap: brace globs + ext probes — Status
 
-**Current Step:** Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** Completed
 **Last Updated:** 2026-08-25
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,16 +29,16 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command
 
 ## Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
