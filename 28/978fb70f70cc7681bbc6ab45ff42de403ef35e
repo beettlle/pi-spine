@@ -1,0 +1,18 @@
+spine-tasks/SP-725-review-attempt-caps/.DONE
+  h_2a17159c706ba1 1-7
+spine-tasks/SP-725-review-attempt-caps/.reviews/1-20260825T210623.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-725-review-attempt-caps/.reviews/final-20260825T210946.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "28978fb70f70cc7681bbc6ab45ff42de403ef35e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
