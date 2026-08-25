@@ -74,6 +74,47 @@ test('expandFileScopeProbes produces nested paths for directory globs', () => {
 	assert.ok(probes.includes('src/a/**'));
 });
 
+test('expandFileScopeProbes expands brace globs into concrete probe paths', () => {
+	const probes = expandFileScopeProbes(['src/{a,b}/**']);
+	assert.ok(probes.includes('src/a/**'));
+	assert.ok(probes.includes('src/b/**'));
+	assert.ok(probes.some((probe) => probe.startsWith('src/a/') && probe.endsWith('.mjs')));
+	assert.ok(probes.some((probe) => probe.startsWith('src/b/') && probe.endsWith('.json')));
+	assert.ok(probes.every((probe) => !probe.includes('{')));
+});
+
+test('expandFileScopeProbes probes json/cjs/yaml extensions for directory entries', () => {
+	const probes = expandFileScopeProbes(['config']);
+	assert.ok(probes.includes('config/__probe__.json'));
+	assert.ok(probes.includes('config/__probe__.cjs'));
+	assert.ok(probes.includes('config/__probe__.yaml'));
+	assert.ok(probes.includes('config/__probe__.yml'));
+});
+
+test('expandFileScopeProbes bounds probe count for wide brace globs', () => {
+	const probes = expandFileScopeProbes(['s/{a,b,c,d,e,f,g,h}/{i,j,k,l,m,n,o,p}/**']);
+	// 32-variant brace cap × (1 entry + 2 probe shapes × 14 extensions) probes.
+	assert.ok(probes.length <= 32 * 29);
+});
+
+test('fileScopePatternsOverlap detects overlapping brace scopes', () => {
+	assert.equal(fileScopePatternsOverlap('src/{a,b}/**', 'src/a/x.mjs'), true);
+	assert.equal(fileScopePatternsOverlap('src/a/x.mjs', 'src/{a,b}/**'), true);
+	assert.equal(fileScopePatternsOverlap('src/{a,b}/**', 'src/{b,c}/**'), true);
+	assert.equal(fileScopePatternsOverlap('src/{a,b}/**', 'src/{c,d}/**'), false);
+	assert.equal(fileScopePatternsOverlap('src/{a,b}.mjs', 'src/b.mjs'), true);
+	assert.equal(fileScopePatternsOverlap('src/{a,b}.mjs', 'src/c.mjs'), false);
+});
+
+test('fileScopePatternsOverlap detects .json/.cjs/.yaml extension collisions', () => {
+	assert.equal(fileScopePatternsOverlap('config/**', 'config/app.json'), true);
+	assert.equal(fileScopePatternsOverlap('lib/**', 'lib/util.cjs'), true);
+	assert.equal(fileScopePatternsOverlap('ci/**', 'ci/workflow.yaml'), true);
+	assert.equal(fileScopePatternsOverlap('ci/**', 'ci/workflow.yml'), true);
+	assert.equal(fileScopePatternsOverlap('config/*', 'config/app.json'), true);
+	assert.equal(fileScopePatternsOverlap('config/**', 'other/app.json'), false);
+});
+
 test('findWaveFileScopeOverlaps returns pairs within the same wave only', () => {
 	const waves = [['A', 'B'], ['C', 'D']];
 	const tasksById = {
