@@ -37,6 +37,82 @@ const CONTRACT_TABLE_HEADER_RE = /^\|\s*Field\s*\|\s*Value\s*\|$/i;
 const CONTRACT_TABLE_SEPARATOR_RE = /^\|[\s\-:|]+\|$/;
 const CONTRACT_TABLE_ROW_RE = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/;
 const TEST_COMMAND_MAX_LENGTH = 500;
+
+/**
+ * Quote-aware scan for shell metacharacters forbidden in contract commands (#268).
+ *
+ * Contract testCommand / runCommand execute through a shell, so expansion and
+ * sequencing operators are an injection surface. Mirrors the #254 gate-evidence
+ * grammar: `&&` stays the only allowed chain separator (house style is
+ * `npm run typecheck && node --test …`), while `$`, backticks, `;`, `|` (which
+ * covers `||`), a lone `&`, and unquoted newlines fail closed. Single-quoted
+ * text is literal data (`printf '%s' 'a | b'` stays valid); `$` and backticks
+ * are rejected even inside double quotes because they still expand there;
+ * unclosed quotes fail closed.
+ *
+ * @param {string} command
+ * @returns {string | null} rejection reason, or null when the command is safe
+ */
+export function findContractCommandMetacharIssue(command) {
+	const text = String(command ?? "");
+	/** @type {"'" | '"' | null} */
+	let quote = null;
+
+	for (let i = 0; i < text.length; i++) {
+		const ch = text[i];
+
+		if (quote === "'") {
+			// Single-quoted content is literal in POSIX shells; only the closing
+			// quote matters, so metacharacters there are data, not syntax.
+			if (ch === "'") quote = null;
+			continue;
+		}
+
+		if (ch === "\\" && i + 1 < text.length) {
+			// Escaped characters are literal outside quotes and inside double
+			// quotes, so `\;` / `\$` cannot sequence or expand anything.
+			i += 1;
+			continue;
+		}
+
+		if (quote === '"') {
+			if (ch === '"') {
+				quote = null;
+				continue;
+			}
+			// `$` and backticks expand inside double quotes; other characters are
+			// literal there, so quoted `;` / `|` data is allowed.
+			if (ch === "$") return "shell variable expansion ($ in double quotes)";
+			if (ch === "`") return "shell command substitution (backticks in double quotes)";
+			continue;
+		}
+
+		if (ch === "'") {
+			quote = "'";
+			continue;
+		}
+		if (ch === '"') {
+			quote = '"';
+			continue;
+		}
+		if (ch === "$") return "shell variable expansion ($)";
+		if (ch === "`") return "shell command substitution (backticks)";
+		if (ch === ";") return "shell sequencing (;)";
+		if (ch === "|") return "shell pipe (| or ||)";
+		if (ch === "\n" || ch === "\r") return "shell sequencing (newline)";
+		if (ch === "&") {
+			if (text[i + 1] === "&") {
+				// `&&` is the documented chain separator (mirrors #254 Phase B).
+				i += 1;
+				continue;
+			}
+			return "shell background operator (&)";
+		}
+	}
+
+	if (quote) return "unclosed quote";
+	return null;
+}
 export const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
 const CONTRACT_EM_DASH_PLACEHOLDER_RE = /^[—\-]$/;
 const CONTRACT_NONE_VALUES = new Set([
@@ -298,6 +374,9 @@ export function resolveContractFileScopeReferences(parsed, fileScopePaths) {
 	parsed.fileScopeMustChange = [...new Set(expanded)];
 }
 
+const CONTRACT_METACHAR_FIX_HINT =
+	"contract commands reject $, backticks, ;, |, || and lone & — && chains are allowed (#268)";
+
 /**
  * @param {ReturnType<typeof parseContract>} parsed
  * @param {string} field
@@ -320,6 +399,13 @@ function applyContractField(parsed, field, rawValue) {
 				parsed.errors.push(`Contract testCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
 				return;
 			}
+			const testCommandIssue = findContractCommandMetacharIssue(command);
+			if (testCommandIssue) {
+				parsed.errors.push(
+					`Contract testCommand contains forbidden shell metacharacters: ${testCommandIssue}; ${CONTRACT_METACHAR_FIX_HINT}`,
+				);
+				return;
+			}
 			parsed.testCommand = command;
 			return;
 		}
@@ -331,6 +417,13 @@ function applyContractField(parsed, field, rawValue) {
 			}
 			if (command.length > TEST_COMMAND_MAX_LENGTH) {
 				parsed.errors.push(`Contract runCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
+				return;
+			}
+			const runCommandIssue = findContractCommandMetacharIssue(command);
+			if (runCommandIssue) {
+				parsed.errors.push(
+					`Contract runCommand contains forbidden shell metacharacters: ${runCommandIssue}; ${CONTRACT_METACHAR_FIX_HINT}`,
+				);
 				return;
 			}
 			parsed.runCommand = command;

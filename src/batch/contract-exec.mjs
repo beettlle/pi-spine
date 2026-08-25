@@ -26,6 +26,7 @@ import {
 	NPM_TEST_DASH_DASH_RE,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 } from "../tasks/validate-contract-warn.mjs";
+import { findContractCommandMetacharIssue } from "../tasks/packet/parse-prompt.mjs";
 
 /** Default stdout/stderr capture limit for contract testCommand (issue #86). */
 export const CONTRACT_TEST_COMMAND_MAX_BUFFER = 10 * 1024 * 1024;
@@ -142,6 +143,33 @@ function formatRefusedNpmTestDashDashMessage(command) {
 }
 
 /**
+ * Defense in depth: reject shell metacharacters in contract testCommand before the
+ * shell spawns (#268). `&&` chains stay allowed (mirrors the #254 gate-evidence
+ * grammar); `$`, backticks, `;`, `|`, `||`, and lone `&` fail closed. This runtime
+ * guard is the enforcement boundary because matrix row substitution and other
+ * post-parse rewrites can reintroduce metacharacters after parse-time validation.
+ *
+ * @param {string} command
+ * @returns {boolean}
+ */
+export function isRefusedContractMetacharCommand(command) {
+	const trimmed = String(command ?? "").trim();
+	if (!trimmed || trimmed === "true") {
+		return false;
+	}
+	return findContractCommandMetacharIssue(trimmed) !== null;
+}
+
+/**
+ * @param {string} command
+ * @returns {string}
+ */
+function formatRefusedContractMetacharMessage(command) {
+	const issue = findContractCommandMetacharIssue(String(command ?? "").trim());
+	return `Contract testCommand refused before spawn: ${issue ?? "shell metacharacters"} (command: ${command}). Contract testCommand runs through a shell; remove $, backticks, ;, |, || or lone & — && chains are allowed (#268).`;
+}
+
+/**
  * @param {string} worktreePath
  * @param {string} command
  * @param {{ maxBuffer?: number }} [options]
@@ -154,6 +182,17 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 
 	if (isRefusedNpmTestDashDashCommand(trimmed)) {
 		const summary = formatRefusedNpmTestDashDashMessage(trimmed);
+		return {
+			ok: false,
+			exitCode: 1,
+			output: summary,
+			summary,
+			refusedBeforeSpawn: true,
+		};
+	}
+
+	if (isRefusedContractMetacharCommand(trimmed)) {
+		const summary = formatRefusedContractMetacharMessage(trimmed);
 		return {
 			ok: false,
 			exitCode: 1,
