@@ -1,0 +1,27 @@
+spine-tasks/_authoring/release-v2.16.0/manifest.md
+  s_2271db3f239c7c::t_4425ce1325e9fe 11
+.spine/rules-manifest.json
+  s_2271db3f239c7c::t_3952e747c11769 2
+spine-tasks/SP-726-set-dedup-hotpaths/STATUS.md
+  s_2271db3f239c7c::t_c5eed56cf01fe2 55
+spine-tasks/SP-726-set-dedup-hotpaths/PROMPT.md
+  s_2271db3f239c7c::t_76dd77deecb840 45-52
+.spine/spine-config.json
+  s_2271db3f239c7c::t_3095ac13030b03 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "48e3e987aeb0feeef9efcf900bd9008a31b0adbe",
+  "prompts": {},
+  "sessions": {
+    "s_2271db3f239c7c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-dee8e343-b925-4249-8a77-a94b8d3e9bf4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
