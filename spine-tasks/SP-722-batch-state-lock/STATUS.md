@@ -1,6 +1,6 @@
 # SP-722: Global inter-process lock for batch-state writers — Status
 
-**Current Step:** Step 1: withBatchStateLock helper
+**Current Step:** Step 3: Concurrent tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 2
@@ -14,18 +14,18 @@
 
 ## Step 1: withBatchStateLock helper
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Add `src/batch/batch-state-lock.mjs` with exclusive lock (wx or flock) under `.spine/runtime/`
-- [ ] Document lock ordering: state before history; no nested lock from same process
+- [x] Add `src/batch/batch-state-lock.mjs` with exclusive lock (wx or flock) under `.spine/runtime/`
+- [x] Document lock ordering: state before history; no nested lock from same process
 
 ## Step 2: Wrap writers
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Wrap `saveSpineBatchState` and `appendBatchHistoryEntry` under the lock
-- [ ] Wrap abort / lifecycle writers that touch batch-state or history
-- [ ] Document resume handoff lock relationship (unified or subset)
+- [x] Wrap `saveSpineBatchState` and `appendBatchHistoryEntry` under the lock
+- [x] Wrap abort / lifecycle writers that touch batch-state or history
+- [x] Document resume handoff lock relationship (unified or subset)
 
 ## Step 3: Concurrent tests
 

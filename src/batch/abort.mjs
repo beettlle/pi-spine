@@ -6,10 +6,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { archiveBatchStatePath } from "./lifecycle.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
+import { withBatchStateLock } from "./batch-state-lock.mjs";
 import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs";
 import { terminateLaneWorkers } from "./worker-host.mjs";
 
@@ -36,15 +38,21 @@ export function readAbortSignal(projectRoot, batchId) {
 }
 
 /**
+ * Write the abort signal atomically under the global batch-state lock
+ * (SP-722 / #264) so a concurrent engine heartbeat never observes a
+ * half-written signal.
+ *
  * @param {string} projectRoot
  * @param {string} batchId
  * @param {object} payload
  */
 export function writeAbortSignal(projectRoot, batchId, payload) {
-	const signalPath = abortSignalPath(projectRoot, batchId);
-	fs.mkdirSync(path.dirname(signalPath), { recursive: true });
-	fs.writeFileSync(signalPath, `${JSON.stringify(payload, null, 2)}\n`, "utf-8");
-	return signalPath;
+	return withBatchStateLock(projectRoot, () => {
+		const signalPath = abortSignalPath(projectRoot, batchId);
+		fs.mkdirSync(path.dirname(signalPath), { recursive: true });
+		writeJsonAtomic(signalPath, payload);
+		return signalPath;
+	});
 }
 
 /**
@@ -211,77 +219,83 @@ export function abortBatch(ctx) {
 		};
 	}
 
-	const snapshot = buildAbortedSnapshot(loaded.raw, reason);
-	writeAbortSignal(projectRoot, batchId, {
-		hard,
-		reason: reason ?? null,
-		requestedAt: new Date().toISOString(),
-	});
+	// Terminal abort write section runs under the global batch-state lock
+	// (SP-722 / #264): abort signal, archive, history entry, and clearing the
+	// active state must not interleave with a concurrent engine save or a
+	// concurrent complete/resume writer.
+	return withBatchStateLock(projectRoot, () => {
+		const snapshot = buildAbortedSnapshot(loaded.raw, reason);
+		writeAbortSignal(projectRoot, batchId, {
+			hard,
+			reason: reason ?? null,
+			requestedAt: new Date().toISOString(),
+		});
 
-	if (hard) {
-		killLaneWorkers(snapshot.lanes, true);
-	}
-
-	const archivePath = writeBatchArchive(projectRoot, batchId, snapshot);
-
-	const eventsBefore = readJournalEvents(projectRoot, batchId);
-	const journalTail = readJournalTail(eventsBefore);
-	appendJournalEvent(projectRoot, batchId, "batch.aborted", {
-		reason: reason ?? null,
-		hard,
-		archivePath: path.relative(projectRoot, archivePath),
-		journalEventsBeforeAbort: eventsBefore.length,
-		journalTailEventTypes: journalTail.map((event) => event.type),
-	});
-
-	const journalFile = journalPath(projectRoot, batchId);
-	if (!fs.existsSync(journalFile)) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "journal_missing_after_abort",
-			headline: "Abort archived state but journal file is missing",
-			suggestedCommand: "spine status --diagnose",
-			batchId,
-		};
-	}
-
-	appendBatchHistoryEntry(projectRoot, {
-		batchId,
-		action: "aborted",
-		endedAt: snapshot.endedAt,
-		hard,
-		reason: reason ?? null,
-		archivePath: path.relative(projectRoot, archivePath),
-	});
-
-	if (hard) {
-		const configResult = loadSpineConfig(projectRoot);
-		const config = configResult.config ?? {};
-		if (shouldCleanupWorktreesOnHardAbort(config)) {
-			const laneCount = maxLaneNumberFromBatchState(snapshot);
-			removeLaneWorktrees(projectRoot, batchId, laneCount);
-			appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
-				batchId,
-				laneCount,
-				reason: "hard_abort",
-			});
+		if (hard) {
+			killLaneWorkers(snapshot.lanes, true);
 		}
-	}
 
-	clearActiveBatchState(loaded.path);
+		const archivePath = writeBatchArchive(projectRoot, batchId, snapshot);
 
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId,
-		diagnosis: "aborted",
-		hard,
-		headline: hard
-			? `Batch ${batchId} hard-aborted and archived`
-			: `Batch ${batchId} aborted and archived`,
-		suggestedCommand: "spine preflight",
-		alternatives: ["spine batch dismiss", "spine status --diagnose"],
-		archivePath,
-	};
+		const eventsBefore = readJournalEvents(projectRoot, batchId);
+		const journalTail = readJournalTail(eventsBefore);
+		appendJournalEvent(projectRoot, batchId, "batch.aborted", {
+			reason: reason ?? null,
+			hard,
+			archivePath: path.relative(projectRoot, archivePath),
+			journalEventsBeforeAbort: eventsBefore.length,
+			journalTailEventTypes: journalTail.map((event) => event.type),
+		});
+
+		const journalFile = journalPath(projectRoot, batchId);
+		if (!fs.existsSync(journalFile)) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: "journal_missing_after_abort",
+				headline: "Abort archived state but journal file is missing",
+				suggestedCommand: "spine status --diagnose",
+				batchId,
+			};
+		}
+
+		appendBatchHistoryEntry(projectRoot, {
+			batchId,
+			action: "aborted",
+			endedAt: snapshot.endedAt,
+			hard,
+			reason: reason ?? null,
+			archivePath: path.relative(projectRoot, archivePath),
+		});
+
+		if (hard) {
+			const configResult = loadSpineConfig(projectRoot);
+			const config = configResult.config ?? {};
+			if (shouldCleanupWorktreesOnHardAbort(config)) {
+				const laneCount = maxLaneNumberFromBatchState(snapshot);
+				removeLaneWorktrees(projectRoot, batchId, laneCount);
+				appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
+					batchId,
+					laneCount,
+					reason: "hard_abort",
+				});
+			}
+		}
+
+		clearActiveBatchState(loaded.path);
+
+		return {
+			ok: true,
+			exitCode: 0,
+			batchId,
+			diagnosis: "aborted",
+			hard,
+			headline: hard
+				? `Batch ${batchId} hard-aborted and archived`
+				: `Batch ${batchId} aborted and archived`,
+			suggestedCommand: "spine preflight",
+			alternatives: ["spine batch dismiss", "spine status --diagnose"],
+			archivePath,
+		};
+	});
 }
