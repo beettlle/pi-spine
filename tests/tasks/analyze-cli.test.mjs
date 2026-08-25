@@ -173,6 +173,60 @@ test('runSpineTasksAnalyze reports parallel file-scope overlap as blocking', asy
 	}
 });
 
+test('runSpineTasksAnalyze flags overlapping brace glob scopes as blocking', async () => {
+	const projectRoot = await initGitRepo('spine-analyze-brace-');
+	try {
+		writeTask(
+			projectRoot,
+			'AN-211-a',
+			'AN-211',
+			validPromptMarkdown('AN-211', { fileScope: 'src/{a,b}/**' }),
+		);
+		writeTask(
+			projectRoot,
+			'AN-212-b',
+			'AN-212',
+			validPromptMarkdown('AN-212', { fileScope: 'src/a/shared.mjs' }),
+		);
+		writeDependenciesJson(projectRoot, { 'AN-211': [], 'AN-212': [] });
+
+		const result = await runSpineTasksAnalyze({ projectRoot, scope: 'AN-211 AN-212' });
+		assert.equal(result.exitCode, 1);
+		assert.ok(
+			result.result.findings.some((finding) => finding.code === 'parallel_file_scope_overlap'),
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test('runSpineTasksAnalyze flags .json extension collisions as blocking', async () => {
+	const projectRoot = await initGitRepo('spine-analyze-json-collision-');
+	try {
+		writeTask(
+			projectRoot,
+			'AN-213-a',
+			'AN-213',
+			validPromptMarkdown('AN-213', { fileScope: 'config/**' }),
+		);
+		writeTask(
+			projectRoot,
+			'AN-214-b',
+			'AN-214',
+			validPromptMarkdown('AN-214', { fileScope: 'config/app.json' }),
+		);
+		writeDependenciesJson(projectRoot, { 'AN-213': [], 'AN-214': [] });
+
+		const result = await runSpineTasksAnalyze({ projectRoot, scope: 'AN-213 AN-214' });
+		assert.equal(result.exitCode, 1);
+		assert.ok(
+			result.result.findings.some((finding) => finding.code === 'parallel_file_scope_overlap'),
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test('runSpineTasksAnalyze reports dependency cycle as blocking', async () => {
 	const projectRoot = await initGitRepo('spine-analyze-cycle-');
 	try {
