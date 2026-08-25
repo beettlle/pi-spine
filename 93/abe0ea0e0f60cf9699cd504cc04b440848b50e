@@ -1,0 +1,16 @@
+spine-tasks/SP-723-contract-testcommand-harden/.reviews/1-20260825T212533.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-723-contract-testcommand-harden/.reviews/final-20260825T212559.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "93abe0ea0e0f60cf9699cd504cc04b440848b50e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
