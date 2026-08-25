@@ -1,7 +1,7 @@
 # SP-722: Global inter-process lock for batch-state writers — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1: withBatchStateLock helper
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 2
 **Review Counter:** 0
@@ -14,7 +14,7 @@
 
 ## Step 1: withBatchStateLock helper
 
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Add `src/batch/batch-state-lock.mjs` with exclusive lock (wx or flock) under `.spine/runtime/`
 - [ ] Document lock ordering: state before history; no nested lock from same process
@@ -74,3 +74,9 @@
 | | | |
 
 ## Notes
+
+Plan (Level 2):
+- `src/batch/batch-state-lock.mjs`: `withBatchStateLock(projectRoot, fn)` — exclusive `wx` create on `.spine/runtime/batch-state.lock`, PID-liveness stale breaking, bounded sync wait (Atomics.wait poll), same-process re-entrant pass-through (no nested acquisition).
+- Lock ordering doc: resume handoff lock (per-batch) may be held while acquiring the global lock; never the reverse. Within global lock: state writes before history writes.
+- Wrap `saveSpineBatchState` (guard-eval + write TOCTOU included) and `appendBatchHistoryEntry` internally in `state-io.mjs`; wrap `writeAbortSignal` + abort terminal write section in `abort.mjs`; wrap complete/dismiss terminal write sections in `lifecycle.mjs`.
+- Test: multi-process child writers doing locked load→mutate→save plus unlocked concurrent `appendBatchHistoryEntry`; assert no lost markers/entries. Plus stale-lock break, re-entrancy, contention wait tests.
