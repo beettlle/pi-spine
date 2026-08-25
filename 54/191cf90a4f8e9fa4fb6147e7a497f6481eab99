@@ -1,0 +1,16 @@
+src/batch/engine-lanes/review-poll.mjs
+  h_2a17159c706ba1 1-427
+src/batch/engine-lanes/review.mjs
+  h_2a17159c706ba1 38-42,663-674,678,680-689,691,693-701,731-742,746,748-765,768-769,771-774,777,780,782-788,790-804,806-820,856-867,871,873-882,884,886-894
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "54191cf90a4f8e9fa4fb6147e7a497f6481eab99",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
