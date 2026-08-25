@@ -1,0 +1,18 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 232-233
+docs/stet-overview.md
+  h_2a17159c706ba1 20-21,24-38
+spine-tasks/SP-721-contract-testcommand-docs/STATUS.md
+  h_2a17159c706ba1 3-4,17,19-21,25,27-28,48-49,56-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1735e59c70d969416890e83220e2f8c28e636889",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
