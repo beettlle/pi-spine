@@ -634,19 +634,31 @@ export function parsePromptDependencies(depsSection) {
 	}
 
 	const ids = [];
+	// Set-backed membership so dedup is O(1) per line instead of O(N) (#271);
+	// `ids` keeps first-seen bullet order for the return value.
+	const seenIds = new Set();
 	for (const line of depsSection.split(/\r?\n/)) {
 		const bullet = line.match(/^-\s+\*{0,2}([A-Z][A-Z0-9]*-\d+)\*{0,2}/);
 		if (bullet) {
-			if (!ids.includes(bullet[1])) ids.push(bullet[1]);
+			if (!seenIds.has(bullet[1])) {
+				seenIds.add(bullet[1]);
+				ids.push(bullet[1]);
+			}
 			continue;
 		}
 		const bare = line.match(/^-\s+([A-Z][A-Z0-9]*-\d+)\b/);
 		if (bare) {
-			if (!ids.includes(bare[1])) ids.push(bare[1]);
+			if (!seenIds.has(bare[1])) {
+				seenIds.add(bare[1]);
+				ids.push(bare[1]);
+			}
 			continue;
 		}
 		const requires = line.match(/\*+Requires:\*+\s*(?:[a-z0-9-]+\/)?([A-Z][A-Z0-9]*-\d+)/i);
-		if (requires && !ids.includes(requires[1])) ids.push(requires[1]);
+		if (requires && !seenIds.has(requires[1])) {
+			seenIds.add(requires[1]);
+			ids.push(requires[1]);
+		}
 	}
 	return ids;
 }

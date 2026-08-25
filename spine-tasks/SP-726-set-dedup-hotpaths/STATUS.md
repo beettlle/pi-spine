@@ -1,7 +1,7 @@
 # SP-726: Replace O(N²) includes()-in-loop dedup with Set — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-08-25
 **Review Level:** 1
 **Review Counter:** 0
@@ -16,16 +16,16 @@
 
 **Status:** ⬜ Not Started
 
-- [ ] parse-prompt: Set for ids; preserve bullet order on return
-- [ ] profile: Set for seen normalization dedup
-- [ ] analyze: Set for scope path sets (no behavior change in findings)
+- [x] parse-prompt: Set for ids; preserve bullet order on return
+- [x] profile: Set for seen normalization dedup
+- [x] analyze: Set for scope path sets (no behavior change in findings)
 
 ## Step 2: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command
 
 ## Step 3: Documentation & Delivery
 
@@ -45,7 +45,7 @@
 
 | Date | Finding | Impact |
 |------|---------|--------|
-| | | |
+| 2026-08-25 | Contract testCommand references `tests/tasks/packet/parse-prompt.test.mjs`, which does not exist on this branch; `node --test` skips missing paths and exits 0 | Verified parse-prompt behavior via existing `tests/tasks/parse-prompt-duplicate-step.test.mjs`, `contract-parse.test.mjs`, `validate-contract-warn.test.mjs`, `validate-prelanded-contract.test.mjs` (50 pass) plus `tests/tasks/analyze-cli.test.mjs` (15 pass) |
 
 ## Execution Log
 
@@ -53,6 +53,8 @@
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
 | 2026-08-25 | Amendment 1 | Redirect fileScopeMustChange to profile.mjs (SP-723 pre-landed parse-prompt) |
+| 2026-08-25 | Step 1 complete | Set-based dedup in parsePromptDependencies, normalizeRulePaths, collectPromptJsonDepsDriftFindings (#271) |
+| 2026-08-25 | Step 2 complete | Contract testCommand exit 0; typecheck clean |
 
 ## Blockers
 
