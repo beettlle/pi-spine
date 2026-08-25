@@ -1,7 +1,7 @@
 # SP-723: Harden contract testCommand execution — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-08-25
 **Review Level:** 1
 **Review Counter:** 0
@@ -36,9 +36,9 @@
 
 ## Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -65,6 +65,7 @@
 | 2026-08-25 | Step 1 complete | Scanner `findContractCommandMetacharIssue` in parse-prompt.mjs (quote-aware, `&&` chains allowed); wired into testCommand+runCommand parse validation; runtime guard `isRefusedContractMetacharCommand` in contract-exec.mjs after npm-test-- guard. Ad-hoc case matrix pass. |
 | 2026-08-25 | Step 2 complete | New `tests/batch/contract-exec.test.mjs` (10 tests, all green): rejection matrix, quote-aware allowances, no-spawn marker proof, distinct-copy assertions, guard precedence, verifyContract surfacing, parse-time testCommand/runCommand errors. |
 | 2026-08-25 | Step 3 complete & verified | Contract testCommand green (typecheck + 10/10; re-run after refactor 10/10). Collateral fixes: contract-retry fixtures, TP-304 matrix runCommand, LOC refactor (contract-exec 498 ≤ 500). Targeted sweep 181/181; eslint clean; full suite worker-env-stripped **2497/2497 exit 0**. |
+| 2026-08-25 | Step 4 delivery | Docs owned by SP-721 (per PROMPT). `.DONE` created; worktree clean; 4 step-granular commits. |
 
 ## Blockers
 
@@ -74,6 +75,7 @@
 
 ## Notes
 
+- **Completion criteria:** metachar/`$` rejected before shell spawn ✅ (runtime guard precedes `spawnSync`); distinct error from #254 ✅ (`Contract testCommand refused before spawn: … (#268)` vs `evidence command contains …`); Closes #268 ✅ (all four issue acceptance criteria implemented — docs item owned by SP-721; issue closure flows via (#268)-referenced merge commits / operator GitHub hygiene, no explicit `gh issue close` step in this packet); `.DONE` ✅.
 - **`&&` stays allowed** as the sole chain separator (mirrors #254 evidence grammar): house style `npm run typecheck && …` is used by every staged packet contract including SP-723/SP-721's own; rejecting it would make this task's own contract unexecutable. Lone `&` fails closed. Mission's `&&`/`||` entries are satisfied: `||` rejected via `|`, `&&` handled as the documented chain operator.
 - Scanner is quote-aware: single-quoted text is literal data (keeps `printf '%s' '… | …'` fixture in `contract-verify.test.mjs` green); `$`/backticks rejected even inside double quotes (they expand there); unclosed quotes and newlines fail closed.
 - Parse-time validation covers testCommand **and** runCommand; runtime guard in `runContractTestCommand` (after the npm-test-- guard, so existing npm-scope copy wins) is the enforcement boundary because matrix row substitution happens post-parse.
