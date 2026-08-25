@@ -1,0 +1,14 @@
+spine-tasks/SP-727-review-extract-poll/STATUS.md
+  h_2a17159c706ba1 3-4,17,19-26,30,32-33,37,39,47,60,69-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "e9fcf2679ca4e1362e1280249ace040707830c1d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
