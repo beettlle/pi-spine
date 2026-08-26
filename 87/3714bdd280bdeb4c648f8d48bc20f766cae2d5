@@ -1,0 +1,34 @@
+src/batch/engine-lanes/review.mjs
+  s_e13eddcec9725b::t_3a15c83ea7ba6a 3,13-15
+src/batch/engine-lanes/review-plan.mjs
+  s_e13eddcec9725b::t_58599461ecd67e 1-315
+spine-tasks/SP-730-review-extract-plan-coordinator/STATUS.md
+  s_e13eddcec9725b::t_cfcef840f9c290 3-5,17,19-21,25,27-28,32,34,48,55
+src/batch/engine-lanes/review-final.mjs
+  s_e13eddcec9725b::t_2c710388cecd68 1-318
+src/batch/engine-lanes/review-stub.mjs
+  s_e13eddcec9725b::t_94b3fe848ac4c7 14-17
+  s_e13eddcec9725b::t_468e4c2753814a 89
+  s_e13eddcec9725b::t_37b5dfa5347dc2 90-120
+src/batch/engine-lanes/review-code.mjs
+  s_e13eddcec9725b::t_6bec618f06e016 20
+  s_e13eddcec9725b::t_0c3f11c0523e12 1-19,21-224
+spine-tasks/SP-729-review-extract-code-final/STATUS.md
+  s_e13eddcec9725b::t_b686e1cb4eadf9 3-5,17,19-21,25,27-28,32,34,48,55,61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "873714bdd280bdeb4c648f8d48bc20f766cae2d5",
+  "prompts": {},
+  "sessions": {
+    "s_e13eddcec9725b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-3cd65eb2-c3b3-4d42-914d-c719abfd3632",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
