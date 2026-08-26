@@ -1,8 +1,8 @@
 # SP-729: Extract review-code.mjs + review-final.mjs — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-08-25
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-08-26
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -14,24 +14,24 @@
 
 ## Step 1: Extract code + final phases
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Move runCodeReviewPhase to review-code.mjs
-- [ ] Move runFinalReviewPhase to review-final.mjs
-- [ ] Re-export from review.mjs coordinator
+- [x] Move runCodeReviewPhase to review-code.mjs
+- [x] Move runFinalReviewPhase to review-final.mjs
+- [x] Re-export from review.mjs coordinator
 
 ## Step 2: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command
 
 ## Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -45,18 +45,19 @@
 
 | Date | Finding | Impact |
 |------|---------|--------|
-| | | |
+| 2026-08-26 | Manual extract after wave-3 batch paused (Kimi 403 quota) | Used SP-727/728 pattern; no behavior change |
 
 ## Execution Log
 
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
+| 2026-08-26 | Manual complete | Extracted review-code.mjs + review-final.mjs; contract tests pass |
 
 ## Blockers
 
 | Date | Blocker | Resolution |
 |------|---------|------------|
-| | | |
+| 2026-08-25 | Wave-3 batch Kimi 403 quota | Manual lane implementation on main |
 
 ## Notes

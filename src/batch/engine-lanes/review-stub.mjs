@@ -11,6 +11,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import {
+	normalizeCodeVerdict,
+	normalizeFinalVerdict,
+} from "../review-shared.mjs";
 
 /**
  * Whether engine reviews should use stub verdicts instead of spawning a
@@ -79,6 +83,38 @@ export function createStubVerdictQueueFromEnv({
 		singleValue: env[singleEnv],
 		normalize,
 		defaultVerdict,
+	});
+}
+
+/**
+ * Build the in-memory stub verdict queue for a review phase (SP-728 / #262).
+ * Env is read once here; the queue is passed down via params and popped
+ * in-memory — `process.env` is never mutated.
+ *
+ * @param {"plan"|"code"|"final"} reviewType
+ */
+export function createPhaseStubVerdictQueue(reviewType) {
+	if (reviewType === "final") {
+		return createStubVerdictQueueFromEnv({
+			queueEnv: "SPINE_ENGINE_FINAL_STUB_VERDICTS",
+			singleEnv: "SPINE_ENGINE_FINAL_STUB_VERDICT",
+			normalize: normalizeFinalVerdict,
+			defaultVerdict: "PASS",
+		});
+	}
+	if (reviewType === "plan") {
+		return createStubVerdictQueueFromEnv({
+			queueEnv: "SPINE_ENGINE_PLAN_STUB_VERDICTS",
+			singleEnv: "SPINE_ENGINE_PLAN_STUB_VERDICT",
+			normalize: normalizeCodeVerdict,
+			defaultVerdict: "APPROVE",
+		});
+	}
+	return createStubVerdictQueueFromEnv({
+		queueEnv: "SPINE_ENGINE_CODE_STUB_VERDICTS",
+		singleEnv: "SPINE_ENGINE_CODE_STUB_VERDICT",
+		normalize: normalizeCodeVerdict,
+		defaultVerdict: "APPROVE",
 	});
 }
 

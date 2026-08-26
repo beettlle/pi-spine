@@ -1,8 +1,8 @@
 # SP-730: Extract review-plan.mjs; thin coordinator; close #262 — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-08-25
+**Current Step:** Complete
+**Status:** ✅ Done
+**Last Updated:** 2026-08-26
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -14,24 +14,24 @@
 
 ## Step 1: Plan extract + thin coordinator
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Move runPlanReviewPhase to review-plan.mjs
-- [ ] Thin review.mjs re-exports phase entrypoints
-- [ ] Verify no review module > 500 LOC; ALLOWED_CLUSTER_CYCLES does not grow
+- [x] Move runPlanReviewPhase to review-plan.mjs
+- [x] Thin review.mjs re-exports phase entrypoints
+- [x] Verify no review module > 500 LOC; ALLOWED_CLUSTER_CYCLES does not grow
 
 ## Step 2: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run contract `testCommand` only
-- [ ] Fix all failures from the scoped contract command
+- [x] Run contract `testCommand` only
+- [x] Fix all failures from the scoped contract command
 
 ## Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -45,13 +45,14 @@
 
 | Date | Finding | Impact |
 |------|---------|--------|
-| | | |
+| 2026-08-26 | All engine-lanes review*.mjs ≤427 LOC; coordinator 15 LOC | Closes #262 |
 
 ## Execution Log
 
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-25 | Task staged | PROMPT.md and STATUS.md created for v2.16.0 release |
+| 2026-08-26 | Manual complete | Extracted review-plan.mjs; thin review.mjs; contract + import-cycles pass |
 
 ## Blockers
 
