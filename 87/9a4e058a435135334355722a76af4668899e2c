@@ -1,0 +1,21 @@
+spine-tasks/SP-730-review-extract-plan-coordinator/STATUS.md
+  s_e13eddcec9725b::t_cfcef840f9c290 3-5,17,19-21,25,27-28,32,34,48,55
+src/batch/engine-lanes/review-plan.mjs
+  s_e13eddcec9725b::t_58599461ecd67e 1-315
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "879a4e058a435135334355722a76af4668899e2c",
+  "prompts": {},
+  "sessions": {
+    "s_e13eddcec9725b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-3cd65eb2-c3b3-4d42-914d-c719abfd3632",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
