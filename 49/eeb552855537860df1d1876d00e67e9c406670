@@ -1,0 +1,20 @@
+tests/batch/detached-start-land-loop.test.mjs
+  s_4479c219bd1152::t_4c03f01f5e3714 141,186,238
+  s_4479c219bd1152::t_a427e25eeb98f4 22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "49eeb552855537860df1d1876d00e67e9c406670",
+  "prompts": {},
+  "sessions": {
+    "s_4479c219bd1152": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6bd90f12-387b-40b9-a19d-e13835151480",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
