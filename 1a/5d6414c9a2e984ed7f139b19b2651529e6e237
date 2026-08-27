@@ -1,0 +1,21 @@
+tests/batch/batch-state-lock.test.mjs
+  s_251c1898e0c6b7::t_e3c4e1426e6e16 57,60-73
+src/batch/batch-state-lock.mjs
+  s_251c1898e0c6b7::t_ef062a534d9a9a 169-172,181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1a5d6414c9a2e984ed7f139b19b2651529e6e237",
+  "prompts": {},
+  "sessions": {
+    "s_251c1898e0c6b7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7887012-abbb-4efc-a3be-eaa0889c2915",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
