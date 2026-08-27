@@ -54,18 +54,23 @@ const { loadSpineBatchState, saveSpineBatchState, appendBatchHistoryEntry } = aw
 );
 const count = Number(iterations);
 for (let i = 0; i < count; i++) {
+	// State RMW and history append share one critical section (#264 AC).
 	withBatchStateLock(projectRoot, () => {
 		const loaded = loadSpineBatchState(projectRoot);
-		const state = loaded.raw ?? { batchId: "lock-test", phase: "running" };
-		state.lockTestMarkers = Array.isArray(state.lockTestMarkers) ? state.lockTestMarkers : [];
-		state.lockTestMarkers.push(writerId + ":" + i);
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
-	});
-	appendBatchHistoryEntry(projectRoot, {
-		batchId: "lock-test",
-		action: "lock-test",
-		writerId,
-		seq: i,
+		const prev = loaded.raw ?? { batchId: "lock-test", phase: "running" };
+		const markers = Array.isArray(prev.lockTestMarkers) ? prev.lockTestMarkers.slice() : [];
+		markers.push(writerId + ":" + i);
+		saveSpineBatchState(
+			projectRoot,
+			{ ...prev, lockTestMarkers: markers },
+			{ bypassWriteGuard: true },
+		);
+		appendBatchHistoryEntry(projectRoot, {
+			batchId: "lock-test",
+			action: "lock-test",
+			writerId,
+			seq: i,
+		});
 	});
 }
 process.exit(0);

@@ -166,7 +166,10 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 	try {
 		return fn();
 	} finally {
-		heldByThisProcess.delete(lockPath);
+		// Unlink before clearing the re-entrancy set. Clearing first lets a
+		// same-process contender treat this file as leakedSelf and steal it
+		// while we still intend to release — then our unlink can delete the
+		// thief's lock and two critical sections overlap (lost RMW updates).
 		try {
 			const holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
 			if (Number(holder?.pid) === process.pid) {
@@ -175,5 +178,6 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 		} catch {
 			// Release races (lock already broken/replaced) are safe to ignore.
 		}
+		heldByThisProcess.delete(lockPath);
 	}
 }
