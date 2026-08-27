@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildSuggestedCommand } from "../../src/batch/diagnosis.mjs";
@@ -20,7 +19,7 @@ import {
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 import { provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
@@ -139,7 +138,7 @@ test("detectPostMergeLimboForResume matches journal-only limbo for batch 2026062
 		const state = loadSpineBatchState(projectRoot).raw;
 		assert.equal(detectPostMergeLimboForResume({ projectRoot, state }), true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -184,7 +183,7 @@ test("resumeBatchDetached --force finalizes journal-only limbo without spawning 
 		} catch {
 			/* ignore */
 		}
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -236,6 +235,6 @@ test("detached batch start opens integrate gate after stub engine completes", as
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
