@@ -1,0 +1,22 @@
+tests/extensions/slash-harness.mjs
+  s_4479c219bd1152::t_c6a9b940419262 75-82,89-101
+  s_4479c219bd1152::t_3ec296d1ffcdaa 74
+tests/extensions/spine-orchestrate-slash.test.mjs
+  s_4479c219bd1152::t_ddc4d58e823ae2 115-119,134-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6594e7ff1096c476829ebdfea3832c42a735b7e6",
+  "prompts": {},
+  "sessions": {
+    "s_4479c219bd1152": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6bd90f12-387b-40b9-a19d-e13835151480",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
