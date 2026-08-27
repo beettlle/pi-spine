@@ -144,7 +144,11 @@ test(
 				`batch-state must remain valid after concurrent writers; got: ${loaded.parseError}`,
 			);
 			const markers = loaded.raw?.lockTestMarkers ?? [];
-			assert.equal(markers.length, writers * iterations);
+			assert.equal(
+				markers.length,
+				writers * iterations,
+				`lost RMW updates under lock: got ${markers.length}/${writers * iterations} markers`,
+			);
 			assert.equal(new Set(markers).size, writers * iterations);
 
 			// History appends from all processes survive.
