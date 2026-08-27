@@ -24,7 +24,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { isProcessAlive, probeProcessStartTimeMs } from "../process/liveness.mjs";
+import {
+	ENGINE_STARTTIME_TOLERANCE_MS,
+	isProcessAlive,
+	probeProcessStartTimeMs,
+} from "../process/liveness.mjs";
 
 export const BATCH_STATE_LOCK_REL = path.join(".spine", "runtime", "batch-state.lock");
 
@@ -40,9 +44,10 @@ const POLL_INTERVAL_MS = 25;
 
 /**
  * Tolerance when comparing recorded process starttime to a live probe
- * (PID-reuse detection). Matches ENGINE_STARTTIME_TOLERANCE_MS spirit.
+ * (PID-reuse detection). Reuse ENGINE_STARTTIME_TOLERANCE_MS so `ps lstart`
+ * second granularity cannot false-trigger under suite load.
  */
-const STARTTIME_TOLERANCE_MS = 2_000;
+const STARTTIME_TOLERANCE_MS = ENGINE_STARTTIME_TOLERANCE_MS;
 
 /**
  * Re-entrancy + ownership tracking keyed by canonical lock path.
@@ -104,10 +109,13 @@ function tryCreateLockFile(lockPath, token) {
 	} catch {
 		processStartedAt = null;
 	}
+	// Never fall back to Date.now() for startedAt: wall-clock acquire time is
+	// not process starttime. Under load, ESM import can lag spawn by >2s; a
+	// later probe of the real starttime would look like PID reuse and steal
+	// the live lock (release:check flake — concurrent writers lost updates).
 	const payload = JSON.stringify({
 		pid: process.pid,
-		// Process starttime (not lock-acquire wall clock) for PID-reuse checks.
-		startedAt: processStartedAt ?? Date.now(),
+		startedAt: processStartedAt,
 		token,
 	});
 	try {
@@ -195,7 +203,10 @@ function breakStaleLock(lockPath) {
 		return;
 	}
 
-	// Live foreign PID: only break when OS starttime proves the PID was recycled.
+	// Live foreign PID: only break when OS starttime proves the PID was
+	// recycled. Require liveStart *newer* than recorded start — a wall-clock
+	// startedAt (legacy / mistaken) is newer than the real process start and
+	// must not steal from a still-living holder.
 	if (holderPid !== process.pid) {
 		const expectedStart = Number(holder?.startedAt);
 		if (!Number.isFinite(expectedStart) || expectedStart <= 0) return;
@@ -207,7 +218,7 @@ function breakStaleLock(lockPath) {
 			liveStart = null;
 		}
 		if (liveStart == null || !Number.isFinite(liveStart) || liveStart <= 0) return;
-		if (Math.abs(liveStart - expectedStart) > STARTTIME_TOLERANCE_MS) {
+		if (liveStart - expectedStart > STARTTIME_TOLERANCE_MS) {
 			try {
 				fs.unlinkSync(lockPath);
 			} catch {

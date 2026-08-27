@@ -282,6 +282,59 @@ test("acquisition waits for a live holder and proceeds after release", { timeout
 	}
 });
 
+test(
+	"live holder is not stolen when lock startedAt is wall-clock (not process start)",
+	{ timeout: 30_000 },
+	async () => {
+		const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-wallclock-"));
+		try {
+			const scriptPath = writeChildScript(projectRoot);
+			const readyPath = path.join(projectRoot, "holder-ready");
+			const holdMs = 800;
+			const holder = runChild(scriptPath, [
+				projectRoot,
+				LOCK_MODULE_URL,
+				STATE_IO_MODULE_URL,
+				"hold",
+				"holder",
+				"0",
+				readyPath,
+				String(holdMs),
+			]);
+
+			const waitDeadline = Date.now() + 10_000;
+			while (!fs.existsSync(readyPath)) {
+				assert.ok(Date.now() < waitDeadline, "holder never acquired the lock");
+				await new Promise((resolve) => setTimeout(resolve, 10));
+			}
+
+			// Simulate the pre-fix payload shape: startedAt = acquire wall clock.
+			// That is newer than OS process starttime and must not age-steal.
+			const lockPath = batchStateLockPath(projectRoot);
+			const holderPayload = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+			fs.writeFileSync(
+				lockPath,
+				JSON.stringify({ ...holderPayload, startedAt: Date.now() }),
+				"utf-8",
+			);
+
+			const startedAt = Date.now();
+			const ran = withBatchStateLock(projectRoot, () => "acquired-after-wallclock-holder");
+			const waitedMs = Date.now() - startedAt;
+			assert.equal(ran, "acquired-after-wallclock-holder");
+			assert.ok(
+				waitedMs >= 100,
+				`expected to wait for live holder despite wall-clock startedAt, waited only ${waitedMs}ms`,
+			);
+
+			const holderResult = await holder;
+			assert.equal(holderResult.code, 0, `holder failed: ${holderResult.stderr}`);
+		} finally {
+			await rm(projectRoot, { recursive: true, force: true });
+		}
+	},
+);
+
 test("writeAbortSignal round-trips atomically under the lock", async () => {
 	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-abort-"));
 	try {
