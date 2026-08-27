@@ -72,19 +72,33 @@ export function writeSpineBatchState(projectRoot, state) {
 }
 
 /**
+ * Serialize process.chdir across concurrent Node --test workers in this process.
+ * Without this, overlapping withGitProject calls race ambient cwd and spawnSync
+ * children (spine plan / preflight) inherit the wrong root — under full-suite load
+ * /spine-orchestrate then notifies "error" instead of "info" (release:check flake).
+ * @type {Promise<void>}
+ */
+let gitProjectChdirChain = Promise.resolve();
+
+/**
  * @param {(projectRoot: string) => Promise<void>} fn
  * @param {string} [prefix]
  */
 export async function withGitProject(fn, prefix = "spine-slash-") {
 	const projectRoot = await initGitRepo(prefix);
-	const previousCwd = process.cwd();
-	process.chdir(projectRoot);
-	try {
-		await fn(projectRoot);
-	} finally {
-		process.chdir(previousCwd);
-		await destroyGitRepo(projectRoot);
-	}
+	const run = gitProjectChdirChain.then(async () => {
+		const previousCwd = process.cwd();
+		process.chdir(projectRoot);
+		try {
+			await fn(projectRoot);
+		} finally {
+			process.chdir(previousCwd);
+			await destroyGitRepo(projectRoot);
+		}
+	});
+	// Keep the chain alive even when a test rejects so later callers still run.
+	gitProjectChdirChain = run.catch(() => {});
+	await run;
 }
 
 /**

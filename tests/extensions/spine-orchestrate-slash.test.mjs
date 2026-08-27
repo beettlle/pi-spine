@@ -112,7 +112,11 @@ test("/spine-orchestrate emits structured prompt from spine plan", async () => {
 
 		await handlers.get("spine-orchestrate")("pending", ctx);
 		assert.equal(notifications.length, 1);
-		assert.equal(notifications[0].level, "info");
+		assert.equal(
+			notifications[0].level,
+			"info",
+			`expected info prompt; got ${notifications[0].level}: ${notifications[0].message}`,
+		);
 		assert.match(notifications[0].message, /Spine multi-wave orchestration/);
 		assert.match(notifications[0].message, /Outer loop/i);
 		assert.match(notifications[0].message, /does NOT auto-approve gates or auto-integrate/);
@@ -127,7 +131,11 @@ test("/spine-orchestrate does not invoke gate or integrate CLI", async () => {
 
 		await handlers.get("spine-orchestrate")("pending", ctx);
 		assert.equal(notifications.length, 1);
-		assert.equal(notifications[0].level, "info");
+		assert.equal(
+			notifications[0].level,
+			"info",
+			`expected info prompt; got ${notifications[0].level}: ${notifications[0].message}`,
+		);
 		const message = notifications[0].message;
 		assert.match(message, /gate approve.*NOT auto-run/i);
 		assert.doesNotMatch(message, /^spine gate approve$/m);
