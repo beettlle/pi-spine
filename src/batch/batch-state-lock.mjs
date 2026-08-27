@@ -52,22 +52,24 @@ const STARTTIME_TOLERANCE_MS = 2_000;
 const heldByThisProcess = new Map();
 
 /**
- * Resolve a stable absolute lock path. Prefer `realpath` so `/var` vs
- * `/private/var` (macOS) cannot split the re-entrancy Map across two keys
- * for the same inode.
+ * Resolve a stable absolute lock path. Create `.spine/runtime` first, then
+ * `realpath` that directory so `/var` vs `/private/var` (macOS) cannot split
+ * the re-entrancy Map across two keys for the same inode. Nested
+ * `withBatchStateLock` (e.g. saveSpineBatchState under an outer hold) must
+ * see the same key or `leakedSelf` will unlink the live lock mid-section.
  *
  * @param {string} projectRoot
  */
 export function batchStateLockPath(projectRoot) {
-	const resolvedRoot = path.resolve(projectRoot);
-	let canonicalRoot = resolvedRoot;
+	const runtimeDir = path.resolve(projectRoot, ".spine", "runtime");
+	fs.mkdirSync(runtimeDir, { recursive: true });
+	let canonicalRuntime = runtimeDir;
 	try {
-		canonicalRoot = fs.realpathSync(resolvedRoot);
+		canonicalRuntime = fs.realpathSync(runtimeDir);
 	} catch {
-		// Root may not exist yet (first acquire creates `.spine/runtime`).
-		canonicalRoot = resolvedRoot;
+		canonicalRuntime = runtimeDir;
 	}
-	return path.join(canonicalRoot, BATCH_STATE_LOCK_REL);
+	return path.join(canonicalRuntime, path.basename(BATCH_STATE_LOCK_REL));
 }
 
 /**
@@ -165,8 +167,17 @@ function breakStaleLock(lockPath) {
 		return;
 	}
 
-	const leakedSelf = holderPid === process.pid && !heldByThisProcess.has(lockPath);
-	if (leakedSelf) {
+	// Same-process "leak" only when we are not in an active hold. Prefer the
+	// ownership token over path-string equality so `/var` vs `/private/var`
+	// aliases cannot falsely clear a live outer hold during nested acquire.
+	if (holderPid === process.pid) {
+		const token = String(holder?.token ?? "");
+		const stillHeldByToken =
+			token.length > 0 && [...heldByThisProcess.values()].includes(token);
+		const stillHeldByPath = heldByThisProcess.has(lockPath);
+		if (stillHeldByToken || stillHeldByPath) {
+			return;
+		}
 		try {
 			fs.unlinkSync(lockPath);
 		} catch {
@@ -232,6 +243,7 @@ function releaseLockFile(lockPath, token) {
  * @returns {unknown} `fn`'s return value
  */
 export function withBatchStateLock(projectRoot, fn, options = {}) {
+	// batchStateLockPath mkdir+realpath so nested calls share one Map key.
 	const lockPath = batchStateLockPath(projectRoot);
 
 	// Re-entrant pass-through: same-process nesting must not self-deadlock.
@@ -239,7 +251,6 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 		return fn();
 	}
 
-	fs.mkdirSync(path.dirname(lockPath), { recursive: true });
 	const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
 	const deadline = Date.now() + timeoutMs;
 	const token = newOwnershipToken();

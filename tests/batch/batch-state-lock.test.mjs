@@ -181,6 +181,28 @@ test("withBatchStateLock is re-entrant within the same process", async () => {
 	}
 });
 
+test("nested lock across projectRoot realpath aliases keeps outer ownership", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-alias-"));
+	try {
+		const realRoot = fs.realpathSync(projectRoot);
+		withBatchStateLock(projectRoot, () => {
+			const lockPath = batchStateLockPath(projectRoot);
+			const outerToken = JSON.parse(fs.readFileSync(lockPath, "utf-8")).token;
+			assert.ok(outerToken);
+			// Nested acquire via realpath form must re-enter — not steal/recreate.
+			withBatchStateLock(realRoot, () => {
+				const nested = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+				assert.equal(nested.token, outerToken);
+			});
+			const after = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+			assert.equal(after.token, outerToken);
+		});
+		assert.equal(fs.existsSync(batchStateLockPath(projectRoot)), false);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
 test("stale lock from a dead holder is broken", { timeout: 30_000 }, async () => {
 	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-stale-"));
 	try {
