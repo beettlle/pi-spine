@@ -57,6 +57,9 @@ for (let i = 0; i < count; i++) {
 	// State RMW and history append share one critical section (#264 AC).
 	withBatchStateLock(projectRoot, () => {
 		const loaded = loadSpineBatchState(projectRoot);
+		if (loaded.parseError) {
+			throw new Error("batch-state parseError under lock: " + loaded.parseError);
+		}
 		const prev = loaded.raw ?? { batchId: "lock-test", phase: "running" };
 		const markers = Array.isArray(prev.lockTestMarkers) ? prev.lockTestMarkers.slice() : [];
 		markers.push(writerId + ":" + i);
@@ -135,6 +138,11 @@ test(
 
 			// No lost updates: every locked RMW cycle pushed exactly one marker.
 			const loaded = loadSpineBatchState(projectRoot);
+			assert.equal(
+				loaded.parseError,
+				null,
+				`batch-state must remain valid after concurrent writers; got: ${loaded.parseError}`,
+			);
 			const markers = loaded.raw?.lockTestMarkers ?? [];
 			assert.equal(markers.length, writers * iterations);
 			assert.equal(new Set(markers).size, writers * iterations);

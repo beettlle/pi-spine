@@ -21,9 +21,10 @@
  *    section that internally calls `appendBatchHistoryEntry`).
  */
 
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { isProcessAlive } from "../process/liveness.mjs";
+import { isProcessAlive, probeProcessStartTimeMs } from "../process/liveness.mjs";
 
 export const BATCH_STATE_LOCK_REL = path.join(".spine", "runtime", "batch-state.lock");
 
@@ -38,23 +39,35 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const POLL_INTERVAL_MS = 25;
 
 /**
- * A lock file older than this is broken regardless of recorded PID, guarding
- * against PID reuse masking a dead holder.
+ * Tolerance when comparing recorded process starttime to a live probe
+ * (PID-reuse detection). Matches ENGINE_STARTTIME_TOLERANCE_MS spirit.
  */
-const STALE_LOCK_MS = 60_000;
+const STARTTIME_TOLERANCE_MS = 2_000;
 
 /**
- * Re-entrancy tracking: resolved lock paths currently held by this process.
- * Presence means the outermost `withBatchStateLock` call owns the file.
- * @type {Set<string>}
+ * Re-entrancy + ownership tracking keyed by canonical lock path.
+ * Value is the ownership token written into the lock file for this hold.
+ * @type {Map<string, string>}
  */
-const heldByThisProcess = new Set();
+const heldByThisProcess = new Map();
 
 /**
+ * Resolve a stable absolute lock path. Prefer `realpath` so `/var` vs
+ * `/private/var` (macOS) cannot split the re-entrancy Map across two keys
+ * for the same inode.
+ *
  * @param {string} projectRoot
  */
 export function batchStateLockPath(projectRoot) {
-	return path.resolve(projectRoot, BATCH_STATE_LOCK_REL);
+	const resolvedRoot = path.resolve(projectRoot);
+	let canonicalRoot = resolvedRoot;
+	try {
+		canonicalRoot = fs.realpathSync(resolvedRoot);
+	} catch {
+		// Root may not exist yet (first acquire creates `.spine/runtime`).
+		canonicalRoot = resolvedRoot;
+	}
+	return path.join(canonicalRoot, BATCH_STATE_LOCK_REL);
 }
 
 /**
@@ -68,13 +81,33 @@ function sleepSync(ms) {
 }
 
 /**
+ * @returns {string}
+ */
+function newOwnershipToken() {
+	return crypto.randomBytes(16).toString("hex");
+}
+
+/**
  * Single exclusive-create attempt.
  *
  * @param {string} lockPath
+ * @param {string} token
  * @returns {boolean} true when the lock file was created by this call
  */
-function tryCreateLockFile(lockPath) {
-	const payload = JSON.stringify({ pid: process.pid, startedAt: Date.now() });
+function tryCreateLockFile(lockPath, token) {
+	/** @type {number|null} */
+	let processStartedAt = null;
+	try {
+		processStartedAt = probeProcessStartTimeMs(process.pid);
+	} catch {
+		processStartedAt = null;
+	}
+	const payload = JSON.stringify({
+		pid: process.pid,
+		// Process starttime (not lock-acquire wall clock) for PID-reuse checks.
+		startedAt: processStartedAt ?? Date.now(),
+		token,
+	});
 	try {
 		fs.writeFileSync(lockPath, payload, { encoding: "utf-8", flag: "wx" });
 		return true;
@@ -89,12 +122,16 @@ function tryCreateLockFile(lockPath) {
 /**
  * Break the lock when the recorded holder cannot still own it: dead PID,
  * corrupt payload, a leaked file from this same process (no active holder),
- * or a lock older than the stale TTL (PID-reuse guard).
+ * or a live PID whose OS starttime no longer matches (PID recycled).
+ *
+ * Never steals from a live holder on age alone — suite-load CPU starvation
+ * can keep a critical section alive for minutes without making the lock stale
+ * (release-check flake under full-suite load).
  *
  * @param {string} lockPath
  */
 function breakStaleLock(lockPath) {
-	/** @type {{ pid?: number, startedAt?: number } | null} */
+	/** @type {{ pid?: number, startedAt?: number, token?: string } | null} */
 	let holder = null;
 	let corrupt = false;
 	try {
@@ -104,29 +141,85 @@ function breakStaleLock(lockPath) {
 		corrupt = true;
 	}
 
-	let ageMs = 0;
-	try {
-		ageMs = Date.now() - fs.statSync(lockPath).mtimeMs;
-	} catch {
+	if (!fs.existsSync(lockPath)) {
 		// Lock vanished between attempts — nothing to break.
 		return;
 	}
 
-	const holderPid = Number(holder?.pid);
-	const deadHolder =
-		Number.isFinite(holderPid) &&
-		holderPid > 0 &&
-		holderPid !== process.pid &&
-		!isProcessAlive(holderPid);
-	const leakedSelf = holderPid === process.pid && !heldByThisProcess.has(lockPath);
-	const expired = ageMs > STALE_LOCK_MS;
-
-	if (corrupt || deadHolder || leakedSelf || expired) {
+	if (corrupt) {
 		try {
 			fs.unlinkSync(lockPath);
 		} catch {
-			// Another contender may have won the unlink — safe to ignore.
+			/* raced unlink */
 		}
+		return;
+	}
+
+	const holderPid = Number(holder?.pid);
+	if (!Number.isFinite(holderPid) || holderPid <= 0) {
+		try {
+			fs.unlinkSync(lockPath);
+		} catch {
+			/* raced unlink */
+		}
+		return;
+	}
+
+	const leakedSelf = holderPid === process.pid && !heldByThisProcess.has(lockPath);
+	if (leakedSelf) {
+		try {
+			fs.unlinkSync(lockPath);
+		} catch {
+			/* raced unlink */
+		}
+		return;
+	}
+
+	if (holderPid !== process.pid && !isProcessAlive(holderPid)) {
+		try {
+			fs.unlinkSync(lockPath);
+		} catch {
+			/* raced unlink */
+		}
+		return;
+	}
+
+	// Live foreign PID: only break when OS starttime proves the PID was recycled.
+	if (holderPid !== process.pid) {
+		const expectedStart = Number(holder?.startedAt);
+		if (!Number.isFinite(expectedStart) || expectedStart <= 0) return;
+		/** @type {number|null} */
+		let liveStart = null;
+		try {
+			liveStart = probeProcessStartTimeMs(holderPid);
+		} catch {
+			liveStart = null;
+		}
+		if (liveStart == null || !Number.isFinite(liveStart) || liveStart <= 0) return;
+		if (Math.abs(liveStart - expectedStart) > STARTTIME_TOLERANCE_MS) {
+			try {
+				fs.unlinkSync(lockPath);
+			} catch {
+				/* raced unlink */
+			}
+		}
+	}
+}
+
+/**
+ * Release the lock file only when our ownership token still matches.
+ *
+ * @param {string} lockPath
+ * @param {string} token
+ */
+function releaseLockFile(lockPath, token) {
+	try {
+		const holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+		if (String(holder?.token ?? "") === token) {
+			fs.unlinkSync(lockPath);
+		}
+	} catch {
+		// Release races (lock already broken/replaced) are safe to ignore.
 	}
 }
 
@@ -149,9 +242,10 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 	fs.mkdirSync(path.dirname(lockPath), { recursive: true });
 	const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
 	const deadline = Date.now() + timeoutMs;
+	const token = newOwnershipToken();
 
 	for (;;) {
-		if (tryCreateLockFile(lockPath)) break;
+		if (tryCreateLockFile(lockPath, token)) break;
 		breakStaleLock(lockPath);
 		if (Date.now() >= deadline) {
 			throw new Error(
@@ -162,22 +256,17 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 		sleepSync(POLL_INTERVAL_MS);
 	}
 
-	heldByThisProcess.add(lockPath);
+	heldByThisProcess.set(lockPath, token);
 	try {
 		return fn();
 	} finally {
-		// Unlink before clearing the re-entrancy set. Clearing first lets a
-		// same-process contender treat this file as leakedSelf and steal it
-		// while we still intend to release — then our unlink can delete the
-		// thief's lock and two critical sections overlap (lost RMW updates).
+		// Unlink (token-gated) before clearing the re-entrancy map so a
+		// same-process contender cannot treat this file as leakedSelf and
+		// steal it while we still intend to release.
 		try {
-			const holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
-			if (Number(holder?.pid) === process.pid) {
-				fs.unlinkSync(lockPath);
-			}
-		} catch {
-			// Release races (lock already broken/replaced) are safe to ignore.
+			releaseLockFile(lockPath, token);
+		} finally {
+			heldByThisProcess.delete(lockPath);
 		}
-		heldByThisProcess.delete(lockPath);
 	}
 }
