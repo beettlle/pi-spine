@@ -1,0 +1,21 @@
+spine-tasks/SP-734-import-cycle-limbo-leaf/PROMPT.md
+  s_76276801a74173::t_70a9e0dbd6ca6b 46-50
+spine-tasks/SP-734-import-cycle-limbo-leaf/STATUS.md
+  s_76276801a74173::t_3ccd492d62fdb2 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e1775c2da0159c1e58387cd943d644e0b1307767",
+  "prompts": {},
+  "sessions": {
+    "s_76276801a74173": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-63cccb90-66ca-48e6-9f52-64e1815baad0",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
