@@ -43,7 +43,11 @@ Partial #267 — Break the static import edge `engine-lanes/merge.mjs -> post-me
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/post-merge-limbo.test.mjs tests/batch/detached-start-land-loop.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/merge.mjs` |
+| fileScopeMustChange | `src/batch/post-merge-finalize.mjs` |
+
+## Amendments
+
+- **2026-08-28:** Redirect `fileScopeMustChange` from `src/batch/engine-lanes/merge.mjs` to `src/batch/post-merge-finalize.mjs` — merge.mjs already changed on `main` by SP-732 (`eacdea37`); preflight pre-landed contract risk. Delivery proof is the new limbo finalize leaf.
 
 ## Steps
 

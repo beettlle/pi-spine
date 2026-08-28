@@ -58,6 +58,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
+| 2026-08-28 | Contract amend | fileScopeMustChange → post-merge-finalize.mjs (merge.mjs pre-landed by SP-732) |
 
 ## Blockers
 
