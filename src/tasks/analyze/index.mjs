@@ -334,8 +334,9 @@ function throwAnalyzeError(message, { suggestedCommand, exitCode = 2 } = {}) {
 
 /**
  * @param {{ projectRoot?: string, scope?: string }} [args]
+ * @returns {{ scope: ReturnType<typeof parseScope>, result: object, output: string, exitCode: number }}
  */
-export async function analyzeTasksScope({ projectRoot = process.cwd(), scope = 'all' } = {}) {
+export function analyzeTasksScope({ projectRoot = process.cwd(), scope = 'all' } = {}) {
 	const configResult = loadSpineConfig(projectRoot);
 	if (configResult.error) {
 		throwAnalyzeError(configResult.error.message, {

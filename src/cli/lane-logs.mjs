@@ -190,8 +190,10 @@ const defaultDeps = {
  * @param {string[]} [options.args]
  * @param {boolean} [options.follow]
  * @param {typeof defaultDeps} [options.deps]
+ * @returns {{ exitCode: number, output: string } | Promise<{ exitCode: number, output: string }>}
+ *   Plain result for the non-follow path; a Promise that resolves on SIGINT/SIGTERM when following.
  */
-export async function runLaneLogs(options) {
+export function runLaneLogs(options) {
 	const { projectRoot, args = [], follow: followOverride, deps = defaultDeps } = options;
 	const { batchId: argBatchId, laneNumber, taskId: argTaskId, follow: argFollow } =
 		parseLaneLogsArgs(args);
