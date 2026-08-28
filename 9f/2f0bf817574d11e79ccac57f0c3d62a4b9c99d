@@ -1,0 +1,26 @@
+spine-tasks/SP-734-import-cycle-limbo-leaf/STATUS.md
+  h_2a17159c706ba1 3-4,15,17-18,46-54
+src/batch/engine-lanes/merge.mjs
+  h_2a17159c706ba1 609-611,621,736-746
+src/batch/engine.mjs
+  h_2a17159c706ba1 13-17,437
+src/batch/post-merge-finalize.mjs
+  h_2a17159c706ba1 1-128
+src/batch/post-merge-limbo.mjs
+  h_2a17159c706ba1 16-20,29,47,294-297,303-306
+src/batch/resume-multi.mjs
+  h_2a17159c706ba1 13-16,217
+tests/arch/import-cycles.test.mjs
+  h_2a17159c706ba1 17-21,27-37,181-209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "9f2f0bf817574d11e79ccac57f0c3d62a4b9c99d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
