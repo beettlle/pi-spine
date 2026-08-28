@@ -605,10 +605,9 @@ export function mergeLaneToOrch({
 }
 
 /**
- * @param {object} params
- * @param {(hookParams: object) => object|null} [params.finalizeAfterWaveMerge]
- *   Post-wave-merge finalize hook injected by callers that own the limbo graph
- *   (`maybeFinalizeAfterWaveMerge` from post-merge-limbo.mjs, SP-734). Omitted → skip finalize.
+ * @param {object} params — includes optional `finalizeAfterWaveMerge(hookParams)` hook injected
+ *   by callers that own the limbo graph (`maybeFinalizeAfterWaveMerge` from post-merge-limbo.mjs,
+ *   SP-734). Omitted → skip post-wave-merge finalize.
  */
 export function mergeWaveLanesToOrch({
 	projectRoot,

@@ -16,7 +16,6 @@ import { isPostMergeLimbo } from "./limbo-detect.mjs";
 import {
 	createMaybeFinalizeAfterWaveMerge,
 	hydrateMergeResultsFromJournal,
-	isLastWaveIndex,
 } from "./post-merge-finalize.mjs";
 import {
 	clearBatchEnginePid,
