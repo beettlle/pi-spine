@@ -1,6 +1,6 @@
 # SP-734: Break merge ↔ post-merge-limbo import cycle — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 4
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-08-28
 **Review Level:** 1
@@ -19,21 +19,21 @@
 
 ## Step 1: Extract limbo finalize leaf
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Leaf module + rewire imports
+- [x] Leaf module + rewire imports — `src/batch/post-merge-finalize.mjs` (imports only `journal.mjs` + `merge/wave-merge-state.mjs`); `merge.mjs` no longer imports `post-merge-limbo.mjs`; hook injected by `engine.mjs`/`resume-multi.mjs`
 
 ## Step 2: Shrink allowlist
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Remove eliminated cycle strings
+- [x] Remove eliminated cycle strings — all 11 allowlist entries reshaped; no cycle contains `engine-lanes/merge.mjs` anymore (remaining limbo↔reconcile cycles via `resume-multi.mjs` are SP-736 scope)
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint + Contract testCommand
+- [x] Run lint + Contract testCommand — lint 0 warnings, typecheck clean, 19/19 contract tests pass; plus 33/33 related limbo/verdict tests (with `SPINE_IS_WORKER` unset, matching engine contract env per `CONTRACT_TEST_WORKER_ENV_KEYS`)
 
 ## Step 4: Documentation & Delivery
 
@@ -60,7 +60,10 @@
 ## Discoveries
 
 | Date | Finding | Impact |
-|------|---------|--------|
+|---|---|---|
+| 2026-08-28 | `detached-start-land-loop` test fails under worker env: `SPINE_IS_WORKER=1` leaks into spawned detached engine → nested-batch guard blocks it | Environmental only; engine contract runs strip `SPINE_IS_WORKER` (`CONTRACT_TEST_WORKER_ENV_KEYS`); passes with `env -u SPINE_IS_WORKER` |
+| 2026-08-28 | `engine.mjs` + `resume-multi.mjs` edited outside literal File Scope | Logically required: callback injection needs the two `mergeWaveLanesToOrch` call sites to pass the hook (PROMPT allows callback injection); both already imported post-merge-limbo |
+| 2026-08-28 | GitNexus `impact`/`context` tools returned mangled-target errors in this session | Used graph-context output from searches instead: `maybeFinalizeAfterWaveMerge` callers = merge.mjs + 1 test (blast radius 2, LOW); `detect_changes` post-edit: LOW, only `mergeWaveLanesToOrch` touched |
 
 ## Execution Log
 
