@@ -181,8 +181,9 @@ export function isEarlyArtifactHonorAllowed(reviewType, contractVerifyResult) {
 
 /**
  * @param {object} params
+ * @returns {Promise<object>} Resolves with the reviewer spawn result (real async child-process wait).
  */
-export async function spawnReviewerPi({
+export function spawnReviewerPi({
 	worktreePath,
 	taskFolder,
 	reviewPrompt,
@@ -194,11 +195,11 @@ export async function spawnReviewerPi({
 	contractVerifyResult = null,
 }) {
 	if (!reviewerPiCommandExists("pi")) {
-		return {
+		return Promise.resolve({
 			spawnFailed: true,
 			exitCode: 127,
 			error: "pi not available for reviewer spawn",
-		};
+		});
 	}
 
 	const piArgs = buildReviewerPiArgs({

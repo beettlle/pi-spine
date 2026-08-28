@@ -285,7 +285,7 @@ export async function startBatch({
 				if (pauseAtTick.stop) {
 					return buildEnginePausedResult(batchId);
 				}
-				/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean }> }> }>} */
+				/** @type {Map<number, { lane: object, runs: Array<{ taskId: string, run: () => Promise<{ ok: boolean, aborted?: boolean }> | { ok: boolean, aborted?: boolean, skipped?: boolean } }> }>} */
 				const runsByLane = new Map();
 
 				for (let laneInTick = 0; laneInTick < (tick.lanes?.length ?? 0); laneInTick++) {

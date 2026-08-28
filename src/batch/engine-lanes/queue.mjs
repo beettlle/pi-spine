@@ -167,7 +167,7 @@ export function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batc
 /**
  * @param {object} params
  */
-export async function skipTaskDoneOnDisk({
+export function skipTaskDoneOnDisk({
 	projectRoot,
 	state,
 	batchId,
