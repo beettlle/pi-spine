@@ -59,6 +59,7 @@
 | Date | Event | Detail |
 |------|-------|--------|
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
+| 2026-08-28 | Contract amend | fileScopeMustChange → engine-lanes.mjs (import-cycles pre-landed by SP-733) |
 
 ## Blockers
 

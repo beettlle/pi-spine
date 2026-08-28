@@ -43,7 +43,11 @@ Partial #267 — Eliminate allowlisted cycles that include `batch-state-io.mjs -
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/resume-multi-validation.test.mjs` |
-| fileScopeMustChange | `tests/arch/import-cycles.test.mjs` |
+| fileScopeMustChange | `src/batch/batch-meta-reconstruct.mjs` |
+
+## Amendments
+
+- **2026-08-28:** Redirect `fileScopeMustChange` from `tests/arch/import-cycles.test.mjs` to `src/batch/batch-meta-reconstruct.mjs` — import-cycles allowlist already shrunk on `main` by SP-733 (`01ec37ed`); preflight pre-landed contract risk. Delivery proof is the state/meta-reconstruct leaf rewire.
 
 ## Steps
 

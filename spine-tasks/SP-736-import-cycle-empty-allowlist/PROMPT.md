@@ -39,7 +39,11 @@ Closes #267 — Set `ALLOWED_CLUSTER_CYCLES` to empty (or only documented transi
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/post-merge-limbo.test.mjs tests/batch/detached-start-land-loop.test.mjs tests/batch/resume-multi-integration.test.mjs` |
-| fileScopeMustChange | `tests/arch/import-cycles.test.mjs` |
+| fileScopeMustChange | `src/batch/engine-lanes.mjs` |
+
+## Amendments
+
+- **2026-08-28:** Redirect `fileScopeMustChange` from `tests/arch/import-cycles.test.mjs` to `src/batch/engine-lanes.mjs` — import-cycles already changed on `main` by SP-733 (`01ec37ed`); preflight pre-landed contract risk. Empty-allowlist proof remains via Contract `testCommand`; facade edit documents cycle-free ownership.
 
 ## Steps
 
