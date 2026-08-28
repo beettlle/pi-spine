@@ -1,0 +1,33 @@
+spine-tasks/CONTEXT.md
+  s_a7ab168c79a118::t_8fef741e8ea101 2402
+spine-tasks/SP-733-import-cycle-resume-leaf/.reviews/0-20260828T225359.md
+  s_a7ab168c79a118::t_a69f24858015c3 1-13
+spine-tasks/SP-733-import-cycle-resume-leaf/.reviews/final-20260828T225453.md
+  s_a7ab168c79a118::t_119a320c7e87f5 1-11
+spine-tasks/SP-733-import-cycle-resume-leaf/STATUS.md
+  s_a7ab168c79a118::t_b388698616ba42 3-4,15,17-18,22,24,28,30,34,36,40,42,55,62-66
+src/batch/resume-common.mjs
+  s_a7ab168c79a118::t_20c56b067b6a19 11
+src/batch/resume-multi.mjs
+  s_a7ab168c79a118::t_57773447f44af9 10
+src/batch/resume.mjs
+  s_a7ab168c79a118::t_63c9f90ad69443 19
+tests/arch/import-cycles.test.mjs
+  s_a7ab168c79a118::t_61936edaedf214 17-19,25-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "39c6daf73c1b4f73ea4d09dbccdc0a176a9c60c2",
+  "prompts": {},
+  "sessions": {
+    "s_a7ab168c79a118": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a044dc-cc82-7c17-870c-45cc8fe5617d",
+        "model": "glm-5.3"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
