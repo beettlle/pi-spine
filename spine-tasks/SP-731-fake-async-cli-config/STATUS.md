@@ -1,7 +1,7 @@
 # SP-731: Remove fake-async in CLI, config, and analyze — Status
 
 **Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-08-28
 **Review Level:** 1
 **Review Counter:** 0
@@ -40,9 +40,9 @@
 
 ## Step 3: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -67,6 +67,7 @@
 | 2026-08-28 | Step 0 complete | Callers mapped: bin/spine.mjs, bin/spine-cli/lane-logs.mjs, bin/spine-tasks.mjs:304, src/batch/worker-prompt.mjs:64, extensions/spine/settings-slash.ts; all `await` the targets |
 | 2026-08-28 | Step 1 complete | Dropped `async` on all five exports; `@returns` JSDoc added; follow paths in journal-follow/lane-logs keep real Promise (fs.watch + signals) |
 | 2026-08-28 | Step 2 complete | lint ✅, typecheck ✅, contract testCommand 46/46 ✅, adjacent suites (spine-settings-slash, worker-prompt-rules, batch-id-validation) 21/21 ✅, full npm test 2478 pass / 43 fail — all 43 environmental (`SPINE_IS_WORKER=1` nested-batch guard SP-482 in worker session); rerun of the 24 affected files without worker env: 115/115 ✅ |
+| 2026-08-28 | Step 3 complete | operator-runbook checked (no async-internals docs to update); .DONE created |
 
 ## Blockers
 
