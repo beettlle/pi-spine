@@ -1,0 +1,14 @@
+src/batch/engine-lanes/merge.mjs
+  h_2a17159c706ba1 608-610
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "06f18ffa5b374fd0aba4b87ca03bc98d3523d217",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
