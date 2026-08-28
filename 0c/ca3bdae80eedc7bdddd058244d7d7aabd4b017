@@ -1,0 +1,32 @@
+src/batch/batch-state-lock.mjs
+  s_756494a8607d4a::t_b060c57471fa8f 177-178
+  s_756494a8607d4a::t_c345b12766be30 27-31,45-50
+  s_756494a8607d4a::t_9d25a65af0a349 254-256,264-290
+  s_d863c62be10c37::t_5a18a4d1515541 51
+tests/batch/batch-state-lock.test.mjs
+  s_756494a8607d4a::t_a10456b84e6614 221-232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0cca3bdae80eedc7bdddd058244d7d7aabd4b017",
+  "prompts": {},
+  "sessions": {
+    "s_756494a8607d4a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a9e96dcf-72e9-4700-b9bb-511213746736",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_d863c62be10c37": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-500c7bb5-c0b2-446d-a390-d406ebfb8b42",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
