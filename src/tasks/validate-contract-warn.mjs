@@ -15,7 +15,23 @@ export const TEST_COMMAND_NPM_TEST_FIX_HINT =
 export const TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT =
 	"npm test -- <path> runs the full suite, not the path argument. Use scoped node --test path/to.test.mjs instead.";
 
+/** Code tasks should chain project lint/analyze in Contract testCommand (post-mortem v2.15.0 F-C). */
+export const TEST_COMMAND_LINT_MISSING_FIX_HINT =
+	"Prefix Contract testCommand with project lint/analyze (pi-spine: npm run lint &&). Docs-only testCommand: true is exempt.";
+
 const PATCH_TASK_SIZES = new Set(["S", "M"]);
+const LINT_IN_TEST_COMMAND_RE = /\b(?:lint|eslint|analyze)\b/;
+
+/**
+ * @param {string | null | undefined} testCommand
+ * @returns {boolean}
+ */
+function testCommandIncludesLintOrAnalyze(testCommand) {
+	if (!testCommand || testCommand === "true") {
+		return true;
+	}
+	return LINT_IN_TEST_COMMAND_RE.test(testCommand);
+}
 
 /** Matches `npm test --` followed by at least one path/token argument. */
 export const NPM_TEST_DASH_DASH_RE = /\bnpm\s+test\s+--\s+\S+/;
@@ -95,6 +111,33 @@ export function collectNpmTestDashDashWarnings(parsed, options = {}) {
 }
 
 /**
+ * Warn when code-task contracts omit project lint/analyze from testCommand (post-mortem v2.15.0 F-C).
+ *
+ * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
+ * @param {{ taskSize?: "S"|"M"|"L"|"XL"|null }} [options]
+ * @returns {string[]}
+ */
+export function collectLintMissingWarnings(parsed, options = {}) {
+	const taskSize = options.taskSize ?? null;
+	if (taskSize !== "S" && taskSize !== "M" && taskSize !== "L") {
+		return [];
+	}
+
+	const testCommand = parsed?.testCommand;
+	if (!testCommand || testCommand === "true") {
+		return [];
+	}
+
+	if (testCommandIncludesLintOrAnalyze(testCommand)) {
+		return [];
+	}
+
+	return [
+		`Contract testCommand omits project lint/analyze on Size ${taskSize} code task. ${TEST_COMMAND_LINT_MISSING_FIX_HINT}`,
+	];
+}
+
+/**
  * Warn when S/M task contracts chain full-suite gates in testCommand.
  *
  * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
@@ -129,11 +172,13 @@ export function collectTestCommandScopeWarnings(parsed, options = {}) {
 			);
 		}
 
+		warnings.push(...collectLintMissingWarnings(parsed, { taskSize }));
 		return warnings;
 	}
 
 	if (taskSize === "L") {
 		warnings.push(...collectNpmTestDashDashWarnings(parsed, { taskSize, mode }));
+		warnings.push(...collectLintMissingWarnings(parsed, { taskSize }));
 	}
 
 	return warnings;

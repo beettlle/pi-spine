@@ -82,6 +82,21 @@ Increment `$WAVE` and repeat until `spine plan pending` shows no remaining waves
 
 ---
 
+## Evidence checklist (before `spine gate approve`)
+
+Inspect `.spine/runtime/<batchId>/evidence/`:
+
+- [ ] Contract verify passed for every task in the wave
+- [ ] Contract pass does **not** imply lint or full CI passed — contract runs only authored `testCommand`; post-integrate `release:check` still required after integrate
+- [ ] Test output present and scoped (not truncated by `maxBuffer`)
+- [ ] Review artifacts acceptable
+- [ ] No unexpected file-scope violations
+- [ ] Operator explicitly approves landing — never auto-approve without reading evidence
+
+See [post-integrate-regression-gate.md](../../spine-release-operator/references/post-integrate-regression-gate.md) for contract vs `release:check` scope.
+
+---
+
 ## Multi-wave strategy
 
 **Preferred: agent repeats per wave.** Each iteration is an independent land loop. The agent reviews evidence, approves or rejects the gate, handles failures, then starts the next wave. This approach:
@@ -108,7 +123,7 @@ After `spine wait` returns or `spine status --diagnose` reports a non-running st
 
 | Diagnosis | Agent action |
 |-----------|--------------|
-| `needs_integrate` | Review evidence under `.spine/runtime/<batchId>/evidence/` → `spine gate approve` → `spine integrate` → `spine batch complete` → push |
+| `needs_integrate` | Review evidence under `.spine/runtime/<batchId>/evidence/` → `spine gate approve` → `spine integrate` → `spine batch complete` → post-integrate `release:check` (exit 0) → push |
 | `needs_retry` | `spine batch retry <taskId>` then `spine batch resume` (detached); amend PROMPT contract if scope is wrong |
 | `needs_retry` + `review_exhausted` | Inspect `.reviews/` feedback; fix implementation or packet scope, then retry |
 | `needs_retry` + `contract_failed` | Edit `PROMPT.md` `testCommand` or file scope, then retry |

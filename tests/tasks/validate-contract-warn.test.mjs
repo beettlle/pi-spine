@@ -8,10 +8,12 @@ import {
 	validateContract,
 } from "../../src/tasks/packet/validate-contract.mjs";
 import {
+	collectLintMissingWarnings,
 	collectNpmTestDashDashErrors,
 	collectNpmTestDashDashWarnings,
 	collectTestCommandScopeWarnings,
 	TEST_COMMAND_COVERAGE_FIX_HINT,
+	TEST_COMMAND_LINT_MISSING_FIX_HINT,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 	TEST_COMMAND_NPM_TEST_FIX_HINT,
 } from "../../src/tasks/validate-contract-warn.mjs";
@@ -164,7 +166,7 @@ x
 test("collectTestCommandScopeWarnings warns on coverage:check for Size S", () => {
 	const parsed = parseContract(
 		promptWithTestCommand(
-			"npm run typecheck && SPINE_WORKER_STUB=1 node --test tests/foo.test.mjs && npm run coverage:check",
+			"npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --test tests/foo.test.mjs && npm run coverage:check",
 		),
 	);
 	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "S" });
@@ -176,7 +178,7 @@ test("collectTestCommandScopeWarnings warns on coverage:check for Size S", () =>
 
 test("collectTestCommandScopeWarnings warns on npm test for Size M", () => {
 	const parsed = parseContract(
-		promptWithTestCommand("npm run typecheck && SPINE_WORKER_STUB=1 npm test", "M"),
+		promptWithTestCommand("npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 npm test", "M"),
 	);
 	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "M" });
 
@@ -202,7 +204,7 @@ test("collectNpmTestDashDashWarnings warns on npm test -- <path> for Size S", ()
 
 test("collectTestCommandScopeWarnings prefers npm test -- warning over generic npm test", () => {
 	const parsed = parseContract(
-		promptWithTestCommand("npm run typecheck && npm test -- tests/foo.test.mjs", "M"),
+		promptWithTestCommand("npm run lint && npm run typecheck && npm test -- tests/foo.test.mjs", "M"),
 	);
 	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "M" });
 
@@ -264,10 +266,10 @@ test("collectNpmTestDashDashErrors is quiet for Size L", () => {
 	assert.deepEqual(errors, []);
 });
 
-test("collectTestCommandScopeWarnings is quiet for scoped node --test on Size S", () => {
+test("collectTestCommandScopeWarnings is quiet for lint + scoped node --test on Size S", () => {
 	const parsed = parseContract(
 		promptWithTestCommand(
-			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
+			"npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
 		),
 	);
 	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "S" });
@@ -275,9 +277,55 @@ test("collectTestCommandScopeWarnings is quiet for scoped node --test on Size S"
 	assert.deepEqual(warnings, []);
 });
 
+test("collectLintMissingWarnings warns when code task omits lint on Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
+		),
+	);
+	const warnings = collectLintMissingWarnings(parsed, { taskSize: "S" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /omits project lint\/analyze/);
+	assert.match(
+		warnings[0],
+		new RegExp(TEST_COMMAND_LINT_MISSING_FIX_HINT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	);
+});
+
+test("collectLintMissingWarnings is quiet when testCommand includes npm run lint", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --test tests/foo.test.mjs",
+		),
+	);
+	const warnings = collectLintMissingWarnings(parsed, { taskSize: "M" });
+
+	assert.deepEqual(warnings, []);
+});
+
+test("collectLintMissingWarnings is quiet for docs-only testCommand true", () => {
+	const parsed = parseContract(promptWithMustNotChange(["src/**"]));
+	const warnings = collectLintMissingWarnings(parsed, { taskSize: "S" });
+
+	assert.deepEqual(warnings, []);
+});
+
+test("collectTestCommandScopeWarnings warns on missing lint for scoped node --test on Size S", () => {
+	const parsed = parseContract(
+		promptWithTestCommand(
+			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/foo.test.mjs",
+		),
+	);
+	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "S" });
+
+	assert.equal(warnings.length, 1);
+	assert.match(warnings[0], /omits project lint\/analyze/);
+});
+
 test("collectTestCommandScopeWarnings allows coverage:check on Size L", () => {
 	const parsed = parseContract(
-		promptWithTestCommand("npm run typecheck && npm run coverage:check", "L"),
+		promptWithTestCommand("npm run lint && npm run typecheck && npm run coverage:check", "L"),
 	);
 	const warnings = collectTestCommandScopeWarnings(parsed, { taskSize: "L" });
 
@@ -287,7 +335,7 @@ test("collectTestCommandScopeWarnings allows coverage:check on Size L", () => {
 test("validateContract warns on SP-516-shaped coverage chain for Size S", () => {
 	const parsed = parseContract(
 		promptWithTestCommand(
-			"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs && npm run coverage:check",
+			"npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs && npm run coverage:check",
 		),
 	);
 	const result = validateContract(parsed, { mode: "required", taskId: "SP-516", taskSize: "S" });
@@ -319,7 +367,9 @@ test("validateContract errors on npm test -- false scope for required Size M", (
 });
 
 test("validateContract warns on npm test -- false scope for optional Size S", () => {
-	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs"));
+	const parsed = parseContract(
+		promptWithTestCommand("npm run lint && npm test -- tests/foo.test.mjs"),
+	);
 	const result = validateContract(parsed, { mode: "optional", taskId: "SP-522", taskSize: "S" });
 
 	assert.equal(result.ok, true);
@@ -329,7 +379,9 @@ test("validateContract warns on npm test -- false scope for optional Size S", ()
 });
 
 test("validateContract warns on npm test -- false scope for required Size L", () => {
-	const parsed = parseContract(promptWithTestCommand("npm test -- tests/foo.test.mjs", "L"));
+	const parsed = parseContract(
+		promptWithTestCommand("npm run lint && npm test -- tests/foo.test.mjs", "L"),
+	);
 	const result = validateContract(parsed, { mode: "required", taskId: "SP-540", taskSize: "L" });
 
 	assert.equal(result.ok, true);

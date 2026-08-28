@@ -86,7 +86,7 @@ Full reference: [post-integrate-regression-gate.md](../../spine-release-operator
 | Do | Do not |
 |----|--------|
 | Verify `$?` or `${PIPESTATUS[0]}` after `release:check` | Use `\| tail` alone for pass/fail |
-| Re-run after manual merge / conflict resolution | Assume scoped task `testCommand` covered full CI |
+| Re-run after manual merge / conflict resolution | Assume scoped task `testCommand` covered full CI (includes **lint** — contract verify does not unless authored) |
 
 ---
 

@@ -89,11 +89,13 @@ Document level and score in PROMPT under `## Review Level`.
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run coverage:check` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/review.test.mjs` |
 | fileScopeMustChange | `src/batch/review.mjs` |
 | fileScopeMustNotChange | `src/planner/**` |
-| completionCriteria | Tests pass; coverage gate met |
+| completionCriteria | Lint, typecheck, and scoped tests pass |
 ```
+
+Docs-only tasks use `` `testCommand: true` `` with `fileScopeMustChange` on deliverable doc paths — no lint prefix.
 
 - **Testing & Verification step** — Mandatory penultimate step before Completion Criteria (SP-075). Use `testing.testWithCoverage` from config when present; else `testing.test`.
 - **Max 4 implementation steps** (excluding Testing and Completion Criteria).
@@ -127,7 +129,7 @@ Document level and score in PROMPT under `## Review Level`.
 - [ ] `Next Task ID` incremented in `CONTEXT.md`
 - [ ] Folder matches `SP-###-slug`; heading matches folder ID
 - [ ] Contract table present for `SP-*` (when required)
-- [ ] Testing & Verification step with real command from config
+- [ ] Testing & Verification step with Contract `testCommand` (lint + scoped tests for code tasks)
 - [ ] `dependencies.json` edges match PROMPT Dependencies
 - [ ] Review level assigned; size S/M/L (XL split)
 - [ ] File scopes disjoint for parallel wave mates

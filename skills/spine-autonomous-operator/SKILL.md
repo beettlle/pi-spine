@@ -205,6 +205,8 @@ test "${PIPESTATUS[0]}" -eq 0
 
 Full reference: [post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md).
 
+**Contract vs gate:** contract verify runs only authored `testCommand` (new packets should include lint); post-integrate `release:check` validates the merged tree (full suite + coverage). Do not skip §3.3a because contract verify passed.
+
 **If non-zero:** fix on `main`, commit, re-run. Do **not** start wave N+1 until green.
 
 ### 3.4 Advance

@@ -36,7 +36,7 @@ Apply when the user:
 | Plan | `spine plan all`, `spine plan pending`, `spine deps` |
 | Batch | `spine batch start <scope>`, `pause`, `resume`, `abort`, `retry <id>`, `skip <id>` |
 | Review | `spine review step`, `spine gate status`, `spine gate approve`, `spine gate reject` |
-| Land | `spine integrate` |
+| Land | `spine integrate`, then post-integrate `npm run release:check` on `main` |
 | Observe | `spine status`, `spine status --diagnose`, `spine journal`, `spine dashboard`, `spine next` |
 
 **Attached vs detached:** Prefer `spine batch start <scope> --attached` until the operator trusts detached recovery. After detached start, always run `spine status --diagnose`.
@@ -48,8 +48,11 @@ Apply when the user:
 ```text
 spine doctor → preflight → plan → batch start
     → monitor (status --diagnose, dashboard)
-    → gate approve → integrate → main
+    → gate approve → integrate → batch complete
+    → post-integrate release:check on main (exit 0) → push
 ```
+
+After integrate, run post-integrate `npm run release:check` on current `main` before the next wave or push. Contract verify runs only PROMPT `testCommand` — it does not replace whole-repo lint/full-suite checks. See [post-integrate-regression-gate.md](skills/spine-release-operator/references/post-integrate-regression-gate.md).
 
 Recovery entry point: **`spine status --diagnose`** — read headline + `suggestedCommand`; do not guess.
 

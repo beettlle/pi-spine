@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-25 (Phase 84 v2.16.0 authoring staged; Next → SP-731)
+**Last Updated:** 2026-08-28 (Phase 84 v2.16.0 published; Next → SP-731)
 **Status:** Active
 **Next Task ID:** SP-731
 
@@ -2363,28 +2363,28 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
-| SP-720 | Post-mortem v2.15.0 + release follow-on context | Staged | — |
-| SP-721 | Docs: contract testCommand vs gate evidence (#268 Partial) | Staged | — |
-| SP-722 | Global inter-process lock for batch-state writers (#264) | Staged | — |
-| SP-723 | Harden contract testCommand (#268) | Staged | — |
-| SP-724 | File-scope brace globs + ext probes (#269) | Staged | — |
-| SP-725 | Separate review attempt caps (#265) | Staged | — |
-| SP-726 | Set-based dedup in parse/profile/analyze (#271) | Staged | SP-724 |
-| SP-727 | Extract review-poll.mjs (#262 Partial) | Staged | SP-725 |
-| SP-728 | Extract review-stub.mjs (#262 Partial) | Staged | SP-727 |
-| SP-729 | Extract review-code + review-final (#262 Partial) | Staged | SP-728 |
-| SP-730 | Extract review-plan; thin coordinator (#262) | Staged | SP-729 |
+| SP-720 | Post-mortem v2.15.0 + release follow-on context | Done | — |
+| SP-721 | Docs: contract testCommand vs gate evidence (#268 Partial) | Done | — |
+| SP-722 | Global inter-process lock for batch-state writers (#264) | Done | — |
+| SP-723 | Harden contract testCommand (#268) | Done | — |
+| SP-724 | File-scope brace globs + ext probes (#269) | Done | — |
+| SP-725 | Separate review attempt caps (#265) | Done | — |
+| SP-726 | Set-based dedup in parse/profile/analyze (#271) | Done | SP-724 |
+| SP-727 | Extract review-poll.mjs (#262 Partial) | Done | SP-725 |
+| SP-728 | Extract review-stub.mjs (#262 Partial) | Done | SP-727 |
+| SP-729 | Extract review-code + review-final (#262 Partial) | Done | SP-728 |
+| SP-730 | Extract review-plan; thin coordinator (#262) | Done | SP-729 |
 
 **Phase 84 exit criteria:**
 
 - [x] Operator approved scope (2026-08-25)
-- [ ] SP-720–SP-730 `.DONE` and integrated on `main`
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] #264, #268, #269, #265, #271, #262 closed when landed
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD; publish after operator approval
+- [x] SP-720–SP-730 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after each wave
+- [x] #264, #268, #269, #265, #271, #262 closed when landed
+- [x] `npm run release:check` green on publish HEAD (gate5 `EXIT=0`, 2521 pass, 89.37% coverage)
+- [x] CI green on HEAD; published **v2.16.0** 2026-08-28 after operator approval
 
-**Release note (planned):** v2.16.0 — Brutal-audit follow-on: batch-state lock (#264), contract testCommand harden (#268), file-scope analyze probes (#269), review attempt caps (#265), review.mjs phase split (#262), Set dedup (#271); post-mortem v2.15.0.
+**Release note (published):** v2.16.0 — Brutal-audit follow-on: batch-state lock (#264), contract testCommand harden (#268), file-scope analyze probes (#269), review attempt caps (#265), review.mjs phase split (#262), Set dedup (#271); post-mortem v2.15.0. Tag `v2.16.0` @ `37dd5362`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33205175897); CI @ `0cca3bda` ([33203409616](https://github.com/beettlle/pi-spine/actions/runs/33203409616), [33203414187](https://github.com/beettlle/pi-spine/actions/runs/33203414187)).
 
 **Deferred:** #266–#270, matrix epic #225 / #229–#232, P3 backlog.
 

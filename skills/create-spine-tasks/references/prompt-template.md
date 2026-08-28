@@ -109,14 +109,16 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 ### Step [N-1]: Testing & Verification
 
 > **Required for every task** — including docs-only and Review Level 0 packets.
-> ZERO test failures allowed. This step runs the FULL test suite as a quality gate.
-> Use `testCommand` from `## Contract` (often chains `npm run typecheck` with tests).
+> ZERO test failures allowed. Run the commands below; do **not** assume the Testing step equals full CI parity.
+> Contract verify runs only `testCommand` from `## Contract` at final review.
+> Operator post-integrate `npm run release:check` owns the whole-repo gate (typecheck → lint → full tests → coverage).
 >
-> **Docs-only tasks:** keep this step; run the full test suite. Omit the coverage-gate
-> checkbox below when the task does not change application code.
+> **Code tasks** (File Scope touches `src/`, `bin/`, `tests/`, or `scripts/`): include `npm run lint` in Contract `testCommand` and mirror it here.
+> **Docs-only tasks:** keep this step; run the full test suite from project config. Omit lint and coverage checkboxes when no application code changes.
 
-- [ ] Run FULL test suite: `[test command from project config]`
-- [ ] Run coverage gate: `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code (code-related tasks only; omit for docs-only)
+- [ ] Run lint (code tasks only): `npm run lint` — or project analyze command when present
+- [ ] Run Contract `testCommand`: `[exact command from ## Contract — typically lint && typecheck && scoped node --test]`
+- [ ] Run coverage gate (only when Contract requires it): `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code
 - [ ] Run integration tests (if applicable)
 - [ ] Fix all failures
 

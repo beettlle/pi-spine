@@ -38,6 +38,19 @@ echo "release:check exit: $?"
 
 ---
 
+## Contract verify vs release:check
+
+| Layer | What runs | What it catches |
+|-------|-----------|-----------------|
+| Contract verify (per task) | PROMPT `testCommand` in lane worktree | Scoped tests, typecheck, and **lint when authored** (`npm run lint && …`) |
+| Post-integrate `release:check` (per wave) | `npm run typecheck && npm run lint && SPINE_WORKER_STUB=1 npm test && npm run coverage:check` | Whole-repo typecheck, lint, full suite, coverage, cross-file drift |
+
+**Authoring rule (new packets):** code tasks prefix Contract `testCommand` with project lint/analyze so ESLint failures surface in-lane, not only here. Post-integrate `release:check` remains mandatory after every land loop — it catches merged-tree gaps contracts cannot see.
+
+**Anti-pattern:** defer lint fixes to Phase 5 publish only — run this gate after **each wave** so lint regressions fail before wave N+1 starts.
+
+---
+
 ## Verification discipline
 
 | Do | Do not |
@@ -45,6 +58,7 @@ echo "release:check exit: $?"
 | Run full `npm run release:check` | Pipe through `tail` or `head` for pass/fail decisions |
 | Verify exit code explicitly (`$?` or `${PIPESTATUS[0]}`) | Claim "passed" from truncated log tail |
 | Save log path in manifest publish checklist | Assume scoped task `testCommand` covered full CI suite |
+| Treat contract verify as CI parity | Contract pass does not imply lint or full-suite pass — only `release:check` does |
 
 **Anti-pattern:** `npm run release:check 2>&1 | tail -20` — `tail` exits 0 even when `release:check` failed.
 

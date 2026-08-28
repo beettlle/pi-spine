@@ -233,6 +233,7 @@ For every task in manifest scope:
 - [ ] Doc paths in File Scope match Documentation Requirements (#144)
 - [ ] `dependencies.json` matches PROMPT `## Dependencies`
 - [ ] Same-wave tasks have disjoint `fileScopeMustChange`
+- [ ] Code tasks: Contract `testCommand` prefixes project lint/analyze (`npm run lint &&` for pi-spine) — see [contract-template.md](../../create-spine-tasks/references/contract-template.md)
 
 ```bash
 spine tasks validate <release-scope>
@@ -336,6 +337,8 @@ test "${PIPESTATUS[0]}" -eq 0
 ```
 
 Full reference: [post-integrate-regression-gate.md](references/post-integrate-regression-gate.md).
+
+**Why this gate still runs when contracts include lint:** contract verify runs only the authored `testCommand` in an isolated lane; post-integrate `release:check` validates the **merged tree** (full suite, coverage, cross-file call sites). Do not skip §4.3a because contract verify passed.
 
 **If non-zero:** fix on `main`, commit, re-run gate. Do **not** start wave N+1, push, or proceed to Phase 5 until green.
 

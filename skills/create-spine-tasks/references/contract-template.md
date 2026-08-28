@@ -15,7 +15,7 @@ Normative schema: [PRD v2.0 implementation handoff §4](../../docs/PRD-v2.0-impl
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run coverage:check` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/final-verdict.test.mjs` |
 | fileScopeMustChange | `src/batch/review.mjs`, `bin/spine-tasks.mjs` |
 | fileScopeMustNotChange | `src/planner/**` |
 | minLineCoverage | 77 |
@@ -36,7 +36,7 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 
 | Field | When to include | Value format |
 |-------|-----------------|--------------|
-| `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. Use `` `true` `` for docs-only S tasks with no code changes. When `` `true` ``, **always** pair with `fileScopeMustChange` (see below). |
+| `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. **Code tasks:** prefix with project lint/analyze (`npm run lint &&` for pi-spine; `flutter analyze` scoped for Flutter). Contract verify executes this command at final review — lint runs in-lane when authored here. Post-integrate `release:check` remains the whole-repo backstop (full suite + coverage). Use `` `true` `` for docs-only S tasks with no code changes. When `` `true` ``, **always** pair with `fileScopeMustChange` (see below). |
 | `fileScopeMustChange` | When you need proof specific paths were touched; **required** when `testCommand` is `` `true` `` | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). For docs-only tasks, list at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). |
 | `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
 | `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
@@ -101,7 +101,7 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm test -- tests/tasks/validate-cli.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/validate-cli.test.mjs` |
 ```
 
 ### M task with coverage gate
@@ -111,7 +111,7 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run coverage:check` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/validate-prompt.test.mjs` |
 | fileScopeMustChange | `src/tasks/packet/validate-prompt.mjs` |
 | minLineCoverage | 77 |
 ```
@@ -150,7 +150,7 @@ For docs-only tasks, add `fileScopeMustNotChange` on product-code directories so
 | Situation | Contract pattern |
 |-----------|------------------|
 | No application code changes; documentation or skill text only | `` `true` `` + `fileScopeMustChange` on deliverable doc paths (+ optional `fileScopeMustNotChange` on `src/**`, `bin/**`) |
-| Small code change with an existing targeted test file | `` `node --test tests/feature.test.mjs` `` (see [scoped testCommand](#scoped-testcommand) below) |
+| Small code change with an existing targeted test file | `` `npm run lint && npm run typecheck && node --test tests/feature.test.mjs` `` (see [scoped testCommand](#scoped-testcommand) below) |
 | Code change but no narrow test yet; full suite unsafe in lane | Scoped command matching the Testing step, or split into a code task + docs task |
 
 Use docs-only when the worker's only product deliverable is documentation. Use scoped `node --test` when the task changes application code — even Size S/M patches should not use bare `` `npm test` `` or `` `npm test -- path` `` in Contract ([#141](https://github.com/beettlle/pi-spine/issues/141)).
@@ -162,7 +162,7 @@ Use docs-only when the worker's only product deliverable is documentation. Use s
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/final-verdict.test.mjs` |
 | fileScopeMustChange | `src/batch/review.mjs` |
 | fileScopeMustNotChange | `src/planner/**`, `src/batch/journal.mjs` |
 | artifactsMustExist | `tests/batch/final-verdict.test.mjs` |
@@ -177,7 +177,7 @@ Use when a task runs a multi-hour external matrix or CI arm with little in-repo 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs` |
 | stallTimeoutMinutes | 240 |
 | extendGraceOnFileScope | true |
 | fileScopeMustChange | `spine-tasks/SP-029-*/STATUS.md` |
@@ -222,11 +222,11 @@ Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-R
 | Task type | Recommended `testCommand` |
 |-----------|---------------------------|
 | Docs-only, no code changes | `` `true` `` **and** `fileScopeMustChange` with at least one deliverable doc path |
-| Single module, targeted tests exist | `` `node --test tests/feature.test.mjs` `` or `` `flutter test test/unit/services/foo_test.dart` `` |
-| **Shared-module behavior change** (diagnosis, reconcile, parse-prompt, worktree, doctor) | Chain **all** related `tests/**/*.test.mjs` from `rg` for old strings — not only the new test file (see below) |
-| Full-suite safe in lane worktree | `` `npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
-| Coverage gate required (pi-spine ≥77%) | `` `npm run coverage:check` `` |
-| Long external job (>2h) | Scoped command + `stallTimeoutMinutes` and `extendGraceOnFileScope` in Contract (see SP-314 example above) |
+| Single module, targeted tests exist (Size S/M) | `` `npm run lint && npm run typecheck && node --test tests/feature.test.mjs` `` or `` `flutter analyze && flutter test test/unit/services/foo_test.dart` `` |
+| **Shared-module behavior change** (diagnosis, reconcile, parse-prompt, worktree, doctor) | `` `npm run lint &&` `` then chain **all** related `tests/**/*.test.mjs` from `rg` for old strings — not only the new test file (see below) |
+| Full-suite safe in lane worktree (Size L) | `` `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |
+| Coverage gate required (pi-spine ≥77%, Size L) | `` `npm run lint && npm run coverage:check` `` |
+| Long external job (>2h) | `` `npm run lint &&` `` scoped command + `stallTimeoutMinutes` and `extendGraceOnFileScope` in Contract (see SP-314 example above) |
 
 ### Shared-module behavior changes
 

@@ -130,6 +130,7 @@ Full reference: [references/outer-loop.md](references/outer-loop.md).
 Inspect `.spine/runtime/<batchId>/evidence/`:
 
 - [ ] Contract verify passed for every task in the wave
+- [ ] Contract pass does **not** imply lint or full CI passed — contract runs only authored `testCommand`; post-integrate `release:check` still required after integrate
 - [ ] Test output present and scoped (not truncated by `maxBuffer` — avoid bare full-suite `testCommand` in PROMPTs)
 - [ ] Review artifacts acceptable (`.reviews/` or engine-stored review verdicts)
 - [ ] No unexpected `fileScopeMustChange` / `fileScopeMustNotChange` violations
@@ -142,7 +143,7 @@ Inspect `.spine/runtime/<batchId>/evidence/`:
 
 | Diagnosis | Agent action |
 |-----------|--------------|
-| `needs_integrate` | Evidence checklist → `spine gate approve` → `spine integrate` → `spine batch complete` → push |
+| `needs_integrate` | Evidence checklist → `spine gate approve` → `spine integrate` → `spine batch complete` → post-integrate `release:check` (exit 0) → push |
 | `needs_retry` | `spine batch retry <taskId>` then `spine batch resume` (detached); amend PROMPT contract if scope wrong |
 | `needs_retry` + `review_exhausted` | Inspect `.reviews/` feedback; fix implementation or packet scope, then retry |
 | `needs_retry` + `contract_failed` | Edit `PROMPT.md` `testCommand` or file scope, then retry |
@@ -180,7 +181,7 @@ When all waves finish, report:
 1. **Waves executed** — indices, task IDs per wave
 2. **Land loops** — integrate commits, push status
 3. **Recoveries** — retries, contract fixes, conflict resolution
-4. **Verification** — paste `spine preflight` and final `spine plan pending` (should show 0 pending)
+4. **Verification** — last wave post-integrate `release:check` log path + verified exit 0; paste `spine preflight` and final `spine plan pending` (should show 0 pending)
 5. **Follow-ups** — deferred tasks, CONTEXT.md tech debt, issues to file
 
 ---
@@ -209,6 +210,7 @@ When all waves finish, report:
 ```text
 Resume spine wave orchestration: spine plan pending --json → pick next wave W →
 spine batch start pending --wave W (detached) → spine status --diagnose → spine wait →
-branch on diagnosis (evidence checklist before gate approve) → integrate → batch complete → push →
-repeat until plan shows 0 waves. Post completion report.
+branch on diagnosis (evidence checklist before gate approve) → integrate → batch complete →
+post-integrate npm run release:check (verify exit 0) → push → repeat until plan shows 0 waves.
+Post completion report.
 ```

@@ -29,7 +29,8 @@ Paste diagnosis headline and exit evidence. Do not claim success without CLI out
 ### onDone prompt template (release:check)
 
 ```text
-release:check monitor completed. Read tail of /tmp/pi-spine-release-check.log.
+release:check monitor completed. Verify exit code from monitor metadata (not log tail alone).
+Read /tmp/pi-spine-release-check.log for failure details when exit is non-zero.
 If exit 0: present pre-publish checklist from docs/release/npm-publish.md.
 If non-zero: STOP; summarize first failing step; do not bump version.
 ```
