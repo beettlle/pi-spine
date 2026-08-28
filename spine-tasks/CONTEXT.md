@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-28 (Phase 84 v2.16.0 published; Next → SP-731)
+**Last Updated:** 2026-08-28 (Phase 85 v2.17.0 authoring; Next → SP-737)
 **Status:** Active
-**Next Task ID:** SP-731
+**Next Task ID:** SP-737
 
 ---
 
@@ -2387,6 +2387,35 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note (published):** v2.16.0 — Brutal-audit follow-on: batch-state lock (#264), contract testCommand harden (#268), file-scope analyze probes (#269), review attempt caps (#265), review.mjs phase split (#262), Set dedup (#271); post-mortem v2.15.0. Tag `v2.16.0` @ `37dd5362`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33205175897); CI @ `0cca3bda` ([33203409616](https://github.com/beettlle/pi-spine/actions/runs/33203409616), [33203414187](https://github.com/beettlle/pi-spine/actions/runs/33203414187)).
 
 **Deferred:** #266–#270, matrix epic #225 / #229–#232, P3 backlog.
+
+### Phase 85 — v2.17.0 lint-churn + fake-async / import-cycle (#270, #267)
+
+**Authoring:** 2026-08-28 · Manifest: [`spine-tasks/_authoring/release-v2.17.0/manifest.md`](_authoring/release-v2.17.0/manifest.md)
+
+**Profile:** minor — pre-landed contract lint-warn (`3df30b4e`) + enhancements #270/#267 (operator override: 0 bugs). Operator approved scope 2026-08-28. Worker pin: `zai/glm-5.3`.
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| *(pre-landed)* | Contract lint-missing warn + skill/rule sync | Done (`3df30b4e`) | — |
+| SP-731 | Fake-async CLI/config/analyze (#270 Partial) | Pending | — |
+| SP-732 | Fake-async batch merge/queue/review-spawn (#270) | Pending | — |
+| SP-733 | Import cycle: resume leaf off engine-lanes facade (#267 Partial) | Pending | SP-732 |
+| SP-734 | Import cycle: merge ↔ post-merge-limbo leaf (#267 Partial) | Pending | SP-733 |
+| SP-735 | Import cycle: batch-state-io / meta-reconstruct (#267 Partial) | Pending | SP-734 |
+| SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Pending | SP-733–735 |
+
+**Phase 85 exit criteria:**
+
+- [x] Operator approved scope (2026-08-28)
+- [ ] SP-731–SP-736 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #270, #267 closed when landed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD; publish **v2.17.0** after operator approval
+
+**Release note (placeholder):** v2.17.0 — Contract lint in testCommand warn; fake-async removal (#270); engine-lanes import cycle break (#267).
+
+**Deferred:** #266, matrix epic #225 / #229–#232, P3 backlog.
 
 ---
 

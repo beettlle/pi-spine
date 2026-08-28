@@ -1,0 +1,67 @@
+# SP-732: Remove fake-async in batch merge, queue, review-spawn — Status
+
+**Current Step:** Step 0
+**Status:** ⬜ Not Started
+**Last Updated:** 2026-08-28
+**Review Level:** 1
+**Review Counter:** 0
+**Iteration:** 0
+**Size:** S
+
+---
+
+## Step 0: Preflight
+
+**Status:** ⬜ Not Started
+
+- [ ] Confirm disjoint scope from SP-731
+- [ ] Read #270 batch criteria
+
+## Step 1: Remove fake-async on batch exports
+
+**Status:** ⬜ Not Started
+
+- [ ] Fix mergeWaveLanesToOrch, skipTaskDoneOnDisk, spawnReviewerPi
+- [ ] Update importers if needed
+
+## Step 2: Optional arch guard
+
+**Status:** ⬜ Not Started
+
+- [ ] Add tests/arch/fake-async.test.mjs (optional)
+
+## Step 3: Testing & Verification
+
+**Status:** ⬜ Not Started
+
+- [ ] Run lint
+- [ ] Run Contract `testCommand`
+
+## Step 4: Documentation & Delivery
+
+**Status:** ⬜ Not Started
+
+- [ ] Create `.DONE`
+
+---
+
+## Reviews
+
+| Date | Step | Type | Outcome |
+|------|------|------|---------|
+
+## Discoveries
+
+| Date | Finding | Impact |
+|------|---------|--------|
+
+## Execution Log
+
+| Date | Event | Detail |
+|------|-------|--------|
+| 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
+
+## Blockers
+
+| Date | Blocker | Resolution |
+|------|---------|------------|
