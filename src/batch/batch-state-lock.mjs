@@ -24,7 +24,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { isProcessAlive, probeProcessStartTimeMs } from "../process/liveness.mjs";
+import {
+	ENGINE_STARTTIME_TOLERANCE_MS,
+	isProcessAlive,
+	probeProcessStartTimeMs,
+} from "../process/liveness.mjs";
 
 export const BATCH_STATE_LOCK_REL = path.join(".spine", "runtime", "batch-state.lock");
 
@@ -37,6 +41,13 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 
 /** Poll interval while another process holds the lock. */
 const POLL_INTERVAL_MS = 25;
+
+/**
+ * Tolerance when comparing recorded process starttime to a live probe
+ * (PID-reuse detection). Reuse ENGINE_STARTTIME_TOLERANCE_MS so `ps lstart`
+ * second granularity cannot false-trigger.
+ */
+const STARTTIME_TOLERANCE_MS = ENGINE_STARTTIME_TOLERANCE_MS;
 
 /**
  * Re-entrancy + ownership tracking keyed by canonical lock path.
@@ -163,8 +174,8 @@ function tryCreateLockFile(lockPath, token) {
 
 /**
  * Break the lock when the recorded holder cannot still own it: dead PID,
- * abandoned corrupt payload, or a leaked file from this same process (no
- * active holder). Never unlinks a live foreign holder.
+ * abandoned corrupt payload, same-process leak (no active holder), or a live
+ * PID whose OS starttime is newer than the recorded start (PID recycled).
  *
  * Never steals from a live holder on age alone — suite-load CPU starvation
  * can keep a critical section alive for minutes without making the lock stale
@@ -240,28 +251,42 @@ function breakStaleLock(lockPath) {
 		return;
 	}
 
-	// Live foreign PID: never steal. Critical sections are short (ms); a false
-	// starttime "PID recycle" under suite load unlinks a live lock and loses
-	// RMW updates (release:check 99/100). True PID reuse while a holder is
-	// mid-section is vanishingly rare — waiters bound out via timeoutMs.
-	// Confirm death with both kill(0) and a starttime probe so a transient
-	// ESRCH cannot clear a still-listed process.
+	// Dead foreign PID: break immediately. Do NOT require a null `ps` probe —
+	// under suite load the PID is often recycled by an unrelated live process,
+	// and refusing to break left waiters stuck until timeout (stale-lock flake).
 	if (holderPid !== process.pid && !isProcessAlive(holderPid)) {
-		/** @type {number|null} */
-		let listedStart = null;
-		try {
-			listedStart = probeProcessStartTimeMs(holderPid);
-		} catch {
-			listedStart = null;
-		}
-		if (listedStart != null && Number.isFinite(listedStart) && listedStart > 0) {
-			return;
-		}
 		try {
 			logLockBreak(lockPath, `deadPid holder=${holderPid}`);
 			fs.unlinkSync(lockPath);
 		} catch {
 			/* raced unlink */
+		}
+		return;
+	}
+
+	// Live foreign PID: steal only when OS starttime proves the PID was
+	// recycled. Require liveStart *newer* than recorded start — wall-clock
+	// startedAt (legacy) is newer than real process start and must not steal.
+	// startedAt null (probe failed at acquire) → never steal from a live PID.
+	if (holderPid === process.pid) return;
+	if (isProcessAlive(holderPid)) {
+		const expectedStart = Number(holder?.startedAt);
+		if (!Number.isFinite(expectedStart) || expectedStart <= 0) return;
+		/** @type {number|null} */
+		let liveStart = null;
+		try {
+			liveStart = probeProcessStartTimeMs(holderPid);
+		} catch {
+			liveStart = null;
+		}
+		if (liveStart == null || !Number.isFinite(liveStart) || liveStart <= 0) return;
+		if (liveStart - expectedStart > STARTTIME_TOLERANCE_MS) {
+			try {
+				logLockBreak(lockPath, `pidRecycled holder=${holderPid}`);
+				fs.unlinkSync(lockPath);
+			} catch {
+				/* raced unlink */
+			}
 		}
 	}
 }

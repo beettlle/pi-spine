@@ -218,12 +218,19 @@ test("stale lock from a dead holder is broken", { timeout: 30_000 }, async () =>
 		const lockPath = batchStateLockPath(projectRoot);
 		fs.mkdirSync(path.dirname(lockPath), { recursive: true });
 
-		// A child takes the lock file with its own PID and exits without releasing.
-		const orphan = spawn(
-			process.execPath,
-			["-e", `require("node:fs").writeFileSync(${JSON.stringify(lockPath)}, JSON.stringify({ pid: process.pid, startedAt: Date.now() }), { flag: "wx" })`],
+		// Use a PID that is not alive (avoid suite-load recycle of a just-exited child).
+		const deadPid = 2_000_000_000;
+		try {
+			process.kill(deadPid, 0);
+			assert.fail(`expected pid ${deadPid} to be dead`);
+		} catch (err) {
+			assert.notEqual(/** @type {NodeJS.ErrnoException} */ (err).code, "EPERM");
+		}
+		fs.writeFileSync(
+			lockPath,
+			JSON.stringify({ pid: deadPid, startedAt: 1, token: "dead-orphan" }),
+			{ flag: "wx" },
 		);
-		await new Promise((resolve) => orphan.once("exit", resolve));
 		assert.equal(fs.existsSync(lockPath), true);
 
 		const startedAt = Date.now();
