@@ -1,0 +1,16 @@
+spine-tasks/SP-732-fake-async-batch/.reviews/0-20260828T204344.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-732-fake-async-batch/.reviews/final-20260828T204528.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "54631314eda707c7941dab0ea3b9bc69c3a7f1b8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
