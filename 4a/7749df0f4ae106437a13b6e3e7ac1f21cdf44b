@@ -1,0 +1,16 @@
+spine-tasks/SP-733-import-cycle-resume-leaf/.reviews/0-20260828T225359.md
+  h_2a17159c706ba1 1-13
+spine-tasks/SP-733-import-cycle-resume-leaf/.reviews/final-20260828T225453.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4a7749df0f4ae106437a13b6e3e7ac1f21cdf44b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
