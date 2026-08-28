@@ -1,0 +1,14 @@
+spine-tasks/SP-734-import-cycle-limbo-leaf/STATUS.md
+  h_2a17159c706ba1 3,22,24,28,30,34,36,63-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c8d510a9e7d471005858dec89722c83ca381bfbe",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
