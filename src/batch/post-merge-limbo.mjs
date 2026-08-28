@@ -11,9 +11,13 @@ import {
 } from "./detached-spawn.mjs";
 import { loadGateRecord, openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
-import { recordWaveMergeResult } from "./merge/wave-merge-state.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { isPostMergeLimbo } from "./limbo-detect.mjs";
+import {
+	createMaybeFinalizeAfterWaveMerge,
+	hydrateMergeResultsFromJournal,
+	isLastWaveIndex,
+} from "./post-merge-finalize.mjs";
 import {
 	clearBatchEnginePid,
 	loadSpineBatchState,
@@ -22,6 +26,7 @@ import {
 } from "./state.mjs";
 
 export { isPostMergeLimbo } from "./limbo-detect.mjs";
+export { hydrateMergeResultsFromJournal, isLastWaveIndex } from "./post-merge-finalize.mjs";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -39,52 +44,8 @@ export function resolveDefaultSpineBin(spineBin) {
 
 /**
  * Sync missing mergeResults rows from journal merge_completed events (SP-378, GitHub #59).
- *
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {object} params.state
- * @param {string} params.batchId
+ * Implementation lives in the `post-merge-finalize.mjs` leaf (SP-734); re-exported here.
  */
-export function hydrateMergeResultsFromJournal({ projectRoot, state, batchId }) {
-	const totalWaves = Number(state.totalWaves ?? state.wavePlan?.length ?? 0);
-	if (!Number.isFinite(totalWaves) || totalWaves <= 0) {
-		return false;
-	}
-
-	const events = readJournalEvents(projectRoot, batchId);
-	const mergeCompleted = events.filter((event) => event.type === "batch.merge_completed");
-	if (mergeCompleted.length < 1) {
-		return false;
-	}
-
-	let changed = false;
-	for (let waveIndex = 0; waveIndex < totalWaves; waveIndex++) {
-		const waveEvents = mergeCompleted.filter(
-			(event) => Number(event.payload?.waveIndex ?? -1) === waveIndex,
-		);
-		if (waveEvents.length < 1) {
-			continue;
-		}
-
-		const existing = (state.mergeResults ?? []).find((entry) => entry?.waveIndex === waveIndex);
-		if (existing && String(existing.status ?? "") === "succeeded") {
-			continue;
-		}
-
-		const lastEvent = waveEvents.at(-1);
-		const mergeCommit =
-			typeof lastEvent?.payload?.mergeCommit === "string" ? lastEvent.payload.mergeCommit : null;
-		recordWaveMergeResult({
-			state,
-			waveIndex,
-			status: "succeeded",
-			mergeCommit,
-		});
-		changed = true;
-	}
-
-	return changed;
-}
 
 /**
  * @param {object} params
@@ -327,53 +288,22 @@ export function finalizeAttachedLandLoopBeforeExit({
 }
 
 /**
- * @param {object|null|undefined} state
- * @param {number} waveIndex
- */
-export function isLastWaveIndex(state, waveIndex) {
-	if (!state || typeof state !== "object") return false;
-	const totalWaves = Number(state.totalWaves ?? state.wavePlan?.length ?? 0);
-	if (!Number.isFinite(totalWaves) || totalWaves <= 0) return false;
-	return waveIndex >= totalWaves - 1;
-}
-
-/**
  * Finalize immediately after the last wave merge so post-merge limbo never opens
  * (SP-280, SP-281 — attached engine + resume orphan race).
+ *
+ * Built from the `post-merge-finalize.mjs` leaf with the limbo detection/finalize
+ * implementations injected (SP-734) so `engine-lanes/merge.mjs` can receive this hook
+ * without importing the limbo module graph.
  *
  * @param {object} params
  * @param {boolean} [params.resumed]
  * @param {boolean} [params.resumeForced]
  * @returns {ReturnType<typeof finalizeBatchForIntegrate>|null}
  */
-export function maybeFinalizeAfterWaveMerge({
-	projectRoot,
-	state,
-	batchId,
-	orchBranch,
-	waveIndex,
-	resumed = false,
-	resumeForced = false,
-}) {
-	if (String(state.phase ?? "") === "completed") {
-		return null;
-	}
-	hydrateMergeResultsFromJournal({ projectRoot, state, batchId: String(state.batchId ?? "") });
-	if (!isLastWaveIndex(state, waveIndex)) {
-		return null;
-	}
-	if (!detectPostMergeLimboForResume({ projectRoot, state })) {
-		return null;
-	}
-	return tryFinalizePostMergeLimbo({
-		projectRoot,
-		state,
-		batchId,
-		orchBranch,
-		resumed,
-		resumeForced,
-	});
-}
+export const maybeFinalizeAfterWaveMerge = createMaybeFinalizeAfterWaveMerge({
+	detectPostMergeLimbo: detectPostMergeLimboForResume,
+	tryFinalizeLimbo: tryFinalizePostMergeLimbo,
+});
 
 /**
  * Whether resume should take the post-merge limbo fast path (no worker re-run).

@@ -27,7 +27,6 @@ import { recordWaveMergeResult } from "../merge/wave-merge-state.mjs";
 import { recordMergeBlocked } from "../lifecycle.mjs";
 import { appendJournalEvent } from "../journal.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
-import { maybeFinalizeAfterWaveMerge } from "../post-merge-limbo.mjs";
 import { saveSpineBatchState } from "../state.mjs";
 import { loadTaskFileScopePaths } from "./queue.mjs";
 import { laneTaskBranch } from "../worktree.mjs";
@@ -607,6 +606,9 @@ export function mergeLaneToOrch({
 
 /**
  * @param {object} params
+ * @param {(hookParams: object) => object|null} [params.finalizeAfterWaveMerge]
+ *   Post-wave-merge finalize hook injected by callers that own the limbo graph
+ *   (`maybeFinalizeAfterWaveMerge` from post-merge-limbo.mjs, SP-734). Omitted → skip finalize.
  */
 export function mergeWaveLanesToOrch({
 	projectRoot,
@@ -616,6 +618,7 @@ export function mergeWaveLanesToOrch({
 	orchBranch,
 	waveIndex,
 	resumed = false,
+	finalizeAfterWaveMerge = null,
 }) {
 	const waveTaskIds = state.wavePlan?.[waveIndex] ?? [];
 	const needsReplanTask = (state.tasks ?? []).find(
@@ -730,14 +733,17 @@ export function mergeWaveLanesToOrch({
 	});
 	saveSpineBatchState(projectRoot, state);
 
-	const finalizeResult = maybeFinalizeAfterWaveMerge({
-		projectRoot,
-		state,
-		batchId,
-		orchBranch,
-		waveIndex,
-		resumed,
-	});
+	const finalizeResult =
+		typeof finalizeAfterWaveMerge === "function"
+			? finalizeAfterWaveMerge({
+					projectRoot,
+					state,
+					batchId,
+					orchBranch,
+					waveIndex,
+					resumed,
+				})
+			: null;
 
 	return {
 		ok: true,
