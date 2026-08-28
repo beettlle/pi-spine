@@ -1,0 +1,16 @@
+spine-tasks/SP-733-import-cycle-resume-leaf/STATUS.md
+  h_2a17159c706ba1 3,22,24,28,30,34,62-63
+tests/arch/import-cycles.test.mjs
+  h_2a17159c706ba1 17-19,25-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "01ec37ed284eb706491c47c213483ad04eeacbfb",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
