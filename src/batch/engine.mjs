@@ -10,7 +10,11 @@ import { runBatchPreflight, resolveTasksRoot } from "../config/spine-preflight-l
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
-import { finalizeBatchForIntegrate, tryFinalizePostMergeLimbo } from "./post-merge-limbo.mjs";
+import {
+	finalizeBatchForIntegrate,
+	maybeFinalizeAfterWaveMerge,
+	tryFinalizePostMergeLimbo,
+} from "./post-merge-limbo.mjs";
 import { detectPostMergeLimboForResume } from "./resume-multi-validate.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { persistBatchMetaFromStartState } from "./batch-meta.mjs";
@@ -430,6 +434,7 @@ export async function startBatch({
 				baseBranch,
 				orchBranch,
 				waveIndex: wave.index,
+				finalizeAfterWaveMerge: maybeFinalizeAfterWaveMerge,
 			});
 			if (!mergeResult.ok) {
 				return {

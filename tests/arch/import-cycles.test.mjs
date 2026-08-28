@@ -14,25 +14,27 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const BATCH_ROOT = path.join(REPO_ROOT, "src", "batch");
 
 /**
- * Known post-merge-limbo ↔ reconcile cycles remaining after SP-733: resume modules now import
- * `engine-lanes/merge.mjs` / `engine-lanes/queue.mjs` leaves directly, so the `engine-lanes.mjs`
- * facade no longer appears in these cycles. Transitional — SP-736 owns the final empty allowlist.
+ * Known post-merge-limbo ↔ reconcile cycles remaining after SP-734: `engine-lanes/merge.mjs`
+ * no longer imports `post-merge-limbo.mjs` (finalize hook is injected via the
+ * `post-merge-finalize.mjs` leaf), so cycles route through `resume-multi.mjs -> post-merge-limbo.mjs`
+ * instead of `engine-lanes/merge.mjs -> post-merge-limbo.mjs`. Transitional — SP-736 owns the
+ * final empty allowlist.
  * Canonical form: rotate to lexicographically smallest start, trailing repeat of first node.
  *
  * @type {ReadonlySet<string>}
  */
 const ALLOWED_CLUSTER_CYCLES = new Set([
-	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs -> postmortem.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
-	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> batch-state-io.mjs",
-	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
-	"batch-meta-reconstruct.mjs -> journal-rebuild.mjs -> journal-rebuild-structural.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
-	"batch-meta-reconstruct.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
-	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
-	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> state.mjs -> batch-state-io.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> state.mjs -> batch-state-io.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> state.mjs -> batch-state-io.mjs",
+	"gate-evidence-collect.mjs -> postmortem.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs",
+	"gate-evidence-collect.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs -> batch-state-io.mjs",
+	"gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs",
+	"batch-meta-reconstruct.mjs -> journal-rebuild.mjs -> journal-rebuild-structural.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"batch-meta-reconstruct.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs",
+	"post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> state.mjs -> batch-state-io.mjs",
 ]);
 
 /**
@@ -174,6 +176,35 @@ test("detached-spawn.mjs is a batch leaf (no relative batch imports)", () => {
 test("gate-evidence-read.mjs is a batch leaf (SP-432 / #83-D)", () => {
 	const leafImports = batchImportGraph["gate-evidence-read.mjs"] ?? [];
 	assert.deepEqual(leafImports, []);
+});
+
+test("engine-lanes/merge.mjs does not import post-merge-limbo.mjs (SP-734 / #267)", () => {
+	const mergeImports = batchImportGraph["engine-lanes/merge.mjs"] ?? [];
+	assert.equal(
+		mergeImports.includes("post-merge-limbo.mjs"),
+		false,
+		"engine-lanes/merge.mjs must not import post-merge-limbo.mjs — finalize hook is injected",
+	);
+});
+
+test("post-merge-finalize.mjs is cycle-safe (no limbo/merge/gate imports, SP-734)", () => {
+	const leafImports = batchImportGraph["post-merge-finalize.mjs"] ?? [];
+	assert.ok(
+		leafImports.length > 0,
+		"post-merge-finalize.mjs must exist in the batch import graph",
+	);
+	for (const forbidden of [
+		"post-merge-limbo.mjs",
+		"engine-lanes/merge.mjs",
+		"gate.mjs",
+		"resume-multi-validate.mjs",
+	]) {
+		assert.equal(
+			leafImports.includes(forbidden),
+			false,
+			`post-merge-finalize.mjs must not import ${forbidden}`,
+		);
+	}
 });
 
 test("gate.mjs does not import evidence.mjs (breaks evidence gate triangle)", () => {
