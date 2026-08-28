@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { rm } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
@@ -19,7 +18,7 @@ import { gateRecordPath } from "../../src/batch/gate.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { loadSpineBatchState } from "../../src/batch/state.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
-import { initGitRepo } from "../helpers/git-fixture.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const SPINE_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "spine.mjs");
 const TASK_ID = "SP-343";
@@ -103,7 +102,7 @@ test("runSpineBatch attached start returns integrate handoff without process.exi
 		else process.env.SPINE_WORKER_STUB = prevStub;
 		if (prevHarness === undefined) delete process.env.SPINE_ALLOW_ATTACHED_HARNESS;
 		else process.env.SPINE_ALLOW_ATTACHED_HARNESS = prevHarness;
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -150,7 +149,7 @@ test("attached batch CLI subprocess exits after completed with stdout milestones
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 

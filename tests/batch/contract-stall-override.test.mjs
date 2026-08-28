@@ -16,6 +16,11 @@ import {
 const GLOBAL_STALL_MIN = 120;
 const CONTRACT_STALL_MIN = 240;
 
+/** V8 coverage + full-suite concurrency starves this timing case (~15m wall, false stall). */
+const UNDER_COVERAGE = process.execArgv.some((arg) =>
+	String(arg).includes("experimental-test-coverage"),
+);
+
 test("parseContract extracts stallTimeoutMinutes and extendGraceOnFileScope", () => {
 	const markdown = `# Task: SP-999 — Stall override
 
@@ -90,7 +95,10 @@ test("resolveWorkerPiTimeoutMs aligns with contract stall budget", () => {
 	}
 });
 
-test("runWorker with contract stall override survives beyond global stall budget (scaled)", async () => {
+test(
+	"runWorker with contract stall override survives beyond global stall budget (scaled)",
+	{ skip: UNDER_COVERAGE ? "timing-sensitive under V8 coverage CPU load" : false },
+	async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-contract-stall-"));
 	const batchId = "20260620T194352";
 	const projectRoot = path.join(root, "project");
@@ -168,7 +176,8 @@ Scaled stall override fixture (no Size line — avoids SP-088 floor in sub-minut
 		else process.env.SPINE_WORKER_STUB_HANG_MS = prevHang;
 		await rm(root, { recursive: true, force: true });
 	}
-});
+},
+);
 
 test("runWorker without contract override stalls at scaled global budget", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-contract-stall-base-"));

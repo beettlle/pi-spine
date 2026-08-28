@@ -4,10 +4,10 @@
  *
  * Serializes read-modify-write cycles on `.spine/batch-state.json`,
  * `.spine/batch-history.json`, and abort-signal writes across the engine,
- * supervisor, and CLI processes. Implemented as an exclusive `wx` create on
- * `.spine/runtime/batch-state.lock` with PID-liveness stale breaking — the
- * same primitive as the resume handoff lock, but scoped to state/history
- * writes rather than resume ownership.
+ * supervisor, and CLI processes. Implemented as an exclusive lock file on
+ * `.spine/runtime/batch-state.lock` (temp write + `linkSync` publish) with
+ * PID-liveness stale breaking — the same primitive as the resume handoff
+ * lock, but scoped to state/history writes rather than resume ownership.
  *
  * Lock ordering (deadlock avoidance):
  * 1. The per-batch resume handoff lock (`resume-handoff.lock`) MAY be held
@@ -41,9 +41,21 @@ const POLL_INTERVAL_MS = 25;
 /**
  * Re-entrancy + ownership tracking keyed by canonical lock path.
  * Value is the ownership token written into the lock file for this hold.
+ * Stored on `globalThis` so dynamic `import()` of this module and the static
+ * import from `state-io.mjs` always share one Map — under
+ * `--experimental-test-coverage`, duplicate module instances otherwise split
+ * re-entrancy tracking and `leakedSelf` unlinks the live lock mid-section
+ * (release:check coverage flake — concurrent writers 99/100).
  * @type {Map<string, string>}
  */
-const heldByThisProcess = new Map();
+const HELD_BY_PROCESS_KEY = Symbol.for("pi-spine.batchStateLock.heldByThisProcess");
+const heldByThisProcess = (() => {
+	const g = globalThis;
+	if (!(g[HELD_BY_PROCESS_KEY] instanceof Map)) {
+		g[HELD_BY_PROCESS_KEY] = new Map();
+	}
+	return /** @type {Map<string, string>} */ (g[HELD_BY_PROCESS_KEY]);
+})();
 
 /**
  * Resolve a stable absolute lock path. Create `.spine/runtime` first, then
@@ -77,6 +89,23 @@ function sleepSync(ms) {
 }
 
 /**
+ * @param {string} lockPath
+ * @param {string} reason
+ */
+function logLockBreak(lockPath, reason) {
+	if (process.env.SPINE_LOCK_STEAL_LOG !== "1") return;
+	try {
+		fs.appendFileSync(
+			`${lockPath}.steals`,
+			`${Date.now()} pid=${process.pid} ${reason}\n`,
+			"utf-8",
+		);
+	} catch {
+		/* ignore diagnostic I/O */
+	}
+}
+
+/**
  * @returns {string}
  */
 function newOwnershipToken() {
@@ -85,6 +114,10 @@ function newOwnershipToken() {
 
 /**
  * Single exclusive-create attempt.
+ *
+ * Publish via temp file + `linkSync` so waiters never observe an empty/partial
+ * lock from `wx` create-then-write (that race was parsed as "corrupt" and
+ * unlinked mid-hold — concurrent RMW lost updates).
  *
  * @param {string} lockPath
  * @param {string} token
@@ -107,21 +140,31 @@ function tryCreateLockFile(lockPath, token) {
 		startedAt: processStartedAt,
 		token,
 	});
+	const tmpPath = `${lockPath}.${process.pid}.${token}.tmp`;
 	try {
-		fs.writeFileSync(lockPath, payload, { encoding: "utf-8", flag: "wx" });
-		return true;
-	} catch (err) {
-		if (/** @type {NodeJS.ErrnoException} */ (err).code !== "EEXIST") {
-			throw err;
+		fs.writeFileSync(tmpPath, payload, { encoding: "utf-8" });
+		try {
+			fs.linkSync(tmpPath, lockPath);
+			return true;
+		} catch (err) {
+			if (/** @type {NodeJS.ErrnoException} */ (err).code !== "EEXIST") {
+				throw err;
+			}
+			return false;
 		}
-		return false;
+	} finally {
+		try {
+			fs.unlinkSync(tmpPath);
+		} catch {
+			/* tmp already removed or never created */
+		}
 	}
 }
 
 /**
  * Break the lock when the recorded holder cannot still own it: dead PID,
- * corrupt payload, a leaked file from this same process (no active holder),
- * or a live PID whose OS starttime no longer matches (PID recycled).
+ * abandoned corrupt payload, or a leaked file from this same process (no
+ * active holder). Never unlinks a live foreign holder.
  *
  * Never steals from a live holder on age alone — suite-load CPU starvation
  * can keep a critical section alive for minutes without making the lock stale
@@ -146,7 +189,19 @@ function breakStaleLock(lockPath) {
 	}
 
 	if (corrupt) {
+		// Do not unlink on the first corrupt read: a concurrent `wx` writer can
+		// briefly expose an empty/partial file. Only clear leftovers that have
+		// been unreadable for a while (abandoned junk), otherwise waiters poll.
 		try {
+			const ageMs = Date.now() - fs.statSync(lockPath).mtimeMs;
+			if (ageMs < 2_000) {
+				return;
+			}
+		} catch {
+			return;
+		}
+		try {
+			logLockBreak(lockPath, "corrupt-stale");
 			fs.unlinkSync(lockPath);
 		} catch {
 			/* raced unlink */
@@ -157,6 +212,7 @@ function breakStaleLock(lockPath) {
 	const holderPid = Number(holder?.pid);
 	if (!Number.isFinite(holderPid) || holderPid <= 0) {
 		try {
+			logLockBreak(lockPath, "invalid-pid");
 			fs.unlinkSync(lockPath);
 		} catch {
 			/* raced unlink */
@@ -176,6 +232,7 @@ function breakStaleLock(lockPath) {
 			return;
 		}
 		try {
+			logLockBreak(lockPath, `leakedSelf token=${token} mapSize=${heldByThisProcess.size}`);
 			fs.unlinkSync(lockPath);
 		} catch {
 			/* raced unlink */
@@ -201,6 +258,7 @@ function breakStaleLock(lockPath) {
 			return;
 		}
 		try {
+			logLockBreak(lockPath, `deadPid holder=${holderPid}`);
 			fs.unlinkSync(lockPath);
 		} catch {
 			/* raced unlink */

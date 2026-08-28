@@ -185,6 +185,11 @@ test("withBatchStateLock is re-entrant within the same process", async () => {
 	}
 });
 
+test("held-lock Map is process-global via Symbol.for (coverage-safe re-entrancy)", () => {
+	const key = Symbol.for("pi-spine.batchStateLock.heldByThisProcess");
+	assert.ok(globalThis[key] instanceof Map);
+});
+
 test("nested lock across projectRoot realpath aliases keeps outer ownership", async () => {
 	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-alias-"));
 	try {
