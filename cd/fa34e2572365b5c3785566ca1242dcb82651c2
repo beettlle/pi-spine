@@ -1,0 +1,35 @@
+tests/batch/batch-state-lock.test.mjs
+  s_71efe8e36dab6e::t_664784120e11e2 188-192
+tests/batch/contract-stall-override.test.mjs
+  s_71efe8e36dab6e::t_3f2524e7bf3d6f 19-23
+  s_71efe8e36dab6e::t_5f3e30a66445ff 98-101,179-180
+src/batch/batch-state-lock.mjs
+  s_71efe8e36dab6e::t_fd174c31ef46b6 192-202,204
+  s_71efe8e36dab6e::t_0cde0f1b51eb54 44-48,51-58
+  s_71efe8e36dab6e::t_fa18ae91115fe8 215,235,261
+  s_71efe8e36dab6e::t_c8e2d4dc8efb52 92-107
+  s_71efe8e36dab6e::t_5a598028137a82 118-121,143,145-159
+  s_71efe8e36dab6e::t_fcbf474d9552de 7-10
+  s_71efe8e36dab6e::t_4edb21c57dc877 166-167
+  s_71efe8e36dab6e::t_05086aba8e361d 91
+tests/batch/attached-batch-exit.test.mjs
+  s_71efe8e36dab6e::t_8f4bcdc3207b17 105
+  s_71efe8e36dab6e::t_b736ae5389d1f4 152
+  s_71efe8e36dab6e::t_6d4b00f4548b53 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cdfa34e2572365b5c3785566ca1242dcb82651c2",
+  "prompts": {},
+  "sessions": {
+    "s_71efe8e36dab6e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e26d2f60-7db0-49d8-bad2-e5c322fda2fb",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
