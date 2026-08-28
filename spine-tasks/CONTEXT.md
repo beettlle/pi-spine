@@ -2399,7 +2399,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | *(pre-landed)* | Contract lint-missing warn + skill/rule sync | Done (`3df30b4e`) | — |
 | SP-731 | Fake-async CLI/config/analyze (#270 Partial) | Pending | — |
 | SP-732 | Fake-async batch merge/queue/review-spawn (#270) | Pending | — |
-| SP-733 | Import cycle: resume leaf off engine-lanes facade (#267 Partial) | Pending | SP-732 |
+| SP-733 | Import cycle: resume leaf off engine-lanes facade (#267 Partial) | Done | SP-732 |
 | SP-734 | Import cycle: merge ↔ post-merge-limbo leaf (#267 Partial) | Pending | SP-733 |
 | SP-735 | Import cycle: batch-state-io / meta-reconstruct (#267 Partial) | Pending | SP-734 |
 | SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Pending | SP-733–735 |

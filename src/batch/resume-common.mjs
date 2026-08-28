@@ -8,7 +8,7 @@ import path from "node:path";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { recomputeTaskCounters } from "./state.mjs";
-import { loadTaskFileScopePaths } from "./engine-lanes.mjs";
+import { loadTaskFileScopePaths } from "./engine-lanes/queue.mjs";
 import { laneWorktreePath } from "./worktree.mjs";
 
 /**

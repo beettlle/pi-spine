@@ -7,7 +7,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { resolveTasksRoot } from "../config/spine-preflight-lib.mjs";
 import { assessWaveMergeEligibility } from "./engine-scope.mjs";
-import { mergeWaveLanesToOrch } from "./engine-lanes.mjs";
+import { mergeWaveLanesToOrch } from "./engine-lanes/merge.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { finalizeResumedBatchForIntegrate } from "./post-merge-limbo.mjs";
