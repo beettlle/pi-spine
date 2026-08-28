@@ -608,7 +608,7 @@ export function mergeLaneToOrch({
 /**
  * @param {object} params
  */
-export async function mergeWaveLanesToOrch({
+export function mergeWaveLanesToOrch({
 	projectRoot,
 	state,
 	batchId,
