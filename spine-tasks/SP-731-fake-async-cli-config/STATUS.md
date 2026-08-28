@@ -24,17 +24,17 @@
 
 ## Step 1: Remove fake-async (sync path)
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Drop `async` or add real `await` on five exports
-- [ ] Update callers / JSDoc
-- [ ] Preserve behavior
+- [x] Drop `async` or add real `await` on five exports
+- [x] Update callers / JSDoc
+- [x] Preserve behavior
 
 ## Step 2: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Run lint
+- [x] Run lint
 - [ ] Run Contract `testCommand`
 - [ ] Fix failures
 
@@ -62,6 +62,7 @@
 |------|-------|--------|
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
 | 2026-08-28 | Step 0 complete | Callers mapped: bin/spine.mjs, bin/spine-cli/lane-logs.mjs, bin/spine-tasks.mjs:304, src/batch/worker-prompt.mjs:64, extensions/spine/settings-slash.ts; all `await` the targets |
+| 2026-08-28 | Step 1 complete | Dropped `async` on all five exports; `@returns` JSDoc added; follow paths in journal-follow/lane-logs keep real Promise (fs.watch + signals) |
 
 ## Blockers
 

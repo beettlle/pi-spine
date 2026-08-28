@@ -223,8 +223,9 @@ export function emitWorkerRulesSelected(journal, payload) {
  * @param {string[]} [params.taskFileScope]
  * @param {number} [params.byteCap]
  * @param {WorkerRulesJournalContext} [params.journal]
+ * @returns {{ text: string, entries: object[], truncated: boolean, skipped: string[], bytesUsed: number, byteCap: number, selection: object, error?: string, blockedPath?: string }}
  */
-export async function buildWorkerContextAsync({
+export function buildWorkerContextAsync({
 	config = {},
 	projectRoot = process.cwd(),
 	taskFileScope = [],

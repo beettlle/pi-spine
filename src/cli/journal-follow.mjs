@@ -157,8 +157,10 @@ const defaultDeps = {
  * @param {string[]} [options.args]
  * @param {boolean} [options.follow]
  * @param {typeof defaultDeps} [options.deps]
+ * @returns {{ exitCode: number, output: string } | Promise<{ exitCode: number, output: string }>}
+ *   Plain result for the non-follow path; a Promise that resolves on SIGINT/SIGTERM when following.
  */
-export async function runJournalFollow(options) {
+export function runJournalFollow(options) {
 	const { projectRoot, args = [], follow = true, deps = defaultDeps } = options;
 	const { batchId: argBatchId, laneId, json } = parseJournalFollowArgs(args);
 	let batchId = null;

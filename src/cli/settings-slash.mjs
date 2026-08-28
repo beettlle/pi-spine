@@ -66,8 +66,9 @@ function parseSetArgs(argsText) {
  * @param {string} args
  * @param {{ notify: (message: string, level: string) => void }} ui
  * @param {string} [cwd]
+ * @returns {void}
  */
-export async function runSpineSettingsSlash(args, ui, cwd = process.cwd()) {
+export function runSpineSettingsSlash(args, ui, cwd = process.cwd()) {
 	const trimmed = args.trim();
 
 	if (trimmed === "set" || trimmed.startsWith("set ")) {
