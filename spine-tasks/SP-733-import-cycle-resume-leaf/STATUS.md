@@ -1,6 +1,6 @@
 # SP-733: Break resume path import of engine-lanes facade — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-08-28
 **Review Level:** 1
@@ -19,19 +19,19 @@
 
 ## Step 1: Leaf imports for resume merge helpers
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Done
 
-- [ ] Replace engine-lanes.mjs imports in resume-* modules
+- [x] Replace engine-lanes.mjs imports in resume-* modules
 
 ## Step 2: Shrink allowlist
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Remove eliminated ALLOWED_CLUSTER_CYCLES entries
+- [x] Remove eliminated ALLOWED_CLUSTER_CYCLES entries
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Run lint + Contract testCommand
 
@@ -59,6 +59,8 @@
 |------|-------|--------|
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
 | 2026-08-28 | Step 0 preflight | import-cycles test passes (9/9); all 11 ALLOWED_CLUSTER_CYCLES entries traverse `resume-multi.mjs -> engine-lanes.mjs`; SP-732 landed on main (54631314) |
+| 2026-08-28 | Step 1 done | resume-multi/resume → `engine-lanes/merge.mjs`; resume-common → `engine-lanes/queue.mjs`; no thin re-export leaf needed |
+| 2026-08-28 | Step 2 done | allowlist rewritten: 11 canonical cycles now end `resume-multi.mjs -> engine-lanes/merge.mjs`; facade removed from all cycles; comment marks SP-736 as final-empty owner; import-cycles test 9/9 |
 
 ## Blockers
 

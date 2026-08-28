@@ -14,23 +14,25 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const BATCH_ROOT = path.join(REPO_ROOT, "src", "batch");
 
 /**
- * Known post-merge-limbo ↔ reconcile cycles remaining after SP-469 slice C (shrinks in SP-432).
+ * Known post-merge-limbo ↔ reconcile cycles remaining after SP-733: resume modules now import
+ * `engine-lanes/merge.mjs` / `engine-lanes/queue.mjs` leaves directly, so the `engine-lanes.mjs`
+ * facade no longer appears in these cycles. Transitional — SP-736 owns the final empty allowlist.
  * Canonical form: rotate to lexicographically smallest start, trailing repeat of first node.
  *
  * @type {ReadonlySet<string>}
  */
 const ALLOWED_CLUSTER_CYCLES = new Set([
-	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> resume-multi.mjs -> engine-lanes.mjs",
-	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> resume-multi.mjs -> engine-lanes.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> batch-state-io.mjs",
-	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
-	"batch-meta-reconstruct.mjs -> journal-rebuild.mjs -> journal-rebuild-structural.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
-	"batch-meta-reconstruct.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
-	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
-	"engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> state.mjs -> batch-state-io.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> state.mjs -> batch-state-io.mjs",
-	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> state.mjs -> batch-state-io.mjs",
+	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs -> postmortem.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
+	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> batch-state-io.mjs",
+	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
+	"batch-meta-reconstruct.mjs -> journal-rebuild.mjs -> journal-rebuild-structural.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"batch-meta-reconstruct.mjs -> state.mjs -> batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> batch-meta-reconstruct.mjs",
+	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
+	"engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> resume-multi-validate.mjs -> state.mjs -> batch-state-io.mjs",
+	"batch-state-io.mjs -> readers/spine-state.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> engine-lanes/merge.mjs -> post-merge-limbo.mjs -> state.mjs -> batch-state-io.mjs",
 ]);
 
 /**
