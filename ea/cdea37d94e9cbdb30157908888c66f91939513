@@ -1,0 +1,24 @@
+spine-tasks/SP-732-fake-async-batch/STATUS.md
+  h_2a17159c706ba1 3-4,15,17-18,63
+src/batch/engine-lanes/merge.mjs
+  h_2a17159c706ba1 611
+src/batch/engine-lanes/queue.mjs
+  h_2a17159c706ba1 170
+src/batch/engine.mjs
+  h_2a17159c706ba1 288
+src/batch/review-spawn.mjs
+  h_2a17159c706ba1 184,186,198,202
+tests/arch/fake-async.test.mjs
+  h_2a17159c706ba1 1-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "eacdea37d94e9cbdb30157908888c66f91939513",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
