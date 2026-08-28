@@ -1,0 +1,14 @@
+spine-tasks/SP-731-fake-async-cli-config/STATUS.md
+  h_2a17159c706ba1 3-4,8,15-18,20-23,64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a9ef11c3e9e9503a1c7960df23e2e1b95ccbd816",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
