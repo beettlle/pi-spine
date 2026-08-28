@@ -1,0 +1,18 @@
+src/batch/resume-common.mjs
+  h_2a17159c706ba1 11
+src/batch/resume-multi.mjs
+  h_2a17159c706ba1 10
+src/batch/resume.mjs
+  h_2a17159c706ba1 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "fcbba2ea77dc55a61478859cf084a95efd9ec28e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
