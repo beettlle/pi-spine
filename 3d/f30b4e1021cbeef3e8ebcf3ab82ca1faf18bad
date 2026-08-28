@@ -1,0 +1,93 @@
+spine-tasks/CONTEXT.md
+  s_756494a8607d4a::t_c109ffea44118e 2366-2376,2381-2385,2387
+  s_756494a8607d4a::t_e53e0507cbcc70 3
+skills/create-spine-tasks/references/prompt-template.md
+  s_fcbade0765742c::t_8177e9f3738be3 112-114,116-117,119-121
+skills/spine-release-operator/SKILL.md
+  s_fcbade0765742c::t_07e1d831f09397 236
+  s_fcbade0765742c::t_c032d03c04ec8f 341
+  s_fcbade0765742c::t_0b38c59cc900ed 342
+tests/tasks/validate-contract-warn.test.mjs
+  s_fcbade0765742c::t_fd277ee203bf61 328
+  s_fcbade0765742c::t_3ad8a984544730 269,272,280-324
+  s_fcbade0765742c::t_31d495a2f26570 207
+  s_fcbade0765742c::t_040c6f4a88c63a 338
+  s_fcbade0765742c::t_83e2766ac8b4e2 370-372,382-384
+  s_fcbade0765742c::t_5873b5af7f9bab 169,181
+  s_fcbade0765742c::t_13aca81885d379 11,16
+  s_fcbade0765742c::t_b11b712b66302f 325
+skills/spine-autonomous-operator/references/agent-shell-batch-policy.md
+  s_fcbade0765742c::t_ac061c5564dcac 89
+src/tasks/validate-contract-warn.mjs
+  s_fcbade0765742c::t_c8f3e96080db71 181
+  s_fcbade0765742c::t_e850115a00c378 114-137
+  s_fcbade0765742c::t_afd4218fceb611 18-21,23-34,113,138
+  s_fcbade0765742c::t_a337a38e0b1137 175
+  s_fcbade0765742c::t_bac2072feb7c5a 139
+skills/spine-orchestrate-waves/SKILL.md
+  s_fcbade0765742c::t_66119a2ed23268 133
+  s_fcbade0765742c::t_b04f5e1d3d6dbb 213-215
+  s_fcbade0765742c::t_5f49a3c2580904 184
+  s_fcbade0765742c::t_27bb91b5c1959b 146
+skills/spine-orchestrate-waves/references/outer-loop.md
+  s_fcbade0765742c::t_766b2fca0eb252 85-99
+  s_fcbade0765742c::t_618032de7d424f 126
+skills/create-spine-tasks/references/contract-template.md
+  s_fcbade0765742c::t_c29c6fd60dd1ac 104
+  s_fcbade0765742c::t_0a3e23106b327e 180
+  s_fcbade0765742c::t_8e475fda6918c4 18
+  s_fcbade0765742c::t_c0da5a5d481035 165
+  s_fcbade0765742c::t_7a2bd351465a8c 39
+  s_fcbade0765742c::t_ee4e1eafe4e50e 114
+  s_fcbade0765742c::t_f43347707a5801 153
+  s_fcbade0765742c::t_206d525ad79f32 225-229
+skills/spine-release-operator/references/pi-async-orchestration.md
+  s_fcbade0765742c::t_85e29fbccfe16f 32-33
+.cursor/rules/spine-task-authoring.mdc
+  s_fcbade0765742c::t_f444bb290fdf0f 132
+  s_fcbade0765742c::t_df3af54d872e46 92,95,98
+  s_fcbade0765742c::t_26063b0c87b807 99
+skills/spine-autonomous-operator/SKILL.md
+  s_fcbade0765742c::t_a1cc2fbf8ae172 208-209
+.cursor/rules/spine-operator-cursor.mdc
+  s_fcbade0765742c::t_0a187146e051f7 51-52,55
+  s_fcbade0765742c::t_a56eb3e412d554 39
+  s_fcbade0765742c::t_4112410f297704 56
+skills/create-spine-tasks/SKILL.md
+  s_fcbade0765742c::t_b310215fa6e644 590
+  s_fcbade0765742c::t_189c10727d60d6 310
+  s_fcbade0765742c::t_08311f1549b6d0 559
+skills/spine-release-operator/references/post-integrate-regression-gate.md
+  s_fcbade0765742c::t_a27d3fbff8ceb8 41-53
+  s_fcbade0765742c::t_47c66855b13761 61
+.spine/rules-manifest.json
+  s_fcbade0765742c::t_e494f973d739e9 2
+AGENTS.md
+  s_fcbade0765742c::t_b61ccea6c3d8e3 4
+CLAUDE.md
+  s_fcbade0765742c::t_6222961d69e205 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3df30b4e1021cbeef3e8ebcf3ab82ca1faf18bad",
+  "prompts": {},
+  "sessions": {
+    "s_756494a8607d4a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a9e96dcf-72e9-4700-b9bb-511213746736",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_fcbade0765742c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e39dd0b4-641b-4ce1-8e2c-88e0737e4d01",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
