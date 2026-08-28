@@ -16,7 +16,7 @@ import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { commitLaneWorktree, filterPorcelain, gitPorcelain } from "./lane-commit.mjs";
-import { mergeLaneToOrch } from "./engine-lanes.mjs";
+import { mergeLaneToOrch } from "./engine-lanes/merge.mjs";
 import {
 	loadResumeFileScopePaths,
 	recordResumePhaseTransition,
