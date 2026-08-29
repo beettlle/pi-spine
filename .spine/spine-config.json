@@ -15,7 +15,7 @@
   },
   "agents": {
     "worker": {
-      "model": "zai/glm-5.3",
+      "model": "zai/glm-5.3-flash",
       "thinking": "high"
     },
     "reviewer": {
@@ -38,9 +38,35 @@
       "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
     },
-    "activeProfile": "allegretto",
+    "activeProfile": "default",
     "profiles": {
       "default": {
+        "worker": {
+          "model": "zai/glm-5.3-flash",
+          "thinking": "high"
+        },
+        "reviewer": {
+          "model": "google/gemini-3.1-pro-preview",
+          "thinking": "high",
+          "plan": {
+            "model": "google/gemini-flash-latest",
+            "thinking": "low"
+          },
+          "code": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          },
+          "final": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          }
+        },
+        "supervisor": {
+          "model": "google/gemini-flash-lite-latest",
+          "thinking": "off"
+        }
+      },
+      "zai-full": {
         "worker": {
           "model": "zai/glm-5.3",
           "thinking": "high"

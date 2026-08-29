@@ -7,8 +7,8 @@
 **Profile:** minor
 **Operator approved scope:** yes (2026-08-28)
 **Composition choice:** Pre-landed lint-churn reduction (commit `3df30b4e`) + deferred P2 enhancements **#270** + **#267** (from v2.16.0 defer table). Bug budget **0** with operator override (no open bugs).
-**Worker model pin:** `zai/glm-5.3` (activeProfile: `default`) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Worker model pin:** `zai/glm-5.3-flash` (activeProfile: `default`) — was `zai/glm-5.3` at scope approval
+**Agent pin override:** yes (2026-08-28, operator requested spine-config improvement: default worker → `zai/glm-5.3-flash`, prior pin kept as profile `zai-full`; activeProfile → `default` from `allegretto`) — [#248](https://github.com/beettlle/pi-spine/issues/248)
 **GitNexus:** refreshed 2026-08-28 — status up-to-date with HEAD (`37dd536` at analyze; post-commit HEAD `3df30b4e` — re-analyze before Phase 4)
 
 ---
