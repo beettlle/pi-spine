@@ -1,0 +1,21 @@
+src/batch/batch-guards.mjs
+  s_23d5b88e377ebe::t_460f932527ce74 70-83
+src/batch/engine.mjs
+  s_23d5b88e377ebe::t_71333517771af7 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0899f8607bc4d823a63323ae279e86c743615d08",
+  "prompts": {},
+  "sessions": {
+    "s_23d5b88e377ebe": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-92e2931c-c7d6-4e27-804c-e8c47a229a44",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
