@@ -1,6 +1,14 @@
 // @ts-nocheck
 /**
  * Lane task execution facade — re-exports split modules and phase transitions.
+ *
+ * Cycle-free ownership (#267 / SP-736): this facade participates in no batch import
+ * cycle and must stay that way. It must not import from the resume/limbo/reconcile
+ * cluster (resume-multi.mjs, post-merge-limbo.mjs, reconcile*.mjs, gate.mjs) —
+ * resume entry points (resume.mjs) import this facade, never the reverse. Lane-phase
+ * helpers live under engine-lanes/* leaves (queue, merge, review, matrix, commit,
+ * orch-sync). `tests/arch/import-cycles.test.mjs` enforces this with an empty
+ * ALLOWED_CLUSTER_CYCLES.
  */
 
 import fs from "node:fs";

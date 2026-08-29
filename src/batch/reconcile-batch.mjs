@@ -22,7 +22,7 @@ import { inferWorkerDoneMissingFailure } from "./diagnosis-worker-done-missing.m
 import { inferEngineOrphanCause } from "./diagnosis-parent-exit.mjs";
 import { findStubMarkedSucceededTask } from "./diagnosis-stub.mjs";
 import { detectOrphanRunning, journalEventsSinceResume } from "./orphan-detect.mjs";
-import { computePendingTasks } from "./resume-multi.mjs";
+import { computePendingTasks } from "./resume-validation.mjs";
 import { computeStatusProgress } from "./status-json.mjs";
 import {
 	detectBatchStateDrift,

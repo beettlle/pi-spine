@@ -1,5 +1,7 @@
 /**
  * Static import-cycle guard for reconcile / detached-start / post-merge-limbo cluster (#83).
+ * #267 closed by SP-736: ALLOWED_CLUSTER_CYCLES is empty — any tracked limbo/reconcile
+ * import cycle is a regression and fails this test.
  */
 
 import assert from "node:assert/strict";
@@ -14,23 +16,15 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const BATCH_ROOT = path.join(REPO_ROOT, "src", "batch");
 
 /**
- * Known post-merge-limbo ↔ reconcile cycles remaining after SP-735: the batch-state-io and
- * batch-meta-reconstruct variants are gone — readers/{spine,taskplane}-state.mjs are graph
- * leaves (inline typedefs instead of JSDoc type-imports) and batch-meta-reconstruct imports
- * state-io/state-guards leaves directly (SP-735). Remaining cycles route through
- * `resume-multi.mjs -> post-merge-limbo.mjs`. Transitional — SP-736 owns the final empty
- * allowlist.
+ * Allowlist is EMPTY since SP-736 (#267): the resume leaf (`resume-validation.mjs`),
+ * detached-spawn leaf, state-io leaves (SP-735), and injected finalize hook (SP-734)
+ * removed every tracked post-merge-limbo ↔ reconcile cycle. Do not add entries —
+ * break the cycle instead (leaf extraction or dependency injection), per #83/#267.
  * Canonical form: rotate to lexicographically smallest start, trailing repeat of first node.
  *
  * @type {ReadonlySet<string>}
  */
-const ALLOWED_CLUSTER_CYCLES = new Set([
-	"gate-evidence-collect.mjs -> postmortem.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs",
-	"gate-evidence-collect.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs -> gate-evidence-collect.mjs",
-	"gate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs -> gate.mjs",
-	"post-merge-limbo.mjs -> resume-multi-validate.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs",
-	"post-merge-limbo.mjs -> resume-multi-validate.mjs -> retry.mjs -> reconcile.mjs -> reconcile-batch.mjs -> resume-multi.mjs -> post-merge-limbo.mjs",
-]);
+const ALLOWED_CLUSTER_CYCLES = new Set([]);
 
 /**
  * @param {string} dir
@@ -299,13 +293,13 @@ test("no import cycle contains reconcile, detached-start, and post-merge-limbo",
 	);
 });
 
-test("post-merge-limbo reconcile cycles match allowlist (shrinks per #83 slice)", () => {
+test("post-merge-limbo reconcile cycles are absent — empty allowlist (#267)", () => {
 	const allCycles = findAllBatchCycles(batchImportGraph);
 	const clusterCycles = allCycles.filter(isTrackedLimboReconcileCycle);
 	const unexpected = clusterCycles.filter((cycleKey) => !ALLOWED_CLUSTER_CYCLES.has(cycleKey));
 	assert.deepEqual(
 		unexpected,
 		[],
-		`Unexpected cluster cycles (update allowlist only when intentionally breaking a cycle): ${unexpected.join("; ")}`,
+		`Unexpected limbo/reconcile cluster cycles — ALLOWED_CLUSTER_CYCLES is empty since #267; break the cycle via leaf extraction (e.g. resume-validation.mjs) or dependency injection instead of re-allowlisting: ${unexpected.join("; ")}`,
 	);
 });
