@@ -1,7 +1,7 @@
 # SP-735: Break batch-state-io and meta-reconstruct cycle variants — Status
 
-**Current Step:** Step 3
-**Status:** 🔄 In Progress
+**Current Step:** Step 4 (delivery)
+**Status:** ✅ Complete
 **Last Updated:** 2026-08-29
 **Review Level:** 1
 **Review Counter:** 0
@@ -53,18 +53,19 @@ JSDoc-only; covered by lint + typecheck + arch/resume tests.
 
 ## Step 3: Testing & Verification
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Run lint — `npm run lint` clean (`--max-warnings 0`, eslint over src bin tests scripts)
-- [x] Contract testCommand — `npm run typecheck` clean (tsconfig.json + tsconfig.batch.json); `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/resume-multi-validation.test.mjs` → **18 pass / 0 fail** (10 arch incl. allowlist match, 8 resume validation)
+- [x] Contract testCommand — `npm run typecheck` clean (tsconfig.json + tsconfig.batch.json); `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/import-cycles.test.mjs tests/batch/resume-multi-validation.test.mjs` → **18 pass / 0 fail** (re-verified in resumed session)
 - [x] detect_changes (repo rule, pre-commit) — risk **low**, 0 changed symbols (JSDoc/import-only edits)
-- [ ] Full `npm test` — running in background monitor #1 (first foreground attempt exceeded 20 min window); result recorded before .DONE
+- [x] Full `npm test` — **2527/2528 pass** with worker env scrubbed (`env -u SPINE_IS_WORKER -u SPINE_BATCH_ID -u SPINE_PARENT_BATCH_ID`, matching `runContractTestCommand` scrub semantics asserted by `contract-verify-worker-env.test.mjs`). Sole failure: `tests/batch/contract-failed-terminal.test.mjs` "reconcileBatch surfaces contract_failed headline" — `git_unavailable` vs `needs_retry` after **902s** under full-suite load (sibling tests also ~900s); **passes in 7.4s in isolation** on this branch → load-induced git-probe flake, no code-path overlap with the JSDoc/import-only diff. First (unscrubbed) run: 2485/2528 with all 43 failures `nested_batch_spawn_blocked`-family from ambient `SPINE_IS_WORKER=1` — environmental, none in-scope.
+- [x] Graph probe re-verified (resumed session): 20 total cycles (was 55), **0 contain batch-state-io.mjs / batch-meta-reconstruct.mjs**, readers have empty batch dep lists
 
 ## Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -81,6 +82,8 @@ JSDoc-only; covered by lint + typecheck + arch/resume tests.
 | 2026-08-29 | D2: `NormalizedBatchState` type does not exist in `reconcile.mjs` — reader JSDoc refs were dangling docs, not a real dependency. | Justifies inline typedef replacement |
 | 2026-08-29 | D3: Graph probe pre-fix: 55 total cycles, 11 tracked; all 6 target cycles share the single phantom spine-state edge. | Minimal fix confirmed |
 | 2026-08-29 | D4: Replacement comment containing literal `import("../reconcile.mjs")` still matched the parser regex — reworded to prose. | Detector is text-based; comments can create edges |
+| 2026-08-29 | D5: Full `npm test` from inside a worker session inherits `SPINE_IS_WORKER=1` → all engine-spawning tests fail `nested_batch_spawn_blocked`. Faithful run requires `env -u SPINE_IS_WORKER -u SPINE_BATCH_ID -u SPINE_PARENT_BATCH_ID` (same scrub the engine applies to contract testCommands). | Explains 43-failure first run; not a regression |
+| 2026-08-29 | D6: `contract-failed-terminal.test.mjs` "reconcileBatch surfaces contract_failed headline" flaked under full-suite load: `git_unavailable` vs `needs_retry` after 902s; passes in 7.4s in isolation. Load-induced git-probe flake, zero overlap with SP-735 diff. | Documented; not a blocker |
 
 ## Execution Log
 
@@ -94,6 +97,8 @@ JSDoc-only; covered by lint + typecheck + arch/resume tests.
 | 2026-08-29 | Step 1 committed | `a661f2ec` — readers leaf typedefs + meta-reconstruct leaf rewire |
 | 2026-08-29 | Step 2 committed | `313448a9` — allowlist 11 → 5 |
 | 2026-08-29 | Step 3 evidence | lint clean; typecheck clean; contract tests 18/18 pass; detect_changes low/0 symbols |
+| 2026-08-29 | Session resumed | Full `npm test` rerun: ambient-env run 2485/2528 (43 `nested_batch_spawn_blocked` failures, environmental); scrubbed-env run **2527/2528**, sole failure = load-flake `git_unavailable` in contract-failed-terminal (902s under load, 7.4s in isolation, passes) |
+| 2026-08-29 | Step 4 done | STATUS finalized; `.DONE` created |
 
 ## Blockers
 
