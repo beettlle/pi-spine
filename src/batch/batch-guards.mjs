@@ -67,3 +67,17 @@ export function rejectNestedBatchStart(projectRoot) {
 			`Parent batch: ${parentBatchId}, projectRoot: ${projectRoot}\n`,
 	};
 }
+
+/**
+ * @param {string} batchId
+ * @returns {{ ok: true, exitCode: 0, batchId: string, paused: true, output: string }}
+ */
+export function buildEnginePausedResult(batchId) {
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		paused: true,
+		output: "Batch paused.\n",
+	};
+}

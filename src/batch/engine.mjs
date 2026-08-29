@@ -49,20 +49,7 @@ import {
 	skipTaskDoneOnDisk,
 	transitionPhase,
 } from "./engine-lanes.mjs";
-import { rejectNestedBatchStart } from "./batch-guards.mjs";
-
-/**
- * @param {string} batchId
- */
-function buildEnginePausedResult(batchId) {
-	return {
-		ok: true,
-		exitCode: 0,
-		batchId,
-		paused: true,
-		output: "Batch paused.\n",
-	};
-}
+import { buildEnginePausedResult, rejectNestedBatchStart } from "./batch-guards.mjs";
 
 export {
 	assessWaveMergeEligibility,
