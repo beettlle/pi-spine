@@ -9,8 +9,11 @@ import { BATCH_META_FILENAME, batchMetaPath } from "./batch-meta.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { rebuildBatchStateFromJournal } from "./journal-rebuild.mjs";
 import { computePendingTasks, findResumableWave } from "./resume-validation.mjs";
-import { createInitialBatchState, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
-import { loadSpineBatchState } from "./state-io.mjs";
+// Leaf rewire (SP-735 / #267): state-io/state-guards are leaves; state.mjs stays only for
+// createInitialBatchState, which is defined in the state facade.
+import { createInitialBatchState } from "./state.mjs";
+import { loadSpineBatchState, saveSpineBatchState } from "./state-io.mjs";
+import { clearBatchEnginePid } from "./state-guards.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
 
 /**
