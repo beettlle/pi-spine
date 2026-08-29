@@ -1,6 +1,27 @@
 // @ts-nocheck
 /**
  * Parse Taskplane `.pi/batch-state.json` for dogfood reconciliation.
+ *
+ * The normalized shape is declared locally so this reader stays a leaf in the batch import
+ * graph: a JSDoc type-import pointing at reconcile.mjs makes the arch cycle detector see a
+ * readers -> reconcile edge even though no runtime import exists (SP-735 / #267).
+ *
+ * @typedef {object} NormalizedBatchState
+ * @property {string} source
+ * @property {string} batchId
+ * @property {string} phase
+ * @property {string} baseBranch
+ * @property {string|null} orchBranch
+ * @property {unknown} startedAt
+ * @property {unknown} endedAt
+ * @property {number} failedTasks
+ * @property {number} succeededTasks
+ * @property {number} totalTasks
+ * @property {unknown[]} mergeResults
+ * @property {Array<object>} tasks
+ * @property {Array<object>} segments
+ * @property {Array<object>} lanes
+ * @property {Record<string, unknown>} raw
  */
 
 const TERMINAL_SUCCESS = new Set(["completed", "succeeded", "skipped", "done"]);
@@ -9,7 +30,7 @@ const ACTIVE = new Set(["pending", "running", "executing"]);
 
 /**
  * @param {unknown} raw
- * @returns {import("../reconcile.mjs").NormalizedBatchState | null}
+ * @returns {NormalizedBatchState | null}
  */
 export function parseTaskplaneBatchState(raw) {
 	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
