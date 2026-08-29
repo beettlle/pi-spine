@@ -1,0 +1,18 @@
+src/batch/batch-meta-reconstruct.mjs
+  h_2a17159c706ba1 12-16
+src/batch/readers/spine-state.mjs
+  h_2a17159c706ba1 4-24,33
+src/batch/readers/taskplane-state.mjs
+  h_2a17159c706ba1 4-24,33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a661f2ec5304a803fd50e272b45bc5cc95fc05e5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
