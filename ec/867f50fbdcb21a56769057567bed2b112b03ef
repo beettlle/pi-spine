@@ -1,0 +1,19 @@
+spine-tasks/SP-734-import-cycle-limbo-leaf/.reviews/0-20260828T234244.md
+  s_5c86bbc6a3958c::t_bbce138d57357a 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ec867f50fbdcb21a56769057567bed2b112b03ef",
+  "prompts": {},
+  "sessions": {
+    "s_5c86bbc6a3958c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-579db2f4-0ca1-4e84-a0f0-09fc6ee18021",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
