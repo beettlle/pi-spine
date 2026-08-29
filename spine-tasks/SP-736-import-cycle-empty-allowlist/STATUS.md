@@ -1,8 +1,8 @@
 # SP-736: Empty ALLOWED_CLUSTER_CYCLES and close #267 — Status
 
-**Current Step:** Step 0
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-08-28
+**Current Step:** Step 1
+**Status:** 🟨 In Progress
+**Last Updated:** 2026-08-29
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -12,10 +12,10 @@
 
 ## Step 0: Preflight
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] SP-733–735 `.DONE` on main
-- [ ] Baseline cycles
+- [x] SP-733–735 `.DONE` on main
+- [x] Baseline cycles
 
 ## Step 1: Empty allowlist
 
@@ -60,6 +60,8 @@
 |------|-------|--------|
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
 | 2026-08-28 | Contract amend | fileScopeMustChange → engine-lanes.mjs (import-cycles pre-landed by SP-733) |
+| 2026-08-29 | Step 0 complete | Deps verified .DONE on main (8c2f85f6); baseline: 5 allowlisted limbo/reconcile cycles, 11/11 arch tests pass |
+| 2026-08-29 | Cycle enumeration | Full batch graph has 20 canonical cycles; only 5 are tracked (limbo+reconcile); ALL 5 share edge `reconcile-batch.mjs -> resume-multi.mjs` (re-export of `computePendingTasks` from `resume-validation.mjs` leaf) |
 
 ## Blockers
 
