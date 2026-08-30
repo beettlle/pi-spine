@@ -1,0 +1,31 @@
+spine-tasks/CONTEXT.md
+  s_aa47f3680313c8::t_7c0c51df5d01a6 2405,2411
+spine-tasks/SP-736-import-cycle-empty-allowlist/.reviews/0-20260830T004335.md
+  s_aa47f3680313c8::t_ad3441f60f9f6c 1-11
+spine-tasks/SP-736-import-cycle-empty-allowlist/.reviews/final-20260830T004434.md
+  s_aa47f3680313c8::t_73e0e23b187704 1-11
+spine-tasks/SP-736-import-cycle-empty-allowlist/STATUS.md
+  s_aa47f3680313c8::t_ad5fc14398f35b 3-5,15,17-18,22,24-25,29,31,35,37-39,43,45-46,59-60,68-71
+src/batch/engine-lanes.mjs
+  s_aa47f3680313c8::t_55a288ce8598ae 4-11
+src/batch/reconcile-batch.mjs
+  s_aa47f3680313c8::t_769a5e6d5d5a4f 25
+tests/arch/import-cycles.test.mjs
+  s_aa47f3680313c8::t_4347fe0d8050e2 3-4,19-22,27,296,303
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "54c953a76ef49be916f699f673a626858a1bdf79",
+  "prompts": {},
+  "sessions": {
+    "s_aa47f3680313c8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-eae2bd58-4cd6-4b08-8db4-48055dad9eac",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
