@@ -2402,12 +2402,13 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-733 | Import cycle: resume leaf off engine-lanes facade (#267 Partial) | Done | SP-732 |
 | SP-734 | Import cycle: merge ↔ post-merge-limbo leaf (#267 Partial) | Pending | SP-733 |
 | SP-735 | Import cycle: batch-state-io / meta-reconstruct (#267 Partial) | Pending | SP-734 |
-| SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Pending | SP-733–735 |
+| SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Done (`.DONE` pending integrate; #267 closed on land) | SP-733–735 |
 
 **Phase 85 exit criteria:**
 
 - [x] Operator approved scope (2026-08-28)
 - [ ] SP-731–SP-736 `.DONE` and integrated on `main`
+- [x] SP-736: `ALLOWED_CLUSTER_CYCLES` empty; tracked limbo/reconcile cycles eliminated via `resume-validation.mjs` leaf rewire (#267 ready to close on integrate)
 - [ ] Post-integrate `release:check` green after each wave
 - [ ] #270, #267 closed when landed
 - [ ] `npm run release:check` green on publish HEAD
