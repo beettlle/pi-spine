@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-08-30 (Phase 85 v2.17.0 published; Next → SP-737)
+**Last Updated:** 2026-08-30 (Phase 86 v2.18.0 staged; Next → SP-743)
 **Status:** Active
-**Next Task ID:** SP-737
+**Next Task ID:** SP-743
 
 ---
 
@@ -2416,7 +2416,33 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Release note (published):** v2.17.0 — Contract lint in testCommand warn; fake-async removal (#270); engine-lanes import cycle break (#267). Tag `v2.17.0` @ `7fce3187`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33337787518); CI @ `c3f4f892` ([33336467358](https://github.com/beettlle/pi-spine/actions/runs/33336467358)); GitHub [v2.17.0](https://github.com/beettlle/pi-spine/releases/tag/v2.17.0).
 
-**Deferred:** #266, matrix epic #225 / #229–#232, P3 backlog.
+**Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog. (#232 staged in Phase 86 / v2.18.0)
+
+### Phase 86 — v2.18.0 land-loop reliability + matrix LLM subst (#272–#276, #232)
+
+**Authoring:** 2026-08-30 · Manifest: [`spine-tasks/_authoring/release-v2.18.0/manifest.md`](_authoring/release-v2.18.0/manifest.md)
+
+**Profile:** minor — bugs #272–#275 + enh #276 + #232. Docs override: 0 standalone (deltas inside packets). Operator approved scope 2026-08-30. Worker pin: `zai/glm-5.3-flash` (activeProfile `default`).
+
+| Task | Summary | Status | Deps |
+|------|---------|--------|------|
+| SP-737 | Stall watchdog static-null progress (#272) | Staged | — |
+| SP-738 | Honor `.DONE` before timeout failure (#273) | Staged | SP-737 |
+| SP-739 | salvage --integrate opens missing gate (#274) | Staged | — |
+| SP-740 | Gate reopen for completed phase + runbook §5.2 (#275) | Staged | SP-739 |
+| SP-741 | Worker foreground verification guardrail (#276) | Staged | — |
+| SP-742 | LLM matrix per-row PROMPT substitution (#232) | Staged | SP-740 |
+
+**Phase 86 exit criteria:**
+
+- [x] Operator approved scope (2026-08-30)
+- [ ] SP-737–SP-742 `.DONE` and integrated on `main`
+- [ ] Post-integrate `release:check` green after each wave
+- [ ] #272–#276, #232 closed when landed
+- [ ] `npm run release:check` green on publish HEAD
+- [ ] CI green on HEAD; publish **v2.18.0** after operator approval
+
+**Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog.
 
 ---
 
