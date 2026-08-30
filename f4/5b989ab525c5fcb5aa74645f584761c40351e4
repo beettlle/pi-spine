@@ -1,0 +1,21 @@
+src/batch/engine-lanes/phase.mjs
+  s_de4254f6fb0785::t_d5d70135d6c339 1-45
+src/batch/engine-lanes.mjs
+  s_de4254f6fb0785::t_4e1c95457b02c9 91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f45b989ab525c5fcb5aa74645f584761c40351e4",
+  "prompts": {},
+  "sessions": {
+    "s_de4254f6fb0785": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-146603f3-a605-4e00-b59f-ed6bd8326edc",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
