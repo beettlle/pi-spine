@@ -1,6 +1,6 @@
 # SP-736: Empty ALLOWED_CLUSTER_CYCLES and close #267 — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 4
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-08-29
 **Review Level:** 1
@@ -32,15 +32,18 @@
 
 ## Step 3: Testing & Verification
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint + Contract testCommand
+- [x] Run lint + Contract testCommand
+
+Evidence: `npm run lint` clean; `npm run typecheck` clean; 22/22 tests pass across import-cycles (11/11), post-merge-limbo, detached-start-land-loop, resume-multi-integration (`env -u SPINE_IS_WORKER` to avoid nested-batch block — see CONTEXT.md contract false-positive note, #155).
 
 ## Step 4: Documentation & Delivery
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] CONTEXT.md Phase 85 / #267 note
+- [x] Create `.DONE`
 
 ---
 
@@ -63,6 +66,7 @@
 | 2026-08-28 | Task staged | v2.17.0 release Phase 3 |
 | 2026-08-28 | Contract amend | fileScopeMustChange → engine-lanes.mjs (import-cycles pre-landed by SP-733) |
 | 2026-08-29 | Step 0 complete | Deps verified .DONE on main (8c2f85f6); baseline: 5 allowlisted limbo/reconcile cycles, 11/11 arch tests pass |
+| 2026-08-29 | Steps 3-4 | lint/typecheck clean; 22/22 contract tests pass; CONTEXT.md Phase 85 note; `.DONE` created |
 | 2026-08-29 | Cycle enumeration | Full batch graph has 20 canonical cycles; only 5 are tracked (limbo+reconcile); ALL 5 share edge `reconcile-batch.mjs -> resume-multi.mjs` (re-export of `computePendingTasks` from `resume-validation.mjs` leaf) |
 | 2026-08-29 | Steps 1-2 done | Rewired `reconcile-batch.mjs` import to `resume-validation.mjs` leaf (SP-468 pattern); emptied allowlist; tightened assertion; engine-lanes.mjs facade header documents cycle-free ownership. Post-change: `post-merge-limbo.mjs` participates in zero cycles; 11/11 arch tests pass |
 
