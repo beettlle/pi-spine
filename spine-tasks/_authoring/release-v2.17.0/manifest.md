@@ -154,14 +154,14 @@ Validated 2026-08-28: `spine tasks validate` 6/6 pass; `spine plan` 5 waves.
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke via `scripts/post-publish-smoke.sh 2.17.0`
-- [ ] Close #270 / #267 after land (§4.3c) — verify CLOSED before final report
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` — exit 0; 2528 pass; coverage 89.41% (`/tmp/pi-spine-release-check-v2.17.0.log`)
+- [x] CI workflow green on `HEAD` — [33336467358](https://github.com/beettlle/pi-spine/actions/runs/33336467358) @ `c3f4f892`
+- [x] `git status` clean (rules-manifest generatedAt-only drift restored before `npm version`)
+- [x] Operator approved publish bump type: **minor** (2026-08-30)
+- [x] `npm version minor` + `git push && git push --tags` → `7fce3187` / `v2.17.0`
+- [x] `release.yml` succeeded — [33337787518](https://github.com/beettlle/pi-spine/actions/runs/33337787518)
+- [x] Post-publish smoke via `scripts/post-publish-smoke.sh 2.17.0` — OK
+- [x] Close #270 / #267 after land (§4.3c) — both CLOSED

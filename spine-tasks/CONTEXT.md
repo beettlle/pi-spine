@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-28 (Phase 85 v2.17.0 authoring; Next → SP-737)
+**Last Updated:** 2026-08-30 (Phase 85 v2.17.0 published; Next → SP-737)
 **Status:** Active
 **Next Task ID:** SP-737
 
@@ -2397,24 +2397,24 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | *(pre-landed)* | Contract lint-missing warn + skill/rule sync | Done (`3df30b4e`) | — |
-| SP-731 | Fake-async CLI/config/analyze (#270 Partial) | Pending | — |
-| SP-732 | Fake-async batch merge/queue/review-spawn (#270) | Pending | — |
+| SP-731 | Fake-async CLI/config/analyze (#270 Partial) | Done | — |
+| SP-732 | Fake-async batch merge/queue/review-spawn (#270) | Done | — |
 | SP-733 | Import cycle: resume leaf off engine-lanes facade (#267 Partial) | Done | SP-732 |
-| SP-734 | Import cycle: merge ↔ post-merge-limbo leaf (#267 Partial) | Pending | SP-733 |
-| SP-735 | Import cycle: batch-state-io / meta-reconstruct (#267 Partial) | Pending | SP-734 |
-| SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Done (`.DONE` pending integrate; #267 closed on land) | SP-733–735 |
+| SP-734 | Import cycle: merge ↔ post-merge-limbo leaf (#267 Partial) | Done | SP-733 |
+| SP-735 | Import cycle: batch-state-io / meta-reconstruct (#267 Partial) | Done | SP-734 |
+| SP-736 | Empty ALLOWED_CLUSTER_CYCLES (#267) | Done | SP-733–735 |
 
 **Phase 85 exit criteria:**
 
 - [x] Operator approved scope (2026-08-28)
-- [ ] SP-731–SP-736 `.DONE` and integrated on `main`
-- [x] SP-736: `ALLOWED_CLUSTER_CYCLES` empty; tracked limbo/reconcile cycles eliminated via `resume-validation.mjs` leaf rewire (#267 ready to close on integrate)
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] #270, #267 closed when landed
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD; publish **v2.17.0** after operator approval
+- [x] SP-731–SP-736 `.DONE` and integrated on `main`
+- [x] SP-736: `ALLOWED_CLUSTER_CYCLES` empty; tracked limbo/reconcile cycles eliminated via `resume-validation.mjs` leaf rewire
+- [x] Post-integrate `release:check` green after each wave
+- [x] #270, #267 closed when landed
+- [x] `npm run release:check` green on publish HEAD (`c3f4f892` / tag `7fce3187`)
+- [x] CI green on HEAD; published **v2.17.0** 2026-08-30 after operator approval
 
-**Release note (placeholder):** v2.17.0 — Contract lint in testCommand warn; fake-async removal (#270); engine-lanes import cycle break (#267).
+**Release note (published):** v2.17.0 — Contract lint in testCommand warn; fake-async removal (#270); engine-lanes import cycle break (#267). Tag `v2.17.0` @ `7fce3187`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33337787518); CI @ `c3f4f892` ([33336467358](https://github.com/beettlle/pi-spine/actions/runs/33336467358)); GitHub [v2.17.0](https://github.com/beettlle/pi-spine/releases/tag/v2.17.0).
 
 **Deferred:** #266, matrix epic #225 / #229–#232, P3 backlog.
 
