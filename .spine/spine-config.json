@@ -38,7 +38,7 @@
       "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
     },
-    "activeProfile": "allegretto",
+    "activeProfile": "default",
     "profiles": {
       "default": {
         "worker": {
