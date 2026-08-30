@@ -2386,7 +2386,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Release note (published):** v2.16.0 — Brutal-audit follow-on: batch-state lock (#264), contract testCommand harden (#268), file-scope analyze probes (#269), review attempt caps (#265), review.mjs phase split (#262), Set dedup (#271); post-mortem v2.15.0. Tag `v2.16.0` @ `37dd5362`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33205175897); CI @ `0cca3bda` ([33203409616](https://github.com/beettlle/pi-spine/actions/runs/33203409616), [33203414187](https://github.com/beettlle/pi-spine/actions/runs/33203414187)).
 
-**Deferred:** #266–#270, matrix epic #225 / #229–#232, P3 backlog.
+**Deferred:** #266, matrix epic #225 / #229–#232, P3 backlog. (#267/#270 shipped in v2.17.0)
 
 ### Phase 85 — v2.17.0 lint-churn + fake-async / import-cycle (#270, #267)
 
