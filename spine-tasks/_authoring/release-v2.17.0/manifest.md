@@ -7,8 +7,8 @@
 **Profile:** minor
 **Operator approved scope:** yes (2026-08-28)
 **Composition choice:** Pre-landed lint-churn reduction (commit `3df30b4e`) + deferred P2 enhancements **#270** + **#267** (from v2.16.0 defer table). Bug budget **0** with operator override (no open bugs).
-**Worker model pin:** `zai/glm-5.3` (activeProfile: `zai-full`)
-**Agent pin override:** yes (2026-08-28, operator → `zai/glm-5.3-flash` / profile `default`); yes (2026-08-29, SP-735 `worker_done_missing` on flash with 0 scoped files — operator switch to `zai-full` / `zai/glm-5.3` before resume) — [#248](https://github.com/beettlle/pi-spine/issues/248)
+**Worker model pin:** `kimi-coding/k3` (activeProfile: `allegretto`)
+**Agent pin override:** yes (2026-08-28, operator → `zai/glm-5.3-flash` / profile `default`); yes (2026-08-29, SP-735 `worker_done_missing` on flash with 0 scoped files — operator switch to `zai-full` / `zai/glm-5.3` before resume); yes (2026-08-29, SP-736 retry hit Z.ai 5h quota 429 code 1308 reset 2026-08-30 09:12:44 — operator switch to `allegretto` / `kimi-coding/k3` before retry) — [#248](https://github.com/beettlle/pi-spine/issues/248)
 **GitNexus:** refreshed 2026-08-28 — status up-to-date with HEAD (`37dd536` at analyze; post-commit HEAD `3df30b4e` — re-analyze before Phase 4)
 
 ---
