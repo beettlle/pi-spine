@@ -10,12 +10,14 @@ import {
 	collectProgressSignals,
 	computeStallDeadline,
 	findLatestStepCompletedMs,
+	isStaticNullProgressSnapshot,
 	progressSignalsChanged,
 	recordLaneHeartbeat,
 	resolveHeartbeatKind,
 	resolveStallConfig,
 	shouldEmitCheckpointWarning,
 } from "../../src/batch/heartbeat.mjs";
+import { createWorkerPollState, pollWorkerUntilSettled } from "../../src/batch/worker-heartbeat.mjs";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { startBatch } from "../../src/batch/engine.mjs";
 import { runWorker } from "../../src/batch/worker-host.mjs";
@@ -181,6 +183,213 @@ test("runWorker launching heartbeat does not journal stale STATUS mtime on fast-
 		if (prevFail === undefined) delete process.env.SPINE_WORKER_STUB_FAIL_TASKS;
 		else process.env.SPINE_WORKER_STUB_FAIL_TASKS = prevFail;
 		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("isStaticNullProgressSnapshot detects all-null/zero progress snapshots (#272)", () => {
+	assert.equal(isStaticNullProgressSnapshot(null), true);
+	assert.equal(isStaticNullProgressSnapshot(undefined), true);
+	assert.equal(
+		isStaticNullProgressSnapshot({
+			statusMtimeMs: null,
+			lastCommitAtMs: null,
+			fileScopeMtimeMs: null,
+			dirtyPaths: [],
+		}),
+		true,
+	);
+	assert.equal(
+		isStaticNullProgressSnapshot({
+			statusMtimeMs: 123,
+			lastCommitAtMs: null,
+			fileScopeMtimeMs: null,
+			dirtyPaths: [],
+		}),
+		false,
+	);
+	assert.equal(
+		isStaticNullProgressSnapshot({
+			statusMtimeMs: null,
+			lastCommitAtMs: 456,
+			fileScopeMtimeMs: null,
+			dirtyPaths: [],
+		}),
+		false,
+	);
+	assert.equal(
+		isStaticNullProgressSnapshot({
+			statusMtimeMs: null,
+			lastCommitAtMs: null,
+			fileScopeMtimeMs: 789,
+			dirtyPaths: [],
+		}),
+		false,
+	);
+	assert.equal(
+		isStaticNullProgressSnapshot({
+			statusMtimeMs: null,
+			lastCommitAtMs: null,
+			fileScopeMtimeMs: null,
+			dirtyPaths: ["src/a.mjs"],
+		}),
+		false,
+	);
+});
+
+/**
+ * Static-poll stall fixtures share tiny test budgets and a fast poll tick; the
+ * default 30s poll interval would make the loop iterate only once per stall.
+ */
+function stallTestStallConfig() {
+	return {
+		...resolveStallConfig({
+			lanes: {
+				stallTimeoutMinutes: 0.05, // 3s hard stall budget
+				stallGraceAfterProgressMinutes: 0.01,
+				heartbeatIntervalMinutes: 0.001, // heartbeat every ~60ms
+			},
+		}),
+		pollIntervalMs: 25,
+	};
+}
+
+/**
+ * Build a SIGSTOP-style hung-worker proxy: the child never exits on its own
+ * (0% CPU, no writes, no session transcript — the #272 observable), and only
+ * the engine's terminate path (kill → childDone resolution) ends it.
+ */
+function hungWorkerChild() {
+	let releaseChildDone = () => {};
+	const childDone = new Promise((resolve) => {
+		releaseChildDone = () => resolve({ exitCode: 137, output: "" });
+	});
+	const workerChild = {
+		pid: 0,
+		exitCode: null,
+		kill: () => releaseChildDone(),
+	};
+	return { workerChild, childDone };
+}
+
+test("static-null worker_alive heartbeats do not refresh stall anchor; stall fires past budget (#272)", { timeout: 30_000 }, async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-stall-"));
+	const batchId = "20260830T090000";
+	// Empty worktree/task folder: no git commits, no STATUS.md, no file-scope
+	// files — every poll yields the static-null snapshot from #272's journal.
+	const { workerChild, childDone } = hungWorkerChild();
+	const startedAt = Date.now();
+	const pollState = createWorkerPollState(startedAt, "pi");
+	let failureInput = null;
+	try {
+		const result = await pollWorkerUntilSettled({
+			donePath: path.join(dir, ".DONE"),
+			workerChild,
+			childDone,
+			stallConfig: stallTestStallConfig(),
+			startedAt,
+			pollState,
+			worktreePath: dir,
+			taskFolder: dir,
+			projectRoot: dir,
+			batchId,
+			laneNumber: 1,
+			taskId: "SP-737",
+			laneCorrelationId: "corr-stall",
+			useStub: true,
+			workerBackend: "stub",
+			childPastPreflight: true,
+			buildFailureResult: (input) => {
+				failureInput = input;
+				return { classification: input.classification };
+			},
+			workerMode: "stub",
+		});
+
+		assert.equal(result.kind, "failure");
+		assert.equal(result.result.classification, "stall_timeout");
+		assert.equal(failureInput?.classification, "stall_timeout");
+		assert.ok(failureInput?.stallDeadline, "failure carries stall deadline");
+		assert.equal(failureInput?.signals?.statusMtimeMs ?? null, null);
+		assert.equal(failureInput?.signals?.lastCommitAtMs ?? null, null);
+		assert.equal(failureInput?.signals?.fileScopeMtimeMs ?? null, null);
+		assert.equal(failureInput?.signals?.dirtyPaths?.length ?? 0, 0);
+
+		const events = readJournalEvents(dir, batchId);
+		const heartbeats = events.filter((event) => event.type === "lane.heartbeat");
+		assert.ok(
+			heartbeats.length >= 2,
+			`expected repeated healthy heartbeats before stall, got ${heartbeats.length}`,
+		);
+		for (const heartbeat of heartbeats) {
+			assert.equal(heartbeat.payload.heartbeatKind, "worker_alive");
+			assert.equal(heartbeat.payload.workerPhase, "pi");
+			assert.equal(heartbeat.payload.statusMtimeMs, null);
+			assert.equal(heartbeat.payload.dirtyPathCount, 0);
+		}
+		const stallWarningIndex = events.findIndex((event) => event.type === "lane.stall_warning");
+		assert.ok(stallWarningIndex >= 0, "lane.stall_warning journaled past budget");
+		const lastHeartbeatIndex = events.map((event) => event.type).lastIndexOf("lane.heartbeat");
+		assert.ok(
+			stallWarningIndex > lastHeartbeatIndex,
+			"stall warning follows the healthy heartbeat stream",
+		);
+	} finally {
+		fs.rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("static non-null snapshots still slide stall anchor on worker_alive (SP-341 kept)", { timeout: 30_000 }, async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-slide-"));
+	const batchId = "20260830T091000";
+	// Non-null but static progress: STATUS.md exists with a fixed mtime — a worker
+	// mid-step between checkpoints keeps its liveness grace (SP-341). Only the
+	// all-null static-null case must lose the anchor slide (#272).
+	fs.writeFileSync(path.join(dir, "STATUS.md"), "step 1", "utf-8");
+	const { workerChild, childDone } = hungWorkerChild();
+	const startedAt = Date.now();
+	const pollState = createWorkerPollState(startedAt, "pi");
+	// Worker finishes at ~4.5s — 1.5s past the 3s hard budget it would have hit if
+	// the fix overreached and stopped sliding on every static worker_alive stream.
+	const exitTimer = setTimeout(() => {
+		workerChild.exitCode = 0;
+	}, 4_500);
+	try {
+		const result = await pollWorkerUntilSettled({
+			donePath: path.join(dir, ".DONE"),
+			workerChild,
+			childDone,
+			stallConfig: stallTestStallConfig(),
+			startedAt,
+			pollState,
+			worktreePath: dir,
+			taskFolder: dir,
+			projectRoot: dir,
+			batchId,
+			laneNumber: 1,
+			taskId: "SP-737",
+			laneCorrelationId: "corr-slide",
+			useStub: true,
+			workerBackend: "stub",
+			childPastPreflight: true,
+			buildFailureResult: (input) => ({ classification: input.classification }),
+			workerMode: "stub",
+		});
+
+		assert.equal(result.kind, "settled");
+		const events = readJournalEvents(dir, batchId);
+		assert.equal(
+			events.some((event) => event.type === "lane.stall_warning"),
+			false,
+			"no stall warning while a real checkpoint signal exists",
+		);
+		const aliveHeartbeats = events.filter(
+			(event) =>
+				event.type === "lane.heartbeat" && event.payload.heartbeatKind === "worker_alive",
+		);
+		assert.ok(aliveHeartbeats.length >= 2, "worker_alive heartbeats keep sliding the anchor");
+	} finally {
+		clearTimeout(exitTimer);
+		fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
 
