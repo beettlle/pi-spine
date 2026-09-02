@@ -1422,11 +1422,12 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 **Rules:**
 
 - Only tasks with terminal success (`succeeded` / `skipped`) and a `lane.committed` journal event are salvageable. Tasks that failed contract or review are **listed as excluded** and must not be integrated alone.
-- Salvage integrate respects **integrate gates** (`gates.requireBeforeIntegrate`). When gates are enabled, run `spine gate approve` before `--integrate`, or salvage exits **2** with `GateBlocked`.
+- Salvage integrate respects **integrate gates** (`gates.requireBeforeIntegrate`). When a gate record exists, run `spine gate approve` before `--integrate`, or salvage exits **2** with `GateBlocked`.
+- **No gate record (#274):** if the batch failed before the merge phase, the gate was never opened and the old path dead-ended on "no gate record". `salvage --integrate` now opens a fresh gate from salvage inspection evidence (`evidence/salvage-inspect.json`: lane, commits ahead, diff stat, base/lane tips) plus the current orch tip pin. Default posture keeps it **pending** — run `spine gate approve`, then re-run `salvage --lane <n> --integrate --yes`. With an explicit `gates.postures.<category>` auto-approve opt-in, the run proceeds end-to-end. Non-salvageable lanes never get a gate opened.
 - Merge conflicts fail loud with `MergeConflict` — `main` is not silently updated. Resolve on the lane branch or `main`, then re-run salvage integrate.
-- Journal events: `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
+- Journal events: `batch.salvage_gate_opened` (when salvage opens a missing gate), `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
 
-**Typical workflow:** abort → `salvage --dry-run` → approve gate if required → `salvage --lane N --integrate` per salvageable lane → `spine status --diagnose`.
+**Typical workflow:** abort → `salvage --dry-run` → `salvage --lane N --integrate` (opens gate if missing) → `spine gate approve` if the gate is pending → re-run `salvage --lane N --integrate --yes` per salvageable lane → `spine status --diagnose`.
 
 After abort, salvage lists lanes whose task branches have commits ahead of base when the task reached terminal-success / lane `.DONE` — even if journal status cache disagrees (SP-614 / [#196](https://github.com/beettlle/pi-spine/issues/196)). Do not assume "no salvageable commits" means the lane branch is empty; re-check with `salvage --dry-run` and `git log main..<lane-task-branch>`.
 

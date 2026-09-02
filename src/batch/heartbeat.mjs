@@ -280,6 +280,24 @@ export function activitySignalsChanged(prev, next) {
 }
 
 /**
+ * Static-null progress snapshot (issue #272): every progress signal is absent, so
+ * the snapshot carries no evidence of forward movement. Heartbeat emission or
+ * child-process liveness alone must not refresh the stall anchor while snapshots
+ * stay static-null, otherwise a hung worker slides the stall budget forever.
+ * @param {object | null | undefined} signals
+ * @returns {boolean}
+ */
+export function isStaticNullProgressSnapshot(signals) {
+	if (!signals) return true;
+	return (
+		signals.statusMtimeMs == null &&
+		signals.lastCommitAtMs == null &&
+		signals.fileScopeMtimeMs == null &&
+		(signals.dirtyPaths?.length ?? 0) === 0
+	);
+}
+
+/**
  * @param {object | null} prev
  * @param {object} next
  * @param {object} [options]

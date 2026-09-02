@@ -1,0 +1,8 @@
+SP-737 complete — stall watchdog treats static-null progress as non-progress (#272).
+
+Implementation (commit 0288bbb4, lane HEAD e9085929):
+- src/batch/heartbeat.mjs: isStaticNullProgressSnapshot() helper
+- src/batch/worker-heartbeat.mjs: pollWorkerUntilSettled skips stall-anchor slide on worker_alive + static-null snapshots; existing recordStallWarning/stall_timeout path journals lane.stall_warning / lane.stall_killed past budget
+- tests/batch/heartbeat.test.mjs: +3 regression tests (helper matrix; static-null heartbeats past budget stall via SIGSTOP-style proxy; static non-null keeps SP-341 slide)
+
+Verification (2026-09-02 re-run): lint clean, typecheck clean, contract testCommand 26/29 in worker session — 3 failures are the SP-482 SPINE_IS_WORKER guard, confirmed environmental via env -u SPINE_IS_WORKER rerun (10/10 incl. SAT-020 full ordering). Engine reviews 0/4: APPROVE.

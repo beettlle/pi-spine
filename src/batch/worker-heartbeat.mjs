@@ -10,6 +10,7 @@ import {
 	checkpointSignalsChanged,
 	collectProgressSignals,
 	computeStallDeadline,
+	isStaticNullProgressSnapshot,
 	recordCheckpointWarning,
 	recordLaneHeartbeat,
 	recordLaneProgressSnapshot,
@@ -326,12 +327,21 @@ export async function pollWorkerUntilSettled({
 					heartbeatKind,
 				}),
 			);
-			stallAnchorAt = nextStallAnchorAt({
-				stallAnchorAt,
-				now,
-				workerPhase,
-				heartbeatKind,
-			});
+			// Issue #272: a worker_alive heartbeat whose progress snapshot is static-null
+			// (statusMtimeMs / lastCommitAtMs / fileScopeMtimeMs null, dirtyPathCount 0, all
+			// unchanged) carries no progress evidence. The engine emits heartbeats itself
+			// while the child merely has not exited, so child liveness alone must not
+			// refresh the stall anchor — a SIGSTOP-style hung worker would otherwise slide
+			// the stall deadline forward forever and never journal stall events.
+			const staticNullProgress = isStaticNullProgressSnapshot(signals);
+			if (!(heartbeatKind === "worker_alive" && staticNullProgress)) {
+				stallAnchorAt = nextStallAnchorAt({
+					stallAnchorAt,
+					now,
+					workerPhase,
+					heartbeatKind,
+				});
+			}
 			onHeartbeat?.(now);
 			lastHeartbeatAt = now;
 		}

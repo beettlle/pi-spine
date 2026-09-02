@@ -34,6 +34,16 @@ If you call `spine_review_step` anyway, it returns **`skipped: true`** with exit
 5. Run the task's test command before creating `.DONE`.
 6. Create `.DONE` only when every completion criterion is satisfied.
 
+## Foreground verification (no background-and-exit)
+
+Long verifications — the Contract `testCommand`, `release:check`, full test suites, builds — **must run in the foreground** via your shell tool and finish inside this session. Do not background them (`&`, `MonitorCreate`, output redirection to a file you plan to check later) and do not end your turn while a verification is still running.
+
+This is a hard constraint, not a style preference. Completion wakes (MonitorCreate, LoopCreate, monitors, cron/event loops) are **incompatible with the worker lifecycle**: your session ends when your turn ends, so nothing can wake you to continue. A backgrounded verification is orphaned mid-stream and its output is lost; the batch engine then records `worker_done_missing` and burns a full retry cycle.
+
+- Run the verification and **wait for it to exit**, then check the exit code before writing `.DONE`.
+- If a verification is too long to run in-session, say so in `STATUS.md` with "verification pending" and do **not** create `.DONE`.
+- Never write `.DONE` while any verification is still running or pending.
+
 ## What the engine does for you
 
 - Runs **plan, code, and final review** after worker `.DONE` in real-pi batches (SP-195).
