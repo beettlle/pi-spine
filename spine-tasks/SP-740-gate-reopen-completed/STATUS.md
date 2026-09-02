@@ -54,15 +54,14 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
-
----
+- [x] Run lint — `npm run lint` exit 0, no warnings
+- [x] Run Contract testCommand — `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/resume-gate-open.test.mjs tests/batch/gate-target-revision-validate.test.mjs tests/batch/gate.test.mjs tests/batch/detached-resume-gate.test.mjs` → 31/31 pass
+- [x] Fix all failures — none in contract; `npm run typecheck` also clean. Safety net over 11 adjacent suites (resume validation, merge-blocked, meta-reconstruct, orphan recovery, detached wait, post-merge limbo, evidence gate): 52/53, the 1 failure is `startBatch` nested-spawn guard — reproduced with `SPINE_IS_WORKER` unset (6/6 pass) vs set (guard fires); environmental SP-482 worker constraint, not a regression
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates
-- [ ] Create `.DONE`
+- [x] Docs updates — `docs/adoption/operator-runbook.md` §5.2 rewritten to `spine gate reopen` / `resume --force` working path (done in Step 2, Documentation Requirements met)
+- [ ] Create `.DONE` — after final completion-criteria sweep below
