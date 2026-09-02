@@ -378,7 +378,7 @@ test("integrateSalvageableLane still rejects contract_failed lane without lane.c
 test("integrateSalvageableLane opens fresh gate when none exists (#274)", async () => {
 	const projectRoot = await initGitRepo("salvage-integrate-open-gate-");
 	try {
-		const batchState = writeArchivedBatch(projectRoot);
+		writeArchivedBatch(projectRoot);
 		seedSalvageJournal(projectRoot);
 		commitLaneBranchWork(projectRoot, 1, "salvage-open-gate.txt");
 		const mainTipBefore = execFileSync("git", ["rev-parse", "main"], {
