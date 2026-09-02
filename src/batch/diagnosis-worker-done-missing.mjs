@@ -3,6 +3,11 @@
  * Worker exited without `.DONE` diagnosis helpers (SP-313 / issue #18).
  */
 
+import {
+	BACKGROUND_VERIFICATION_HINT,
+	detectBackgroundedVerification,
+} from "./worker-output.mjs";
+
 /** Worker exited cleanly but never wrote `.DONE`. */
 export const WORKER_DONE_MISSING_OUTPUT_MARKERS = [
 	"pi exited but .DONE was not created",
@@ -81,7 +86,13 @@ export function buildWorkerDoneMissingHeadline(batchLabel, ctx = {}) {
 		: ctx.workerOutputSnippet
 			? `: ${ctx.workerOutputSnippet}`
 			: "";
-	return `${batchLabel} ${taskLabel} exited without .DONE${fileHint}${logHint}${tailHint}`;
+	// SP-741 (#276): point operators at the backgrounded-verification cause when
+	// the captured output shows the worker exited mid-verification.
+	const hintInput = [tail, ctx.workerOutputSnippet, ctx.output].filter(Boolean).join("\n");
+	const backgroundHint = detectBackgroundedVerification(hintInput)
+		? ` — ${BACKGROUND_VERIFICATION_HINT}`
+		: "";
+	return `${batchLabel} ${taskLabel} exited without .DONE${fileHint}${logHint}${tailHint}${backgroundHint}`;
 }
 
 /** @param {object} ctx */

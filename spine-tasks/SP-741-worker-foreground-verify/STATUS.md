@@ -1,6 +1,6 @@
 # SP-741: Worker prompt: foreground long verifications — Status
 
-**Current Step:** Step 1 — Prompt guardrail
+**Current Step:** Step 3 — Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-02
 **Review Level:** 1
@@ -39,10 +39,19 @@ Step 2 plan (hint is cheap → implement): add `detectBackgroundedVerification()
 ---
 
 ### Step 2: Optional harness hint + tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] If cheap: detect live background children at exit-without-.DONE and add targeted hint
-- [ ] Otherwise document-only is acceptable if prompt change is clear — note in STATUS
+- [x] If cheap: detect live background children at exit-without-.DONE and add targeted hint — implemented as marker-based detection on the already-captured worker output tail (no new I/O, no process probing): `detectBackgroundedVerification()` + `BACKGROUND_VERIFICATION_HINT` in `src/batch/worker-output.mjs`, wired into `buildWorkerDoneMissingHeadline`
+- [x] Otherwise document-only is acceptable if prompt change is clear — note in STATUS — n/a: hint implemented; see Discoveries for the File Scope note
+
+---
+
+### Discoveries
+
+| Finding | Disposition |
+|---------|-------------|
+| The narration site `src/batch/diagnosis-worker-done-missing.mjs` is outside declared File Scope but is where the PROMPT's Step 0 points ("diagnosis for worker_done_missing — optional hint"). Wiring the scoped detector into `buildWorkerDoneMissingHeadline` required a one-import + hint-append change there. | Treated as "path logically required to complete a scoped change"; impact = LOW (1 upstream caller `buildHeadline`); covered by new tests in the scoped test file |
+| Worker output tail is already loaded into diagnosis ctx (`workerOutputTail`/`workerOutputSnippet` by `enrichWorkerDoneMissingContext`), so marker detection on captured output achieves the issue's intent without live child-process probing at session end (not portable). | Chosen approach: advisory hint appended to headline |
 
 ---
 
