@@ -1,7 +1,7 @@
 # SP-741: Worker prompt: foreground long verifications — Status
 
-**Current Step:** Step 4 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — pending engine review/merge
 **Last Updated:** 2026-09-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -66,7 +66,16 @@ Step 2 plan (hint is cheap → implement): add `detectBackgroundedVerification()
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates
-- [ ] Create `.DONE`
+- [x] Docs updates — `.spine/agents/worker.md` "Foreground verification (no background-and-exit)" section (landed in Step 1)
+- [x] Create `.DONE`
+
+---
+
+### Completion Criteria
+
+- [x] worker.md forbids backgrounding long verifications
+- [x] Optional harness hint or explicit STATUS deferral with rationale — hint implemented (`detectBackgroundedVerification` + headline wiring)
+- [x] Closes #276
+- [x] `.DONE` created
