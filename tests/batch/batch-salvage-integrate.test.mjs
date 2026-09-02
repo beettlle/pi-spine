@@ -9,7 +9,7 @@ import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { runSpineBatch } from "../../bin/spine-batch.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
-import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
+import { approveIntegrateGate, loadGateRecord, openIntegrateGate } from "../../src/batch/gate.mjs";
 import { archiveBatchStatePath } from "../../src/batch/lifecycle.mjs";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import {
@@ -365,6 +365,132 @@ test("integrateSalvageableLane still rejects contract_failed lane without lane.c
 
 		assert.equal(result.ok, false);
 		assert.equal(result.error, "lane_not_salvageable");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/**
+ * #274 — batch failed before merge, so no gate record exists. Salvage integrate
+ * must open a fresh gate from salvage inspection evidence instead of dead-ending
+ * on "no gate record".
+ */
+test("integrateSalvageableLane opens fresh gate when none exists (#274)", async () => {
+	const projectRoot = await initGitRepo("salvage-integrate-open-gate-");
+	try {
+		writeArchivedBatch(projectRoot);
+		seedSalvageJournal(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-open-gate.txt");
+		const mainTipBefore = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		const result = await integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+
+		// Default posture is locked — fail closed pending human approval, but the
+		// recovery no longer dead-ends on the missing-gate-record precondition.
+		assert.equal(result.ok, false);
+		assert.equal(result.failureClass, "GateBlocked");
+		assert.notEqual(result.error, "Integrate gate not opened — approve evidence before merging");
+		assert.equal(result.gateOpenedBySalvage, true);
+		assert.match(result.headline ?? "", /approve/i);
+
+		const gate = loadGateRecord(projectRoot, BATCH_ID);
+		assert.ok(gate, "gate record should exist after salvage open");
+		assert.equal(gate.status, "pending");
+		assert.match(gate.targetRevision ?? "", /^[0-9a-f]{40}$/);
+		assert.equal(gate.targetRevision, mainTipBefore, "gate pins the orch/base tip at salvage open");
+		assert.ok(gate.evidenceRefs.includes("evidence/salvage-inspect.json"));
+		assert.ok(
+			fs.existsSync(
+				path.join(projectRoot, ".spine", "runtime", BATCH_ID, "evidence", "salvage-inspect.json"),
+			),
+		);
+		const inspect = JSON.parse(
+			fs.readFileSync(
+				path.join(projectRoot, ".spine", "runtime", BATCH_ID, "evidence", "salvage-inspect.json"),
+				"utf-8",
+			),
+		);
+		assert.equal(inspect.laneNumber, 1);
+		assert.equal(inspect.commitsAhead, 1);
+		assert.deepEqual(inspect.salvageableTasks, ["SP-470"]);
+
+		const events = readJournalEvents(projectRoot, BATCH_ID);
+		assert.ok(events.some((event) => event.type === "batch.salvage_gate_opened"));
+
+		// Operator approves → re-run proceeds (full #274 recovery path).
+		approveIntegrateGate({ projectRoot, batchId: BATCH_ID });
+		const retry = await integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+		assert.equal(retry.ok, true);
+		assert.ok(retry.mergeCommit);
+		assert.ok(gitRefHasPath(projectRoot, "main", "salvage-open-gate.txt"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/**
+ * #274 — with an explicit auto-approve posture opt-in, salvage integrate proceeds
+ * end-to-end in one run (fresh gate opens and is auto-approved by posture).
+ */
+test("integrateSalvageableLane proceeds when posture auto-approves salvage gate", async () => {
+	const projectRoot = await initGitRepo("salvage-integrate-auto-gate-");
+	try {
+		writeArchivedBatch(projectRoot);
+		seedSalvageJournal(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-auto-gate.txt");
+		const configPath = path.join(projectRoot, ".spine", "spine-config.json");
+		const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+		config.gates = {
+			...(config.gates ?? {}),
+			postures: { execute: { posture: "cautious", autoApproveAfterN: 0 } },
+		};
+		fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf-8");
+
+		const result = await integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+
+		assert.equal(result.ok, true);
+		assert.equal(result.gateOpenedBySalvage, true);
+		assert.ok(gitRefHasPath(projectRoot, "main", "salvage-auto-gate.txt"));
+
+		const gate = loadGateRecord(projectRoot, BATCH_ID);
+		assert.equal(gate.status, "approved");
+		assert.equal(gate.decidedBy, "auto");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/**
+ * #274 fail-closed guard — non-salvageable lanes must never get a gate opened.
+ */
+test("integrateSalvageableLane does not open gate for non-salvageable lane", async () => {
+	const projectRoot = await initGitRepo("salvage-nogate-nonsalvageable-");
+	try {
+		writeArchivedBatch(projectRoot);
+		seedSalvageJournal(projectRoot);
+		commitLaneBranchWork(projectRoot, 1, "salvage-ok-nogate.txt");
+		commitLaneBranchWork(projectRoot, 2, "salvage-failed-nogate.txt");
+
+		const result = await integrateSalvageableLane(projectRoot, BATCH_ID, 2, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "lane_not_salvageable");
+		assert.equal(loadGateRecord(projectRoot, BATCH_ID), null);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
