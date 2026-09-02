@@ -1,7 +1,7 @@
 # SP-739: salvage --integrate opens gate when none exists — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Open gate from salvage
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-08-30
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduce no-gate salvage integrate failure in unit fixture
-- [ ] Read `openIntegrateGate` / evidence collection APIs
+- [x] Reproduce no-gate salvage integrate failure in unit fixture — scratch fixture: `ok:false, GateBlocked, "Integrate gate not opened — approve evidence before merging"`, exit 2 (#274 reproduced)
+- [x] Read `openIntegrateGate` / evidence collection APIs (gate.mjs, gate-evidence-collect.mjs, gate-revision.mjs, gate-posture-approve.mjs)
 
 ---
 
