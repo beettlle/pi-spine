@@ -354,6 +354,21 @@ export async function pollWorkerUntilSettled({
 		});
 
 		if (now >= stallDeadline) {
+			// SP-738 (#273): .DONE can be written between the loop-top check and this
+			// deadline check. A worker that has completed its contract is not a stall —
+			// hand it back to the done branch, which honors the post-done grace before
+			// any termination. Workers without .DONE keep the strict stall path (#272).
+			if (fs.existsSync(donePath)) {
+				if (projectRoot && batchId) {
+					appendJournalEvent(projectRoot, batchId, "worker.done_honored_at_stall", {
+						laneNumber,
+						taskId,
+						correlationId: laneCorrelationId,
+						stallDeadline,
+					});
+				}
+				continue;
+			}
 			if (!stallWarningSent && projectRoot && batchId) {
 				recordStallWarning({
 					projectRoot,
