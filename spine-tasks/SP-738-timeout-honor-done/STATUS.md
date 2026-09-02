@@ -1,7 +1,7 @@
 # SP-738: Honor .DONE before classifying worker timeout failure — Status
 
-**Current Step:** 3 (Testing & Verification)
-**Status:** 🟢 Executing
+**Current Step:** 4 (Documentation & Delivery)
+**Status:** 🟢 Finishing
 **Last Updated:** 2026-09-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -63,15 +63,30 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
+- [x] Run lint — `npm run lint`: clean, 0 warnings
+- [x] Run Contract testCommand — lint ✓, typecheck ✓, 12/12 pass (`worker-post-done-grace`, `worker-timeout-heartbeat-slide`, `post-done-orphan-heal`)
+- [x] Fix all failures — none to fix
+
+Full-suite note (`npm test`): 2538 tests, 2495 pass, 43 fail — **all 43 are worker-env artifacts**: they spawn `spine batch` CLI subprocesses that inherit `SPINE_IS_WORKER=1` from this worker session and are correctly blocked by the SP-482 nested-batch guard. Verified: representative failing files (`tests/batch/attached-batch-exit.test.mjs`, `tests/spine-run.test.mjs`) pass 6/6 with worker env vars unset; unrelated to SP-738 sources.
+
+GitNexus `detect_changes` before final commit: risk low, no unexpected affected processes.
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates
-- [ ] Create `.DONE`
+- [x] Docs updates — none required per PROMPT
+- [x] Create `.DONE`
+
+---
+
+## Completion Criteria (mirror of PROMPT)
+
+- [x] Timeout with `.DONE` does not mark task failed — stall boundary re-checks `.DONE` before stall failure; exit boundary honors `.DONE` + runner timeout exit 124 → `ok:true` / `"succeeded"`
+- [x] Post-done grace still reap/cleanup as designed — done-branch grace/termination untouched; stall-boundary `.DONE` hands into that same path (`worker.post_done_terminated` still fires for hung-after-done workers, verified by existing test)
+- [x] Regression tests pass — see Step 3 evidence
+- [x] Closes #273 — closing keyword present in lane commits, reachable from main after land
+- [x] `.DONE` created
