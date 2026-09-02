@@ -7,6 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
@@ -19,6 +20,7 @@ import {
 	runShellInDir,
 	substituteRowCommand,
 } from "./matrix.mjs";
+import { applyMatrixRowToPrompt } from "../../planner/matrix.mjs";
 import { commitLaneAndValidateWorktree } from "./commit.mjs";
 import { recordLaneTaskMetric } from "./queue.mjs";
 import { appendJournalEvent } from "../journal.mjs";
@@ -48,12 +50,62 @@ export function readParentContract(parentTaskFolderAbs) {
 }
 
 /**
- * Execute a single matrix row in its own worktree. Substitutes `{matrix.X}`
- * placeholders for execution-only rows; LLM rows delegate to `runWorker`.
- * Commits successful row output to the row branch.
+ * Serve a matrix LLM row its row-substituted PROMPT.md (#232). Reads the parent
+ * PROMPT.md (same source convention as `readParentContract`), substitutes
+ * `{matrix.<column>}` placeholders across the whole document — steps, contract
+ * fields, and File Scope paths — and writes the result to the row worktree's
+ * PROMPT.md so `runWorker` and the spawned worker both read row-specific
+ * content instead of raw `{matrix.*}` refs.
  *
  * @param {object} params
- * @returns {Promise<{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string, commitSha?: string }>}
+ * @param {string} params.parentTaskFolderAbs Parent task folder in the main checkout.
+ * @param {string} params.worktreePath Row worktree root.
+ * @param {string} params.taskFolderRel Task folder path relative to the worktree root.
+ * @param {Record<string, string>} params.row Matrix row values keyed by column.
+ * @returns {{ servedPrompt: string, sha256: string }} Exact bytes served plus their digest.
+ * @throws When the parent PROMPT.md is missing, or on unknown `{matrix.X}`
+ *   references (fail-loud via `substituteMatrixVariables`).
+ */
+function serveMatrixRowPrompt({ parentTaskFolderAbs, worktreePath, taskFolderRel, row }) {
+	const promptPath = path.join(parentTaskFolderAbs, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) {
+		throw new Error(`parent PROMPT.md not found: ${promptPath}`);
+	}
+	const substituted = applyMatrixRowToPrompt(fs.readFileSync(promptPath, "utf-8"), row);
+	const rowPromptPath = path.join(worktreePath, taskFolderRel, "PROMPT.md");
+	fs.mkdirSync(path.dirname(rowPromptPath), { recursive: true });
+	fs.writeFileSync(rowPromptPath, substituted, "utf-8");
+	const sha256 = createHash("sha256").update(substituted, "utf-8").digest("hex");
+	return { servedPrompt: substituted, sha256 };
+}
+
+/**
+ * Restore the authored PROMPT.md and drop the row's `.DONE` after a successful
+ * LLM row so the per-row commit carries only real row output. Row branches are
+ * merged into the lane (SP-697), and per-row PROMPT/.DONE content always
+ * differs (row values, completion timestamps) — committing either would
+ * add/add-conflict every multi-row LLM matrix merge. The parent writes the
+ * lane-level `.DONE` after all rows merge, mirroring the execute path.
+ *
+ * @param {object} params
+ * @param {string} params.worktreePath Row worktree root.
+ * @param {string} params.taskFolderRel Task folder path relative to the worktree root.
+ * @param {string} [params.projectRoot] Main repo root for git identity.
+ */
+function restoreMatrixRowPrompt({ worktreePath, taskFolderRel, projectRoot }) {
+	const promptRel = `${taskFolderRel.replace(/\\/g, "/")}/PROMPT.md`;
+	gitExec(worktreePath, ["checkout", "--", promptRel], { projectRoot });
+	fs.rmSync(path.join(worktreePath, taskFolderRel, ".DONE"), { force: true });
+}
+
+/**
+ * Execute a single matrix row in its own worktree. Substitutes `{matrix.X}`
+ * placeholders for execution-only rows; LLM rows delegate to `runWorker` with a
+ * row-substituted PROMPT.md served into the row worktree (#232). Commits
+ * successful row output to the row branch.
+ *
+ * @param {object} params
+ * @returns {Promise<{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string, commitSha?: string, servedPrompt?: string }>}
  */
 export async function runMatrixSubLane({
 	projectRoot,
@@ -231,29 +283,73 @@ export async function runMatrixSubLane({
 			}
 		}
 	} else {
-		// LLM rows delegate to the worker in the row worktree. Per-row agent-prompt
-		// substitution is handled by SP-670 helpers at the worker boundary; full
-		// worker-side substitution wiring is tracked for SP-673.
-		const workerResult = await runWorker({
-			worktreePath,
-			taskFolder: path.join(worktreePath, taskFolderRel),
-			projectRoot,
-			batchId,
-			laneNumber,
-			taskId,
-			laneBranch: branch,
-			laneCorrelationId: `${laneCorrelationId}-matrix-${rowId}`,
-			fileScopePaths: [],
-			config,
-		});
-		result = {
-			rowId,
-			ok: Boolean(workerResult.ok),
-			exitCode: workerResult.exitCode ?? 0,
-			output: workerResult.output ?? "",
-			worktreePath,
-			branch,
-		};
+		// LLM rows delegate to the worker in the row worktree. Serve the row its
+		// row-substituted PROMPT.md first (#232): steps, contract fields, and File
+		// Scope all carry this row's values, so the worker never sees raw
+		// `{matrix.*}` refs. Substitution is fail-loud (SP-670 engine): an unknown
+		// reference fails the row instead of reaching the worker.
+		try {
+			const { servedPrompt, sha256 } = serveMatrixRowPrompt({
+				parentTaskFolderAbs,
+				worktreePath,
+				taskFolderRel,
+				row: values,
+			});
+			recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.prompt_served", {
+				taskId,
+				laneNumber,
+				rowId,
+				correlationId: laneCorrelationId,
+				sha256,
+				chars: servedPrompt.length,
+			});
+			const workerResult = await runWorker({
+				worktreePath,
+				taskFolder: path.join(worktreePath, taskFolderRel),
+				projectRoot,
+				batchId,
+				laneNumber,
+				taskId,
+				laneBranch: branch,
+				laneCorrelationId: `${laneCorrelationId}-matrix-${rowId}`,
+				fileScopePaths: [],
+				config,
+			});
+			result = {
+				rowId,
+				ok: Boolean(workerResult.ok),
+				exitCode: workerResult.exitCode ?? 0,
+				output: workerResult.output ?? "",
+				worktreePath,
+				branch,
+			};
+			if (result.ok) {
+				// Drop the substitution scaffolding before the per-row commit so
+				// row→lane merges stay conflict-free (see restoreMatrixRowPrompt).
+				try {
+					restoreMatrixRowPrompt({ worktreePath, taskFolderRel, projectRoot });
+				} catch (restoreErr) {
+					const restoreMessage = restoreErr instanceof Error ? restoreErr.message : String(restoreErr);
+					result = {
+						...result,
+						ok: false,
+						exitCode: 1,
+						output: `${result.output}\nmatrix row prompt restore failed: ${restoreMessage}`,
+					};
+				}
+			}
+			result.servedPrompt = servedPrompt;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			result = {
+				rowId,
+				ok: false,
+				exitCode: 1,
+				output: `matrix row prompt substitution failed: ${message}`,
+				worktreePath,
+				branch,
+			};
+		}
 	}
 
 	if (result.ok) {
