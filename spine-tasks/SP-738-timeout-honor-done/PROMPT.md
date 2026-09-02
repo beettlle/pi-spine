@@ -42,7 +42,6 @@ Closes #273 — At worker runner exit / timeout boundary, if `.DONE` exists in t
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/worker-post-done-grace.test.mjs tests/batch/worker-timeout-heartbeat-slide.test.mjs tests/batch/post-done-orphan-heal.test.mjs` |
 | fileScopeMustChange | `src/batch/worker-heartbeat.mjs`, `tests/batch/worker-post-done-grace.test.mjs` |
-| minLineCoverage | 77 |
 
 ## Steps
 

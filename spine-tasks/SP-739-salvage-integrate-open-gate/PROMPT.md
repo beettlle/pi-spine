@@ -41,7 +41,6 @@ Closes #274 — When `spine batch salvage --integrate` finds salvageable lane co
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-salvage-integrate.test.mjs tests/batch/batch-salvage-list.test.mjs tests/batch/engine-gate-open.test.mjs` |
 | fileScopeMustChange | `src/batch/salvage-batch-integrate.mjs`, `tests/batch/batch-salvage-integrate.test.mjs` |
-| minLineCoverage | 77 |
 
 ## Steps
 

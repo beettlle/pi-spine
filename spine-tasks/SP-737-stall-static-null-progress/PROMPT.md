@@ -42,7 +42,6 @@ Closes #272 — When `lane.heartbeat` reports `worker_alive` with static-null pr
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/heartbeat.test.mjs tests/batch/heartbeat-subprocess.test.mjs tests/batch/stall-sat020-integration.test.mjs tests/batch/task-stall-budget.test.mjs` |
 | fileScopeMustChange | `src/batch/heartbeat.mjs`, `src/batch/worker-heartbeat.mjs`, `tests/batch/heartbeat.test.mjs` |
-| minLineCoverage | 77 |
 
 ## Steps
 

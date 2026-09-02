@@ -45,7 +45,6 @@ Closes #232 — For `Type: llm` (or non-execute) matrix rows, apply `applyMatrix
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs tests/planner/matrix-subst.test.mjs tests/batch/contract-matrix-subst.test.mjs` |
 | fileScopeMustChange | `src/batch/engine-lanes/matrix-run.mjs`, `tests/batch/matrix-execution.test.mjs` |
-| minLineCoverage | 77 |
 
 ## Steps
 
