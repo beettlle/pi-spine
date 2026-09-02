@@ -1,0 +1,43 @@
+bin/spine-gate.mjs
+  s_5ec9fd5deb4c5e::t_615da9034af0e0 4,13,117-121,128
+docs/adoption/operator-runbook.md
+  s_5ec9fd5deb4c5e::t_a968426642a21b 1083,1257,1260,1263,1271
+spine-tasks/SP-740-gate-reopen-completed/.DONE
+  s_5ec9fd5deb4c5e::t_14c889c176f781 1
+spine-tasks/SP-740-gate-reopen-completed/.reviews/0-20260902T194107.md
+  s_5ec9fd5deb4c5e::t_1da4674b51c3fc 1-8
+spine-tasks/SP-740-gate-reopen-completed/.reviews/4-20260902T194121.md
+  s_5ec9fd5deb4c5e::t_740a20f0aedeb6 1-10
+spine-tasks/SP-740-gate-reopen-completed/.reviews/final-20260902T194314.md
+  s_5ec9fd5deb4c5e::t_210c59264df701 1-10
+spine-tasks/SP-740-gate-reopen-completed/STATUS.md
+  s_5ec9fd5deb4c5e::t_dd9f820426efbf 3-5,14-35,40,42-44,49,51-52,57,59-61,64,66-67
+src/batch/gate.mjs
+  s_5ec9fd5deb4c5e::t_5c7f90eaedbe15 7,204-330,341-345,350-356,423-430,437-441
+src/batch/resume-multi-validate.mjs
+  s_5ec9fd5deb4c5e::t_4349eb98ade77f 197-239
+src/batch/resume.mjs
+  s_5ec9fd5deb4c5e::t_fa71c8112177bb 14,69-96
+tests/batch/gate-target-revision-validate.test.mjs
+  s_5ec9fd5deb4c5e::t_f760f582c3e7d2 12,14,204-327
+tests/batch/gate.test.mjs
+  s_5ec9fd5deb4c5e::t_faa6c955f95d3d 11,56-63,298-391
+tests/batch/resume-gate-open.test.mjs
+  s_5ec9fd5deb4c5e::t_15ff78d5fae1a8 6,106-255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0c9db2d51874f03498a81938512a31f49751b0d2",
+  "prompts": {},
+  "sessions": {
+    "s_5ec9fd5deb4c5e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-12606acd-e178-4a88-8393-0477ac3f38c2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
