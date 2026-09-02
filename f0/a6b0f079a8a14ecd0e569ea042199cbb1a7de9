@@ -1,0 +1,22 @@
+spine-tasks/CONTEXT.md
+  s_5ec9fd5deb4c5e::t_fd9bef0fb039af 2429,2431,2433,2439-2442,2450
+  s_5ec9fd5deb4c5e::t_0df4570d11a208 2451
+spine-tasks/_authoring/release-v2.18.0/manifest.md
+  s_5ec9fd5deb4c5e::t_d5611f9f601127 157-165,171-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f0a6b0f079a8a14ecd0e569ea042199cbb1a7de9",
+  "prompts": {},
+  "sessions": {
+    "s_5ec9fd5deb4c5e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-12606acd-e178-4a88-8393-0477ac3f38c2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
