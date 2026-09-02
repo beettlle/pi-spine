@@ -1,0 +1,16 @@
+.spine/agents/worker.md
+  h_2a17159c706ba1 37-46
+spine-tasks/SP-741-worker-foreground-verify/STATUS.md
+  h_2a17159c706ba1 3-5,13-24,26,28-29,34,36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "bcbf1f17e24a18c67dd19a40b0c1d7d9ce935a12",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
