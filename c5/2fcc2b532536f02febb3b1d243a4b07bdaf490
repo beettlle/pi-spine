@@ -1,0 +1,22 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1083,1257,1260,1263,1271
+spine-tasks/SP-740-gate-reopen-completed/STATUS.md
+  h_2a17159c706ba1 49,51-52
+tests/batch/gate-target-revision-validate.test.mjs
+  h_2a17159c706ba1 12,14,204-327
+tests/batch/gate.test.mjs
+  h_2a17159c706ba1 11,56-63,298-391
+tests/batch/resume-gate-open.test.mjs
+  h_2a17159c706ba1 6,106-255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c52fcc2b532536f02febb3b1d243a4b07bdaf490",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
