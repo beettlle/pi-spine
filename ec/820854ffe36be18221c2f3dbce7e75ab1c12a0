@@ -1,0 +1,30 @@
+.spine/agents/worker.md
+  h_2a17159c706ba1 37-46
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-741-worker-foreground-verify/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-741-worker-foreground-verify/.reviews/0-20260902T171654.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-741-worker-foreground-verify/.reviews/final-20260902T172048.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-741-worker-foreground-verify/STATUS.md
+  h_2a17159c706ba1 3-5,13-24,26,28-29,34,36-37,42,44-54,59,61-64,69-76,78-81
+src/batch/diagnosis-worker-done-missing.mjs
+  h_2a17159c706ba1 6-10,89-95
+src/batch/worker-output.mjs
+  h_2a17159c706ba1 363-418
+tests/batch/worker-output.test.mjs
+  h_2a17159c706ba1 9-10,17,96-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ec820854ffe36be18221c2f3dbce7e75ab1c12a0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
