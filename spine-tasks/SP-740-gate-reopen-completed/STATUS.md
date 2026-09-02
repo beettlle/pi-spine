@@ -64,4 +64,4 @@
 **Status:** ✅ Complete
 
 - [x] Docs updates — `docs/adoption/operator-runbook.md` §5.2 rewritten to `spine gate reopen` / `resume --force` working path (done in Step 2, Documentation Requirements met)
-- [ ] Create `.DONE` — after final completion-criteria sweep below
+- [x] Create `.DONE` — completion criteria verified: reopen for completed ✓ (tests), message consistency ✓ (tests), §5.2 corrected ✓, `(#275)` in final commit message ✓, `.DONE` created ✓
