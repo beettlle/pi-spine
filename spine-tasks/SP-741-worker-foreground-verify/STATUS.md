@@ -1,6 +1,6 @@
 # SP-741: Worker prompt: foreground long verifications — Status
 
-**Current Step:** Step 3 — Testing & Verification
+**Current Step:** Step 4 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-02
 **Review Level:** 1
@@ -56,10 +56,12 @@ Step 2 plan (hint is cheap → implement): add `detectBackgroundedVerification()
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
+- [x] Run lint — `npm run lint` clean (eslint --max-warnings 0, no output)
+- [x] Run Contract testCommand — `npm run typecheck` clean (both tsconfig projects) + `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/worker-output.test.mjs`: 9 pass / 0 fail
+- [x] Fix all failures — none; also ran full `SPINE_WORKER_STUB=1 npm test`: **2530 pass / 0 fail** (run with `env -u SPINE_IS_WORKER -u SPINE_BATCH_ID -u SPINE_LANE_CORRELATION_ID -u SPINE_JOURNAL_ATTACH -u SPINE_ALLOW_ATTACHED_HARNESS`; with worker env present, subprocess-spawning integration tests fail by design via `nested_batch_spawn_blocked` SP-482 guard — environmental, not code-related)
+- [x] `gitnexus_detect_changes` (compare vs base de84c6be): 6 changed symbols, 0 affected processes, risk low
 
 ---
 
