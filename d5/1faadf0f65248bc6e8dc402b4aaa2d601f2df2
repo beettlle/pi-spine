@@ -1,0 +1,29 @@
+spine-tasks/SP-741-worker-foreground-verify/STATUS.md
+  s_d25c84c9387eda::t_f3df54456b8ace 3,42-49,51-54
+tests/batch/worker-output.test.mjs
+  s_6f209730fb1736::t_a21892f726658a 9-10,17,96-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "d51faadf0f65248bc6e8dc402b4aaa2d601f2df2",
+  "prompts": {},
+  "sessions": {
+    "s_6f209730fb1736": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-9a61ab8a-c296-4c29-8200-dc6c326486be",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_d25c84c9387eda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1d4f444f-ac98-45b0-b172-28c4ea7c9af5",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
