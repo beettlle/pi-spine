@@ -1,0 +1,19 @@
+tests/batch/batch-salvage-integrate.test.mjs
+  s_d25c84c9387eda::t_61721ce3cecf4b 381
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "836f5c564ff8464184b5e0b1733f73e7fb804f6b",
+  "prompts": {},
+  "sessions": {
+    "s_d25c84c9387eda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1d4f444f-ac98-45b0-b172-28c4ea7c9af5",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
