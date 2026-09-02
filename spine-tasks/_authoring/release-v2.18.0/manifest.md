@@ -154,12 +154,22 @@ Start: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`
 - **Quota snapshot:** live `2026-09-02T16:54:13Z` — zai pool 0 recent tasks (post-reset).
 - **Action:** restart wave 0 detached for `SP-737,SP-738,SP-739,SP-740,SP-741,SP-742`.
 
+### Wave 0 landed (2026-09-02)
+
+- **Batch:** `20260902T165453-86f7` — SP-737 / SP-739 / SP-741 terminal-success; manual orch merge then land (`96bbf1eb`).
+- **Post-integrate:** first `release:check` failed phase23 LOC on `salvage-batch-integrate.mjs` (>500). Split gate helpers → `salvage-batch-integrate-gate.mjs` (`8a4764cb`).
+- **Retry log:** `/tmp/pi-spine-post-integrate-wave-0-retry.log` — suite fail 0 (2536 pass), line coverage 89.20% ≥ 77%; monitor exit 0.
+- **Push:** `origin/main` at `8a4764cb` (F8 cleared; was 24 ahead).
+- **Issues closed:** #272 (SP-737), #274 (SP-739; already closed + land receipt), #276 (SP-741).
+- **Next:** wave 1 detached — `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 1`.
+
 ---
 
 ## Publish checklist (Phase 5–6)
 
 - [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] Post-integrate `release:check` green after **wave 0** (`/tmp/pi-spine-post-integrate-wave-0-retry.log`)
+- [ ] Post-integrate `release:check` green after **each remaining wave** (log paths recorded)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
 - [ ] `git status` clean
