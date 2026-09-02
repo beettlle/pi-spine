@@ -1,0 +1,20 @@
+spine-tasks/SP-738-timeout-honor-done/STATUS.md
+  h_2a17159c706ba1 3-5,14-27,29-45,50,52-53,58,60-61
+src/batch/worker-heartbeat.mjs
+  h_2a17159c706ba1 357-371
+src/batch/worker-host.mjs
+  h_2a17159c706ba1 39-47,338-355
+tests/batch/worker-post-done-grace.test.mjs
+  h_2a17159c706ba1 27-63,123-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "878972bc556ae06b48d3bfd51302a01b32f5c91d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
