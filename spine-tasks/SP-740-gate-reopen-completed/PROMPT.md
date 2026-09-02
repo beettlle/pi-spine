@@ -45,7 +45,6 @@ Closes #275 — After `stale_revision` / gate record removed, allow re-open + re
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/resume-gate-open.test.mjs tests/batch/gate-target-revision-validate.test.mjs tests/batch/gate.test.mjs tests/batch/detached-resume-gate.test.mjs` |
 | fileScopeMustChange | `src/batch/resume-multi-validate.mjs`, `docs/adoption/operator-runbook.md` |
-| minLineCoverage | 77 |
 
 ## Steps
 

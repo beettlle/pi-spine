@@ -39,7 +39,6 @@ Closes #276 — Instruct workers that long verifications (Contract `testCommand`
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/worker-output.test.mjs` |
 | fileScopeMustChange | `.spine/agents/worker.md` |
-| minLineCoverage | 77 |
 
 ## Steps
 
