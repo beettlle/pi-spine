@@ -120,3 +120,27 @@ export function applyMatrixRowToSteps(steps, row) {
 		body: substituteMatrixVariables(step.body, row),
 	}));
 }
+
+/**
+ * Substitute `{matrix.<column>}` placeholders across an entire raw PROMPT.md
+ * document for one matrix row. This is the LLM-row serving vehicle (#232):
+ * workers consume the raw markdown, so whole-document substitution is the
+ * composition of `applyMatrixRowToSteps` (step titles/bodies),
+ * `applyMatrixRowToContract` (contract table fields), and the File Scope paths
+ * in a single pass, with the same fail-loud semantics via
+ * `substituteMatrixVariables` — an unknown `{matrix.X}` reference throws.
+ *
+ * The input is returned unchanged when no row is supplied or the row is empty
+ * (non-matrix tasks keep their PROMPT verbatim), mirroring the guards on the
+ * structured helpers.
+ *
+ * @param {string} promptText Raw PROMPT.md content.
+ * @param {Record<string, string> | null | undefined} row Matrix row values keyed by column.
+ * @returns {string}
+ */
+export function applyMatrixRowToPrompt(promptText, row) {
+	if (typeof promptText !== "string" || !row || Object.keys(row).length === 0) {
+		return promptText;
+	}
+	return substituteMatrixVariables(promptText, row);
+}

@@ -1,8 +1,8 @@
 # SP-742: LLM matrix rows get per-row PROMPT substitution — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-08-30
+**Current Step:** Step 4 (complete)
+**Status:** 🟣 In Progress
+**Last Updated:** 2026-09-02
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,40 +11,62 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-740 `.DONE` on main (runbook ownership)
-- [ ] Read LLM branch in `matrix-run.mjs` and SP-670 helpers
+- [x] Confirm SP-740 `.DONE` on main (runbook ownership) — `git show main:spine-tasks/SP-740-gate-reopen-completed/.DONE` resolves; SP-740 landed in 3237ce46/15a9a9f6.
+- [x] Read LLM branch in `matrix-run.mjs` and SP-670 helpers — see Plan below.
+
+### Plan (Step 1 approach)
+
+1. Add `applyMatrixRowToPrompt(promptText, row)` to `src/planner/matrix.mjs` — whole-document `{matrix.*}` substitution built on `substituteMatrixVariables` (SP-670 engine). Rationale: the worker consumes raw PROMPT markdown; no prompt re-serializer exists, so serving requires whole-doc substitution. It is a superset of `applyMatrixRowToSteps` + `applyMatrixRowToContract` + File Scope paths with identical fail-loud semantics and identical empty-row guard.
+2. Wire into the LLM branch of `runMatrixSubLane` (`src/batch/engine-lanes/matrix-run.mjs`):
+   - After worktree provision, before worker run: build substituted PROMPT from parent `PROMPT.md` (same source convention as `readParentContract`), write it to the row worktree's `PROMPT.md`. Unknown `{matrix.X}` ref throws → row fails loud with `matrix row prompt substitution failed: …`.
+   - Journal `matrix.sub_lane.prompt_served` with sha256 + char count so operators can verify per-row substitution (narrows runbook §2.4 caveat).
+   - After a successful `runWorker`: restore the authored PROMPT.md (`git checkout --`) and delete the row's `.DONE` before the per-row commit. Otherwise each row branch would commit a different PROMPT.md and a timestamp-stamped `.DONE`, add/add-conflicting the row→lane merge (SP-697) on every multi-row LLM matrix task. Parent already writes the lane `.DONE` after merges.
+   - Attach `servedPrompt` to the row result for diagnostics/tests.
+   - Execute+matrix path untouched (GitNexus impact on `runMatrixSubLane`: LOW, 2 upstream callers).
+3. Tests: unit tests for `applyMatrixRowToPrompt` (matrix-subst.test.mjs); integration tests driving `runMatrixSubLane` directly under `SPINE_WORKER_STUB=1` (two rows → distinct served PROMPT with substituted steps/contract/file-scope; unknown ref fails loud); startBatch e2e (LLM matrix, 2 rows → batch ok, distinct `prompt_served` shas, authored PROMPT.md unchanged on orch branch).
+4. Runbook §2.4: replace LLM caveat with per-row substitution contract + `prompt_served` verification.
 
 ---
 
 ### Step 1: Wire substitution into LLM rows
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Before `runWorker`, write/serve row-substituted steps + contract (+ file-scope) into the row worktree PROMPT
-- [ ] Fail loud on unknown `{matrix.*}` refs (existing helper behavior)
-- [ ] Keep execute+matrix path unchanged / recommended for pure compute
+- [x] Before `runWorker`, write/serve row-substituted steps + contract (+ file-scope) into the row worktree PROMPT — `applyMatrixRowToPrompt` (whole-doc, SP-670 engine) written to the row worktree PROMPT.md in `serveMatrixRowPrompt`; `servedPrompt` + sha256 attached to the row result; `matrix.sub_lane.prompt_served` journaled.
+- [x] Fail loud on unknown `{matrix.*}` refs (existing helper behavior) — substitution throw is caught per row → row fails with `matrix row prompt substitution failed: …`, never reaches the worker.
+- [x] Keep execute+matrix path unchanged / recommended for pure compute — execute branch untouched; GitNexus impact `runMatrixSubLane` upstream = LOW (2 callers).
 
 ---
 
 ### Step 2: Tests + runbook §2.4
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Stub/integration: two rows → worker sees distinct substituted content
-- [ ] Remove or narrow §2.4 LLM substitution caveat
+- [x] Stub/integration: two rows → worker sees distinct substituted content — 3 new tests in `tests/batch/matrix-execution.test.mjs` (direct `runMatrixSubLane` two-row servedPrompt distinctness + scaffolding restore; unknown-ref fail-loud; startBatch e2e with `prompt_served` sha256 equality + authored packet intactness) and 6 unit tests for `applyMatrixRowToPrompt` in `tests/planner/matrix-subst.test.mjs`.
+- [x] Remove or narrow §2.4 LLM substitution caveat — rewritten as "LLM-type rows are fully substituted (#232, SP-742)"; added per-row distinct-output merge caveat; removed #232 from deferred follow-ups (line ~324).
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
+- [x] Resolve STATUS.md rebase conflict (kept HEAD `Current Step: Step 3` — Steps 0–2 committed in a244d524/99978bde/c5f6454d)
+- [x] Run lint — `npm run lint` exit 0 (eslint --max-warnings 0 src bin tests scripts)
+- [x] Run typecheck — `npm run typecheck` exit 0 (both tsconfig projects)
+- [x] Run Contract testCommand — `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs tests/planner/matrix-subst.test.mjs tests/batch/contract-matrix-subst.test.mjs` → 58 pass / 0 fail
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates
-- [ ] Create `.DONE`
+- [x] Docs updates — runbook §2.4 rewritten in c5f6454d (lines 294/321/324: per-row substitution contract, `prompt_served` sha256 verification, #232 marked shipped)
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] LLM matrix rows receive substituted PROMPT content — `serveMatrixRowPrompt` in `matrix-run.mjs`
+- [x] Two-row stub/integration test passes — `matrix-execution.test.mjs` (#232 tests)
+- [x] Runbook §2.4 updated
+- [x] Closes #232
+- [x] `.DONE` created
