@@ -7,8 +7,8 @@
 **Profile:** minor
 **Operator approved scope:** yes (2026-08-30)
 **Composition choice:** Bugs #272–#275 + enh #276 + 2nd enh #232 (matrix LLM PROMPT substitution). Docs override: 0 standalone (deltas inside #274/#275/#276/#232 runbook).
-**Worker model pin:** `zai/glm-5.3-flash` via `agents.activeProfile: default` (doctor effective pin; top-level `agents.worker` is `kimi-coding/k3` but inactive under default) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Worker model pin:** `kimi-coding/k3` via `agents.activeProfile: allegretto` (mid-release override 2026-09-02; was `zai/glm-5.3-flash` / `default`)
+**Agent pin override:** yes — 2026-09-02 — operator switched to `allegretto` to stop expensive Z.ai spend and finish v2.18.0 wave 2 ([#248](https://github.com/beettlle/pi-spine/issues/248) explicit override)
 **GitNexus:** refreshed 2026-08-30 — status up-to-date with HEAD (`528f2fd`)
 
 ---
@@ -172,6 +172,14 @@ Start: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`
 - **Issues closed:** #273 (SP-738), #275 (SP-740).
 - **Macro recovery:** diagnose `human_base_diverged` after LOC fix on landed batch; `spine sync-base --dry-run` refused path overlap on `src/batch/resume.mjs`; `spine batch complete` → no active batch; Macro **Idle**.
 - **Next:** wave 2 detached — `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 2`.
+
+### Wave 2 abort + allegretto pin override (2026-09-02)
+
+- **Operator:** pause expensive Z.ai usage; finish release on **allegretto** (`kimi-coding/k3`). Explicit mid-release pin override ([#248](https://github.com/beettlle/pi-spine/issues/248)).
+- **Batch:** `20260902T205149-1d2c` aborted/archived while SP-742 was mid-flight (Macro Idle). Monitor #8 exited 2 (`archived as aborted`).
+- **Lane salvage:** `spine batch salvage --batch 20260902T205149-1d2c --dry-run` → **no salvageable lanes** (task never reached terminal success / `.DONE`). Lane tip still has Steps 0–2: `6a44cd74` on `task/spine-lane-1-20260902T205149-1d2c` (preserved as branch `salvage/SP-742-wave2-abort`).
+- **Remaining:** Steps 3–4 (contract verify + `.DONE`).
+- **Action:** pin `activeProfile: allegretto` on `main` → restart wave 2 detached → transplant salvage commits into new lane → finish SP-742 on allegretto.
 
 ---
 
