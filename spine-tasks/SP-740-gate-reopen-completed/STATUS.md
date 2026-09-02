@@ -1,8 +1,8 @@
 # SP-740: Gate reopen for completed phase + runbook §5.2 — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-08-30
+**Current Step:** 1 — Re-open path for completed
+**Status:** 🟣 Step 0 complete; plan ready for review
+**Last Updated:** 2026-09-02
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,28 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-739 `.DONE` on main
-- [ ] Map stale_revision → delete gate → resume refuse completed
+- [x] Confirm SP-739 `.DONE` on main — `spine-tasks/SP-739-salvage-integrate-open-gate/.DONE` exists on origin/main; commit `8a4764cb` is ancestor
+- [x] Map stale_revision → delete gate → resume refuse completed — `checkIntegrateGate` (gate.mjs) emits `stale_revision` + "re-open and re-approve"; runbook §5.2 says delete `gate.json` then `spine batch resume --force`; `validateMultiTaskResume` (resume-multi-validate.mjs) never admits `phase === "completed"` in `resumable` → `cannot_resume` "Cannot resume batch in phase completed." → dead end (#275)
+
+#### Implementation plan (Review Level 2)
+
+1. **gate.mjs** — add `reopenIntegrateGateForCompletedBatch({ projectRoot, batchId, batchState? })`:
+   - Fail closed unless `batchState.phase === "completed"` (load state when not passed).
+   - Existing gate + `status approved` + `validateGateTargetRevision` ok → `{ reopened:false, reason:"gate_current" }` (never silently invalidate a current approval).
+   - Existing gate + `status pending` + pin ok → `{ reopened:false, reason:"gate_pending" }`.
+   - Gate missing / pin stale / `rejected` → remove stale `gate.json` (fs rm), journal `gate.reopened`, then route through `openIntegrateGateAfterBatchComplete` → fresh pin (current orch tip) + fresh evidence, status `pending`.
+   - `getIntegrateGateStatus`: when no gate and batch phase `completed` → suggestedCommand `spine gate reopen` (align with integrate).
+   - `checkIntegrateGate` missing_gate branch: headline/suggestedCommand mention `spine gate reopen` for completed batches. `ok/exitCode/blockers` unchanged (impact HIGH — display-only change in that branch).
+2. **bin/spine-gate.mjs** — add `reopen` action → human/JSON output via existing `formatGateHuman`.
+3. **resume-multi-validate.mjs** (must-change) — admit `phase === "completed"`:
+   - `!force` → refuse with guidance to `spine gate reopen` / `resume --force`.
+   - `force` + pending tasks → refuse (use retry).
+   - `force` + no pending tasks → `{ ok:true, gateReopen:true, ... }` (skip worktree checks; no worker re-run).
+4. **resume.mjs** — in `resumeBatch`, right after `validateResumeBatch`, if `resumeCheck.gateReopen` → call `reopenIntegrateGateForCompletedBatch`, release lock, return its result (before the multi-task branch, so no waves re-run).
+5. **Runbook §5.2** — recovery steps become `spine gate reopen` (or `resume --force` for completed); drop hand-delete gate.json + refused resume path.
+6. **Tests** — gate-target-revision-validate.test.mjs: reopen re-pins after drift; reopen fails closed when gate current; reopen on non-completed refuses. gate.test.mjs: status/integrate message agreement when gate absent. resume-gate-open.test.mjs: regression — completed + no gate → `resumeBatch({force:true})` reopens gate, phase stays completed, no worker re-run.
 
 ---
 
