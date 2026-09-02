@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-08-30 (Phase 86 v2.18.0 staged; Next → SP-743)
+**Last Updated:** 2026-09-02 (Phase 86 wave 1 landed; wave 2 → SP-742; Next → SP-743)
 **Status:** Active
 **Next Task ID:** SP-743
 
@@ -2427,19 +2427,21 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
 | SP-737 | Stall watchdog static-null progress (#272) | Done | — |
-| SP-738 | Honor `.DONE` before timeout failure (#273) | Staged | SP-737 |
+| SP-738 | Honor `.DONE` before timeout failure (#273) | Done | SP-737 |
 | SP-739 | salvage --integrate opens missing gate (#274) | Done | — |
-| SP-740 | Gate reopen for completed phase + runbook §5.2 (#275) | Staged | SP-739 |
+| SP-740 | Gate reopen for completed phase + runbook §5.2 (#275) | Done | SP-739 |
 | SP-741 | Worker foreground verification guardrail (#276) | Done | — |
 | SP-742 | LLM matrix per-row PROMPT substitution (#232) | Staged | SP-740 |
 
 **Phase 86 exit criteria:**
 
 - [x] Operator approved scope (2026-08-30)
-- [ ] SP-737–SP-742 `.DONE` and integrated on `main` (wave 0 done: SP-737/739/741)
+- [ ] SP-737–SP-742 `.DONE` and integrated on `main` (waves 0–1 done: SP-737–741; wave 2: SP-742)
 - [x] Post-integrate `release:check` green after wave 0 (`/tmp/pi-spine-post-integrate-wave-0-retry.log`)
+- [x] Post-integrate `release:check` green after wave 1 (`/tmp/pi-spine-post-integrate-wave-1-retry.log`)
 - [x] #272, #274, #276 closed when wave 0 landed
-- [ ] #273, #275, #232 closed when later waves land
+- [x] #273, #275 closed when wave 1 landed
+- [ ] #232 closed when wave 2 lands
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] CI green on HEAD; publish **v2.18.0** after operator approval
 
@@ -2448,6 +2450,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Resumed 2026-09-02:** Operator reported quotas reset; continue with same pin (`zai/glm-5.3-flash`). Restart wave 0: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`.
 
 **Wave 0 landed 2026-09-02:** Batch `20260902T165453-86f7` → merge `96bbf1eb`; LOC split `8a4764cb`; `origin/main` @ `8a4764cb`. Next: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 1`.
+
+**Wave 1 landed 2026-09-02:** Batch `20260902T191700-320e` — SP-738 / SP-740; FF tip `0c9db2d5`; LOC leaves `acd3d010` (`resume.mjs` 478); `release:check` green 2550 pass / 88.35%; #273/#275 closed; Macro Idle. Next: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 2`.
 
 **Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog.
 

@@ -163,13 +163,24 @@ Start: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`
 - **Issues closed:** #272 (SP-737), #274 (SP-739; already closed + land receipt), #276 (SP-741).
 - **Next:** wave 1 detached — `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 1`.
 
+### Wave 1 landed (2026-09-02)
+
+- **Batch:** `20260902T191700-320e` — SP-738 / SP-740 terminal-success; FF integrate tip `0c9db2d5`.
+- **Post-integrate:** first `release:check` failed phase23 LOC on `resume.mjs` (>500). Extracted `resume-gate-reopen.mjs` + `resume-prompt-parse-fail.mjs`; parent `resume.mjs` 478 LOC (`acd3d010`).
+- **Retry log:** `/tmp/pi-spine-post-integrate-wave-1-retry.log` — suite fail 0 (2550 pass), line coverage 88.35% ≥ 77%; `RELEASE_CHECK_EXIT:0`.
+- **Push:** `origin/main` at `acd3d010` (synced; F8 clear).
+- **Issues closed:** #273 (SP-738), #275 (SP-740).
+- **Macro recovery:** diagnose `human_base_diverged` after LOC fix on landed batch; `spine sync-base --dry-run` refused path overlap on `src/batch/resume.mjs`; `spine batch complete` → no active batch; Macro **Idle**.
+- **Next:** wave 2 detached — `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 2`.
+
 ---
 
 ## Publish checklist (Phase 5–6)
 
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [x] Post-integrate `release:check` green after **wave 0** (`/tmp/pi-spine-post-integrate-wave-0-retry.log`)
-- [ ] Post-integrate `release:check` green after **each remaining wave** (log paths recorded)
+- [x] Post-integrate `release:check` green after **wave 1** (`/tmp/pi-spine-post-integrate-wave-1-retry.log`)
+- [ ] Post-integrate `release:check` green after **wave 2** (log path recorded)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
 - [ ] `git status` clean
