@@ -1,0 +1,22 @@
+bin/spine-gate.mjs
+  h_2a17159c706ba1 4,13,117-121,128
+spine-tasks/SP-740-gate-reopen-completed/STATUS.md
+  h_2a17159c706ba1 40,42-44
+src/batch/gate.mjs
+  h_2a17159c706ba1 7,204-330,341-345,350-356,423-430,437-441
+src/batch/resume-multi-validate.mjs
+  h_2a17159c706ba1 197-239
+src/batch/resume.mjs
+  h_2a17159c706ba1 14,69-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c47767d2e33c0eaa5da04d764c80caeae34d1ce8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
