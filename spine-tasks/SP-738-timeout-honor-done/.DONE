@@ -1,0 +1,7 @@
+SP-738 complete. Honor .DONE before classifying worker timeout failure (#273).
+
+- src/batch/worker-heartbeat.mjs: stall boundary re-checks lane .DONE before stall warning/kill; honors post-done grace via done branch (worker.done_honored_at_stall journaled).
+- src/batch/worker-host.mjs: exit boundary treats .DONE + runner wall-clock timeout exit (124) as success (worker.done_after_timeout journaled); true stalls without .DONE keep failing (#272); salvage gate (#274) untouched.
+- tests/batch/worker-post-done-grace.test.mjs: timeout-with-.DONE succeeds; timeout-without-.DONE still fails.
+
+Verification: npm run lint clean; Contract testCommand (lint + typecheck + 3 test files) 12/12 pass. Full npm test 2495/2538 — 43 failures are SP-482 nested-batch guard artifacts of running inside a worker session (pass with worker env unset).
