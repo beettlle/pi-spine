@@ -46,10 +46,10 @@
 ---
 
 ### Step 2: Runbook §5.2 + tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Rewrite §5.2 recovery steps to the working path
-- [ ] Regression: completed + no gate → reopen succeeds
+- [x] Rewrite §5.2 recovery steps to the working path — `spine gate reopen` / `resume --force` (completed) replace hand-delete + refused resume; noted `gate_current`/`gate_pending` fail-closed guard and the pre-#275 wedge; `missing_gate` table row and land-loop stale-revision cross-reference now name the command
+- [x] Regression: completed + no gate → reopen succeeds — 3 new cases in resume-gate-open.test.mjs (no gate / drifted pin / non-force guidance), 5 reopen unit cases in gate-target-revision-validate.test.mjs, 4 status/integrate-agreement + CLI cases in gate.test.mjs; all pass
 
 ---
 

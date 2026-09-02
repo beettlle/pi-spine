@@ -9,7 +9,9 @@ import {
 	checkIntegrateGate,
 	gateRecordPath,
 	openIntegrateGate,
+	reopenIntegrateGateForCompletedBatch,
 } from "../../src/batch/gate.mjs";
+import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { validateGateTargetRevision } from "../../src/batch/gate-revision.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -195,6 +197,130 @@ test("checkIntegrateGate blocks approved gate with missing targetRevision pin", 
 		assert.equal(blocked.exitCode, 2);
 		assert.equal(blocked.failureClass, "GateBlocked");
 		assert.match(blocked.error, /no targetRevision pin/i);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reopenIntegrateGateForCompletedBatch re-pins stale gate and re-collects evidence (#275)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reopen-drift-");
+	const batchId = "20260712T130300";
+	const orchBranch = "orch/spine-reopen-drift";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedFixture(batchId, orchBranch);
+		writeSpineBatchState(projectRoot, fixture);
+
+		const opened = openIntegrateGate({ projectRoot, batchId, batchState: fixture });
+		approveIntegrateGate({ projectRoot, batchId });
+		advanceOrch(projectRoot, orchBranch);
+
+		const reopened = reopenIntegrateGateForCompletedBatch({ projectRoot, batchId });
+		assert.equal(reopened.ok, true, reopened.error);
+		assert.equal(reopened.reopened, true);
+		assert.equal(reopened.reason, "reopened");
+		assert.notEqual(reopened.gate.gateId, opened.gate.gateId);
+		assert.equal(reopened.gate.status, "pending");
+		assert.equal(reopened.gate.targetRevision, tipSha(projectRoot, orchBranch));
+		assert.equal(reopened.suggestedCommand, "spine gate approve");
+		assert.ok(Array.isArray(reopened.gate.evidenceRefs));
+
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.ok(events.some((event) => event.type === "gate.reopened"));
+		assert.ok(events.some((event) => event.type === "gate.opened"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reopenIntegrateGateForCompletedBatch refuses to invalidate a current approval", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reopen-current-");
+	const batchId = "20260712T130301";
+	const orchBranch = "orch/spine-reopen-current";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedFixture(batchId, orchBranch);
+		writeSpineBatchState(projectRoot, fixture);
+
+		const opened = openIntegrateGate({ projectRoot, batchId, batchState: fixture });
+		approveIntegrateGate({ projectRoot, batchId });
+
+		const result = reopenIntegrateGateForCompletedBatch({ projectRoot, batchId });
+		assert.equal(result.ok, true);
+		assert.equal(result.reopened, false);
+		assert.equal(result.reason, "gate_current");
+		assert.equal(result.suggestedCommand, "spine integrate");
+
+		const onDisk = JSON.parse(fs.readFileSync(gateRecordPath(projectRoot, batchId), "utf-8"));
+		assert.equal(onDisk.gateId, opened.gate.gateId);
+		assert.equal(onDisk.status, "approved");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reopenIntegrateGateForCompletedBatch leaves pending gate with current pin untouched", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reopen-pending-");
+	const batchId = "20260712T130302";
+	const orchBranch = "orch/spine-reopen-pending";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedFixture(batchId, orchBranch);
+		writeSpineBatchState(projectRoot, fixture);
+
+		const opened = openIntegrateGate({ projectRoot, batchId, batchState: fixture });
+
+		const result = reopenIntegrateGateForCompletedBatch({ projectRoot, batchId });
+		assert.equal(result.ok, true);
+		assert.equal(result.reopened, false);
+		assert.equal(result.reason, "gate_pending");
+		assert.equal(result.suggestedCommand, "spine gate approve");
+
+		const onDisk = JSON.parse(fs.readFileSync(gateRecordPath(projectRoot, batchId), "utf-8"));
+		assert.equal(onDisk.gateId, opened.gate.gateId);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reopenIntegrateGateForCompletedBatch opens a fresh gate when record is missing", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reopen-missing-");
+	const batchId = "20260712T130303";
+	const orchBranch = "orch/spine-reopen-missing";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedFixture(batchId, orchBranch);
+		writeSpineBatchState(projectRoot, fixture);
+		assert.equal(fs.existsSync(gateRecordPath(projectRoot, batchId)), false);
+
+		const result = reopenIntegrateGateForCompletedBatch({ projectRoot, batchId });
+		assert.equal(result.ok, true, result.error);
+		assert.equal(result.reopened, true);
+		assert.ok(fs.existsSync(gateRecordPath(projectRoot, batchId)));
+		assert.equal(result.gate.status, "pending");
+		assert.equal(result.gate.targetRevision, tipSha(projectRoot, orchBranch));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reopenIntegrateGateForCompletedBatch refuses non-completed batch", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reopen-paused-");
+	const batchId = "20260712T130304";
+	const orchBranch = "orch/spine-reopen-paused";
+	try {
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = { ...completedFixture(batchId, orchBranch), phase: "paused" };
+
+		const result = reopenIntegrateGateForCompletedBatch({
+			projectRoot,
+			batchId,
+			batchState: fixture,
+		});
+		assert.equal(result.ok, false);
+		assert.equal(result.exitCode, 1);
+		assert.equal(result.reason, "batch_not_completed");
+		assert.match(result.error, /phase paused/);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
