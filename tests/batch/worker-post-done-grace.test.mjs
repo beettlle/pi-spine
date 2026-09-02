@@ -24,6 +24,43 @@ exec sleep 600
 	return "scripts/hang-after-done.sh";
 }
 
+/**
+ * Launch script that writes .DONE then exits with the runner's pi-timeout exit
+ * code (SP-738 / #273 reproduction: wall-clock budget hit after completion).
+ */
+function writeTimeoutAfterDoneLaunchScript(projectRoot) {
+	const scriptPath = path.join(projectRoot, "scripts", "timeout-after-done.sh");
+	fs.mkdirSync(path.dirname(scriptPath), { recursive: true });
+	fs.writeFileSync(
+		scriptPath,
+		`#!/bin/sh
+echo "step work complete"
+echo "Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$SPINE_TASK_FOLDER/.DONE"
+exit 124
+`,
+		{ encoding: "utf-8", mode: 0o755 },
+	);
+	return "scripts/timeout-after-done.sh";
+}
+
+/**
+ * Launch script that exits with the pi-timeout exit code without writing .DONE
+ * (SP-738 regression guard: true timeout without completion must still fail).
+ */
+function writeTimeoutWithoutDoneLaunchScript(projectRoot) {
+	const scriptPath = path.join(projectRoot, "scripts", "timeout-no-done.sh");
+	fs.mkdirSync(path.dirname(scriptPath), { recursive: true });
+	fs.writeFileSync(
+		scriptPath,
+		`#!/bin/sh
+echo "still working"
+exit 124
+`,
+		{ encoding: "utf-8", mode: 0o755 },
+	);
+	return "scripts/timeout-no-done.sh";
+}
+
 function writeMinimalPrompt(taskFolder, taskId) {
 	fs.writeFileSync(
 		path.join(taskFolder, "PROMPT.md"),
@@ -76,6 +113,104 @@ test("runWorker terminates hung child after .DONE and returns ok: true", async (
 		const terminated = events.find((event) => event.type === "worker.post_done_terminated");
 		assert.ok(terminated, "worker.post_done_terminated should be journaled");
 		assert.equal(terminated.taskId, taskId);
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runWorker honors .DONE when wall-clock timeout exits 124 (SP-738 / #273)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-done-timeout-"));
+	const batchId = "20260902T190000";
+	const projectRoot = path.join(root, "project");
+	const worktreePath = projectRoot;
+	const taskId = "SP-738-done";
+	const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-timeout`);
+	fs.mkdirSync(taskFolder, { recursive: true });
+	writeMinimalPrompt(taskFolder, taskId);
+	const launchScript = writeTimeoutAfterDoneLaunchScript(projectRoot);
+
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+
+	try {
+		const result = await runWorker({
+			worktreePath,
+			taskFolder,
+			projectRoot,
+			batchId,
+			laneNumber: 1,
+			taskId,
+			config: {
+				development: { workerLaunchScript: launchScript },
+				lanes: {
+					stallTimeoutMinutes: 30,
+					heartbeatIntervalMinutes: 60,
+					postDoneGraceMinutes: 5,
+				},
+			},
+		});
+
+		assert.equal(result.ok, true, "timeout after .DONE must not fail the task");
+		assert.equal(result.classification, "succeeded");
+		assert.equal(result.doneFound, true);
+		assert.equal(result.exitCode, 124);
+		assert.ok(fs.existsSync(path.join(taskFolder, ".DONE")));
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const honored = events.find((event) => event.type === "worker.done_after_timeout");
+		assert.ok(honored, "worker.done_after_timeout should be journaled");
+		assert.equal(honored.taskId, taskId);
+		assert.equal(honored.payload?.exitCode, 124);
+	} finally {
+		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prevStub;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runWorker timeout exit 124 without .DONE still fails (SP-738 guard)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-timeout-nodone-"));
+	const batchId = "20260902T190100";
+	const projectRoot = path.join(root, "project");
+	const worktreePath = projectRoot;
+	const taskId = "SP-738-nodone";
+	const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-nodone`);
+	fs.mkdirSync(taskFolder, { recursive: true });
+	writeMinimalPrompt(taskFolder, taskId);
+	const launchScript = writeTimeoutWithoutDoneLaunchScript(projectRoot);
+
+	const prevStub = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+
+	try {
+		const result = await runWorker({
+			worktreePath,
+			taskFolder,
+			projectRoot,
+			batchId,
+			laneNumber: 2,
+			taskId,
+			config: {
+				development: { workerLaunchScript: launchScript },
+				lanes: {
+					stallTimeoutMinutes: 30,
+					heartbeatIntervalMinutes: 60,
+					postDoneGraceMinutes: 5,
+				},
+			},
+		});
+
+		assert.equal(result.ok, false, "timeout without .DONE must still fail");
+		assert.equal(result.classification, "failed");
+		assert.equal(result.doneFound, false);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.ok(
+			!events.some((event) => event.type === "worker.done_after_timeout"),
+			"done_after_timeout must not be journaled without .DONE",
+		);
 	} finally {
 		if (prevStub === undefined) delete process.env.SPINE_WORKER_STUB;
 		else process.env.SPINE_WORKER_STUB = prevStub;

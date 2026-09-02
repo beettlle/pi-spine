@@ -37,6 +37,15 @@ export { buildWorkerChildEnv } from "./worker-spawn.mjs";
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
 
 /**
+ * Exit code the worker runner uses when the `pi` spawn hits its wall-clock
+ * budget (ETIMEDOUT). Must stay in sync with bin/spine-worker-runner.mjs.
+ * Engine-initiated kills surface as exit code 1 (signal → `code ?? 1` in
+ * collectChildOutput), so 124 only ever originates from the runner's own
+ * timeout — never from post-done or stall termination.
+ */
+const WORKER_TIMEOUT_EXIT_CODE = 124;
+
+/**
  * Force-terminate lane worker process trees tracked in batch state.
  * Reaps nested `pi` grandchildren, not only the tracked runner PID (SP-609 / #194).
  *
@@ -326,7 +335,24 @@ export async function runWorker({
 			config,
 		});
 	}
-	const ok = doneFound && (exitCode === 0 || postDoneTerminated);
+	// SP-738 (#273): the runner exits 124 when the `pi` spawn hit its wall-clock
+	// budget (ETIMEDOUT). If the agent had already written .DONE, the task is done —
+	// do not classify a completed worker as timeout-failed. Post-done termination
+	// already resolves via postDoneTerminated, and true stalls never reach this
+	// boundary with .DONE absent (#272 keeps them failing).
+	const timedOutAfterDone =
+		doneFound && !postDoneTerminated && exitCode === WORKER_TIMEOUT_EXIT_CODE;
+	if (timedOutAfterDone && projectRoot && batchId) {
+		appendJournalEvent(projectRoot, batchId, "worker.done_after_timeout", {
+			laneNumber,
+			taskId,
+			correlationId: laneCorrelationId,
+			exitCode,
+			mode: workerMode,
+		});
+	}
+	const ok =
+		doneFound && (exitCode === 0 || postDoneTerminated || timedOutAfterDone);
 	let classification = ok ? "succeeded" : "failed";
 	if (!ok && useLaunchScript && !childPastPreflight) {
 		classification = "launch_failed";
