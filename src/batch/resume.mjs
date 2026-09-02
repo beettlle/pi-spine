@@ -11,7 +11,7 @@ import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
-import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
+import { openIntegrateGateAfterBatchComplete, reopenIntegrateGateForCompletedBatch } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
@@ -64,6 +64,34 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	if (!resumeCheck.ok) {
 		releaseResumeLock?.();
 		return resumeCheck;
+	}
+
+	// SP-740 / #275: completed + force re-opens the integrate gate (no worker re-run).
+	// State is persisted afterwards so detached resume waiters observe the fresh pin.
+	if (resumeCheck.gateReopen) {
+		const reopenState = loadSpineBatchState(projectRoot).raw;
+		const reopenResult = reopenIntegrateGateForCompletedBatch({
+			projectRoot,
+			batchId: resumeCheck.batchId,
+			batchState: reopenState,
+		});
+		if (reopenState) {
+			saveSpineBatchState(projectRoot, reopenState, { bypassWriteGuard: true });
+		}
+		releaseResumeLock?.();
+		const output = reopenResult.reopened
+			? `Batch ${resumeCheck.batchId} gate re-opened: evidence re-collected, targetRevision re-pinned.\n  → spine gate approve\n  → spine integrate\n`
+			: `${reopenResult.headline}\n  → ${reopenResult.suggestedCommand}\n`;
+		return {
+			ok: reopenResult.ok,
+			exitCode: reopenResult.exitCode,
+			batchId: resumeCheck.batchId,
+			reopened: reopenResult.reopened,
+			reopenReason: reopenResult.reason,
+			gate: reopenResult.gate,
+			error: reopenResult.error,
+			output,
+		};
 	}
 
 	installAttachedEngineShutdownHandlers({ projectRoot });

@@ -1080,7 +1080,7 @@ Use when batch lane work on the orch branch is correct but `main` moved during t
    git push origin main
    ```
 
-Gate approval remains valid only while the orch tip still matches the gate’s pinned `targetRevision` ([§5.2](#52-gate-maturity-v250--121122123)). If orch advanced after approve, integrate fails closed with `stale_revision` — re-open and re-approve before retrying. If unsure, run `spine gate status` before re-integrating.
+Gate approval remains valid only while the orch tip still matches the gate’s pinned `targetRevision` ([§5.2](#52-gate-maturity-v250--121122123)). If orch advanced after approve, integrate fails closed with `stale_revision` — re-open and re-approve before retrying (`spine gate reopen`; see [§5.2](#52-gate-maturity-v250--121122123)). If unsure, run `spine gate status` before re-integrating.
 
 #### Manual recovery (merge on main)
 
@@ -1254,13 +1254,13 @@ On `spine integrate` / `checkIntegrateGate`, an **approved** gate is re-validate
 | Pin matches current orch tip | Integrate may proceed (gate still required) |
 | Pin missing, unreadable, or orch tip advanced | Fail closed — `stale_revision` blocker; headline *gate targetRevision stale* |
 
-**Operator recovery when integrate reports stale revision:**
+**Operator recovery when integrate reports stale revision (SP-740 / #275):**
 
 1. Confirm drift: `spine gate status` and compare orch tip (`git rev-parse orch/spine-<batchId>`) to `targetRevision` in the gate record.
-2. Re-open a fresh pin (existing `gate.json` blocks reopen): remove `.spine/runtime/<batchId>/gate.json`, then run `spine status --diagnose` / detached `spine batch resume --force` so finalize re-opens the gate with a new `targetRevision`.
+2. Re-open a fresh pin: `spine gate reopen` — removes the stale (or rejected, or missing) gate record and re-opens the gate with a new `targetRevision` pinned to the current orch tip plus freshly collected evidence. `spine batch resume --force` on a completed batch routes through the same re-open (no worker re-run).
 3. Review evidence again → `spine gate approve` → `spine integrate`.
 
-Do not hand-edit `targetRevision` on an approved gate to “force” a match — that defeats the safety boundary.
+`spine gate reopen` never invalidates a gate that is approved or pending and still pinned to the current orch tip (`gate_current` / `gate_pending`) — approve or integrate instead. Do not hand-edit `targetRevision` on an approved gate to “force” a match — that defeats the safety boundary. (Before SP-740 / #275 this step recommended hand-deleting `gate.json` and re-running `spine batch resume --force`; resume refuses `phase=completed`, which wedged completed batches at exactly this recovery step.)
 
 #### Structured blocker codes (#122)
 
@@ -1268,7 +1268,7 @@ Gate check / approve fail paths return `blockers: [{ code, message }]` alongside
 
 | Code | When |
 |------|------|
-| `missing_gate` | No gate record — batch not ready or gate not opened |
+| `missing_gate` | No gate record — batch not ready or gate not opened (completed batches: `spine gate reopen`) |
 | `gate_pending` | Gate open, awaiting approve/reject |
 | `gate_rejected` | Gate was rejected |
 | `stale_revision` | Approved gate pin missing or orch tip drifted (#121) |

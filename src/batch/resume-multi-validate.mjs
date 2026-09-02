@@ -194,6 +194,49 @@ export function validateMultiTaskResume({ projectRoot, force = false }) {
 	const failedTasksCount = Number(state.failedTasks ?? 0);
 	const failedPhaseRetryLimbo =
 		phase === "failed" && failedTasksCount === 0 && pendingTasksForResume.length > 0;
+
+	// SP-740 / #275: completed batches are never worker-resumable, but after a
+	// `stale_revision` blocker or a removed gate record they still need a working
+	// re-open + re-approve path. Force resume on a completed batch routes through
+	// the gate re-open (no worker re-run) instead of dead-ending on cannot_resume.
+	if (phase === "completed") {
+		if (!force) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: "cannot_resume",
+				output: `Batch ${state.batchId} completed. Use spine gate reopen (or spine batch resume --force) to re-open the integrate gate.\n`,
+				batchId: state.batchId,
+				phase,
+			};
+		}
+		if (pendingTasksForResume.length > 0) {
+			return {
+				ok: false,
+				exitCode: 1,
+				error: "cannot_resume",
+				output: `Batch ${state.batchId} is completed but has pending tasks — use spine batch retry <taskId> instead.\n`,
+				batchId: state.batchId,
+				phase,
+			};
+		}
+		// Lane worktrees may already be cleaned up after completion; skip worker-oriented
+		// validation. The caller must route this through reopenIntegrateGateForCompletedBatch.
+		return {
+			ok: true,
+			batchId: state.batchId,
+			phase,
+			updatedAt: Number(state.updatedAt ?? 0),
+			pendingTasks: [],
+			lanes: [],
+			resumableWave: null,
+			postMergeLimbo: false,
+			orphanResume: false,
+			engineConfirmedDead: false,
+			gateReopen: true,
+		};
+	}
+
 	const postMergeLimbo = detectPostMergeLimboForResume({ projectRoot, state });
 	const orphanEligibility =
 		phase === "running"
