@@ -137,9 +137,22 @@ Start: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`
 
 - #272/#273 may share stall/timeout code paths — may need same-wave serialization or sequential waves
 - #274/#275 both touch gate/integrate recovery — serialize if file scopes overlap
-- Doctor quota-risk advisory (#251) — advisory only; pin stays `kimi-coding/k3` for this release
+- Doctor quota-risk advisory (#251) — advisory only; pin stays `zai/glm-5.3-flash` for this release unless operator overrides
 - 0 open documentation issues → profile WARN; override requested below
 - All work is **gaps** — Phase 3 authoring required before Phase 4
+
+### Execution pause (2026-08-30)
+
+- **Wave 0 failure:** batch `20260830T223942-f4e8` — SP-737/739/741 all `task.failed` with Z.ai `429` code `1308` (5h usage limit; reset `2026-08-31 10:28:16`). Diagnosis `needs_retry`. No salvageable lane work (0 scoped files).
+- **Operator decision:** abort batch and pause release (no mid-release pin override).
+- **Batch:** aborted and archived (`20260830T223942-f4e8`). Macro phase idle.
+- **Resume later:** after quota reset and/or pin choice — `spine preflight` → `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0` (detached). Packets remain staged on `main` (commit `cc222168`).
+
+### Execution resume (2026-09-02)
+
+- **Operator:** quotas reset — continue release with same worker pin (`zai/glm-5.3-flash` / `activeProfile: default`). No mid-release pin override.
+- **Quota snapshot:** live `2026-09-02T16:54:13Z` — zai pool 0 recent tasks (post-reset).
+- **Action:** restart wave 0 detached for `SP-737,SP-738,SP-739,SP-740,SP-741,SP-742`.
 
 ---
 

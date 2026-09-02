@@ -2442,6 +2442,10 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [ ] `npm run release:check` green on publish HEAD
 - [ ] CI green on HEAD; publish **v2.18.0** after operator approval
 
+**Paused 2026-08-30:** Wave 0 batch `20260830T223942-f4e8` aborted after Z.ai 429 (5h quota reset `2026-08-31 10:28:16`). Operator chose abort + pause (no pin override). Packets staged on `main` (`cc222168`).
+
+**Resumed 2026-09-02:** Operator reported quotas reset; continue with same pin (`zai/glm-5.3-flash`). Restart wave 0: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`.
+
 **Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog.
 
 ---
