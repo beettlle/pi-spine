@@ -1,6 +1,6 @@
 # SP-742: LLM matrix rows get per-row PROMPT substitution — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4 (complete)
 **Status:** 🟣 In Progress
 **Last Updated:** 2026-09-02
 **Review Level:** 2
@@ -48,15 +48,25 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
+- [x] Resolve STATUS.md rebase conflict (kept HEAD `Current Step: Step 3` — Steps 0–2 committed in a244d524/99978bde/c5f6454d)
+- [x] Run lint — `npm run lint` exit 0 (eslint --max-warnings 0 src bin tests scripts)
+- [x] Run typecheck — `npm run typecheck` exit 0 (both tsconfig projects)
+- [x] Run Contract testCommand — `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs tests/planner/matrix-subst.test.mjs tests/batch/contract-matrix-subst.test.mjs` → 58 pass / 0 fail
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates
-- [ ] Create `.DONE`
+- [x] Docs updates — runbook §2.4 rewritten in c5f6454d (lines 294/321/324: per-row substitution contract, `prompt_served` sha256 verification, #232 marked shipped)
+- [x] Create `.DONE`
+
+## Completion Criteria
+
+- [x] LLM matrix rows receive substituted PROMPT content — `serveMatrixRowPrompt` in `matrix-run.mjs`
+- [x] Two-row stub/integration test passes — `matrix-execution.test.mjs` (#232 tests)
+- [x] Runbook §2.4 updated
+- [x] Closes #232
+- [x] `.DONE` created
