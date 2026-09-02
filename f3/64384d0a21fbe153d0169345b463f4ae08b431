@@ -1,0 +1,20 @@
+spine-tasks/SP-738-timeout-honor-done/.DONE
+  h_2a17159c706ba1 1-7
+spine-tasks/SP-738-timeout-honor-done/.reviews/0-20260902T194319.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-738-timeout-honor-done/.reviews/4-20260902T194423.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-738-timeout-honor-done/.reviews/final-20260902T194650.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f364384d0a21fbe153d0169345b463f4ae08b431",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
