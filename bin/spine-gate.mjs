@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Integrate gate inspection and resolution (PRD §12, FR-GATE).
- * Usage: spine gate [approve|reject|status] [--batch ID] [--reason text] [--json]
+ * Usage: spine gate [approve|reject|status|reopen] [--batch ID] [--reason text] [--json]
  */
 
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
@@ -10,6 +10,7 @@ import {
 	approveIntegrateGate,
 	getIntegrateGateStatus,
 	rejectIntegrateGate,
+	reopenIntegrateGateForCompletedBatch,
 } from "../src/batch/gate.mjs";
 
 /**
@@ -113,13 +114,18 @@ export function runSpineGate(options) {
 		case "status":
 			result = getIntegrateGateStatus({ projectRoot, batchId });
 			break;
+		case "reopen":
+			// SP-740 / #275: re-open + re-approve path for completed batches after
+			// stale_revision or a removed gate record.
+			result = reopenIntegrateGateForCompletedBatch({ projectRoot, batchId });
+			break;
 		default:
 			result = {
 				ok: false,
 				exitCode: 1,
 				headline: `Unknown gate action: ${action}`,
 				suggestedCommand: "spine gate status",
-				error: "Use approve, reject, or status",
+				error: "Use approve, reject, status, or reopen",
 			};
 	}
 

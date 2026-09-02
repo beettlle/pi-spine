@@ -37,11 +37,11 @@
 ---
 
 ### Step 1: Re-open path for completed
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Allow force-resume or dedicated `spine gate reopen` for completed + missing/stale gate
-- [ ] Re-pin targetRevision to current orch tip and re-collect evidence
-- [ ] Make integrate / gate status messages agree when gate absent
+- [x] Allow force-resume or dedicated `spine gate reopen` for completed + missing/stale gate — both: `spine gate reopen` action (bin/spine-gate.mjs) + `reopenIntegrateGateForCompletedBatch` (gate.mjs); `resume --force` on completed admitted via `gateReopen` flag (resume-multi-validate.mjs), routed in `resumeBatch` before the multi-task branch (resume.mjs)
+- [x] Re-pin targetRevision to current orch tip and re-collect evidence — reopen removes stale/decided record, journals `gate.reopened`, routes through `openIntegrateGateAfterBatchComplete`; approved/pending gates with a current pin fail closed (`gate_current` / `gate_pending`, never invalidated)
+- [x] Make integrate / gate status messages agree when gate absent — completed batch: both suggest `spine gate reopen`; non-completed keeps prior text. Blocker code `missing_gate`, `exitCode: 2`, `failureClass` unchanged (impact HIGH — display-only in that branch)
 
 ---
 

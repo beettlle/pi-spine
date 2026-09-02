@@ -4,6 +4,7 @@
  */
 
 import crypto from "node:crypto";
+import fs from "node:fs";
 import { resolveGatePostureConfig } from "../config/gate-posture-config.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
@@ -201,6 +202,133 @@ export function openIntegrateGateAfterBatchComplete(ctx) {
 }
 
 /**
+ * Remove a gate record so a fresh gate can be opened (SP-740 / #275).
+ * Supported counterpart to hand-deleting `gate.json` (runbook §5.2 pre-v2.18).
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {boolean} true when an existing record was removed
+ */
+export function removeGateRecord(projectRoot, batchId) {
+	const filePath = gateRecordPath(projectRoot, batchId);
+	if (!fs.existsSync(filePath)) return false;
+	fs.rmSync(filePath, { force: true });
+	return true;
+}
+
+/**
+ * Re-open the integrate gate for a completed batch (SP-740 / #275).
+ *
+ * After `stale_revision` (orch tip drift past the approved pin) or a removed gate
+ * record, completed-phase batches had no working re-open path: `spine batch resume
+ * --force` refuses phase=completed. Reopening removes the stale/decided record and
+ * routes through `openIntegrateGateAfterBatchComplete`, re-pinning `targetRevision`
+ * to the current orch tip and re-collecting evidence for a fresh approval.
+ *
+ * Fail-closed guarantees preserved: a gate that is approved or pending AND still
+ * pinned to the current orch tip is never invalidated here — approve/integrate
+ * instead. Only missing, stale-pin, or rejected records are replaced.
+ *
+ * @param {object} ctx
+ * @param {string} ctx.projectRoot
+ * @param {string} ctx.batchId
+ * @param {object|null} [ctx.batchState]
+ * @returns {{ ok: boolean, exitCode: number, reopened: boolean, reason: string, gate: object|null, headline: string, suggestedCommand: string, alternatives: string[], error?: string, extendedError?: string|null }}
+ */
+export function reopenIntegrateGateForCompletedBatch(ctx) {
+	const { projectRoot, batchId, batchState = null } = ctx;
+	const state = batchState ?? loadBatchStateFile(projectRoot).raw ?? null;
+
+	if (String(state?.phase ?? "") !== "completed") {
+		return {
+			ok: false,
+			exitCode: 1,
+			reopened: false,
+			reason: "batch_not_completed",
+			gate: null,
+			headline: "Gate reopen requires a completed batch",
+			suggestedCommand: "spine status --diagnose",
+			alternatives: [],
+			error: `Batch ${batchId} is in phase ${String(state?.phase ?? "unknown")} — gate reopen only applies to completed batches`,
+		};
+	}
+
+	if (!state?.orchBranch) {
+		return {
+			ok: false,
+			exitCode: 1,
+			reopened: false,
+			reason: "no_orch_branch",
+			gate: null,
+			headline: "Gate reopen blocked — batch state has no orch branch",
+			suggestedCommand: "spine status --diagnose",
+			alternatives: [],
+			error: "batchState.orchBranch missing; cannot pin a fresh targetRevision",
+		};
+	}
+
+	const existing = loadGateRecord(projectRoot, batchId);
+	if (existing && (existing.status === "approved" || existing.status === "pending")) {
+		const pinCheck = validateGateTargetRevision(projectRoot, existing, state);
+		if (pinCheck.ok) {
+			const approved = String(existing.status) === "approved";
+			return {
+				ok: true,
+				exitCode: 0,
+				reopened: false,
+				reason: approved ? "gate_current" : "gate_pending",
+				gate: existing,
+				headline: approved
+					? "Gate already approved and pinned to the current orch tip — nothing to reopen"
+					: "Gate already pending with a current pin — approve the existing record",
+				suggestedCommand: approved ? "spine integrate" : "spine gate approve",
+				alternatives: ["spine gate status"],
+			};
+		}
+	}
+
+	// Missing, stale-pin, or rejected record: clear the way and re-open with a fresh pin.
+	removeGateRecord(projectRoot, batchId);
+	appendJournalEvent(projectRoot, batchId, "gate.reopened", {
+		previousStatus: existing?.status ?? null,
+		previousTargetRevision: existing?.targetRevision ?? null,
+		source: "spine gate reopen",
+	});
+
+	const gateResult = openIntegrateGateAfterBatchComplete({
+		projectRoot,
+		batchId,
+		batchState: { ...state, phase: "completed" },
+	});
+
+	if (gateResult.skipped) {
+		return {
+			ok: false,
+			exitCode: 1,
+			reopened: false,
+			reason: gateResult.reason ?? "gate_open_skipped",
+			gate: null,
+			headline: "Gate reopen failed — integrate gate could not be opened",
+			suggestedCommand: "spine status --diagnose",
+			alternatives: [],
+			error: gateResult.reason ?? "openIntegrateGateAfterBatchComplete skipped",
+		};
+	}
+
+	return {
+		ok: true,
+		exitCode: 0,
+		reopened: true,
+		reason: "reopened",
+		gate: gateResult.gate,
+		extendedError: gateResult.extendedError ?? null,
+		headline: `Integrate gate re-opened — ${formatGateSummary(gateResult.gate)}; targetRevision re-pinned to current orch tip`,
+		suggestedCommand: "spine gate approve",
+		alternatives: ["spine gate status", "/spine-gate approve"],
+	};
+}
+
+/**
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
@@ -210,12 +338,22 @@ export function getIntegrateGateStatus(ctx) {
 	const gate = loadGateRecord(projectRoot, batchId);
 
 	if (!gate) {
+		// SP-740 / #275: agree with `spine integrate` — a completed batch without a
+		// gate record has a working re-open path; non-completed batches keep the
+		// diagnose suggestion.
+		const completed =
+			String(loadBatchStateFile(projectRoot).raw?.phase ?? "") === "completed";
 		return {
 			ok: true,
 			exitCode: 0,
 			gate: null,
-			headline: "No integrate gate on record",
-			suggestedCommand: "spine status --diagnose",
+			headline: completed
+				? "No integrate gate on record — batch completed; re-open and re-approve"
+				: "No integrate gate on record",
+			suggestedCommand: completed ? "spine gate reopen" : "spine status --diagnose",
+			alternatives: completed
+				? ["spine batch resume --force", "spine status --diagnose"]
+				: [],
 		};
 	}
 
@@ -282,16 +420,25 @@ export function checkIntegrateGate(ctx) {
 
 	const gate = loadGateRecord(projectRoot, batchId);
 	if (!gate) {
-		const error = "Integrate gate not opened — approve evidence before merging";
+		// SP-740 / #275: for completed batches point at the working re-open path so
+		// integrate and `spine gate status` agree. Blocker code / exitCode unchanged —
+		// automation switches on `missing_gate`, not display text.
+		const completed =
+			String((ctx.batchState ?? loadBatchStateFile(projectRoot).raw)?.phase ?? "") === "completed";
+		const error = completed
+			? "Integrate gate not opened — re-open and re-approve the completed batch before merging"
+			: "Integrate gate not opened — approve evidence before merging";
 		return {
 			ok: false,
 			required: true,
 			exitCode: 2,
 			failureClass: "GateBlocked",
 			error,
-			headline: "Integrate blocked — no gate record (run batch to completion or spine gate status)",
-			suggestedCommand: "spine gate status",
-			alternatives: ["/spine-gate"],
+			headline: completed
+				? "Integrate blocked — no gate record (batch completed: spine gate reopen to re-open and re-approve)"
+				: "Integrate blocked — no gate record (run batch to completion or spine gate status)",
+			suggestedCommand: completed ? "spine gate reopen" : "spine gate status",
+			alternatives: completed ? ["spine gate status", "/spine-gate"] : ["/spine-gate"],
 			blockers: [makeBlocker("missing_gate", error)],
 		};
 	}
