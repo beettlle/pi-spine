@@ -1,8 +1,8 @@
 # SP-737: Stall watchdog treats static-null progress as non-progress — Status
 
 **Current Step:** Complete
-**Status:** ✅ Done — pending engine review
-**Last Updated:** 2026-08-30
+**Status:** ✅ Done — re-verified after worker restart; .DONE re-created
+**Last Updated:** 2026-09-02
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -82,3 +82,14 @@
 
 - engine-lanes/watch.mjs stayed untouched (out of File Scope); the gate lives at the worker-heartbeat.mjs call site.
 - Commit: `0288bbb4 fix(SP-737): stall on static-null heartbeat progress (#272)`.
+
+## Re-verification (2026-09-02, worker restart)
+
+Worker session was re-invoked after the original `.DONE` was consumed by the engine (reviews 0/4 in `.reviews/` = both APPROVE). Re-verified full completion criteria on the committed tree (`e9085929`):
+
+- Code intact: `isStaticNullProgressSnapshot` (`src/batch/heartbeat.mjs:290`) + anchor-slide gate (`src/batch/worker-heartbeat.mjs:330-338`).
+- `npm run lint` — clean. `npm run typecheck` — clean.
+- Contract testCommand: 26/29 pass; the 3 failures (`startBatch records lane.heartbeat`, both SAT-020 tests) are the SP-482 guard (`SPINE_IS_WORKER=1`). Independently confirmed environmental: `env -u SPINE_IS_WORKER` rerun passes 10/10 including the SAT-020 full ordering replay and the `.DONE` regression.
+- New SP-737 tests pass: helper matrix, static-null → stall fires past budget (#272), static non-null → SP-341 slide kept.
+- Restored hook-churn in `.spine/rules-manifest.json` to HEAD (forbidden file, timestamp-only diff).
+- `.DONE` re-created.
