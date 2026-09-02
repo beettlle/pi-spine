@@ -10,6 +10,7 @@
  */
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -18,6 +19,8 @@ import test from "node:test";
 
 import { startBatch } from "../../src/batch/engine.mjs";
 import { expandMatrixFileScopePatterns } from "../../src/batch/lane-commit.mjs";
+import { runMatrixSubLane } from "../../src/batch/engine-lanes/matrix-run.mjs";
+import { applyMatrixRowToPrompt } from "../../src/planner/matrix.mjs";
 import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
@@ -27,6 +30,7 @@ import {
 	matrixWorktreeDir,
 	matrixWorktreePath,
 	releaseLaneSlot,
+	removeMatrixSubLaneWorktree,
 	runConcurrent,
 	runMatrixSubLaneSetupHook,
 	runShellInDir,
@@ -822,6 +826,216 @@ test("E2E: matrix sub-lanes run worktreeSetupHook before the row command", async
 });
 
 /* ------------------------------------------------------------------ */
+/* LLM rows: per-row PROMPT substitution (#232 / SP-742)               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * LLM matrix task folder fixture: PROMPT.md + STATUS.md + dependencies.json,
+ * committed so row worktrees provision with the authored packet.
+ *
+ * @param {string} projectRoot
+ * @param {string} taskId
+ * @param {string} promptText
+ * @returns {string} Task folder path relative to the repo root.
+ */
+function writeLlmMatrixTask(projectRoot, taskId, promptText) {
+	const folderRel = path.join("spine-tasks", `${taskId}-matrix-llm`);
+	const folder = path.join(projectRoot, folderRel);
+	fs.mkdirSync(folder, { recursive: true });
+	fs.writeFileSync(path.join(folder, "PROMPT.md"), promptText, "utf-8");
+	fs.writeFileSync(path.join(folder, "STATUS.md"), "# STATUS\n\n**Current Step:** Not Started\n", "utf-8");
+	fs.writeFileSync(
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
+		JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+		"utf-8",
+	);
+	return folderRel;
+}
+
+function commitAll(projectRoot) {
+	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "task packet"], { cwd: projectRoot, stdio: "ignore" });
+}
+
+function sha256(text) {
+	return createHash("sha256").update(text, "utf-8").digest("hex");
+}
+
+/** Save/set/restore SPINE_WORKER_STUB around stub-worker tests. */
+function withStubEnv(fn) {
+	const prev = process.env.SPINE_WORKER_STUB;
+	process.env.SPINE_WORKER_STUB = "1";
+	return Promise.resolve(fn()).finally(() => {
+		if (prev === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prev;
+	});
+}
+
+test("runMatrixSubLane serves each LLM row its own substituted PROMPT.md (#232)", () =>
+	withStubEnv(async () => {
+		const projectRoot = await initGitRepo("spine-matrix-llm-served-");
+		try {
+			const taskId = "TP-320";
+			const authored = llmMatrixPrompt(taskId);
+			const folderRel = writeLlmMatrixTask(projectRoot, taskId, authored);
+			commitAll(projectRoot);
+
+			/** @type {Array<Record<string, any>>} */
+			const results = [];
+			for (const row of [
+				{ rowId: "a", values: { run_id: "a", region: "us-east-1" } },
+				{ rowId: "b", values: { run_id: "b", region: "eu-west-1" } },
+			]) {
+				const result = await runMatrixSubLane({
+					projectRoot,
+					batchId: "batch-llm-served",
+					laneNumber: 1,
+					taskId,
+					laneBranch: "main",
+					laneCorrelationId: "corr-llm-served",
+					row,
+					matrixType: "llm",
+					parentTaskFolderAbs: path.join(projectRoot, folderRel),
+					taskFolderRel: folderRel,
+					config: {},
+					baseBranch: "main",
+				});
+				results.push(result);
+			}
+
+			const [rowA, rowB] = results;
+			assert.equal(rowA.ok, true, `row a should succeed: ${rowA.output}`);
+			assert.equal(rowB.ok, true, `row b should succeed: ${rowB.output}`);
+
+			// Each row's served PROMPT carries that row's values across steps
+			// (title region, per-row output path) — never raw {matrix.*} refs.
+			for (const result of results) {
+				const region = result.rowId === "a" ? "us-east-1" : "eu-west-1";
+				assert.match(result.servedPrompt, new RegExp(`Step 1: Report for ${region}`));
+				assert.match(result.servedPrompt, new RegExp(`out/${result.rowId}\\.txt for ${region}`));
+				assert.doesNotMatch(result.servedPrompt, /\{matrix\./);
+			}
+			assert.notEqual(rowA.servedPrompt, rowB.servedPrompt, "rows must see distinct substituted content");
+
+			// Served bytes are exactly the whole-document substitution of the
+			// authored PROMPT with the row values (SP-670 engine).
+			assert.equal(rowA.servedPrompt, applyMatrixRowToPrompt(authored, { run_id: "a", region: "us-east-1" }));
+			assert.equal(rowB.servedPrompt, applyMatrixRowToPrompt(authored, { run_id: "b", region: "eu-west-1" }));
+
+			// Scaffolding cleanup: the row worktree PROMPT is restored and the
+			// row's .DONE dropped before the per-row commit, so the row branch
+			// carries only real row output (stub STATUS.md delivery here).
+			const rowPromptOnDisk = fs.readFileSync(path.join(rowA.worktreePath, folderRel, "PROMPT.md"), "utf-8");
+			assert.equal(rowPromptOnDisk, authored, "row worktree PROMPT.md must be restored after the worker finishes");
+			assert.equal(fs.existsSync(path.join(rowA.worktreePath, folderRel, ".DONE")), false, "row .DONE must not be committed scaffolding");
+
+			for (const result of results) {
+				const changed = execFileSync(
+					"git",
+					["diff", `main...${result.branch}`, "--name-only"],
+					{ cwd: projectRoot, encoding: "utf-8" },
+				).trim();
+				assert.equal(
+					changed,
+					path.join(folderRel, "STATUS.md").split(path.sep).join("/"),
+					`row branch must carry only worker output, not PROMPT/.DONE scaffolding; got: ${changed}`,
+					);
+				removeMatrixSubLaneWorktree(projectRoot, result.worktreePath, result.branch);
+			}
+		} finally {
+			await destroyGitRepo(projectRoot);
+		}
+	}));
+
+test("runMatrixSubLane fails an LLM row loud on unknown {matrix.*} refs (#232)", () =>
+	withStubEnv(async () => {
+		const projectRoot = await initGitRepo("spine-matrix-llm-badref-");
+		try {
+			const taskId = "TP-321";
+			const folderRel = writeLlmMatrixTask(projectRoot, taskId, llmMatrixPrompt(taskId));
+			commitAll(projectRoot);
+
+			const result = await runMatrixSubLane({
+				projectRoot,
+				batchId: "batch-llm-badref",
+				laneNumber: 1,
+				taskId,
+				laneBranch: "main",
+				laneCorrelationId: "corr-llm-badref",
+				// Missing the `region` column: fail-loud, never reaches the worker.
+				row: { rowId: "a", values: { run_id: "a" } },
+				matrixType: "llm",
+				parentTaskFolderAbs: path.join(projectRoot, folderRel),
+				taskFolderRel: folderRel,
+				config: {},
+				baseBranch: "main",
+			});
+
+			assert.equal(result.ok, false);
+			assert.equal(result.exitCode, 1);
+			assert.match(
+				result.output,
+				/matrix row prompt substitution failed: Unknown matrix variable reference: \{matrix\.region\}/,
+			);
+			removeMatrixSubLaneWorktree(projectRoot, result.worktreePath, result.branch);
+		} finally {
+			await destroyGitRepo(projectRoot);
+		}
+	}));
+
+test("E2E: LLM matrix rows receive distinct substituted PROMPTs and the authored packet stays intact (#232)", () =>
+	withStubEnv(async () => {
+		const projectRoot = await initGitRepo("spine-matrix-llm-e2e-");
+		try {
+			const taskId = "TP-306";
+			const authored = llmMatrixPrompt(taskId);
+			const folderRel = writeLlmMatrixTask(projectRoot, taskId, authored);
+			commitAll(projectRoot);
+
+			configureForBatch(projectRoot, { maxParallel: 2 });
+
+			const oldIsWorker = process.env.SPINE_IS_WORKER;
+			delete process.env.SPINE_IS_WORKER;
+			const batchResult = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+			if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+			assert.ok(
+				batchResult.ok,
+				`batch should succeed; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+			);
+
+			// Each row journaled the exact served PROMPT digest, and the two rows
+			// saw different substituted content.
+			const events = readJournalEvents(projectRoot, batchResult.batchId);
+			const served = events.filter((e) => e.type === "matrix.sub_lane.prompt_served");
+			assert.equal(served.length, 2, "both rows should journal prompt_served");
+			const shaByRow = new Map(served.map((e) => [e.payload.rowId, e.payload.sha256]));
+			assert.equal(shaByRow.get("a"), sha256(applyMatrixRowToPrompt(authored, { run_id: "a", region: "us-east-1" })));
+			assert.equal(shaByRow.get("b"), sha256(applyMatrixRowToPrompt(authored, { run_id: "b", region: "eu-west-1" })));
+			assert.notEqual(shaByRow.get("a"), shaByRow.get("b"), "rows must see distinct substituted content");
+
+			// The authored packet survives: the merged PROMPT.md keeps its
+			// {matrix.*} placeholders (substitution scaffolding is never committed).
+			const mergedPrompt = execFileSync(
+				"git",
+				["show", `${batchResult.orchBranch}:${folderRel.split(path.sep).join("/")}/PROMPT.md`],
+				{ cwd: projectRoot, encoding: "utf-8" },
+			);
+			assert.equal(mergedPrompt, authored);
+
+			// Row output landed: both rows delivered the stub STATUS.md marker.
+			const deliveredStatus = execFileSync(
+				"git",
+				["show", `${batchResult.orchBranch}:${folderRel.split(path.sep).join("/")}/STATUS.md`],
+				{ cwd: projectRoot, encoding: "utf-8" },
+			);
+			assert.match(deliveredStatus, /\*\*Current Step:\*\* Complete/);
+		} finally {
+			await destroyGitRepo(projectRoot);
+		}
+	}));
+
+/* ------------------------------------------------------------------ */
 /* Fixtures + helpers                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -1008,6 +1222,56 @@ Each row reads the hook-provided marker into its output.
 
 ## Do NOT
 - Fail
+`;
+}
+
+/**
+ * LLM matrix prompt: rows write a per-row report whose path and step text are
+ * substituted per row. File scope is the task folder's STATUS.md so the stub
+ * worker's delivery path (writeStubDeliveryStatusIfNeeded) satisfies the
+ * contract without a real agent.
+ *
+ * @param {string} taskId
+ */
+function llmMatrixPrompt(taskId) {
+	return `# Task: ${taskId} — Matrix LLM
+**Size:** S
+**Type:** llm
+
+## Mission
+Each row reports on its region; the served PROMPT must carry row values (#232).
+
+## Dependencies
+**None**
+
+## File Scope
+- \`spine-tasks/${taskId}-matrix-llm/STATUS.md\`
+
+## Matrix
+| run_id | region |
+|--------|--------|
+| a | us-east-1 |
+| b | eu-west-1 |
+
+## Steps
+### Step 1: Report for {matrix.region}
+
+- [ ] Write out/{matrix.run_id}.txt for {matrix.region}
+
+## Contract
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | \`spine-tasks/${taskId}-matrix-llm/STATUS.md\` |
+| testCommand | \`test -f spine-tasks/${taskId}-matrix-llm/STATUS.md\` |
+
+## Testing
+Stub delivery writes STATUS.md per row.
+
+## Completion Criteria
+- [ ] Both rows deliver
+
+## Do NOT
+- Touch other rows' outputs
 `;
 }
 

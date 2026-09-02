@@ -1,6 +1,6 @@
 # SP-742: LLM matrix rows get per-row PROMPT substitution — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟣 In Progress
 **Last Updated:** 2026-09-02
 **Review Level:** 2
@@ -31,19 +31,19 @@
 ---
 
 ### Step 1: Wire substitution into LLM rows
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Before `runWorker`, write/serve row-substituted steps + contract (+ file-scope) into the row worktree PROMPT
-- [ ] Fail loud on unknown `{matrix.*}` refs (existing helper behavior)
-- [ ] Keep execute+matrix path unchanged / recommended for pure compute
+- [x] Before `runWorker`, write/serve row-substituted steps + contract (+ file-scope) into the row worktree PROMPT — `applyMatrixRowToPrompt` (whole-doc, SP-670 engine) written to the row worktree PROMPT.md in `serveMatrixRowPrompt`; `servedPrompt` + sha256 attached to the row result; `matrix.sub_lane.prompt_served` journaled.
+- [x] Fail loud on unknown `{matrix.*}` refs (existing helper behavior) — substitution throw is caught per row → row fails with `matrix row prompt substitution failed: …`, never reaches the worker.
+- [x] Keep execute+matrix path unchanged / recommended for pure compute — execute branch untouched; GitNexus impact `runMatrixSubLane` upstream = LOW (2 callers).
 
 ---
 
 ### Step 2: Tests + runbook §2.4
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Stub/integration: two rows → worker sees distinct substituted content
-- [ ] Remove or narrow §2.4 LLM substitution caveat
+- [x] Stub/integration: two rows → worker sees distinct substituted content — 3 new tests in `tests/batch/matrix-execution.test.mjs` (direct `runMatrixSubLane` two-row servedPrompt distinctness + scaffolding restore; unknown-ref fail-loud; startBatch e2e with `prompt_served` sha256 equality + authored packet intactness) and 6 unit tests for `applyMatrixRowToPrompt` in `tests/planner/matrix-subst.test.mjs`.
+- [x] Remove or narrow §2.4 LLM substitution caveat — rewritten as "LLM-type rows are fully substituted (#232, SP-742)"; added per-row distinct-output merge caveat; removed #232 from deferred follow-ups (line ~324).
 
 ---
 

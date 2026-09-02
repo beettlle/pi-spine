@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
 	substituteMatrixVariables,
 	applyMatrixRowToSteps,
+	applyMatrixRowToPrompt,
 } from "../../src/planner/matrix.mjs";
 
 test("substituteMatrixVariables: replaces every {matrix.<column>} with the row value", () => {
@@ -99,4 +100,97 @@ test("applyMatrixRowToSteps: returns input unchanged when no row is supplied", (
 test("applyMatrixRowToSteps: propagates unknown-column errors from step bodies", () => {
 	const steps = [{ number: 1, title: "x", body: "{matrix.missing}" }];
 	assert.throws(() => applyMatrixRowToSteps(steps, { run_id: "a" }), /Unknown matrix variable/);
+});
+
+/**
+ * Raw PROMPT.md fixture exercising every region an LLM matrix row consumes:
+ * steps, the Contract table, and the File Scope section (#232).
+ *
+ * @param {string} taskId
+ */
+function llmMatrixPromptDoc(taskId) {
+	return `# Task: ${taskId} — LLM matrix
+**Size:** S
+**Type:** llm
+
+## Mission
+Write the {matrix.region} report.
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/{matrix.run_id}.txt\`
+
+## Matrix
+| run_id | region |
+|--------|--------|
+| a | us-east-1 |
+| b | eu-west-1 |
+
+## Steps
+### Step 1: Report for {matrix.region}
+
+- [ ] Write out/{matrix.run_id}.txt
+
+## Contract
+| Field | Value |
+|-------|-------|
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Each row writes its own report.
+
+## Completion Criteria
+- [ ] Report written
+
+## Do NOT
+- Touch other rows' outputs
+`;
+}
+
+test("applyMatrixRowToPrompt: substitutes steps, contract fields, and File Scope in one pass", () => {
+	const out = applyMatrixRowToPrompt(llmMatrixPromptDoc("TP-1"), {
+		run_id: "a",
+		region: "us-east-1",
+	});
+	assert.match(out, /### Step 1: Report for us-east-1/);
+	assert.match(out, /- \[ \] Write out\/a\.txt/);
+	assert.match(out, /fileScopeMustChange \| `out\/a\.txt`/);
+	assert.match(out, /testCommand \| `test -f out\/a\.txt`/);
+	assert.match(out, /- `out\/a\.txt`/);
+	assert.match(out, /Write the us-east-1 report\./);
+	assert.doesNotMatch(out, /\{matrix\./);
+});
+
+test("applyMatrixRowToPrompt: different rows yield different documents", () => {
+	const a = applyMatrixRowToPrompt(llmMatrixPromptDoc("TP-1"), { run_id: "a", region: "us-east-1" });
+	const b = applyMatrixRowToPrompt(llmMatrixPromptDoc("TP-1"), { run_id: "b", region: "eu-west-1" });
+	assert.notEqual(a, b);
+	assert.match(b, /### Step 1: Report for eu-west-1/);
+	assert.match(b, /Write out\/b\.txt/);
+	assert.doesNotMatch(b, /\{matrix\./);
+	// The authored Matrix table survives substitution intact in both documents.
+	assert.match(a, /\| b \| eu-west-1 \|/);
+	assert.match(b, /\| a \| us-east-1 \|/);
+});
+
+test("applyMatrixRowToPrompt: returns input unchanged when no row or empty row", () => {
+	const doc = llmMatrixPromptDoc("TP-1");
+	assert.strictEqual(applyMatrixRowToPrompt(doc, null), doc);
+	assert.strictEqual(applyMatrixRowToPrompt(doc, undefined), doc);
+	assert.strictEqual(applyMatrixRowToPrompt(doc, {}), doc);
+});
+
+test("applyMatrixRowToPrompt: fails loud on unknown column references", () => {
+	assert.throws(
+		() => applyMatrixRowToPrompt(llmMatrixPromptDoc("TP-1"), { run_id: "a" }),
+		/Unknown matrix variable reference: \{matrix\.region\}/,
+	);
+});
+
+test("applyMatrixRowToPrompt: passes non-string input through unchanged", () => {
+	assert.strictEqual(applyMatrixRowToPrompt(null, { run_id: "a" }), null);
+	assert.strictEqual(applyMatrixRowToPrompt(undefined, { run_id: "a" }), undefined);
 });

@@ -291,6 +291,7 @@ Add a `## Matrix` section after the front matter. It is a markdown table whose c
 
 - Placeholder syntax: `{matrix.<column>}` only. `<column>` matches letters, digits, underscores, and hyphens (e.g. `{matrix.run_id}`, `{matrix.target_region}`).
 - Placeholders are substituted in string contract fields and step bodies (`testCommand`, `runCommand`, `fileScopeMustChange`, `fileScopeMustNotChange`, `artifactsMustExist`).
+- **LLM rows receive a fully substituted PROMPT** (#232, SP-742): before the row worker starts, the engine substitutes `{matrix.*}` across the entire `PROMPT.md` served in the row worktree — steps, contract table, File Scope paths, and mission text — using the same fail-loud engine as the contract fields. An unknown `{matrix.X}` reference fails the row before the worker spawns.
 - Substitution is **fail-loud**: a `{matrix.X}` reference whose column is absent from the row throws a parse error before the sub-lane runs. A placeholder that reaches substitution with no row at all also fails.
 - Non-matrix tasks are unchanged — if no row is supplied, `applyMatrixRowToContract` returns the contract verbatim.
 
@@ -317,9 +318,10 @@ Row fan-out happens only in the engine at run time (see [Concurrency](#concurren
 #### Caveats
 
 - **Execute-type rows are fully substituted and tested.** For `Type: execute` matrix tasks, the engine substitutes `runCommand` (or `testCommand`) and runs the shell command in each row worktree.
-- **LLM-type rows:** `runMatrixSubLane` delegates to the normal LLM worker in each row worktree, but per-row agent-prompt substitution (the substituted `PROMPT.md` served to the worker) is an advanced path. Verify the worker actually receives the row-specific values before relying on LLM matrix tasks in production.
+- **LLM-type rows are fully substituted** (#232, SP-742): each row's worker receives a row-substituted `PROMPT.md`, and the row journals `matrix.sub_lane.prompt_served` with the served document's sha256, so per-row substitution is verifiable instead of assumed. Substitution scaffolding is never committed — the row branch carries only worker output, and the authored packet keeps its placeholders.
+- **Rows must write row-distinct outputs.** Row branches merge back into the lane (SP-697), so outputs shared across rows are safe only when their content is identical (e.g. stub `STATUS.md` delivery). Two rows concurrently writing *different* content to the same path will conflict at the row→lane merge; scope `fileScopeMustChange` / outputs per row (`out/{matrix.run_id}.txt`).
 - **Planner packing:** the planner treats a matrix task as a single task. `buildPlan` does **not** expand `## Matrix` rows into virtual `SP-X[rowId]` sub-lanes — SP-690 (#227) reverted the SP-689 plan-time expansion that exposed virtual row IDs to the batch engine before it could schedule them (causing `task_not_found`). **#226 is closed as superseded by #228:** first-class row scheduling is run-time lane-pool fan-out under the parent task ID (SP-697/SP-698). Re-propagating matrix fields through `buildPlan` without engine virtual-ID consumption still fails matrix E2E with `task_not_found` (verified SP-696 / batch `20260806T184913`). Plan output shows one parent line; row parallelism is an engine concern.
-- **Deferred follow-ups:** matrix environment propagation (#229), per-row status APIs (#230), `maxFailedIndexes` partial-failure tolerance (#231), and full PROMPT-body substitution for LLM rows (#232) remain deferred. The default — and only — parent success policy is that all rows succeed.
+- **Deferred follow-ups:** matrix environment propagation (#229), per-row status APIs (#230), and `maxFailedIndexes` partial-failure tolerance (#231) remain deferred. Full PROMPT-body substitution for LLM rows (#232) shipped in SP-742 (see the substitution rules above). The default — and only — parent success policy is that all rows succeed.
 - Matrix tasks are best for **deterministic, scoped** automation. Avoid large matrix tables that exceed your machine's parallel capacity or produce overlapping file-scope changes across rows.
 
 ### 2.5 Execution-only tasks (Type: execute)
