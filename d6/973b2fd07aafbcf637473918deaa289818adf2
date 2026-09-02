@@ -1,0 +1,18 @@
+spine-tasks/SP-742-matrix-llm-prompt-subst/.reviews/0-20260902T230528.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-742-matrix-llm-prompt-subst/.reviews/4-20260902T230542.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-742-matrix-llm-prompt-subst/.reviews/final-20260902T230734.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "d6973b2fd07aafbcf637473918deaa289818adf2",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
