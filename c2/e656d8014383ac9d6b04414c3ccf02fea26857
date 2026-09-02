@@ -1,0 +1,22 @@
+spine-tasks/SP-737-stall-static-null-progress/.DONE
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-737-stall-static-null-progress/.reviews/0-20260902T172053.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-737-stall-static-null-progress/.reviews/4-20260902T172112.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-737-stall-static-null-progress/.reviews/final-20260902T185012.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-737-stall-static-null-progress/STATUS.md
+  h_2a17159c706ba1 4-5,85-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c2e656d8014383ac9d6b04414c3ccf02fea26857",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
