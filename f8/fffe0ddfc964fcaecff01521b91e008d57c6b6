@@ -1,0 +1,14 @@
+spine-tasks/SP-742-matrix-llm-prompt-subst/STATUS.md
+  h_2a17159c706ba1 3,51,53-56,61-66,68-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f8fffe0ddfc964fcaecff01521b91e008d57c6b6",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
