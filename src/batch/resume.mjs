@@ -11,7 +11,7 @@ import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 import { installAttachedEngineShutdownHandlers } from "./attached-engine-handoff.mjs";
 import { enforceAttachedEngineSingleOwner, finalizeResumePostMergeLimbo } from "./attached-runner.mjs";
 import { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
-import { openIntegrateGateAfterBatchComplete, reopenIntegrateGateForCompletedBatch } from "./gate.mjs";
+import { openIntegrateGateAfterBatchComplete } from "./gate.mjs";
 import { finalizeResumedBatchForIntegrate, isPostMergeLimbo } from "./post-merge-limbo.mjs";
 import { prepareOrphanResumeHandoff } from "./resume-engine.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
@@ -24,6 +24,8 @@ import {
 	resolveTaskFolderRel,
 	taskAlreadyComplete,
 } from "./resume-common.mjs";
+import { tryResumeCompletedGateReopen } from "./resume-gate-reopen.mjs";
+import { failResumePromptParse } from "./resume-prompt-parse-fail.mjs";
 import {
 	countPendingSegments,
 	loadSpineBatchState,
@@ -67,31 +69,13 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	}
 
 	// SP-740 / #275: completed + force re-opens the integrate gate (no worker re-run).
-	// State is persisted afterwards so detached resume waiters observe the fresh pin.
-	if (resumeCheck.gateReopen) {
-		const reopenState = loadSpineBatchState(projectRoot).raw;
-		const reopenResult = reopenIntegrateGateForCompletedBatch({
-			projectRoot,
-			batchId: resumeCheck.batchId,
-			batchState: reopenState,
-		});
-		if (reopenState) {
-			saveSpineBatchState(projectRoot, reopenState, { bypassWriteGuard: true });
-		}
-		releaseResumeLock?.();
-		const output = reopenResult.reopened
-			? `Batch ${resumeCheck.batchId} gate re-opened: evidence re-collected, targetRevision re-pinned.\n  → spine gate approve\n  → spine integrate\n`
-			: `${reopenResult.headline}\n  → ${reopenResult.suggestedCommand}\n`;
-		return {
-			ok: reopenResult.ok,
-			exitCode: reopenResult.exitCode,
-			batchId: resumeCheck.batchId,
-			reopened: reopenResult.reopened,
-			reopenReason: reopenResult.reason,
-			gate: reopenResult.gate,
-			error: reopenResult.error,
-			output,
-		};
+	const gateReopenResult = tryResumeCompletedGateReopen({
+		projectRoot,
+		resumeCheck,
+		releaseResumeLock,
+	});
+	if (gateReopenResult) {
+		return gateReopenResult;
 	}
 
 	installAttachedEngineShutdownHandlers({ projectRoot });
@@ -130,47 +114,16 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const taskFolderOnHost = resolveTaskFolderOnHost(projectRoot, taskFolderRel, tasksRootRel, taskId);
 	const scopeResult = loadResumeFileScopePaths(taskFolderOnHost);
 	if (!scopeResult.ok) {
-		const laneCorrelationId = crypto.randomUUID();
-		task.status = "failed";
-		task.endedAt = Date.now();
-		task.exitReason = "prompt_parse_failed";
-		if (!task.startedAt) task.startedAt = Date.now();
-		updateSegmentForTask(state, taskId, "failed");
-		state.failedTasks = 1;
-		state.succeededTasks = 0;
-		state.endedAt = Date.now();
-		state.lastError = scopeResult.error?.slice(0, 500) ?? "prompt parse failed";
-		state.phase = "failed";
-		saveSpineBatchState(projectRoot, state);
-		appendJournalEvent(projectRoot, batchId, "task.prompt_parse_failed", {
-			taskId,
-			laneNumber: 1,
-			laneId: "lane-1",
-			correlationId: laneCorrelationId,
-			error: scopeResult.error,
-			errors: scopeResult.errors,
-			promptPath: scopeResult.promptPath,
-			resumed: true,
-		});
-		appendJournalEvent(projectRoot, batchId, "task.failed", {
-			taskId,
-			laneNumber: 1,
-			laneId: "lane-1",
-			correlationId: laneCorrelationId,
-			classification: "prompt_parse_failed",
-			exitCode: 1,
-			output: scopeResult.error,
-			resumed: true,
-		});
-		releaseResumeLock?.();
-		return {
-			ok: false,
-			exitCode: 1,
+		return failResumePromptParse({
+			projectRoot,
+			state,
 			batchId,
+			task,
 			taskId,
-			error: "prompt_parse_failed",
-			output: scopeResult.error,
-		};
+			scopeResult,
+			releaseResumeLock,
+			laneCorrelationId: crypto.randomUUID(),
+		});
 	}
 	const fileScopePaths = scopeResult.fileScopePaths;
 
