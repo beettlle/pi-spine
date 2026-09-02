@@ -1,0 +1,41 @@
+spine-tasks/CONTEXT.md
+  s_ed1b698b62600f::t_bfda3aa7bd3dcd 2445-2447
+  s_05201b79c3d929::t_edd0c40e9431ab 2448
+spine-tasks/_authoring/release-v2.18.0/manifest.md
+  s_b9a93563464d0b::t_4d21b8192486a7 140
+  s_ed1b698b62600f::t_5fda9374044a3c 151-156
+  s_05201b79c3d929::t_dd12f0b6bd58f1 144-149
+  s_ed1b698b62600f::t_48464485807a4d 150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "de84c6be8cd9422057354451082dc99225cb0de5",
+  "prompts": {},
+  "sessions": {
+    "s_05201b79c3d929": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-956c164b-ed6c-4aaa-bb8d-a1afdd4520b1",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_b9a93563464d0b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-1b0e3c8e-8517-4dd8-9a06-48a4c438d3bd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_ed1b698b62600f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-60273f72-66df-4902-9c25-cc5844946e3b",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
