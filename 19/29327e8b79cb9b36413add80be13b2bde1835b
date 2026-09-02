@@ -1,0 +1,14 @@
+spine-tasks/SP-740-gate-reopen-completed/STATUS.md
+  h_2a17159c706ba1 57,59-61,64,66-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1929327e8b79cb9b36413add80be13b2bde1835b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
