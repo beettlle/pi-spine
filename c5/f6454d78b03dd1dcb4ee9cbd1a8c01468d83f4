@@ -1,0 +1,20 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 294,321-322,324
+spine-tasks/SP-742-matrix-llm-prompt-subst/STATUS.md
+  h_2a17159c706ba1 3,34,36-38,43,45-46
+tests/batch/matrix-execution.test.mjs
+  h_2a17159c706ba1 13,22-23,33,828-1037,1228-1277
+tests/planner/matrix-subst.test.mjs
+  h_2a17159c706ba1 6,104-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c5f6454d78b03dd1dcb4ee9cbd1a8c01468d83f4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
