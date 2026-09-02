@@ -1,0 +1,18 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1425-1426,1428,1430
+src/batch/salvage-batch-integrate.mjs
+  h_2a17159c706ba1 7-8,11,13-19,21,24,74-234,328-329,332,336-375,383,392-394,396-401,405,486,577,602-607
+tests/batch/batch-salvage-integrate.test.mjs
+  h_2a17159c706ba1 12,372-497
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cfc1140e81aa5fcc89fa0d8433000abe12dbf8e3",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
