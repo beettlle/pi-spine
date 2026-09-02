@@ -1,0 +1,21 @@
+src/batch/salvage-batch-integrate-gate.mjs
+  s_802d5417f9b8fd::t_3ea36a4c853923 1-180
+src/batch/salvage-batch-integrate.mjs
+  s_802d5417f9b8fd::t_35050f7b6ae00f 10,15-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "8a4764cbf2e8bbed7631d7f79b0c875802c89045",
+  "prompts": {},
+  "sessions": {
+    "s_802d5417f9b8fd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-01b99f66-6cde-42de-b293-2d3469b2378c",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
