@@ -1,11 +1,11 @@
 # SP-739: salvage --integrate opens gate when none exists — Status
 
 **Current Step:** Complete
-**Status:** ✅ Done — `.DONE` created
-**Last Updated:** 2026-08-30
+**Status:** ✅ Done — re-verified after PROMPT sync from main (60e50d55, dropped minLineCoverage only); contract unchanged, `.DONE` recreated
+**Last Updated:** 2026-09-02
 **Review Level:** 2
 **Review Counter:** 0
-**Iteration:** 0
+**Iteration:** 1
 **Size:** S
 
 ---
@@ -59,3 +59,4 @@
 | Evidence pickup | `collectCoreEvidenceBundle` auto-includes any `salvage-*.json` in the evidence dir, so `salvage-inspect.json` lands in `gate.evidenceRefs` with no gate.mjs changes needed |
 | targetRevision pin | `resolveGateTargetRevision` prefers orch tip, falls back to HEAD when orch branch absent (failed-before-merge case) — pin stable across approve → re-run |
 | Worker env | `engine-gate-open.test.mjs` cannot run in-process under `SPINE_IS_WORKER=1` (SP-482 guard); contract testCommand needs `env -u SPINE_IS_WORKER` in worker sessions |
+| Re-verify 2026-09-02 | Re-ran Step 3 verification after PROMPT sync: lint clean, typecheck clean, 21/22 under exact worker-env command (sole fail = SP-482 guard artifact), 22/22 with `env -u SPINE_IS_WORKER`. Engine plan (step 0) and code (step 4) reviews both APPROVE (`.reviews/`). |
