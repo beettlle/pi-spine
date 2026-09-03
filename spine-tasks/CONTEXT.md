@@ -2422,7 +2422,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Authoring:** 2026-08-30 · Manifest: [`spine-tasks/_authoring/release-v2.18.0/manifest.md`](_authoring/release-v2.18.0/manifest.md)
 
-**Profile:** minor — bugs #272–#275 + enh #276 + #232. Docs override: 0 standalone (deltas inside packets). Operator approved scope 2026-08-30. Worker pin: `zai/glm-5.3-flash` (activeProfile `default`).
+**Profile:** minor — bugs #272–#275 + enh #276 + #232. Docs override: 0 standalone (deltas inside packets). Operator approved scope 2026-08-30. Worker pin ended on `allegretto` / `kimi-coding/k3` (mid-release override 2026-09-02 after Z.ai spend).
 
 | Task | Summary | Status | Deps |
 |------|---------|--------|------|
@@ -2431,27 +2431,26 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-739 | salvage --integrate opens missing gate (#274) | Done | — |
 | SP-740 | Gate reopen for completed phase + runbook §5.2 (#275) | Done | SP-739 |
 | SP-741 | Worker foreground verification guardrail (#276) | Done | — |
-| SP-742 | LLM matrix per-row PROMPT substitution (#232) | Staged | SP-740 |
+| SP-742 | LLM matrix per-row PROMPT substitution (#232) | Done | SP-740 |
 
 **Phase 86 exit criteria:**
 
 - [x] Operator approved scope (2026-08-30)
-- [ ] SP-737–SP-742 `.DONE` and integrated on `main` (waves 0–1 done: SP-737–741; wave 2: SP-742)
+- [x] SP-737–SP-742 `.DONE` and integrated on `main`
 - [x] Post-integrate `release:check` green after wave 0 (`/tmp/pi-spine-post-integrate-wave-0-retry.log`)
 - [x] Post-integrate `release:check` green after wave 1 (`/tmp/pi-spine-post-integrate-wave-1-retry.log`)
+- [x] Post-integrate / Phase 5 `release:check` green before publish (`/tmp/pi-spine-release-check.log` — 2558 pass, 89.50%)
 - [x] #272, #274, #276 closed when wave 0 landed
 - [x] #273, #275 closed when wave 1 landed
-- [ ] #232 closed when wave 2 lands
-- [ ] `npm run release:check` green on publish HEAD
-- [ ] CI green on HEAD; publish **v2.18.0** after operator approval
+- [x] #232 closed when wave 2 landed
+- [x] `npm run release:check` green on publish HEAD (`a38991dc` pre-bump; tag `a8a1b42a`)
+- [x] CI green on HEAD; published **v2.18.0** 2026-09-03 after operator approval
 
-**Paused 2026-08-30:** Wave 0 batch `20260830T223942-f4e8` aborted after Z.ai 429 (5h quota reset `2026-08-31 10:28:16`). Operator chose abort + pause (no pin override). Packets staged on `main` (`cc222168`).
+**Release note (published):** v2.18.0 — Land-loop reliability: stall static-null progress (#272), honor `.DONE` before timeout (#273), salvage opens missing gate (#274), gate reopen for completed phase (#275); worker foreground verification (#276); LLM matrix per-row PROMPT substitution (#232). Tag `v2.18.0` @ `a8a1b42a`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33698016417); CI @ `a38991dc` ([33694899161](https://github.com/beettlle/pi-spine/actions/runs/33694899161)); GitHub [v2.18.0](https://github.com/beettlle/pi-spine/releases/tag/v2.18.0). Post-publish smoke OK.
 
-**Resumed 2026-09-02:** Operator reported quotas reset; continue with same pin (`zai/glm-5.3-flash`). Restart wave 0: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`.
+**Paused 2026-08-30:** Wave 0 batch `20260830T223942-f4e8` aborted after Z.ai 429. Resumed 2026-09-02; waves 0–1 on Z.ai; wave 2 finished on allegretto after abort/salvage transplant.
 
-**Wave 0 landed 2026-09-02:** Batch `20260902T165453-86f7` → merge `96bbf1eb`; LOC split `8a4764cb`; `origin/main` @ `8a4764cb`. Next: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 1`.
-
-**Wave 1 landed 2026-09-02:** Batch `20260902T191700-320e` — SP-738 / SP-740; FF tip `0c9db2d5`; LOC leaves `acd3d010` (`resume.mjs` 478); `release:check` green 2550 pass / 88.35%; #273/#275 closed; Macro Idle. Next: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 2`.
+**Wave 0 landed 2026-09-02:** Batch `20260902T165453-86f7` → `8a4764cb`. **Wave 1:** `20260902T191700-320e` → `acd3d010`. **Wave 2:** `20260902T230103-b3f3` → `a38991dc` (#232).
 
 **Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog.
 

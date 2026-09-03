@@ -181,19 +181,34 @@ Start: `spine batch start SP-737,SP-738,SP-739,SP-740,SP-741,SP-742 --wave 0`
 - **Remaining:** Steps 3–4 (contract verify + `.DONE`).
 - **Action:** pin `activeProfile: allegretto` on `main` → restart wave 2 detached → transplant salvage commits into new lane → finish SP-742 on allegretto.
 
+### Wave 2 landed (2026-09-02)
+
+- **Batch:** `20260902T230103-b3f3` — SP-742 terminal-success; tip `a38991dc`.
+- **Issue closed:** #232 (SP-742).
+- **Macro:** completed → idle after land.
+
+### Publish (2026-09-03)
+
+- **Phase 5:** `/tmp/pi-spine-release-check.log` — 2558 pass, 0 fail, line coverage 89.50%; `RELEASE_CHECK_EXIT:0`.
+- **CI:** green on `a38991dc` — [33694899161](https://github.com/beettlle/pi-spine/actions/runs/33694899161).
+- **Bump:** `npm version minor` → **v2.18.0** @ `a8a1b42a`; `git push && git push --tags`.
+- **release.yml:** success — [33698016417](https://github.com/beettlle/pi-spine/actions/runs/33698016417).
+- **Smoke:** `scripts/post-publish-smoke.sh 2.18.0` exit 0 (attempt 1/6).
+- **Issues:** #272–#276, #232 all CLOSED.
+
 ---
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [x] All release-scoped tasks `.DONE` on `main`
 - [x] Post-integrate `release:check` green after **wave 0** (`/tmp/pi-spine-post-integrate-wave-0-retry.log`)
 - [x] Post-integrate `release:check` green after **wave 1** (`/tmp/pi-spine-post-integrate-wave-1-retry.log`)
-- [ ] Post-integrate `release:check` green after **wave 2** (log path recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Every release-scoped `Closes #NNN` CLOSED (§4.3c + Phase 6 sweep)
+- [x] Post-integrate / Phase 5 `release:check` green after **wave 2** (`/tmp/pi-spine-release-check.log`)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
+- [x] `git status` clean at bump (rules-manifest generatedAt-only drift restored)
+- [x] Operator approved publish bump type: minor
+- [x] `npm version minor` + `git push && git push --tags`
+- [x] `release.yml` succeeded ([33698016417](https://github.com/beettlle/pi-spine/actions/runs/33698016417))
+- [x] Post-publish smoke per `docs/release/npm-publish.md` (`scripts/post-publish-smoke.sh 2.18.0`)
+- [x] Every release-scoped `Closes #NNN` CLOSED (§4.3c + Phase 6 sweep): #272–#276, #232
