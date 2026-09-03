@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-02 (Phase 86 wave 1 landed; wave 2 → SP-742; Next → SP-743)
+**Last Updated:** 2026-09-03 (Phase 86 v2.18.0 published; Next → SP-743)
 **Status:** Active
 **Next Task ID:** SP-743
 
