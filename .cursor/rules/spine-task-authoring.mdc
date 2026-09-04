@@ -79,6 +79,19 @@ Score each dimension **0–2** (blast radius, pattern novelty, security, reversi
 
 Document level and score in PROMPT under `## Review Level`.
 
+**Assessment field names ([#281](https://github.com/beettlle/pi-spine/issues/281)):** the Review Level block is field-based, not free prose. Use unambiguous names:
+
+- `**Risk:**` — severity/blast radius; what breaks and how far the change reaches. Pairs with the `**Score:**` line.
+- `**Problem theory:**` — optional, bug-fix tasks: the working diagnosis (why the fault occurs, why this change resolves it).
+
+Legacy `**Assessment:**` alone remains valid — validators do not parse or reject it, and historical packets must not be mass-rewritten.
+
+❌ Bad: `**Assessment:**` carrying risk scores in one packet and fault theories in another
+✅ Good: `**Risk:** Docs/templates only, no runtime paths.` plus `**Problem theory:** Field overload left workers guessing whether Assessment meant severity or diagnosis.`
+⚠️ Why: Overloaded field collides with diagnose "Assessment" ([#278](https://github.com/beettlle/pi-spine/issues/278)) and blurs severity vs diagnosis
+🔧 Fix: Use Risk / Problem theory in new packets; leave legacy `**Assessment:**` packets as-is
+**Detect:** `**Assessment:**` in newly authored PROMPT Review Level blocks
+
 ## Spine-specific PROMPT requirements
 
 - **Heading:** `# Task: SP-### — Title` (em dash U+2014).

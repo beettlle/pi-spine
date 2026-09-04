@@ -15,8 +15,11 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 ## Review Level: [0-3] ([None | Plan Only | Plan and Code | Full])
 
-**Assessment:** [1-2 sentences explaining the score]
+**Risk:** [1-2 sentences: severity/blast radius — what breaks and how far the change reaches]
 **Score:** [N]/8 — Blast radius: [N], Pattern novelty: [N], Security: [N], Reversibility: [N]
+**Problem theory:** [Optional, bug-fix tasks — working diagnosis: why the fault occurs and why this change resolves it]
+
+> **Assessment disambiguation ([#281](https://github.com/beettlle/pi-spine/issues/281)):** Use `**Risk:**` for severity/blast (pairs with **Score**) and `**Problem theory:**` for the working diagnosis. Legacy `**Assessment:**` alone remains accepted by tooling and validators — do not mass-rewrite historical packets.
 
 > **Real-pi batches (SP-195/SP-278):** Do **not** add per-step "Call `spine_review_step`" checkboxes for Review Level ≥ 1. The batch engine runs plan, code, and final reviews after worker `.DONE`. Stub batches (`SPINE_WORKER_STUB=1`) may still use in-worker stub plan review via the tool when a checkpoint marker requires it.
 
@@ -177,6 +180,18 @@ for this task MUST include the task ID for traceability:
      **Issue:** [what was wrong]
      **Resolution:** [what was changed] -->
 ````
+
+---
+
+## Example — Review Level block fields ([#281](https://github.com/beettlle/pi-spine/issues/281))
+
+Use unambiguous field names: `**Risk:**` for severity/blast (pairs with **Score**), `**Problem theory:**` for the working diagnosis. Legacy `**Assessment:**` alone remains valid — do not mass-rewrite historical packets.
+
+```markdown
+**Risk:** Docs and templates only; no runtime code paths touched.
+**Score:** 1/8 — Blast radius: 1, Pattern novelty: 0, Security: 0, Reversibility: 0
+**Problem theory:** The `Assessment` field was overloaded — packets used it for score blurbs and fault theories interchangeably, so workers could not tell severity from diagnosis.
+```
 
 ---
 
