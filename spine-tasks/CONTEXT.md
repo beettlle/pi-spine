@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-04 (Phase 87 v2.19.0 staged; Next → SP-747)
+**Last Updated:** 2026-09-04 (Phase 87 v2.19.0 published; Next → SP-747)
 **Status:** Active
 **Next Task ID:** SP-747
 
@@ -2453,24 +2453,28 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Authoring:** 2026-09-04 · Manifest: [`spine-tasks/_authoring/release-v2.19.0/manifest.md`](_authoring/release-v2.19.0/manifest.md)
 
-| Task | Mission | Size | Issue |
-|------|---------|------|-------|
-| SP-743 | Operator handoff quality bar (runbook + operator rule) | S | #282 |
-| SP-744 | Disambiguate PROMPT Assessment → Risk / Problem theory | S | #281 |
-| SP-745 | Diagnose `background[]` + `assessmentReason` | M | #278 |
-| SP-746 | issue-draft / handoff SBAR-shaped sections | M | #279 |
+**Profile:** minor — docs-shaped #282/#281 + enh #278/#279. Bugs: 0 (operator override — none open). Operator approved scope 2026-09-04. Worker pin: `zai/glm-5.3-flash` / `activeProfile: default` (pre-execution switch from allegretto).
 
-**Execution:** `spine batch start SP-743,SP-744,SP-745,SP-746 --wave 0` (detached). Worker pin: `zai/glm-5.3-flash` / `activeProfile: default`.
+| Task | Mission | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-743 | Operator handoff quality bar (runbook + operator rule) | S | #282 | Done |
+| SP-744 | Disambiguate PROMPT Assessment → Risk / Problem theory | S | #281 | Done |
+| SP-745 | Diagnose `background[]` + `assessmentReason` | M | #278 | Done |
+| SP-746 | issue-draft / handoff SBAR-shaped sections | M | #279 | Done |
+
+**Phase 87 exit criteria:**
+
+- [x] Operator approved scope (2026-09-04)
+- [x] SP-743–SP-746 `.DONE` and integrated on `main`
+- [x] Post-integrate `release:check` green after wave 0 (LOC split `2c1a2abd`; `/tmp/pi-spine-post-integrate-wave-0-retry.log`)
+- [x] Post-integrate coverage gate green after wave 1 (`/tmp/pi-spine-coverage-check-retry.log` — #222 isolation 90.46%)
+- [x] #282, #281, #278 closed when wave 0 landed; #279 closed when wave 1 landed
+- [x] CI green on pre-bump HEAD `58d1aa79` ([33916294750](https://github.com/beettlle/pi-spine/actions/runs/33916294750))
+- [x] Published **v2.19.0** 2026-09-04 after operator approval
+
+**Release note (published):** v2.19.0 — Operator handoff quality: runbook/operator-rule handoff packet (#282), PROMPT Risk/Problem theory (#281), diagnose `background[]`/`assessmentReason` (#278), issue-draft/handoff SBAR sections (#279). Tag `v2.19.0` @ `a73b9ced`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33918406120); CI @ `58d1aa79` ([33916294750](https://github.com/beettlle/pi-spine/actions/runs/33916294750)); GitHub [v2.19.0](https://github.com/beettlle/pi-spine/releases/tag/v2.19.0). Post-publish smoke OK (retry after registry lag F9/#247).
 
 **Deferred:** #280 gate synthesis; #277 Google quota probe; #266 ts-nocheck; matrix epic #225/#229–#231; P3 backlog.
-
-
-
-**Paused 2026-08-30:** Wave 0 batch `20260830T223942-f4e8` aborted after Z.ai 429. Resumed 2026-09-02; waves 0–1 on Z.ai; wave 2 finished on allegretto after abort/salvage transplant.
-
-**Wave 0 landed 2026-09-02:** Batch `20260902T165453-86f7` → `8a4764cb`. **Wave 1:** `20260902T191700-320e` → `acd3d010`. **Wave 2:** `20260902T230103-b3f3` → `a38991dc` (#232).
-
-**Deferred:** #266, matrix epic #225 / #229–#231, P3 backlog.
 
 ---
 
