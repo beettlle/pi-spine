@@ -1,0 +1,23 @@
+.spine/rules-manifest.json
+  s_0b2b15144115c2::t_45fd70587a048e 2
+spine-tasks/SP-746-issue-draft-handoff-sbar/.DONE
+  s_0b2b15144115c2::t_a3aabde9a20912 1-7
+spine-tasks/SP-746-issue-draft-handoff-sbar/.reviews/0-20260904T184638.md
+  s_0b2b15144115c2::t_c6e48422f343df 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "58d1aa792c761c070730485b67b1345cb7fda8ff",
+  "prompts": {},
+  "sessions": {
+    "s_0b2b15144115c2": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e70e8304-1996-4e86-b630-0209b7097f25",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
