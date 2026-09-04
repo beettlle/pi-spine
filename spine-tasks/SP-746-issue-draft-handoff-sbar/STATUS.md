@@ -1,7 +1,7 @@
 # SP-746: issue-draft and handoff SBAR-shaped sections — Status
 
-**Current Step:** 0
-**Status:** ⬜ Not Started
+**Current Step:** 1
+**Status:** 🔄 Step 1 in progress
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,10 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-745 landed / fields available
-- [ ] Read current issue-draft and handoff shapes
+- [x] Confirm SP-745 landed / fields available — commit 0e742af2; `buildDiagnosisOutput` (src/batch/diagnosis.mjs:325) returns `background: string[]` + `assessmentReason: string`; `reconcileBatch` spreads them into its result
+- [x] Read current issue-draft and handoff shapes — issue-draft: Summary/Environment/Commands run/Diagnosis/Journal excerpt/Expected/Actual; handoff: header/Diagnosis/Suggested command/Alternatives/Pending tasks/Lane summary/Journal tail/Restore; golden fixture tests/cli/fixtures/handoff-golden.md pins handoff shape
+
+**Notes:**
+- Idle early-return path in `assembleHandoffData` must also carry background/assessmentReason
+- Only renderers + tests reference the old headings (`## Diagnosis`, `## Suggested command`, `## Alternatives`) — no parsers elsewhere
+- GitHub #279 body not fetchable (private); PROMPT.md is canonical
 
 ---
 
