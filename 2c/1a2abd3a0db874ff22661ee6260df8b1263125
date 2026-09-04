@@ -1,0 +1,23 @@
+src/batch/diagnosis-handoff-packet.mjs
+  s_b519a17f6fa432::t_06828b976dcee0 1-148
+src/batch/diagnosis-suggested-command.mjs
+  s_b519a17f6fa432::t_9ed7296efe83d7 1-177
+src/batch/diagnosis.mjs
+  s_b519a17f6fa432::t_59405f1abebc83 60,70-73,183,189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2c1a2abd3a0db874ff22661ee6260df8b1263125",
+  "prompts": {},
+  "sessions": {
+    "s_b519a17f6fa432": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2c0b1a9a-3e3f-4fff-990f-3dcb9bdbabc0",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
