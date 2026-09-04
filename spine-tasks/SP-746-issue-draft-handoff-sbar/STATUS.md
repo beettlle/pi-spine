@@ -58,9 +58,10 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Documentation Must Update list: (none) per PROMPT; runbook check done — documents workflow, not markdown shape (see Notes)
+- [x] Create `.DONE`
 
 ---
 
