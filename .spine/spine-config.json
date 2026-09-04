@@ -15,7 +15,7 @@
   },
   "agents": {
     "worker": {
-      "model": "kimi-coding/k3",
+      "model": "zai/glm-5.3-flash",
       "thinking": "high"
     },
     "reviewer": {
@@ -38,7 +38,7 @@
       "model": "google/gemini-flash-lite-latest",
       "thinking": "off"
     },
-    "activeProfile": "allegretto",
+    "activeProfile": "default",
     "profiles": {
       "default": {
         "worker": {
