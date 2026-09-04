@@ -37,8 +37,24 @@ export function runSpineStatus(options) {
 		lines.push(`  Macro phase: ${result.macroPhaseLabel ?? result.macroPhase}`);
 	}
 
-	lines.push("", `  ${result.headline}`, "");
-	lines.push(`  → ${result.suggestedCommand}`);
+	if (diagnose && result.headline != null) {
+		// SBAR handoff layout (#278 / SP-745): Situation → Background → Assessment → Recommendation.
+		lines.push("", `  Situation: ${result.headline}`);
+		if (result.background?.length) {
+			lines.push("", "  Background:");
+			for (const fact of result.background) {
+				lines.push(`    • ${fact}`);
+			}
+		}
+		if (result.assessmentReason) {
+			lines.push("", `  Assessment: ${result.diagnosis} — ${result.assessmentReason}`);
+		}
+		lines.push("");
+		lines.push(`  Recommendation: ${result.suggestedCommand}`);
+	} else {
+		lines.push("", `  ${result.headline}`, "");
+		lines.push(`  → ${result.suggestedCommand}`);
+	}
 
 	if (diagnose && result.mergeFailed) {
 		lines.push("");

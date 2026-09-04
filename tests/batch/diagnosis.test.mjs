@@ -4,12 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import { deriveDiagnosis } from "../../src/batch/reconcile-diagnosis.mjs";
 import {
+	buildDiagnosisOutput,
 	buildHeadline,
 	buildRunningTailHeadline,
 	buildSuggestedCommand,
 	isGateReadyHeadlineContext,
 	isRunningWithoutActiveWorkers,
 } from "../../src/batch/diagnosis.mjs";
+import { runSpineStatus } from "../../bin/spine-status.mjs";
 import { deriveMacroPhase } from "../../src/batch/macro-phase.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -278,4 +280,117 @@ test("tail-state headline matches batch 20260701T031142 shape via buildHeadline"
 	});
 	assert.equal(headline, `Batch ${BATCH_ID} tasks done — merging lane branches…`);
 	assert.doesNotMatch(headline, /\bis running\b/i);
+});
+
+// --- SBAR handoff packet fields (#278 / SP-745) ---
+
+test("buildDiagnosisOutput adds background and assessmentReason for needs_retry without changing legacy fields", () => {
+	const ctx = {
+		batchId: "20260904T120000",
+		phase: "failed",
+		macroPhase: "failed",
+		failedTaskId: "SP-001",
+		exitReason: "DirtyWorktree",
+		failedTasks: 1,
+		succeededTasks: 1,
+		totalTasks: 3,
+		pendingTaskCount: 1,
+	};
+	const output = buildDiagnosisOutput("needs_retry", ctx);
+
+	// Legacy fields keep their exact values — backward compatible for consumers.
+	assert.equal(output.diagnosis, "needs_retry");
+	assert.equal(output.headline, buildHeadline("needs_retry", ctx));
+	assert.equal(output.suggestedCommand, buildSuggestedCommand("needs_retry", ctx));
+	assert.ok(Array.isArray(output.alternatives));
+
+	assert.ok(Array.isArray(output.background));
+	assert.ok(output.background.every((fact) => typeof fact === "string"));
+	assert.ok(output.background.some((fact) => fact.includes("Batch: 20260904T120000")));
+	assert.ok(output.background.some((fact) => fact.includes("Phase: failed")));
+	assert.ok(output.background.some((fact) => fact.includes("SP-001") && fact.includes("DirtyWorktree")));
+
+	assert.equal(typeof output.assessmentReason, "string");
+	assert.ok(output.assessmentReason.includes("SP-001"));
+	assert.ok(output.assessmentReason.includes("DirtyWorktree"));
+	assert.notEqual(output.assessmentReason, "needs_retry");
+});
+
+test("buildDiagnosisOutput assessmentReason explains orphan taxonomy (worker_orphaned)", () => {
+	const output = buildDiagnosisOutput("worker_orphaned", {
+		batchId: "20260904T130000",
+		failedTaskId: "SP-649",
+	});
+	assert.equal(output.diagnosis, "worker_orphaned");
+	assert.match(output.assessmentReason, /SP-649/);
+	assert.match(output.assessmentReason, /running|heartbeats/i);
+	assert.ok(output.background.some((fact) => fact.includes("SP-649")));
+});
+
+test("buildDiagnosisOutput assessmentReason explains needs_integrate with open gate", () => {
+	const output = buildDiagnosisOutput("needs_integrate", {
+		batchId: "20260904T140000",
+		phase: "running",
+		baseBranch: "main",
+		integrateGateOpen: true,
+	});
+	assert.equal(output.diagnosis, "needs_integrate");
+	assert.match(output.assessmentReason, /gate/i);
+	assert.ok(output.background.some((fact) => fact.includes("gate is open")));
+	assert.equal(output.suggestedCommand, "spine gate approve");
+});
+
+test("spine status --diagnose renders Situation, Background, Assessment, Recommendation in order", async () => {
+	const projectRoot = await initGitRepo("spine-diagnosis-sbar-");
+	try {
+		writePiBatchState(projectRoot, loadFixture("needs-retry-batch.json"));
+		const { output } = runSpineStatus({ projectRoot, diagnose: true });
+		assert.match(output, /Situation: Batch 20260601T130000/);
+		assert.match(output, /Background:/);
+		assert.match(output, /• Batch: 20260601T130000/);
+		assert.match(output, /• Failed task: TP-002/);
+		assert.match(output, /Assessment: needs_retry — /);
+		assert.match(output, /Recommendation: spine batch retry TP-002/);
+
+		const position = (marker) => output.indexOf(marker);
+		const situation = position("Situation:");
+		const background = position("Background:");
+		const assessment = position("Assessment:");
+		const recommendation = position("Recommendation:");
+		assert.ok(
+			situation > -1 && situation < background && background < assessment && assessment < recommendation,
+			`SBAR roles out of order: ${situation}, ${background}, ${assessment}, ${recommendation}`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("spine status --json includes background and assessmentReason", async () => {
+	const projectRoot = await initGitRepo("spine-diagnosis-json-sbar-");
+	try {
+		writePiBatchState(projectRoot, loadFixture("needs-retry-batch.json"));
+		const { output } = runSpineStatus({ projectRoot, json: true, diagnose: true });
+		const parsed = JSON.parse(output);
+		assert.equal(parsed.diagnosis, "needs_retry");
+		assert.ok(Array.isArray(parsed.background));
+		assert.ok(parsed.background.some((fact) => fact.includes("TP-002")));
+		assert.equal(typeof parsed.assessmentReason, "string");
+		assert.ok(parsed.assessmentReason.includes("TP-002"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("spine status without --diagnose keeps legacy layout (no SBAR roles)", async () => {
+	const projectRoot = await initGitRepo("spine-diagnosis-plain-");
+	try {
+		writePiBatchState(projectRoot, loadFixture("needs-retry-batch.json"));
+		const { output } = runSpineStatus({ projectRoot });
+		assert.match(output, /Diagnosis:\s+needs_retry/);
+		assert.match(output, /→ spine batch retry TP-002/);
+		assert.doesNotMatch(output, /Situation:|Background:|Assessment:|Recommendation:/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
