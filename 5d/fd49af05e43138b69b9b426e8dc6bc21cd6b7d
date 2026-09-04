@@ -1,0 +1,20 @@
+spine-tasks/SP-746-issue-draft-handoff-sbar/.DONE
+  h_2a17159c706ba1 1-7
+spine-tasks/SP-746-issue-draft-handoff-sbar/.reviews/0-20260904T184638.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-746-issue-draft-handoff-sbar/.reviews/4-20260904T184657.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-746-issue-draft-handoff-sbar/.reviews/final-20260904T184809.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5dfd49af05e43138b69b9b426e8dc6bc21cd6b7d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
