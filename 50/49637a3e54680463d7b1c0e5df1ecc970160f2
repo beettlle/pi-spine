@@ -1,0 +1,16 @@
+.cursor/rules/spine-task-authoring.mdc
+  h_2a17159c706ba1 82-94
+skills/create-spine-tasks/references/prompt-template.md
+  h_2a17159c706ba1 18,20-22,186-197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5049637a3e54680463d7b1c0e5df1ecc970160f2",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
