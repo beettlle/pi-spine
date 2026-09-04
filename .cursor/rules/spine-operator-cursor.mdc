@@ -92,6 +92,8 @@ When recovery fails or the same diagnosis repeats after following `suggestedComm
 
 If triage is ambiguous, ask the user once before filing. See `general-llm-anti-patterns.mdc` §7.3.
 
+**Handoff quality bar (#282):** An upstream report is itself a handoff packet — Situation (diagnosis output), Background (commands run + journal excerpt), Assessment (expected vs actual), Recommendation (minimal repro or suggested fix). **Incomplete handoff = missing any of the four**; finish the packet before filing. See the [runbook handoff packet](https://github.com/beettlle/pi-spine/blob/main/docs/adoption/operator-runbook.md#operator-handoff-packet-282) (structured fields land via [#278](https://github.com/beettlle/pi-spine/issues/278) / [#279](https://github.com/beettlle/pi-spine/issues/279)).
+
 ## v1 boundaries
 
 - **Workers:** pi only—Cursor does not replace `spine batch start` workers
@@ -131,6 +133,17 @@ If triage is ambiguous, ask the user once before filing. See `general-llm-anti-p
 ⚠️ Why: Orphan workers and limbo states are common
 🔧 Fix: Diagnose → follow `suggestedCommand`
 **Detect:** detached start with no follow-up status check
+
+### Invent recovery past `suggestedCommand` (CRIT)
+
+**CRITICAL:** When diagnose provides a Recommendation (`suggestedCommand`), run it — do not invent your own recovery.
+
+❌ Bad: `spine status --diagnose` suggests `spine batch retry SP-014`; you improvise git surgery or narrate your own fix instead
+✅ Good: Run the `suggestedCommand`, then re-run `spine status --diagnose` to confirm; deviate only after it fails, and only via **Upstream bug reports** triage
+⚠️ Why: Diagnose is derived from journal + batch state; improvised recovery drifts from engine truth and hides root cause
+🔧 Fix: Follow diagnose → verify → escalate upstream if the suggestion fails
+📍 See: [Operator handoff packet (#282)](https://github.com/beettlle/pi-spine/blob/main/docs/adoption/operator-runbook.md#operator-handoff-packet-282)
+**Detect:** recovery actions that never appeared in diagnose output
 
 ### Integrate without gate (CRIT)
 
