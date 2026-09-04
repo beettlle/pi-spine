@@ -1,6 +1,6 @@
 # SP-743: Operator handoff quality bar — Status
 
-**Current Step:** 2
+**Current Step:** 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-04
 **Review Level:** 0
@@ -32,11 +32,13 @@ Added `#### Operator handoff packet (#282)` under §6 Operator handoff with the 
 ---
 
 ### Step 2: Operator rule + optional supervisor pointer
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Anti-pattern: do not invent recovery when Recommendation present
-- [ ] Incomplete-handoff definition in rule
-- [ ] Optional supervisor.md pointer
+- [x] Anti-pattern: do not invent recovery when Recommendation present
+- [x] Incomplete-handoff definition in rule
+- [x] Optional supervisor.md pointer
+
+Added `### Invent recovery past suggestedCommand (CRIT)` anti-pattern and the handoff quality-bar note under Upstream bug reports in `spine-operator-cursor.mdc`; one-line pointer appended to the operator-runbook line in `templates/agents/supervisor.md`.
 
 ---
 

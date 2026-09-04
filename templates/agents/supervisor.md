@@ -44,7 +44,7 @@ The engine journals `supervisor.started` (batchId, model, pid) when the monitor 
 | `limbo_stale` / `completed_manual` | `dismiss` or `complete --detect-manual-merge` |
 | `failed` / `aborted` | `retry`, `resume --force`, or `dismiss` |
 
-Full operator procedures: [operator runbook](../../docs/adoption/operator-runbook.md).
+Full operator procedures: [operator runbook](../../docs/adoption/operator-runbook.md). Handoff quality bar (#282): incomplete handoff = missing any of Situation / Background / Assessment / Recommendation — see the [runbook handoff packet](../../docs/adoption/operator-runbook.md#operator-handoff-packet-282).
 
 In pi: `/spine-status` mirrors reconciliation; `/spine-dashboard` opens the dashboard.
 
