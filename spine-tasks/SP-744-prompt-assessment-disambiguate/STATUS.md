@@ -1,7 +1,7 @@
 # SP-744: Disambiguate PROMPT Assessment field — Status
 
-**Current Step:** 3
-**Status:** 🔵 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-04
 **Review Level:** 0
 **Review Counter:** 0
@@ -37,25 +37,36 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Template + rule show unambiguous fields
-- [ ] Optional validate sample
+- [x] Template + rule show unambiguous fields — verified in both files (Risk / Problem theory + #281 callouts)
+- [x] Optional validate sample — `spine tasks validate SP-744` → `1 passed, 0 failed`; SP-744 PROMPT itself uses legacy `**Assessment:**` (7 occurrences) → legacy field accepted. Note: `spine tasks validate SP-051` fails, but only on pre-existing structural gaps (missing Testing step / Contract — TP-era packet); Assessment not flagged
+- [x] Full test suite — `env -u SPINE_IS_WORKER npm test` → **2558/2558 pass, 0 fail** (187.9s). Raw `npm test` inside the worker session fails `tests/spine-run.test.mjs` with `nested_batch_spawn_blocked` (SP-482 guard inherits `SPINE_IS_WORKER=1`); same file passes 2/2 with the var unset — environmental, not change-related. One transient failure in the first unset run; immediate full rerun clean
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates complete
-- [ ] Create `.DONE`
+- [x] Docs updates complete — Must Update: `skills/create-spine-tasks/references/prompt-template.md`, `.cursor/rules/spine-task-authoring.mdc`; Check If Affected: `templates/tasks/CONTEXT.md` (updated)
+- [x] Create `.DONE`
 
 ---
 
 ### Completion Criteria
 
-- [ ] Unambiguous fields in template/rule
-- [ ] Legacy Assessment accepted
-- [ ] Example present
-- [ ] Closes #281
-- [ ] `.DONE` created
+- [x] Unambiguous fields in template/rule — `**Risk:**` + `**Problem theory:**` with #281 disambiguation note
+- [x] Legacy Assessment accepted — no tooling change; validators never parsed it; SP-744 packet validates with it
+- [x] Example present — "Example — Review Level block fields (#281)" section in prompt-template.md
+- [x] Closes #281
+- [x] `.DONE` created
+
+---
+
+## Discoveries
+
+| Discovery | Disposition | Location |
+|-----------|-------------|----------|
+| Raw `npm test` in worker session fails `tests/spine-run.test.mjs` (`nested_batch_spawn_blocked`, SP-482 guard) | Environmental — passes 2/2 with `SPINE_IS_WORKER` unset; full suite green the same way | `tests/spine-run.test.mjs` |
+| `spine tasks validate SP-051` fails | Pre-existing (TP-era packet lacks Testing step/Contract); unrelated to Assessment acceptance | `spine-tasks/SP-051-init-docs-rebrand/PROMPT.md` |
+| Graphify post-commit hook rewrites `.spine/rules-manifest.json` | Restored via `git checkout` — engine-owned path, out of scope for this task | `.spine/rules-manifest.json` |
