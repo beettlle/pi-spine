@@ -1,7 +1,7 @@
 # SP-743: Operator handoff quality bar — Status
 
-**Current Step:** 0
-**Status:** ⬜ Not Started
+**Current Step:** 2
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-09-04
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,19 +11,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Locate diagnose / recovery / upstream-bug sections in the runbook
-- [ ] Locate Upstream bug reports + Critical anti-patterns in `spine-operator-cursor.mdc`
+- [x] Locate diagnose / recovery / upstream-bug sections in the runbook
+- [x] Locate Upstream bug reports + Critical anti-patterns in `spine-operator-cursor.mdc`
+
+**Findings:** Runbook anchor = `### Operator handoff (v1.3 — FR-UXB-05)` in §6 (~line 1376); recovery tree with `suggestedCommand` in the detached-first policy (~line 67). Cursor rule anchors = `## Upstream bug reports` + `## Critical anti-patterns`. Supervisor template ends with full-operator-procedures pointer line.
 
 ---
 
 ### Step 1: Runbook handoff packet subsection
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add “Operator handoff packet” subsection: Situation / Background / Assessment / Recommendation
-- [ ] Define incomplete handoff = missing any of the four
-- [ ] Cross-link #278 / #279
+- [x] Add “Operator handoff packet” subsection: Situation / Background / Assessment / Recommendation
+- [x] Define incomplete handoff = missing any of the four
+- [x] Cross-link #278 / #279
+
+Added `#### Operator handoff packet (#282)` under §6 Operator handoff with the four-role table, incomplete-handoff definition, suggestedCommand-follow rule, and structured-fields cross-links.
 
 ---
 

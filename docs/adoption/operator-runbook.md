@@ -1385,6 +1385,21 @@ spine status --diagnose    # confirm diagnosis before handoff
 
 In pi: `/spine-handoff`. Handoff summarizes batch diagnosis, pending tasks, and suggested next command — not full pi conversation history.
 
+#### Operator handoff packet (#282)
+
+A handoff — `spine handoff` output, a written note, or a message to the next operator or agent — is **complete** only when it carries all four roles, in spine vocabulary:
+
+| Role | Answers | Filled from |
+|------|---------|-------------|
+| **Situation** | What is the batch state right now? | `spine status --diagnose` headline, phase, lane/task counts |
+| **Background** | How did the batch get here? | Commands run, journal events, last review verdict |
+| **Assessment** | What does that mean? | Root-cause read of the diagnosis |
+| **Recommendation** | What should happen next? | The diagnose `suggestedCommand`, or an explicit alternative with reasoning |
+
+**Incomplete handoff = missing any of the four.** Do not act on an incomplete handoff without re-running `spine status --diagnose`, and do not write one: finish the packet before ending the session. Agents follow the diagnose `suggestedCommand` instead of inventing recovery — deviation is allowed only after the suggested command fails, and then goes through the upstream triage tree at the top of this runbook.
+
+**Structured fields (planned):** diagnose `background[]` / `assessmentReason` ([#278](https://github.com/beettlle/pi-spine/issues/278)) and the issue-draft / handoff SBAR-shaped render ([#279](https://github.com/beettlle/pi-spine/issues/279)) will populate these roles mechanically when they land. Until then, write the four roles by hand and keep spine vocabulary — the four roles are a quality bar, not a rename of engine fields to SBAR.
+
 ### Pause and abort
 
 ```bash
