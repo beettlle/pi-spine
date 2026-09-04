@@ -1,0 +1,16 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1388-1402
+spine-tasks/SP-743-operator-handoff-quality-bar/STATUS.md
+  h_2a17159c706ba1 3-4,14-17,19,24-28,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c19a4f0860f7c839cee47f7a6bf9b22af57c69e9",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
