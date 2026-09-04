@@ -1,7 +1,7 @@
 # SP-746: issue-draft and handoff SBAR-shaped sections — Status
 
-**Current Step:** 3
-**Status:** 🔄 Step 3 verification in progress
+**Current Step:** 4
+**Status:** 🔄 Step 4 delivery
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -48,11 +48,12 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint
-- [ ] Contract testCommand
-- [ ] Fix failures
+- [x] lint — `npm run lint` clean (exit 0, --max-warnings 0)
+- [x] Contract testCommand — exact command green: lint + typecheck (both tsconfig projects) + 35/35 tests
+- [x] Fix failures — none needed in contract scope; full `npm test` initially showed failures traced to worker-env guard (`SPINE_IS_WORKER=1` → `nested_batch_spawn_blocked`, SP-482), not the diff
+- Evidence: full suite with guard unset: **2570 tests, 2570 pass, 0 fail**
 
 ---
 
@@ -65,7 +66,7 @@
 
 ### Completion Criteria
 
-- [ ] Four sections in issue-draft + handoff
-- [ ] `(none)` + redaction + tests
-- [ ] Closes #279
-- [ ] `.DONE` created
+- [x] Four sections in issue-draft + handoff
+- [x] `(none)` + redaction + tests
+- [x] Closes #279
+- [x] `.DONE` created
