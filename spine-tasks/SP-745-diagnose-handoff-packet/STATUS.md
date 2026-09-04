@@ -1,7 +1,7 @@
 # SP-745: Diagnose handoff packet background + assessmentReason — Status
 
-**Current Step:** 3
-**Status:** 🔄 In Progress — Step 3 (Testing & Verification)
+**Current Step:** 4
+**Status:** 🔄 In Progress — Step 4 (Documentation & Delivery)
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -37,11 +37,11 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint
-- [ ] Contract testCommand
-- [ ] Fix failures
+- [x] lint
+- [x] Contract testCommand
+- [x] Fix failures
 
 ---
 
@@ -83,5 +83,6 @@
 
 | Area | Note |
 |------|------|
-| GitNexus | Impact on `buildDiagnosisOutput` = CRITICAL (see preflight #6); proceeding per PROMPT's additive mandate; `detect_changes` to run before final commit. |
+| GitNexus | Impact on `buildDiagnosisOutput` = CRITICAL (see preflight #6); proceeding per PROMPT's additive mandate; `detect_changes` ran: 0 changed symbols, risk low (hook touched `.spine/rules-manifest.json` — reverted, Do-NOT list). |
 | Docs | No runbook edit needed — SP-743 owns handoff quality-bar docs (per PROMPT Step 4). |
+| Verification | `npm test` in worker session: 2519/2564 pass; the 45 failures are ALL `nested_batch_spawn_blocked` from `SPINE_IS_WORKER=1` (SP-482 guard — workers must not spawn batch engines). Proven environmental: same failing files pass 20/20 with `env -u SPINE_IS_WORKER`. Contract `testCommand` exits 0 (56/56); consumer suites (status, status-json, reconcile, handoff, issue-draft, dashboard, extensions, postmortem) pass 177/177. |
