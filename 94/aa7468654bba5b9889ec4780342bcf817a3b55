@@ -1,0 +1,26 @@
+spine-tasks/SP-746-issue-draft-handoff-sbar/STATUS.md
+  h_2a17159c706ba1 3-4,20-21,23-25,30,32-35,40,42-46
+src/cli/handoff.mjs
+  h_2a17159c706ba1 126-194,216-225,265-276,288-289,292,311-322,333-335,337,340-353
+src/cli/issue-draft.mjs
+  h_2a17159c706ba1 15-16,41-43,102-120,125-128,142-153,198-216
+tests/cli/issue-draft.test.mjs
+  h_2a17159c706ba1 11-14,32,36-39,49-52,62-90,97-98,119-122,145,169-194
+tests/cli/spine-handoff.test.mjs
+  h_2a17159c706ba1 105-198
+tests/cli/spine-issue.test.mjs
+  h_2a17159c706ba1 62
+tests/fixtures/handoff-golden.md
+  h_2a17159c706ba1 6,9-12,14-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "94aa7468654bba5b9889ec4780342bcf817a3b55",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
