@@ -1,0 +1,14 @@
+spine-tasks/SP-746-issue-draft-handoff-sbar/STATUS.md
+  h_2a17159c706ba1 3-4,14-17,19-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f23319297fe1fc53b750183a4679a81499143d9a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
