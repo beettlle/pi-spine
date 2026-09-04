@@ -1,0 +1,7 @@
+SP-746 complete.
+
+- SBAR-shaped ordered sections (Situation / Background / Assessment / Recommendation) in both `spine issue-draft` and operator handoff markdown (#279)
+- Maps SP-745 diagnose fields (`background`, `assessmentReason`) when present; journal/phase/pending-derived fallback otherwise; empty Background renders explicit `(none)`
+- Secret redaction preserved and test-covered
+- Verification: lint clean, typecheck clean, contract testCommand 35/35, full suite 2570/2570 (worker-env `SPINE_IS_WORKER=1` nested-spawn guard excluded per SP-482; verified passing with guard unset)
+- Commits: f2331929 (Step 0), 94aa7468 (Steps 1–2), f81948f7 (Step 3), a89e9136 (Step 4)
