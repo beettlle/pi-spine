@@ -1,7 +1,7 @@
 # SP-745: Diagnose handoff packet background + assessmentReason — Status
 
 **Current Step:** 4
-**Status:** 🔄 In Progress — Step 4 (Documentation & Delivery)
+**Status:** ✅ Complete — all steps done
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -46,20 +46,20 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] STATUS note if runbook touch deferred to SP-743
-- [ ] Create `.DONE`
+- [x] STATUS note if runbook touch deferred to SP-743
+- [x] Create `.DONE`
 
 ---
 
 ### Completion Criteria
 
-- [ ] JSON + human four-role output
-- [ ] Backward compatible
-- [ ] Tests for three diagnoses
-- [ ] Closes #278
-- [ ] `.DONE` created
+- [x] JSON + human four-role output
+- [x] Backward compatible
+- [x] Tests for three diagnoses
+- [x] Closes #278
+- [x] `.DONE` created
 
 ---
 
