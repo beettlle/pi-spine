@@ -1,0 +1,46 @@
+spine-tasks/SP-746-issue-draft-handoff-sbar/PROMPT.md
+  s_b519a17f6fa432::t_e76d0778c57265 1-106
+spine-tasks/_authoring/release-v2.19.0/manifest.md
+  s_b519a17f6fa432::t_7536713d3aa47a 1-117
+spine-tasks/SP-745-diagnose-handoff-packet/PROMPT.md
+  s_b519a17f6fa432::t_901807920bb09e 1-107
+spine-tasks/SP-743-operator-handoff-quality-bar/STATUS.md
+  s_b519a17f6fa432::t_5558612221fbf9 1-60
+spine-tasks/SP-746-issue-draft-handoff-sbar/STATUS.md
+  s_b519a17f6fa432::t_2eb901b1eed233 1-61
+spine-tasks/CONTEXT.md
+  s_b519a17f6fa432::t_0d3c15c69db6df 3,5,2451-2467
+  s_b519a17f6fa432::t_32d85bab4aefe1 2468
+spine-tasks/dependencies.json
+  s_b519a17f6fa432::t_0d3c15c69db6df 3,1921-1926
+spine-tasks/SP-743-operator-handoff-quality-bar/PROMPT.md
+  s_b519a17f6fa432::t_69a7eb68952672 1-101
+spine-tasks/SP-745-diagnose-handoff-packet/STATUS.md
+  s_b519a17f6fa432::t_dcca5418efc951 1-62
+spine-tasks/SP-744-prompt-assessment-disambiguate/PROMPT.md
+  s_b519a17f6fa432::t_07fdeb7f18ba76 1-102
+spine-tasks/SP-744-prompt-assessment-disambiguate/STATUS.md
+  s_b519a17f6fa432::t_c39bc3b0372c5f 1-61
+.spine/spine-config.json
+  s_b519a17f6fa432::t_3fcf1c3f989602 18,41
+AGENTS.md
+  s_b519a17f6fa432::t_d5145be06d59f7 4
+CLAUDE.md
+  s_b519a17f6fa432::t_5770e022871eca 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "380148f4546678573b3fd07477da8d6fa9472ef1",
+  "prompts": {},
+  "sessions": {
+    "s_b519a17f6fa432": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2c0b1a9a-3e3f-4fff-990f-3dcb9bdbabc0",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
