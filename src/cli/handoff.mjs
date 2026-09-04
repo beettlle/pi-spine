@@ -124,6 +124,75 @@ function formatPendingTasks(pendingTasks) {
 }
 
 /**
+ * Derive SBAR Background facts from journal tail, phase, and pending tasks
+ * when the diagnose packet fields (#278 / SP-745) are absent.
+ *
+ * @param {{ phase?: string|null, pendingTasks?: object[], journalTail?: object[] }} data
+ * @returns {string[]}
+ */
+function deriveBackgroundFacts(data) {
+	const facts = [];
+	if (data.phase) {
+		facts.push(`Phase: ${data.phase}`);
+	}
+	const pendingTaskIds = (data.pendingTasks ?? [])
+		.map((task) => task.taskId)
+		.filter((taskId) => typeof taskId === "string" && taskId.length > 0);
+	if (pendingTaskIds.length) {
+		facts.push(`Pending tasks: ${pendingTaskIds.join(", ")}`);
+	}
+	const journalTail = data.journalTail ?? [];
+	const lastEntry = journalTail[journalTail.length - 1];
+	if (lastEntry?.type) {
+		const suffix = lastEntry.taskId
+			? ` ${lastEntry.taskId}`
+			: lastEntry.laneId
+				? ` ${lastEntry.laneId}`
+				: "";
+		facts.push(`Last journal event: ${lastEntry.type}${suffix}`);
+	}
+	return facts;
+}
+
+/**
+ * Resolve SBAR Background facts: map the diagnose packet `background` field
+ * (#278 / SP-745) when present, else derive from journalTail + phase +
+ * pendingTasks. Returns an empty array when nothing decision-relevant is
+ * known — renderers must show explicit `(none)` in that case (#279).
+ *
+ * @param {{ background?: unknown, phase?: string|null, pendingTasks?: object[], journalTail?: object[] }} data
+ * @returns {string[]}
+ */
+export function resolveBackgroundFacts(data) {
+	if (Array.isArray(data.background)) {
+		const mapped = data.background.filter(
+			(fact) => typeof fact === "string" && fact.trim().length > 0,
+		);
+		if (mapped.length) return mapped;
+	}
+	return deriveBackgroundFacts(data);
+}
+
+/**
+ * Resolve SBAR Assessment rationale: map the diagnose packet
+ * `assessmentReason` field (#278 / SP-745) when present, else derive from
+ * diagnosis + headline.
+ *
+ * @param {{ assessmentReason?: unknown, diagnosis?: string|null, headline?: string|null }} data
+ * @returns {string}
+ */
+export function resolveAssessmentReason(data) {
+	if (typeof data.assessmentReason === "string" && data.assessmentReason.trim().length > 0) {
+		return data.assessmentReason;
+	}
+	const diagnosis = data.diagnosis ?? "idle";
+	if (diagnosis === "idle") {
+		return "No active batch signals observed; reconcile found nothing to recover";
+	}
+	return `Reconcile signals selected "${diagnosis}"${data.headline ? ` — ${data.headline}` : ""}`;
+}
+
+/**
  * Assemble structured handoff data from reconciliation, batch-state, and journal.
  *
  * @param {string} projectRoot
@@ -144,6 +213,16 @@ export function assembleHandoffData(projectRoot, batchId) {
 			pendingTasks: [],
 			laneSummary: [],
 			journalTail: [],
+			background: resolveBackgroundFacts({
+				background: reconciliation.background,
+				pendingTasks: [],
+				journalTail: [],
+			}),
+			assessmentReason: resolveAssessmentReason({
+				assessmentReason: reconciliation.assessmentReason,
+				diagnosis: "idle",
+				headline: reconciliation.headline,
+			}),
 			restoreCommands: buildRestoreCommands(reconciliation),
 			idle: true,
 			handoffPath: resolveHandoffPath(projectRoot),
@@ -183,6 +262,18 @@ export function assembleHandoffData(projectRoot, batchId) {
 	const journalTail = readJournalTail(journalEvents, JOURNAL_TAIL_LIMIT).map(formatJournalTailEntry);
 
 	const diagnosis = reconciliation.diagnosis ?? "idle";
+	const phase = reconciliation.phase ?? batch?.phase ?? null;
+	const background = resolveBackgroundFacts({
+		background: reconciliation.background,
+		phase,
+		pendingTasks,
+		journalTail,
+	});
+	const assessmentReason = resolveAssessmentReason({
+		assessmentReason: reconciliation.assessmentReason,
+		diagnosis,
+		headline: reconciliation.headline,
+	});
 
 	return redactHandoffSecrets({
 		generatedAt,
@@ -194,9 +285,11 @@ export function assembleHandoffData(projectRoot, batchId) {
 		pendingTasks,
 		laneSummary,
 		journalTail,
+		background,
+		assessmentReason,
 		restoreCommands: buildRestoreCommands(reconciliation),
 		batchStatePath,
-		phase: reconciliation.phase ?? batch?.phase ?? null,
+		phase,
 		idle: diagnosis === "idle",
 		handoffPath: resolveHandoffPath(projectRoot),
 	});
@@ -216,6 +309,18 @@ function findLaneNumber(laneSummary, taskId) {
 }
 
 /**
+ * Render SBAR-shaped recommendation commands (suggested command + unique
+ * alternatives).
+ *
+ * @param {{ suggestedCommand?: string|null, alternatives?: string[] }} data
+ * @returns {string[]}
+ */
+function buildRecommendationCommands(data) {
+	const candidates = [data.suggestedCommand, ...(data.alternatives ?? [])];
+	return [...new Set(candidates.filter((command) => typeof command === "string" && command.trim().length > 0))];
+}
+
+/**
  * @param {ReturnType<typeof assembleHandoffData>} data
  */
 export function renderHandoffMarkdown(data) {
@@ -225,18 +330,27 @@ export function renderHandoffMarkdown(data) {
 		`**Generated at:** ${data.generatedAt}`,
 		`**Batch ID:** ${data.batchId ?? "—"}`,
 		"",
-		"## Diagnosis",
-		`**${data.diagnosis}** — ${data.headline}`,
+		// SBAR order (#279): Situation → Background → Assessment → Recommendation.
+		"## Situation",
+		`**${data.diagnosis ?? "idle"}** — ${data.headline ?? "—"}`,
 		"",
-		"## Suggested command",
-		data.suggestedCommand,
-		"",
-		"## Alternatives",
+		"## Background",
 	];
 
-	if (data.alternatives?.length) {
-		for (const alt of data.alternatives) {
-			lines.push(`- ${alt}`);
+	const backgroundFacts = resolveBackgroundFacts(data);
+	if (backgroundFacts.length) {
+		for (const fact of backgroundFacts) {
+			lines.push(`- ${fact}`);
+		}
+	} else {
+		lines.push("- (none)");
+	}
+
+	lines.push("", "## Assessment", resolveAssessmentReason(data), "", "## Recommendation");
+	const recommendations = buildRecommendationCommands(data);
+	if (recommendations.length) {
+		for (const command of recommendations) {
+			lines.push(`- ${command}`);
 		}
 	} else {
 		lines.push("- (none)");

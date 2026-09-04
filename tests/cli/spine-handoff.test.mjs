@@ -102,6 +102,100 @@ test("assembleHandoffData redacts secret-like payload fields in journal tail", a
 	}
 });
 
+test("renderHandoffMarkdown renders SBAR sections in order", async () => {
+	const projectRoot = await initGitRepo("spine-handoff-sbar-order-");
+	try {
+		writeSpineBatchState(projectRoot, PAUSED_PENDING_FIXTURE);
+		appendJournalEvent(projectRoot, PAUSED_PENDING_FIXTURE.batchId, "batch.paused", {
+			fromPhase: "running",
+			toPhase: "paused",
+		});
+
+		const markdown = renderHandoffMarkdown(assembleHandoffData(projectRoot));
+		const headings = [
+			"## Situation",
+			"## Background",
+			"## Assessment",
+			"## Recommendation",
+		].map((heading) => markdown.indexOf(heading));
+		assert.ok(
+			headings.every((position, index) => position >= 0 && (index === 0 || position > headings[index - 1])),
+			`expected ordered SBAR headings, got positions ${headings.join(",")}`,
+		);
+		// Spine vocabulary inside the SBAR shape.
+		assert.match(markdown, /## Situation\n\*\*paused\*\* — /);
+		assert.match(markdown, /- spine batch resume/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("renderHandoffMarkdown derives Background when #278 fields are missing", () => {
+	const markdown = renderHandoffMarkdown({
+		generatedAt: "2026-09-04T00:00:00.000Z",
+		batchId: "20260601T140000",
+		diagnosis: "needs_retry",
+		headline: "Batch 20260601T140000 needs a task retry",
+		suggestedCommand: "spine batch retry TP-002",
+		alternatives: [],
+		pendingTasks: [{ taskId: "TP-003", status: "pending" }],
+		laneSummary: [],
+		journalTail: [{ timestamp: "2026-09-04T00:00:00.000Z", type: "task.started", taskId: "TP-002" }],
+		restoreCommands: ["spine batch retry TP-002"],
+		phase: "running",
+		idle: false,
+	});
+
+	assert.match(markdown, /## Background\n- Phase: running/);
+	assert.match(markdown, /- Pending tasks: TP-003/);
+	assert.match(markdown, /- Last journal event: task\.started TP-002/);
+	assert.match(
+		markdown,
+		/## Assessment\nReconcile signals selected "needs_retry" — Batch 20260601T140000 needs a task retry/,
+	);
+});
+
+test("renderHandoffMarkdown shows explicit (none) for empty Background", () => {
+	const markdown = renderHandoffMarkdown({
+		generatedAt: "2026-09-04T00:00:00.000Z",
+		batchId: null,
+		diagnosis: "idle",
+		headline: "No active batch signals",
+		suggestedCommand: "spine preflight",
+		alternatives: [],
+		pendingTasks: [],
+		laneSummary: [],
+		journalTail: [],
+		restoreCommands: ["spine preflight"],
+		idle: true,
+	});
+
+	assert.match(markdown, /## Background\n- \(none\)/);
+	assert.match(markdown, /## Assessment\nNo active batch signals observed/);
+});
+
+test("renderHandoffMarkdown redacts secrets in Background facts", () => {
+	const markdown = renderHandoffMarkdown({
+		generatedAt: "2026-09-04T00:00:00.000Z",
+		batchId: "20260601T140000",
+		diagnosis: "needs_retry",
+		headline: "retry needed",
+		suggestedCommand: "spine batch retry TP-002",
+		alternatives: [],
+		pendingTasks: [],
+		laneSummary: [],
+		journalTail: [],
+		restoreCommands: ["spine batch retry TP-002"],
+		phase: "running",
+		idle: false,
+		background: ["Engine env: OPENAI_API_KEY=sk-test123456789"],
+		assessmentReason: 'Task TP-002 exited "error" without completing its contract',
+	});
+
+	assert.ok(!markdown.includes("sk-test123456789"));
+	assert.match(markdown, /\[REDACTED\]/);
+});
+
 const PAUSED_PENDING_FIXTURE = {
 	batchId: "20260601T140000",
 	phase: "paused",

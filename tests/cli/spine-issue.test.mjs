@@ -59,7 +59,7 @@ test("buildIssueDraftBody works in idle repo without batch context", async () =>
 		assert.ok(draft.title);
 		assert.match(draft.body, /## Summary/);
 		assert.match(draft.body, /## Environment/);
-		assert.match(draft.body, /## Diagnosis/);
+		assert.match(draft.body, /## Situation/);
 		assert.match(draft.body, /## Journal excerpt/);
 		assert.deepEqual(draft.labels, ["bug"]);
 		assert.ok(!draft.body.includes("sk-live-secret"));

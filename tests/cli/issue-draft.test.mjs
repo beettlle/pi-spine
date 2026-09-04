@@ -8,6 +8,10 @@ import {
 	buildIssueDraftBody,
 	formatIssueDraftMarkdown,
 } from "../../src/cli/issue-draft.mjs";
+import {
+	resolveAssessmentReason,
+	resolveBackgroundFacts,
+} from "../../src/cli/handoff.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const FIXTURES = path.join(process.cwd(), "tests/fixtures/batch-state");
@@ -25,12 +29,15 @@ function writeSpineBatchState(projectRoot, fixture) {
 	);
 }
 
-test("formatIssueDraftMarkdown renders all issue checklist sections", () => {
+test("formatIssueDraftMarkdown renders SBAR sections in order", () => {
 	const body = formatIssueDraftMarkdown({
 		summary: "Batch stalled on lane 2",
 		environment: "- pi-spine version: 1.0.0",
+		situation: "- **Diagnosis:** stalled",
+		background: ["Phase: running", "Pending tasks: TP-002"],
+		assessment: "Lane heartbeat stale for TP-002",
+		recommendation: ["spine status --diagnose"],
 		commandsRun: "- spine status --diagnose",
-		diagnosis: "- **Diagnosis:** stalled",
 		journalExcerpt: "- 2026-01-01T00:00:00.000Z task.started TP-001",
 		expected: "Worker completes task",
 		actual: "Lane heartbeat stale",
@@ -39,8 +46,11 @@ test("formatIssueDraftMarkdown renders all issue checklist sections", () => {
 	for (const heading of [
 		"## Summary",
 		"## Environment",
+		"## Situation",
+		"## Background",
+		"## Assessment",
+		"## Recommendation",
 		"## Commands run",
-		"## Diagnosis",
 		"## Journal excerpt",
 		"## Expected",
 		"## Actual",
@@ -49,14 +59,44 @@ test("formatIssueDraftMarkdown renders all issue checklist sections", () => {
 	}
 	assert.match(body, /Batch stalled on lane 2/);
 	assert.match(body, /Worker completes task/);
+
+	// SBAR order (#279): Situation → Background → Assessment → Recommendation.
+	const positions = ["## Situation", "## Background", "## Assessment", "## Recommendation"].map(
+		(heading) => body.indexOf(heading),
+	);
+	assert.ok(
+		positions.every((position, index) => position >= 0 && (index === 0 || position > positions[index - 1])),
+		`expected ordered SBAR headings, got positions ${positions.join(",")}`,
+	);
+});
+
+test("formatIssueDraftMarkdown shows (none) for empty Background and Assessment", () => {
+	const body = formatIssueDraftMarkdown({
+		summary: "Idle repo",
+		environment: "- pi-spine version: 1.0.0",
+		situation: "- **Diagnosis:** idle",
+		background: [],
+		assessment: "",
+		recommendation: [],
+		commandsRun: "- spine preflight",
+		journalExcerpt: "- (none)",
+	});
+
+	assert.match(body, /## Background\n\(none\)/);
+	assert.match(body, /## Assessment\n\(none\)/);
+	assert.match(body, /## Recommendation\n\(none\)/);
+	// Expected/Actual placeholders are kept for bug drafts.
+	assert.match(body, /## Expected\n\(describe expected behavior\)/);
+	assert.match(body, /## Actual\n\(describe actual behavior\)/);
 });
 
 test("formatIssueDraftMarkdown applies redaction to section content", () => {
 	const body = formatIssueDraftMarkdown({
 		summary: "token sk-live1234567890abcdef leaked",
 		environment: "OPENAI_API_KEY=sk-test123456789",
+		situation: "- **Diagnosis:** idle",
+		background: ["Journal hint: OPENAI_API_KEY=sk-test123456789"],
 		commandsRun: "- spine preflight",
-		diagnosis: "- **Diagnosis:** idle",
 		journalExcerpt: "- (none)",
 	});
 
@@ -76,7 +116,10 @@ test("buildIssueDraftBody returns title, body, and labels for idle repo", async 
 		assert.match(draft.body, /## Summary/);
 		assert.match(draft.body, /## Environment/);
 		assert.match(draft.body, /pi-spine version:/);
-		assert.match(draft.body, /## Diagnosis/);
+		assert.match(draft.body, /## Situation/);
+		assert.match(draft.body, /## Background/);
+		assert.match(draft.body, /## Assessment/);
+		assert.match(draft.body, /## Recommendation/);
 		assert.match(draft.body, /## Journal excerpt/);
 	} finally {
 		await destroyGitRepo(projectRoot);
@@ -99,7 +142,7 @@ test("buildIssueDraftBody includes batch context and journal tail", async () => 
 		});
 
 		assert.deepEqual(draft.labels, ["question"]);
-		assert.match(draft.body, /## Diagnosis/);
+		assert.match(draft.body, /## Situation/);
 		assert.match(draft.body, new RegExp(fixture.batchId));
 		assert.match(draft.body, /task\.started/);
 	} finally {
@@ -121,6 +164,32 @@ test("buildIssueDraftBody maps issueType to GitHub labels", async () => {
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("buildIssueDraftBody derives Background from journal and phase when diagnose fields are absent", () => {
+	// Simulate a diagnose packet without #278 fields (pre-SP-745 shape).
+	const body = formatIssueDraftMarkdown({
+		summary: "fallback check",
+		environment: "- pi-spine version: 1.0.0",
+		situation: "- **Diagnosis:** needs_retry",
+		background: resolveBackgroundFacts({
+			phase: "running",
+			pendingTasks: [{ taskId: "TP-003" }],
+			journalTail: [{ timestamp: "2026-01-01T00:00:00.000Z", type: "task.started", taskId: "TP-002" }],
+		}),
+		assessment: resolveAssessmentReason({
+			diagnosis: "needs_retry",
+			headline: "Batch 20260601T140000 needs a task retry",
+		}),
+		recommendation: ["spine batch retry TP-002"],
+		commandsRun: "- spine status --diagnose",
+		journalExcerpt: "- (none)",
+	});
+
+	assert.match(body, /## Background\n- Phase: running/);
+	assert.match(body, /- Pending tasks: TP-003/);
+	assert.match(body, /- Last journal event: task\.started TP-002/);
+	assert.match(body, /## Assessment\nReconcile signals selected "needs_retry" — Batch 20260601T140000 needs a task retry/);
 });
 
 test("buildIssueDraftBody rejects invalid issueType", async () => {

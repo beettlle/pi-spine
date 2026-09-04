@@ -3,15 +3,20 @@
 **Generated at:** <TIMESTAMP>
 **Batch ID:** 20260601T140000
 
-## Diagnosis
+## Situation
 **paused** — Batch 20260601T140000 is paused with 2 tasks pending — use spine batch resume (multi-task)
 
-## Suggested command
-spine batch resume
+## Background
+- Batch: 20260601T140000
+- Phase: paused (macro: paused)
+- Progress: 2/4 tasks succeeded, 2 pending
 
-## Alternatives
+## Assessment
+Batch was paused by an operator or gate with 2 task(s) pending — resume continues from journal state
+
+## Recommendation
+- spine batch resume
 - spine batch resume --force
-- spine status --diagnose
 - spine status --diagnose
 
 ## Pending tasks
