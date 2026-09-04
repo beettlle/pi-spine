@@ -1,0 +1,16 @@
+spine-tasks/SP-744-prompt-assessment-disambiguate/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-17,22,24-27,32,34-35
+templates/tasks/CONTEXT.md
+  h_2a17159c706ba1 21-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "de7c01d4a100e839d76814ce7796f9dfb4893ca5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
