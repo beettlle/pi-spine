@@ -1,7 +1,7 @@
 # SP-743: Operator handoff quality bar — Status
 
-**Current Step:** 3
-**Status:** 🔄 In Progress
+**Current Step:** 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-04
 **Review Level:** 0
 **Review Counter:** 0
@@ -43,24 +43,35 @@ Added `### Invent recovery past suggestedCommand (CRIT)` anti-pattern and the ha
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm Must Update paths contain new content
-- [ ] Optional full suite for docs-only task
+- [x] Confirm Must Update paths contain new content
+- [x] Optional full suite for docs-only task
+
+**Evidence:** grep confirms runbook lines 1388/1399/1401, cursor rule lines 95/137/145, supervisor line 47; `git diff 380148f4..HEAD -- src bin` = empty (fileScopeMustNotChange holds). `npm run typecheck` exit 0. Full suite: `env -u SPINE_WORKER_STUB... SPINE_WORKER_STUB=1 npm test` → **2558 pass / 0 fail, exit 0**. Note: first suite run inside the worker env had exactly one failure (`tests/spine-run.test.mjs` → `nested_batch_spawn_blocked`) caused by `SPINE_IS_WORKER=1` (SP-482 guard, worker must not spawn batch engines); with the var unset the file passes 2/2 and the full suite is green — environmental, unrelated to this docs-only change.
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Docs updates complete
-- [ ] Create `.DONE`
+- [x] Docs updates complete
+- [x] Create `.DONE`
 
 ---
 
 ### Completion Criteria
 
-- [ ] Runbook handoff packet subsection present
-- [ ] Operator rule anti-pattern present
-- [ ] Closes #282
-- [ ] `.DONE` created
+- [x] Runbook handoff packet subsection present
+- [x] Operator rule anti-pattern present
+- [x] Closes #282
+- [x] `.DONE` created
+
+---
+
+### Discoveries
+
+| Finding | Disposition |
+|---------|-------------|
+| `tests/spine-run.test.mjs` fails under `SPINE_IS_WORKER=1` (`nested_batch_spawn_blocked`) | Environmental (SP-482 worker guard), passes when unset; no code change made — out of scope |
+| `spine handoff` CLI + §6 FR-UXB-05 section already existed | New subsection nests under it rather than inventing a new top-level section |
