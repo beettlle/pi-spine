@@ -1,7 +1,7 @@
 # SP-745: Diagnose handoff packet background + assessmentReason — Status
 
-**Current Step:** 1
-**Status:** 🔄 In Progress — Step 1 (Additive fields)
+**Current Step:** 2
+**Status:** 🔄 In Progress — Step 2 (Human CLI + tests)
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -19,11 +19,11 @@
 ---
 
 ### Step 1: Additive fields on diagnose output
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Add `background: string[]`
-- [ ] Add `assessmentReason: string`
-- [ ] Preserve existing fields
+- [x] Add `background: string[]`
+- [x] Add `assessmentReason: string`
+- [x] Preserve existing fields
 
 ---
 
