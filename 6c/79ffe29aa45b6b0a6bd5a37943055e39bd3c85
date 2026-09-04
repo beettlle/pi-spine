@@ -1,0 +1,18 @@
+.cursor/rules/spine-operator-cursor.mdc
+  h_2a17159c706ba1 95-96,137-147
+spine-tasks/SP-743-operator-handoff-quality-bar/STATUS.md
+  h_2a17159c706ba1 3,35-39,41
+templates/agents/supervisor.md
+  h_2a17159c706ba1 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6c79ffe29aa45b6b0a6bd5a37943055e39bd3c85",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
