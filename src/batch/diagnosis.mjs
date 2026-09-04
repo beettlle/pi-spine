@@ -544,10 +544,10 @@ export function buildAssessmentReason(diagnosis, ctx = {}) {
 			return "Work is already on the base branch while the batch record is still active — operator completed it manually";
 		case "needs_retry":
 			if (ctx.failedTaskId && ctx.exitReason) {
-				return `Task ${ctx.failedTaskId} exited "${ctx.exitReason}" without completing its contract, and tasks remain to run`;
+				return `Task ${ctx.failedTaskId} exited "${ctx.exitReason}" without completing its contract, so the batch cannot proceed until it is retried`;
 			}
 			if (ctx.failedTaskId) {
-				return `Worker for task ${ctx.failedTaskId} died before writing .DONE, and tasks remain to run`;
+				return `Worker for task ${ctx.failedTaskId} died before writing .DONE, so the batch cannot proceed until it is retried`;
 			}
 			return "Failed phase left only pending tasks with no live workers — retry limbo resolves as a retry";
 		case "state_drift":

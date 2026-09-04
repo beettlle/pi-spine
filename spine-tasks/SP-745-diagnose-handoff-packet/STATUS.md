@@ -1,7 +1,7 @@
 # SP-745: Diagnose handoff packet background + assessmentReason — Status
 
-**Current Step:** 2
-**Status:** 🔄 In Progress — Step 2 (Human CLI + tests)
+**Current Step:** 3
+**Status:** 🔄 In Progress — Step 3 (Testing & Verification)
 **Last Updated:** 2026-09-04
 **Review Level:** 2
 **Review Counter:** 0
@@ -28,11 +28,11 @@
 ---
 
 ### Step 2: Human CLI + tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Four-role human layout
-- [ ] `--json` includes new fields
-- [ ] Tests for needs_retry, orphan taxonomy, needs_integrate
+- [x] Four-role human layout
+- [x] `--json` includes new fields
+- [x] Tests for needs_retry, orphan taxonomy, needs_integrate
 
 ---
 
