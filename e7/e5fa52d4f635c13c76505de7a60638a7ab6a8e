@@ -1,0 +1,14 @@
+spine-tasks/SP-745-diagnose-handoff-packet/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-17,22,63-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e7e5fa52d4f635c13c76505de7a60638a7ab6a8e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
