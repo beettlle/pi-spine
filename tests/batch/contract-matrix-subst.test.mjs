@@ -73,6 +73,52 @@ test("applyMatrixRowToContract: passes numeric fields through unchanged", () => 
 	assert.strictEqual(out.minLineCoverage, 77);
 });
 
+/* ------------------------------------------------------------------ */
+/* Contract matrixMaxParallel (SP-751 / #229)                          */
+/* ------------------------------------------------------------------ */
+
+test("parseContract: matrixMaxParallel is a known field parsed as a positive int", () => {
+	const contract = parseContract(
+		MATRIX_PROMPT.replace("| minLineCoverage | 77 |", "| minLineCoverage | 77 |\n| matrixMaxParallel | 4 |"),
+	);
+	assert.strictEqual(contract.matrixMaxParallel, 4);
+	assert.deepStrictEqual(contract.errors, []);
+	assert.deepStrictEqual(contract.unknownFields, [], "matrixMaxParallel must not be an unknown field");
+});
+
+test("parseContract: matrixMaxParallel defaults to null when absent", () => {
+	const contract = parseContract(MATRIX_PROMPT);
+	assert.strictEqual(contract.matrixMaxParallel, null);
+});
+
+test("parseContract: rejects non-positive-integer matrixMaxParallel values", () => {
+	for (const bad of ["0", "-1", "2.5", "abc", "1 2"]) {
+		const contract = parseContract(
+			MATRIX_PROMPT.replace("| minLineCoverage | 77 |", `| minLineCoverage | 77 |\n| matrixMaxParallel | ${bad} |`),
+		);
+		assert.strictEqual(contract.matrixMaxParallel, null, `value ${bad} must not parse`);
+		assert.ok(
+			contract.errors.some((e) => /matrixMaxParallel must be a positive integer/.test(e)),
+			`value ${bad} must error; got ${JSON.stringify(contract.errors)}`,
+		);
+	}
+});
+
+test("parseContract: accepts backtick-quoted matrixMaxParallel", () => {
+	const contract = parseContract(
+		MATRIX_PROMPT.replace("| minLineCoverage | 77 |", "| minLineCoverage | 77 |\n| matrixMaxParallel | \`8\` |"),
+	);
+	assert.strictEqual(contract.matrixMaxParallel, 8);
+});
+
+test("applyMatrixRowToContract: passes matrixMaxParallel through per row", () => {
+	const contract = parseContract(
+		MATRIX_PROMPT.replace("| minLineCoverage | 77 |", "| minLineCoverage | 77 |\n| matrixMaxParallel | 2 |"),
+	);
+	const out = applyMatrixRowToContract(contract, { run_id: "node" });
+	assert.strictEqual(out.matrixMaxParallel, 2, "numeric throttle is row-invariant");
+});
+
 test("applyMatrixRowToContract: returns the parsed contract unchanged for non-matrix tasks", () => {
 	const contract = parseContract(MATRIX_PROMPT);
 	// No row supplied -> identity return (original placeholders preserved).

@@ -19,11 +19,16 @@ import test from "node:test";
 
 import { startBatch } from "../../src/batch/engine.mjs";
 import { expandMatrixFileScopePatterns } from "../../src/batch/lane-commit.mjs";
-import { runMatrixSubLane } from "../../src/batch/engine-lanes/matrix-run.mjs";
+import {
+	resolveMatrixRowConcurrency,
+	runMatrixSubLane,
+} from "../../src/batch/engine-lanes/matrix-run.mjs";
+import { buildWorkerChildEnv } from "../../src/batch/worker-spawn.mjs";
 import { applyMatrixRowToPrompt } from "../../src/planner/matrix.mjs";
 import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
+	buildMatrixRowEnv,
 	isMatrixSubLaneWorktreeDir,
 	loadMatrixTaskRows,
 	matrixSubLaneBranch,
@@ -289,6 +294,117 @@ test("runShellInDir resolves exit code and output", async () => {
 		assert.equal(fail.exitCode, 7);
 	} finally {
 		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+/* ------------------------------------------------------------------ */
+/* Unit: matrix row env + per-matrix throttle (SP-751 / #229)          */
+/* ------------------------------------------------------------------ */
+
+test("buildMatrixRowEnv emits the five matrix index vars with a 0-based index", () => {
+	const env = buildMatrixRowEnv({ taskId: "SP-9", rowId: "row_b", rowIndex: 1, rowCount: 3 });
+	assert.deepStrictEqual(env, {
+		SPINE_MATRIX_JOB_ID: "SP-9",
+		SPINE_MATRIX_TASK_ID: "row_b",
+		SPINE_MATRIX_TASK_INDEX: "1",
+		SPINE_MATRIX_TASK_COUNT: "3",
+		// K8s indexed-job alias of SPINE_MATRIX_TASK_INDEX.
+		JOB_COMPLETION_INDEX: "1",
+	});
+	const first = buildMatrixRowEnv({ taskId: "SP-9", rowId: "a", rowIndex: 0, rowCount: 2 });
+	assert.equal(first.SPINE_MATRIX_TASK_INDEX, "0", "index is 0-based");
+	assert.equal(first.JOB_COMPLETION_INDEX, "0", "alias matches the 0-based index");
+});
+
+test("buildMatrixRowEnv returns null when the row position is unknown", () => {
+	assert.equal(buildMatrixRowEnv({ taskId: "SP-9", rowId: "a" }), null);
+	assert.equal(buildMatrixRowEnv({ taskId: "SP-9", rowId: "a", rowCount: 2 }), null);
+	assert.equal(buildMatrixRowEnv({}), null);
+	assert.equal(
+		buildMatrixRowEnv({ taskId: "SP-9", rowId: "a", rowIndex: -1, rowCount: 2 }),
+		null,
+		"negative index injects nothing",
+	);
+});
+
+test("runShellInDir layers extraEnv over process.env (#229)", async () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-shell-env-"));
+	try {
+		const matrixEnv = buildMatrixRowEnv({ taskId: "SP-9", rowId: "a", rowIndex: 0, rowCount: 2 });
+		const run = await runShellInDir(
+			tmp,
+			`printf '%s|%s|%s|%s|%s' "$SPINE_MATRIX_JOB_ID" "$SPINE_MATRIX_TASK_ID" "$SPINE_MATRIX_TASK_INDEX" "$SPINE_MATRIX_TASK_COUNT" "$JOB_COMPLETION_INDEX"`,
+			matrixEnv,
+		);
+		assert.equal(run.exitCode, 0);
+		assert.equal(run.output, "SP-9|a|0|2|0");
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("runShellInDir without extraEnv injects nothing (back-compat)", async () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-shell-noenv-"));
+	try {
+		const run = await runShellInDir(tmp, "printf '%s' \"${SPINE_MATRIX_TASK_INDEX:-unset}\"");
+		assert.equal(run.exitCode, 0);
+		assert.equal(run.output, "unset");
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test("resolveMatrixRowConcurrency caps the matrix throttle by the global pool", () => {
+	// Throttle narrower than the pool narrows the matrix's share.
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: 1, maxParallel: 4 }), 1);
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: 2, maxParallel: 4 }), 2);
+	// Throttle can never widen the global pool.
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: 8, maxParallel: 3 }), 3);
+	// No throttle → global cap unchanged.
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: null, maxParallel: 3 }), 3);
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: undefined, maxParallel: 5 }), 5);
+	// Invalid throttles fall back to the global cap (defense in depth past parse).
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: 0, maxParallel: 3 }), 3);
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: -2, maxParallel: 3 }), 3);
+	// Missing/invalid globals clamp to a single slot (mirrors acquireLaneSlot).
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: null }), 1);
+	assert.equal(resolveMatrixRowConcurrency({ matrixMaxParallel: 4, maxParallel: 0 }), 1);
+});
+
+test("buildWorkerChildEnv merges extraEnv; omits matrix vars without it", () => {
+	const prevIndex = process.env.SPINE_MATRIX_TASK_INDEX;
+	delete process.env.SPINE_MATRIX_TASK_INDEX;
+	try {
+		const base = {
+			taskFolder: "/tmp/spine-tf",
+			worktreePath: "/tmp/spine-wt",
+			projectRoot: "/tmp/spine-root",
+			batchId: "batch-env",
+			laneNumber: 1,
+			taskId: "SP-9",
+			laneCorrelationId: "corr-env",
+		};
+		const bare = buildWorkerChildEnv(base);
+		assert.equal(
+			"SPINE_MATRIX_TASK_INDEX" in bare,
+			false,
+			"no matrix vars without extraEnv (back-compat)",
+		);
+
+		const withEnv = buildWorkerChildEnv({
+			...base,
+			extraEnv: buildMatrixRowEnv({ taskId: "SP-9", rowId: "a", rowIndex: 0, rowCount: 2 }),
+		});
+		assert.equal(withEnv.SPINE_MATRIX_JOB_ID, "SP-9");
+		assert.equal(withEnv.SPINE_MATRIX_TASK_ID, "a");
+		assert.equal(withEnv.SPINE_MATRIX_TASK_INDEX, "0");
+		assert.equal(withEnv.SPINE_MATRIX_TASK_COUNT, "2");
+		assert.equal(withEnv.JOB_COMPLETION_INDEX, "0");
+		// Built-in worker identity survives the merge.
+		assert.equal(withEnv.SPINE_TASK_ID, "SP-9");
+		assert.equal(withEnv.SPINE_IS_WORKER, "1");
+	} finally {
+		if (prevIndex !== undefined) process.env.SPINE_MATRIX_TASK_INDEX = prevIndex;
 	}
 });
 
@@ -1036,6 +1152,188 @@ test("E2E: LLM matrix rows receive distinct substituted PROMPTs and the authored
 	}));
 
 /* ------------------------------------------------------------------ */
+/* E2E + row-level: matrix index env vars + matrixMaxParallel throttle  */
+/* (SP-751 / #229)                                                     */
+/* ------------------------------------------------------------------ */
+
+test("E2E: execute matrix rows receive the matrix index env vars (#229)", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-env-e2e-");
+	try {
+		const taskId = "TP-323";
+		const folder = path.join(projectRoot, "spine-tasks", `${taskId}-matrix-env`);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(path.join(folder, "PROMPT.md"), envMatrixPrompt(taskId), "utf-8");
+		fs.mkdirSync(path.join(projectRoot, "scripts"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, "scripts", "dump-matrix-env.sh"),
+			DUMP_MATRIX_ENV_SH,
+			{ encoding: "utf-8", mode: 0o755 },
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const oldIsWorker = process.env.SPINE_IS_WORKER;
+		delete process.env.SPINE_IS_WORKER;
+		const batchResult = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+		if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+		assert.ok(
+			batchResult.ok,
+			`batch should succeed; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+			);
+
+		// Each row's dump script saw the full Slurm/K8s-shaped identity: parent
+		// task id as JOB_ID, row id as TASK_ID, 0-based index + K8s alias, count 2.
+		const rowA = execFileSync("git", ["show", `${batchResult.orchBranch}:out/a.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		assert.match(rowA, /^job=TP-323$/m);
+		assert.match(rowA, /^task=a$/m);
+		assert.match(rowA, /^index=0$/m);
+		assert.match(rowA, /^count=2$/m);
+		assert.match(rowA, /^k8s=0$/m);
+
+		const rowB = execFileSync("git", ["show", `${batchResult.orchBranch}:out/b.txt`], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
+		assert.match(rowB, /^job=TP-323$/m);
+		assert.match(rowB, /^task=b$/m);
+		assert.match(rowB, /^index=1$/m);
+		assert.match(rowB, /^count=2$/m);
+		assert.match(rowB, /^k8s=1$/m);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("E2E: matrixMaxParallel=1 serializes rows under a larger global pool (#229)", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-throttle-");
+	try {
+		const taskId = "TP-324";
+		const folder = path.join(projectRoot, "spine-tasks", `${taskId}-matrix-throttle`);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(
+			path.join(folder, "PROMPT.md"),
+			throttleMatrixPrompt(taskId, 1),
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+
+		// Global pool of 2, matrix throttle of 1: rows must take turns.
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const oldIsWorker = process.env.SPINE_IS_WORKER;
+		delete process.env.SPINE_IS_WORKER;
+		const batchResult = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+		if (oldIsWorker) process.env.SPINE_IS_WORKER = oldIsWorker;
+
+		assert.ok(
+			batchResult.ok,
+			`batch should succeed; output: ${batchResult.output}\n${JSON.stringify(batchResult)}`,
+			);
+
+		const events = readJournalEvents(projectRoot, batchResult.batchId);
+		const startedEvents = events.filter((e) => e.type === "matrix.sub_lane.started");
+		const completions = events.filter((e) => e.type === "matrix.sub_lane.completed");
+		assert.equal(startedEvents.length, 2, "both rows should start");
+		assert.equal(completions.length, 2, "both rows should complete");
+
+		// The throttle was parsed and carried into scheduling: rowConcurrency is
+		// the throttled min(1, global=2), and the global pool stayed maxParallel=2.
+		const taskStarted = events.find((e) => e.type === "matrix.task_started");
+		assert.ok(taskStarted, "matrix.task_started should be journaled");
+		assert.equal(taskStarted.payload.matrixMaxParallel, 1);
+		assert.equal(taskStarted.payload.rowConcurrency, 1);
+		assert.equal(taskStarted.payload.maxParallel, 2);
+
+		// Serial proof (Slurm %N analog): the first row fully completed before
+		// the second row started — impossible under the unthrottled global pool.
+		const firstCompletion = Math.min(...completions.map((e) => Date.parse(e.timestamp)));
+		const lastStart = Math.max(...startedEvents.map((e) => Date.parse(e.timestamp)));
+		assert.ok(
+			firstCompletion < lastStart,
+			`matrixMaxParallel=1 must serialize rows; first completion ${firstCompletion}, last start ${lastStart}`,
+			);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runMatrixSubLane passes matrix env to LLM row workers (#229)", () =>
+	withStubEnv(async () => {
+		const projectRoot = await initGitRepo("spine-matrix-llm-env-");
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spine-matrix-llm-env-dump-"));
+		try {
+			const taskId = "TP-325";
+			const folderRel = writeLlmMatrixTask(projectRoot, taskId, llmMatrixPrompt(taskId));
+			commitAll(projectRoot);
+
+			// Launch script dumps the row worker's inherited env, then execs the
+			// real runner — proving the vars reach the worker child process.
+			fs.mkdirSync(path.join(projectRoot, "scripts"), { recursive: true });
+			fs.writeFileSync(
+				path.join(projectRoot, "scripts", "spine-worker-launch.sh"),
+				ENV_DUMP_LAUNCH_SH,
+				{ encoding: "utf-8", mode: 0o755 },
+			);
+
+			const rows = [
+				{ rowId: "a", values: { run_id: "a", region: "us-east-1" }, index: 0 },
+				{ rowId: "b", values: { run_id: "b", region: "eu-west-1" }, index: 1 },
+			];
+			for (const row of rows) {
+				const dumpPath = path.join(tmp, `env-${row.rowId}.txt`);
+				process.env.SPINE_MATRIX_ENV_DUMP = dumpPath;
+				process.env.SPINE_TEST_NODE = process.execPath;
+				const result = await runMatrixSubLane({
+					projectRoot,
+					batchId: "batch-llm-env",
+					laneNumber: 1,
+					taskId,
+					laneBranch: "main",
+					laneCorrelationId: "corr-llm-env",
+					row: { rowId: row.rowId, values: row.values },
+					matrixType: "llm",
+					parentTaskFolderAbs: path.join(projectRoot, folderRel),
+					taskFolderRel: folderRel,
+					config: { development: { workerLaunchScript: "scripts/spine-worker-launch.sh" } },
+					baseBranch: "main",
+					rowIndex: row.index,
+					rowCount: rows.length,
+				});
+				assert.equal(result.ok, true, `row ${row.rowId} should succeed: ${result.output}`);
+
+				const dumped = fs.readFileSync(dumpPath, "utf-8");
+				assert.match(dumped, /^job=TP-325$/m, "SPINE_MATRIX_JOB_ID is the parent task id");
+				assert.match(dumped, new RegExp(`^task=${row.rowId}$`, "m"), "SPINE_MATRIX_TASK_ID is the row id");
+				assert.match(dumped, new RegExp(`^index=${row.index}$`, "m"), "SPINE_MATRIX_TASK_INDEX is 0-based");
+				assert.match(dumped, /^count=2$/m, "SPINE_MATRIX_TASK_COUNT is the row count");
+				assert.match(dumped, new RegExp(`^k8s=${row.index}$`, "m"), "JOB_COMPLETION_INDEX aliases the index");
+			}
+		} finally {
+			delete process.env.SPINE_MATRIX_ENV_DUMP;
+			delete process.env.SPINE_TEST_NODE;
+			fs.rmSync(tmp, { recursive: true, force: true });
+			await destroyGitRepo(projectRoot);
+		}
+	}));
+
+/* ------------------------------------------------------------------ */
 /* Fixtures + helpers                                                  */
 /* ------------------------------------------------------------------ */
 
@@ -1396,6 +1694,129 @@ Write the sibling marker.
 
 ## Completion Criteria
 - [ ] Done
+
+## Do NOT
+- Fail
+`;
+}
+
+/** Shell script committed into env-E2E fixtures: dumps the matrix index env
+ * vars (#229) into the row's out file. Lives in scripts/ because contract
+ * commands refuse `$` (#268) — the script, not the runCommand, reads the env. */
+const DUMP_MATRIX_ENV_SH = `#!/bin/sh
+mkdir -p out
+{
+	printf 'job=%s\\n' "$SPINE_MATRIX_JOB_ID"
+	printf 'task=%s\\n' "$SPINE_MATRIX_TASK_ID"
+	printf 'index=%s\\n' "$SPINE_MATRIX_TASK_INDEX"
+	printf 'count=%s\\n' "$SPINE_MATRIX_TASK_COUNT"
+	printf 'k8s=%s\\n' "$JOB_COMPLETION_INDEX"
+} > "out/$SPINE_MATRIX_TASK_ID.txt"
+`;
+
+/** Worker launch script that dumps the inherited row-worker env (#229) to
+ * $SPINE_MATRIX_ENV_DUMP, then execs the real runner args. */
+const ENV_DUMP_LAUNCH_SH = `#!/bin/sh
+{
+	printf 'job=%s\\n' "$SPINE_MATRIX_JOB_ID"
+	printf 'task=%s\\n' "$SPINE_MATRIX_TASK_ID"
+	printf 'index=%s\\n' "$SPINE_MATRIX_TASK_INDEX"
+	printf 'count=%s\\n' "$SPINE_MATRIX_TASK_COUNT"
+	printf 'k8s=%s\\n' "$JOB_COMPLETION_INDEX"
+} > "$SPINE_MATRIX_ENV_DUMP"
+exec "$SPINE_TEST_NODE" "$@"
+`;
+
+/**
+ * Execute matrix prompt whose runCommand delegates to the committed env-dump
+ * script, so each row's out file records the env vars the row process saw.
+ *
+ * @param {string} taskId
+ */
+function envMatrixPrompt(taskId) {
+	return `# Task: ${taskId} — Matrix env
+**Size:** S
+**Type:** execute
+
+## Mission
+Each row dumps its matrix index env vars into its output file (#229).
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/\`
+
+## Matrix
+| run_id | value |
+|-------|-------|
+| a | alpha |
+| b | beta |
+
+## Steps
+### Step 1: Dump env per row
+
+## Contract
+| Field | Value |
+|-------|-------|
+| runCommand | \`sh scripts/dump-matrix-env.sh\` |
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Each row writes its env dump.
+
+## Completion Criteria
+- [ ] Both rows carry env evidence
+
+## Do NOT
+- Fail
+`;
+}
+
+/**
+ * Matrix prompt with a Contract `matrixMaxParallel` throttle; rows sleep so
+ * serialization under the throttle is observable in the journal (#229).
+ *
+ * @param {string} taskId
+ * @param {number} seconds
+ */
+function throttleMatrixPrompt(taskId, seconds) {
+	return `# Task: ${taskId} — Matrix throttled
+**Size:** S
+**Type:** execute
+
+## Mission
+Rows sleep so the matrixMaxParallel throttle is observable in the journal.
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/\`
+
+## Matrix
+| run_id | value |
+|-------|-------|
+| a | alpha |
+| b | beta |
+
+## Steps
+### Step 1: Run per row
+
+## Contract
+| Field | Value |
+|-------|-------|
+| matrixMaxParallel | 1 |
+| runCommand | \`sleep ${seconds} && mkdir -p out && echo {matrix.value} > out/{matrix.run_id}.txt\` |
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Each row sleeps, then writes its output file.
+
+## Completion Criteria
+- [ ] Both rows produce output
 
 ## Do NOT
 - Fail

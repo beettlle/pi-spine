@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
+	buildMatrixRowEnv,
 	provisionMatrixSubLaneWorktree,
 	recordMatrixEvent,
 	releaseLaneSlot,
@@ -99,12 +100,37 @@ function restoreMatrixRowPrompt({ worktreePath, taskFolderRel, projectRoot }) {
 }
 
 /**
+ * Effective per-matrix row concurrency (#229): the Contract's optional
+ * `matrixMaxParallel` throttle (Slurm `%N` analog) capped by the global
+ * `lanes.maxParallel` — a matrix can narrow its share of the pool but never
+ * widen it. Missing/invalid throttles fall back to the global cap.
+ *
+ * @param {object} params
+ * @param {number | null} [params.matrixMaxParallel] Contract `matrixMaxParallel` (positive int).
+ * @param {number} [params.maxParallel] Global `lanes.maxParallel`.
+ * @returns {number}
+ */
+export function resolveMatrixRowConcurrency({ matrixMaxParallel, maxParallel = 1 }) {
+	const globalCap = Math.max(1, Math.floor(Number(maxParallel) || 1));
+	if (matrixMaxParallel == null) return globalCap;
+	const throttle = Number(matrixMaxParallel);
+	if (!Number.isFinite(throttle) || throttle < 1) return globalCap;
+	return Math.max(1, Math.min(Math.floor(throttle), globalCap));
+}
+
+/**
  * Execute a single matrix row in its own worktree. Substitutes `{matrix.X}`
  * placeholders for execution-only rows; LLM rows delegate to `runWorker` with a
  * row-substituted PROMPT.md served into the row worktree (#232). Commits
  * successful row output to the row branch.
  *
+ * Rows also receive matrix index environment variables (#229) when `rowIndex`
+ * and `rowCount` are supplied: execute rows via the shell env, LLM rows via the
+ * worker child env (`buildMatrixRowEnv`).
+ *
  * @param {object} params
+ * @param {number} [params.rowIndex] 0-based index of this row in the matrix.
+ * @param {number} [params.rowCount] Total matrix row count.
  * @returns {Promise<{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string, commitSha?: string, servedPrompt?: string }>}
  */
 export async function runMatrixSubLane({
@@ -120,9 +146,12 @@ export async function runMatrixSubLane({
 	taskFolderRel,
 	config,
 	baseBranch,
+	rowIndex,
+	rowCount,
 }) {
 	const rowId = row.rowId;
 	const values = row.values;
+	const matrixEnv = buildMatrixRowEnv({ taskId, rowId, rowIndex, rowCount });
 	let worktreePath;
 	let branch;
 
@@ -210,7 +239,7 @@ export async function runMatrixSubLane({
 			};
 		} else {
 			const command = substituteRowCommand(rawCommand, values);
-			const run = await runShellInDir(worktreePath, command);
+			const run = await runShellInDir(worktreePath, command, matrixEnv);
 			if (run.exitCode !== 0) {
 				result = {
 					rowId,
@@ -314,6 +343,7 @@ export async function runMatrixSubLane({
 				laneCorrelationId: `${laneCorrelationId}-matrix-${rowId}`,
 				fileScopePaths: [],
 				config,
+				...(matrixEnv ? { extraEnv: matrixEnv } : {}),
 			});
 			result = {
 				rowId,
@@ -444,6 +474,13 @@ export async function runMatrixTaskOnLane({
 	const taskFolderInWorktree = path.join(wt, taskFolderRel);
 	const parentTaskFolderAbs = path.join(projectRoot, taskFolderRel);
 
+	// Per-matrix throttle (#229): an optional Contract `matrixMaxParallel`
+	// narrows this matrix's share of the global pool. The pool itself stays
+	// sized `maxParallel` — global `lanes.maxParallel` semantics never change.
+	const parentContract = readParentContract(parentTaskFolderAbs);
+	const matrixMaxParallel = parentContract?.matrixMaxParallel ?? null;
+	const rowConcurrency = resolveMatrixRowConcurrency({ matrixMaxParallel, maxParallel });
+
 	task.status = "running";
 	task.isMatrix = true;
 	task.matrixType = matrix.type;
@@ -472,9 +509,11 @@ export async function runMatrixTaskOnLane({
 		rowIds: matrix.rows.map((row) => row.rowId),
 		matrixType: matrix.type,
 		maxParallel,
+		matrixMaxParallel,
+		rowConcurrency,
 	});
 
-	const { results } = await runConcurrent(matrix.rows, maxParallel, async (row) => {
+	const { results } = await runConcurrent(matrix.rows, rowConcurrency, async (row, rowIndex) => {
 		// Compete for the global lane pool: block until a slot frees (a sibling
 		// lane task or another row releasing), then run on that slot as the
 		// row's distinct lane identity. Always release so a crashed row cannot
@@ -494,6 +533,8 @@ export async function runMatrixTaskOnLane({
 				taskFolderRel,
 				config,
 				baseBranch,
+				rowIndex,
+				rowCount: matrix.rows.length,
 			});
 		} catch (err) {
 			// Defensive: a crashed sub-lane must never lose its row identity, or the

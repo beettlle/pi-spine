@@ -295,6 +295,35 @@ Add a `## Matrix` section after the front matter. It is a markdown table whose c
 - Substitution is **fail-loud**: a `{matrix.X}` reference whose column is absent from the row throws a parse error before the sub-lane runs. A placeholder that reaches substitution with no row at all also fails.
 - Non-matrix tasks are unchanged — if no row is supplied, `applyMatrixRowToContract` returns the contract verbatim.
 
+#### Matrix row environment variables
+
+Every row process — execute shells and LLM row workers alike — also receives Slurm/K8s-style matrix index environment variables (#229, SP-751), so existing HPC/CI scripts can be ported without string substitution:
+
+| Variable | Value |
+|----------|-------|
+| `SPINE_MATRIX_JOB_ID` | Parent matrix task id (e.g. `SP-100`) |
+| `SPINE_MATRIX_TASK_ID` | Row id (`run_id` value or derived) |
+| `SPINE_MATRIX_TASK_INDEX` | 0-based index of the row in the matrix |
+| `SPINE_MATRIX_TASK_COUNT` | Total number of rows |
+| `JOB_COMPLETION_INDEX` | Alias of `SPINE_MATRIX_TASK_INDEX` for Kubernetes indexed-job scripts |
+
+Contract `runCommand` / `testCommand` values refuse `$` (#268), so consume the variables from a helper script rather than inline expansion:
+
+```markdown
+| Field | Value |
+|-------|-------|
+| runCommand | `sh scripts/run-row.sh` |
+```
+
+```sh
+# scripts/run-row.sh — reads the matrix row identity from its environment
+case "$SPINE_MATRIX_TASK_INDEX" in
+  0) target=us-east-1 ;;
+  1) target=eu-west-1 ;;
+esac
+"./deploy.sh" "$target" > "out/${SPINE_MATRIX_TASK_ID}.txt"
+```
+
 #### Plan output and sub-lane naming
 
 The planner treats a matrix task as a **single task** — `spine plan` shows the parent task on one lane, not per-row sub-lanes:
@@ -311,6 +340,7 @@ Row fan-out happens only in the engine at run time (see [Concurrency](#concurren
 - `spine status` reports the parent task's **aggregated** state. Per-row status is stored in `task.matrixRows[]` and emitted as `matrix.sub_lane.started/completed/failed` journal events.
 - The parent task succeeds only if **all rows** succeed. If any row fails, the parent task fails with `matrix_sub_lane_failed:<rowIds>` and the failing row IDs are surfaced in the diagnosis.
 - Rows are scheduled as **first-class lane occupants** (#228, SP-697/SP-698; supersedes the SP-690 nested throttle). The parent matrix task holds **no** lane slot while its rows run: each active row acquires a slot from the global pool sized `lanes.maxParallel`, competing with sibling lane tasks, so global in-flight workers never exceed `lanes.maxParallel`. The acquired slot number is the row's lane identity — each row gets its own git worktree (`lane-{n}-{parentTaskSlug}-{rowSlug}`), so row output is isolated and then merged back into the lane branch.
+- **Per-matrix throttle** (#229, SP-751): an optional Contract field `matrixMaxParallel` (positive integer) caps how many rows of this matrix run at once — the Slurm `--array=0-15%4` analog. The effective row concurrency is `min(matrixMaxParallel, lanes.maxParallel)`: a matrix can narrow its share of the global pool but never widen it, and global `lanes.maxParallel` semantics are unchanged. The parsed throttle and effective limit are journaled on `matrix.task_started` as `matrixMaxParallel` / `rowConcurrency`.
 - A failing row's worktree is cleaned up; the remaining rows finish (or are aborted) before the parent is marked failed.
 
 > **Superseded: SP-690 nested throttle.** The interim `max(1, maxParallel - 1)` row cap (SP-690 / #227) reserved the parent lane's slot and under-utilized the pool at higher parallelism. First-class row scheduling (#228) replaces it: the parent releases its slot and rows compete for the global pool alongside sibling lanes, so the pool is fully utilized and the in-flight invariant holds at any `lanes.maxParallel`.
@@ -321,7 +351,7 @@ Row fan-out happens only in the engine at run time (see [Concurrency](#concurren
 - **LLM-type rows are fully substituted** (#232, SP-742): each row's worker receives a row-substituted `PROMPT.md`, and the row journals `matrix.sub_lane.prompt_served` with the served document's sha256, so per-row substitution is verifiable instead of assumed. Substitution scaffolding is never committed — the row branch carries only worker output, and the authored packet keeps its placeholders.
 - **Rows must write row-distinct outputs.** Row branches merge back into the lane (SP-697), so outputs shared across rows are safe only when their content is identical (e.g. stub `STATUS.md` delivery). Two rows concurrently writing *different* content to the same path will conflict at the row→lane merge; scope `fileScopeMustChange` / outputs per row (`out/{matrix.run_id}.txt`).
 - **Planner packing:** the planner treats a matrix task as a single task. `buildPlan` does **not** expand `## Matrix` rows into virtual `SP-X[rowId]` sub-lanes — SP-690 (#227) reverted the SP-689 plan-time expansion that exposed virtual row IDs to the batch engine before it could schedule them (causing `task_not_found`). **#226 is closed as superseded by #228:** first-class row scheduling is run-time lane-pool fan-out under the parent task ID (SP-697/SP-698). Re-propagating matrix fields through `buildPlan` without engine virtual-ID consumption still fails matrix E2E with `task_not_found` (verified SP-696 / batch `20260806T184913`). Plan output shows one parent line; row parallelism is an engine concern.
-- **Deferred follow-ups:** matrix environment propagation (#229), per-row status APIs (#230), and `maxFailedIndexes` partial-failure tolerance (#231) remain deferred. Full PROMPT-body substitution for LLM rows (#232) shipped in SP-742 (see the substitution rules above). The default — and only — parent success policy is that all rows succeed.
+- **Deferred follow-ups:** per-row status APIs (#230) and `maxFailedIndexes` partial-failure tolerance (#231) remain deferred. Matrix environment variables and the `matrixMaxParallel` throttle (#229) shipped in SP-751 (see the row environment and throttle sections above). Full PROMPT-body substitution for LLM rows (#232) shipped in SP-742 (see the substitution rules above). The default — and only — parent success policy is that all rows succeed.
 - Matrix tasks are best for **deterministic, scoped** automation. Avoid large matrix tables that exceed your machine's parallel capacity or produce overlapping file-scope changes across rows.
 
 ### 2.5 Execution-only tasks (Type: execute)

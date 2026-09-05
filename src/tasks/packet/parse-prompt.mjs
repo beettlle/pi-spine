@@ -30,6 +30,7 @@ export const CONTRACT_FIELD_NAMES = Object.freeze([
 	"artifactsMustExist",
 	"stallTimeoutMinutes",
 	"extendGraceOnFileScope",
+	"matrixMaxParallel",
 ]);
 
 const CONTRACT_KNOWN_FIELDS = new Set(CONTRACT_FIELD_NAMES);
@@ -286,6 +287,7 @@ function collectDuplicateStepNumberErrors(steps) {
  *   artifactsMustExist: string[],
  *   stallTimeoutMinutes: number | null,
  *   extendGraceOnFileScope: boolean | null,
+ *   matrixMaxParallel: number | null,
  *   rawTableValid: boolean,
  *   errors: string[],
  *   unknownFields: string[],
@@ -309,6 +311,7 @@ export function parseContract(markdown) {
 		artifactsMustExist: [],
 		stallTimeoutMinutes: null,
 		extendGraceOnFileScope: null,
+		matrixMaxParallel: null,
 		rawTableValid: false,
 		errors: [],
 		unknownFields: [],
@@ -507,6 +510,20 @@ function applyContractField(parsed, field, rawValue) {
 				return;
 			}
 			parsed.errors.push("Contract extendGraceOnFileScope must be true or false");
+			return;
+		}
+		case "matrixMaxParallel": {
+			const rawParallel = parseContractScalar(value);
+			if (!/^\d+$/.test(rawParallel)) {
+				parsed.errors.push("Contract matrixMaxParallel must be a positive integer");
+				return;
+			}
+			const parallel = Number(rawParallel);
+			if (parallel < 1) {
+				parsed.errors.push("Contract matrixMaxParallel must be a positive integer");
+				return;
+			}
+			parsed.matrixMaxParallel = parallel;
 			return;
 		}
 		default:

@@ -60,6 +60,7 @@ export function resolveWorkerLaunchScript(projectRoot, config = {}) {
  * @param {string[]} [params.fileScopePaths]
  * @param {object} [params.config]
  * @param {number} [params.piTimeoutMs]
+ * @param {Record<string, string>} [params.extraEnv] Extra child env (matrix row identity, #229)
  */
 export function buildWorkerChildEnv({
 	taskFolder,
@@ -72,6 +73,7 @@ export function buildWorkerChildEnv({
 	fileScopePaths = [],
 	config = {},
 	piTimeoutMs,
+	extraEnv,
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	/** @type {NodeJS.ProcessEnv} */
@@ -104,6 +106,12 @@ export function buildWorkerChildEnv({
 			process.env.SPINE_WORKER_PI_TIMEOUT_MS ?? piTimeoutMs,
 		);
 	}
+	// Optional caller-supplied additions (matrix row identity, #229). Assigned
+	// last so explicit extras win, and omitted entirely for existing callers so
+	// the env stays byte-identical to the pre-#229 behavior.
+	if (extraEnv && typeof extraEnv === "object") {
+		Object.assign(env, extraEnv);
+	}
 	return env;
 }
 
@@ -121,6 +129,7 @@ export function buildWorkerChildEnv({
  * @param {string[]} [params.fileScopePaths]
  * @param {object} [params.config]
  * @param {number} [params.piTimeoutMs]
+ * @param {Record<string, string>} [params.extraEnv] Extra child env (matrix row identity, #229)
  */
 export function spawnWorkerChild({
 	worktreePath,
@@ -135,6 +144,7 @@ export function spawnWorkerChild({
 	fileScopePaths = [],
 	config = {},
 	piTimeoutMs,
+	extraEnv,
 }) {
 	const runner = path.join(PACKAGE_ROOT, "bin", "spine-worker-runner.mjs");
 	const env = buildWorkerChildEnv({
@@ -148,6 +158,7 @@ export function spawnWorkerChild({
 		fileScopePaths,
 		config,
 		piTimeoutMs,
+		extraEnv,
 	});
 	const args = useStub ? ["--stub"] : ["--pi"];
 
@@ -316,6 +327,7 @@ export function collectChildOutput(child, liveLogWriter) {
  * @param {string[]} [params.fileScopePaths]
  * @param {object} [params.config]
  * @param {object} [params.workerBackendDeps]
+ * @param {Record<string, string>} [params.extraEnv] Extra child env (matrix row identity, #229)
  */
 export function spawnWorkerHandle({
 	worktreePath,
@@ -331,6 +343,7 @@ export function spawnWorkerHandle({
 	fileScopePaths = [],
 	config,
 	workerBackendDeps,
+	extraEnv,
 }) {
 	const journal =
 		projectRoot && batchId
@@ -370,6 +383,7 @@ export function spawnWorkerHandle({
 		laneCorrelationId,
 		fileScopePaths,
 		config,
+		extraEnv,
 	});
 }
 
