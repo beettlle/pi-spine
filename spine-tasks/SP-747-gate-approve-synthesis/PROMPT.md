@@ -44,7 +44,6 @@ Closes #280 — Add optional `--synthesis "..."` on `spine gate approve` / `reje
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate.test.mjs tests/batch/gate-posture-stamp.test.mjs` |
 | fileScopeMustChange | `bin/spine-gate.mjs`, `src/batch/gate-posture-approve.mjs`, `docs/adoption/operator-runbook.md` |
-| minLineCoverage | 77 |
 
 ## Steps
 

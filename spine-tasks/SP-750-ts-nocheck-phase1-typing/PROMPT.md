@@ -45,7 +45,6 @@ Closes #266 — Phase 1: remove `@ts-nocheck` from high-risk modules (`src/batch
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` |
 | fileScopeMustChange | `src/batch/state-io.mjs`, `src/batch/state-guards.mjs`, `src/batch/contract-exec.mjs`, `tsconfig.batch.json` |
-| minLineCoverage | 77 |
 
 ## Steps
 

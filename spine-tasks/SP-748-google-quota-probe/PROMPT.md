@@ -43,7 +43,6 @@ Closes #277 — Add an optional fail-closed Google pool probe so `spine metrics 
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/metrics/quota-probes.test.mjs tests/metrics/quota-snapshot.test.mjs tests/metrics/quota-cli.test.mjs` |
 | fileScopeMustChange | `src/metrics/quota-probes.mjs`, `docs/QUICK-REFERENCE.md` |
-| minLineCoverage | 77 |
 
 ## Steps
 

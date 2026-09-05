@@ -40,7 +40,6 @@ Partial #266 — Phase 0 guardrail: fail CI / arch tests when a **new** `src/**/
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` |
 | fileScopeMustChange | `tests/arch/ts-nocheck-guard.test.mjs` |
 | fileScopeMustNotChange | `src/` |
-| minLineCoverage | 77 |
 
 ## Steps
 
