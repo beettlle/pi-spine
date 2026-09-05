@@ -46,4 +46,5 @@
 
 ## Amendments
 
-- 2026-09-05: Pre-landed contract redirect — operator-runbook.md already touched by SP-747; mustChange is matrix-run + spine-status.
+- 2026-09-05: Pre-landed contract redirect — operator-runbook.md already touched by SP-747; mustChange was matrix-run + spine-status.
+- 2026-09-05: After SP-751 land, `src/batch/engine-lanes/matrix-run.mjs` is also pre-landed on main — redirect `fileScopeMustChange` to `bin/spine-status.mjs` + `src/batch/retry.mjs` (row status / retry-cancel deliverables).
