@@ -1,0 +1,21 @@
+package-lock.json
+  s_c318c0bd393d64::t_81d0435f92d294 3,9
+package.json
+  s_c318c0bd393d64::t_27eb066618ecb8 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "90297be88d86e9ab436153a7c251b0295ef9a887",
+  "prompts": {},
+  "sessions": {
+    "s_c318c0bd393d64": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-caabcb08-4137-409a-a7a7-6ddf0395d3b7",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
