@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Row-scoped matrix operations (SP-752 / #230).
  *

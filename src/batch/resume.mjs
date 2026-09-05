@@ -45,7 +45,6 @@ import { recordTaskFailureSalvage } from "./salvage.mjs";
 export { pauseBatch } from "./pause.mjs";
 export { validateResumeBatch } from "./resume-single-validate.mjs";
 export { ensureForceResumeBatchState } from "./batch-meta-reconstruct.mjs";
-
 /** @param {{ projectRoot: string, force?: boolean }} params */
 export async function resumeBatch({ projectRoot, force = false }) {
 	const engineLock = enforceAttachedEngineSingleOwner({ projectRoot, force, operation: "resume" });
@@ -188,8 +187,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const laneCorrelationId = crypto.randomUUID();
 	let workerResult = { ok: true, mode: "skipped" };
 	let workerSucceeded = false;
-	// Matrix tasks resume through runMatrixTaskOnLane, which owns lane commit +
-	// success recording — the plain worker postlude below must be skipped (#230).
+	// Matrix resume owns lane commit + success recording — skip plain worker postlude (#230).
 	let matrixHandled = false;
 	const skippedWorkerBecauseComplete = taskAlreadyComplete({
 		taskFolder: taskFolderInWorktree,
