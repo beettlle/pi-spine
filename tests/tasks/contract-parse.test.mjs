@@ -153,6 +153,7 @@ test("CONTRACT_FIELD_NAMES lists all normative contract fields", () => {
 		"artifactsMustExist",
 		"stallTimeoutMinutes",
 		"extendGraceOnFileScope",
+		"matrixMaxParallel",
 	]);
 });
 
