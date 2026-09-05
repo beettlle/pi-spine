@@ -14,6 +14,7 @@ import { parseBatchStartWaveFilter } from "../src/planner/wave-scope.mjs";
 import { pauseBatch } from "../src/batch/pause.mjs";
 import { resumeBatch } from "../src/batch/resume.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
+import { retryTaskRow, skipTaskRow, parseMatrixRowRef } from "../src/batch/retry-row.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
 import {
 	finishAttachedBatchCli,
@@ -38,7 +39,8 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
  */
 export function printBatchHelp() {
 	return (
-		"Usage: spine batch start <scope>|pause|resume|retry <taskId>|skip <taskId>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n" +
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId|[rowId]>|skip <taskId|[rowId]>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n" +
+		"  Row identity: retry/skip 'SP-X[rowId]' targets one matrix row; plain SP-X targets the whole task.\n" +
 		"  abort --dry-run  Preview abort (reason/archive target); does not archive, journal, or clear live batch\n"
 	);
 }
@@ -349,10 +351,13 @@ export async function runSpineBatch(options) {
 		if (!parsed.taskId) {
 			return {
 				exitCode: 1,
-				output: "Usage: spine batch retry <taskId> [--json]\n",
+				output: "Usage: spine batch retry <taskId> | <taskId>[rowId] [--json]\n",
 			};
 		}
-		const result = retryTask({ projectRoot, taskId: parsed.taskId });
+		const rowRef = parseMatrixRowRef(parsed.taskId);
+		const result = rowRef
+			? retryTaskRow({ projectRoot, taskId: rowRef.taskId, rowId: rowRef.rowId })
+			: retryTask({ projectRoot, taskId: parsed.taskId });
 		if (parsed.json) {
 			return {
 				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
@@ -368,6 +373,7 @@ export async function runSpineBatch(options) {
 		];
 		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
 		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		if (result.rowId) lines.push(`  Row: ${result.rowId}`);
 		if (result.pendingSegments != null) lines.push(`  Pending segments: ${result.pendingSegments}`);
 		lines.push("");
 		return {
@@ -381,10 +387,13 @@ export async function runSpineBatch(options) {
 		if (!parsed.taskId) {
 			return {
 				exitCode: 1,
-				output: "Usage: spine batch skip <taskId> [--json]\n",
+				output: "Usage: spine batch skip <taskId> | <taskId>[rowId] [--json]\n",
 			};
 		}
-		const result = skipTask({ projectRoot, taskId: parsed.taskId });
+		const rowRef = parseMatrixRowRef(parsed.taskId);
+		const result = rowRef
+			? skipTaskRow({ projectRoot, taskId: rowRef.taskId, rowId: rowRef.rowId })
+			: skipTask({ projectRoot, taskId: parsed.taskId });
 		if (parsed.json) {
 			return {
 				exitCode: result.exitCode ?? (result.ok ? 0 : 1),
@@ -400,6 +409,7 @@ export async function runSpineBatch(options) {
 		];
 		if (result.batchId) lines.push("", `  Batch: ${result.batchId}`);
 		if (result.taskId) lines.push(`  Task: ${result.taskId}`);
+		if (result.rowId) lines.push(`  Row: ${result.rowId}`);
 		lines.push("");
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),

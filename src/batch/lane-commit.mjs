@@ -14,6 +14,7 @@ import {
 	sanitizeGitignoredArtifactsBeforeLaneCommit,
 } from "./lane-dirty-check.mjs";
 import { gitExec } from "./git-exec.mjs";
+import { deriveMatrixRowId } from "../planner/matrix.mjs";
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { substituteMatrixVariables } from "../planner/matrix.mjs";
 import {
@@ -229,6 +230,7 @@ function listPorcelainPaths(porcelain) {
  * @param {string} [params.baseBranch] Base branch for stub contract diff (default main)
  * @param {string[]} [params.ignorePatterns] Hook paths to skip (default includes `.venv`)
  * @param {string[]} [params.fileScopePaths] Task fileScope — paths here are never skipped
+ * @param {string[]} [params.canceledMatrixRowIds] Row ids canceled by the operator (#230) — their expanded fileScope patterns are excluded
  * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[], skippedIgnorePaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
  */
 export function commitLaneWorktree({
@@ -241,6 +243,7 @@ export function commitLaneWorktree({
 	baseBranch = "main",
 	ignorePatterns,
 	fileScopePaths = [],
+	canceledMatrixRowIds = [],
 }) {
 	const identityRoot = projectRoot ?? worktreePath;
 	const effectiveIgnorePatterns = Array.isArray(ignorePatterns)
@@ -286,18 +289,30 @@ export function commitLaneWorktree({
 				// Matrix tasks carry `{matrix.<column>}` placeholders in fileScopeMustChange.
 				// Expand them across every matrix row so the stub check matches the
 				// concrete per-row output paths the rows actually produced.
-				const prompt = promptText ? parsePrompt(promptText) : null;
-				const matrixRows = Array.isArray(prompt?.matrix) ? prompt.matrix : [];
-				const effectiveContract =
-					matrixRows.length > 0
-						? {
-								...parsedContract,
-								fileScopeMustChange: expandMatrixFileScopePatterns(
-									parsedContract.fileScopeMustChange,
-									matrixRows,
-								),
-						  }
-						: parsedContract;
+			const prompt = promptText ? parsePrompt(promptText) : null;
+			const matrixRows = Array.isArray(prompt?.matrix) ? prompt.matrix : [];
+			// Canceled rows (#230) are operator exclusions — they never execute and
+			// produce no output, so their expanded fileScopeMustChange patterns must
+			// not gate the lane commit.
+			const canceledRowIds = new Set(
+				Array.isArray(canceledMatrixRowIds) ? canceledMatrixRowIds : [],
+			);
+			const activeMatrixRows =
+				canceledRowIds.size === 0
+					? matrixRows
+					: matrixRows.filter(
+							(row) => !canceledRowIds.has(deriveMatrixRowId(row, prompt?.matrixColumns ?? [])),
+						);
+			const effectiveContract =
+				matrixRows.length > 0
+					? {
+							...parsedContract,
+							fileScopeMustChange: expandMatrixFileScopePatterns(
+								parsedContract.fileScopeMustChange,
+								activeMatrixRows,
+							),
+					  }
+					: parsedContract;
 				const scopeCheck = verifyStubFileScopeMustChange(
 					worktreePath,
 					effectiveContract,

@@ -25,6 +25,10 @@ import {
 } from "../../src/batch/engine-lanes/matrix-run.mjs";
 import { buildWorkerChildEnv } from "../../src/batch/worker-spawn.mjs";
 import { applyMatrixRowToPrompt } from "../../src/planner/matrix.mjs";
+import { resumeBatch } from "../../src/batch/resume.mjs";
+import { retryTask } from "../../src/batch/retry.mjs";
+import { retryTaskRow, skipTaskRow } from "../../src/batch/retry-row.mjs";
+import { loadSpineBatchState } from "../../src/batch/state.mjs";
 import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
@@ -1822,3 +1826,228 @@ Each row sleeps, then writes its output file.
 - Fail
 `;
 }
+
+/* ------------------------------------------------------------------ */
+/* E2E: row-scoped retry carries over succeeded rows (#230 / SP-752)   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Matrix prompt whose runCommand delegates to scripts/run-row.sh. Row b fails
+ * on its first attempt (marker under the shared git dir) and succeeds on every
+ * later attempt — so a re-run is observable, and "b was not re-executed" is
+ * provable via the journal.
+ *
+ * @param {string} taskId
+ */
+function retryMatrixPrompt(taskId) {
+	return `# Task: ${taskId} — Matrix row retry
+**Size:** S
+**Type:** execute
+
+## Mission
+Row b fails once, then succeeds; row a always succeeds.
+
+## Dependencies
+**None**
+
+## File Scope
+- \`out/\`
+
+## Matrix
+| run_id | value |
+|-------|-------|
+| a | alpha |
+| b | beta |
+
+## Steps
+### Step 1: Run per row
+
+## Contract
+| Field | Value |
+|-------|-------|
+| runCommand | \`sh scripts/run-row.sh\` |
+| fileScopeMustChange | \`out/{matrix.run_id}.txt\` |
+| testCommand | \`test -f out/{matrix.run_id}.txt\` |
+
+## Testing
+Row b fails on attempt 1 only.
+
+## Completion Criteria
+- [ ] Both rows produce output
+
+## Do NOT
+- Fail on retry
+`;
+}
+
+/**
+ * Write scripts/run-row.sh into the project root (committed with the fixture).
+ *
+ * @param {string} projectRoot
+ */
+function writeRowRetryScript(projectRoot) {
+	const rel = "scripts/run-row.sh";
+	const scriptPath = path.join(projectRoot, rel);
+	fs.mkdirSync(path.dirname(scriptPath), { recursive: true });
+	fs.writeFileSync(
+		scriptPath,
+		[
+			"#!/bin/sh",
+			'set -e',
+			'row="$SPINE_MATRIX_TASK_ID"',
+			"mkdir -p out",
+			'marker="$(git rev-parse --path-format=absolute --git-common-dir)/spine-row-b-failed-marker"',
+			'if [ "$row" = "b" ] && [ ! -f "$marker" ]; then',
+			'  touch "$marker"',
+			'  echo "beta-attempt1" > out/b.txt',
+			"  exit 1",
+			"fi",
+			'echo "value-$row" > "out/$row.txt"',
+			"",
+		].join("\n"),
+		"utf-8",
+	);
+	fs.chmodSync(scriptPath, 0o755);
+}
+
+function writeMatrixFixture(projectRoot, taskId, promptText) {
+	const folder = path.join(projectRoot, "spine-tasks", `${taskId}-matrix`);
+	fs.mkdirSync(folder, { recursive: true });
+	fs.writeFileSync(path.join(folder, "PROMPT.md"), promptText, "utf-8");
+	fs.writeFileSync(
+		path.join(projectRoot, "spine-tasks", "dependencies.json"),
+		JSON.stringify({ version: 1, tasks: { [taskId]: [] } }),
+		"utf-8",
+	);
+	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "init"], { cwd: projectRoot, stdio: "ignore" });
+}
+
+async function runBatchStep(fn, projectRoot, options = {}) {
+	const oldIsWorker = process.env.SPINE_IS_WORKER;
+	delete process.env.SPINE_IS_WORKER;
+	try {
+		return await fn({ projectRoot, ...options });
+	} finally {
+		if (oldIsWorker !== undefined) process.env.SPINE_IS_WORKER = oldIsWorker;
+	}
+}
+
+function gitShowFile(projectRoot, ref, filePath) {
+	return execFileSync("git", ["show", `${ref}:${filePath}`], {
+		cwd: projectRoot,
+		encoding: "utf-8",
+	});
+}
+
+test("E2E: retry SP-X[rowId] re-runs only the failed row; succeeded rows carry over", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-row-retry-");
+	try {
+		const taskId = "TP-311";
+		writeRowRetryScript(projectRoot);
+		writeMatrixFixture(projectRoot, taskId, retryMatrixPrompt(taskId));
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const batchResult = await runBatchStep(startBatch, projectRoot, { scope: taskId, skipPreflight: true });
+		assert.equal(batchResult.ok, false, "row b fails on the first attempt");
+
+		const state1 = loadSpineBatchState(projectRoot).raw;
+		const orchBranch = state1.orchBranch;
+		const task1 = state1.tasks.find((entry) => entry.taskId === taskId);
+		const rowA1 = task1.matrixRows.find((row) => row.rowId === "a");
+		const rowB1 = task1.matrixRows.find((row) => row.rowId === "b");
+		assert.equal(rowA1.status, "succeeded", "row a succeeded on attempt 1");
+		assert.equal(rowB1.status, "failed", "row b failed on attempt 1");
+		assert.ok(rowA1.worktreePath, "succeeded row persists its worktree for carry-over");
+		assert.ok(rowA1.branch, "succeeded row persists its branch for carry-over");
+		assert.ok(fs.existsSync(rowA1.worktreePath), "succeeded row worktree kept on failed sweep");
+		const commitShaA1 = rowA1.commitSha;
+
+		const retry = retryTaskRow({ projectRoot, taskId, rowId: "b" });
+		assert.equal(retry.ok, true, retry.output ?? retry.error);
+
+		const resumed = await runBatchStep(resumeBatch, projectRoot);
+		assert.ok(resumed.ok, `resume should land the matrix; output: ${resumed.output}`);
+
+		const state2 = loadSpineBatchState(projectRoot).raw;
+		const task2 = state2.tasks.find((entry) => entry.taskId === taskId);
+		assert.equal(task2.status, "succeeded", "matrix task succeeds after row-scoped retry");
+		const rowA2 = task2.matrixRows.find((row) => row.rowId === "a");
+		assert.equal(rowA2.commitSha, commitShaA1, "row a output identical — never re-executed");
+
+		assert.match(gitShowFile(projectRoot, orchBranch, "out/a.txt"), /value-a/);
+		assert.match(gitShowFile(projectRoot, orchBranch, "out/b.txt"), /value-b/);
+
+		const events = readJournalEvents(projectRoot, batchResult.batchId);
+		const rowAStarts = events.filter(
+			(event) => event.type === "matrix.sub_lane.started" && event.payload?.rowId === "a",
+		);
+		assert.equal(rowAStarts.length, 1, "row a started exactly once (carried over on attempt 2)");
+		const rowBStarts = events.filter(
+			(event) => event.type === "matrix.sub_lane.started" && event.payload?.rowId === "b",
+		);
+		assert.equal(rowBStarts.length, 2, "row b started once per attempt");
+		assert.ok(
+			events.some((event) => event.type === "task.retry_requested" && event.payload?.rowId === "b"),
+			"row-scoped retry journaled",
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("E2E: cancel one row (skip SP-X[rowId]) — matrix lands without it; whole-matrix skip still cancels all", async () => {
+	const projectRoot = await initGitRepo("spine-matrix-row-cancel-");
+	try {
+		const taskId = "TP-312";
+		writeRowRetryScript(projectRoot);
+		writeMatrixFixture(projectRoot, taskId, retryMatrixPrompt(taskId));
+		configureForBatch(projectRoot, { maxParallel: 2 });
+
+		const batchResult = await runBatchStep(startBatch, projectRoot, { scope: taskId, skipPreflight: true });
+		assert.equal(batchResult.ok, false, "row b fails on the first attempt");
+
+		// Cancel the failed row, then retry the whole task: row b is excluded
+		// from execution and aggregation, row a carries over.
+		const cancel = skipTaskRow({ projectRoot, taskId, rowId: "b" });
+		assert.equal(cancel.ok, true, cancel.output ?? cancel.error);
+		const retry = retryTask({ projectRoot, taskId });
+		assert.equal(retry.ok, true, retry.output ?? retry.error);
+		assert.deepEqual(retry.retriedRowIds ?? [], [], "no failed row left to re-run");
+		assert.doesNotMatch(retry.output ?? "", /Matrix rows re-running/);
+
+		const resumed = await runBatchStep(resumeBatch, projectRoot);
+		assert.ok(resumed.ok, `resume should land the matrix without row b; output: ${resumed.output}`);
+
+		const state2 = loadSpineBatchState(projectRoot).raw;
+		const orchBranch = state2.orchBranch;
+		const task2 = state2.tasks.find((entry) => entry.taskId === taskId);
+		assert.equal(task2.status, "succeeded", "matrix succeeds with canceled row excluded");
+		assert.equal(
+			task2.matrixRows.find((row) => row.rowId === "b")?.status,
+			"canceled",
+			"canceled row stays canceled after landing",
+		);
+
+		assert.match(gitShowFile(projectRoot, orchBranch, "out/a.txt"), /value-a/);
+		let bMissing = false;
+		try {
+			gitShowFile(projectRoot, orchBranch, "out/b.txt");
+		} catch {
+			bMissing = true;
+		}
+		assert.ok(bMissing, "canceled row produced no output on the orch branch");
+
+		const events = readJournalEvents(projectRoot, batchResult.batchId);
+		assert.ok(
+			events.some((event) => event.type === "matrix.row_skipped" && event.payload?.rowId === "b"),
+			"row cancel journaled",
+		);
+		const rowBStarts = events.filter(
+			(event) => event.type === "matrix.sub_lane.started" && event.payload?.rowId === "b",
+		);
+		assert.equal(rowBStarts.length, 1, "canceled row never re-executed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

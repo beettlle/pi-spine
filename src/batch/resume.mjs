@@ -35,6 +35,7 @@ import {
 	updateSegmentForTask,
 } from "./state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "./worktree.mjs";
+import { runMatrixTaskForResume } from "./engine-lanes/matrix-run.mjs";
 import { resumeMultiTaskBatch } from "./resume-multi.mjs";
 import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
 import { validateResumeBatch } from "./resume-single-validate.mjs";
@@ -187,6 +188,9 @@ export async function resumeBatch({ projectRoot, force = false }) {
 	const laneCorrelationId = crypto.randomUUID();
 	let workerResult = { ok: true, mode: "skipped" };
 	let workerSucceeded = false;
+	// Matrix tasks resume through runMatrixTaskOnLane, which owns lane commit +
+	// success recording — the plain worker postlude below must be skipped (#230).
+	let matrixHandled = false;
 	const skippedWorkerBecauseComplete = taskAlreadyComplete({
 		taskFolder: taskFolderInWorktree,
 		events,
@@ -208,83 +212,101 @@ export async function resumeBatch({ projectRoot, force = false }) {
 			resumed: true,
 		});
 
-		workerResult = await runWorker({
-			worktreePath: wt,
-			taskFolder: taskFolderInWorktree,
+		const matrixResume = await runMatrixTaskForResume({
 			projectRoot,
+			state,
 			batchId,
-			laneNumber: 1,
-			taskId,
-			laneBranch: taskBranch,
+			baseBranch,
+			config,
+			task,
+			lane,
+			taskFolderRel,
 			laneCorrelationId,
 			fileScopePaths,
-			config,
-			onHeartbeat: (timestamp) => {
-				state.lanes[0].lastHeartbeatAt = timestamp;
-				saveSpineBatchState(projectRoot, state);
-			},
-			onWorkerPid: (pid) => {
-				if (pid > 0) {
-					state.lanes[0].workerPid = pid;
-					saveSpineBatchState(projectRoot, state);
-				}
-			},
 		});
-
-		if (!workerResult.ok) {
-			task.status = "failed";
-			task.endedAt = Date.now();
-			task.exitReason = workerResult.classification ?? "worker_failed";
-			updateSegmentForTask(state, taskId, "failed");
-			state.failedTasks = 1;
-			state.succeededTasks = 0;
-			state.endedAt = Date.now();
-			state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
-			state.phase = "failed";
-			saveSpineBatchState(projectRoot, state);
-			const salvageFields = recordTaskFailureSalvage({
+		if (matrixResume.isMatrix) {
+			if (!matrixResume.ok) return matrixResume.cliResult;
+			workerSucceeded = true;
+			matrixHandled = true;
+		} else {
+			workerResult = await runWorker({
+				worktreePath: wt,
+				taskFolder: taskFolderInWorktree,
 				projectRoot,
 				batchId,
 				laneNumber: 1,
-				laneId: "lane-1",
 				taskId,
-				correlationId: laneCorrelationId,
-				worktreePath: wt,
+				laneBranch: taskBranch,
+				laneCorrelationId,
 				fileScopePaths,
-				taskFolder: taskFolderInWorktree,
-				workerResult,
 				config,
-				batchPhase: state.phase,
-				taskBranch,
+				onHeartbeat: (timestamp) => {
+					state.lanes[0].lastHeartbeatAt = timestamp;
+					saveSpineBatchState(projectRoot, state);
+				},
+				onWorkerPid: (pid) => {
+					if (pid > 0) {
+						state.lanes[0].workerPid = pid;
+						saveSpineBatchState(projectRoot, state);
+					}
+				},
 			});
-			appendJournalEvent(projectRoot, batchId, "task.failed", {
-				taskId,
+
+			if (!workerResult.ok) {
+				task.status = "failed";
+				task.endedAt = Date.now();
+				task.exitReason = workerResult.classification ?? "worker_failed";
+				updateSegmentForTask(state, taskId, "failed");
+				state.failedTasks = 1;
+				state.succeededTasks = 0;
+				state.endedAt = Date.now();
+				state.lastError = workerResult.output?.slice(0, 500) ?? "worker failed";
+				state.phase = "failed";
+				saveSpineBatchState(projectRoot, state);
+				const salvageFields = recordTaskFailureSalvage({
+					projectRoot,
+					batchId,
+					laneNumber: 1,
+					laneId: "lane-1",
+					taskId,
+					correlationId: laneCorrelationId,
+					worktreePath: wt,
+					fileScopePaths,
+					taskFolder: taskFolderInWorktree,
+					workerResult,
+					config,
+					batchPhase: state.phase,
+					taskBranch,
+				});
+				appendJournalEvent(projectRoot, batchId, "task.failed", {
+					taskId,
+					laneNumber: 1,
+					laneId: "lane-1",
+					correlationId: laneCorrelationId,
+					...workerResult,
+					...salvageFields,
+				});
+				return {
+					ok: false,
+					exitCode: workerResult.exitCode ?? 1,
+					batchId,
+					taskId,
+					error: "worker_failed",
+					output: workerResult.output,
+				};
+			}
+
+			appendJournalEvent(projectRoot, batchId, "lane.completed", {
 				laneNumber: 1,
 				laneId: "lane-1",
-				correlationId: laneCorrelationId,
-				...workerResult,
-				...salvageFields,
-			});
-			return {
-				ok: false,
-				exitCode: workerResult.exitCode ?? 1,
-				batchId,
 				taskId,
-				error: "worker_failed",
-				output: workerResult.output,
-			};
+				correlationId: laneCorrelationId,
+			});
+			workerSucceeded = true;
 		}
-
-		appendJournalEvent(projectRoot, batchId, "lane.completed", {
-			laneNumber: 1,
-			laneId: "lane-1",
-			taskId,
-			correlationId: laneCorrelationId,
-		});
-		workerSucceeded = true;
 	}
 
-	if (workerSucceeded) {
+	if (workerSucceeded && !matrixHandled) {
 		const lane =
 			(state.lanes ?? []).find((entry) => entry.laneNumber === 1) ??
 			{

@@ -1,7 +1,7 @@
 # SP-752: Per-row matrix status, retry, and cancel — Status
 
-**Current Step:** 0
-**Status:** ⚪ Not Started
+**Current Step:** 3
+**Status:** ✅ Complete — .DONE ready
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,26 +11,40 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Map `task.matrixRows` status fields and journal events
-- [ ] Map batch retry / cancel entry points and ID parsing
+- [x] Map `task.matrixRows` status fields and journal events
+- [x] Map batch retry / cancel entry points and ID parsing
+
+#### Preflight map
+
+- `task.matrixRows`: `[{rowId, status: pending|succeeded|failed|canceled|running, exitCode, commitSha, worktreePath, branch}]`.
+- Journal: `matrix.task_started`, `matrix.sub_lane.*`, `task.retry_requested` / skip with `rowId` payload.
+- Row ops live in `src/batch/retry-row.mjs` (split from `retry.mjs` for LOC cap); CLI parses `SP-X[rowId]` via `parseMatrixRowRef`.
+
+#### Step 1 design (shipped)
+
+- Row identity `SP-X[rowId]` parsed by `parseMatrixRowRef` in `src/batch/retry-row.mjs`.
+- `retry SP-X[rowId]` / `skip SP-X[rowId]` as designed; whole-task paths unchanged.
+- Status human + JSON matrixRows; engine marks running, persists worktree/branch on success, carry-over for succeeded rows.
 
 ---
 
 ### Step 1: Status + row retry/cancel
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Show per-row status under parent
-- [ ] Diagnose failing row ids
-- [ ] Retry single `SP-X[rowId]`
-- [ ] Cancel single row vs whole matrix
-- [ ] JSON includes row array when present
+- [x] Show per-row status under parent (`bin/spine-status.mjs` appendMatrixRowSections)
+- [x] Diagnose failing row ids
+- [x] Retry single `SP-X[rowId]` (`retryTaskRow` + CLI)
+- [x] Cancel single row vs whole matrix (`skipTaskRow` + CLI)
+- [x] JSON includes row array when present
+
+**Recovery note (operator):** Batch `20260905T193305-0705` aborted after thrashing (uncommitted Step 1 WIP). WIP committed as `9b829b9b`; missing `parseMatrixRowRef` + test import path fixed before land.
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand`

@@ -18,6 +18,7 @@ import { saveSpineBatchState, updateSegmentForTask } from "./state.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 import { laneDoneMarkerCommittedOnBranch } from "./journal-rebuild.mjs";
 import { runWorker } from "./worker-host.mjs";
+import { runMatrixTaskForResume } from "./engine-lanes/matrix-run.mjs";
 import { runLaneReviewPhasesBeforeCommit } from "./resume-lane-reviews.mjs";
 
 export { executeResumeWave } from "./resume-multi-queue.mjs";
@@ -251,6 +252,36 @@ export async function runResumedTaskOnLane({
 		correlationId: laneCorrelationId,
 		resumed: true,
 	});
+
+	// Matrix tasks resume through runMatrixTaskOnLane (row fan-out, carry-over,
+	// lane commit, success recording) instead of a plain worker run (#230).
+	const matrixResume = await runMatrixTaskForResume({
+		projectRoot,
+		state,
+		batchId,
+		baseBranch: state.baseBranch ?? "main",
+		config,
+		task,
+		lane,
+		taskFolderRel,
+		laneCorrelationId,
+		fileScopePaths,
+	});
+	if (matrixResume.isMatrix) {
+		if (!matrixResume.ok) {
+			const classification = matrixResume.cliResult?.error ?? "matrix_failed";
+			appendJournalEvent(projectRoot, batchId, "lane.died", {
+				laneNumber,
+				laneId: lane.laneId,
+				taskId,
+				correlationId: laneCorrelationId,
+				reason: classification,
+			});
+			return { ok: false, aborted: false, workerResult: matrixResume.cliResult, taskId, laneNumber };
+		}
+		// The matrix runner already lane-committed, recorded success, and journaled.
+		return { ok: true, taskId, laneNumber };
+	}
 
 	const workerResult = await runWorker({
 		worktreePath: wt,
