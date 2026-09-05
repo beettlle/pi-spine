@@ -1,7 +1,7 @@
 # SP-747: Gate approve/reject optional synthesis note — Status
 
 **Current Step:** 3
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete — .DONE ready
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -50,7 +50,31 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update gate subsection in `docs/adoption/operator-runbook.md`
-- [ ] Create `.DONE`
+- [x] Update gate subsection in `docs/adoption/operator-runbook.md` — added `--synthesis` readback block (§4 Land loop, after `requireBeforeIntegrate` note)
+- [x] `docs/QUICK-REFERENCE.md` checked — gate cheatsheet lists approve flags, so added a synthesis example line
+- [x] Create `.DONE` — after final commit
+
+## Completion Criteria
+
+- [x] `spine gate approve --synthesis '…'` persists text (gate.json + journal)
+- [x] `spine gate status` shows it (human output; `--json` carries the record field automatically)
+- [x] Approve without flag still works (synthesis absent — non-breaking null default)
+- [x] Reject accepts synthesis (alongside `--reason`)
+- [x] Empty synthesis is not required (flag optional; whitespace-only treated as absent)
+- [x] Closes #280
+- [x] `.DONE` created
+
+## Verification evidence
+
+- `npm run lint` — clean (eslint --max-warnings 0)
+- `npm run typecheck` — clean (both tsconfig projects)
+- Contract testCommand — `41 pass / 0 fail` (`gate-posture-wire-approve` 19, `gate` 15, `gate-posture-stamp` 7)
+- New tests: 8 (5 persistence in wire-approve, 3 CLI in gate.test.mjs)
+- `detect_changes()` — risk low, no affected processes
+
+## Notes
+
+- Real-pi worker session (`SPINE_WORKER_RUNNER` set): plan/code/final reviews run engine-side after `.DONE` (SP-195/SP-278); no in-worker review calls.
+- Auto-approve synthesis choice: **omit (null)** — `decidedBy:"auto"` already marks automation on the record.

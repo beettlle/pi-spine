@@ -966,6 +966,15 @@ spine integrate --dry-run
 
 When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine integrate` **refuses** until the gate is approved.
 
+**Synthesis readback (`--synthesis`, #280 / SP-747):** `spine gate approve` and `spine gate reject` accept an optional `--synthesis "…"` note — the receiver's readback of what was reviewed, I-PASS-lite style. The text is persisted on the gate record and surfaced by `spine gate status` (human output and `--json`) when present:
+
+```bash
+spine gate approve --synthesis "Evidence reviewed: 41 tests green, scope matches PROMPT"
+spine gate reject --reason "scope drift" --synthesis "Readback: batch landed wrong lane"
+```
+
+Rules: the flag is optional — approving without it leaves `synthesis` absent, so existing automation is unaffected; empty/whitespace values are treated as absent; posture auto-approve never writes a synthesis (the record's `decidedBy: auto` already marks automation); approvals with a recorded synthesis also carry it on the `gate.approved` / `gate.rejected` journal events for audit.
+
 **Rules-manifest drift on `main` before integrate:** Lane workers may refresh `.spine/rules-manifest.json` on the base worktree (e.g. after `spine rules sync` or new `.cursor/rules/` entries). If the gate is approved and the **only** dirty path is the manifest:
 
 | Drift kind | Integrate behavior |
