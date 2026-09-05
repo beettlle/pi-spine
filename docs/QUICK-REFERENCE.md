@@ -521,6 +521,7 @@ Optional probes read credentials from `~/.pi/agent/auth.json`. Each pool require
 | `cursor` | Admin key only | `{ "cursor": { "type": "admin_key", "key": "..." } }` or an `adminKey` field | Cursor teams daily usage |
 | `anthropic` | Anthropic **Admin** key only (`sk-ant-admin...`); regular inference keys (`sk-ant-api...`) are never used | `{ "anthropic": { "type": "admin_key", "key": "..." } }` or an `adminKey` field | Anthropic Admin usage report |
 | `github-copilot` | GitHub PAT **plus** explicit org or enterprise context (billing/enterprise scope); user-level entries are not probed | `{ "github-copilot": { "key": "ghp_...", "org": "my-org" } }` or `"enterprise": "my-ent"` | GitHub Copilot billing (org/enterprise) |
+| `google` | **No probe runs.** Google publishes no public usage/quota endpoint that authenticates with the AI Studio API key class pi stores (`{ "google": { "type": "api_key", "key": "AIza..." } }`); usage/rate-limit views exist only in AI Studio HTML dashboards, which are never scraped; Cloud Monitoring / Service Usage require GCP OAuth credentials of a different class and expose limits, not usage. The `google` pool therefore stays on the offline estimate (SP-748) | `{ "google": { "type": "api_key", "key": "AIza..." } }` (present but deliberately unused for probing) | none — no endpoint is called |
 
 #### Probe degrade matrix
 
@@ -530,6 +531,7 @@ All probes fail closed. No probe invents a remaining percentage or limit, and no
 |-----------|--------|
 | Auth file missing, unreadable, or malformed | `source: "absent"` for every pool |
 | Credential present but wrong class (e.g. Cursor regular key, Anthropic inference key, Copilot PAT without org/enterprise) | `source: "absent"`; endpoint is never called |
+| Google pool (any credential state, including a valid `google` API key) | `source: "absent"` permanently; no endpoint exists to call and no dashboard is scraped, so the pool keeps its offline estimate (SP-748) |
 | Network error, timeout, or DNS failure | `source: "absent"` with the error attached |
 | Non-OK HTTP response (401/403/404/5xx) | `source: "absent"` |
 | OK response without explicit usage/limit fields | `source: "live"`; usage stays zeroed and no `limit` is attached |

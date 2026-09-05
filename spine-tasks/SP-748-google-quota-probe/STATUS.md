@@ -1,7 +1,7 @@
 # SP-748: Optional Google quota probe for metrics quota — Status
 
-**Current Step:** 3
-**Status:** 🔵 Step 3 in progress (documentation & delivery)
+**Current Step:** 3 (all steps complete)
+**Status:** ✅ Ready for engine review / .DONE
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -58,11 +58,13 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document Google credential class + degrade row in `docs/QUICK-REFERENCE.md`
-- [ ] If no public API: STATUS records research conclusion
-- [ ] Create `.DONE`
+- [x] Document Google credential class + degrade row in `docs/QUICK-REFERENCE.md`
+- [x] If no public API: STATUS records research conclusion (Step 0 above + Amendments; probe stays `absent` with documented rationale, no scrape)
+- [x] Create `.DONE`
+
+**Check-if-affected — operator-runbook:** section 8.2 describes credential classes and the degrade matrix generically and does not enumerate probe pools per provider, so no change was required there.
 
 ## Amendments
 
@@ -83,3 +85,14 @@
 |---------|----------|
 | pi stores `auth.google = { type: "api_key", key: "AIza…" }` (shape only; verified via pi auth-storage, local auth.json shape) | Documented as the credential class; probe deliberately never reads it |
 | No live-path tests possible (no endpoint) | Recorded in Amendments; absent-path coverage substitutes per Mission branch 2 |
+| GitNexus `detect_changes` before final commit: 2 doc sections touched, 0 affected processes, low risk | Scope matches contract (mustChange `quota-probes.mjs` landed in Step 1 commit) |
+
+## Completion criteria — final self-check (Review Level 2)
+
+- [x] Optional Google probe follows fail-closed rules (never reads credential, never calls fetch, no invented numbers, no secrets)
+- [x] `spine metrics quota` google pool: documented permanent `absent` with no scrape (Mission branch 2); pool keeps offline `estimate`/`absent` as before
+- [x] Wrong/missing credentials → `absent` (trivially: probe is unconditional absent; test proves fetch is never called with a `google` api_key present)
+- [x] Tests cover absent / never-dials-out / no-limit / estimate-preservation paths (mocked); live path N/A per research conclusion (Amendments)
+- [x] QUICK-REFERENCE updated (credential-class row + degrade-matrix row)
+- [x] Closes #277 (commit message + rationale documented here and in code)
+- [x] `.DONE` created after this checklist
