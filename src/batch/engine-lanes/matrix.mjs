@@ -256,18 +256,49 @@ export function removeMatrixSubLaneWorktree(projectRoot, worktreePath, branch) {
 }
 
 /**
+ * Matrix row index environment (#229). Gives row scripts Slurm/K8s-style
+ * identity without string substitution: `SPINE_MATRIX_JOB_ID` is the parent
+ * task id, `SPINE_MATRIX_TASK_ID` the row id, `SPINE_MATRIX_TASK_INDEX` the
+ * 0-based row position, `SPINE_MATRIX_TASK_COUNT` the row count, and
+ * `JOB_COMPLETION_INDEX` aliases the index for Kubernetes indexed-job scripts.
+ *
+ * Returns null when `rowIndex`/`rowCount` are absent so callers that do not
+ * know a row's position (legacy direct calls) inject nothing at all.
+ *
+ * @param {object} params
+ * @param {string} [params.taskId] Parent matrix task id.
+ * @param {string} [params.rowId] Row id (`run_id` or derived).
+ * @param {number} [params.rowIndex] 0-based position of the row in the matrix.
+ * @param {number} [params.rowCount] Total number of matrix rows.
+ * @returns {Record<string, string> | null}
+ */
+export function buildMatrixRowEnv({ taskId, rowId, rowIndex, rowCount }) {
+	if (!Number.isInteger(rowIndex) || rowIndex < 0) return null;
+	if (!Number.isInteger(rowCount) || rowCount < 0) return null;
+	return {
+		SPINE_MATRIX_JOB_ID: String(taskId ?? ""),
+		SPINE_MATRIX_TASK_ID: String(rowId ?? ""),
+		SPINE_MATRIX_TASK_INDEX: String(rowIndex),
+		SPINE_MATRIX_TASK_COUNT: String(rowCount),
+		JOB_COMPLETION_INDEX: String(rowIndex),
+	};
+}
+
+/**
  * Run a shell command in a directory, resolving with exit code and combined output.
  * Uses async spawn so concurrent rows genuinely overlap (required for maxParallel).
  *
  * @param {string} cwd
  * @param {string} command
+ * @param {Record<string, string> | null} [extraEnv] Extra environment variables
+ *   layered over `process.env` (matrix row identity, #229). Null injects nothing.
  * @returns {Promise<{ exitCode: number, output: string }>}
  */
-export function runShellInDir(cwd, command) {
+export function runShellInDir(cwd, command, extraEnv = null) {
 	return new Promise((resolve) => {
 		const child = spawn("/bin/sh", ["-c", command], {
 			cwd,
-			env: process.env,
+			env: extraEnv ? { ...process.env, ...extraEnv } : process.env,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 		let output = "";

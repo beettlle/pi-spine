@@ -219,6 +219,7 @@ function isContractTableEmpty(parsed) {
 		parsed.fileScopeMustNotChange.length === 0 &&
 		parsed.minLineCoverage === null &&
 		parsed.artifactsMustExist.length === 0 &&
+		parsed.matrixMaxParallel === null &&
 		(parsed.unknownFields?.length ?? 0) === 0
 	);
 }

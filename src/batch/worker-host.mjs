@@ -155,6 +155,7 @@ function buildWorkerFailureResult({
  * @param {string[]} [params.fileScopePaths]
  * @param {number} [params.timeoutMs]
  * @param {object} [params.workerBackendDeps] Test-only injectables for agentSession backend
+ * @param {Record<string, string>} [params.extraEnv] Extra child env (matrix row identity, #229)
  */
 export async function runWorker({
 	worktreePath,
@@ -171,6 +172,7 @@ export async function runWorker({
 	fileScopePaths = [],
 	timeoutMs: _timeoutMs = DEFAULT_TIMEOUT_MS,
 	workerBackendDeps = {},
+	extraEnv,
 }) {
 	const donePath = path.join(taskFolder, ".DONE");
 	if (fs.existsSync(donePath)) {
@@ -250,6 +252,7 @@ export async function runWorker({
 				fileScopePaths,
 				config,
 				workerBackendDeps,
+				extraEnv,
 			});
 	const workerChild = /** @type {WorkerChildHandle} */ (child);
 	let childPastPreflight = isExecute ? true : !useLaunchScript;

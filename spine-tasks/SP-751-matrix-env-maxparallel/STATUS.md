@@ -1,7 +1,7 @@
 # SP-751: Matrix index env vars and matrixMaxParallel — Status
 
-**Current Step:** 1
-**Status:** 🔄 Step 1 in progress
+**Current Step:** 3
+**Status:** 🔄 Step 3 in progress (docs + delivery)
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -26,27 +26,29 @@
 ---
 
 ### Step 1: Env vars + matrixMaxParallel
-**Status:** 🔄 In progress
+**Status:** ✅ Complete
 
-- [ ] Inject five env vars for execute and LLM rows
-- [ ] Parse and enforce `matrixMaxParallel`
-- [ ] Tests for env injection and throttle capping
+- [x] Inject five env vars for execute and LLM rows
+- [x] Parse and enforce `matrixMaxParallel`
+- [x] Tests for env injection and throttle capping
 
-**Plan:**
-1. `matrix.mjs`: `runShellInDir(cwd, command, extraEnv = null)` merges `{...process.env, ...extraEnv}`; new `buildMatrixRowEnv({ taskId, rowId, rowIndex, rowCount })` returning the 5 vars (`SPINE_MATRIX_JOB_ID`=parent task id, `SPINE_MATRIX_TASK_ID`=row id, `SPINE_MATRIX_TASK_INDEX`=0-based, `SPINE_MATRIX_TASK_COUNT`, `JOB_COMPLETION_INDEX` alias) or null when index/count absent.
-2. `matrix-run.mjs`: `runMatrixSubLane` accepts `rowIndex`/`rowCount`; execute path passes env to `runShellInDir`, LLM path passes `extraEnv` to `runWorker`. New `resolveMatrixRowConcurrency({ matrixMaxParallel, maxParallel })` = `min(⌈matrixMaxParallel⌉ ≥ 1, global)`; `runMatrixTaskOnLane` reads parent contract, uses it as the `runConcurrent` limit (global pool stays `maxParallel`), journals `matrixMaxParallel`.
-3. `parse-prompt.mjs`: `matrixMaxParallel` in `CONTRACT_FIELD_NAMES` + positive-int validation in `applyContractField`. `validate-contract.mjs`: `isContractTableEmpty` accounts for it.
-4. `worker-spawn.mjs`/`worker-host.mjs`: additive optional `extraEnv` param on `buildWorkerChildEnv`, `spawnWorkerChild`, `spawnWorkerHandle`, `runWorker`.
-5. Tests (matrix-execution.test.mjs): `buildMatrixRowEnv` shape; `runShellInDir` injection + back-compat; `resolveMatrixRowConcurrency` caps; `buildWorkerChildEnv` extraEnv present/absent; E2E execute rows write env values to out files; E2E `matrixMaxParallel: 1` serializes rows (journal timestamps); LLM row env observed via `development.workerLaunchScript` env-dump script. contract-matrix-subst.test.mjs: parse valid/invalid `matrixMaxParallel`, per-row passthrough, no unknown-field warning.
+**Implemented:**
+- `matrix.mjs`: `buildMatrixRowEnv()` (5 vars incl. `JOB_COMPLETION_INDEX` alias); `runShellInDir(cwd, command, extraEnv)`.
+- `matrix-run.mjs`: `resolveMatrixRowConcurrency()` = min(throttle, global); `runMatrixSubLane` takes `rowIndex`/`rowCount` and injects env on both paths; `runMatrixTaskOnLane` reads parent contract, journals `matrixMaxParallel` + `rowConcurrency` on `matrix.task_started`.
+- `parse-prompt.mjs`: `matrixMaxParallel` contract field, positive-int validation. `validate-contract.mjs`: emptiness check updated.
+- `worker-spawn.mjs`/`worker-host.mjs`: additive optional `extraEnv` on `buildWorkerChildEnv`/`spawnWorkerChild`/`spawnWorkerHandle`/`runWorker`.
+- Tests: 9 new (env shape, shell injection + back-compat, throttle math, child-env merge, execute E2E env dump, throttle serialization E2E, LLM row worker env via launch script, parse valid/invalid/backtick/passthrough).
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand`
+- [x] Fix all failures
+
+**Evidence:** Contract `testCommand` exit 0 — lint clean, typecheck clean (both tsconfigs), 55/55 tests pass (40 matrix-execution + 15 contract-matrix-subst). `detect_changes()` run: changes confined to intended symbols/flows.
 
 ---
 
