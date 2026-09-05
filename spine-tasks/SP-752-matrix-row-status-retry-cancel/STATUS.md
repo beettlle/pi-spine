@@ -44,19 +44,20 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint` — exit 0
+- [x] Run typecheck — exit 0
+- [x] Contract tests: `matrix-execution.test.mjs` + `retry-row.test.mjs` — **53 pass / 0 fail**
+- [x] Fix all failures — circular import (retry-row vs retry) + export `parseMatrixRowRef`
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update runbook §2.4 ops
-- [ ] Create `.DONE`
+- [x] Update runbook §2.4 ops (status / retry / cancel)
+- [x] Create `.DONE`
 
 ## Amendments
 
