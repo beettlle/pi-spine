@@ -1,0 +1,19 @@
+tests/tasks/contract-parse.test.mjs
+  s_7146f06d8286df::t_3cd95dfc891780 156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "a94fb784191b1b440c9888a7c8a049148c42ae22",
+  "prompts": {},
+  "sessions": {
+    "s_7146f06d8286df": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-464d871b-e940-4654-8441-89d0ac529592",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
