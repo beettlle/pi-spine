@@ -1,0 +1,20 @@
+spine-tasks/SP-748-google-quota-probe/.DONE
+  h_2a17159c706ba1 1-14
+spine-tasks/SP-748-google-quota-probe/.reviews/0-20260905T174719.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-748-google-quota-probe/.reviews/3-20260905T174744.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-748-google-quota-probe/.reviews/final-20260905T174822.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "81039e563eed6ff2a393349a5d1f25cb7fd5b1ea",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
