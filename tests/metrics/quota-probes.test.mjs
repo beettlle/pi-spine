@@ -102,6 +102,7 @@ test("runQuotaProbes degrades to absent when auth is missing", async () => {
 	assert.equal(results.zai.source, "absent");
 	assert.equal(results["kimi-coding"].source, "absent");
 	assert.equal(results.cursor.source, "absent");
+	assert.equal(results.google.source, "absent");
 	assert.equal(fetch.calls, undefined); // fetch never called
 });
 
@@ -428,6 +429,67 @@ test("runQuotaProbes degrades GitHub Copilot to absent on 404 and network errors
 		assert.equal(netErr["github-copilot"].source, "absent");
 		assert.ok(netErr["github-copilot"].error);
 		assert.equal(JSON.stringify(netErr).includes("ghp-secret-token"), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("PROBE_POOLS registers the google pool id", () => {
+	assert.equal(PROBE_POOLS.google, "google");
+});
+
+test("runQuotaProbes keeps the Google probe permanently absent without network calls", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			google: { type: "api_key", key: "AIzaGoogleSecretKey" },
+		}),
+	);
+	try {
+		let fetchCalled = false;
+		const fetch = () => {
+			fetchCalled = true;
+			return Promise.resolve({ ok: true, status: 200, text: async () => "{}", json: async () => ({}) });
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.google] });
+
+		assert.equal(results.google.source, "absent");
+		assert.equal(fetchCalled, false);
+		assert.equal("usage" in results.google, false);
+		assert.equal("limit" in results.google, false);
+		assert.equal(JSON.stringify(results).includes("AIzaGoogleSecretKey"), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("google pool stays on the offline estimate while the probe is permanently absent", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(
+		authPath,
+		JSON.stringify({
+			google: { type: "api_key", key: "AIzaGoogleSecretKey" },
+		}),
+	);
+	try {
+		const probes = await runQuotaProbes({ authPath, fetch: createMockFetch([]) });
+		const snapshot = buildQuotaSnapshot({
+			projectRoot: "/tmp",
+			config: { agents: { reviewer: { model: "google/gemini-3.1-pro-preview" } } },
+			metricsLines: [
+				{ recordType: "task", model: "google/gemini-3.1-pro-preview", durationMs: 800, tokensOut: 42 },
+			],
+			probeResults: probes,
+			now: "2026-09-05T00:00:00.000Z",
+		});
+
+		assert.equal(snapshot.pools.google.source, "estimate");
+		assert.equal(snapshot.pools.google.usage.tokensOut, 42);
+		assert.equal("limit" in snapshot.pools.google, false);
+		assert.equal(JSON.stringify(snapshot).includes("AIzaGoogleSecretKey"), false);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

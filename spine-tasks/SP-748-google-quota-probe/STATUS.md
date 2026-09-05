@@ -1,7 +1,7 @@
 # SP-748: Optional Google quota probe for metrics quota — Status
 
-**Current Step:** 1
-**Status:** 🔵 Step 1 in progress (implement fail-closed probeGoogle)
+**Current Step:** 2
+**Status:** 🔵 Step 2 in progress (testing & verification)
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -36,12 +36,12 @@
 ---
 
 ### Step 1: Implement fail-closed probeGoogle
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add Google probe wired into `PROBE_POOLS` / `runQuotaProbes`
-- [ ] Wrong/missing credentials → `absent`
-- [ ] Map explicit usage/limit fields only when present
-- [ ] Redact secrets from all probe outputs
+- [x] Add Google probe wired into `PROBE_POOLS` / `runQuotaProbes`
+- [x] Wrong/missing credentials → `absent` (probe is permanently absent: never reads the credential, never calls fetch)
+- [x] Map explicit usage/limit fields only when present (no live endpoint exists; result carries no usage/limit keys)
+- [x] Redact secrets from all probe outputs
 
 ---
 

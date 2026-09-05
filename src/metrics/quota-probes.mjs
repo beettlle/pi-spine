@@ -20,6 +20,11 @@
  * (`sk-ant-api...`) are never sent to the Admin API. GitHub Copilot is only
  * probed when the auth entry carries a PAT plus an explicit org or enterprise
  * context; user-level entries without that scope degrade to `absent`.
+ *
+ * Google is permanently `absent` (SP-748): Google ships no public usage or
+ * quota endpoint that authenticates with the AI Studio API key class pi
+ * stores, and the AI Studio dashboards that show usage are HTML consoles
+ * this project never scrapes. See `probeGoogle` for the research conclusion.
  */
 
 import fs from "node:fs";
@@ -43,6 +48,7 @@ export const PROBE_POOLS = {
 	cursor: "cursor",
 	anthropic: "anthropic",
 	githubCopilot: "github-copilot",
+	google: "google",
 };
 
 /**
@@ -433,6 +439,41 @@ async function probeGitHubCopilot(auth, fetch) {
 }
 
 /**
+ * Google probe — permanently `absent` (SP-748, closes #277 with a documented
+ * won't-scrape rationale).
+ *
+ * Research conclusion (verified 2026-09-05): Google publishes no public usage
+ * or quota endpoint that authenticates with the credential class pi stores in
+ * `auth.json` (`{ "google": { "type": "api_key", "key": "AIza..." } }`, an
+ * AI Studio standard API key):
+ *
+ * - The Generative Language API reference (ai.google.dev/api) documents only
+ *   inference and platform endpoints (interactions, generateContent,
+ *   batch, embeddings, files, caches, countTokens); there is no usage-report
+ *   or quota resource.
+ * - Rate limits and usage are published solely through AI Studio HTML
+ *   dashboards (aistudio.google.com/rate-limit), which this project never
+ *   scrapes.
+ * - The programmatic alternatives (Cloud Monitoring `request_count` metrics,
+ *   Service Usage `consumerQuotaMetrics`) require GCP OAuth credentials with
+ *   cloud-platform scope — a different credential class — and expose quota
+ *   limits, not current usage.
+ *
+ * The probe therefore fails closed without reading the credential or touching
+ * the network, so the `google` pool keeps its offline estimate. When Google
+ * ships a public usage/quota endpoint for this key class, implement it here
+ * following the Z.ai/Kimi adapter pattern: explicit fields only, never invent
+ * a limit or remaining percentage, and never include secrets in the result.
+ *
+ * @param {object | null} _auth
+ * @param {typeof globalThis.fetch} _fetch
+ * @returns {Promise<ProbeResult>}
+ */
+async function probeGoogle(_auth, _fetch) {
+	return { poolId: "google", source: "absent" };
+}
+
+/**
  * Run the optional provider probes and return a map keyed by pool id.
  *
  * @param {object} [params]
@@ -450,6 +491,7 @@ export async function runQuotaProbes({
 		PROBE_POOLS.cursor,
 		PROBE_POOLS.anthropic,
 		PROBE_POOLS.githubCopilot,
+		PROBE_POOLS.google,
 	],
 } = {}) {
 	const auth = loadAuthCredentials(authPath);
@@ -467,6 +509,8 @@ export async function runQuotaProbes({
 			results.anthropic = await probeAnthropic(auth, fetch);
 		} else if (provider === PROBE_POOLS.githubCopilot) {
 			results["github-copilot"] = await probeGitHubCopilot(auth, fetch);
+		} else if (provider === PROBE_POOLS.google) {
+			results.google = await probeGoogle(auth, fetch);
 		}
 	}
 
