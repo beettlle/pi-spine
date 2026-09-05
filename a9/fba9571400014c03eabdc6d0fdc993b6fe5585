@@ -1,0 +1,18 @@
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/0-20260905T180502.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/3-20260905T180522.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/final-20260905T180819.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "a9fba9571400014c03eabdc6d0fdc993b6fe5585",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
