@@ -1,0 +1,14 @@
+spine-tasks/SP-750-ts-nocheck-phase1-typing/STATUS.md
+  h_2a17159c706ba1 64-78,80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "e5afafa6950d461a24a72e5c8739116e63455938",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
