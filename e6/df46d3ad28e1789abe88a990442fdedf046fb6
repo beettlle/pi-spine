@@ -1,0 +1,16 @@
+bin/spine-gate.mjs
+  h_2a17159c706ba1 4,35-38,94-99,119,122-127
+src/batch/gate-posture-approve.mjs
+  h_2a17159c706ba1 126,129,165-169,186-188,300,303,335-337,347
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "e6df46d3ad28e1789abe88a990442fdedf046fb6",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
