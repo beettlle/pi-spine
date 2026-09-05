@@ -1,0 +1,19 @@
+src/batch/resume.mjs
+  s_a98943580d361f::t_0dfe6f4674fd67 190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "06b984f65b985b5e089c96902f95004583262596",
+  "prompts": {},
+  "sessions": {
+    "s_a98943580d361f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-72cc2051-6932-4d0f-ab73-325e1ef6f7f5",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
