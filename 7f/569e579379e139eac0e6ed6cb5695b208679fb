@@ -1,0 +1,53 @@
+spine-tasks/SP-751-matrix-env-maxparallel/STATUS.md
+  s_2df0bcd0922f65::t_241178a4369b87 1-43
+spine-tasks/SP-752-matrix-row-status-retry-cancel/STATUS.md
+  s_2df0bcd0922f65::t_88562ab0c8e833 1-45
+spine-tasks/SP-752-matrix-row-status-retry-cancel/PROMPT.md
+  s_2df0bcd0922f65::t_42fa6063e8afa3 1-109
+spine-tasks/_authoring/release-v2.20.0/manifest.md
+  s_2df0bcd0922f65::t_8d9fdb5e21edfa 1-7,9-62,66-91,93-97,100-138
+  s_2df0bcd0922f65::t_45a7308fea2a69 63-65
+  s_2df0bcd0922f65::t_22f8169edac0c4 8
+  s_2df0bcd0922f65::t_3435cc7dc125a6 92,98-99
+  s_2df0bcd0922f65::t_a669244593f003 139-142
+spine-tasks/SP-748-google-quota-probe/PROMPT.md
+  s_2df0bcd0922f65::t_e1a27520eed449 1-104
+spine-tasks/CONTEXT.md
+  s_2df0bcd0922f65::t_ae7ed88d558b03 3,5,2477-2500
+  s_2df0bcd0922f65::t_60da43aba8faa7 2501
+spine-tasks/SP-747-gate-approve-synthesis/PROMPT.md
+  s_2df0bcd0922f65::t_185c5458e4b4af 1-104
+spine-tasks/SP-749-ts-nocheck-ci-guard/STATUS.md
+  s_2df0bcd0922f65::t_1273082fa3051f 1-43
+spine-tasks/SP-747-gate-approve-synthesis/STATUS.md
+  s_2df0bcd0922f65::t_23552715205916 1-45
+spine-tasks/SP-750-ts-nocheck-phase1-typing/PROMPT.md
+  s_2df0bcd0922f65::t_4668e678352f7e 1-104
+spine-tasks/SP-750-ts-nocheck-phase1-typing/STATUS.md
+  s_2df0bcd0922f65::t_5386e3245ee52f 1-43
+spine-tasks/SP-751-matrix-env-maxparallel/PROMPT.md
+  s_2df0bcd0922f65::t_e16b7573a7bf56 1-16,18-106
+  s_2df0bcd0922f65::t_e0b3b79cfeb758 17
+spine-tasks/SP-749-ts-nocheck-ci-guard/PROMPT.md
+  s_2df0bcd0922f65::t_c9a73036dffa2d 1-97
+spine-tasks/dependencies.json
+  s_2df0bcd0922f65::t_76663c24192a9a 3,1927-1938
+spine-tasks/SP-748-google-quota-probe/STATUS.md
+  s_2df0bcd0922f65::t_534f32497b973b 1-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "7f569e579379e139eac0e6ed6cb5695b208679fb",
+  "prompts": {},
+  "sessions": {
+    "s_2df0bcd0922f65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f2a14206-7343-48a7-96f1-46025bc3793f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
