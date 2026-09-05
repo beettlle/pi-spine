@@ -1,0 +1,24 @@
+spine-tasks/SP-750-ts-nocheck-phase1-typing/STATUS.md
+  h_2a17159c706ba1 3-4,14-19,21-36,41,43-46
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 30-34,39-66,182-185,189,220-221,242,255,297-299,321,337,347,367,402-406,412-413,415-417
+src/batch/state-guards.mjs
+  h_2a17159c706ba1 41,123,135,239
+src/batch/state-io.mjs
+  h_2a17159c706ba1 28,63
+tsconfig.batch.json
+  h_2a17159c706ba1 12-17
+types/micromatch.d.ts
+  h_2a17159c706ba1 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "da2df40e6333ababde8a326df15d6b79e5633d43",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
