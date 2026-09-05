@@ -1,0 +1,14 @@
+spine-tasks/SP-749-ts-nocheck-ci-guard/STATUS.md
+  h_2a17159c706ba1 3,47-52,54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "549ef0c5d377fbf869464e28c997c99c3fb0b934",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
