@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-09-04 (Phase 87 v2.19.0 published; Next → SP-747)
+**Last Updated:** 2026-09-05 (Phase 88 v2.20.0 authored; Next → SP-753)
 **Status:** Active
-**Next Task ID:** SP-747
+**Next Task ID:** SP-753
 
 ---
 
@@ -2473,6 +2473,31 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] Published **v2.19.0** 2026-09-04 after operator approval
 
 **Release note (published):** v2.19.0 — Operator handoff quality: runbook/operator-rule handoff packet (#282), PROMPT Risk/Problem theory (#281), diagnose `background[]`/`assessmentReason` (#278), issue-draft/handoff SBAR sections (#279). Tag `v2.19.0` @ `a73b9ced`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33918406120); CI @ `58d1aa79` ([33916294750](https://github.com/beettlle/pi-spine/actions/runs/33916294750)); GitHub [v2.19.0](https://github.com/beettlle/pi-spine/releases/tag/v2.19.0). Post-publish smoke OK (retry after registry lag F9/#247).
+
+### Phase 88 — v2.20.0 close all open P2 issues (#280, #277, #266, #229, #230)
+
+**Authoring:** 2026-09-05 · Manifest: [`spine-tasks/_authoring/release-v2.20.0/manifest.md`](_authoring/release-v2.20.0/manifest.md)
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-747 | Gate approve/reject `--synthesis` | S | #280 | Pending |
+| SP-748 | Optional Google quota probe | M | #277 | Pending |
+| SP-749 | `@ts-nocheck` CI/arch guard (Phase 0) | S | #266 Partial | Pending |
+| SP-750 | Phase 1 high-risk typing | M | #266 Closes | Pending |
+| SP-751 | Matrix env vars + `matrixMaxParallel` | M | #229 | Pending |
+| SP-752 | Per-row matrix status/retry/cancel | M | #230 | Pending |
+
+**Phase 88 exit criteria:**
+
+- [ ] Operator approved release scope (manifest)
+- [ ] SP-747–SP-752 `.DONE` and integrated on `main`
+- [ ] All five P2 issues CLOSED on GitHub
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Published **v2.20.0** after operator publish approval
+
+**Release note (draft):** v2.20.0 — Close open P2 backlog: gate synthesis (#280), Google quota probe (#277), `@ts-nocheck` Phase 0–1 (#266), matrix env/`matrixMaxParallel` (#229), per-row matrix ops (#230).
+
+
 
 **Deferred:** #280 gate synthesis; #277 Google quota probe; #266 ts-nocheck; matrix epic #225/#229–#231; P3 backlog.
 
