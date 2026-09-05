@@ -1,0 +1,19 @@
+spine-tasks/SP-752-matrix-row-status-retry-cancel/STATUS.md
+  s_a98943580d361f::t_2f8e0b09ac0d18 47,49-52,57,59-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4f9ac97241d227b6055185ca27b738a2808520b6",
+  "prompts": {},
+  "sessions": {
+    "s_a98943580d361f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-72cc2051-6932-4d0f-ab73-325e1ef6f7f5",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
