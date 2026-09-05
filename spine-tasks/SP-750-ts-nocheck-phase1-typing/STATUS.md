@@ -61,7 +61,20 @@ Impact analysis (GitNexus, per AGENTS.md): `saveSpineBatchState` upstream = CRIT
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update #266 checklist / follow-up notes
-- [ ] Create `.DONE`
+- [x] Update #266 checklist / follow-up notes — burn-down comment posted (264 files, 168 nocheck → **36.3% checkJs-clean**; tsconfig include 4 → 8); follow-up issues filed: Phase 2 → [#283](https://github.com/beettlle/pi-spine/issues/283) (engine-lanes), Phase 3 → [#284](https://github.com/beettlle/pi-spine/issues/284) (reconcile/doctor); cross-link comment posted. Commit convention intentionally omits "Closes #266" keyword so the issue stays open while rows remain.
+- [x] Create `.DONE` — after all completion criteria verified
+
+---
+
+## Completion Criteria
+
+- [x] Phase 1 modules pass `tsc --project tsconfig.batch.json` without nocheck (state-io, state-guards, contract-exec; liveness clean + included)
+- [x] `tsconfig.batch.json` include expanded for Phase 1 (4 → 8 entries)
+- [x] Arch guard green; allowlist shrunk 171 → 168 (hygiene + count-parity tests pass)
+- [x] No regression: lint clean, typecheck clean, Contract `testCommand` PASS, full `npm test` 2582/2582
+- [x] #266 updated (burn-down comment + Phase 2/3 follow-ups #283, #284)
+- [x] `.DONE` created
+
+**End state:** 3 source modules typed (nocheck removed, typing-only edits), `tsconfig.batch.json` + ambient `types/micromatch.d.ts` added, arch allowlist shrunk by 3. PROMPT.md left pristine per SP-749 convention (STATUS is the tracker).
