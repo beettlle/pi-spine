@@ -1,0 +1,14 @@
+spine-tasks/SP-752-matrix-row-status-retry-cancel/STATUS.md
+  h_2a17159c706ba1 3-4,14-27,29-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b34454416af22c35180f6fe913732c4a5987f84b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
