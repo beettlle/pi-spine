@@ -267,8 +267,9 @@ spine review step --step 1 --type plan
 # Inspect integrate gate status
 spine gate status
 
-# Approve gate (if required)
+# Approve gate (if required) — optional --synthesis readback note (#280)
 spine gate approve
+spine gate approve --synthesis "tests green, scope matches PROMPT"
 
 # Reject gate
 spine gate reject --reason "test failures"

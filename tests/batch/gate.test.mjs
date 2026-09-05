@@ -296,6 +296,70 @@ test("runSpineGate CLI approve updates gate record", async () => {
 	}
 });
 
+test("runSpineGate approve --synthesis persists readback and status shows it (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-cli-synthesis-");
+	const batchId = "20260712T130600";
+	try {
+		writeSpineBatchState(projectRoot, completedFixture(batchId, "orch/x"));
+		openIntegrateGate({ projectRoot, batchId, batchState: completedFixture(batchId, "orch/x") });
+
+		const approve = runSpineGate({
+			projectRoot,
+			args: ["approve", "--synthesis", "readback: tests pass, scope matches PROMPT"],
+		});
+		assert.equal(approve.exitCode, 0);
+		assert.match(approve.output, /Synthesis: readback: tests pass, scope matches PROMPT/);
+
+		const status = runSpineGate({ projectRoot, args: ["status"] });
+		assert.equal(status.exitCode, 0);
+		assert.match(status.output, /Synthesis: readback: tests pass, scope matches PROMPT/);
+
+		assert.equal(
+			loadGateRecord(projectRoot, batchId).synthesis,
+			"readback: tests pass, scope matches PROMPT",
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runSpineGate status hides synthesis when absent (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-cli-no-synth-");
+	const batchId = "20260712T130601";
+	try {
+		writeSpineBatchState(projectRoot, completedFixture(batchId, "orch/x"));
+		openIntegrateGate({ projectRoot, batchId, batchState: completedFixture(batchId, "orch/x") });
+
+		const status = runSpineGate({ projectRoot, args: ["status"] });
+		assert.equal(status.exitCode, 0);
+		assert.doesNotMatch(status.output, /Synthesis:/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runSpineGate reject accepts --synthesis (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-cli-reject-synth-");
+	const batchId = "20260712T130602";
+	try {
+		writeSpineBatchState(projectRoot, completedFixture(batchId, "orch/x"));
+		openIntegrateGate({ projectRoot, batchId, batchState: completedFixture(batchId, "orch/x") });
+
+		const reject = runSpineGate({
+			projectRoot,
+			args: ["reject", "--reason", "bad scope", "--synthesis", "readback: scope drift"],
+		});
+		assert.equal(reject.exitCode, 0);
+
+		const gate = loadGateRecord(projectRoot, batchId);
+		assert.equal(gate.status, "rejected");
+		assert.equal(gate.rejectionReason, "bad scope");
+		assert.equal(gate.synthesis, "readback: scope drift");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 function orchTipSha(projectRoot, ref) {
 	return execFileSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
 		cwd: projectRoot,

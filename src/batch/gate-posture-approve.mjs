@@ -123,9 +123,10 @@ function recordRejectStreakReset(projectRoot, gate) {
  * @param {string} ctx.batchId
  * @param {"human" | "auto"} [ctx.decidedBy]
  * @param {GatePostureEvaluateResult | null} [ctx.postureEvaluation]
+ * @param {string} [ctx.synthesis] Optional operator readback note (SP-747 / #280); omitted stays absent.
  */
 export function approveIntegrateGate(ctx) {
-	const { projectRoot, batchId, decidedBy = "human", postureEvaluation = null } = ctx;
+	const { projectRoot, batchId, decidedBy = "human", postureEvaluation = null, synthesis } = ctx;
 	const gate = loadGateRecord(projectRoot, batchId);
 
 	if (!gate) {
@@ -161,6 +162,11 @@ export function approveIntegrateGate(ctx) {
 	gate.status = "approved";
 	gate.decidedAt = new Date().toISOString();
 	gate.decidedBy = actor;
+	// SP-747 / #280: persist the operator's synthesis readback when provided.
+	// Absent / empty flag leaves the field omitted (non-breaking null default);
+	// auto-approve never passes synthesis, so automated records stay without one.
+	const synthesisNote = typeof synthesis === "string" && synthesis.trim() !== "" ? synthesis : null;
+	if (synthesisNote) gate.synthesis = synthesisNote;
 	saveGateRecord(projectRoot, gate);
 	recordApprovalStreak(projectRoot, gate);
 
@@ -176,6 +182,9 @@ export function approveIntegrateGate(ctx) {
 		journalPayload.postureDecision = postureEvaluation.decision;
 		journalPayload.postureReason = postureEvaluation.reason;
 		journalPayload.postureTier = postureEvaluation.tier;
+	}
+	if (synthesisNote) {
+		journalPayload.synthesis = synthesisNote;
 	}
 
 	appendJournalEvent(projectRoot, batchId, "gate.approved", journalPayload);
@@ -288,9 +297,10 @@ export function maybeAutoApproveIntegrateGate(ctx) {
  * @param {string} ctx.projectRoot
  * @param {string} ctx.batchId
  * @param {string} [ctx.reason]
+ * @param {string} [ctx.synthesis] Optional operator readback note (SP-747 / #280).
  */
 export function rejectIntegrateGate(ctx) {
-	const { projectRoot, batchId, reason } = ctx;
+	const { projectRoot, batchId, reason, synthesis } = ctx;
 	const gate = loadGateRecord(projectRoot, batchId);
 
 	if (!gate) {
@@ -322,6 +332,9 @@ export function rejectIntegrateGate(ctx) {
 	gate.decidedAt = new Date().toISOString();
 	gate.decidedBy = "human";
 	if (reason) gate.rejectionReason = reason;
+	// SP-747 / #280: same optional readback contract as approve — omit when absent.
+	const synthesisNote = typeof synthesis === "string" && synthesis.trim() !== "" ? synthesis : null;
+	if (synthesisNote) gate.synthesis = synthesisNote;
 	saveGateRecord(projectRoot, gate);
 	recordRejectStreakReset(projectRoot, gate);
 
@@ -331,6 +344,7 @@ export function rejectIntegrateGate(ctx) {
 		category: gate.category ?? null,
 		status: gate.status,
 		reason: reason ?? null,
+		...(synthesisNote ? { synthesis: synthesisNote } : {}),
 		decidedBy: "human",
 	});
 
