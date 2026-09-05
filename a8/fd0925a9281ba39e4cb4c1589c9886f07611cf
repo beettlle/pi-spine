@@ -1,0 +1,29 @@
+tests/batch/matrix-execution.test.mjs
+  s_a98943580d361f::t_389c74873e6522 29-30
+docs/adoption/operator-runbook.md
+  s_a98943580d361f::t_fa0d7797fb1acb 355
+  s_a98943580d361f::t_15e2b988ea200f 340-342
+src/batch/retry-row.mjs
+  s_a98943580d361f::t_5b595591d72349 19-32
+  s_a98943580d361f::t_9c1aa7ed8a287b 18
+spine-tasks/SP-752-matrix-row-status-retry-cancel/STATUS.md
+  s_a98943580d361f::t_e20c9aaa0a42af 3-4,21-23,25,27-29,34,36-42,47
+spine-tasks/SP-752-matrix-row-status-retry-cancel/.DONE
+  s_a98943580d361f::t_49ee1fb7e02d6f 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "a8fd0925a9281ba39e4cb4c1589c9886f07611cf",
+  "prompts": {},
+  "sessions": {
+    "s_a98943580d361f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-72cc2051-6932-4d0f-ab73-325e1ef6f7f5",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
