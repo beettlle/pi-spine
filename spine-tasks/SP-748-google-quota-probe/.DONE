@@ -1,0 +1,14 @@
+SP-748 complete — see STATUS.md for full record.
+
+Research conclusion: no public Google usage/quota API exists for the AI Studio
+API key class pi stores, so per Mission branch 2 the google pool ships a
+documented permanent fail-closed `absent` probe (no scraping). Contract
+mustChange `src/metrics/quota-probes.mjs` changed (PROBE_POOLS.google +
+probeGoogle wired into runQuotaProbes); tests prove never-dials-out, no
+invented usage/limit, no secrets, estimate preservation. QUICK-REFERENCE
+updated with the Google credential class + degrade rows.
+
+Verification: Contract testCommand run in foreground — lint clean (0
+warnings), typecheck clean, 47/47 tests pass (quota-probes/snapshot/cli).
+
+Closes #277.
