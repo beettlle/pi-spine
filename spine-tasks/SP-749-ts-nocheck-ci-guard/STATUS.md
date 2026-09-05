@@ -1,6 +1,6 @@
 # SP-749: CI/arch guard against new @ts-nocheck — Status
 
-**Current Step:** 2
+**Current Step:** 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-05
 **Review Level:** 1
@@ -44,11 +44,14 @@ Step 2 sanity: add a temp `// @ts-nocheck` file under `src/`, observe the guard 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Not Started
+**Status:** ✅ Done (see verification notes)
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint` — pass, exit 0
+- [x] Run Contract `testCommand` (`npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs`) — pass, exit 0, 4/4 arch tests green
+- [x] Fix all failures — one test-side fix during development: expected array in the scanner self-check missed the `nested/` prefix; header block comment also initially contained a literal `*/` (see Step 1 discovery)
+- [x] Sanity: created `src/__sp749-sanity-tmp.mjs` with a leading `// @ts-nocheck` — guard failed as designed ("no new @ts-nocheck outside the allowlist" ✖ + count-parity ✖); deleted the file, re-ran → 4/4 pass. Nothing left failing, `src/` unchanged in git.
+
+**Full `npm test` note:** `SPINE_SUPPRESS_JOURNAL_ATTACH=1 npm test` → 2574 tests, 2531 pass, **43 fail — all pre-existing** subprocess-heavy batch/engine integration tests (engine.test.mjs, sequence-resume, batch-start-wave, spine-run, etc.), zero in `tests/arch/`. Verified pre-existing: at lane base 7f569e57 (throwaway worktree, before this task's commit) `tests/spine-run.test.mjs` already fails 2/2 and `tests/batch/integration-abc.test.mjs` fails 2/3. All 4 new arch tests pass inside the full-suite run. Contract testCommand is green; the 43 base failures are out of scope for SP-749.
 
 ---
 
