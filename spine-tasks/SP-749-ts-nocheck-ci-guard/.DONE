@@ -1,0 +1,1 @@
+SP-749 complete: arch guard against new @ts-nocheck landed (tests/arch/ts-nocheck-guard.test.mjs, 171-entry allowlist). Lint + typecheck + Contract testCommand green; 43 npm test failures verified pre-existing at base 7f569e57. #266 Phase 0 comment posted. See STATUS.md.
