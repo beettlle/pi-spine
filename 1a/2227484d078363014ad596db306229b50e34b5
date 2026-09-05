@@ -1,0 +1,22 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-750-ts-nocheck-phase1-typing/.DONE
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-750-ts-nocheck-phase1-typing/.reviews/0-20260905T182703.md
+  h_2a17159c706ba1 1-13
+spine-tasks/SP-750-ts-nocheck-phase1-typing/.reviews/3-20260905T182711.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-750-ts-nocheck-phase1-typing/.reviews/final-20260905T182757.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "1a2227484d078363014ad596db306229b50e34b5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
