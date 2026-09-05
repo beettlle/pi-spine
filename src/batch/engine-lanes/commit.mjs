@@ -65,6 +65,11 @@ export function commitLaneAndValidateWorktree({
 		porcelain: preCommitPorcelain,
 	});
 
+	const canceledMatrixRowIds = (Array.isArray(task?.matrixRows) ? task.matrixRows : [])
+		.filter((row) => row && row.status === "canceled")
+		.map((row) => row.rowId)
+		.filter(Boolean);
+
 	const laneCommit = commitLaneWorktree({
 		worktreePath,
 		taskBranch,
@@ -74,6 +79,7 @@ export function commitLaneAndValidateWorktree({
 		projectRoot,
 		ignorePatterns,
 		fileScopePaths,
+		canceledMatrixRowIds,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";

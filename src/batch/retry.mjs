@@ -18,6 +18,7 @@ import {
 const RETRY_ALLOWED_PHASES = new Set(["paused", "failed"]);
 const RETRY_BLOCKED_PHASES = new Set(["running", "planning"]);
 
+
 /**
  * Fail running tasks and clear dead engine/worker PIDs before retry/skip (#203 / SP-647).
  *
@@ -29,10 +30,92 @@ function reconcileOrphanBeforeTaskMutation(projectRoot, state) {
 }
 
 /**
+ * Shared preamble for task/row mutations: load batch state, reconcile orphan
+ * running state, reload. Returns the live state or a ready-to-return error.
+ *
+ * @param {string} projectRoot
+ * @returns {{ ok: true, state: object } | { ok: false, result: { ok: false, exitCode: number, error: string, output: string } }}
+ */
+export function loadMutableBatch(projectRoot) {
+	const loaded = loadSpineBatchState(projectRoot);
+	if (!loaded.raw) {
+		return {
+			ok: false,
+			result: { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" },
+		};
+	}
+
+	reconcileOrphanBeforeTaskMutation(projectRoot, loaded.raw);
+
+	const reloaded = loadSpineBatchState(projectRoot);
+	const state = reloaded.raw;
+	if (!state) {
+		return {
+			ok: false,
+			result: { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" },
+		};
+	}
+	return { ok: true, state };
+}
+
+/**
+ * Phase guard shared by retry/skip at task and row scope. `operation` only
+ * shapes the error text ("retry" vs "skip"); the phase sets are shared.
+ *
+ * @param {object} params
+ * @param {string} params.phase
+ * @param {"retry" | "skip"} params.operation
+ * @returns {{ ok: true } | { ok: false, error: string, output: string, batchId?: string, phase: string }}
+ */
+export function guardPhaseForMutation({ phase, operation }) {
+	const verb = operation === "skip" ? "skip" : "retry";
+	if (RETRY_BLOCKED_PHASES.has(phase)) {
+		return {
+			ok: false,
+			error: `cannot_${verb}`,
+			output: `Cannot ${verb} task while batch phase is ${phase}. Pause the batch first.\n`,
+			phase,
+		};
+	}
+	if (operation === "retry" && !RETRY_ALLOWED_PHASES.has(phase)) {
+		return {
+			ok: false,
+			error: "cannot_retry",
+			output: `Cannot retry task in batch phase ${phase}. Retry is allowed in paused or failed batches.\n`,
+			phase,
+		};
+	}
+	return { ok: true };
+}
+
+/**
+ * Flip a matrix task's `failed` rows back to `pending` for a whole-task retry
+ * while preserving `succeeded` rows (never re-executed — #230) and `canceled`
+ * rows (operator exclusion wins).
+ *
+ * @param {object} task
+ * @returns {string[]} Row ids reset for re-execution.
+ */
+function resetMatrixRowsForRetry(task) {
+	const rows = Array.isArray(task?.matrixRows) ? task.matrixRows : [];
+	/** @type {string[]} */
+	const retried = [];
+	for (const row of rows) {
+		if (!row || typeof row !== "object") continue;
+		if (row.status === "failed") {
+			row.status = "pending";
+			row.exitCode = null;
+			retried.push(row.rowId);
+		}
+	}
+	return retried;
+}
+
+/**
  * @param {object} state
  * @param {string} taskId
  */
-function findTask(state, taskId) {
+export function findTask(state, taskId) {
 	return (state.tasks ?? []).find(
 		(task) => task && typeof task === "object" && task.taskId === taskId,
 	);
@@ -120,37 +203,18 @@ export function detectSegmentDrift(state) {
  * @param {string} params.taskId
  */
 export function retryTask({ projectRoot, taskId }) {
-	const loaded = loadSpineBatchState(projectRoot);
-	if (!loaded.raw) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
-	}
-
-	reconcileOrphanBeforeTaskMutation(projectRoot, loaded.raw);
-
-	const reloaded = loadSpineBatchState(projectRoot);
-	const state = reloaded.raw;
-	if (!state) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
-	}
+	const loadedBatch = loadMutableBatch(projectRoot);
+	if (!loadedBatch.ok) return loadedBatch.result;
+	const state = loadedBatch.state;
 	const phase = String(state.phase ?? "");
 
-	if (RETRY_BLOCKED_PHASES.has(phase)) {
+	const guard = guardPhaseForMutation({ phase, operation: "retry" });
+	if (!guard.ok) {
 		return {
 			ok: false,
 			exitCode: 1,
-			error: "cannot_retry",
-			output: `Cannot retry task while batch phase is ${phase}. Pause the batch first.\n`,
-			batchId: state.batchId,
-			phase,
-		};
-	}
-
-	if (!RETRY_ALLOWED_PHASES.has(phase)) {
-		return {
-			ok: false,
-			exitCode: 1,
-			error: "cannot_retry",
-			output: `Cannot retry task in batch phase ${phase}. Retry is allowed in paused or failed batches.\n`,
+			error: guard.error,
+			output: guard.output,
 			batchId: state.batchId,
 			phase,
 		};
@@ -204,6 +268,10 @@ export function retryTask({ projectRoot, taskId }) {
 		};
 	}
 
+	// Matrix tasks (#230): succeeded rows carry over (never re-executed) and
+	// canceled rows stay excluded — only failed rows re-enter the sweep.
+	const retriedRowIds = resetMatrixRowsForRetry(task);
+
 	const unblocked = unblockBatchAfterRetry(state);
 	if (!unblocked) {
 		state.phase = "failed";
@@ -216,7 +284,8 @@ export function retryTask({ projectRoot, taskId }) {
 	state.resilience.retryCountByScope[taskId] = (state.resilience.retryCountByScope[taskId] ?? 0) + 1;
 
 	const pendingSegments = countPendingSegments(state, taskId);
-	const previousPhase = String(reloaded.raw?.phase ?? phase);
+	// The shared preamble already reloaded state, so the live phase is `phase`.
+	const previousPhase = phase;
 	recordTaskTransition({
 		projectRoot,
 		state,
@@ -225,6 +294,7 @@ export function retryTask({ projectRoot, taskId }) {
 			taskId,
 			previousClassification: reset.previousClassification,
 			pendingSegments,
+			...(retriedRowIds.length > 0 ? { retriedRowIds } : {}),
 		},
 	});
 
@@ -243,6 +313,12 @@ export function retryTask({ projectRoot, taskId }) {
 
 	const resumeHint = unblocked ? "spine batch resume" : "spine batch resume --force";
 
+	let output = `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).`;
+	if (retriedRowIds.length > 0) {
+		output += `\n  Matrix rows re-running: ${retriedRowIds.join(", ")} (succeeded rows carry over).`;
+	}
+	output += `\n  → ${resumeHint}\n`;
+
 	return {
 		ok: true,
 		exitCode: 0,
@@ -250,7 +326,8 @@ export function retryTask({ projectRoot, taskId }) {
 		taskId,
 		pendingSegments,
 		unblocked,
-		output: `Task ${taskId} reset for retry (pendingSegments=${pendingSegments}).\n  → ${resumeHint}\n`,
+		...(retriedRowIds.length > 0 ? { retriedRowIds } : {}),
+		output,
 	};
 }
 
@@ -260,26 +337,18 @@ export function retryTask({ projectRoot, taskId }) {
  * @param {string} params.taskId
  */
 export function skipTask({ projectRoot, taskId }) {
-	const loaded = loadSpineBatchState(projectRoot);
-	if (!loaded.raw) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
-	}
-
-	reconcileOrphanBeforeTaskMutation(projectRoot, loaded.raw);
-
-	const reloaded = loadSpineBatchState(projectRoot);
-	const state = reloaded.raw;
-	if (!state) {
-		return { ok: false, exitCode: 1, error: "no_active_batch", output: "No active pi-spine batch.\n" };
-	}
+	const loadedBatch = loadMutableBatch(projectRoot);
+	if (!loadedBatch.ok) return loadedBatch.result;
+	const state = loadedBatch.state;
 	const phase = String(state.phase ?? "");
 
-	if (RETRY_BLOCKED_PHASES.has(phase)) {
+	const guard = guardPhaseForMutation({ phase, operation: "skip" });
+	if (!guard.ok) {
 		return {
 			ok: false,
 			exitCode: 1,
-			error: "cannot_skip",
-			output: `Cannot skip task while batch phase is ${phase}. Pause the batch first.\n`,
+			error: guard.error,
+			output: guard.output,
 			batchId: state.batchId,
 			phase,
 		};
@@ -354,3 +423,4 @@ export function skipTask({ projectRoot, taskId }) {
 			: `Task ${taskId} skipped.\n  → spine batch resume --force\n`,
 	};
 }
+

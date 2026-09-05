@@ -72,6 +72,9 @@ function normalizeTasks(tasks) {
 		/** @type {Record<string, unknown>} */
 		const task = entry && typeof entry === "object" ? /** @type {Record<string, unknown>} */ (entry) : {};
 		const status = String(task.status ?? "pending").toLowerCase();
+		// Matrix per-row state (#230): pass the row array through when present so
+		// `spine status --json` / diagnose surfaces per-row running/succeeded/failed.
+		const matrixRows = Array.isArray(task.matrixRows) ? task.matrixRows : null;
 		return {
 			taskId: String(task.taskId ?? task.id ?? ""),
 			status,
@@ -81,6 +84,7 @@ function normalizeTasks(tasks) {
 			startedAt: task.startedAt ?? null,
 			endedAt: task.endedAt ?? null,
 			classification: classifyStatus(status),
+			...(matrixRows ? { matrixRows } : {}),
 		};
 	});
 }

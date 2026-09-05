@@ -12,6 +12,7 @@ import {
 	acquireLaneSlot,
 	aggregateMatrixOutcomes,
 	buildMatrixRowEnv,
+	loadMatrixTaskRows,
 	provisionMatrixSubLaneWorktree,
 	recordMatrixEvent,
 	releaseLaneSlot,
@@ -433,6 +434,88 @@ export async function runMatrixSubLane({
 }
 
 /**
+ * Resume-path entry for matrix tasks (SP-752 / #230).
+ *
+ * The single-task (`resume.mjs`) and multi-task (`resume-multi-lanes.mjs`)
+ * resume loops run workers directly and have no matrix fan-out — without this
+ * dispatch a retried matrix task falls through to a plain worker run on the
+ * unsubstituted parent PROMPT. Detect a matrix packet and delegate to
+ * `runMatrixTaskOnLane`, which owns per-row execution, carry-over, lane commit,
+ * and success/failure recording for the resumed task.
+ *
+ * On failure the matrix runner has already failed the task, persisted state,
+ * and journaled `task.failed`; this finishes the failed-batch bookkeeping
+ * (batch phase/counters — the plain worker failure branch does the same) and
+ * returns a ready-to-return `cliResult` envelope for the resume caller.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} params.state Live batch state.
+ * @param {string} params.batchId
+ * @param {string} params.baseBranch
+ * @param {object} params.config
+ * @param {object} params.task
+ * @param {object} params.lane
+ * @param {string} params.taskFolderRel
+ * @param {string} params.laneCorrelationId
+ * @param {string[]} params.fileScopePaths
+ * @returns {Promise<{ isMatrix: false } | { isMatrix: true, ok: boolean, cliResult?: object }>}
+ */
+export async function runMatrixTaskForResume({
+	projectRoot,
+	state,
+	batchId,
+	baseBranch,
+	config,
+	task,
+	lane,
+	taskFolderRel,
+	laneCorrelationId,
+	fileScopePaths,
+}) {
+	const matrix = loadMatrixTaskRows(path.join(projectRoot, taskFolderRel));
+	if (!matrix) return { isMatrix: false };
+	const result = await runMatrixTaskOnLane({
+		projectRoot,
+		state,
+		batchId,
+		baseBranch,
+		config,
+		task,
+		lane,
+		taskFolderRel,
+		laneCorrelationId,
+		fileScopePaths,
+		matrix,
+		maxParallel: config?.lanes?.maxParallel ?? 1,
+	});
+	if (!result.ok) {
+		const output = result.workerResult?.output ?? result.output ?? "matrix task failed";
+		state.failedTasks = 1;
+		state.succeededTasks = 0;
+		state.phase = "failed";
+		state.endedAt = Date.now();
+		state.lastError = String(output).slice(0, 500);
+		saveEngineBatchState(projectRoot, state);
+		return {
+			isMatrix: true,
+			ok: false,
+			cliResult: {
+				ok: false,
+				exitCode: result.workerResult?.exitCode ?? 1,
+				batchId,
+				taskId: task.taskId,
+				error: result.workerResult?.classification ?? "worker_failed",
+				output,
+			},
+		};
+	}
+	// Success: the matrix runner already lane-committed, recorded task success,
+	// and journaled — the caller skips its plain worker postlude.
+	return { isMatrix: true, ok: true };
+}
+
+/**
  * Run every matrix row of a task as a first-class lane-pool competitor
  * (SP-697 / #228, supersedes the SP-690 nested throttle).
  *
@@ -445,10 +528,13 @@ export async function runMatrixSubLane({
  * `lane-{n}-…` worktrees.
  *
  * Each row runs in its own worktree off the lane task branch. The parent task
- * succeeds only when every row succeeds; any failure fails the task and
- * surfaces the failing row id(s). Successful row branches are merged back into
- * the lane worktree so the normal lane-commit + wave-merge carry all rows'
- * output.
+ * succeeds only when every non-canceled row succeeds; any failed row fails the
+ * task and surfaces the failing row id(s). `canceled` rows (row-scoped skip,
+ * #230) are operator exclusions and leave the required set. On a failed sweep
+ * only the failed rows' worktrees are removed — succeeded rows keep theirs so a
+ * row-scoped retry carries them over without re-execution. Successful row
+ * branches (fresh and carried-over) are merged back into the lane worktree so
+ * the normal lane-commit + wave-merge carry all rows' output.
  *
  * @param {object} params
  * @param {number} params.maxParallel  Global `lanes.maxParallel` (pool size).
@@ -485,12 +571,61 @@ export async function runMatrixTaskOnLane({
 	task.isMatrix = true;
 	task.matrixType = matrix.type;
 	if (!task.startedAt) task.startedAt = Date.now();
-	task.matrixRows = matrix.rows.map((row) => ({
-		rowId: row.rowId,
-		status: "pending",
-		exitCode: null,
-		commitSha: null,
-	}));
+	// Seed per-row entries preserving prior-attempt state (#230): `succeeded`
+	// rows keep their status + persisted worktree/branch for retry carry-over,
+	// `canceled` rows stay excluded, and only failed/pending rows re-enter the
+	// sweep. Fresh rows start `pending`.
+	task.matrixRows = matrix.rows.map((row) => {
+		const existing = Array.isArray(task.matrixRows)
+			? task.matrixRows.find((entry) => entry && entry.rowId === row.rowId)
+			: null;
+		return existing ?? {
+			rowId: row.rowId,
+			status: "pending",
+			exitCode: null,
+			commitSha: null,
+		};
+	});
+
+	// Partition rows for this sweep (#230): carry-over succeeded rows (kept
+	// worktree/branch from a prior attempt — never re-executed), rows to run now
+	// (status pending), and rows skipped this sweep (canceled, or still failed
+	// because only a subset was retried).
+	const carryOverRows = [];
+	const runnableRows = [];
+	const skippedRowIds = [];
+	for (const row of matrix.rows) {
+		const entry = task.matrixRows.find((m) => m.rowId === row.rowId);
+		if (entry.status === "succeeded") {
+			const carryWorktree = typeof entry.worktreePath === "string" ? entry.worktreePath : null;
+			const carryBranch = typeof entry.branch === "string" ? entry.branch : null;
+			if (carryWorktree && carryBranch && fs.existsSync(carryWorktree)) {
+				carryOverRows.push({ row, worktreePath: carryWorktree, branch: carryBranch, commitSha: entry.commitSha });
+				continue;
+			}
+			// Carry-over material lost (crash recovery / manual cleanup): fall back
+			// to re-execution — never worse than the pre-SP-752 whole-sweep rerun.
+			// A stale branch would break `worktree add -b`, so drop it first.
+			if (carryBranch) {
+				gitExec(projectRoot, ["branch", "-D", carryBranch], { throwOnError: false });
+			}
+			recordMatrixEvent(projectRoot, batchId, "matrix.row_reexecuted", {
+				taskId,
+				laneNumber,
+				rowId: row.rowId,
+				correlationId: laneCorrelationId,
+				reason: "carry_over_worktree_missing",
+			});
+			entry.status = "pending";
+			runnableRows.push(row);
+			continue;
+		}
+		if (entry.status === "pending") {
+			runnableRows.push(row);
+			continue;
+		}
+		skippedRowIds.push(row.rowId);
+	}
 	updateSegmentForTask(state, taskId, "running");
 	saveEngineBatchState(projectRoot, state);
 
@@ -511,14 +646,24 @@ export async function runMatrixTaskOnLane({
 		maxParallel,
 		matrixMaxParallel,
 		rowConcurrency,
+		runnableRowIds: runnableRows.map((row) => row.rowId),
+		carriedOverRowIds: carryOverRows.map((carry) => carry.row.rowId),
+		skippedRowIds,
 	});
 
-	const { results } = await runConcurrent(matrix.rows, rowConcurrency, async (row, rowIndex) => {
+	const { results } = await runConcurrent(runnableRows, rowConcurrency, async (row, rowIndex) => {
 		// Compete for the global lane pool: block until a slot frees (a sibling
 		// lane task or another row releasing), then run on that slot as the
 		// row's distinct lane identity. Always release so a crashed row cannot
 		// leak a slot and stall the batch.
 		const rowLaneNumber = await acquireLaneSlot(state, maxParallel);
+		// Per-row live status (#230): flip to `running` only once the row actually
+		// holds a slot, and persist so `spine status` sees it from another process.
+		const runningEntry = task.matrixRows.find((m) => m.rowId === row.rowId);
+		if (runningEntry) {
+			runningEntry.status = "running";
+			saveEngineBatchState(projectRoot, state);
+		}
 		try {
 			return await runMatrixSubLane({
 				projectRoot,
@@ -564,21 +709,36 @@ export async function runMatrixTaskOnLane({
 			entry.status = rowResult.ok ? "succeeded" : "failed";
 			entry.exitCode = rowResult.exitCode ?? null;
 			entry.commitSha = rowResult.commitSha ?? null;
+			if (rowResult.ok && rowResult.worktreePath && rowResult.branch) {
+				// Persist carry-over material (#230): a later row-scoped retry reuses
+				// this worktree/branch instead of re-executing the succeeded row.
+				entry.worktreePath = rowResult.worktreePath;
+				entry.branch = rowResult.branch;
+			}
 		}
 	}
 
+	// Aggregate from the full per-row state (#230): `canceled` rows are operator
+	// exclusions and leave the required set; everything else must be `succeeded`.
+	// The default all-rows-must-succeed policy itself is unchanged (#231 out of
+	// scope).
 	const { ok, failedRowIds } = aggregateMatrixOutcomes(
-		results.map((rowResult) => ({ rowId: rowResult.rowId, ok: rowResult.ok })),
+		task.matrixRows
+			.filter((entry) => entry.status !== "canceled")
+			.map((entry) => ({ rowId: entry.rowId, ok: entry.status === "succeeded" })),
 	);
 
 	if (!ok) {
 		for (const rowResult of results) {
-			if (rowResult.worktreePath) {
-				removeMatrixSubLaneWorktree(
-					projectRoot,
-					rowResult.worktreePath,
-					rowResult.branch,
-				);
+			if (!rowResult.worktreePath) continue;
+			if (rowResult.ok) continue;
+			// Failed rows' worktrees are cleaned up; succeeded rows keep theirs as
+			// carry-over material for a row-scoped retry (#230).
+			removeMatrixSubLaneWorktree(projectRoot, rowResult.worktreePath, rowResult.branch);
+			const failedEntry = task.matrixRows.find((m) => m.rowId === rowResult.rowId);
+			if (failedEntry) {
+				delete failedEntry.worktreePath;
+				delete failedEntry.branch;
 			}
 		}
 		const failedSummary = failedRowIds.join(", ");
@@ -628,7 +788,22 @@ export async function runMatrixTaskOnLane({
 
 	// All rows succeeded: merge each row branch into the lane worktree so the
 	// lane carries every row's output, then run the standard lane commit.
-	for (const rowResult of results) {
+	// Carry-over rows (#230) merge their kept prior-attempt branches alongside
+	// the freshly executed rows — their outputs land exactly once.
+	const allRowResults = [
+		...carryOverRows.map((carry) => ({
+			rowId: carry.row.rowId,
+			ok: true,
+			exitCode: 0,
+			output: "",
+			worktreePath: carry.worktreePath,
+			branch: carry.branch,
+			commitSha: carry.commitSha ?? null,
+			carriedOver: true,
+		})),
+		...results,
+	];
+	for (const rowResult of allRowResults) {
 		if (!rowResult.branch) continue;
 		try {
 			gitExec(
@@ -639,7 +814,7 @@ export async function runMatrixTaskOnLane({
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			gitExec(wt, ["merge", "--abort"], { throwOnError: false, projectRoot });
-			for (const other of results) {
+			for (const other of allRowResults) {
 				if (other.worktreePath) {
 					removeMatrixSubLaneWorktree(projectRoot, other.worktreePath, other.branch);
 				}
@@ -673,7 +848,7 @@ export async function runMatrixTaskOnLane({
 		laneNumber,
 		laneId: lane.laneId,
 		correlationId: laneCorrelationId,
-		rowIds: results.map((rowResult) => rowResult.rowId),
+		rowIds: allRowResults.map((rowResult) => rowResult.rowId),
 	});
 
 	const ignorePatterns = resolveWorktreeSetupIgnorePaths(config);
