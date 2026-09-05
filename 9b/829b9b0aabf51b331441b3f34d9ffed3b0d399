@@ -1,0 +1,29 @@
+src/batch/resume-multi-lanes.mjs
+  s_2c799f49039000::t_2e94c08d245dcb 21,256-285
+src/batch/resume.mjs
+  s_a7ab168c79a118::t_91599f0487127c 38,191-193,215,217,219-223,227-234,239-240,243-252,254-299,302,305,309
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "9b829b9b0aabf51b331441b3f34d9ffed3b0d399",
+  "prompts": {},
+  "sessions": {
+    "s_2c799f49039000": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-5de9aa19-4e87-48b2-9ce3-f8ab2a4013a3",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_a7ab168c79a118": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a044dc-cc82-7c17-870c-45cc8fe5617d",
+        "model": "auto"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
