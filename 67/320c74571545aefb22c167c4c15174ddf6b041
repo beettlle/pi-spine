@@ -1,0 +1,45 @@
+docs/QUICK-REFERENCE.md
+  s_7146f06d8286df::t_4235c84841ba62 433,437
+docs/adoption/operator-runbook.md
+  s_7146f06d8286df::t_917fbfc52bd07f 298-326,343,354
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/0-20260905T180502.md
+  s_7146f06d8286df::t_8d6c5a56423314 1-8
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/3-20260905T180522.md
+  s_7146f06d8286df::t_9c901ce345f604 1-8
+spine-tasks/SP-751-matrix-env-maxparallel/.reviews/final-20260905T180819.md
+  s_7146f06d8286df::t_31c73ca9cc1366 1-8
+spine-tasks/SP-751-matrix-env-maxparallel/STATUS.md
+  s_7146f06d8286df::t_76a6e6402bb574 3-4,14,16-24,29-33,35-40,45,47-51,56-59,61-63,68-75
+src/batch/engine-lanes/matrix-run.mjs
+  s_7146f06d8286df::t_a5b09c241dea55 14,102-120,127-130,132-133,149-150,154,242,346,477-483,512-513,516,536-537
+src/batch/engine-lanes/matrix.mjs
+  s_7146f06d8286df::t_c9fb1f4b4ca296 258-286,293-294,297,301
+src/batch/worker-host.mjs
+  s_7146f06d8286df::t_5397dfc10708e2 158,175,255
+src/batch/worker-spawn.mjs
+  s_7146f06d8286df::t_468473d7a15337 63,76,109-114,132,147,161,330,346,386
+src/tasks/packet/parse-prompt.mjs
+  s_7146f06d8286df::t_6851e96784380f 33,290,314,515-528
+src/tasks/packet/validate-contract.mjs
+  s_7146f06d8286df::t_304b1275788382 222
+tests/batch/contract-matrix-subst.test.mjs
+  s_7146f06d8286df::t_b1ef91ace54cb8 76-121
+tests/batch/matrix-execution.test.mjs
+  s_7146f06d8286df::t_b5422b7c90531b 22-26,31,300-410,1154-1335,1702-1824
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "67320c74571545aefb22c167c4c15174ddf6b041",
+  "prompts": {},
+  "sessions": {
+    "s_7146f06d8286df": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-464d871b-e940-4654-8441-89d0ac529592",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
