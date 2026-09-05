@@ -44,3 +44,7 @@
 - [ ] Document Google credential class + degrade row in `docs/QUICK-REFERENCE.md`
 - [ ] If no public API: STATUS records research conclusion
 - [ ] Create `.DONE`
+
+## Amendments
+
+- 2026-09-05: Pre-landed contract redirect — docs/QUICK-REFERENCE.md already touched by SP-747; mustChange is quota-probes only.

@@ -45,7 +45,7 @@ Closes #229 — Inject matrix index environment variables for portable scripts (
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs tests/batch/contract-matrix-subst.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/matrix.mjs`, `src/batch/engine-lanes/matrix-run.mjs`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `src/batch/engine-lanes/matrix.mjs`, `src/batch/engine-lanes/matrix-run.mjs` |
 
 ## Steps
 

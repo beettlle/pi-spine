@@ -41,3 +41,7 @@
 
 - [ ] Update runbook §2.4
 - [ ] Create `.DONE`
+
+## Amendments
+
+- 2026-09-05: Pre-landed contract redirect — operator-runbook.md already touched by SP-747; mustChange is matrix modules only.
