@@ -1,0 +1,30 @@
+spine-tasks/SP-751-matrix-env-maxparallel/STATUS.md
+  h_2a17159c706ba1 3-4,29,31-33,35-40,45-49,51
+src/batch/engine-lanes/matrix-run.mjs
+  h_2a17159c706ba1 14,102-120,127-130,132-133,149-150,154,242,346,477-483,512-513,516,536-537
+src/batch/engine-lanes/matrix.mjs
+  h_2a17159c706ba1 258-286,293-294,297,301
+src/batch/worker-host.mjs
+  h_2a17159c706ba1 158,175,255
+src/batch/worker-spawn.mjs
+  h_2a17159c706ba1 63,76,109-114,132,147,161,330,346,386
+src/tasks/packet/parse-prompt.mjs
+  h_2a17159c706ba1 33,290,314,515-528
+src/tasks/packet/validate-contract.mjs
+  h_2a17159c706ba1 222
+tests/batch/contract-matrix-subst.test.mjs
+  h_2a17159c706ba1 76-121
+tests/batch/matrix-execution.test.mjs
+  h_2a17159c706ba1 22-26,31,300-410,1154-1335,1702-1824
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6c07f529d2d7664a62eb6ce4229447baa987297c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
