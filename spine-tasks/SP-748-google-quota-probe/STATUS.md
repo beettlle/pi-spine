@@ -1,7 +1,7 @@
 # SP-748: Optional Google quota probe for metrics quota — Status
 
-**Current Step:** 2
-**Status:** 🔵 Step 2 in progress (testing & verification)
+**Current Step:** 3
+**Status:** 🔵 Step 3 in progress (documentation & delivery)
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -46,12 +46,14 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
-- [ ] Tests: live / 401 / missing key / no-limit
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand`
+- [x] Fix all failures (none required)
+- [x] Tests: live / 401 / missing key / no-limit → adapted per Amendments: no live/401 paths exist (no endpoint); tests prove never-dials-out with key present, missing auth in default set, no usage/limit keys, no secrets, and estimate preservation end-to-end
+
+**Evidence:** Contract `testCommand` run in foreground 2026-09-05 — `npm run lint` (eslint --max-warnings 0, clean) → `npm run typecheck` (both tsconfig projects, clean) → `node --test` on quota-probes/snapshot/cli: **47 pass, 0 fail**.
 
 ---
 
