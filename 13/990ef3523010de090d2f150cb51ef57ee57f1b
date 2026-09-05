@@ -1,0 +1,18 @@
+docs/QUICK-REFERENCE.md
+  h_2a17159c706ba1 270,272
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 969-977
+spine-tasks/SP-747-gate-approve-synthesis/STATUS.md
+  h_2a17159c706ba1 4,53-77,79-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "13990ef3523010de090d2f150cb51ef57ee57f1b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
