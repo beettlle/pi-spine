@@ -1,7 +1,7 @@
 # SP-749: CI/arch guard against new @ts-nocheck — Status
 
-**Current Step:** 3
-**Status:** 🔄 In Progress
+**Current Step:** 3 (complete)
+**Status:** ✅ Done
 **Last Updated:** 2026-09-05
 **Review Level:** 1
 **Review Counter:** 0
@@ -56,7 +56,19 @@ Step 2 sanity: add a temp `// @ts-nocheck` file under `src/`, observe the guard 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Done
 
-- [ ] Note Phase 0 landed for #266
-- [ ] Create `.DONE`
+- [x] Note Phase 0 landed for #266 — commented: https://github.com/beettlle/pi-spine/issues/266#issuecomment-5553479301
+- [x] Create `.DONE`
+
+---
+
+### Completion Criteria
+
+- [x] CI/arch fails on **new** `@ts-nocheck` in `src/` — "no new @ts-nocheck outside the allowlist in src/" (runs via `tests/arch/*.test.mjs` glob in `npm test` / `release:check` / CI)
+- [x] Existing nocheck files remain allowlisted (green) — 171 entries, count-parity test proves scanner↔allowlist agreement
+- [x] No `src/` nocheck removals in this task — git diff touches only `tests/arch/ts-nocheck-guard.test.mjs` + task packet
+- [x] Partial #266 — Phase 0 note posted (link above)
+- [x] `.DONE` created
+
+**Verification status:** lint ✅ (exit 0) · typecheck ✅ (exit 0) · Contract testCommand ✅ (exit 0, 4/4) · full `npm test`: 2531/2574 pass; 43 failures verified pre-existing at lane base 7f569e57 (see Step 2 note), zero in `tests/arch/`.
