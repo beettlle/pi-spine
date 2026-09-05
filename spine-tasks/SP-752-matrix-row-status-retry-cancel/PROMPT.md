@@ -47,7 +47,7 @@ Closes #230 — Surface per-row matrix state in `spine status` / `--diagnose` (a
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/matrix-execution.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/matrix-run.mjs`, `bin/spine-status.mjs` |
+| fileScopeMustChange | `bin/spine-status.mjs`, `src/batch/retry.mjs` |
 
 ## Steps
 
