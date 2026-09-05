@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Batch-state write guards, engine PID tracking, and schema validation (SP-587 / FR-SHIP-02).
  */
@@ -39,7 +38,7 @@ function archivedBatchStatePath(projectRoot, batchId) {
  * Reject cache writes from non-owner engines or post-archive resurrection (SP-254).
  *
  * @param {string} projectRoot
- * @param {object} state
+ * @param {Record<string, any>} state
  * @returns {{ allowed: boolean, reason?: string }}
  */
 export function evaluateBatchStateWriteGuard(projectRoot, state) {
@@ -121,7 +120,7 @@ export function readBatchEngineStartedAt(raw) {
 }
 
 /**
- * @param {object} state
+ * @param {Record<string, any>} state
  * @param {number} enginePid
  */
 export function recordBatchEnginePid(state, enginePid) {
@@ -133,7 +132,7 @@ export function recordBatchEnginePid(state, enginePid) {
 }
 
 /**
- * @param {object} state
+ * @param {Record<string, any>} state
  */
 export function clearBatchEnginePid(state) {
 	if (!state?.resilience || typeof state.resilience !== "object") return;
@@ -237,7 +236,7 @@ export function validateBatchState(state) {
 			? /** @type {{ taskIds?: string[] }} */ (lane).taskIds
 			: [];
 		for (const taskId of taskIds) {
-			const found = (raw.tasks ?? []).some(
+			const found = (/** @type {unknown[]} */ (raw.tasks ?? [])).some(
 				(task) =>
 					task &&
 					typeof task === "object" &&

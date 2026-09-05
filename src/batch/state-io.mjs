@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Batch-state read/write/archive I/O (SP-587 / FR-SHIP-02).
  */
@@ -26,6 +25,7 @@ export function spineBatchStatePath(projectRoot) {
 
 /**
  * @param {string} projectRoot
+ * @returns {{ path: string | null, raw: any, parseError: string | null }}
  */
 export function loadSpineBatchState(projectRoot) {
 	const filePath = spineBatchStatePath(projectRoot);
@@ -60,7 +60,7 @@ function archivedBatchStatePath(projectRoot, batchId) {
  * (engine vs. CLI complete/resume/abort).
  *
  * @param {string} projectRoot
- * @param {object} state
+ * @param {Record<string, any>} state
  * @param {{ bypassWriteGuard?: boolean }} [options]
  */
 export function saveSpineBatchState(projectRoot, state, options = {}) {
