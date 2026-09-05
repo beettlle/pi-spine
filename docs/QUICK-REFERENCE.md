@@ -430,10 +430,11 @@ Parametric tasks fan out one row per matrix table row into parallel sub-lanes. U
 | Field | Value |
 |-------|-------|
 | testCommand | `scripts/deploy-{matrix.target_region}.sh` |
+| matrixMaxParallel | `4` |
 | fileScopeMustChange | `spine-tasks/{taskId}/STATUS.md` |
 ```
 
-`spine plan` lists the matrix task as a single parent task; the engine fans rows out into parallel sub-lanes at run time as first-class occupants of the global `lanes.maxParallel` pool (SP-697 / #228, superseding the SP-690 nested-slot throttle). The parent task succeeds only if **all rows** succeed; any failing row fails the parent and surfaces the failing row id. See [operator-runbook.md §2.4 Matrix tasks](./adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes) for full syntax and caveats.
+`spine plan` lists the matrix task as a single parent task; the engine fans rows out into parallel sub-lanes at run time as first-class occupants of the global `lanes.maxParallel` pool (SP-697 / #228, superseding the SP-690 nested-slot throttle). Optional Contract `matrixMaxParallel` (positive int) throttles concurrent rows to `min(matrixMaxParallel, lanes.maxParallel)` (#229). Every row process (execute and LLM) gets `SPINE_MATRIX_JOB_ID`, `SPINE_MATRIX_TASK_ID`, `SPINE_MATRIX_TASK_INDEX` (0-based), `SPINE_MATRIX_TASK_COUNT`, and the `JOB_COMPLETION_INDEX` alias. The parent task succeeds only if **all rows** succeed; any failing row fails the parent and surfaces the failing row id. See [operator-runbook.md §2.4 Matrix tasks](./adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes) for full syntax and caveats.
 
 #### Execution-only tasks (`Type: execute`)
 

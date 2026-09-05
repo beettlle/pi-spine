@@ -1,7 +1,7 @@
 # SP-751: Matrix index env vars and matrixMaxParallel — Status
 
-**Current Step:** 3
-**Status:** 🔄 Step 3 in progress (docs + delivery)
+**Current Step:** Complete
+**Status:** ✅ All steps complete
 **Last Updated:** 2026-09-05
 **Review Level:** 2
 **Review Counter:** 0
@@ -53,10 +53,14 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Update runbook §2.4
-- [ ] Create `.DONE`
+- [x] Update runbook §2.4
+- [x] Create `.DONE`
+
+**Docs:** runbook §2.4 gained a "Matrix row environment variables" section (5 vars incl. `JOB_COMPLETION_INDEX` alias, helper-script pattern for the #268 `$` refusal), a per-matrix throttle bullet (`min(matrixMaxParallel, lanes.maxParallel)`, journal evidence), and #229 removed from deferred follow-ups. QUICK-REFERENCE.md matrix cheatsheet updated (Check-If-Affected, sanctioned by PROMPT Documentation Requirements).
+
+**Completion criteria:** env in execute rows ✓ (E2E out-file evidence) · env for LLM row workers ✓ (launch-script dump test) · `JOB_COMPLETION_INDEX` documented ✓ · `matrixMaxParallel` parsed+enforced ✓ · tests cover env+throttle ✓ (9 new) · runbook §2.4 ✓ · closes #229 (commit ref) ✓ · `.DONE` ✓
 
 ## Amendments
 
