@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-05 (Phase 88 v2.20.0 authored; Next → SP-753)
+**Last Updated:** 2026-09-05 (Phase 88 v2.20.0 published; Next → SP-753)
 **Status:** Active
 **Next Task ID:** SP-753
 
@@ -2480,26 +2480,24 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-747 | Gate approve/reject `--synthesis` | S | #280 | Pending |
-| SP-748 | Optional Google quota probe | M | #277 | Pending |
-| SP-749 | `@ts-nocheck` CI/arch guard (Phase 0) | S | #266 Partial | Pending |
-| SP-750 | Phase 1 high-risk typing | M | #266 Closes | Pending |
-| SP-751 | Matrix env vars + `matrixMaxParallel` | M | #229 | Pending |
-| SP-752 | Per-row matrix status/retry/cancel | M | #230 | Pending |
+| SP-747 | Gate approve/reject `--synthesis` | S | #280 | Done |
+| SP-748 | Optional Google quota probe | M | #277 | Done |
+| SP-749 | `@ts-nocheck` CI/arch guard (Phase 0) | S | #266 Partial | Done |
+| SP-750 | Phase 1 high-risk typing | M | #266 Closes | Done |
+| SP-751 | Matrix env vars + `matrixMaxParallel` | M | #229 | Done |
+| SP-752 | Per-row matrix status/retry/cancel | M | #230 | Done |
 
 **Phase 88 exit criteria:**
 
-- [ ] Operator approved release scope (manifest)
-- [ ] SP-747–SP-752 `.DONE` and integrated on `main`
-- [ ] All five P2 issues CLOSED on GitHub
-- [ ] `npm run release:check` green; CI green on HEAD
-- [ ] Published **v2.20.0** after operator publish approval
+- [x] Operator approved release scope (manifest)
+- [x] SP-747–SP-752 `.DONE` and integrated on `main`
+- [x] All five P2 issues CLOSED on GitHub
+- [x] `npm run release:check` green; CI green on HEAD (`06b984f6` / [33995467069](https://github.com/beettlle/pi-spine/actions/runs/33995467069))
+- [x] Published **v2.20.0** 2026-09-05 after operator approval
 
-**Release note (draft):** v2.20.0 — Close open P2 backlog: gate synthesis (#280), Google quota probe (#277), `@ts-nocheck` Phase 0–1 (#266), matrix env/`matrixMaxParallel` (#229), per-row matrix ops (#230).
+**Release note (published):** v2.20.0 — Close open P2 backlog: gate `--synthesis` (#280), Google quota probe (#277), `@ts-nocheck` Phase 0–1 (#266), matrix env/`matrixMaxParallel` (#229), per-row matrix status/retry/cancel (#230). Tag `v2.20.0` @ `90297be8`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33996284816); CI @ `06b984f6` ([33995467069](https://github.com/beettlle/pi-spine/actions/runs/33995467069)); GitHub [v2.20.0](https://github.com/beettlle/pi-spine/releases/tag/v2.20.0).
 
-
-
-**Deferred:** #280 gate synthesis; #277 Google quota probe; #266 ts-nocheck; matrix epic #225/#229–#231; P3 backlog.
+**Deferred:** matrix epic remainder #225/#231; P3 backlog (#212, #211, #209, #135, #127, #124, #43); #266 Phase 2–3 typing follow-ups if filed.
 
 ---
 

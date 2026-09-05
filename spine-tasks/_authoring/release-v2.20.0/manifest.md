@@ -129,14 +129,14 @@ Wave 2 · 1 task
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI workflow green on `HEAD` before tag
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke via `scripts/post-publish-smoke.sh 2.20.0`
-- [ ] Every release-scoped `Closes #NNN` issue CLOSED on GitHub
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after wave 0 manual land (`/tmp/pi-spine-post-integrate-wave-0.log`, exit 0); remaining waves landed via batch `20260905T173611-8b45` + SP-752 manual land
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final pre-bump `HEAD` (`/tmp/pi-spine-release-check-v2.20.0.log`, 2612/2612, coverage 89.52%)
+- [x] CI workflow green on `HEAD` before tag — [33995467069](https://github.com/beettlle/pi-spine/actions/runs/33995467069) on `06b984f6`
+- [x] Working tree clean for `npm version` (skill edits stashed)
+- [x] Operator approved publish bump type: **minor**
+- [x] `npm version minor` + `git push && git push --tags` → `90297be8` / `v2.20.0`
+- [x] `release.yml` succeeded — [33996284816](https://github.com/beettlle/pi-spine/actions/runs/33996284816)
+- [x] Post-publish smoke via `scripts/post-publish-smoke.sh 2.20.0` (first attempt exhausted on registry lag F9/#247; retry succeeded — `SMOKE_EXIT:0`, doctor All checks passed)
+- [x] Every release-scoped `Closes #NNN` issue CLOSED on GitHub (#280 #277 #266 #229 #230)
