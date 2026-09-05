@@ -1,0 +1,27 @@
+spine-tasks/SP-751-matrix-env-maxparallel/PROMPT.md
+  s_2df0bcd0922f65::t_ca7699de9458dc 48
+spine-tasks/SP-748-google-quota-probe/PROMPT.md
+  s_2df0bcd0922f65::t_439110db6c2116 45
+spine-tasks/SP-748-google-quota-probe/STATUS.md
+  s_2df0bcd0922f65::t_8144d1c079ad0f 47-50
+spine-tasks/SP-751-matrix-env-maxparallel/STATUS.md
+  s_2df0bcd0922f65::t_aca41aef2144dc 44-47
+spine-tasks/SP-752-matrix-row-status-retry-cancel/STATUS.md
+  s_2df0bcd0922f65::t_90db8c9b98fe55 46-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "a008a508f0f1477e0f7ae73d78ea299e6a30d1c0",
+  "prompts": {},
+  "sessions": {
+    "s_2df0bcd0922f65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f2a14206-7343-48a7-96f1-46025bc3793f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
