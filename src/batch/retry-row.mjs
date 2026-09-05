@@ -16,6 +16,21 @@ import {
 import { unblockBatchAfterRetry, loadMutableBatch, guardPhaseForMutation, findTask } from "./retry.mjs";
 
 /**
+ * Parse a matrix row identity token `SP-X[rowId]` / `TP-X[rowId]`.
+ * Plain task ids and malformed brackets return null (CLI falls back to whole-task retry/skip).
+ *
+ * @param {unknown} raw
+ * @returns {{ taskId: string, rowId: string } | null}
+ */
+export function parseMatrixRowRef(raw) {
+	if (typeof raw !== "string" || raw.length === 0) return null;
+	// Exact match: one pair of brackets, non-empty row id, no nested brackets.
+	const match = /^([A-Za-z]+-\d+)\[([^\[\]]+)\]$/.exec(raw);
+	if (!match) return null;
+	return { taskId: match[1], rowId: match[2] };
+}
+
+/**
  * Row-scoped matrix retry (#230): `spine batch retry SP-X[rowId]` resets one
  * `failed` row for re-execution without touching sibling rows — succeeded rows
  * are never re-executed (their worktrees carry over), other failed rows stay

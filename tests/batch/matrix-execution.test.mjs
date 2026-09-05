@@ -26,7 +26,8 @@ import {
 import { buildWorkerChildEnv } from "../../src/batch/worker-spawn.mjs";
 import { applyMatrixRowToPrompt } from "../../src/planner/matrix.mjs";
 import { resumeBatch } from "../../src/batch/resume.mjs";
-import { retryTask, retryTaskRow, skipTaskRow } from "../../src/batch/retry.mjs";
+import { retryTask } from "../../src/batch/retry.mjs";
+import { retryTaskRow, skipTaskRow } from "../../src/batch/retry-row.mjs";
 import { loadSpineBatchState } from "../../src/batch/state.mjs";
 import {
 	acquireLaneSlot,
