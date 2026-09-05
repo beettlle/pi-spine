@@ -1,0 +1,8 @@
+SP-750 complete — Phase 1 high-risk modules typed without @ts-nocheck.
+
+- Removed @ts-nocheck: src/batch/state-io.mjs, src/batch/state-guards.mjs, src/batch/contract-exec.mjs (src/process/liveness.mjs was already clean; added to checked program).
+- tsconfig.batch.json include expanded 4 -> 8 (adds the 3 modules, liveness.mjs, types/micromatch.d.ts ambient decl for untyped micromatch).
+- SP-749 arch allowlist shrunk 171 -> 168; guard tests green.
+- Verification: lint clean; typecheck clean; Contract testCommand PASS; full npm test 2582/2582 pass (clean worker env; SP-482 guard env vars unset).
+- #266 burn-down comment posted (36.3% checkJs-clean); Phase 2/3 follow-ups filed: #283, #284.
+- Commits: da2df40e (Step 1), fe6ccd4a (Step 2), e5afafa6 (Step 3). detect_changes scope = 5 expected symbols in target modules only.
