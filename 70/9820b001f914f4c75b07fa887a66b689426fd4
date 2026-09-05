@@ -1,0 +1,18 @@
+docs/QUICK-REFERENCE.md
+  h_2a17159c706ba1 433,437
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 298-326,343,354
+spine-tasks/SP-751-matrix-env-maxparallel/STATUS.md
+  h_2a17159c706ba1 3-4,56-61,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "709820b001f914f4c75b07fa887a66b689426fd4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
