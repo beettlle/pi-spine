@@ -157,6 +157,31 @@ test("opted-in immediate auto journals decidedBy auto", async () => {
 	}
 });
 
+test("posture auto-approve leaves synthesis absent (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-auto-synthesis-");
+	const batchId = "20260712T140014";
+	const orchBranch = "orch/spine-gate-auto-synthesis";
+	try {
+		const config = {
+			gates: {
+				integrateCategory: "read",
+				postures: { read: { posture: "permissive", autoApproveAfterN: 0 } },
+			},
+		};
+		openPendingGate(projectRoot, batchId, orchBranch, config);
+
+		const result = maybeAutoApproveIntegrateGate({ projectRoot, batchId, config });
+		assert.equal(result.approved, true);
+		assert.equal(result.decidedBy, "auto");
+
+		const gate = loadGateRecord(projectRoot, batchId);
+		assert.equal(gate.decidedBy, "auto");
+		assert.equal(gate.synthesis, undefined);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("human approve journals decidedBy human and increments streak", async () => {
 	const projectRoot = await initGitRepo("spine-gate-wire-human-");
 	const batchId = "20260712T140003";
@@ -174,6 +199,101 @@ test("human approve journals decidedBy human and increments streak", async () =>
 		assert.ok(event);
 		assert.equal(event.payload?.decidedBy, "human");
 		assert.equal(getCategoryStreak(projectRoot, "execute"), 1);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("approve with synthesis persists readback on record and journal (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-synthesis-");
+	const batchId = "20260712T140010";
+	const orchBranch = "orch/spine-gate-synthesis";
+	try {
+		openPendingGate(projectRoot, batchId, orchBranch, null);
+
+		const approved = approveIntegrateGate({
+			projectRoot,
+			batchId,
+			synthesis: "Evidence reviewed: tests green, scope matches PROMPT",
+		});
+		assert.equal(approved.ok, true);
+
+		const gate = loadGateRecord(projectRoot, batchId);
+		assert.equal(gate.status, "approved");
+		assert.equal(gate.synthesis, "Evidence reviewed: tests green, scope matches PROMPT");
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const event = events.find((e) => e.type === "gate.approved");
+		assert.ok(event);
+		assert.equal(event.payload?.synthesis, "Evidence reviewed: tests green, scope matches PROMPT");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("approve without synthesis omits the field — non-breaking null default (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-no-synthesis-");
+	const batchId = "20260712T140011";
+	const orchBranch = "orch/spine-gate-no-synthesis";
+	try {
+		openPendingGate(projectRoot, batchId, orchBranch, null);
+
+		const approved = approveIntegrateGate({ projectRoot, batchId });
+		assert.equal(approved.ok, true);
+
+		const gate = loadGateRecord(projectRoot, batchId);
+		assert.equal(gate.status, "approved");
+		assert.equal(gate.synthesis, undefined);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const event = events.find((e) => e.type === "gate.approved");
+		assert.ok(event);
+		assert.equal("synthesis" in (event.payload ?? {}), false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("whitespace-only synthesis is treated as absent (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-blank-synthesis-");
+	const batchId = "20260712T140012";
+	const orchBranch = "orch/spine-gate-blank-synthesis";
+	try {
+		openPendingGate(projectRoot, batchId, orchBranch, null);
+
+		const approved = approveIntegrateGate({ projectRoot, batchId, synthesis: "   " });
+		assert.equal(approved.ok, true);
+		assert.equal(loadGateRecord(projectRoot, batchId).synthesis, undefined);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reject with synthesis persists readback on record and journal (SP-747 / #280)", async () => {
+	const projectRoot = await initGitRepo("spine-gate-reject-synthesis-");
+	const batchId = "20260712T140013";
+	const orchBranch = "orch/spine-gate-reject-synthesis";
+	try {
+		openPendingGate(projectRoot, batchId, orchBranch, null);
+
+		const rejected = rejectIntegrateGate({
+			projectRoot,
+			batchId,
+			reason: "scope drift beyond PROMPT",
+			synthesis: "Readback: batch landed wrong lane",
+		});
+		assert.equal(rejected.ok, true);
+
+		const gate = loadGateRecord(projectRoot, batchId);
+		assert.equal(gate.status, "rejected");
+		assert.equal(gate.rejectionReason, "scope drift beyond PROMPT");
+		assert.equal(gate.synthesis, "Readback: batch landed wrong lane");
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const event = events.find((e) => e.type === "gate.rejected");
+		assert.ok(event);
+		assert.equal(event.payload?.synthesis, "Readback: batch landed wrong lane");
+		assert.equal(event.payload?.reason, "scope drift beyond PROMPT");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

@@ -1,6 +1,6 @@
 # SP-747: Gate approve/reject optional synthesis note — Status
 
-**Current Step:** 1
+**Current Step:** 3
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-05
 **Review Level:** 2
@@ -30,22 +30,22 @@
 ---
 
 ### Step 1: CLI + persistence
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Parse optional `--synthesis` on approve and reject
-- [ ] Persist `synthesis` string on gate record; omit/null when flag absent
-- [ ] Auto-approve sets synthesis null or `"auto"`
-- [ ] `spine gate status` displays synthesis when present
+- [x] Parse optional `--synthesis` on approve and reject
+- [x] Persist `synthesis` string on gate record; omit/null when flag absent
+- [x] Auto-approve sets synthesis null or `"auto"` — **choice: omit (null)**; `decidedBy:"auto"` already marks automation, a literal `"auto"` could be mistaken for human readback
+- [x] `spine gate status` displays synthesis when present
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
-- [ ] Cover approve/reject/status synthesis cases
+- [x] Run lint: `npm run lint` — clean
+- [x] Run Contract `testCommand` — 41 pass / 0 fail (incl. 8 new SP-747 tests)
+- [x] Fix all failures — none
+- [x] Cover: approve with synthesis; approve without; reject with synthesis; status shows text (plus: whitespace-only treated as absent, auto-approve omits, status hides when absent, `npm run typecheck` clean, `detect_changes` risk low)
 
 ---
 
