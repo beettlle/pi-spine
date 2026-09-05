@@ -27,42 +27,10 @@ import {
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
 
-/** Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
- *
- * @param {string} summary
- * @returns {ContractTestCommandResult}
- */
-function refusedBeforeSpawnResult(summary) {
+// Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
+function refusedBeforeSpawnResult(/** @type {string} */ summary) {
 	return { ok: false, exitCode: 1, output: summary, summary, refusedBeforeSpawn: true };
 }
-
-/**
- * Result envelope for one contract testCommand execution attempt (SP-603 / SP-541).
- *
- * @typedef {object} ContractTestCommandResult
- * @property {boolean} ok Whether the attempt exited 0.
- * @property {number} exitCode Process exit code (255 on spawn error / overflow).
- * @property {string} output Combined stdout + stderr.
- * @property {boolean} [bufferOverflow] True when output exceeded maxBuffer.
- * @property {string} [summary] Truncated human-readable failure summary.
- * @property {boolean} [refusedBeforeSpawn] True when a pre-spawn guard rejected the command.
- */
-
-/**
- * Caller-supplied options for verifyContract and its helpers.
- *
- * @typedef {object} VerifyContractConfig
- * @property {string} [baseBranch] Base branch for file-scope diffs (default "main").
- * @property {string} [sinceCommit] Scope file-scope checks to `sinceCommit..HEAD` (serialized lanes).
- * @property {string} [taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution; anchor stable across retry/resume per SP-478).
- * @property {string} [projectRoot] Repo root for journal events (optional).
- * @property {string} [batchId] Batch ID for journal events (optional).
- * @property {string} [taskId] Task ID for journal events (optional).
- * @property {string} [taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
- * @property {{ testRetries?: number, testRetryDelayMs?: number }} [contract] Retry tuning for testCommand attempts.
- * @property {number} [contractTestMaxBuffer] stdout/stderr capture limit override for testCommand.
- * @property {{ test?: string, testWithCoverage?: string }} [testing] Coverage command selection.
- */
 
 /** Default stdout/stderr capture limit for contract testCommand (issue #86). */
 export const CONTRACT_TEST_COMMAND_MAX_BUFFER = 10 * 1024 * 1024;
@@ -179,14 +147,10 @@ function formatRefusedNpmTestDashDashMessage(command) {
 }
 
 /**
- * Run the contract testCommand in a login shell from the lane worktree
- * (SP-603 / SP-541). Applies the npm-scope (#187) and metachar (#268)
- * pre-spawn guards before spawning.
- *
  * @param {string} worktreePath
  * @param {string} command
  * @param {{ maxBuffer?: number }} [options]
- * @returns {ContractTestCommandResult}
+ * @returns {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean }}
  */
 export function runContractTestCommand(worktreePath, command, options = {}) {
 	const trimmed = String(command ?? "").trim();
@@ -217,8 +181,7 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	const stderr = String(result.stderr ?? "");
 	const output = `${stdout}\n${stderr}`;
 
-	const spawnError = /** @type {NodeJS.ErrnoException | undefined} */ (result.error);
-	if (spawnError?.code === "ENOBUFS") {
+	if (/** @type {NodeJS.ErrnoException | undefined} */ (result.error)?.code === "ENOBUFS") {
 		const limitLabel = formatMaxBufferLabel(maxBuffer);
 		return {
 			ok: false,
@@ -239,7 +202,7 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 }
 
 /**
- * @param {VerifyContractConfig} [config]
+ * @param {{ testing?: { test?: string, testWithCoverage?: string } }} [config]
  */
 function resolveCoverageCommand(config) {
 	return (
@@ -252,7 +215,7 @@ function resolveCoverageCommand(config) {
 /**
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
- * @param {VerifyContractConfig} config
+ * @param {object} config
  * @param {string} [testCommandOutput]
  */
 function resolveLineCoverage(worktreePath, parsedContract, config, testCommandOutput = "") {
@@ -294,9 +257,7 @@ function findArtifactMatch(worktreePath, artifactPattern) {
 	/** @type {Array<{ abs: string, rel: string }>} */
 	const stack = [{ abs: searchRoot, rel: baseDir === "." ? "" : baseDir }];
 	while (stack.length > 0) {
-		const next = stack.pop();
-		if (!next) break;
-		const { abs, rel } = next;
+		const { abs, rel } = /** @type {{ abs: string, rel: string }} */ (stack.pop());
 		for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
 			const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
 			const entryAbs = path.join(abs, entry.name);
@@ -318,7 +279,7 @@ function findArtifactMatch(worktreePath, artifactPattern) {
  *
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
- * @param {VerifyContractConfig} [config]
+ * @param {object} [config]
  * @returns {{ hygieneApplied: boolean, cleaned?: boolean, buildDir?: string, reason?: string }}
  */
 export function prepareContractVerifyEnvironment(worktreePath, parsedContract, config = {}) {
@@ -334,7 +295,17 @@ export function prepareContractVerifyEnvironment(worktreePath, parsedContract, c
 /**
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
- * @param {VerifyContractConfig} [config]
+ * @param {object} [config]
+ * @param {string} [config.baseBranch]
+ * @param {string} [config.sinceCommit] When set, scope file-scope checks to `sinceCommit..HEAD` (serialized lanes).
+ * @param {string} [config.taskStartCommit] Alias for `sinceCommit` (SP-415 journal resolution; anchor stable across retry/resume per SP-478).
+ * @param {string} [config.projectRoot] Repo root for journal events (optional).
+ * @param {string} [config.batchId] Batch ID for journal events (optional).
+ * @param {string} [config.taskId] Task ID for journal events (optional).
+ * @param {string} [config.taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
+ * @param {{ testRetries?: number, testRetryDelayMs?: number }} [config.contract] Retry tuning for testCommand attempts.
+ * @param {number} [config.contractTestMaxBuffer] stdout/stderr capture limit override.
+ * @param {{ test?: string, testWithCoverage?: string }} [config.testing] Coverage command selection.
  * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }}
  */
 export function verifyContract(worktreePath, parsedContract, config = {}) {
@@ -345,7 +316,7 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	const committedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
 	
 	/** @type {string[]} */
-	let indexAndWorktreeFiles = [];
+	let indexAndWorktreeFiles = /** @type {string[]} */ ([]);
 	try {
 		const stdout = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd: worktreePath, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
 		indexAndWorktreeFiles = stdout.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -364,8 +335,7 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 		const maxRetries = config?.contract?.testRetries ?? CONTRACT_TEST_DEFAULT_RETRIES;
 		const retryDelayMs = config?.contract?.testRetryDelayMs ?? CONTRACT_TEST_RETRY_DELAY_MS;
 		const totalAttempts = maxRetries + 1;
-		let lastResult = /** @type {ContractTestCommandResult | null} */ (null);
-		let successAttempt = 0;
+		let lastResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean } | null} */ (null), successAttempt = 0;
 
 		for (let attempt = 1; attempt <= totalAttempts; attempt++) {
 			lastResult = runContractTestCommand(worktreePath, parsedContract.testCommand, {
@@ -399,9 +369,7 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 			}
 		}
 
-		// The retry loop above always executes at least one attempt (totalAttempts >= 1),
-		// so lastResult is non-null here despite what the loop-naive type says.
-		const finalResult = /** @type {ContractTestCommandResult} */ (lastResult);
+		const finalResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean }} */ (lastResult);
 		testCommandOutput = finalResult.output;
 		testCommandOk = finalResult.ok;
 		const attemptLabel = successAttempt > 1
