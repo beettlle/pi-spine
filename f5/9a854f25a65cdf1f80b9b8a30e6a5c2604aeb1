@@ -1,0 +1,18 @@
+spine-tasks/SP-747-gate-approve-synthesis/STATUS.md
+  h_2a17159c706ba1 3,33,35-38,43,45-48
+tests/batch/gate-posture-wire-approve.test.mjs
+  h_2a17159c706ba1 160-184,207-301
+tests/batch/gate.test.mjs
+  h_2a17159c706ba1 299-362
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "f59a854f25a65cdf1f80b9b8a30e6a5c2604aeb1",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
