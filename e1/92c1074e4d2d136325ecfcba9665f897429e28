@@ -1,0 +1,14 @@
+spine-tasks/SP-748-google-quota-probe/STATUS.md
+  h_2a17159c706ba1 3-4,14-28,30-34,68-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "e192c1074e4d2d136325ecfcba9665f897429e28",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
