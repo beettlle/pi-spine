@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Integrate gate inspection and resolution (PRD §12, FR-GATE).
- * Usage: spine gate [approve|reject|status|reopen] [--batch ID] [--reason text] [--json]
+ * Usage: spine gate [approve|reject|status|reopen] [--batch ID] [--reason text] [--synthesis text] [--json]
  */
 
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
@@ -32,6 +32,10 @@ export function formatGateHuman(result, json = false) {
 			`  Status: ${result.gate.status}`,
 			`  Kind: ${result.gate.kind}`,
 		);
+		// SP-747 / #280: show the operator's synthesis readback when one was recorded.
+		if (typeof result.gate.synthesis === "string" && result.gate.synthesis.trim() !== "") {
+			lines.push(`  Synthesis: ${result.gate.synthesis}`);
+		}
 		if (Array.isArray(result.gate.evidenceRefs) && result.gate.evidenceRefs.length > 0) {
 			lines.push("", "  Evidence:");
 			for (const ref of result.gate.evidenceRefs) {
@@ -87,6 +91,12 @@ export function runSpineGate(options) {
 		reason = args[reasonIdx + 1];
 	}
 
+	let synthesis = null;
+	const synthesisIdx = args.indexOf("--synthesis");
+	if (synthesisIdx >= 0 && args[synthesisIdx + 1]) {
+		synthesis = args[synthesisIdx + 1];
+	}
+
 	batchId = resolveActiveBatchId(projectRoot, batchId);
 	if (!batchId) {
 		const result = {
@@ -106,10 +116,15 @@ export function runSpineGate(options) {
 	let result;
 	switch (action) {
 		case "approve":
-			result = approveIntegrateGate({ projectRoot, batchId });
+			result = approveIntegrateGate({ projectRoot, batchId, synthesis: synthesis ?? undefined });
 			break;
 		case "reject":
-			result = rejectIntegrateGate({ projectRoot, batchId, reason: reason ?? undefined });
+			result = rejectIntegrateGate({
+				projectRoot,
+				batchId,
+				reason: reason ?? undefined,
+				synthesis: synthesis ?? undefined,
+			});
 			break;
 		case "status":
 			result = getIntegrateGateStatus({ projectRoot, batchId });
