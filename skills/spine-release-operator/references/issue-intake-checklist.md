@@ -86,6 +86,43 @@ Exclude when:
 - Disjoint `fileScopeMustChange` from bug tasks in same wave
 - P1/P2 over P3
 
+## Dependency drift check
+
+Run during **Phase 1** for **every** profile (including patch). Always record results; only **include** a dep/hygiene task when a threshold fires — never auto-add “update all deps” to every minor.
+
+### Commands
+
+```bash
+npm outdated
+npm audit
+```
+
+Optional: glance at GitHub Actions major pins in `.github/workflows/*.yml` (`actions/checkout`, `actions/setup-node`, `actions/upload-artifact`, `actions/github-script`) for toolchain major drift.
+
+### Include / defer thresholds
+
+| Signal | Include in release? | Bucket |
+|--------|---------------------|--------|
+| `npm audit` high or critical | Yes — even **patch** if fix is S-sized | bug / hygiene |
+| `@earendil-works/pi-coding-agent` behind by ≥1 0.x minor (e.g. 0.80 → 0.85) | Yes for **minor/major**; patch only if also audit-high | enh / hygiene (counts against enh budget on minor) |
+| Same-major patch/minor drift only (eslint 9.x, `@types/node` 22.x) | Include only if enh budget has room **or** operator override; otherwise defer | hygiene |
+| TypeScript / ESLint / Actions **major** | **minor/major** only — never default into patch | enh / hygiene |
+| No overdue signal | Record “deps OK — deferred” in the manifest; **no new task** | — |
+
+**Scope when included:** prefer one focused peer/security packet over “bump everything” when the enhancement slot is already full. Dep hygiene inserts into the bug or enh slot — it is not a fourth unlimited bucket.
+
+### Map before authoring a gap
+
+Search open issues for an existing dep bump ticket before creating a new SP-*:
+
+```bash
+gh issue list --repo beettlle/pi-spine --state open --limit 100 \
+  --json number,title,labels \
+  --jq '.[] | select(.title | test("dependenc|pi-coding-agent|npm audit|Bump dep"; "i"))'
+```
+
+Prefer `Closes #NNN` on that issue over inventing duplicate work.
+
 ## Pending task inventory
 
 ```bash
@@ -105,3 +142,12 @@ Cross-reference pending SP-* with open issues. The release executes **manifest s
 |---------|--------|-------------|--------|-------------|-------|
 | #130 | bug | SP-483 | bug | patch ✓ | post-merge restore |
 | #90 | documentation | — (gap) | doc | minor ✓ | needs new SP-* |
+
+### Deps mini-table (required)
+
+| Package | Current | Latest | Action |
+|---------|---------|--------|--------|
+| @earendil-works/pi-coding-agent | 0.80.3 | 0.85.1 | include (#285) / defer: … |
+| (others from `npm outdated`) | … | … | include \| defer |
+
+Also record: `npm audit` high/critical count and overall action for the manifest **Dependency drift** section.

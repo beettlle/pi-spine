@@ -47,6 +47,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** run `npm version` or `git push --tags` when `npm run release:check` exits non-zero on current `main` ([#175](https://github.com/beettlle/pi-spine/issues/175))
 - **Never** run `npm version` or `git push --tags` when the **CI** workflow is not green on current `HEAD` — release-safe profile: typecheck + lint + tests + coverage (parity with `ci.yml`) ([#156](https://github.com/beettlle/pi-spine/issues/156))
 - **Always** parse target version / bump type **before** task selection (Phase 2)
+- **Always** record dependency drift in Phase 1 (`npm outdated` + `npm audit`) and apply include/defer thresholds — never auto-add a full “update all deps” task; see [issue-intake-checklist.md](references/issue-intake-checklist.md) § Dependency drift check
 - **Always** prioritize documentation issues over enhancements
 - **Always** run `spine gate approve` before `spine integrate`
 - **Always** run `npm install` on `main` after successful integrate
@@ -154,9 +155,18 @@ spine tasks analyze pending
 rg 'Closes #|Closes:|Partial #|Partial:' spine-tasks/*/PROMPT.md
 ```
 
+**Dependency drift check** (every profile, including patch) — full thresholds in [issue-intake-checklist.md](references/issue-intake-checklist.md):
+
+```bash
+npm outdated
+npm audit
+```
+
+Classify each signal as **include** or **defer** (security highs even in patch; peer ≥1-minor drift and toolchain majors for minor/major only). Prefer an existing open dep issue (e.g. title contains “Bump dependencies” / “pi-coding-agent”) over inventing a duplicate gap. Record a one-row summary in the intake output and the manifest **Dependency drift** section.
+
 Read `spine-tasks/CONTEXT.md` for `Next Task ID`.
 
-**Output:** intake table (issue #, labels, mapped SP-* or gap, bucket, profile fit).
+**Output:** intake table (issue #, labels, mapped SP-* or gap, bucket, profile fit) **plus** deps mini-table (package, current, latest, include|defer).
 
 ---
 
@@ -173,9 +183,11 @@ Use [references/release-manifest-template.md](references/release-manifest-templa
 ### Selection order (strict)
 
 1. **Documentation first** — all feasible doc items before feature work
-2. **Bug fixes** — target 3–5 with user impact
-3. **Enhancements** — per profile (0 for patch, 1–2 for minor)
-4. **Defer** everything else with one-line rationale
+2. **Bug fixes** — target 3–5 with user impact; include **security-high dep fixes** from the Phase 1 drift check here (hygiene, not a fourth unlimited bucket)
+3. **Enhancements** — per profile (0 for patch, 1–2 for minor); peer ≥1-minor drift / toolchain majors from the drift check consume an enh/hygiene slot when thresholds fire
+4. **Defer** everything else with one-line rationale (including “deps OK — deferred” when no threshold fires)
+
+Dep hygiene from the drift check **inserts into** the bug or enh slot per [issue-intake-checklist.md](references/issue-intake-checklist.md) thresholds — it is not a separate uncapped bucket. Prefer one focused peer/security packet over “bump everything” when the enh slot is already full.
 
 ### Apply profile budgets
 
@@ -193,6 +205,7 @@ Present manifest summary:
 
 - Target version and profile
 - Selected SP-* / issues by bucket
+- Dependency drift action (included SP-*/#NNN or deferred rationale)
 - Deferred count
 - Profile audit status
 
@@ -551,12 +564,13 @@ Include the published version/tag in the close comment when closing at Phase 6 (
 1. **Release manifest** — path, target version, profile, composition table
 2. **Tasks completed** — SP-IDs, waves, issues closed (list `#NNN` CLOSED with close time or comment URL)
 3. **Deferred backlog** — count and top items for next release (issues left OPEN + rationale)
-4. **Authoring changes** — new SP-* created, splits/fixes in Phase 3
-5. **Issues filed** — pi-spine GitHub links or "none"
-6. **Recovery actions** — aborts, retries, contract fixes
-7. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
-8. **Publish** — version bumped (Y/N), tag pushed (Y/N), workflow URL, or "awaiting operator approval"
-9. **Issue tracker hygiene** — confirm every release-scoped `Closes #NNN` is CLOSED (paste `gh issue view` states or list)
+4. **Dependency drift** — Phase 1 check outcome: included SP-*/#NNN or deferred rationale (and audit high/critical count)
+5. **Authoring changes** — new SP-* created, splits/fixes in Phase 3
+6. **Issues filed** — pi-spine GitHub links or "none"
+7. **Recovery actions** — aborts, retries, contract fixes
+8. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
+9. **Publish** — version bumped (Y/N), tag pushed (Y/N), workflow URL, or "awaiting operator approval"
+10. **Issue tracker hygiene** — confirm every release-scoped `Closes #NNN` is CLOSED (paste `gh issue view` states or list)
 
 ---
 

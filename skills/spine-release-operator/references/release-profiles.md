@@ -72,8 +72,11 @@ Breaking changes and large migrations. Operator-defined epic scope.
 Apply in this order; stop when profile budget is full:
 
 1. **Documentation** — `label:documentation`, `skill:create-spine-tasks` doc issues, pending docs-only SP-* tasks
-2. **Bug fixes** — open `label:bug` with user impact; prefer already-tasked or quick S
-3. **Enhancements** — only if profile allows; one user-visible improvement per minor release
+2. **Bug fixes** — open `label:bug` with user impact; prefer already-tasked or quick S; **security-high dep fixes** from the Phase 1 drift check insert here before enhancements
+3. **Enhancements / dep hygiene** — only if profile allows; one user-visible improvement per minor release; peer ≥1-minor drift (`pi-coding-agent`) or toolchain majors from the drift check fill **one** enh/hygiene slot on minor/major when thresholds fire (see [issue-intake-checklist.md](issue-intake-checklist.md) § Dependency drift check)
+4. **Defer** the rest — including “deps OK — deferred” when no threshold fires
+
+Never treat dependency updates as an uncapped fourth bucket. Prefer one focused peer/security packet over “bump everything” when the enh slot is already full.
 
 ## Profile audit (must pass before Phase 3)
 
@@ -86,6 +89,7 @@ Fill the composition audit table in the manifest. Fail or warn when:
 | Total tasks | >8 without override | >15 without override | — |
 | M/L tasks in patch | any without override | — | — |
 | Doc paths in File Scope | required for doc tasks (#144) | required | required |
+| Dep drift check recorded | WARN if missing | **FAIL** without override if missing | **FAIL** without override if missing |
 
 Record `Profile audit: PASS` or `PASS with operator override` before proceeding.
 

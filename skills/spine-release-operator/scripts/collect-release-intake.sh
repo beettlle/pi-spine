@@ -67,5 +67,49 @@ else
 fi
 echo ""
 
+echo "=== npm outdated ==="
+# npm outdated exits 1 when updates exist — must not abort this script
+npm outdated 2>/dev/null || true
+echo ""
+
+echo "=== npm audit (vulnerability counts) ==="
+if command -v node >/dev/null 2>&1; then
+  # npm audit exits non-zero when vulns exist — capture JSON without aborting
+  AUDIT_JSON="$(npm audit --json 2>/dev/null || true)"
+  if [ -n "$AUDIT_JSON" ]; then
+    printf '%s' "$AUDIT_JSON" | node -e '
+      let s = "";
+      process.stdin.on("data", (c) => { s += c; });
+      process.stdin.on("end", () => {
+        try {
+          const d = JSON.parse(s || "{}");
+          const v = (d.metadata && d.metadata.vulnerabilities) || {};
+          const info = v.info || 0;
+          const low = v.low || 0;
+          const moderate = v.moderate || 0;
+          const high = v.high || 0;
+          const critical = v.critical || 0;
+          const total = v.total != null ? v.total : info + low + moderate + high + critical;
+          console.log(
+            "info=" + info +
+            " low=" + low +
+            " moderate=" + moderate +
+            " high=" + high +
+            " critical=" + critical +
+            " total=" + total
+          );
+        } catch {
+          console.log("(could not parse npm audit --json)");
+        }
+      });
+    '
+  else
+    echo "(npm audit --json produced no output)"
+  fi
+else
+  npm audit 2>/dev/null || true
+fi
+echo ""
+
 echo "=== Next Task ID (from CONTEXT.md) ==="
 grep -E '^\*\*Next Task ID:\*\*' spine-tasks/CONTEXT.md 2>/dev/null || echo "(CONTEXT.md not found)"

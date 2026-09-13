@@ -24,6 +24,18 @@
 
 ---
 
+## Dependency drift
+
+| Check | Result |
+|-------|--------|
+| `npm outdated` | (paste summary or path to intake snapshot) |
+| `npm audit` highs/criticals | n |
+| Action | include SP-### / #NNN \| deferred: {reason} |
+
+Thresholds: [issue-intake-checklist.md](issue-intake-checklist.md) § Dependency drift check. Always record; include a task only when a threshold fires.
+
+---
+
 ## Selected tasks
 
 | SP-ID | Issue | Bucket | Size | Title | Notes |
