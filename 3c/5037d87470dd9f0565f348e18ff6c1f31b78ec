@@ -1,0 +1,19 @@
+spine-tasks/SP-755-bump-pi-peer-audit/PROMPT.md
+  s_1a15c230b893b1::t_8663d8c208c692 44,46-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3c5037d87470dd9f0565f348e18ff6c1f31b78ec",
+  "prompts": {},
+  "sessions": {
+    "s_1a15c230b893b1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8514fbd5-b455-42a2-b55f-87d6856eefe4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
