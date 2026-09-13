@@ -1,7 +1,7 @@
 # SP-755: Wave A peer bump + audit clear — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Peer, engines, minPiVersion
+**Status:** 🟡 In Progress — Step 1
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Capture `npm audit` high/critical counts and `npm outdated` for pi-coding-agent
-- [ ] Record current pins in STATUS.md
-- [ ] Dependencies satisfied
+- [x] Capture `npm audit` high/critical counts and `npm outdated` for pi-coding-agent
+- [x] Record current pins in STATUS.md
+- [x] Dependencies satisfied
 
 ---
 
@@ -59,6 +59,14 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Before: npm audit = 3 high (brace-expansion, js-yaml, undici), 2 moderate, 0 critical | Baseline recorded | npm audit --json |
+| Registry: pi-coding-agent 0.85.1 exists; typebox latest = 1.3.30 | Confirms PROMPT targets | npm view |
+| CI stubs mock pi --version as 0.78.0 (< new 0.80.0 floor) — must bump in ci.yml + release.yml | Planned in Step 1 | .github/workflows/ci.yml:72, release.yml:115 |
+| real-pi.yml has no pi version stub (uses real runner pi, skips if absent) | No change needed | .github/workflows/real-pi.yml |
+| Doctor minPiVersion check emits warning (ok:true) below floor, does not fail | Read-only confirm | src/doctor/run-doctor-checks.mjs:311-335 |
+| typebox imported only via `Type` in extensions/spine/worker-tools.ts | Align dep version; schemas only if typecheck fails | extensions/spine/worker-tools.ts |
+| `0.60.0` also in docs/release/v1.0-checklist.md (historical doc; SP-757 owns docs) | Out of File Scope — left as-is | docs/release/v1.0-checklist.md:123 |
+| node_modules not installed in fresh worktree (micromatch MISSING) | npm install as part of lockfile refresh | repo root |
 
 ---
 
@@ -67,6 +75,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
+| 2026-09-13 | Step 0 preflight | audit=3H/2M/0C baseline; pins recorded; stub locations found |
 
 ---
 
