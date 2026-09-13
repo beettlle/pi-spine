@@ -103,17 +103,24 @@ Intake snapshot: `spine-tasks/_authoring/release-v2.21.0/intake-snapshot-2026091
 ## Wave plan snapshot
 
 ```text
-(expected after authoring — refine with spine plan SP-753,SP-754,SP-755,SP-756,SP-757,SP-758)
+Spine plan — ids
+6 task(s) · 3 wave(s) · maxParallel 4
 
-Wave 0 · parallel
-  SP-753 — wait headlines (P0)
-  SP-755 — peer/security Wave A
-  SP-757 — peer/minPi docs (disjoint from SP-755 code paths if docs-only)
+Wave 0 · 2 tasks · 2 lanes in parallel
+  Lane 1: SP-753 — wait: human match/timeout/supersede headlines (P0)
+  Lane 2: SP-755 — Wave A: pi-coding-agent 0.85 peer bump + audit clear
 
-Wave 1 · after deps
-  SP-754 — wait progress (depends SP-753)
-  SP-756 — wait docs (depends SP-753,SP-754)
-  SP-758 — TS6/ESLint10 (depends SP-755)
+Wave 1 · 2 tasks · 2 lanes in parallel
+  Lane 1: SP-754 — wait: start banner + periodic progress (P1)
+  Lane 2: SP-757 — Document minPiVersion, engines, and peer bump
+
+Wave 2 · 2 tasks · 2 lanes in parallel
+  Lane 1: SP-756 — Document wait progress + agent outer-loop guidance (P2)
+  Lane 2: SP-758 — Wave B: TypeScript 6 + ESLint 10 + globals 17
+```
+
+```bash
+spine batch start SP-753,SP-754,SP-755,SP-756,SP-757,SP-758 --wave 0
 ```
 
 ---
