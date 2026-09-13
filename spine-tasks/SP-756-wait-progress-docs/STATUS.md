@@ -1,7 +1,7 @@
 # SP-756: Document wait progress + agent guidance — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Document wait UX
+**Status:** 🟢 Executing
 **Last Updated:** 2026-09-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-753/SP-754 `.DONE` and wait stdout behavior on `main`
-- [ ] Dependencies satisfied
+- [x] Confirm SP-753/SP-754 `.DONE` and wait stdout behavior on `main`
+- [x] Dependencies satisfied
 
 ---
 
