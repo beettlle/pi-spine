@@ -1,7 +1,7 @@
 # SP-756: Document wait progress + agent guidance — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟢 Executing
+**Current Step:** Complete
+**Status:** ✅ Done — awaiting engine review/merge
 **Last Updated:** 2026-09-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -37,9 +37,9 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -63,6 +63,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
+| 2026-09-13 | Step 0 | SP-753/SP-754 confirmed landed (wave-0 integrate `39bba516`, SP-754 `10715653`/`6bb3bca7`); live wait output verified (banner + progress + timeout headline) |
+| 2026-09-13 | Step 1 | All four File Scope files updated; commit `38e033fe` |
+| 2026-09-13 | Step 2 | All `--until` lists validate via `parseUntilDiagnoses`; `env -u SPINE_IS_WORKER … npm test` → 2622/2622 pass, exit 0; commit `4484adc3` |
+| 2026-09-13 | Step 3 | Contract checked: 0 src/bin changes, must-change paths modified; `.DONE` created |
 
 ---
 
