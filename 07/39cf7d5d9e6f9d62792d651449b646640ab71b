@@ -1,0 +1,22 @@
+.github/workflows/ci.yml
+  h_2a17159c706ba1 72
+.github/workflows/release.yml
+  h_2a17159c706ba1 115
+package-lock.json
+  h_2a17159c706ba1 18,22,26,42-44,49-52,57,65-66,70,80-82,86-87,542-553,555-556,560-563,565,573-574,578,580,585,587,590,596-604,606-607,618-1059,1490-1496,1566-1568,1575,1661-1702,1710-1716,1871-1880,2100-2102,2195-2197,2292-2302,2331-2333,2338-2340,2752-2754,3232-3234,3562-3564
+package.json
+  h_2a17159c706ba1 25,29,75,79
+spine-tasks/SP-755-bump-pi-peer-audit/STATUS.md
+  h_2a17159c706ba1 3-4,23,25-29,70-71,81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0739cf7d5d9e6f9d62792d651449b646640ab71b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
