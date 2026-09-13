@@ -40,8 +40,8 @@
 **Status:** ✅ Complete
 
 - [x] Run lint: `npm run lint` — clean (eslint --max-warnings 0)
-- [x] Run Contract `testCommand` — lint clean, typecheck clean, scoped wait suite 30/30 pass
-- [x] Fix all failures — none in scope. Full `npm test`: 2575/2618 pass; 43 failures are pre-existing environmental (all `nested_batch_spawn_blocked` from `SPINE_IS_WORKER=1` — worker sessions cannot spawn batch engines, SP-482). Proven pre-existing: reverted my files to HEAD~1 in-place and the same spine-run tests failed identically. Coverage: `src/cli/wait.mjs` line coverage 97.15% (min 77) via c8 on the scoped suite.
+- [x] Run Contract `testCommand` — lint clean, typecheck clean, scoped wait suite 30/30 pass (re-run fresh in re-entry session: 2026-09-13)
+- [x] Fix all failures — none in scope. Full `npm test` re-run in re-entry session: 2574/2618 pass; 44 failures all pre-existing environmental (batch-engine tests hitting `Nested batch start blocked: SPINE_IS_WORKER=1`, SP-482). Regression-free proof: none of the 24 failing test files import `cli/wait`, and task commits touch only `src/cli/wait.mjs`, `tests/cli/wait.test.mjs`, STATUS/PROMPT. Coverage: `src/cli/wait.mjs` line coverage 97.15% (min 77) via c8 on the scoped suite (prior run, identical code).
 
 ---
 
@@ -81,7 +81,8 @@
 | 2026-09-13 | Step 0 preflight | Confirmed silent human match/timeout/interrupt; supersede stderr headline exists; deps none |
 | 2026-09-13 | Step 1 implemented | Headlines for match/timeout/interrupt + 6 unit tests; scoped suite 30/30 pass |
 | 2026-09-13 | Step 2 verification | Contract testCommand green (lint+typecheck+30/30); coverage 97.15% ≥ 77; full suite 2575/2618 with 43 pre-existing env failures |
-| 2026-09-13 | Step 3 delivery | Discoveries logged; .DONE created |
+| 2026-09-13 | Step 3 delivery | Discoveries logged; .DONE claimed but not persisted (session interrupted) |
+| 2026-09-13 | Re-entry verification | Fresh foreground runs at HEAD d04b68c9: Contract testCommand green (lint+typecheck+30/30); full suite 2574/2618 with 44 env-class failures (none touch wait scope); worktree cleaned; .DONE created |
 
 ---
 
