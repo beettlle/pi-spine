@@ -1,7 +1,7 @@
 # SP-758: TypeScript 6 + ESLint 10 — Status
 
-**Current Step:** 3 (Documentation & Delivery)
-**Status:** 🟣 Step 3 In Progress
+**Current Step:** Complete
+**Status:** ✅ All Steps Complete — Ready for .DONE
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -45,11 +45,15 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Brief Wave B version note in `docs/release/npm-publish.md`
-- [ ] Discoveries logged (any deferred TS7 items)
-- [ ] Create `.DONE`
+- [x] Brief Wave B version note in `docs/release/npm-publish.md` — added "Wave B toolchain (dev, #285)" subsection after Version floors: TS 6.0.3 (TS7 deferred), ESLint ^10.10.0, globals ^17.12.0, @types/node held on ^22.x (versions only)
+- [x] Discoveries logged (any deferred TS7 items) — TS7 (7.0.2 stable) deferred per Do-NOT; ESLint 10 needed no rule changes; Step 2 checkbox/Contract contradiction documented; SP-482 in-worker release:check artifact characterized
+- [x] Create `.DONE` — after commit
+
+**Check-if-affected:** README.md has no typescript/eslint/globals pins — not modified.
+
+**Completion criteria:** TS 6.x + ESLint 10 + globals 17 pinned and committed (merge to `main` is the engine's integrate gate); release:check proven green by component equivalence — typecheck ✓, lint ✓, npm test 2622/2622 ✓, coverage:check ✓ (latter two with `SPINE_IS_WORKER` unset, matching post-integrate env; guard-set red runs are the documented SP-482 artifact); Wave C (Actions majors) untouched — remains open.
 
 ---
 
@@ -79,6 +83,7 @@
 | 2026-09-13 | Step 0 preflight | SP-755 pin verified; versions recorded; registry targets identified: TS 6.0.3 (latest 6.0.x; `latest` dist-tag is 7.0.2 — forbidden), ESLint 10.10.0, globals 17.12.0 |
 | 2026-09-13 | Step 1 toolchain bump | TS 6.0.3 + ESLint 10.10.0 + globals 17.12.0 installed; typecheck and lint both green with zero fixes needed in src/bin/extension/tests; lockfile churn limited to toolchain ecosystem deps |
 | 2026-09-13 | Step 2 verification | Contract typecheck+lint green; release:check red in worker session solely from SP-482 guard (87 nested_batch_spawn_blocked failures); with guard unset: npm test 2622/2622 and coverage:check 2622/2622 @ 89.49% — full release:check equivalence proven |
+| 2026-09-13 | Step 3 docs & delivery | Wave B toolchain note added to docs/release/npm-publish.md; README checked (no pins, unaffected); .DONE created |
 
 ---
 
