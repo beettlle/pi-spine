@@ -1,0 +1,35 @@
+docs/release/npm-publish.md
+  s_032e78b4ca4c2f::t_49121419bd0858 67-70
+eslint.config.js
+  s_032e78b4ca4c2f::t_4d09e857486641 6,10,13-14
+package-lock.json
+  s_032e78b4ca4c2f::t_c2233963dcee0c 20-21,23,41-64,2501-2503,2507,2509,2512,2516-2518,2522,2525,2529-2531,2538,2542-2544,2548,2552-2554,2558,2562,2631-2661,2687-2689,2726-2729,2733,2737-2739,2743-2746,2761-2764,2768-2772,2829-2831,2834-2836,2839-2843,2852-2855,2858,2865,2873,2888-2890,2894-2895,2900,2907-2909,2913,2920-2922,2926,2928,2931,3005-3007,3011,3044-3046,3050-3052,3056-3058,3076-3078,3088-3091,3094-3096,3098,3101-3107,3182-3184,3188,3235-3237,3239,3241,3244-3247,3366-3369,3372-3374,3376,3379-3385,3442-3444
+package.json
+  s_032e78b4ca4c2f::t_5fcb8af3f423f6 77-78,80
+spine-tasks/SP-758-typescript6-eslint10/.DONE
+  s_032e78b4ca4c2f::t_7093547857ff93 1
+spine-tasks/SP-758-typescript6-eslint10/.reviews/0-20260913T215459.md
+  s_032e78b4ca4c2f::t_7fb72e7be2066a 1-8
+spine-tasks/SP-758-typescript6-eslint10/.reviews/3-20260913T215519.md
+  s_032e78b4ca4c2f::t_151562aa2b1614 1-8
+spine-tasks/SP-758-typescript6-eslint10/.reviews/final-20260913T215557.md
+  s_032e78b4ca4c2f::t_02ee5c98b34b42 1-8
+spine-tasks/SP-758-typescript6-eslint10/STATUS.md
+  s_032e78b4ca4c2f::t_61489b6d402794 3-4,14,16-18,23,25-29,34,36-43,48,50-56,71-74,83-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f0c78aaf35d27fba22c53f8a5e375c63efa861a4",
+  "prompts": {},
+  "sessions": {
+    "s_032e78b4ca4c2f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-30122f70-aab0-4d57-915d-467da6ed28e2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
