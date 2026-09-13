@@ -1,7 +1,7 @@
 # SP-753: wait human match/timeout headlines — Status
 
-**Current Step:** 1 (Human terminal headlines)
-**Status:** 🟣 In Progress
+**Current Step:** 3 (Documentation & Delivery) — all steps complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -37,19 +37,19 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint` — clean (eslint --max-warnings 0)
+- [x] Run Contract `testCommand` — lint clean, typecheck clean, scoped wait suite 30/30 pass
+- [x] Fix all failures — none in scope. Full `npm test`: 2575/2618 pass; 43 failures are pre-existing environmental (all `nested_batch_spawn_blocked` from `SPINE_IS_WORKER=1` — worker sessions cannot spawn batch engines, SP-482). Proven pre-existing: reverted my files to HEAD~1 in-place and the same spine-run tests failed identically. Coverage: `src/cli/wait.mjs` line coverage 97.15% (min 77) via c8 on the scoped suite.
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md — see Discoveries table
+- [x] Create `.DONE`
 
 ---
 
@@ -64,6 +64,12 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Human-mode match/timeout/interrupt were fully silent; only `--json` emitted output; supersede already had a stderr headline (#215) | Confirmed in Step 0 preflight | `src/cli/wait.mjs` |
+| Match can fire via pseudo diagnoses (`gate_open`) or the phase-based `failed` alias (#252), so the headline label resolves what actually matched, not the raw diagnosis | Handled by `describeMatchedDiagnosis` helper | `src/cli/wait.mjs` |
+| Interrupt (exit 130) is test-reachable via `process.emit("SIGINT")` inside `sleepFn` — no real signal needed | Used in two new tests | `tests/cli/wait.test.mjs` |
+| `tests/spine-run.test.mjs` and ~41 batch-spawn tests cannot pass inside worker sessions (`SPINE_IS_WORKER=1` nested-batch guard, SP-482); they don't unset the env var before spawning real engines | Pre-existing environmental, out of scope; documented here | `tests/spine-run.test.mjs`, `tests/batch/*` |
+| Test runs regenerate `.spine/rules-manifest.json` `generatedAt` and rotate tracked `coverage/tmp/*.json`; both restored to committed state after runs | Kept worktree clean | `.spine/rules-manifest.json`, `coverage/tmp/` |
+| `docs/adoption/operator-runbook.md` wait sections document usage/flags/process cost, not terminal output — headlines do not invalidate them; doc updates deferred to SP-756 per PROMPT | No change needed | `docs/adoption/operator-runbook.md` |
 
 ---
 
@@ -74,6 +80,8 @@
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
 | 2026-09-13 | Step 0 preflight | Confirmed silent human match/timeout/interrupt; supersede stderr headline exists; deps none |
 | 2026-09-13 | Step 1 implemented | Headlines for match/timeout/interrupt + 6 unit tests; scoped suite 30/30 pass |
+| 2026-09-13 | Step 2 verification | Contract testCommand green (lint+typecheck+30/30); coverage 97.15% ≥ 77; full suite 2575/2618 with 43 pre-existing env failures |
+| 2026-09-13 | Step 3 delivery | Discoveries logged; .DONE created |
 
 ---
 
