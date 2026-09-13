@@ -1,0 +1,19 @@
+spine-tasks/SP-754-wait-progress-banner/.reviews/0-20260913T204523.md
+  s_707c67852967db::t_263412befcc50f 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "396fb8704fc3aacd8e199a7311fba8ddfadbb185",
+  "prompts": {},
+  "sessions": {
+    "s_707c67852967db": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "62ed67c6-15a3-49e7-bd65-f529ffb91e39",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
