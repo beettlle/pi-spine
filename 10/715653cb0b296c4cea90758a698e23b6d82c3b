@@ -1,0 +1,18 @@
+spine-tasks/SP-754-wait-progress-banner/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,23,25-29,69
+src/cli/wait.mjs
+  h_2a17159c706ba1 166-216,333-341,434-447
+tests/cli/wait.test.mjs
+  h_2a17159c706ba1 489-490,492-493,561-564,591-593,621-760
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "10715653cb0b296c4cea90758a698e23b6d82c3b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
