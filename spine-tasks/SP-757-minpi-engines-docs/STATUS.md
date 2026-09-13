@@ -1,7 +1,7 @@
 # SP-757: Document minPiVersion and engines — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress — Steps 0–2 complete
+**Current Step:** Complete
+**Status:** ✅ Done — all steps complete
 **Last Updated:** 2026-09-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -36,9 +36,9 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -65,6 +65,15 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
+| 2026-09-13 | Step 0 | Pins captured; SP-755 confirmed landed (0739cf7d, wave-0 integrate 39bba516) |
+| 2026-09-13 | Step 1 | README prerequisites table + floors note; npm-publish "Version floors" section + checklist row; runbook §1 floors row |
+| 2026-09-13 | Step 2 | Version-match check 9/9 OK; `npm test` 2618/2618 pass (SPINE_IS_WORKER guard unset — see Discoveries) |
+| 2026-09-13 | Step 3 | `.DONE` created; completion criteria met |
+
+## Completion Criteria
+
+- [x] Docs match Wave A pins (`engines.node` >=22.19.0, `pi.minPiVersion` 0.80.0, peer dev pin ^0.85.1)
+- [x] Partial #285 (docs)
 
 ---
 
