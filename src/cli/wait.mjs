@@ -163,6 +163,57 @@ function formatBatchSuffix(scopedBatchId) {
 	return scopedBatchId != null ? ` (batch ${scopedBatchId})` : "";
 }
 
+/**
+ * Start banner for human waits (#286, SP-754). Printed once, right before the first poll
+ * sleep, so the batch id captured on that poll is included when known. Instant matches
+ * never see a banner — their single-line output stays exactly one line.
+ *
+ * @param {object} options
+ * @param {Set<string>} options.untilDiagnoses
+ * @param {string | null} options.batchId
+ * @param {number} options.intervalSec
+ * @param {number | null} options.timeoutMs
+ * @returns {string}
+ */
+function formatWaitBanner({ untilDiagnoses, batchId, intervalSec, timeoutMs }) {
+	const timeoutPart =
+		timeoutMs != null
+			? `timeout ${formatWaitElapsed(timeoutMs) ?? `${timeoutMs}ms`}`
+			: "no timeout";
+	return `Waiting for ${formatUntilList(untilDiagnoses)}${formatBatchSuffix(batchId)} — polling every ${intervalSec}s, ${timeoutPart}`;
+}
+
+/**
+ * Interval-aligned liveness line (#286, SP-754). The poll loop sleeps exactly one
+ * `--interval` per iteration, so one progress line per non-matching poll is aligned by
+ * construction and can never spam micro-sleeps. Carries diagnosis/phase (plus wave and
+ * pending-task counts when reconcile surfaces them) and elapsed so agent hosts can prove
+ * the wait is alive between the start banner and the terminal headline.
+ *
+ * @param {import("../batch/reconcile.mjs").ReconciliationResult} result
+ * @param {string | null} scopedBatchId
+ * @param {number} elapsedMs
+ * @returns {string}
+ */
+function formatWaitProgress(result, scopedBatchId, elapsedMs) {
+	/** @type {string[]} */
+	const parts = [result.diagnosis ?? "no diagnosis"];
+	if (result.phase != null) {
+		parts.push(`phase=${result.phase}`);
+	}
+	if (result.currentWaveIndex != null && result.waveCount != null) {
+		parts.push(`wave ${result.currentWaveIndex + 1}/${result.waveCount}`);
+	}
+	if (result.pendingTasks != null) {
+		parts.push(`pending tasks ${result.pendingTasks}`);
+	}
+	const elapsed = formatWaitElapsed(elapsedMs);
+	if (elapsed != null) {
+		parts.push(`elapsed ${elapsed}`);
+	}
+	return `Wait progress: ${parts.join(", ")}${formatBatchSuffix(scopedBatchId)}`;
+}
+
 /** Exit code when the waited-on batch was archived or superseded by another session (#215). */
 export const WAIT_SUPERSEDED_EXIT_CODE = 2;
 
@@ -279,6 +330,15 @@ export async function runSpineWait(options) {
 	let scopedBatchId = null;
 	let scopedBatchIdCaptured = false;
 
+	/**
+	 * Human start banner (#286, SP-754): flipped after the first poll that continues past
+	 * the match/supersede/timeout checks, so the banner is printed exactly once and only
+	 * when the wait actually waits. `--json` never prints it.
+	 *
+	 * @type {boolean}
+	 */
+	let bannerPrinted = false;
+
 	try {
 		while (running) {
 			const result = reconcileFn({ projectRoot });
@@ -369,6 +429,20 @@ export async function runSpineWait(options) {
 					timedOut: true,
 					batchId: scopedBatchId,
 				};
+			}
+
+			if (!json) {
+				if (!bannerPrinted) {
+					// Start banner (#286, SP-754): once, only when the wait actually continues —
+					// instant matches keep their single-line output. batchId was captured above.
+					bannerPrinted = true;
+					writeStdout(
+						`${formatWaitBanner({ untilDiagnoses, batchId: scopedBatchId, intervalSec, timeoutMs })}\n`,
+					);
+				} else {
+					// Interval-aligned progress (#286, SP-754): one line per non-matching poll.
+					writeStdout(`${formatWaitProgress(result, scopedBatchId, nowFn() - startedAt)}\n`);
+				}
 			}
 
 			await sleepFn(intervalSec * 1000);

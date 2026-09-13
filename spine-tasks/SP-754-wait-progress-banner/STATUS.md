@@ -1,7 +1,7 @@
 # SP-754: wait start banner + periodic progress — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟣 In Progress
 **Last Updated:** 2026-09-13
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,22 +11,22 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-753 headlines present on match/timeout
-- [ ] Note current `--interval` default and sleep path
-- [ ] Dependencies satisfied
+- [x] Confirm SP-753 headlines present on match/timeout
+- [x] Note current `--interval` default and sleep path
+- [x] Dependencies satisfied
 
 ---
 
 ### Step 1: Banner + periodic progress
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Human mode: start banner once (until set, timeout, batchId when captured)
-- [ ] Human mode: emit progress on an interval-aligned cadence
-- [ ] Progress line includes diagnosis/phase/elapsed enough to prove liveness
-- [ ] `--json` remains quiet during the loop by default
-- [ ] Unit tests cover banner + at least one progress write before match
+- [x] Human mode: start banner once (until set, timeout, batchId when captured)
+- [x] Human mode: emit progress on an interval-aligned cadence
+- [x] Progress line includes diagnosis/phase/elapsed enough to prove liveness
+- [x] `--json` remains quiet during the loop by default
+- [x] Unit tests cover banner + at least one progress write before match
 
 ---
 
@@ -66,6 +66,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
+| 2026-09-13 | Step 0 preflight | SP-753 headlines confirmed (match/timeout/interrupt/supersede); interval default 5s (`DEFAULT_WATCH_INTERVAL_SEC`); sleep path = one full `intervalSec` sleep per poll (no micro-sleeps); impact analysis on `runSpineWait` = LOW (1 direct caller) |
 
 ---
 
