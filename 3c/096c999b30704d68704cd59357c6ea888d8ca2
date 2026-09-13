@@ -1,0 +1,14 @@
+spine-tasks/SP-757-minpi-engines-docs/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-17,56-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3c096c999b30704d68704cd59357c6ea888d8ca2",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
