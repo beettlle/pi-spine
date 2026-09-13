@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-09-05 (Phase 88 v2.20.0 published; Next → SP-753)
+**Last Updated:** 2026-09-13 (Phase 89 v2.21.0 release packets staged; Next → SP-759)
 **Status:** Active
-**Next Task ID:** SP-753
+**Next Task ID:** SP-759
 
 ---
 
@@ -2498,6 +2498,29 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Release note (published):** v2.20.0 — Close open P2 backlog: gate `--synthesis` (#280), Google quota probe (#277), `@ts-nocheck` Phase 0–1 (#266), matrix env/`matrixMaxParallel` (#229), per-row matrix status/retry/cancel (#230). Tag `v2.20.0` @ `90297be8`; [release workflow](https://github.com/beettlle/pi-spine/actions/runs/33996284816); CI @ `06b984f6` ([33995467069](https://github.com/beettlle/pi-spine/actions/runs/33995467069)); GitHub [v2.20.0](https://github.com/beettlle/pi-spine/releases/tag/v2.20.0).
 
 **Deferred:** matrix epic remainder #225/#231; P3 backlog (#212, #211, #209, #135, #127, #124, #43); #266 Phase 2–3 typing follow-ups if filed.
+
+### Phase 89 — v2.21.0 wait UX + dependency Waves A–B (#286, #285)
+
+**Authoring:** 2026-09-13 · Manifest: [`spine-tasks/_authoring/release-v2.21.0/manifest.md`](_authoring/release-v2.21.0/manifest.md)
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-753 | wait human match/timeout headlines (P0) | S | #286 Partial | Pending |
+| SP-754 | wait start banner + progress (P1) | S | #286 Partial | Pending |
+| SP-755 | Wave A: pi-coding-agent 0.85 + audit clear | M | #285 Partial | Pending |
+| SP-756 | wait progress docs + agent guidance (P2) | S | #286 Closes | Pending |
+| SP-757 | Document minPiVersion / engines floors | S | #285 Partial | Pending |
+| SP-758 | Wave B: TypeScript 6 + ESLint 10 | M | #285 Partial | Pending |
+
+**Phase 89 exit criteria:**
+
+- [x] Operator approved release scope (manifest)
+- [ ] SP-753–SP-758 `.DONE` and integrated on `main`
+- [ ] #286 CLOSED; #285 left OPEN or commented for Wave C deferral
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Publish **v2.21.0** only after operator approval
+
+**Deferred:** #285 Wave C (Actions majors); #283/#284 typing; matrix epic #225/#231; P3 backlog.
 
 ---
 
