@@ -1,6 +1,6 @@
 # SP-756: Document wait progress + agent guidance — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟢 Executing
 **Last Updated:** 2026-09-13
 **Review Level:** 0
@@ -29,10 +29,10 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract `testCommand` is `true` (docs-only)
-- [ ] Spot-check linked examples still use valid `--until` lists
+- [x] Contract `testCommand` is `true` (docs-only)
+- [x] Spot-check linked examples still use valid `--until` lists
 
 ---
 
@@ -54,6 +54,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `npm test` inside a worker session fails 43 batch-engine tests with `nested_batch_spawn_blocked` — `SPINE_IS_WORKER=1` env leaks into spawned test processes | Environmental, not a regression; suite passes 2622/2622 with worker env vars cleared (`env -u SPINE_IS_WORKER … npm test`) | tests/spine-run.test.mjs et al. |
 
 ---
 
