@@ -1,0 +1,14 @@
+spine-tasks/SP-755-bump-pi-peer-audit/STATUS.md
+  h_2a17159c706ba1 77-79,92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "231d49203ad87dd38d0d4ec64cbcb074bf30bfa4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
