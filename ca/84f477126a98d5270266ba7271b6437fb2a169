@@ -1,0 +1,18 @@
+spine-tasks/SP-753-wait-match-headlines/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,23-31,33-35,75-76
+src/cli/wait.mjs
+  h_2a17159c706ba1 14-19,103-165,337-343,357-363,377-382
+tests/cli/wait.test.mjs
+  h_2a17159c706ba1 459-613
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca84f477126a98d5270266ba7271b6437fb2a169",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
