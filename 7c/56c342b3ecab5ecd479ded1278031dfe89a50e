@@ -1,0 +1,16 @@
+docs/release/npm-publish.md
+  h_2a17159c706ba1 67-70
+spine-tasks/SP-758-typescript6-eslint10/STATUS.md
+  h_2a17159c706ba1 3-4,48-54,56,86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7c56c342b3ecab5ecd479ded1278031dfe89a50e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
