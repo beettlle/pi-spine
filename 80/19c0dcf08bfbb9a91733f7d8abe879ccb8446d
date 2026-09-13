@@ -1,0 +1,14 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8019c0dcf08bfbb9a91733f7d8abe879ccb8446d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
