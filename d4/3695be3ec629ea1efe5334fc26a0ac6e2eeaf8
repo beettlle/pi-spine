@@ -1,0 +1,21 @@
+spine-tasks/SP-755-bump-pi-peer-audit/PROMPT.md
+  s_1a15c230b893b1::t_39aa52f5c318a0 44,46-47
+spine-tasks/SP-758-typescript6-eslint10/PROMPT.md
+  s_1a15c230b893b1::t_ec02eb9e0f4cf1 51,53-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d43695be3ec629ea1efe5334fc26a0ac6e2eeaf8",
+  "prompts": {},
+  "sessions": {
+    "s_1a15c230b893b1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8514fbd5-b455-42a2-b55f-87d6856eefe4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
