@@ -486,9 +486,11 @@ test("runSpineWait prints one human match headline on stdout with diagnosis batc
 
 	assert.equal(result.exitCode, 0);
 	assert.equal(result.matched, true);
-	assert.equal(stdout.length, 1);
+	// SP-754: the wait continued past poll 1, so stdout is start banner + match headline.
+	assert.equal(stdout.length, 2);
 	assert.equal(stderr.length, 0);
-	const line = stdout[0];
+	assert.match(stdout[0], /Waiting for completed \(batch b1\)/);
+	const line = stdout[1];
 	assert.match(line, /Wait matched: completed/);
 	assert.match(line, /batch b1/);
 	assert.match(line, /after 5\.0s/);
@@ -556,7 +558,10 @@ test("runSpineWait prints one human timeout headline on stderr (#286)", async ()
 	assert.equal(result.exitCode, 1);
 	assert.equal(result.timedOut, true);
 	assert.equal(result.matched, false);
-	assert.equal(stdout.length, 0);
+	// SP-754: the banner is the only stdout traffic; the terminal timeout line is stderr.
+	assert.equal(stdout.length, 1);
+	assert.match(stdout[0], /Waiting for completed \(batch b1\)/);
+	assert.match(stdout[0], /timeout 1\.0s/);
 	assert.equal(stderr.length, 1);
 	const line = stderr[0];
 	assert.match(line, /Wait timed out after 1\.0s/);
@@ -583,7 +588,9 @@ test("runSpineWait prints a human interrupt headline and exits 130 on SIGINT (#2
 
 	assert.equal(result.exitCode, 130);
 	assert.equal(result.interrupted, true);
-	assert.equal(stdout.length, 0);
+	// SP-754: poll 1 continued, so the start banner printed before SIGINT arrived.
+	assert.equal(stdout.length, 1);
+	assert.match(stdout[0], /Waiting for completed \(batch b1\)/);
 	assert.equal(stderr.length, 1);
 	assert.match(stderr[0], /Wait interrupted/);
 	assert.match(stderr[0], /completed/);
@@ -610,4 +617,144 @@ test("runSpineWait json mode stays silent on SIGINT (#286)", async () => {
 	assert.equal(result.interrupted, true);
 	assert.equal(stdout.length, 0);
 	assert.equal(stderr.length, 0);
+});
+
+// --- Human start banner + interval-aligned progress (#286, SP-754) ----------------
+// A multi-minute wait must prove liveness: one start banner (until set, interval,
+// timeout, batchId when captured) followed by one progress line per non-matching poll.
+// Each poll sleeps exactly `--interval`, so per-poll lines are interval-aligned by
+// construction. `--json` keeps its loop silent (terminal snapshot only).
+
+test("runSpineWait prints start banner once then interval-aligned progress before match (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	let calls = 0;
+	let now = 0;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 5,
+		nowFn: () => now,
+		reconcileFn: () => {
+			calls += 1;
+			if (calls < 3) {
+				return {
+					diagnosis: "running",
+					phase: "executing",
+					pendingTasks: 2,
+					currentWaveIndex: 1,
+					waveCount: 3,
+					batchId: "b1",
+					headline: "b1 running",
+					suggestedCommand: "spine status",
+				};
+			}
+			return {
+				diagnosis: "completed",
+				phase: "completed",
+				batchId: "b1",
+				headline: "b1 done",
+				suggestedCommand: "spine integrate",
+			};
+		},
+		sleepFn: async () => {
+			now += 5_000;
+		},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(stderr.length, 0);
+	assert.equal(stdout.length, 3);
+	// Banner: exactly one, first line, naming the until set, batch, interval, timeout.
+	assert.match(stdout[0], /Waiting for completed \(batch b1\) — polling every 5s, no timeout/);
+	// Progress: diagnosis, phase, wave/task counts, elapsed — enough to prove liveness.
+	assert.match(
+		stdout[1],
+		/Wait progress: running, phase=executing, wave 2\/3, pending tasks 2, elapsed 5\.0s \(batch b1\)/,
+	);
+	assert.match(stdout[2], /Wait matched: completed/);
+	// Human lines are not JSON.
+	assert.throws(() => JSON.parse(stdout[0]));
+	assert.throws(() => JSON.parse(stdout[1]));
+});
+
+test("runSpineWait json mode emits no banner or progress during the loop (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	let calls = 0;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 5,
+		json: true,
+		reconcileFn: () => {
+			calls += 1;
+			return calls < 3
+				? { diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }
+				: { diagnosis: "completed", batchId: "b1", headline: "b1 done", suggestedCommand: "spine integrate" };
+		},
+		sleepFn: async () => {},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	// Terminal snapshot only — no continuous NDJSON chatter by default.
+	assert.equal(stdout.length, 1);
+	assert.equal(stderr.length, 0);
+	const snapshot = JSON.parse(stdout[0]);
+	assert.equal(snapshot.diagnosis, "completed");
+});
+
+test("runSpineWait banner states the timeout when set and no timeout otherwise (#286)", async () => {
+	/**
+	 * @param {number | null} timeoutMs
+	 */
+	async function bannerFor(timeoutMs) {
+		const stdout = [];
+		let calls = 0;
+		await runSpineWait({
+			projectRoot: "/tmp/unused",
+			untilDiagnoses: new Set(["completed"]),
+			intervalSec: 2,
+			timeoutMs,
+			reconcileFn: () => {
+				calls += 1;
+				return calls < 2
+					? { diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }
+					: { diagnosis: "completed", batchId: "b1", headline: "b1 done", suggestedCommand: "spine integrate" };
+			},
+			sleepFn: async () => {},
+			writeStdout: (text) => stdout.push(text),
+			writeStderr: () => {},
+		});
+		assert.ok(stdout.length >= 1);
+		return stdout[0];
+	}
+
+	assert.match(await bannerFor(30_000), /timeout 30\.0s/);
+	assert.match(await bannerFor(null), /no timeout/);
+});
+
+test("runSpineWait prints no banner when the first poll matches (#286)", async () => {
+	const stdout = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 5,
+		reconcileFn: () => ({ diagnosis: "completed", batchId: "b1", headline: "b1 done", suggestedCommand: "spine integrate" }),
+		sleepFn: async () => {},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(stdout.length, 1);
+	assert.match(stdout[0], /Wait matched: completed/);
+	assert.ok(!stdout[0].includes("Waiting for"));
 });
