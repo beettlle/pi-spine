@@ -40,7 +40,8 @@ Partial #286 — In human mode, print a start banner (batchId when known, `--unt
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/cli/wait.test.mjs` |
 | fileScopeMustChange | `src/cli/wait.mjs`, `tests/cli/wait.test.mjs` |
-| minLineCoverage | 77 |
+
+> **Coverage:** Post-integrate `release:check` owns ≥77% line coverage. Do not set `minLineCoverage` with scoped `node --test` (no parseable coverage table in stdout) — same failure mode as SP-671 / SP-753.
 
 ## Steps
 
