@@ -1,7 +1,7 @@
 # SP-755: Wave A peer bump + audit clear — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress — Step 2
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟡 In Progress — Step 3
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -31,12 +31,12 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (`release:check`)
-- [ ] Fix all failures from the peer/typebox bump
-- [ ] Confirm `npm audit` high=0
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand` (`release:check`)
+- [x] Fix all failures from the peer/typebox bump
+- [x] Confirm `npm audit` high=0
 
 ---
 
@@ -69,6 +69,8 @@
 | node_modules not installed in fresh worktree (micromatch MISSING) | npm install as part of lockfile refresh | repo root |
 | `npm audit fix` (non-force) cleared remaining brace-expansion + js-yaml highs; final audit = 0 vulnerabilities (no --force needed) | Resolved | npm audit |
 | typebox schemas needed no fixes after 1.1→1.3 bump (typecheck pending Step 2) | Verified in Step 2 | extensions/spine/worker-tools.ts |
+| `tests/spine-run.test.mjs` + startBatch spawn tests fail inside worker session: children inherit SPINE_IS_WORKER=1 → nested_batch_spawn_blocked (SP-482 guard). Reproduced identically at base commit bdf00479 (2/2 fail) — pre-existing env artifact, NOT a bump regression. Engine's own `buildContractTestEnv` strips SPINE_IS_WORKER before contract runs; ran contract with `env -u SPINE_IS_WORKER` to reproduce CI conditions | Documented; contract run uses engine-sanctioned env | tests/spine-run.test.mjs, src/batch/contract-verify.mjs, tests/batch/contract-verify-nested-spawn.test.mjs |
+| Full contract with engine-sanctioned env: 2612/2612 tests pass, 0 fail; line coverage 89.50% (threshold 77%); release:check exit=0 | Verification evidence | /tmp/sp755-contract.log |
 
 ---
 
@@ -79,6 +81,7 @@
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
 | 2026-09-13 | Step 0 preflight | audit=3H/2M/0C baseline; pins recorded; stub locations found |
 | 2026-09-13 | Step 1 peer bump | pi ^0.85.1, typebox 1.3.30, engines >=22.19.0, minPi 0.80.0, stubs 0.78.0→0.85.1; audit 0 vulns |
+| 2026-09-13 | Step 2 verification | lint clean; release:check exit=0 (env -u SPINE_IS_WORKER, engine-sanctioned); 2612/2612 pass; coverage 89.50%; audit 0 vulns |
 
 ---
 
