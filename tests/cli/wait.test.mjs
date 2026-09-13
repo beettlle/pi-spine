@@ -456,3 +456,158 @@ test("runSpineWait tolerates a corrupt archived batch-state (#215)", async () =>
 		fs.rmSync(tmp, { recursive: true, force: true });
 	}
 });
+
+// --- Human terminal headlines (#286) ---------------------------------------------
+// In human (non-json) mode every terminal wait outcome must print one clear line:
+// match → stdout; timeout/interrupt → stderr. `--json` keeps its single snapshot.
+
+test("runSpineWait prints one human match headline on stdout with diagnosis batch and elapsed (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	let calls = 0;
+	let now = 0;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 1,
+		nowFn: () => now,
+		reconcileFn: () => {
+			calls += 1;
+			return calls < 2
+				? { diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }
+				: { diagnosis: "completed", batchId: "b1", headline: "b1 done", suggestedCommand: "spine integrate" };
+		},
+		sleepFn: async () => {
+			now = 5_000;
+		},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(stdout.length, 1);
+	assert.equal(stderr.length, 0);
+	const line = stdout[0];
+	assert.match(line, /Wait matched: completed/);
+	assert.match(line, /batch b1/);
+	assert.match(line, /after 5\.0s/);
+	assert.throws(() => JSON.parse(line));
+});
+
+test("runSpineWait human match headline names the pseudo diagnosis that fired (#286)", async () => {
+	const stdout = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["gate_open"]),
+		reconcileFn: () => ({
+			diagnosis: "running",
+			macroPhase: "gating",
+			headline: "Batch b1 gate opened — approve to continue land loop",
+			suggestedCommand: "spine gate approve",
+			batchId: "b1",
+		}),
+		sleepFn: async () => {},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(stdout.length, 1);
+	assert.match(stdout[0], /Wait matched: gate_open/);
+	assert.ok(!stdout[0].includes("running"));
+});
+
+test("runSpineWait human match headline omits batch segment when no batch is active (#286)", async () => {
+	const stdout = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		reconcileFn: () => ({ diagnosis: "completed", headline: "done", suggestedCommand: "spine integrate" }),
+		sleepFn: async () => {},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(stdout.length, 1);
+	assert.match(stdout[0], /Wait matched: completed after/);
+	assert.ok(!stdout[0].includes("batch"));
+});
+
+test("runSpineWait prints one human timeout headline on stderr (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	let now = 1_000;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		timeoutMs: 1_000,
+		intervalSec: 1,
+		nowFn: () => now,
+		reconcileFn: () => ({ diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }),
+		sleepFn: async () => {
+			now += 1_000;
+		},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 1);
+	assert.equal(result.timedOut, true);
+	assert.equal(result.matched, false);
+	assert.equal(stdout.length, 0);
+	assert.equal(stderr.length, 1);
+	const line = stderr[0];
+	assert.match(line, /Wait timed out after 1\.0s/);
+	assert.match(line, /waiting for completed/);
+	assert.match(line, /batch b1/);
+	assert.match(line, /last diagnosis: running/);
+	assert.throws(() => JSON.parse(line));
+});
+
+test("runSpineWait prints a human interrupt headline and exits 130 on SIGINT (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 1,
+		reconcileFn: () => ({ diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }),
+		sleepFn: async () => {
+			process.emit("SIGINT");
+		},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 130);
+	assert.equal(result.interrupted, true);
+	assert.equal(stdout.length, 0);
+	assert.equal(stderr.length, 1);
+	assert.match(stderr[0], /Wait interrupted/);
+	assert.match(stderr[0], /completed/);
+	assert.match(stderr[0], /batch b1/);
+});
+
+test("runSpineWait json mode stays silent on SIGINT (#286)", async () => {
+	const stdout = [];
+	const stderr = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed"]),
+		intervalSec: 1,
+		json: true,
+		reconcileFn: () => ({ diagnosis: "running", batchId: "b1", headline: "b1 running", suggestedCommand: "spine status" }),
+		sleepFn: async () => {
+			process.emit("SIGINT");
+		},
+		writeStdout: (text) => stdout.push(text),
+		writeStderr: (text) => stderr.push(text),
+	});
+
+	assert.equal(result.exitCode, 130);
+	assert.equal(result.interrupted, true);
+	assert.equal(stdout.length, 0);
+	assert.equal(stderr.length, 0);
+});
