@@ -1,6 +1,6 @@
 # SP-756: Document wait progress + agent guidance — Status
 
-**Current Step:** Step 1 — Document wait UX
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🟢 Executing
 **Last Updated:** 2026-09-13
 **Review Level:** 0
@@ -19,12 +19,12 @@
 ---
 
 ### Step 1: Document wait UX
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] QUICK-REFERENCE: note human-mode start/progress/match lines; when to use `--json`
-- [ ] spine-release-operator: detached wait guidance mentions progress
-- [ ] spine-orchestrate-waves: wait recipe mentions liveness output
-- [ ] agent-shell-batch-policy: quiet-stdout agent hosts vs wait progress
+- [x] QUICK-REFERENCE: note human-mode start/progress/match lines; when to use `--json`
+- [x] spine-release-operator: detached wait guidance mentions progress
+- [x] spine-orchestrate-waves: wait recipe mentions liveness output
+- [x] agent-shell-batch-policy: quiet-stdout agent hosts vs wait progress
 
 ---
 

@@ -18,6 +18,8 @@ spine wait --until completed,needs_integrate,failed,aborted --timeout 4h   # opt
 
 Detached start/resume returns when the engine **starts**, not when work completes.
 
+> **Wait progress vs quiet-stdout hosts:** human-mode `spine wait` prints a start banner and a `Wait progress:` line per poll, but agent hosts that buffer stdout until process exit (MonitorCreate, non-TTY shells) only see the terminal line. For machine-readable output use `--json` — one JSON snapshot at the terminal state.
+
 ---
 
 ## Cursor Agent shell
