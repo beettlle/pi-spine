@@ -1,0 +1,8 @@
+SP-754 complete.
+
+- Human wait prints a start banner once (until set, interval, timeout, batchId when captured) and one interval-aligned progress line per non-matching poll (diagnosis, phase, wave x/y, pending tasks, elapsed).
+- `--json` loop behavior unchanged: terminal snapshot only.
+- SP-753 headlines preserved; `--until` matching untouched.
+- Files: src/cli/wait.mjs, tests/cli/wait.test.mjs (File Scope only).
+- Verification: `npm run lint` (0 warnings), `npm run typecheck` clean, Contract testCommand 34/34 pass, EXIT=0.
+- Commits: 10715653 (Step 1), 6bb3bca7 (Steps 2-3).
