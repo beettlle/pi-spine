@@ -1,7 +1,7 @@
 # SP-757: Document minPiVersion and engines — Status
 
-**Current Step:** Step 1 — Document floors
-**Status:** 🟡 In Progress — Step 0 complete
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress — Steps 0–1 complete
 **Last Updated:** 2026-09-13
 **Review Level:** 0
 **Review Counter:** 0
@@ -19,11 +19,11 @@
 ---
 
 ### Step 1: Document floors
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] README: Node / pi minimums and peer expectation
-- [ ] npm-publish: note minPiVersion/engines for release operators
-- [ ] operator-runbook: short install/doctor row for the new floors
+- [x] README: Node / pi minimums and peer expectation
+- [x] npm-publish: note minPiVersion/engines for release operators
+- [x] operator-runbook: short install/doctor row for the new floors
 
 ---
 

@@ -52,6 +52,18 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 2. Enter the tag name (e.g. `v1.2.3`) — the tag must already exist in the repo.
 3. The workflow checks out at that tag and re-runs the full publish pipeline.
 
+## Version floors (engines / minPiVersion / peer)
+
+`package.json` declares the Wave A floors ([#285](https://github.com/beettlle/pi-spine/issues/285)). Release operators bumping dependencies must keep these consistent within the same release:
+
+| Floor | Value | Enforced by |
+|-------|-------|-------------|
+| `engines.node` | `>=22.19.0` | npm `engines` check at install; CI runs Node 22 |
+| `pi.minPiVersion` | `0.80.0` | `spine doctor` "pi version supported" warning when the installed pi is older |
+| `@earendil-works/pi-coding-agent` (tested peer) | `^0.85.1` dev pin | `npm audit` highs cleared via 0.85.1; extension tool schemas tested against it |
+
+The `peerDependencies` entries for `@earendil-works/pi-coding-agent` and `typebox` stay `*` (optional) — the tested pin lives in `devDependencies`. When bumping the peer, also raise `pi.minPiVersion` if the new pi requires it, and update the workflow pi stubs that emulate `pi --version` (`ci.yml`, `release.yml`) so they report a version at or above the new minimum.
+
 ## Pre-publish checklist
 
 - [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
@@ -68,6 +80,7 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
   - **`cancelled` or no run exists for `HEAD`:** re-run **CI** via `workflow_dispatch` — `gh workflow run ci.yml` (dispatch trigger added in `edb7919d`) — then `gh run list` again and wait for `conclusion: success` on current `HEAD`.
   - Do **not** treat a cancelled run as green or as red, and do **not** `npm version` or `git push --tags` until a green run exists on `HEAD`.
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
+- [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^0.85.1` (see [Version floors](#version-floors-engines--minpiversion--peer))
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
 - [ ] `release.yml` succeeded
