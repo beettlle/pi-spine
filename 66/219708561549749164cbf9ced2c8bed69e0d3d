@@ -1,0 +1,36 @@
+skills/spine-release-operator/references/release-profiles.md
+  s_323a4172eb709d::t_9359460c743be7 75-79,92
+skills/spine-release-operator/references/issue-intake-checklist.md
+  s_323a4172eb709d::t_8b25c6b31ee974 89-125,145-153
+skills/spine-release-operator/references/release-manifest-template.md
+  s_323a4172eb709d::t_d60bc5f11d1cd5 27-38
+skills/spine-release-operator/SKILL.md
+  s_323a4172eb709d::t_4eba19afbc231b 50
+  s_323a4172eb709d::t_3ea14e7739d2cd 158-166,169
+  s_323a4172eb709d::t_47c91210f83cc3 567-573
+  s_323a4172eb709d::t_33d8570f1eaec5 208
+  s_323a4172eb709d::t_7dfa031001bd4b 186-190
+skills/spine-release-operator/scripts/collect-release-intake.sh
+  s_323a4172eb709d::t_851575a0e6f0cf 70-76,109-113
+  s_323a4172eb709d::t_50ce01ad52f03e 77-108
+AGENTS.md
+  s_323a4172eb709d::t_d292f4c3400c59 4
+CLAUDE.md
+  s_323a4172eb709d::t_92d184705394a3 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "66219708561549749164cbf9ced2c8bed69e0d3d",
+  "prompts": {},
+  "sessions": {
+    "s_323a4172eb709d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "769ca360-6b61-4d5b-9fb2-465038193221",
+        "model": "default"
+      },
+      "human_author": null
+    }
+  }
+}
