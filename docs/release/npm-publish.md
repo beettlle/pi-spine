@@ -64,6 +64,10 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 
 The `peerDependencies` entries for `@earendil-works/pi-coding-agent` and `typebox` stay `*` (optional) — the tested pin lives in `devDependencies`. When bumping the peer, also raise `pi.minPiVersion` if the new pi requires it, and update the workflow pi stubs that emulate `pi --version` (`ci.yml`, `release.yml`) so they report a version at or above the new minimum.
 
+### Wave B toolchain (dev, [#285](https://github.com/beettlle/pi-spine/issues/285))
+
+Dev toolchain majors shipped in Wave B: TypeScript `6.0.3` (TS7 intentionally deferred), ESLint `^10.10.0`, `globals` `^17.12.0`, with `@types/node` held on the `^22.x` line. These are dev-only pins — they do not change `engines.node` or the runtime floors above.
+
 ## Pre-publish checklist
 
 - [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
