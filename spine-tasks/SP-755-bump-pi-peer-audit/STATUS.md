@@ -74,6 +74,9 @@
 | `tests/spine-run.test.mjs` + startBatch spawn tests fail inside worker session: children inherit SPINE_IS_WORKER=1 → nested_batch_spawn_blocked (SP-482 guard). Reproduced identically at base commit bdf00479 (2/2 fail) — pre-existing env artifact, NOT a bump regression. Engine's own `buildContractTestEnv` strips SPINE_IS_WORKER before contract runs; ran contract with `env -u SPINE_IS_WORKER` to reproduce CI conditions | Documented; contract run uses engine-sanctioned env | tests/spine-run.test.mjs, src/batch/contract-verify.mjs, tests/batch/contract-verify-nested-spawn.test.mjs |
 | Full contract with engine-sanctioned env: 2612/2612 tests pass, 0 fail; line coverage 89.50% (threshold 77%); release:check exit=0 | Verification evidence | /tmp/sp755-contract.log |
 | docs/release/npm-publish.md contains no engines/node version wording — SP-757 unaffected by engines change there | Not affected | docs/release/npm-publish.md |
+| Duplicate worker session detected: two spine-worker-runner PIDs alive (11:52/11:53); sibling committed Steps 2–3 + .DONE (cd64e15c..3471cc84) while this session ran verification in parallel. Sibling's /tmp/sp755-contract.log independently verified genuine: 2612/2612 ×2 runs, coverage 89.50%, 0 ✖ | Collision documented; code state identical, no divergence | /tmp/sp755-contract.log, git log cd64e15c..3471cc84 |
+| Engine post-DONE contract verify failed 2× (12:07, 12:17) solely on flaky timing tests (`contract stall override (scaled)` ~15.7s both runs; + `batch resume returns quickly` once) under contention with this session's concurrent suite runs; engine deleted working-tree .DONE per retry protocol | Environmental; retries exhausted on flake, not regression | .reviews/contract-fail-*.log |
+| Post-collision re-verify on quiet machine: release:check exit 0, 2612/2612, coverage 89.49%, audit still 0 vulns; .DONE restored from HEAD (3471cc84) | Resolved — task complete | npm run release:check, npm audit |
 
 ---
 
@@ -86,6 +89,7 @@
 | 2026-09-13 | Step 1 peer bump | pi ^0.85.1, typebox 1.3.30, engines >=22.19.0, minPi 0.80.0, stubs 0.78.0→0.85.1; audit 0 vulns |
 | 2026-09-13 | Step 2 verification | lint clean; release:check exit=0 (env -u SPINE_IS_WORKER, engine-sanctioned); 2612/2612 pass; coverage 89.50%; audit 0 vulns |
 | 2026-09-13 | Step 3 delivery | Affected-docs checked (none affected); .DONE created |
+| 2026-09-13 | Collision recovery | Engine contract retries flaked 2× (timing tests under contention); re-verified green on quiet machine; .DONE restored from HEAD |
 
 ---
 
