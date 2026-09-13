@@ -1,7 +1,7 @@
 # SP-758: TypeScript 6 + ESLint 10 — Status
 
-**Current Step:** 1 (Toolchain bump)
-**Status:** 🟣 Step 1 In Progress
+**Current Step:** 2 (Testing & Verification)
+**Status:** 🟣 Step 2 In Progress
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -20,13 +20,13 @@
 ---
 
 ### Step 1: Toolchain bump
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Bump `typescript` to 6.0.x; `eslint` to 10.x; `globals` to 17.x; refresh lockfile
-- [ ] Keep `@types/node` on 22.x
-- [ ] Adjust flat ESLint config for v10 as needed
-- [ ] Fix typecheck errors in package + extension/batch projects
-- [ ] `npm run lint` clean with `--max-warnings 0`
+- [x] Bump `typescript` to 6.0.x; `eslint` to 10.x; `globals` to 17.x; refresh lockfile — typescript `6.0.3` (exact pin, style preserved; `latest` dist-tag is 7.0.2 — not used), eslint `^10.10.0`, globals `^17.12.0`; lockfile refreshed via `npm install`
+- [x] Keep `@types/node` on 22.x — pin unchanged `^22.19.18`, resolves `22.19.19`
+- [x] Adjust flat ESLint config for v10 as needed — config already flat-native (no eslintrc residue); added `name` properties (v10 core-config convention) and moved `ecmaVersion` from pinned `2022` to `"latest"` per ESLint 10 recommendation; v10 lookup-from-file resolves root config for `src/bin/tests/scripts` — verified by clean lint
+- [x] Fix typecheck errors in package + extension/batch projects — none required: `tsc --project tsconfig.json` and `tsc --project tsconfig.batch.json` green on TS 6.0.3 with zero output (tsconfigs unchanged)
+- [x] `npm run lint` clean with `--max-warnings 0` — zero findings on ESLint 10.10.0
 
 ---
 
@@ -68,6 +68,7 @@
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
 | 2026-09-13 | Step 0 preflight | SP-755 pin verified; versions recorded; registry targets identified: TS 6.0.3 (latest 6.0.x; `latest` dist-tag is 7.0.2 — forbidden), ESLint 10.10.0, globals 17.12.0 |
+| 2026-09-13 | Step 1 toolchain bump | TS 6.0.3 + ESLint 10.10.0 + globals 17.12.0 installed; typecheck and lint both green with zero fixes needed in src/bin/extension/tests; lockfile churn limited to toolchain ecosystem deps |
 
 ---
 
