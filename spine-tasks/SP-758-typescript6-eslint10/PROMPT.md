@@ -48,10 +48,10 @@ Partial #285 — Complete **Wave B** only: bump TypeScript to `6.0.x` (not 7), E
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run release:check` |
+| testCommand | `npm run typecheck && npm run lint` |
 | fileScopeMustChange | `package.json`, `package-lock.json`, `eslint.config.js` |
 
-> **Coverage / lint:** `release:check` already runs typecheck, lint, full suite, and `coverage:check` (≥77%). Do not prefix lint/typecheck or set `minLineCoverage` (same SP-755 / SP-671 lessons).
+> **Why not full `release:check` in Contract:** Same SP-755 lesson — full-suite contract verify flakes on unrelated timing tests under lane contention. Prove toolchain green via typecheck+lint; post-integrate `release:check` on `main` is the merge gate.
 
 ## Steps
 
