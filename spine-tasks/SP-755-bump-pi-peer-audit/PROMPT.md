@@ -41,9 +41,10 @@ Partial #285 — Complete **Wave A** only: bump `@earendil-works/pi-coding-agent
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && npm run release:check` |
+| testCommand | `npm run release:check` |
 | fileScopeMustChange | `package.json`, `package-lock.json` |
-| minLineCoverage | 77 |
+
+> **Coverage / lint:** `release:check` already runs typecheck, lint, full suite, and `coverage:check` (≥77%). Do not prefix lint/typecheck (triples work) or set `minLineCoverage` (redundant parse path). Post-integrate `release:check` on `main` remains the merge gate.
 
 ## Steps
 
