@@ -48,9 +48,10 @@ Partial #285 — Complete **Wave B** only: bump TypeScript to `6.0.x` (not 7), E
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && npm run release:check` |
+| testCommand | `npm run release:check` |
 | fileScopeMustChange | `package.json`, `package-lock.json`, `eslint.config.js` |
-| minLineCoverage | 77 |
+
+> **Coverage / lint:** `release:check` already runs typecheck, lint, full suite, and `coverage:check` (≥77%). Do not prefix lint/typecheck or set `minLineCoverage` (same SP-755 / SP-671 lessons).
 
 ## Steps
 
