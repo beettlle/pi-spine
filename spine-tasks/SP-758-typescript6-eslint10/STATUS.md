@@ -1,7 +1,7 @@
 # SP-758: TypeScript 6 + ESLint 10 — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1 (Toolchain bump)
+**Status:** 🟣 Step 1 In Progress
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-755 pins on `main` (pi-coding-agent ^0.85.1)
-- [ ] Record current typescript/eslint/globals versions in STATUS.md
-- [ ] Dependencies satisfied
+- [x] Confirm SP-755 pins on `main` (pi-coding-agent ^0.85.1) — verified `"@earendil-works/pi-coding-agent": "^0.85.1"` in package.json at HEAD e057f79f
+- [x] Record current typescript/eslint/globals versions in STATUS.md — typescript `5.6.3` (pinned), eslint `^9.28.0`, globals `^16.2.0`, `@types/node ^22.19.18`
+- [x] Dependencies satisfied — SP-755/SP-757 merged (SP-757 commits in lane history; engines floors documented eb9afa87)
 
 ---
 
@@ -67,6 +67,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
+| 2026-09-13 | Step 0 preflight | SP-755 pin verified; versions recorded; registry targets identified: TS 6.0.3 (latest 6.0.x; `latest` dist-tag is 7.0.2 — forbidden), ESLint 10.10.0, globals 17.12.0 |
 
 ---
 
