@@ -1,0 +1,22 @@
+docs/QUICK-REFERENCE.md
+  h_2a17159c706ba1 195-196,199-205
+skills/spine-autonomous-operator/references/agent-shell-batch-policy.md
+  h_2a17159c706ba1 21-22
+skills/spine-orchestrate-waves/SKILL.md
+  h_2a17159c706ba1 122-123
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 323-324
+spine-tasks/SP-756-wait-progress-docs/STATUS.md
+  h_2a17159c706ba1 3,22,24-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "38e033fe23658a9b7eb727bc02d487103578f9e3",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
