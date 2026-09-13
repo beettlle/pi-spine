@@ -1,7 +1,7 @@
 # SP-755: Wave A peer bump + audit clear — Status
 
-**Current Step:** Step 1 — Peer, engines, minPiVersion
-**Status:** 🟡 In Progress — Step 1
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress — Step 2
 **Last Updated:** 2026-09-13
 **Review Level:** 2
 **Review Counter:** 0
@@ -20,13 +20,13 @@
 ---
 
 ### Step 1: Peer, engines, minPiVersion
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Bump `@earendil-works/pi-coding-agent` to `^0.85.1` and refresh lockfile
-- [ ] Align `typebox` to 1.3.x; fix extension schemas only if needed
-- [ ] Set `engines.node` to `>=22.19.0` and `pi.minPiVersion` to `0.80.0`
-- [ ] Update CI/release pi stubs below the new floor
-- [ ] Re-run `npm audit` — 0 high
+- [x] Bump `@earendil-works/pi-coding-agent` to `^0.85.1` and refresh lockfile
+- [x] Align `typebox` to 1.3.x; fix extension schemas only if needed
+- [x] Set `engines.node` to `>=22.19.0` and `pi.minPiVersion` to `0.80.0`
+- [x] Update CI/release pi stubs below the new floor
+- [x] Re-run `npm audit` — 0 high
 
 ---
 
@@ -67,6 +67,8 @@
 | typebox imported only via `Type` in extensions/spine/worker-tools.ts | Align dep version; schemas only if typecheck fails | extensions/spine/worker-tools.ts |
 | `0.60.0` also in docs/release/v1.0-checklist.md (historical doc; SP-757 owns docs) | Out of File Scope — left as-is | docs/release/v1.0-checklist.md:123 |
 | node_modules not installed in fresh worktree (micromatch MISSING) | npm install as part of lockfile refresh | repo root |
+| `npm audit fix` (non-force) cleared remaining brace-expansion + js-yaml highs; final audit = 0 vulnerabilities (no --force needed) | Resolved | npm audit |
+| typebox schemas needed no fixes after 1.1→1.3 bump (typecheck pending Step 2) | Verified in Step 2 | extensions/spine/worker-tools.ts |
 
 ---
 
@@ -76,6 +78,7 @@
 |-----------|--------|---------|
 | 2026-09-13 | Task staged | PROMPT.md and STATUS.md created for v2.21.0 |
 | 2026-09-13 | Step 0 preflight | audit=3H/2M/0C baseline; pins recorded; stub locations found |
+| 2026-09-13 | Step 1 peer bump | pi ^0.85.1, typebox 1.3.30, engines >=22.19.0, minPi 0.80.0, stubs 0.78.0→0.85.1; audit 0 vulns |
 
 ---
 
