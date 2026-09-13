@@ -11,7 +11,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { reconcileBatch } from "../batch/reconcile.mjs";
-import { parseUntilDiagnoses, reconciliationMatchesUntil } from "./spine-wait.mjs";
+import {
+	deriveWaitPseudoDiagnoses,
+	diagnosisMatchesUntil,
+	parseUntilDiagnoses,
+	reconciliationMatchesUntil,
+} from "./spine-wait.mjs";
 import {
 	buildWatchSnapshot,
 	DEFAULT_WATCH_INTERVAL_SEC,
@@ -93,6 +98,69 @@ export function parseWaitArgs(argv) {
 	}
 
 	return args;
+}
+
+/**
+ * Human duration for wait headlines (e.g. `12.0s`, `1m5s`). Returns null when the
+ * elapsed value is not representable so callers can omit the suffix instead of
+ * printing a garbage number (nowFn pairs are expected sane, this is defensive).
+ *
+ * @param {number} ms
+ * @returns {string | null}
+ */
+function formatWaitElapsed(ms) {
+	if (!Number.isFinite(ms) || ms < 0) {
+		return null;
+	}
+	const seconds = ms / 1000;
+	if (seconds < 60) {
+		return `${seconds.toFixed(1)}s`;
+	}
+	const minutes = Math.floor(seconds / 60);
+	const remainder = Math.round(seconds % 60);
+	return `${minutes}m${remainder}s`;
+}
+
+/**
+ * Label for what actually matched the `--until` set: the literal taxonomy diagnosis
+ * when it matched, the `failed` token when the phase-based alias fired (#252), or the
+ * pseudo diagnosis (e.g. gate_open) that fired. Keeps headlines honest for pseudo
+ * matches where the raw diagnosis (e.g. "running") is not what woke the wait.
+ *
+ * @param {import("../batch/reconcile.mjs").ReconciliationResult} result
+ * @param {Set<string>} untilDiagnoses
+ * @returns {string}
+ */
+function describeMatchedDiagnosis(result, untilDiagnoses) {
+	const diagnosis = result.diagnosis ?? null;
+	if (diagnosisMatchesUntil(diagnosis, untilDiagnoses)) {
+		return diagnosis;
+	}
+	if (untilDiagnoses.has("failed") && result.phase === "failed") {
+		return "failed";
+	}
+	for (const pseudo of deriveWaitPseudoDiagnoses(result)) {
+		if (untilDiagnoses.has(pseudo)) {
+			return pseudo;
+		}
+	}
+	return diagnosis ?? "matched";
+}
+
+/**
+ * @param {Set<string>} untilDiagnoses
+ * @returns {string}
+ */
+function formatUntilList(untilDiagnoses) {
+	return [...untilDiagnoses].sort().join(",");
+}
+
+/**
+ * @param {string | null} scopedBatchId
+ * @returns {string}
+ */
+function formatBatchSuffix(scopedBatchId) {
+	return scopedBatchId != null ? ` (batch ${scopedBatchId})` : "";
 }
 
 /** Exit code when the waited-on batch was archived or superseded by another session (#215). */
@@ -266,6 +334,13 @@ export async function runSpineWait(options) {
 			if (reconciliationMatchesUntil(result, untilDiagnoses)) {
 				if (json) {
 					writeStdout(`${JSON.stringify(buildWatchSnapshot(result, nowFn()))}\n`);
+				} else {
+					// Terminal headline (#286): long waits must not look hung on success. One
+					// stdout line naming what matched, the scoped batch, and elapsed time.
+					const elapsed = formatWaitElapsed(nowFn() - startedAt);
+					writeStdout(
+						`Wait matched: ${describeMatchedDiagnosis(result, untilDiagnoses)}${formatBatchSuffix(scopedBatchId)}${elapsed != null ? ` after ${elapsed}` : ""}\n`,
+					);
 				}
 				return {
 					exitCode: 0,
@@ -279,6 +354,13 @@ export async function runSpineWait(options) {
 			if (deadline != null && nowFn() >= deadline) {
 				if (json) {
 					writeStdout(`${JSON.stringify(buildWatchSnapshot(result, nowFn()))}\n`);
+				} else {
+					// Terminal headline (#286): stderr keeps the non-success terminal state off
+					// stdout and is clearly distinct from the match line.
+					const elapsed = formatWaitElapsed(nowFn() - startedAt);
+					writeStderr(
+						`Wait timed out${elapsed != null ? ` after ${elapsed}` : ""} waiting for ${formatUntilList(untilDiagnoses)}${formatBatchSuffix(scopedBatchId)} — last diagnosis: ${diagnosis ?? "none"}\n`,
+					);
 				}
 				return {
 					exitCode: 1,
@@ -292,6 +374,12 @@ export async function runSpineWait(options) {
 			await sleepFn(intervalSec * 1000);
 		}
 
+		if (!json) {
+			// Terminal headline (#286): SIGINT must not exit silently either.
+			writeStderr(
+				`Wait interrupted — exited without matching ${formatUntilList(untilDiagnoses)}${formatBatchSuffix(scopedBatchId)}\n`,
+			);
+		}
 		return { exitCode: 130, matched: false, diagnosis: null, timedOut: false, interrupted: true };
 	} finally {
 		process.off("SIGINT", onSigInt);
