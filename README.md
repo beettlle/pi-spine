@@ -43,11 +43,13 @@ Primary monitor surfaces: **`spine status --diagnose`**, **`spine dashboard`** /
 
 ## Prerequisites
 
-| Dependency | Required |
-|------------|----------|
-| [Node.js](https://nodejs.org/) ≥ 22 | Yes |
-| [pi](https://pi.dev) coding agent | Yes |
-| Git (worktree support) | Yes |
+| Dependency | Minimum | Required |
+|------------|---------|----------|
+| [Node.js](https://nodejs.org/) | ≥ 22.19.0 (`engines.node`) | Yes |
+| [pi](https://pi.dev) coding agent | ≥ 0.80.0 (`pi.minPiVersion`) | Yes |
+| Git (worktree support) | — | Yes |
+
+These are the Wave A floors ([#285](https://github.com/beettlle/pi-spine/issues/285)). `spine doctor` **warns** when the installed pi is below `pi.minPiVersion` ("pi version supported"). The optional peer `@earendil-works/pi-coding-agent` is developed and tested against `^0.85.1` (pinned in `devDependencies`; the `peerDependencies` range stays `*`).
 
 ## Install
 

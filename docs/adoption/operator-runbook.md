@@ -99,6 +99,8 @@ spine doctor
 spine version   # confirms global npm link resolves (npm bin is a symlink to bin/spine.mjs)
 ```
 
+**Version floors (Wave A, [#285](https://github.com/beettlle/pi-spine/issues/285)):** pi-spine requires **Node ≥ 22.19.0** (`engines.node`) and pi **≥ 0.80.0** (`pi.minPiVersion`); the optional peer `@earendil-works/pi-coding-agent` is tested against **^0.85.1**. `spine doctor` warns `pi version supported` when the installed pi is older than `pi.minPiVersion` — update pi before diagnosing further install failures.
+
 When `PI_SPINE_ROOT` is unset, the CLI defaults it to the current working directory so `spine doctor` / preflight do not require a manual `export PI_SPINE_ROOT=$PWD` solely for a missing env var (SP-643 / [#203](https://github.com/beettlle/pi-spine/issues/203)). An explicit `PI_SPINE_ROOT` still wins; worker spawn continues to resolve the package root via `resolvePiSpineRoot`.
 
 `spine doctor` prints an advisory **`lanes.maxParallel`** sizing line when config is valid (configured vs CPU-based suggestion). Use it with [§3 Orchestrator process model](#orchestrator-process-model-98) to estimate expected node process count during batches.
