@@ -1,0 +1,25 @@
+README.md
+  s_1a15c230b893b1::t_d19a2f759037b7 46-52
+docs/adoption/operator-runbook.md
+  s_1a15c230b893b1::t_6ae1fccf15fb35 102-103
+docs/release/npm-publish.md
+  s_1a15c230b893b1::t_cb03db87ebf079 55-66,83
+spine-tasks/SP-757-minpi-engines-docs/STATUS.md
+  s_1a15c230b893b1::t_f282127eb7d978 3-4,14,16-17,22,24-26,31,33-34,39,41,56-59,68-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e057f79f01e37afb41a7a688232aabb824115fea",
+  "prompts": {},
+  "sessions": {
+    "s_1a15c230b893b1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-8514fbd5-b455-42a2-b55f-87d6856eefe4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
