@@ -192,8 +192,16 @@ spine watch
 spine watch --json --once
 spine watch --interval 10   # lighter orchestrator poll (see runbook §3)
 
-# Block until terminal diagnosis (CI)
+# Block until terminal diagnosis (CI) — `--json` prints one JSON snapshot at the
+# terminal state and suppresses all progress output (use it for machine parsing)
 spine wait --until completed,failed --json --timeout 30m
+
+# Human mode (no --json) is not silent: one start banner
+# ("Waiting for <until> — polling every Ns, timeout Xs"), a "Wait progress:"
+# line per poll (diagnosis, phase, wave, elapsed), then a terminal
+# "Wait matched:" line (stdout) or "Wait timed out" (stderr). A quiet wait
+# between progress lines is alive, not hung.
+spine wait --until completed,failed --timeout 30m
 
 # Live journal events
 spine journal follow [--lane lane-1]

@@ -320,6 +320,8 @@ spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeou
 
 Optional pi watchdog: `LoopCreate` every 2m, `readOnly: true`, `maxFires: 50` — see pi-async-orchestration.
 
+> **Wait progress (SP-754):** human-mode `spine wait` is not silent until exit — it prints a start banner, a `Wait progress:` line per poll (diagnosis, phase, wave, elapsed), and a terminal `Wait matched:` (stdout) or `Wait timed out` (stderr) headline. Quiet output between progress lines means the wait is between polls, not hung. Use `--json` when a machine parses the result.
+
 > **Wait recipe note:** With SP-683, gate-pending land loops report the taxonomy diagnosis `needs_integrate`, so the default `--until` lists above wake on that diagnosis. The operator runbook documents optional land-loop pseudo-diagnoses (`gate_open`, `needs_approval`, `post_merge_limbo`) as belt-and-suspenders waits when you need finer-grained blocking inside the land loop itself.
 
 **Do not** start wave N+1 until wave N is integrated on `main`.
