@@ -1,7 +1,7 @@
 # SP-767: Bump pi-coding-agent peer to ^0.87.0 — Status
 
-**Current Step:** 1
-**Status:** 🟡 Step 0 Complete — Executing
+**Current Step:** 2
+**Status:** 🟡 Step 1 Complete — Verifying
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -17,11 +17,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Peer bump
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Bump to ^0.87.0 + lockfile
-- [ ] Fix typecheck/lint only if needed
-- [ ] Confirm audit-high=0
+- [x] Bump to ^0.87.0 + lockfile
+- [x] Fix typecheck/lint only if needed
+- [x] Confirm audit-high=0
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
@@ -51,6 +51,7 @@
 | `npm audit`: 0 vulnerabilities baseline | Recorded | — |
 | Orphaned lockfile entry `node_modules/micromatch 4.0.8` required by nothing, missing on disk (`npm outdated` flags MISSING) — pre-existing, npm install refresh reconciles | Noted (out of scope) | `package-lock.json` |
 | `pi.minPiVersion` stays `0.80.0` — SP-767 contract only checks devDependency contains 0.87 | Noted | `package.json` |
+| Bump clean: `npm install` → 0.87.0 installed; typecheck exit 0, lint exit 0 (max-warnings 0), `npm audit --audit-level=high` exit 0 (0 vulnerabilities). No source changes required. Micromatch MISSING flag resolved by install (now present 4.0.8) | Resolved | `package.json`, `package-lock.json` |
 
 ---
 
