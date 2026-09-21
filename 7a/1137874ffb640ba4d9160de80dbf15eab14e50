@@ -1,0 +1,19 @@
+tests/batch/journal-rebuild-lane-numbers.test.mjs
+  s_957f9c3d1f793b::t_1456aa3f77e524 1-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7a1137874ffb640ba4d9160de80dbf15eab14e50",
+  "prompts": {},
+  "sessions": {
+    "s_957f9c3d1f793b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0dde063d-fc0c-4356-8a08-138249204ef2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
