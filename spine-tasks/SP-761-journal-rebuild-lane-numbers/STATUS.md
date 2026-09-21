@@ -36,10 +36,10 @@
 - [x] Fix all failures — none introduced
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ## Reviews
 
@@ -91,6 +91,7 @@
 | 2026-09-21 | Step 0 preflight | Collapse reproduced via timeline sim (lane-less task.started → all tasks lane 1); root cause identified in `taskStub`/`finalizeTasks`; impact analysis run (CRITICAL blast radius, narrow change kept) |
 | 2026-09-21 | Step 1 implement | `finiteLaneNumber` helper; `taskStub` only accepts finite positive lane hints; `finalizeTasks` prefers journal lane → seed lane → 1; 5-test regression suite added, 5/5 pass |
 | 2026-09-21 | Step 2 verify | lint clean, typecheck clean, Contract testCommand green, neighbors 46/47 (1 pre-existing), full suite 2584/2627 with 43 env-guard failures identical stashed |
+| 2026-09-21 | Step 3 delivery | Contract testCommand re-run end-to-end (exit 0); STATUS finalized; commits 7a113787 + 35755b8e; .DONE created |
 
 ---
 
