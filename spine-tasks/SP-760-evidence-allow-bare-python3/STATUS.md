@@ -1,7 +1,7 @@
 # SP-760: Allow bare python3 in gate evidence — Status
 
-**Current Step:** Step 1 — Allow bare python3
-**Status:** 🟡 In Progress (Step 0 complete)
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress (Steps 0–1 complete)
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -18,11 +18,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Allow bare python3
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add python3 to ALLOWED_EVIDENCE_EXECUTABLES
-- [ ] Keep reject unknown / metachar
-- [ ] Unit tests allow bare python3
+- [x] Add python3 to ALLOWED_EVIDENCE_EXECUTABLES
+- [x] Keep reject unknown / metachar
+- [x] Unit tests allow bare python3
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
@@ -61,6 +61,8 @@
 |-----------|--------|---------|
 | 2026-09-21 | Task staged | PROMPT.md and STATUS.md created for v2.22.0 |
 | 2026-09-21 | Step 0 preflight | Bare python3 rejected, venv rule intact, deps satisfied |
+| 2026-09-21 | Plan review checkpoint (step 1, type=plan) | skipped per SP-195 — engine runs review after .DONE |
+| 2026-09-21 | Step 1 implemented | python3 added to allowlist; 3 tests added/updated; targeted file 28/28 pass; doctor stops warning for bare python3, still warns bare python |
 
 ---
 

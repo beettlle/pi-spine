@@ -30,12 +30,15 @@ export const ALLOWED_EVIDENCE_EXECUTABLES = new Set([
 	"npx",
 	"cargo",
 	"task",
+	"python3",
 ]);
 
 /**
- * Interpreter basenames allowed only as project-local relative paths under
+ * Interpreter basenames allowed as project-local relative paths under
  * `.venv/` or `venv/` (see {@link isAllowedProjectLocalInterpreter}).
- * Bare names (PATH lookup) and absolute/outside-project paths stay rejected.
+ * Within that venv rule, bare names (PATH lookup) and absolute/outside-project
+ * paths stay rejected. Bare `python3` PATH lookup is separately allowed for
+ * evidence via {@link ALLOWED_EVIDENCE_EXECUTABLES}; bare `python` is not.
  * @type {Set<string>}
  */
 export const ALLOWED_PROJECT_LOCAL_INTERPRETERS = new Set(["python", "python3"]);

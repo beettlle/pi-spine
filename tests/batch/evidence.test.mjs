@@ -46,6 +46,15 @@ test("parseEvidenceCommandArgv accepts project-local .venv python", () => {
 	]);
 });
 
+test("parseEvidenceCommandArgv accepts bare python3", () => {
+	assert.deepEqual(parseEvidenceCommandArgv("python3 -m pytest -q"), [
+		"python3",
+		"-m",
+		"pytest",
+		"-q",
+	]);
+});
+
 test("parseEvidenceCommandArgv accepts project-local venv python3", () => {
 	assert.deepEqual(parseEvidenceCommandArgv("venv/bin/python3 -m pytest"), [
 		"venv/bin/python3",
@@ -57,7 +66,22 @@ test("parseEvidenceCommandArgv accepts project-local venv python3", () => {
 test("parseEvidenceCommandArgv rejects bare python", () => {
 	assert.throws(
 		() => parseEvidenceCommandArgv("python -m unittest"),
-		(err) => err instanceof EvidenceCommandError && /not allowed: python/.test(err.message),
+		(err) => err instanceof EvidenceCommandError && /not allowed: python$/.test(err.message),
+	);
+});
+
+test("parseEvidenceCommandArgv still rejects non-allowlisted executables and metachars with python3 present", () => {
+	assert.throws(
+		() => parseEvidenceCommandArgv("bash -c 'echo pwned'"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: bash/.test(err.message),
+	);
+	assert.throws(
+		() => parseEvidenceCommandArgv("python3 -m pytest; rm -rf /"),
+		(err) => err instanceof EvidenceCommandError && /metacharacters/.test(err.message),
+	);
+	assert.throws(
+		() => parseEvidenceCommandArgv("python3 -m pytest && curl https://evil.example"),
+		(err) => err instanceof EvidenceCommandError && /not allowed: curl/.test(err.message),
 	);
 });
 
