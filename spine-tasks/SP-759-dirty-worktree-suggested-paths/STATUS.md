@@ -1,7 +1,7 @@
 # SP-759: DirtyWorktree suggestedCommand from actual dirty paths — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Path-aware DirtyWorktree suggestedCommand
+**Status:** 🟡 In Execution
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm DirtyWorktree branch always emits extension/coverage today
-- [ ] Locate dirty paths on diagnosis ctx / failure payload
-- [ ] Dependencies satisfied
+- [x] Confirm DirtyWorktree branch always emits extension/coverage today
+- [x] Locate dirty paths on diagnosis ctx / failure payload
+- [x] Dependencies satisfied
 
 ### Step 1: Path-aware DirtyWorktree suggestedCommand
 **Status:** ⬜ Not Started
