@@ -1,0 +1,19 @@
+spine-tasks/SP-762-post-done-plan-review-spawn-class/.DONE
+  s_2b595674374f4a::t_97adcaa7aa6380 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "be90158197fe02514d9778ed70d87999d1e2070b",
+  "prompts": {},
+  "sessions": {
+    "s_2b595674374f4a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-69e99724-e471-477e-8b8a-78d9e7561758",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
