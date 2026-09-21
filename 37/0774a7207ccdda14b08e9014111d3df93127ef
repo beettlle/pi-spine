@@ -1,0 +1,33 @@
+src/batch/diagnosis-primary-failure.mjs
+  s_957f9c3d1f793b::t_800268f6c0e31d 60-92,102
+src/batch/diagnosis-suggested-command.mjs
+  s_480ea5d7aed244::t_084bb956028c65 35-36
+tests/batch/diagnosis-failure-class.test.mjs
+  s_480ea5d7aed244::t_a14d44d5cb582d 51,57,174-177
+tests/batch/diagnosis.test.mjs
+  s_480ea5d7aed244::t_cba9b060602fe6 397-469
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "370774a7207ccdda14b08e9014111d3df93127ef",
+  "prompts": {},
+  "sessions": {
+    "s_480ea5d7aed244": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-79b7d1c8-f436-4a01-aa25-6b9e74e29e17",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_957f9c3d1f793b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0dde063d-fc0c-4356-8a08-138249204ef2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
