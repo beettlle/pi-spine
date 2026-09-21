@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-09-13 (Phase 89 v2.21.0 release packets staged; Next → SP-759)
+**Last Updated:** 2026-09-21 (Phase 90 v2.22.0 release packets staged; Next → SP-768)
 **Status:** Active
-**Next Task ID:** SP-759
+**Next Task ID:** SP-768
 
 ---
 
