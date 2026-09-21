@@ -1,0 +1,14 @@
+spine-tasks/SP-760-evidence-allow-bare-python3/STATUS.md
+  h_2a17159c706ba1 3-4,28,30-32,35,37-38,55,67-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b4d3f24e3ebd7d6b2f307980bce8a4d6f77be0cd",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
