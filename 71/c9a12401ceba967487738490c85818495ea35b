@@ -1,0 +1,20 @@
+spine-tasks/SP-761-journal-rebuild-lane-numbers/.DONE
+  h_2a17159c706ba1 1-7
+spine-tasks/SP-761-journal-rebuild-lane-numbers/.reviews/0-20260921T234241.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-761-journal-rebuild-lane-numbers/.reviews/3-20260921T234253.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-761-journal-rebuild-lane-numbers/.reviews/final-20260921T234340.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "71c9a12401ceba967487738490c85818495ea35b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
