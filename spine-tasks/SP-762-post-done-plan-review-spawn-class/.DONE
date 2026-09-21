@@ -1,0 +1,12 @@
+SP-762 complete — post-DONE plan_review_spawn_failed salvage classification (#291).
+
+- src/batch/reconcile-diagnosis.mjs: deriveDiagnosis maps failed tasks with
+  plan_review_spawn_failed / plan_review_timeout exit reasons plus done
+  evidence (.DONE in lane worktree / done flags) to pending_lane_land
+  (salvage integrate guidance) instead of needs_retry worker-retry language.
+- tests/batch/post-done-plan-review-spawn.test.mjs: 7 tests incl. #291
+  journal/state fixture (worker lane commits, .DONE + artifacts, no
+  lane.committed event) asserting salvage-oriented headline/command.
+- Verification: contract testCommand green (lint + typecheck + 7/7);
+  adjacent diagnosis/salvage suites 60/60; compat 16/16; engine-review
+  suites 35/35; tests/batch failures (37) identical on stashed base.
