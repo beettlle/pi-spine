@@ -1,7 +1,7 @@
 # SP-767: Bump pi-coding-agent peer to ^0.87.0 — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1
+**Status:** 🟡 Step 0 Complete — Executing
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Record current peer pin
-- [ ] Dependencies satisfied
+- [x] Record current peer pin
+- [x] Dependencies satisfied
 
 ### Step 1: Peer bump
 **Status:** ⬜ Not Started
@@ -46,6 +46,11 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Preflight: devDependency `@earendil-works/pi-coding-agent: ^0.85.1` (installed 0.85.1, registry.npmjs.org); `peerDependencies` entry is `*` optional (unchanged) | Recorded | `package.json` |
+| `npm outdated`: wanted 0.85.1, latest 0.87.0 (≥1 0.x minor drift confirmed) | Recorded | — |
+| `npm audit`: 0 vulnerabilities baseline | Recorded | — |
+| Orphaned lockfile entry `node_modules/micromatch 4.0.8` required by nothing, missing on disk (`npm outdated` flags MISSING) — pre-existing, npm install refresh reconciles | Noted (out of scope) | `package-lock.json` |
+| `pi.minPiVersion` stays `0.80.0` — SP-767 contract only checks devDependency contains 0.87 | Noted | `package.json` |
 
 ---
 
@@ -65,4 +70,4 @@
 
 ## Notes
 
-*Reserved for execution notes*
+Review Level 1 plan: (1) bump devDependency `@earendil-works/pi-coding-agent` `^0.85.1` → `^0.87.0`; (2) `npm install` to refresh `package-lock.json`; (3) typecheck + lint — fix only bump-caused breakages (file scope is package.json/package-lock.json only); (4) contract testCommand incl. `npm audit --audit-level=high`; (5) `npm test`; (6) check README/docs for explicit 0.85 pins; (7) .DONE. #285 stays open (Wave C deferred).
