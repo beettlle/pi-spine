@@ -1,0 +1,19 @@
+tests/batch/post-done-plan-review-spawn.test.mjs
+  s_480ea5d7aed244::t_7bab8f3f80081a 1-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "596390d824a1834cc3ae2f99ea4e58725877c9fb",
+  "prompts": {},
+  "sessions": {
+    "s_480ea5d7aed244": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-79b7d1c8-f436-4a01-aa25-6b9e74e29e17",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
