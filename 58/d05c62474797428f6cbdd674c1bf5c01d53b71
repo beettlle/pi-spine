@@ -1,0 +1,65 @@
+spine-tasks/SP-767-bump-pi-peer-087/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-68
+spine-tasks/SP-760-evidence-allow-bare-python3/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-96
+spine-tasks/SP-762-post-done-plan-review-spawn-class/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-70
+spine-tasks/_authoring/release-v2.22.0/manifest.md
+  s_26425baa4eeaea::t_6901f72a2284c9 1-119,139-175
+  s_26425baa4eeaea::t_1deb534466567d 120-138
+spine-tasks/SP-767-bump-pi-peer-087/PROMPT.md
+  s_26425baa4eeaea::t_6e243403f70071 40
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-39,41-92
+spine-tasks/SP-759-dirty-worktree-suggested-paths/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-98
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-98
+spine-tasks/SP-766-docs-salvage-complete-land-loop/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-19,21-93
+  s_26425baa4eeaea::t_fb7cb2892668e9 20
+spine-tasks/_authoring/release-v2.22.0/intake-snapshot-20260921.md
+  s_26425baa4eeaea::t_77021df104b5d2 1-272
+spine-tasks/SP-765-docs-dirty-worktree-landmine/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-67
+spine-tasks/SP-763-salvage-integrate-allows-complete/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-69
+spine-tasks/SP-761-journal-rebuild-lane-numbers/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-70
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-70
+spine-tasks/SP-760-evidence-allow-bare-python3/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-70
+spine-tasks/SP-761-journal-rebuild-lane-numbers/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-95
+spine-tasks/dependencies.json
+  s_26425baa4eeaea::t_b10f161f4f0e76 1970-1971
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1955-1969,1972-1973
+spine-tasks/CONTEXT.md
+  s_26425baa4eeaea::t_b10f161f4f0e76 3,5
+spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-67
+spine-tasks/SP-759-dirty-worktree-suggested-paths/STATUS.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-71
+spine-tasks/SP-765-docs-dirty-worktree-landmine/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-93
+spine-tasks/SP-763-salvage-integrate-allows-complete/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-95
+spine-tasks/SP-762-post-done-plan-review-spawn-class/PROMPT.md
+  s_26425baa4eeaea::t_6b17c6b67d6b17 1-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "58d05c62474797428f6cbdd674c1bf5c01d53b71",
+  "prompts": {},
+  "sessions": {
+    "s_26425baa4eeaea": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-da6a9d6c-bfaa-49a8-b4a8-306bf25d64db",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
