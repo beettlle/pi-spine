@@ -60,9 +60,19 @@ function taskIdsOf(value) {
 	return value.map((entry) => String(entry ?? "").trim()).filter(Boolean);
 }
 
+/** Finite positive laneNumber, or null when the value is missing/garbage (#287). */
+function finiteLaneNumber(value) {
+	const n = Number(value);
+	return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function taskStub(map, taskId, hints = {}) {
 	const row = map.get(taskId) ?? { taskId };
-	if (hints.laneNumber != null) row.laneNumber = Number(hints.laneNumber) || row.laneNumber || 1;
+	// Only an explicit finite laneNumber from an event may assign a lane. Garbage
+	// hints (NaN/0) must not default the row to lane 1 — that defaulted value
+	// would shadow the seed's correct lane in finalizeTasks (#287).
+	const hintedLane = finiteLaneNumber(hints.laneNumber);
+	if (hintedLane != null) row.laneNumber = hintedLane;
 	if (typeof hints.taskFolder === "string" && hints.taskFolder) row.taskFolder = hints.taskFolder;
 	map.set(taskId, row);
 	return row;
@@ -85,7 +95,8 @@ function finalizeTasks(tasksById, seedTasks) {
 		const seed = seedById.get(taskId);
 		return {
 			taskId,
-			laneNumber: Number(derived.laneNumber ?? seed?.laneNumber ?? 1) || 1,
+			// Journal-provided lane wins; seed fills the gap; 1 is the last resort (#287).
+			laneNumber: finiteLaneNumber(derived.laneNumber) ?? finiteLaneNumber(seed?.laneNumber) ?? 1,
 			status: "pending",
 			taskFolder: derived.taskFolder ?? seed?.taskFolder ?? null,
 			sessionName: seed?.sessionName,
