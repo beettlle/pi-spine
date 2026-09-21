@@ -32,15 +32,18 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create .DONE
+- [x] Discoveries logged (see Discoveries table)
+- [x] Create .DONE
+
+**Docs check:** `docs/adoption/operator-runbook.md` — no `plan_review_spawn_failed` section exists; final/code review spawn-failure sections remain accurate (behavior unchanged). No update required (Must Update: None; SP-766 owns operator docs).
 
 ## Reviews
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 1 | skipped (engine-owned, SP-195) | .reviews/1-20260921T231841.md |
 
 ---
 
