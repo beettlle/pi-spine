@@ -57,6 +57,39 @@ export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 	return null;
 }
 
+// Keep the hint readable; the gitignored merge repair command uses the same cap (#288).
+const DIRTY_WORKTREE_PATH_HINT_LIMIT = 5;
+
+/**
+ * DirtyWorktree remediation hint built from the actual dirty set (#288).
+ * Prefers concrete dirty paths from the failure payload / lane dirty-check;
+ * falls back to a generic status inspection plus retry when paths are unknown.
+ * Never hardcodes coverage paths — they appear only when present in the dirty set.
+ *
+ * @param {object} ctx
+ * @param {string|null} [ctx.failedTaskId]
+ * @param {string[]|null} [ctx.dirtyPaths]
+ * @param {string|null} [ctx.laneWorktree]
+ * @returns {string}
+ */
+export function buildDirtyWorktreeSuggestedCommand(ctx = {}) {
+	const dirtyPaths = (Array.isArray(ctx.dirtyPaths) ? ctx.dirtyPaths : []).filter(
+		(entry) => typeof entry === "string" && entry.trim().length > 0,
+	);
+	const retryHint = ctx.failedTaskId
+		? `spine batch retry ${ctx.failedTaskId}`
+		: "spine batch retry";
+	if (dirtyPaths.length > 0) {
+		const pathHint = dirtyPaths.slice(0, DIRTY_WORKTREE_PATH_HINT_LIMIT).join(" ");
+		return `git checkout -- ${pathHint} && ${retryHint}`;
+	}
+	const worktreeHint =
+		typeof ctx.laneWorktree === "string" && ctx.laneWorktree.trim().length > 0
+			? ctx.laneWorktree
+			: "<laneWorktree>";
+	return `git -C ${worktreeHint} status --porcelain && ${retryHint}`;
+}
+
 /**
  * @param {object} ctx
  * @param {string|null} [ctx.exitReason]
@@ -66,9 +99,7 @@ export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 export function buildPrimaryFailureSuggestedCommand(ctx = {}) {
 	if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
 		if (ctx.exitReason === "DirtyWorktree") {
-			return ctx.failedTaskId
-				? `git checkout -- extension/coverage && spine batch retry ${ctx.failedTaskId}`
-				: "git checkout -- extension/coverage && spine batch retry";
+			return buildDirtyWorktreeSuggestedCommand(ctx);
 		}
 		return ctx.failedTaskId
 			? `spine batch retry ${ctx.failedTaskId}`

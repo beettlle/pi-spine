@@ -48,13 +48,13 @@ test("buildHeadline prefers DirtyWorktree over worker launch", () => {
 	assert.match(headline, /SP-001/);
 });
 
-test("buildSuggestedCommand for DirtyWorktree suggests coverage cleanup and retry", () => {
+test("buildSuggestedCommand for DirtyWorktree falls back to lane status inspection and retry when paths are unknown", () => {
 	assert.equal(
 		buildSuggestedCommand("needs_retry", {
 			failedTaskId: "SP-001",
 			exitReason: "DirtyWorktree",
 		}),
-		"git checkout -- extension/coverage && spine batch retry SP-001",
+		"git -C <laneWorktree> status --porcelain && spine batch retry SP-001",
 	);
 });
 
@@ -171,7 +171,10 @@ test("reconcileBatch aligns hasFailedTasks with segment drift and DirtyWorktree 
 		assert.equal(result.signals?.failedTasks, 5);
 		assert.doesNotMatch(result.headline, /failed at worker launch/i);
 		assert.match(result.headline, /dirty lane worktree/i);
-		assert.equal(result.suggestedCommand, "git checkout -- extension/coverage && spine batch retry SP-001");
+		assert.equal(
+			result.suggestedCommand,
+			"git -C <laneWorktree> status --porcelain && spine batch retry SP-001",
+		);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
