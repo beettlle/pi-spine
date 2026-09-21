@@ -1,0 +1,18 @@
+spine-tasks/SP-759-dirty-worktree-suggested-paths/.DONE
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-759-dirty-worktree-suggested-paths/.reviews/0-20260921T232321.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-759-dirty-worktree-suggested-paths/.reviews/final-20260921T232411.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a717e7ffb9d59739f56e3726a27bdd8e03656313",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
