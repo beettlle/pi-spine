@@ -1,7 +1,7 @@
 # SP-762: Post-DONE plan_review_spawn_failed classification — Status
 
-**Current Step:** Step 1 (Classification + diagnose)
-**Status:** 🟣 Step 0 complete — implementing classification/diagnose
+**Current Step:** Step 3 (Documentation & Delivery)
+**Status:** 🟣 Steps 1–2 complete — verification green
 **Last Updated:** 2026-09-21
 **Review Level:** 2
 **Review Counter:** 0
@@ -18,18 +18,18 @@
 - [x] Dependencies satisfied (none)
 
 ### Step 1: Classification + diagnose
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Post-DONE spawnFailed not forced retry
-- [ ] Diagnose prefers salvage/land-loop
-- [ ] Regression test for #291
+- [x] Post-DONE spawnFailed not forced retry
+- [x] Diagnose prefers salvage/land-loop
+- [x] Regression test for #291
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
-- [ ] Fix all failures
+- [x] Run lint
+- [x] Run Contract testCommand
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -54,6 +54,8 @@
 | #291 real journal has NO `lane.committed` event (worker committed to lane branch directly; engine commit phase never ran) — lane-commit evidence must not be required from journal | Gate diagnosis on done evidence (`.DONE` in lane worktree → doneInLane) instead | `src/batch/diagnosis-task-done.mjs` |
 | Flipping task classification to terminal-success for this case would suppress `hasFailedTasks` and drop diagnosis into limbo_stale/needs_merge paths that hide salvage guidance — worse outcome | Keep terminal-failure; fix at deriveDiagnosis layer (SP-763 owns post-salvage complete) | `src/batch/reconcile-classify.mjs` |
 | Reuse existing diagnosis id `pending_lane_land`: headline "has lane work not on main (taskId) — salvage integrate", suggestedCommand `spine batch salvage --batch X --lane N --integrate`, alternatives include dry-run — zero changes to out-of-scope taxonomy/headline/suggested-command modules | Chosen design | `src/batch/diagnosis-pending-lane.mjs` |
+| `parseSpineBatchState.normalizeTasks` drops `exitReason` from parsed batch tasks — helper must resolve exit reason via `resolvePrimaryFailureExitReason` (raw state → journal), with classified entry's own `exitReason` taking precedence (unit signals) | Implemented | `src/batch/readers/spine-state.mjs`, `reconcile-diagnosis.mjs` |
+| 37 tests/batch failures (startBatch/attached/detached/sequence CLI-subprocess tests) fail identically on stashed base — pre-existing lane environment issue, not caused by this change | Documented; not in scope | `tests/batch/*start*.test.mjs` |
 
 ---
 

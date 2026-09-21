@@ -263,6 +263,50 @@ function hasNeedsReplanBlocker(signals) {
 }
 
 /**
+ * Plan-review exit reasons where reviewer infrastructure failed after the
+ * worker had already completed its lane work (#291 / SP-762). Mirrors the
+ * SP-718 final-review distinction: spawn failure / timeout mean no verdict
+ * was produced — the implementation itself is not the failure.
+ */
+const POST_DONE_PLAN_REVIEW_EXIT_REASONS = new Set([
+	"plan_review_spawn_failed",
+	"plan_review_timeout",
+]);
+
+/**
+ * Failed task whose lane work already completed (done evidence / `.DONE` in
+ * the lane worktree) but whose engine plan review failed to spawn or timed
+ * out. Such tasks are salvageable land-loop candidates — a full worker retry
+ * would re-run expensive work that is already on disk (#291 / SP-762).
+ *
+ * Parsed batch-state tasks drop `exitReason` (normalizeTasks), so the exit
+ * reason is resolved the same way deriveFailureContext resolves it: from the
+ * task entry when present, else raw state / journal `task.failed` events.
+ * The salvage command itself hard-gates on commits-ahead, so pointing at it
+ * without lane commits is safe (dry-run reports none salvageable).
+ *
+ * @param {object} signals
+ * @returns {object|null}
+ */
+function findPostDonePlanReviewSpawnFailedTask(signals) {
+	const tasks = Array.isArray(signals.tasks) ? signals.tasks : [];
+	for (const task of tasks) {
+		if (String(task?.status ?? "").toLowerCase() !== "failed") continue;
+		const hasDoneEvidence =
+			task?.doneInLane === true ||
+			task?.doneOnMain === true ||
+			task?.doneFileFound === true ||
+			String(task?.classification ?? "").toLowerCase() === "terminal-success";
+		if (!hasDoneEvidence) continue;
+		const taskId = String(task?.taskId ?? "");
+		const exitReason = task?.exitReason ?? resolvePrimaryFailureExitReason(taskId, signals);
+		if (!POST_DONE_PLAN_REVIEW_EXIT_REASONS.has(String(exitReason ?? ""))) continue;
+		return task;
+	}
+	return null;
+}
+
+/**
  * @param {object} signals
  */
 export function deriveDiagnosis(signals) {
@@ -361,6 +405,17 @@ export function deriveDiagnosis(signals) {
 		});
 		if (doneMissing) {
 			return withFailureContext("worker_done_missing", failedTaskId, signals);
+		}
+		// Post-DONE plan-review spawn failure: lane work is complete, so map to
+		// pending_lane_land (salvage / land-loop guidance) instead of needs_retry,
+		// whose retry language would force an expensive worker re-run (#291 / SP-762).
+		const postDonePlanReviewTask = findPostDonePlanReviewSpawnFailedTask(signals);
+		if (postDonePlanReviewTask) {
+			return withFailureContext(
+				"pending_lane_land",
+				postDonePlanReviewTask.taskId ?? failedTaskId,
+				signals,
+			);
 		}
 		return withFailureContext("needs_retry", failedTaskId, signals);
 	}
