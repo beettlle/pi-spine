@@ -1,0 +1,14 @@
+spine-tasks/SP-762-post-done-plan-review-spawn-class/STATUS.md
+  h_2a17159c706ba1 35-38,40,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "80b0d9a89dd5e9b4bc94dc001e592f9aa33c6db5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
