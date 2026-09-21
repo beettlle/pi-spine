@@ -29,6 +29,12 @@ import {
 	runPreflightPlanCheck,
 } from "./preflight/integrate-plan.mjs";
 import { checkLocCapstoneReadiness } from "./preflight/loc-capstone.mjs";
+import {
+	buildTrackedGitignoredDoctorCheck,
+	checkTrackedGitignoredWarn,
+	listTrackedGitignoredPaths,
+	trackedGitignoredRemediation,
+} from "./preflight/tracked-gitignored.mjs";
 import { INTEGRATE_DEFAULTS } from "./defaults.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";
@@ -77,6 +83,13 @@ export {
 	listBatchModuleLineCounts,
 	listPendingLocCapstoneTasks,
 } from "./preflight/loc-capstone.mjs";
+
+export {
+	buildTrackedGitignoredDoctorCheck,
+	checkTrackedGitignoredWarn,
+	listTrackedGitignoredPaths,
+	trackedGitignoredRemediation,
+} from "./preflight/tracked-gitignored.mjs";
 
 const CONCURRENT_DEV_LABEL = "concurrent development on base branch";
 
@@ -355,6 +368,7 @@ export function runBatchPreflight(options) {
 	checks.push(checkStalePathSpine(ctx));
 
 	checks.push(checkGitClean(ctx));
+	checks.push(checkTrackedGitignoredWarn(ctx));
 	checks.push(
 		buildCoexistencePreflightCheck({
 			projectRoot,
