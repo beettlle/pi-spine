@@ -1,7 +1,7 @@
 # SP-760: Allow bare python3 in gate evidence — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟡 In Progress (Steps 0–1 complete)
+**Current Step:** Complete
+**Status:** ✅ All steps complete — ready for .DONE
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -25,17 +25,17 @@
 - [x] Unit tests allow bare python3
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
-- [ ] Fix all failures
+- [x] Run lint
+- [x] Run Contract testCommand
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create .DONE
+- [x] Discoveries logged
+- [x] Create .DONE
 
 ## Reviews
 
@@ -52,6 +52,7 @@
 | Preflight: `.venv/bin/python3 -m pytest -q` parses fine via `isAllowedProjectLocalInterpreter` | venv rule intact pre-change | src/batch/evidence-command.mjs |
 | GitNexus impact on `ALLOWED_EVIDENCE_EXECUTABLES`: LOW risk, 0 direct upstream callers (consumed in-module by `parseEvidenceSegmentArgv`; doctor consumes via `parseEvidenceCommandChain`) | Safe to extend set | src/batch/evidence-command.mjs |
 | Adding bare `python3` to the allowlist means any first token with basename `python3` is accepted (incl. absolute/relative paths), matching existing npm/node/cargo semantics; bare `python` stays rejected (existing test "rejects bare python" retained) | Accepted parity behavior; chain mode also gains python3 (consistent with node/npm) | src/batch/evidence-command.mjs |
+| `docs/stet-overview.md:30` allowlist prose omits `python3`; `docs/adoption/operator-runbook.md:1559` (#199 row) and `:1620` (Phase A table) list the old first-token set | Out of File Scope — owned by SP-765/SP-766 per PROMPT Must Update: None | docs/stet-overview.md, docs/adoption/operator-runbook.md |
 
 ---
 
@@ -63,6 +64,9 @@
 | 2026-09-21 | Step 0 preflight | Bare python3 rejected, venv rule intact, deps satisfied |
 | 2026-09-21 | Plan review checkpoint (step 1, type=plan) | skipped per SP-195 — engine runs review after .DONE |
 | 2026-09-21 | Step 1 implemented | python3 added to allowlist; 3 tests added/updated; targeted file 28/28 pass; doctor stops warning for bare python3, still warns bare python |
+| 2026-09-21 | Step 2 verification | `npm run lint` exit 0; `npm run typecheck` exit 0; Contract testCommand 28/28 pass exit 0 |
+| 2026-09-21 | detect_changes vs main | 1 touched symbol (doc comment), 3 files, risk LOW, 0 affected processes |
+| 2026-09-21 | Step 3 delivery | STATUS finalized; .DONE created |
 
 ---
 
