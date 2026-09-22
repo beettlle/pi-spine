@@ -1,0 +1,23 @@
+src/batch/salvage-batch-integrate-heal.mjs
+  s_4cd3466d4c40bd::t_0b2eb4086934cf 1-117
+src/batch/salvage-batch-integrate.mjs
+  s_4cd3466d4c40bd::t_ab6e6517a1c85f 19,145-147,152-153,394-396,405,419-420,470-475
+tests/batch/salvage-complete-after-integrate.test.mjs
+  s_4cd3466d4c40bd::t_cd48cecb3ec58c 1-265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "137fc4dd3334cf3471ac1f71171bce9e73cbff7f",
+  "prompts": {},
+  "sessions": {
+    "s_4cd3466d4c40bd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7f00a1d0-5464-40c2-b985-26fbc68d9f04",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
