@@ -29,12 +29,7 @@ import {
 	runPreflightPlanCheck,
 } from "./preflight/integrate-plan.mjs";
 import { checkLocCapstoneReadiness } from "./preflight/loc-capstone.mjs";
-import {
-	buildTrackedGitignoredDoctorCheck,
-	checkTrackedGitignoredWarn,
-	listTrackedGitignoredPaths,
-	trackedGitignoredRemediation,
-} from "./preflight/tracked-gitignored.mjs";
+import { checkTrackedGitignoredWarn } from "./preflight/tracked-gitignored.mjs";
 import { INTEGRATE_DEFAULTS } from "./defaults.mjs";
 import { parseContract } from "../tasks/packet/parse-prompt.mjs";
 import { hasReleaseCriticalContract, isStubWorkerMode } from "../batch/contract-verify.mjs";

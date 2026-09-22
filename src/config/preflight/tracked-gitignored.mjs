@@ -1,10 +1,41 @@
-// @ts-nocheck
 import { execFileSync } from "node:child_process";
 
 const TRACKED_GITIGNORED_CHECK_ID = "tracked-gitignored";
 const TRACKED_GITIGNORED_LABEL = "tracked gitignored paths";
 const PREVIEW_LIMIT = 3;
 
+/**
+ * @typedef {object} TrackedGitignoredPathsResult
+ * @property {string[]} paths Tracked paths that also match ignore patterns.
+ * @property {string | null} error Non-null when the git query itself failed.
+ */
+
+/**
+ * @typedef {object} TrackedGitignoredPreflightCheck
+ * @property {"tracked-gitignored"} id
+ * @property {true} ok Always advisory — this check never blocks preflight (#289).
+ * @property {string} message
+ * @property {true} [warning]
+ * @property {{ paths: string[] }} [details]
+ * @property {string} [suggestedCommand]
+ */
+
+/**
+ * @typedef {object} TrackedGitignoredDoctorCheck
+ * @property {"tracked gitignored paths"} label
+ * @property {true} ok Always advisory — this check never increments issueCount (#289).
+ * @property {true} [warning]
+ * @property {string} detail
+ * @property {string} [suggestedCommand]
+ */
+
+/**
+ * @param {"tracked-gitignored"} id
+ * @param {true} ok
+ * @param {string} message
+ * @param {Partial<Omit<TrackedGitignoredPreflightCheck, "id" | "ok" | "message">>} [extra]
+ * @returns {TrackedGitignoredPreflightCheck}
+ */
 function makeCheck(id, ok, message, extra = {}) {
 	return { id, ok, message, ...extra };
 }
@@ -19,7 +50,7 @@ function makeCheck(id, ok, message, extra = {}) {
  * DirtyWorktree after a PASS.
  *
  * @param {string} projectRoot
- * @returns {{ paths: string[]; error: string | null }}
+ * @returns {TrackedGitignoredPathsResult}
  */
 export function listTrackedGitignoredPaths(projectRoot) {
 	try {
@@ -57,6 +88,10 @@ export function trackedGitignoredRemediation(paths) {
 	return `git rm -r --cached -- ${paths.slice(0, PREVIEW_LIMIT).join(" ")}`;
 }
 
+/**
+ * @param {string[]} paths
+ * @returns {string}
+ */
 function previewWithSuffix(paths) {
 	const preview = paths.slice(0, PREVIEW_LIMIT).join(", ");
 	const suffix =
@@ -71,6 +106,7 @@ function previewWithSuffix(paths) {
  *
  * @param {object} ctx
  * @param {string} ctx.projectRoot
+ * @returns {TrackedGitignoredPreflightCheck}
  */
 export function checkTrackedGitignoredWarn(ctx) {
 	const { projectRoot } = ctx;
@@ -109,6 +145,7 @@ export function checkTrackedGitignoredWarn(ctx) {
  *
  * @param {object} ctx
  * @param {string} ctx.projectRoot
+ * @returns {TrackedGitignoredDoctorCheck}
  */
 export function buildTrackedGitignoredDoctorCheck(ctx) {
 	const { projectRoot } = ctx;
