@@ -1,7 +1,7 @@
 # SP-767: Bump pi-coding-agent peer to ^0.87.0 — Status
 
-**Current Step:** 3
-**Status:** 🟡 Step 2 Complete — Delivering
+**Current Step:** 3 (complete)
+**Status:** ✅ All Steps Complete
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -30,10 +30,10 @@
 - [x] Fix failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create .DONE
+- [x] Discoveries logged
+- [x] Create .DONE
 
 ## Reviews
 
@@ -55,6 +55,8 @@
 | Contract testCommand exit 0 (typecheck + lint + audit-high + pin contains 0.87) | Verified | — |
 | `npm test` from inside worker session: 30 failures, all `nested_batch_spawn_blocked` — SP-482 worker guard blocks tests that spawn nested batch engines (`SPINE_IS_WORKER=1` in session env); unrelated to peer bump | Environmental | `tests/batch/`, `tests/spine-run.test.mjs`, `tests/adoption/` |
 | Proof: re-ran affected suites with `SPINE_IS_WORKER` unset → 1485 tests, 1485 pass, 0 fail, 0 skipped (TAP) | Verified | — |
+| Check-If-Affected hit: README.md + docs/adoption/operator-runbook.md + docs/release/npm-publish.md (×2) pinned `^0.85.1` explicitly → updated to `^0.87.0` (npm-publish release checklist would otherwise fail its own floors-consistency check) | Updated per PROMPT | `README.md`, `docs/adoption/operator-runbook.md`, `docs/release/npm-publish.md` |
+| #285 left open — Wave C (TypeScript 7 / @types/node 26 / Actions majors) remains deferred, untouched by this task | Deferred | GitHub #285 |
 
 ---
 
@@ -63,12 +65,22 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-09-21 | Task staged | PROMPT.md and STATUS.md created for v2.22.0 |
+| 2026-09-21 | Step 0 | Preflight recorded: `^0.85.1` → latest 0.87.0; audit baseline 0; committed e212995c |
+| 2026-09-21 | Step 1 | Bumped devDependency to `^0.87.0`, lockfile refreshed (0.87.0 installed); typecheck/lint/audit all exit 0 with no source changes; committed 82a34cda |
+| 2026-09-21 | Step 2 | Contract testCommand exit 0; `npm test` 30 failures all proven environmental (SP-482 guard; 1485/1485 pass with guard unset); committed e4720763 |
+| 2026-09-21 | Step 3 | Doc pins updated to 0.87.0; final contract verification on final state; .DONE created |
 
 ---
 
 ## Blockers
 
 *None*
+
+## Completion Criteria
+
+- [x] Peer pin includes 0.87 (`^0.87.0` in devDependencies; `peerDependencies` stays `*`)
+- [x] typecheck + lint + audit-high=0 (all exit 0)
+- [x] #285 left open (Wave C deferred)
 
 ---
 
