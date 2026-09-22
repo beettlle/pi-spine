@@ -1,0 +1,9 @@
+SP-764 complete.
+
+- src/config/preflight/tracked-gitignored.mjs (new): listTrackedGitignoredPaths (`git ls-files -i -c --exclude-standard`), checkTrackedGitignoredWarn (preflight, ok:true + warning:true + `git rm -r --cached` remediation), buildTrackedGitignoredDoctorCheck (doctor advisory)
+- src/config/spine-preflight-lib.mjs: wired into runBatchPreflight after checkGitClean; public re-exports
+- src/doctor/run-doctor-checks.mjs: wired as doctor advisory after the run-metrics tracked check
+- tests/config/preflight-tracked-gitignored.test.mjs (new): 8 tests, temp git fixtures
+- Contract testCommand exit 0 (lint + typecheck + 8/8); doctor/config/ts-nocheck-guard suites 313/313
+- npm test: 43 failures verified pre-existing at base commit a717e7ff (worker-session env)
+- Closes #289
