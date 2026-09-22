@@ -1,7 +1,7 @@
 # SP-767: Bump pi-coding-agent peer to ^0.87.0 — Status
 
-**Current Step:** 2
-**Status:** 🟡 Step 1 Complete — Verifying
+**Current Step:** 3
+**Status:** 🟡 Step 2 Complete — Delivering
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -24,10 +24,10 @@
 - [x] Confirm audit-high=0
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract testCommand
-- [ ] Fix failures
+- [x] Run Contract testCommand
+- [x] Fix failures
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -52,6 +52,9 @@
 | Orphaned lockfile entry `node_modules/micromatch 4.0.8` required by nothing, missing on disk (`npm outdated` flags MISSING) — pre-existing, npm install refresh reconciles | Noted (out of scope) | `package-lock.json` |
 | `pi.minPiVersion` stays `0.80.0` — SP-767 contract only checks devDependency contains 0.87 | Noted | `package.json` |
 | Bump clean: `npm install` → 0.87.0 installed; typecheck exit 0, lint exit 0 (max-warnings 0), `npm audit --audit-level=high` exit 0 (0 vulnerabilities). No source changes required. Micromatch MISSING flag resolved by install (now present 4.0.8) | Resolved | `package.json`, `package-lock.json` |
+| Contract testCommand exit 0 (typecheck + lint + audit-high + pin contains 0.87) | Verified | — |
+| `npm test` from inside worker session: 30 failures, all `nested_batch_spawn_blocked` — SP-482 worker guard blocks tests that spawn nested batch engines (`SPINE_IS_WORKER=1` in session env); unrelated to peer bump | Environmental | `tests/batch/`, `tests/spine-run.test.mjs`, `tests/adoption/` |
+| Proof: re-ran affected suites with `SPINE_IS_WORKER` unset → 1485 tests, 1485 pass, 0 fail, 0 skipped (TAP) | Verified | — |
 
 ---
 
