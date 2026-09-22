@@ -1,0 +1,1 @@
+SP-767 complete: peer bump ^0.85.1 -> ^0.87.0 (devDependency; peerDependencies stays *), lockfile refreshed, audit 0 high, typecheck/lint exit 0, contract testCommand exit 0, docs pins updated, #285 left open.
