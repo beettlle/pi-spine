@@ -1,0 +1,25 @@
+spine-tasks/SP-765-docs-dirty-worktree-landmine/PROMPT.md
+  s_64e6816854c485::t_6a630bda4d454c 43,94-99
+spine-tasks/SP-765-docs-dirty-worktree-landmine/STATUS.md
+  s_64e6816854c485::t_e48d7a35b9203c 68-71
+spine-tasks/SP-766-docs-salvage-complete-land-loop/PROMPT.md
+  s_64e6816854c485::t_e9b937700caeb7 44,94-99
+spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md
+  s_64e6816854c485::t_a19f5ede27ae94 68-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "39139e075baa9af36e1365ddf2a2208d27165f60",
+  "prompts": {},
+  "sessions": {
+    "s_64e6816854c485": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6bcad539-3436-48a9-9781-bbf7262820f9",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
