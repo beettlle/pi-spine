@@ -1,0 +1,16 @@
+spine-tasks/SP-766-docs-salvage-complete-land-loop/DELIVERY.md
+  h_2a17159c706ba1 1-44
+spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md
+  h_2a17159c706ba1 3-4,33,35,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "60f58a9e5f562774b9e17a1e623ce82bdbb1dd20",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
