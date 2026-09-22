@@ -1,0 +1,39 @@
+spine-tasks/SP-763-salvage-integrate-allows-complete/PROMPT.md
+  s_64e6816854c485::t_9b9d8d8547bdd3 49-50,54-56,64-66,70-71,83-85
+spine-tasks/SP-763-salvage-integrate-allows-complete/STATUS.md
+  s_26425baa4eeaea::t_8467122bd8a3fb 3-5,14,16-17,20,22-24,27,29-31,34,36-37,50-58,67-71,79-84,89-101
+src/batch/salvage-batch-integrate.mjs
+  s_802d5417f9b8fd::t_ad57b923359c14 19,145-147,152-153,394-396,405,419-420,470-475
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bb4d3eaf38c594ade3b804a03bd931791482e49d",
+  "prompts": {},
+  "sessions": {
+    "s_26425baa4eeaea": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-da6a9d6c-bfaa-49a8-b4a8-306bf25d64db",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_64e6816854c485": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6bcad539-3436-48a9-9781-bbf7262820f9",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_802d5417f9b8fd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-01b99f66-6cde-42de-b293-2d3469b2378c",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
