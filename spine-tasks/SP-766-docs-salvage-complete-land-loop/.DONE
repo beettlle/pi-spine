@@ -1,0 +1,1 @@
+SP-766 delivered 2026-09-22T02:25:44Z — docs salvage→complete land loop (#291 #292). Commits: cec2a1ec 58033831 99d1f13f 60f58a9e. npm test 2651/2651 pass (worker-guard env vars unset). detect_changes: 0 symbols, risk low.
