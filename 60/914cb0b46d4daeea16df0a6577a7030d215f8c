@@ -1,0 +1,16 @@
+spine-tasks/SP-763-salvage-integrate-allows-complete/PROMPT.md
+  h_2a17159c706ba1 49-50,54-56,64-66,70-71,83-85
+spine-tasks/SP-763-salvage-integrate-allows-complete/STATUS.md
+  h_2a17159c706ba1 3-4,34,36-37,55,71,79-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "60914cb0b46d4daeea16df0a6577a7030d215f8c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
