@@ -1,7 +1,7 @@
 # SP-765: Document DirtyWorktree + tracked-ignore landmine — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — awaiting engine review/integrate
 **Last Updated:** 2026-09-21
 **Review Level:** 0
 **Review Counter:** 0
@@ -30,9 +30,9 @@
 - [x] Spot-check links
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ## Reviews
 
@@ -59,6 +59,7 @@
 | 2026-09-21 | Step 0 complete | SP-759/SP-764 .DONE verified on main; SP-760 (#290) stale-allowlist cross-link applies |
 | 2026-09-21 | Step 1 complete | Runbook §2.2 preflight table+landmine para, diagnosis quick map row (path-aware, #288), recovery row (tracked-ignore, #289), Phase A allowlist bare python3; QR preflight row + 2 troubleshooting rows; stet-overview allowlist line |
 | 2026-09-21 | Step 2 complete | Contract `testCommand` (`true`) exit 0; links/anchor spot-checked (#288 #289 #290, `#lane-merge-conflicts-before-integrate`); `env -u SPINE_IS_WORKER npm test` → 2651 pass / 0 fail (~158s). Raw `npm test` inside worker session shows 47 failures, all `SPINE_IS_WORKER=1 is set` / `nested_batch_spawn_blocked` (SP-482 guard) — environmental, unrelated to docs change |
+| 2026-09-21 | Step 3 complete | Completion criteria met: docs describe path-aware DirtyWorktree remediation (#288) + tracked-gitignored warn (#289); `detect_changes` unstaged → 0 symbols / risk low; `.DONE` created |
 
 ---
 
