@@ -210,8 +210,11 @@ spine preflight --json        # automation / CI
 | Tasks + deps | Discoverable `PROMPT.md`, valid `dependencies.json` |
 | Tasks validate (v1.3) | Invalid PROMPT packets for pending scope |
 | Wave plan | Same planner output as `spine plan` (invalid PROMPTs fail here with actionable errors) |
+| Tracked gitignored paths (advisory, [#289](https://github.com/beettlle/pi-spine/issues/289)) | Tracked files that also match `.gitignore`/exclude patterns — **warns, never blocks**; suggests the `git rm -r --cached` untrack remediation |
 
 When validate, `spine plan`, or preflight fails with `Invalid PROMPT for …` or `PROMPT validation failed for N task(s):`, fix the listed `PROMPT.md` files before retrying. Fix `suggestedCommand` from failed preflight before `batch start`. Do **not** hand-edit `.spine/batch-state.json`.
+
+**Tracked+gitignored landmine ([#289](https://github.com/beettlle/pi-spine/issues/289)):** After the git-clean gate, preflight runs the advisory `tracked-gitignored` check. It fires when a tracked file also matches `.gitignore` — usually because it was committed before being ignored. Those files keep mutating **outside version control** in lane worktrees, then fail `DirtyWorktree` after an otherwise-PASS task. The check never fails preflight (operators may track such paths on purpose); it emits a ⚠️ warning that previews up to 3 paths (`+N more` when truncated) and suggests `git rm -r --cached -- <paths>` — untrack while keeping the working copies so `.gitignore` keeps them out of future commits. `spine doctor` surfaces the same advisory without incrementing `issueCount`.
 
 ### 2.3 Contract authoring (v2.0 — FR-CDO-01)
 
@@ -890,7 +893,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `running` | Workers active | Wait; use dashboard or `--diagnose` |
 | `paused` | Operator or engine paused | `spine batch resume` |
 | `needs_retry` | Failed or dead worker task | `spine batch retry <id>` or skip |
-| `needs_retry` + `DirtyWorktree` | Lane worktree dirty after worker completion (often `extension/coverage/`) | `git checkout -- extension/coverage && spine batch retry <id>` |
+| `needs_retry` + `DirtyWorktree` | Lane worktree dirty after worker completion | Follow the diagnose `suggestedCommand` — it is built from the **actual dirty paths** ([#288](https://github.com/beettlle/pi-spine/issues/288)): `git checkout -- <dirty paths (cap 5)> && spine batch retry <id>`; when no dirty paths are known it falls back to `git -C <laneWorktree> status --porcelain && spine batch retry <id>`. If a dirty path is tracked **and** ignore-matched, untrack it instead ([#289](https://github.com/beettlle/pi-spine/issues/289)) — see the `DirtyWorktree` recurring row in the [lane merge conflicts recovery table](#lane-merge-conflicts-before-integrate) |
 | `needs_retry` + `review_exhausted` | Final review REVISE cap reached | Fix implementation or packet scope, then `spine batch retry <id>` |
 | `needs_retry` + `contract_failed` | Final `contract.verified` failed | Edit `PROMPT.md` scope, then `spine batch retry <id>` |
 | `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
@@ -1161,6 +1164,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
 | `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)). Ensure `graphify-out/` is in `.gitignore`; if it was previously tracked, run `git rm -r --cached graphify-out/` once on the repo |
+| `DirtyWorktree` recurring on the same path even after `git checkout -- <path>` | Tracked+gitignored landmine ([#289](https://github.com/beettlle/pi-spine/issues/289)): the file is tracked **and** ignore-matched (committed before being ignored), so it mutates outside version control and re-dirties every lane. Preflight and `spine doctor` warn on this. Untrack while keeping the working copy: `git rm -r --cached -- <paths>`, commit, then `spine batch retry <id>` |
 | rules-manifest only | Usually auto-resolved; if not, `spine rules sync` + commit on one side |
 | `docs/adoption/*` (e.g. operator-runbook) | Engine auto-merges disjoint additive hunks (table rows, cross-links) via 3-way merge; overlapping edits fail with recovery commands in `lastError` |
 | `docs/PRD.md` (release-recovery / merge-origin-main) | Engine auto-merges disjoint additive PRD edits (e.g. lane merged `origin/main` while orch advanced earlier waves); overlapping hunks fail with `lastError` recovery commands |
@@ -1617,7 +1621,7 @@ Gate evidence runs config `testing.build` / `testing.test` / `testing.testWithCo
 | Shape | Example | Notes |
 |-------|---------|-------|
 | Phase A — `scripts/` wrapper | `"testWithCoverage": "scripts/run-coverage.sh"` | Relative path under `scripts/`; no shell metacharacters (SP-639) |
-| Phase A — single allowlisted argv | `"build": "npm run typecheck"`, `"test": "npm test"` | First token must be `npm` / `node` / `npx` / `pnpm` / `yarn` / `cargo` / `task` (or project-local `.venv/bin/python`) |
+| Phase A — single allowlisted argv | `"build": "npm run typecheck"`, `"test": "npm test"` | First token must be `npm` / `node` / `npx` / `pnpm` / `yarn` / `cargo` / `task`, bare `python3` (PATH lookup, [#290](https://github.com/beettlle/pi-spine/issues/290) / SP-760), or a project-local `.venv/bin/python` |
 | Documented `PATH="…"` prefix | `"test": "PATH=\"$HOME/.cargo/bin:$PATH\" cargo test"` | Entries bounded to `$PATH`, `$HOME/<relative>` toolchain dirs, and project-relative paths; other `$` expansions stay rejected (SP-710, [#254](https://github.com/beettlle/pi-spine/issues/254)) |
 | Phase B — allowlisted `&&` only | `"build": "npm run typecheck && npm test"` | Each segment allowlisted; join with `&&` only (SP-653; **partial** [#160](https://github.com/beettlle/pi-spine/issues/160)) |
 
