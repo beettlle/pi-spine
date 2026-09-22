@@ -1,0 +1,20 @@
+README.md
+  h_2a17159c706ba1 52
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 102
+docs/release/npm-publish.md
+  h_2a17159c706ba1 63,87
+spine-tasks/SP-767-bump-pi-peer-087/STATUS.md
+  h_2a17159c706ba1 3-4,33,35-36,58-59,68-71,79-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e8025ad491de924d79cf99245c4e80d81b6be59d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
