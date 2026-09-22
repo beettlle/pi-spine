@@ -1,0 +1,18 @@
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/.DONE
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/.reviews/0-20260922T000849.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/.reviews/final-20260922T000908.md
+  h_2a17159c706ba1 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "40fdd62c179291a4184aee248546a009570d5782",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
