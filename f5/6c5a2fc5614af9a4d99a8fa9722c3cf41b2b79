@@ -1,0 +1,21 @@
+spine-tasks/SP-766-docs-salvage-complete-land-loop/PROMPT.md
+  s_42adfe2c1bebca::t_4ef98e5e8ab579 44,100-101
+spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md
+  s_42adfe2c1bebca::t_932581c50e1b5c 72-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f56c5a2fc5614af9a4d99a8fa9722c3cf41b2b79",
+  "prompts": {},
+  "sessions": {
+    "s_42adfe2c1bebca": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-abb35a7c-b854-4692-8102-e7507c45b1db",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
