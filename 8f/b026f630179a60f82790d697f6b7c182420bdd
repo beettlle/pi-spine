@@ -1,0 +1,19 @@
+spine-tasks/SP-765-docs-dirty-worktree-landmine/STATUS.md
+  s_4cd3466d4c40bd::t_4463e26bf3174f 3,27,29-30,59-61,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8fb026f630179a60f82790d697f6b7c182420bdd",
+  "prompts": {},
+  "sessions": {
+    "s_4cd3466d4c40bd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-7f00a1d0-5464-40c2-b985-26fbc68d9f04",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
