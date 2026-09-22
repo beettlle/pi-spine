@@ -1,6 +1,6 @@
 # SP-766: Document salvage→complete land loop — Status
 
-**Current Step:** Step 0 Preflight
+**Current Step:** Step 2 Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-22
 **Review Level:** 0
@@ -17,14 +17,14 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Document salvage land loop
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Post-DONE plan-review → salvage
-- [ ] Complete after salvage integrate
-- [ ] QUICK-REFERENCE row
+- [x] Post-DONE plan-review → salvage
+- [x] Complete after salvage integrate
+- [x] QUICK-REFERENCE row
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Contract true
 - [ ] Spot-check commands
@@ -57,6 +57,7 @@
 |-----------|--------|---------|
 | 2026-09-21 | Task staged | PROMPT.md and STATUS.md created for v2.22.0 |
 | 2026-09-22 | Step 0 preflight | SP-762/SP-763/SP-765 confirmed on main; #287 note skipped per condition |
+| 2026-09-22 | Step 1 docs | Runbook: `pending_lane_land` quick-map row, new land-loop subsection, typical-workflow update; QUICK-REFERENCE: taxonomy row + troubleshooting row + completion block |
 
 ---
 

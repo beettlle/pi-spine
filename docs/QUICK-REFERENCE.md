@@ -340,6 +340,7 @@ spine next --execute
 | `needs_merge` | Wave done, lane merge blocked |
 | `needs_integrate` | Orch ahead of `main` — land loop |
 | `needs_replan` | Final review REPLAN — edit PROMPT |
+| `pending_lane_land` | Lane work done but not on `main` — incl. post-DONE review spawn fail (#291) |
 | `completed` | Batch terminal, merged |
 | `completed_manual` | Work on `main`, batch record stale |
 | `limbo_stale` | Tasks green, batch record stale |
@@ -386,6 +387,10 @@ spine batch dismiss --reason "manual recovery"
 
 # Complete with specific batch ID
 spine batch complete --batch 20260612T143000
+
+# After salvage integrate lands lane work: complete normally — no dismiss --force (#292)
+spine batch salvage --batch <id> --lane <n> --integrate --yes
+spine batch complete
 ```
 
 ---
@@ -754,6 +759,7 @@ spine batch complete
 | `DirtyWorktree` with known dirty paths | Use the diagnose `suggestedCommand`: `git checkout -- <dirty paths> && spine batch retry <id>` ([#288](https://github.com/beettlle/pi-spine/issues/288)) |
 | `DirtyWorktree` returns on a path already in `.gitignore` | Tracked+gitignored landmine ([#289](https://github.com/beettlle/pi-spine/issues/289)) — `git rm -r --cached -- <paths>` (keeps the working copy), commit, then `spine batch retry <id>`; preflight/doctor warn on this |
 | `DirtyWorktree` with only `graphify-out/**` after lane commit | Gitignore `graphify-out/`; see [operator-runbook §9 Graphify hook](./adoption/operator-runbook.md#graphify-post-commit-hook-vs-spine-batches) ([#113](https://github.com/beettlle/pi-spine/issues/113)) |
+| `pending_lane_land` after post-DONE review spawn fail | Salvage, don't retry (#291): `spine batch salvage --batch <id> --dry-run` → `--lane <n> --integrate --yes` → `spine batch complete` — no `dismiss --force` needed (#292) |
 
 ### Debug Mode
 
