@@ -1,0 +1,19 @@
+.spine/rules-manifest.json
+  s_42adfe2c1bebca::t_71bc23c3550915 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c01b8c1053f6856ee30eb155cc89dbc778fe872e",
+  "prompts": {},
+  "sessions": {
+    "s_42adfe2c1bebca": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-abb35a7c-b854-4692-8102-e7507c45b1db",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
