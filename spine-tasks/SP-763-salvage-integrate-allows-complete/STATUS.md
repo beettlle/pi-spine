@@ -1,7 +1,7 @@
 # SP-763: After salvage integrate allow batch complete — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🟣 Step 1 complete, verifying
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🟣 Step 2 complete
 **Last Updated:** 2026-09-22
 **Review Level:** 1
 **Review Counter:** 0
@@ -24,11 +24,11 @@
 - [x] Test salvage→complete path
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint
-- [ ] Run Contract testCommand
-- [ ] Fix all failures
+- [x] Run lint
+- [x] Run Contract testCommand
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -66,6 +66,7 @@
 | 2026-09-22 | Step 0 preflight | Traced #292 path; SP-762 verified merged; wrote failing-first test `tests/batch/salvage-complete-after-integrate.test.mjs`; pre-fix run confirms complete refusal after salvage integrate (see Notes) |
 | 2026-09-22 | Step 1 implemented | `salvage-batch-integrate-heal.mjs` (heal + journaling, 117 LOC); wired into both `alreadyMerged` and post-merge paths of `integrateSalvageableLane`; result/formatter surface `healedTaskIds`/`healError`; new test 3/3 green |
 | 2026-09-22 | Step 1 regression check | 9 related salvage/lifecycle suites: 56/58 pass; only failure is pre-existing on lane baseline (verified via `git stash` A/B): `salvage-inspect.test.mjs` "startBatch worker failure with dirty scoped file…" |
+| 2026-09-22 | Step 2 verification | Contract testCommand green in foreground: `npm run lint` clean (--max-warnings 0), `npm run typecheck` clean (both tsconfig projects), contract test 3/3 pass; `batch-loc-policy` 0 over-limit modules |
 
 ---
 
