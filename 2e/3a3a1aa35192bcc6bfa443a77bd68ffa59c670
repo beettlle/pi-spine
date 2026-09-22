@@ -1,0 +1,29 @@
+.spine/rules-manifest.json
+  s_42adfe2c1bebca::t_bd8175e1a5f3cc 2
+docs/QUICK-REFERENCE.md
+  s_42adfe2c1bebca::t_e01e235a9e99d0 88,754-755
+docs/adoption/operator-runbook.md
+  s_42adfe2c1bebca::t_7164845a11dbbd 213,217-218,896,1167,1624
+docs/stet-overview.md
+  s_42adfe2c1bebca::t_930bee7d30cb15 30
+spine-tasks/SP-765-docs-dirty-worktree-landmine/.DONE
+  s_42adfe2c1bebca::t_1af8139604f9bd 1-7
+spine-tasks/SP-765-docs-dirty-worktree-landmine/STATUS.md
+  s_42adfe2c1bebca::t_2c34f72ed51f3e 3-4,14,16-17,20,22-24,27,29-30,33,35,48-50,59-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2e3a3a1aa35192bcc6bfa443a77bd68ffa59c670",
+  "prompts": {},
+  "sessions": {
+    "s_42adfe2c1bebca": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-abb35a7c-b854-4692-8102-e7507c45b1db",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
