@@ -85,6 +85,7 @@ spine preflight --json
 | Dependencies | `{tasksRoot}/dependencies.json` parses and references valid task IDs |
 | Tasks validate | Pending `PROMPT.md` packets pass structural validation (v1.3+) |
 | Wave plan | Dependency waves and lane assignment (same output as `spine plan`) |
+| Tracked gitignored | Advisory warning (non-blocking, [#289](https://github.com/beettlle/pi-spine/issues/289)) when tracked files also match `.gitignore` — untrack with `git rm -r --cached -- <paths>` |
 
 `spine doctor` also prints an advisory **lanes.maxParallel** sizing line when config is valid (configured vs CPU-based suggestion). The hint never fails doctor; it may warn when configured parallelism looks high for your machine. For expected node process count (pi vs spine vs harness), poll defaults, and CPU mitigations, see [operator-runbook §3 — Orchestrator process model](./adoption/operator-runbook.md#orchestrator-process-model-98).
 
@@ -750,6 +751,8 @@ spine batch complete
 | `Needs merge` | `spine batch resume --force` |
 | `Needs integrate` | `spine integrate` after gate approval |
 | `Stale batch` | `spine batch dismiss` |
+| `DirtyWorktree` with known dirty paths | Use the diagnose `suggestedCommand`: `git checkout -- <dirty paths> && spine batch retry <id>` ([#288](https://github.com/beettlle/pi-spine/issues/288)) |
+| `DirtyWorktree` returns on a path already in `.gitignore` | Tracked+gitignored landmine ([#289](https://github.com/beettlle/pi-spine/issues/289)) — `git rm -r --cached -- <paths>` (keeps the working copy), commit, then `spine batch retry <id>`; preflight/doctor warn on this |
 | `DirtyWorktree` with only `graphify-out/**` after lane commit | Gitignore `graphify-out/`; see [operator-runbook §9 Graphify hook](./adoption/operator-runbook.md#graphify-post-commit-hook-vs-spine-batches) ([#113](https://github.com/beettlle/pi-spine/issues/113)) |
 
 ### Debug Mode
