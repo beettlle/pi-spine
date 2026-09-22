@@ -1,7 +1,7 @@
 # SP-764: Preflight warn tracked gitignored paths — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — .DELIVERED
 **Last Updated:** 2026-09-21
 **Review Level:** 1
 **Review Counter:** 0
@@ -32,10 +32,10 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create .DONE
+- [x] Discoveries logged
+- [x] Create .DONE
 
 ## Reviews
 
@@ -53,6 +53,7 @@
 | Minimal PROMPT fixture needs `## Do NOT` + Testing step to pass tasks-validate/plan | Resolved in fixture | `tests/config/preflight-tracked-gitignored.test.mjs` |
 | New src/ files must not carry `@ts-nocheck` (SP-749 arch guard); tsc reaches the module transitively via tsconfig.batch.json import chains, so the module is fully JSDoc-typed | Resolved | `src/config/preflight/tracked-gitignored.mjs` |
 | Full `npm test` has 43 pre-existing failures (batch start/spine-run) from worker-session nested-spawn guards; verified identical at base commit a717e7ff | Out of scope (environment, not regression) | — |
+| `docs/adoption/operator-runbook.md` already documents the downstream remediation rows (`GitignoredDirtyWorktree`, `needs_merge`); the new upstream warning row belongs to SP-765 per PROMPT | Not affected — no change | `docs/adoption/operator-runbook.md` |
 
 ---
 
@@ -66,6 +67,7 @@
 | 2026-09-21 | Step 1 complete | Check module + preflight/doctor wiring + 8 unit tests, all passing |
 | 2026-09-21 | Step 2 complete | Contract testCommand exit 0 (lint + typecheck + 8/8 tests); doctor/config/guard suites 313/313; fixed unused-import lint + ts-nocheck guard |
 | 2026-09-21 | npm test | 2589/2634 pass; 43 failures verified pre-existing at base commit (worker-session env), not regressions |
+| 2026-09-21 | Step 3 complete | Runbook checked (SP-765 owns doc update); .DONE created |
 
 ---
 
