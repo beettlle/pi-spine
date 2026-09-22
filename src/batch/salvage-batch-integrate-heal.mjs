@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Heal failed-task gates after a successful salvage integrate (#292 / SP-763).
  *
