@@ -46,14 +46,14 @@ Closes #292 — When salvage `--integrate` successfully lands lane work onto mai
 
 ### Step 0: Preflight
 
-- [ ] Confirm complete refuses after salvage integrate when failedTasks still set
-- [ ] Dependencies satisfied (SP-762)
+- [x] Confirm complete refuses after salvage integrate when failedTasks still set
+- [x] Dependencies satisfied (SP-762)
 
 ### Step 1: Heal complete after salvage land
 
-- [ ] After successful salvage integrate for a task, complete no longer refuses solely on that task's prior failure bit
-- [ ] Still refuse when other unresolved failed tasks remain
-- [ ] Unit/integration test covering salvage→complete happy path
+- [x] After successful salvage integrate for a task, complete no longer refuses solely on that task's prior failure bit
+- [x] Still refuse when other unresolved failed tasks remain
+- [x] Unit/integration test covering salvage→complete happy path
 
 **Artifacts:**
 - lifecycle/salvage modules as needed (modified)
@@ -61,14 +61,14 @@ Closes #292 — When salvage `--integrate` successfully lands lane work onto mai
 
 ### Step 2: Testing & Verification
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand`
+- [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ## Documentation Requirements
 
@@ -80,9 +80,9 @@ Closes #292 — When salvage `--integrate` successfully lands lane work onto mai
 
 ## Completion Criteria
 
-- [ ] Salvage integrate → batch complete succeeds without dismiss --force
-- [ ] Unrelated failures still block complete
-- [ ] Closes #292
+- [x] Salvage integrate → batch complete succeeds without dismiss --force
+- [x] Unrelated failures still block complete
+- [x] Closes #292
 
 ## Git Commit Convention
 
