@@ -1,0 +1,19 @@
+docs/stet-overview.md
+  s_3fdf2830481552::t_5029c92acf9ae9 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "de1262b95b7ae6b46343542970f3f34c2dfd8176",
+  "prompts": {},
+  "sessions": {
+    "s_3fdf2830481552": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-9c0fc93c-ebdb-4473-be51-db1300568b17",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
