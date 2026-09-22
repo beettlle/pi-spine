@@ -1,7 +1,7 @@
 # SP-763: After salvage integrate allow batch complete — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟣 Step 2 complete
+**Current Step:** Complete
+**Status:** ✅ Done — all steps and completion criteria met
 **Last Updated:** 2026-09-22
 **Review Level:** 1
 **Review Counter:** 0
@@ -31,10 +31,10 @@
 - [x] Fix all failures
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create .DONE
+- [x] Discoveries logged
+- [x] Create .DONE
 
 ## Reviews
 
@@ -52,6 +52,7 @@
 | Heal must cover task status, segments (`updateSegmentForTask`), and counters (`recomputeTaskCounters`) — `recordTaskSucceeded` does all three | design | `src/batch/state.mjs` |
 | SP-762's post-DONE reclassification surfaces `pending_lane_land` (not `needs_retry`) for plan-review spawn failures — healing status to succeeded removes the task from that path too (requires status failed) | discovery | `src/batch/reconcile-diagnosis.mjs` |
 | When orch has commits not on base (earlier waves merged to orch), salvage of a later lane leaves `orchMergedToBase` false → complete still refuses (`needs_integrate`) — correct, not a sole prior-failure refusal | discovery | reconcile-diagnosis branch order |
+| Runbook salvage section (docs/adoption/operator-runbook.md ~L1460-1491) has no complete-after-salvage guidance to contradict; land-loop complete story is SP-766's scope — no doc edit here | checked-affected | operator-runbook.md |
 | Healed status is drift-safe: last journal lifecycle event becomes `task.completed` (cached succeeded) → no `state_drift` entry in `detectBatchStateDrift` | design | `src/batch/journal-rebuild-drift.mjs` |
 | `batch-loc-policy` caps `src/batch/**` at 500 LOC ungrandfathered; salvage-batch-integrate.mjs already 472 → heal goes in new `salvage-batch-integrate-heal.mjs` (pattern: `salvage-batch-integrate-gate.mjs`) | constraint | `bin/spine-cli/verify.mjs` |
 | Post-heal complete path: `allTasksTerminalSuccess` + `orchMergedToBase` (salvage merge makes orch ancestor of main) → `mergeSatisfied` → allowed; `assertOrchIntegratable` ok; `.DONE` on main → no `pending_lane_land` | design | `src/batch/lifecycle.mjs` |
@@ -67,12 +68,19 @@
 | 2026-09-22 | Step 1 implemented | `salvage-batch-integrate-heal.mjs` (heal + journaling, 117 LOC); wired into both `alreadyMerged` and post-merge paths of `integrateSalvageableLane`; result/formatter surface `healedTaskIds`/`healError`; new test 3/3 green |
 | 2026-09-22 | Step 1 regression check | 9 related salvage/lifecycle suites: 56/58 pass; only failure is pre-existing on lane baseline (verified via `git stash` A/B): `salvage-inspect.test.mjs` "startBatch worker failure with dirty scoped file…" |
 | 2026-09-22 | Step 2 verification | Contract testCommand green in foreground: `npm run lint` clean (--max-warnings 0), `npm run typecheck` clean (both tsconfig projects), contract test 3/3 pass; `batch-loc-policy` 0 over-limit modules |
+| 2026-09-22 | Step 3 delivery | Runbook checked (no drift; SP-766 owns land-loop docs); PROMPT checkboxes marked; .DONE created |
 
 ---
 
 ## Blockers
 
 *None*
+
+## Completion Criteria Evidence
+
+- **Salvage integrate → batch complete succeeds without dismiss --force:** `tests/batch/salvage-complete-after-integrate.test.mjs` tests 1–2 (plain `complete` + `--detect-manual-merge`) assert `completeBatch` → `ok: true`, `diagnosis: "completed"`, state archived.
+- **Unrelated failures still block complete:** test 3 asserts refusal (`complete refused`) and `failedTasks: 1` after healing only the salvaged task.
+- **Closes #292:** fix commits reference #292; heal lands in `src/batch/salvage-batch-integrate-heal.mjs` wired into `integrateSalvageableLane`.
 
 ---
 
