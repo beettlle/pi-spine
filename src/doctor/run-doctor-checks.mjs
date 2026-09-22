@@ -17,6 +17,7 @@ import {
 import { buildStalePathDoctorCheck } from "./stale-path.mjs";
 import { buildCoexistenceDoctorCheck } from "./coexistence.mjs";
 import { buildConcurrentDevDoctorCheck } from "../config/spine-preflight-lib.mjs";
+import { buildTrackedGitignoredDoctorCheck } from "../config/preflight/tracked-gitignored.mjs";
 import { buildTaskPacketSizeDoctorCheck } from "./task-packet-size.mjs";
 import {
 	buildPiWorkerTimeoutDoctorCheck,
@@ -576,6 +577,10 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		} catch {
 			// Git ls-files unavailable; skip tracked-metrics advisory.
 		}
+
+		// Advisory only (#289): tracked files that also match .gitignore mutate in
+		// lane worktrees and fail DirtyWorktree after PASS; warn with remediation.
+		checks.push(buildTrackedGitignoredDoctorCheck({ projectRoot }));
 	}
 
 	const rulesRootPath = path.join(projectRoot, CURSOR_RULES_ROOT_REL);

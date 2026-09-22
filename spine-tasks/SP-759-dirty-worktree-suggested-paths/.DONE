@@ -1,0 +1,8 @@
+SP-759 complete — DirtyWorktree suggestedCommand built from actual dirty paths (#288).
+
+- `src/batch/diagnosis-primary-failure.mjs`: new `buildDirtyWorktreeSuggestedCommand` — path-aware `git checkout -- <paths>` hint (cap 5) when `ctx.dirtyPaths` present; falls back to `git -C <laneWorktree|placeholder> status --porcelain` + retry; no hardcoded `extension/coverage`.
+- `src/batch/diagnosis-suggested-command.mjs`: ctx jsdoc for `dirtyPaths`/`laneWorktree`.
+- `tests/batch/diagnosis.test.mjs`: 4 new tests (path-aware, coverage-only-in-dirty-set, cap-5, fallback variants).
+- `tests/batch/diagnosis-failure-class.test.mjs`: 2 assertions updated off the removed hardcoded string.
+
+Verification: lint exit 0; typecheck exit 0; Contract testCommand 25/25 pass; full `npm test` 2626/2626 (worker-guard env vars unset; the 43 in-worker failures were the SP-482 nested-batch guard, environmental). Commits: de462ccf (Step 0), 370774a7 (fix). detect_changes: LOW risk, 0 affected processes.

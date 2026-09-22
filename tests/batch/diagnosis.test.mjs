@@ -394,3 +394,76 @@ test("spine status without --diagnose keeps legacy layout (no SBAR roles)", asyn
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+// --- Path-aware DirtyWorktree suggestedCommand (#288 / SP-759) ---
+
+test("DirtyWorktree suggestedCommand checks out the actual dirty paths when known", () => {
+	const command = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-759",
+		exitReason: "DirtyWorktree",
+		dirtyPaths: ["src/batch/diagnosis-primary-failure.mjs", "tests/batch/diagnosis.test.mjs"],
+	});
+	assert.equal(
+		command,
+		"git checkout -- src/batch/diagnosis-primary-failure.mjs tests/batch/diagnosis.test.mjs && spine batch retry SP-759",
+	);
+});
+
+test("DirtyWorktree suggestedCommand mentions coverage only when it is in the dirty set", () => {
+	const withCoverage = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-759",
+		exitReason: "DirtyWorktree",
+		dirtyPaths: ["extension/coverage/lcov.info"],
+	});
+	assert.equal(
+		withCoverage,
+		"git checkout -- extension/coverage/lcov.info && spine batch retry SP-759",
+	);
+
+	const withoutCoverage = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-759",
+		exitReason: "DirtyWorktree",
+		dirtyPaths: [".pi-smart-router/state.db"],
+	});
+	assert.equal(
+		withoutCoverage,
+		"git checkout -- .pi-smart-router/state.db && spine batch retry SP-759",
+	);
+	assert.doesNotMatch(withoutCoverage, /extension\/coverage/);
+});
+
+test("DirtyWorktree suggestedCommand caps path hints at five entries", () => {
+	const command = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-759",
+		exitReason: "DirtyWorktree",
+		dirtyPaths: ["a.mjs", "b.mjs", "c.mjs", "d.mjs", "e.mjs", "f.mjs", "g.mjs"],
+	});
+	assert.equal(command, "git checkout -- a.mjs b.mjs c.mjs d.mjs e.mjs && spine batch retry SP-759");
+});
+
+test("DirtyWorktree suggestedCommand falls back to lane status inspection when paths are unknown", () => {
+	const withTaskId = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-001",
+		exitReason: "DirtyWorktree",
+	});
+	assert.equal(
+		withTaskId,
+		"git -C <laneWorktree> status --porcelain && spine batch retry SP-001",
+	);
+
+	const withLaneWorktree = buildSuggestedCommand("needs_retry", {
+		failedTaskId: "SP-001",
+		exitReason: "DirtyWorktree",
+		laneWorktree: "/repo/.worktrees/batch/lane-1",
+	});
+	assert.equal(
+		withLaneWorktree,
+		"git -C /repo/.worktrees/batch/lane-1 status --porcelain && spine batch retry SP-001",
+	);
+
+	const withoutTaskId = buildSuggestedCommand("needs_retry", {
+		exitReason: "DirtyWorktree",
+		dirtyPaths: [],
+	});
+	assert.equal(withoutTaskId, "git -C <laneWorktree> status --porcelain && spine batch retry");
+});

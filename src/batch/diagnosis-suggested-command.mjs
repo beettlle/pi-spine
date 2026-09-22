@@ -32,6 +32,8 @@ import { buildPendingLaneLandSuggestedCommand } from "./diagnosis-pending-lane.m
  * @param {boolean} [ctx.mergeFailed]
  * @param {string|null} [ctx.taskBranch]
  * @param {string[]|null} [ctx.gitignoredPaths]
+ * @param {string[]|null} [ctx.dirtyPaths]
+ * @param {string|null} [ctx.laneWorktree]
  * @param {object[]} [ctx.pendingLaneLandTasks]
  */
 export function buildSuggestedCommand(diagnosis, ctx = {}) {
