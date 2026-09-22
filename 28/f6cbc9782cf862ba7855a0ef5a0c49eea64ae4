@@ -1,0 +1,18 @@
+spine-tasks/SP-764-preflight-tracked-gitignored-warn/STATUS.md
+  h_2a17159c706ba1 3,28,30-32,54-55,67-68
+src/config/preflight/tracked-gitignored.mjs
+  h_2a17159c706ba1 7-38,53,91-94,109,148
+src/config/spine-preflight-lib.mjs
+  h_2a17159c706ba1 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "28f6cbc9782cf862ba7855a0ef5a0c49eea64ae4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
