@@ -1,0 +1,14 @@
+spine-tasks/SP-765-docs-dirty-worktree-landmine/.DONE
+  h_2a17159c706ba1 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0a8ddf0687ed6548b1c9fde216d5c62a8c851576",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
