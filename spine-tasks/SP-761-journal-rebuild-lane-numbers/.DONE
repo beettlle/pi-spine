@@ -1,0 +1,7 @@
+SP-761 complete — laneNumber preserved on journal rebuild (#287)
+
+Completion criteria met:
+- Rebuild preserves per-task laneNumber after DirtyWorktree retry (src/batch/journal-rebuild-structural.mjs)
+- Regression test covers 3-lane case incl. salvage dry-run (tests/batch/journal-rebuild-lane-numbers.test.mjs, 5/5 pass)
+- Contract testCommand green: lint clean, typecheck clean, test file 5/5 (exit 0)
+- Closes #287
