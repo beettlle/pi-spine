@@ -69,3 +69,5 @@
 ## Notes
 
 - 2026-09-21: Contract fileScopeMustChange redirected to STATUS.md (preflight pre-landed after SP-767 doc touch). Docs File Scope steps still apply.
+
+- 2026-09-22: Contract fileScopeMustChange redirected to DELIVERY.md (STATUS.md pre-landed after prior amend).
