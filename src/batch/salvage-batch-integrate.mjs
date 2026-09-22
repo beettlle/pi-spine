@@ -16,6 +16,7 @@ import {
 	gateBlockedOnMissingGate,
 	openGateFromSalvageEvidence,
 } from "./salvage-batch-integrate-gate.mjs";
+import { healAfterSalvageLand } from "./salvage-batch-integrate-heal.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 import { listSalvageableLanes } from "./salvage-batch-list.mjs";
 
@@ -141,10 +142,15 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 	}
 
 	if (commitsAhead <= 0) {
+		// Lane work is already fully merged (manual land or re-run) — heal the
+		// failed-task gate on the same landed-work evidence (#292 / SP-763).
+		const heal = healAfterSalvageLand(projectRoot, resolvedBatchId, lane, null);
 		return {
 			ok: true,
 			exitCode: 0,
 			alreadyMerged: true,
+			healedTaskIds: heal.healedTaskIds,
+			healError: heal.healError,
 			batchId: resolvedBatchId,
 			laneNumber: laneNum,
 			baseBranch,
@@ -385,6 +391,9 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 		};
 	}
 
+	// Landed lane work clears the salvaged tasks' failure gate (#292 / SP-763).
+	const heal = healAfterSalvageLand(projectRoot, resolvedBatchId, lane, mergeCommit);
+
 	appendJournalEvent(projectRoot, resolvedBatchId, "batch.salvage_integrated", {
 		laneNumber: laneNum,
 		taskBranch,
@@ -393,6 +402,7 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 		commitsAhead,
 		salvageableTasks: lane.salvageableTasks,
 		excludedTasks: lane.excludedTasks,
+		healedTaskIds: heal.healedTaskIds,
 	});
 
 	return {
@@ -406,6 +416,8 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 		commitsAhead,
 		salvageableTasks: lane.salvageableTasks,
 		excludedTasks: lane.excludedTasks,
+		healedTaskIds: heal.healedTaskIds,
+		healError: heal.healError,
 		gateOpenedBySalvage,
 		headline: `Salvaged lane ${laneNum} (${taskBranch}) into ${baseBranch}`,
 		suggestedCommand: "spine status --diagnose",
@@ -454,6 +466,12 @@ export function formatSalvageIntegrateOutput(result, options = {}) {
 	}
 	if (result.mergeCommit) {
 		lines.push(`  Merge commit: ${result.mergeCommit}`);
+	}
+	if (result.healedTaskIds?.length) {
+		lines.push(`  Healed tasks: ${result.healedTaskIds.join(", ")}`);
+	}
+	if (result.healError) {
+		lines.push(`  Heal failed: ${result.healError} — failed-task gate not cleared (see journal)`);
 	}
 
 	if (result.suggestedCommand) {
