@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Diagnosis enrichment helpers for reconcile.
  * Extracted from reconcile-diagnosis.mjs to stay under the Phase 23 500 LOC cap.
@@ -9,6 +8,34 @@ import { inferLaunchFailureFromWorkerOutputTail } from "./diagnosis.mjs";
 import { workerOutputLogPath, workerOutputLogRef } from "./worker-output.mjs";
 
 const WORKER_OUTPUT_TAIL_LINES = 20;
+
+/**
+ * @typedef {{
+ *   taskId: string,
+ *   laneNumber?: number|null,
+ *   classification?: string,
+ * }} DiagnosisTaskRow
+ */
+
+/**
+ * @typedef {{
+ *   workerOutputLogRef?: string|null,
+ *   workerOutputLogPath?: string|null,
+ *   output?: string|null,
+ *   changedFileCount?: number|null,
+ * }} DoneMissingHint
+ */
+
+/**
+ * @typedef {{
+ *   type?: string,
+ *   taskId?: string,
+ *   payload?: {
+ *     taskId?: string,
+ *     gitignoredPaths?: unknown,
+ *   },
+ * }} JournalEventLike
+ */
 
 /**
  * @param {string} filePath
@@ -28,7 +55,7 @@ function readWorkerOutputLogTail(filePath, lineCount = WORKER_OUTPUT_TAIL_LINES)
  * @param {string} projectRoot
  * @param {string} batchId
  * @param {string|null} failedTaskId
- * @param {Array<{ taskId: string, laneNumber?: number|null }>} tasks
+ * @param {DiagnosisTaskRow[]} tasks
  * @param {string|null} launchFailureKind
  * @returns {string|null}
  */
@@ -45,8 +72,8 @@ export function enrichLaunchFailureFromWorkerOutput(projectRoot, batchId, failed
  * @param {string} projectRoot
  * @param {string} batchId
  * @param {string|null} failedTaskId
- * @param {Array<{ taskId: string, laneNumber?: number|null }>} tasks
- * @param {object|null} doneMissingHint
+ * @param {DiagnosisTaskRow[]} tasks
+ * @param {DoneMissingHint|null|undefined} doneMissingHint
  * @returns {{ workerOutputLogRef: string|null, workerOutputLogPath: string|null, workerOutputTail: string|null, workerOutputSnippet: string|null, changedFileCount: number|null }}
  */
 export function enrichWorkerDoneMissingContext(
@@ -89,7 +116,7 @@ export function enrichWorkerDoneMissingContext(
 }
 
 /**
- * @param {Array<{ taskId: string, classification: string, laneNumber?: number|null }>} tasks
+ * @param {DiagnosisTaskRow[]} tasks
  * @param {string|null} failedTaskId
  * @returns {boolean}
  */
@@ -107,7 +134,7 @@ export function hasGhostRunningCluster(tasks, failedTaskId) {
 }
 
 /**
- * @param {object[]} journalEvents
+ * @param {JournalEventLike[]} journalEvents
  * @param {string|null} failedTaskId
  * @returns {string[]}
  */
@@ -135,7 +162,12 @@ export function extractGitignoredPathsFromJournal(journalEvents, failedTaskId) {
 export function laneTaskBranchForDiagnosis(raw, batchId, taskId) {
 	const tasks = raw?.tasks;
 	if (!Array.isArray(tasks)) return null;
-	const task = tasks.find((entry) => entry?.taskId === taskId);
+	const task = /** @type {DiagnosisTaskRow|undefined} */ (
+		tasks.find((entry) => {
+			if (!entry || typeof entry !== "object") return false;
+			return /** @type {{ taskId?: unknown }} */ (entry).taskId === taskId;
+		})
+	);
 	if (!task || task.laneNumber == null) return null;
 	return `task/spine-lane-${task.laneNumber}-${batchId}`;
 }
