@@ -1,0 +1,18 @@
+docs/QUICK-REFERENCE.md
+  h_2a17159c706ba1 343,390-393,762
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 899,1494,1498-1516
+spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md
+  h_2a17159c706ba1 3,20,22-24,27,60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "580338314cd68e51f5d3aa90f1517301c2c85b66",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
