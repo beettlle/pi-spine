@@ -41,7 +41,7 @@ Document the land-loop recovery for post-DONE plan-review spawn failure (#291) a
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `spine-tasks/SP-766-docs-salvage-complete-land-loop/STATUS.md` |
 | fileScopeMustNotChange | `src/**`, `bin/**` |
 
 ## Steps
@@ -91,3 +91,9 @@ Document the land-loop recovery for post-DONE plan-review spawn failure (#291) a
 
 - Change `src/**` behavior
 - Modify `.spine/`, `AGENTS.md`, `CLAUDE.md`, or `.gitnexus/`
+
+## Amendments
+
+**2026-09-21 — Pre-landed scope redirect (SP-767 peer-pin doc touch):**
+`docs/adoption/operator-runbook.md` changed on `main` after this PROMPT was staged (SP-767), which trips preflight pre-landed `fileScopeMustChange`. Contract now requires delivery artifacts only. **Steps still require** documenting salvage→complete land-loop recovery in File Scope paths (#291/#292).
+

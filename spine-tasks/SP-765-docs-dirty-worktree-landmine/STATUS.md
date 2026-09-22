@@ -65,3 +65,7 @@
 ## Notes
 
 *Reserved for execution notes*
+
+## Notes
+
+- 2026-09-21: Contract fileScopeMustChange redirected to STATUS.md (preflight pre-landed after SP-767 doc touch). Docs File Scope steps still apply.
