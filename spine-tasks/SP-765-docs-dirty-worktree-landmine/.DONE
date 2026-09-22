@@ -1,0 +1,7 @@
+SP-765 complete — DirtyWorktree path-aware remediation (#288) + tracked-gitignored warn (#289) documented in operator runbook and QUICK-REFERENCE; optional SP-760 (#290) bare python3 allowlist cross-link applied (stale prose confirmed).
+
+- docs/adoption/operator-runbook.md: §2.2 preflight table row + Tracked+gitignored landmine paragraph; diagnosis quick map DirtyWorktree row replaced hardcoded extension/coverage with path-aware suggestedCommand guidance; recovery table recurring-DirtyWorktree row; Phase A evidence allowlist notes bare python3
+- docs/QUICK-REFERENCE.md: preflight Tracked-gitignored advisory row; two DirtyWorktree troubleshooting recovery rows (#288, #289)
+- docs/stet-overview.md: gate-evidence allowlist prose mentions bare python3 (#290 / SP-760)
+
+Verification: contract testCommand \`true\` exit 0; env -u SPINE_IS_WORKER npm test -> 2651 pass / 0 fail; detect_changes unstaged -> 0 symbols, risk low.
