@@ -1,0 +1,29 @@
+spine-tasks/SP-762-post-done-plan-review-spawn-class/.DONE
+  s_3fdf2830481552::t_954793130077b0 1-12
+spine-tasks/SP-762-post-done-plan-review-spawn-class/.reviews/0-20260921T234301.md
+  s_3fdf2830481552::t_0c0152b2d73c08 1-8
+spine-tasks/SP-762-post-done-plan-review-spawn-class/.reviews/3-20260921T234312.md
+  s_3fdf2830481552::t_d0c8ba21e1929e 1-8
+spine-tasks/SP-762-post-done-plan-review-spawn-class/STATUS.md
+  s_3fdf2830481552::t_b993b0981c51d5 3-4,14,16-18,21,23-25,28,30-32,35,37-40,46,54-61,70,82
+src/batch/reconcile-diagnosis.mjs
+  s_3fdf2830481552::t_01a983add53c08 265-308,409-419
+tests/batch/post-done-plan-review-spawn.test.mjs
+  s_3fdf2830481552::t_f9fd00d116c4b7 1-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "036b0b6ebb942e016deec99076699e914b2256eb",
+  "prompts": {},
+  "sessions": {
+    "s_3fdf2830481552": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-9c0fc93c-ebdb-4473-be51-db1300568b17",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
