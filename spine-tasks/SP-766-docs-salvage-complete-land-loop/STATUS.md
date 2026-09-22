@@ -1,7 +1,7 @@
 # SP-766: Document salvage→complete land loop — Status
 
-**Current Step:** Step 3 Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — ready for delivery
 **Last Updated:** 2026-09-22
 **Review Level:** 0
 **Review Counter:** 0
@@ -30,9 +30,9 @@
 - [x] Spot-check commands
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ## Reviews
 
@@ -59,6 +59,7 @@
 | 2026-09-22 | Step 0 preflight | SP-762/SP-763/SP-765 confirmed on main; #287 note skipped per condition |
 | 2026-09-22 | Step 1 docs | Runbook: `pending_lane_land` quick-map row, new land-loop subsection, typical-workflow update; QUICK-REFERENCE: taxonomy row + troubleshooting row + completion block |
 | 2026-09-22 | Step 2 verify | Spot-checks pass (CLI usage, `salvage_integrated`, `batch.salvage_heal_failed` match code); npm test 2651/2651 pass with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset — 43 in-worker failures were nested-spawn guard only |
+| 2026-09-22 | Step 3 delivery | DELIVERY.md created (contract target); detect_changes: 0 symbols / 0 processes, risk low; .DONE created |
 
 ---
 
