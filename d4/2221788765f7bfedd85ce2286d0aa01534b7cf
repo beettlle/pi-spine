@@ -1,0 +1,21 @@
+src/batch/reconcile-diagnosis.mjs
+  s_64e6816854c485::t_0a3c4543266eb6 4,17-23
+src/batch/reconcile-diagnosis-enrich.mjs
+  s_64e6816854c485::t_f35b4f920fe6d1 1-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d42221788765f7bfedd85ce2286d0aa01534b7cf",
+  "prompts": {},
+  "sessions": {
+    "s_64e6816854c485": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6bcad539-3436-48a9-9781-bbf7262820f9",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
