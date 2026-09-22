@@ -1,0 +1,14 @@
+spine-tasks/SP-765-docs-dirty-worktree-landmine/STATUS.md
+  h_2a17159c706ba1 3-4,33,35,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a18f36f4e6560247635ce827da221eb98e819588",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
