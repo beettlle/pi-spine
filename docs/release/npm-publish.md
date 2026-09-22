@@ -60,7 +60,7 @@ If the tag-triggered workflow fails (e.g. transient npm registry error), re-run 
 |-------|-------|-------------|
 | `engines.node` | `>=22.19.0` | npm `engines` check at install; CI runs Node 22 |
 | `pi.minPiVersion` | `0.80.0` | `spine doctor` "pi version supported" warning when the installed pi is older |
-| `@earendil-works/pi-coding-agent` (tested peer) | `^0.85.1` dev pin | `npm audit` highs cleared via 0.85.1; extension tool schemas tested against it |
+| `@earendil-works/pi-coding-agent` (tested peer) | `^0.87.0` dev pin | `npm audit` highs cleared via 0.85.1 (maintained through 0.87.0); extension tool schemas tested against it |
 
 The `peerDependencies` entries for `@earendil-works/pi-coding-agent` and `typebox` stay `*` (optional) — the tested pin lives in `devDependencies`. When bumping the peer, also raise `pi.minPiVersion` if the new pi requires it, and update the workflow pi stubs that emulate `pi --version` (`ci.yml`, `release.yml`) so they report a version at or above the new minimum.
 
@@ -84,7 +84,7 @@ Dev toolchain majors shipped in Wave B: TypeScript `6.0.3` (TS7 intentionally de
   - **`cancelled` or no run exists for `HEAD`:** re-run **CI** via `workflow_dispatch` — `gh workflow run ci.yml` (dispatch trigger added in `edb7919d`) — then `gh run list` again and wait for `conclusion: success` on current `HEAD`.
   - Do **not** treat a cancelled run as green or as red, and do **not** `npm version` or `git push --tags` until a green run exists on `HEAD`.
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
-- [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^0.85.1` (see [Version floors](#version-floors-engines--minpiversion--peer))
+- [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^0.87.0` (see [Version floors](#version-floors-engines--minpiversion--peer))
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
 - [ ] `release.yml` succeeded
