@@ -162,14 +162,26 @@ Wave 2 · 1 task
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD` (release-safe profile)
-- [ ] `git status` clean
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after each wave (logs under /tmp/pi-spine-post-integrate-*.log)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final HEAD (2651 pass, coverage 89.63%; /tmp/pi-spine-post-integrate-docs-766.log)
+- [ ] CI workflow green on HEAD — in_progress at Phase 5 stop (await success before tag)
+- [x] `git status` clean
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Every release-scoped `Closes #NNN` CLOSED on GitHub
+- [x] Every release-scoped Closes CLOSED (#287–#292); #285 left OPEN (Wave C deferred)
+
+---
+
+## Phase 5 status
+
+**Stopped for publish approval:** 2026-09-22
+**HEAD:** `7734d3b7` (package.json still **2.21.0**)
+**Release scope:** SP-759–SP-767 all `.DONE` on main; pending backlog 0
+**Issues CLOSED:** #287 #288 #289 #290 #291 #292
+**Deferred open:** #285 (Actions Wave C)
+**Publish blocked until:** operator says approve publish + CI green on HEAD
+
