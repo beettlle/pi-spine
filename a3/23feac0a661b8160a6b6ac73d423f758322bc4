@@ -1,0 +1,19 @@
+.github/workflows/release.yml
+  s_58b9abd6389f7f::t_d5ecd44fab2388 141-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a323feac0a661b8160a6b6ac73d423f758322bc4",
+  "prompts": {},
+  "sessions": {
+    "s_58b9abd6389f7f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e742d4a4-8e73-43e7-9c70-947ae97dd0a6",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
