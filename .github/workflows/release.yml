@@ -13,11 +13,13 @@ on:
 permissions:
   contents: write
   actions: read
+  # OIDC token for npm Trusted Publishing (stage publish).
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Same validation steps as ci.yml when CI gate misses; allow headroom for npm publish.
+    # Same validation steps as ci.yml when CI gate misses; allow headroom for npm stage.
     timeout-minutes: 20
 
     steps:
@@ -76,8 +78,14 @@ jobs:
         with:
           node-version: "22"
           registry-url: https://registry.npmjs.org
-          cache: npm
-          cache-dependency-path: package-lock.json
+          # Trusted Publishing guidance: avoid package-manager cache in release builds.
+
+      - name: Ensure npm supports stage publish
+        # Staged publishing requires npm >= 11.15.0 (and Node >= 22.14).
+        run: |
+          npm install -g npm@^11.15.0
+          node --version
+          npm --version
 
       - name: Install dependencies
         run: npm ci
@@ -127,10 +135,11 @@ jobs:
           node "$GITHUB_WORKSPACE/bin/spine.mjs" init
           node "$GITHUB_WORKSPACE/bin/spine.mjs" doctor
 
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMSECRET }}
-        run: npm publish --access public --ignore-scripts
+      - name: Stage publish to npm (OIDC)
+        # Trusted Publisher is stage-only — package is not installable until a maintainer
+        # approves with 2FA on npmjs.com or via `npm stage approve <id>`.
+        # No NODE_AUTH_TOKEN / NPMSECRET: OIDC exchange is automatic with id-token: write.
+        run: npm stage publish --access public --ignore-scripts --provenance
 
       - name: Create GitHub Release
         env:

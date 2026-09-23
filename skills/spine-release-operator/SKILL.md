@@ -35,8 +35,9 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 4. `spine preflight` green; **`npm run release:check` green (blocking gate)** on current `main`
 5. **CI workflow green on release commit** (release-safe profile — parity with `ci.yml`) before tag push
 6. Operator explicitly approved publish; version bumped and tag pushed (if approved)
-7. Every release-scoped `Closes #NNN` / `Closes: #NNN` issue is **CLOSED** on GitHub once its fix is on `main` (close after each land — do not wait for publish)
-8. Final report with composition table, issues closed/deferred, verification output
+7. **npm stage completed via GitHub Actions** — `release.yml` Stage step green; then maintainer **approves** with 2FA; `npm view pi-spine version` matches the tag (stage alone is not publish)
+8. Every release-scoped `Closes #NNN` / `Closes: #NNN` issue is **CLOSED** on GitHub once its fix is on `main` (close after each land — do not wait for publish)
+9. Final report with composition table, issues closed/deferred, verification output
 
 ## Hard rules
 
@@ -46,6 +47,9 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 - **Never** run `npm version` or `git push --tags` without explicit operator approval
 - **Never** run `npm version` or `git push --tags` when `npm run release:check` exits non-zero on current `main` ([#175](https://github.com/beettlle/pi-spine/issues/175))
 - **Never** run `npm version` or `git push --tags` when the **CI** workflow is not green on current `HEAD` — release-safe profile: typecheck + lint + tests + coverage (parity with `ci.yml`) ([#156](https://github.com/beettlle/pi-spine/issues/156))
+- **Never** claim the package is on npm until the staged package is **approved** with 2FA and `npm view pi-spine version` matches the release — tag push and green `release.yml` stage alone are not publish
+- **Never** re-run `npm version` / retag when `release.yml` failed after a correct `v*` tag already exists — fix Trusted Publisher / OIDC config or re-dispatch Release on the existing tag (see Phase 6 § Publish failure recovery)
+- **Never** use local `npm publish` for routine releases — CI stages via OIDC (`npm stage publish`); emergency manual only after explicit operator approval (see `docs/release/npm-publish.md`)
 - **Always** parse target version / bump type **before** task selection (Phase 2)
 - **Always** record dependency drift in Phase 1 (`npm outdated` + `npm audit`) and apply include/defer thresholds — never auto-add a full “update all deps” task; see [issue-intake-checklist.md](references/issue-intake-checklist.md) § Dependency drift check
 - **Always** prioritize documentation issues over enhancements
@@ -519,15 +523,79 @@ npm version patch   # or minor / major — must match Phase 2 profile
 git push && git push --tags
 ```
 
-Monitor Release workflow (tag publish):
+### CI stages to npm via OIDC (not the operator shell)
+
+**Canonical publish path:** pushing `v*` triggers [`.github/workflows/release.yml`](../../.github/workflows/release.yml). That workflow:
+
+1. Checks out the tag
+2. Verifies CI green on the tagged commit (or runs the full gate if no green CI yet)
+3. Ensures npm ≥ 11.15 and runs `npm stage publish --access public --ignore-scripts --provenance` with **Trusted Publishing (OIDC)** — `permissions.id-token: write`; no `NPMSECRET`
+4. Creates the GitHub Release (`gh release create`)
+
+**Not live yet:** Trusted Publisher is **stage-only**. A maintainer must approve with 2FA before the version is installable:
+
+```bash
+npm stage list
+npm stage view <stage-id>
+npm stage approve <stage-id>   # prompts for 2FA
+# or: npmjs.com → package → Staged Packages → Approve
+```
+
+Operator Phase 6 after approval is: **bump → push tag → watch `release.yml` (stage) → human approve → smoke**. Full mechanics: `docs/release/npm-publish.md`.
+
+Monitor Release workflow until conclusion:
 
 ```bash
 gh run list --workflow release.yml --limit 3
+# Prefer the run for this tag:
+gh run list --workflow release.yml --branch v{VERSION} --limit 3
+gh run watch --exit-status <run-id>
 ```
 
-**pi async:** `MonitorCreate` with `gh run watch --exit-status <run-id>`, `timeout: 1800000`, `onDone` to report conclusion and run smoke tests if green.
+**pi async:** `MonitorCreate` with `gh run watch --exit-status <run-id>`, `timeout: 1800000`, `onDone` to report conclusion; if green, remind operator to approve the staged package, then run smoke.
 
-Post-publish smoke per `docs/release/npm-publish.md` — **retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)):** the first `npm install -g` right after a successful `release.yml` run can fail with `ETARGET` / "No matching version found" while the registry propagates, even when `npm view` already lists the version. Prefer the bounded wrapper:
+**Publish success criteria (all required):**
+
+- `release.yml` conclusion `success` (stage + GitHub Release)
+- Staged package **approved** (2FA) — `npm view pi-spine version` equals the released version
+- GitHub Release exists for `v{VERSION}` (`gh release view v{VERSION}`)
+
+Tag push + green **CI** (`ci.yml`) alone is **not** enough — `ci.yml` does not stage or publish. Green stage alone is **not** enough — approve is required.
+
+### Publish failure recovery (HARD STOP — do not retag)
+
+When `release.yml` fails, diagnose with the failed job log before any recovery:
+
+```bash
+gh run view <run-id> --log-failed
+```
+
+| Symptom | Meaning | Action |
+|---------|---------|--------|
+| OIDC / trusted publisher mismatch / `ENEEDAUTH` | Trusted Publisher config wrong (workflow name, Environment name set while job has none, stage permission missing) | Fix npm Trusted Publisher; re-dispatch same tag — do **not** `npm version` again |
+| Legacy `E404` on PUT with `NPMSECRET` | Old token path still in use or secret bad | Prefer OIDC; emergency: rotate `NPMSECRET` only if workflow still uses token |
+| Validation steps failed (typecheck / lint / coverage / CLI smoke) | Tagged commit not release-safe | Fix on `main`, create a **new** patch version + tag; do not force-publish a broken tag |
+| CI gate failed for tagged commit | Pre-tag CI was red or missing | Fix `main` / re-run `ci.yml`; new tag if the old tag pointed at a bad commit |
+| Stage green but install missing version | Not approved yet | Approve with 2FA; do not retag |
+| GitHub Release step failed after stage succeeded | Notes/release page only | Create release manually; do not double-stage the same version without rejecting the prior stage first |
+
+**Re-dispatch existing tag** (after Trusted Publisher / transient registry fix):
+
+```bash
+# Tag must already exist; this re-runs checkout → gate → stage → gh release
+# workflow_dispatch uses the workflow file from the branch you select (usually main)
+gh workflow run release.yml -f tag=v{VERSION}
+gh run list --workflow release.yml --limit 3
+gh run watch --exit-status <new-run-id>
+```
+
+UI equivalent: **Actions → Release → Run workflow** → enter `v{VERSION}`.
+
+**Do not** delete/retag/`npm version` again when the only failure was auth/OIDC — package.json and the `v*` tag are already correct.
+
+Distinguish **stage auth failures** (table above) from **post-approve install E404/ETARGET** (registry lag F9 — smoke section below) and from **pre-approve missing version** (approve pending).
+
+Post-publish smoke per `docs/release/npm-publish.md` — **only after stage success and 2FA approve**. **Retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)):** the first `npm install -g` right after approve can fail with `ETARGET` / "No matching version found" while the registry propagates, even when `npm view` already lists the version. Prefer the bounded wrapper:
 
 ```bash
 scripts/post-publish-smoke.sh <version>
@@ -571,7 +639,7 @@ Include the published version/tag in the close comment when closing at Phase 6 (
 6. **Issues filed** — pi-spine GitHub links or "none"
 7. **Recovery actions** — aborts, retries, contract fixes
 8. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
-9. **Publish** — version bumped (Y/N), tag pushed (Y/N), workflow URL, or "awaiting operator approval"
+9. **Publish** — version bumped (Y/N), tag pushed (Y/N), `release.yml` URL + conclusion, stage approved (Y/N), `npm view pi-spine version`, or "awaiting operator approval" / "blocked on Trusted Publisher" / "awaiting stage approve"
 10. **Issue tracker hygiene** — confirm every release-scoped `Closes #NNN` is CLOSED (paste `gh issue view` states or list)
 
 ---
@@ -584,7 +652,8 @@ Include the published version/tag in the close comment when closing at Phase 6 (
 | Issues repo | `beettlle/pi-spine` |
 | Pre-publish gate | `npm run release:check` (typecheck → lint → tests → coverage; CI parity) |
 | Pre-tag CI gate | `ci.yml` green on `HEAD` via `gh run list` / `gh run watch` before `npm version` ([#156](https://github.com/beettlle/pi-spine/issues/156)) |
-| Publish | Tag-triggered `.github/workflows/release.yml` |
+| Publish | **CI-only OIDC stage** — `.github/workflows/release.yml` runs `npm stage publish` (`id-token: write`). Trusted Publisher: stage-only. Human 2FA approve before installable |
+| Re-publish | `gh workflow run release.yml -f tag=vX.Y.Z` after Trusted Publisher fix — never retag for auth-only failures |
 | Pending backlog | Run `spine plan pending` — release executes **subset only** |
 
 ## Short prompt (resume mid-release)
@@ -599,6 +668,7 @@ post-integrate release:check (exit 0 required; no tail-only verification) →
 git push origin main when remote publish is the goal (F8) →
 close Closes #NNN issues for tasks that just landed (§4.3c; do not wait for publish) →
 MonitorCreate release:check → HARD STOP if non-zero (fix on main, re-run) → only if exit 0: verify ci.yml green on HEAD (gh run list/watch) → HARD STOP if not green → only then: STOP for publish approval →
-after publish: Phase 6 issue sweep for any still-open Closes links → final report must list CLOSED issue numbers.
+after approve: npm version + push tags → watch release.yml (OIDC `npm stage publish`) → on OIDC/auth failure fix Trusted Publisher and gh workflow run release.yml -f tag=v{TARGET} (do not retag) →
+human 2FA approve staged package (npmjs.com or `npm stage approve`) → confirm npm view + gh release view → post-publish smoke → Phase 6 issue sweep → final report must list CLOSED issue numbers.
 resume --attached --force stays foreground. Post final report with composition table.
 ```

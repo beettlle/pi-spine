@@ -1,6 +1,6 @@
 # npm publish (tag-triggered)
 
-Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.github/workflows/release.yml`](../../.github/workflows/release.yml) runs tests, publishes to npm, and creates a GitHub Release. Manual `npm publish` is an emergency fallback only (see [Emergency manual publish](#emergency-manual-publish)).
+Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.github/workflows/release.yml`](../../.github/workflows/release.yml) runs tests, **stages** the package on npm via Trusted Publishing (OIDC), and creates a GitHub Release. A maintainer must then **approve** the staged package with 2FA before it is installable. Manual `npm publish` is an emergency fallback only (see [Emergency manual publish](#emergency-manual-publish)).
 
 ## Tag-triggered release flow
 
@@ -28,9 +28,13 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    - If **CI already succeeded** on that commit (typical when `main` and tag are pushed together), skips duplicate validation and publishes immediately.
    - If **no green CI run** exists for that commit (tag-only release), runs the full gate: typecheck, lint, tests, coverage, and CLI smoke checks (parity with `ci.yml`).
    - Fails if CI failed on that commit — release does not bypass a red main build.
-   - Runs `npm publish --access public --ignore-scripts` using secret `NPMSECRET`.
+   - Runs `npm stage publish --access public --ignore-scripts --provenance` via **npm Trusted Publishing (OIDC)** — `permissions.id-token: write`; no `NPMSECRET` / `NODE_AUTH_TOKEN` on the happy path. Trusted Publisher must allow **npm stage publish** (stage-only is fine / preferred).
    - Creates a GitHub Release with auto-generated notes via `gh release create --generate-notes`.
-5. **Post-publish smoke** — verify install and CLI. Prefer the bounded retry wrapper (handles registry lag, see below):
+5. **Approve staged package (human + 2FA — required)** — a green `release.yml` only **stages** the tarball; it is **not** installable until approved:
+   - **npmjs.com:** package → **Staged Packages** → review → **Approve** (2FA), or
+   - **CLI** (local, logged-in maintainer): `npm stage list` → `npm stage view <id>` → `npm stage approve <id>` (2FA).
+   - OIDC cannot approve — `npm stage approve` requires interactive proof-of-presence.
+6. **Post-publish smoke** — only after approve. Prefer the bounded retry wrapper (handles registry lag, see below):
    ```bash
    scripts/post-publish-smoke.sh <version>
    ```
@@ -42,15 +46,58 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    pi install npm:pi-spine
    ```
 
-   **Registry lag (`ETARGET` / "No matching version found"):** a green `release.yml` run does not mean the version is immediately installable — the first global install can fail with `ETARGET` / E404 while the registry propagates, even when `npm view` already lists the version (post-mortem F9, [#247](https://github.com/beettlle/pi-spine/issues/247)). Retry with **bounded** exponential backoff (e.g. 5s → 10s → 20s, capped at 60s, max 6 attempts; `scripts/post-publish-smoke.sh <version>` does this for you). Only `ETARGET`/404-class errors count as lag — any other install error is a real failure; do not retry it as lag. If the version is still not installable after the retries exhaust, **fail closed**: treat it as a real missing-version failure and investigate the publish instead of waiting longer.
+   **Not yet approved:** `npm view` / install missing the version is expected until step 5 — do not treat that as registry lag.
+
+   **Registry lag (`ETARGET` / "No matching version found"):** after approve, a green stage+approve still may not mean the version is immediately installable — the first global install can fail with `ETARGET` / E404 while the registry propagates, even when `npm view` already lists the version (post-mortem F9, [#247](https://github.com/beettlle/pi-spine/issues/247)). Retry with **bounded** exponential backoff (e.g. 5s → 10s → 20s, capped at 60s, max 6 attempts; `scripts/post-publish-smoke.sh <version>` does this for you). Only `ETARGET`/404-class errors count as lag — any other install error is a real failure; do not retry it as lag. If the version is still not installable after the retries exhaust, **fail closed**: treat it as a real missing-version failure and investigate the publish instead of waiting longer.
 
 ## Manual re-publish (workflow_dispatch)
 
-If the tag-triggered workflow fails (e.g. transient npm registry error), re-run it manually:
+If the tag-triggered workflow fails, re-run it on the **existing** tag (do not `npm version` / retag for auth or transient registry failures):
 
-1. Go to **Actions → Release → Run workflow**.
+1. Go to **Actions → Release → Run workflow**, or:
+
+   ```bash
+   gh workflow run release.yml -f tag=v1.2.3
+   gh run list --workflow release.yml --limit 3
+   gh run watch --exit-status <run-id>
+   ```
+
 2. Enter the tag name (e.g. `v1.2.3`) — the tag must already exist in the repo.
-3. The workflow checks out at that tag and re-runs the full publish pipeline.
+3. The workflow checks out at that tag and re-runs the full pipeline (validation when needed → `npm stage publish` via OIDC → GitHub Release). You must still **approve** the staged package with 2FA before it is installable.
+
+### Trusted Publisher (OIDC) one-time setup
+
+On npmjs.com → `pi-spine` → **Trusted Publisher**:
+
+| Field | Value |
+|-------|--------|
+| Provider | GitHub Actions |
+| Organization or user | `beettlle` |
+| Repository | `pi-spine` |
+| Workflow filename | `release.yml` |
+| Environment name | *(leave blank — job has no `environment:`)* |
+| Allowed actions | **npm stage publish** (stage-only is preferred) |
+
+Workflow requirements: `permissions.id-token: write`, Node ≥ 22.14, npm ≥ 11.15, and `npm stage publish` (not token-based `npm publish`).
+
+### Diagnose Stage-to-npm failures
+
+`ci.yml` never publishes. Only `release.yml` step **Stage publish to npm (OIDC)** talks to the registry (OIDC short-lived token — not `NPMSECRET`).
+
+```bash
+gh run view <run-id> --log-failed
+```
+
+| Log symptom | Cause | Fix |
+|-------------|-------|-----|
+| OIDC / trusted publisher / `ENEEDAUTH` / publish denied | Trusted Publisher missing, wrong workflow filename, non-blank Environment name mismatch, or Allowed actions exclude `npm stage publish` | Fix Trusted Publisher fields (Environment blank; workflow `release.yml`); re-dispatch same tag |
+| `npm error code E404` on **PUT** while still using `NODE_AUTH_TOKEN` / `NPMSECRET` | Legacy token path — invalid/expired secret | Prefer OIDC migration; if emergency token path, rotate `NPMSECRET` |
+| `npm stage` unknown / needs newer npm | Runner npm &lt; 11.15 | Workflow must install `npm@^11.15.0` before stage |
+| Stage succeeded but `npm view` / install missing version | **Not approved yet** (expected) | Approve on npmjs.com Staged Packages or `npm stage approve <id>` with 2FA |
+| `ETARGET` / install E404 **after** approve | Registry lag (F9) | Bounded smoke retries — not an auth problem |
+| Typecheck/lint/coverage/CLI smoke red in `release.yml` | Tagged tree not release-safe | Fix on `main`; ship a **new** version/tag |
+
+**Do not** treat tag push + green `ci.yml` or green stage-only as “published.” Confirm with `npm view pi-spine version` **after approve**, then `gh release view vX.Y.Z`.
 
 ## Version floors (engines / minPiVersion / peer)
 
@@ -87,8 +134,9 @@ Dev toolchain majors shipped in Wave B: TypeScript `6.0.3` (TS7 intentionally de
 - [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^0.87.0` (see [Version floors](#version-floors-engines--minpiversion--peer))
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke: global install + `spine doctor` — retry on `ETARGET`/404 registry lag (bounded, see step 5 / `scripts/post-publish-smoke.sh`); fail closed after retries exhaust
+- [ ] `release.yml` succeeded (**stage** complete)
+- [ ] Staged package **approved** with 2FA (`npm stage approve` or npmjs.com Staged Packages)
+- [ ] Post-publish smoke: global install + `spine doctor` — retry on `ETARGET`/404 registry lag (bounded, see step 6 / `scripts/post-publish-smoke.sh`); fail closed after retries exhaust
 - [ ] Real-pi adoption E2E report filed (optional but recommended)
 
 ## Dry-run pack (local inspection)
