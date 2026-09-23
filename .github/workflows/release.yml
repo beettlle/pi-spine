@@ -77,8 +77,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          # No registry-url: that writes //registry…/:_authToken=${NODE_AUTH_TOKEN} and
-          # blocks OIDC Trusted Publishing (E401 with a token, ENEEDAUTH when empty).
+          # registry-url is required so npm targets registry.npmjs.org; strip the
+          # placeholder _authToken it writes before stage (OIDC must not see a token).
+          registry-url: https://registry.npmjs.org
 
       - name: Ensure npm supports stage publish
         # Staged publishing requires npm >= 11.15.0 (and Node >= 22.14).
@@ -138,10 +139,14 @@ jobs:
       - name: Stage publish to npm (OIDC)
         # Trusted Publisher is stage-only — package is not installable until a maintainer
         # approves with 2FA on npmjs.com or via `npm stage approve <id>`.
-        # Do not set NODE_AUTH_TOKEN (even empty) — npm must use OIDC via id-token: write.
+        # setup-node writes //registry…/:_authToken=${NODE_AUTH_TOKEN}; a real or empty
+        # token blocks OIDC (E401 / ENEEDAUTH). Strip auth lines and unset the env var.
         run: |
-          unset NODE_AUTH_TOKEN
-          npm stage publish --access public --ignore-scripts --provenance
+          if [ -n "${NPM_CONFIG_USERCONFIG:-}" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+            sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+            sed -i '/always-auth/d' "$NPM_CONFIG_USERCONFIG"
+          fi
+          env -u NODE_AUTH_TOKEN npm stage publish --access public --ignore-scripts --provenance
 
       - name: Create GitHub Release
         env:
