@@ -1,0 +1,19 @@
+spine-tasks/_authoring/release-v2.22.0/manifest.md
+  s_6b2ec415da0953::t_f9d959eff50c23 165-170,175-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0cbe9ccca46d8eebc396b59da2a64b1cfe119b27",
+  "prompts": {},
+  "sessions": {
+    "s_6b2ec415da0953": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f6ae4781-2b9a-4481-959b-519fa74cdce4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
