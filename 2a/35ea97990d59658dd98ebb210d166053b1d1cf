@@ -1,0 +1,45 @@
+skills/spine-release-operator/SKILL.md
+  s_bd61c5c2860adc::t_30f6ea2eaf9269 528-531,533-534,536,547-553,556-558,561-562,564-567,570-574,577-578,581,583-584,587,589,592-593,595
+  s_7b52437abb1368::t_b54529dc8acce7 526,532,535,537-546,555,559-560,563,575-576,579-580,582,585-586,594,596,598
+  s_7b52437abb1368::t_d2197f5dab546a 38
+  s_7b52437abb1368::t_a368e36b0d72ce 50-52
+  s_7b52437abb1368::t_f832a5656fec14 655-656
+  s_7b52437abb1368::t_3aa02ab9882897 671-672
+  s_7b52437abb1368::t_4303309e544cd5 642
+  s_bd61c5c2860adc::t_e19d9364d37c5f 39-40
+  s_7b52437abb1368::t_4ccb37a2341cba 527,554
+.github/workflows/release.yml
+  s_7b52437abb1368::t_67f407365f725d 81
+  s_7b52437abb1368::t_f4093cf47723fe 16-17,22,83-88,138-142
+  s_7b52437abb1368::t_e846596cc78b93 82
+docs/release/npm-publish.md
+  s_7b52437abb1368::t_8ea1c75d739718 31,33-37,49-51
+  s_7b52437abb1368::t_04baa5cebd2596 3
+  s_bd61c5c2860adc::t_253e8172aa855b 55-63,67,69,71,87-92,98-99
+  s_7b52437abb1368::t_67549f8867295b 137-139
+  s_7b52437abb1368::t_a72fc33bd74a6f 66,68,70,72-86,93-97,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2a35ea97990d59658dd98ebb210d166053b1d1cf",
+  "prompts": {},
+  "sessions": {
+    "s_7b52437abb1368": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-26369aae-7015-444c-98e1-4fe6ad917b5a",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_bd61c5c2860adc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-c34e2fef-660e-4f1b-b7d6-798629cd2765",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
