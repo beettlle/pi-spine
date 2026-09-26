@@ -1,0 +1,21 @@
+spine-tasks/SP-770-type-engine-lanes-small/.DONE
+  s_fc42deacf2db9e::t_0d80ebef341543 1-7
+spine-tasks/SP-770-type-engine-lanes-small/.reviews/0-20260926T202704.md
+  s_fc42deacf2db9e::t_26da48c7246738 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4c60aa7878bb341b0c116b9fab606643d4b986d7",
+  "prompts": {},
+  "sessions": {
+    "s_fc42deacf2db9e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6354bdbd-6e30-490d-84d9-2726b12e71aa",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
