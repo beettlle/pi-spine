@@ -1,0 +1,28 @@
+spine-tasks/SP-770-type-engine-lanes-small/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-24,27,29-31,49-58
+src/batch/engine-lanes.mjs
+  h_2a17159c706ba1 92-107,143-144,157-158,185-195,287,308
+src/batch/engine-lanes/commit.mjs
+  h_2a17159c706ba1 29,32-33,36-37
+src/batch/engine-lanes/orch-sync.mjs
+  h_2a17159c706ba1 14,23,40,43,56-58,89-94
+src/batch/engine-lanes/phase.mjs
+  h_2a17159c706ba1 21,33-39
+src/batch/engine-lanes/queue.mjs
+  h_2a17159c706ba1 22-27,30,37-38,43,68-76,141-145,149,191-198
+src/batch/engine-lanes/review-stub.mjs
+  h_2a17159c706ba1 71
+tsconfig.batch.json
+  h_2a17159c706ba1 17-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "18d848f376e15247cfd05328f973ce18e1aa8c54",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
