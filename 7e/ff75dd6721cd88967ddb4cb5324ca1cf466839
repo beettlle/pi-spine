@@ -1,0 +1,20 @@
+.github/workflows/ci.yml
+  h_2a17159c706ba1 23,26,54
+.github/workflows/real-pi.yml
+  h_2a17159c706ba1 19,22
+.github/workflows/release.yml
+  h_2a17159c706ba1 36,44,77
+spine-tasks/SP-768-actions-wave-c/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,21,23-26,45-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7eff75dd6721cd88967ddb4cb5324ca1cf466839",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
