@@ -1,0 +1,14 @@
+spine-tasks/SP-771-type-engine-lanes-review/.DONE
+  h_2a17159c706ba1 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "379010d160719b0fff566a9e24e34f2dabb28d43",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
