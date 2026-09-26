@@ -33,10 +33,10 @@
 - [x] Fix failures — full stub suite: 2608 pass / 43 fail; A/B rerun of the 43 failing tests with HEAD vs HEAD~1 sources → identical 75/118 pass/fail both ways ⇒ zero regressions; all 43 are pre-existing worker-env failures (`SPINE_IS_WORKER=1` → `nested_batch_spawn_blocked` / spawn timeouts in batch-engine tests)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md (docs deferred to SP-773)
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -53,9 +53,10 @@
 
 ## Completion Criteria
 
-- [ ] matrix/merge typed
-- [ ] Zero engine-lanes allowlist entries
-- [ ] Closes #283
+- [x] matrix/merge typed (tsc exit 0; nocheck removed from all three)
+- [x] Zero engine-lanes allowlist entries (guard test live + count checks pass)
+- [x] Closes #283 (last engine-lanes nocheck cluster; `refactor(SP-772): type matrix/merge engine-lanes modules (#283)`)
+- [x] `PHASE23_GRANDFATHERED_OVER_500` untouched (still `[]`); LOC after typing: matrix 511, matrix-run 922, merge 785 (subdir — outside batch-loc-policy count)
 
 ## Blockers
 
