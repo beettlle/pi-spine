@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Engine lane plan review phase (SP-730 / #262).
  */
@@ -57,7 +56,7 @@ function findPlanReviewStepNumber(taskFolder) {
  *
  * @param {object} params
  * @param {string} params.taskFolder
- * @param {object[]} [params.journalEvents]
+ * @param {Array<Record<string, any>>} [params.journalEvents]
  * @param {string} [params.taskId]
  * @returns {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
  */
@@ -93,7 +92,9 @@ function findCompletedPlanReview({ taskFolder, journalEvents = [], taskId }) {
 		const { verdict, feedback } = parseReviewVerdict(reviewContent, { reviewType: "plan" });
 		if (verdict) {
 			const artifactMatch = {
-				verdict,
+				// Narrowed by the `if (verdict)` guard above; parseReviewVerdict's
+				// union spans code/final verdicts, so cast to the plan verdict set.
+				verdict: /** @type {"APPROVE"|"REVISE"} */ (verdict),
 				feedback,
 				artifactPath: latestArtifact.artifactPath,
 				source: /** @type {"artifact"} */ ("artifact"),
@@ -113,6 +114,13 @@ function findCompletedPlanReview({ taskFolder, journalEvents = [], taskId }) {
  * Uses agents.reviewer.plan pins via runStepReview → buildReviewerPiArgs (SP-695 / #250).
  *
  * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} params.worktreePath
+ * @param {Record<string, any>} [params.config]
+ * @param {number} [params.attempt]
+ * @param {Record<string, any>} [params.journal]
+ * @param {{ next: () => string } | null} [params.stubVerdicts]
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runEnginePlanReview({
 	taskFolder,
@@ -195,6 +203,17 @@ export async function runEnginePlanReview({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {string} params.exitReason
+ * @param {string|null} params.verdict
+ * @param {number} params.planReviewAttempt
+ * @param {Record<string, any>} params.config
+ * @param {string} params.taskFolder
  */
 function recordPlanReviewTaskFailure({
 	projectRoot,
@@ -242,7 +261,14 @@ function recordPlanReviewTaskFailure({
  * existing plan artifact/journal verdict, rework loop on REVISE, fail-closed
  * on exhaustion or invalid verdict.
  *
- * @param {object} params
+ * Params: projectRoot, state, batchId, config, task, lane,
+ * taskFolderInWorktree, wt, taskBranch, laneCorrelationId, fileScopePaths.
+ * Loosely typed because callers may forward a shared params bag
+ * (resume-lane-reviews.mjs) — same `Record<string, any>` pattern as
+ * state-guards.mjs.
+ *
+ * @param {Record<string, any>} params
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runPlanReviewPhase({
 	projectRoot,
@@ -296,7 +322,8 @@ export async function runPlanReviewPhase({
 		attemptField: "planReviewAttempts",
 		attemptKey: "planReviewAttempt",
 		maxAttempts: maxPlanReviewAttempts,
-		runEngineReview: (params) => runEnginePlanReview({ ...params, stubVerdicts }),
+		runEngineReview: (params) =>
+			runEnginePlanReview(/** @type {any} */ ({ ...params, stubVerdicts })),
 		recordReviewTaskFailure: recordPlanReviewTaskFailure,
 		invalidVerdictOutput: "plan review artifact missing APPROVE or REVISE verdict",
 		journalEvents,

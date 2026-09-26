@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Engine lane final review phase (SP-729 / #262).
  */
@@ -39,6 +38,14 @@ import {
 
 /**
  * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} params.worktreePath
+ * @param {Record<string, any>} [params.config]
+ * @param {number} [params.attempt]
+ * @param {any} [params.contractVerifyResult]
+ * @param {Record<string, any>} [params.journal]
+ * @param {{ next: () => string } | null} [params.stubVerdicts]
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runEngineFinalReview({
 	taskFolder,
@@ -103,6 +110,15 @@ export async function runEngineFinalReview({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {any} params.contractVerifyResult
+ * @param {Record<string, any>} params.config
+ * @param {string} params.taskFolder
  */
 function recordContractVerifyTaskFailure({
 	projectRoot,
@@ -153,6 +169,17 @@ function recordContractVerifyTaskFailure({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {string} params.exitReason
+ * @param {string|null} params.verdict
+ * @param {number} params.finalAttempt
+ * @param {Record<string, any>} params.config
+ * @param {string} params.taskFolder
  */
 function recordFinalReviewTaskFailure({
 	projectRoot,
@@ -195,7 +222,15 @@ function recordFinalReviewTaskFailure({
 }
 
 /**
- * @param {object} params
+ * Params: projectRoot, state, batchId, config, task, lane,
+ * taskFolderInWorktree, wt, taskBranch, laneCorrelationId, fileScopePaths,
+ * baseBranch.
+ * Loosely typed because callers may forward a shared params bag
+ * (resume-lane-reviews.mjs) — same `Record<string, any>` pattern as
+ * state-guards.mjs.
+ *
+ * @param {Record<string, any>} params
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runFinalReviewPhase({
 	projectRoot,
@@ -248,7 +283,8 @@ export async function runFinalReviewPhase({
 		attemptField: "finalAttempts",
 		attemptKey: "finalAttempt",
 		maxAttempts: maxFinalAttempts,
-		runEngineReview: (params) => runEngineFinalReview({ ...params, stubVerdicts }),
+		runEngineReview: (params) =>
+			runEngineFinalReview(/** @type {any} */ ({ ...params, stubVerdicts })),
 		recordReviewTaskFailure: recordFinalReviewTaskFailure,
 		invalidVerdictOutput: "final review artifact missing PASS, REVISE, or REPLAN verdict",
 		allowReplan: true,

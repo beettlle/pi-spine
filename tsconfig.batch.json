@@ -21,6 +21,10 @@
     "src/batch/engine-lanes/orch-sync.mjs",
     "src/batch/engine-lanes/commit.mjs",
     "src/batch/engine-lanes/queue.mjs",
+    "src/batch/engine-lanes/review-code.mjs",
+    "src/batch/engine-lanes/review-final.mjs",
+    "src/batch/engine-lanes/review-plan.mjs",
+    "src/batch/engine-lanes/review-poll.mjs",
     "types/micromatch.d.ts"
   ]
 }
