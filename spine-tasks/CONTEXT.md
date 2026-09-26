@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-09-21 (Phase 90 v2.22.0 release packets staged; Next → SP-768)
+**Last Updated:** 2026-09-26 (Phase 91 v2.23.0 release packets staged; Next → SP-774)
 **Status:** Active
-**Next Task ID:** SP-768
+**Next Task ID:** SP-774
 
 ---
 
@@ -2521,6 +2521,39 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [ ] Publish **v2.21.0** only after operator approval
 
 **Deferred:** #285 Wave C (Actions majors); #283/#284 typing; matrix epic #225/#231; P3 backlog.
+
+### Phase 90 — v2.22.0 MastodonML incident cluster (#287–#292) + peer 0.87
+
+**Authoring:** 2026-09-21 · Manifest: [`spine-tasks/_authoring/release-v2.22.0/manifest.md`](_authoring/release-v2.22.0/manifest.md)
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-759–SP-767 | DirtyWorktree / salvage / evidence / peer 0.87 | S/M | #287–#292 + peer | Done |
+
+**Release note (published):** v2.22.0 — see manifest publish checklist. #285 Wave C still deferred.
+
+### Phase 91 — v2.23.0 Actions Wave C (#285) + engine-lanes typing (#283)
+
+**Authoring:** 2026-09-26 · Manifest: [`spine-tasks/_authoring/release-v2.23.0/manifest.md`](_authoring/release-v2.23.0/manifest.md)
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-768 | Wave C: Actions majors (v7 / github-script v9) | S | #285 Partial | Pending |
+| SP-769 | Document Actions majors | S | #285 Closes | Pending |
+| SP-770 | Type small engine-lanes + facade | M | #283 Partial | Pending |
+| SP-771 | Type review-* engine-lanes | M | #283 Partial | Pending |
+| SP-772 | Type matrix/merge engine-lanes | M | #283 Closes | Pending |
+| SP-773 | Document engine-lanes typing | S | #283 docs | Pending |
+
+**Phase 91 exit criteria:**
+
+- [ ] Operator approved release scope (manifest)
+- [ ] SP-768–SP-773 `.DONE` and integrated on `main`
+- [ ] #285 and #283 CLOSED
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Publish **v2.23.0** only after operator approval
+
+**Deferred:** #284 typing Phase 3; matrix epic #225/#231; P3 backlog; TypeScript 7 / `@types/node` 26.
 
 ---
 
