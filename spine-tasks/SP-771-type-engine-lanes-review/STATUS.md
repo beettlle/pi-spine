@@ -1,6 +1,6 @@
 # SP-771: Type review-* engine-lanes — Status
 
-**Current Step:** Step 1 — Type review-* engine-lanes
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
@@ -25,10 +25,10 @@
 - [x] Shrink allowlist for four modules
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint + Contract testCommand
-- [ ] Fix failures
+- [x] lint + Contract testCommand (all green: eslint 0 warnings; typecheck both projects; batch tsc 0 errors; arch guard 4/4)
+- [x] Fix failures (10 initial tsc errors fixed — see Discoveries)
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
