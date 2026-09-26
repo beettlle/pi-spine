@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Engine lane review stub verdict queues (SP-728 / #262).
  *
@@ -69,7 +68,7 @@ export function createStubVerdictQueue({ queueValue, singleValue, normalize, def
  * @param {string} params.singleEnv Env var holding the single-verdict fallback.
  * @param {(raw: string) => string|null} params.normalize Verdict normalizer.
  * @param {string} params.defaultVerdict Fallback when nothing else resolves.
- * @param {NodeJS.ProcessEnv} [env]
+ * @param {NodeJS.ProcessEnv} [params.env]
  */
 export function createStubVerdictQueueFromEnv({
 	queueEnv,
