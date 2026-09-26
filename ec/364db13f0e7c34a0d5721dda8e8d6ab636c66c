@@ -1,0 +1,14 @@
+spine-tasks/SP-769-docs-actions-wave-c/STATUS.md
+  h_2a17159c706ba1 3-4,27,29,32,34-35,45-46,50-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ec364db13f0e7c34a0d5721dda8e8d6ab636c66c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
