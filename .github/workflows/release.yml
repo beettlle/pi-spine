@@ -33,7 +33,7 @@ jobs:
           fi
 
       - name: Checkout at tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.ref.outputs.tag }}
 
@@ -41,7 +41,7 @@ jobs:
         id: ci_gate
         # Release-safe profile: same validation as ci.yml (typecheck, lint, coverage, CLI smoke).
         # Fail closed when CI failed on this commit; skip duplicate steps when CI already succeeded.
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const sha = context.sha;
@@ -74,7 +74,7 @@ jobs:
             }
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           # registry-url is required so npm targets registry.npmjs.org; strip the
