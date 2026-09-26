@@ -115,6 +115,10 @@ The `peerDependencies` entries for `@earendil-works/pi-coding-agent` and `typebo
 
 Dev toolchain majors shipped in Wave B: TypeScript `6.0.3` (TS7 intentionally deferred), ESLint `^10.10.0`, `globals` `^17.12.0`, with `@types/node` held on the `^22.x` line. These are dev-only pins — they do not change `engines.node` or the runtime floors above.
 
+### Wave C Actions majors (CI/release workflows, [#285](https://github.com/beettlle/pi-spine/issues/285))
+
+GitHub workflow Actions are pinned to current majors: `actions/checkout@v7` and `actions/setup-node@v7` in all three workflows (`ci.yml`, `release.yml`, `real-pi.yml`), `actions/upload-artifact@v7` in `ci.yml`, and `actions/github-script@v9` in `release.yml` (GitHub Release notes step). With this wave, #285 Waves A–C are complete — TypeScript 7 and `@types/node` 26 remain intentionally deferred; do not reopen them under #285.
+
 ## Pre-publish checklist
 
 - [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
