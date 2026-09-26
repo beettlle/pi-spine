@@ -1,0 +1,6 @@
+SP-773 complete.
+
+- docs/QUICK-REFERENCE.md: new "Batch module typing (#266)" section — engine-lanes + facade typed via tsconfig.batch.json, no @ts-nocheck, arch allowlist empty for engine-lanes; #284 (Phase 3) deferred.
+- docs/adoption/operator-runbook.md: rewrote stale typecheck paragraph (was: four modules + transitive nocheck) to current tsconfig.batch.json include incl. engine-lanes (#266 Phase 2 / #283, SP-770–772); #284 deferred.
+- Verification: Contract testCommand (true) exit 0; both File Scope paths changed; npx tsc --project tsconfig.batch.json --noEmit exit 0; SPINE_WORKER_STUB=1 npm test → 2608 pass / 43 fail, all nested_batch_spawn_blocked env class (parity with SP-772 baseline, zero regressions from docs-only diff).
+- No product code touched; .spine/rules-manifest.json hook churn reverted (Do NOT respected).
