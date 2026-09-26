@@ -1,0 +1,18 @@
+spine-tasks/SP-768-actions-wave-c/.DONE
+  h_2a17159c706ba1 1-3
+spine-tasks/SP-768-actions-wave-c/.reviews/0-20260926T201449.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-768-actions-wave-c/.reviews/final-20260926T201520.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "625487517442fb23985da0a8394c36bb62290a7b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
