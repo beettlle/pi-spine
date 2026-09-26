@@ -1,0 +1,14 @@
+spine-tasks/SP-773-docs-engine-lanes-typing/STATUS.md
+  h_2a17159c706ba1 3,26,28,31,42-44,48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "15bc9588054663570bd424be56d7fc3d6a3f15f0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
