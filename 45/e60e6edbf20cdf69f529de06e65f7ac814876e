@@ -1,0 +1,21 @@
+spine-tasks/SP-771-type-engine-lanes-review/.reviews/0-20260926T210027.md
+  s_fc42deacf2db9e::t_88698092fa12e4 1-8
+spine-tasks/SP-771-type-engine-lanes-review/.reviews/3-20260926T210039.md
+  s_fc42deacf2db9e::t_ec34958c82fdee 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "45e60e6edbf20cdf69f529de06e65f7ac814876e",
+  "prompts": {},
+  "sessions": {
+    "s_fc42deacf2db9e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-6354bdbd-6e30-490d-84d9-2726b12e71aa",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
