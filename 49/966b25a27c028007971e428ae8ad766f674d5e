@@ -1,0 +1,37 @@
+spine-tasks/SP-772-type-engine-lanes-matrix/.DONE
+  s_8173cb491c312a::t_9a5928454b3432 1
+spine-tasks/SP-772-type-engine-lanes-matrix/.reviews/0-20260926T214629.md
+  s_8173cb491c312a::t_feddcf8e17f43f 1-8
+spine-tasks/SP-772-type-engine-lanes-matrix/.reviews/3-20260926T214641.md
+  s_8173cb491c312a::t_d17001d2cc74ca 1-8
+spine-tasks/SP-772-type-engine-lanes-matrix/.reviews/final-20260926T214720.md
+  s_8173cb491c312a::t_df5ea5afc42117 1-11
+spine-tasks/SP-772-type-engine-lanes-matrix/STATUS.md
+  s_8173cb491c312a::t_e989defeec9bab 3-4,14,16-19,22,24-26,29,31-33,36,38-39,45-52,56-59
+src/batch/engine-lanes/matrix-run.mjs
+  s_8173cb491c312a::t_707e7f1df366e4 45,132-143,237,347-348,360,412,465,468-470,551-560,598,600,618,664,669-670,682,720-722,730,750-751,761
+src/batch/engine-lanes/matrix.mjs
+  s_8173cb491c312a::t_181ea632a3e41a 37,50-52,277-278,306,308
+src/batch/engine-lanes/merge.mjs
+  s_8173cb491c312a::t_40b187c258ac2e 71,115,165,181-182,200,224,232,247-248,255,281,285,418-421,439,450,485-500,524,590,628-642,656,674-675,683-684
+tests/arch/ts-nocheck-guard.test.mjs
+  s_8173cb491c312a::t_b01d914481ff53 36
+tsconfig.batch.json
+  s_8173cb491c312a::t_f74c3164e45510 28-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49966b25a27c028007971e428ae8ad766f674d5e",
+  "prompts": {},
+  "sessions": {
+    "s_8173cb491c312a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-586515c9-c8e5-455e-92e5-426201d414a2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
