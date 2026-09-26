@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Batch phase transition helpers for the engine-lanes facade.
  * Leaf module: journals phase changes without importing resume/limbo/reconcile.
@@ -19,7 +18,7 @@ function phaseTransitionEventType(fromPhase, toPhase) {
 }
 
 /**
- * @param {object} params
+ * @param {{ projectRoot: string, batchId: string, fromPhase: string, toPhase: string, extra?: Record<string, unknown> }} params
  */
 function recordPhaseTransition({ projectRoot, batchId, fromPhase, toPhase, extra = {} }) {
 	const type = phaseTransitionEventType(fromPhase, toPhase);
@@ -31,6 +30,13 @@ function recordPhaseTransition({ projectRoot, batchId, fromPhase, toPhase, extra
 	});
 }
 
+/**
+ * Mutate `state.phase` and journal the transition (SP-770).
+ *
+ * @param {Record<string, any>} state Batch state mutated in place.
+ * @param {string} newPhase
+ * @param {{ projectRoot: string, batchId: string, extra?: Record<string, unknown> }} ctx
+ */
 export function transitionPhase(state, newPhase, ctx) {
 	const fromPhase = state.phase;
 	if (fromPhase === newPhase) return;

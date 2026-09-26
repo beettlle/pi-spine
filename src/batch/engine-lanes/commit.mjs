@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lane commit and post-commit dirty validation (SP-427 / #73).
  */
@@ -27,15 +26,15 @@ const DIRTY_AFTER_COMMIT_MESSAGE =
  * @param {string} params.taskId
  * @param {string} params.batchId
  * @param {string} params.taskFolder
- * @param {string} [params.projectRoot]
+ * @param {string} params.projectRoot
  * @param {string[]} [params.fileScopePaths]
  * @param {string[]} [params.ignorePatterns]
- * @param {object} params.task
- * @param {object} params.lane
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
  * @param {number} params.laneNumber
  * @param {string} params.laneCorrelationId
- * @param {object} params.state
- * @param {object} params.config
+ * @param {Record<string, any>} params.state
+ * @param {Record<string, any>} params.config
  * @returns {{ ok: true, laneCommit: object } | { ok: false, error: string, output?: string }}
  */
 export function commitLaneAndValidateWorktree({

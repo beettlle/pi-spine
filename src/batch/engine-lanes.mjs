@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lane task execution facade — re-exports split modules and phase transitions.
  *
@@ -90,6 +89,22 @@ export { runMatrixTaskOnLane, runMatrixSubLane } from "./engine-lanes/matrix-run
 
 export { transitionPhase } from "./engine-lanes/phase.mjs";
 
+/**
+ * Run one task on its lane: file-scope load, matrix fan-out, or the single
+ * worker path (SP-770 typing).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {string} [params.baseBranch]
+ * @param {Record<string, any>} params.config
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.taskFolderRel
+ * @param {string} params.laneCorrelationId
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
+ */
 export async function runTaskOnLane({
 	projectRoot,
 	state,
@@ -125,7 +140,8 @@ export async function runTaskOnLane({
 	// global in-flight workers never exceed `lanes.maxParallel`.
 	const matrixRows = loadMatrixTaskRows(path.join(projectRoot, taskFolderRel));
 	if (matrixRows) {
-		return runMatrixTaskOnLane({
+		/** @type {{ maxParallel: number } & Record<string, any>} */
+		const matrixParams = {
 			projectRoot,
 			state,
 			batchId,
@@ -138,7 +154,8 @@ export async function runTaskOnLane({
 			fileScopePaths,
 			matrix: matrixRows,
 			maxParallel: config?.lanes?.maxParallel ?? 1,
-		});
+		};
+		return runMatrixTaskOnLane(matrixParams);
 	}
 
 	const laneSlot = await acquireLaneSlot(state, config?.lanes?.maxParallel ?? 1);
@@ -165,6 +182,17 @@ export async function runTaskOnLane({
  * for the duration of this call.
  *
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {string} [params.baseBranch]
+ * @param {Record<string, any>} params.config
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.taskFolderRel
+ * @param {string} params.laneCorrelationId
+ * @param {string[]} params.fileScopePaths
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 async function runNonMatrixTaskOnLane({
 	projectRoot,
@@ -256,7 +284,7 @@ async function runNonMatrixTaskOnLane({
 		correlationId: laneCorrelationId,
 	});
 
-	const workerResult = await runWorker({
+	const workerResult = /** @type {any} */ (await runWorker({
 		worktreePath: wt,
 		taskFolder: taskFolderInWorktree,
 		projectRoot,
@@ -277,7 +305,7 @@ async function runNonMatrixTaskOnLane({
 				saveEngineBatchState(projectRoot, state);
 			}
 		},
-	});
+	}));
 
 	if (!workerResult.ok) {
 		const doneOnDisk = fs.existsSync(path.join(taskFolderInWorktree, ".DONE"));

@@ -14,6 +14,13 @@
     "src/batch/contract-exec.mjs",
     "src/process/liveness.mjs",
     "src/config/spine-config-load.mjs",
+    "src/batch/engine-lanes.mjs",
+    "src/batch/engine-lanes/review.mjs",
+    "src/batch/engine-lanes/phase.mjs",
+    "src/batch/engine-lanes/review-stub.mjs",
+    "src/batch/engine-lanes/orch-sync.mjs",
+    "src/batch/engine-lanes/commit.mjs",
+    "src/batch/engine-lanes/queue.mjs",
     "types/micromatch.d.ts"
   ]
 }

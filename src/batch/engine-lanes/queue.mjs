@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lane queue and provisioning — build lane/task state from plan and handle
  * per-lane task prep (file scope) plus skip-when-done-on-disk queue behavior.
@@ -20,20 +19,28 @@ import { laneTaskBranch, laneWorktreePath } from "../worktree.mjs";
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} [params.config]
+ * @param {string} [params.taskFolder]
+ * @param {{ laneNumber?: number }} [params.lane]
  */
 export function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskFolder, lane }) {
-	recordTaskTerminalMetric({
+	const metricParams = {
 		projectRoot,
 		batchId,
 		task,
 		config,
 		taskFolder,
 		laneNumber: lane?.laneNumber ?? task?.laneNumber,
-	});
+	};
+	recordTaskTerminalMetric(metricParams);
 }
 
 /**
  * @param {string} taskFolderPath
+ * @returns {{ ok: true, fileScopePaths: string[] } | { ok: false, error: string, errors?: string[], promptPath: string }}
  */
 export function loadTaskFileScopePaths(taskFolderPath) {
 	try {
@@ -58,6 +65,15 @@ export function loadTaskFileScopePaths(taskFolderPath) {
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {{ laneNumber?: number, laneId?: string }} params.lane
+ * @param {string} [params.laneCorrelationId]
+ * @param {{ ok: false, error: string, errors?: string[], promptPath?: string }} params.scopeResult
+ * @param {Record<string, any>} [params.config]
+ * @param {string} [params.taskFolderPath]
  */
 export function recordPromptParseFailure({
 	projectRoot,
@@ -122,9 +138,15 @@ export function recordPromptParseFailure({
 
 /**
  * @param {object} params
+ * @param {any} params.plan
+ * @param {Array<{ taskId: string, folderPath?: string }>} params.discovered
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {number} params.maxLaneNumber
  */
 export function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batchId, maxLaneNumber }) {
 	const assignments = buildTaskLaneAssignments(plan);
+	/** @type {string[]} */
 	const taskIds = countPlanTasks(plan);
 
 	/** @type {Record<number, string[]>} */
@@ -166,6 +188,14 @@ export function buildTasksAndLanesFromPlan({ plan, discovered, projectRoot, batc
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {{ laneNumber?: number, laneId?: string }} params.lane
+ * @param {string} params.taskFolderPath
+ * @param {string} [params.laneCorrelationId]
+ * @param {Record<string, any>} [params.config]
  */
 export function skipTaskDoneOnDisk({
 	projectRoot,

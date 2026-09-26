@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Orch→lane sync when satisfied deps share File Scope (FR-REL231-03 / #191).
  */
@@ -12,7 +11,7 @@ import { syncLaneWorktreeFromOrch } from "../worktree.mjs";
 
 /**
  * @param {string} projectRoot
- * @param {object} [config]
+ * @param {Record<string, any>} config
  */
 function resolveBatchTasksRoot(projectRoot, config) {
 	return resolveTasksRootPath(projectRoot, config) ?? path.join(projectRoot, "spine-tasks");
@@ -21,7 +20,7 @@ function resolveBatchTasksRoot(projectRoot, config) {
 /**
  * @param {string} tasksRoot
  * @param {string} taskId
- * @param {object[]} [stateTasks]
+ * @param {Array<Record<string, any>>} [stateTasks]
  */
 function resolveTaskFolderPath(tasksRoot, taskId, stateTasks = []) {
 	const fromState = stateTasks.find((entry) => entry?.taskId === taskId)?.taskFolder;
@@ -38,10 +37,10 @@ function resolveTaskFolderPath(tasksRoot, taskId, stateTasks = []) {
  *
  * @param {object} params
  * @param {string} params.projectRoot
- * @param {object} params.state
+ * @param {Record<string, any>} params.state
  * @param {string} params.taskId
  * @param {string[]} params.fileScopePaths
- * @param {object} [params.config]
+ * @param {Record<string, any>} [params.config]
  * @returns {Array<{ depId: string, overlap: string[] }>}
  */
 export function collectSharedScopeSatisfiedDeps({
@@ -54,7 +53,9 @@ export function collectSharedScopeSatisfiedDeps({
 	if (!Array.isArray(fileScopePaths) || fileScopePaths.length === 0) return [];
 
 	const tasksRoot = resolveBatchTasksRoot(projectRoot, config);
-	const deps = loadDependenciesJson(tasksRoot).tasks?.[taskId] ?? [];
+	/** @type {{ tasks?: Record<string, string[]> }} */
+	const depsIndex = loadDependenciesJson(tasksRoot);
+	const deps = depsIndex.tasks?.[taskId] ?? [];
 	if (!Array.isArray(deps) || deps.length === 0) return [];
 
 	const scopeSet = new Set(fileScopePaths);
@@ -85,6 +86,12 @@ export function collectSharedScopeSatisfiedDeps({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.taskId
+ * @param {string[]} params.fileScopePaths
+ * @param {string} params.worktreePath
+ * @param {Record<string, any>} [params.config]
  * @returns {{ ok: true, synced: boolean, skipped?: boolean, sharedDeps: Array<{ depId: string, overlap: string[] }>, headSha?: string } | { ok: false, error: string, sharedDeps: Array<{ depId: string, overlap: string[] }> }}
  */
 export function ensureLaneSyncedForSharedScopeDeps({
