@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Shared review poll-loop mechanics for the engine lane review phases
  * (SP-727 / #262). Extracted from review.mjs so the plan, code, and final
@@ -38,12 +37,12 @@ export function removeDoneFile(taskFolder) {
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.batchId
- * @param {object} params.task
- * @param {object} params.lane
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
  * @param {string} params.laneCorrelationId
  * @param {"plan"|"code"|"final"} params.reviewType
  * @param {number} params.reviewAttempt
- * @param {object} params.honored
+ * @param {Record<string, any>} params.honored
  * @param {"review.crash_recovered"|"review.skipped_fresh_artifact"|null} params.honorJournalEvent
  */
 export function appendReviewHonorJournalEvents({
@@ -105,6 +104,15 @@ export function appendReviewHonorJournalEvents({
  * @param {string} params.attemptField Task state field, e.g. "codeReviewAttempts".
  * @param {string} params.attemptKey Journal payload key, e.g. "codeReviewAttempt".
  * @param {Function} params.findCompletedReview ({ taskFolder, journalEvents, taskId }) => honored|null
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {string} params.taskFolder
+ * @param {Array<Record<string, any>>} params.journalEvents
+ * @returns {{ ok: boolean, [key: string]: any } | null}
  */
 export function honorCompletedReview({
 	reviewType,
@@ -130,7 +138,9 @@ export function honorCompletedReview({
 	const honorJournalEvent = resolveReviewHonorJournalEvent({
 		journalEvents,
 		taskId,
-		reviewType,
+		// review-artifacts.mjs predates the plan phase and still narrows the
+		// JSDoc to "code"|"final"; its body treats all three types alike.
+		reviewType: /** @type {"code"|"final"} */ (reviewType),
 		honorSource: honored.source,
 		reviewAttempt,
 	});
@@ -178,12 +188,25 @@ export function honorCompletedReview({
  * @param {string} params.attemptField Task state field, e.g. "codeReviewAttempts".
  * @param {string} params.attemptKey Journal payload key, e.g. "codeReviewAttempt".
  * @param {number} params.maxAttempts
- * @param {Function} params.runEngineReview Async engine review fn (e.g. runEngineCodeReview).
+ * @param {(reviewParams: Record<string, any>) => any} params.runEngineReview Async engine review fn (e.g. runEngineCodeReview).
  * @param {Function} params.recordReviewTaskFailure Phase-specific failure recorder.
  * @param {string} params.invalidVerdictOutput Output message for the invalid-verdict failure.
  * @param {boolean} [params.allowReplan] Final phase only: handle REPLAN as needs_replan.
- * @param {Function} [params.beforeReview] Async hook per iteration; returns
+ * @param {((hookParams: { attempt: number }) => Promise<{ abort?: any, extraReviewParams?: Record<string, any> } | undefined>) | null} [params.beforeReview] Async hook per iteration; returns
  *   { abort: result } to stop the loop or { extraReviewParams: object } to continue.
+ * @param {Array<Record<string, any>>} params.journalEvents
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.config
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.taskFolderInWorktree
+ * @param {string} params.wt
+ * @param {string} params.taskBranch
+ * @param {string} params.laneCorrelationId
+ * @param {string[]} params.fileScopePaths
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runReviewPollLoop({
 	reviewType,
@@ -355,7 +378,7 @@ export async function runReviewPollLoop({
 			}
 
 			removeDoneFile(taskFolderInWorktree);
-			const reworkResult = await runWorker({
+			const reworkResult = /** @type {any} */ (await runWorker({
 				worktreePath: wt,
 				taskFolder: taskFolderInWorktree,
 				projectRoot,
@@ -376,7 +399,7 @@ export async function runReviewPollLoop({
 						saveSpineBatchState(projectRoot, state);
 					}
 				},
-			});
+			}));
 			if (!reworkResult.ok) {
 				const aborted = reworkResult.classification === "aborted";
 				task.status = aborted ? "aborted" : "failed";

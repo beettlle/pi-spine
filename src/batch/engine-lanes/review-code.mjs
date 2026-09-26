@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Engine lane code review phase (SP-729 / #262).
  */
@@ -30,6 +29,13 @@ import {
 
 /**
  * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} params.worktreePath
+ * @param {Record<string, any>} [params.config]
+ * @param {number} [params.attempt]
+ * @param {Record<string, any>} [params.journal]
+ * @param {{ next: () => string } | null} [params.stubVerdicts]
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runEngineCodeReview({
 	taskFolder,
@@ -112,6 +118,17 @@ export async function runEngineCodeReview({
 
 /**
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
+ * @param {string} params.laneCorrelationId
+ * @param {string} params.exitReason
+ * @param {string|null} params.verdict
+ * @param {number} params.codeReviewAttempt
+ * @param {Record<string, any>} params.config
+ * @param {string} params.taskFolder
  */
 function recordCodeReviewTaskFailure({
 	projectRoot,
@@ -154,7 +171,14 @@ function recordCodeReviewTaskFailure({
 }
 
 /**
- * @param {object} params
+ * Params: projectRoot, state, batchId, config, task, lane,
+ * taskFolderInWorktree, wt, taskBranch, laneCorrelationId, fileScopePaths.
+ * Loosely typed because callers may forward a shared params bag
+ * (resume-lane-reviews.mjs) — same `Record<string, any>` pattern as
+ * state-guards.mjs.
+ *
+ * @param {Record<string, any>} params
+ * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runCodeReviewPhase({
 	projectRoot,
@@ -205,7 +229,8 @@ export async function runCodeReviewPhase({
 		attemptField: "codeReviewAttempts",
 		attemptKey: "codeReviewAttempt",
 		maxAttempts: maxCodeReviewAttempts,
-		runEngineReview: (params) => runEngineCodeReview({ ...params, stubVerdicts }),
+		runEngineReview: (params) =>
+			runEngineCodeReview(/** @type {any} */ ({ ...params, stubVerdicts })),
 		recordReviewTaskFailure: recordCodeReviewTaskFailure,
 		invalidVerdictOutput: "code review artifact missing APPROVE or REVISE verdict",
 		journalEvents,
