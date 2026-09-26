@@ -1,0 +1,14 @@
+spine-tasks/SP-769-docs-actions-wave-c/.DONE
+  h_2a17159c706ba1 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c2570206b0fd43f2d487e31f5039ffca6bd4157b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
