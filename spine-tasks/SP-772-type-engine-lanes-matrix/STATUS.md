@@ -1,6 +1,6 @@
 # SP-772: Type matrix/merge engine-lanes — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
@@ -26,11 +26,11 @@
 - [x] Clear remaining engine-lanes allowlist entries (zero remain; stray double-tab on first entry fixed)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint + Contract testCommand
-- [ ] rg nocheck empty under engine-lanes
-- [ ] Fix failures
+- [x] lint + Contract testCommand (`npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` → exit 0; guard tests 4/4 pass)
+- [x] rg nocheck empty under engine-lanes (exit 1, no matches; `src/batch/engine-lanes.mjs` also clean)
+- [x] Fix failures — full stub suite: 2608 pass / 43 fail; A/B rerun of the 43 failing tests with HEAD vs HEAD~1 sources → identical 75/118 pass/fail both ways ⇒ zero regressions; all 43 are pre-existing worker-env failures (`SPINE_IS_WORKER=1` → `nested_batch_spawn_blocked` / spawn timeouts in batch-engine tests)
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
