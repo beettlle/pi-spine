@@ -800,6 +800,10 @@ During a batch, the engine polls lane progress (STATUS.md mtime, lane-branch com
 
 Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook.md](./adoption/operator-runbook.md) §9.
 
+### Batch module typing (#266)
+
+`src/batch/engine-lanes/` and the `engine-lanes.mjs` facade are type-checked via `tsconfig.batch.json` with no `// @ts-nocheck` (#266 Phase 2 / #283 — SP-770–SP-772; the arch guard allowlist in `tests/arch/ts-nocheck-guard.test.mjs` holds no engine-lanes entries). Other batch modules (reconcile/doctor clusters) remain allowlisted; typing them is deferred to #266 Phase 3 (#284). Run `npx tsc --project tsconfig.batch.json --noEmit` after touching included modules.
+
 ---
 
 ## 📖 Further Reading
