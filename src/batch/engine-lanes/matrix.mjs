@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Matrix sub-lane execution (SP-671 / #217).
  *
@@ -35,7 +34,7 @@ import { appendJournalEvent } from "../journal.mjs";
  * task is not a matrix task.
  *
  * @param {string} taskFolderPath Absolute path to the task folder (parent for matrix).
- * @returns {{ rows: Array<{ rowId: string, values: Record<string,string> }>, columns: string[], type: string } | null}
+ * @returns {{ rows: Array<{ rowId: string, values: Record<string,string> }>, columns: string[], type: "execute" | "llm" } | null}
  */
 export function loadMatrixTaskRows(taskFolderPath) {
 	if (!taskFolderPath || !fs.existsSync(path.join(taskFolderPath, "PROMPT.md"))) {
@@ -48,7 +47,9 @@ export function loadMatrixTaskRows(taskFolderPath) {
 		return null;
 	}
 	const prompt = packet?.prompt;
-	const matrix = Array.isArray(prompt?.matrix) ? prompt.matrix : null;
+	const matrix = /** @type {Array<Record<string, string>> | null} */ (
+		Array.isArray(prompt?.matrix) ? prompt.matrix : null
+	);
 	if (!matrix || matrix.length === 0) return null;
 	const columns = Array.isArray(prompt.matrixColumns) ? prompt.matrixColumns : [];
 	const rows = matrix.map((values) => ({
@@ -273,8 +274,8 @@ export function removeMatrixSubLaneWorktree(projectRoot, worktreePath, branch) {
  * @returns {Record<string, string> | null}
  */
 export function buildMatrixRowEnv({ taskId, rowId, rowIndex, rowCount }) {
-	if (!Number.isInteger(rowIndex) || rowIndex < 0) return null;
-	if (!Number.isInteger(rowCount) || rowCount < 0) return null;
+	if (typeof rowIndex !== "number" || !Number.isInteger(rowIndex) || rowIndex < 0) return null;
+	if (typeof rowCount !== "number" || !Number.isInteger(rowCount) || rowCount < 0) return null;
 	return {
 		SPINE_MATRIX_JOB_ID: String(taskId ?? ""),
 		SPINE_MATRIX_TASK_ID: String(rowId ?? ""),
@@ -302,8 +303,9 @@ export function runShellInDir(cwd, command, extraEnv = null) {
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 		let output = "";
+		/** @type {(chunk: unknown) => void} */
 		const append = (chunk) => {
-			output += chunk.toString();
+			output += String(chunk);
 		};
 		child.stdout?.on("data", append);
 		child.stderr?.on("data", append);

@@ -33,7 +33,7 @@ const NOCHECK_PATTERN = /@ts-nocheck/;
  * @type {ReadonlySet<string>}
  */
 const NOCHECK_ALLOWLIST = new Set([
-		"src/batch/abort.mjs",
+	"src/batch/abort.mjs",
 	"src/batch/agent-session-worker.mjs",
 	"src/batch/attached-engine-handoff.mjs",
 	"src/batch/attached-runner-promote.mjs",
@@ -63,9 +63,6 @@ const NOCHECK_ALLOWLIST = new Set([
 	"src/batch/diagnosis-task-done.mjs",
 	"src/batch/diagnosis-worker-done-missing.mjs",
 	"src/batch/diagnosis.mjs",
-	"src/batch/engine-lanes/matrix-run.mjs",
-	"src/batch/engine-lanes/matrix.mjs",
-	"src/batch/engine-lanes/merge.mjs",
 	"src/batch/engine-scope.mjs",
 	"src/batch/evidence.mjs",
 	"src/batch/gate-evidence-collect.mjs",
