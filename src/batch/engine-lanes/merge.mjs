@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Engine lane merge-phase wiring — lane→orch merges and rules-manifest conflict resolution.
  */
@@ -69,6 +68,7 @@ function listUnmergedPaths(projectRoot) {
 /**
  * @param {string} projectRoot
  * @param {string} ref
+ * @returns {{ ok: true, manifest: import("../../config/cursor-rules/discover.mjs").CursorRulesManifest } | { ok: false, error: string }}
  */
 function readRulesManifestFromRef(projectRoot, ref) {
 	const output = git(projectRoot, ["show", `${ref}:${RULES_MANIFEST_REL_PATH}`], {
@@ -112,6 +112,7 @@ export { resolveRulesManifestIntegrateDrift } from "../rules-manifest-drift.mjs"
 /**
  * @param {string} projectRoot
  * @param {2 | 3} stage
+ * @returns {{ ok: true, manifest: import("../../config/cursor-rules/discover.mjs").CursorRulesManifest } | { ok: false, error: string }}
  */
 function readRulesManifestMergeStage(projectRoot, stage) {
 	const output = git(projectRoot, ["show", `:${stage}:${RULES_MANIFEST_REL_PATH}`], {
@@ -161,7 +162,7 @@ function resolveRulesManifestMergeConflict(projectRoot) {
 	const theirsResult = readRulesManifestMergeStage(projectRoot, 3);
 	if (!oursResult.ok || !theirsResult.ok) {
 		return {
-			ok: false,
+			ok: /** @type {const} */ (false),
 			error: "unable to read rules-manifest merge stages",
 		};
 	}
@@ -177,8 +178,8 @@ function resolveRulesManifestMergeConflict(projectRoot) {
 	writeRulesManifestAtomic(projectRoot, resolved.manifest);
 	gitAddFilteredPaths(projectRoot, [RULES_MANIFEST_REL_PATH], { projectRoot });
 	return {
-		ok: true,
-		autoResolved: true,
+		ok: /** @type {const} */ (true),
+		autoResolved: /** @type {const} */ (true),
 		generatedAt: resolved.manifest.generatedAt,
 	};
 }
@@ -196,7 +197,7 @@ function tryAutoResolveOutOfScopeMergeConflict({
 	projectRoot,
 	filePath,
 	laneFileScopePaths,
-	_laneChangedFiles,
+	laneChangedFiles: _laneChangedFiles,
 }) {
 	if (pathInLaneFileScope(filePath, laneFileScopePaths)) {
 		return { ok: false, reason: "in_lane_file_scope" };
@@ -220,7 +221,7 @@ function tryAutoResolveOutOfScopeMergeConflict({
 }
 
 /**
- * @param {object} state
+ * @param {Record<string, any>} state
  * @param {number} laneNumber
  * @param {string[]} waveTaskIds
  */
@@ -228,7 +229,7 @@ function collectLaneWaveFileScope(state, laneNumber, waveTaskIds) {
 	/** @type {Set<string>} */
 	const patterns = new Set();
 	for (const taskId of waveTaskIds) {
-		const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+		const task = (state.tasks ?? []).find((/** @type {any} */ entry) => entry?.taskId === taskId);
 		if (!task || task.laneNumber !== laneNumber) continue;
 		const folder = task.taskFolder;
 		if (!folder) continue;
@@ -243,12 +244,15 @@ function collectLaneWaveFileScope(state, laneNumber, waveTaskIds) {
 }
 
 /**
+ * Auto-resolve lane→orch merge conflicts for known conflict classes.
+ *
  * @param {string} projectRoot
  * @param {object} [options]
  * @param {string[]} [options.laneFileScopePaths]
  * @param {string} [options.taskBranch]
  * @param {string} [options.orchBranch]
  * @param {number} [options.waveIndex]
+ * @returns {{ ok: true, autoResolved: true, generatedAt?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], skippedGitignoredPaths?: string[] }}
  */
 export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	const { laneFileScopePaths = [], taskBranch, orchBranch, waveIndex } = options;
@@ -274,11 +278,11 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	/** @type {Set<string>} */
 	let laneChangedFiles = new Set();
 	if (canResolveOutOfScope) {
-		const mergeBase = git(projectRoot, ["merge-base", orchBranch, taskBranch], {
+		const mergeBase = git(projectRoot, ["merge-base", /** @type {string} */ (orchBranch), /** @type {string} */ (taskBranch)], {
 			throwOnError: false,
 		});
 		if (mergeBase) {
-			laneChangedFiles = listBranchChangedFiles(projectRoot, mergeBase, taskBranch);
+			laneChangedFiles = listBranchChangedFiles(projectRoot, mergeBase, /** @type {string} */ (taskBranch));
 		}
 	}
 
@@ -411,7 +415,10 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	};
 }
 
-/** @deprecated use tryAutoResolveMergeConflicts */
+/**
+ * @deprecated use tryAutoResolveMergeConflicts
+ * @param {string} projectRoot
+ */
 export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
 	return tryAutoResolveMergeConflicts(projectRoot, {});
 }
@@ -425,14 +432,11 @@ function gitStrict(projectRoot, args) {
 }
 
 /**
- * @param {object} params
- * @param {boolean} [params.requireLaneCommits] When true, task branch must be ahead of orch before merge (post lane auto-commit).
- */
-/**
  * Clear generatedAt-only rules-manifest drift on the working tree before lane→orch merge.
  * Workers refresh the manifest during pi sessions; an uncommitted copy blocks `git merge`.
  *
  * @param {string} projectRoot
+ * @returns {{ ok: true, resolved: boolean, action?: string } | { ok: false, failureClass: string, error: string }}
  */
 function resolveRulesManifestPreMergeDrift(projectRoot) {
 	const dirtyPaths = listDirtyPaths(projectRoot);
@@ -443,7 +447,7 @@ function resolveRulesManifestPreMergeDrift(projectRoot) {
 		return { ok: true, resolved: false };
 	}
 
-	const headRef = gitStrict(projectRoot, ["rev-parse", "HEAD"]);
+	const headRef = /** @type {string} */ (gitStrict(projectRoot, ["rev-parse", "HEAD"]));
 	const headResult = readRulesManifestFromRef(projectRoot, headRef);
 	const working = loadRulesManifest(projectRoot);
 	if (!working) {
@@ -478,6 +482,22 @@ function resolveRulesManifestPreMergeDrift(projectRoot) {
 	return { ok: true, resolved: true, action: "restored_head_for_lane_merge" };
 }
 
+/**
+ * Merge a lane task branch into the orch branch, auto-resolving known conflict
+ * classes (rules-manifest, adoption/PRD docs, out-of-scope dependency drift).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ * @param {string} params.taskBranch
+ * @param {string} params.batchId
+ * @param {boolean} [params.requireLaneCommits] When true, task branch must be ahead of orch before merge (post lane auto-commit).
+ * @param {string[]} [params.laneFileScopePaths]
+ * @param {string[]} [params.laneTaskFolders]
+ * @param {number} [params.waveIndex]
+ * @returns {{ ok: true, mergeCommit: string, commitsAhead: number } | { ok: false, failureClass?: string, error: string, outOfScopePaths?: string[], skippedGitignoredPaths?: string[] }}
+ */
 export function mergeLaneToOrch({
 	projectRoot,
 	baseBranch,
@@ -501,7 +521,7 @@ export function mergeLaneToOrch({
 			};
 		}
 
-		const orchHeadBefore = gitStrict(projectRoot, ["rev-parse", orchBranch]);
+		const orchHeadBefore = /** @type {string} */ (gitStrict(projectRoot, ["rev-parse", orchBranch]));
 		const commitsAhead = countCommitsAhead(projectRoot, orchBranch, taskBranch);
 
 		if (Array.isArray(laneTaskFolders) && laneTaskFolders.length > 0) {
@@ -567,7 +587,7 @@ export function mergeLaneToOrch({
 			gitStrict(projectRoot, ["commit", "--no-edit"]);
 		}
 
-		const mergeCommit = gitStrict(projectRoot, ["rev-parse", "HEAD"]);
+		const mergeCommit = /** @type {string} */ (gitStrict(projectRoot, ["rev-parse", "HEAD"]));
 
 		if (requireLaneCommits && mergeCommit === orchHeadBefore) {
 			return {
@@ -605,9 +625,21 @@ export function mergeLaneToOrch({
 }
 
 /**
- * @param {object} params — includes optional `finalizeAfterWaveMerge(hookParams)` hook injected
- *   by callers that own the limbo graph (`maybeFinalizeAfterWaveMerge` from post-merge-limbo.mjs,
- *   SP-734). Omitted → skip post-wave-merge finalize.
+ * Merge every succeeded lane of a wave into the orch branch, then run the
+ * optional `finalizeAfterWaveMerge(hookParams)` hook injected by callers that
+ * own the limbo graph (`maybeFinalizeAfterWaveMerge` from post-merge-limbo.mjs,
+ * SP-734). Omitted → skip post-wave-merge finalize.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {Record<string, any>} params.state
+ * @param {string} params.batchId
+ * @param {string} params.baseBranch
+ * @param {string} params.orchBranch
+ * @param {number} params.waveIndex
+ * @param {boolean} [params.resumed]
+ * @param {((params: object) => unknown) | null} [params.finalizeAfterWaveMerge]
+ * @returns {{ ok: true, mergeCommit: string | null, finalized: boolean, finalizeResult: unknown } | { ok: false, error: string, laneNumber?: number, failureClass?: string | null, blockedBy?: string, exitReason?: string }}
  */
 export function mergeWaveLanesToOrch({
 	projectRoot,
@@ -621,7 +653,7 @@ export function mergeWaveLanesToOrch({
 }) {
 	const waveTaskIds = state.wavePlan?.[waveIndex] ?? [];
 	const needsReplanTask = (state.tasks ?? []).find(
-		(entry) =>
+		(/** @type {any} */ entry) =>
 			waveTaskIds.includes(entry?.taskId) && entry?.exitReason === "needs_replan",
 	);
 	if (needsReplanTask) {
@@ -639,8 +671,8 @@ export function mergeWaveLanesToOrch({
 	for (const lane of lanes) {
 		const laneNumber = lane.laneNumber;
 		const waveTaskIds = state.wavePlan?.[waveIndex] ?? [];
-		const laneSucceeded = waveTaskIds.some((taskId) => {
-			const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+		const laneSucceeded = waveTaskIds.some((/** @type {any} */ taskId) => {
+			const task = (state.tasks ?? []).find((/** @type {any} */ entry) => entry?.taskId === taskId);
 			return task && task.laneNumber === laneNumber && task.status === "succeeded";
 		});
 		if (!laneSucceeded) continue;
@@ -648,8 +680,8 @@ export function mergeWaveLanesToOrch({
 		const taskBranch = lane.branch ?? laneTaskBranch(batchId, laneNumber);
 		const laneFileScopePaths = collectLaneWaveFileScope(state, laneNumber, waveTaskIds);
 		const laneTaskFolders = waveTaskIds
-			.map((taskId) => {
-				const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+			.map((/** @type {any} */ taskId) => {
+				const task = (state.tasks ?? []).find((/** @type {any} */ entry) => entry?.taskId === taskId);
 				if (!task || task.laneNumber !== laneNumber || !task.taskFolder) return null;
 				return task.taskFolder;
 			})

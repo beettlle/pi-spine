@@ -1,6 +1,6 @@
 # SP-772: Type matrix/merge engine-lanes — Status
 
-**Current Step:** Step 1 — Type matrix/merge engine-lanes
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
@@ -19,11 +19,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Type matrix/merge engine-lanes
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Remove nocheck + JSDoc
-- [ ] Expand tsconfig.batch include
-- [ ] Clear remaining engine-lanes allowlist entries
+- [x] Remove nocheck + JSDoc (matrix 4 errors, matrix-run 64, merge 42 — all fixed; see Discoveries)
+- [x] Expand tsconfig.batch include (matrix/matrix-run/merge added)
+- [x] Clear remaining engine-lanes allowlist entries (zero remain; stray double-tab on first entry fixed)
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
@@ -46,6 +46,10 @@
 | `PHASE23_GRANDFATHERED_OVER_500` in `bin/spine-cli/verify.mjs` is already `[]` (emptied by SP-593) | Nothing to grow; leave as-is |
 | `NOCHECK_ALLOWLIST` engine-lanes entries are exactly the three targets; first allowlist entry `src/batch/abort.mjs` has a stray double-tab indent (pre-existing) | Fix indent while pruning the three entries |
 | `watch.mjs` in engine-lanes has no nocheck and is not in tsconfig include — already typed, out of scope | Leave untouched |
+| `engine-lanes.mjs` facade calls `runMatrixTaskOnLane` with a `@type {{ maxParallel: number } & Record<string, any>}` bag (SP-671); that source type can never satisfy named required param props, so precise per-property JSDoc on `runMatrixTaskOnLane` broke the facade | Kept fix in-scope: param typed `Record<string, any>` with field docs as text; facade untouched |
+| `maybeFinalizeAfterWaveMerge` resolves to `(params: object) => object \| null` via factory JSDoc (post-merge-finalize.mjs), so `finalizeAfterWaveMerge` param typed `((params: object) => unknown) \| null` |
+| JSDoc property docs (`@param {string} params.x`) require `@param {object} params` — TS8032 with `Record<string, any>` param (verified empirically) | Matched existing repo convention: `Record<string, any>` for state/task/config bags, inline `/** @type {any} */` annotations for row-entry callbacks |
+| `resolveRulesManifestMergeConflict` needed `/** @type {const} */` assertions on `ok`/`autoResolved` literals so spreads stay discriminated-union assignable | Followed existing discover.mjs const-assertion pattern |
 
 ## Completion Criteria
 

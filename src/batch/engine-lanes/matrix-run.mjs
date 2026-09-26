@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Matrix task / sub-lane runners (SP-671 / #217).
  *
@@ -43,7 +42,7 @@ import { gitExec } from "../git-exec.mjs";
  * Read the `## Contract` table from a parent task folder (un-substituted).
  *
  * @param {string} parentTaskFolderAbs
- * @returns {object|null}
+ * @returns {ReturnType<typeof parseContract> | null}
  */
 export function readParentContract(parentTaskFolderAbs) {
 	const promptPath = path.join(parentTaskFolderAbs, "PROMPT.md");
@@ -130,6 +129,18 @@ export function resolveMatrixRowConcurrency({ matrixMaxParallel, maxParallel = 1
  * worker child env (`buildMatrixRowEnv`).
  *
  * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {number} params.laneNumber
+ * @param {string} params.taskId
+ * @param {string} params.laneBranch Lane task branch the row worktree branches from.
+ * @param {string} params.laneCorrelationId
+ * @param {{ rowId: string, values: Record<string, string> }} params.row
+ * @param {"execute" | "llm"} params.matrixType
+ * @param {string} params.parentTaskFolderAbs
+ * @param {string} params.taskFolderRel
+ * @param {Record<string, any>} [params.config]
+ * @param {string} [params.baseBranch]
  * @param {number} [params.rowIndex] 0-based index of this row in the matrix.
  * @param {number} [params.rowCount] Total matrix row count.
  * @returns {Promise<{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string, commitSha?: string, servedPrompt?: string }>}
@@ -223,7 +234,7 @@ export async function runMatrixSubLane({
 		};
 	}
 
-	/** @type {{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string }} */
+	/** @type {{ rowId: string, ok: boolean, exitCode: number, output: string, worktreePath?: string, branch?: string, commitSha?: string, servedPrompt?: string }} */
 	let result;
 
 	if (matrixType === "execute") {
@@ -333,7 +344,8 @@ export async function runMatrixSubLane({
 				sha256,
 				chars: servedPrompt.length,
 			});
-			const workerResult = await runWorker({
+			const workerResult = /** @type {{ ok?: boolean, exitCode?: number, output?: string, classification?: string }} */ (
+				await runWorker({
 				worktreePath,
 				taskFolder: path.join(worktreePath, taskFolderRel),
 				projectRoot,
@@ -345,7 +357,7 @@ export async function runMatrixSubLane({
 				fileScopePaths: [],
 				config,
 				...(matrixEnv ? { extraEnv: matrixEnv } : {}),
-			});
+			}));
 			result = {
 				rowId,
 				ok: Boolean(workerResult.ok),
@@ -397,7 +409,7 @@ export async function runMatrixSubLane({
 					{ projectRoot },
 				);
 			}
-			const sha = gitExec(worktreePath, ["rev-parse", "HEAD"], { projectRoot });
+			const sha = /** @type {string} */ (gitExec(worktreePath, ["rev-parse", "HEAD"], { projectRoot }));
 			result.commitSha = sha;
 			recordMatrixEvent(projectRoot, batchId, "matrix.sub_lane.completed", {
 				taskId,
@@ -450,12 +462,12 @@ export async function runMatrixSubLane({
  *
  * @param {object} params
  * @param {string} params.projectRoot
- * @param {object} params.state Live batch state.
+ * @param {Record<string, any>} params.state Live batch state.
  * @param {string} params.batchId
  * @param {string} params.baseBranch
- * @param {object} params.config
- * @param {object} params.task
- * @param {object} params.lane
+ * @param {Record<string, any>} params.config
+ * @param {Record<string, any>} params.task
+ * @param {Record<string, any>} params.lane
  * @param {string} params.taskFolderRel
  * @param {string} params.laneCorrelationId
  * @param {string[]} params.fileScopePaths
@@ -536,8 +548,16 @@ export async function runMatrixTaskForResume({
  * branches (fresh and carried-over) are merged back into the lane worktree so
  * the normal lane-commit + wave-merge carry all rows' output.
  *
- * @param {object} params
- * @param {number} params.maxParallel  Global `lanes.maxParallel` (pool size).
+ * Params bag keys: `projectRoot` (string), `state` (live batch state),
+ * `batchId` (string), `baseBranch` (string), `config` (spine config), `task`
+ * (parent matrix task, mutated in place), `lane` (lane identity with
+ * `laneNumber`/`branch`/`worktreePath`), `taskFolderRel` (string),
+ * `laneCorrelationId` (string), `fileScopePaths` (string[]), `matrix` (packet
+ * matrix rows from `loadMatrixTaskRows`), `maxParallel` (global
+ * `lanes.maxParallel`, pool size).
+ *
+ * @param {Record<string, any>} params
+ * @returns {Promise<{ ok: boolean, aborted?: boolean, error?: string, output?: string, laneCommit?: object, workerResult?: { ok: boolean, classification?: string, exitCode?: number, output?: string } }>}
  */
 export async function runMatrixTaskOnLane({
 	projectRoot,
@@ -575,9 +595,9 @@ export async function runMatrixTaskOnLane({
 	// rows keep their status + persisted worktree/branch for retry carry-over,
 	// `canceled` rows stay excluded, and only failed/pending rows re-enter the
 	// sweep. Fresh rows start `pending`.
-	task.matrixRows = matrix.rows.map((row) => {
+	task.matrixRows = matrix.rows.map((/** @type {any} */ row) => {
 		const existing = Array.isArray(task.matrixRows)
-			? task.matrixRows.find((entry) => entry && entry.rowId === row.rowId)
+			? task.matrixRows.find((/** @type {any} */ entry) => entry && entry.rowId === row.rowId)
 			: null;
 		return existing ?? {
 			rowId: row.rowId,
@@ -595,7 +615,7 @@ export async function runMatrixTaskOnLane({
 	const runnableRows = [];
 	const skippedRowIds = [];
 	for (const row of matrix.rows) {
-		const entry = task.matrixRows.find((m) => m.rowId === row.rowId);
+		const entry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === row.rowId);
 		if (entry.status === "succeeded") {
 			const carryWorktree = typeof entry.worktreePath === "string" ? entry.worktreePath : null;
 			const carryBranch = typeof entry.branch === "string" ? entry.branch : null;
@@ -641,13 +661,13 @@ export async function runMatrixTaskOnLane({
 		laneNumber,
 		laneId: lane.laneId,
 		correlationId: laneCorrelationId,
-		rowIds: matrix.rows.map((row) => row.rowId),
+		rowIds: matrix.rows.map((/** @type {any} */ row) => row.rowId),
 		matrixType: matrix.type,
 		maxParallel,
 		matrixMaxParallel,
 		rowConcurrency,
-		runnableRowIds: runnableRows.map((row) => row.rowId),
-		carriedOverRowIds: carryOverRows.map((carry) => carry.row.rowId),
+		runnableRowIds: runnableRows.map((/** @type {any} */ row) => row.rowId),
+		carriedOverRowIds: carryOverRows.map((/** @type {any} */ carry) => carry.row.rowId),
 		skippedRowIds,
 	});
 
@@ -659,7 +679,7 @@ export async function runMatrixTaskOnLane({
 		const rowLaneNumber = await acquireLaneSlot(state, maxParallel);
 		// Per-row live status (#230): flip to `running` only once the row actually
 		// holds a slot, and persist so `spine status` sees it from another process.
-		const runningEntry = task.matrixRows.find((m) => m.rowId === row.rowId);
+		const runningEntry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === row.rowId);
 		if (runningEntry) {
 			runningEntry.status = "running";
 			saveEngineBatchState(projectRoot, state);
@@ -697,6 +717,9 @@ export async function runMatrixTaskOnLane({
 				ok: false,
 				exitCode: 1,
 				output: `sub-lane crashed: ${message}`,
+				worktreePath: undefined,
+				branch: undefined,
+				commitSha: undefined,
 			};
 		} finally {
 			releaseLaneSlot(state, rowLaneNumber);
@@ -704,7 +727,7 @@ export async function runMatrixTaskOnLane({
 	});
 
 	for (const rowResult of results) {
-		const entry = task.matrixRows.find((m) => m.rowId === rowResult.rowId);
+		const entry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === rowResult.rowId);
 		if (entry) {
 			entry.status = rowResult.ok ? "succeeded" : "failed";
 			entry.exitCode = rowResult.exitCode ?? null;
@@ -724,8 +747,8 @@ export async function runMatrixTaskOnLane({
 	// scope).
 	const { ok, failedRowIds } = aggregateMatrixOutcomes(
 		task.matrixRows
-			.filter((entry) => entry.status !== "canceled")
-			.map((entry) => ({ rowId: entry.rowId, ok: entry.status === "succeeded" })),
+			.filter((/** @type {any} */ entry) => entry.status !== "canceled")
+			.map((/** @type {any} */ entry) => ({ rowId: entry.rowId, ok: entry.status === "succeeded" })),
 	);
 
 	if (!ok) {
@@ -735,7 +758,7 @@ export async function runMatrixTaskOnLane({
 			// Failed rows' worktrees are cleaned up; succeeded rows keep theirs as
 			// carry-over material for a row-scoped retry (#230).
 			removeMatrixSubLaneWorktree(projectRoot, rowResult.worktreePath, rowResult.branch);
-			const failedEntry = task.matrixRows.find((m) => m.rowId === rowResult.rowId);
+			const failedEntry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === rowResult.rowId);
 			if (failedEntry) {
 				delete failedEntry.worktreePath;
 				delete failedEntry.branch;

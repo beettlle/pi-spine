@@ -25,6 +25,9 @@
     "src/batch/engine-lanes/review-final.mjs",
     "src/batch/engine-lanes/review-plan.mjs",
     "src/batch/engine-lanes/review-poll.mjs",
+    "src/batch/engine-lanes/matrix.mjs",
+    "src/batch/engine-lanes/matrix-run.mjs",
+    "src/batch/engine-lanes/merge.mjs",
     "types/micromatch.d.ts"
   ]
 }
