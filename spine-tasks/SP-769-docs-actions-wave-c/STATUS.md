@@ -1,7 +1,7 @@
 # SP-769: Document Actions majors — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-09-26
 **Review Level:** 0
 **Review Counter:** 0
@@ -24,15 +24,15 @@
 - [x] Update QUICK-REFERENCE.md
 
 ### Step 2: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Done
 
-- [ ] Contract true + File Scope changed
+- [x] Contract true + File Scope changed
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -42,11 +42,13 @@
 | npm-publish.md already has `## Version floors` (Wave A) + `### Wave B toolchain` subsections from SP-757 | Add `### Wave C Actions majors` subsection in the same pattern |
 | QUICK-REFERENCE.md has no CI/release section (command reference only) | Add short `## 🤖 CI / release Actions pins` section before Common Workflows; update Last updated footer |
 | README.md has no hardcoded Actions versions (CI badge only) | No README change needed per PROMPT Check-If-Affected |
+| `npm test` fails at clean HEAD (`tests/spine-run.test.mjs:83`, `1 !== 0`) — reproduced via `git stash` on untouched tree; pre-existing on lane branch, unrelated to docs-only SP-769 changes | Not fixed here (out of File Scope); Contract `testCommand` (`true`) passes with exit 0 |
+| `.spine/rules-manifest.json` was regenerated (timestamp-only diff) by tooling during the session | Restored via `git checkout --` to honor PROMPT Do-NOT `.spine/` |
 
 ## Completion Criteria
 
-- [ ] Docs list Actions v7 / github-script v9
-- [ ] Closes #285
+- [x] Docs list Actions v7 / github-script v9
+- [x] Closes #285
 
 ## Blockers
 
