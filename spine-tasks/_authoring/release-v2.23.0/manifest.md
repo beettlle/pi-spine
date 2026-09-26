@@ -5,7 +5,7 @@
 **Target version:** v2.23.0
 **Bump type:** minor
 **Profile:** minor
-**Operator approved scope:** no
+**Operator approved scope:** yes (2026-09-26)
 **Composition choice:** Standard A — Close #285 Wave C (Actions majors) + #283 engine-lanes typing. Defer #284 and P3/epics. Operator selected 2026-09-26.
 **Worker model pin:** `zai/glm-5.3-flash` via `agents.worker.model` / default profile — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
