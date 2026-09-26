@@ -1,0 +1,41 @@
+spine-tasks/SP-770-type-engine-lanes-small/.DONE
+  s_8173cb491c312a::t_7b86d9b200c3ff 1-7
+spine-tasks/SP-770-type-engine-lanes-small/.reviews/0-20260926T202704.md
+  s_8173cb491c312a::t_d4de1476419d0f 1-8
+spine-tasks/SP-770-type-engine-lanes-small/.reviews/3-20260926T202712.md
+  s_8173cb491c312a::t_897e59fa8e8626 1-8
+spine-tasks/SP-770-type-engine-lanes-small/.reviews/final-20260926T202749.md
+  s_8173cb491c312a::t_492d4ed45aed39 1-8
+spine-tasks/SP-770-type-engine-lanes-small/STATUS.md
+  s_8173cb491c312a::t_71171e180d34d1 3-4,14,16-24,27,29-31,34-37,39-47,50,52-53,59-68,73-75,79
+src/batch/engine-lanes.mjs
+  s_8173cb491c312a::t_f43707ffae4dec 92-107,143-144,157-158,185-195,287,308
+src/batch/engine-lanes/commit.mjs
+  s_8173cb491c312a::t_4e82a0e85f3589 29,32-33,36-37
+src/batch/engine-lanes/orch-sync.mjs
+  s_8173cb491c312a::t_c5da0b8801f0d9 14,23,40,43,56-58,89-94
+src/batch/engine-lanes/phase.mjs
+  s_8173cb491c312a::t_282f2c8b41ad6d 21,33-39
+src/batch/engine-lanes/queue.mjs
+  s_8173cb491c312a::t_27928b6100c7e7 22-27,30,37-38,43,68-76,141-145,149,191-198
+src/batch/engine-lanes/review-stub.mjs
+  s_8173cb491c312a::t_219a3c6e0ffdc1 71
+tsconfig.batch.json
+  s_8173cb491c312a::t_dc7fa7cc487375 17-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a01aede12ad2de157f86b85a2fdedad71c2192c2",
+  "prompts": {},
+  "sessions": {
+    "s_8173cb491c312a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-586515c9-c8e5-455e-92e5-426201d414a2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
