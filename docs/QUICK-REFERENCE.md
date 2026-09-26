@@ -633,6 +633,12 @@ node scripts/best-of-n.mjs --cleanup-run <runId>
 
 ---
 
+## 🤖 CI / release Actions pins
+
+GitHub workflow Actions are pinned to current majors ([#285](https://github.com/beettlle/pi-spine/issues/285), Wave C): `actions/checkout@v7` and `actions/setup-node@v7` in all three workflows (`ci.yml`, `release.yml`, `real-pi.yml`), `actions/upload-artifact@v7` in `ci.yml`, and `actions/github-script@v9` in `release.yml`. #285 Waves A–C are complete (A: `engines` / `minPiVersion` floors, B: TypeScript 6 / ESLint 10, C: Actions majors) — TypeScript 7 and `@types/node` 26 stay intentionally deferred. Details: [npm publish → Version floors](./release/npm-publish.md#version-floors-engines--minpiversion--peer).
+
+---
+
 ## 🎯 Common Workflows
 
 ### Start a New Batch
@@ -807,4 +813,4 @@ Use ≥120 minutes for real `pi` workers. Full stall recovery: [operator-runbook
 
 ---
 
-*Last updated: 2026-07-02*
+*Last updated: 2026-09-26*
