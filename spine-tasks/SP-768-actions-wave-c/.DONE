@@ -1,0 +1,3 @@
+SP-768 Wave C complete — see STATUS.md.
+
+Steps 0–3 done. Workflows bumped: ci.yml, release.yml, real-pi.yml → checkout/setup-node/upload-artifact@v7, github-script@v9. Contract green (lint, typecheck, scripts/verify-actions-wave-c.mjs). Partial #285; docs via SP-769.
