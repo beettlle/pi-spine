@@ -140,10 +140,11 @@ Wave 3 · SP-773 (after 772)
 
 - [x] All release-scoped tasks `.DONE` on `main` (merges `a01aede1`, `f29761cc`, `49966b25`, `0d3dc628`)
 - [x] Post-integrate `release:check` green after each wave (2651/2651 pass each wave)
-- [ ] `spine preflight` green
-- [x] `npm run release:check` green on final HEAD `0d3dc628` (2651 pass, 89.64% line coverage)
-- [ ] CI workflow green on HEAD
-- [ ] `git status` clean
+- [x] `spine preflight` green (2026-09-26 @ `05aa5e5a`)
+- [x] `npm run release:check` green on `05aa5e5a` — exit 0, 2651/2651 pass, 89.70% line coverage (`/tmp/pi-spine-release-check.log`)
+- [x] CI workflow green on `05aa5e5a` (run 36276084623); re-verify on Phase 5 commit before tag
+- [x] `git status` clean; `main` in sync with `origin`
+- [x] Engine-lanes `@ts-nocheck` fully removed; no engine-lanes entries in `NOCHECK_ALLOWLIST`
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded + stage approved
@@ -152,7 +153,10 @@ Wave 3 · SP-773 (after 772)
 
 ---
 
-## Operator gate
+## Phase 5 status
 
-**Awaiting:** explicit **"approve release scope"** before Phase 4 (batch start).
-Packets may be authored/committed under Phase 3 while scope approval is pending; **do not** `spine batch start` until this field is `yes`.
+**Stopped for publish approval:** 2026-09-26
+**Release scope:** SP-768–SP-773 all `.DONE` on main; pending backlog 0
+**Issues CLOSED:** #283 #285
+**Deferred open:** #284 (reconcile/doctor typing), P3/epics
+**Publish blocked until:** operator says approve publish (bump **minor** → 2.23.0) + CI green on HEAD
