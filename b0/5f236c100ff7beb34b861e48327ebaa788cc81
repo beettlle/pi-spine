@@ -1,0 +1,23 @@
+spine-tasks/SP-771-type-engine-lanes-review/PROMPT.md
+  s_8173cb491c312a::t_e6e519fe77ebc8 46
+  s_8173cb491c312a::t_4fa8cdd8cf2438 100-103
+spine-tasks/SP-772-type-engine-lanes-matrix/PROMPT.md
+  s_8173cb491c312a::t_8b19517da9eaa2 45
+  s_8173cb491c312a::t_027cde236299e3 101-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b05f236c100ff7beb34b861e48327ebaa788cc81",
+  "prompts": {},
+  "sessions": {
+    "s_8173cb491c312a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-586515c9-c8e5-455e-92e5-426201d414a2",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
