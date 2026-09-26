@@ -1,7 +1,7 @@
 # SP-770: Type small engine-lanes + facade — Status
 
-**Current Step:** Step 2 — Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Step 3 — Documentation & Delivery
+**Status:** 🔄 Finalizing
 **Last Updated:** 2026-09-26
 **Review Level:** 2
 **Review Counter:** 0
@@ -31,16 +31,26 @@
 - [x] Shrink allowlist for this set only
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint + Contract testCommand
-- [ ] Fix failures
+- [x] lint + Contract testCommand
+- [x] Fix failures
+
+**Evidence:**
+- `npm run lint` — clean (eslint `--max-warnings 0`, exit 0)
+- `npm run typecheck` — both projects clean
+- `npx tsc --project tsconfig.batch.json --noEmit` — 0 errors (was 98 after stripping nocheck)
+- Contract guard test — 4/4 pass (`SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs`)
+- Full `npm test` with worker env unset (`env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER`): **2651/2651 pass, 0 fail**. First run with worker env inherited failed 43 batch-spawning tests with `nested_batch_spawn_blocked` (SP-482 guard) — expected per PROMPT Step 2 note, not a code regression.
+- LOC check: all 7 typed modules < 500 (`engine-lanes.mjs` 497, `queue.mjs` 242, rest ≤ 159). `PHASE23_GRANDFATHERED_OVER_500` untouched.
+- Out-of-scope nocheck intact: matrix/matrix-run/merge/review-code/final/plan/poll each still carry exactly one `@ts-nocheck`.
+- Reverted hook-regenerated `.spine/rules-manifest.json` timestamp (Do-NOT scope).
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -60,10 +70,10 @@
 
 ## Completion Criteria
 
-- [ ] Small modules + facade typed
-- [ ] Allowlist shrunk for this set
-- [ ] Partial #283
+- [x] Small modules + facade typed
+- [x] Allowlist shrunk for this set
+- [x] Partial #283
 
 ## Blockers
 
-_None yet._
+_None._
