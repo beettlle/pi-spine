@@ -1,0 +1,6 @@
+SP-769 complete — see STATUS.md.
+
+- Step 0: SP-768 pins verified on disk (checkout/setup-node v7 in ci/release/real-pi; upload-artifact v7 in ci.yml; github-script v9 in release.yml).
+- Step 1: Wave C Actions majors documented in docs/release/npm-publish.md (new "Wave C Actions majors" subsection) and docs/QUICK-REFERENCE.md (new "CI / release Actions pins" section); Waves A–C noted complete, TS7/@types/node 26 deferred.
+- Step 2: Contract testCommand (`true`) exit 0; both File Scope paths changed (gitnexus detect_changes: low risk, 0 affected processes).
+- Note: `npm test` fails at clean HEAD (tests/spine-run.test.mjs:83, pre-existing on lane branch, unrelated to docs-only change) — evidence in STATUS.md Discoveries.
