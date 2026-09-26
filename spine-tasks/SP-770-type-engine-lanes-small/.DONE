@@ -1,0 +1,7 @@
+SP-770 complete.
+
+- Removed `@ts-nocheck` from `src/batch/engine-lanes.mjs` + 6 small engine-lanes modules (review, phase, review-stub, orch-sync, commit, queue); typed with compact JSDoc / `Record<string, any>` / one cast.
+- Expanded `tsconfig.batch.json` include (+7 paths); shrank `NOCHECK_ALLOWLIST` by the same 7 entries. No new grandfather entries.
+- Contract green: lint clean, typecheck clean, `tsc --project tsconfig.batch.json --noEmit` 0 errors, arch guard 4/4.
+- Full `npm test`: 2651/2651 pass (worker env vars unset per PROMPT Step 2 — nested-spawn guard note).
+- review-* and matrix/merge left nocheck for SP-771/SP-772. Partial #283.
