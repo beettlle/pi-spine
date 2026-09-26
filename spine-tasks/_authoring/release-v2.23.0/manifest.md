@@ -138,17 +138,17 @@ Wave 3 · SP-773 (after 772)
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after each wave
+- [x] All release-scoped tasks `.DONE` on `main` (merges `a01aede1`, `f29761cc`, `49966b25`, `0d3dc628`)
+- [x] Post-integrate `release:check` green after each wave (2651/2651 pass each wave)
 - [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final HEAD
+- [x] `npm run release:check` green on final HEAD `0d3dc628` (2651 pass, 89.64% line coverage)
 - [ ] CI workflow green on HEAD
 - [ ] `git status` clean
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded + stage approved
 - [ ] Post-publish smoke
-- [ ] Every release-scoped Closes CLOSED (#285, #283)
+- [x] Every release-scoped Closes CLOSED (#285, #283)
 
 ---
 

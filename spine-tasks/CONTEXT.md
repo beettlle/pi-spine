@@ -2538,18 +2538,18 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-768 | Wave C: Actions majors (v7 / github-script v9) | S | #285 Partial | Pending |
-| SP-769 | Document Actions majors | S | #285 Closes | Pending |
-| SP-770 | Type small engine-lanes + facade | M | #283 Partial | Pending |
-| SP-771 | Type review-* engine-lanes | M | #283 Partial | Pending |
-| SP-772 | Type matrix/merge engine-lanes | M | #283 Closes | Pending |
-| SP-773 | Document engine-lanes typing | S | #283 docs | Pending |
+| SP-768 | Wave C: Actions majors (v7 / github-script v9) | S | #285 Partial | Done |
+| SP-769 | Document Actions majors | S | #285 Closes | Done |
+| SP-770 | Type small engine-lanes + facade | M | #283 Partial | Done |
+| SP-771 | Type review-* engine-lanes | M | #283 Partial | Done |
+| SP-772 | Type matrix/merge engine-lanes | M | #283 Closes | Done |
+| SP-773 | Document engine-lanes typing | S | #283 docs | Done |
 
 **Phase 91 exit criteria:**
 
-- [ ] Operator approved release scope (manifest)
-- [ ] SP-768–SP-773 `.DONE` and integrated on `main`
-- [ ] #285 and #283 CLOSED
+- [x] Operator approved release scope (manifest)
+- [x] SP-768–SP-773 `.DONE` and integrated on `main` (merges `a01aede1`, `f29761cc`, `49966b25`, `0d3dc628`)
+- [x] #285 and #283 CLOSED
 - [ ] `npm run release:check` green; CI green on HEAD
 - [ ] Publish **v2.23.0** only after operator approval
 
