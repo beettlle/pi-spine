@@ -43,7 +43,7 @@ Partial #283 — Remove `@ts-nocheck` from `review-plan.mjs`, `review-final.mjs`
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/review-plan.mjs`, `src/batch/engine-lanes/review-final.mjs`, `src/batch/engine-lanes/review-code.mjs`, `src/batch/engine-lanes/review-poll.mjs`, `tsconfig.batch.json`, `tests/arch/ts-nocheck-guard.test.mjs` |
+| fileScopeMustChange | `src/batch/engine-lanes/review-plan.mjs`, `src/batch/engine-lanes/review-final.mjs`, `src/batch/engine-lanes/review-code.mjs`, `src/batch/engine-lanes/review-poll.mjs` |
 
 ## Steps
 
@@ -96,6 +96,10 @@ Partial #283 — Remove `@ts-nocheck` from `review-plan.mjs`, `review-final.mjs`
 ## Git Commit Convention
 
 - `refactor(SP-771): type review-* engine-lanes modules (#283)`
+
+## Amendments
+
+- 2026-09-26: SP-770 already changed `tsconfig.batch.json` and `tests/arch/ts-nocheck-guard.test.mjs` on `main`. Both stay in File Scope and must still be updated for the four review-* modules, but `fileScopeMustChange` now lists only the review-* modules (prelanded-file-scope preflight warning).
 
 ## Do NOT
 

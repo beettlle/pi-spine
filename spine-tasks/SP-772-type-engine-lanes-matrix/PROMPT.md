@@ -42,7 +42,7 @@ Closes #283 — Remove `@ts-nocheck` from `matrix.mjs`, `matrix-run.mjs`, and `m
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` |
-| fileScopeMustChange | `src/batch/engine-lanes/matrix.mjs`, `src/batch/engine-lanes/matrix-run.mjs`, `src/batch/engine-lanes/merge.mjs`, `tsconfig.batch.json`, `tests/arch/ts-nocheck-guard.test.mjs` |
+| fileScopeMustChange | `src/batch/engine-lanes/matrix.mjs`, `src/batch/engine-lanes/matrix-run.mjs`, `src/batch/engine-lanes/merge.mjs` |
 
 ## Steps
 
@@ -97,6 +97,10 @@ Closes #283 — Remove `@ts-nocheck` from `matrix.mjs`, `matrix-run.mjs`, and `m
 ## Git Commit Convention
 
 - `refactor(SP-772): type matrix/merge engine-lanes modules (#283)`
+
+## Amendments
+
+- 2026-09-26: SP-770 already changed `tsconfig.batch.json` and `tests/arch/ts-nocheck-guard.test.mjs` on `main`. Both stay in File Scope and must still be updated for matrix/merge, but `fileScopeMustChange` now lists only the three matrix/merge modules (prelanded-file-scope preflight warning).
 
 ## Do NOT
 
