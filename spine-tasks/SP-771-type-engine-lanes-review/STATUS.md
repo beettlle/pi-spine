@@ -1,7 +1,7 @@
 # SP-771: Type review-* engine-lanes — Status
 
 **Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-26
 **Review Level:** 2
 **Review Counter:** 0
@@ -14,7 +14,7 @@
 **Status:** ✅ Complete
 
 - [x] Confirm SP-770 landed (`4c60aa78` + `.DONE` on main; small modules absent from allowlist)
-- [x] Confirm four review-* still nocheck (all four carry `// @ts-nocheck`; all four in allowlist lines 69–72)
+- [x] Confirm four review-* still nocheck (all four carried `// @ts-nocheck`; all four in allowlist lines 69–72)
 - [x] Dependencies satisfied
 
 ### Step 1: Type review-* engine-lanes
@@ -29,34 +29,22 @@
 
 - [x] lint + Contract testCommand (all green: eslint 0 warnings; typecheck both projects; batch tsc 0 errors; arch guard 4/4)
 - [x] Fix failures (10 initial tsc errors fixed — see Discoveries)
+- [x] Full `npm test`: 2651/2651 pass, 0 fail (worker env vars unset per nested-spawn-guard note)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
-## Implementation Plan (Step 1)
+## Implementation Summary (Step 1)
 
-Follow SP-770 house style (`Record<string, any>` for mutated batch-state params — see `state-guards.mjs`, `queue.mjs`, `engine-lanes.mjs`):
+Followed SP-770 house style (`Record<string, any>` for mutated batch-state params):
 
-1. **review-poll.mjs** (typed first — plan/code/final depend on it):
-   - Remove `// @ts-nocheck`; fill existing `@param {object} params` stubs:
-     - `appendReviewHonorJournalEvents`: task/lane/honored → `Record<string, any>`.
-     - `honorCompletedReview`: state/task/lane → `Record<string, any>`; `journalEvents: Array<Record<string, any>>`; `findCompletedReview: Function`; `@returns {{ ok: boolean, [key: string]: any } | null}` (computed `[attemptKey]` prop).
-     - `runReviewPollLoop`: full params doc; `runEngineReview: (reviewParams: Record<string, any>) => any` (precise type required — bare `Function` would make caller arrows implicitly-any); `beforeReview: (hookParams: { attempt: number }) => Promise<{ abort?: any, extraReviewParams?: Record<string, any> } | undefined>`; `@returns {Promise<{ ok: boolean, [key: string]: any }>}`.
-     - `runWorker` result: `/** @type {any} */` cast (house pattern from `engine-lanes.mjs:288`) — inferred union lacks `classification` on all members.
-2. **review-plan.mjs / review-code.mjs / review-final.mjs** (mechanical mirrors):
-   - Remove `// @ts-nocheck`; fill `@param` stubs on `runEngine*Review`, `record*TaskFailure`, `run*Phase` (phase params mirror `engine-lanes.mjs runNonMatrixTaskOnLane` exactly: state/task/lane/config `Record<string, any>`, `fileScopePaths: string[]`, `baseBranch` optional on final).
-   - `stubVerdicts: { next: () => string } | null` (only `.next()` consumed).
-   - review-plan `findCompletedPlanReview`: `journalEvents` → `Array<Record<string, any>>` (existing `object[]` blocks `event.taskId` access); existing `@type`/casts kept.
-3. **tsconfig.batch.json**: add the four `src/batch/engine-lanes/review-*.mjs` paths (alphabetical, after `queue.mjs`).
-4. **tests/arch/ts-nocheck-guard.test.mjs**: delete the four allowlist entries (lines 69–72). No new entries.
-
-Risk notes (verified):
-- `resume-lane-reviews.mjs` passes plain `object` to the phase fns but is not reachable from the tsconfig.batch include closure (imported only by resume.mjs / resume-multi-lanes.mjs, which nothing in the include set imports) — tsc will confirm.
-- LOC policy counts only top-level `src/batch/*.mjs` (non-recursive), so engine-lanes/ additions are out of capstone scope; additions kept compact anyway.
-- Untyped deps (review.mjs, review-shared.mjs, journal.mjs, state.mjs, contract-*.mjs) carry `@ts-nocheck` → resolve to `any` at call sites; no casts needed for them.
+- **review-poll.mjs** (typed first — the other three depend on it): filled `@param` stubs on `appendReviewHonorJournalEvents`, `honorCompletedReview`, `runReviewPollLoop`. `runEngineReview: (reviewParams: Record<string, any>) => any` (precise type required — bare `Function` made caller arrows implicitly-any); `beforeReview` typed `(hookParams: { attempt: number }) => Promise<{ abort?: any, extraReviewParams?: Record<string, any> } | undefined> | null`; `runWorker` result `/** @type {any} */` cast (house pattern from `engine-lanes.mjs` — inferred union lacks `classification` on every member).
+- **review-plan.mjs / review-code.mjs / review-final.mjs**: removed nocheck; filled `@param` stubs on `runEngine*Review`, `record*TaskFailure`; `stubVerdicts: { next: () => string } | null`.
+- **tsconfig.batch.json**: +4 `src/batch/engine-lanes/review-*.mjs` include paths.
+- **tests/arch/ts-nocheck-guard.test.mjs**: −4 allowlist entries. No grandfather growth.
 
 ## Discoveries & Decisions
 
@@ -64,16 +52,29 @@ Risk notes (verified):
 |-----------|----------|
 | SP-770 `.DONE` on main (`4c60aa78`); small modules + facade off allowlist | Preflight pass; proceed |
 | `runWorker` JSDoc types `onHeartbeat`/`onWorkerPid` callbacks (`number`) | Callback bodies typecheck without casts |
-| `runWorker` return type is an inferred union without `classification` on every member | Use `/** @type {any} */` cast per `engine-lanes.mjs` precedent |
-| LOC 500 cap scans `src/batch/*.mjs` non-recursively (`loc-capstone.mjs:29-40`) | engine-lanes/ JSDoc growth out of policy scope |
-| `PHASE23_GRANDFATHERED_OVER_500` is empty | No grandfather growth possible/needed |
+| `runWorker` return type is an inferred union without `classification` on every member | `/** @type {any} */` cast per `engine-lanes.mjs` precedent |
+| LOC 500 cap scans `src/batch/*.mjs` non-recursively (`loc-capstone.mjs:29-40`); `PHASE23_GRANDFATHERED_OVER_500` is empty | engine-lanes/ JSDoc growth out of policy scope |
+| `{...record}` spreads and `Record<string, any>` do NOT satisfy required props in TS 6 (probe-verified), but intrinsic `object` → all-optional/Record types does | Phase fns take `@param {Record<string, any>} params` with keys in prose — `resume-lane-reviews.mjs` forwards a loose `object` bag and IS in the tsc program (contrary to import-graph guess) |
+| Bare `@param {Function}` on `runEngineReview` made `(params) => ...` caller arrows implicitly-any | Typed as `(reviewParams: Record<string, any>) => any` |
+| `review-artifacts.mjs` `resolveReviewHonorJournalEvent` JSDoc still narrows reviewType to `"code"\|"final"` (predates plan phase); file out of scope | Cast at the review-poll call site with a why-comment |
+| `parseReviewVerdict` inferred union spans code/final verdicts; object property capture defeats narrowing | One `/** @type {"APPROVE"\|"REVISE"} */` cast on the `artifactMatch` verdict property with why-comment |
+| Subfield `@param` docs require `@param {object}` top type (TS8032) | Record-typed params carry keys in prose instead |
+
+## Verification Evidence
+
+- `npm run lint` — clean (0 warnings, `--max-warnings 0`)
+- `npm run typecheck` — both tsconfig.json and tsconfig.batch.json, 0 errors
+- `npx tsc --project tsconfig.batch.json --noEmit` — 0 errors
+- `SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs` — 4/4 pass (allowlist live, no new nocheck, count matches)
+- `npm test` — 2651/2651 pass
+- GitNexus `detect_changes` vs `b05f236c` — only the four review-* modules (plus tsconfig/guard-test/STATUS) touched; affected processes are exactly the plan/code/final review-phase flows
 
 ## Completion Criteria
 
-- [ ] Four review-* modules typed
-- [ ] Allowlist shrunk
-- [ ] Partial #283
+- [x] Four review-* modules typed (batch tsc green without nocheck)
+- [x] Allowlist shrunk (−4 entries; guard 4/4)
+- [x] Partial #283
 
 ## Blockers
 
-_None yet._
+_None._
