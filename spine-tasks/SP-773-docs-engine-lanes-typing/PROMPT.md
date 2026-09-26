@@ -39,7 +39,7 @@ Document that `src/batch/engine-lanes/**` (and the facade) are included in batch
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `docs/QUICK-REFERENCE.md`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `docs/adoption/operator-runbook.md` |
 
 ## Steps
 
@@ -86,6 +86,10 @@ Document that `src/batch/engine-lanes/**` (and the facade) are included in batch
 ## Git Commit Convention
 
 - `docs(SP-773): document engine-lanes typing (#283 Phase 2)`
+
+## Amendments
+
+- 2026-09-26: SP-769 already changed `docs/QUICK-REFERENCE.md` on `main`. It stays in File Scope and Must Update, but `fileScopeMustChange` now lists only `docs/adoption/operator-runbook.md` (prelanded-file-scope preflight warning).
 
 ## Do NOT
 
