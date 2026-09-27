@@ -1,6 +1,6 @@
 # SP-780: Journal tolerates torn lines — Status
 
-**Current Step:** Step 1 (Parse tolerance + append guard)
+**Current Step:** Step 3 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
@@ -19,21 +19,21 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Parse tolerance + append guard
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Per-line try/catch + `{ events, skippedLines }` helper
-- [ ] Read return shapes unchanged
-- [ ] Append newline guard
-- [ ] Doc comment corrected
-- [ ] Unit tests
+- [x] Per-line try/catch + `{ events, skippedLines }` helper
+- [x] Read return shapes unchanged
+- [x] Append newline guard
+- [x] Doc comment corrected
+- [x] Unit tests
 
 ### Step 2: Diagnose signal + abort
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `signals.journalCorruptLines`
-- [ ] Visible in `--diagnose`
-- [ ] Abort-with-torn-journal test
-- [ ] `reconcile-batch.mjs` ≤ 500 lines
+- [x] `signals.journalCorruptLines`
+- [x] Visible in `--diagnose`
+- [x] Abort-with-torn-journal test
+- [x] `reconcile-batch.mjs` ≤ 500 lines (499)
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
@@ -68,6 +68,8 @@
 | 5 | GitNexus impact: `parseJournalLines` CRITICAL (75 nodes, 25 processes), `appendJsonlLineSync` CRITICAL (122 nodes, 36 processes, 1 direct caller). Mitigation: public reader shapes unchanged; guard is no-op on well-formed files; full batch suite verifies. |
 | 6 | `bin/spine-status.mjs --diagnose` renders `result.signals` via wholesale `JSON.stringify`, so any `signals.journalCorruptLines` set by `reconcileBatch` appears automatically. `runSpineStatus` is exported → testable directly. |
 | 7 | `reconcileBatch` is defined in `src/batch/reconcile-batch.mjs` (the scoped file) and re-exported via `src/batch/reconcile.mjs` shim. |
+| 8 | `reconcileBatch` only includes `signals` in its result when `ctx.verbose` is true (`signals: ctx.verbose ? signals : undefined`) — direct test calls must pass `verbose: true`, which is how `runSpineStatus --diagnose` invokes it. |
+| 9 | Final LOC after edits: `journal.mjs` 482, `reconcile-batch.mjs` 499, `journal-checksum.mjs` 110 — all within the 500 cap. |
 
 ## Blockers
 
