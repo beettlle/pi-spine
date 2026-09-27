@@ -1,0 +1,20 @@
+spine-tasks/SP-781-matrix-row-metachar-guard/STATUS.md
+  h_2a17159c706ba1 3,20,22-26
+src/batch/engine-lanes/matrix-run.mjs
+  h_2a17159c706ba1 37-41,57-71,273-280
+tests/batch/contract-matrix-subst.test.mjs
+  h_2a17159c706ba1 166-194
+tests/batch/matrix-row-command-guard.test.mjs
+  h_2a17159c706ba1 1-245
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "afb1a149edaa9a1257a909c1c9a9eeac2894c8f4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
