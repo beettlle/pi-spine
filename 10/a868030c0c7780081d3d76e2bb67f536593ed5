@@ -1,0 +1,71 @@
+spine-tasks/SP-781-matrix-row-metachar-guard/STATUS.md
+  s_e5a9e3b01dd5b5::t_4e30453be1e43b 1-49
+spine-tasks/SP-785-unified-task-id-discovery/PROMPT.md
+  s_e5a9e3b01dd5b5::t_4bc2769ea1a5d2 1-63,65-135
+  s_e5a9e3b01dd5b5::t_48401d204e63cf 64
+spine-tasks/SP-780-journal-torn-line-tolerance/PROMPT.md
+  s_e5a9e3b01dd5b5::t_5131790dbf6fa3 1-131
+spine-tasks/SP-783-matrix-row-shell-limits/PROMPT.md
+  s_e5a9e3b01dd5b5::t_bd6533842b201b 1-120
+spine-tasks/SP-789-docs-recovery-evidence-hardening/STATUS.md
+  s_e5a9e3b01dd5b5::t_7d0a98f3e52b1e 1-49
+spine-tasks/SP-779-stall-exit-before-deadline/PROMPT.md
+  s_e5a9e3b01dd5b5::t_90d3b263ea7efd 1-124
+spine-tasks/SP-781-matrix-row-metachar-guard/PROMPT.md
+  s_e5a9e3b01dd5b5::t_f9893e17de32eb 1-113
+spine-tasks/dependencies.json
+  s_e5a9e3b01dd5b5::t_bc19560866a901 1998-2016
+spine-tasks/SP-779-stall-exit-before-deadline/STATUS.md
+  s_e5a9e3b01dd5b5::t_4f1a1843860952 1-59
+spine-tasks/SP-786-quarantine-corrupt-batch-state/PROMPT.md
+  s_e5a9e3b01dd5b5::t_4d99ab5474c708 1-133
+spine-tasks/CONTEXT.md
+  s_e5a9e3b01dd5b5::t_c95a1519f5de8c 2582-2608
+  s_e5a9e3b01dd5b5::t_3af1d29c39a522 3,5
+  s_e5a9e3b01dd5b5::t_19a0960a68930b 2609
+spine-tasks/SP-787-worker-spawn-hardening/STATUS.md
+  s_e5a9e3b01dd5b5::t_269427bd5ece5e 1-64
+spine-tasks/SP-782-integrate-base-ref-cas/STATUS.md
+  s_e5a9e3b01dd5b5::t_21e4c4c999174a 1-58
+spine-tasks/SP-787-worker-spawn-hardening/PROMPT.md
+  s_e5a9e3b01dd5b5::t_865f8de7c41e17 1-133
+spine-tasks/SP-784-integrate-checkout-sync-safety/STATUS.md
+  s_e5a9e3b01dd5b5::t_528de59cc2e7a4 1-63
+spine-tasks/SP-788-engine-crash-journal/STATUS.md
+  s_e5a9e3b01dd5b5::t_847c549ad3469d 1-56
+spine-tasks/SP-783-matrix-row-shell-limits/STATUS.md
+  s_e5a9e3b01dd5b5::t_d36886966efd6a 1-57
+spine-tasks/SP-784-integrate-checkout-sync-safety/PROMPT.md
+  s_e5a9e3b01dd5b5::t_a8830b5f640525 1-133
+spine-tasks/SP-789-docs-recovery-evidence-hardening/PROMPT.md
+  s_e5a9e3b01dd5b5::t_ae637c5afe1034 1-107
+spine-tasks/_authoring/release-v2.25.0/manifest.md
+  s_e5a9e3b01dd5b5::t_359471d51ee05f 1-119,122,142,145-178
+  s_e5a9e3b01dd5b5::t_b9e767f4fe0417 120-121,123-141,143-144
+spine-tasks/SP-785-unified-task-id-discovery/STATUS.md
+  s_e5a9e3b01dd5b5::t_b8509514b14cfb 1-63
+spine-tasks/SP-786-quarantine-corrupt-batch-state/STATUS.md
+  s_e5a9e3b01dd5b5::t_7fd18accecc651 1-64
+spine-tasks/SP-780-journal-torn-line-tolerance/STATUS.md
+  s_e5a9e3b01dd5b5::t_b00cfd88d19a5e 1-60
+spine-tasks/SP-788-engine-crash-journal/PROMPT.md
+  s_e5a9e3b01dd5b5::t_56b4f4d18ffd22 1-119
+spine-tasks/SP-782-integrate-base-ref-cas/PROMPT.md
+  s_e5a9e3b01dd5b5::t_2a216158211353 1-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "10a868030c0c7780081d3d76e2bb67f536593ed5",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
