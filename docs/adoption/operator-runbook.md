@@ -329,6 +329,14 @@ esac
 "./deploy.sh" "$target" > "out/${SPINE_MATRIX_TASK_ID}.txt"
 ```
 
+#### Row value guard and timeouts (#297, SP-783)
+
+Row values flow into the row command through `/bin/sh -c`, so the engine re-checks the **substituted** command right before spawn — a clean template can still become unsafe through substitution:
+
+- A row value that introduces `$`, backticks, `;`, `|`, `||`, or a lone `&` **fails the row before spawn** — the shell never sees it. `&&` chains remain allowed. The row fails with `matrix row command refused before spawn: row '<rowId>' substitutes to a command containing …` (journalled as `matrix.sub_lane.failed`). Fix the row value in the `## Matrix` table, then `spine batch retry 'SP-X[rowId]'`.
+- Every row command is bounded in time: it times out after **10 minutes** by default (600 000 ms) and resolves with exit code **124** and a `matrix row command timed out after <N>ms` output line; the row's whole process tree is terminated (SIGTERM, then SIGKILL). Set `SPINE_MATRIX_ROW_TIMEOUT_MS` (positive integer milliseconds) to override; an invalid or absent value falls back to the default.
+- Row output kept in memory is capped: only a bounded tail of at most 256 KiB is retained. When bytes were dropped, the output is prefixed with a `[… N bytes truncated …]` marker.
+
 #### Plan output and sub-lane naming
 
 The planner treats a matrix task as a **single task** — `spine plan` shows the parent task on one lane, not per-row sub-lanes:
@@ -1224,6 +1232,39 @@ Emergency bypass (journaled, not for routine conflict resolution):
 SPINE_ALLOW_FORCE=1 spine integrate --force-integrate
 ```
 
+### 4.3 Integrate base moved / dirty overlap (#298)
+
+`spine integrate` captures the base tip before the merge and verifies it afterwards, so a commit landing on the base branch mid-integrate fails loudly instead of being clobbered.
+
+#### `BaseMoved` — base changed mid-integrate
+
+The base ref update is compare-and-swap (`git update-ref` with the expected old SHA), and the worktree merge path additionally verifies the merge commit's first parent. On mismatch integrate exits 1 with `failureClass: "BaseMoved"`:
+
+```text
+<main> moved during integrate (expected <old-sha>, found <new-sha>) — re-run spine integrate
+```
+
+Nothing is orphaned: the merge commit stays on the orch branch and the base ref keeps the newer tip. **Recovery: re-run `spine integrate`.** If unsure, `spine status --diagnose` first; the journal carries `integrate.failed` with the error.
+
+#### `DirtyOverlap` — local edits kept during post-merge sync
+
+When the base branch is checked out in the main worktree and some merged paths carry **uncommitted operator edits**, integrate skips exactly those paths (your local edits are kept) and still succeeds — with a warning:
+
+```text
+DirtyOverlap: <paths> kept local edits — run git diff / git restore --source <baseBranch> -- <paths> after review
+```
+
+The skipped paths are journaled as `integrate.dirty_overlap` (`skippedDirtyPaths`). Reconcile per path after review:
+
+```bash
+git diff -- <path>                            # want your local edit? nothing to do
+git restore --source <baseBranch> -- <path>   # want the merged version? restore it
+```
+
+#### Sync is checkout-gated
+
+Integrate never syncs files into a checkout that is **not on base**: when the base branch is not checked out in the main worktree, the post-merge sync is skipped entirely — no sync, no `DirtyOverlap`. The merge commit is on the base ref and your checkout stays untouched; checking out the base branch later materializes the merged files.
+
 ---
 
 ## 5. Gate races
@@ -1786,6 +1827,52 @@ When the detached resume engine throws (for example a broken lane worktree durin
    - `spine batch abort` when work should be discarded.
 
 If diagnosis is still **`engine_orphaned`** with **`phase: running`**, the engine died without hitting the fail-closed handler — use the orphan steps above.
+
+### v2.25.0 recovery-evidence hardening (#296–#303)
+
+v2.25.0 changes what you see when recovery evidence is damaged: torn journal lines are reported instead of crashing status, corrupt batch-state is quarantined and `spine batch start` refuses, and matrix rows are bounded before they can wedge a lane. Damaged evidence is preserved for inspection, never silently repaired or deleted.
+
+#### Torn journal lines (#296, SP-780)
+
+A crash or disk-full mid-append can leave a torn (partial) line in `.spine/runtime/<batchId>/journal/events.jsonl`. Journal reads are fail-closed **per line**: a line that fails to parse, or whose checksum no longer matches its contents, is skipped and every valid event still loads — one bad line no longer costs you the whole journal.
+
+**What you see:** `spine status --diagnose` reports the corruption in its Signals block:
+
+```json
+"journalCorruptLines": {
+  "count": 1,
+  "lines": [{ "lineNumber": 42, "byteOffset": 18730 }]
+}
+```
+
+- `lineNumber` is 1-based; `byteOffset` is the line's byte offset in the file. The first 20 bad lines are listed.
+- Skip reasons: `json_parse_error` (torn write) or `checksum_mismatch` (line contents changed). Legacy lines without a checksum load as-is.
+
+**What spine does:** nothing in the journal is rewritten. New appends detect a torn tail and start on a **fresh line**, so the damaged fragment stays in place as evidence.
+
+**What to inspect:** the reported lines in `.spine/runtime/<batchId>/journal/events.jsonl` (e.g. `sed -n '42p' .spine/runtime/<batchId>/journal/events.jsonl`), then `spine status --diagnose` for the state reconciled from the surviving events. No repair command is needed — the engine works from the valid events.
+
+#### Corrupt batch-state quarantine (#303, SP-786)
+
+When spine-owned `.spine/batch-state.json` cannot be parsed, spine **quarantines** it — renames it to `batch-state.corrupt-<UTC-timestamp>.json` in the same directory (a numeric suffix is added if that name is taken) — and never deletes it. `spine batch start` then refuses, **even with `--skip-preflight`** (the gate runs unconditionally on every start path):
+
+```text
+Batch state was corrupt and has been quarantined to <path>/batch-state.corrupt-2026-09-27T12-00-00-000Z.json. Inspect it and the journal (spine status --diagnose), then run spine batch dismiss --force before starting a new batch.
+```
+
+A corrupt **Taskplane-owned `.pi/batch-state.json`** is reported, and spine leaves it **unmodified** — `.pi/` belongs to the owning tool:
+
+```text
+Batch state at .pi/batch-state.json is corrupt and was left unmodified by spine (<parse error>). Inspect it (spine status --diagnose), then repair or remove it with the owning tool before starting a new batch.
+```
+
+**Recovery (spine-owned state):**
+
+1. Inspect the quarantined file — it is the evidence for what was corrupted — and the journal: `.spine/runtime/<batchId>/journal/events.jsonl`.
+2. `spine status --diagnose` — review the state reconciled from surviving journal events.
+3. `spine batch dismiss --force` — clear the quarantined state so a new batch can start.
+
+For `.pi/batch-state.json`, repair or remove it with the owning tool; spine will not touch it.
 
 ### Final review spawn timeout (`final_review_timeout`)
 

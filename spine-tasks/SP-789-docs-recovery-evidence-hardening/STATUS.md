@@ -1,6 +1,6 @@
 # SP-789: Runbook: v2.25.0 recovery-evidence hardening — Status
 
-**Current Step:** Step 1 (Runbook sections)
+**Current Step:** Step 2 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 0
@@ -18,12 +18,12 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Runbook sections
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] §6 recovery-evidence section
-- [ ] §4 BaseMoved / DirtyOverlap
-- [ ] §2.4 matrix note
-- [ ] Names match code
+- [x] §6 recovery-evidence section
+- [x] §4 BaseMoved / DirtyOverlap
+- [x] §2.4 matrix note
+- [x] Names match code
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
