@@ -192,7 +192,9 @@ export function truncateLiveLogBytes(text, maxBytes) {
 }
 
 /**
- * Append redacted worker output to the live log with a rolling byte cap.
+ * Append redacted worker output to the live log (SP-787 / #306). The hot path
+ * is a pure append — the file is never re-read per chunk. Only when it has
+ * grown past twice `workerLiveLogMaxBytes` is it truncated back to the cap.
  *
  * @param {object} params
  * @param {string} params.logPath
@@ -205,12 +207,18 @@ export function appendWorkerLiveLogChunk({ logPath, rawChunk, outputConfig }) {
 	const redacted = redactWorkerOutput(String(rawChunk), outputConfig);
 	if (!redacted) return;
 
-	const prior = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf-8") : "";
-	const combined = `${prior}${redacted}`;
-	const capped = truncateLiveLogBytes(combined, outputConfig.workerLiveLogMaxBytes);
-	if (!capped) return;
-
 	fs.mkdirSync(path.dirname(logPath), { recursive: true });
+	fs.appendFileSync(logPath, redacted);
+
+	let size = 0;
+	try {
+		size = fs.statSync(logPath).size;
+	} catch {
+		return;
+	}
+	if (size <= outputConfig.workerLiveLogMaxBytes * 2) return;
+
+	const capped = truncateLiveLogBytes(fs.readFileSync(logPath, "utf-8"), outputConfig.workerLiveLogMaxBytes);
 	writeTextAtomic(logPath, capped);
 }
 
