@@ -104,6 +104,33 @@ test("abortBatch journals batch.aborted and preserves prior journal tail", async
 	}
 });
 
+test("abortBatch completes on a journal with a torn line", async () => {
+	const projectRoot = await initGitRepo("spine-abort-torn-");
+	try {
+		const batchId = "20260815T170700";
+		writeRunningBatch(projectRoot, batchId);
+		appendJournalEvent(projectRoot, batchId, "batch.started", { fromPhase: "planning", toPhase: "running" });
+
+		// Crash mid-append: torn JSON fragment without trailing newline.
+		fs.appendFileSync(journalPath(projectRoot, batchId), '{"type":"x"', "utf-8");
+
+		const result = abortBatch({ projectRoot, reason: "torn journal abort" });
+		assert.equal(result.ok, true);
+		assert.equal(result.batchId, batchId);
+
+		const activePath = spineBatchStatePath(projectRoot);
+		assert.ok(!fs.existsSync(activePath), "active batch-state must be cleared");
+
+		const after = readJournalEvents(projectRoot, batchId);
+		assert.equal(after.length, 2);
+		assert.equal(after[0].type, "batch.started");
+		assert.equal(after[1].type, "batch.aborted");
+		assert.equal(after[1].payload?.reason, "torn journal abort");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("abortBatch writes abort signal without killing on graceful abort", async () => {
 	const projectRoot = await initGitRepo("spine-abort-graceful-");
 	try {

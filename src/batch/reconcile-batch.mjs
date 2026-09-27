@@ -32,6 +32,7 @@ import {
 	extractJournalDiagnosisHints,
 	findPlanReviewNestedSpawnBlockedFailure,
 	journalPath,
+	parseJournalLines,
 	readJournalEvents,
 } from "./journal.mjs";
 import { findLatestSalvageInspection } from "./salvage.mjs";
@@ -181,7 +182,18 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	/** @type {object[]} */
 	let journalEvents = [];
 	if (fs.existsSync(journalFile)) {
-		journalEvents = readJournalEvents(projectRoot, batch.batchId);
+		const parsedJournal = parseJournalLines(fs.readFileSync(journalFile, "utf-8"));
+		journalEvents = parsedJournal.events;
+		if (parsedJournal.skippedLines.length > 0) {
+			// SP-780: surface torn/checksum-failed lines so --diagnose reports
+			// the corruption instead of silently dropping those events.
+			signals.journalCorruptLines = {
+				count: parsedJournal.skippedLines.length,
+				lines: parsedJournal.skippedLines
+					.slice(0, 20)
+					.map(({ lineNumber, byteOffset }) => ({ lineNumber, byteOffset })),
+			};
+		}
 		signals.journalHints = extractJournalDiagnosisHints(journalEvents);
 		signals.journalEvents = journalEvents;
 	}

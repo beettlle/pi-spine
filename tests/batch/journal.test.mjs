@@ -11,7 +11,9 @@ import {
 	JOURNAL_SCHEMA_VERSION,
 	MAX_PAYLOAD_BYTES,
 	normalizeJournalEvent,
+	parseJournalLines,
 	readJournalEvents,
+	readJournalEventsCached,
 	readLastTaskFailedEvent,
 	redactSecrets,
 	verifyJournalChecksum,
@@ -180,6 +182,89 @@ test("readJournalEvents skips checksum-mismatched lines without discarding the f
 		const events = readJournalEvents(root, batchId);
 		assert.equal(events.length, 1);
 		assert.equal(events[0].type, "task.completed");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("readJournalEvents tolerates a torn final line and reports skipped metadata", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-torn-final-"));
+	const batchId = "20260815T170400";
+	try {
+		appendJournalEvent(root, batchId, "batch.started", { baseBranch: "main" });
+		const filePath = path.join(root, ".spine", "runtime", batchId, "journal", "events.jsonl");
+		// Simulate a crash mid-append: torn JSON fragment without trailing newline.
+		fs.appendFileSync(filePath, '{"type":"x"', "utf-8");
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 1);
+		assert.equal(events[0].type, "batch.started");
+
+		const raw = fs.readFileSync(filePath, "utf-8");
+		const parsed = parseJournalLines(raw);
+		assert.equal(parsed.events.length, 1);
+		assert.equal(parsed.skippedLines.length, 1);
+		assert.equal(parsed.skippedLines[0].lineNumber, 2);
+		assert.equal(parsed.skippedLines[0].byteOffset, Buffer.byteLength(raw.split("\n")[0], "utf-8") + 1);
+		assert.equal(parsed.skippedLines[0].reason, "json_parse_error");
+
+		// Cached reader keeps the same object[] shape on a torn journal.
+		assert.deepEqual(readJournalEventsCached(root, batchId), events);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("readJournalEvents yields valid events around a torn middle line", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-torn-mid-"));
+	const batchId = "20260815T170500";
+	try {
+		appendJournalEvent(root, batchId, "batch.started", { baseBranch: "main" });
+		appendJournalEvent(root, batchId, "task.completed", { taskId: "SP-1" });
+		const filePath = path.join(root, ".spine", "runtime", batchId, "journal", "events.jsonl");
+		const lines = fs.readFileSync(filePath, "utf-8").split("\n").filter(Boolean);
+		// Torn fragment between the two valid lines.
+		fs.writeFileSync(
+			filePath,
+			`${lines[0]}\n{"type":"x"\n${lines[1]}\n`,
+			"utf-8",
+		);
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 2);
+		assert.equal(events[0].type, "batch.started");
+		assert.equal(events[1].type, "task.completed");
+
+		const parsed = parseJournalLines(fs.readFileSync(filePath, "utf-8"));
+		assert.equal(parsed.skippedLines.length, 1);
+		assert.equal(parsed.skippedLines[0].lineNumber, 2);
+		assert.equal(parsed.skippedLines[0].byteOffset, Buffer.byteLength(lines[0], "utf-8") + 1);
+		assert.equal(parsed.skippedLines[0].reason, "json_parse_error");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("appendJournalEvent after a torn line keeps both events parseable", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-journal-append-torn-"));
+	const batchId = "20260815T170600";
+	try {
+		appendJournalEvent(root, batchId, "batch.started", { baseBranch: "main" });
+		const filePath = path.join(root, ".spine", "runtime", batchId, "journal", "events.jsonl");
+		fs.appendFileSync(filePath, '{"type":"x"', "utf-8");
+
+		appendJournalEvent(root, batchId, "task.completed", { taskId: "SP-1" });
+
+		// The torn fragment stays isolated on its own line.
+		const rawLines = fs.readFileSync(filePath, "utf-8").split("\n").filter(Boolean);
+		assert.equal(rawLines.length, 3);
+		assert.equal(rawLines[1], '{"type":"x"');
+
+		const events = readJournalEvents(root, batchId);
+		assert.equal(events.length, 2);
+		assert.equal(events[0].type, "batch.started");
+		assert.equal(events[1].type, "task.completed");
+		assert.equal(events[1].taskId, "SP-1");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
