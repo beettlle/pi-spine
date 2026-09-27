@@ -66,6 +66,9 @@ function crashStack(error) {
 function defaultMarkBatchFailed({ projectRoot, batchId, message, endedAt }) {
 	const loaded = loadSpineBatchState(projectRoot);
 	if (!loaded.raw) return false;
+	// Fail only the batch that was active at crash time — never a batch that
+	// appeared in batch-state.json between resolution and this write.
+	if (loaded.raw.batchId !== batchId) return false;
 	loaded.raw.phase = "failed";
 	loaded.raw.endedAt = typeof endedAt === "number" ? endedAt : Date.now();
 	loaded.raw.lastError = String(message).slice(0, ERROR_MESSAGE_CAP);
@@ -94,14 +97,14 @@ export function installEngineCrashHandlers({ projectRoot, deps = {} }) {
 	const {
 		appendJournalEvent: appendEvent = appendJournalEvent,
 		markBatchFailed = defaultMarkBatchFailed,
-		exit = (code) => process.exit(code),
-		now = () => Date.now(),
+		exit = /** @type {(code?: number) => void} */ ((code) => process.exit(code)),
+		now = /** @type {() => number} */ (() => Date.now()),
 	} = deps ?? {};
 
 	/** Guard against a second fault firing while the first is being journaled. */
 	let handling = false;
 
-	const handle = (kind, error) => {
+	const handle = (/** @type {string} */ kind, /** @type {unknown} */ error) => {
 		if (handling) return;
 		handling = true;
 
@@ -128,8 +131,8 @@ export function installEngineCrashHandlers({ projectRoot, deps = {} }) {
 		exit(1);
 	};
 
-	const onUncaughtException = (error) => handle("uncaughtException", error);
-	const onUnhandledRejection = (reason) => handle("unhandledRejection", reason);
+	const onUncaughtException = (/** @type {unknown} */ error) => handle("uncaughtException", error);
+	const onUnhandledRejection = (/** @type {unknown} */ reason) => handle("unhandledRejection", reason);
 	process.on("uncaughtException", onUncaughtException);
 	process.on("unhandledRejection", onUnhandledRejection);
 

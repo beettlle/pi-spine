@@ -40,15 +40,15 @@
 9 tests: journal+mark+exit once, rejection kind, re-entrancy, uninstall removes both listeners, throwing journal → exit 1 + stderr, throwing markBatchFailed → exit 1, no active batch → exit 1, 500-char/20-line caps, default markBatchFailed real-I/O path.
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Batch suite
+- [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Discoveries logged
 - [ ] Create `.DONE`
@@ -62,6 +62,9 @@
 | No `uncaughtException`/`unhandledRejection` handlers in `src/` or `bin/` (rg exit 1) — confirms problem theory | — |
 | `tsconfig.batch.json` type-checks an explicit file list; `attached-runner-promote.mjs` and the new module are not in it — no `// @ts-nocheck` needed either way; verified via Contract testCommand in Step 3 | None |
 | Existing fail-closed pattern: `failBatchFromEngineError` in `state.mjs` sets `endedAt`/`lastError` (sliced 500)/`phase="failed"` — mirrored in default `markBatchFailed` | Informs design |
+| New module IS transitively type-checked (`npm run typecheck` failed with 5 TS7006 implicit-any errors before inline JSDoc casts) — no `@ts-nocheck` used | Fixed in Step 3 |
+| Lint `--max-warnings 0` caught unused `batchId` param in `defaultMarkBatchFailed` — fixed with a real guard: never fail a batch other than the one resolved at crash time | Fixed in Step 3 |
+| `docs/adoption/operator-runbook.md` "Resume engine crash (fail-closed)" (line ~1776) covers the detached-engine path only — SP-789 should extend it with the attached-engine `engine.crashed` behavior | Delegated to SP-789 |
 
 ## Blockers
 
