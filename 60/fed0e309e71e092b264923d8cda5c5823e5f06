@@ -1,0 +1,14 @@
+spine-tasks/SP-780-journal-torn-line-tolerance/STATUS.md
+  h_2a17159c706ba1 3-4,39,41-44,47,49-50,68,73,78-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "60fed0e309e71e092b264923d8cda5c5823e5f06",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
