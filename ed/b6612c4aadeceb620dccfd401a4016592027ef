@@ -1,0 +1,21 @@
+spine-tasks/SP-779-stall-exit-before-deadline/.DONE
+  s_e5a9e3b01dd5b5::t_924b080aa3535b 1-8
+spine-tasks/SP-779-stall-exit-before-deadline/.reviews/0-20260927T222700.md
+  s_e5a9e3b01dd5b5::t_881da900ea7da3 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "edb6612c4aadeceb620dccfd401a4016592027ef",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
