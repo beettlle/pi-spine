@@ -11,6 +11,7 @@ import { gitExec } from "./git-exec.mjs";
 import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
 
 export const DEFAULT_SYNC_TIMEOUT_MS = 60_000;
 
@@ -281,14 +282,14 @@ function pathExistsInTree(cwd, treeRef, filePath, { timeoutMs } = {}) {
 }
 
 /**
- * Materialize paths introduced/changed by a plumbing merge without resetting human edits.
- * Returns a result object so callers can detect timeout and emit integrate.failed.
+ * Materialize paths changed by a plumbing merge into the current checkout; paths with
+ * uncommitted local edits are skipped and reported via skippedDirtyPaths (SP-784 / #298).
  *
  * @param {string} projectRoot
  * @param {string} baseSha
  * @param {string} mergeCommit
  * @param {{ timeoutMs?: number }} [options]
- * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number }}
+ * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] }}
  */
 export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS } = {}) {
 	const envTimeoutMs = process.env.SPINE_SYNC_TIMEOUT_MS
@@ -311,6 +312,8 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 	}
 
 	const paths = output.split("\n").map((line) => line.trim()).filter(Boolean);
+	const dirtyPathSet = new Set(listIntegrateDirtyPaths(projectRoot));
+	const skippedDirtyPaths = [];
 	let processedCount = 0;
 
 	for (const filePath of paths) {
@@ -336,6 +339,12 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 			debugSyncLog(
 				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
 			);
+			continue;
+		}
+
+		if (dirtyPathSet.has(filePath)) {
+			skippedDirtyPaths.push(filePath);
+			debugSyncLog(`syncPlumbingMergePathsToWorktree: skip ${filePath} — uncommitted local edits kept (SP-784)`);
 			continue;
 		}
 
@@ -369,7 +378,41 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 		processedCount++;
 	}
 
-	return { ok: true, processedPaths: processedCount, totalPaths: paths.length };
+	return { ok: true, processedPaths: processedCount, totalPaths: paths.length, skippedDirtyPaths };
+}
+
+/**
+ * Post-merge path sync gated on the branch checked out right now (SP-784 / #298): returns
+ * null (no sync) whenever baseBranch is not checked out in projectRoot, leaving it untouched.
+ *
+ * @param {string} projectRoot
+ * @param {string} baseBranch
+ * @param {string} baseSha
+ * @param {string} mergeCommit
+ * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] } | null}
+ */
+export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit) {
+	if (!isBranchCheckedOutInWorktree(projectRoot, baseBranch)) return null;
+	return syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
+}
+
+/**
+ * Journal merged paths the sync skipped (uncommitted operator edits), then return the
+ * operator-facing warning string; null when there is no overlap (SP-784 / #298).
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} baseBranch
+ * @param {string} orchBranch
+ * @param {string} mergeCommit
+ * @param {string[]} [skippedDirtyPaths]
+ * @param {number|null} [laneNumber] Salvage-only lane number added to the journal event.
+ * @returns {string | null}
+ */
+export function reportDirtyOverlap({ projectRoot, batchId, baseBranch, orchBranch, mergeCommit, skippedDirtyPaths = [], laneNumber = null }) {
+	if (skippedDirtyPaths.length === 0) return null;
+	appendJournalEvent(projectRoot, batchId, "integrate.dirty_overlap", { baseBranch, orchBranch, mergeCommit, ...(laneNumber != null ? { laneNumber } : {}), skippedDirtyPaths });
+	return `DirtyOverlap: ${skippedDirtyPaths.join(", ")} kept local edits — run git diff / git restore --source ${baseBranch} -- ${skippedDirtyPaths.join(" ")} after review`;
 }
 
 /**
