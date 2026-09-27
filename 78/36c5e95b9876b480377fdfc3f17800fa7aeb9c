@@ -1,0 +1,16 @@
+spine-tasks/SP-782-integrate-base-ref-cas/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-19,22,24-30,33,35-37,40,42-46,49,51-53,57-64,67-75
+tests/batch/integrate-base-cas.test.mjs
+  h_2a17159c706ba1 5,294
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7836c5e95b9876b480377fdfc3f17800fa7aeb9c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
