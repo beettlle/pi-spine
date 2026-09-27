@@ -1,0 +1,10 @@
+SP-775 complete — type reconcile classify/diagnosis/context/light-cache (#284 partial).
+
+- Four modules pass `npx tsc --project tsconfig.batch.json --noEmit` (exit 0) with `@ts-nocheck` removed
+- tsconfig.batch.json include: 4 paths added before types/micromatch.d.ts
+- NOCHECK_ALLOWLIST: exactly 4 rows removed (guard test green)
+- LOC: 443/383/87/60 — all ≤500; PHASE23_GRANDFATHERED_OVER_500 untouched
+- src/doctor/run-doctor-checks.mjs untouched
+- Evidence: lint clean; npm run typecheck exit 0; Contract testCommand 69/69; full suite 2651/2651 (`env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm test`); coverage 89.67% ≥ 77%
+- detect_changes: 19 symbols touched (annotation-only), risk medium, no runtime/signature change
+- Commits: 51fa4d0a (Step 0), 6448d8c1 (Step 1), 6f1b0c70 (Step 2), 5806b25e (Step 3)
