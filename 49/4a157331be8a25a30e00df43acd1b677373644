@@ -1,0 +1,21 @@
+tests/batch/live-worker-log.test.mjs
+  s_163668b472df17::t_fb8d2c5fda9827 291,302-307,311
+tests/batch/worker-spawn-errors.test.mjs
+  s_163668b472df17::t_799619625a80e9 1-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "494a157331be8a25a30e00df43acd1b677373644",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
