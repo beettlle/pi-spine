@@ -1,6 +1,6 @@
 # SP-775: Type reconcile classify/diagnosis/context/light-cache — Status
 
-**Current Step:** Step 1 — Type classify/diagnosis cluster
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
@@ -18,13 +18,13 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Type classify/diagnosis cluster
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 > ⚠️ Hydrate: Expand based on tsc errors surfaced after stripping nocheck
 
-- [ ] Remove nocheck + JSDoc/casts
-- [ ] Expand tsconfig.batch include
-- [ ] Shrink allowlist for this set only
-- [ ] LOC under policy limit
+- [x] Remove nocheck + JSDoc/casts (only 3 errors post-annotation vs 119 probe — SP-774 patterns absorbed most; see Discoveries)
+- [x] Expand tsconfig.batch include (4 paths before `types/micromatch.d.ts`)
+- [x] Shrink allowlist for this set only (4 rows; 100→96 lines in guard fixture)
+- [x] LOC under policy limit (443/383/87/60; `PHASE23_GRANDFATHERED_OVER_500` untouched)
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started

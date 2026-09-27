@@ -1,10 +1,9 @@
-// @ts-nocheck
 /** Diagnosis output context after reconcile signal enrichment (#201 / SP-645). */
 
 import { findPendingLaneLandTasks } from "./diagnosis-pending-lane.mjs";
 
 /**
- * @param {object} params
+ * @param {Record<string, any>} params
  */
 export function buildReconcileDiagnosisContext(params) {
 	const {

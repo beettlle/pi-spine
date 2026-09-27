@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** Light-reconcile git cache and phase sets (SP-606 / #192). */
 
 export const LIMBO_PHASES = new Set(["stopped", "failed", "executing"]);

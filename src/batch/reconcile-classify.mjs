@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** Task classification and git inspection for batch reconciliation (SP-578). */
 
 import fs from "node:fs";
@@ -21,7 +20,7 @@ export function resolveTasksRoot(projectRoot, configResult) {
 	return resolveTasksRootPath(projectRoot, loaded.config);
 }
 
-/** Align classification with batch-state status (SP-516 / #166, SP-512). @param {object} classified */
+/** Align classification with batch-state status (SP-516 / #166, SP-512). @param {Record<string, any>} classified */
 export function alignTaskClassificationWithStatus(classified) {
 	const status = String(classified.status ?? "").toLowerCase();
 	let classification = classified.classification;
@@ -43,9 +42,9 @@ export function alignTaskClassificationWithStatus(classified) {
 	return { ...classified, classification };
 }
 
-/** @param {object} batch @param {string|null} tasksRoot @param {string} [projectRoot] */
+/** @param {Record<string, any>} batch @param {string|null} tasksRoot @param {string} [projectRoot] */
 export function classifyTasks(batch, tasksRoot, projectRoot = "") {
-	return batch.tasks.map((task) =>
+	return batch.tasks.map((/** @type {any} */ task) =>
 		alignTaskClassificationWithStatus(
 			classifyTaskDoneSemantics(task, {
 				tasksRoot,
@@ -57,7 +56,7 @@ export function classifyTasks(batch, tasksRoot, projectRoot = "") {
 	);
 }
 
-/** @param {{ projectRoot: string, state: object }} params @returns {{ changed: boolean }} */
+/** @param {{ projectRoot: string, state: Record<string, any> }} params @returns {{ changed: boolean }} */
 export function syncPersistedClassifications({ projectRoot, state }) {
 	if (!state || typeof state !== "object") {
 		return { changed: false };
@@ -70,7 +69,7 @@ export function syncPersistedClassifications({ projectRoot, state }) {
 
 	const tasksRoot = resolveTasksRoot(projectRoot);
 	const classified = classifyTasks(batch, tasksRoot, projectRoot);
-	const alignedById = new Map(classified.map((task) => [String(task.taskId), task]));
+	const alignedById = new Map(classified.map((/** @type {any} */ task) => [String(task.taskId), task]));
 	let changed = false;
 
 	for (const task of state.tasks ?? []) {
@@ -116,6 +115,7 @@ export function syncPersistedClassifications({ projectRoot, state }) {
 	return { changed };
 }
 
+/** @param {string} projectRoot */
 function isInsideGitRepo(projectRoot) {
 	try {
 		execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
@@ -129,6 +129,7 @@ function isInsideGitRepo(projectRoot) {
 	}
 }
 
+/** @param {string} projectRoot @param {string} ref */
 function gitRefExists(projectRoot, ref) {
 	try {
 		execFileSync("git", ["rev-parse", "--verify", ref], {
@@ -142,6 +143,7 @@ function gitRefExists(projectRoot, ref) {
 	}
 }
 
+/** @param {string} projectRoot @param {string} ancestor @param {string} descendant */
 function gitIsAncestor(projectRoot, ancestor, descendant) {
 	try {
 		execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
@@ -155,6 +157,7 @@ function gitIsAncestor(projectRoot, ancestor, descendant) {
 	}
 }
 
+/** @param {Record<string, any>} result @param {unknown} err @param {string} context */
 function recordGitInspectionError(result, err, context) {
 	const message = err instanceof Error ? err.message : String(err);
 	const detail = `${context}: ${message}`;
@@ -163,6 +166,7 @@ function recordGitInspectionError(result, err, context) {
 		: detail;
 }
 
+/** @param {string} projectRoot @param {string} batchId @returns {string[]} */
 function listOrchBranches(projectRoot, batchId) {
 	try {
 		const output = execFileSync("git", ["branch", "-a", "--list", "*orch*"], {
@@ -184,7 +188,7 @@ function listOrchBranches(projectRoot, batchId) {
 /** @param {{ projectRoot: string, batchId: string, baseBranch: string, orchBranch: string|null }} ctx */
 export function inspectGitState(ctx) {
 	const { projectRoot, batchId, baseBranch, orchBranch } = ctx;
-	const result = {
+	const result = /** @type {Record<string, any>} */ ({
 		inGitRepo: isInsideGitRepo(projectRoot),
 		baseBranch,
 		orchBranch,
@@ -194,7 +198,7 @@ export function inspectGitState(ctx) {
 		mergedOrchBranch: null,
 		orchCommitsAhead: null,
 		gitInspectionError: null,
-	};
+	});
 
 	if (!result.inGitRepo) return result;
 
@@ -273,7 +277,9 @@ export function listGitChangedPaths(projectRoot, refA, refB) {
 	}
 }
 
-/** Paths from human commits since snapshot, excluding orch ancestry. */
+/** Paths from human commits since snapshot, excluding orch ancestry.
+ * @param {string} projectRoot @param {string|null} snapshot @param {string|null} humanHead @param {string|null} orchBranch @returns {string[]}
+ */
 export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch) {
 	if (!snapshot || !humanHead || snapshot === humanHead) return [];
 	const args = ["log", "--name-only", "--pretty=format:", `${snapshot}..${humanHead}`];
@@ -293,6 +299,7 @@ export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch)
 	}
 }
 
+/** @param {string} projectRoot @param {string} ref @param {string} filePath */
 function pathExistsAtRef(projectRoot, ref, filePath) {
 	try {
 		execFileSync("git", ["cat-file", "-e", `${ref}:${filePath}`], {
@@ -306,6 +313,7 @@ function pathExistsAtRef(projectRoot, ref, filePath) {
 	}
 }
 
+/** @param {string} projectRoot @param {string} baseTip @param {string} snapshot */
 function humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot) {
 	const landPaths = listGitChangedPaths(projectRoot, snapshot, baseTip);
 	for (const filePath of landPaths) {
@@ -317,7 +325,9 @@ function humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot) {
 	return false;
 }
 
-/** Human/base divergence or post-isolated-integrate sync (FR-WT-08 / #91). */
+/** Human/base divergence or post-isolated-integrate sync (FR-WT-08 / #91).
+ * @param {Record<string, any>} ctx
+ */
 export function inspectHumanBaseSync(ctx) {
 	const { projectRoot, baseBranch, baseBranchHeadAtStart, orchBranch, git, journalEvents } = ctx;
 	if (!git?.inGitRepo) return null;
@@ -343,7 +353,7 @@ export function inspectHumanBaseSync(ctx) {
 	}
 
 	const integrateCompleted = Array.isArray(journalEvents)
-		? journalEvents.some((event) => event.type === "integrate.completed")
+		? journalEvents.some((/** @type {any} */ event) => event.type === "integrate.completed")
 		: false;
 	const landSucceeded =
 		git.orchMergedToBase ||
