@@ -1,6 +1,6 @@
 # SP-784: Integrate checkout sync safety — Status
 
-**Current Step:** Step 3 (Tests)
+**Current Step:** Step 4 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
@@ -41,11 +41,12 @@
 - [x] Same gate + dirty skip (plumbing sync via gate wrapper; `laneNumber` added to overlap event; `warnings` on salvage success result)
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Feature-branch porcelain unchanged
-- [ ] Dirty edit preserved + reported
-- [ ] Salvage assertion
+- [x] Feature-branch porcelain unchanged (existing e2e extended; also asserts no overlap warning)
+- [x] Dirty edit preserved + reported (plumbing e2e: edit survives, `main:tracked.txt` updated, `warnings` + `integrate.dirty_overlap` asserted)
+- [x] Salvage assertion (e2e via `integrateSalvageableLane`: dirty path kept, `laneId: lane-1` on overlap event)
+- [x] Unit coverage in integrate-worktree-sync (dirty skip + `skippedDirtyPaths`; gate wrapper null on feature branch) — 12/12 pass
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
