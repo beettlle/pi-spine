@@ -1,0 +1,19 @@
+spine-tasks/SP-787-worker-spawn-hardening/PROMPT.md
+  s_a6aa67bf96416b::t_c17ae700e57d4f 133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3299d0bf5b154f9a68090f7110eda31b230b20bc",
+  "prompts": {},
+  "sessions": {
+    "s_a6aa67bf96416b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d11c8f3e-bf10-4f94-9f9e-131a8f2123c8",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
