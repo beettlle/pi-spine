@@ -34,7 +34,11 @@ import {
 } from "../state.mjs";
 import { runWorker } from "../worker-host.mjs";
 import { resolveWorktreeSetupIgnorePaths } from "../../config/spine-config-load.mjs";
-import { parseContract } from "../../tasks/packet/parse-prompt.mjs";
+import {
+	findContractCommandMetacharIssue,
+	isRefusedContractMetacharCommand,
+	parseContract,
+} from "../../tasks/packet/parse-prompt.mjs";
 import { verifyContract } from "../contract-verify.mjs";
 import { gitExec } from "../git-exec.mjs";
 
@@ -48,6 +52,21 @@ export function readParentContract(parentTaskFolderAbs) {
 	const promptPath = path.join(parentTaskFolderAbs, "PROMPT.md");
 	if (!fs.existsSync(promptPath)) return null;
 	return parseContract(fs.readFileSync(promptPath, "utf-8"));
+}
+
+/**
+ * Matrix-specific refusal copy for an execute row whose substituted command
+ * contains shell metacharacters (#297). Deliberately distinct from the
+ * contract-verify copy ("Contract testCommand refused before spawn") so
+ * operators can tell a bad row value from a bad authored command.
+ *
+ * @param {string} rowId
+ * @param {string} command
+ * @returns {string}
+ */
+function formatMatrixRowRefusedMetacharMessage(rowId, command) {
+	const issue = findContractCommandMetacharIssue(String(command ?? "").trim());
+	return `matrix row command refused before spawn: row '${rowId}' substitutes to a command containing ${issue ?? "shell metacharacters"} (command: ${command}). Row values flow into runCommand through /bin/sh -c; remove $, backticks, ;, |, || or lone & from the row value — && chains are allowed (#268, #297).`;
 }
 
 /**
@@ -251,7 +270,14 @@ export async function runMatrixSubLane({
 			};
 		} else {
 			const command = substituteRowCommand(rawCommand, values);
-			const run = await runShellInDir(worktreePath, command, matrixEnv);
+			// Guard AFTER substitution, BEFORE spawn (#297): parse-time validation only
+			// saw the raw template, so a row value can reintroduce shell metacharacters
+			// into an otherwise-clean command. Refused rows never reach /bin/sh — the
+			// ternary short-circuits before `runShellInDir` — and the refusal message
+			// flows through the failed-row path, which journals `matrix.sub_lane.failed`.
+			const run = isRefusedContractMetacharCommand(command)
+				? { exitCode: 1, output: formatMatrixRowRefusedMetacharMessage(rowId, command) }
+				: await runShellInDir(worktreePath, command, matrixEnv);
 			if (run.exitCode !== 0) {
 				result = {
 					rowId,

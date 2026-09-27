@@ -1,0 +1,8 @@
+SP-781 complete.
+
+- Runtime metachar guard in runMatrixSubLane execute branch: isRefusedContractMetacharCommand after substituteRowCommand, before runShellInDir (ternary short-circuit; refused rows never spawn a shell).
+- Refused rows: ok:false, exitCode:1, matrix-specific message (formatMatrixRowRefusedMetacharMessage) naming row id + detected issue; existing failed-row path journals matrix.sub_lane.failed.
+- && chains remain allowed (#268 grammar).
+- Tests: tests/batch/matrix-row-command-guard.test.mjs (new; ; $( backtick lone-& all refused, no side-effect file, journaled; benign && success path) + metachar-in-value case in tests/batch/contract-matrix-subst.test.mjs.
+- Verification: npm run lint clean; typecheck clean; Contract testCommand 63/63 pass (incl. full matrix-execution e2e suite).
+- src/batch/engine-lanes/matrix.mjs untouched (SP-783 owns runShellInDir).

@@ -163,6 +163,35 @@ test("applyMatrixRowToContract: tolerates sparse contracts with null/missing lis
 	assert.deepStrictEqual(out.artifactsMustExist, []);
 });
 
+test("metachar-in-value: substitution is textual and verifyContract refuses the injected command before spawn (#297)", async () => {
+	const contract = parseContract(MATRIX_PROMPT);
+	const evil = "a; printf PWNED";
+	// testCommand avoids the `npm test --` shape so the #297 metachar guard is the
+	// refusal that fires, not the npm-test-dash-dash refusal (#268-era).
+	const scoped = { ...contract, testCommand: "node scripts/run.js {matrix.run_id}" };
+
+	// Substitution itself stays textual — the guard lives at the runtime boundary,
+	// not in the planner (#297).
+	const substituted = applyMatrixRowToContract(scoped, { run_id: evil });
+	assert.strictEqual(substituted.testCommand, "node scripts/run.js a; printf PWNED");
+
+	const worktreePath = await initGitRepo("spine-matrix-metachar-");
+	try {
+		const result = verifyContract(worktreePath, scoped, {
+			matrixRow: { run_id: evil },
+			contract: { testRetries: 0 },
+		});
+		assert.equal(result.ok, false);
+		const cmdCheck = result.checks.find((c) => c.field === "testCommand");
+		assert.ok(cmdCheck, "testCommand check present");
+		assert.equal(cmdCheck.ok, false);
+		assert.match(cmdCheck.message, /shell sequencing \(;\)/, "metachar guard names the detected issue");
+		assert.match(cmdCheck.message, /refused before spawn/, "refusal happens before any shell spawn");
+	} finally {
+		await destroyGitRepo(worktreePath);
+	}
+});
+
 test("verifyContract: applies config.matrixRow so fileScopeMustChange matches per row", async () => {
 	const worktreePath = await initGitRepo("spine-matrix-contract-");
 	try {
