@@ -1,0 +1,14 @@
+spine-tasks/SP-775-type-reconcile-classify-diagnosis/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "51fa4d0aa0d2adcc930eaec62a133d3899284cc0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
