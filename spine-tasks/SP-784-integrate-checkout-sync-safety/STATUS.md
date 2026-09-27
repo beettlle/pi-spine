@@ -1,6 +1,6 @@
 # SP-784: Integrate checkout sync safety — Status
 
-**Current Step:** Step 1 (Safe sync in integrate)
+**Current Step:** Step 3 (Tests)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
@@ -28,17 +28,17 @@
 > Note: real-pi session — engine runs plan/code review after .DONE (SP-195).
 
 ### Step 1: Safe sync in integrate
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Sync gated on base checked out now
-- [ ] Dirty skip + `skippedDirtyPaths` + docstring
-- [ ] `integrate.dirty_overlap` + warning
-- [ ] Dead code removed
+- [x] Sync gated on base checked out now (`syncMergePathsToCheckedOutBase` gate wrapper; fast-forward + plumbing routes)
+- [x] Dirty skip + `skippedDirtyPaths` + docstring (intersect via `listIntegrateDirtyPaths`; skip after exists-in-merge check)
+- [x] `integrate.dirty_overlap` + warning (reported only after sync known-good; `warnings: [string]` on success result)
+- [x] Dead code removed (checkout + `reset --hard` bare-catch block deleted; `baseCheckedOutAtStart` kept — still read by `integrate.completed` payload)
 
 ### Step 2: Salvage parity
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Same gate + dirty skip
+- [x] Same gate + dirty skip (plumbing sync via gate wrapper; `laneNumber` added to overlap event; `warnings` on salvage success result)
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -65,7 +65,14 @@
 
 ## Discoveries
 
-_None yet._
+| # | Finding |
+|---|---------|
+| 1 | GitNexus index is stale (references `mergeOrchIntoBaseViaRefs`, removed by SP-782); verified preflight with grep instead. |
+| 2 | Both #298 effects reproduced on pre-fix code: (a) feature-branch integrate staged `orch-work.txt` into the feature index (`A  orch-work.txt`); (b) `syncPlumbingMergePathsToWorktree` overwrote a dirty `tracked.txt` ("operator uncommitted edit" → "orch version"). |
+| 3 | Impact of `syncPlumbingMergePathsToWorktree` is HIGH (7 nodes): 3rd caller `syncHumanCheckoutWithBase` (src/cli/sync-base.mjs) is outside File Scope. Change kept additive (new `skippedDirtyPaths` field ignored there; dirty-skip extends the same protection to `spine sync-base`). `tests/batch/integrate-sync-base.test.mjs` covers it and runs in the Step 4 glob. |
+| 4 | LOC pressure: integrate-worktree.mjs exactly 500, salvage-batch-integrate.mjs 497 — JSDoc/props compacted to fit the ≤ 500 contract (`reportDirtyOverlap` docs use positional-style names for its destructured object). |
+| 5 | In integrate.mjs, `mode: "worktree"` is unreachable (runIntegrateMerge only calls `mergeOrchIntoBaseIsolated` when base is checked out, which delegates to plumbing), so the deleted `checkout`/`reset --hard` fallback was the only worktree-mode handler. |
+| 6 | Journal events expose payload under `event.payload` (normalizeJournalEvent nests extras). |
 
 ## Blockers
 
