@@ -1,0 +1,19 @@
+src/batch/engine-lanes/matrix.mjs
+  s_163668b472df17::t_c4d94e0a2ccd36 25,289-327,332-339,344-348,350-361,363-395,400-401,403-410,412-424,428-431,434-451
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5165301bb3ddadb5d540677e443271273f0c2d9b",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
