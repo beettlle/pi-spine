@@ -1,6 +1,6 @@
 # SP-785: Unified task-ID discovery (SP-1000+) — Status
 
-**Current Step:** Step 3 (Boundary + guard tests)
+**Current Step:** Step 4 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 1
@@ -31,11 +31,11 @@
 - [x] Worker prompt/runner use shared helper
 
 ### Step 3: Boundary + guard tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Parity + numeric order
-- [ ] Regex guard test
-- [ ] Preflight test expectations
+- [x] Parity + numeric order
+- [x] Regex guard test
+- [x] Preflight test expectations
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
@@ -62,6 +62,9 @@
 | Consumer inventory | `discover.mjs:5` (`\d{3}`), `discovery.mjs:15` `TASK_ID_PATTERN` (`[A-Z]{2,}`), `discovery.mjs:35` `taskIdFromFolder`, `discovery.mjs:39/51` unfiltered discovery, `scope.mjs:15` `TASK_ID_RE` (canonical shape), `worker-prompt.mjs:83`, `spine-worker-runner.mjs:315` |
 | Out-of-scope regexes (untouched) | `parse-prompt.mjs` (`\d+` heading/parsers), `taskplane-state.mjs:124`, `engine-scope.mjs:92` — not in File Scope |
 | Blast radius | GitNexus impact on `discoverTaskFolders`: LOW, 7 impacted (preflight checks → batch preflight → batch start) — matches PROMPT risk note |
+| Fourth private regex | Guard sweep found `worker-prompt.mjs:48` default `taskIdHint` param with its own `/^([A-Z]+-\d+)/`; now defaults to `taskIdFromFolder(taskFolder)` |
+| Preflight tests | Existing expectations (TP-001/TP-002) unchanged; added `checkTasksRoot ignores non-task folders` case (`_explore`/`_authoring`/`_archive` with PROMPT.md excluded) |
+| Boundary suite | 6/6 pass; affected suites (preflight + worker-prompt + planner) 118/118 pass |
 | Baseline count | `discoverTasks('spine-tasks')` = **766** tasks, all 3-digit IDs |
 | `spine plan all` pre-existing failure | Throws on legacy TP-04x packets with invalid PROMPT (missing Testing) — unrelated to discovery; using `discoverTasks` count for the plan-count criterion instead |
 

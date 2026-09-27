@@ -45,7 +45,7 @@ export async function buildWorkerTailPrompt({
 	worktreePath,
 	taskFolder,
 	donePath,
-	taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID",
+	taskIdHint = taskIdFromFolder(taskFolder),
 	reviewLevel = 0,
 	includePromptInclude = false,
 	config = {},
