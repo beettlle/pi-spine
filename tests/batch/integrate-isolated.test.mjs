@@ -6,11 +6,15 @@ import test from "node:test";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
+import { integrateSalvageableLane } from "../../src/batch/salvage-batch-integrate.mjs";
+import { createInitialBatchState } from "../../src/batch/state.mjs";
+import { archiveBatchStatePath } from "../../src/batch/lifecycle.mjs";
+import { laneTaskBranch } from "../../src/batch/worktree.mjs";
 import {
 	isBranchCheckedOutInWorktree,
 	resolveIntegrateWorktreePath,
 } from "../../src/batch/integrate-worktree.mjs";
-import { readJournalEvents } from "../../src/batch/journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { recordBatchBaseSnapshot } from "../../src/batch/integrate-worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -229,11 +233,22 @@ test("integrateOrchToBase succeeds with uncommitted edits on feature branch (non
 			cwd: projectRoot,
 			encoding: "utf-8",
 		}).trim();
+		const porcelainBefore = execFileSync("git", ["status", "--porcelain"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		});
 
 		const result = integrateOrchToBase({ projectRoot });
 		assert.equal(result.ok, true, result.error ?? result.headline);
 		assert.ok(result.mergeCommit);
 		assert.notEqual(result.mergeCommit, mainBefore);
+
+		// SP-784: the checkout must be untouched — no staged base changes, no lost edits.
+		assert.equal(
+			execFileSync("git", ["status", "--porcelain"], { cwd: projectRoot, encoding: "utf-8" }),
+			porcelainBefore,
+		);
+		assert.equal(result.warnings, undefined);
 
 		const onFeature = execFileSync("git", ["branch", "--show-current"], {
 			cwd: projectRoot,
@@ -245,6 +260,182 @@ test("integrateOrchToBase succeeds with uncommitted edits on feature branch (non
 			"feature branch draft\n",
 		);
 		assert.ok(gitRefHasPath(projectRoot, "main", "orch-work.txt"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("integrateOrchToBase with base checked out keeps dirty merged path and reports overlap (SP-784)", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-isolated-overlap-");
+	const orchBranch = "orch/spine-20260702T150000";
+	const batchId = "20260702T150000";
+	try {
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "baseline\n", "utf-8");
+		execFileSync("git", ["add", "tracked.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tracked baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "orch version\n", "utf-8");
+		execFileSync("git", ["add", "tracked.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch edits tracked"], { cwd: projectRoot, stdio: "ignore" });
+
+		// Advance main past the fork point so the merge is a plumbing merge, not a fast-forward.
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "main-only.txt"), "main work\n", "utf-8");
+		execFileSync("git", ["add", "main-only.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "main advances"], { cwd: projectRoot, stdio: "ignore" });
+
+		const fixture = completedBatchFixture(orchBranch, batchId);
+		writeSpineBatchState(projectRoot, fixture);
+		approveGateForIntegrate(projectRoot, fixture, batchId);
+
+		// Operator edit on the path the merge wants to update.
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "operator uncommitted edit\n", "utf-8");
+
+		const result = integrateOrchToBase({ projectRoot });
+		assert.equal(result.ok, true, result.error ?? result.headline);
+		assert.ok(result.mergeCommit);
+
+		// The uncommitted edit survives; the merge commit is on main.
+		assert.equal(
+			fs.readFileSync(path.join(projectRoot, "tracked.txt"), "utf-8"),
+			"operator uncommitted edit\n",
+		);
+		assert.equal(
+			execFileSync("git", ["show", "main:tracked.txt"], { cwd: projectRoot, encoding: "utf-8" }),
+			"orch version\n",
+		);
+
+		assert.deepEqual(result.warnings, [
+			"DirtyOverlap: tracked.txt kept local edits — run git diff / git restore --source main -- tracked.txt after review",
+		]);
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const overlap = events.find((event) => event.type === "integrate.dirty_overlap");
+		assert.ok(overlap);
+		assert.deepEqual(overlap.payload.skippedDirtyPaths, ["tracked.txt"]);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+const SALVAGE_BATCH_ID = "20260703T231500";
+
+function writeArchivedAbortedBatch(projectRoot) {
+	const state = createInitialBatchState({
+		batchId: SALVAGE_BATCH_ID,
+		baseBranch: "main",
+		orchBranch: `orch/spine-${SALVAGE_BATCH_ID}`,
+		wavePlan: [["SP-470"], ["SP-471"]],
+		tasks: [
+			{
+				taskId: "SP-470",
+				laneNumber: 1,
+				status: "succeeded",
+				taskFolder: "spine-tasks/SP-470-fixture",
+				doneFileFound: true,
+				exitReason: "done",
+			},
+			{
+				taskId: "SP-471",
+				laneNumber: 2,
+				status: "failed",
+				taskFolder: "spine-tasks/SP-471-fixture",
+				doneFileFound: false,
+				exitReason: "contract_failed",
+			},
+		],
+		lanes: [
+			{ laneNumber: 1, laneId: "lane-1", taskIds: ["SP-470"] },
+			{ laneNumber: 2, laneId: "lane-2", taskIds: ["SP-471"] },
+		],
+	});
+	state.phase = "aborted";
+	state.endedAt = Date.now();
+	const archivePath = archiveBatchStatePath(projectRoot, SALVAGE_BATCH_ID);
+	fs.mkdirSync(path.dirname(archivePath), { recursive: true });
+	fs.writeFileSync(archivePath, `${JSON.stringify(state, null, 2)}\n`, "utf-8");
+	return state;
+}
+
+function seedSalvageableLaneJournal(projectRoot) {
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "batch.started", {
+		baseBranch: "main",
+		orchBranch: `orch/spine-${SALVAGE_BATCH_ID}`,
+	});
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "task.started", { taskId: "SP-470", laneNumber: 1 });
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "lane.committed", {
+		taskId: "SP-470",
+		laneNumber: 1,
+		commitSha: "lane1sha",
+	});
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "task.completed", {
+		taskId: "SP-470",
+		doneFileFound: true,
+		exitReason: "done",
+	});
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "task.started", { taskId: "SP-471", laneNumber: 2 });
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "lane.committed", {
+		taskId: "SP-471",
+		laneNumber: 2,
+		commitSha: "lane2sha",
+	});
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "task.failed", {
+		taskId: "SP-471",
+		exitReason: "contract_failed",
+		classification: "contract_failed",
+	});
+	appendJournalEvent(projectRoot, SALVAGE_BATCH_ID, "batch.aborted", { reason: "operator abort" });
+}
+
+test("integrateSalvageableLane keeps dirty merged path and reports overlap (SP-784)", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-salvage-dirty-");
+	try {
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "baseline\n", "utf-8");
+		execFileSync("git", ["add", "tracked.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "tracked baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		const batchState = writeArchivedAbortedBatch(projectRoot);
+		seedSalvageableLaneJournal(projectRoot);
+
+		const laneBranch = laneTaskBranch(SALVAGE_BATCH_ID, 1);
+		execFileSync("git", ["branch", laneBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", laneBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "lane version\n", "utf-8");
+		execFileSync("git", ["add", "tracked.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "lane salvage work"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		approveGateForIntegrate(projectRoot, batchState, SALVAGE_BATCH_ID);
+
+		// Operator edit on the path the salvage merge wants to update.
+		fs.writeFileSync(path.join(projectRoot, "tracked.txt"), "operator uncommitted edit\n", "utf-8");
+
+		const result = await integrateSalvageableLane(projectRoot, SALVAGE_BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+		assert.equal(result.ok, true, result.error ?? result.headline);
+		assert.ok(result.mergeCommit);
+
+		assert.equal(
+			fs.readFileSync(path.join(projectRoot, "tracked.txt"), "utf-8"),
+			"operator uncommitted edit\n",
+		);
+		assert.equal(
+			execFileSync("git", ["show", "main:tracked.txt"], { cwd: projectRoot, encoding: "utf-8" }),
+			"lane version\n",
+		);
+		assert.deepEqual(result.warnings, [
+			"DirtyOverlap: tracked.txt kept local edits — run git diff / git restore --source main -- tracked.txt after review",
+		]);
+
+		const events = readJournalEvents(projectRoot, SALVAGE_BATCH_ID);
+		const overlap = events.find((event) => event.type === "integrate.dirty_overlap");
+		assert.ok(overlap);
+		assert.deepEqual(overlap.payload.skippedDirtyPaths, ["tracked.txt"]);
+		// laneNumber is a journal META_KEY: it lands on the event as laneId (journal convention).
+		assert.equal(overlap.laneId, "lane-1");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

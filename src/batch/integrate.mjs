@@ -10,10 +10,12 @@ import {
 	plumbingMergeOrchIntoBase,
 	casUpdateBaseRef,
 	isBranchCheckedOutInWorktree,
-	syncPlumbingMergePathsToWorktree,
+	reportDirtyOverlap,
+	syncMergePathsToCheckedOutBase,
 } from "./integrate-worktree.mjs";
 import {
 	isFastForwardCapableIntegrate,
+	listIntegrateDirtyPaths,
 	resolveRulesManifestIntegrateDrift,
 } from "./rules-manifest-drift.mjs";
 import { assertOrchIntegratable } from "./integrate-assert.mjs";
@@ -311,6 +313,9 @@ export function integrateOrchToBase(ctx) {
 			});
 		}
 
+		// Capture before the merge moves the base ref: afterwards git status reports
+		// not-yet-materialized merged paths as modified/deleted vs the new HEAD (SP-784).
+		const preMergeDirtyPaths = listIntegrateDirtyPaths(projectRoot);
 		const mergeResult = runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId });
 
 		if (!mergeResult.ok) {
@@ -342,22 +347,21 @@ export function integrateOrchToBase(ctx) {
 		/** @type {{ ok: boolean, timedOut?: boolean, error?: string } | null} */
 		let syncResult = null;
 		if (mergeResult.mode === "fast-forward") {
-			syncResult = syncPlumbingMergePathsToWorktree(
+			syncResult = syncMergePathsToCheckedOutBase(
 				projectRoot,
+				baseBranch,
 				mergeResult.baseShaBefore,
 				mergeCommit,
+				{ dirtyPaths: preMergeDirtyPaths },
 			);
 		} else if (mergeResult.mode === "plumbing") {
 			const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-			syncResult = syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
-		} else if (!baseCheckedOutAtStart) {
-			try {
-				git(projectRoot, ["checkout", baseBranch]);
-				git(projectRoot, ["reset", "--hard", "HEAD"]);
-			} catch {
-				// Dirty tree may block checkout after isolated land — operator syncs manually.
-			}
+			syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, {
+				dirtyPaths: preMergeDirtyPaths,
+			});
 		}
+		// No sync fallback for other branches (SP-784 / #298): when base is not checked out right
+		// now, the merge commit is already on the base ref and the checkout must stay untouched.
 
 		if (syncResult && !syncResult.ok) {
 			appendJournalEvent(projectRoot, batchId, "integrate.failed", {
@@ -386,6 +390,15 @@ export function integrateOrchToBase(ctx) {
 			};
 		}
 
+		const dirtyOverlapWarning = reportDirtyOverlap({
+			projectRoot,
+			batchId,
+			baseBranch,
+			orchBranch,
+			mergeCommit,
+			skippedDirtyPaths: syncResult?.skippedDirtyPaths,
+		});
+
 		appendJournalEvent(projectRoot, batchId, "integrate.completed", {
 			baseBranch,
 			orchBranch,
@@ -407,6 +420,7 @@ export function integrateOrchToBase(ctx) {
 			headline: `Integrated ${orchBranch} into ${baseBranch}`,
 			suggestedCommand: "spine batch complete",
 			alternatives: ["spine status --diagnose"],
+			...(dirtyOverlapWarning ? { warnings: [dirtyOverlapWarning] } : {}),
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
