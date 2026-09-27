@@ -1,7 +1,7 @@
 # SP-779: Stall watchdog observes worker exit before deadline — Status
 
-**Current Step:** Step 3 (Testing & Verification)
-**Status:** 🟨 In Progress
+**Current Step:** Step 4 (Documentation & Delivery)
+**Status:** ✅ Done
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -45,10 +45,11 @@
 - [x] `detect_changes()` before commit: only `startAttachedMilestoneReporter`/`stop` touched, 1 affected process (medium risk, expected)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged (7 entries: race-safety of childDone/exitCode, stub hang semantics, poll defaults, ordering scenario, 20× loop, attached-reporter regression + fix)
+- [x] Docs checked: `docs/adoption/operator-runbook.md` not touched — SP-789 owns runbook edits this release (per PROMPT)
+- [x] `.DONE` created
 
 ---
 
