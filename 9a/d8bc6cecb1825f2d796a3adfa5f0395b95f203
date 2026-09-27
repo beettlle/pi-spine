@@ -1,0 +1,16 @@
+src/doctor/run-doctor-checks.mjs
+  h_2a17159c706ba1 58-62,101-104,117-121,129-132,158-161,194-197,217,235,266-269,277-279,287,322-326
+tsconfig.batch.json
+  h_2a17159c706ba1 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9ad8bc6cecb1825f2d796a3adfa5f0395b95f203",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
