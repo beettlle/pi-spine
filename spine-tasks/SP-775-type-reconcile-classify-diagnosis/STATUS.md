@@ -1,7 +1,7 @@
 # SP-775: Type reconcile classify/diagnosis/context/light-cache — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 1 — Type classify/diagnosis cluster
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,14 +11,14 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-774 landed
-- [ ] Confirm nocheck on targets
-- [ ] Dependencies satisfied
+- [x] Confirm SP-774 landed (`f603e5c1`, merge `b0fe8e23`; `reconcile.mjs`/`reconcile-batch.mjs`/`reconcile-orphan.mjs` in tsconfig.batch.json include)
+- [x] Confirm nocheck on targets (all 4 modules line 1; LOC 433/384/88/61)
+- [x] Dependencies satisfied
 
 ### Step 1: Type classify/diagnosis cluster
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 > ⚠️ Hydrate: Expand based on tsc errors surfaced after stripping nocheck
 
 - [ ] Remove nocheck + JSDoc/casts
