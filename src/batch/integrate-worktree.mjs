@@ -115,13 +115,49 @@ function mergeTreeOutputHasConflict(output) {
 }
 
 /**
+ * Move a branch ref to newSha only if it still points at expectedOldSha (compare-and-swap).
+ * Prevents a concurrent commit on base from being silently orphaned mid-integrate (#298).
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.baseBranch
+ * @param {string} params.newSha
+ * @param {string} params.expectedOldSha
+ * @returns {{ ok: boolean, failureClass?: string, error?: string }}
+ */
+export function casUpdateBaseRef({ projectRoot, baseBranch, newSha, expectedOldSha }) {
+	try {
+		gitExec(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, newSha, expectedOldSha], {
+			projectRoot,
+		});
+		return { ok: true };
+	} catch {
+		let current = "unknown";
+		try {
+			current = gitExec(projectRoot, ["rev-parse", `refs/heads/${baseBranch}`], { projectRoot });
+		} catch {
+			// keep "unknown" — the branch may have been deleted mid-integrate
+		}
+		return {
+			ok: false,
+			failureClass: "BaseMoved",
+			error: `${baseBranch} moved during integrate (expected ${expectedOldSha}, found ${current}) — re-run spine integrate`,
+		};
+	}
+}
+
+/**
+ * Plumbing merge of orch into base without touching any worktree.
+ * Shared implementation for integrate and salvage paths; merge-tree runs on captured SHAs
+ * and the base ref update is compare-and-swap so a mid-integrate base move fails loudly (#298).
+ *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.baseBranch
  * @param {string} params.orchBranch
  * @param {string} params.mergeMessage
  */
-function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeMessage }) {
+export function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeMessage }) {
 	const baseSha = git(projectRoot, ["rev-parse", baseBranch]);
 	const orchSha = git(projectRoot, ["rev-parse", orchBranch]);
 
@@ -130,7 +166,7 @@ function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeM
 	try {
 		mergeTreeOutput = execFileSync(
 			"git",
-			["merge-tree", "--write-tree", baseBranch, orchBranch],
+			["merge-tree", "--write-tree", baseSha, orchSha],
 			{
 				cwd: projectRoot,
 				encoding: "utf-8",
@@ -170,7 +206,10 @@ function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeM
 		projectRoot,
 		["commit-tree", treeSha, "-p", baseSha, "-p", orchSha, "-m", mergeMessage],
 	);
-	git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, mergeCommit]);
+	const cas = casUpdateBaseRef({ projectRoot, baseBranch, newSha: mergeCommit, expectedOldSha: baseSha });
+	if (!cas.ok) {
+		return cas;
+	}
 
 	return { ok: true, mergeCommit, mode: "plumbing" };
 }
@@ -342,6 +381,10 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
  * @param {string} params.mergeMessage
  */
 function mergeInIntegrateWorktree({ projectRoot, worktreePath, baseBranch, orchBranch, mergeMessage }) {
+	// The worktree has baseBranch checked out, so the merge itself advances the shared ref.
+	// Capture the base tip before the merge and verify the merge commit's first parent matches
+	// so a base move between provisioning and merge fails loudly instead of being clobbered (#298).
+	const baseShaBefore = git(projectRoot, ["rev-parse", baseBranch]);
 	try {
 		git(worktreePath, ["merge", "--no-ff", orchBranch, "-m", mergeMessage]);
 	} catch {
@@ -365,9 +408,18 @@ function mergeInIntegrateWorktree({ projectRoot, worktreePath, baseBranch, orchB
 	}
 
 	const mergeCommit = git(worktreePath, ["rev-parse", "HEAD"]);
-	const baseSha = git(projectRoot, ["rev-parse", baseBranch]);
-	if (mergeCommit !== baseSha) {
-		git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, mergeCommit]);
+	if (mergeCommit === baseShaBefore) {
+		// Merge was a no-op (orch already contained in base) — HEAD did not move, so there is
+		// no new merge commit whose first parent could be verified.
+		return { ok: true, mergeCommit, mode: "worktree" };
+	}
+	const firstParent = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
+	if (firstParent !== baseShaBefore) {
+		return {
+			ok: false,
+			failureClass: "BaseMoved",
+			error: `${baseBranch} moved during integrate (expected ${baseShaBefore}, found ${firstParent}) — re-run spine integrate`,
+		};
 	}
 
 	return { ok: true, mergeCommit, mode: "worktree" };
