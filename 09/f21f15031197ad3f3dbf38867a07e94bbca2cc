@@ -1,0 +1,20 @@
+spine-tasks/SP-782-integrate-base-ref-cas/.DONE
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/0-20260927T220214.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/4-20260927T220225.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/final-20260927T220338.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "09f21f15031197ad3f3dbf38867a07e94bbca2cc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
