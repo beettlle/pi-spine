@@ -1,6 +1,6 @@
 # SP-781: Matrix row runtime metachar guard — Status
 
-**Current Step:** Step 1 (Runtime guard)
+**Current Step:** Step 2 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
@@ -17,13 +17,13 @@
 - [x] Dependencies satisfied (none)
 
 ### Step 1: Runtime guard
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Guard after substitution, before spawn
-- [ ] Refused-row result + message
-- [ ] `&&` allowed
-- [ ] Injection tests (no spawn, journaled)
-- [ ] `contract-matrix-subst` case
+- [x] Guard after substitution, before spawn — `isRefusedContractMetacharCommand(command)` ternary short-circuits before `runShellInDir` (matrix-run.mjs execute branch)
+- [x] Refused-row result + message — flows through the existing `run.exitCode !== 0` failed-row path; `formatMatrixRowRefusedMetacharMessage` names row id + detected issue ("matrix row command refused before spawn")
+- [x] `&&` allowed — same #268 grammar; unit + e2e assertions
+- [x] Injection tests (no spawn, journaled) — matrix-row-command-guard.test.mjs: `;`, `$(`, backtick, lone `&` all refused; `pwned.txt`/`out/` absent in row worktree; `matrix.sub_lane.failed` journaled
+- [x] `contract-matrix-subst` case — metachar-in-value: substitution textual, verifyContract refuses before spawn
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started
