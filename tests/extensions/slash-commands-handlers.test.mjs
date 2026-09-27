@@ -147,7 +147,8 @@ test("/spine-dismiss archives limbo batch state", async () => {
 		assert.equal(notifications.length, 1);
 		assert.equal(notifications[0].level, "info");
 		assert.match(notifications[0].message, /dismiss|archive|limbo/i);
-		assert.equal(fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")), false);
+		// Taskplane-owned `.pi/` state is archived but never removed by spine (#303).
+		assert.equal(fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")), true);
 	});
 });
 
