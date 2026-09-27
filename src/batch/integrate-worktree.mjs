@@ -408,6 +408,11 @@ function mergeInIntegrateWorktree({ projectRoot, worktreePath, baseBranch, orchB
 	}
 
 	const mergeCommit = git(worktreePath, ["rev-parse", "HEAD"]);
+	if (mergeCommit === baseShaBefore) {
+		// Merge was a no-op (orch already contained in base) — HEAD did not move, so there is
+		// no new merge commit whose first parent could be verified.
+		return { ok: true, mergeCommit, mode: "worktree" };
+	}
 	const firstParent = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
 	if (firstParent !== baseShaBefore) {
 		return {
