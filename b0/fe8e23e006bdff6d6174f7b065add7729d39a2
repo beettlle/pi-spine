@@ -1,30 +1,35 @@
 README.md
-  h_2a17159c706ba1 52
+  s_4da3149d3798bc::t_85d07c9126d4e7 52
 docs/adoption/operator-runbook.md
-  h_2a17159c706ba1 102
+  s_4da3149d3798bc::t_9700de670b395b 102
 docs/release/npm-publish.md
-  h_2a17159c706ba1 110,138
+  s_4da3149d3798bc::t_4f350d48dd69fc 110,138
 package-lock.json
-  h_2a17159c706ba1 18-20,22,66-68,73-76,494-495,506-507,511-513,524-525,531,573-574,582-583,2329-2331,2481-2483,3087-3089
+  s_4da3149d3798bc::t_9a5ed6f7bd6fd4 18-20,22,66-68,73-76,494-495,506-507,511-513,524-525,531,573-574,582-583,2329-2331,2481-2483,3087-3089
 package.json
-  h_2a17159c706ba1 75-77,79
+  s_4da3149d3798bc::t_f5a63080dbf6bc 75-77,79
 spine-tasks/SP-778-dev-deps-same-major-hygiene/.DONE
-  h_2a17159c706ba1 1-3
+  s_4da3149d3798bc::t_a21080b4041fb5 1-3
 spine-tasks/SP-778-dev-deps-same-major-hygiene/.reviews/0-20260927T003733.md
-  h_2a17159c706ba1 1-8
+  s_4da3149d3798bc::t_ad89a8f96e183e 1-8
 spine-tasks/SP-778-dev-deps-same-major-hygiene/.reviews/final-20260927T003817.md
-  h_2a17159c706ba1 1-8
+  s_4da3149d3798bc::t_c271ca43675c44 1-8
 spine-tasks/SP-778-dev-deps-same-major-hygiene/STATUS.md
-  h_2a17159c706ba1 3-5,14,16-18,21,23-26,29,31-32,35,37-40,43,45-46,52-56,60-65,69
+  s_4da3149d3798bc::t_86f076d52ea42f 3-5,14,16-18,21,23-26,29,31-32,35,37-40,43,45-46,52-56,60-65,69
 ---
 {
   "schema_version": "authorship/3.0.0",
   "git_ai_version": "1.7.4",
   "base_commit_sha": "b0fe8e23e006bdff6d6174f7b065add7729d39a2",
   "prompts": {},
-  "humans": {
-    "h_2a17159c706ba1": {
-      "author": "Cesar Delgado <beettlle@gmail.com>"
+  "sessions": {
+    "s_4da3149d3798bc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-62e003e9-9f7d-497c-b2bd-f10e86b4eb30",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
     }
   }
 }
