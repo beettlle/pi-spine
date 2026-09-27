@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** Orphan reconcile helpers (SP-606 / #192). Post-DONE heal: SP-657 / #205. */
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
@@ -37,7 +36,7 @@ export function runReconciliationCheck(ctx) {
 }
 
 /**
- * @param {unknown[]} lanes
+ * @param {Record<string, any>[]} lanes
  * @param {number|null|undefined} laneNumber
  */
 function findLaneForOrphanReconcile(lanes, laneNumber) {
@@ -52,7 +51,7 @@ function findLaneForOrphanReconcile(lanes, laneNumber) {
 /**
  * Classify tasks for orphan reconcile (status-only, mirrors resume validation).
  *
- * @param {object[]} tasks
+ * @param {Record<string, any>[]} tasks
  */
 function classifyTasksForOrphanReconcile(tasks) {
 	return (tasks ?? []).map((task) => {
@@ -66,7 +65,7 @@ function classifyTasksForOrphanReconcile(tasks) {
 }
 
 /**
- * @param {object[]} journalEvents
+ * @param {Record<string, any>[]} journalEvents
  * @param {string} taskId
  * @param {string} eventType
  */
@@ -111,8 +110,8 @@ function orphanTaskReadyForSkipDoneHeal({ projectRoot, batchId, task, lanes, tas
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.batchId
- * @param {object} params.state
- * @param {object} params.task
+ * @param {Record<string, any>} params.state
+ * @param {Record<string, any>} params.task
  * @param {object[]} params.journalEvents
  * @returns {boolean}
  */
@@ -146,7 +145,7 @@ function healPostDoneOrphanTask({ projectRoot, batchId, state, task, journalEven
  *
  * @param {object} params
  * @param {string} params.projectRoot
- * @param {object} params.state
+ * @param {Record<string, any>} params.state
  * @returns {{ reconciled: boolean, taskId?: string|null, kind?: string, exitReason?: string, healedTaskIds?: string[] }}
  */
 export function reconcileOrphanRunningState({ projectRoot, state }) {
@@ -202,7 +201,9 @@ export function reconcileOrphanRunningState({ projectRoot, state }) {
 	const taskIdsFailed = [];
 
 	for (const taskId of taskIdsToConsider) {
-		const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+		const task = /** @type {Record<string, any>[]} */ (state.tasks ?? []).find(
+			(entry) => entry?.taskId === taskId,
+		);
 		if (!task || task.status !== "running") continue;
 
 		if (

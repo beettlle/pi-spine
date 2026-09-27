@@ -28,6 +28,9 @@
     "src/batch/engine-lanes/matrix.mjs",
     "src/batch/engine-lanes/matrix-run.mjs",
     "src/batch/engine-lanes/merge.mjs",
+    "src/batch/reconcile.mjs",
+    "src/batch/reconcile-batch.mjs",
+    "src/batch/reconcile-orphan.mjs",
     "types/micromatch.d.ts"
   ]
 }
