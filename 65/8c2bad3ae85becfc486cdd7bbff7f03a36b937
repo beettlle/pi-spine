@@ -1,0 +1,33 @@
+spine-tasks/SP-782-integrate-base-ref-cas/.DONE
+  s_e5a9e3b01dd5b5::t_7091f23f6d515c 1-9
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/0-20260927T220214.md
+  s_e5a9e3b01dd5b5::t_850e5ac239618c 1-8
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/4-20260927T220225.md
+  s_e5a9e3b01dd5b5::t_30c75d2a9b8d75 1-8
+spine-tasks/SP-782-integrate-base-ref-cas/.reviews/final-20260927T220338.md
+  s_e5a9e3b01dd5b5::t_62b1b4de81b6a2 1-11
+spine-tasks/SP-782-integrate-base-ref-cas/STATUS.md
+  s_e5a9e3b01dd5b5::t_53dcc79521095a 3-4,14,16-19,22,24-30,33,35-37,40,42-46,49,51-53,57-64,67-75
+src/batch/integrate-worktree.mjs
+  s_e5a9e3b01dd5b5::t_dff471d7551ffd 118-153,160,169,209-212,384-387,411-422
+src/batch/integrate.mjs
+  s_e5a9e3b01dd5b5::t_bcd19d3943b225 8-14,38-39,49-52,76
+tests/batch/integrate-base-cas.test.mjs
+  s_e5a9e3b01dd5b5::t_d7caaeec5a77a1 1-445
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "658c2bad3ae85becfc486cdd7bbff7f03a36b937",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
