@@ -1,7 +1,7 @@
 # SP-786: Quarantine corrupt batch-state instead of deleting it — Status
 
-**Current Step:** Step 5 (Documentation & Delivery)
-**Status:** 🔄 In Progress
+**Current Step:** Complete — all steps done
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -48,10 +48,10 @@
 - [x] Fix all failures — 2 legacy lifecycle tests updated (see Discovery 9)
 
 ### Step 5: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
