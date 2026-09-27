@@ -171,7 +171,7 @@ function quarantineCorruptBatchState(batchStatePath) {
  *
  * @param {string|null} batchStatePath
  * @param {string} expectedBatchId
- * @param {string} [projectRoot] derived from the `.spine` parent when omitted
+ * @param {string|null} [projectRoot] derived from the `.spine` parent when omitted
  * @returns {{ cleared: boolean, reason?: string, activeBatchId?: string, quarantinedPath?: string }}
  */
 export function clearActiveBatchStateIfMatches(batchStatePath, expectedBatchId, projectRoot = null) {
@@ -184,29 +184,32 @@ export function clearActiveBatchStateIfMatches(batchStatePath, expectedBatchId, 
 
 	// Derive the lock root from `<root>/.spine/batch-state.json` when no caller supplies one.
 	const lockRoot = projectRoot ?? path.dirname(path.dirname(batchStatePath));
-	return withBatchStateLock(lockRoot, () => {
-		try {
-			const onDisk = JSON.parse(fs.readFileSync(batchStatePath, "utf-8"));
-			const onDiskBatchId = readBatchStateId(onDisk);
-			if (onDiskBatchId && onDiskBatchId !== expectedBatchId) {
-				return {
-					cleared: false,
-					reason: "batch_id_mismatch",
-					activeBatchId: onDiskBatchId,
-				};
+	const result = /** @type {{ cleared: boolean, reason?: string, activeBatchId?: string, quarantinedPath?: string }} */ (
+		withBatchStateLock(lockRoot, () => {
+			try {
+				const onDisk = JSON.parse(fs.readFileSync(batchStatePath, "utf-8"));
+				const onDiskBatchId = readBatchStateId(onDisk);
+				if (onDiskBatchId && onDiskBatchId !== expectedBatchId) {
+					return {
+						cleared: false,
+						reason: "batch_id_mismatch",
+						activeBatchId: onDiskBatchId,
+					};
+				}
+			} catch (err) {
+				if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
+					return { cleared: false, reason: "missing" };
+				}
+				// Corrupt active state — quarantine for inspection, never delete (SP-786 / #303).
+				const quarantinedPath = quarantineCorruptBatchState(batchStatePath);
+				return { cleared: false, reason: "corrupt", quarantinedPath };
 			}
-		} catch (err) {
-			if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
-				return { cleared: false, reason: "missing" };
-			}
-			// Corrupt active state — quarantine for inspection, never delete (SP-786 / #303).
-			const quarantinedPath = quarantineCorruptBatchState(batchStatePath);
-			return { cleared: false, reason: "corrupt", quarantinedPath };
-		}
 
-		fs.unlinkSync(batchStatePath);
-		return { cleared: true };
-	});
+			fs.unlinkSync(batchStatePath);
+			return { cleared: true };
+		})
+	);
+	return result;
 }
 
 /**
@@ -232,40 +235,43 @@ export function clearStaleTerminalBatchStateForStart(projectRoot) {
 		return { cleared: false, reason: "missing" };
 	}
 
-	return withBatchStateLock(projectRoot, () => {
-		/** @type {unknown} */
-		let raw;
-		try {
-			raw = JSON.parse(fs.readFileSync(spinePath, "utf-8"));
-		} catch (err) {
-			if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
-				return { cleared: false, reason: "missing" };
+	const result = /** @type {{ cleared: boolean, reason?: string, batchId?: string, quarantinedPath?: string }} */ (
+		withBatchStateLock(projectRoot, () => {
+			/** @type {unknown} */
+			let raw;
+			try {
+				raw = JSON.parse(fs.readFileSync(spinePath, "utf-8"));
+			} catch (err) {
+				if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
+					return { cleared: false, reason: "missing" };
+				}
+				// Corrupt state — quarantine for inspection, never delete (SP-786 / #303).
+				const quarantinedPath = quarantineCorruptBatchState(spinePath);
+				return { cleared: false, reason: "corrupt", quarantinedPath };
 			}
-			// Corrupt state — quarantine for inspection, never delete (SP-786 / #303).
-			const quarantinedPath = quarantineCorruptBatchState(spinePath);
-			return { cleared: false, reason: "corrupt", quarantinedPath };
-		}
 
-		const batchId = readBatchStateId(raw);
-		const phase = String(/** @type {{ phase?: string }} */ (raw)?.phase ?? "");
-		const ownerPid = readBatchStateEnginePid(raw);
+			const batchId = readBatchStateId(raw);
+			const phase = String(/** @type {{ phase?: string }} */ (raw)?.phase ?? "");
+			const ownerPid = readBatchStateEnginePid(raw);
 
-		if (ACTIVE_PHASES_FOR_HANDOFF.has(phase) && !/** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
-			return { cleared: false, reason: "active", batchId };
-		}
+			if (ACTIVE_PHASES_FOR_HANDOFF.has(phase) && !/** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
+				return { cleared: false, reason: "active", batchId };
+			}
 
-		if (ownerPid && isProcessAlive(ownerPid)) {
-			throw new Error(
-				`Active batch ${batchId || "(unknown)"} engine still running (pid=${ownerPid}). ` +
-					"Wait for it to exit or run spine batch dismiss before spine batch start.",
-			);
-		}
+			if (ownerPid && isProcessAlive(ownerPid)) {
+				throw new Error(
+					`Active batch ${batchId || "(unknown)"} engine still running (pid=${ownerPid}). ` +
+						"Wait for it to exit or run spine batch dismiss before spine batch start.",
+				);
+			}
 
-		if (TERMINAL_PHASES_FOR_HANDOFF.has(phase) || /** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
-			fs.unlinkSync(spinePath);
-			return { cleared: true, reason: "stale_terminal", batchId };
-		}
+			if (TERMINAL_PHASES_FOR_HANDOFF.has(phase) || /** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
+				fs.unlinkSync(spinePath);
+				return { cleared: true, reason: "stale_terminal", batchId };
+			}
 
-		return { cleared: false, reason: "idle", batchId };
-	});
+			return { cleared: false, reason: "idle", batchId };
+		})
+	);
+	return result;
 }
