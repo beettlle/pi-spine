@@ -1,0 +1,23 @@
+spine-tasks/SP-784-integrate-checkout-sync-safety/STATUS.md
+  s_e5a9e3b01dd5b5::t_3118150ff40f4e 3,44,46-49
+tests/batch/integrate-isolated.test.mjs
+  s_e5a9e3b01dd5b5::t_e89b1dc11c283c 9-12,17,236-239,246-252,268-443
+tests/batch/integrate-worktree-sync.test.mjs
+  s_e5a9e3b01dd5b5::t_5ef1ee4b7c24c2 6,93-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e0e61d4b51f416388f3bbe8db5b270dd5489c0fe",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
