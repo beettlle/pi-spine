@@ -1,0 +1,21 @@
+spine-tasks/SP-786-quarantine-corrupt-batch-state/.DONE
+  s_e5a9e3b01dd5b5::t_753f866db4ddbe 1
+spine-tasks/SP-786-quarantine-corrupt-batch-state/.reviews/0-20260927T230028.md
+  s_e5a9e3b01dd5b5::t_836502cd0df9a7 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "47542b9af1661f2f072d998c44ffa219ee98aefc",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
