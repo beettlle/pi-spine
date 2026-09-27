@@ -158,7 +158,6 @@ const NOCHECK_ALLOWLIST = new Set([
 	"src/doctor/duplicate-install.mjs",
 	"src/doctor/pi-cli-resolution.mjs",
 	"src/doctor/quota-risk.mjs",
-	"src/doctor/run-doctor-checks.mjs",
 	"src/doctor/stale-path.mjs",
 	"src/doctor/stall-config.mjs",
 	"src/doctor/suggest-max-parallel.mjs",

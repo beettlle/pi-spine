@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Doctor check orchestration — library surface for preflight and CLI.
  */
@@ -56,6 +55,11 @@ const SPINE_CLI_ENTRY = path.join(PACKAGE_ROOT, "bin", "spine.mjs");
 
 const REQUIRED_AGENT_FILES = ["worker.md", "reviewer.md", "supervisor.md"];
 
+/**
+ * @param {string} cmd
+ * @param {string} [flag]
+ * @returns {string | null}
+ */
 function getVersion(cmd, flag = "--version") {
 	let result;
 	try {
@@ -94,6 +98,10 @@ function getMinPiVersion() {
 	}
 }
 
+/**
+ * @param {unknown} versionText
+ * @returns {{ major: number, minor: number, patch: number } | null}
+ */
 function parseSemver(versionText) {
 	const match = String(versionText ?? "")
 		.trim()
@@ -106,6 +114,11 @@ function parseSemver(versionText) {
 	};
 }
 
+/**
+ * @param {{ major: number, minor: number, patch: number } | null} a
+ * @param {{ major: number, minor: number, patch: number } | null} b
+ * @returns {number | null}
+ */
 function compareSemver(a, b) {
 	if (!a || !b) return null;
 	if (a.major !== b.major) return a.major - b.major;
@@ -113,6 +126,10 @@ function compareSemver(a, b) {
 	return a.patch - b.patch;
 }
 
+/**
+ * @param {string} dir
+ * @returns {boolean}
+ */
 function isInsideGitRepo(dir) {
 	try {
 		execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
@@ -138,6 +155,10 @@ function gitSupportsWorktrees() {
 	}
 }
 
+/**
+ * @param {string} output
+ * @returns {{ provider: string, id: string } | null}
+ */
 function parsePiListModelsOutput(output) {
 	const lines = output.split(/\r?\n/).filter(Boolean);
 	let providerCol = 0;
@@ -170,6 +191,10 @@ function parsePiListModelsOutput(output) {
 
 const LIST_MODELS_TIMEOUT_MS = 30_000;
 
+/**
+ * @param {any} err
+ * @returns {boolean}
+ */
 function isListModelsTimeout(err) {
 	return err?.code === "ETIMEDOUT";
 }
@@ -189,6 +214,7 @@ function listModelsTimeoutCheck() {
  * @param {object} [options]
  * @param {(cmd: string, args: string[], opts: object) => any} [options.spawn]
  * @param {(cmd: string) => boolean} [options.commandExistsFn]
+ * @returns {{ ok: boolean, warning?: boolean, detail?: string, suggestedCommand?: string }}
  */
 export function checkModelProvider({ spawn = spawnSync, commandExistsFn = commandExists } = {}) {
 	if (!commandExistsFn("pi")) {
@@ -206,7 +232,7 @@ export function checkModelProvider({ spawn = spawnSync, commandExistsFn = comman
 		if (isListModelsTimeout(err)) return listModelsTimeoutCheck();
 		return {
 			ok: false,
-			detail: err.message,
+			detail: /** @type {Error} */ (err).message,
 			suggestedCommand: "pi login",
 		};
 	}
@@ -237,6 +263,10 @@ ${result?.stderr ?? ""}`.trim();
 	};
 }
 
+/**
+ * @param {string} projectRoot
+ * @param {ReturnType<typeof loadSpineConfig>} configResult
+ */
 function resolveTasksRoot(projectRoot, configResult) {
 	if (!configResult.config) {
 		return null;
@@ -244,6 +274,9 @@ function resolveTasksRoot(projectRoot, configResult) {
 	return resolveTasksRootPath(projectRoot, configResult.config);
 }
 
+/**
+ * @param {unknown} command
+ */
 function isTestingCommandEmpty(command) {
 	return !command || String(command).trim() === "";
 }
@@ -251,7 +284,7 @@ function isTestingCommandEmpty(command) {
 /**
  * Warn when evidence gates expect commands that are missing (SP-112).
  *
- * @param {object} [config]
+ * @param {Record<string, any>} [config]
  * @returns {Array<{ label: string, ok: boolean, warning?: boolean, detail: string, suggestedCommand?: string }>}
  */
 export function buildTestingEvidenceDoctorChecks(config = {}) {
@@ -286,6 +319,11 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 	const checks = [];
 	let issueCount = 0;
 
+	/**
+	 * @param {string} label
+	 * @param {boolean} ok
+	 * @param {Record<string, any>} [extra]
+	 */
 	const record = (label, ok, extra = {}) => {
 		checks.push({ label, ok, ...extra });
 		if (!ok) issueCount++;
