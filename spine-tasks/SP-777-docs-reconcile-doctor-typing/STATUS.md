@@ -1,8 +1,8 @@
 # SP-777: Document reconcile/doctor typing — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
-**Last Updated:** 2026-09-26
+**Last Updated:** 2026-09-27
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -24,10 +24,10 @@
 - [x] Update operator-runbook.md (typecheck paragraph updated; kept nocheck/arch-guard note for remaining modules)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Contract true + full suite
-- [ ] File Scope changed
+- [x] Contract true + full suite (`true` exit 0; `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm test` → 2651 pass / 0 fail, 168s)
+- [x] File Scope changed (Step 1 commit `24f34efd` touches both Must-Update docs; `git diff HEAD~1 -- src bin` empty)
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -42,6 +42,7 @@
 | Operator amendment 2026-09-26: `operator-runbook.md` pre-changed on `main` by SP-778 | `fileScopeMustChange` redirected to `QUICK-REFERENCE.md`; still update the runbook typecheck paragraph |
 | Reconcile cluster files live under `src/batch/`, not `scripts/` (PROMPT Mission names them without dir prefix) | Preflight grep used `src/batch/reconcile*.mjs` paths; all 8 confirmed clean |
 | Arch guard allowlist holds no reconcile-cluster or doctor entries (only `attached-runner-reconcile.mjs`, a different module) | Replacement text states remaining nocheck modules stay tracked by the allowlist, per PROMPT |
+| `.spine/rules-manifest.json` churned by a session hook (timestamp-only diff) | Restored via `git checkout`; `.spine/` stays out of File Scope |
 
 ## Completion Criteria
 
