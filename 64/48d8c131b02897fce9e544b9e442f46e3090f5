@@ -1,0 +1,19 @@
+src/batch/reconcile-diagnosis.mjs
+  s_8ed96afe67a29d::t_68336d769cf8cd 31,42,50,77,85,102,116,122,130,134,160-161,182,208,217,226,231,320
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6448d8c131b02897fce9e544b9e442f46e3090f5",
+  "prompts": {},
+  "sessions": {
+    "s_8ed96afe67a29d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2391cd04-efab-45a9-8ca2-d2ea57ff484d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
