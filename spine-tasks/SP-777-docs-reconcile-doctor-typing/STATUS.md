@@ -1,7 +1,7 @@
 # SP-777: Document reconcile/doctor typing — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ All steps done
 **Last Updated:** 2026-09-27
 **Review Level:** 0
 **Review Counter:** 0
@@ -30,10 +30,10 @@
 - [x] File Scope changed (Step 1 commit `24f34efd` touches both Must-Update docs; `git diff HEAD~1 -- src bin` empty)
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ## Discoveries & Decisions
 
@@ -46,8 +46,8 @@
 
 ## Completion Criteria
 
-- [ ] Docs note Phase 3 done
-- [ ] `.DONE` created
+- [x] Docs note Phase 3 done (no stale "deferred" wording — grep clean on both files)
+- [x] `.DONE` created
 
 ## Blockers
 
