@@ -1,6 +1,6 @@
 # SP-785: Unified task-ID discovery (SP-1000+) — Status
 
-**Current Step:** Step 1 (Shared patterns + numeric sort)
+**Current Step:** Step 2 (Preflight + worker delegation)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 1
@@ -18,11 +18,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Shared patterns + numeric sort
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Shared regexes + helpers
-- [ ] `discoverTasks` `\d{3,}` + numeric sort
-- [ ] `scope.mjs` re-export
+- [x] Shared regexes + helpers
+- [x] `discoverTasks` `\d{3,}` + numeric sort
+- [x] `scope.mjs` re-export
 
 ### Step 2: Preflight + worker delegation
 **Status:** ⬜ Not Started

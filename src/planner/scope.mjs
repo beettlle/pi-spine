@@ -12,7 +12,9 @@
 import path from 'node:path';
 import { summarizePendingScope } from './pending.mjs';
 
-export const TASK_ID_RE = /^[A-Z][A-Z0-9]*-\d{3,}$/;
+// Single source of truth (SP-785, #300): re-export the shared task-ID regex.
+import { TASK_ID_RE } from '../tasks/packet/discover.mjs';
+export { TASK_ID_RE };
 
 export const NO_PENDING_TASKS_ERROR = 'No pending tasks (all discovered tasks have .DONE).';
 
