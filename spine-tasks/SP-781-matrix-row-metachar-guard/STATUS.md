@@ -1,7 +1,7 @@
 # SP-781: Matrix row runtime metachar guard — Status
 
-**Current Step:** Step 0 (Preflight)
-**Status:** ⬜ Not Started
+**Current Step:** Step 1 (Runtime guard)
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Reproduce injection at HEAD
-- [ ] Dependencies satisfied
+- [x] Reproduce injection at HEAD — row value `alpha; printf PWNED > pwned.txt` substitutes into runCommand; `/bin/sh -c` runs the injected second command (pwned.txt created); `isRefusedContractMetacharCommand(substituted)` = true
+- [x] Dependencies satisfied (none)
 
 ### Step 1: Runtime guard
 **Status:** ⬜ Not Started
