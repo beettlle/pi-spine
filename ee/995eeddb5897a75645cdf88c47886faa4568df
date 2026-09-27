@@ -1,0 +1,20 @@
+spine-tasks/SP-781-matrix-row-metachar-guard/.DONE
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-781-matrix-row-metachar-guard/.reviews/0-20260927T215001.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-781-matrix-row-metachar-guard/.reviews/3-20260927T215019.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-781-matrix-row-metachar-guard/.reviews/final-20260927T215346.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ee995eeddb5897a75645cdf88c47886faa4568df",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
