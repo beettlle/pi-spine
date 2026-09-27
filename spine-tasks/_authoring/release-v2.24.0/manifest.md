@@ -152,6 +152,7 @@ Wave 3 · SP-777 (after 776)
 |------|-------|-------|-----------------|--------------------------------|-------|
 | 0 | `20260927T002714-6ad1` | SP-774, SP-778 | `b0fe8e23` (pushed) | exit 0 — 2651/2651 pass, 89.67% line coverage (`/tmp/pi-spine-post-integrate-wave-0.log`) | Filed [#293](https://github.com/beettlle/pi-spine/issues/293): detached engine rewrote `batch-state.json` after `batch complete` (late extended gate evidence); second `batch complete` cleared it. Amended SP-775/776/777 `fileScopeMustChange` (prelanded paths). |
 | 1 | `20260927T010354-6c5d` | SP-775 | `749a48b7` (pushed) | exit 0 — 2651/2651 pass, 89.62% line coverage (`/tmp/pi-spine-post-integrate-wave-1.log`) | Waited for `batch.land_loop_finalized` before land loop (#293 workaround); state file stayed cleared. |
+| 2 | `20260927T013808-0d36` | SP-776 | `ea3e4141` (pushed) | exit 0 — 2651/2651 pass, 89.69% line coverage (`/tmp/pi-spine-post-integrate-wave-2.log`) | #284 CLOSED; no #284 target left in `NOCHECK_ALLOWLIST`. |
 
 **Out-of-scope bug filed:** #293 — not added to v2.24.0 scope (operator-approved composition unchanged).
 
