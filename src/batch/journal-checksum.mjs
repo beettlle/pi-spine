@@ -46,6 +46,31 @@ export function verifyJournalChecksum(event) {
 	return computeJournalChecksum(rest) === checksum;
 }
 
+const NEWLINE_BYTE = 0x0a;
+
+/**
+ * Isolate a torn tail before appending: when a previous append was torn by a
+ * crash or disk-full, the file can end mid-line without a trailing newline.
+ * Writing a newline first keeps the torn fragment on its own line so the new
+ * event stays parseable and the corruption stops propagating (SP-780).
+ * @param {string} filePath
+ */
+function appendNewlineIfTornTail(filePath) {
+	if (!fs.existsSync(filePath)) return;
+	const stat = fs.statSync(filePath);
+	if (stat.size === 0) return;
+	const fd = fs.openSync(filePath, "r");
+	try {
+		const tail = Buffer.alloc(1);
+		fs.readSync(fd, tail, 0, 1, stat.size - 1);
+		if (tail[0] !== NEWLINE_BYTE) {
+			fs.appendFileSync(filePath, "\n", "utf-8");
+		}
+	} finally {
+		fs.closeSync(fd);
+	}
+}
+
 /**
  * Append one jsonl line with fsync and bounded EBUSY/ENOENT retry.
  * Does not rewrite the journal file. In-process callers remain serialized
@@ -60,6 +85,7 @@ export function appendJsonlLineSync(filePath, line) {
 		try {
 			if (!appended) {
 				fs.mkdirSync(path.dirname(filePath), { recursive: true });
+				appendNewlineIfTornTail(filePath);
 				fs.appendFileSync(filePath, line, "utf-8");
 				appended = true;
 			}

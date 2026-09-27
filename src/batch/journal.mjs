@@ -211,19 +211,38 @@ export function exportJournalJsonl(projectRoot, batchId) {
 }
 
 /**
- * Parse jsonl journal content into normalized events. Lines whose checksum is
- * present but mismatches are skipped (fail-closed per-line) without
- * discarding the rest of the file; legacy lines without checksum load as-is.
+ * Parse jsonl journal content into normalized events, tolerating torn lines.
+ * Each line is parsed in its own try/catch: a line that fails JSON.parse
+ * (torn write from a crash or disk-full) or whose present checksum mismatches
+ * is skipped (fail-closed per-line) without discarding the rest of the file;
+ * legacy lines without checksum load as-is. Alongside the events, returns
+ * skipped-line metadata (1-based lineNumber, byteOffset, reason) so diagnosis
+ * surfaces can report corruption instead of losing every valid event.
  * @param {string} content Raw jsonl content.
- * @returns {object[]}
+ * @returns {{ events: object[], skippedLines: Array<{ lineNumber: number, byteOffset: number, reason: string }> }}
  */
-function parseJournalLines(content) {
-	return content
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line))
-		.filter((parsed) => verifyJournalChecksum(parsed))
-		.map((parsed) => normalizeJournalEvent(parsed));
+export function parseJournalLines(content) {
+	/** @type {object[]} */
+	const events = [];
+	/** @type {Array<{ lineNumber: number, byteOffset: number, reason: string }>} */
+	const skippedLines = [];
+	let byteOffset = 0;
+	for (const [index, line] of content.split("\n").entries()) {
+		if (line) {
+			try {
+				const parsed = JSON.parse(line);
+				if (verifyJournalChecksum(parsed)) {
+					events.push(normalizeJournalEvent(parsed));
+				} else {
+					skippedLines.push({ lineNumber: index + 1, byteOffset, reason: "checksum_mismatch" });
+				}
+			} catch {
+				skippedLines.push({ lineNumber: index + 1, byteOffset, reason: "json_parse_error" });
+			}
+		}
+		byteOffset += Buffer.byteLength(line, "utf-8") + 1;
+	}
+	return { events, skippedLines };
 }
 
 /**
@@ -235,7 +254,7 @@ export function readJournalEvents(projectRoot, batchId) {
 	const filePath = journalPath(projectRoot, batchId);
 	if (!fs.existsSync(filePath)) return [];
 
-	return parseJournalLines(fs.readFileSync(filePath, "utf-8"));
+	return parseJournalLines(fs.readFileSync(filePath, "utf-8")).events;
 }
 
 /**
@@ -268,7 +287,7 @@ export function readJournalEventsCached(projectRoot, batchId) {
 		return _journalCache.events;
 	}
 
-	const events = parseJournalLines(fs.readFileSync(filePath, "utf-8"));
+	const events = parseJournalLines(fs.readFileSync(filePath, "utf-8")).events;
 
 	_journalCache.filePath = filePath;
 	_journalCache.mtimeMs = stat.mtimeMs;
