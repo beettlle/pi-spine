@@ -1,0 +1,30 @@
+src/batch/integrate-dirty-overlap.mjs
+  s_13e0e59146a3f6::t_89587d9b36bd59 1-35
+src/batch/salvage-batch-integrate.mjs
+  s_13e0e59146a3f6::t_28e826cd53d5eb 11
+  s_13e0e59146a3f6::t_5ea5bf4037a432 12,14
+  s_13e0e59146a3f6::t_8548240b817345 354-356
+src/batch/integrate-worktree.mjs
+  s_13e0e59146a3f6::t_3f835af7941036 400-401
+  s_13e0e59146a3f6::t_bdbf49cd99b31a 402,404-413
+src/batch/integrate.mjs
+  s_13e0e59146a3f6::t_dfdbecc5f8df8b 15
+  s_13e0e59146a3f6::t_47dbe3fb3ed709 347-351
+  s_13e0e59146a3f6::t_96bd637e6f420a 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4d5f9a5c4edc318cf97c6c0aca22b9265db6d7bf",
+  "prompts": {},
+  "sessions": {
+    "s_13e0e59146a3f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0e8219c3-aeec-4606-aa1f-838e38ee9f54",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
