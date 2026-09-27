@@ -3,10 +3,15 @@
  * Orch → base integration (FR-INT-01–05, TP-016).
  */
 
-import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { mergeOrchIntoBaseIsolated, isBranchCheckedOutInWorktree, syncPlumbingMergePathsToWorktree } from "./integrate-worktree.mjs";
+import {
+	mergeOrchIntoBaseIsolated,
+	plumbingMergeOrchIntoBase,
+	casUpdateBaseRef,
+	isBranchCheckedOutInWorktree,
+	syncPlumbingMergePathsToWorktree,
+} from "./integrate-worktree.mjs";
 import {
 	isFastForwardCapableIntegrate,
 	resolveRulesManifestIntegrateDrift,
@@ -29,77 +34,9 @@ function git(projectRoot, args) {
 }
 
 /**
- * @param {string} output
- */
-function mergeTreeOutputHasConflict(output) {
-	return /CONFLICT/i.test(output);
-}
-
-/**
- * Ref-only merge when base is not checked out in projectRoot (avoids worktree git merge).
- *
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {string} params.baseBranch
- * @param {string} params.orchBranch
- * @param {string} params.mergeMessage
- */
-function mergeOrchIntoBaseViaRefs({ projectRoot, baseBranch, orchBranch, mergeMessage }) {
-	const baseSha = git(projectRoot, ["rev-parse", baseBranch]);
-	const orchSha = git(projectRoot, ["rev-parse", orchBranch]);
-
-	let mergeTreeOutput = "";
-	let treeSha = "";
-	try {
-		mergeTreeOutput = execFileSync(
-			"git",
-			["merge-tree", "--write-tree", baseBranch, orchBranch],
-			{
-				cwd: projectRoot,
-				encoding: "utf-8",
-				stdio: ["ignore", "pipe", "pipe"],
-				env: { ...process.env },
-			},
-		).trim();
-		treeSha = mergeTreeOutput.split("\n").pop()?.trim() ?? "";
-	} catch (err) {
-		const stdout = err && typeof err === "object" && "stdout" in err ? String(err.stdout ?? "") : "";
-		const stderr = err && typeof err === "object" && "stderr" in err ? String(err.stderr ?? "") : "";
-		mergeTreeOutput = `${stdout}\n${stderr}`.trim();
-		if (mergeTreeOutputHasConflict(mergeTreeOutput)) {
-			return {
-				ok: false,
-				failureClass: "MergeConflict",
-				error: mergeTreeOutput.split("\n").slice(-3).join(" ") || "merge conflict",
-			};
-		}
-		const message = err instanceof Error ? err.message : String(err);
-		return {
-			ok: false,
-			failureClass: "IntegrateFailed",
-			error: message,
-		};
-	}
-
-	if (!treeSha || mergeTreeOutputHasConflict(mergeTreeOutput)) {
-		return {
-			ok: false,
-			failureClass: "MergeConflict",
-			error: mergeTreeOutput || `merge conflict integrating ${orchBranch} into ${baseBranch}`,
-		};
-	}
-
-	const mergeCommit = git(
-		projectRoot,
-		["commit-tree", treeSha, "-p", baseSha, "-p", orchSha, "-m", mergeMessage],
-	);
-	git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, mergeCommit]);
-
-	return { ok: true, mergeCommit, mode: "plumbing" };
-}
-
-/**
  * Fast-forward base to orch tip without checking out base in projectRoot.
+ * The ref update is compare-and-swap on baseShaBefore so a commit landing on base
+ * mid-integrate fails loudly instead of being orphaned (#298).
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -109,7 +46,10 @@ function mergeOrchIntoBaseViaRefs({ projectRoot, baseBranch, orchBranch, mergeMe
 function fastForwardOrchIntoBase({ projectRoot, baseBranch, orchBranch }) {
 	const baseShaBefore = git(projectRoot, ["rev-parse", baseBranch]);
 	const orchSha = git(projectRoot, ["rev-parse", orchBranch]);
-	git(projectRoot, ["update-ref", `refs/heads/${baseBranch}`, orchSha]);
+	const cas = casUpdateBaseRef({ projectRoot, baseBranch, newSha: orchSha, expectedOldSha: baseShaBefore });
+	if (!cas.ok) {
+		return cas;
+	}
 	return {
 		ok: true,
 		mergeCommit: orchSha,
@@ -133,7 +73,7 @@ function runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId }) {
 	if (isBranchCheckedOutInWorktree(projectRoot, baseBranch)) {
 		return mergeOrchIntoBaseIsolated({ projectRoot, baseBranch, orchBranch, batchId });
 	}
-	return mergeOrchIntoBaseViaRefs({ projectRoot, baseBranch, orchBranch, mergeMessage });
+	return plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeMessage });
 }
 
 /**
