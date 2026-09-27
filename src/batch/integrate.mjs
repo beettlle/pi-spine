@@ -15,6 +15,7 @@ import {
 } from "./integrate-worktree.mjs";
 import {
 	isFastForwardCapableIntegrate,
+	listIntegrateDirtyPaths,
 	resolveRulesManifestIntegrateDrift,
 } from "./rules-manifest-drift.mjs";
 import { assertOrchIntegratable } from "./integrate-assert.mjs";
@@ -312,6 +313,9 @@ export function integrateOrchToBase(ctx) {
 			});
 		}
 
+		// Capture before the merge moves the base ref: afterwards git status reports
+		// not-yet-materialized merged paths as modified/deleted vs the new HEAD (SP-784).
+		const preMergeDirtyPaths = listIntegrateDirtyPaths(projectRoot);
 		const mergeResult = runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId });
 
 		if (!mergeResult.ok) {
@@ -348,10 +352,13 @@ export function integrateOrchToBase(ctx) {
 				baseBranch,
 				mergeResult.baseShaBefore,
 				mergeCommit,
+				{ dirtyPaths: preMergeDirtyPaths },
 			);
 		} else if (mergeResult.mode === "plumbing") {
 			const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-			syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit);
+			syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, {
+				dirtyPaths: preMergeDirtyPaths,
+			});
 		}
 		// No sync fallback for other branches (SP-784 / #298): when base is not checked out right
 		// now, the merge commit is already on the base ref and the checkout must stay untouched.

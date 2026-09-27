@@ -11,6 +11,7 @@ import { checkIntegrateGate } from "./gate.mjs";
 import { gitExec } from "./git-exec.mjs";
 import { mergeOrchIntoBaseIsolated, reportDirtyOverlap, syncMergePathsToCheckedOutBase } from "./integrate-worktree.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
 import { resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
 import {
 	gateBlockedOnMissingGate,
@@ -324,6 +325,7 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 		gateOpenedBySalvage,
 	});
 
+	const preMergeDirtyPaths = listIntegrateDirtyPaths(projectRoot); // before merge moves base ref (SP-784)
 	const mergeResult = mergeOrchIntoBaseIsolated({
 		projectRoot,
 		baseBranch,
@@ -362,7 +364,9 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 	let syncResult = null;
 	if (mergeResult.mode === "plumbing") {
 		const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-		syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit);
+		syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, {
+			dirtyPaths: preMergeDirtyPaths,
+		});
 	}
 
 	if (syncResult && !syncResult.ok) {
@@ -391,7 +395,6 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 		};
 	}
 
-	// Overlap report only after the sync is known good — failed syncs never carry skippedDirtyPaths.
 	const dirtyOverlapWarning = reportDirtyOverlap({
 		projectRoot, batchId: resolvedBatchId, baseBranch, orchBranch: taskBranch, mergeCommit,
 		skippedDirtyPaths: syncResult?.skippedDirtyPaths, laneNumber: laneNum,

@@ -282,16 +282,17 @@ function pathExistsInTree(cwd, treeRef, filePath, { timeoutMs } = {}) {
 }
 
 /**
- * Materialize paths changed by a plumbing merge into the current checkout; paths with
- * uncommitted local edits are skipped and reported via skippedDirtyPaths (SP-784 / #298).
+ * Materialize paths changed by a plumbing merge; dirty paths (uncommitted local edits) are
+ * skipped and reported via skippedDirtyPaths (SP-784 / #298). Capture dirtyPaths BEFORE the
+ * merge moves the base ref: afterwards git status reports unmaterialized paths as deleted.
  *
  * @param {string} projectRoot
  * @param {string} baseSha
  * @param {string} mergeCommit
- * @param {{ timeoutMs?: number }} [options]
+ * @param {{ timeoutMs?: number, dirtyPaths?: string[] }} [options]
  * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] }}
  */
-export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS } = {}) {
+export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS, dirtyPaths } = {}) {
 	const envTimeoutMs = process.env.SPINE_SYNC_TIMEOUT_MS
 		? Number(process.env.SPINE_SYNC_TIMEOUT_MS)
 		: null;
@@ -312,16 +313,20 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 	}
 
 	const paths = output.split("\n").map((line) => line.trim()).filter(Boolean);
-	const dirtyPathSet = new Set(listIntegrateDirtyPaths(projectRoot));
+	const dirtyPathSet = new Set(dirtyPaths ?? listIntegrateDirtyPaths(projectRoot));
 	const skippedDirtyPaths = [];
 	let processedCount = 0;
 
 	for (const filePath of paths) {
-		let existsInMerge = false;
+		// Dirty entry = local edit only when the file is in the worktree (modified/untracked) or
+		// tracked at baseSha (operator deleted); missing from both = merge output to restore (SP-784).
+		let existsInMerge = false, operatorTouched = false;
 		try {
 			existsInMerge = pathExistsInTree(projectRoot, mergeCommit, filePath, {
 				timeoutMs: effectiveTimeout,
 			});
+			if (dirtyPathSet.has(filePath)) operatorTouched = fs.existsSync(path.join(projectRoot, filePath)) ||
+				pathExistsInTree(projectRoot, baseSha, filePath, { timeoutMs: effectiveTimeout });
 		} catch (err) {
 			if (isTimeoutError(err)) {
 				return {
@@ -342,9 +347,8 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 			continue;
 		}
 
-		if (dirtyPathSet.has(filePath)) {
+		if (dirtyPathSet.has(filePath) && operatorTouched) {
 			skippedDirtyPaths.push(filePath);
-			debugSyncLog(`syncPlumbingMergePathsToWorktree: skip ${filePath} — uncommitted local edits kept (SP-784)`);
 			continue;
 		}
 
@@ -382,18 +386,14 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 }
 
 /**
- * Post-merge path sync gated on the branch checked out right now (SP-784 / #298): returns
- * null (no sync) whenever baseBranch is not checked out in projectRoot, leaving it untouched.
- *
+ * Post-merge path sync gated on baseBranch being checked out right now (SP-784 / #298);
+ * returns null (no sync) otherwise. Options forward to syncPlumbingMergePathsToWorktree.
  * @param {string} projectRoot
  * @param {string} baseBranch
- * @param {string} baseSha
- * @param {string} mergeCommit
- * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] } | null}
  */
-export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit) {
+export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, options) {
 	if (!isBranchCheckedOutInWorktree(projectRoot, baseBranch)) return null;
-	return syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
+	return syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, options);
 }
 
 /**
