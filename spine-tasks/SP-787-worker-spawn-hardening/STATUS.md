@@ -1,7 +1,7 @@
 # SP-787: Worker spawn hardening — Status
 
-**Current Step:** Step 1 (Spawn error → launch_failed + positional `.DONE`)
-**Status:** 🔄 In Progress
+**Current Step:** Step 3 (Tests)
+**Status:** 🔄 In Progress — Steps 0–2 complete, Step 3 next
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -18,18 +18,18 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Spawn error → launch_failed + positional `.DONE`
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `error` listener, resolve once
-- [ ] `launch_failed` classification; poll settles
-- [ ] `.DONE` as `$1`
+- [x] `error` listener, resolve once
+- [x] `launch_failed` classification; poll settles
+- [x] `.DONE` as `$1`
 
 ### Step 2: Bounded output + append-only live log
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Tail buffer
-- [ ] Append-only live log, 2× cap truncation
-- [ ] `worker-output.mjs` ≤ 500 lines
+- [x] Tail buffer
+- [x] Append-only live log, 2× cap truncation
+- [x] `worker-output.mjs` ≤ 500 lines
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -65,6 +65,7 @@
 | 4 | `tests/batch/worker-output.test.mjs` exists (162 lines, no overlap with the touched functions). No existing tests call `collectChildOutput` or `spawnExecutionOnlyHandle` directly. |
 | 5 | **Contract conflict:** `tests/batch/live-worker-log.test.mjs` "appendWorkerLiveLogChunk rolls file with truncation marker when over max bytes" (cap 48, appends 40+40=80 bytes) asserts final content ≤ **1× cap** with a truncation marker. The PROMPT-specified 2×-cap append-only semantics (80 ≤ 96 → no truncation) mathematically cannot satisfy it. That test encodes the per-chunk-rewrite behavior this task replaces; its expectations will be updated to the new append-only contract (minimal edit) and reported in PROMPT Amendments. File is outside File Scope — flagged here because the scoped behavior change cannot ship with a permanently red batch suite. |
 | 6 | EACCES test path confirmed: `resolveSafeWorkerLaunchScript` returns the conventional `scripts/spine-worker-launch.sh` when it exists (no executability check), so a non-executable script gives `useLaunchScript=true` → spawn EACCES via `spawnWorkerChild`. Review Level 0 in the test PROMPT.md keeps `assertReviewToolAvailable` green. |
+| 7 | Implementation shape: `collectChildOutput(child, liveLogWriter, maxBytes)` keeps the `{exitCode, output}` shape and adds optional `spawnError: true` (exitCode 127, output = tail + String(err)); per-stream bounded tail buffers, combined string trimmed to last `maxBytes` preserving stdout-then-stderr order; `wait()` branch untouched (agentSession backend out of scope). No extraction needed — `worker-output.mjs` lands at exactly 500 lines, so `worker-output-live-log.mjs` was NOT created. Smoke-verified: hostile folder `x$(touch pwn)` → `.DONE` in folder, no `pwn` file; EACCES → single `{exitCode:127, spawnError:true}` result, `child.exitCode` flagged 127. |
 
 ## Blockers
 
