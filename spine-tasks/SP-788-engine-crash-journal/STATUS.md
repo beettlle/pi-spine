@@ -31,11 +31,13 @@
 - [ ] Wired in `runAttachedBatchEngine`
 
 ### Step 2: Tests
-**Status:** 🔄 In Progress
+**Status:** ✅ Done
 
-- [ ] Handler behavior
-- [ ] Uninstall
-- [ ] Failing journal still exits
+- [x] Handler behavior
+- [x] Uninstall
+- [x] Failing journal still exits
+
+9 tests: journal+mark+exit once, rejection kind, re-entrancy, uninstall removes both listeners, throwing journal → exit 1 + stderr, throwing markBatchFailed → exit 1, no active batch → exit 1, 500-char/20-line caps, default markBatchFailed real-I/O path.
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
