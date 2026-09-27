@@ -19,6 +19,7 @@ import { loadSpineBatchState, saveSpineBatchState } from "./state.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveAttachedMilestonePollMs } from "../config/spine-config-schema.mjs";
 import { startParentSessionMonitor } from "./parent-session-monitor.mjs";
+import { installEngineCrashHandlers } from "./engine-crash-guard.mjs";
 import {
 	enforceAttachedEngineSingleOwner,
 	reconcilePausedResumeDoneInLane,
@@ -291,6 +292,9 @@ export async function runAttachedBatchEngine({
 	}
 
 	installAttachedExitFinalizeHandlers({ projectRoot, spineBin });
+	// Scoped to this engine run: journal `engine.crashed` + fail the batch on a
+	// process-level crash, then uninstall so handlers never leak into importers (SP-788).
+	const uninstallEngineCrashGuard = installEngineCrashHandlers({ projectRoot });
 	const reporter = await startAttachedMilestoneReporter({ projectRoot, write });
 	/** @type {{ stop: () => Promise<void> }} */
 	let parentMonitor = { stop: async () => {} };
@@ -310,6 +314,7 @@ export async function runAttachedBatchEngine({
 		}
 		return result;
 	} finally {
+		uninstallEngineCrashGuard();
 		await parentMonitor.stop();
 		await reporter.stop();
 	}
