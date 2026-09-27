@@ -1,0 +1,19 @@
+src/batch/reconcile-orphan.mjs
+  s_6c95e855fa4361::t_a67dfc7ad0bbd3 39,54,68,113-114,148,204-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "291bee9e9ae079a4efff84602dbd3881ba44ba13",
+  "prompts": {},
+  "sessions": {
+    "s_6c95e855fa4361": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-30280cfa-970b-41c4-a32b-e070916cae5e",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
