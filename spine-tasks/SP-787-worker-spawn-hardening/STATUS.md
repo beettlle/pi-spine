@@ -1,7 +1,7 @@
 # SP-787: Worker spawn hardening — Status
 
-**Current Step:** Step 4 (Testing & Verification)
-**Status:** 🔄 In Progress — Steps 0–3 complete, Step 4 next
+**Current Step:** Step 5 (Documentation & Delivery)
+**Status:** 🔄 In Progress — Steps 0–4 complete
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -40,12 +40,12 @@
 - [x] Live log bounded
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Fix all failures
+- [x] Lint — `npm run lint` exit 0, 0 warnings
+- [x] Contract `testCommand` — lint ✓, typecheck ✓, tests 32 pass / 0 fail, exit 0
+- [x] Batch suite — `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm run test:batch` → 1542 pass / 0 fail
+- [x] Fix all failures — 8 tsc errors in new code found and fixed (Buffer generics, `maxBytes` narrowing, readonly `exitCode` cast)
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started

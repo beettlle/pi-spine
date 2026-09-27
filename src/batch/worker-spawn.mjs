@@ -290,10 +290,10 @@ export async function terminateHungWorkerChild(child, childDone) {
 /**
  * Append `text` to a bounded tail buffer, keeping only the last `maxBytes`.
  *
- * @param {Buffer} tail
+ * @param {Buffer<ArrayBufferLike>} tail
  * @param {string} text
  * @param {number} maxBytes
- * @returns {Buffer}
+ * @returns {Buffer<ArrayBufferLike>}
  */
 function appendToBoundedTail(tail, text, maxBytes) {
 	const chunk = Buffer.from(text, "utf-8");
@@ -323,9 +323,14 @@ export function collectChildOutput(child, liveLogWriter, maxBytes) {
 	if ("wait" in child && typeof child.wait === "function") {
 		return child.wait();
 	}
-	const cap = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : DEFAULT_MAX_BYTES;
+	const cap =
+		typeof maxBytes === "number" && Number.isFinite(maxBytes) && maxBytes > 0
+			? maxBytes
+			: DEFAULT_MAX_BYTES;
 	return new Promise((resolve) => {
+		/** @type {Buffer<ArrayBufferLike>} */
 		let stdoutTail = Buffer.alloc(0);
+		/** @type {Buffer<ArrayBufferLike>} */
 		let stderrTail = Buffer.alloc(0);
 		/** @type {string|null} */
 		let spawnErrorMessage = null;
@@ -372,7 +377,12 @@ export function collectChildOutput(child, liveLogWriter, maxBytes) {
 			// negative errno instead). The property is a plain writable own field.
 			if (child.exitCode === null || child.exitCode < 0) {
 				try {
-					child.exitCode = 127;
+					// exitCode is readonly on the Node ChildProcess type; a failed spawn
+					// has no real status, so flagging it is safe and intentional.
+					const writableExitCode = /** @type {{ exitCode: number | null }} */ (
+						/** @type {unknown} */ (child)
+					);
+					writableExitCode.exitCode = 127;
 				} catch {
 					// Read-only test double; the resolved promise still settles the host.
 				}
