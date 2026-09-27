@@ -1,0 +1,19 @@
+spine-tasks/SP-786-quarantine-corrupt-batch-state/STATUS.md
+  s_163668b472df17::t_a931d436803b9a 3,22,24-27,30,32-33,36,38-40,67-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b3b7d74d582697bab20cc09d19209947cdb2b4b4",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
