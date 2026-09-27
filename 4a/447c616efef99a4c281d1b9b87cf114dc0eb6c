@@ -1,0 +1,31 @@
+src/batch/integrate-worktree.mjs
+  s_163668b472df17::t_9c091e63dcae00 285-287,292,295,316,321-323,328-329,350,389-390,394,396
+src/batch/integrate.mjs
+  s_e5a9e3b01dd5b5::t_9496ded7a30db1 18,316-318,355,359-361
+src/batch/salvage-batch-integrate.mjs
+  s_e5a9e3b01dd5b5::t_d70f6600d6318f 14,328,367-369
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4a447c616efef99a4c281d1b9b87cf114dc0eb6c",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
