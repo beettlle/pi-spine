@@ -36,6 +36,7 @@ import {
 	writeWorkerDoneMarker,
 } from "../src/batch/worker-output.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
+import { taskIdFromFolderName } from "../src/tasks/packet/discover.mjs";
 import { DEFAULT_TASKS_ROOT } from "../src/config/spine-init-constants.mjs";
 import {
 	isPiExtensionConflictOutput,
@@ -312,7 +313,7 @@ async function runWorkerRunner() {
 	const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 	if (mode === "stub") {
-		const parsedTaskId = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "";
+		const parsedTaskId = taskIdFromFolderName(path.basename(taskFolder)) ?? "";
 		const failTasks = String(process.env.SPINE_WORKER_STUB_FAIL_TASKS ?? "")
 			.split(/[,\s]+/)
 			.filter(Boolean);
