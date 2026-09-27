@@ -1,0 +1,14 @@
+spine-tasks/SP-785-unified-task-id-discovery/STATUS.md
+  h_2a17159c706ba1 3,41,43-47,68-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "117dffa49d8ac9c09373e6b5ac0fe77b9939aadc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
