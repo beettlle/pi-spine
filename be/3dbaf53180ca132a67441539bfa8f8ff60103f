@@ -1,0 +1,14 @@
+spine-tasks/SP-781-matrix-row-metachar-guard/STATUS.md
+  h_2a17159c706ba1 3-4,29,31-33,36,38-39,45-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "be3dbaf53180ca132a67441539bfa8f8ff60103f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
