@@ -13,7 +13,11 @@ import {
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
-import { finalizeWorkerOutput, createWorkerLiveLogWriter } from "./worker-output.mjs";
+import {
+	finalizeWorkerOutput,
+	createWorkerLiveLogWriter,
+	resolveWorkerOutputConfig,
+} from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { commandExists } from "../util/command-exists.mjs";
 import {
@@ -262,6 +266,7 @@ export async function runWorker({
 		childPastPreflight = true;
 	});
 	onWorkerPid?.(workerChild.pid ?? 0);
+	const outputConfig = resolveWorkerOutputConfig(config);
 	const liveLogWriter = createWorkerLiveLogWriter({
 		projectRoot,
 		batchId,
@@ -269,7 +274,7 @@ export async function runWorker({
 		taskId,
 		config,
 	});
-	const childDone = collectChildOutput(workerChild, liveLogWriter);
+	const childDone = collectChildOutput(workerChild, liveLogWriter, outputConfig.maxBytes);
 
 	const pollState = createWorkerPollState(startedAt, initialWorkerPhase);
 	const pollOutcome = await pollWorkerUntilSettled({
@@ -315,12 +320,32 @@ export async function runWorker({
 
 	const childResult = await Promise.race([childDone, sleep(CHILD_DONE_TIMEOUT_MS).then(() => null)]);
 	let exitCode, output;
+	/** @type {boolean} */
+	let spawnFailed = false;
 	if (childResult) {
-		({ exitCode, output } = childResult);
+		({ exitCode, output, spawnError: spawnFailed = false } = childResult);
 	} else {
 		// close event didn't fire — sub-processes likely hold stdio pipes open.
 		const fallback = await terminateHungWorkerChild(workerChild, childDone);
-		({ exitCode, output } = fallback);
+		({ exitCode, output, spawnError: spawnFailed = false } = fallback);
+	}
+	// SP-787 (#306): the child never spawned (EACCES/ENOENT/missing execPath).
+	// Report `launch_failed` for this lane through the standard failure path so
+	// the engine keeps running; no worker code ran, so .DONE cannot be honored.
+	if (spawnFailed) {
+		return buildWorkerFailureResult({
+			rawOutput: output,
+			classification: "launch_failed",
+			exitCode,
+			mode: workerMode,
+			doneFound: fs.existsSync(donePath),
+			projectRoot,
+			batchId,
+			laneNumber,
+			taskId,
+			laneCorrelationId,
+			config,
+		});
 	}
 	const doneFound = fs.existsSync(donePath);
 	if (postDoneTerminated && !doneFound) {

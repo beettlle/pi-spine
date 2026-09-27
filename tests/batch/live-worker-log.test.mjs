@@ -288,7 +288,7 @@ test("startAgentSessionWorker flushes transcript chunks to live log", async () =
 	}
 });
 
-test("appendWorkerLiveLogChunk rolls file with truncation marker when over max bytes", async () => {
+test("appendWorkerLiveLogChunk appends and truncates only past twice the cap", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-live-cap-"));
 	try {
 		const logPath = path.join(root, "worker-live-cap.log");
@@ -299,9 +299,16 @@ test("appendWorkerLiveLogChunk rolls file with truncation marker when over max b
 		appendWorkerLiveLogChunk({ logPath, rawChunk: "a".repeat(40), outputConfig });
 		appendWorkerLiveLogChunk({ logPath, rawChunk: "b".repeat(40), outputConfig });
 
+		// SP-787: append-only hot path — 80 bytes ≤ 2×48 cap stays untouched.
+		assert.equal(fs.readFileSync(logPath, "utf-8"), `${"a".repeat(40)}${"b".repeat(40)}`);
+
+		// 120 bytes > 2×48 cap → truncated back to the cap, tail kept.
+		appendWorkerLiveLogChunk({ logPath, rawChunk: "c".repeat(40), outputConfig });
+
 		const content = fs.readFileSync(logPath, "utf-8");
 		assert.match(content, /worker output truncated/);
 		assert.ok(Buffer.byteLength(content, "utf-8") <= 48);
+		assert.ok(content.endsWith("c".repeat(13)));
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

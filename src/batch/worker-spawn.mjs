@@ -7,6 +7,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { startAgentSessionWorker } from "./agent-session-worker.mjs";
+import { DEFAULT_MAX_BYTES } from "./worker-output.mjs";
 import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { resolvePiSpineRoot } from "../config/pi-spine-root.mjs";
 import { resolveSafeWorkerLaunchScript } from "../config/worker-launch-script.mjs";
@@ -215,12 +216,13 @@ export function spawnExecutionOnlyHandle({
 		config,
 	});
 	
-	// Create a wrapper script that runs the command and then creates .DONE
-	// This matches the behavior expected by the heartbeat loop.
-	// We run `/bin/sh -c "<command> && touch .DONE"`
-	const script = `${command} && touch "${path.join(taskFolder, ".DONE")}"`;
-	
-	return spawn("/bin/sh", ["-c", script], {
+	// Run the command, then create the .DONE marker. The path is passed as a
+	// positional parameter (`$1`) instead of being interpolated into the script
+	// string, so a task folder containing `"`, `$(`, or a backtick is never
+	// evaluated as shell code (SP-787 / #306). The third element is `$0`.
+	const donePath = path.join(taskFolder, ".DONE");
+
+	return spawn("/bin/sh", ["-c", `${command} && touch "$1"`, "sh", donePath], {
 		cwd: worktreePath,
 		env,
 		stdio: ["ignore", "pipe", "pipe"],
@@ -286,28 +288,113 @@ export async function terminateHungWorkerChild(child, childDone) {
 }
 
 /**
+ * Append `text` to a bounded tail buffer, keeping only the last `maxBytes`.
+ *
+ * @param {Buffer<ArrayBufferLike>} tail
+ * @param {string} text
+ * @param {number} maxBytes
+ * @returns {Buffer<ArrayBufferLike>}
+ */
+function appendToBoundedTail(tail, text, maxBytes) {
+	const chunk = Buffer.from(text, "utf-8");
+	if (maxBytes <= 0) return Buffer.alloc(0);
+	const combined = tail.byteLength === 0 ? chunk : Buffer.concat([tail, chunk]);
+	return combined.byteLength > maxBytes
+		? combined.subarray(combined.byteLength - maxBytes)
+		: combined;
+}
+
+/**
+ * Collect child stdout/stderr into a bounded tail (SP-787 / #306) and settle
+ * on either `close` or a spawn `error`, whichever comes first. A child that
+ * never spawned (EACCES/ENOENT, missing execPath) emits `error` and then a
+ * synthetic `close`, so the error path resolves once with `spawnError: true`
+ * and the conventional exit code 127; the close handler is guarded so the
+ * later close cannot override the spawn failure. Without the `error` listener
+ * the engine itself would crash on the unhandled event and lose every lane.
+ *
  * @param {WorkerChildHandle} child
  * @param {{ append: (rawChunk: string) => void } | null} [liveLogWriter]
+ * @param {number} [maxBytes] Byte cap for the collected output tail; defaults
+ *   to the worker output cap. Memory stays bounded regardless of child runtime.
+ * @returns {Promise<{ exitCode: number; output: string; spawnError?: boolean }>}
  */
-export function collectChildOutput(child, liveLogWriter) {
+export function collectChildOutput(child, liveLogWriter, maxBytes) {
 	if ("wait" in child && typeof child.wait === "function") {
 		return child.wait();
 	}
+	const cap =
+		typeof maxBytes === "number" && Number.isFinite(maxBytes) && maxBytes > 0
+			? maxBytes
+			: DEFAULT_MAX_BYTES;
 	return new Promise((resolve) => {
-		let stdout = "";
-		let stderr = "";
+		/** @type {Buffer<ArrayBufferLike>} */
+		let stdoutTail = Buffer.alloc(0);
+		/** @type {Buffer<ArrayBufferLike>} */
+		let stderrTail = Buffer.alloc(0);
+		/** @type {string|null} */
+		let spawnErrorMessage = null;
+		let settled = false;
+
+		// stdout-then-stderr order as before; the combined string keeps the last
+		// `cap` bytes overall.
+		const combinedOutput = () => {
+			const combined = Buffer.concat([stdoutTail, stderrTail]);
+			const bounded =
+				combined.byteLength > cap
+					? combined.subarray(combined.byteLength - cap)
+					: combined;
+			return bounded.toString("utf-8");
+		};
+		const settle = (
+			/** @type {() => { exitCode: number; output: string; spawnError?: boolean }} */ build,
+		) => {
+			if (settled) return;
+			settled = true;
+			resolve(build());
+		};
+		const spawnFailureResult = () => ({
+			exitCode: 127,
+			output: `${combinedOutput()}${spawnErrorMessage ?? ""}`,
+			spawnError: true,
+		});
+
 		child.stdout?.on("data", (/** @type {Buffer | string} */ chunk) => {
 			const text = chunk.toString();
-			stdout += text;
+			stdoutTail = appendToBoundedTail(stdoutTail, text, cap);
 			liveLogWriter?.append(text);
 		});
 		child.stderr?.on("data", (/** @type {Buffer | string} */ chunk) => {
 			const text = chunk.toString();
-			stderr += text;
+			stderrTail = appendToBoundedTail(stderrTail, text, cap);
 			liveLogWriter?.append(text);
 		});
+		child.on?.("error", (/** @type {unknown} */ err) => {
+			spawnErrorMessage = String(err);
+			// A child that failed to spawn has no real exit status. Flag the handle
+			// as settled so poll loops keyed on `exitCode` stop polling — older
+			// runtimes leave `exitCode` null on failed spawns (Node ≥22 sets a
+			// negative errno instead). The property is a plain writable own field.
+			if (child.exitCode === null || child.exitCode < 0) {
+				try {
+					// exitCode is readonly on the Node ChildProcess type; a failed spawn
+					// has no real status, so flagging it is safe and intentional.
+					const writableExitCode = /** @type {{ exitCode: number | null }} */ (
+						/** @type {unknown} */ (child)
+					);
+					writableExitCode.exitCode = 127;
+				} catch {
+					// Read-only test double; the resolved promise still settles the host.
+				}
+			}
+			settle(spawnFailureResult);
+		});
 		child.on?.("close", (/** @type {number | null} */ code) => {
-			resolve({ exitCode: code ?? 1, output: `${stdout}${stderr}` });
+			if (spawnErrorMessage !== null) {
+				settle(spawnFailureResult);
+				return;
+			}
+			settle(() => ({ exitCode: code ?? 1, output: combinedOutput() }));
 		});
 	});
 }
