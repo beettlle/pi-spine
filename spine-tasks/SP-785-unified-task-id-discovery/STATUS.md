@@ -1,7 +1,7 @@
 # SP-785: Unified task-ID discovery (SP-1000+) — Status
 
-**Current Step:** Step 5 (Documentation & Delivery)
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — all completion criteria met
 **Last Updated:** 2026-09-27
 **Review Level:** 1
 **Review Counter:** 0
@@ -47,10 +47,10 @@
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -74,3 +74,11 @@
 ## Blockers
 
 _None._
+
+## Completion Criteria
+
+- [x] SP-1000 discovered by planner, preflight, and worker runner (boundary fixture test + repo checks)
+- [x] Ordering SP-099 < SP-999 < SP-1000 (`compareTaskIds`)
+- [x] `checkTasksRoot` ignores non-task folders (new preflight test)
+- [x] One task-ID regex, guarded by a test (guard passes on all four consumer files)
+- [x] Closes #300
