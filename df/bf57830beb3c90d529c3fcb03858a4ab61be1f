@@ -1,0 +1,21 @@
+docs/adoption/operator-runbook.md
+  s_971f5d75f3604a::t_d807ec196ae0aa 2162
+spine-tasks/SP-777-docs-reconcile-doctor-typing/STATUS.md
+  s_971f5d75f3604a::t_7c8aad92573759 3-5,14,16-18,21,23-24,27,29-30,33,35-36,43-45,49-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dfbf57830beb3c90d529c3fcb03858a4ab61be1f",
+  "prompts": {},
+  "sessions": {
+    "s_971f5d75f3604a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-4ca2a013-3c94-42e4-b4a3-b4a1eea3b3c7",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
