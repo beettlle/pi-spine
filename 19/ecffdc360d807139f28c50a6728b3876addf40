@@ -1,0 +1,20 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-776-type-run-doctor-checks/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-776-type-run-doctor-checks/.reviews/0-20260927T015002.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-776-type-run-doctor-checks/.reviews/final-20260927T015028.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "19ecffdc360d807139f28c50a6728b3876addf40",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
