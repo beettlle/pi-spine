@@ -1,6 +1,6 @@
 # SP-775: Type reconcile classify/diagnosis/context/light-cache — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 2
@@ -27,12 +27,12 @@
 - [x] LOC under policy limit (443/383/87/60; `PHASE23_GRANDFATHERED_OVER_500` untouched)
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] lint + Contract testCommand
-- [ ] Full suite (worker env unset)
-- [ ] Coverage gate ≥77%
-- [ ] Fix failures
+- [x] lint + Contract testCommand (lint clean; 69/69 arch+diagnosis+light+macro)
+- [x] Full suite (worker env unset): 2651/2651 pass, 0 fail
+- [x] Coverage gate ≥77%: **89.67%** (`env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm run coverage:check`)
+- [x] Fix failures: 1st full-suite run had 1 flaky assert in `reviewer-artifact-early-honor.test.mjs` (out of scope, imports none of the touched modules, passes 3/3 isolated; 2nd full run clean)
 
 ### Step 3: Documentation & Delivery
 **Status:** ⬜ Not Started
