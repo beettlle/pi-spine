@@ -1,7 +1,7 @@
 # SP-789: Runbook: v2.25.0 recovery-evidence hardening — Status
 
-**Current Step:** Step 3 (Documentation & Delivery)
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — `.DONE` ready
 **Last Updated:** 2026-09-27
 **Review Level:** 0
 **Review Counter:** 0
@@ -33,10 +33,10 @@
 - [x] Fix all failures — none caused by this change
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
