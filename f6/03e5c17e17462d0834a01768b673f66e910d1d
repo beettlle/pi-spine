@@ -1,0 +1,16 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-774-type-reconcile-batch-orphan/STATUS.md
+  h_2a17159c706ba1 3-4,37,39-42,45,47-48,64-66,70-74,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f603e5c17e17462d0834a01768b673f66e910d1d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
