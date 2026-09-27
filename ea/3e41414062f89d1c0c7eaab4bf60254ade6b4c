@@ -1,0 +1,26 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-776-type-run-doctor-checks/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-776-type-run-doctor-checks/.reviews/0-20260927T015002.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-776-type-run-doctor-checks/.reviews/final-20260927T015028.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-776-type-run-doctor-checks/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,21,23-26,29,31-34,37,39-40,47-55,59-63,67
+src/doctor/run-doctor-checks.mjs
+  h_2a17159c706ba1 58-62,101-104,117-121,129-132,158-161,194-197,217,235,266-269,277-279,287,322-326
+tsconfig.batch.json
+  h_2a17159c706ba1 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ea3e41414062f89d1c0c7eaab4bf60254ade6b4c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
