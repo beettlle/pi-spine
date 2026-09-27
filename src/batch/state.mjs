@@ -125,10 +125,24 @@ export function failBatchFromEngineError({
 }
 
 /**
+ * Fail closed when the on-disk batch state must not be silently replaced.
+ *
+ * Corrupt spine-owned state is quarantined (never deleted) and start refuses
+ * with an actionable recovery message (SP-786 / #303). This gate runs even
+ * when preflight is skipped: the engine calls `assertNoActiveBatch`
+ * unconditionally on every start path. A Taskplane-owned `.pi/batch-state.json`
+ * is never modified — a corrupt one is reported instead.
+ *
  * @param {string} projectRoot
  */
 export function assertNoActiveBatch(projectRoot) {
-	clearStaleTerminalBatchStateForStart(projectRoot);
+	const clearResult = clearStaleTerminalBatchStateForStart(projectRoot);
+	if (clearResult.reason === "corrupt") {
+		throw new Error(
+			`Batch state was corrupt and has been quarantined to ${clearResult.quarantinedPath}. ` +
+				"Inspect it and the journal (spine status --diagnose), then run spine batch dismiss --force before starting a new batch.",
+		);
+	}
 
 	const spine = loadSpineBatchState(projectRoot);
 	if (spine.path && spine.raw) {
@@ -141,6 +155,13 @@ export function assertNoActiveBatch(projectRoot) {
 	}
 
 	const any = loadBatchStateFile(projectRoot);
+	if (any.path && any.parseError) {
+		// Corrupt Taskplane-owned state: reported, never modified by spine (SP-786 / #303).
+		throw new Error(
+			`Batch state at ${any.path} is corrupt and was left unmodified by spine (${any.parseError}). ` +
+				"Inspect it (spine status --diagnose), then repair or remove it with the owning tool before starting a new batch.",
+		);
+	}
 	if (any.path && any.raw) {
 		const phase = String(any.raw.phase ?? "");
 		const active =

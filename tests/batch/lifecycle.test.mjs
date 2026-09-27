@@ -51,8 +51,11 @@ test("dismiss archives batch-state before clearing active file", async () => {
 	const projectRoot = await createProjectFixture();
 	try {
 		const fixture = loadFixture("limbo-stale-20260531T165700.json");
-		writePiBatchState(projectRoot, fixture);
-		const activePath = path.join(projectRoot, ".pi", "batch-state.json");
+		// SP-786 / #303: dismiss clears spine-owned `.spine/batch-state.json` only;
+		// Taskplane-owned `.pi/batch-state.json` is never modified (covered in
+		// batch-state-handoff.test.mjs).
+		writeSpineBatchState(projectRoot, fixture);
+		const activePath = path.join(projectRoot, ".spine", "batch-state.json");
 
 		const result = dismissBatch({ projectRoot, reason: "test" });
 		assert.equal(result.ok, true);
@@ -98,7 +101,7 @@ test("complete with --detect-manual-merge succeeds when orch merged to main", as
 
 		const archivePath = archiveBatchStatePath(projectRoot, fixture.batchId);
 		assert.ok(fs.existsSync(archivePath));
-		assert.ok(!fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")));
+		assert.ok(!fs.existsSync(path.join(projectRoot, ".spine", "batch-state.json")));
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

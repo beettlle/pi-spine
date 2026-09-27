@@ -12,6 +12,7 @@ import {
 	loadBatchStateFile,
 } from "../../src/batch/batch-state-io.mjs";
 import { archiveBatchStatePath, completeBatch } from "../../src/batch/lifecycle.mjs";
+import { startBatch } from "../../src/batch/engine.mjs";
 import {
 	assertNoActiveBatch,
 	createInitialBatchState,
@@ -238,6 +239,123 @@ test("new batch save replaces terminal completed cache with different batchId", 
 		const loaded = loadBatchStateFile(projectRoot);
 		assert.equal(loaded.raw?.batchId, NEW_BATCH);
 		assert.equal(loaded.raw?.phase, "planning");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("clearStaleTerminalBatchStateForStart quarantines corrupt spine state instead of deleting it", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-handoff-quarantine-"));
+	try {
+		const statePath = spineBatchStatePath(projectRoot);
+		fs.mkdirSync(path.dirname(statePath), { recursive: true });
+		const corrupt = "{ not valid json !!!";
+		fs.writeFileSync(statePath, corrupt, "utf-8");
+
+		const result = clearStaleTerminalBatchStateForStart(projectRoot);
+		assert.equal(result.cleared, false);
+		assert.equal(result.reason, "corrupt");
+		assert.ok(result.quarantinedPath, "quarantinedPath is returned");
+		assert.match(result.quarantinedPath, /batch-state\.corrupt-.+\.json$/);
+		assert.equal(path.dirname(result.quarantinedPath), path.dirname(statePath));
+
+		// Original path is gone, but the file was renamed, never deleted.
+		assert.equal(fs.existsSync(statePath), false);
+		assert.equal(fs.readFileSync(result.quarantinedPath, "utf-8"), corrupt);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("clearActiveBatchStateIfMatches quarantines corrupt active state instead of deleting it", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-handoff-quarantine2-"));
+	try {
+		const statePath = spineBatchStatePath(projectRoot);
+		fs.mkdirSync(path.dirname(statePath), { recursive: true });
+		const corrupt = "{ corruption }";
+		fs.writeFileSync(statePath, corrupt, "utf-8");
+
+		const result = clearActiveBatchStateIfMatches(statePath, OLD_BATCH, projectRoot);
+		assert.equal(result.cleared, false);
+		assert.equal(result.reason, "corrupt");
+		assert.ok(result.quarantinedPath, "quarantinedPath is returned");
+		assert.match(result.quarantinedPath, /batch-state\.corrupt-.+\.json$/);
+		assert.equal(path.dirname(result.quarantinedPath), path.dirname(statePath));
+
+		assert.equal(fs.existsSync(statePath), false);
+		assert.equal(fs.readFileSync(result.quarantinedPath, "utf-8"), corrupt);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("corrupt .pi/batch-state.json is reported, never modified by start or clear", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-handoff-foreign-"));
+	try {
+		const piPath = path.join(projectRoot, ".pi", "batch-state.json");
+		fs.mkdirSync(path.dirname(piPath), { recursive: true });
+		const corrupt = "{ corrupt .pi state";
+		fs.writeFileSync(piPath, corrupt, "utf-8");
+
+		const startClear = clearStaleTerminalBatchStateForStart(projectRoot);
+		assert.equal(startClear.cleared, false);
+		assert.equal(startClear.reason, "foreign_state");
+
+		const activeClear = clearActiveBatchStateIfMatches(piPath, OLD_BATCH, projectRoot);
+		assert.equal(activeClear.cleared, false);
+		assert.equal(activeClear.reason, "foreign_state");
+
+		assert.equal(fs.existsSync(piPath), true);
+		assert.equal(fs.readFileSync(piPath, "utf-8"), corrupt);
+
+		// Start gate reports the corrupt foreign file without modifying it.
+		assert.throws(() => assertNoActiveBatch(projectRoot), /left unmodified by spine/);
+		assert.equal(fs.readFileSync(piPath, "utf-8"), corrupt);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("terminal .pi/batch-state.json survives the start gate untouched", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-handoff-foreign-term-"));
+	try {
+		const piPath = path.join(projectRoot, ".pi", "batch-state.json");
+		fs.mkdirSync(path.dirname(piPath), { recursive: true });
+		fs.writeFileSync(
+			piPath,
+			JSON.stringify({ id: "tp-terminal", phase: "completed", endedAt: Date.now() }),
+			"utf-8",
+		);
+
+		const result = clearStaleTerminalBatchStateForStart(projectRoot);
+		assert.equal(result.cleared, false);
+		assert.equal(result.reason, "foreign_state");
+
+		assert.doesNotThrow(() => assertNoActiveBatch(projectRoot));
+		assert.equal(fs.existsSync(piPath), true);
+		assert.equal(JSON.parse(fs.readFileSync(piPath, "utf-8")).id, "tp-terminal");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("startBatch refuses with skipPreflight when spine state is corrupt (quarantine message)", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-handoff-startrefuses-"));
+	try {
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(spineBatchStatePath(projectRoot), "{ corrupt before start", "utf-8");
+
+		// skipPreflight: true must not bypass the fail-closed corrupt-state gate.
+		await assert.rejects(
+			() => startBatch({ projectRoot, skipPreflight: true }),
+			/Batch state was corrupt and has been quarantined to .+spine batch dismiss --force/s,
+		);
+
+		assert.equal(fs.existsSync(spineBatchStatePath(projectRoot)), false);
+		const quarantined = fs
+			.readdirSync(path.join(projectRoot, ".spine"))
+			.filter((name) => name.startsWith("batch-state.corrupt-"));
+		assert.equal(quarantined.length, 1);
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}
