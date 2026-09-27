@@ -1,0 +1,21 @@
+src/batch/reconcile-batch.mjs
+  s_e5a9e3b01dd5b5::t_db1e21e06dd0a4 35,185-196
+tests/batch/abort.test.mjs
+  s_e5a9e3b01dd5b5::t_91f963847f513c 107-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4c13914bb4498e825b9a02b7c063a5e765d08885",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
