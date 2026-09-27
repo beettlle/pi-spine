@@ -1,0 +1,21 @@
+spine-tasks/SP-785-unified-task-id-discovery/.reviews/0-20260927T225818.md
+  s_e5a9e3b01dd5b5::t_3d8ca806461ae2 1-8
+spine-tasks/SP-785-unified-task-id-discovery/.reviews/final-20260927T225907.md
+  s_e5a9e3b01dd5b5::t_72e0b6e56b4a0b 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1243516464fd94df8233a47047300b4d85bf02ac",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
