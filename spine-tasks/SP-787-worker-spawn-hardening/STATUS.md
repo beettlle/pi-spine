@@ -1,7 +1,7 @@
 # SP-787: Worker spawn hardening — Status
 
-**Current Step:** Step 5 (Documentation & Delivery)
-**Status:** 🔄 In Progress — Steps 0–4 complete
+**Current Step:** Complete
+**Status:** ✅ All steps complete — verification green, .DONE ready
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -48,10 +48,20 @@
 - [x] Fix all failures — 8 tsc errors in new code found and fixed (Buffer generics, `maxBytes` narrowing, readonly `exitCode` cast)
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged (table above, entries 1–8)
+- [x] Create `.DONE`
+
+Completion criteria evidence:
+
+- ✅ Spawn failure → `launch_failed`, engine keeps running — test "non-executable launch script yields launch_failed and the engine survives" (same-process follow-up worker succeeds)
+- ✅ Worker output memory bounded — per-stream tail buffers capped at `maxBytes`; combined string keeps last `maxBytes`
+- ✅ Live log never re-read per chunk — `readFileSync` spy: 0 reads on append hot path, inode stable across appends
+- ✅ Hostile task folder (`"`, `$(`) executes no shell code — positional `$1`; test with `x$(touch pwn)` writes `.DONE`, no `pwn` file
+- ✅ Closes #306 (items 1–4; item 5 owned by SP-788)
+
+Documentation check: `docs/adoption/operator-runbook.md` references worker output log paths only — no live-log rewrite mechanics documented, so not affected by this change (and SP-789 owns runbook edits).
 
 ---
 
