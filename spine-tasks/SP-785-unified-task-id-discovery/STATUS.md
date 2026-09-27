@@ -1,6 +1,6 @@
 # SP-785: Unified task-ID discovery (SP-1000+) — Status
 
-**Current Step:** Step 4 (Testing & Verification)
+**Current Step:** Step 5 (Documentation & Delivery)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 1
@@ -38,13 +38,13 @@
 - [x] Preflight test expectations
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Full suite
-- [ ] `spine plan all` count unchanged
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Full suite
+- [x] `spine plan all` count unchanged
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -65,6 +65,9 @@
 | Fourth private regex | Guard sweep found `worker-prompt.mjs:48` default `taskIdHint` param with its own `/^([A-Z]+-\d+)/`; now defaults to `taskIdFromFolder(taskFolder)` |
 | Preflight tests | Existing expectations (TP-001/TP-002) unchanged; added `checkTasksRoot ignores non-task folders` case (`_explore`/`_authoring`/`_archive` with PROMPT.md excluded) |
 | Boundary suite | 6/6 pass; affected suites (preflight + worker-prompt + planner) 118/118 pass |
+| Verification evidence | lint clean; typecheck clean; Contract testCommand 124/124; full suite `SPINE_WORKER_STUB=1 npm test` **2679/2679 pass** |
+| Plan count unchanged | `discoverTasks('spine-tasks')` BEFORE **766** = AFTER **766** (verified against stashed pre-change HEAD); preflight now also reports 766 (agrees with planner). `spine plan all` output identical pre/post: 58 legacy TP-04x "Missing testing coverage" lines — pre-existing validation failure, unrelated to discovery |
+| PRD check | `docs/PRD.md` FR-TASK-01 says `{tasksRoot}/{PREFIX-###-slug}/PROMPT.md` — `###` is a placeholder, no "three digits" wording; no doc update required (Must Update: None) |
 | Baseline count | `discoverTasks('spine-tasks')` = **766** tasks, all 3-digit IDs |
 | `spine plan all` pre-existing failure | Throws on legacy TP-04x packets with invalid PROMPT (missing Testing) — unrelated to discovery; using `discoverTasks` count for the plan-count criterion instead |
 
