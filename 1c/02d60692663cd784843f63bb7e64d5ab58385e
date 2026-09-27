@@ -1,0 +1,19 @@
+spine-tasks/SP-784-integrate-checkout-sync-safety/STATUS.md
+  s_163668b472df17::t_b99053ea109a11 3,31,33-36,39,41,68-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1c02d60692663cd784843f63bb7e64d5ab58385e",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
