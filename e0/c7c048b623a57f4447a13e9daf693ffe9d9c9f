@@ -1,0 +1,23 @@
+src/batch/worker-prompt.mjs
+  s_e5a9e3b01dd5b5::t_fc2f30cf28827f 48
+tests/spine-preflight.test.mjs
+  s_e5a9e3b01dd5b5::t_9e733b6a6afac8 238-255
+tests/tasks/discover-boundary.test.mjs
+  s_e5a9e3b01dd5b5::t_9631539f5b9825 1-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e0c7c048b623a57f4447a13e9daf693ffe9d9c9f",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
