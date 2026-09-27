@@ -1,0 +1,14 @@
+spine-tasks/SP-776-type-run-doctor-checks/STATUS.md
+  h_2a17159c706ba1 3-4,21,23-26,29,31-34,37,39-40,47-55,59-63,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e8b9c579aa17202ea79a0c76a1ba8237ae018bfd",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
