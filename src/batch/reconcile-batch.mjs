@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** Main reconcileBatch orchestration (SP-606 / #192). */
 
 import fs from "node:fs";
@@ -126,7 +125,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 	}
 
 	const tasksRoot = resolveTasksRoot(projectRoot);
-	let classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
+	let classifiedTasks = /** @type {{ taskId: string, classification: string, laneNumber?: number|null }[]} */ (classifyTasks(batch, tasksRoot, projectRoot));
 	const useLightGit =
 		ctx.light === true &&
 		!_lightRetry &&
@@ -142,12 +141,10 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 
 	const hasRunningTasks = classifiedTasks.some((task) => task.classification === "running");
 	const hasPendingTasks = classifiedTasks.some((task) => task.classification === "pending");
-	const pendingWithFailedSegment = batch.segments.some(
-		(segment) => segment.classification === "terminal-failure",
-	);
-	const driftTask = batch.tasks.find((task) => {
+	const pendingWithFailedSegment = /** @type {Record<string, any>[]} */ (batch.segments).some((segment) => segment.classification === "terminal-failure");
+	const driftTask = /** @type {Record<string, any>[]} */ (batch.tasks).find((task) => {
 		if (task.classification !== "pending") return false;
-		return batch.segments.some(
+		return /** @type {Record<string, any>[]} */ (batch.segments).some(
 			(segment) => segment.taskId === task.taskId && segment.classification === "terminal-failure",
 		);
 	});
@@ -161,7 +158,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		classifiedTasks.every((task) => task.classification === "terminal-success");
 	const failedTask = classifiedTasks.find((task) => task.classification === "terminal-failure");
 
-	const signals = {
+	const signals = /** @type {Record<string, any>} */ ({
 		phase: batch.phase,
 		endedAt: batch.endedAt,
 		failedTasks: hasFailedTasks ? Math.max(batch.failedTasks, 1) : batch.failedTasks,
@@ -178,7 +175,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		segments: batch.segments,
 		lanes: batch.lanes,
 		raw: batch.raw,
-	};
+	});
 
 	const journalFile = journalPath(projectRoot, batch.batchId);
 	/** @type {object[]} */
@@ -193,11 +190,11 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 
 	if (journalEvents.length > 0 && batch.raw) {
 		let rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
-		let drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
+		let drift = detectBatchStateDrift(batch.raw, rebuilt, /** @type {any} */ (journalEvents), /** @type {any} */ (classifiedTasks));
 		const healed = reconcileBatchStateDrift({
 			projectRoot,
 			state: batch.raw,
-			classifiedTasks,
+			classifiedTasks: /** @type {any} */ (classifiedTasks),
 			journalEvents,
 			drift,
 		});
@@ -213,7 +210,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 			}
 			classifiedTasks = classifyTasks(batch, tasksRoot, projectRoot);
 			rebuilt = rebuildBatchStateFromJournal(batch.raw, journalEvents);
-			drift = detectBatchStateDrift(batch.raw, rebuilt, journalEvents, classifiedTasks);
+			drift = detectBatchStateDrift(batch.raw, rebuilt, /** @type {any} */ (journalEvents), /** @type {any} */ (classifiedTasks));
 		}
 		signals.stateDrift = drift;
 		signals.rebuiltFromJournal = rebuilt;
@@ -345,13 +342,13 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 
 	const mergeGitignoredFailureInferred = inferMergeGitignoredFailure({
 		exitReason,
-		failureClass: batch.raw?.mergeResults?.find((entry) => entry?.failureClass)?.failureClass ?? null,
-		lastError: batch.raw?.lastError ?? null,
+		failureClass: /** @type {Record<string, any>[] | undefined} */ (batch.raw?.mergeResults)?.find((entry) => entry?.failureClass)?.failureClass ?? null,
+		lastError: /** @type {any} */ (batch.raw?.lastError) ?? null,
 		journalEvents,
 	});
 	const mergeFailureSummary = summarizeMergeFailures(
 		batch.mergeResults,
-		batch.raw?.lastError ?? null,
+		/** @type {any} */ (batch.raw?.lastError) ?? null,
 	);
 	signals.mergeFailed = mergeFailureSummary.mergeFailed;
 	signals.failedMerges = mergeFailureSummary.failedMerges;
@@ -376,9 +373,7 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 			: null;
 	const driftTaskStatus =
 		failedTaskId != null
-			? String(
-					(batch.raw?.tasks ?? []).find((entry) => entry?.taskId === failedTaskId)?.status ?? "",
-				)
+			? String((/** @type {Record<string, any>[]} */ (batch.raw?.tasks) ?? []).find((entry) => entry?.taskId === failedTaskId)?.status ?? "")
 			: null;
 
 	const activeReviewTaskId =
