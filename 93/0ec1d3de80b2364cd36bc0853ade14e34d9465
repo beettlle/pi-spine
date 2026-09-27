@@ -1,0 +1,21 @@
+tests/batch/contract-stall-override.test.mjs
+  s_e5a9e3b01dd5b5::t_1f2fc11a8c71c7 2,9-10,22-64,140,148-155,220,222-259,261-270,272-289,291-305,307-308,311-315,317
+tests/batch/heartbeat.test.mjs
+  s_e5a9e3b01dd5b5::t_5efd7f51e1d219 2,397-465
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "930ec1d3de80b2364cd36bc0853ade14e34d9465",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
