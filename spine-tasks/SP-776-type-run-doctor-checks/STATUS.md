@@ -1,7 +1,7 @@
 # SP-776: Type run-doctor-checks — Status
 
-**Current Step:** Step 0 — Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 1 — Type run-doctor-checks
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-09-26
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ## Progress Checklist
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-775 landed
-- [ ] Confirm nocheck on target
-- [ ] Dependencies satisfied
+- [x] Confirm SP-775 landed (`649de2f8` wave 1; 4 classify/diagnosis modules in tsconfig.batch.json include, allowlist rows gone)
+- [x] Confirm nocheck on target (`src/doctor/run-doctor-checks.mjs` line 1)
+- [x] Dependencies satisfied
 
 ### Step 1: Type run-doctor-checks
 **Status:** ⬜ Not Started
