@@ -1,0 +1,20 @@
+spine-tasks/SP-787-worker-spawn-hardening/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-787-worker-spawn-hardening/.reviews/0-20260927T235606.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-787-worker-spawn-hardening/.reviews/5-20260927T235616.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-787-worker-spawn-hardening/.reviews/final-20260927T235756.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f0a7e35eb58768a742c1328534f54b7df202cd1c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
