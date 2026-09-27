@@ -1,0 +1,14 @@
+src/batch/worker-output.mjs
+  h_2a17159c706ba1 195-197,211-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f9ecaa2255b031a7a6bd1f5c4dba6dd9ff8190a9",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
