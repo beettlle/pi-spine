@@ -1,0 +1,16 @@
+spine-tasks/SP-787-worker-spawn-hardening/STATUS.md
+  h_2a17159c706ba1 3-4,43,45-48
+src/batch/worker-spawn.mjs
+  h_2a17159c706ba1 293,296,326-329,331,333,380-385
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7a3278990292658a957d0f3e40a32d7e2b27eb41",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
