@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-09-26 (Phase 91 v2.23.0 release packets staged; Next → SP-774)
+**Last Updated:** 2026-09-26 (Phase 92 v2.24.0 release packets staged; Next → SP-779)
 **Status:** Active
-**Next Task ID:** SP-774
+**Next Task ID:** SP-779
 
 ---
 
@@ -2554,6 +2554,30 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [ ] Publish **v2.23.0** only after operator approval
 
 **Deferred:** #284 typing Phase 3; matrix epic #225/#231; P3 backlog; TypeScript 7 / `@types/node` 26.
+
+---
+
+### Phase 92 — v2.24.0 reconcile/doctor typing (#284) + dev dep hygiene
+
+**Authoring:** 2026-09-26 · Manifest: [`spine-tasks/_authoring/release-v2.24.0/manifest.md`](_authoring/release-v2.24.0/manifest.md)
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-774 | Type reconcile-batch/orphan + reconcile facade | M | #284 Partial | Staged |
+| SP-775 | Type reconcile classify/diagnosis/context/light-cache | M | #284 Partial | Staged |
+| SP-776 | Type run-doctor-checks | S | #284 Closes | Staged |
+| SP-777 | Document reconcile/doctor typing | S | #284 docs | Staged |
+| SP-778 | Same-major dev dependency hygiene | S | — | Staged |
+
+**Phase 92 exit criteria:**
+
+- [x] Operator approved release scope (manifest)
+- [ ] SP-774–SP-778 `.DONE` and integrated on `main`
+- [ ] #284 CLOSED
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Publish **v2.24.0** only after operator approval
+
+**Deferred:** matrix epic #225/#231; P3 backlog; TypeScript 7 / `@types/node` 26.
 
 ---
 
