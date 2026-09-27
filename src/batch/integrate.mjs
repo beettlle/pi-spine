@@ -10,9 +10,9 @@ import {
 	plumbingMergeOrchIntoBase,
 	casUpdateBaseRef,
 	isBranchCheckedOutInWorktree,
-	reportDirtyOverlap,
-	syncMergePathsToCheckedOutBase,
+	syncMergeResultToCheckedOutBase,
 } from "./integrate-worktree.mjs";
+import { reportDirtyOverlap } from "./integrate-dirty-overlap.mjs";
 import {
 	isFastForwardCapableIntegrate,
 	listIntegrateDirtyPaths,
@@ -344,24 +344,11 @@ export function integrateOrchToBase(ctx) {
 
 		const mergeCommit = mergeResult.mergeCommit;
 
-		/** @type {{ ok: boolean, timedOut?: boolean, error?: string } | null} */
-		let syncResult = null;
-		if (mergeResult.mode === "fast-forward") {
-			syncResult = syncMergePathsToCheckedOutBase(
-				projectRoot,
-				baseBranch,
-				mergeResult.baseShaBefore,
-				mergeCommit,
-				{ dirtyPaths: preMergeDirtyPaths },
-			);
-		} else if (mergeResult.mode === "plumbing") {
-			const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-			syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, {
-				dirtyPaths: preMergeDirtyPaths,
-			});
-		}
-		// No sync fallback for other branches (SP-784 / #298): when base is not checked out right
-		// now, the merge commit is already on the base ref and the checkout must stay untouched.
+		// No sync when base is not checked out right now (SP-784 / #298): the merge commit is
+		// already on the base ref and the checkout must stay untouched.
+		const syncResult = syncMergeResultToCheckedOutBase(projectRoot, baseBranch, mergeResult, {
+			dirtyPaths: preMergeDirtyPaths,
+		});
 
 		if (syncResult && !syncResult.ok) {
 			appendJournalEvent(projectRoot, batchId, "integrate.failed", {

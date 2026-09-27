@@ -397,22 +397,20 @@ export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha,
 }
 
 /**
- * Journal merged paths the sync skipped (uncommitted operator edits), then return the
- * operator-facing warning string; null when there is no overlap (SP-784 / #298).
- *
- * @param {string} projectRoot
- * @param {string} batchId
- * @param {string} baseBranch
- * @param {string} orchBranch
- * @param {string} mergeCommit
- * @param {string[]} [skippedDirtyPaths]
- * @param {number|null} [laneNumber] Salvage-only lane number added to the journal event.
- * @returns {string | null}
+ * Sync a landed merge into projectRoot when base is checked out. Pre-merge base: `baseShaBefore`
+ * (fast-forward) or the merge's first parent (plumbing); worktree merges imply no checkout (null).
+ * @param {{ mode?: string, mergeCommit: string, baseShaBefore?: string }} mergeResult
  */
-export function reportDirtyOverlap({ projectRoot, batchId, baseBranch, orchBranch, mergeCommit, skippedDirtyPaths = [], laneNumber = null }) {
-	if (skippedDirtyPaths.length === 0) return null;
-	appendJournalEvent(projectRoot, batchId, "integrate.dirty_overlap", { baseBranch, orchBranch, mergeCommit, ...(laneNumber != null ? { laneNumber } : {}), skippedDirtyPaths });
-	return `DirtyOverlap: ${skippedDirtyPaths.join(", ")} kept local edits — run git diff / git restore --source ${baseBranch} -- ${skippedDirtyPaths.join(" ")} after review`;
+export function syncMergeResultToCheckedOutBase(projectRoot, baseBranch, mergeResult, options) {
+	const { mode, mergeCommit } = mergeResult;
+	if (mode === "fast-forward") {
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, mergeResult.baseShaBefore, mergeCommit, options);
+	}
+	if (mode === "plumbing") {
+		const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, options);
+	}
+	return null;
 }
 
 /**

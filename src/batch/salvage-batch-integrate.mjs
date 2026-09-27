@@ -8,11 +8,10 @@ import readline from "node:readline/promises";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
-import { gitExec } from "./git-exec.mjs";
-import { mergeOrchIntoBaseIsolated, reportDirtyOverlap, syncMergePathsToCheckedOutBase } from "./integrate-worktree.mjs";
+import { mergeOrchIntoBaseIsolated, syncMergeResultToCheckedOutBase } from "./integrate-worktree.mjs";
+import { reportDirtyOverlap } from "./integrate-dirty-overlap.mjs";
 import { appendJournalEvent } from "./journal.mjs";
-import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
-import { resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
+import { listIntegrateDirtyPaths, resolveRulesManifestIntegrateDrift } from "./rules-manifest-drift.mjs";
 import {
 	gateBlockedOnMissingGate,
 	openGateFromSalvageEvidence,
@@ -20,14 +19,6 @@ import {
 import { healAfterSalvageLand } from "./salvage-batch-integrate-heal.mjs";
 import { laneTaskBranch } from "./worktree.mjs";
 import { listSalvageableLanes } from "./salvage-batch-list.mjs";
-
-/**
- * @param {string} projectRoot
- * @param {string[]} args
- */
-function git(projectRoot, args) {
-	return gitExec(projectRoot, args, { projectRoot });
-}
 
 /**
  * Default interactive confirmation for salvage integrate.
@@ -360,14 +351,9 @@ export async function integrateSalvageableLane(projectRoot, batchId, laneNumber,
 	}
 
 	const mergeCommit = mergeResult.mergeCommit;
-	/** @type {{ ok: boolean, timedOut?: boolean, error?: string } | null} */
-	let syncResult = null;
-	if (mergeResult.mode === "plumbing") {
-		const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-		syncResult = syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, {
-			dirtyPaths: preMergeDirtyPaths,
-		});
-	}
+	const syncResult = syncMergeResultToCheckedOutBase(projectRoot, baseBranch, mergeResult, {
+		dirtyPaths: preMergeDirtyPaths,
+	});
 
 	if (syncResult && !syncResult.ok) {
 		appendJournalEvent(projectRoot, resolvedBatchId, "batch.salvage_integrate_failed", {
