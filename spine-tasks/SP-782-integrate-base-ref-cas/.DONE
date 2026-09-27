@@ -1,0 +1,9 @@
+SP-782 complete — 2026-09-27
+
+Mission: base-ref updates in integrate are compare-and-swap, merges use captured SHAs, duplicated plumbing merge removed (partial #298).
+
+- src/batch/integrate-worktree.mjs: new exported casUpdateBaseRef (CAS update-ref, BaseMoved failure class); plumbingMergeOrchIntoBase exported, merge-tree on captured SHAs, CAS ref update; mergeInIntegrateWorktree captures base SHA pre-merge, dropped redundant update-ref, first-parent verification with no-op guard.
+- src/batch/integrate.mjs: deleted mergeOrchIntoBaseViaRefs (+dead mergeTreeOutputHasConflict); runIntegrateMerge reuses exported plumbingMergeOrchIntoBase; fastForwardOrchIntoBase CAS on baseShaBefore. 437 lines (cap 500).
+- tests/batch/integrate-base-cas.test.mjs: 6 tests — casUpdateBaseRef happy/BaseMoved, plumbingMergeOrchIntoBase happy path, and deterministic git PATH-shim race tests proving fast-forward, plumbing, and worktree merge paths all fail with BaseMoved while the concurrent base commit stays reachable; shim argv log asserts merge-tree runs on SHAs.
+
+Verification: npm run lint exit 0 (0 warnings); npm run typecheck exit 0; Contract testCommand 14/14 pass; integrate* + salvage* suites 59/59 pass. Commits: 97cb087f (Step 1), 84d2d695 (Step 2), 7836c5e9 (Steps 3-4).
