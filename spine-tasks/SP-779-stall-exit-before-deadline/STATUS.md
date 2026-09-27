@@ -1,7 +1,7 @@
 # SP-779: Stall watchdog observes worker exit before deadline — Status
 
-**Current Step:** Step 0 (Preflight)
-**Status:** ⬜ Not Started
+**Current Step:** Step 1 (Exit-before-deadline ordering + injectable timing)
+**Status:** 🟨 In Progress
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Confirm deadline-before-exit ordering at HEAD
-- [ ] List callers/tests of `pollWorkerUntilSettled`
-- [ ] Dependencies satisfied
+- [x] Confirm deadline-before-exit ordering at HEAD (deadline branch L358, exit check L399)
+- [x] List callers/tests of `pollWorkerUntilSettled` (worker-host.mjs:275 production; heartbeat.test.mjs:284,357)
+- [x] Dependencies satisfied (none)
 
 ### Step 1: Exit-before-deadline ordering + injectable timing
 **Status:** ⬜ Not Started
