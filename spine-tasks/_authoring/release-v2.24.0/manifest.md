@@ -163,10 +163,10 @@ Wave 3 · SP-777 (after 776)
 
 - [x] All release-scoped tasks `.DONE` on `main`
 - [x] Post-integrate `release:check` green after each wave (waves 0–2; wave 3 docs-only, covered by Phase 5)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on release commit — exit 0 verified
-- [ ] CI workflow green on HEAD
-- [ ] `git status` clean; `main` in sync with `origin`
+- [x] `spine preflight` green (2026-09-27, `9584bf1e`)
+- [x] `npm run release:check` green on release commit — exit 0 verified (`9584bf1e`: 2651/2651 pass, 88.63% line coverage; `/tmp/pi-spine-release-check.log`)
+- [x] CI workflow green on HEAD (run 36288437918 on `9584bf1e` — re-verify on tag commit)
+- [x] `git status` clean; `main` in sync with `origin` (only spine-owned `.spine/rules-manifest.json` timestamp churn)
 - [x] No reconcile/doctor entries left in `NOCHECK_ALLOWLIST` for #284 targets
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
