@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -389,6 +390,75 @@ test("static non-null snapshots still slide stall anchor on worker_alive (SP-341
 		assert.ok(aliveHeartbeats.length >= 2, "worker_alive heartbeats keep sliding the anchor");
 	} finally {
 		clearTimeout(exitTimer);
+		fs.rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("exited child settles even when the next poll lands past the stall deadline (#308)", async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-exit-first-"));
+	// Ordering regression for #308: the child exits at virtual 600ms — after the
+	// 550ms budget boundary passes but before the next 100ms poll observes it.
+	// The old deadline-before-exit order classified that poll stall_timeout; the
+	// exit-first order must settle the loop instead.
+	const child = new EventEmitter();
+	child.pid = 0;
+	/** @type {number | null} */
+	child.exitCode = null;
+	let virtualNow = 0;
+	let releaseChildDone = () => {};
+	const childDone = new Promise((resolve) => {
+		releaseChildDone = resolve;
+	});
+	const deps = {
+		now: () => virtualNow,
+		sleep: async (ms) => {
+			virtualNow += ms;
+			if (virtualNow >= 600 && child.exitCode === null) {
+				child.exitCode = 0;
+				releaseChildDone({ exitCode: 0, output: "" });
+			}
+		},
+	};
+	const stallConfig = {
+		...resolveStallConfig({
+			lanes: {
+				stallTimeoutMinutes: 0.05,
+				stallGraceAfterProgressMinutes: 0.005,
+				heartbeatIntervalMinutes: 60,
+			},
+		}),
+		stallTimeoutMs: 550,
+		pollIntervalMs: 100,
+	};
+	let failures = 0;
+	try {
+		const result = await pollWorkerUntilSettled({
+			donePath: path.join(dir, ".DONE"),
+			workerChild: child,
+			childDone,
+			stallConfig,
+			startedAt: 0,
+			pollState: createWorkerPollState(0, "pi"),
+			worktreePath: dir,
+			taskFolder: dir,
+			useStub: true,
+			workerBackend: "stub",
+			childPastPreflight: true,
+			buildFailureResult: (input) => {
+				failures += 1;
+				return { classification: input.classification };
+			},
+			workerMode: "stub",
+			deps,
+		});
+
+		assert.equal(result.kind, "settled", "an exited worker is settled, not stalled");
+		assert.equal(
+			failures,
+			0,
+			"a worker that exits on its own is never classified stall_timeout",
+		);
+	} finally {
 		fs.rmSync(dir, { recursive: true, force: true });
 	}
 });

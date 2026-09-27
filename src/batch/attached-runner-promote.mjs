@@ -240,6 +240,15 @@ export async function startAttachedMilestoneReporter({
 		stop: async () => {
 			stopped = true;
 			await loopPromise;
+			// A fast engine can finish inside one poll interval, so the loop above
+			// may never have discovered the batchId (#308 follow-up: the worker
+			// poll loop no longer idles 5s per poll, shortening attached runs).
+			// Discover it here so the final flush still prints milestones — a
+			// completed batch must always surface [spine] batch.completed.
+			if (!batchId) {
+				const loaded = loadSpineBatchState(projectRoot);
+				batchId = loaded.raw?.batchId ? String(loaded.raw.batchId) : null;
+			}
 			if (batchId) {
 				const events = readJournalEventsCached(projectRoot, batchId);
 				for (const event of events) {

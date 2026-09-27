@@ -1,0 +1,8 @@
+SP-779 complete.
+
+- Exit-before-deadline ordering in pollWorkerUntilSettled (src/batch/worker-heartbeat.mjs): child exit observed before stall deadline; inter-poll sleeps race childDone; injectable deps = { now, sleep } with production defaults preserved; SP-738/#272 behavior unchanged; file 428 lines (≤500).
+- Deterministic tests: two virtual-clock tests replace the scaled wall-clock tests in tests/batch/contract-stall-override.test.mjs (no stall at virtual 10s under 12s contract budget; hung worker stalls at virtual 5s under 2.4s global budget); one real-subprocess E2E kept with generous margins (3s global / 30s contract / 6s hang), classification only; coverage-mode skip removed; ordering regression test added to tests/batch/heartbeat.test.mjs (exit at virtual 600ms, deadline 550ms — fails on old order).
+- 20x loop: 20/20 pass.
+- Verification: lint clean, typecheck clean, Contract testCommand 25/25, test:batch 1502/1502, npm test 2653/2653, all exit 0.
+- Out-of-scope fix (flagged in STATUS Amendments for review): src/batch/attached-runner-promote.mjs stop() now discovers batchId before the final flush — the #308 timing change removed the idle window the milestone reporter relied on, which broke attached-batch-exit.test.mjs; Step 3 "Fix all failures" required it.
+- Closes #308.

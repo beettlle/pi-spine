@@ -37,9 +37,19 @@ import { terminateProcessTree } from "../process/terminate-tree.mjs";
 /**
  * @param {number} ms
  */
-function sleep(ms) {
+function defaultSleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/**
+ * Injectable timing for `pollWorkerUntilSettled` (SP-779 / #308). Tests pass a
+ * virtual clock so stall classification is wall-clock independent; production
+ * callers omit `deps` and keep the Date.now/setTimeout defaults.
+ *
+ * @typedef {object} WorkerPollDeps
+ * @property {() => number} [now] Clock read at the top of every poll (default `Date.now`).
+ * @property {(ms: number) => Promise<void>} [sleep] Inter-poll wait (default `setTimeout`).
+ */
 
 /**
  * @typedef {object} WorkerPollState
@@ -112,6 +122,7 @@ export function createWorkerPollState(startedAt, workerPhase) {
  *   signals?: object;
  * }) => object} params.buildFailureResult
  * @param {string} params.workerMode
+ * @param {WorkerPollDeps} [params.deps] Injectable timing; defaults preserve production behavior.
  * @returns {Promise<
  *   | { kind: "settled"; postDoneTerminated: boolean }
  *   | { kind: "failure"; result: object }
@@ -139,7 +150,9 @@ export async function pollWorkerUntilSettled({
 	onHeartbeat,
 	buildFailureResult,
 	workerMode,
+	deps = {},
 }) {
+	const { now: nowFn = Date.now, sleep: sleepFn = defaultSleep } = deps;
 	let {
 		stallAnchorAt,
 		lastCheckpointAt,
@@ -157,7 +170,7 @@ export async function pollWorkerUntilSettled({
 
 	while (true) {
 		const doneOnDisk = fs.existsSync(donePath);
-		const now = Date.now();
+		const now = nowFn();
 
 		if (doneOnDisk && postDoneStartedAt === null) {
 			postDoneStartedAt = now;
@@ -208,7 +221,10 @@ export async function pollWorkerUntilSettled({
 				await terminateHungWorkerChild(workerChild, childDone);
 				break;
 			}
-			await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
+			// #308: race the inter-poll wait against child exit so a worker that
+			// finishes right after writing .DONE is observed on its next wake
+			// instead of a full interval later.
+			await Promise.race([sleepFn(Math.min(stallConfig.pollIntervalMs, 5_000)), childDone]);
 			continue;
 		}
 
@@ -346,6 +362,15 @@ export async function pollWorkerUntilSettled({
 			lastHeartbeatAt = now;
 		}
 
+		// #308: observe child exit before the stall deadline. A worker that exits
+		// on its own between polls is settled work, never a stall — even when the
+		// next poll lands past the budget (the old order classified such exits
+		// `stall_timeout`). The bottom sleep races `childDone`, so exits are seen
+		// promptly; handles resolve `childDone` only after `exitCode` is set.
+		if (workerChild.exitCode !== null) {
+			break;
+		}
+
 		const stallDeadline = computeStallDeadline({
 			startedAt,
 			lastProgressAt: lastCheckpointAt,
@@ -396,11 +421,7 @@ export async function pollWorkerUntilSettled({
 			};
 		}
 
-		if (workerChild.exitCode !== null) {
-			break;
-		}
-
-		await sleep(Math.min(stallConfig.pollIntervalMs, 5_000));
+		await Promise.race([sleepFn(Math.min(stallConfig.pollIntervalMs, 5_000)), childDone]);
 	}
 
 	return { kind: "settled", postDoneTerminated };
