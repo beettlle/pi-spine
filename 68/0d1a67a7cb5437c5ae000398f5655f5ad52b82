@@ -1,0 +1,20 @@
+spine-tasks/SP-780-journal-torn-line-tolerance/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-780-journal-torn-line-tolerance/.reviews/0-20260927T215351.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-780-journal-torn-line-tolerance/.reviews/4-20260927T215410.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-780-journal-torn-line-tolerance/.reviews/final-20260927T215512.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "680d1a67a7cb5437c5ae000398f5655f5ad52b82",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
