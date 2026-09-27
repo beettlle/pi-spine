@@ -47,7 +47,7 @@ Probe at `9942b782` (operator, throwaway worktree): with nocheck stripped, `reco
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs tests/batch/diagnosis.test.mjs tests/batch/diagnosis-failure-class.test.mjs tests/batch/diagnosis-orphan-taxonomy.test.mjs tests/batch/reconcile-light.test.mjs tests/batch/macro-phase.test.mjs` |
-| fileScopeMustChange | `src/batch/reconcile-classify.mjs`, `src/batch/reconcile-diagnosis.mjs`, `src/batch/reconcile-diagnosis-context.mjs`, `tsconfig.batch.json`, `tests/arch/ts-nocheck-guard.test.mjs` |
+| fileScopeMustChange | `src/batch/reconcile-classify.mjs`, `src/batch/reconcile-diagnosis.mjs`, `src/batch/reconcile-diagnosis-context.mjs` |
 
 ## Steps
 
@@ -115,4 +115,4 @@ Probe at `9942b782` (operator, throwaway worktree): with nocheck stripped, `reco
 
 ## Amendments
 
-_None._
+- 2026-09-26: SP-774 already changed `tsconfig.batch.json` and `tests/arch/ts-nocheck-guard.test.mjs` on `main` (wave 0, merge `b0fe8e23`). Both stay in File Scope and Step 1 still edits them, but `fileScopeMustChange` now lists only the three reconcile modules (prelanded-file-scope preflight warning).

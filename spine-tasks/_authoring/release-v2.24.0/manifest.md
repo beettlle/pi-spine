@@ -146,6 +146,16 @@ Wave 3 · SP-777 (after 776)
 
 ---
 
+## Execution log
+
+| Wave | Batch | Tasks | Merge on `main` | Post-integrate `release:check` | Notes |
+|------|-------|-------|-----------------|--------------------------------|-------|
+| 0 | `20260927T002714-6ad1` | SP-774, SP-778 | `b0fe8e23` (pushed) | exit 0 — 2651/2651 pass, 89.67% line coverage (`/tmp/pi-spine-post-integrate-wave-0.log`) | Filed [#293](https://github.com/beettlle/pi-spine/issues/293): detached engine rewrote `batch-state.json` after `batch complete` (late extended gate evidence); second `batch complete` cleared it. Amended SP-775/776/777 `fileScopeMustChange` (prelanded paths). |
+
+**Out-of-scope bug filed:** #293 — not added to v2.24.0 scope (operator-approved composition unchanged).
+
+---
+
 ## Publish checklist (Phase 5–6)
 
 - [ ] All release-scoped tasks `.DONE` on `main`

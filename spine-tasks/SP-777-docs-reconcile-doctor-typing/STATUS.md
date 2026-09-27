@@ -39,7 +39,7 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| | |
+| Operator amendment 2026-09-26: `operator-runbook.md` pre-changed on `main` by SP-778 | `fileScopeMustChange` redirected to `QUICK-REFERENCE.md`; still update the runbook typecheck paragraph |
 
 ## Completion Criteria
 

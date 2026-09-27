@@ -43,7 +43,7 @@ Probe at `9942b782` (operator, throwaway worktree): with nocheck stripped, `run-
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && npx tsc --project tsconfig.batch.json --noEmit && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/arch/ts-nocheck-guard.test.mjs tests/doctor/stale-worktrees.test.mjs tests/doctor/duplicate-install.test.mjs tests/doctor/list-models-timeout.test.mjs tests/cli/doctor-attached-orphan-warn.test.mjs` |
-| fileScopeMustChange | `src/doctor/run-doctor-checks.mjs`, `tsconfig.batch.json`, `tests/arch/ts-nocheck-guard.test.mjs` |
+| fileScopeMustChange | `src/doctor/run-doctor-checks.mjs` |
 
 ## Steps
 
@@ -110,4 +110,4 @@ Probe at `9942b782` (operator, throwaway worktree): with nocheck stripped, `run-
 
 ## Amendments
 
-_None._
+- 2026-09-26: SP-774 already changed `tsconfig.batch.json` and `tests/arch/ts-nocheck-guard.test.mjs` on `main`. Both stay in File Scope and Step 1 still edits them, but `fileScopeMustChange` now lists only `src/doctor/run-doctor-checks.mjs` (prelanded-file-scope preflight warning).

@@ -2563,11 +2563,11 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-774 | Type reconcile-batch/orphan + reconcile facade | M | #284 Partial | Staged |
+| SP-774 | Type reconcile-batch/orphan + reconcile facade | M | #284 Partial | Done |
 | SP-775 | Type reconcile classify/diagnosis/context/light-cache | M | #284 Partial | Staged |
 | SP-776 | Type run-doctor-checks | S | #284 Closes | Staged |
 | SP-777 | Document reconcile/doctor typing | S | #284 docs | Staged |
-| SP-778 | Same-major dev dependency hygiene | S | — | Staged |
+| SP-778 | Same-major dev dependency hygiene | S | — | Done |
 
 **Phase 92 exit criteria:**
 

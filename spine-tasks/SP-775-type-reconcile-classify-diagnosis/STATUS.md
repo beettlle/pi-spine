@@ -44,7 +44,7 @@
 
 | Discovery | Decision |
 |-----------|----------|
-| | |
+| Operator amendment 2026-09-26: `tsconfig.batch.json` + arch guard pre-changed on `main` by SP-774 | `fileScopeMustChange` redirected to the three reconcile modules; still edit tsconfig/allowlist in Step 1 |
 
 ## Completion Criteria
 

@@ -40,7 +40,7 @@ Partial #284 (docs) — Update the batch-typing notes so they state that the rec
 | Field | Value |
 |-------|-------|
 | testCommand | `true` |
-| fileScopeMustChange | `docs/QUICK-REFERENCE.md`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `docs/QUICK-REFERENCE.md` |
 | fileScopeMustNotChange | `src/**`, `bin/**` |
 
 ## Steps
@@ -100,4 +100,4 @@ Partial #284 (docs) — Update the batch-typing notes so they state that the rec
 
 ## Amendments
 
-_None._
+- 2026-09-26: SP-778 already changed `docs/adoption/operator-runbook.md` on `main` (version-pin paragraph). It stays in File Scope and Must Update, but `fileScopeMustChange` now lists only `docs/QUICK-REFERENCE.md` (prelanded-file-scope preflight warning).
