@@ -1,0 +1,16 @@
+spine-tasks/SP-788-engine-crash-journal/STATUS.md
+  h_2a17159c706ba1 34-38,40
+tests/batch/engine-crash-guard.test.mjs
+  h_2a17159c706ba1 1-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ae24ccdfc7dc1915cc7f41ac79cb80ad82e0e62f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
