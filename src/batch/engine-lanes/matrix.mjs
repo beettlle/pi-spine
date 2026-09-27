@@ -22,6 +22,7 @@ import {
 	substituteMatrixVariables,
 } from "../../planner/matrix.mjs";
 import { gitExec } from "../git-exec.mjs";
+import { terminateProcessTree } from "../../process/terminate-tree.mjs";
 import {
 	normalizeLaneWorktreeGitPaths,
 	runWorktreeSetupHook,
@@ -286,34 +287,168 @@ export function buildMatrixRowEnv({ taskId, rowId, rowIndex, rowCount }) {
 }
 
 /**
+ * Default matrix row shell timeout (SP-783 / #297). Matches the contract
+ * `testCommand` timeout so a hung row cannot hold a global lane slot forever.
+ *
+ * @type {number}
+ */
+export const DEFAULT_MATRIX_ROW_TIMEOUT_MS = 600_000;
+
+/**
+ * Default matrix row output cap (SP-783 / #297). Matches the worker-output
+ * default so a chatty row keeps only a bounded tail in engine memory.
+ *
+ * @type {number}
+ */
+export const DEFAULT_MATRIX_ROW_OUTPUT_MAX_BYTES = 262_144;
+
+/** Grace between SIGTERM and the SIGKILL escalation when a row times out. */
+const TREE_KILL_GRACE_MS = 5_000;
+
+/** Marker prefixed to output when the cap dropped bytes (SP-783 / #297). */
+const OUTPUT_TRUNCATION_MARKER_PREFIX = "[… ";
+const OUTPUT_TRUNCATION_MARKER_SUFFIX = " bytes truncated …]\n";
+
+/**
+ * Resolve the `SPINE_MATRIX_ROW_TIMEOUT_MS` override (positive integer ms),
+ * mirroring `SPINE_SYNC_TIMEOUT_MS`: invalid or absent values return null so
+ * the caller falls back to the default instead of failing the row.
+ *
+ * @param {{ env?: Record<string, string | undefined> }} [params]
+ * @returns {number | null} Override in ms, or null when unset/invalid.
+ */
+export function resolveMatrixRowTimeoutOverride(params = {}) {
+	const env = params.env ?? process.env;
+	const raw = env.SPINE_MATRIX_ROW_TIMEOUT_MS;
+	if (raw == null || raw === "") return null;
+	const parsed = Number(raw);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
  * Run a shell command in a directory, resolving with exit code and combined output.
  * Uses async spawn so concurrent rows genuinely overlap (required for maxParallel).
+ *
+ * Bounded by default (SP-783 / #297): a row that outlives `timeoutMs` gets its
+ * whole process tree terminated (SIGTERM, then SIGKILL after a short grace —
+ * the shell is spawned detached so it is a process-group leader whose
+ * descendants are reachable) and resolves with `exitCode: 124` and
+ * `timedOut: true`. Output is kept as a bounded tail of at most
+ * `maxOutputBytes` bytes; when the cap dropped anything the result is prefixed
+ * with a truncation marker and carries `outputTruncated: true`.
  *
  * @param {string} cwd
  * @param {string} command
  * @param {Record<string, string> | null} [extraEnv] Extra environment variables
  *   layered over `process.env` (matrix row identity, #229). Null injects nothing.
- * @returns {Promise<{ exitCode: number, output: string }>}
+ * @param {{ timeoutMs?: number, maxOutputBytes?: number }} [options]
+ *   `timeoutMs` defaults to `SPINE_MATRIX_ROW_TIMEOUT_MS` (positive integer)
+ *   when set, else `DEFAULT_MATRIX_ROW_TIMEOUT_MS`; `maxOutputBytes` defaults
+ *   to `DEFAULT_MATRIX_ROW_OUTPUT_MAX_BYTES`.
+ * @returns {Promise<{ exitCode: number, output: string, timedOut?: boolean, outputTruncated?: boolean }>}
  */
-export function runShellInDir(cwd, command, extraEnv = null) {
+export function runShellInDir(cwd, command, extraEnv = null, options = {}) {
+	const optionTimeoutMs = Number(options.timeoutMs);
+	const timeoutMs =
+		Number.isInteger(optionTimeoutMs) && optionTimeoutMs > 0
+			? optionTimeoutMs
+			: (resolveMatrixRowTimeoutOverride() ?? DEFAULT_MATRIX_ROW_TIMEOUT_MS);
+	const optionMaxOutputBytes = Number(options.maxOutputBytes);
+	const maxOutputBytes =
+		Number.isInteger(optionMaxOutputBytes) && optionMaxOutputBytes > 0
+			? optionMaxOutputBytes
+			: DEFAULT_MATRIX_ROW_OUTPUT_MAX_BYTES;
+
 	return new Promise((resolve) => {
+		let settled = false;
+		let timedOut = false;
+		let droppedBytes = 0;
+		/** @type {NodeJS.Timeout | undefined} */
+		let killGraceTimer;
+
+		// Bounded tail buffer: once the cap is exceeded, chunks are dropped from
+		// the front (copying the retained slice) so memory stays O(maxOutputBytes)
+		// no matter how chatty the row is — never the full stream.
+		/** @type {Buffer[]} */
+		const tailChunks = [];
+		let tailBytes = 0;
+		/** @type {(chunk: unknown) => void} */
+		const append = (chunk) => {
+			const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
+			if (buf.length === 0) return;
+			tailChunks.push(buf);
+			tailBytes += buf.length;
+			while (tailBytes > maxOutputBytes && tailChunks.length > 0) {
+				const excess = tailBytes - maxOutputBytes;
+				const first = tailChunks[0];
+				if (first.length > excess) {
+					tailChunks[0] = Buffer.from(first.subarray(excess));
+					droppedBytes += excess;
+					tailBytes = maxOutputBytes;
+				} else {
+					tailChunks.shift();
+					droppedBytes += first.length;
+					tailBytes -= first.length;
+				}
+			}
+		};
+
 		const child = spawn("/bin/sh", ["-c", command], {
 			cwd,
 			env: extraEnv ? { ...process.env, ...extraEnv } : process.env,
 			stdio: ["ignore", "pipe", "pipe"],
+			// Process-group leader on POSIX so tree termination reaches grandchildren.
+			detached: process.platform !== "win32",
 		});
-		let output = "";
-		/** @type {(chunk: unknown) => void} */
-		const append = (chunk) => {
-			output += String(chunk);
+
+		/** @param {{ exitCode: number, output: string, timedOut?: boolean, outputTruncated?: boolean }} result */
+		const settle = (result) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timeoutTimer);
+			clearTimeout(killGraceTimer);
+			resolve(result);
 		};
+
+		/** @type {NodeJS.Timeout} */
+		const timeoutTimer = setTimeout(() => {
+			timedOut = true;
+			terminateProcessTree(child.pid, { signal: "SIGTERM" });
+			// Escalate when the tree ignores SIGTERM past the grace window.
+			killGraceTimer = setTimeout(() => {
+				if (!settled) terminateProcessTree(child.pid, { signal: "SIGKILL" });
+			}, TREE_KILL_GRACE_MS);
+			killGraceTimer.unref();
+		}, timeoutMs);
+		timeoutTimer.unref();
+
 		child.stdout?.on("data", append);
 		child.stderr?.on("data", append);
 		child.on("error", (err) => {
-			resolve({ exitCode: 1, output: output + String(err) });
+			settle({
+				exitCode: 1,
+				output: Buffer.concat(tailChunks).toString("utf8") + String(err),
+			});
 		});
 		child.on("close", (code) => {
-			resolve({ exitCode: code ?? 1, output });
+			const tail = Buffer.concat(tailChunks).toString("utf8");
+			if (timedOut) {
+				settle({
+					exitCode: 124,
+					output: `${tail}matrix row command timed out after ${timeoutMs}ms\n`,
+					timedOut: true,
+					...(droppedBytes > 0 ? { outputTruncated: true } : {}),
+				});
+				return;
+			}
+			settle({
+				exitCode: code ?? 1,
+				output:
+					droppedBytes > 0
+						? `${OUTPUT_TRUNCATION_MARKER_PREFIX}${droppedBytes}${OUTPUT_TRUNCATION_MARKER_SUFFIX}${tail}`
+						: tail,
+				...(droppedBytes > 0 ? { outputTruncated: true } : {}),
+			});
 		});
 	});
 }

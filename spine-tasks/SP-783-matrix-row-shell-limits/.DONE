@@ -1,0 +1,10 @@
+SP-783 complete.
+
+- `src/batch/engine-lanes/matrix.mjs`: `runShellInDir(cwd, command, extraEnv = null, options = {})` now bounds rows — `DEFAULT_MATRIX_ROW_TIMEOUT_MS = 600_000`, `DEFAULT_MATRIX_ROW_OUTPUT_MAX_BYTES = 262_144`, `SPINE_MATRIX_ROW_TIMEOUT_MS` positive-integer override (`resolveMatrixRowTimeoutOverride`); detached spawn (process-group leader) so `terminateProcessTree` SIGTERM → 5s-grace SIGKILL reaches grandchildren on timeout → `exitCode: 124` + `timedOut: true` + message; byte-space front-dropping tail buffer caps output at `maxOutputBytes` with `[… N bytes truncated …]` marker + `outputTruncated: true`; timers cleared via `settle()` guard on close/error. Callers unchanged (additive options/fields).
+- `tests/batch/matrix-row-shell-limits.test.mjs` (new): 6 tests — tree kill (grandchild `sleep` confirmed dead via pgrep poll), cap bounds + marker, invalid-cap fallback, env override resolver + integration, defaults constants.
+
+Verification (all with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset):
+- Contract `testCommand`: lint ✓, typecheck ✓, node --test 48/48 pass (6 new + 42 matrix-execution).
+- Full `npm test`: 2678/2678 pass, 0 fail.
+- Impact analysis: runShellInDir upstream LOW; detect_changes before commit: low risk, 0 affected processes.
+- Commits: 5165301b (Steps 1–2), ebd70288 (Steps 3–4 STATUS). .spine/rules-manifest.json timestamp refresh is engine-owned, left for lane auto-commit.
