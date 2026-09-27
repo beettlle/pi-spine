@@ -1,0 +1,19 @@
+src/batch/batch-state-io.mjs
+  s_e5a9e3b01dd5b5::t_b4aac31bd5e597 174,187-205,208-212,238-250,253-255,257-259,261-266,268-271,273-276
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8641cfeb5e7a0ed4e0c826bf1dc7e761ca886ad1",
+  "prompts": {},
+  "sessions": {
+    "s_e5a9e3b01dd5b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a7e90427-d3ea-41f2-acd3-ca16ea3cdbcd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
