@@ -35,12 +35,14 @@
 - [x] 20× loop: **20/20 pass, 0 failures**
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Fix all failures
+- [x] Lint: clean (`eslint --max-warnings 0 src bin tests scripts`)
+- [x] Contract `testCommand`: green — lint + typecheck + 25/25 tests (with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` guard per Environment note)
+- [x] Batch suite: `npm run test:batch` — 1502/1502 pass, exit 0
+- [x] `npm test`: 2653/2653 pass, exit 0
+- [x] All failures fixed (see Discoveries 6–7: attached milestone reporter regression found and fixed)
+- [x] `detect_changes()` before commit: only `startAttachedMilestoneReporter`/`stop` touched, 1 affected process (medium risk, expected)
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -59,7 +61,13 @@
 | 3 | Production poll interval is 30s (`POLL_INTERVAL_MS`), capped to 5s in-loop; the E2E polls land at ~0s/5s/10s — a broken override (budget 3s) is caught by the 5s poll while the child still hangs. |
 | 4 | Virtual-clock ordering scenario: budget 550ms, child exits at virtual 600ms, polls every 100ms — the exit fires during the sleep that crosses the deadline, so the next poll is past-budget with the child already exited. Old order → stall_timeout (flake reproduced); new order → settled. |
 | 5 | 20× loop of `tests/batch/contract-stall-override.test.mjs`: 20/20 pass, 0 failures (wall ~2.5 min total, ~6.5s per run — dominated by the single real-subprocess E2E). |
+| 6 | **Out-of-scope fix required (flagged for review).** The #308 race removes the 5s idle window the old poll loop had; in attached batches the engine then runs as dense sync git/evidence work, so the milestone reporter's 2000ms timer never fires and its `stop()` skipped the flush while `batchId` was still null — `[spine] batch.completed` milestones vanished, failing `attached-batch-exit.test.mjs` (base passes, mine failed → attributed to this task's timing change). |
+| 7 | Fix applied in `src/batch/attached-runner-promote.mjs` `startAttachedMilestoneReporter.stop()`: discover `batchId` from batch state before the final flush instead of skipping when the loop never found it. One-loop-iteration reproduction proven via temporary stderr instrumentation (1 iter at t=1ms, batchId null, then engine completion). |
 
 ## Blockers
 
 _None._
+
+## Amendments
+
+- File Scope extended by one file beyond the contract: `src/batch/attached-runner-promote.mjs` (minimal flush fix in `stop()`; required to satisfy Step 3 "Fix all failures" — the in-scope #308 timing change exposed a latent batchId-discovery gap in the attached milestone reporter). Full rationale in Discoveries 6–7.
