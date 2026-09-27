@@ -235,6 +235,24 @@ test("checkTasksRoot validates discoverable task folders", async () => {
 	}
 });
 
+test("checkTasksRoot ignores non-task folders (SP-785, #300)", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-");
+	try {
+		writeTask(projectRoot, "TP-001", "alpha");
+		// Non-task folders with a PROMPT.md must not count as task folders.
+		for (const folder of ["_explore", "_authoring", "_archive"]) {
+			fs.mkdirSync(path.join(projectRoot, "spine-tasks", folder), { recursive: true });
+			fs.writeFileSync(path.join(projectRoot, "spine-tasks", folder, "PROMPT.md"), "# notes\n", "utf-8");
+		}
+
+		const result = checkTasksRoot({ projectRoot });
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.details.taskFolders, ["TP-001-alpha"]);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("checkDependenciesJson validates version and task IDs", async () => {
 	const projectRoot = await initGitRepo("spine-preflight-");
 	try {

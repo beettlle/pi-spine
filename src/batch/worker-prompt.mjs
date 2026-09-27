@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildWorkerContextAsync } from "../config/worker-context.mjs";
+import { taskIdFromFolderName } from "../tasks/packet/discover.mjs";
 
 export function buildReviewLevelHint(reviewLevel) {
 	if (reviewLevel <= 0) {
@@ -44,7 +45,7 @@ export async function buildWorkerTailPrompt({
 	worktreePath,
 	taskFolder,
 	donePath,
-	taskIdHint = path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID",
+	taskIdHint = taskIdFromFolder(taskFolder),
 	reviewLevel = 0,
 	includePromptInclude = false,
 	config = {},
@@ -81,5 +82,6 @@ export async function buildWorkerTailPrompt({
 }
 
 export function taskIdFromFolder(taskFolder) {
-	return path.basename(taskFolder).match(/^([A-Z]+-\d+)/)?.[1] ?? "TASK-ID";
+	// Shared pattern (SP-785, #300); keeps the TASK-ID fallback for unparseable names.
+	return taskIdFromFolderName(path.basename(taskFolder)) ?? "TASK-ID";
 }

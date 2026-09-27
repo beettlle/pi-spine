@@ -6,13 +6,12 @@ import { loadSpineConfig } from "../spine-config-load.mjs";
 import { missingConfigHint } from "../missing-config-hint.mjs";
 import { resolveTasksRootPath } from "../env-overrides.mjs";
 import { validateWorktreeSetupHookConfig } from "../worktree-setup-hook.mjs";
-import { discoverTasks } from "../../tasks/packet/discover.mjs";
+import { discoverTasks, TASK_ID_RE, taskIdFromFolderName } from "../../tasks/packet/discover.mjs";
 import { NO_PENDING_TASKS_ERROR } from "../../planner/scope.mjs";
 import { summarizePendingScope } from "../../planner/pending.mjs";
 import { validatePrompt } from "../../tasks/packet/validate-prompt.mjs";
 
 const DEPENDENCIES_SCHEMA_VERSION = 1;
-const TASK_ID_PATTERN = /^[A-Z]{2,}-\d{3,}$/;
 
 function makeCheck(id, ok, message, extra = {}) {
 	return { id, ok, message, ...extra };
@@ -31,24 +30,33 @@ export function resolveTasksRoot(projectRoot, configResult) {
 	return resolveTasksRootPath(projectRoot, loaded.config);
 }
 
+/**
+ * Task ID from a folder name — delegates to the shared pattern (SP-785, #300).
+ *
+ * @param {string} folderName
+ * @returns {string | null}
+ */
 export function taskIdFromFolder(folderName) {
-	const match = String(folderName).match(/^([A-Z]{2,}-\d{3,})/);
-	return match?.[1] ?? null;
+	return taskIdFromFolderName(folderName);
 }
 
+/**
+ * Discoverable task folders (PREFIX-###-slug with PROMPT.md), numeric order.
+ * Delegates to the planner's discoverTasks so preflight and planner agree.
+ *
+ * @param {string} tasksRootPath
+ * @returns {string[]}
+ */
 export function discoverTaskFolders(tasksRootPath) {
 	if (!tasksRootPath || !fs.existsSync(tasksRootPath)) return [];
 
-	return fs
-		.readdirSync(tasksRootPath, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name)
-		.filter((name) => fs.existsSync(path.join(tasksRootPath, name, "PROMPT.md")))
-		.sort();
+	return discoverTasks(tasksRootPath).map((task) => task.folderName);
 }
 
 export function discoverTaskIds(tasksRootPath) {
-	return [...new Set(discoverTaskFolders(tasksRootPath).map(taskIdFromFolder).filter(Boolean))].sort();
+	if (!tasksRootPath || !fs.existsSync(tasksRootPath)) return [];
+
+	return discoverTasks(tasksRootPath).map((task) => task.taskId);
 }
 
 /**
@@ -148,7 +156,7 @@ export function checkDependenciesJson(ctx) {
 	}
 
 	const taskIds = Object.keys(parsed.tasks);
-	const invalidIds = taskIds.filter((id) => !TASK_ID_PATTERN.test(id));
+	const invalidIds = taskIds.filter((id) => !TASK_ID_RE.test(id));
 	if (invalidIds.length > 0) {
 		return makeCheck(
 			"dependencies-json",
