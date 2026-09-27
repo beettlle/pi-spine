@@ -130,4 +130,4 @@ Closes #306 (with SP-788) — A worker spawn failure yields `launch_failed` for 
 
 ## Amendments
 
-_None._
+1. **Reported contradiction (worker, 2026-09-27):** `tests/batch/live-worker-log.test.mjs` (outside File Scope) asserts the OLD live-log contract — final content ≤ 1× `workerLiveLogMaxBytes` with a truncation marker after two 40-byte appends at cap 48. The Step 2 spec (append-only, truncate only past **2×** cap) makes 80 ≤ 96 → no truncation → that assertion cannot pass. The test encodes the per-chunk-rewrite behavior this task replaces; its expectations will be updated minimally to the new append-only contract so the batch suite stays green.
