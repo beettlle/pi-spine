@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
@@ -291,7 +291,7 @@ test("fast-forward integrate fails with BaseMoved when base moves before the ref
 	const projectRoot = await initGitRepo("spine-cas-race-ff-");
 	const orchBranch = "orch/spine-cas-race-ff";
 	const batchId = "20260927T010000";
-	const { shimDir, statePath, logPath } = installGitShim();
+	const { shimDir, statePath } = installGitShim();
 	try {
 		createFastForwardOrch(projectRoot, orchBranch);
 		const baseBefore = git(projectRoot, ["rev-parse", "main"]);
