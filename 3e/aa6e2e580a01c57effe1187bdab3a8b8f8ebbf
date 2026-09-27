@@ -1,0 +1,14 @@
+spine-tasks/SP-777-docs-reconcile-doctor-typing/STATUS.md
+  h_2a17159c706ba1 3,5,27,29-30,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3eaa6e2e580a01c57effe1187bdab3a8b8f8ebbf",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
