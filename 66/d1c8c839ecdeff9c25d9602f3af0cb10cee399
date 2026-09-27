@@ -1,0 +1,19 @@
+tests/extensions/slash-commands-handlers.test.mjs
+  s_13e0e59146a3f6::t_dc6d266fca1dc7 150-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "66d1c8c839ecdeff9c25d9602f3af0cb10cee399",
+  "prompts": {},
+  "sessions": {
+    "s_13e0e59146a3f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0e8219c3-aeec-4606-aa1f-838e38ee9f54",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
