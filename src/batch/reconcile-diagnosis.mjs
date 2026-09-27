@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** Diagnosis derivation (SP-596/SP-606 / #192). */
 
 import { inferLaunchFailureKind } from "./diagnosis.mjs";
@@ -29,7 +28,7 @@ export {
  */
 function resolveFailedExitReason(rawTasks, failedTaskId) {
 	if (!failedTaskId || !Array.isArray(rawTasks)) return null;
-	const match = rawTasks.find((entry) => {
+	const match = rawTasks.find((/** @type {any} */ entry) => {
 		if (!entry || typeof entry !== "object") return false;
 		return String(entry.taskId ?? entry.id ?? "") === failedTaskId;
 	});
@@ -40,7 +39,7 @@ function resolveFailedExitReason(rawTasks, failedTaskId) {
 
 /**
  * @param {string|null} failedTaskId
- * @param {object} signals
+ * @param {Record<string, any>} signals
  * @returns {string|null}
  */
 function resolvePrimaryFailureExitReason(failedTaskId, signals) {
@@ -48,7 +47,7 @@ function resolvePrimaryFailureExitReason(failedTaskId, signals) {
 	if (fromTask) return fromTask;
 	if (!failedTaskId) return null;
 	if (Array.isArray(signals.segments)) {
-		const segment = signals.segments.find((entry) => entry?.taskId === failedTaskId);
+		const segment = signals.segments.find((/** @type {any} */ entry) => entry?.taskId === failedTaskId);
 		const classification = segment?.classification;
 		if (
 			typeof classification === "string" &&
@@ -75,7 +74,7 @@ function resolvePrimaryFailureExitReason(failedTaskId, signals) {
 /**
  * @param {string|null} failedTaskId
  * @param {string|null} exitReason
- * @param {object} signals
+ * @param {Record<string, any>} signals
  * @returns {{ exitReason: string|null, launchFailureKind: string|null }}
  */
 function deriveFailureContext(failedTaskId, exitReason, signals) {
@@ -83,7 +82,7 @@ function deriveFailureContext(failedTaskId, exitReason, signals) {
 		exitReason ?? resolvePrimaryFailureExitReason(failedTaskId, signals);
 	if (failedTaskId && signals.tasksRoot) {
 		const taskFolder =
-			signals.tasks?.find((entry) => entry.taskId === failedTaskId)?.taskFolder ?? null;
+			signals.tasks?.find((/** @type {any} */ entry) => entry.taskId === failedTaskId)?.taskFolder ?? null;
 		const stubReason = inferStubExitReasonForTask(signals.tasksRoot, failedTaskId, taskFolder);
 		if (stubReason) {
 			resolvedExitReason = stubReason;
@@ -100,7 +99,7 @@ function deriveFailureContext(failedTaskId, exitReason, signals) {
 /**
  * @param {string} diagnosis
  * @param {string|null} failedTaskId
- * @param {object} signals
+ * @param {Record<string, any>} signals
  * @param {string|null} [exitReason]
  */
 function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null) {
@@ -114,13 +113,13 @@ function withFailureContext(diagnosis, failedTaskId, signals, exitReason = null)
 }
 
 /**
- * @param {object} signals
+ * @param {Record<string, any>} signals
  */
 function findNeedsReplanTask(signals) {
 	const tasks = signals.raw?.tasks ?? signals.tasks ?? [];
 	return (
 		tasks.find(
-			(task) =>
+			(/** @type {any} */ task) =>
 				task?.exitReason === "needs_replan" &&
 				(task.status === "failed" || task.classification === "terminal-failure"),
 		) ?? null
@@ -128,11 +127,11 @@ function findNeedsReplanTask(signals) {
 }
 
 /**
- * @param {object} signals
+ * @param {Record<string, any>} signals
  */
 function hasNeedsReplanBlocker(signals) {
 	const tasks = signals.raw?.tasks ?? signals.tasks ?? [];
-	return tasks.some((task) => task?.exitReason === "needs_replan");
+	return tasks.some((/** @type {any} */ task) => task?.exitReason === "needs_replan");
 }
 
 /**
@@ -158,8 +157,8 @@ const POST_DONE_PLAN_REVIEW_EXIT_REASONS = new Set([
  * The salvage command itself hard-gates on commits-ahead, so pointing at it
  * without lane commits is safe (dry-run reports none salvageable).
  *
- * @param {object} signals
- * @returns {object|null}
+ * @param {Record<string, any>} signals
+ * @returns {Record<string, any>|null}
  */
 function findPostDonePlanReviewSpawnFailedTask(signals) {
 	const tasks = Array.isArray(signals.tasks) ? signals.tasks : [];
@@ -180,7 +179,7 @@ function findPostDonePlanReviewSpawnFailedTask(signals) {
 }
 
 /**
- * @param {object} signals
+ * @param {Record<string, any>} signals
  */
 export function deriveDiagnosis(signals) {
 	const {
@@ -206,7 +205,7 @@ export function deriveDiagnosis(signals) {
 	}
 
 	if (shouldDiagnosePendingLaneLand(signals)) {
-		const pendingLaneLandTasks = findPendingLaneLandTasks(signals.tasks);
+		const pendingLaneLandTasks = /** @type {any} */ (findPendingLaneLandTasks(signals.tasks));
 		return withFailureContext(
 			"pending_lane_land",
 			pendingLaneLandTasks[0]?.taskId ?? null,
@@ -215,7 +214,7 @@ export function deriveDiagnosis(signals) {
 	}
 
 	if (signals.stateDrift?.drifted) {
-		const driftTask = signals.stateDrift.entries.find((entry) => entry.taskId !== "*");
+		const driftTask = signals.stateDrift.entries.find((/** @type {any} */ entry) => entry.taskId !== "*");
 		return withFailureContext("state_drift", driftTask?.taskId ?? null, signals);
 	}
 
@@ -224,12 +223,12 @@ export function deriveDiagnosis(signals) {
 		hasPendingTasks &&
 		Array.isArray(signals.tasks) &&
 		signals.tasks.some(
-			(task) =>
+			(/** @type {any} */ task) =>
 				task?.doneInLane === true &&
 				(task.status === "pending" || task.status === "running" || task.classification === "pending" || task.classification === "running"),
 		)
 	) {
-		const driftTask = signals.tasks.find((task) => task?.doneInLane);
+		const driftTask = signals.tasks.find((/** @type {any} */ task) => task?.doneInLane);
 		return withFailureContext("needs_retry", driftTask?.taskId ?? null, signals);
 	}
 
@@ -318,7 +317,7 @@ export function deriveDiagnosis(signals) {
 		phase === "merging" &&
 		endedAt != null &&
 		Array.isArray(signals.raw?.mergeResults) &&
-		signals.raw.mergeResults.some((entry) => String(entry?.status ?? "").toLowerCase() === "failed")
+		signals.raw.mergeResults.some((/** @type {any} */ entry) => String(entry?.status ?? "").toLowerCase() === "failed")
 	) {
 		return withFailureContext("failed", null, signals);
 	}

@@ -31,6 +31,10 @@
     "src/batch/reconcile.mjs",
     "src/batch/reconcile-batch.mjs",
     "src/batch/reconcile-orphan.mjs",
+    "src/batch/reconcile-classify.mjs",
+    "src/batch/reconcile-diagnosis.mjs",
+    "src/batch/reconcile-diagnosis-context.mjs",
+    "src/batch/reconcile-light-cache.mjs",
     "types/micromatch.d.ts"
   ]
 }
