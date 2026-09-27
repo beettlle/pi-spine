@@ -1,0 +1,3 @@
+SP-778 complete: same-major dev dependency hygiene
+pi-coding-agent ^0.87.1, eslint ^10.11.0, typebox 1.3.34, @types/node ^22.20.4
+audit 0; lint/typecheck clean; full suite 2651/2651; coverage 89.68% (>=77)
