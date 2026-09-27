@@ -2566,13 +2566,13 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-774 | Type reconcile-batch/orphan + reconcile facade | M | #284 Partial | Done |
 | SP-775 | Type reconcile classify/diagnosis/context/light-cache | M | #284 Partial | Done |
 | SP-776 | Type run-doctor-checks | S | #284 Closes | Done |
-| SP-777 | Document reconcile/doctor typing | S | #284 docs | Staged |
+| SP-777 | Document reconcile/doctor typing | S | #284 docs | Done |
 | SP-778 | Same-major dev dependency hygiene | S | — | Done |
 
 **Phase 92 exit criteria:**
 
 - [x] Operator approved release scope (manifest)
-- [ ] SP-774–SP-778 `.DONE` and integrated on `main`
+- [x] SP-774–SP-778 `.DONE` and integrated on `main`
 - [x] #284 CLOSED
 - [ ] `npm run release:check` green; CI green on HEAD
 - [ ] Publish **v2.24.0** only after operator approval
