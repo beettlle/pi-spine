@@ -1,0 +1,18 @@
+README.md
+  h_2a17159c706ba1 52
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 102
+docs/release/npm-publish.md
+  h_2a17159c706ba1 110,138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "137d618e8afe3c182076976235279f15daec3576",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
