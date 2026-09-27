@@ -1,0 +1,19 @@
+src/batch/salvage-batch-integrate.mjs
+  s_163668b472df17::t_ca037e40c76db5 12,365,394-399,428
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ad641e09eedd3a257509d7588077dbb01474d7ca",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
