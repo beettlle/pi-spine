@@ -1,0 +1,20 @@
+bin/spine-worker-runner.mjs
+  h_2a17159c706ba1 39,316
+spine-tasks/SP-785-unified-task-id-discovery/STATUS.md
+  h_2a17159c706ba1 3,28,30-31,64
+src/batch/worker-prompt.mjs
+  h_2a17159c706ba1 9,85-86
+src/config/preflight/discovery.mjs
+  h_2a17159c706ba1 9,33-38,40,43-49,53,57-59,159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "389a009d7aa8478d89f7e9c8f50e6ba03d6e9e7e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
