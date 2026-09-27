@@ -1,0 +1,16 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 332-339,1235-1267,1831-1876
+spine-tasks/SP-789-docs-recovery-evidence-hardening/STATUS.md
+  h_2a17159c706ba1 3,21,23-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1e332f9162d7d8c772f7812eea54b36f9dcab098",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
