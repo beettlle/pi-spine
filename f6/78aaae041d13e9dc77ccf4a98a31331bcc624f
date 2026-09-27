@@ -1,0 +1,16 @@
+src/batch/worker-host.mjs
+  h_2a17159c706ba1 16-20,269,277,323-324,326,330-348
+src/batch/worker-spawn.mjs
+  h_2a17159c706ba1 10,219-225,291-315,318-320,322,326,328-356,359,364,367-381,383-387
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f678aaae041d13e9dc77ccf4a98a31331bcc624f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
