@@ -1,0 +1,14 @@
+spine-tasks/SP-779-stall-exit-before-deadline/STATUS.md
+  h_2a17159c706ba1 3-4,48,50-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6e3dd7dd9392e2475065110a9c5736949199e3ec",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
