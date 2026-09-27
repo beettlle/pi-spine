@@ -1,0 +1,23 @@
+spine-tasks/SP-788-engine-crash-journal/.reviews/0-20260927T234742.md
+  s_163668b472df17::t_d303b2522baef6 1-8
+spine-tasks/SP-788-engine-crash-journal/.reviews/4-20260927T234750.md
+  s_163668b472df17::t_9e39e13168049c 1-8
+spine-tasks/SP-788-engine-crash-journal/.reviews/final-20260927T234857.md
+  s_163668b472df17::t_259116da020647 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a56ba795afc33998421c726d60c6c40285eb56e2",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
