@@ -1,7 +1,7 @@
 # SP-784: Integrate checkout sync safety — Status
 
-**Current Step:** Step 5 (Documentation & Delivery)
-**Status:** 🔄 Finalizing
+**Current Step:** Complete
+**Status:** ✅ Done — awaiting engine review
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -58,10 +58,10 @@
 - [x] Fix all failures (one regression found & fixed — see Discoveries #7/#8)
 
 ### Step 5: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
