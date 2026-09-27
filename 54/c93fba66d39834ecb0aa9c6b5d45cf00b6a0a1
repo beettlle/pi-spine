@@ -1,0 +1,36 @@
+spine-tasks/SP-777-docs-reconcile-doctor-typing/PROMPT.md
+  s_4da3149d3798bc::t_1c216bf6f24564 43
+  s_4da3149d3798bc::t_888bc392853ec4 103
+spine-tasks/SP-776-type-run-doctor-checks/PROMPT.md
+  s_4da3149d3798bc::t_e7413ae8eb8599 46
+  s_4da3149d3798bc::t_cedfc71443ff2a 113
+spine-tasks/SP-775-type-reconcile-classify-diagnosis/STATUS.md
+  s_4da3149d3798bc::t_640161eaccd2bb 47
+spine-tasks/SP-777-docs-reconcile-doctor-typing/STATUS.md
+  s_4da3149d3798bc::t_1e7741dd65aac8 42
+spine-tasks/_authoring/release-v2.24.0/manifest.md
+  s_4da3149d3798bc::t_d0f970562820ec 149-158
+spine-tasks/SP-776-type-run-doctor-checks/STATUS.md
+  s_4da3149d3798bc::t_475f24ebba8d5c 46
+spine-tasks/SP-775-type-reconcile-classify-diagnosis/PROMPT.md
+  s_4da3149d3798bc::t_9ef127c77609fe 118
+  s_4da3149d3798bc::t_1f8943f9858aee 50
+spine-tasks/CONTEXT.md
+  s_4da3149d3798bc::t_ae8c3208710d8e 2566,2570
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "54c93fba66d39834ecb0aa9c6b5d45cf00b6a0a1",
+  "prompts": {},
+  "sessions": {
+    "s_4da3149d3798bc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-62e003e9-9f7d-497c-b2bd-f10e86b4eb30",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
