@@ -1,7 +1,7 @@
 # SP-788: Engine crash journaling — Status
 
-**Current Step:** Step 1 (Crash guard module + wiring)
-**Status:** 🔄 In Progress
+**Current Step:** Complete (all 5 steps done)
+**Status:** ✅ Done — verification: lint ✓, typecheck ✓, contract testCommand 12/12 ✓, batch suite 1545/1545 ✓
 **Last Updated:** 2026-09-27
 **Review Level:** 2
 **Review Counter:** 0
@@ -48,10 +48,10 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
