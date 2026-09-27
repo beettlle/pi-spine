@@ -247,7 +247,7 @@ export function dismissBatch(ctx) {
 			batchState: loaded.raw,
 			config,
 		});
-		clearCompletedBatchState(loaded.path, batchId);
+		clearCompletedBatchState(projectRoot, loaded.path, batchId);
 		bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
 
 		return {
@@ -453,7 +453,7 @@ export function completeBatch(ctx) {
 			batchState: loaded.raw,
 			config,
 		});
-		clearCompletedBatchState(loaded.path, batchId);
+		clearCompletedBatchState(projectRoot, loaded.path, batchId);
 
 		return {
 			ok: true,

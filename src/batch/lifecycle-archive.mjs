@@ -38,11 +38,17 @@ export function archiveBatchState(projectRoot, batchId, raw) {
 }
 
 /**
+ * Clear the completed batch-state pointer under the global batch-state lock
+ * (SP-722 / #264; SP-786 / #303). Delegates to `clearActiveBatchStateIfMatches`,
+ * which quarantines corrupt state instead of deleting it and refuses to touch
+ * Taskplane-owned `.pi/` state files.
+ *
+ * @param {string} projectRoot
  * @param {string|null} batchStatePath
  * @param {string} batchId
  */
-export function clearCompletedBatchState(batchStatePath, batchId) {
-	clearActiveBatchStateIfMatches(batchStatePath, batchId);
+export function clearCompletedBatchState(projectRoot, batchStatePath, batchId) {
+	clearActiveBatchStateIfMatches(batchStatePath, batchId, projectRoot);
 }
 
 /**

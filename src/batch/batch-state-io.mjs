@@ -7,6 +7,7 @@ import path from "node:path";
 import { isProcessAlive } from "../process/liveness.mjs";
 import { parseSpineBatchState } from "./readers/spine-state.mjs";
 import { parseTaskplaneBatchState } from "./readers/taskplane-state.mjs";
+import { withBatchStateLock } from "./batch-state-lock.mjs";
 
 /** Terminal phases safe to clear before a new batch start (SP-441 / #94). */
 const TERMINAL_PHASES_FOR_HANDOFF = new Set(["completed", "failed", "aborted", "merge_blocked"]);
@@ -127,76 +128,144 @@ export function readAliveBatchEnginePid(raw) {
 }
 
 /**
+ * Detect a Taskplane-owned batch-state path (`.pi/`) that spine must never
+ * modify (SP-786 / #303). Spine start/clear paths act on `.spine/` state only.
+ *
+ * @param {string} batchStatePath
+ */
+function isForeignBatchStatePath(batchStatePath) {
+	return batchStatePath.includes(`${path.sep}.pi${path.sep}`);
+}
+
+/**
+ * Rename a corrupt batch-state file to a collision-safe quarantine name in the
+ * same directory (SP-786 / #303). Never unlink: the file is evidence for
+ * post-mortem inspection. Uses a UTC timestamp plus a numeric suffix when the
+ * name is already taken (two corruptions within the same millisecond).
+ *
+ * @param {string} batchStatePath
+ * @returns {string} the quarantined file path
+ */
+function quarantineCorruptBatchState(batchStatePath) {
+	const dir = path.dirname(batchStatePath);
+	const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+	let quarantinedPath = path.join(dir, `batch-state.corrupt-${stamp}.json`);
+	let attempt = 1;
+	while (fs.existsSync(quarantinedPath)) {
+		quarantinedPath = path.join(dir, `batch-state.corrupt-${stamp}-${attempt}.json`);
+		attempt += 1;
+	}
+	fs.renameSync(batchStatePath, quarantinedPath);
+	return quarantinedPath;
+}
+
+/**
  * Remove active batch-state only when on-disk batch matches expected (SP-441 / #94).
  * Prevents complete/dismiss from clearing a newer batch after a concurrent start handoff.
  *
+ * Spine-owned path only: a Taskplane-owned `.pi/batch-state.json` is never
+ * renamed or unlinked here (SP-786 / #303). A corrupt spine-owned state file
+ * is quarantined (renamed), never deleted. The read-check-mutate sequence runs
+ * under the global batch-state lock; `projectRoot` may be omitted and is then
+ * derived from the `.spine` parent directory of `batchStatePath`.
+ *
  * @param {string|null} batchStatePath
  * @param {string} expectedBatchId
- * @returns {{ cleared: boolean, reason?: string, activeBatchId?: string }}
+ * @param {string} [projectRoot] derived from the `.spine` parent when omitted
+ * @returns {{ cleared: boolean, reason?: string, activeBatchId?: string, quarantinedPath?: string }}
  */
-export function clearActiveBatchStateIfMatches(batchStatePath, expectedBatchId) {
+export function clearActiveBatchStateIfMatches(batchStatePath, expectedBatchId, projectRoot = null) {
 	if (!batchStatePath || !fs.existsSync(batchStatePath)) {
 		return { cleared: false, reason: "missing" };
 	}
-
-	try {
-		const onDisk = JSON.parse(fs.readFileSync(batchStatePath, "utf-8"));
-		const onDiskBatchId = readBatchStateId(onDisk);
-		if (onDiskBatchId && onDiskBatchId !== expectedBatchId) {
-			return {
-				cleared: false,
-				reason: "batch_id_mismatch",
-				activeBatchId: onDiskBatchId,
-			};
-		}
-	} catch {
-		// Corrupt active state — remove so a new batch can start cleanly.
+	if (isForeignBatchStatePath(batchStatePath)) {
+		return { cleared: false, reason: "foreign_state" };
 	}
 
-	fs.unlinkSync(batchStatePath);
-	return { cleared: true };
+	// Derive the lock root from `<root>/.spine/batch-state.json` when no caller supplies one.
+	const lockRoot = projectRoot ?? path.dirname(path.dirname(batchStatePath));
+	return withBatchStateLock(lockRoot, () => {
+		try {
+			const onDisk = JSON.parse(fs.readFileSync(batchStatePath, "utf-8"));
+			const onDiskBatchId = readBatchStateId(onDisk);
+			if (onDiskBatchId && onDiskBatchId !== expectedBatchId) {
+				return {
+					cleared: false,
+					reason: "batch_id_mismatch",
+					activeBatchId: onDiskBatchId,
+				};
+			}
+		} catch (err) {
+			if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
+				return { cleared: false, reason: "missing" };
+			}
+			// Corrupt active state — quarantine for inspection, never delete (SP-786 / #303).
+			const quarantinedPath = quarantineCorruptBatchState(batchStatePath);
+			return { cleared: false, reason: "corrupt", quarantinedPath };
+		}
+
+		fs.unlinkSync(batchStatePath);
+		return { cleared: true };
+	});
 }
 
 /**
  * Clear a terminal completed batch-state pointer before spine batch start (SP-441 / #94).
  *
+ * Spine-owned path only (SP-786 / #303): when `.spine/batch-state.json` is
+ * absent, a Taskplane-owned `.pi/batch-state.json` is reported as
+ * `foreign_state` and never renamed or unlinked. A corrupt spine-owned state
+ * file is quarantined (renamed), never deleted. The read-check-mutate sequence
+ * runs under the global batch-state lock.
+ *
  * @param {string} projectRoot
- * @returns {{ cleared: boolean, reason?: string, batchId?: string }}
+ * @returns {{ cleared: boolean, reason?: string, batchId?: string, quarantinedPath?: string }}
  */
 export function clearStaleTerminalBatchStateForStart(projectRoot) {
-	const resolved = resolveBatchStatePath(projectRoot);
-	if (!resolved || !fs.existsSync(resolved)) {
+	const spinePath = path.join(projectRoot, ".spine", "batch-state.json");
+	const piPath = path.join(projectRoot, ".pi", "batch-state.json");
+
+	if (!fs.existsSync(spinePath)) {
+		if (fs.existsSync(piPath)) {
+			return { cleared: false, reason: "foreign_state" };
+		}
 		return { cleared: false, reason: "missing" };
 	}
 
-	/** @type {unknown} */
-	let raw;
-	try {
-		raw = JSON.parse(fs.readFileSync(resolved, "utf-8"));
-	} catch {
-		fs.unlinkSync(resolved);
-		return { cleared: true, reason: "corrupt" };
-	}
+	return withBatchStateLock(projectRoot, () => {
+		/** @type {unknown} */
+		let raw;
+		try {
+			raw = JSON.parse(fs.readFileSync(spinePath, "utf-8"));
+		} catch (err) {
+			if (/** @type {NodeJS.ErrnoException} */ (err)?.code === "ENOENT") {
+				return { cleared: false, reason: "missing" };
+			}
+			// Corrupt state — quarantine for inspection, never delete (SP-786 / #303).
+			const quarantinedPath = quarantineCorruptBatchState(spinePath);
+			return { cleared: false, reason: "corrupt", quarantinedPath };
+		}
 
-	const batchId = readBatchStateId(raw);
-	const phase = String(/** @type {{ phase?: string }} */ (raw)?.phase ?? "");
-	const ownerPid = readBatchStateEnginePid(raw);
+		const batchId = readBatchStateId(raw);
+		const phase = String(/** @type {{ phase?: string }} */ (raw)?.phase ?? "");
+		const ownerPid = readBatchStateEnginePid(raw);
 
-	if (ACTIVE_PHASES_FOR_HANDOFF.has(phase) && !/** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
-		return { cleared: false, reason: "active", batchId };
-	}
+		if (ACTIVE_PHASES_FOR_HANDOFF.has(phase) && !/** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
+			return { cleared: false, reason: "active", batchId };
+		}
 
-	if (ownerPid && isProcessAlive(ownerPid)) {
-		throw new Error(
-			`Active batch ${batchId || "(unknown)"} engine still running (pid=${ownerPid}). ` +
-				"Wait for it to exit or run spine batch dismiss before spine batch start.",
-		);
-	}
+		if (ownerPid && isProcessAlive(ownerPid)) {
+			throw new Error(
+				`Active batch ${batchId || "(unknown)"} engine still running (pid=${ownerPid}). ` +
+					"Wait for it to exit or run spine batch dismiss before spine batch start.",
+			);
+		}
 
-	if (TERMINAL_PHASES_FOR_HANDOFF.has(phase) || /** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
-		fs.unlinkSync(resolved);
-		return { cleared: true, reason: "stale_terminal", batchId };
-	}
+		if (TERMINAL_PHASES_FOR_HANDOFF.has(phase) || /** @type {{ endedAt?: unknown }} */ (raw)?.endedAt) {
+			fs.unlinkSync(spinePath);
+			return { cleared: true, reason: "stale_terminal", batchId };
+		}
 
-	return { cleared: false, reason: "idle", batchId };
+		return { cleared: false, reason: "idle", batchId };
+	});
 }
