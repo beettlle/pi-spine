@@ -1,0 +1,16 @@
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 29,170
+src/batch/contract-spawn.mjs
+  h_2a17159c706ba1 1-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9260d5187a18426a0074c8c5dd87bad8ec7d9532",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
