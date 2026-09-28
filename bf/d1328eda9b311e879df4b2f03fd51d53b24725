@@ -1,0 +1,14 @@
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/STATUS.md
+  h_2a17159c706ba1 4,52,54-55,75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bfd1328eda9b311e879df4b2f03fd51d53b24725",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
