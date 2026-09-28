@@ -1,0 +1,18 @@
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/STATUS.md
+  h_2a17159c706ba1 3,35,37-40,72
+src/batch/engine-lanes/merge.mjs
+  h_2a17159c706ba1 845-850
+tests/batch/lane-merge-out-of-scope.test.mjs
+  h_2a17159c706ba1 6-11,20-23,25,37,40-41,45-46,59-64,66-67,71-76,121-438
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ddd4cce13bc2457b7dfc32185b1611ee9340d7c4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
