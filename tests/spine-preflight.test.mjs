@@ -223,6 +223,77 @@ test("checkNoActiveBatch calls reconciliation when batch-state exists", async ()
 	}
 });
 
+test("checkNoActiveBatch suggests spine batch complete for completed batch whose archive exists (#293 / SP-790)", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-archived-");
+	const batchId = "20260928T010000";
+	try {
+		// Phantom completed state recreated by a late land-loop write (#293) while
+		// the real batch was already archived by `spine batch complete`.
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "batch-state.json"),
+			JSON.stringify({ batchId, phase: "completed", endedAt: Date.now() }),
+			"utf-8",
+		);
+		const archiveDir = path.join(projectRoot, ".spine", "runtime", batchId, "archive");
+		fs.mkdirSync(archiveDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(archiveDir, "batch-state.json"),
+			JSON.stringify({ batchId, phase: "completed" }),
+			"utf-8",
+		);
+
+		const result = checkNoActiveBatch({
+			projectRoot,
+			runReconciliation: () => ({
+				diagnosis: "completed",
+				headline: "Batch completed",
+				suggestedCommand: "spine preflight",
+			}),
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(result.suggestedCommand, "spine batch complete");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("checkNoActiveBatch suggests spine batch complete for completed batch with approved gate", async () => {
+	const projectRoot = await initGitRepo("spine-preflight-gate-approved-");
+	const batchId = "20260928T010001";
+	try {
+		// Completed batch awaiting `spine batch complete` (gate approved, no archive yet).
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "batch-state.json"),
+			JSON.stringify({ batchId, phase: "completed", endedAt: Date.now() }),
+			"utf-8",
+		);
+		const gateRecord = path.join(projectRoot, ".spine", "runtime", batchId, "gate.json");
+		fs.mkdirSync(path.dirname(gateRecord), { recursive: true });
+		fs.writeFileSync(
+			gateRecord,
+			JSON.stringify({ gateId: "g-1", batchId, kind: "integrate", status: "approved" }),
+			"utf-8",
+		);
+
+		const result = checkNoActiveBatch({
+			projectRoot,
+			runReconciliation: () => ({
+				diagnosis: "completed",
+				headline: "Batch completed",
+				suggestedCommand: "spine preflight",
+			}),
+		});
+
+		assert.equal(result.ok, false);
+		assert.equal(result.suggestedCommand, "spine batch complete");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("checkTasksRoot validates discoverable task folders", async () => {
 	const projectRoot = await initGitRepo("spine-preflight-");
 	try {

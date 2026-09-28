@@ -1,6 +1,6 @@
 # SP-790: Refuse post-archive batch-state resurrection — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -33,11 +33,11 @@
 - [x] Preflight suggests `spine batch complete`
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] #293 regression test
-- [ ] Guard tests
-- [ ] Preflight test
+- [x] #293 regression test
+- [x] Guard tests
+- [x] Preflight test
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
