@@ -1,6 +1,6 @@
 # SP-798: Lane merge out-of-scope fail-closed — Status
 
-**Current Step:** 1
+**Current Step:** 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -18,18 +18,18 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Allow-list + fail-closed resolver
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Allow-list default
-- [ ] Blob + ours / fail closed
-- [ ] Dead computation removed
+- [x] Allow-list default
+- [x] Blob + ours / fail closed
+- [x] Dead computation removed
 
 ### Step 2: Journal + failure classification + resume parity
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Journal event + return field
-- [ ] `MergeFailed` classification
-- [ ] Resume parity; `resume.mjs` ≤ 500
+- [x] Journal event + return field
+- [x] `MergeFailed` classification
+- [x] Resume parity; `resume.mjs` ≤ 500
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -67,6 +67,8 @@
 | 5 | `tests/batch/rules-manifest-merge.test.mjs:231` asserts generic conflict error matches `/automatic resolution supports/` — new error text must keep that phrase. |
 | 6 | `tests/helpers/git-fixture.mjs` `initGitRepo` runs spine init → temp repos have `.spine/spine-config.json`, so `loadSpineConfig` succeeds there and `applyConfigDefaults` fills the new `lanes.outOfScopeMergeAllowList` default. |
 | 7 | `minimalValidPromptMarkdown` helper (tests/helpers/smoke-task-prompt.mjs) supports custom `fileScope` — used for the `mergeWaveLanesToOrch` journal test task folder. |
+| 8 | Step 1+2 implementation: `tryAutoResolveMergeConflicts` loads the allow-list via `loadSpineConfig` (defaults fill via `applyConfigDefaults`, verified on a runInit temp repo), derives laneNumber from the branch name, and returns `discardedOutOfScope`; `mergeLaneToOrch` classifies zero-unmerged-path merge failures as `MergeFailed` with piped stderr (`err.stderr` Buffer) and propagates `discardedOutOfScope`; `mergeWaveLanesToOrch` journals `batch.merge_out_of_scope_discarded` `{laneNumber, taskBranch, paths, laneBlobs}`. `resume.mjs` single-line parity fix keeps it at 498 lines. |
+| 9 | `tests/batch/merge-gitignored-paths.test.mjs` test 3 fixed per discovery #4 by committing `lanes.outOfScopeMergeAllowList: ["extension/coverage/lcov-report/index.html"]` into the fixture's `.spine/spine-config.json` before branching — 10/10 pass. |
 
 ## Blockers
 

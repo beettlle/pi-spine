@@ -25,6 +25,8 @@ import {
 import { recordWaveMergeResult } from "../merge/wave-merge-state.mjs";
 import { recordMergeBlocked } from "../lifecycle.mjs";
 import { appendJournalEvent } from "../journal.mjs";
+import { LANES_DEFAULTS } from "../../config/defaults.mjs";
+import { loadSpineConfig } from "../../config/spine-config-load.mjs";
 import { countCommitsAhead, gitPorcelain } from "../lane-commit.mjs";
 import { saveSpineBatchState } from "../state.mjs";
 import { loadTaskFileScopePaths } from "./queue.mjs";
@@ -52,6 +54,22 @@ function abortInProgressMerge(projectRoot) {
 	} catch {
 		// best effort — leave checkout restoration to caller
 	}
+}
+
+/**
+ * Stderr text of a failed gitExec error (execFileSync attaches piped stderr as a
+ * Buffer); falls back to the error message when stderr is empty.
+ *
+ * @param {unknown} err
+ * @returns {string}
+ */
+function gitStderrText(err) {
+	const stderr = /** @type {{ stderr?: unknown }} */ (err)?.stderr;
+	if (stderr != null) {
+		const text = Buffer.isBuffer(stderr) ? stderr.toString("utf-8") : String(stderr);
+		if (text.trim()) return text.trim();
+	}
+	return err instanceof Error ? err.message : String(err);
 }
 
 /**
@@ -136,22 +154,44 @@ function pathInLaneFileScope(filePath, laneFileScopePaths) {
 }
 
 /**
- * @param {string} projectRoot
- * @param {string} mergeBase
- * @param {string} taskBranch
- * @returns {Set<string>}
+ * Lane number for fail-closed messages, derived from the laneTaskBranch naming
+ * convention (`task/spine-lane-<n>-<batchId>`). Null for foreign branch names.
+ *
+ * @param {string | undefined} taskBranch
+ * @returns {number | null}
  */
-function listBranchChangedFiles(projectRoot, mergeBase, taskBranch) {
-	const output = git(projectRoot, ["diff", "--name-only", `${mergeBase}..${taskBranch}`], {
-		throwOnError: false,
-	});
-	if (!output) return new Set();
-	return new Set(
-		output
-			.split("\n")
-			.map((line) => line.trim())
-			.filter(Boolean),
+function laneNumberFromTaskBranch(taskBranch) {
+	const match = typeof taskBranch === "string" ? /-lane-(\d+)-/.exec(taskBranch) : null;
+	return match ? Number(match[1]) : null;
+}
+
+/**
+ * Allow-listed out-of-scope paths keep prefer-orch auto-resolution (SP-798 / #304).
+ * Matched with the same glob helper `pathInLaneFileScope` uses so File Scope and
+ * allow-list patterns behave identically.
+ *
+ * @param {string} filePath
+ * @param {readonly string[] | string[]} allowList
+ */
+function pathInOutOfScopeAllowList(filePath, allowList) {
+	if (!Array.isArray(allowList)) return false;
+	return allowList.some(
+		(pattern) => typeof pattern === "string" && matchesContractPattern(filePath, pattern),
 	);
+}
+
+/**
+ * Load `lanes.outOfScopeMergeAllowList` from the repo config, falling back to
+ * LANES_DEFAULTS when the repo has no spine config (bare fixtures).
+ *
+ * @param {string} projectRoot
+ * @returns {string[]}
+ */
+function loadOutOfScopeMergeAllowList(projectRoot) {
+	const loaded = loadSpineConfig(projectRoot);
+	const configured = loaded.config?.lanes?.outOfScopeMergeAllowList;
+	if (Array.isArray(configured)) return configured.filter((pattern) => typeof pattern === "string");
+	return [...LANES_DEFAULTS.outOfScopeMergeAllowList];
 }
 
 /**
@@ -185,24 +225,46 @@ function resolveRulesManifestMergeConflict(projectRoot) {
 }
 
 /**
- * Prefer orch (merge --ours) for stale dependency artifacts outside lane file scope.
+ * Auto-resolve an out-of-scope conflict only when the path is allow-listed via
+ * `lanes.outOfScopeMergeAllowList` (SP-798 / #304). A conflicted path is only ever
+ * conflicted because both sides changed it, so prefer-orch always discards lane work;
+ * the lane blob (`:3:<path>`) is captured first so the caller can journal what was
+ * dropped. Paths that are neither in File Scope nor allow-listed fail closed.
  *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string} params.filePath
  * @param {string[]} params.laneFileScopePaths
- * @param {Set<string>} params.laneChangedFiles
+ * @param {string[]} params.outOfScopeAllowList
+ * @param {number | null} params.laneNumber
+ * @param {string} params.taskBranch
+ * @param {string} params.orchBranch
+ * @returns {{ ok: true, strategy: "prefer_orch_out_of_scope", discarded: { path: string, laneBlob: string | null }, skippedGitignoredPaths: string[] } | { ok: false, reason: string, failureClass?: string, error?: string }}
  */
 function tryAutoResolveOutOfScopeMergeConflict({
 	projectRoot,
 	filePath,
 	laneFileScopePaths,
-	laneChangedFiles: _laneChangedFiles,
+	outOfScopeAllowList,
+	laneNumber,
+	taskBranch,
+	orchBranch,
 }) {
 	if (pathInLaneFileScope(filePath, laneFileScopePaths)) {
 		return { ok: false, reason: "in_lane_file_scope" };
 	}
+	if (!pathInOutOfScopeAllowList(filePath, outOfScopeAllowList)) {
+		return {
+			ok: false,
+			reason: "not_allow_listed",
+			failureClass: "MergeConflict",
+			error:
+				`Lane ${laneNumber ?? "?"} (${taskBranch}) changed out-of-scope path ${filePath} ` +
+				`that also changed on ${orchBranch}; add it to File Scope or lanes.outOfScopeMergeAllowList`,
+		};
+	}
 
+	const laneBlob = git(projectRoot, ["rev-parse", `:3:${filePath}`], { throwOnError: false });
 	gitExec(projectRoot, ["checkout", "--ours", "--", filePath], { projectRoot });
 	const { stageable, skipped } = filterGitignoredPaths(projectRoot, [filePath]);
 	if (stageable.length > 0) {
@@ -216,6 +278,7 @@ function tryAutoResolveOutOfScopeMergeConflict({
 	return {
 		ok: true,
 		strategy: "prefer_orch_out_of_scope",
+		discarded: { path: filePath, laneBlob },
 		skippedGitignoredPaths: skipped,
 	};
 }
@@ -252,7 +315,7 @@ function collectLaneWaveFileScope(state, laneNumber, waveTaskIds) {
  * @param {string} [options.taskBranch]
  * @param {string} [options.orchBranch]
  * @param {number} [options.waveIndex]
- * @returns {{ ok: true, autoResolved: true, generatedAt?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], skippedGitignoredPaths?: string[] }}
+ * @returns {{ ok: true, autoResolved: true, generatedAt?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], discardedOutOfScope?: { path: string, laneBlob: string | null }[], skippedGitignoredPaths?: string[] } | { ok: false, error: string, failureClass?: string, outOfScopePaths?: string[], adoptionDocPaths?: string[], skippedGitignoredPaths?: string[] }}
  */
 export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 	const { laneFileScopePaths = [], taskBranch, orchBranch, waveIndex } = options;
@@ -275,17 +338,13 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		Boolean(taskBranch) &&
 		Boolean(orchBranch);
 
-	/** @type {Set<string>} */
-	let laneChangedFiles = new Set();
-	if (canResolveOutOfScope) {
-		const mergeBase = git(projectRoot, ["merge-base", /** @type {string} */ (orchBranch), /** @type {string} */ (taskBranch)], {
-			throwOnError: false,
-		});
-		if (mergeBase) {
-			laneChangedFiles = listBranchChangedFiles(projectRoot, mergeBase, /** @type {string} */ (taskBranch));
-		}
-	}
+	const outOfScopeAllowList = canResolveOutOfScope
+		? loadOutOfScopeMergeAllowList(projectRoot)
+		: [];
+	const laneNumber = laneNumberFromTaskBranch(taskBranch);
 
+	/** @type {{ path: string, laneBlob: string | null }[]} */
+	const discardedOutOfScope = [];
 	/** @type {string[]} */
 	const resolvedOutOfScope = [];
 	/** @type {string[]} */
@@ -335,13 +394,26 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			projectRoot,
 			filePath,
 			laneFileScopePaths,
-			laneChangedFiles,
+			outOfScopeAllowList,
+			laneNumber,
+			taskBranch: /** @type {string} */ (taskBranch),
+			orchBranch: /** @type {string} */ (orchBranch),
 		});
 		if (resolved.ok) {
 			resolvedOutOfScope.push(filePath);
+			discardedOutOfScope.push(resolved.discarded);
 			if (Array.isArray(resolved.skippedGitignoredPaths) && resolved.skippedGitignoredPaths.length > 0) {
 				skippedGitignoredPaths.push(...resolved.skippedGitignoredPaths);
 			}
+		} else if (resolved.reason === "not_allow_listed") {
+			// Lane-committed out-of-scope conflict — fail closed instead of discarding (#304).
+			return {
+				ok: false,
+				failureClass: "MergeConflict",
+				error: /** @type {string} */ (resolved.error),
+				outOfScopePaths: resolvedOutOfScope,
+				adoptionDocPaths: resolvedAutoMergeDocs,
+			};
 		} else {
 			remaining.push(filePath);
 		}
@@ -356,6 +428,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 				return {
 					...manifestResult,
 					outOfScopePaths: resolvedOutOfScope,
+					discardedOutOfScope,
 					skippedGitignoredPaths,
 				};
 			}
@@ -372,6 +445,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		return {
 			...manifestResult,
 			outOfScopePaths: resolvedOutOfScope,
+			discardedOutOfScope,
 			skippedGitignoredPaths,
 		};
 	}
@@ -382,6 +456,7 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 			autoResolved: true,
 			outOfScopePaths: resolvedOutOfScope,
 			adoptionDocPaths: resolvedAutoMergeDocs,
+			discardedOutOfScope,
 			skippedGitignoredPaths,
 		};
 	}
@@ -408,8 +483,8 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 		failureClass: "MergeConflict",
 		error:
 			`merge conflict on ${remaining.join(", ")}; automatic resolution supports docs/adoption/*, ` +
-			`docs/PRD.md, ${RULES_MANIFEST_REL_PATH}, and out-of-scope dependency drift ` +
-			"(prefer orch when the lane did not commit the path)",
+			`docs/PRD.md, and ${RULES_MANIFEST_REL_PATH}; out-of-scope conflicts are only ` +
+			"auto-resolved when allow-listed via lanes.outOfScopeMergeAllowList",
 		outOfScopePaths: resolvedOutOfScope,
 		adoptionDocPaths: resolvedAutoMergeDocs,
 	};
@@ -496,7 +571,7 @@ function resolveRulesManifestPreMergeDrift(projectRoot) {
  * @param {string[]} [params.laneFileScopePaths]
  * @param {string[]} [params.laneTaskFolders]
  * @param {number} [params.waveIndex]
- * @returns {{ ok: true, mergeCommit: string, commitsAhead: number } | { ok: false, failureClass?: string, error: string, outOfScopePaths?: string[], skippedGitignoredPaths?: string[] }}
+ * @returns {{ ok: true, mergeCommit: string, commitsAhead: number, discardedOutOfScope: { path: string, laneBlob: string | null }[] } | { ok: false, failureClass?: string, error: string, outOfScopePaths?: string[], skippedGitignoredPaths?: string[] }}
  */
 export function mergeLaneToOrch({
 	projectRoot,
@@ -511,6 +586,8 @@ export function mergeLaneToOrch({
 }) {
 	const previous = gitStrict(projectRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	let mergeInProgress = false;
+	/** @type {{ path: string, laneBlob: string | null }[]} */
+	let discardedOutOfScope = [];
 	try {
 		const drift = resolveRulesManifestPreMergeDrift(projectRoot);
 		if (!drift.ok) {
@@ -558,7 +635,17 @@ export function mergeLaneToOrch({
 				"-m",
 				`merge ${taskBranch} into ${orchBranch}`,
 			]);
-		} catch {
+		} catch (mergeErr) {
+			// SP-798 / #304: only real conflicts (unmerged index entries) may run the
+			// auto-resolver; hook/lock/untracked-overwrite failures are MergeFailed.
+			if (listUnmergedPaths(projectRoot).length === 0) {
+				abortInProgressMerge(projectRoot);
+				return {
+					ok: false,
+					failureClass: "MergeFailed",
+					error: gitStderrText(mergeErr),
+				};
+			}
 			mergeInProgress = true;
 			const autoResolved = tryAutoResolveMergeConflicts(projectRoot, {
 				laneFileScopePaths,
@@ -584,6 +671,9 @@ export function mergeLaneToOrch({
 					skippedPaths: autoResolved.skippedGitignoredPaths,
 				});
 			}
+			discardedOutOfScope = Array.isArray(autoResolved.discardedOutOfScope)
+				? autoResolved.discardedOutOfScope
+				: [];
 			gitStrict(projectRoot, ["commit", "--no-edit"]);
 		}
 
@@ -599,7 +689,7 @@ export function mergeLaneToOrch({
 			};
 		}
 
-		return { ok: true, mergeCommit, commitsAhead };
+		return { ok: true, mergeCommit, commitsAhead, discardedOutOfScope };
 	} catch (err) {
 		if (mergeInProgress) {
 			abortInProgressMerge(projectRoot);
@@ -749,6 +839,14 @@ export function mergeWaveLanesToOrch({
 			};
 		}
 		lastMergeCommit = merge.mergeCommit;
+		if (Array.isArray(merge.discardedOutOfScope) && merge.discardedOutOfScope.length > 0) {
+			appendJournalEvent(projectRoot, batchId, "batch.merge_out_of_scope_discarded", {
+				laneNumber,
+				taskBranch,
+				paths: merge.discardedOutOfScope.map((entry) => entry.path),
+				laneBlobs: merge.discardedOutOfScope.map((entry) => entry.laneBlob),
+			});
+		}
 		appendJournalEvent(projectRoot, batchId, "batch.merge_completed", {
 			mergeCommit: merge.mergeCommit,
 			laneNumber,
