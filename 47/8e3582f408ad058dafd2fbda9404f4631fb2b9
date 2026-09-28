@@ -1,0 +1,21 @@
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/.reviews/0-20260928T214913.md
+  s_163668b472df17::t_d21627b92a09d1 1-8
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/.reviews/5-20260928T214933.md
+  s_163668b472df17::t_fb92e84931c598 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "478e3582f408ad058dafd2fbda9404f4631fb2b9",
+  "prompts": {},
+  "sessions": {
+    "s_163668b472df17": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bfb8b955-11e0-4d1b-b35d-3fce8247e71c",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
