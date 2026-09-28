@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-27 (Phase 93 v2.25.0 SP-779–SP-789 integrated; publish pending; Next → SP-790)
+**Last Updated:** 2026-09-27 (Phase 93 v2.25.0 published; Next → SP-790)
 **Status:** Active
 **Next Task ID:** SP-790
 
@@ -2602,8 +2602,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] Operator approved release scope (manifest)
 - [x] SP-779–SP-789 `.DONE` and integrated on `main` (waves 1–3: `658c2bad`, `0a239bfb`, `e9ffc7c8`)
 - [x] #296, #297, #298, #300, #303, #306, #308 CLOSED
-- [ ] `npm run release:check` green (2709/2709, 89.97% lines after wave 3); CI green on HEAD
-- [ ] Publish **v2.25.0** only after operator approval
+- [x] `npm run release:check` green (2709/2709, 89.96% lines on `v2.25.0`); CI green on HEAD
+- [x] Publish **v2.25.0** only after operator approval (published 2026-09-27; post-publish smoke OK)
 
 **Deferred:** P1 #299, #301, #302, #304, #305, #307; P2 #309–#323; TypeScript 7 / `@types/node` 26.
 

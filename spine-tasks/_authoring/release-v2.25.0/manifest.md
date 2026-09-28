@@ -168,11 +168,11 @@ Baseline `npm run release:check` on `081f4296` (pre-authoring): tests 2651 pass 
 
 - [x] All release-scoped tasks `.DONE` on `main`
 - [x] Post-integrate `release:check` green after **each wave** — wave 1: 2672/2672 (`/tmp/pi-spine-post-integrate-wave-1.log`); wave 2: 2694/2694 (`/tmp/pi-spine-post-integrate-wave-2.log`); wave 3: 2709/2709, 89.97% lines (`/tmp/pi-spine-post-integrate-wave-3.log`)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI green on `HEAD`
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded; staged package approved (2FA)
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (`npm version` preversion: 2709/2709, 89.96% lines)
+- [x] CI green on `HEAD` (`89451b19`)
+- [x] `git status` clean
+- [x] Operator approved publish bump type: minor
+- [x] `npm version minor` + `git push && git push --tags` (tag `v2.25.0`)
+- [x] `release.yml` succeeded; staged package approved (2FA)
+- [x] Post-publish smoke per `docs/release/npm-publish.md` (`scripts/post-publish-smoke.sh 2.25.0` OK)
