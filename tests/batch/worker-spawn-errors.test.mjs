@@ -50,6 +50,10 @@ function createFakeChild() {
 test("non-executable launch script yields launch_failed and the engine survives", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-spawn-eacces-"));
 	const prevStub = process.env.SPINE_WORKER_STUB;
+	// #299 (SP-801): without an explicit stub, a missing `pi` now fails the
+	// launch before any spawn (CI runs the suite without `pi` on PATH). The
+	// launch-script EACCES path is stub-agnostic, so pin the stub here.
+	process.env.SPINE_WORKER_STUB = "1";
 	try {
 		const projectRoot = path.join(root, "project");
 		const worktreePath = path.join(root, "worktree");
@@ -86,7 +90,6 @@ test("non-executable launch script yields launch_failed and the engine survives"
 		const taskFolder2 = path.join(worktreePath2, "spine-tasks", `${taskId2}-ok`);
 		fs.mkdirSync(taskFolder2, { recursive: true });
 		fs.writeFileSync(path.join(taskFolder2, "PROMPT.md"), "# Task\n\n## Review Level: 0\n", "utf-8");
-		process.env.SPINE_WORKER_STUB = "1";
 		const second = await runWorker({
 			worktreePath: worktreePath2,
 			taskFolder: taskFolder2,
