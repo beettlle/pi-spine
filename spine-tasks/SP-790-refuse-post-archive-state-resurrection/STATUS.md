@@ -1,6 +1,6 @@
 # SP-790: Refuse post-archive batch-state resurrection — Status
 
-**Current Step:** Step 4
+**Current Step:** Step 5
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -40,13 +40,13 @@
 - [x] Preflight test
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Batch suite
+- [x] Coverage gate
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -66,6 +66,8 @@
 | 4 | No import cycle: `journal.mjs` imports only node builtins + `journal-checksum.mjs` + `../util/secret-redact.mjs`; neither reaches `state-io.mjs`. Direct import of `appendJournalEvent` in `state-io.mjs` is safe. |
 | 5 | GitNexus impact: `saveSpineBatchState` upstream blast radius is **CRITICAL** (47 direct callers / 30 processes) — expected, the guard sits under every state write. Semantic delta is narrow: new rejection only fires when the state file is absent AND the archive exists AND `allowArchivedResurrection` is unset; all 16 owner-bypass sites write live batches with the state file present (Discovery #2), so their behavior is unchanged. `ensureForceResumeBatchState` impact is LOW (2 callers). Mitigated by full contract suite in Step 4. |
 | 6 | GitNexus impact: `finalizeBatchForIntegrate` is **HIGH** (3 direct callers: startBatch, tryFinalizePostMergeLimbo, finalizeResumedBatchForIntegrate). The added branch is an early return that fires only when the archive exists AND the live state file is absent — unreachable in normal flow since all callers operate on a live loaded state. `checkNoActiveBatch` is LOW (runBatchPreflight + tests). post-merge-limbo + preflight suites pass after the change. |
+| 7 | First `coverage:check` run showed 44 failures — **operator error, not code**: run without `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER`, so worker-env guards correctly blocked nested batch spawns in subprocess-spawning tests. Re-run with clean env: matrix suite 2715/2715, line coverage 90.02% ≥ 77%, exit 0. PROMPT's `env -u` instruction exists exactly for this. |
+| 8 | `detect_changes` (vs HEAD~3): all changed symbols confined to File Scope — `evaluateBatchStateWriteGuard`, `saveSpineBatchState`, `finalizeBatchForIntegrate`, `ensureForceResumeBatchState`, `checkNoActiveBatch` (+ same-file touches only). `.spine/rules-manifest.json` generatedAt drift from test runs was restored, not committed. |
 ## Blockers
 
 _None._
