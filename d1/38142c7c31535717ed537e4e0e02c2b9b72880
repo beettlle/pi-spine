@@ -1,0 +1,22 @@
+.spine/spine-config.json
+  s_69ce93fda56683::t_e35e8478d52c6c 25-26
+  s_69ce93fda56683::t_4aec0157f76591 71
+  s_69ce93fda56683::t_b867beb895f90a 38,65,91,117
+  s_69ce93fda56683::t_7814ac79187d3b 78-79,104-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d138142c7c31535717ed537e4e0e02c2b9b72880",
+  "prompts": {},
+  "sessions": {
+    "s_69ce93fda56683": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fb12aaef-b974-453c-ba98-4eb4c3f81139",
+        "model": "default"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
