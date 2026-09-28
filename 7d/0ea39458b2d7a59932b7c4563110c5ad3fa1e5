@@ -1,0 +1,18 @@
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/STATUS.md
+  h_2a17159c706ba1 3,30,32-33,68
+src/batch/post-merge-limbo.mjs
+  h_2a17159c706ba1 26,387-415
+src/config/preflight/git-batch.mjs
+  h_2a17159c706ba1 7-9,136-162,330-346
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7d0ea39458b2d7a59932b7c4563110c5ad3fa1e5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
