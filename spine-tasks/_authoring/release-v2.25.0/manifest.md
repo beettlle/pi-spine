@@ -166,8 +166,8 @@ Baseline `npm run release:check` on `081f4296` (pre-authoring): tests 2651 pass 
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** — wave 1: 2672/2672 (`/tmp/pi-spine-post-integrate-wave-1.log`); wave 2: 2694/2694 (`/tmp/pi-spine-post-integrate-wave-2.log`); wave 3: 2709/2709, 89.97% lines (`/tmp/pi-spine-post-integrate-wave-3.log`)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD`
 - [ ] CI green on `HEAD`

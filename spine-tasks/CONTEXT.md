@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-27 (Phase 93 v2.25.0 release packets staged; Next → SP-790)
+**Last Updated:** 2026-09-27 (Phase 93 v2.25.0 SP-779–SP-789 integrated; publish pending; Next → SP-790)
 **Status:** Active
 **Next Task ID:** SP-790
 
@@ -2585,24 +2585,24 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Wave | Status |
 |------|---------|------|-------|------|--------|
-| SP-779 | Stall watchdog observes worker exit before deadline | M | #308 Closes | 1 | Staged |
-| SP-780 | Journal tolerates torn lines | M | #296 Closes | 1 | Staged |
-| SP-781 | Matrix row runtime metachar guard | S | #297 Partial | 1 | Staged |
-| SP-782 | Integrate base-ref compare-and-swap | M | #298 Partial | 1 | Staged |
-| SP-783 | Matrix row shell timeout + output cap | S | #297 Closes | 2 | Staged |
-| SP-784 | Integrate checkout sync safety | M | #298 Closes | 2 | Staged |
-| SP-785 | Unified task-ID discovery (SP-1000+) | M | #300 Closes | 2 | Staged |
-| SP-786 | Quarantine corrupt batch-state | M | #303 Closes | 2 | Staged |
-| SP-787 | Worker spawn hardening | M | #306 Closes | 3 | Staged |
-| SP-788 | Engine crash journaling | S | #306 Partial | 3 | Staged |
-| SP-789 | Runbook: recovery-evidence hardening | S | docs | 3 | Staged |
+| SP-779 | Stall watchdog observes worker exit before deadline | M | #308 Closes | 1 | Done |
+| SP-780 | Journal tolerates torn lines | M | #296 Closes | 1 | Done |
+| SP-781 | Matrix row runtime metachar guard | S | #297 Partial | 1 | Done |
+| SP-782 | Integrate base-ref compare-and-swap | M | #298 Partial | 1 | Done |
+| SP-783 | Matrix row shell timeout + output cap | S | #297 Closes | 2 | Done |
+| SP-784 | Integrate checkout sync safety | M | #298 Closes | 2 | Done |
+| SP-785 | Unified task-ID discovery (SP-1000+) | M | #300 Closes | 2 | Done |
+| SP-786 | Quarantine corrupt batch-state | M | #303 Closes | 2 | Done |
+| SP-787 | Worker spawn hardening | M | #306 Closes | 3 | Done |
+| SP-788 | Engine crash journaling | S | #306 Partial | 3 | Done |
+| SP-789 | Runbook: recovery-evidence hardening | S | docs | 3 | Done |
 
 **Phase 93 exit criteria:**
 
 - [x] Operator approved release scope (manifest)
-- [ ] SP-779–SP-789 `.DONE` and integrated on `main`
-- [ ] #296, #297, #298, #300, #303, #306, #308 CLOSED
-- [ ] `npm run release:check` green; CI green on HEAD
+- [x] SP-779–SP-789 `.DONE` and integrated on `main` (waves 1–3: `658c2bad`, `0a239bfb`, `e9ffc7c8`)
+- [x] #296, #297, #298, #300, #303, #306, #308 CLOSED
+- [ ] `npm run release:check` green (2709/2709, 89.97% lines after wave 3); CI green on HEAD
 - [ ] Publish **v2.25.0** only after operator approval
 
 **Deferred:** P1 #299, #301, #302, #304, #305, #307; P2 #309–#323; TypeScript 7 / `@types/node` 26.
