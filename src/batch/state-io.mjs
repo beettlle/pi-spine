@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 import { withBatchStateLock } from "./batch-state-lock.mjs";
 import {
 	clearBatchEnginePid,
@@ -53,22 +54,55 @@ function archivedBatchStatePath(projectRoot, batchId) {
 }
 
 /**
+ * Make a rejected batch-state write visible instead of silent (#293 / SP-790):
+ * journal `batch.state_write_rejected` (when the incoming state carries a batchId)
+ * and print one `[spine]` line to stderr so a swallowed late write is diagnosable.
+ *
+ * @param {string} projectRoot
+ * @param {Record<string, any>} state
+ * @param {string} reason
+ */
+function reportRejectedBatchStateWrite(projectRoot, state, reason) {
+	const batchId = String(state?.batchId ?? "");
+	if (batchId) {
+		try {
+			appendJournalEvent(projectRoot, batchId, "batch.state_write_rejected", {
+				reason,
+				incomingPhase: String(state.phase ?? ""),
+			});
+		} catch {
+			/* journal failure must not turn a guarded no-op into a crash */
+		}
+	}
+	console.error(
+		`[spine] refused batch-state write (${reason}) for batch ${batchId || "unknown"} — keeping on-disk state`,
+	);
+}
+
+/**
  * Persist batch state under the global batch-state lock (SP-722 / #264).
  *
  * The guard evaluation and the write run inside one critical section so the
  * check-then-act pair cannot race a concurrent writer from another process
  * (engine vs. CLI complete/resume/abort).
  *
+ * `bypassWriteGuard: true` skips only the live-foreign-owner-PID check; the
+ * post-archive resurrection check always runs (SP-790 / #293).
+ * `allowArchivedResurrection: true` is reserved for operator recovery that
+ * intentionally rebuilds an archived batch (force-resume from batch-meta, #126).
+ *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
- * @param {{ bypassWriteGuard?: boolean }} [options]
+ * @param {{ bypassWriteGuard?: boolean, allowArchivedResurrection?: boolean }} [options]
  */
 export function saveSpineBatchState(projectRoot, state, options = {}) {
 	return withBatchStateLock(projectRoot, () => {
-		const guard = options.bypassWriteGuard
-			? { allowed: true }
-			: evaluateBatchStateWriteGuard(projectRoot, state);
+		const guard = evaluateBatchStateWriteGuard(projectRoot, state, {
+			skipOwnerCheck: options.bypassWriteGuard === true,
+			allowArchivedResurrection: options.allowArchivedResurrection === true,
+		});
 		if (!guard.allowed) {
+			reportRejectedBatchStateWrite(projectRoot, state, String(guard.reason ?? "unknown"));
 			const loaded = loadSpineBatchState(projectRoot);
 			return loaded.raw ?? state;
 		}

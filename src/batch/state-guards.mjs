@@ -35,16 +35,41 @@ function archivedBatchStatePath(projectRoot, batchId) {
 }
 
 /**
+ * Whether `<root>/.spine/runtime/<batchId>/archive/batch-state.json` exists — i.e. the
+ * batch was archived by `spine batch complete` / `dismiss` / `abort` (SP-790 / #293).
+ * Callers use this to check archive status without duplicating the path.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {boolean}
+ */
+export function isBatchArchived(projectRoot, batchId) {
+	const id = String(batchId ?? "");
+	if (!id) return false;
+	return fs.existsSync(archivedBatchStatePath(projectRoot, id));
+}
+
+/**
  * Reject cache writes from non-owner engines or post-archive resurrection (SP-254).
+ *
+ * The resurrection check applies to **every** incoming phase, including terminal
+ * ones (`completed`/`failed`): a late land-loop finalize after `spine batch complete`
+ * archived the batch must not recreate `.spine/batch-state.json` (SP-790 / #293).
+ * Operator recovery that intentionally rebuilds an archived batch passes
+ * `allowArchivedResurrection: true` (force-resume from batch-meta, #126).
+ *
+ * `skipOwnerCheck` skips only the live-foreign-owner-PID rejection so trusted
+ * engine writers cannot be blocked by their own recorded PID; resurrection
+ * protection always runs.
  *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
+ * @param {{ skipOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
  * @returns {{ allowed: boolean, reason?: string }}
  */
-export function evaluateBatchStateWriteGuard(projectRoot, state) {
+export function evaluateBatchStateWriteGuard(projectRoot, state, options = {}) {
 	const filePath = spineBatchStatePath(projectRoot);
 	const batchId = String(state.batchId ?? "");
-	const incomingPhase = String(state.phase ?? "");
 
 	if (fs.existsSync(filePath)) {
 		try {
@@ -63,16 +88,23 @@ export function evaluateBatchStateWriteGuard(projectRoot, state) {
 			) {
 				return { allowed: true };
 			}
-			if (ownerPid && ownerPid !== process.pid && isEngineProcessAlive(ownerPid, ownerStartedAt)) {
+			if (
+				!options.skipOwnerCheck &&
+				ownerPid &&
+				ownerPid !== process.pid &&
+				isEngineProcessAlive(ownerPid, ownerStartedAt)
+			) {
 				return { allowed: false, reason: "stale_engine_pid" };
 			}
 		} catch {
 			/* corrupt on-disk state — allow overwrite */
 		}
-	} else if (batchId && ACTIVE_PHASES.has(incomingPhase)) {
-		if (fs.existsSync(archivedBatchStatePath(projectRoot, batchId))) {
-			return { allowed: false, reason: "archived_batch_resurrection" };
-		}
+	} else if (
+		batchId &&
+		!options.allowArchivedResurrection &&
+		isBatchArchived(projectRoot, batchId)
+	) {
+		return { allowed: false, reason: "archived_batch_resurrection" };
 	}
 
 	return { allowed: true };
