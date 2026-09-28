@@ -1,0 +1,14 @@
+spine-tasks/SP-801-worker-pi-missing-fail-closed/STATUS.md
+  h_2a17159c706ba1 3-4,45,47-48,64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "504606b2d444eb6f360180e2e31adc1494ee0e0d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
