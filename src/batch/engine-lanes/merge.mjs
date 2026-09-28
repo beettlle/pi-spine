@@ -842,9 +842,12 @@ export function mergeWaveLanesToOrch({
 		if (Array.isArray(merge.discardedOutOfScope) && merge.discardedOutOfScope.length > 0) {
 			appendJournalEvent(projectRoot, batchId, "batch.merge_out_of_scope_discarded", {
 				laneNumber,
-				taskBranch,
-				paths: merge.discardedOutOfScope.map((entry) => entry.path),
-				laneBlobs: merge.discardedOutOfScope.map((entry) => entry.laneBlob),
+				payload: {
+					laneNumber,
+					taskBranch,
+					paths: merge.discardedOutOfScope.map((entry) => entry.path),
+					laneBlobs: merge.discardedOutOfScope.map((entry) => entry.laneBlob),
+				},
 			});
 		}
 		appendJournalEvent(projectRoot, batchId, "batch.merge_completed", {

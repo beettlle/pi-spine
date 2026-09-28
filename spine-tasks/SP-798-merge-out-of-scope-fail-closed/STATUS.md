@@ -1,6 +1,6 @@
 # SP-798: Lane merge out-of-scope fail-closed — Status
 
-**Current Step:** 3
+**Current Step:** 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -32,12 +32,12 @@
 - [x] Resume parity; `resume.mjs` ≤ 500
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Real conflict fails closed
-- [ ] Allow-listed journaled
-- [ ] Untracked-overwrite
-- [ ] Resume parity
+- [x] Real conflict fails closed
+- [x] Allow-listed journaled
+- [x] Untracked-overwrite
+- [x] Resume parity
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
@@ -69,6 +69,7 @@
 | 7 | `minimalValidPromptMarkdown` helper (tests/helpers/smoke-task-prompt.mjs) supports custom `fileScope` — used for the `mergeWaveLanesToOrch` journal test task folder. |
 | 8 | Step 1+2 implementation: `tryAutoResolveMergeConflicts` loads the allow-list via `loadSpineConfig` (defaults fill via `applyConfigDefaults`, verified on a runInit temp repo), derives laneNumber from the branch name, and returns `discardedOutOfScope`; `mergeLaneToOrch` classifies zero-unmerged-path merge failures as `MergeFailed` with piped stderr (`err.stderr` Buffer) and propagates `discardedOutOfScope`; `mergeWaveLanesToOrch` journals `batch.merge_out_of_scope_discarded` `{laneNumber, taskBranch, paths, laneBlobs}`. `resume.mjs` single-line parity fix keeps it at 498 lines. |
 | 9 | `tests/batch/merge-gitignored-paths.test.mjs` test 3 fixed per discovery #4 by committing `lanes.outOfScopeMergeAllowList: ["extension/coverage/lcov-report/index.html"]` into the fixture's `.spine/spine-config.json` before branching — 10/10 pass. |
+| 10 | Test-fixture pitfalls: PROMPT heading validation requires task IDs matching `PREFIX-###` (digits only — `SP-799J` fails parse); `appendJournalEvent` lifts `laneNumber` into the `laneId` meta (META_KEYS) so the discard event passes an explicit `payload: {laneNumber, taskBranch, paths, laneBlobs}` to keep `laneNumber` queryable; wave-merge fixtures need an absolute `taskFolder` (relative paths resolve against process cwd, fine in production where engine cwd = projectRoot); lane worktrees must be provisioned before orch advances or both-sided edits cannot conflict. |
 
 ## Blockers
 
