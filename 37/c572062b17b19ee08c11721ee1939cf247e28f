@@ -1,0 +1,90 @@
+spine-tasks/SP-795-durable-atomic-json-write/PROMPT.md
+  s_1f26aa0e0711fa::t_5b16543708f742 1-109
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/PROMPT.md
+  s_1f26aa0e0711fa::t_ce161fa1b9059d 1-136
+CLAUDE.md
+  s_1f26aa0e0711fa::t_2cd7520d4bfdcf 4
+spine-tasks/SP-799-async-contract-process-runner/PROMPT.md
+  s_1f26aa0e0711fa::t_2e9afb16300763 1-124
+spine-tasks/SP-794-lock-steal-by-rename/PROMPT.md
+  s_1f26aa0e0711fa::t_1e6ada218ea176 1-116
+spine-tasks/SP-799-async-contract-process-runner/STATUS.md
+  s_1f26aa0e0711fa::t_c077dab3136e31 1-60
+AGENTS.md
+  s_1f26aa0e0711fa::t_2cd7520d4bfdcf 4
+spine-tasks/SP-801-worker-pi-missing-fail-closed/PROMPT.md
+  s_1f26aa0e0711fa::t_23f5281876f0f5 1-117
+spine-tasks/SP-800-async-contract-verify/STATUS.md
+  s_1f26aa0e0711fa::t_ea53a5fcd9d8be 1-65
+spine-tasks/SP-796-shrink-terminal-lock-sections/PROMPT.md
+  s_1f26aa0e0711fa::t_25792ed09aa1db 1-123
+spine-tasks/SP-791-atomic-batch-state-update/PROMPT.md
+  s_1f26aa0e0711fa::t_11dacb171ba928 1-129
+spine-tasks/SP-797-async-engine-lock-wait/PROMPT.md
+  s_1f26aa0e0711fa::t_3ddad9a54061c3 25
+  s_1f26aa0e0711fa::t_5a317737d278ed 1-24,26-133
+spine-tasks/SP-802-sequence-wait-deadline/STATUS.md
+  s_1f26aa0e0711fa::t_d06d5c9933e05e 1-65
+spine-tasks/SP-792-archive-in-lock-state/STATUS.md
+  s_1f26aa0e0711fa::t_bbfd5e1c4230f7 1-64
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/STATUS.md
+  s_1f26aa0e0711fa::t_5248657c4d6489 1-66
+spine-tasks/SP-803-docs-state-lock-hardening/STATUS.md
+  s_1f26aa0e0711fa::t_46a95fd87216dc 1-46
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/STATUS.md
+  s_1f26aa0e0711fa::t_1558de215e54ec 1-66
+spine-tasks/SP-796-shrink-terminal-lock-sections/STATUS.md
+  s_1f26aa0e0711fa::t_8aca5f58364dbf 1-63
+spine-tasks/SP-803-docs-state-lock-hardening/PROMPT.md
+  s_1f26aa0e0711fa::t_d4796ab3ecd370 1-108
+spine-tasks/SP-793-bypass-owner-check-audit/PROMPT.md
+  s_1f26aa0e0711fa::t_889bdaa12cb0a4 1-55,64-146
+  s_1f26aa0e0711fa::t_3f15de8d997090 56-63
+spine-tasks/CONTEXT.md
+  s_1f26aa0e0711fa::t_f3e5aa28355551 3,5
+  s_1f26aa0e0711fa::t_e94450b9d80f23 2610-2640
+spine-tasks/SP-794-lock-steal-by-rename/STATUS.md
+  s_1f26aa0e0711fa::t_a1736eef3fb365 1-57
+spine-tasks/SP-795-durable-atomic-json-write/STATUS.md
+  s_1f26aa0e0711fa::t_dc72bcb2af67be 1-57
+spine-tasks/_authoring/release-v2.26.0/manifest.md
+  s_1f26aa0e0711fa::t_b9e6c10c27fcb9 8-10,12,18,23-141,144-180
+  s_1f26aa0e0711fa::t_da290ccaa4be99 142-143
+spine-tasks/SP-802-sequence-wait-deadline/PROMPT.md
+  s_1f26aa0e0711fa::t_9970c3aecdd592 1-24,26-134
+  s_1f26aa0e0711fa::t_13df11b940c122 25
+spine-tasks/dependencies.json
+  s_1f26aa0e0711fa::t_cfbfa8fe831211 2042-2044
+  s_1f26aa0e0711fa::t_e944ffbb3528c7 2016-2032,2034-2041,2045-2053
+  s_1f26aa0e0711fa::t_37a81bd81428e0 2033
+spine-tasks/SP-800-async-contract-verify/PROMPT.md
+  s_1f26aa0e0711fa::t_294eac7b68115a 1-146
+spine-tasks/SP-801-worker-pi-missing-fail-closed/STATUS.md
+  s_1f26aa0e0711fa::t_7d47541ea93f34 1-57
+spine-tasks/SP-792-archive-in-lock-state/PROMPT.md
+  s_1f26aa0e0711fa::t_cf1651117bdad2 1-125
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/PROMPT.md
+  s_1f26aa0e0711fa::t_3c4ef75c909d1a 1-138
+spine-tasks/SP-791-atomic-batch-state-update/STATUS.md
+  s_1f26aa0e0711fa::t_8a57084adaabcb 1-65
+spine-tasks/SP-793-bypass-owner-check-audit/STATUS.md
+  s_1f26aa0e0711fa::t_0b3d984f488c2a 1-64
+spine-tasks/SP-797-async-engine-lock-wait/STATUS.md
+  s_1f26aa0e0711fa::t_3bda248a1b2b04 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "37c572062b17b19ee08c11721ee1939cf247e28f",
+  "prompts": {},
+  "sessions": {
+    "s_1f26aa0e0711fa": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-fb50b1d0-c3eb-4d8e-9a44-c3da1094447b",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
