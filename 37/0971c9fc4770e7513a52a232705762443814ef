@@ -1,0 +1,19 @@
+src/batch/batch-meta-reconstruct.mjs
+  s_d5121617f6d91a::t_96f078d5f0949c 385-390
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "370971c9fc4770e7513a52a232705762443814ef",
+  "prompts": {},
+  "sessions": {
+    "s_d5121617f6d91a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-092131eb-6eb8-484d-9e01-fa314483ae47",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
