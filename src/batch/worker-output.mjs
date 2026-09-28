@@ -210,12 +210,7 @@ export function appendWorkerLiveLogChunk({ logPath, rawChunk, outputConfig }) {
 	fs.mkdirSync(path.dirname(logPath), { recursive: true });
 	fs.appendFileSync(logPath, redacted);
 
-	let size = 0;
-	try {
-		size = fs.statSync(logPath).size;
-	} catch {
-		return;
-	}
+	const size = fs.statSync(logPath, { throwIfNoEntry: false })?.size ?? 0;
 	if (size <= outputConfig.workerLiveLogMaxBytes * 2) return;
 
 	const capped = truncateLiveLogBytes(fs.readFileSync(logPath, "utf-8"), outputConfig.workerLiveLogMaxBytes);
