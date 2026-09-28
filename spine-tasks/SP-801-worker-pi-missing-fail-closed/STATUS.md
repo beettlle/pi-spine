@@ -1,6 +1,6 @@
 # SP-801: Worker fails closed when pi is missing — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 1
@@ -31,13 +31,15 @@
 - [x] `agentSession` case
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Batch suite
+- [x] Coverage gate
+- [x] Fix all failures
+
+**Evidence (2026-09-28):** `npm run lint` + `npm run typecheck` clean; contract testCommand 37/37 pass; `npm run test:batch` (stub=1) 1554/1554 pass; `npm run coverage:check` 2712/2712 pass, 89.89% line coverage (threshold 77%), exit 0.
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -57,6 +59,8 @@
 | 4 | Tests that delete/unset `SPINE_WORKER_STUB` but need **no** fix: `tests/doctor/stall-config.test.mjs`, `tests/doctor/batch-size-guidance.test.mjs` (`isStubWorkerMode` is env-keyed only), `tests/worker-tools/review-step-tool.test.mjs` (review CLI args), `tests/batch/worker-backend.test.mjs` agentSession test (guard excludes agentSession backend), `tests/batch/review.test.mjs` (review-failed precedence preserved). |
 | 5 | Launch-failure return shape: pre-spawn failures in `runWorker` return `{ ok: false, exitCode: 1, mode, output, classification, doneFound: false }` directly (see the `review.failed` return); post-spawn launch failures go through `buildWorkerFailureResult` (adds `workerOutputLogPath`/`workerOutputLogRef`). The new pre-spawn guard matches the direct shape, mirroring `review-step-run.mjs` fail-closed message style. |
 | 6 | `docs/adoption/operator-runbook.md` §3 "Worker backend default" reviewed — it documents only explicit `SPINE_WORKER_STUB=1` forcing the stub; no implicit-fallback text exists → no doc change needed. |
+| 7 | `scripts/run-coverage.mjs` (CI `coverage:check` entry) and the Contract testCommand both run with `SPINE_WORKER_STUB=1` ambient — the new fail-closed test explicitly deletes the var, so it passes under ambient-stub, no-stub, and pi-present invocations. |
+| 8 | Discovery #2 fix applied: `tests/batch/worker-spawn-errors.test.mjs` EACCES test now sets `SPINE_WORKER_STUB="1"` before its first `runWorker` call; duplicate set before the second call removed. No other test relied on the implicit fallback (all direct `runWorker` callers set the stub, run review-level>0 gate first, use execute-type prompts, or use the agentSession backend). |
 
 ## Blockers
 
