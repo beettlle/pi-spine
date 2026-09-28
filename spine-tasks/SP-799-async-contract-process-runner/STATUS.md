@@ -1,6 +1,6 @@
 # SP-799: Async contract shell runner — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -26,21 +26,23 @@
 - [x] Shared shell resolution (helper moved to contract-spawn.mjs; contract-exec.mjs 498→497 lines)
 
 ### Step 2: Tests
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Event-loop
-- [ ] Timeout grandchild
-- [ ] Output cap
-- [ ] Missing shell
+- [x] Event-loop
+- [x] Timeout grandchild
+- [x] Output cap
+- [x] Missing shell
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`eslint --max-warnings 0` clean)
+- [x] Contract `testCommand` (19/19 pass, incl. typecheck)
+- [x] Batch suite (`test:batch` 1556/1556 pass, 164 s)
+- [x] Coverage gate (`coverage:check` 89.99% ≥ 77%)
+- [x] Fix all failures — none needed
+
+testCommand run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT. GitNexus `detect_changes` vs main: 1 symbol touched (`runContractTestCommand`, helper-extraction only), 1 affected process (`verifyContract`) — matches Discovery #1.
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
