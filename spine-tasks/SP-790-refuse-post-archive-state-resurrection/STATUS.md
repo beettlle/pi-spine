@@ -1,7 +1,7 @@
 # SP-790: Refuse post-archive batch-state resurrection — Status
 
-**Current Step:** Step 5
-**Status:** 🟨 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done
 **Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
@@ -49,10 +49,10 @@
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Bypass-site classification logged
-- [ ] Create `.DONE`
+- [x] Bypass-site classification logged
+- [x] Create `.DONE`
 
 ---
 
@@ -71,3 +71,12 @@
 ## Blockers
 
 _None._
+
+## Verification Evidence
+
+- `npm run lint` — clean (exit 0)
+- `npm run typecheck` — clean (exit 0)
+- Contract `testCommand` — 53/53 pass
+- `npm run test:batch` (env -u worker vars) — 1555/1555 pass
+- `npm run coverage:check` (env -u worker vars) — matrix suite 2715/2715, line coverage 90.02% ≥ 77%, exit 0
+- `docs/adoption/operator-runbook.md` §4/§6 reviewed — not affected (operator flow unchanged; SP-803 owns v2.26.0 state docs)
