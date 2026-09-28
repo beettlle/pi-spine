@@ -38,9 +38,23 @@ export const CONTRACT_DEFAULTS = Object.freeze({
 	legacyTaskIdPrefixes: Object.freeze(["TP-"]),
 });
 
-/** @type {Readonly<{ cleanupWorktreesOnComplete: boolean }>} */
+/**
+ * Conflicted paths outside a lane File Scope that keep prefer-orch auto-resolution
+ * (SP-798 / #304). A conflicted path outside File Scope is only auto-resolved when
+ * it matches one of these globs — and the discarded lane blob is journaled; every
+ * other out-of-scope conflict fails closed so lane-committed work is never silently
+ * discarded.
+ */
+const OUT_OF_SCOPE_MERGE_ALLOW_LIST_DEFAULT = Object.freeze([
+	".spine/rules-manifest.json",
+	"package-lock.json",
+	"**/package-lock.json",
+]);
+
+/** @type {Readonly<{ cleanupWorktreesOnComplete: boolean; outOfScopeMergeAllowList: readonly string[] }>} */
 export const LANES_DEFAULTS = Object.freeze({
 	cleanupWorktreesOnComplete: true,
+	outOfScopeMergeAllowList: OUT_OF_SCOPE_MERGE_ALLOW_LIST_DEFAULT,
 });
 
 /** @type {Readonly<{ isolatedWorktree: boolean; allowHumanOnBaseBranch: "warn" | "block" | "allow" }>} */

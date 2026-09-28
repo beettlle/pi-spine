@@ -1,8 +1,8 @@
 # SP-799: Async contract shell runner — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Done
+**Status:** ✅ Complete
+**Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,42 +11,44 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Current runner read
-- [ ] Tree-kill behavior confirmed
-- [ ] Dependencies satisfied
+- [x] Current runner read
+- [x] Tree-kill behavior confirmed
+- [x] Dependencies satisfied
 
 ### Step 1: `runShellCommandAsync`
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detached spawn + capped capture
-- [ ] Timeout tree-kill
-- [ ] Spawn errors → 127
-- [ ] Shared shell resolution
+- [x] Detached spawn + capped capture
+- [x] Timeout tree-kill
+- [x] Spawn errors → 127
+- [x] Shared shell resolution (helper moved to contract-spawn.mjs; contract-exec.mjs 498→497 lines)
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Event-loop
-- [ ] Timeout grandchild
-- [ ] Output cap
-- [ ] Missing shell
+- [x] Event-loop
+- [x] Timeout grandchild
+- [x] Output cap
+- [x] Missing shell
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`eslint --max-warnings 0` clean)
+- [x] Contract `testCommand` (19/19 pass, incl. typecheck)
+- [x] Batch suite (`test:batch` 1556/1556 pass, 164 s)
+- [x] Coverage gate (`coverage:check` 89.99% ≥ 77%)
+- [x] Fix all failures — none needed
+
+testCommand run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT. GitNexus `detect_changes` vs main: 1 symbol touched (`runContractTestCommand`, helper-extraction only), 1 affected process (`verifyContract`) — matches Discovery #1.
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -54,6 +56,9 @@
 
 | # | Finding |
 |---|---------|
+| 1 | GitNexus impact on `runContractTestCommand` = HIGH (5 upstream, 3 processes via `verifyContract`). Mitigated: change to it is behavior-preserving helper extraction only; existing contract tests lock behavior. |
+| 2 | Step 3 `detect_changes` vs main: 1 symbol touched (`runContractTestCommand`), 1 affected process (`verifyContract`) — no unexpected blast radius. |
+| 3 | `terminateProcessTree`'s POSIX negative-pid group kill requires a group leader; `detached: true` on spawn makes the child the leader, so the SIGTERM reaches `sleep 30 &` grandchildren without tree-walk races. |
 
 ## Blockers
 

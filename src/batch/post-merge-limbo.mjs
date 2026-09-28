@@ -23,6 +23,7 @@ import {
 	recordBatchEnginePid,
 	saveSpineBatchState,
 } from "./state.mjs";
+import { isBatchArchived } from "./state-guards.mjs";
 
 export { isPostMergeLimbo } from "./limbo-detect.mjs";
 export { hydrateMergeResultsFromJournal, isLastWaveIndex } from "./post-merge-finalize.mjs";
@@ -382,6 +383,35 @@ export function finalizeBatchForIntegrate({
 		batchId,
 		batchState: { ...state, phase: "completed" },
 	});
+
+	// Late-finalize no-op after archive (#293 / SP-790): the operator can run
+	// gate approve → integrate → batch complete while extended evidence collection
+	// above is still running. `batch complete` archives and removes the active state
+	// file; persisting from this late path would resurrect a phantom completed batch
+	// that blocks the next `spine batch start`. Skip the land-loop finalize and the
+	// final save — the write guard would reject the write anyway — and journal the
+	// skip so the no-op is visible instead of silent.
+	const activeStateAfterGate = loadSpineBatchState(projectRoot);
+	if (!activeStateAfterGate.raw && isBatchArchived(projectRoot, batchId)) {
+		appendJournalEvent(projectRoot, batchId, "batch.late_finalize_skipped", {
+			batchId,
+			reason: "archived",
+		});
+		return {
+			ok: true,
+			exitCode: 0,
+			batchId,
+			taskIds,
+			taskId: taskIds.length === 1 ? taskIds[0] : undefined,
+			orchBranch,
+			mergeCommit: state.mergeResults?.at(-1)?.mergeCommit,
+			gateResult,
+			lateFinalizeSkipped: "archived",
+			output:
+				`Batch ${batchId} archived while finalizing: ${summaryTask} succeeded; merged to ${orchBranch}.\n` +
+				"  → late land-loop finalize skipped — batch already completed and archived\n",
+		};
+	}
 
 	// Always mark completed in memory before ensure so a prior land-loop journal
 	// (e.g. start then pause/resume) still persists phase: completed on disk.

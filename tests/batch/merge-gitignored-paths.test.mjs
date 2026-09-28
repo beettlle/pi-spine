@@ -79,6 +79,17 @@ test("gitAddFilteredPaths skips gitignored paths without failing", async () => {
 test("mergeLaneToOrch succeeds when task branch committed gitignored coverage", async () => {
 	const projectRoot = await initGitRepo("spine-merge-gitignored-coverage-");
 	try {
+		// SP-798 / #304: out-of-scope conflicts fail closed unless allow-listed; this
+		// fixture intentionally keeps prefer-orch behavior for force-added coverage drift.
+		const configPath = path.join(projectRoot, ".spine", "spine-config.json");
+		const configJson = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+		configJson.lanes = {
+			...(configJson.lanes ?? {}),
+			outOfScopeMergeAllowList: ["extension/coverage/lcov-report/index.html"],
+		};
+		fs.writeFileSync(configPath, JSON.stringify(configJson, null, 2), "utf-8");
+		execCommit(projectRoot, "allow-list coverage drift");
+
 		const batchId = "20260619T234638";
 		const orchBranch = `orch/spine-${batchId}`;
 		const laneBranch = `task/spine-lane-3-${batchId}`;

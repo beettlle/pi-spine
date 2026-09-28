@@ -183,10 +183,12 @@ export async function runWorker({
 		return { ok: true, exitCode: 0, mode: "already-done" };
 	}
 
-	const useStub =
-		process.env.SPINE_WORKER_STUB === "1" ||
-		process.env.SPINE_WORKER_STUB === "true" ||
-		(!commandExists("pi") && resolveWorkerBackend(config) !== "agentSession");
+	const stubExplicit =
+		process.env.SPINE_WORKER_STUB === "1" || process.env.SPINE_WORKER_STUB === "true";
+	// #299 (SP-801): the stub is opt-in only. The old implicit fallback
+	// (missing `pi` → stub) could mark review-level-0 tasks done with no work
+	// when PATH lacked `pi`; the fail-closed guard below replaces it.
+	const useStub = stubExplicit;
 
 	const workerBackend = useStub ? "subprocess" : resolveWorkerBackend(config);
 	const workerMode = useStub ? "stub" : workerBackend === "agentSession" ? "agentSession" : "pi";
@@ -228,6 +230,32 @@ export async function runWorker({
 
 	const isExecute = parsedPrompt?.type === "execute";
 	const runCommand = contract.runCommand || contract.testCommand;
+
+	// #299 (SP-801): fail closed when the pi CLI is missing rather than silently
+	// falling back to the stub. Placed after the review gate so review-tool
+	// unavailability keeps its `review_failed` precedence, and scoped to
+	// non-execute tasks (execute-only runs the contract command, never `pi`);
+	// agentSession workers spawn in-process and never consult PATH for `pi`.
+	if (!stubExplicit && !isExecute && workerBackend !== "agentSession" && !commandExists("pi")) {
+		if (projectRoot && batchId) {
+			appendJournalEvent(projectRoot, batchId, "worker.spawn_failed", {
+				taskId,
+				laneNumber,
+				correlationId: laneCorrelationId,
+				reason: "pi_missing",
+				phase: "preflight",
+			});
+		}
+		return {
+			ok: false,
+			exitCode: 1,
+			mode: workerMode,
+			output:
+				"worker requires pi on PATH (fail closed); set SPINE_WORKER_STUB=1 only for stub runs",
+			classification: "launch_failed",
+			doneFound: false,
+		};
+	}
 
 	const child = isExecute
 		? spawnExecutionOnlyHandle({

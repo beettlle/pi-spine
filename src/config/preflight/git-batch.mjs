@@ -4,6 +4,9 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadSpineConfig } from "../spine-config-load.mjs";
 import { runReconciliationCheck } from "../../batch/reconcile.mjs";
+import { isBatchArchived } from "../../batch/state-guards.mjs";
+import { loadGateRecord } from "../../batch/gate-evidence-read.mjs";
+import { readJournalEvents } from "../../batch/journal.mjs";
 import {
 	isRulesManifestGeneratedAtOnlyDrift,
 	RULES_MANIFEST_REL_PATH,
@@ -128,6 +131,33 @@ function isHealthyActiveBatch(batchState) {
 	if (phase && HEALTHY_ACTIVE_PHASES.has(String(phase))) return true;
 	if (batchState.endedAt == null && batchState.batchId) return true;
 	return false;
+}
+
+/**
+ * A terminal `completed` batch-state whose archive already exists (a phantom
+ * recreated by a late land-loop write, #293) or whose integrate gate was
+ * approved / integrate already ran needs `spine batch complete` to archive and
+ * clear the file — never a self-referential `spine preflight` suggestion
+ * (SP-790 / #293).
+ *
+ * @param {string} projectRoot
+ * @param {object} batchState
+ */
+function completedBatchNeedsBatchComplete(projectRoot, batchState) {
+	const phase = String(batchState?.phase ?? batchState?.status ?? "");
+	if (phase !== "completed") return false;
+	const batchId = String(batchState?.batchId ?? batchState?.id ?? "");
+	if (!batchId) return false;
+	if (isBatchArchived(projectRoot, batchId)) return true;
+	const gate = loadGateRecord(projectRoot, batchId);
+	if (gate && String(gate.status ?? "") === "approved") return true;
+	try {
+		return readJournalEvents(projectRoot, batchId).some(
+			(event) => event.type === "integrate.completed",
+		);
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -293,6 +323,23 @@ export function checkNoActiveBatch(ctx) {
 					headline: reconciliation.headline,
 				},
 				suggestedCommand: reconciliation.suggestedCommand ?? "/spine-resume --force",
+			},
+		);
+	}
+
+	if (completedBatchNeedsBatchComplete(ctx.projectRoot, batchState)) {
+		const batchId = batchState.batchId ?? batchState.id ?? "unknown";
+		return makeCheck(
+			"no-active-batch",
+			false,
+			`completed batch ${batchId} awaiting archive`,
+			{
+				details: {
+					batchStatePath: path.relative(ctx.projectRoot, batchStatePath),
+					batchId,
+					phase: "completed",
+				},
+				suggestedCommand: "spine batch complete",
 			},
 		);
 	}
