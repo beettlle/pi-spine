@@ -452,7 +452,7 @@ export async function resumeBatch({ projectRoot, force = false }) {
 		taskBranch,
 		orchBranch,
 	});
-	const merge = mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranch, batchId });
+	const merge = mergeLaneToOrch({ projectRoot, baseBranch, orchBranch, taskBranch, batchId, laneFileScopePaths: fileScopePaths });
 	if (!merge.ok) {
 		state.endedAt = Date.now();
 		state.lastError = merge.error ?? "merge failed";
