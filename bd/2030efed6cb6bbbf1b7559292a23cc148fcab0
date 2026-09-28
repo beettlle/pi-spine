@@ -1,0 +1,30 @@
+cur_exec.mjs
+  h_2a17159c706ba1 1-497
+prev_exec.mjs
+  h_2a17159c706ba1 1-497
+spine-tasks/SP-799-async-contract-process-runner/.reviews/0-20260928T153448.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-799-async-contract-process-runner/.reviews/4-20260928T153527.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-799-async-contract-process-runner/.reviews/final-20260928T153757.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-799-async-contract-process-runner/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-26,29,31-34,37,39-45,48,50-51,59-61
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 29,170
+src/batch/contract-spawn.mjs
+  h_2a17159c706ba1 1-224
+tests/batch/contract-spawn.test.mjs
+  h_2a17159c706ba1 1-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bd2030efed6cb6bbbf1b7559292a23cc148fcab0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
