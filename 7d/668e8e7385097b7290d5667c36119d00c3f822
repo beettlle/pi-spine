@@ -1,0 +1,16 @@
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-19,63-66
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/_repro.mjs
+  h_2a17159c706ba1 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7d668e8e7385097b7290d5667c36119d00c3f822",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
