@@ -1,6 +1,6 @@
 # SP-798: Lane merge out-of-scope fail-closed — Status
 
-**Current Step:** 4
+**Current Step:** 5
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -40,16 +40,16 @@
 - [x] Resume parity
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Batch suite
+- [x] Coverage gate
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Discoveries logged
 - [ ] Create `.DONE`
@@ -70,6 +70,8 @@
 | 8 | Step 1+2 implementation: `tryAutoResolveMergeConflicts` loads the allow-list via `loadSpineConfig` (defaults fill via `applyConfigDefaults`, verified on a runInit temp repo), derives laneNumber from the branch name, and returns `discardedOutOfScope`; `mergeLaneToOrch` classifies zero-unmerged-path merge failures as `MergeFailed` with piped stderr (`err.stderr` Buffer) and propagates `discardedOutOfScope`; `mergeWaveLanesToOrch` journals `batch.merge_out_of_scope_discarded` `{laneNumber, taskBranch, paths, laneBlobs}`. `resume.mjs` single-line parity fix keeps it at 498 lines. |
 | 9 | `tests/batch/merge-gitignored-paths.test.mjs` test 3 fixed per discovery #4 by committing `lanes.outOfScopeMergeAllowList: ["extension/coverage/lcov-report/index.html"]` into the fixture's `.spine/spine-config.json` before branching — 10/10 pass. |
 | 10 | Test-fixture pitfalls: PROMPT heading validation requires task IDs matching `PREFIX-###` (digits only — `SP-799J` fails parse); `appendJournalEvent` lifts `laneNumber` into the `laneId` meta (META_KEYS) so the discard event passes an explicit `payload: {laneNumber, taskBranch, paths, laneBlobs}` to keep `laneNumber` queryable; wave-merge fixtures need an absolute `taskFolder` (relative paths resolve against process cwd, fine in production where engine cwd = projectRoot); lane worktrees must be provisioned before orch advances or both-sided edits cannot conflict. |
+| 11 | Step 4 verification evidence (2026-09-28, `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset): `npm run lint` clean (max-warnings 0); Contract `testCommand` (lint + typecheck + lane-merge-out-of-scope + engine tests) 18/18 pass; `npm run test:batch` 1555/1555 pass; `npm run coverage:check` **90.04% line coverage ≥ 77% threshold**. First coverage attempt hit the known Node test-runner flake (`Warning: Could not report code coverage … coverage file is empty`, node v26.10.0) with all 2713 tests passing — clean retry reproduced nothing; small-scope coverage table parses fine, confirming infra flake not a code defect. |
+| 12 | Runbook §4.1 "Check If Affected" reviewed: its lane-merge table never documented out-of-scope auto-resolution — the "Other files" row (resolve in lane worktree, commit, resume) stays valid guidance for the new fail-closed case. Allow-list/`MergeFailed` documentation is owned by SP-803 (PROMPT Must Update: none). GitNexus `detect_changes` vs main: 15 symbols, all inside File Scope + the discovery-#4 fixture; medium risk as expected. |
 
 ## Blockers
 
