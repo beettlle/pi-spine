@@ -1,0 +1,19 @@
+src/batch/worker-output.mjs
+  s_13e0e59146a3f6::t_f87f89d4533e38 213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "779551543bf1e6fad78f1031ea65174981fe054a",
+  "prompts": {},
+  "sessions": {
+    "s_13e0e59146a3f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0e8219c3-aeec-4606-aa1f-838e38ee9f54",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
