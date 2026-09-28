@@ -1,0 +1,18 @@
+spine-tasks/SP-801-worker-pi-missing-fail-closed/STATUS.md
+  h_2a17159c706ba1 3,27,29-31
+tests/batch/worker-host-pi-missing.test.mjs
+  h_2a17159c706ba1 1-195
+tests/batch/worker-spawn-errors.test.mjs
+  h_2a17159c706ba1 53-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2584a3e278035333266560781a4408a1acb7b502",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
