@@ -1,7 +1,7 @@
 # SP-799: Async contract shell runner — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
@@ -45,10 +45,10 @@
 testCommand run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT. GitNexus `detect_changes` vs main: 1 symbol touched (`runContractTestCommand`, helper-extraction only), 1 affected process (`verifyContract`) — matches Discovery #1.
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -57,6 +57,8 @@ testCommand run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT. G
 | # | Finding |
 |---|---------|
 | 1 | GitNexus impact on `runContractTestCommand` = HIGH (5 upstream, 3 processes via `verifyContract`). Mitigated: change to it is behavior-preserving helper extraction only; existing contract tests lock behavior. |
+| 2 | Step 3 `detect_changes` vs main: 1 symbol touched (`runContractTestCommand`), 1 affected process (`verifyContract`) — no unexpected blast radius. |
+| 3 | `terminateProcessTree`'s POSIX negative-pid group kill requires a group leader; `detached: true` on spawn makes the child the leader, so the SIGTERM reaches `sleep 30 &` grandchildren without tree-walk races. |
 
 ## Blockers
 
