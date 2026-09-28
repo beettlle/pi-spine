@@ -1,7 +1,7 @@
 # SP-798: Lane merge out-of-scope fail-closed — Status
 
 **Current Step:** 5
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
@@ -49,10 +49,10 @@
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -72,6 +72,7 @@
 | 10 | Test-fixture pitfalls: PROMPT heading validation requires task IDs matching `PREFIX-###` (digits only — `SP-799J` fails parse); `appendJournalEvent` lifts `laneNumber` into the `laneId` meta (META_KEYS) so the discard event passes an explicit `payload: {laneNumber, taskBranch, paths, laneBlobs}` to keep `laneNumber` queryable; wave-merge fixtures need an absolute `taskFolder` (relative paths resolve against process cwd, fine in production where engine cwd = projectRoot); lane worktrees must be provisioned before orch advances or both-sided edits cannot conflict. |
 | 11 | Step 4 verification evidence (2026-09-28, `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset): `npm run lint` clean (max-warnings 0); Contract `testCommand` (lint + typecheck + lane-merge-out-of-scope + engine tests) 18/18 pass; `npm run test:batch` 1555/1555 pass; `npm run coverage:check` **90.04% line coverage ≥ 77% threshold**. First coverage attempt hit the known Node test-runner flake (`Warning: Could not report code coverage … coverage file is empty`, node v26.10.0) with all 2713 tests passing — clean retry reproduced nothing; small-scope coverage table parses fine, confirming infra flake not a code defect. |
 | 12 | Runbook §4.1 "Check If Affected" reviewed: its lane-merge table never documented out-of-scope auto-resolution — the "Other files" row (resolve in lane worktree, commit, resume) stays valid guidance for the new fail-closed case. Allow-list/`MergeFailed` documentation is owned by SP-803 (PROMPT Must Update: none). GitNexus `detect_changes` vs main: 15 symbols, all inside File Scope + the discovery-#4 fixture; medium risk as expected. |
+| 13 | Delivery self-review (Review Level 2): committed diff re-inspected against Mission items 1–7 — resolver message matches PROMPT verbatim; `mergeLaneToOrch` propagates `discardedOutOfScope` on every success return path; journal event payload carries `{laneNumber, taskBranch, paths, laneBlobs}`; `tryAutoResolveMergeConflicts` error keeps the `automatic resolution supports` phrase (rules-manifest-merge.test.mjs:231 dependency); resume.mjs 498 lines ≤ 500. Integrate path untouched (deprecated wrapper has no file scope → out-of-scope branch unreachable there). Plan-review checkpoint at step 5 returned `skipped` (engine reviews post-.DONE). |
 
 ## Blockers
 
