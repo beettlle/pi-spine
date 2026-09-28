@@ -1,6 +1,6 @@
 # SP-790: Refuse post-archive batch-state resurrection — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 2
@@ -27,10 +27,10 @@
 - [x] `isBatchArchived` exported
 
 ### Step 2: Late finalize + preflight suggestion
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Late finalize skipped after archive
-- [ ] Preflight suggests `spine batch complete`
+- [x] Late finalize skipped after archive
+- [x] Preflight suggests `spine batch complete`
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -65,6 +65,7 @@
 | 3 | Tests pinning guard/bypass behavior: `batch-state-stale-writer.test.mjs` (resurrection rejected for phase `running`; stale_engine_pid), `engine-liveness-starttime.test.mjs` (calls `evaluateBatchStateWriteGuard` directly, 2-arg form), `batch-state-lock.test.mjs:69`, `batch-state-handoff.test.mjs:89`, `sequence-detached-poll.test.mjs:163`, `pause-phase-persistence.test.mjs:107`, `pause-retry-guard.test.mjs:133` (all bypass writes on live batches — unaffected). |
 | 4 | No import cycle: `journal.mjs` imports only node builtins + `journal-checksum.mjs` + `../util/secret-redact.mjs`; neither reaches `state-io.mjs`. Direct import of `appendJournalEvent` in `state-io.mjs` is safe. |
 | 5 | GitNexus impact: `saveSpineBatchState` upstream blast radius is **CRITICAL** (47 direct callers / 30 processes) — expected, the guard sits under every state write. Semantic delta is narrow: new rejection only fires when the state file is absent AND the archive exists AND `allowArchivedResurrection` is unset; all 16 owner-bypass sites write live batches with the state file present (Discovery #2), so their behavior is unchanged. `ensureForceResumeBatchState` impact is LOW (2 callers). Mitigated by full contract suite in Step 4. |
+| 6 | GitNexus impact: `finalizeBatchForIntegrate` is **HIGH** (3 direct callers: startBatch, tryFinalizePostMergeLimbo, finalizeResumedBatchForIntegrate). The added branch is an early return that fires only when the archive exists AND the live state file is absent — unreachable in normal flow since all callers operate on a live loaded state. `checkNoActiveBatch` is LOW (runBatchPreflight + tests). post-merge-limbo + preflight suites pass after the change. |
 ## Blockers
 
 _None._
