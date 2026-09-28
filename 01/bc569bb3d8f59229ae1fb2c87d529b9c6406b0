@@ -1,0 +1,46 @@
+spine-tasks/SP-791-atomic-batch-state-update/PROMPT.md
+  s_d5121617f6d91a::t_d9fdc8b424f589 51
+  s_d5121617f6d91a::t_da75b6cb560a88 129
+spine-tasks/SP-793-bypass-owner-check-audit/PROMPT.md
+  s_d5121617f6d91a::t_48385c43c58d7d 69
+  s_d5121617f6d91a::t_1601dc0454ce60 146
+spine-tasks/SP-792-archive-in-lock-state/PROMPT.md
+  s_d5121617f6d91a::t_7370681a0d246d 49
+  s_d5121617f6d91a::t_e10531b6a63f75 125
+spine-tasks/SP-794-lock-steal-by-rename/PROMPT.md
+  s_d5121617f6d91a::t_a98f797e813da3 116
+  s_d5121617f6d91a::t_dd516293cd2950 49
+spine-tasks/SP-797-async-engine-lock-wait/PROMPT.md
+  s_d5121617f6d91a::t_a0fb2ecb18ce87 133
+  s_d5121617f6d91a::t_8fbc85022b8123 54
+spine-tasks/SP-800-async-contract-verify/PROMPT.md
+  s_d5121617f6d91a::t_df95b990604943 146
+  s_d5121617f6d91a::t_284553d6fbc573 67
+spine-tasks/_authoring/release-v2.26.0/manifest.md
+  s_d5121617f6d91a::t_9c1c57c91c82c7 146-156
+spine-tasks/SP-796-shrink-terminal-lock-sections/PROMPT.md
+  s_d5121617f6d91a::t_0b0d119f7db50b 49
+  s_d5121617f6d91a::t_65940e17e884b0 123
+spine-tasks/SP-795-durable-atomic-json-write/PROMPT.md
+  s_d5121617f6d91a::t_7518405b3969a3 109
+  s_d5121617f6d91a::t_d4aad654244cc8 44
+spine-tasks/SP-802-sequence-wait-deadline/PROMPT.md
+  s_d5121617f6d91a::t_454e41c70c4ca9 55
+  s_d5121617f6d91a::t_94b20521d16ef2 134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "01bc569bb3d8f59229ae1fb2c87d529b9c6406b0",
+  "prompts": {},
+  "sessions": {
+    "s_d5121617f6d91a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-092131eb-6eb8-484d-9e01-fa314483ae47",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
