@@ -1,8 +1,8 @@
 # SP-799: Async contract shell runner — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,22 +11,22 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Current runner read
-- [ ] Tree-kill behavior confirmed
-- [ ] Dependencies satisfied
+- [x] Current runner read
+- [x] Tree-kill behavior confirmed
+- [x] Dependencies satisfied
 
 ### Step 1: `runShellCommandAsync`
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detached spawn + capped capture
-- [ ] Timeout tree-kill
-- [ ] Spawn errors → 127
-- [ ] Shared shell resolution
+- [x] Detached spawn + capped capture
+- [x] Timeout tree-kill
+- [x] Spawn errors → 127
+- [x] Shared shell resolution (helper moved to contract-spawn.mjs; contract-exec.mjs 498→497 lines)
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Event-loop
 - [ ] Timeout grandchild
@@ -54,6 +54,7 @@
 
 | # | Finding |
 |---|---------|
+| 1 | GitNexus impact on `runContractTestCommand` = HIGH (5 upstream, 3 processes via `verifyContract`). Mitigated: change to it is behavior-preserving helper extraction only; existing contract tests lock behavior. |
 
 ## Blockers
 
