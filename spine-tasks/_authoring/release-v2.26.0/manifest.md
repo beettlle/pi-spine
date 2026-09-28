@@ -151,6 +151,11 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - 15:26 UTC: `spine batch retry` ×4 + `spine batch resume`. SP-790, SP-799 completed with plan/code/final review and `contract.verified`. SP-798 hit the 429 limit again at 15:58 (reset 2026-09-29 04:26:47 UTC+8 = 20:26 UTC); partial work kept in lane 2.
 - **SP-801 completed through a leaked stub verdict**: its contract test run (`review.test.mjs`, direct `node --test`) wrote a stub final `PASS` into the live journal; the engine honored it (`honorSource: "journal"`) and skipped contract verification. Filed [#328](https://github.com/beettlle/pi-spine/issues/328). Operator re-ran the SP-801 contract in the lane-4 worktree: lint + typecheck exit 0, 43/43 tests pass; diff reviewed against the packet.
 - Mitigation: SP-791–SP-797, SP-800, SP-802 Contract `testCommand` now set `SPINE_SUPPRESS_JOURNAL_ATTACH=1` (Amendments recorded in each PROMPT).
+- 21:35 UTC: SP-798 retried after quota reset; completed with plan/code/final review and `contract.verified`. Wave merged 21:57.
+- 22:03 UTC: waited for `gate.evidence_completed` before approving (avoids #293 on the pre-fix engine). Gate evidence test count (2709) matched the pre-release baseline, so it likely ran against `main`, not orch — verified independently post-integrate.
+- Integrated as `92a53711`; `spine batch complete` archived the batch and `.spine/batch-state.json` was not recreated.
+- Post-integrate `npm run release:check` on `main`: 2727 pass / 0 fail, line coverage 90.07%, exit 0 — log `/tmp/pi-spine-v2.26-wave1.log`.
+- Paused after wave 1 at operator request (peak model pricing). Next: wave 2 `SP-791,SP-792,SP-793,SP-800`.
 
 ---
 
