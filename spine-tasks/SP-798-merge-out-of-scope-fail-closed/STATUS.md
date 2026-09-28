@@ -1,8 +1,8 @@
 # SP-798: Lane merge out-of-scope fail-closed — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reproduce discard
-- [ ] Consumers listed
-- [ ] Dependencies satisfied
+- [x] Reproduce discard
+- [x] Consumers listed
+- [x] Dependencies satisfied
 
 ### Step 1: Allow-list + fail-closed resolver
 **Status:** ⬜ Not Started
@@ -60,6 +60,13 @@
 
 | # | Finding |
 |---|---------|
+| 1 | Repro (temp repo, `/tmp/sp798-repro/repro.mjs`): both sides edit out-of-scope `parallel.ts` → `mergeLaneToOrch` returns `ok:true`, lane blob (`v = 99`) silently discarded, 0 journal events, no discard field. |
+| 2 | Consumers of current shapes: `engine.mjs:417` + `resume-multi.mjs:209` (via `mergeWaveLanesToOrch`), `resume.mjs:455` (calls without `laneFileScopePaths`), `integrate-worktree.mjs:12` (deprecated `tryAutoResolveRulesManifestMergeConflict` wrapper — no file scope passed, out-of-scope branch unreachable → integrate unaffected). |
+| 3 | GitNexus impact: `mergeLaneToOrch` LOW (2 direct callers); `tryAutoResolveMergeConflicts` flagged HIGH because shared, but the out-of-scope branch is only reachable from lane→orch merges with file scope — blast radius confined as intended. |
+| 4 | `tests/batch/merge-gitignored-paths.test.mjs` test 3 (`extension/coverage/lcov-report/index.html` real out-of-scope conflict) relies on prefer-orch auto-resolution → under fail-closed it must configure `lanes.outOfScopeMergeAllowList` in the fixture. Consequential edit outside File Scope; required by Step 4 "fix all failures". |
+| 5 | `tests/batch/rules-manifest-merge.test.mjs:231` asserts generic conflict error matches `/automatic resolution supports/` — new error text must keep that phrase. |
+| 6 | `tests/helpers/git-fixture.mjs` `initGitRepo` runs spine init → temp repos have `.spine/spine-config.json`, so `loadSpineConfig` succeeds there and `applyConfigDefaults` fills the new `lanes.outOfScopeMergeAllowList` default. |
+| 7 | `minimalValidPromptMarkdown` helper (tests/helpers/smoke-task-prompt.mjs) supports custom `fileScope` — used for the `mergeWaveLanesToOrch` journal test task folder. |
 
 ## Blockers
 
