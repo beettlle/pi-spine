@@ -1,0 +1,19 @@
+spine-tasks/SP-799-async-contract-process-runner/.reviews/0-20260928T153448.md
+  s_c06477d51089a8::t_1a114061ed9330 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "89a85e098180cad222577b8b25630847da32af91",
+  "prompts": {},
+  "sessions": {
+    "s_c06477d51089a8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-bc2dcdf4-47c6-4f98-9f66-173f306a24a8",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
