@@ -1,0 +1,18 @@
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/.reviews/0-20260928T155639.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/.reviews/5-20260928T155706.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/.reviews/final-20260928T155821.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7265822943e59f109389908d5794bd5ac19c24da",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
