@@ -1,8 +1,8 @@
 # SP-790: Refuse post-archive batch-state resurrection — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 1
+**Status:** 🟨 In Progress
+**Last Updated:** 2026-09-28
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,12 +11,12 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Reproduce #293
-- [ ] List + classify `bypassWriteGuard: true` sites
-- [ ] List tests pinning guard behavior
-- [ ] Dependencies satisfied
+- [x] Reproduce #293 (see Discoveries #1)
+- [x] List + classify `bypassWriteGuard: true` sites (see Discoveries #2)
+- [x] List tests pinning guard behavior (see Discoveries #3)
+- [x] Dependencies satisfied (none declared)
 
 ### Step 1: Guard + bypass semantics + rejected-write journal
 **Status:** ⬜ Not Started
@@ -60,7 +60,10 @@
 
 | # | Finding |
 |---|---------|
-
+| 1 | #293 reproduced via `spine-tasks/SP-790-refuse-post-archive-state-resurrection/_repro.mjs`: after archive+remove, `evaluateBatchStateWriteGuard` returns `{allowed:true}` for an incoming `completed` phase, and `saveSpineBatchState(..., {bypassWriteGuard:true})` recreates `.spine/batch-state.json` with phase `completed`. |
+| 2 | `bypassWriteGuard: true` site classification (17 sites): **owner-bypass only** — `attached-runner-reconcile.mjs:232`, `attached-runner-promote.mjs:459`, `resume-gate-reopen.mjs:34`, `pause.mjs:88/186/201`, `resume-multi.mjs:77`, `parent-session-monitor.mjs:143`, `post-merge-limbo.mjs:171/244/269/378/401`, `detached-wait.mjs:182`, `attached-engine-handoff.mjs:123/148` (all write a live batch whose state file exists on disk — resurrection branch does not apply). **Intentional resurrection** — `batch-meta-reconstruct.mjs:385` only (force-resume rebuilds state from batch-meta when live state is missing/corrupt, #126) → gets `allowArchivedResurrection: true`. |
+| 3 | Tests pinning guard/bypass behavior: `batch-state-stale-writer.test.mjs` (resurrection rejected for phase `running`; stale_engine_pid), `engine-liveness-starttime.test.mjs` (calls `evaluateBatchStateWriteGuard` directly, 2-arg form), `batch-state-lock.test.mjs:69`, `batch-state-handoff.test.mjs:89`, `sequence-detached-poll.test.mjs:163`, `pause-phase-persistence.test.mjs:107`, `pause-retry-guard.test.mjs:133` (all bypass writes on live batches — unaffected). |
+| 4 | No import cycle: `journal.mjs` imports only node builtins + `journal-checksum.mjs` + `../util/secret-redact.mjs`; neither reaches `state-io.mjs`. Direct import of `appendJournalEvent` in `state-io.mjs` is safe. |
 ## Blockers
 
 _None._
