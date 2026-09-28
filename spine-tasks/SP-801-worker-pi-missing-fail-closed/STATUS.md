@@ -1,7 +1,7 @@
 # SP-801: Worker fails closed when pi is missing — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-28
 **Review Level:** 1
 **Review Counter:** 0
@@ -42,10 +42,10 @@
 **Evidence (2026-09-28):** `npm run lint` + `npm run typecheck` clean; contract testCommand 37/37 pass; `npm run test:batch` (stub=1) 1554/1554 pass; `npm run coverage:check` 2712/2712 pass, 89.89% line coverage (threshold 77%), exit 0.
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -61,6 +61,7 @@
 | 6 | `docs/adoption/operator-runbook.md` §3 "Worker backend default" reviewed — it documents only explicit `SPINE_WORKER_STUB=1` forcing the stub; no implicit-fallback text exists → no doc change needed. |
 | 7 | `scripts/run-coverage.mjs` (CI `coverage:check` entry) and the Contract testCommand both run with `SPINE_WORKER_STUB=1` ambient — the new fail-closed test explicitly deletes the var, so it passes under ambient-stub, no-stub, and pi-present invocations. |
 | 8 | Discovery #2 fix applied: `tests/batch/worker-spawn-errors.test.mjs` EACCES test now sets `SPINE_WORKER_STUB="1"` before its first `runWorker` call; duplicate set before the second call removed. No other test relied on the implicit fallback (all direct `runWorker` callers set the stub, run review-level>0 gate first, use execute-type prompts, or use the agentSession backend). |
+| 9 | Delivery note: `.spine/rules-manifest.json` was re-timestamped by spine tooling during the session; restored via `git checkout` to honor the Do-NOT on `.spine/`. Final diff vs main: `src/batch/worker-host.mjs`, `tests/batch/worker-host-pi-missing.test.mjs`, `tests/batch/worker-spawn-errors.test.mjs` (Discovery #2 fix), task STATUS.md, and the engine plan-review artifact. |
 
 ## Blockers
 
