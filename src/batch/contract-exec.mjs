@@ -26,6 +26,7 @@ import {
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
+import { resolveContractShellInvocation } from "./contract-spawn.mjs";
 
 // Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
 function refusedBeforeSpawnResult(/** @type {string} */ summary) {
@@ -166,9 +167,7 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	}
 
 	const maxBuffer = options.maxBuffer ?? CONTRACT_TEST_COMMAND_MAX_BUFFER;
-	const shell = process.env.SHELL || (process.platform === "win32" ? "cmd.exe" : "/bin/sh");
-	const shellFlag = process.platform === "win32" ? "/c" : "-c";
-	const result = spawnSync(shell, [shellFlag, trimmed], {
+	const result = spawnSync(...resolveContractShellInvocation(trimmed), {
 		cwd: worktreePath,
 		env: buildContractTestEnv(),
 		encoding: "utf-8",
