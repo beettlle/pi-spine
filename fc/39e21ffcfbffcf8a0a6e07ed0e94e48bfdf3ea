@@ -1,0 +1,19 @@
+spine-tasks/SP-790-refuse-post-archive-state-resurrection/STATUS.md
+  s_f71f6c918e243f::t_7e37da39af54f5 3,43,45-49,69-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fc39e21ffcfbffcf8a0a6e07ed0e94e48bfdf3ea",
+  "prompts": {},
+  "sessions": {
+    "s_f71f6c918e243f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ffb27d54-9319-478c-a3ad-60d3362565a5",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
