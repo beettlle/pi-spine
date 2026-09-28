@@ -1,6 +1,6 @@
 # SP-801: Worker fails closed when pi is missing — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-28
 **Review Level:** 1
@@ -24,11 +24,11 @@
 - [x] `pi_missing` fail-closed
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] pi missing case
-- [ ] Explicit stub case
-- [ ] `agentSession` case
+- [x] pi missing case
+- [x] Explicit stub case
+- [x] `agentSession` case
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
