@@ -46,7 +46,7 @@ Partial #301 — Abort, complete and dismiss re-read batch state inside the lock
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/abort.test.mjs tests/batch/lifecycle.test.mjs tests/batch/batch-state-handoff.test.mjs tests/batch/batch-state-lock.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/abort.test.mjs tests/batch/lifecycle.test.mjs tests/batch/batch-state-handoff.test.mjs tests/batch/batch-state-lock.test.mjs` |
 | fileScopeMustChange | `src/batch/abort.mjs`, `src/batch/lifecycle.mjs`, `tests/batch/abort.test.mjs` |
 
 ## Steps
@@ -122,4 +122,4 @@ Partial #301 — Abort, complete and dismiss re-read batch state inside the lock
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

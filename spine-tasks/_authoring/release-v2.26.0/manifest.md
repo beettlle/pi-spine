@@ -143,6 +143,17 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 
 ---
 
+## Execution log
+
+### Wave 1 — batch `20260928T010710-9c1b` (`SP-790,SP-798,SP-799,SP-801`)
+
+- 2026-09-28 01:16–01:18 UTC: all four workers failed with z.ai 429 (5-hour usage limit, reset 10:37:44 UTC+8). Operator chose **wait for reset, then retry** (no pin change, #248). Lane 2 had stray untracked `index.ts` / `parallel.ts` (worker scratch, outside File Scope) — removed before retry.
+- 15:26 UTC: `spine batch retry` ×4 + `spine batch resume`. SP-790, SP-799 completed with plan/code/final review and `contract.verified`. SP-798 hit the 429 limit again at 15:58 (reset 2026-09-29 04:26:47 UTC+8 = 20:26 UTC); partial work kept in lane 2.
+- **SP-801 completed through a leaked stub verdict**: its contract test run (`review.test.mjs`, direct `node --test`) wrote a stub final `PASS` into the live journal; the engine honored it (`honorSource: "journal"`) and skipped contract verification. Filed [#328](https://github.com/beettlle/pi-spine/issues/328). Operator re-ran the SP-801 contract in the lane-4 worktree: lint + typecheck exit 0, 43/43 tests pass; diff reviewed against the packet.
+- Mitigation: SP-791–SP-797, SP-800, SP-802 Contract `testCommand` now set `SPINE_SUPPRESS_JOURNAL_ATTACH=1` (Amendments recorded in each PROMPT).
+
+---
+
 ## Deferred backlog
 
 | Item | Type | Rationale |

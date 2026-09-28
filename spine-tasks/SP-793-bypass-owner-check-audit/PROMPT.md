@@ -66,7 +66,7 @@ Closes #301 — The bypass option says what it does, the number of bypass sites 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-update.test.mjs tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-stale-writer.test.mjs tests/batch/pause-phase-persistence.test.mjs tests/batch/pause-retry-guard.test.mjs tests/batch/post-merge-limbo.test.mjs tests/batch/late-finalize-after-complete.test.mjs tests/batch/resume-multi-engine.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-update.test.mjs tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-stale-writer.test.mjs tests/batch/pause-phase-persistence.test.mjs tests/batch/pause-retry-guard.test.mjs tests/batch/post-merge-limbo.test.mjs tests/batch/late-finalize-after-complete.test.mjs tests/batch/resume-multi-engine.test.mjs` |
 | fileScopeMustChange | `src/batch/state-io.mjs`, `src/batch/resume-gate-reopen.mjs` |
 | fileScopeMustNotChange | `src/batch/abort.mjs`, `src/batch/lifecycle.mjs` |
 
@@ -143,4 +143,4 @@ Closes #301 — The bypass option says what it does, the number of bypass sites 
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

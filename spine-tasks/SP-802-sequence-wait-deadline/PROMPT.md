@@ -52,7 +52,7 @@ Closes #307 — The sequence wait always ends: a hard cap, a no-progress stall e
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/sequence-detached-poll.test.mjs tests/batch/reconcile-light.test.mjs tests/config/*.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/sequence-detached-poll.test.mjs tests/batch/reconcile-light.test.mjs tests/config/*.test.mjs` |
 | fileScopeMustChange | `src/batch/sequence-wait.mjs`, `tests/batch/sequence-detached-poll.test.mjs` |
 
 ## Steps
@@ -131,4 +131,4 @@ Closes #307 — The sequence wait always ends: a hard cap, a no-progress stall e
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

@@ -64,7 +64,7 @@ Test files calling these functions today: `contract-prelanded`, `contract-verify
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/contract-*.test.mjs tests/batch/flutter-analyzer-hygiene.test.mjs tests/batch/engine.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/contract-*.test.mjs tests/batch/flutter-analyzer-hygiene.test.mjs tests/batch/engine.test.mjs` |
 | fileScopeMustChange | `src/batch/contract-exec.mjs`, `src/batch/engine-lanes/review-final.mjs`, `src/batch/engine-lanes/matrix-run.mjs`, `tests/batch/contract-verify-async.test.mjs` |
 
 ## Steps
@@ -143,4 +143,4 @@ Test files calling these functions today: `contract-prelanded`, `contract-verify
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

@@ -46,7 +46,7 @@ Partial #302 — Breaking a stale lock can only remove the exact lock file that 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-update.test.mjs tests/batch/batch-state-stale-writer.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-update.test.mjs tests/batch/batch-state-stale-writer.test.mjs` |
 | fileScopeMustChange | `src/batch/batch-state-lock.mjs`, `tests/batch/batch-state-lock.test.mjs` |
 
 ## Steps
@@ -113,4 +113,4 @@ Partial #302 — Breaking a stale lock can only remove the exact lock file that 
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

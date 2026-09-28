@@ -41,7 +41,7 @@ Partial #302 — `writeJsonAtomic` fsyncs the temp file before rename and the pa
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/fs/atomic-write.test.mjs tests/batch/batch-state-lock.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/fs/atomic-write.test.mjs tests/batch/batch-state-lock.test.mjs` |
 | fileScopeMustChange | `src/fs/atomic-write.mjs`, `tests/fs/atomic-write.test.mjs` |
 
 ## Steps
@@ -106,4 +106,4 @@ Partial #302 — `writeJsonAtomic` fsyncs the temp file before rename and the pa
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).

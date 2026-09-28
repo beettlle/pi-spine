@@ -51,7 +51,7 @@ Closes #302 — Engine saves wait for the lock asynchronously; CLI callers keep 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-lock-async.test.mjs tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-update.test.mjs tests/batch/pause-phase-persistence.test.mjs tests/batch/pause-retry-guard.test.mjs tests/batch/engine.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/batch-state-lock-async.test.mjs tests/batch/batch-state-lock.test.mjs tests/batch/batch-state-update.test.mjs tests/batch/pause-phase-persistence.test.mjs tests/batch/pause-retry-guard.test.mjs tests/batch/engine.test.mjs` |
 | fileScopeMustChange | `src/batch/batch-state-lock.mjs`, `src/batch/pause.mjs`, `tests/batch/batch-state-lock-async.test.mjs` |
 
 ## Steps
@@ -130,4 +130,4 @@ Closes #302 — Engine saves wait for the lock asynchronously; CLI callers keep 
 
 ## Amendments
 
-_None._
+- 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).
