@@ -1,0 +1,22 @@
+spine-tasks/SP-798-merge-out-of-scope-fail-closed/STATUS.md
+  h_2a17159c706ba1 3,21,23-25,28,30-32,70-71
+src/batch/engine-lanes/merge.mjs
+  h_2a17159c706ba1 28-29,59-74,157-161,163-179,183-196,228-232,238-242,248-251,256-265,267,281,318,341-344,346-347,397-400,404,408-416,431,448,459,486-487,574,589-590,638-648,674-676,692,842-849
+src/batch/resume.mjs
+  h_2a17159c706ba1 455
+src/config/defaults.mjs
+  h_2a17159c706ba1 41-54,57
+tests/batch/merge-gitignored-paths.test.mjs
+  h_2a17159c706ba1 82-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c0a7113ef57126dbd30303aaf6ca4b5d54fb90fc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
