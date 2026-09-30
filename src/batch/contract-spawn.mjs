@@ -1,12 +1,13 @@
 /**
  * Async shell runner for contract commands (SP-799 / #305).
  *
- * runContractTestCommand uses spawnSync, which blocks the engine's event loop
- * for the entire command; one slow contract check freezes every concurrent
- * lane. This module exposes the same shell semantics ($SHELL resolution, -c
- * flag, capped capture) as a Promise-based primitive that never blocks and
- * never leaks: on timeout the detached process group is terminated through
- * terminateProcessTree so backgrounded grandchildren cannot outlive the run.
+ * runContractTestCommand originally ran its shell synchronously, which
+ * blocked the engine's event loop for the entire command; one slow contract
+ * check froze every concurrent lane. This module exposes the same shell
+ * semantics ($SHELL resolution, -c flag, capped capture) as a Promise-based
+ * primitive that never blocks and never leaks: on timeout the detached process
+ * group is terminated through terminateProcessTree so backgrounded
+ * grandchildren cannot outlive the run.
  */
 
 import { spawn } from "node:child_process";
@@ -36,7 +37,7 @@ const SPAWN_ERROR_EXIT_CODE = 127;
  * cmd.exe on Windows and /bin/sh elsewhere, with the matching command flag.
  * Lives here (not in contract-exec.mjs) so the sync and async runners share one
  * implementation instead of drifting. Returns a [shell, args] pair ready to
- * spread into spawn()/spawnSync().
+ * spread into spawn().
  *
  * @param {string} command
  * @param {string} [shellOverride]
