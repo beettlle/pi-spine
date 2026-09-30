@@ -1,0 +1,18 @@
+src/batch/pause.mjs
+  h_2a17159c706ba1 8,15,67-72,78-81,87-92,97-115,211-237,248-263,267,271
+src/batch/state-io.mjs
+  h_2a17159c706ba1 82-118,131-134,140-143,145-183,185-198
+src/batch/state.mjs
+  h_2a17159c706ba1 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0a6f46fad8aec47f65fae72f1725fc99839a6261",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
