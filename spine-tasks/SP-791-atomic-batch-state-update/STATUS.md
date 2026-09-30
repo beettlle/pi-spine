@@ -1,7 +1,7 @@
 # SP-791: Atomic batch-state read-modify-write helper — Status
 
-**Current Step:** Step 3
-**Status:** 🟨 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-30
 **Review Level:** 2
 **Review Counter:** 0
@@ -32,26 +32,26 @@
 - [x] Rollback respects terminal phase (restores `fromPhase` only while disk phase is still `paused`; journals `batch.pause_failed` with pre-rollback `observedPhase`)
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Two-process RMW
-- [ ] Rollback-vs-terminal
-- [ ] Helper unit cases
+- [x] Two-process RMW (`rmw-update` child mode; alpha/beta counters both = 20)
+- [x] Rollback-vs-terminal (engine completes during grace; final phase stays `completed`, `batch.pause_failed` carries `observedPhase: completed`)
+- [x] Helper unit cases (missing, corrupt, no-op, rejected + success/clone/bypass passthrough)
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`npm run lint` — 0 errors/0 warnings)
+- [x] Contract `testCommand` — 29/29 pass
+- [x] Batch suite (`env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm run test:batch`) — 1576/1576 pass on re-run. First run had 1 unrelated load flake: `reviewer-artifact-early-honor.test.mjs` hit its 300s review-spawn timeout under full-suite CPU load (passes in 366ms in isolation; subsystem untouched by this diff — review-spawn artifact polling, not batch-state).
+- [x] Coverage gate — 90.03% line coverage (threshold 77%), 2736/2736 coverage-suite tests pass
+- [x] Fix all failures — none attributable to this change
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged (6 rows above)
+- [x] Create `.DONE`
 
 ---
 
@@ -63,6 +63,8 @@
 | 2 | `withBatchStateLock` is typed `() => unknown`, so `updateSpineBatchState` uses an expression-level JSDoc cast for its structured result (batch tsconfig `checkJs`). |
 | 3 | `pauseBatch` phase pre-check still runs on a pre-lock load; the authoritative re-check happens inside `updateSpineBatchState`, so a terminal phase landing in between now yields `cannot_pause` with the observed phase instead of being overwritten. |
 | 4 | `enforceOperatorPauseOnDisk` returns `false` when the guarded write is refused (previously `true` after a silently-dropped save); today the only reachable refusal paths (missing/corrupt) already returned `false`. |
+| 5 | Journal event payloads are nested under `payload` (e.g. `event.payload.reason`), not top-level. |
+| 6 | Runbook §6 pause description ("reverts phase to `running`") still matches the engine-overwrite scenario it documents; the new terminal-during-grace edge case (phase left terminal) is undocumented and docs are owned by SP-803 — no update made. |
 ## Blockers
 
 _None._
