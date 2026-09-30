@@ -14,6 +14,30 @@ import {
 import { laneTaskBranch, laneWorktreePath, provisionLaneWorktree } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
+/**
+ * SP-792 / #301: serve `stale` on the first read of the active batch-state
+ * path and pass every later read through to the real on-disk file — exactly
+ * the view a terminal write sees when a concurrent engine save lands between
+ * its pre-lock read and its lock section. Returns a restore function.
+ *
+ * @param {string} statePath
+ * @param {object} stale
+ */
+function serveStaleStateOnFirstRead(statePath, stale) {
+	const realReadFileSync = fs.readFileSync;
+	let served = false;
+	fs.readFileSync = (/** @type {any[]} */ ...args) => {
+		if (!served && String(args[0]) === statePath) {
+			served = true;
+			return `${JSON.stringify(stale, null, 2)}\n`;
+		}
+		return realReadFileSync(...args);
+	};
+	return () => {
+		fs.readFileSync = realReadFileSync;
+	};
+}
+
 function writeRunningBatch(projectRoot, batchId) {
 	const state = createInitialBatchState({
 		batchId,
@@ -267,6 +291,114 @@ test("abortBatch without dry-run still archives after a prior dry-run", async ()
 		assert.equal(result.dryRun, undefined);
 		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, batchId)));
 		assert.ok(!fs.existsSync(activePath));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("abortBatch archives the in-lock state, not the stale pre-lock snapshot", async () => {
+	const projectRoot = await initGitRepo("spine-abort-inlock-");
+	try {
+		const batchId = "20260601T170007";
+		writeRunningBatch(projectRoot, batchId);
+		appendJournalEvent(projectRoot, batchId, "batch.started", { fromPhase: "planning", toPhase: "running" });
+
+		// Newer engine save on disk; the pre-lock read is served the older copy.
+		const activePath = spineBatchStatePath(projectRoot);
+		const onDisk = JSON.parse(fs.readFileSync(activePath, "utf-8"));
+		onDisk.sp792Marker = "in-lock";
+		fs.writeFileSync(activePath, `${JSON.stringify(onDisk, null, 2)}\n`, "utf-8");
+		const stale = { ...onDisk, sp792Marker: "pre-lock" };
+		const restore = serveStaleStateOnFirstRead(activePath, stale);
+
+		const result = abortBatch({ projectRoot, reason: "archive freshest state" });
+		restore();
+
+		assert.equal(result.ok, true);
+		assert.equal(result.batchId, batchId);
+
+		const archivePath = archiveBatchStatePath(projectRoot, batchId);
+		assert.ok(fs.existsSync(archivePath), "archive must exist");
+		const archived = JSON.parse(fs.readFileSync(archivePath, "utf-8"));
+		assert.equal(archived.phase, "aborted");
+		assert.equal(
+			archived.sp792Marker,
+			"in-lock",
+			"archive must hold the state as read inside the lock, not the pre-lock snapshot",
+		);
+		assert.ok(!fs.existsSync(activePath), "active batch-state must be cleared");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("abortBatch fails closed and archives nothing when batch id changed during abort", async () => {
+	const projectRoot = await initGitRepo("spine-abort-id-changed-");
+	try {
+		const batchId = "20260601T170008";
+		writeRunningBatch(projectRoot, batchId);
+
+		// A different batch took over the active state file before the lock.
+		const activePath = spineBatchStatePath(projectRoot);
+		const stale = JSON.parse(fs.readFileSync(activePath, "utf-8"));
+		fs.writeFileSync(
+			activePath,
+			`${JSON.stringify({ ...stale, batchId: "20260601T179999", phase: "running" }, null, 2)}\n`,
+			"utf-8",
+		);
+		const restore = serveStaleStateOnFirstRead(activePath, stale);
+
+		const result = abortBatch({ projectRoot, reason: "race" });
+		restore();
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "batch_state_changed_during_terminal_write");
+		assert.equal(result.headline, "Batch state changed during abort — re-run spine status --diagnose");
+		assert.equal(result.batchId, batchId);
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, batchId)), "nothing archived for the stale batch");
+		assert.ok(!fs.existsSync(abortSignalPath(projectRoot, batchId)), "no abort signal for the stale batch");
+		assert.ok(fs.existsSync(activePath), "the newer active batch-state must survive untouched");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("abortBatch fails closed when the state file vanished before the lock", async () => {
+	const projectRoot = await initGitRepo("spine-abort-vanished-");
+	try {
+		const batchId = "20260601T170009";
+		writeRunningBatch(projectRoot, batchId);
+
+		// The in-lock reload (second read of the state path) hits ENOENT as if
+		// the active state file was removed between the pre-lock read and the lock.
+		const activePath = spineBatchStatePath(projectRoot);
+		const realReadFileSync = fs.readFileSync;
+		let stateReads = 0;
+		fs.readFileSync = (/** @type {any[]} */ ...args) => {
+			if (String(args[0]) === activePath) {
+				stateReads += 1;
+				if (stateReads >= 2) {
+					const err = /** @type {NodeJS.ErrnoException} */ (new Error("ENOENT: state vanished"));
+					err.code = "ENOENT";
+					throw err;
+				}
+			}
+			return realReadFileSync(...args);
+		};
+
+		let result;
+		try {
+			result = abortBatch({ projectRoot, reason: "vanished" });
+		} finally {
+			fs.readFileSync = realReadFileSync;
+		}
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "batch_state_changed_during_terminal_write");
+		assert.match(result.headline ?? "", /Batch state changed during abort/);
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, batchId)), "nothing archived");
+		assert.ok(!fs.existsSync(abortSignalPath(projectRoot, batchId)), "no abort signal written");
+		assert.ok(fs.existsSync(activePath), "active batch-state untouched");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

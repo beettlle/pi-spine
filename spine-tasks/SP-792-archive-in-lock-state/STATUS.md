@@ -1,6 +1,6 @@
 # SP-792: Abort, complete and dismiss archive in-lock state — Status
 
-**Current Step:** Step 3 — Tests
+**Current Step:** Step 4 — Testing & Verification
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-09-30
 **Review Level:** 2
@@ -31,11 +31,11 @@
 - [x] `lifecycle.mjs` ≤ 500 lines (494)
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Abort stale-snapshot
-- [ ] Complete/dismiss stale-snapshot
-- [ ] Batch-id changed
+- [x] Abort stale-snapshot (12/12 pass in `tests/batch/abort.test.mjs`)
+- [x] Complete/dismiss stale-snapshot (8/8 pass in `tests/batch/lifecycle.test.mjs`)
+- [x] Batch-id changed (abort + complete; abort also covers vanished-file ENOENT, dismiss covers phase-flip + --force)
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
