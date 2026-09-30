@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync, execFileSync } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
 import micromatch from "micromatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import {
@@ -26,7 +26,7 @@ import {
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
-import { resolveContractShellInvocation } from "./contract-spawn.mjs";
+import { runShellCommandAsync } from "./contract-spawn.mjs";
 
 // Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
 function refusedBeforeSpawnResult(/** @type {string} */ summary) {
@@ -81,17 +81,6 @@ function formatMaxBufferLabel(byteCount) {
 		return `${Math.round(byteCount / 1024)}KB`;
 	}
 	return `${byteCount}B`;
-}
-
-/**
- * Block the current thread for the given duration without busy-waiting.
- * Safe for CLI/batch tools; not suitable for servers.
- *
- * @param {number} ms
- */
-function sleepSync(ms) {
-	if (ms <= 0) return;
-	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 /**
@@ -150,10 +139,10 @@ function formatRefusedNpmTestDashDashMessage(command) {
 /**
  * @param {string} worktreePath
  * @param {string} command
- * @param {{ maxBuffer?: number }} [options]
- * @returns {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean }}
+ * @param {{ maxBuffer?: number, timeoutMs?: number }} [options]
+ * @returns {Promise<{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean, timedOut?: boolean }>}
  */
-export function runContractTestCommand(worktreePath, command, options = {}) {
+export async function runContractTestCommand(worktreePath, command, options = {}) {
 	const trimmed = String(command ?? "").trim();
 	if (!trimmed || trimmed === "true") {
 		return { ok: true, exitCode: 0, output: "" };
@@ -167,12 +156,11 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	}
 
 	const maxBuffer = options.maxBuffer ?? CONTRACT_TEST_COMMAND_MAX_BUFFER;
-	const result = spawnSync(...resolveContractShellInvocation(trimmed), {
-		cwd: worktreePath,
+	const timeoutMs = options.timeoutMs ?? 10 * 60 * 1000;
+	// Async primitive (SP-799): concurrent lanes keep running while this command executes.
+	const result = await runShellCommandAsync(worktreePath, trimmed, {
 		env: buildContractTestEnv(),
-		encoding: "utf-8",
-		stdio: ["ignore", "pipe", "pipe"],
-		timeout: 10 * 60 * 1000,
+		timeoutMs,
 		maxBuffer,
 	});
 
@@ -180,18 +168,30 @@ export function runContractTestCommand(worktreePath, command, options = {}) {
 	const stderr = String(result.stderr ?? "");
 	const output = `${stdout}\n${stderr}`;
 
-	if (/** @type {NodeJS.ErrnoException | undefined} */ (result.error)?.code === "ENOBUFS") {
+	if (result.timedOut) {
+		// Report the timeout explicitly — a bare "exit 1" hides the real cause (#305).
+		const timeoutLabel = `${(timeoutMs / 60000).toFixed(2).replace(/\.?0+$/, "")} min`;
+		return {
+			ok: false,
+			exitCode: Number(result.exitCode ?? 1),
+			output,
+			timedOut: true,
+			summary: `testCommand timed out after ${timeoutLabel} and was terminated`,
+		};
+	}
+
+	if (result.truncated) {
 		const limitLabel = formatMaxBufferLabel(maxBuffer);
 		return {
 			ok: false,
-			exitCode: Number(result.status ?? 255),
+			exitCode: Number(result.exitCode ?? 255),
 			output,
 			bufferOverflow: true,
 			summary: `testCommand output exceeded maxBuffer (${limitLabel}); use a scoped testCommand instead of full-suite commands. Command: ${trimmed}`,
 		};
 	}
 
-	const exitCode = Number(result.status ?? 1);
+	const exitCode = Number(result.exitCode ?? 1);
 	if (exitCode === 0) {
 		return { ok: true, exitCode: 0, output };
 	}
@@ -214,10 +214,10 @@ function resolveCoverageCommand(config) {
 /**
  * @param {string} worktreePath
  * @param {ReturnType<import("../tasks/packet/parse-prompt.mjs").parseContract>} parsedContract
- * @param {object} config
+ * @param {{ contractTestMaxBuffer?: number, testing?: { test?: string, testWithCoverage?: string } }} config
  * @param {string} [testCommandOutput]
  */
-function resolveLineCoverage(worktreePath, parsedContract, config, testCommandOutput = "") {
+async function resolveLineCoverage(worktreePath, parsedContract, config, testCommandOutput = "") {
 	let output = testCommandOutput;
 	if (parsedContract.minLineCoverage != null) {
 		const parsedFromTest = parseAggregateLineCoverage(output);
@@ -225,7 +225,7 @@ function resolveLineCoverage(worktreePath, parsedContract, config, testCommandOu
 			return parsedFromTest;
 		}
 		const coverageCommand = resolveCoverageCommand(config);
-		const coverageResult = runContractTestCommand(worktreePath, coverageCommand);
+		const coverageResult = await runContractTestCommand(worktreePath, coverageCommand, { maxBuffer: config?.contractTestMaxBuffer });
 		output = coverageResult.output;
 	}
 	return parseAggregateLineCoverage(output);
@@ -304,24 +304,23 @@ export function prepareContractVerifyEnvironment(worktreePath, parsedContract, c
  * @param {string} [config.taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
  * @param {{ testRetries?: number, testRetryDelayMs?: number }} [config.contract] Retry tuning for testCommand attempts.
  * @param {number} [config.contractTestMaxBuffer] stdout/stderr capture limit override.
+ * @param {number} [config.contractTestTimeoutMs] Wall-clock timeout override for testCommand attempts.
  * @param {{ test?: string, testWithCoverage?: string }} [config.testing] Coverage command selection.
- * @returns {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }}
+ * @returns {Promise<{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }>}
  */
-export function verifyContract(worktreePath, parsedContract, config = {}) {
+export async function verifyContract(worktreePath, parsedContract, config = {}) {
 	/** @type {Array<{ field: string, ok: boolean, message: string }>} */
 	const checks = [];
 	const baseBranch = config?.baseBranch ?? "main";
 	const sinceCommit = config?.sinceCommit ?? config?.taskStartCommit ?? undefined;
 	const committedFiles = listChangedFiles(worktreePath, baseBranch, sinceCommit);
-	
-	/** @type {string[]} */
-	let indexAndWorktreeFiles = /** @type {string[]} */ ([]);
-	try {
-		const stdout = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd: worktreePath, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
-		indexAndWorktreeFiles = stdout.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-	} catch {
-		// Ignore git diff failures; fall back to committedFiles only.
-	}
+
+	// Async + time-capped (30s) + buffer-capped git diff — a wedged git must never block lanes (#305).
+	const diffResult = await runShellCommandAsync(worktreePath, "git diff --name-only HEAD", {
+		timeoutMs: 30 * 1000,
+		maxBuffer: CONTRACT_TEST_COMMAND_MAX_BUFFER,
+	});
+	const indexAndWorktreeFiles = diffResult.exitCode === 0 ? diffResult.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
 
 	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
@@ -334,11 +333,12 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 		const maxRetries = config?.contract?.testRetries ?? CONTRACT_TEST_DEFAULT_RETRIES;
 		const retryDelayMs = config?.contract?.testRetryDelayMs ?? CONTRACT_TEST_RETRY_DELAY_MS;
 		const totalAttempts = maxRetries + 1;
-		let lastResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean } | null} */ (null), successAttempt = 0;
+		let lastResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean, timedOut?: boolean } | null} */ (null), successAttempt = 0;
 
 		for (let attempt = 1; attempt <= totalAttempts; attempt++) {
-			lastResult = runContractTestCommand(worktreePath, parsedContract.testCommand, {
+			lastResult = await runContractTestCommand(worktreePath, parsedContract.testCommand, {
 				maxBuffer: config?.contractTestMaxBuffer,
+				timeoutMs: config?.contractTestTimeoutMs,
 			});
 
 			if (lastResult.ok) {
@@ -364,11 +364,11 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 						totalAttempts,
 					});
 				}
-				sleepSync(retryDelayMs);
+				await sleep(retryDelayMs);
 			}
 		}
 
-		const finalResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean }} */ (lastResult);
+		const finalResult = /** @type {{ ok: boolean, exitCode: number, output: string, bufferOverflow?: boolean, summary?: string, refusedBeforeSpawn?: boolean, timedOut?: boolean }} */ (lastResult);
 		testCommandOutput = finalResult.output;
 		testCommandOk = finalResult.ok;
 		const attemptLabel = successAttempt > 1
@@ -381,7 +381,9 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 				? `testCommand passed${attemptLabel}`
 				: finalResult.bufferOverflow
 					? `Contract ${finalResult.summary}`
-					: `Contract testCommand failed after ${totalAttempts} attempt(s) (exit ${finalResult.exitCode}): ${finalResult.summary || "(no output)"}`,
+					: finalResult.timedOut
+						? `Contract testCommand failed after ${totalAttempts} attempt(s): ${finalResult.summary}`
+						: `Contract testCommand failed after ${totalAttempts} attempt(s) (exit ${finalResult.exitCode}): ${finalResult.summary || "(no output)"}`,
 		});
 	}
 
@@ -458,7 +460,7 @@ export function verifyContract(worktreePath, parsedContract, config = {}) {
 	}
 
 	if (parsedContract.minLineCoverage != null) {
-		const actual = resolveLineCoverage(worktreePath, parsedContract, config, testCommandOutput);
+		const actual = await resolveLineCoverage(worktreePath, parsedContract, config, testCommandOutput);
 		const required = parsedContract.minLineCoverage;
 		if (actual == null) {
 			checks.push({
