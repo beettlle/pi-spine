@@ -23,9 +23,9 @@ test("CONTRACT_TEST_COMMAND_MAX_BUFFER exceeds legacy 256KB limit", () => {
 });
 
 test("runContractTestCommand captures large stdout without killing child", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const byteCount = 300 * 1024;
-		const result = runContractTestCommand(
+		const result = await runContractTestCommand(
 			worktreePath,
 			`node -e "process.stdout.write('x'.repeat(${byteCount}))"`,
 		);
@@ -36,9 +36,9 @@ test("runContractTestCommand captures large stdout without killing child", async
 });
 
 test("runContractTestCommand surfaces ENOBUFS with scoped testCommand guidance", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const byteCount = 50 * 1024;
-		const result = runContractTestCommand(
+		const result = await runContractTestCommand(
 			worktreePath,
 			`node -e "process.stdout.write('x'.repeat(${byteCount}))"`,
 			{ maxBuffer: 1024 },
@@ -52,14 +52,14 @@ test("runContractTestCommand surfaces ENOBUFS with scoped testCommand guidance",
 });
 
 test("verifyContract reports buffer overflow with scoped testCommand guidance", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const byteCount = 50 * 1024;
 		const overflowCommand = `node -e "process.stdout.write('x'.repeat(${byteCount}))"`;
 
-		const direct = runContractTestCommand(worktreePath, overflowCommand, { maxBuffer: 1024 });
+		const direct = await runContractTestCommand(worktreePath, overflowCommand, { maxBuffer: 1024 });
 		assert.equal(direct.bufferOverflow, true);
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: overflowCommand,
 			artifactsMustExist: [],
 		}, {

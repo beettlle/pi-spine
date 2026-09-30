@@ -101,7 +101,7 @@ test("verifyContract uses base-satisfied when scope predates task PROMPT on base
 		createLaneWithDeliveryOnly(projectRoot);
 
 		const parsed = parseContract(BASE_SATISFIED_PROMPT);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, true, result.checks.map((check) => check.message).join("\n"));
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");
@@ -120,7 +120,7 @@ test("verifyContract passes when scope is on base and lane has zero implementati
 		createLaneWithDeliveryOnly(projectRoot);
 
 		const parsed = parseContract(BASE_SATISFIED_PROMPT);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, true, result.checks.map((check) => check.message).join("\n"));
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");
@@ -148,7 +148,7 @@ test("verifyContract fails base-satisfied scope when testCommand fails", async (
 		createLaneWithDeliveryOnly(projectRoot);
 
 		const parsed = parseContract(prompt);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, false);
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");

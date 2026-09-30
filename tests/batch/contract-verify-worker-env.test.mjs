@@ -43,8 +43,8 @@ test("runContractTestCommand subprocess does not inherit SPINE_IS_WORKER", async
 	const prev = process.env.SPINE_IS_WORKER;
 	try {
 		process.env.SPINE_IS_WORKER = "1";
-		await withWorktree((worktreePath) => {
-			const result = runContractTestCommand(worktreePath, FAIL_IF_WORKER_ENV);
+		await withWorktree(async (worktreePath) => {
+			const result = await runContractTestCommand(worktreePath, FAIL_IF_WORKER_ENV);
 			assert.equal(result.ok, true, result.output);
 		});
 	} finally {
@@ -57,8 +57,8 @@ test("verifyContract testCommand passes under worker env when subprocess is sani
 	const prev = process.env.SPINE_IS_WORKER;
 	try {
 		process.env.SPINE_IS_WORKER = "1";
-		await withWorktree((worktreePath) => {
-			const result = verifyContract(worktreePath, {
+		await withWorktree(async (worktreePath) => {
+			const result = await verifyContract(worktreePath, {
 				testCommand: FAIL_IF_WORKER_ENV,
 			});
 			assert.equal(result.ok, true);

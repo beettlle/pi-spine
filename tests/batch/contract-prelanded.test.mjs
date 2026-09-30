@@ -109,7 +109,7 @@ test("verifyContract satisfies pre-landed fileScopeMustChange when testCommand a
 		createLaneWithStatusDelivery(projectRoot);
 
 		const parsed = parseContract(PRELANDED_SOURCE_PROMPT);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, true, result.checks.map((check) => check.message).join("\n"));
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");
@@ -129,7 +129,7 @@ test("verifyContract still fails pre-landed scope when testCommand fails", async
 		createLaneWithStatusDelivery(projectRoot);
 
 		const parsed = parseContract(prompt);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, false);
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");
@@ -166,7 +166,7 @@ test("verifyContract passes delivery-only STATUS.md fileScopeMustChange contract
 		createLaneWithStatusDelivery(projectRoot);
 
 		const parsed = parseContract(DELIVERY_STATUS_PROMPT);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, true, result.checks.map((check) => check.message).join("\n"));
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");

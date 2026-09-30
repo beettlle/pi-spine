@@ -97,11 +97,11 @@ test("isRefusedContractMetacharCommand allows && chains, quoted data and plain c
 });
 
 test("runContractTestCommand refuses metachars before spawn with distinct copy", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const markerPath = path.join(worktreePath, "spawn-marker.txt");
 		const command = `node -e "require('node:fs').writeFileSync('spawn-marker.txt', 'pwned')" ; node -e "process.exit(0)"`;
 
-		const result = runContractTestCommand(worktreePath, command);
+		const result = await runContractTestCommand(worktreePath, command);
 
 		assert.equal(result.ok, false);
 		assert.equal(result.refusedBeforeSpawn, true);
@@ -117,19 +117,19 @@ test("runContractTestCommand refuses metachars before spawn with distinct copy",
 });
 
 test("runContractTestCommand refusal copy is distinct per rejected construct", async () => {
-	await withWorktree((worktreePath) => {
-		assert.match(runContractTestCommand(worktreePath, "echo $HOME").summary, /variable expansion/);
-		assert.match(runContractTestCommand(worktreePath, "echo `id`").summary, /command substitution/);
-		assert.match(runContractTestCommand(worktreePath, "a | b").summary, /shell pipe/);
-		assert.match(runContractTestCommand(worktreePath, "a & b").summary, /background/);
-		assert.match(runContractTestCommand(worktreePath, "echo 'x").summary, /unclosed quote/);
+	await withWorktree(async (worktreePath) => {
+		assert.match((await runContractTestCommand(worktreePath, "echo $HOME")).summary, /variable expansion/);
+		assert.match((await runContractTestCommand(worktreePath, "echo `id`")).summary, /command substitution/);
+		assert.match((await runContractTestCommand(worktreePath, "a | b")).summary, /shell pipe/);
+		assert.match((await runContractTestCommand(worktreePath, "a & b")).summary, /background/);
+		assert.match((await runContractTestCommand(worktreePath, "echo 'x")).summary, /unclosed quote/);
 	});
 });
 
 test("npm test -- guard copy still wins when both refusals apply", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const command = "npm test -- tests/foo.test.mjs; node -e \"process.exit(1)\"";
-		const result = runContractTestCommand(worktreePath, command);
+		const result = await runContractTestCommand(worktreePath, command);
 		assert.equal(result.refusedBeforeSpawn, true);
 		assert.match(result.summary, /npm test -- <path>/);
 		assert.doesNotMatch(result.summary, /shell sequencing/);
@@ -137,8 +137,8 @@ test("npm test -- guard copy still wins when both refusals apply", async () => {
 });
 
 test("runContractTestCommand executes valid && chain commands", async () => {
-	await withWorktree((worktreePath) => {
-		const result = runContractTestCommand(
+	await withWorktree(async (worktreePath) => {
+		const result = await runContractTestCommand(
 			worktreePath,
 			'node -e "process.exit(0)" && node -e "process.exit(0)"',
 		);
@@ -147,8 +147,8 @@ test("runContractTestCommand executes valid && chain commands", async () => {
 });
 
 test("verifyContract surfaces metachar refusal as contract failure", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(
 			worktreePath,
 			{ testCommand: "echo $HOME" },
 			{ contract: { testRetries: 0 } },

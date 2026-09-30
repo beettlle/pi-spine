@@ -29,7 +29,7 @@ test("verifyContract auto-stages untracked files matching fileScopeMustChange", 
 			fileScopeMustChange: ["src/*.js"],
 		};
 
-		const result = verifyContract(worktreePath, parsedContract);
+		const result = await verifyContract(worktreePath, parsedContract);
 
 		// It should auto-stage and pass the fileScopeMustChange check
 		assert.equal(result.ok, true, `Expected verifyContract to pass, got: ${JSON.stringify(result.checks)}`);
@@ -55,7 +55,7 @@ test("verifyContract does NOT stage untracked files outside fileScopeMustChange"
 			fileScopeMustChange: ["src/*.js"],
 		};
 
-		const result = verifyContract(worktreePath, parsedContract);
+		const result = await verifyContract(worktreePath, parsedContract);
 
 		// It should fail because the required file is not changed
 		assert.equal(result.ok, false);
@@ -87,7 +87,7 @@ test("verifyContract preserves behavior when no untracked files exist", async ()
 
 		// The file is tracked but unstaged, listChangedFiles compares working tree vs index/HEAD
 		// wait, listChangedFiles checks diff-index HEAD, so unstaged changes to tracked files are included.
-		const result = verifyContract(worktreePath, parsedContract);
+		const result = await verifyContract(worktreePath, parsedContract);
 
 		assert.equal(result.ok, true, `Expected verifyContract to pass, got: ${JSON.stringify(result.checks)}`);
 

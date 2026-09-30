@@ -132,7 +132,7 @@ test("verifyContract passes fileScopeMustChange after pause/retry/resume when la
 		assert.equal(sinceCommit, taskStartCommit);
 
 		const falseNegativeBaseline = laneCommit;
-		const broken = verifyContract(
+		const broken = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",
@@ -148,7 +148,7 @@ test("verifyContract passes fileScopeMustChange after pause/retry/resume when la
 		);
 		assert.ok(brokenScope);
 
-		const fixed = verifyContract(
+		const fixed = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",
