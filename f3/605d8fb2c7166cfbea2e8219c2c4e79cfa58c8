@@ -1,0 +1,18 @@
+spine-tasks/SP-792-archive-in-lock-state/.reviews/0-20260930T163456.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-792-archive-in-lock-state/.reviews/5-20260930T163540.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-792-archive-in-lock-state/.reviews/final-20260930T163657.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f3605d8fb2c7166cfbea2e8219c2c4e79cfa58c8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
