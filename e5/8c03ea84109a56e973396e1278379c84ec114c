@@ -1,0 +1,20 @@
+spine-tasks/SP-791-atomic-batch-state-update/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-25,28,30-32,62-65
+tests/batch/batch-state-lock.test.mjs
+  h_2a17159c706ba1 32-33,54-76,193-246
+tests/batch/batch-state-update.test.mjs
+  h_2a17159c706ba1 1-200
+tests/batch/pause-phase-persistence.test.mjs
+  h_2a17159c706ba1 85-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e58c03ea84109a56e973396e1278379c84ec114c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
