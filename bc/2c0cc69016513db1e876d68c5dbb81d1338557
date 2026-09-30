@@ -1,0 +1,20 @@
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 7,29,142-143,145,159-161,163,171-183,187,194,217,220,228,307,309,311,317-323,336,339,341,367,371,384-386,463
+src/batch/contract-verify.mjs
+  h_2a17159c706ba1 57,59
+src/batch/engine-lanes/matrix-run.mjs
+  h_2a17159c706ba1 322
+src/batch/engine-lanes/review-final.mjs
+  h_2a17159c706ba1 304
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bc2c0cc69016513db1e876d68c5dbb81d1338557",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
