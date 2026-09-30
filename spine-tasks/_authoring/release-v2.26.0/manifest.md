@@ -157,6 +157,13 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - Post-integrate `npm run release:check` on `main`: 2727 pass / 0 fail, line coverage 90.07%, exit 0 — log `/tmp/pi-spine-v2.26-wave1.log`.
 - Paused after wave 1 at operator request (peak model pricing). Next: wave 2 `SP-791,SP-792,SP-793,SP-800`.
 
+### Wave 2 — batch `20260930T160832-5a48` (`SP-791,SP-792,SP-793,SP-800`)
+
+- 2026-09-30 16:08 UTC: preflight `prelanded-file-scope` warning for SP-791/SP-793/SP-800 judged a false positive — the must-change files were edited by wave 1, and none of the wave 2 work is on `main` (`updateSpineBatchState` absent, 21 `bypassWriteGuard` sites, `spawnSync`/`sleepSync` still in `contract-exec.mjs`).
+- 16:37 UTC: SP-791 and SP-800 failed with z.ai 429 (5-hour limit, reset 2026-10-01 05:08:52 UTC+8 = 21:08 UTC) after ~30 min of 3 GLM-5.3 lanes. Both lanes had verification green and final steps committed; only `.DONE` + engine reviews remain.
+- SP-792 completed with plan/code/final review and `contract.verified`; no stub journal events this batch (#328 mitigation held).
+- SP-793 not started (depends on SP-791).
+
 ---
 
 ## Deferred backlog
