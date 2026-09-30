@@ -1,0 +1,20 @@
+spine-tasks/SP-792-archive-in-lock-state/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-24,27,29-31,61-63
+src/batch/abort.mjs
+  h_2a17159c706ba1 11,228-239,297
+src/batch/lifecycle-archive.mjs
+  h_2a17159c706ba1 9-13,16-86
+src/batch/lifecycle.mjs
+  h_2a17159c706ba1 16,215-228,231,254,261,264,434-445,448,471,478,481
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cd6d17d66f7839197e4b19b7959f8acc028f6dfc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
