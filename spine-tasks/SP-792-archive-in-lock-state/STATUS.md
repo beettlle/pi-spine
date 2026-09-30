@@ -1,7 +1,7 @@
 # SP-792: Abort, complete and dismiss archive in-lock state — Status
 
-**Current Step:** Step 5 — Documentation & Delivery
-**Status:** 🟨 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-30
 **Review Level:** 2
 **Review Counter:** 0
@@ -47,10 +47,10 @@
 - [x] Fix all failures — none in scope; one apparent failure was worker-env leakage (Discovery 4), plus one flaky ENOTEMPTY tmpdir-cleanup race in lifecycle.test.mjs that passes on re-run
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md (6 entries)
+- [x] Create `.DONE`
 
 ---
 
