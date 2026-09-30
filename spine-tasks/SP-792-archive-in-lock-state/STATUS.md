@@ -1,8 +1,8 @@
 # SP-792: Abort, complete and dismiss archive in-lock state — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 3 — Tests
+**Status:** 🟨 In Progress
+**Last Updated:** 2026-09-30
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,24 +11,24 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Pre-lock snapshot uses listed
-- [ ] Line counts noted
-- [ ] Dependencies satisfied
+- [x] Pre-lock snapshot uses listed
+- [x] Line counts noted
+- [x] Dependencies satisfied
 
 ### Step 1: Abort in-lock reload
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reload + mismatch fail-closed
-- [ ] Snapshot from in-lock state
+- [x] Reload + mismatch fail-closed
+- [x] Snapshot from in-lock state
 
 ### Step 2: Complete + dismiss in-lock reload
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Reload + precondition re-validated
-- [ ] Archive/history/clear from in-lock state
-- [ ] `lifecycle.mjs` ≤ 500 lines
+- [x] Reload + precondition re-validated
+- [x] Archive/history/clear from in-lock state
+- [x] `lifecycle.mjs` ≤ 500 lines (494)
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -58,6 +58,9 @@
 
 | # | Finding |
 |---|---------|
+| 1 | Pre-lock `loaded.raw` uses inside lock sections: `abort.mjs` — `buildAbortedSnapshot(loaded.raw)` L227, `clearActiveBatchState(loaded.path)` L300; `lifecycle.mjs` dismiss — archive L214, postMortem L217, metric L240, cleanup L247, clear L248; complete — archive L420, postMortem L423, metric L446, cleanup L453, clear L454. Baseline line counts: `lifecycle.mjs` 469/500, `abort.mjs` 301. |
+| 2 | `reconcileBatch` is called with in-memory `batchState` (no re-read), so an in-lock reload of the state file is the only fresh read — no double-count risk in tests. |
+| 3 | Shared reload helper `reloadStateForTerminalWrite` extracted into `src/batch/lifecycle-archive.mjs` (PROMPT Step 2 permits this to keep `lifecycle.mjs` ≤ 500 lines). File Scope addition per PROMPT. |
 
 ## Blockers
 
