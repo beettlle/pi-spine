@@ -1,0 +1,14 @@
+spine-tasks/SP-792-archive-in-lock-state/STATUS.md
+  h_2a17159c706ba1 3-4,50,52-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "839ac7e366ef9b7543c52e3c6f851c4ff199892e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
