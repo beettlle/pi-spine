@@ -1,0 +1,42 @@
+tests/batch/contract-base-satisfied.test.mjs
+  h_2a17159c706ba1 104,123,151
+tests/batch/contract-exec.test.mjs
+  h_2a17159c706ba1 100,104,120-125,130,132,140-141,150-151
+tests/batch/contract-matrix-subst.test.mjs
+  h_2a17159c706ba1 180,217,252
+tests/batch/contract-prelanded.test.mjs
+  h_2a17159c706ba1 112,132,169
+tests/batch/contract-resume-baseline.test.mjs
+  h_2a17159c706ba1 135,151
+tests/batch/contract-retry.test.mjs
+  h_2a17159c706ba1 24,31,45-46,60,71,80,90,94,120,122,137,179,183
+tests/batch/contract-untracked-files.test.mjs
+  h_2a17159c706ba1 32,58,90
+tests/batch/contract-verify-async.test.mjs
+  h_2a17159c706ba1 1-84
+tests/batch/contract-verify-buffer.test.mjs
+  h_2a17159c706ba1 26,28,39,41,55,59,62
+tests/batch/contract-verify-npm-scope.test.mjs
+  h_2a17159c706ba1 38,41,54-55,61-62
+tests/batch/contract-verify-resume.test.mjs
+  h_2a17159c706ba1 98,126,154
+tests/batch/contract-verify-serialized.test.mjs
+  h_2a17159c706ba1 40,56,81
+tests/batch/contract-verify-worker-env.test.mjs
+  h_2a17159c706ba1 46-47,60-61
+tests/batch/contract-verify.test.mjs
+  h_2a17159c706ba1 29-30,43-44,57,62,76,85,98-99,126,139,158-159,286,320,355,390
+tests/batch/flutter-analyzer-hygiene.test.mjs
+  h_2a17159c706ba1 127,139,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6fc5e8c5ae460b8693a339f0e36773a3b57660f0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
