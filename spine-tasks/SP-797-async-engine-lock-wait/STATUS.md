@@ -1,6 +1,6 @@
 # SP-797: Async engine lock wait — Status
 
-**Current Step:** Step 4: Testing & Verification
+**Current Step:** Step 5: Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -39,13 +39,13 @@
 - [x] Existing tests awaited (`post-done-plan-review-spawn`, `salvage-final-review-spawn-failed`, `attached-pause-persist` — setInterval callback uses `void` fire-and-forget)
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint — `npm run lint` clean
+- [x] Contract `testCommand` — lint + typecheck clean; 48/48 pass (run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset per Environment note; with them set, `engine.test.mjs` fails `nested_batch_spawn_blocked` by design)
+- [x] Batch suite — 1597/1597 pass
+- [x] Coverage gate — 90.02% line coverage (threshold 77%), 2757/2757 pass
+- [x] Fix all failures — compacted comments in `batch-state-lock.mjs` (501→499) and `engine-lanes.mjs` (503→499) to satisfy the Phase-23 500-LOC structural guard (`tests/cli/phase23-exit-verify.test.mjs`)
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -87,6 +87,11 @@
 
 | # | Finding |
 |---|---------|
+| 1 | Tests updated beyond File Scope (per PROMPT Step 3): `tests/batch/post-done-plan-review-spawn.test.mjs`, `tests/batch/salvage-final-review-spawn-failed.test.mjs`, `tests/batch/attached-pause-persist.test.mjs` — added `await` / `void` for now-async `saveEngineBatchState`. |
+| 2 | No synchronous non-engine callers of `saveEngineBatchState` exist — no sync fallback path kept. CLI callers go through `state-io.mjs` / `updateSpineBatchState` and keep synchronous `withBatchStateLock`. |
+| 3 | `engine-lanes.mjs` `onHeartbeat`/`onWorkerPid` are sync-typed callbacks invoked un-awaited by `worker-heartbeat.mjs` / `worker-host.mjs`; made them async arrows (fire-and-forget). Safe because `fn` serializes the live state object at lock-acquire time — a queued save writes latest state, never a stale snapshot. |
+| 4 | Phase-23 structural guard (`bin/spine-cli/verify.mjs`, `tests/cli/phase23-exit-verify.test.mjs`) caps every `src/batch/*.mjs` at 500 LOC via `split(/\r?\n/).length` (trailing newline counts +1). Comment compaction kept both touched files at 499 wc-lines. |
+| 5 | `.spine/rules-manifest.json` timestamp churned by a commit hook; reverted (`.spine/` is spine-owned, Do NOT modify). |
 
 ## Blockers
 

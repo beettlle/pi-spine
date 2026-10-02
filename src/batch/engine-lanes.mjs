@@ -295,11 +295,8 @@ async function runNonMatrixTaskOnLane({
 		laneCorrelationId,
 		fileScopePaths,
 		config,
-		// Fire-and-forget saves: the worker host invokes these callbacks without
-		// awaiting, so the returned promise settles on its own. Safe because
-		// `saveEngineBatchState` serializes the live state object at lock-acquire
-		// time — a queued heartbeat save writes the latest state, never a stale
-		// snapshot (SP-797 / #302).
+		// Fire-and-forget saves (SP-797 / #302): the host never awaits these callbacks.
+		// Safe — the save serializes live state at lock-acquire time, never a stale snapshot.
 		onHeartbeat: async (timestamp) => {
 			lane.lastHeartbeatAt = timestamp;
 			await saveEngineBatchState(projectRoot, state);
