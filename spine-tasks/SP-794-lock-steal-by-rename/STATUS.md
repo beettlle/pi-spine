@@ -1,8 +1,8 @@
 # SP-794: Lock steal-by-rename with token re-check — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 1
+**Status:** 🟨 In Progress
+**Last Updated:** 2026-10-02
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,14 +11,14 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Unlink sites mapped
-- [ ] Baseline flake rate
-- [ ] Dependencies satisfied
+- [x] Unlink sites mapped (5 sites in `breakStaleLock`: corrupt-stale ~216, invalid-pid ~227, leakedSelf ~247, deadPid ~260, pidRecycled ~286)
+- [x] Baseline flake rate (3/3 runs pass, 10/10 tests, ~4.8s each, 0 failures)
+- [x] Dependencies satisfied (none declared)
 
 ### Step 1: Steal-by-rename helper
-**Status:** ⬜ Not Started
+**Status:** 🟨 In Progress
 
 - [ ] Helper used for every stale break
 - [ ] Content compare for corrupt/invalid
@@ -51,7 +51,9 @@
 
 | # | Finding |
 |---|---------|
-
+| 1 | 5 unlink sites in `breakStaleLock`, each already wrapped in `try/catch` ("raced unlink"); none are token-gated. `releaseLockFile` is the only token-gated removal. |
+| 2 | Corrupt branch does not retain the raw read text — must keep it for content comparison in the steal helper. |
+| 3 | Baseline lock tests: 3/3 green, ~4.8s per run, no flakes. |
 ## Blockers
 
 _None._
