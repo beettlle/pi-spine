@@ -1,6 +1,6 @@
 # SP-797: Async engine lock wait — Status
 
-**Current Step:** Step 3: Tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -32,11 +32,11 @@
 - [x] Call sites awaited — `engine.mjs` ×10, `engine-lanes.mjs` ×7 (incl. 2 fire-and-forget worker callbacks now async arrows), `matrix-run.mjs` ×5
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Event-loop test
-- [ ] Re-entrancy test
-- [ ] Existing tests awaited
+- [x] Event-loop test (heartbeat ticks ≥ 5 during a 500 ms contended wait; write landed)
+- [x] Re-entrancy test (nested sync `withBatchStateLock` + nested async variant)
+- [x] Existing tests awaited (`post-done-plan-review-spawn`, `salvage-final-review-spawn-failed`, `attached-pause-persist` — setInterval callback uses `void` fire-and-forget)
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
