@@ -1,8 +1,8 @@
 # SP-795: Durable writeJsonAtomic — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 2
+**Status:** 🟨 In Progress
+**Last Updated:** 2026-10-02
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,20 +11,20 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Callers noted
-- [ ] Dependencies satisfied
+- [x] Callers noted
+- [x] Dependencies satisfied
 
 ### Step 1: Durable write
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] File + directory fsync
-- [ ] Narrow error tolerance
-- [ ] Signature unchanged
+- [x] File + directory fsync
+- [x] Narrow error tolerance
+- [x] Signature unchanged
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟨 In Progress
 
 - [ ] Call-order test
 - [ ] Directory `EPERM`
@@ -51,6 +51,8 @@
 
 | # | Finding |
 |---|---------|
+| 1 | `rg` preflight: `writeJsonAtomic` has 13 call sites in 12 modules; `writeTextAtomic` is the shared impl and also serves worker logs and gate evidence directly. |
+| 2 | GitNexus impact on `writeTextAtomic` (upstream, depth 2): **CRITICAL** — 6 direct callers, 24 impacted symbols, 8 processes (engine lanes, salvage, gates, evidence). Mitigation: signature, temp naming, and cleanup-on-error unchanged; file-fsync errors keep propagating; gated by contract testCommand + full suite + coverage. |
 
 ## Blockers
 
