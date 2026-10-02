@@ -1,0 +1,50 @@
+spine-tasks/SP-793-bypass-owner-check-audit/STATUS.md
+  h_2a17159c706ba1 3-5,12,14-16,19,21-22,27-46,75-78
+src/batch/attached-engine-handoff.mjs
+  h_2a17159c706ba1 123,148
+src/batch/attached-runner-promote.mjs
+  h_2a17159c706ba1 459
+src/batch/attached-runner-reconcile.mjs
+  h_2a17159c706ba1 232
+src/batch/batch-meta-reconstruct.mjs
+  h_2a17159c706ba1 388
+src/batch/detached-wait.mjs
+  h_2a17159c706ba1 182
+src/batch/parent-session-monitor.mjs
+  h_2a17159c706ba1 143
+src/batch/pause.mjs
+  h_2a17159c706ba1 75,113,223,262
+src/batch/post-merge-limbo.mjs
+  h_2a17159c706ba1 172,245,270,379,431
+src/batch/resume-gate-reopen.mjs
+  h_2a17159c706ba1 34
+src/batch/resume-multi.mjs
+  h_2a17159c706ba1 77
+src/batch/state-io.mjs
+  h_2a17159c706ba1 94,99,126,137,171,175
+tests/batch/batch-state-handoff.test.mjs
+  h_2a17159c706ba1 89
+tests/batch/batch-state-lock.test.mjs
+  h_2a17159c706ba1 67,94
+tests/batch/batch-state-stale-writer.test.mjs
+  h_2a17159c706ba1 129,143
+tests/batch/batch-state-update.test.mjs
+  h_2a17159c706ba1 144,171,179,186
+tests/batch/pause-phase-persistence.test.mjs
+  h_2a17159c706ba1 101,111,159
+tests/batch/pause-retry-guard.test.mjs
+  h_2a17159c706ba1 133
+tests/batch/sequence-detached-poll.test.mjs
+  h_2a17159c706ba1 163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "95846ea05670ed5a80cbfb8dd51e58012d648ffa",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
