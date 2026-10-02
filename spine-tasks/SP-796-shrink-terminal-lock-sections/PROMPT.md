@@ -39,6 +39,7 @@ Partial #302 — Abort, complete and dismiss hold the lock only for state-file I
 
 - `src/batch/abort.mjs`
 - `src/batch/lifecycle.mjs`
+- `src/batch/lifecycle-cleanup.mjs`
 - `tests/batch/abort.test.mjs`
 - `tests/batch/lifecycle.test.mjs`
 
@@ -121,3 +122,4 @@ Partial #302 — Abort, complete and dismiss hold the lock only for state-file I
 ## Amendments
 
 - 2026-09-28: Contract `testCommand` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1` so tests run by the worker cannot write into the live batch journal (#328).
+- 2026-10-02: `lifecycle.mjs` is at 494/500 lines after SP-792. If the split would push it over 500, move the post-release cleanup (post-mortem, metrics, worktree cleanup, `cleanupWarnings` / `batch.cleanup_failed` handling) into a new `src/batch/lifecycle-cleanup.mjs` shared by complete and dismiss (and abort if it fits). Added to File Scope.

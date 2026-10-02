@@ -163,6 +163,12 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - 16:37 UTC: SP-791 and SP-800 failed with z.ai 429 (5-hour limit, reset 2026-10-01 05:08:52 UTC+8 = 21:08 UTC) after ~30 min of 3 GLM-5.3 lanes. Both lanes had verification green and final steps committed; only `.DONE` + engine reviews remain.
 - SP-792 completed with plan/code/final review and `contract.verified`; no stub journal events this batch (#328 mitigation held).
 - SP-793 not started (depends on SP-791).
+- 2026-10-01 17:08 UTC: retry SP-791 + SP-800 after quota reset; both passed contract verification, then final review failed for both at 17:12 with `reviewer exited but produced no artifact` (`final_review_spawn_failed`). No reviewer log was kept.
+- 2026-10-02 02:22 UTC: probed `google/gemini-3.1-pro-preview` with `pi -p` (responded); retried SP-791 + SP-800 and resumed. Both final reviews PASS; SP-793 then ran and passed plan/code/final review with `contract.verified`. 0 `"stub":true` journal events (#328 mitigation held).
+- 02:53 UTC: waited for `gate.evidence_completed`, then approved. Gate evidence test count (2727) again matched `main`, not orch.
+- Integrated as `d631f3d8`; `spine batch complete` archived and `.spine/batch-state.json` was not recreated.
+- Post-integrate `npm run release:check` on `main`: 2748 pass / 0 fail, line coverage 90.08%, exit 0 — log `/tmp/pi-spine-v2.26-wave2.log`. `bypassWriteGuard` count in `src`/`tests`: 0; no `spawnSync`/`Atomics` in `contract-exec.mjs`.
+- SP-796 amended: `lifecycle.mjs` is 494/500, so `src/batch/lifecycle-cleanup.mjs` added to its File Scope for extracting post-release cleanup.
 
 ---
 

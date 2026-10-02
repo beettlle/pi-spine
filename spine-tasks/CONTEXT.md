@@ -2617,10 +2617,10 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-798 | Lane merge out-of-scope fail-closed | M | #304 Closes | 1 | Done |
 | SP-799 | Async contract shell runner | M | #305 Partial | 1 | Done |
 | SP-801 | Worker fails closed when pi is missing | S | #299 Closes | 1 | Done |
-| SP-791 | Atomic batch-state update helper | M | #301 Partial | 2 | Pending |
-| SP-792 | Abort/complete/dismiss archive in-lock state | M | #301 Partial | 2 | Pending |
-| SP-793 | `bypassOwnerCheck` rename + bypass audit | M | #301 Closes | 2 | Pending |
-| SP-800 | Async contract verification | M | #305 Closes | 2 | Pending |
+| SP-791 | Atomic batch-state update helper | M | #301 Partial | 2 | Done |
+| SP-792 | Abort/complete/dismiss archive in-lock state | M | #301 Partial | 2 | Done |
+| SP-793 | `bypassOwnerCheck` rename + bypass audit | M | #301 Closes | 2 | Done |
+| SP-800 | Async contract verification | M | #305 Closes | 2 | Done |
 | SP-794 | Lock steal-by-rename | M | #302 Partial | 3 | Pending |
 | SP-795 | Durable `writeJsonAtomic` | S | #302 Partial | 3 | Pending |
 | SP-796 | Shrink terminal lock sections | M | #302 Partial | 3 | Pending |
