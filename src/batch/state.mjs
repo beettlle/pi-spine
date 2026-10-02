@@ -21,6 +21,7 @@ export {
 	spineBatchStatePath,
 	loadSpineBatchState,
 	saveSpineBatchState,
+	updateSpineBatchState,
 	batchHistoryPath,
 	resolveBatchStateFileForValidation,
 	appendBatchHistoryEntry,
