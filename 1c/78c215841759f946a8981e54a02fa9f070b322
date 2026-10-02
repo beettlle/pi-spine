@@ -1,0 +1,14 @@
+spine-tasks/SP-793-bypass-owner-check-audit/STATUS.md
+  h_2a17159c706ba1 3-4,64,66-73,106-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1c78c215841759f946a8981e54a02fa9f070b322",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
