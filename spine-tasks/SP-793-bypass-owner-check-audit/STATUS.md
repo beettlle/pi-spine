@@ -1,6 +1,6 @@
 # SP-793: bypassOwnerCheck rename and bypass-site audit — Status
 
-**Current Step:** Step 4
+**Current Step:** Step 5
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-09-30
 **Review Level:** 2
@@ -52,13 +52,13 @@
 - [x] Gate-reopen concurrent-pause test — 2 new cases in `tests/batch/batch-state-update.test.mjs` (9/9 green)
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint — `npm run lint` exit 0
+- [x] Contract `testCommand` — 44/44 tests, exit 0
+- [x] Batch suite — `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm run test:batch`: 1578/1578, exit 0
+- [x] Coverage gate — `npm run coverage:check` (clean env): 2738/2738, line coverage **90.01% ≥ 77%**, exit 0
+- [x] Fix all failures — none failed; GitNexus `detect_changes` confirms scope confined to File Scope; `.spine/rules-manifest.json` test-run drift restored, not committed
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
