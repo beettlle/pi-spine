@@ -1,0 +1,22 @@
+spine-tasks/SP-797-async-engine-lock-wait/STATUS.md
+  h_2a17159c706ba1 3,35,37-39
+tests/batch/attached-pause-persist.test.mjs
+  h_2a17159c706ba1 93,145
+tests/batch/batch-state-lock-async.test.mjs
+  h_2a17159c706ba1 1-171
+tests/batch/post-done-plan-review-spawn.test.mjs
+  h_2a17159c706ba1 152
+tests/batch/salvage-final-review-spawn-failed.test.mjs
+  h_2a17159c706ba1 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cdc82471024326b8f9c59803fcfff80085a33de9",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
