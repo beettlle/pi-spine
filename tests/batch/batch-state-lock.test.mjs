@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
-import { batchStateLockPath, withBatchStateLock } from "../../src/batch/batch-state-lock.mjs";
+import { batchStateLockPath, stealIfTokenMatches, withBatchStateLock } from "../../src/batch/batch-state-lock.mjs";
 import {
 	appendBatchHistoryEntry,
 	batchHistoryPath,
@@ -32,10 +32,16 @@ const STATE_IO_MODULE_URL = new URL("../../src/batch/state-io.mjs", import.meta.
  * - `rmw-update`: N updateSpineBatchState cycles — each call is a complete
  *   atomic load+mutate+save under the lock (SP-791 / #301).
  * - `hold`: acquire the lock, touch a ready file, hold for holdMs, release.
+ * - `steal-hold`: contend for a lock initially owned by a dead holder. Both
+ *   children wait on a start barrier so they hit the stale lock head-to-head;
+ *   each round acquires via `withBatchStateLock`, logs entry/exit timestamps
+ *   to the events path (readyPath slot) around a brief hold, so the parent
+ *   can prove critical sections never overlap even when both children break
+ *   the same stale lock (SP-794 / #302). goPath is the barrier file.
  */
 const CHILD_SCRIPT = String.raw`
 import fs from "node:fs";
-const [projectRoot, lockModuleUrl, stateIoUrl, mode, writerId, iterations, readyPath, holdMsRaw] =
+const [projectRoot, lockModuleUrl, stateIoUrl, mode, writerId, iterations, readyPath, holdMsRaw, goPath] =
 	process.argv.slice(2);
 const { withBatchStateLock } = await import(lockModuleUrl);
 
@@ -48,6 +54,39 @@ if (mode === "hold") {
 			Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
 		}
 	});
+	process.exit(0);
+}
+
+if (mode === "steal-hold") {
+	const count = Number(iterations);
+	const holdMs = Number(holdMsRaw);
+	const eventsPath = readyPath;
+	fs.writeFileSync(eventsPath + ".ready", String(process.pid), "utf-8");
+	// Start barrier: do not touch the lock until the parent says both
+	// contenders are booted, so both break the dead holder head-to-head.
+	const barrierDeadline = Date.now() + 30_000;
+	while (!fs.existsSync(goPath)) {
+		if (Date.now() > barrierDeadline) process.exit(3);
+		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+	}
+	for (let i = 0; i < count; i++) {
+		withBatchStateLock(projectRoot, () => {
+			fs.appendFileSync(
+				eventsPath,
+				"enter " + writerId + " " + i + " " + Date.now() + "\n",
+				"utf-8",
+			);
+			const end = Date.now() + holdMs;
+			while (Date.now() < end) {
+				Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+			}
+			fs.appendFileSync(
+				eventsPath,
+				"exit " + writerId + " " + i + " " + Date.now() + "\n",
+				"utf-8",
+			);
+		});
+	}
 	process.exit(0);
 }
 
@@ -449,6 +488,226 @@ test("writeAbortSignal round-trips atomically under the lock", async () => {
 		const leftovers = fs
 			.readdirSync(path.dirname(signalPath))
 			.filter((name) => name.endsWith(".tmp"));
+		assert.deepEqual(leftovers, []);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+/**
+ * Shared SP-794 contention runner: two children race to break the same
+ * stale lock (start-barriered so they judge it head-to-head), then run
+ * `roundsPerWriter` locked holds apiece with entry/exit timestamps. Asserts
+ * both children finish, every critical section interval is logged, no two
+ * intervals ever overlap, and no `.break.*` copies are stranded.
+ *
+ * @param {string} tmpPrefix
+ * @param {() => { payload: string, label: string }} makeFixture writes the
+ *   stale lock file at the canonical path and describes it.
+ */
+async function runTwoStealerContention(tmpPrefix, makeFixture) {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), tmpPrefix));
+	try {
+		const lockPath = batchStateLockPath(projectRoot);
+		const scriptPath = writeChildScript(projectRoot);
+		const fixture = makeFixture();
+		fs.writeFileSync(lockPath, fixture.payload, { flag: "wx" });
+
+		const writers = 2;
+		const roundsPerWriter = 10; // ≥ 20 total acquisitions across the steal race
+		const holdMs = 50;
+		const goPath = path.join(projectRoot, "steal-go");
+		const children = [];
+		for (let w = 0; w < writers; w++) {
+			const eventsPath = path.join(projectRoot, `steal-events-w${w}`);
+			children.push(
+				runChild(scriptPath, [
+					projectRoot,
+					LOCK_MODULE_URL,
+					STATE_IO_MODULE_URL,
+					"steal-hold",
+					`w${w}`,
+					String(roundsPerWriter),
+					eventsPath,
+					String(holdMs),
+					goPath,
+				]),
+			);
+		}
+
+		// Release the barrier only after both contenders are booted and primed.
+		const readyDeadline = Date.now() + 10_000;
+		for (let w = 0; w < writers; w++) {
+			const readyPath = path.join(projectRoot, `steal-events-w${w}.ready`);
+			while (!fs.existsSync(readyPath)) {
+				assert.ok(Date.now() < readyDeadline, `stealer w${w} never booted`);
+				await new Promise((resolve) => setTimeout(resolve, 5));
+			}
+		}
+		fs.writeFileSync(goPath, "go", "utf-8");
+
+		const results = await Promise.all(children);
+		for (const result of results) {
+			assert.equal(result.code, 0, `stealer child failed: ${result.stderr}`);
+		}
+
+		// Reconstruct every critical-section interval from the per-writer logs.
+		const intervals = [];
+		for (let w = 0; w < writers; w++) {
+			const lines = fs
+				.readFileSync(path.join(projectRoot, `steal-events-w${w}`), "utf-8")
+				.split("\n")
+				.filter((line) => line.length > 0);
+			assert.equal(lines.length, roundsPerWriter * 2);
+			/** @type {number[]} */
+			const pendingEnters = [];
+			for (const line of lines) {
+				const [kind, , roundRaw, tsRaw] = line.split(" ");
+				const ts = Number(tsRaw);
+				assert.ok(Number.isFinite(ts), `bad event line: ${line}`);
+				if (kind === "enter") {
+						pendingEnters[Number(roundRaw)] = ts;
+				} else if (kind === "exit") {
+						const enter = pendingEnters[Number(roundRaw)];
+						assert.ok(Number.isFinite(enter), `exit without enter: ${line}`);
+						intervals.push({ writer: w, round: Number(roundRaw), enter, exit: ts });
+					} else {
+						assert.fail(`unknown event kind in line: ${line}`);
+					}
+				}
+		}
+		assert.equal(intervals.length, writers * roundsPerWriter);
+
+		// Exactly one acquisition at a time: sorted by entry, no interval may
+		// start before the previous one ended (1ms wall-clock tolerance for
+		// Date.now() granularity across processes).
+		intervals.sort((a, b) => a.enter - b.enter || a.exit - b.exit);
+		for (let i = 1; i < intervals.length; i++) {
+			const prev = intervals[i - 1];
+			const cur = intervals[i];
+			assert.ok(
+				cur.enter >= prev.exit - 1,
+				`critical sections overlapped (${fixture.label}): ` +
+					`w${prev.writer}#${prev.round} [${prev.enter},${prev.exit}] ` +
+					`vs w${cur.writer}#${cur.round} [${cur.enter},${cur.exit}]`,
+			);
+		}
+
+		// The steal removed exactly the judged lock — no renamed copies stranded,
+		// and no lock remains after both writers finish.
+		const leftovers = fs
+			.readdirSync(path.dirname(lockPath))
+			.filter((name) => name.includes(".break."));
+		assert.deepEqual(leftovers, []);
+		assert.equal(fs.existsSync(lockPath), false);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+}
+
+test(
+	"two concurrent breakers of a dead holder never overlap critical sections (SP-794)",
+	{ timeout: 90_000 },
+	async () => {
+		// Dead-holder fixture: a PID that cannot be alive names the lock, so both
+		// children's first acquisition attempts must break it — the exact race
+		// where a bare unlink could remove the other waiter's fresh lock.
+		await runTwoStealerContention("spine-state-lock-stealers-", () => {
+			const deadPid = 2_000_000_000;
+			try {
+				process.kill(deadPid, 0);
+				assert.fail(`expected pid ${deadPid} to be dead`);
+			} catch (err) {
+				assert.notEqual(/** @type {NodeJS.ErrnoException} */ (err).code, "EPERM");
+			}
+			return {
+				label: "deadPid",
+				payload: JSON.stringify({ pid: deadPid, startedAt: 1, token: "dead-orphan" }),
+			};
+		});
+	},
+);
+
+test(
+	"two concurrent breakers of a recycled-pid holder never overlap critical sections (SP-794)",
+	{ timeout: 90_000 },
+	async () => {
+		// Recycled-PID fixture: this test process is a live foreign PID whose OS
+		// starttime is far newer than the recorded startedAt, so each child's
+		// break runs the `ps` probe (the widened judge→unlink window from #302)
+		// before stealing.
+		await runTwoStealerContention("spine-state-lock-stealers-recycled-", () => ({
+			label: "pidRecycled",
+			payload: JSON.stringify({
+				pid: process.pid,
+				startedAt: 1,
+				token: "recycled-orphan",
+			}),
+		}));
+	},
+);
+
+test("stealIfTokenMatches puts back a fresh lock acquired between judge and rename (SP-794)", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-putback-"));
+	try {
+		const lockPath = batchStateLockPath(projectRoot);
+		// What the breaker judged stale earlier (old dead holder's raw payload).
+		const stalePayload = JSON.stringify({ pid: 2_000_000_000, startedAt: 1, token: "stale-token" });
+		// A different holder acquired after the judgment, before the rename.
+		const freshPayload = JSON.stringify({ pid: 424_242, startedAt: 2, token: "fresh-token" });
+		fs.writeFileSync(lockPath, freshPayload, { flag: "wx" });
+
+		stealIfTokenMatches(lockPath, "stale-token", "unit-putback", stalePayload);
+
+		// The fresh holder's lock survives at lockPath, byte for byte.
+		const survived = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+		assert.equal(survived.token, "fresh-token");
+		// No renamed copies left behind.
+		const leftovers = fs
+			.readdirSync(path.dirname(lockPath))
+			.filter((name) => name.includes(".break."));
+		assert.deepEqual(leftovers, []);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("stealIfTokenMatches removes the lock only when the token still matches", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-token-match-"));
+	try {
+		const lockPath = batchStateLockPath(projectRoot);
+		const payload = JSON.stringify({ pid: 2_000_000_000, startedAt: 1, token: "dead-orphan" });
+		fs.writeFileSync(lockPath, payload, { flag: "wx" });
+
+		stealIfTokenMatches(lockPath, "dead-orphan", "unit-steal", payload);
+
+		assert.equal(fs.existsSync(lockPath), false);
+		const leftovers = fs
+			.readdirSync(path.dirname(lockPath))
+			.filter((name) => name.includes(".break."));
+		assert.deepEqual(leftovers, []);
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("stealIfTokenMatches compares full content for tokenless corrupt payloads", async () => {
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-lock-corrupt-compare-"));
+	try {
+		const lockPath = batchStateLockPath(projectRoot);
+
+		// Same corrupt bytes as judged stale → stolen.
+		fs.writeFileSync(lockPath, "not json at all", { flag: "wx" });
+		stealIfTokenMatches(lockPath, "", "unit-corrupt-same", "not json at all");
+		assert.equal(fs.existsSync(lockPath), false);
+
+		// Different bytes (a new holder's payload, however malformed) → survives.
+		fs.writeFileSync(lockPath, "different junk", { flag: "wx" });
+		stealIfTokenMatches(lockPath, "", "unit-corrupt-diff", "not json at all");
+		assert.equal(fs.readFileSync(lockPath, "utf-8"), "different junk");
+		const leftovers = fs
+			.readdirSync(path.dirname(lockPath))
+			.filter((name) => name.includes(".break."));
 		assert.deepEqual(leftovers, []);
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });

@@ -90,7 +90,7 @@ test("saveEngineBatchState does not clobber phase paused during heartbeat-style 
 		const engineState = structuredClone(state);
 		engineState.phase = "running";
 		engineState.lanes[0].lastHeartbeatAt = Date.now();
-		saveEngineBatchState(projectRoot, engineState);
+		await saveEngineBatchState(projectRoot, engineState);
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "paused");
 	} finally {
 		await destroyGitRepo(projectRoot);
@@ -142,7 +142,7 @@ test("pauseBatch confirms when attached engine heartbeat saves honor pause", asy
 			const engineState = loaded.raw;
 			engineState.phase = "running";
 			engineState.lanes[0].lastHeartbeatAt = Date.now();
-			saveEngineBatchState(projectRoot, engineState);
+			void saveEngineBatchState(projectRoot, engineState);
 		}, 20);
 
 		const reporter = await startAttachedMilestoneReporter({ projectRoot, write: () => {} });

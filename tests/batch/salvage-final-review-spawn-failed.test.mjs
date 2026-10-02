@@ -58,7 +58,7 @@ test("salvage lists commits and diagnose identifies spawn failure after final re
 
 		// For reconcileBatch, we need the seed state to be saved
 		const { saveEngineBatchState } = await import("../../src/batch/pause.mjs");
-		saveEngineBatchState(projectRoot, seedState);
+		await saveEngineBatchState(projectRoot, seedState);
 
 		void reconcileBatch({ projectRoot, batchId, verbose: true });
 		const list = listSalvageableLanes(projectRoot, batchId);

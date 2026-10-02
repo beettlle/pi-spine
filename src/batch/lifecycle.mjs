@@ -11,16 +11,14 @@ import {
 } from "./diagnosis-pending-lane.mjs";
 import {
 	archiveBatchState,
-	cleanupBatchLaneWorktrees,
 	clearCompletedBatchState,
 	reloadStateForTerminalWrite,
 } from "./lifecycle-archive.mjs";
 export { archiveBatchStatePath } from "./lifecycle-archive.mjs";
+import { runLifecycleCleanupAfterRelease } from "./lifecycle-cleanup.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
-import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { appendJournalEvent } from "./journal.mjs";
-import { recordBatchTerminalMetric } from "./metrics.mjs";
-import { writeBatchPostMortem } from "./postmortem.mjs";
+import { postMortemRelPath } from "./postmortem.mjs";
 import { appendBatchHistoryEntry, clearBatchEnginePid, saveSpineBatchState } from "./state.mjs";
 import { withBatchStateLock } from "./batch-state-lock.mjs";
 import { loadBatchStateFile, parseBatchState, reconcileBatch } from "./reconcile.mjs";
@@ -209,9 +207,11 @@ export function dismissBatch(ctx) {
 		});
 	}
 	// Terminal dismiss write section under the global batch-state lock
-	// (SP-722 / #264): archive, history entry, and clearing the active state
-	// must not interleave with a concurrent engine save or resume writer.
-	return withBatchStateLock(projectRoot, () => {
+	// (SP-722 / #264; SP-796 / #302): archive, history entry, journal event,
+	// and clearing the active state must not interleave with a concurrent
+	// engine save or resume writer. Post-mortem, metrics, and worktree
+	// cleanup run after the lock is released.
+	const inLock = withBatchStateLock(projectRoot, () => {
 		// SP-792 / #301: archive from the state re-read inside the lock; fail
 		// closed when the batch changed or became active again mid-dismiss.
 		const { state: fresh, refusal } = reloadStateForTerminalWrite({
@@ -223,15 +223,13 @@ export function dismissBatch(ctx) {
 			force,
 			diagnosis,
 		});
-		if (refusal) return refusal;
+		if (refusal) return { refusal, archivePath: null, fresh: null, endedAt: 0 };
 
 		const archivePath = archiveBatchState(projectRoot, batchId, fresh.raw);
-		const postMortemPath = writeBatchPostMortem({
-			projectRoot,
-			batchState: fresh.raw,
-			reconciliation,
-		});
 		const endedAt = Date.now();
+		// Deterministic post-mortem location: the file itself is written after
+		// release (SP-796), but the history entry carries the exact path
+		// `writeBatchPostMortem` reports, so lookups keep working.
 		appendBatchHistoryEntry(projectRoot, {
 			batchId,
 			action: "dismissed",
@@ -239,42 +237,46 @@ export function dismissBatch(ctx) {
 			diagnosis,
 			reason: reason ?? null,
 			archivePath: path.relative(projectRoot, archivePath),
-			postMortemPath,
+			postMortemPath: postMortemRelPath(batchId),
 		});
 		appendJournalEvent(projectRoot, batchId, "batch.dismissed", {
 			diagnosis,
 			reason: reason ?? null,
 			archivePath: path.relative(projectRoot, archivePath),
 		});
-		const configResult = loadSpineConfig(projectRoot);
-		const config = configResult.config ?? {};
-		recordBatchTerminalMetric({
-			projectRoot,
-			batchId,
-			batchState: { ...fresh.raw, endedAt },
-			diagnosis: diagnosis ?? "dismissed",
-			config,
-		});
-		cleanupBatchLaneWorktrees({
-			projectRoot,
-			batchId,
-			batchState: fresh.raw,
-			config,
-		});
 		clearCompletedBatchState(projectRoot, fresh.path, batchId);
 		bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
 
-		return {
-			ok: true,
-			exitCode: 0,
-			batchId,
-			diagnosis,
-			headline: `Batch ${batchId} dismissed and archived`,
-			suggestedCommand: "spine preflight",
-			alternatives: ["spine plan all"],
-			archivePath,
-		};
+		return { refusal: null, archivePath, fresh, endedAt };
 	});
+
+	// Cleanup runs only when the in-lock section succeeded (archived and
+	// journaled `batch.dismissed`); a refusal archived nothing for this batch.
+	if (inLock.refusal) return inLock.refusal;
+
+	// SP-796 / #302: post-mortem, metrics, and worktree cleanup run after the
+	// lock is released; failures are reported as cleanupWarnings +
+	// `batch.cleanup_failed`, never thrown after the state was archived.
+	const cleanupWarnings = runLifecycleCleanupAfterRelease({
+		projectRoot,
+		batchId,
+		batchState: inLock.fresh.raw,
+		reconciliation,
+		diagnosis: diagnosis ?? "dismissed",
+		endedAt: inLock.endedAt,
+	});
+
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		diagnosis,
+		headline: `Batch ${batchId} dismissed and archived`,
+		suggestedCommand: "spine preflight",
+		alternatives: ["spine plan all"],
+		archivePath: inLock.archivePath,
+		cleanupWarnings,
+	};
 }
 
 /**
@@ -428,9 +430,9 @@ export function completeBatch(ctx) {
 	terminateSupervisorIfRunning(projectRoot, batchId, "batch_complete");
 
 	// Terminal complete write section under the global batch-state lock
-	// (SP-722 / #264): archive, history entry, and clearing the active state
-	// must not interleave with a concurrent engine save or resume writer.
-	return withBatchStateLock(projectRoot, () => {
+	// (SP-722 / #264; SP-796 / #302) — same split as dismiss: state I/O only,
+	// post-mortem/metrics/worktrees after release.
+	const inLock = withBatchStateLock(projectRoot, () => {
 		// SP-792 / #301: archive from the state re-read inside the lock; fail
 		// closed when the batch changed or became active again mid-complete.
 		const { state: fresh, refusal } = reloadStateForTerminalWrite({
@@ -440,15 +442,13 @@ export function completeBatch(ctx) {
 			action: "complete",
 			requireTerminalPhase: true,
 		});
-		if (refusal) return refusal;
+		if (refusal) return { refusal, archivePath: null, fresh: null, endedAt: 0 };
 
 		const archivePath = archiveBatchState(projectRoot, batchId, fresh.raw);
-		const postMortemPath = writeBatchPostMortem({
-			projectRoot,
-			batchState: fresh.raw,
-			reconciliation,
-		});
 		const endedAt = Date.now();
+		// Deterministic post-mortem location: the file itself is written after
+		// release (SP-796), but the history entry carries the exact path
+		// `writeBatchPostMortem` reports, so lookups keep working.
 		appendBatchHistoryEntry(projectRoot, {
 			batchId,
 			action: "completed",
@@ -456,39 +456,42 @@ export function completeBatch(ctx) {
 			diagnosis: "completed",
 			detectManualMerge,
 			archivePath: path.relative(projectRoot, archivePath),
-			postMortemPath,
+			postMortemPath: postMortemRelPath(batchId),
 		});
 		appendJournalEvent(projectRoot, batchId, "batch.completed", {
 			detectManualMerge,
 			archivePath: path.relative(projectRoot, archivePath),
 			lifecycle: "complete",
 		});
-		const configResult = loadSpineConfig(projectRoot);
-		const config = configResult.config ?? {};
-		recordBatchTerminalMetric({
-			projectRoot,
-			batchId,
-			batchState: { ...fresh.raw, endedAt },
-			diagnosis: "completed",
-			config,
-		});
-		cleanupBatchLaneWorktrees({
-			projectRoot,
-			batchId,
-			batchState: fresh.raw,
-			config,
-		});
 		clearCompletedBatchState(projectRoot, fresh.path, batchId);
 
-		return {
-			ok: true,
-			exitCode: 0,
-			batchId,
-			diagnosis: "completed",
-			headline: `Batch ${batchId} completed and archived`,
-			suggestedCommand: "spine preflight",
-			alternatives: ["spine plan all"],
-			archivePath,
-		};
+		return { refusal: null, archivePath, fresh, endedAt };
 	});
+
+	// Cleanup runs only when the in-lock section succeeded (archived and
+	// journaled `batch.completed`); a refusal archived nothing for this batch.
+	if (inLock.refusal) return inLock.refusal;
+
+	// SP-796 / #302: same post-release split as dismiss — failures become
+	// cleanupWarnings + `batch.cleanup_failed`, never thrown post-archive.
+	const cleanupWarnings = runLifecycleCleanupAfterRelease({
+		projectRoot,
+		batchId,
+		batchState: inLock.fresh.raw,
+		reconciliation,
+		diagnosis: "completed",
+		endedAt: inLock.endedAt,
+	});
+
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		diagnosis: "completed",
+		headline: `Batch ${batchId} completed and archived`,
+		suggestedCommand: "spine preflight",
+		alternatives: ["spine plan all"],
+		archivePath: inLock.archivePath,
+		cleanupWarnings,
+	};
 }
