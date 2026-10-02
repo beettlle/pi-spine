@@ -1,0 +1,21 @@
+.spine/rules-manifest.json
+  s_117ec4f9213ece::t_a7cdbb25053875 2
+spine-tasks/SP-794-lock-steal-by-rename/.DONE
+  s_117ec4f9213ece::t_73aeb50c751ee6 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "56fecde6fe7ef8e85679c5d922350fe5e8580ef0",
+  "prompts": {},
+  "sessions": {
+    "s_117ec4f9213ece": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2889e847-53e7-4340-b422-b301149adc60",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
