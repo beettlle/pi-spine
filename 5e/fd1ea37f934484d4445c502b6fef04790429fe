@@ -1,0 +1,18 @@
+spine-tasks/SP-796-shrink-terminal-lock-sections/.reviews/0-20261002T163937.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-796-shrink-terminal-lock-sections/.reviews/5-20261002T164242.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-796-shrink-terminal-lock-sections/.reviews/final-20261002T170412.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5efd1ea37f934484d4445c502b6fef04790429fe",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
