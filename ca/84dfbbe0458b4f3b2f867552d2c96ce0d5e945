@@ -1,0 +1,14 @@
+spine-tasks/SP-797-async-engine-lock-wait/STATUS.md
+  h_2a17159c706ba1 3-4,51-56,58-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca84dfbbe0458b4f3b2f867552d2c96ce0d5e945",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
