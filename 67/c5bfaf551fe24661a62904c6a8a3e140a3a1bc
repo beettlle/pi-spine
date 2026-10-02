@@ -1,0 +1,16 @@
+src/batch/abort.mjs
+  h_2a17159c706ba1 12,225-229,239,263-272,285-311,318-321,323-336
+src/batch/lifecycle-cleanup.mjs
+  h_2a17159c706ba1 1-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "67c5bfaf551fe24661a62904c6a8a3e140a3a1bc",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
