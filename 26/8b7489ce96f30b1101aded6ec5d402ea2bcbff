@@ -1,0 +1,18 @@
+spine-tasks/SP-797-async-engine-lock-wait/.reviews/0-20261002T175021.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-797-async-engine-lock-wait/.reviews/5-20261002T175131.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-797-async-engine-lock-wait/.reviews/final-20261002T175406.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "268b7489ce96f30b1101aded6ec5d402ea2bcbff",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
