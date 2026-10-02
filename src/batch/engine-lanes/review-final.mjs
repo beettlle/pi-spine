@@ -301,7 +301,7 @@ export async function runFinalReviewPhase({
 					batchId,
 					worktreePath: wt,
 				});
-				contractVerifyResult = verifyContract(wt, parsedContract, {
+				contractVerifyResult = await verifyContract(wt, parsedContract, {
 					...config,
 					baseBranch,
 					sinceCommit: sinceCommit ?? undefined,

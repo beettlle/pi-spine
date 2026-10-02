@@ -179,7 +179,7 @@ export function prepareDetachedResumeEngineHandoff(projectRoot) {
 		orphanResume: orphanEligibility.allowOrphanResume,
 		engineConfirmedDead: orphanEligibility.engineConfirmedDead,
 	});
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 	return {
 		ok: true,

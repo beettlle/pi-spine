@@ -80,42 +80,122 @@ function reportRejectedBatchStateWrite(projectRoot, state, reason) {
 }
 
 /**
+ * Guard + write path shared by `saveSpineBatchState` and `updateSpineBatchState`
+ * (SP-791 / #301). The caller must already hold the batch-state lock; the
+ * guard evaluation and the write run in one critical section so the
+ * check-then-act pair cannot race a concurrent writer from another process.
+ *
+ * Returns a structured result so callers can distinguish a rejected write
+ * (`{ ok: false, reason }`, disk state returned as `state`) from a persisted
+ * one (`{ ok: true, state: next }`).
+ *
+ * @param {string} projectRoot
+ * @param {Record<string, any>} state
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} options
+ * @returns {{ ok: true, state: Record<string, any> } | { ok: false, reason: string, state: Record<string, any> }}
+ */
+function persistSpineBatchStateGuarded(projectRoot, state, options) {
+	const guard = evaluateBatchStateWriteGuard(projectRoot, state, {
+		skipOwnerCheck: options.bypassOwnerCheck === true,
+		allowArchivedResurrection: options.allowArchivedResurrection === true,
+	});
+	if (!guard.allowed) {
+		const reason = String(guard.reason ?? "unknown");
+		reportRejectedBatchStateWrite(projectRoot, state, reason);
+		const loaded = loadSpineBatchState(projectRoot);
+		return { ok: false, reason, state: loaded.raw ?? state };
+	}
+
+	const filePath = spineBatchStatePath(projectRoot);
+	fs.mkdirSync(path.dirname(filePath), { recursive: true });
+	if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {
+		clearBatchEnginePid(state);
+	}
+	const next = { ...state, updatedAt: Date.now() };
+	writeJsonAtomic(filePath, next);
+	return { ok: true, state: next };
+}
+
+/**
  * Persist batch state under the global batch-state lock (SP-722 / #264).
  *
  * The guard evaluation and the write run inside one critical section so the
  * check-then-act pair cannot race a concurrent writer from another process
  * (engine vs. CLI complete/resume/abort).
  *
- * `bypassWriteGuard: true` skips only the live-foreign-owner-PID check; the
+ * `bypassOwnerCheck: true` skips only the live-foreign-owner-PID check; the
  * post-archive resurrection check always runs (SP-790 / #293).
  * `allowArchivedResurrection: true` is reserved for operator recovery that
  * intentionally rebuilds an archived batch (force-resume from batch-meta, #126).
  *
+ * When the guard rejects, the on-disk state (or the incoming state when no
+ * disk state exists) is returned unchanged so existing callers keep their
+ * pre-SP-790 contract.
+ *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
- * @param {{ bypassWriteGuard?: boolean, allowArchivedResurrection?: boolean }} [options]
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
  */
 export function saveSpineBatchState(projectRoot, state, options = {}) {
-	return withBatchStateLock(projectRoot, () => {
-		const guard = evaluateBatchStateWriteGuard(projectRoot, state, {
-			skipOwnerCheck: options.bypassWriteGuard === true,
-			allowArchivedResurrection: options.allowArchivedResurrection === true,
-		});
-		if (!guard.allowed) {
-			reportRejectedBatchStateWrite(projectRoot, state, String(guard.reason ?? "unknown"));
-			const loaded = loadSpineBatchState(projectRoot);
-			return loaded.raw ?? state;
-		}
+	return withBatchStateLock(projectRoot, () =>
+		persistSpineBatchStateGuarded(projectRoot, state, options).state,
+	);
+}
 
-		const filePath = spineBatchStatePath(projectRoot);
-		fs.mkdirSync(path.dirname(filePath), { recursive: true });
-		if (TERMINAL_BATCH_PHASES.has(String(state.phase ?? ""))) {
-			clearBatchEnginePid(state);
+/**
+ * Atomic read-modify-write on `.spine/batch-state.json` (SP-791 / #301).
+ *
+ * Load, clone, mutate, and guarded save all run inside ONE `withBatchStateLock`
+ * hold, so racing processes (engine progress save vs. operator pause/resume)
+ * each mutate the latest committed state instead of clobbering each other with
+ * stale whole-file snapshots. The lock is re-entrant per process, so callers
+ * may already hold it (e.g. under `withBatchStateLock`) and the nested
+ * acquisition composes instead of self-deadlocking.
+ *
+ * `mutate(draft, { diskState })` receives a `structuredClone` of the raw disk
+ * state plus the disk state itself for read-only reference; mutating `draft`
+ * never affects the returned `diskState`. Returning exactly `false` from
+ * `mutate` is a no-op: nothing is written and `{ changed: false }` is returned.
+ *
+ * Results:
+ * - `{ ok: false, reason: "missing" }` — no batch-state.json on disk
+ * - `{ ok: false, reason: "corrupt" }` — batch-state.json is unparseable
+ * - `{ ok: false, reason, state }` — the write guard rejected (e.g.
+ *   `stale_engine_pid`, `archived_batch_resurrection`); `state` is the on-disk
+ *   state that was kept
+ * - `{ ok: true, changed: false, state }` — `mutate` returned `false`;
+ *   `state` is the untouched disk state
+ * - `{ ok: true, changed: true, state }` — mutated state persisted
+ *
+ * `options` passes through to the same guard/write path as
+ * `saveSpineBatchState` (`bypassOwnerCheck` / `allowArchivedResurrection`).
+ *
+ * @param {string} projectRoot
+ * @param {(draft: Record<string, any>, ctx: { diskState: Record<string, any> }) => boolean | unknown} mutate
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
+ * @returns {{ ok: boolean, reason?: string, changed?: boolean, state?: Record<string, any> }}
+ */
+export function updateSpineBatchState(projectRoot, mutate, options = {}) {
+	const result = /** @type {{ ok: boolean, reason?: string, changed?: boolean, state?: Record<string, any> }} */ (
+		withBatchStateLock(projectRoot, () => {
+		const loaded = loadSpineBatchState(projectRoot);
+		if (!loaded.raw) {
+			return { ok: false, reason: loaded.parseError ? "corrupt" : "missing" };
 		}
-		const next = { ...state, updatedAt: Date.now() };
-		writeJsonAtomic(filePath, next);
-		return next;
-	});
+		const diskState = loaded.raw;
+		const draft = structuredClone(diskState);
+		const mutated = mutate(draft, { diskState });
+		if (mutated === false) {
+			return { ok: true, changed: false, state: diskState };
+		}
+		const persisted = persistSpineBatchStateGuarded(projectRoot, draft, options);
+		if (!persisted.ok) {
+			return { ok: false, reason: persisted.reason, state: persisted.state };
+		}
+		return { ok: true, changed: true, state: persisted.state };
+		})
+	);
+	return result;
 }
 
 /**

@@ -120,7 +120,7 @@ export function attemptPostMergeLandLoopHandoff({
 	});
 	if (finalizeResult?.ok) {
 		clearBatchEnginePid(state);
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 		appendJournalEvent(projectRoot, batchId, "engine.attached_post_merge_handoff", {
 			signal,
 			action: "finalized_in_process",
@@ -145,7 +145,7 @@ export function attemptPostMergeLandLoopHandoff({
 	const fresh = loadSpineBatchState(projectRoot);
 	if (fresh.raw && enginePid) {
 		recordBatchEnginePid(fresh.raw, enginePid);
-		saveSpineBatchState(projectRoot, fresh.raw, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, fresh.raw, { bypassOwnerCheck: true });
 	}
 
 	appendJournalEvent(projectRoot, batchId, "engine.attached_post_merge_handoff", {

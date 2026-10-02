@@ -124,7 +124,7 @@ test("polluted build does not fail verify after hygiene", async () => {
 		const pollution = createPollutedFlutterBuild(projectRoot);
 		const checkCommand = "test ! -e build/ios/SourcePackages/pollution.dart";
 
-		const beforeHygiene = verifyContract(
+		const beforeHygiene = await verifyContract(
 			projectRoot,
 			{ testCommand: checkCommand },
 			{ contract: { testRetries: 0 } },
@@ -136,7 +136,7 @@ test("polluted build does not fail verify after hygiene", async () => {
 		});
 		assert.equal(fs.existsSync(pollution), false);
 
-		const afterHygiene = verifyContract(
+		const afterHygiene = await verifyContract(
 			projectRoot,
 			{ testCommand: checkCommand },
 			{ contract: { testRetries: 0 } },
@@ -152,7 +152,7 @@ test("verifyContract cleans polluted build before unscoped flutter analyze testC
 	const restorePath = installFlutterStubOnPath(projectRoot);
 	try {
 		const pollution = createPollutedFlutterBuild(projectRoot);
-		const result = verifyContract(
+		const result = await verifyContract(
 			projectRoot,
 			{
 				testCommand:

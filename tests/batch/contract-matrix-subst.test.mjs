@@ -177,7 +177,7 @@ test("metachar-in-value: substitution is textual and verifyContract refuses the 
 
 	const worktreePath = await initGitRepo("spine-matrix-metachar-");
 	try {
-		const result = verifyContract(worktreePath, scoped, {
+		const result = await verifyContract(worktreePath, scoped, {
 			matrixRow: { run_id: evil },
 			contract: { testRetries: 0 },
 		});
@@ -214,7 +214,7 @@ test("verifyContract: applies config.matrixRow so fileScopeMustChange matches pe
 		execFileSync("git", ["commit", "-m", "matrix row node"], { cwd: worktreePath, stdio: "ignore" });
 
 		// With the matrix row, the placeholder resolves to src/runner-node.mjs and matches.
-		const result = verifyContract(worktreePath, scoped, { matrixRow: { run_id: "node" } });
+		const result = await verifyContract(worktreePath, scoped, { matrixRow: { run_id: "node" } });
 		assert.ok(result.ok, `expected ok with matrix row; checks: ${JSON.stringify(result.checks)}`);
 
 		const scopeCheck = result.checks.find((c) => c.field === "fileScopeMustChange");
@@ -249,7 +249,7 @@ test("verifyContract: omits matrixRow for non-matrix tasks (backwards compatible
 		execFileSync("git", ["commit", "-m", "non-matrix"], { cwd: worktreePath, stdio: "ignore" });
 
 		// No matrixRow -> parsed contract used verbatim -> file scope matches.
-		const result = verifyContract(worktreePath, scoped, {});
+		const result = await verifyContract(worktreePath, scoped, {});
 		assert.ok(result.ok, `non-matrix verify expected ok; checks: ${JSON.stringify(result.checks)}`);
 	} finally {
 		await destroyGitRepo(worktreePath);

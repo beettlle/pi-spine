@@ -95,7 +95,7 @@ test("verifyContract passes pre-landed fileScopeMustChange with resume sinceComm
 		gitCommitAll(projectRoot, "unrelated lane change since task start");
 
 		const parsed = parseContract(RESUME_PRELANDED_PROMPT);
-		const result = verifyContract(projectRoot, parsed, {
+		const result = await verifyContract(projectRoot, parsed, {
 			baseBranch: "main",
 			sinceCommit,
 		});
@@ -123,7 +123,7 @@ test("verifyContract without sinceCommit still requires spine delivery for pre-l
 		gitCommitAll(projectRoot, "unrelated lane change without delivery");
 
 		const parsed = parseContract(RESUME_PRELANDED_PROMPT);
-		const result = verifyContract(projectRoot, parsed, { baseBranch: "main" });
+		const result = await verifyContract(projectRoot, parsed, { baseBranch: "main" });
 
 		assert.equal(result.ok, false);
 		const scopeCheck = result.checks.find((check) => check.field === "fileScopeMustChange");
@@ -151,7 +151,7 @@ test("verifyContract resume baseline does not satisfy scope changed on lane sinc
 		gitCommitAll(projectRoot, "lane implementation after task start");
 
 		const parsed = parseContract(RESUME_PRELANDED_PROMPT);
-		const result = verifyContract(projectRoot, parsed, {
+		const result = await verifyContract(projectRoot, parsed, {
 			baseBranch: "main",
 			sinceCommit,
 		});

@@ -160,7 +160,7 @@ test("waitForSequenceBatchTerminal does not exit while engine PID is alive", asy
 		setTimeout(() => {
 			const updated = makeBatchState("20260703T130000", "SP-998");
 			markStateCompleted(updated);
-			saveSpineBatchState(projectRoot, updated, { bypassWriteGuard: true });
+			saveSpineBatchState(projectRoot, updated, { bypassOwnerCheck: true });
 		}, 300);
 
 		const result = await resultPromise;

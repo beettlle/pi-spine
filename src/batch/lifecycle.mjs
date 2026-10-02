@@ -13,6 +13,7 @@ import {
 	archiveBatchState,
 	cleanupBatchLaneWorktrees,
 	clearCompletedBatchState,
+	reloadStateForTerminalWrite,
 } from "./lifecycle-archive.mjs";
 export { archiveBatchStatePath } from "./lifecycle-archive.mjs";
 import { assertOrchIntegratable } from "./integrate.mjs";
@@ -211,10 +212,23 @@ export function dismissBatch(ctx) {
 	// (SP-722 / #264): archive, history entry, and clearing the active state
 	// must not interleave with a concurrent engine save or resume writer.
 	return withBatchStateLock(projectRoot, () => {
-		const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+		// SP-792 / #301: archive from the state re-read inside the lock; fail
+		// closed when the batch changed or became active again mid-dismiss.
+		const { state: fresh, refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: loaded.path,
+			batchId,
+			action: "dismiss",
+			requireTerminalPhase: true,
+			force,
+			diagnosis,
+		});
+		if (refusal) return refusal;
+
+		const archivePath = archiveBatchState(projectRoot, batchId, fresh.raw);
 		const postMortemPath = writeBatchPostMortem({
 			projectRoot,
-			batchState: loaded.raw,
+			batchState: fresh.raw,
 			reconciliation,
 		});
 		const endedAt = Date.now();
@@ -237,17 +251,17 @@ export function dismissBatch(ctx) {
 		recordBatchTerminalMetric({
 			projectRoot,
 			batchId,
-			batchState: { ...loaded.raw, endedAt },
+			batchState: { ...fresh.raw, endedAt },
 			diagnosis: diagnosis ?? "dismissed",
 			config,
 		});
 		cleanupBatchLaneWorktrees({
 			projectRoot,
 			batchId,
-			batchState: loaded.raw,
+			batchState: fresh.raw,
 			config,
 		});
-		clearCompletedBatchState(projectRoot, loaded.path, batchId);
+		clearCompletedBatchState(projectRoot, fresh.path, batchId);
 		bumpDashboardInvalidateSignal(projectRoot, "batch_dismiss", batchId);
 
 		return {
@@ -417,10 +431,21 @@ export function completeBatch(ctx) {
 	// (SP-722 / #264): archive, history entry, and clearing the active state
 	// must not interleave with a concurrent engine save or resume writer.
 	return withBatchStateLock(projectRoot, () => {
-		const archivePath = archiveBatchState(projectRoot, batchId, loaded.raw);
+		// SP-792 / #301: archive from the state re-read inside the lock; fail
+		// closed when the batch changed or became active again mid-complete.
+		const { state: fresh, refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: loaded.path,
+			batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+		});
+		if (refusal) return refusal;
+
+		const archivePath = archiveBatchState(projectRoot, batchId, fresh.raw);
 		const postMortemPath = writeBatchPostMortem({
 			projectRoot,
-			batchState: loaded.raw,
+			batchState: fresh.raw,
 			reconciliation,
 		});
 		const endedAt = Date.now();
@@ -443,17 +468,17 @@ export function completeBatch(ctx) {
 		recordBatchTerminalMetric({
 			projectRoot,
 			batchId,
-			batchState: { ...loaded.raw, endedAt },
+			batchState: { ...fresh.raw, endedAt },
 			diagnosis: "completed",
 			config,
 		});
 		cleanupBatchLaneWorktrees({
 			projectRoot,
 			batchId,
-			batchState: loaded.raw,
+			batchState: fresh.raw,
 			config,
 		});
-		clearCompletedBatchState(projectRoot, loaded.path, batchId);
+		clearCompletedBatchState(projectRoot, fresh.path, batchId);
 
 		return {
 			ok: true,

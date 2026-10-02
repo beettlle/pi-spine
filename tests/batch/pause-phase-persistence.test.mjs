@@ -82,6 +82,58 @@ test("confirmed pause records batch.paused only after engine persists phase", as
 	}
 });
 
+test("unconfirmed pause rollback never reverts a terminal phase (SP-791)", async () => {
+	const projectRoot = await initGitRepo("spine-pause-rollback-terminal-");
+	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	await new Promise((resolve, reject) => {
+		child.once("spawn", resolve);
+		child.once("error", reject);
+	});
+
+	/** @type {ReturnType<typeof setInterval> | undefined} */
+	let finishInterval;
+	try {
+		const { batchId } = writeFailedPausedMismatchBatch(projectRoot);
+		const state = loadSpineBatchState(projectRoot).raw;
+		recordBatchEnginePid(state, child.pid ?? null);
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+
+		// The attached engine finishes the batch during the grace window: the
+		// pause stays unconfirmed and the disk phase is terminal before the
+		// rollback runs. The rollback must leave completed alone instead of
+		// reverting it to the pre-pause running phase (#301).
+		finishInterval = setInterval(() => {
+			const loaded = loadSpineBatchState(projectRoot);
+			if (loaded.raw?.phase !== "paused") return;
+			loaded.raw.phase = "completed";
+			saveSpineBatchState(projectRoot, loaded.raw, { bypassOwnerCheck: true });
+		}, 20);
+
+		const pause = await pauseBatch({
+			projectRoot,
+			confirmGraceMs: 250,
+			pollIntervalMs: 50,
+		});
+		assert.equal(pause.ok, false);
+		assert.equal(pause.error, "pause_not_confirmed");
+
+		const events = readJournalEvents(projectRoot, batchId);
+		const failedEvents = events.filter((event) => event.type === "batch.pause_failed");
+		assert.equal(failedEvents.length, 1);
+		assert.equal(failedEvents[0].payload?.observedPhase, "completed");
+
+		const after = loadSpineBatchState(projectRoot).raw;
+		assert.equal(after?.phase, "completed");
+		assert.equal(events.some((event) => event.type === "batch.paused"), false);
+	} finally {
+		if (finishInterval) clearInterval(finishInterval);
+		child.kill("SIGKILL");
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("unconfirmed pause does not leave orphan batch.paused journal entry", async () => {
 	const projectRoot = await initGitRepo("spine-pause-orphan-journal-");
 	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
@@ -104,7 +156,7 @@ test("unconfirmed pause does not leave orphan batch.paused journal entry", async
 			const loaded = loadSpineBatchState(projectRoot);
 			if (loaded.raw?.phase === "paused") {
 				loaded.raw.phase = "running";
-				saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
+				saveSpineBatchState(projectRoot, loaded.raw, { bypassOwnerCheck: true });
 			}
 		}, 20);
 

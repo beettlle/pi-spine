@@ -29,6 +29,8 @@ const STATE_IO_MODULE_URL = new URL("../../src/batch/state-io.mjs", import.meta.
  * Child-writer script source. Modes:
  * - `rmw`: N locked read-modify-write cycles on batch-state plus one history
  *   append per cycle.
+ * - `rmw-update`: N updateSpineBatchState cycles — each call is a complete
+ *   atomic load+mutate+save under the lock (SP-791 / #301).
  * - `hold`: acquire the lock, touch a ready file, hold for holdMs, release.
  */
 const CHILD_SCRIPT = String.raw`
@@ -49,6 +51,29 @@ if (mode === "hold") {
 	process.exit(0);
 }
 
+if (mode === "rmw-update") {
+	const { updateSpineBatchState } = await import(stateIoUrl);
+	const count = Number(iterations);
+	for (let i = 0; i < count; i++) {
+		// Each cycle is atomic on its own: load, mutate, and guarded save share
+		// one lock hold inside updateSpineBatchState (SP-791).
+		const result = updateSpineBatchState(
+			projectRoot,
+			(draft) => {
+				draft.counters = draft.counters ?? {};
+				draft.counters[writerId] = Number(draft.counters[writerId] ?? 0) + 1;
+				return true;
+			},
+			{ bypassOwnerCheck: true },
+		);
+		if (!result.ok || !result.changed) {
+			console.error("updateSpineBatchState failed:", JSON.stringify(result));
+			process.exit(1);
+		}
+	}
+	process.exit(0);
+}
+
 const { loadSpineBatchState, saveSpineBatchState, appendBatchHistoryEntry } = await import(
 	stateIoUrl
 );
@@ -66,7 +91,7 @@ for (let i = 0; i < count; i++) {
 		saveSpineBatchState(
 			projectRoot,
 			{ ...prev, lockTestMarkers: markers },
-			{ bypassWriteGuard: true },
+			{ bypassOwnerCheck: true },
 		);
 		appendBatchHistoryEntry(projectRoot, {
 			batchId: "lock-test",
@@ -158,6 +183,60 @@ test(
 			assert.equal(historyKeys.size, writers * iterations);
 
 			// Lock file is released after all writers finish.
+			assert.equal(fs.existsSync(batchStateLockPath(projectRoot)), false);
+		} finally {
+			await rm(projectRoot, { recursive: true, force: true });
+		}
+	},
+);
+
+test(
+	"concurrent updateSpineBatchState writers on different fields both survive (SP-791)",
+	{ timeout: 90_000 },
+	async () => {
+		const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-update-concurrent-"));
+		try {
+			const scriptPath = writeChildScript(projectRoot);
+			saveSpineBatchState(projectRoot, {
+				batchId: "lock-update-test",
+				phase: "running",
+				counters: {},
+			});
+
+			// Two processes, 20 atomic RMW cycles each on a different field. Whole-file
+			// snapshots without the lock would clobber each other's counters; both
+			// must survive (#301).
+			const iterations = 20;
+			const results = await Promise.all([
+				runChild(scriptPath, [
+					projectRoot,
+					LOCK_MODULE_URL,
+					STATE_IO_MODULE_URL,
+					"rmw-update",
+					"alpha",
+					String(iterations),
+					"",
+					"",
+				]),
+				runChild(scriptPath, [
+					projectRoot,
+					LOCK_MODULE_URL,
+					STATE_IO_MODULE_URL,
+					"rmw-update",
+					"beta",
+					String(iterations),
+					"",
+					"",
+				]),
+			]);
+			for (const result of results) {
+				assert.equal(result.code, 0, `child writer failed: ${result.stderr}`);
+			}
+
+			const loaded = loadSpineBatchState(projectRoot);
+			assert.equal(loaded.parseError, null);
+			assert.equal(loaded.raw?.counters?.alpha, iterations);
+			assert.equal(loaded.raw?.counters?.beta, iterations);
 			assert.equal(fs.existsSync(batchStateLockPath(projectRoot)), false);
 		} finally {
 			await rm(projectRoot, { recursive: true, force: true });

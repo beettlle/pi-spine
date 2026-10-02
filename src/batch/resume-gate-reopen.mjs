@@ -5,12 +5,18 @@
  */
 
 import { reopenIntegrateGateForCompletedBatch } from "./gate.mjs";
-import { loadSpineBatchState, saveSpineBatchState } from "./state.mjs";
+import { updateSpineBatchState } from "./state.mjs";
 
 /**
  * When `resumeCheck.gateReopen` is set, re-open the integrate gate and return
  * a resumeBatch-shaped result. Caller must release the resume lock via the
  * returned path (this helper releases it).
+ *
+ * The reopen decision and the state persist run in one `updateSpineBatchState`
+ * critical section (SP-793 / #301): the phase is re-read under the lock from the
+ * latest committed state instead of a stale pre-load, and the persist goes
+ * through the write guard with no owner bypass — a completed batch has no live
+ * engine owner, so a guard rejection here is a real signal, not an obstacle.
  *
  * @param {{
  *   projectRoot: string,
@@ -24,14 +30,24 @@ export function tryResumeCompletedGateReopen({ projectRoot, resumeCheck, release
 		return null;
 	}
 
-	const reopenState = loadSpineBatchState(projectRoot).raw;
-	const reopenResult = reopenIntegrateGateForCompletedBatch({
-		projectRoot,
-		batchId: resumeCheck.batchId,
-		batchState: reopenState,
+	let reopenResult = null;
+	updateSpineBatchState(projectRoot, (draft) => {
+		reopenResult = reopenIntegrateGateForCompletedBatch({
+			projectRoot,
+			batchId: resumeCheck.batchId,
+			batchState: draft,
+		});
+		// The gate record is written by the reopen itself; persisting the draft
+		// keeps parity with the prior unconditional save (refreshes updatedAt).
+		return true;
 	});
-	if (reopenState) {
-		saveSpineBatchState(projectRoot, reopenState, { bypassWriteGuard: true });
+	if (!reopenResult) {
+		// Missing or corrupt batch-state on disk: evaluate reopen without state
+		// so the CLI reports the same batch_not_completed result as before.
+		reopenResult = reopenIntegrateGateForCompletedBatch({
+			projectRoot,
+			batchId: resumeCheck.batchId,
+		});
 	}
 	releaseResumeLock?.();
 	const output = reopenResult.reopened

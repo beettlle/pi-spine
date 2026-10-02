@@ -37,7 +37,7 @@ test("verifyContract with sinceCommit ignores prior same-lane task fileScopeMust
 		execFileSync("git", ["add", "src/task-two/b.mjs"], { cwd: worktreePath, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "lane task 2"], { cwd: worktreePath, stdio: "ignore" });
 
-		const cumulative = verifyContract(
+		const cumulative = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",
@@ -53,7 +53,7 @@ test("verifyContract with sinceCommit ignores prior same-lane task fileScopeMust
 		);
 		assert.ok(cumulativeForbidden.length > 0);
 
-		const scoped = verifyContract(
+		const scoped = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",
@@ -78,7 +78,7 @@ test("verifyContract without sinceCommit preserves cumulative lane branch behavi
 		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "single task lane"], { cwd: worktreePath, stdio: "ignore" });
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",

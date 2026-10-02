@@ -54,8 +54,9 @@ export {
  * @param {string} worktreePath 
  * @param {object} parsedContract 
  * @param {object} [config] 
+ * @returns {Promise<{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }>}
  */
-export function verifyContract(worktreePath, parsedContract, config = {}) {
+export async function verifyContract(worktreePath, parsedContract, config = {}) {
 	const effectiveContract = config?.matrixRow
 		? applyMatrixRowToContract(parsedContract, config.matrixRow)
 		: parsedContract;

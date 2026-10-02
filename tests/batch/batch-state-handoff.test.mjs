@@ -86,7 +86,7 @@ test("complete handoff preserves newer active batch (073511 vs 073937 race)", as
 			],
 		});
 		newState.phase = "running";
-		saveSpineBatchState(projectRoot, newState, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, newState, { bypassOwnerCheck: true });
 
 		const clearResult = clearActiveBatchStateIfMatches(spineBatchStatePath(projectRoot), OLD_BATCH);
 		assert.equal(clearResult.cleared, false);
