@@ -1,6 +1,6 @@
 # SP-794: Lock steal-by-rename with token re-check — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟨 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -18,14 +18,14 @@
 - [x] Dependencies satisfied (none declared)
 
 ### Step 1: Steal-by-rename helper
-**Status:** 🟨 In Progress
+**Status:** ✅ Complete
 
-- [ ] Helper used for every stale break
-- [ ] Content compare for corrupt/invalid
-- [ ] Put-back tolerated
+- [x] Helper used for every stale break (5 call sites: corrupt-stale, invalid-pid, leakedSelf, deadPid, pidRecycled; existing 10/10 lock tests pass with the new mechanism)
+- [x] Content compare for corrupt/invalid (full raw file content; token path only when a non-empty token was observed)
+- [x] Put-back tolerated (`linkSync`, `EEXIST` swallowed, renamed copy unlinked in `finally` so it is never stranded)
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟨 In Progress
 
 - [ ] Two-concurrent-stealers
 - [ ] Put-back unit test
