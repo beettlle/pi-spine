@@ -1,0 +1,18 @@
+spine-tasks/SP-795-durable-atomic-json-write/.reviews/0-20261002T032354.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-795-durable-atomic-json-write/.reviews/final-20261002T032454.md
+  h_2a17159c706ba1 1-11
+test.txt
+  h_2a17159c706ba1 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "931386ce1023066835efeefbaa096aa424ad9a21",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
