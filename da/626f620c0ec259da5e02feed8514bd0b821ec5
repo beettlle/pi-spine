@@ -1,0 +1,24 @@
+spine-tasks/SP-796-shrink-terminal-lock-sections/PROMPT.md
+  s_11ae5c60ed44c9::t_9f47b459246b0c 42
+  s_11ae5c60ed44c9::t_602c3987d0df60 125
+spine-tasks/_authoring/release-v2.26.0/manifest.md
+  s_11ae5c60ed44c9::t_64acd002e71133 166-171
+spine-tasks/CONTEXT.md
+  s_11ae5c60ed44c9::t_65cd6b7fbd283d 2620-2623
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "da626f620c0ec259da5e02feed8514bd0b821ec5",
+  "prompts": {},
+  "sessions": {
+    "s_11ae5c60ed44c9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-77c41bd8-67b0-4704-ba2a-7d21722e4423",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
