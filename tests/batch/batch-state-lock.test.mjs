@@ -64,7 +64,7 @@ if (mode === "rmw-update") {
 				draft.counters[writerId] = Number(draft.counters[writerId] ?? 0) + 1;
 				return true;
 			},
-			{ bypassWriteGuard: true },
+			{ bypassOwnerCheck: true },
 		);
 		if (!result.ok || !result.changed) {
 			console.error("updateSpineBatchState failed:", JSON.stringify(result));
@@ -91,7 +91,7 @@ for (let i = 0; i < count; i++) {
 		saveSpineBatchState(
 			projectRoot,
 			{ ...prev, lockTestMarkers: markers },
-			{ bypassWriteGuard: true },
+			{ bypassOwnerCheck: true },
 		);
 		appendBatchHistoryEntry(projectRoot, {
 			batchId: "lock-test",

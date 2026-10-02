@@ -74,7 +74,7 @@ export async function resumeMultiTaskBatch({ projectRoot, force = false, resumeC
 			batchId,
 			fromPhase: phase,
 		});
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 		return finalizeResumedBatchForIntegrate({
 			projectRoot,
 			state,

@@ -72,7 +72,7 @@ export function mergeEngineStateWithDiskPause(projectRoot, state) {
  *
  * @param {string} projectRoot
  * @param {object} state
- * @param {{ bypassWriteGuard?: boolean }} [options]
+ * @param {{ bypassOwnerCheck?: boolean }} [options]
  */
 export function saveEngineBatchState(projectRoot, state, options = {}) {
 	return withBatchStateLock(projectRoot, () => {
@@ -110,7 +110,7 @@ export function enforceOperatorPauseOnDisk(projectRoot) {
 			enforced = true;
 			return true;
 		},
-		{ bypassWriteGuard: true },
+		{ bypassOwnerCheck: true },
 	);
 	return result.ok === true && enforced;
 }
@@ -220,7 +220,7 @@ export async function pauseBatch({
 			draft.phase = "paused";
 			return true;
 		},
-		{ bypassWriteGuard: true },
+		{ bypassOwnerCheck: true },
 	);
 	const diskPhase = String(pauseWrite.state?.phase ?? phase ?? "unknown");
 	if (!pauseWrite.ok || (!pauseWrite.changed && diskPhase !== "paused")) {
@@ -259,7 +259,7 @@ export async function pauseBatch({
 					draft.phase = fromPhase;
 					return true;
 				},
-				{ bypassWriteGuard: true },
+				{ bypassOwnerCheck: true },
 			);
 			appendJournalEvent(projectRoot, batchId, "batch.pause_failed", {
 				fromPhase,

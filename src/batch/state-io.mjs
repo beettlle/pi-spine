@@ -91,12 +91,12 @@ function reportRejectedBatchStateWrite(projectRoot, state, reason) {
  *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
- * @param {{ bypassWriteGuard?: boolean, allowArchivedResurrection?: boolean }} options
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} options
  * @returns {{ ok: true, state: Record<string, any> } | { ok: false, reason: string, state: Record<string, any> }}
  */
 function persistSpineBatchStateGuarded(projectRoot, state, options) {
 	const guard = evaluateBatchStateWriteGuard(projectRoot, state, {
-		skipOwnerCheck: options.bypassWriteGuard === true,
+		skipOwnerCheck: options.bypassOwnerCheck === true,
 		allowArchivedResurrection: options.allowArchivedResurrection === true,
 	});
 	if (!guard.allowed) {
@@ -123,7 +123,7 @@ function persistSpineBatchStateGuarded(projectRoot, state, options) {
  * check-then-act pair cannot race a concurrent writer from another process
  * (engine vs. CLI complete/resume/abort).
  *
- * `bypassWriteGuard: true` skips only the live-foreign-owner-PID check; the
+ * `bypassOwnerCheck: true` skips only the live-foreign-owner-PID check; the
  * post-archive resurrection check always runs (SP-790 / #293).
  * `allowArchivedResurrection: true` is reserved for operator recovery that
  * intentionally rebuilds an archived batch (force-resume from batch-meta, #126).
@@ -134,7 +134,7 @@ function persistSpineBatchStateGuarded(projectRoot, state, options) {
  *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
- * @param {{ bypassWriteGuard?: boolean, allowArchivedResurrection?: boolean }} [options]
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
  */
 export function saveSpineBatchState(projectRoot, state, options = {}) {
 	return withBatchStateLock(projectRoot, () =>
@@ -168,11 +168,11 @@ export function saveSpineBatchState(projectRoot, state, options = {}) {
  * - `{ ok: true, changed: true, state }` — mutated state persisted
  *
  * `options` passes through to the same guard/write path as
- * `saveSpineBatchState` (`bypassWriteGuard` / `allowArchivedResurrection`).
+ * `saveSpineBatchState` (`bypassOwnerCheck` / `allowArchivedResurrection`).
  *
  * @param {string} projectRoot
  * @param {(draft: Record<string, any>, ctx: { diskState: Record<string, any> }) => boolean | unknown} mutate
- * @param {{ bypassWriteGuard?: boolean, allowArchivedResurrection?: boolean }} [options]
+ * @param {{ bypassOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
  * @returns {{ ok: boolean, reason?: string, changed?: boolean, state?: Record<string, any> }}
  */
 export function updateSpineBatchState(projectRoot, mutate, options = {}) {
