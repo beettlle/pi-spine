@@ -149,7 +149,7 @@ test("diagnose prefers salvage over worker retry after post-DONE plan review spa
 			],
 		};
 		const { saveEngineBatchState } = await import("../../src/batch/pause.mjs");
-		saveEngineBatchState(projectRoot, seedState);
+		await saveEngineBatchState(projectRoot, seedState);
 
 		// Salvage eligibility (SP-718 pattern) must also hold for plan review:
 		// lane commits exist and the failed task is salvageable, not excluded.

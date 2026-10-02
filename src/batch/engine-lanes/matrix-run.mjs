@@ -534,7 +534,7 @@ export async function runMatrixTaskForResume({
 		state.phase = "failed";
 		state.endedAt = Date.now();
 		state.lastError = String(output).slice(0, 500);
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 		return {
 			isMatrix: true,
 			ok: false,
@@ -673,7 +673,7 @@ export async function runMatrixTaskOnLane({
 		skippedRowIds.push(row.rowId);
 	}
 	updateSegmentForTask(state, taskId, "running");
-	saveEngineBatchState(projectRoot, state);
+	await saveEngineBatchState(projectRoot, state);
 
 	appendJournalEvent(projectRoot, batchId, "task.started", {
 		taskId,
@@ -708,7 +708,7 @@ export async function runMatrixTaskOnLane({
 		const runningEntry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === row.rowId);
 		if (runningEntry) {
 			runningEntry.status = "running";
-			saveEngineBatchState(projectRoot, state);
+			await saveEngineBatchState(projectRoot, state);
 		}
 		try {
 			return await runMatrixSubLane({
@@ -796,7 +796,7 @@ export async function runMatrixTaskOnLane({
 		task.exitReason = `matrix_sub_lane_failed:${failedSummary}`;
 		updateSegmentForTask(state, taskId, "failed");
 		recomputeTaskCounters(state);
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 		recordMatrixEvent(projectRoot, batchId, "matrix.task_failed", {
 			taskId,
 			laneNumber,
@@ -873,7 +873,7 @@ export async function runMatrixTaskOnLane({
 			task.exitReason = `matrix_row_merge_failed:${rowResult.rowId}`;
 			updateSegmentForTask(state, taskId, "failed");
 			recomputeTaskCounters(state);
-			saveEngineBatchState(projectRoot, state);
+			await saveEngineBatchState(projectRoot, state);
 			return {
 				ok: false,
 				workerResult: {

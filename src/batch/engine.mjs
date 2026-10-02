@@ -193,7 +193,7 @@ export async function startBatch({
 	});
 
 	recordBatchBaseSnapshotOnStart(projectRoot, state);
-	saveEngineBatchState(projectRoot, state);
+	await saveEngineBatchState(projectRoot, state);
 	persistBatchMetaFromStartState(projectRoot, state, /** @type {string} */ (tasksRoot));
 
 	try {
@@ -201,7 +201,7 @@ export async function startBatch({
 		transitionPhase(state, "running", { projectRoot, batchId });
 		recordBatchEnginePid(state, process.pid);
 		installAttachedEngineShutdownHandlers({ projectRoot });
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 
 		for (const lane of state.lanes) {
 			lane.correlationId = crypto.randomUUID();
@@ -258,21 +258,21 @@ export async function startBatch({
 				correlationId: lane.correlationId,
 			});
 		}
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 
 		let batchAborted = false;
 
 		for (const wave of effectivePlan.waves) {
-			const pauseAtWave = adoptPauseIfRequested({ projectRoot, state, batchId });
+			const pauseAtWave = await adoptPauseIfRequested({ projectRoot, state, batchId });
 			if (pauseAtWave.stop) {
 				return buildEnginePausedResult(batchId);
 			}
 
 			state.currentWaveIndex = wave.index;
-			saveEngineBatchState(projectRoot, state);
+			await saveEngineBatchState(projectRoot, state);
 
 			for (const tick of wave.ticks ?? []) {
-				const pauseAtTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				const pauseAtTick = await adoptPauseIfRequested({ projectRoot, state, batchId });
 				if (pauseAtTick.stop) {
 					return buildEnginePausedResult(batchId);
 				}
@@ -359,7 +359,7 @@ export async function startBatch({
 				await Promise.all(laneExecutions);
 				if (batchAborted) break;
 
-				const pauseAfterTick = adoptPauseIfRequested({ projectRoot, state, batchId });
+				const pauseAfterTick = await adoptPauseIfRequested({ projectRoot, state, batchId });
 				if (pauseAfterTick.stop) {
 					return buildEnginePausedResult(batchId);
 				}
@@ -374,7 +374,7 @@ export async function startBatch({
 					batchId,
 					extra: { taskId: abortedTask?.taskId },
 				});
-				saveEngineBatchState(projectRoot, state);
+				await saveEngineBatchState(projectRoot, state);
 				return {
 					ok: false,
 					exitCode: 1,
@@ -398,7 +398,7 @@ export async function startBatch({
 						reason: "mixed_outcome",
 					},
 				});
-				saveEngineBatchState(projectRoot, state);
+				await saveEngineBatchState(projectRoot, state);
 				appendJournalEvent(projectRoot, batchId, "batch.merge_blocked", {
 					waveIndex: wave.index,
 					failedTaskIds: mergeEligibility.failedTaskIds,
@@ -481,7 +481,7 @@ export async function startBatch({
 			batchId,
 			extra: { error: message },
 		});
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 		removeAllMatrixSubLaneWorktrees(projectRoot, batchId);
 		removeLaneWorktrees(projectRoot, batchId, maxLaneNumber);
 		return { ok: false, exitCode: 1, batchId, error: message };

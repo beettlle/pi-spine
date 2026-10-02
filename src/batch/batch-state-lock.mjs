@@ -24,6 +24,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { setTimeout as sleepAsync } from "node:timers/promises";
 import {
 	ENGINE_STARTTIME_TOLERANCE_MS,
 	isProcessAlive,
@@ -432,6 +433,67 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 			releaseLockFile(lockPath, token);
 		} finally {
 			heldByThisProcess.delete(lockPath);
+		}
+	}
+}
+
+/**
+ * Async twin of `withBatchStateLock` for event-loop callers (SP-797 / #302):
+ * same acquire loop, stale breaking, token release, and re-entrancy, but the
+ * contention wait yields via `node:timers/promises` instead of blocking the
+ * thread — a CLI-held lock can no longer freeze engine heartbeats, pipe
+ * draining, and stall timers. `fn` MUST stay synchronous: no `await` between
+ * acquire and release, or the re-entrancy map breaks. Uncontended calls reach
+ * `fn` before the first `await`. Waits >1 s log one `[spine]` stderr line.
+ *
+ * @param {string} projectRoot
+ * @param {() => unknown} fn synchronous critical section
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {Promise<unknown>} `fn`'s return value
+ */
+export async function withBatchStateLockAsync(projectRoot, fn, options = {}) {
+	const lockPath = batchStateLockPath(projectRoot);
+
+	// Re-entrant pass-through: nested sync/async calls from this process run directly.
+	if (heldByThisProcess.has(lockPath)) {
+		return fn();
+	}
+
+	const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
+	const deadline = Date.now() + timeoutMs;
+	const token = newOwnershipToken();
+	const waitStartedAt = Date.now();
+
+	for (;;) {
+		if (tryCreateLockFile(lockPath, token)) break;
+		breakStaleLock(lockPath);
+		if (Date.now() >= deadline) {
+			throw new Error(
+				`Timed out acquiring batch-state lock (${path.relative(projectRoot, lockPath)}) ` +
+					`after ${timeoutMs}ms — another spine process may be holding it`,
+			);
+		}
+		await sleepAsync(POLL_INTERVAL_MS);
+	}
+
+	const waitedMs = Date.now() - waitStartedAt;
+	heldByThisProcess.set(lockPath, token);
+	try {
+		return fn();
+	} finally {
+		// Token-gated unlink before map clear (see `withBatchStateLock`).
+		try {
+			releaseLockFile(lockPath, token);
+		} finally {
+			heldByThisProcess.delete(lockPath);
+			if (waitedMs > 1_000) {
+				const rel = path.relative(projectRoot, lockPath);
+				try {
+					process.stderr.write(`[spine] batch-state lock wait took ${waitedMs}ms (${rel}) — another spine process held it\n`);
+				} catch {
+					/* diagnostic only — never fail a state save on stderr */
+				}
+			}
 		}
 	}
 }
