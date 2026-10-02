@@ -26,8 +26,8 @@ async function withWorktree(run) {
 }
 
 test("verifyContract passes when testCommand exits 0", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "true",
 			artifactsMustExist: [],
 		});
@@ -40,8 +40,8 @@ test("verifyContract passes when testCommand exits 0", async () => {
 });
 
 test("verifyContract fails when testCommand exits non-zero", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "false",
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 0 } });
@@ -54,12 +54,12 @@ test("verifyContract fails when testCommand exits non-zero", async () => {
 });
 
 test("verifyContract checks artifactsMustExist paths in worktree", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const artifactRel = "artifacts/proof.txt";
 		fs.mkdirSync(path.join(worktreePath, "artifacts"), { recursive: true });
 		fs.writeFileSync(path.join(worktreePath, artifactRel), "ok", "utf-8");
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: null,
 			artifactsMustExist: [artifactRel, "missing/file.txt"],
 		});
@@ -73,7 +73,7 @@ test("verifyContract checks artifactsMustExist paths in worktree", async () => {
 });
 
 test("verifyContract expands glob patterns in artifactsMustExist", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const artifactDir = "docs/adoption";
 		fs.mkdirSync(path.join(worktreePath, artifactDir), { recursive: true });
 		fs.writeFileSync(
@@ -82,7 +82,7 @@ test("verifyContract expands glob patterns in artifactsMustExist", async () => {
 			"utf-8",
 		);
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: null,
 			artifactsMustExist: [`${artifactDir}/consumer-pilot-report-*.md`],
 		});
@@ -95,8 +95,8 @@ test("verifyContract expands glob patterns in artifactsMustExist", async () => {
 });
 
 test("verifyContract returns ok with empty checks when contract has no verify fields", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: null,
 			artifactsMustExist: [],
 		});
@@ -123,7 +123,7 @@ test("verifyContract enforces fileScopeMustChange and fileScopeMustNotChange", a
 		const changed = listChangedFiles(worktreePath, "main");
 		assert.ok(changed.includes("src/planner/index.mjs"));
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: "true",
@@ -136,7 +136,7 @@ test("verifyContract enforces fileScopeMustChange and fileScopeMustNotChange", a
 
 		assert.equal(result.ok, true);
 
-		const forbidden = verifyContract(
+		const forbidden = await verifyContract(
 			worktreePath,
 			{
 				testCommand: null,
@@ -155,8 +155,8 @@ test("verifyContract enforces fileScopeMustChange and fileScopeMustNotChange", a
 });
 
 test("verifyContract checks minLineCoverage from command output", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "printf '%s\\n' 'all files          |    82.50 |'",
 			minLineCoverage: 77,
 			artifactsMustExist: [],
@@ -283,7 +283,7 @@ test("verifyContract passes SP-193-shaped contract when scoped files changed", a
 		const validation = validateContract(parsed, { mode: "required", taskId: "SP-193" });
 		assert.equal(validation.ok, true, validation.errors.join("\n"));
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: parsed.testCommand,
@@ -317,7 +317,7 @@ test("fileScopeMustChange trailing-slash pattern matches files under directory p
 		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "update types"], { cwd: worktreePath, stdio: "ignore" });
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: null,
@@ -352,7 +352,7 @@ test("fileScopeMustChange trailing-slash pattern fails when no files under prefi
 		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "unrelated change"], { cwd: worktreePath, stdio: "ignore" });
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: null,
@@ -387,7 +387,7 @@ test("fileScopeMustChange exact-path and glob behavior preserved alongside trail
 		execFileSync("git", ["add", "-A"], { cwd: worktreePath, stdio: "ignore" });
 		execFileSync("git", ["commit", "-m", "planner edit"], { cwd: worktreePath, stdio: "ignore" });
 
-		const result = verifyContract(
+		const result = await verifyContract(
 			worktreePath,
 			{
 				testCommand: null,

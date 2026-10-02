@@ -35,10 +35,10 @@ test("isRefusedNpmTestDashDashCommand allows scoped node --test", () => {
 });
 
 test("runContractTestCommand refuses npm test -- before spawn", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const markerPath = path.join(worktreePath, "spawn-marker.txt");
 		const command = `npm test -- tests/foo.test.mjs; node -e "require('node:fs').writeFileSync('${markerPath.replace(/\\/g, "\\\\")}', 'spawned')"`;
-		const result = runContractTestCommand(worktreePath, command);
+		const result = await runContractTestCommand(worktreePath, command);
 
 		assert.equal(result.ok, false);
 		assert.equal(result.refusedBeforeSpawn, true);
@@ -51,15 +51,15 @@ test("runContractTestCommand refuses npm test -- before spawn", async () => {
 });
 
 test("runContractTestCommand still executes allowed scoped commands", async () => {
-	await withWorktree((worktreePath) => {
-		const result = runContractTestCommand(worktreePath, 'node -e "process.exit(0)"');
+	await withWorktree(async (worktreePath) => {
+		const result = await runContractTestCommand(worktreePath, 'node -e "process.exit(0)"');
 		assert.equal(result.ok, true, result.output);
 	});
 });
 
 test("verifyContract surfaces npm test -- refusal as contract failure", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "npm test -- tests/foo.test.mjs",
 		});
 

@@ -21,14 +21,14 @@ async function withWorktree(run) {
 }
 
 test("testCommand fails once then succeeds on retry — contract passes", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const marker = path.join(worktreePath, ".retry-marker");
 		// First run creates the marker and exits 1; second run sees it and exits 0.
 		// Semicolons stay inside double quotes — unquoted shell sequencing (`;`)
 		// is refused before spawn since #268 (SP-723).
 		const command = `node -e "const fs=require('fs'); const m=process.argv[1]; if (fs.existsSync(m)) process.exit(0); fs.writeFileSync(m, ''); process.exit(1)" "${marker}"`;
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: command,
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 1, testRetryDelayMs: 0 } });
@@ -42,8 +42,8 @@ test("testCommand fails once then succeeds on retry — contract passes", async 
 });
 
 test("testCommand fails all retries — contract_failed as before", async () => {
-	await withWorktree((worktreePath) => {
-		const result = verifyContract(worktreePath, {
+	await withWorktree(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "false",
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 2, testRetryDelayMs: 0 } });
@@ -57,7 +57,7 @@ test("testCommand fails all retries — contract_failed as before", async () => 
 });
 
 test("retry count configurable via spine-config contract.testRetries", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const marker = path.join(worktreePath, ".attempt-count");
 		// Increment a counter on each call; succeed on attempt 3.
 		// Succeed on attempt 3; quoted-node form keeps retry semantics without
@@ -68,7 +68,7 @@ test("retry count configurable via spine-config contract.testRetries", async () 
 			`"${marker}"`,
 		].join(" ");
 
-		const noRetry = verifyContract(worktreePath, {
+		const noRetry = await verifyContract(worktreePath, {
 			testCommand: command,
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 0, testRetryDelayMs: 0 } });
@@ -77,7 +77,7 @@ test("retry count configurable via spine-config contract.testRetries", async () 
 		// Reset marker.
 		fs.unlinkSync(marker);
 
-		const twoRetries = verifyContract(worktreePath, {
+		const twoRetries = await verifyContract(worktreePath, {
 			testCommand: command,
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 2, testRetryDelayMs: 0 } });
@@ -87,11 +87,11 @@ test("retry count configurable via spine-config contract.testRetries", async () 
 });
 
 test("failed output captured to .reviews/ directory", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const taskFolder = path.join(worktreePath, "task-folder");
 		fs.mkdirSync(taskFolder, { recursive: true });
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "node -e \"console.error('test output to stderr'); console.log('test output to stdout'); process.exit(1)\"",
 			artifactsMustExist: [],
 		}, {
@@ -117,9 +117,9 @@ test("failed output captured to .reviews/ directory", async () => {
 });
 
 test("no retry when testCommand succeeds first time (no performance cost)", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const start = Date.now();
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "true",
 			artifactsMustExist: [],
 		}, { contract: { testRetries: 3, testRetryDelayMs: 5000 } });
@@ -134,7 +134,7 @@ test("no retry when testCommand succeeds first time (no performance cost)", asyn
 });
 
 test("writeContractFailureLog creates log file with header", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const taskFolder = path.join(worktreePath, "my-task");
 		const logPath = writeContractFailureLog(
 			taskFolder,
@@ -176,11 +176,11 @@ test("CONTRACT_TEST_RETRY_DELAY_MS is 5000", () => {
 });
 
 test("multiple failure logs captured across retry attempts", async () => {
-	await withWorktree((worktreePath) => {
+	await withWorktree(async (worktreePath) => {
 		const taskFolder = path.join(worktreePath, "task-multi");
 		fs.mkdirSync(taskFolder, { recursive: true });
 
-		const result = verifyContract(worktreePath, {
+		const result = await verifyContract(worktreePath, {
 			testCommand: "echo 'attempt output' && exit 1",
 			artifactsMustExist: [],
 		}, {

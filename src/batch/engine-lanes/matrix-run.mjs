@@ -319,7 +319,7 @@ export async function runMatrixSubLane({
 				} else {
 					// Verify the contract per row (testCommand + fileScopeMustChange
 					// substituted with this row's values). This is the per-row gate.
-					const verify = verifyContract(worktreePath, contract, {
+					const verify = await verifyContract(worktreePath, contract, {
 						matrixRow: values,
 						baseBranch,
 					});
