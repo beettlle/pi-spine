@@ -1,6 +1,6 @@
 # SP-796: Shrink terminal lock sections to state I/O — Status
 
-**Current Step:** Step 3 (Tests)
+**Current Step:** Step 4 (Testing & Verification)
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -31,13 +31,13 @@
 - [x] `lifecycle.mjs` ≤ 500 lines
 
 ### Step 3: Tests
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Lock not held during cleanup
-- [ ] Cleanup failure reported
+- [x] Lock not held during cleanup
+- [x] Cleanup failure reported
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Lint
 - [ ] Contract `testCommand`

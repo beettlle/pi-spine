@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { abortBatch, abortSignalPath } from "../../src/batch/abort.mjs";
+import { batchStateLockPath } from "../../src/batch/batch-state-lock.mjs";
 import { archiveBatchStatePath } from "../../src/batch/lifecycle.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents } from "../../src/batch/journal.mjs";
 import {
@@ -35,6 +36,60 @@ function serveStaleStateOnFirstRead(statePath, stale) {
 	};
 	return () => {
 		fs.readFileSync = realReadFileSync;
+	};
+}
+
+/**
+ * SP-796 / #302: record, per journaled event, whether the batch-state lock
+ * file existed at append time. `batch.aborted` must append with the lock
+ * held; post-release cleanup events (`batch.worktrees_cleaned`,
+ * `batch.cleanup_failed`) must append with it released. Returns `{ seen,
+ * restore }`.
+ *
+ * @param {string} lockPath
+ */
+function spyJournalAppendsWithLockState(lockPath) {
+	const realAppendFileSync = fs.appendFileSync;
+	/** @type {Array<{ type: string, lockHeld: boolean }>} */
+	const seen = [];
+	fs.appendFileSync = (/** @type {any} */ file, /** @type {any} */ data, /** @type {any[]} */ ...rest) => {
+		try {
+			const parsed = JSON.parse(String(data).trim().split("\n").at(-1) ?? "");
+			if (parsed && typeof parsed.type === "string") {
+				seen.push({ type: parsed.type, lockHeld: fs.existsSync(lockPath) });
+			}
+		} catch {
+			// Non-journal append (metrics JSONL, torn-tail newline) — ignore.
+		}
+		return realAppendFileSync(file, data, ...rest);
+	};
+	return {
+		seen,
+		restore: () => {
+			fs.appendFileSync = realAppendFileSync;
+		},
+	};
+}
+
+/**
+ * SP-796 / #302: record whether the batch-state lock file existed on each
+ * `process.kill` call. Lane-worker termination must happen after release.
+ *
+ * @param {string} lockPath
+ */
+function spyProcessKillWithLockState(lockPath) {
+	const realKill = process.kill;
+	/** @type {Array<{ pid: number, lockHeld: boolean }>} */
+	const calls = [];
+	process.kill = (/** @type {any} */ pid, /** @type {any} */ signal) => {
+		calls.push({ pid: Number(pid), lockHeld: fs.existsSync(lockPath) });
+		return realKill(pid, signal);
+	};
+	return {
+		calls,
+		restore: () => {
+			process.kill = realKill;
+		},
 	};
 }
 
@@ -400,6 +455,104 @@ test("abortBatch fails closed when the state file vanished before the lock", asy
 		assert.ok(!fs.existsSync(abortSignalPath(projectRoot, batchId)), "no abort signal written");
 		assert.ok(fs.existsSync(activePath), "active batch-state untouched");
 	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("hard abort releases the batch-state lock before worker kill and worktree cleanup", async () => {
+	const projectRoot = await initGitRepo("spine-abort-lock-free-");
+	let journalSpy;
+	let killSpy;
+	try {
+		const batchId = "20260601T170010";
+		const orchBranch = `orch/spine-${batchId}`;
+		const { execFileSync } = await import("node:child_process");
+		execFileSync("git", ["branch", orchBranch, "main"], { cwd: projectRoot, stdio: "ignore" });
+		provisionLaneWorktree({ projectRoot, batchId, laneNumber: 1, orchBranch });
+		writeRunningBatch(projectRoot, batchId);
+
+		const lockPath = batchStateLockPath(projectRoot);
+		journalSpy = spyJournalAppendsWithLockState(lockPath);
+		killSpy = spyProcessKillWithLockState(lockPath);
+
+		const result = abortBatch({ projectRoot, hard: true, reason: "lock-free cleanup" });
+
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.cleanupWarnings, []);
+
+		const aborted = journalSpy.seen.find((event) => event.type === "batch.aborted");
+		assert.ok(aborted, "batch.aborted journaled");
+		assert.equal(aborted.lockHeld, true, "batch.aborted is journaled inside the lock");
+
+		assert.ok(killSpy.calls.length > 0, "worker kill must signal the lane worker pid");
+		assert.ok(
+			killSpy.calls.every((call) => call.lockHeld === false),
+			"worker kill must run after the batch-state lock is released",
+		);
+
+		const cleaned = journalSpy.seen.find((event) => event.type === "batch.worktrees_cleaned");
+		assert.ok(cleaned, "batch.worktrees_cleaned journaled");
+		assert.equal(cleaned.lockHeld, false, "worktree cleanup must run after the lock is released");
+	} finally {
+		journalSpy?.restore();
+		killSpy?.restore();
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("hard abort reports post-release cleanup failure without failing the abort", async () => {
+	const projectRoot = await initGitRepo("spine-abort-cleanup-fail-");
+	let restoreRmSync;
+	try {
+		const batchId = "20260601T170011";
+		writeRunningBatch(projectRoot, batchId);
+
+		// Unregistered directory at the lane worktree path: `git worktree
+		// remove` fails and removeLaneWorktree falls back to fs.rmSync, which
+		// this patch faults — a post-release cleanup failure (SP-796 / #302).
+		const worktreePath = laneWorktreePath(projectRoot, batchId, 1);
+		fs.mkdirSync(worktreePath, { recursive: true });
+
+		const lockPath = batchStateLockPath(projectRoot);
+		const realRmSync = fs.rmSync;
+		/** @type {boolean|null} */
+		let rmLockHeld = null;
+		restoreRmSync = () => {
+			fs.rmSync = realRmSync;
+		};
+		fs.rmSync = (/** @type {any} */ target, /** @type {any[]} */ ...rest) => {
+			if (String(target) === worktreePath) {
+				rmLockHeld = fs.existsSync(lockPath);
+				throw new Error("simulated worktree removal failure");
+			}
+			return realRmSync(target, ...rest);
+		};
+
+		const result = abortBatch({ projectRoot, hard: true, reason: "cleanup failure" });
+		restoreRmSync();
+		restoreRmSync = undefined;
+
+		assert.equal(result.ok, true, "cleanup failure must not fail the archived abort");
+		assert.equal(rmLockHeld, false, "worktree cleanup runs after the lock is released");
+		assert.ok(
+			result.cleanupWarnings?.some((warning) =>
+				warning.startsWith("remove_worktrees: simulated worktree removal failure"),
+			),
+			"cleanupWarnings carries the failing step and error",
+		);
+
+		const archivePath = archiveBatchStatePath(projectRoot, batchId);
+		assert.ok(fs.existsSync(archivePath), "state stays archived");
+		assert.ok(!fs.existsSync(spineBatchStatePath(projectRoot)), "active state stays cleared");
+
+		const events = readJournalEvents(projectRoot, batchId);
+		assert.ok(events.some((event) => event.type === "batch.aborted"), "batch.aborted journaled in-lock");
+		const failed = events.find((event) => event.type === "batch.cleanup_failed");
+		assert.ok(failed, "batch.cleanup_failed journaled");
+		assert.equal(failed.payload?.step, "remove_worktrees");
+		assert.match(String(failed.payload?.error), /simulated worktree removal failure/);
+	} finally {
+		restoreRmSync?.();
 		await destroyGitRepo(projectRoot);
 	}
 });
