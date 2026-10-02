@@ -1,7 +1,7 @@
 # SP-794: Lock steal-by-rename with token re-check — Status
 
-**Current Step:** Step 3
-**Status:** 🟨 In Progress
+**Current Step:** Step 4
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -36,19 +36,25 @@
 **Evidence:** 15/15 tests pass (~10.2s); eslint clean on both changed files.
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand` 3×
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`npm run lint` — clean, max-warnings 0)
+- [x] Contract `testCommand` 3× — 3/3 runs, 28/28 tests each, exit 0 (worker env unset)
+- [x] Batch suite — `SPINE_WORKER_STUB=1 npm run test:batch`: 1593/1593 pass (~173s)
+- [x] Coverage gate — `npm run coverage:check`: 90.09% line (threshold 77%), underlying suite 2753/2753
+- [x] Fix all failures — none encountered; also `npm run typecheck` clean and gitnexus `detect_changes` scope check confirmed only in-scope files/symbols changed
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged (table below)
+- [x] Create `.DONE`
+
+**Completion criteria evidence:**
+- Two concurrent breakers of a dead holder — exactly one acquires: proven by both two-stealer tests (dead-PID and recycled-PID fixtures; start-barriered head-to-head break; 20 rounds each; zero overlapping critical sections; zero stranded `.break.*` copies).
+- A lock acquired between judge and break is never removed: proven by the put-back unit test (fresh lock with different token survives `stealIfTokenMatches` byte-for-byte) plus token-match and corrupt content-compare unit tests.
+
+**Docs:** Must Update: None (SP-803). Check If Affected: None.
 
 ---
 
