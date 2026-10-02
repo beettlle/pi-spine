@@ -9,6 +9,7 @@ import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { archiveBatchStatePath } from "./lifecycle.mjs";
 import { reloadStateForTerminalWrite } from "./lifecycle-archive.mjs";
+import { runPostReleaseCleanup } from "./lifecycle-cleanup.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
@@ -221,10 +222,11 @@ export function abortBatch(ctx) {
 	}
 
 	// Terminal abort write section runs under the global batch-state lock
-	// (SP-722 / #264): abort signal, archive, history entry, and clearing the
-	// active state must not interleave with a concurrent engine save or a
-	// concurrent complete/resume writer.
-	return withBatchStateLock(projectRoot, () => {
+	// (SP-722 / #264; SP-796 / #302): abort signal, archive, journal event,
+	// history entry, and clearing the active state must not interleave with a
+	// concurrent engine save or a concurrent complete/resume writer. Worker
+	// termination and worktree removal run after the lock is released.
+	const inLock = withBatchStateLock(projectRoot, () => {
 		// SP-792 / #301: archive the state as re-read inside the lock. Engine
 		// progress saved between the pre-lock read and here must survive into
 		// the archive; a changed or vanished state file fails closed instead.
@@ -234,7 +236,7 @@ export function abortBatch(ctx) {
 			batchId,
 			action: "abort",
 		});
-		if (refusal) return refusal;
+		if (refusal) return { refusal, snapshot: null, archivePath: null };
 
 		const snapshot = buildAbortedSnapshot(fresh.raw, reason);
 		writeAbortSignal(projectRoot, batchId, {
@@ -242,10 +244,6 @@ export function abortBatch(ctx) {
 			reason: reason ?? null,
 			requestedAt: new Date().toISOString(),
 		});
-
-		if (hard) {
-			killLaneWorkers(snapshot.lanes, true);
-		}
 
 		const archivePath = writeBatchArchive(projectRoot, batchId, snapshot);
 
@@ -262,12 +260,16 @@ export function abortBatch(ctx) {
 		const journalFile = journalPath(projectRoot, batchId);
 		if (!fs.existsSync(journalFile)) {
 			return {
-				ok: false,
-				exitCode: 1,
-				error: "journal_missing_after_abort",
-				headline: "Abort archived state but journal file is missing",
-				suggestedCommand: "spine status --diagnose",
-				batchId,
+				refusal: {
+					ok: false,
+					exitCode: 1,
+					error: "journal_missing_after_abort",
+					headline: "Abort archived state but journal file is missing",
+					suggestedCommand: "spine status --diagnose",
+					batchId,
+				},
+				snapshot: null,
+				archivePath: null,
 			};
 		}
 
@@ -280,34 +282,56 @@ export function abortBatch(ctx) {
 			archivePath: path.relative(projectRoot, archivePath),
 		});
 
-		if (hard) {
-			const configResult = loadSpineConfig(projectRoot);
-			const config = configResult.config ?? {};
-			if (shouldCleanupWorktreesOnHardAbort(config)) {
-				const laneCount = maxLaneNumberFromBatchState(snapshot);
+		clearActiveBatchState(fresh.path);
+
+		return { refusal: null, snapshot, archivePath };
+	});
+
+	// Cleanup runs only when the in-lock section succeeded (journaled
+	// `batch.aborted`); a refusal means nothing was archived for this batch.
+	if (inLock.refusal) return inLock.refusal;
+
+	// SP-796 / #302: worker kill and worktree removal run after the lock is
+	// released, so they no longer block concurrent engine saves. Failures
+	// here are reported as cleanupWarnings + `batch.cleanup_failed` instead
+	// of thrown, because the state was already archived and journaled aborted.
+	const cleanupSteps = [];
+	if (hard) {
+		cleanupSteps.push({
+			step: "kill_lane_workers",
+			run: () => {
+				killLaneWorkers(inLock.snapshot.lanes, true);
+			},
+		});
+		cleanupSteps.push({
+			step: "remove_worktrees",
+			run: () => {
+				const config = loadSpineConfig(projectRoot).config ?? {};
+				if (!shouldCleanupWorktreesOnHardAbort(config)) return;
+				const laneCount = maxLaneNumberFromBatchState(inLock.snapshot);
 				removeLaneWorktrees(projectRoot, batchId, laneCount);
 				appendJournalEvent(projectRoot, batchId, "batch.worktrees_cleaned", {
 					batchId,
 					laneCount,
 					reason: "hard_abort",
 				});
-			}
-		}
+			},
+		});
+	}
+	const cleanupWarnings = runPostReleaseCleanup({ projectRoot, batchId, steps: cleanupSteps });
 
-		clearActiveBatchState(fresh.path);
-
-		return {
-			ok: true,
-			exitCode: 0,
-			batchId,
-			diagnosis: "aborted",
-			hard,
-			headline: hard
-				? `Batch ${batchId} hard-aborted and archived`
-				: `Batch ${batchId} aborted and archived`,
-			suggestedCommand: "spine preflight",
-			alternatives: ["spine batch dismiss", "spine status --diagnose"],
-			archivePath,
-		};
-	});
+	return {
+		ok: true,
+		exitCode: 0,
+		batchId,
+		diagnosis: "aborted",
+		hard,
+		headline: hard
+			? `Batch ${batchId} hard-aborted and archived`
+			: `Batch ${batchId} aborted and archived`,
+		suggestedCommand: "spine preflight",
+		alternatives: ["spine batch dismiss", "spine status --diagnose"],
+		archivePath: inLock.archivePath,
+		cleanupWarnings,
+	};
 }
