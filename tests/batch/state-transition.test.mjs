@@ -106,12 +106,11 @@ test("saveGateRecord leaves prior JSON intact when atomic write fails", async ()
 		const before = fs.readFileSync(filePath, "utf-8");
 		assert.doesNotThrow(() => JSON.parse(before));
 
-		const originalWrite = fs.writeFileSync;
-		fs.writeFileSync = (filePathArg, ...args) => {
-			if (String(filePathArg).includes(".tmp")) {
-				throw new Error("simulated interrupted gate write");
-			}
-			return originalWrite(filePathArg, ...args);
+		// writeTextAtomic writes the temp file via openSync/writeSync with fsync
+		// (SP-795), so simulate the interrupted write at writeSync.
+		const originalWrite = fs.writeSync;
+		fs.writeSync = () => {
+			throw new Error("simulated interrupted gate write");
 		};
 
 		try {
@@ -120,7 +119,7 @@ test("saveGateRecord leaves prior JSON intact when atomic write fails", async ()
 				/simulated interrupted gate write/,
 			);
 		} finally {
-			fs.writeFileSync = originalWrite;
+			fs.writeSync = originalWrite;
 		}
 
 		const after = fs.readFileSync(filePath, "utf-8");
