@@ -47,6 +47,30 @@ function writeSpineBatchState(projectRoot, fixture) {
 	);
 }
 
+/**
+ * SP-792 / #301: serve `stale` on the first read of the active batch-state
+ * path and pass every later read through to the real on-disk file — exactly
+ * the view a terminal write sees when a concurrent engine save lands between
+ * its pre-lock read and its lock section. Returns a restore function.
+ *
+ * @param {string} statePath
+ * @param {object} stale
+ */
+function serveStaleStateOnFirstRead(statePath, stale) {
+	const realReadFileSync = fs.readFileSync;
+	let served = false;
+	fs.readFileSync = (/** @type {any[]} */ ...args) => {
+		if (!served && String(args[0]) === statePath) {
+			served = true;
+			return `${JSON.stringify(stale, null, 2)}\n`;
+		}
+		return realReadFileSync(...args);
+	};
+	return () => {
+		fs.readFileSync = realReadFileSync;
+	};
+}
+
 test("dismiss archives batch-state before clearing active file", async () => {
 	const projectRoot = await createProjectFixture();
 	try {
@@ -164,6 +188,159 @@ test("dismiss refused when diagnosis is running without --force", async () => {
 		assert.equal(result.ok, false);
 		assert.match(result.headline, /force/i);
 		assert.ok(fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")));
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("dismiss archives the in-lock state, not the stale pre-lock snapshot", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		// Newer engine save on disk; the pre-lock read is served the older copy.
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		writeSpineBatchState(projectRoot, { ...fixture, sp792Marker: "in-lock" });
+		const restore = serveStaleStateOnFirstRead(statePath, { ...fixture, sp792Marker: "pre-lock" });
+
+		const result = dismissBatch({ projectRoot, reason: "test" });
+		restore();
+
+		assert.equal(result.ok, true);
+		assert.equal(result.batchId, fixture.batchId);
+
+		const archived = JSON.parse(
+			fs.readFileSync(archiveBatchStatePath(projectRoot, fixture.batchId), "utf-8"),
+		);
+		assert.equal(
+			archived.sp792Marker,
+			"in-lock",
+			"dismiss archive must hold the state as read inside the lock, not the pre-lock snapshot",
+		);
+		assert.ok(!fs.existsSync(statePath), "active batch-state must be cleared");
+
+		const history = JSON.parse(fs.readFileSync(batchHistoryPath(projectRoot), "utf-8"));
+		assert.equal(history.at(-1)?.action, "dismissed");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("dismiss fails closed when the batch became active again inside the lock", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		// A resume writer flipped the batch back to running on disk; the
+		// pre-lock read is served the dismissable limbo snapshot.
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		const restore = serveStaleStateOnFirstRead(statePath, fixture);
+
+		const refused = dismissBatch({ projectRoot, reason: "test" });
+		assert.equal(refused.ok, false);
+		assert.equal(refused.error, "batch_state_changed_during_terminal_write");
+		assert.equal(
+			refused.headline,
+			"Batch state changed during dismiss — re-run spine status --diagnose",
+		);
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)), "nothing archived");
+		assert.ok(fs.existsSync(statePath), "active batch-state must survive");
+
+		// --force skips the in-lock phase re-validation and dismisses anyway.
+		const forced = dismissBatch({ projectRoot, reason: "test", force: true });
+		restore();
+
+		assert.equal(forced.ok, true);
+		const archived = JSON.parse(
+			fs.readFileSync(archiveBatchStatePath(projectRoot, fixture.batchId), "utf-8"),
+		);
+		assert.equal(archived.phase, "running", "forced dismiss archives the in-lock state");
+		assert.ok(!fs.existsSync(statePath));
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("complete archives the in-lock state, not the stale pre-lock snapshot", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		writeSpineBatchState(projectRoot, { ...fixture, sp792Marker: "in-lock" });
+
+		execFileSync("git", ["checkout", "-b", fixture.orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "merged.txt"), "orch work", "utf-8");
+		execFileSync("git", ["add", "merged.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch lane merge"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["merge", "--no-ff", fixture.orchBranch, "-m", "merge orch"], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+
+		const restore = serveStaleStateOnFirstRead(statePath, { ...fixture, sp792Marker: "pre-lock" });
+		const result = completeBatch({ projectRoot, detectManualMerge: true });
+		restore();
+
+		assert.equal(result.ok, true);
+		assert.equal(result.diagnosis, "completed");
+
+		const archived = JSON.parse(
+			fs.readFileSync(archiveBatchStatePath(projectRoot, fixture.batchId), "utf-8"),
+		);
+		assert.equal(
+			archived.sp792Marker,
+			"in-lock",
+			"complete archive must hold the state as read inside the lock, not the pre-lock snapshot",
+		);
+		assert.ok(!fs.existsSync(statePath), "active batch-state must be cleared");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
+test("complete fails closed and archives nothing when batch id changed during complete", async () => {
+	const projectRoot = await createProjectFixture();
+	try {
+		const fixture = loadFixture("limbo-stale-20260531T165700.json");
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		writeSpineBatchState(projectRoot, { ...fixture, sp792Marker: "pre-lock" });
+
+		// The stale snapshot must pass every pre-lock gate: merge orch to main
+		// so `detectManualMerge` sees a manually landed batch.
+		execFileSync("git", ["checkout", "-b", fixture.orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "merged.txt"), "orch work", "utf-8");
+		execFileSync("git", ["add", "merged.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch lane merge"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["merge", "--no-ff", fixture.orchBranch, "-m", "merge orch"], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+
+		// A different batch took over the active state file before the lock.
+		fs.writeFileSync(
+			statePath,
+			`${JSON.stringify({ ...fixture, batchId: "20260531T179999", phase: "running" }, null, 2)}\n`,
+			"utf-8",
+		);
+		const stale = { ...fixture, sp792Marker: "pre-lock" };
+		const restore = serveStaleStateOnFirstRead(statePath, stale);
+
+		const result = completeBatch({ projectRoot, detectManualMerge: true });
+		restore();
+
+		assert.equal(result.ok, false);
+		assert.equal(result.error, "batch_state_changed_during_terminal_write");
+		assert.equal(
+			result.headline,
+			"Batch state changed during complete — re-run spine status --diagnose",
+		);
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)), "nothing archived for the stale batch");
+		assert.ok(
+			!fs.existsSync(archiveBatchStatePath(projectRoot, "20260531T179999")),
+			"nothing archived for the newer batch either",
+		);
+		assert.ok(fs.existsSync(statePath), "the newer active batch-state must survive untouched");
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

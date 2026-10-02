@@ -8,6 +8,7 @@ import path from "node:path";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
 import { archiveBatchStatePath } from "./lifecycle.mjs";
+import { reloadStateForTerminalWrite } from "./lifecycle-archive.mjs";
 import { appendJournalEvent, journalPath, readJournalEvents, readJournalTail } from "./journal.mjs";
 import { loadBatchStateFile } from "./reconcile.mjs";
 import { appendBatchHistoryEntry } from "./state.mjs";
@@ -224,7 +225,18 @@ export function abortBatch(ctx) {
 	// active state must not interleave with a concurrent engine save or a
 	// concurrent complete/resume writer.
 	return withBatchStateLock(projectRoot, () => {
-		const snapshot = buildAbortedSnapshot(loaded.raw, reason);
+		// SP-792 / #301: archive the state as re-read inside the lock. Engine
+		// progress saved between the pre-lock read and here must survive into
+		// the archive; a changed or vanished state file fails closed instead.
+		const { state: fresh, refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: loaded.path,
+			batchId,
+			action: "abort",
+		});
+		if (refusal) return refusal;
+
+		const snapshot = buildAbortedSnapshot(fresh.raw, reason);
 		writeAbortSignal(projectRoot, batchId, {
 			hard,
 			reason: reason ?? null,
@@ -282,7 +294,7 @@ export function abortBatch(ctx) {
 			}
 		}
 
-		clearActiveBatchState(loaded.path);
+		clearActiveBatchState(fresh.path);
 
 		return {
 			ok: true,
