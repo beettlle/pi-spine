@@ -1,0 +1,16 @@
+spine-tasks/SP-795-durable-atomic-json-write/STATUS.md
+  h_2a17159c706ba1 3-4,27,29-31,34,36-40,56-58
+tests/batch/state-transition.test.mjs
+  h_2a17159c706ba1 109-113,122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b5472ff928b06c58309030d0224b684855a1b10d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
