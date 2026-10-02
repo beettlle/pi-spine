@@ -3,7 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
+import { destroyGitRepo } from "../helpers/git-fixture.mjs";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
 import { archiveBatchStatePath, completeBatch, dismissBatch } from "../../src/batch/lifecycle.mjs";
@@ -99,7 +100,9 @@ test("dismiss archives batch-state before clearing active file", async () => {
 		assert.equal(history.at(-1)?.batchId, fixture.batchId);
 		assert.equal(history.at(-1)?.action, "dismissed");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -127,7 +130,9 @@ test("complete with --detect-manual-merge succeeds when orch merged to main", as
 		assert.ok(fs.existsSync(archivePath));
 		assert.ok(!fs.existsSync(path.join(projectRoot, ".spine", "batch-state.json")));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -174,7 +179,9 @@ test("complete refused when mergeResults succeeded but orch not on main", async 
 		const completed = completeBatch({ projectRoot });
 		assert.equal(completed.ok, true);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -189,7 +196,9 @@ test("dismiss refused when diagnosis is running without --force", async () => {
 		assert.match(result.headline, /force/i);
 		assert.ok(fs.existsSync(path.join(projectRoot, ".pi", "batch-state.json")));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -221,7 +230,9 @@ test("dismiss archives the in-lock state, not the stale pre-lock snapshot", asyn
 		const history = JSON.parse(fs.readFileSync(batchHistoryPath(projectRoot), "utf-8"));
 		assert.equal(history.at(-1)?.action, "dismissed");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -256,7 +267,9 @@ test("dismiss fails closed when the batch became active again inside the lock", 
 		assert.equal(archived.phase, "running", "forced dismiss archives the in-lock state");
 		assert.ok(!fs.existsSync(statePath));
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -294,7 +307,9 @@ test("complete archives the in-lock state, not the stale pre-lock snapshot", asy
 		);
 		assert.ok(!fs.existsSync(statePath), "active batch-state must be cleared");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -342,6 +357,8 @@ test("complete fails closed and archives nothing when batch id changed during co
 		);
 		assert.ok(fs.existsSync(statePath), "the newer active batch-state must survive untouched");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		// destroyGitRepo (SP-685 pattern) retries and tolerates residual ENOTEMPTY
+		// from git object writes racing the teardown on macOS.
+		await destroyGitRepo(projectRoot);
 	}
 });
