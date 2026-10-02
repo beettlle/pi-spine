@@ -1,7 +1,8 @@
 # SP-795: Durable writeJsonAtomic — Status
 
-**Current Step:** Step 4
-**Status:** 🟩 Verifying/Delivering
+**Current Step:** Done
+**Status:** ✅ Complete
+**Last Updated:** 2026-10-02
 **Last Updated:** 2026-10-02
 **Review Level:** 1
 **Review Counter:** 0
@@ -40,10 +41,10 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [ ] Create `.DONE` (created at delivery)
 
 ---
 
