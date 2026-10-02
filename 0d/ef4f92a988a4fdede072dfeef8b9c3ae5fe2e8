@@ -1,0 +1,18 @@
+spine-tasks/SP-796-shrink-terminal-lock-sections/STATUS.md
+  h_2a17159c706ba1 3,34,36-37,40
+tests/batch/abort.test.mjs
+  h_2a17159c706ba1 6,42-95,461-558
+tests/batch/lifecycle.test.mjs
+  h_2a17159c706ba1 10,12-13,78-175,466-619
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0def4f92a988a4fdede072dfeef8b9c3ae5fe2e8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
