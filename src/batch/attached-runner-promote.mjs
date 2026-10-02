@@ -456,7 +456,7 @@ export function finalizeResumePostMergeLimbo({
 		batchId,
 		fromPhase,
 	});
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 	return finalizeResumedBatchForIntegrate({
 		projectRoot,

@@ -141,7 +141,7 @@ test("guard rejection surfaces stale_engine_pid and keeps disk state", async () 
 		const state = { batchId, phase: "running" };
 		recordBatchEnginePid(state, owner.pid);
 		// Seed with bypass: the test process is not the recorded owner.
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 		const result = updateSpineBatchState(projectRoot, (draft) => {
 			draft.phase = "paused";
@@ -168,7 +168,7 @@ test("guard rejection surfaces stale_engine_pid and keeps disk state", async () 
 	}
 });
 
-test("bypassWriteGuard passes through to the shared guard/write path", async () => {
+test("bypassOwnerCheck passes through to the shared guard/write path", async () => {
 	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
 		stdio: "ignore",
 	});
@@ -176,14 +176,14 @@ test("bypassWriteGuard passes through to the shared guard/write path", async () 
 	try {
 		const state = { batchId: "20260930T000000-upd5", phase: "running" };
 		recordBatchEnginePid(state, owner.pid);
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 		const result = updateSpineBatchState(
 			projectRoot,
 			(draft) => {
 				draft.phase = "paused";
 			},
-			{ bypassWriteGuard: true },
+			{ bypassOwnerCheck: true },
 		);
 
 		assert.equal(result.ok, true);

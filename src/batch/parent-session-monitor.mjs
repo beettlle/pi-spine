@@ -140,7 +140,7 @@ export function reconcileParentSessionLost({ projectRoot, parentPid, enginePid =
 	}
 
 	recomputeTaskCounters(state);
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 	return { handled: true, batchId, taskIds: failedTaskIds };
 }
 

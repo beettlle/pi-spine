@@ -130,7 +130,7 @@ test("pauseBatch fails loud when attached engine keeps phase running", async () 
 			const loaded = loadSpineBatchState(projectRoot);
 			if (loaded.raw?.phase === "paused") {
 				loaded.raw.phase = "running";
-				saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
+				saveSpineBatchState(projectRoot, loaded.raw, { bypassOwnerCheck: true });
 			}
 		}, 20);
 

@@ -31,7 +31,7 @@ export function tryResumeCompletedGateReopen({ projectRoot, resumeCheck, release
 		batchState: reopenState,
 	});
 	if (reopenState) {
-		saveSpineBatchState(projectRoot, reopenState, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, reopenState, { bypassOwnerCheck: true });
 	}
 	releaseResumeLock?.();
 	const output = reopenResult.reopened

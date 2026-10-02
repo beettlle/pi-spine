@@ -229,7 +229,7 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 			fromPhase,
 			allowRunningOrphanTerminate: true,
 		});
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 		return {
 			ok: true,
 			handoff: true,

@@ -385,7 +385,7 @@ export function ensureForceResumeBatchState(projectRoot, options = {}) {
 	// Operator-initiated force-resume intentionally rebuilds a batch whose live
 	// state is gone (#126): this is the one sanctioned archived resurrection.
 	const saved = saveSpineBatchState(projectRoot, reconstructed.state, {
-		bypassWriteGuard: true,
+		bypassOwnerCheck: true,
 		allowArchivedResurrection: true,
 	});
 	appendJournalEvent(projectRoot, reconstructed.batchId, "batch.state_reconstructed", {

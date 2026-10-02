@@ -126,7 +126,7 @@ test("guard rejects post-archive resurrection for terminal phases too and journa
 		}
 
 		// The engine-trusted bypass no longer skips the resurrection check.
-		saveSpineBatchState(projectRoot, { ...state, phase: "completed" }, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, { ...state, phase: "completed" }, { bypassOwnerCheck: true });
 		assert.equal(loadSpineBatchState(projectRoot).raw, null, "bypassed save recreated archived state");
 
 		const rejectedEvents = readJournalEvents(projectRoot, batchId).filter(
@@ -140,7 +140,7 @@ test("guard rejects post-archive resurrection for terminal phases too and journa
 		saveSpineBatchState(
 			projectRoot,
 			{ ...state, phase: "paused" },
-			{ bypassWriteGuard: true, allowArchivedResurrection: true },
+			{ bypassOwnerCheck: true, allowArchivedResurrection: true },
 		);
 		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "paused");
 	} finally {

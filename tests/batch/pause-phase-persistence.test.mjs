@@ -98,7 +98,7 @@ test("unconfirmed pause rollback never reverts a terminal phase (SP-791)", async
 		const { batchId } = writeFailedPausedMismatchBatch(projectRoot);
 		const state = loadSpineBatchState(projectRoot).raw;
 		recordBatchEnginePid(state, child.pid ?? null);
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 		// The attached engine finishes the batch during the grace window: the
 		// pause stays unconfirmed and the disk phase is terminal before the
@@ -108,7 +108,7 @@ test("unconfirmed pause rollback never reverts a terminal phase (SP-791)", async
 			const loaded = loadSpineBatchState(projectRoot);
 			if (loaded.raw?.phase !== "paused") return;
 			loaded.raw.phase = "completed";
-			saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
+			saveSpineBatchState(projectRoot, loaded.raw, { bypassOwnerCheck: true });
 		}, 20);
 
 		const pause = await pauseBatch({
@@ -156,7 +156,7 @@ test("unconfirmed pause does not leave orphan batch.paused journal entry", async
 			const loaded = loadSpineBatchState(projectRoot);
 			if (loaded.raw?.phase === "paused") {
 				loaded.raw.phase = "running";
-				saveSpineBatchState(projectRoot, loaded.raw, { bypassWriteGuard: true });
+				saveSpineBatchState(projectRoot, loaded.raw, { bypassOwnerCheck: true });
 			}
 		}, 20);
 

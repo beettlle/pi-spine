@@ -169,7 +169,7 @@ export function ensureLandLoopFinalizedAfterGateOrIntegrate({
 	}
 
 	if (changed) {
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 	}
 
 	return {
@@ -242,7 +242,7 @@ export function finalizeAttachedLandLoopBeforeExit({
 	});
 	if (finalizeResult?.ok) {
 		clearBatchEnginePid(state);
-		saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 		appendJournalEvent(projectRoot, batchId, "engine.attached_post_merge_handoff", {
 			signal,
 			action: "finalized_in_process",
@@ -267,7 +267,7 @@ export function finalizeAttachedLandLoopBeforeExit({
 	const fresh = loadSpineBatchState(projectRoot);
 	if (fresh.raw && enginePid) {
 		recordBatchEnginePid(fresh.raw, enginePid);
-		saveSpineBatchState(projectRoot, fresh.raw, { bypassWriteGuard: true });
+		saveSpineBatchState(projectRoot, fresh.raw, { bypassOwnerCheck: true });
 	}
 
 	appendJournalEvent(projectRoot, batchId, "engine.attached_post_merge_handoff", {
@@ -376,7 +376,7 @@ export function finalizeBatchForIntegrate({
 
 	// Persist PID clear before evidence collection can hang (#198 / SP-636).
 	clearBatchEnginePid(state);
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 	const gateResult = openIntegrateGateAfterBatchComplete({
 		projectRoot,
@@ -428,7 +428,7 @@ export function finalizeBatchForIntegrate({
 		source: landLoopSource,
 	});
 	// Ensure may no-op when journal events already exist; always persist phase/PID.
-	saveSpineBatchState(projectRoot, state, { bypassWriteGuard: true });
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
 	const completionLabel = resumed ? "resumed and completed" : "completed";
 	const nextSteps = resumed
