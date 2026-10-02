@@ -1,7 +1,7 @@
 # SP-793: bypassOwnerCheck rename and bypass-site audit — Status
 
-**Current Step:** Step 5
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-09-30
 **Review Level:** 2
 **Review Counter:** 0
@@ -61,10 +61,16 @@
 - [x] Fix all failures — none failed; GitNexus `detect_changes` confirms scope confined to File Scope; `.spine/rules-manifest.json` test-run drift restored, not committed
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md (6 entries incl. before/after justification table)
+- [x] Create `.DONE` — all completion criteria verified:
+  - `bypassWriteGuard` gone from `src`, `tests`, `docs` (rg → 0 matches)
+  - Bypass call sites **17 → 15**, every remaining site justified (Discovery #5)
+  - Gate reopen goes through `updateSpineBatchState` (2 regression tests prove the guarded path + concurrent-pause safety)
+  - Docs: Must-Update none (SP-803); operator-runbook unaffected (Discovery #4)
+  - Verification: lint exit 0 · contract suite 44/44 · batch suite 1578/1578 · coverage 90.01% ≥ 77%
+  - File Scope respected: `abort.mjs`, `lifecycle.mjs` untouched
 
 ---
 
@@ -96,6 +102,16 @@
 | | `pause.mjs:223` | `bypassOwnerCheck` | kept | Operator pause while a live attached engine owns the batch — the sanctioned SP-376 exception |
 | | `pause.mjs:262` | `bypassOwnerCheck` | kept | Rollback of an unconfirmed pause under the same live-owner condition |
 | 6 | Tests: renamed 14 `bypassWriteGuard` refs across 8 test files; added 2 SP-793 gate-reopen cases in `batch-state-update.test.mjs` — one proves the persist is refused (and journaled `batch.state_write_rejected`) when a live foreign owner exists (pre-SP-793 bypass wrote anyway), the other proves a concurrent `phase: "paused"` survives the reopen (declined `batch_not_completed`, disk stays paused, no gate record opened). |
+
+## Verification Evidence
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Lint | `npm run lint` | exit 0 |
+| Typecheck | `npm run typecheck` | exit 0 |
+| Contract suite | `SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --test` (8 files) | 44/44 pass, exit 0 |
+| Batch suite | `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER SPINE_WORKER_STUB=1 npm run test:batch` | 1578/1578 pass, exit 0 |
+| Coverage | `npm run coverage:check` (clean env) | 2738/2738 pass; line 90.01% ≥ 77%, exit 0 |
 
 ## Blockers
 
