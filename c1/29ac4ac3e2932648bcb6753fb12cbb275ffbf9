@@ -1,0 +1,21 @@
+spine-tasks/SP-791-atomic-batch-state-update/.reviews/0-20261001T171011.md
+  s_2233c7a863834d::t_1003535ca7948e 1-8
+spine-tasks/SP-791-atomic-batch-state-update/.reviews/5-20261001T171036.md
+  s_2233c7a863834d::t_c3ce84089c7381 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c129ac4ac3e2932648bcb6753fb12cbb275ffbf9",
+  "prompts": {},
+  "sessions": {
+    "s_2233c7a863834d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc3f7-b03c-715d-9c38-79c2778162d2",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
