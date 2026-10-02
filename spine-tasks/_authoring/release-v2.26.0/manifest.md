@@ -8,7 +8,7 @@
 **Operator approved scope:** yes (2026-09-27 — scope enumerated in the operator invocation: "State and lock work: #301 together with #293, then #302. Rest of P1: #304, #305, #307, #299 as well as #293"; same precedent as v2.25.0)
 **Composition choice:** Batch-state lock / write-path correctness from epic [#324](https://github.com/beettlle/pi-spine/issues/324) first (#301 with #293 in waves 1–2, #302 in wave 3), remaining P1s in parallel lanes. #293 is fixed in wave 1 because it recurred throughout the v2.25.0 land loops.
 **Worker model pin:** `zai/glm-5.3` via `agents.activeProfile=hard` (config commit `d138142c`, pinned in `fc8558f9`) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
-**Agent pin override:** none
+**Agent pin override:** yes — 2026-10-02, operator-approved: z.ai weekly limit exhausted (code 1310, resets 2026-10-06 01:01 UTC+8). Worker switched to `kimi-coding/k3` (thinking high) via `agents.activeProfile=allegretto` for SP-796, SP-797, SP-802, SP-803. Reviewer (`google/gemini-3.1-pro-preview`) and supervisor (`google/gemini-3.5-flash-lite`) unchanged. `escalatePolicy.toProfile` still points to `hard` (GLM, out of quota). Restore `activeProfile=hard` before v2.27.
 **GitNexus:** refreshed 2026-09-27 — status up-to-date with HEAD (`258f2a7`)
 
 ---
@@ -169,6 +169,12 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - Integrated as `d631f3d8`; `spine batch complete` archived and `.spine/batch-state.json` was not recreated.
 - Post-integrate `npm run release:check` on `main`: 2748 pass / 0 fail, line coverage 90.08%, exit 0 — log `/tmp/pi-spine-v2.26-wave2.log`. `bypassWriteGuard` count in `src`/`tests`: 0; no `spawnSync`/`Atomics` in `contract-exec.mjs`.
 - SP-796 amended: `lifecycle.mjs` is 494/500, so `src/batch/lifecycle-cleanup.mjs` added to its File Scope for extracting post-release cleanup.
+
+### Wave 3 — batch `20261002T025919-f11a` (`SP-794,SP-795,SP-796,SP-797`)
+
+- SP-794 and SP-795 completed and merged into orch (`0ec5fe02`, `931386ce`).
+- SP-796 failed on the z.ai **weekly** limit (code 1310, resets 2026-10-06 01:01 UTC+8). Lane 3 keeps Step 1 commit `67c5bfaf` plus uncommitted lifecycle edits. SP-797 is not started (depends on SP-796).
+- Operator approved switching the worker to `kimi-coding/k3` (see Agent pin override). Probed with `pi -p` (responded), then retried SP-796 and resumed.
 
 ---
 
