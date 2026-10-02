@@ -12,11 +12,10 @@ import { resolveAttachedMilestonePollMs } from "../config/spine-config-schema.mj
 import { appendJournalEvent } from "./journal.mjs";
 import {
 	clearBatchEnginePid,
-	loadSpineBatchState,
 	readBatchEnginePid,
 	recomputeTaskCounters,
-	saveSpineBatchState,
 	updateSegmentForTask,
+	updateSpineBatchState,
 } from "./state.mjs";
 
 /**
@@ -56,6 +55,14 @@ export function isParentSessionLost({
 /**
  * Fail-closed reconcile when the attached engine parent session is gone.
  *
+ * The whole reconcile is one `updateSpineBatchState` read-modify-write
+ * (SP-793 / #301): the phase is re-checked under the lock on the latest
+ * committed state, and the persist goes through the write guard with no owner
+ * bypass — the recorded owner is the dead parent engine, so the guard allows
+ * the write; if ownership was handed to a live detached child meanwhile, the
+ * loud guard rejection is the correct outcome instead of clobbering the new
+ * owner's state.
+ *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {number} params.parentPid
@@ -63,85 +70,85 @@ export function isParentSessionLost({
  * @returns {{ handled: boolean, batchId?: string, taskIds?: string[] }}
  */
 export function reconcileParentSessionLost({ projectRoot, parentPid, enginePid = process.pid }) {
-	const loaded = loadSpineBatchState(projectRoot);
-	const state = loaded.raw;
-	if (!state || typeof state !== "object") {
-		return { handled: false };
-	}
+	/** @type {{ handled: boolean, batchId?: string, taskIds?: string[] }} */
+	let outcome = { handled: false };
+	updateSpineBatchState(projectRoot, (draft) => {
+		const batchId = String(draft.batchId ?? "");
+		if (!batchId) {
+			return false;
+		}
 
-	const batchId = String(state.batchId ?? "");
-	if (!batchId) {
-		return { handled: false };
-	}
+		const phase = String(draft.phase ?? "");
+		if (phase === "completed" || phase === "aborted" || phase === "failed") {
+			outcome = { handled: false, batchId };
+			return false;
+		}
 
-	const phase = String(state.phase ?? "");
-	if (phase === "completed" || phase === "aborted" || phase === "failed") {
-		return { handled: false, batchId };
-	}
-
-	appendJournalEvent(projectRoot, batchId, "engine.parent_died", {
-		parentPid,
-		enginePid,
-		signal: "parent_exit",
-	});
-
-	const now = Date.now();
-	/** @type {string[]} */
-	const failedTaskIds = [];
-	let changed = false;
-
-	for (const task of state.tasks ?? []) {
-		if (!task || typeof task !== "object") continue;
-		if (String(task.status ?? "").toLowerCase() !== "running") continue;
-
-		const taskId = String(task.taskId ?? "");
-		if (!taskId) continue;
-
-		task.status = "failed";
-		task.endedAt = now;
-		task.exitReason = "parent_exit";
-		updateSegmentForTask(state, taskId, "failed");
-		failedTaskIds.push(taskId);
-		changed = true;
-
-		const laneNumber = Number(task.laneNumber ?? 1);
-		const lane = (state.lanes ?? []).find((entry) => Number(entry?.laneNumber) === laneNumber);
-		appendJournalEvent(projectRoot, batchId, "task.failed", {
-			taskId,
-			laneNumber,
-			laneId: lane?.laneId ?? `lane-${laneNumber}`,
-			reason: "parent_exit",
-			reconciled: true,
+		appendJournalEvent(projectRoot, batchId, "engine.parent_died", {
+			parentPid,
+			enginePid,
+			signal: "parent_exit",
 		});
-	}
 
-	for (const lane of state.lanes ?? []) {
-		if (!lane || typeof lane !== "object") continue;
-		const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane).workerPid);
-		if (Number.isFinite(workerPid) && workerPid > 0 && !isProcessAlive(workerPid)) {
-			delete lane.workerPid;
+		const now = Date.now();
+		/** @type {string[]} */
+		const failedTaskIds = [];
+		let changed = false;
+
+		for (const task of draft.tasks ?? []) {
+			if (!task || typeof task !== "object") continue;
+			if (String(task.status ?? "").toLowerCase() !== "running") continue;
+
+			const taskId = String(task.taskId ?? "");
+			if (!taskId) continue;
+
+			task.status = "failed";
+			task.endedAt = now;
+			task.exitReason = "parent_exit";
+			updateSegmentForTask(draft, taskId, "failed");
+			failedTaskIds.push(taskId);
+			changed = true;
+
+			const laneNumber = Number(task.laneNumber ?? 1);
+			const lane = (draft.lanes ?? []).find((entry) => Number(entry?.laneNumber) === laneNumber);
+			appendJournalEvent(projectRoot, batchId, "task.failed", {
+				taskId,
+				laneNumber,
+				laneId: lane?.laneId ?? `lane-${laneNumber}`,
+				reason: "parent_exit",
+				reconciled: true,
+			});
+		}
+
+		for (const lane of draft.lanes ?? []) {
+			if (!lane || typeof lane !== "object") continue;
+			const workerPid = Number(/** @type {{ workerPid?: number }} */ (lane).workerPid);
+			if (Number.isFinite(workerPid) && workerPid > 0 && !isProcessAlive(workerPid)) {
+				delete lane.workerPid;
+				changed = true;
+			}
+		}
+
+		const recordedEnginePid = readBatchEnginePid(draft);
+		if (recordedEnginePid != null) {
+			clearBatchEnginePid(draft);
 			changed = true;
 		}
-	}
 
-	const recordedEnginePid = readBatchEnginePid(state);
-	if (recordedEnginePid != null) {
-		clearBatchEnginePid(state);
-		changed = true;
-	}
+		if (phase !== "paused") {
+			draft.phase = "paused";
+			changed = true;
+		}
 
-	if (phase !== "paused") {
-		state.phase = "paused";
-		changed = true;
-	}
+		outcome = { handled: true, batchId, taskIds: failedTaskIds };
+		if (!changed) {
+			return false;
+		}
 
-	if (!changed) {
-		return { handled: true, batchId, taskIds: failedTaskIds };
-	}
-
-	recomputeTaskCounters(state);
-	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
-	return { handled: true, batchId, taskIds: failedTaskIds };
+		recomputeTaskCounters(draft);
+		return true;
+	});
+	return outcome;
 }
 
 /**
