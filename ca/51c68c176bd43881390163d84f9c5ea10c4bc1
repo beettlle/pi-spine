@@ -1,0 +1,16 @@
+spine-tasks/SP-797-async-engine-lock-wait/STATUS.md
+  h_2a17159c706ba1 3,23,25-26
+src/batch/batch-state-lock.mjs
+  h_2a17159c706ba1 27,439-514
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca51c68c176bd43881390163d84f9c5ea10c4bc1",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
