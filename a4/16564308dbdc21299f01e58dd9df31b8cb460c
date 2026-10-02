@@ -1,0 +1,14 @@
+tests/fs/atomic-write.test.mjs
+  h_2a17159c706ba1 5,69,73-83,94-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a416564308dbdc21299f01e58dd9df31b8cb460c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
