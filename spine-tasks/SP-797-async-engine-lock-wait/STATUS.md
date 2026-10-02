@@ -1,7 +1,7 @@
 # SP-797: Async engine lock wait — Status
 
-**Current Step:** Step 5: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-02
 **Review Level:** 2
 **Review Counter:** 0
@@ -48,10 +48,16 @@
 - [x] Fix all failures — compacted comments in `batch-state-lock.mjs` (501→499) and `engine-lanes.mjs` (503→499) to satisfy the Phase-23 500-LOC structural guard (`tests/cli/phase23-exit-verify.test.mjs`)
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
+
+## Completion Criteria Evidence
+
+- [x] Heartbeat-style timer keeps firing during a contended lock wait — `tests/batch/batch-state-lock-async.test.mjs` "event loop keeps running while awaiting a contended lock": `setInterval(25ms)` fired ≥5 times (observed ~20) while a CLI-style child held the lock for 500 ms; engine write landed after release.
+- [x] CLI callers keep synchronous `withBatchStateLock` — unchanged in `state-io.mjs` / `updateSpineBatchState`; only engine callers use `withBatchStateLockAsync` (no sync non-engine callers of `saveEngineBatchState` found in Step 0).
+- [x] Closes #302 defect 2 (with SP-794/SP-795/SP-796 on `main`).
 
 ---
 
