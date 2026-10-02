@@ -24,6 +24,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { setTimeout as sleepAsync } from "node:timers/promises";
 import {
 	ENGINE_STARTTIME_TOLERANCE_MS,
 	isProcessAlive,
@@ -432,6 +433,82 @@ export function withBatchStateLock(projectRoot, fn, options = {}) {
 			releaseLockFile(lockPath, token);
 		} finally {
 			heldByThisProcess.delete(lockPath);
+		}
+	}
+}
+
+/**
+ * Async twin of `withBatchStateLock` for event-loop-driven callers (SP-797 /
+ * GitHub #302 defect 2): identical acquire loop (`tryCreateLockFile` +
+ * `breakStaleLock` + token-gated release + per-process re-entrancy), but the
+ * contention wait yields via `node:timers/promises` instead of blocking the
+ * thread with `Atomics.wait`. Engine saves use this so a CLI-held lock cannot
+ * freeze the engine's heartbeat timers, worker pipe draining, and stall
+ * detection while the engine waits.
+ *
+ * `fn` MUST stay synchronous and is never separated from release by an
+ * `await`: the re-entrancy map is only correct because no other same-process
+ * code can interleave between acquire and release. The uncontended fast path
+ * reaches `fn` before the first `await`, so uncontended callers observe the
+ * same run-to-completion semantics as the sync version.
+ *
+ * Journal-free diagnostics: when the wait exceeded 1 s, one `[spine]` line is
+ * written to stderr after release (never inside the locked section).
+ *
+ * @param {string} projectRoot
+ * @param {() => unknown} fn synchronous critical section
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {Promise<unknown>} `fn`'s return value
+ */
+export async function withBatchStateLockAsync(projectRoot, fn, options = {}) {
+	// batchStateLockPath mkdir+realpath so nested calls share one Map key.
+	const lockPath = batchStateLockPath(projectRoot);
+
+	// Re-entrant pass-through: same-process nesting must not self-deadlock.
+	// A nested sync `withBatchStateLock` inside `fn` lands here too and runs
+	// directly, matching the sync version's composition guarantee.
+	if (heldByThisProcess.has(lockPath)) {
+		return fn();
+	}
+
+	const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
+	const deadline = Date.now() + timeoutMs;
+	const token = newOwnershipToken();
+	const waitStartedAt = Date.now();
+
+	for (;;) {
+		if (tryCreateLockFile(lockPath, token)) break;
+		breakStaleLock(lockPath);
+		if (Date.now() >= deadline) {
+			throw new Error(
+				`Timed out acquiring batch-state lock (${path.relative(projectRoot, lockPath)}) ` +
+					`after ${timeoutMs}ms — another spine process may be holding it`,
+			);
+		}
+		await sleepAsync(POLL_INTERVAL_MS);
+	}
+
+	const waitedMs = Date.now() - waitStartedAt;
+	heldByThisProcess.set(lockPath, token);
+	try {
+		return fn();
+	} finally {
+		// Unlink (token-gated) before clearing the re-entrancy map so a
+		// same-process contender cannot treat this file as leakedSelf and
+		// steal it while we still intend to release.
+		try {
+			releaseLockFile(lockPath, token);
+		} finally {
+			heldByThisProcess.delete(lockPath);
+			if (waitedMs > 1_000) {
+				try {
+					process.stderr.write(
+						`[spine] batch-state lock wait took ${waitedMs}ms (${path.relative(projectRoot, lockPath)}) — another spine process held it\n`,
+					);
+				} catch {
+					/* diagnostic only — never fail a state save on stderr */
+				}
+			}
 		}
 	}
 }

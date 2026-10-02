@@ -1,6 +1,6 @@
 # SP-797: Async engine lock wait — Status
 
-**Current Step:** Step 1: Async acquire
+**Current Step:** Step 2: Async engine save + call sites
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -20,10 +20,10 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Async acquire
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `withBatchStateLockAsync`
-- [ ] Long-wait stderr line
+- [x] `withBatchStateLockAsync`
+- [x] Long-wait stderr line
 
 ### Step 2: Async engine save + call sites
 **Status:** ⬜ Not Started
