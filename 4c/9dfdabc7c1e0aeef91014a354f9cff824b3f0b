@@ -1,0 +1,19 @@
+spine-tasks/SP-800-async-contract-verify/.reviews/5-20261001T171003.md
+  s_2233c7a863834d::t_b4cb6164253422 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4c9dfdabc7c1e0aeef91014a354f9cff824b3f0b",
+  "prompts": {},
+  "sessions": {
+    "s_2233c7a863834d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc3f7-b03c-715d-9c38-79c2778162d2",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
