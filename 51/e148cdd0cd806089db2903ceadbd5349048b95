@@ -1,0 +1,16 @@
+spine-tasks/SP-795-durable-atomic-json-write/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-17,20,22-24,27,54-55
+src/fs/atomic-write.mjs
+  h_2a17159c706ba1 17-43,55-63,65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "51e148cdd0cd806089db2903ceadbd5349048b95",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
