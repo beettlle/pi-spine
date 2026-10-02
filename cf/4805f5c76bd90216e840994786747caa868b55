@@ -1,0 +1,14 @@
+spine-tasks/SP-794-lock-steal-by-rename/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,54-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cf4805f5c76bd90216e840994786747caa868b55",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
