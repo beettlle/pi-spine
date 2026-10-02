@@ -1,0 +1,16 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-796-shrink-terminal-lock-sections/STATUS.md
+  h_2a17159c706ba1 3,40,42-46,49,51,65-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fb67231f2749642703ac154fc6cb9db8ac546505",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
