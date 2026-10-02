@@ -226,7 +226,7 @@ async function runNonMatrixTaskOnLane({
 		if (!task.startedAt) task.startedAt = Date.now();
 		updateSegmentForTask(state, taskId, "failed");
 		recomputeTaskCounters(state);
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 		appendJournalEvent(projectRoot, batchId, "lane.orch_sync_failed", {
 			taskId,
 			laneNumber,
@@ -276,7 +276,7 @@ async function runNonMatrixTaskOnLane({
 	task.status = "running";
 	if (!task.startedAt) task.startedAt = Date.now();
 	updateSegmentForTask(state, taskId, "running");
-	saveEngineBatchState(projectRoot, state);
+	await saveEngineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "task.started", {
 		taskId,
 		laneNumber,
@@ -295,14 +295,19 @@ async function runNonMatrixTaskOnLane({
 		laneCorrelationId,
 		fileScopePaths,
 		config,
-		onHeartbeat: (timestamp) => {
+		// Fire-and-forget saves: the worker host invokes these callbacks without
+		// awaiting, so the returned promise settles on its own. Safe because
+		// `saveEngineBatchState` serializes the live state object at lock-acquire
+		// time — a queued heartbeat save writes the latest state, never a stale
+		// snapshot (SP-797 / #302).
+		onHeartbeat: async (timestamp) => {
 			lane.lastHeartbeatAt = timestamp;
-			saveEngineBatchState(projectRoot, state);
+			await saveEngineBatchState(projectRoot, state);
 		},
-		onWorkerPid: (pid) => {
+		onWorkerPid: async (pid) => {
 			if (pid > 0) {
 				lane.workerPid = pid;
-				saveEngineBatchState(projectRoot, state);
+				await saveEngineBatchState(projectRoot, state);
 			}
 		},
 	}));
@@ -323,7 +328,7 @@ async function runNonMatrixTaskOnLane({
 			});
 			if (lane.workerPid) {
 				delete lane.workerPid;
-				saveEngineBatchState(projectRoot, state);
+				await saveEngineBatchState(projectRoot, state);
 			}
 		} else {
 			const aborted = workerResult.classification === "aborted";
@@ -339,7 +344,7 @@ async function runNonMatrixTaskOnLane({
 			task.exitReason = workerResult.classification ?? "worker_failed";
 			updateSegmentForTask(state, taskId, aborted ? "aborted" : "failed");
 			recomputeTaskCounters(state);
-			saveEngineBatchState(projectRoot, state);
+			await saveEngineBatchState(projectRoot, state);
 			if (!aborted) {
 				const salvageFields = recordTaskFailureSalvage({
 					projectRoot,
@@ -378,7 +383,7 @@ async function runNonMatrixTaskOnLane({
 
 	if (lane.workerPid) {
 		delete lane.workerPid;
-		saveEngineBatchState(projectRoot, state);
+		await saveEngineBatchState(projectRoot, state);
 	}
 
 	appendJournalEvent(projectRoot, batchId, "lane.completed", {

@@ -1,6 +1,6 @@
 # SP-797: Async engine lock wait — Status
 
-**Current Step:** Step 2: Async engine save + call sites
+**Current Step:** Step 3: Tests
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-02
 **Review Level:** 2
@@ -26,12 +26,10 @@
 - [x] Long-wait stderr line
 
 ### Step 2: Async engine save + call sites
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-> ⚠️ Hydrate: one checkbox per call-site file from Step 0
-
-- [ ] Async save + pause adopt
-- [ ] Call sites awaited
+- [x] Async save + pause adopt (`saveEngineBatchState` + `adoptPauseIfRequested` async; no sync fallback — Step 0 found no sync non-engine callers)
+- [x] Call sites awaited — `engine.mjs` ×10, `engine-lanes.mjs` ×7 (incl. 2 fire-and-forget worker callbacks now async arrows), `matrix-run.mjs` ×5
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started

@@ -5,7 +5,7 @@
  */
 
 import { isProcessAlive } from "../process/liveness.mjs";
-import { withBatchStateLock } from "./batch-state-lock.mjs";
+import { withBatchStateLockAsync } from "./batch-state-lock.mjs";
 import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import { recordResumePhaseTransition } from "./resume-common.mjs";
 import {
@@ -64,18 +64,24 @@ export function mergeEngineStateWithDiskPause(projectRoot, state) {
 /**
  * Persist engine state while honoring an operator pause already on disk or in the journal.
  *
- * The pause merge (a disk read) and the save run inside one `withBatchStateLock`
- * hold (SP-791 / #301): previously the merge ran before the lock, so an operator
- * pause landing between the merge and the write was clobbered by the engine's
- * whole-file snapshot. The lock is re-entrant per process, so the nested
- * `saveSpineBatchState` acquisition composes instead of self-deadlocking.
+ * The pause merge (a disk read) and the save run inside one async
+ * `withBatchStateLockAsync` hold (SP-791 / #301, SP-797 / #302): previously the
+ * merge ran before the lock, so an operator pause landing between the merge and
+ * the write was clobbered by the engine's whole-file snapshot; and the wait for
+ * a contended lock must not block the engine's event loop. The lock is
+ * re-entrant per process, so the nested `saveSpineBatchState` acquisition
+ * composes instead of self-deadlocking. All callers are engine-side and async
+ * (Step 0 of SP-797 found no synchronous non-engine callers), so no sync
+ * fallback path is kept — CLI callers keep the synchronous
+ * `withBatchStateLock` via `state-io.mjs` / `updateSpineBatchState`.
  *
  * @param {string} projectRoot
  * @param {object} state
  * @param {{ bypassOwnerCheck?: boolean }} [options]
+ * @returns {Promise<unknown>}
  */
-export function saveEngineBatchState(projectRoot, state, options = {}) {
-	return withBatchStateLock(projectRoot, () => {
+export async function saveEngineBatchState(projectRoot, state, options = {}) {
+	return withBatchStateLockAsync(projectRoot, () => {
 		mergeEngineStateWithDiskPause(projectRoot, state);
 		return saveSpineBatchState(projectRoot, state, options);
 	});
@@ -122,10 +128,10 @@ export function enforceOperatorPauseOnDisk(projectRoot) {
  * @param {string} params.batchId
  * @returns {{ stop: boolean }}
  */
-export function adoptPauseIfRequested({ projectRoot, state, batchId }) {
+export async function adoptPauseIfRequested({ projectRoot, state, batchId }) {
 	const paused = mergeEngineStateWithDiskPause(projectRoot, state);
 	if (!paused) return { stop: false };
-	saveEngineBatchState(projectRoot, state);
+	await saveEngineBatchState(projectRoot, state);
 	appendJournalEvent(projectRoot, batchId, "engine.pause_observed", {
 		enginePid: process.pid,
 	});
