@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Post-release cleanup for terminal batch lifecycle writes (SP-796 / #302).
  *
