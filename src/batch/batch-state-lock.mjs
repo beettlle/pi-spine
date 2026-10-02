@@ -173,6 +173,93 @@ function tryCreateLockFile(lockPath, token) {
 }
 
 /**
+ * Steal the lock by renaming it out of the acquisition path, but only when
+ * the renamed file is still the exact lock that was judged stale (SP-794 /
+ * GitHub #302 defect 1).
+ *
+ * A bare `unlinkSync` could remove a lock a different waiter had freshly
+ * acquired after the staleness judgment: two concurrent breakers of the same
+ * dead holder would both "win", each running the critical section while the
+ * other holds it. `renameSync` is atomic, so at most one breaker ever moves a
+ * given lock file; the token/content re-check guarantees the moved file is
+ * the same one the breaker judged stale. Exported for direct unit testing of
+ * the put-back branch, which cannot be scheduled deterministically through
+ * `withBatchStateLock`.
+ *
+ * @param {string} lockPath
+ * @param {string} staleToken ownership token observed when the lock was
+ *   judged stale; empty for corrupt/invalid payloads that carry no token.
+ * @param {string} reason diagnostic label for the steal log
+ * @param {string | null} [staleContent] raw payload text observed when the
+ *   lock was judged stale; compared in full when `staleToken` is empty.
+ */
+export function stealIfTokenMatches(lockPath, staleToken, reason, staleContent = null) {
+	const stolenPath = `${lockPath}.break.${process.pid}.${newOwnershipToken()}`;
+	try {
+		fs.renameSync(lockPath, stolenPath);
+	} catch {
+		// ENOENT: another breaker or the holder's release already removed the
+		// lock — nothing to steal. Any other FS error also leaves lockPath
+		// untouched; treat it as a lost race so the acquire loop keeps its
+		// wait-then-timeout behavior (the unlink-based break this replaces
+		// swallowed its failures the same way).
+		return;
+	}
+	// Below this point nothing throws: every op is wrapped so a live holder's
+	// lock file is never stranded away from lockPath.
+
+	/** @type {string | null} */
+	let currentContent = null;
+	try {
+		currentContent = fs.readFileSync(stolenPath, "utf-8");
+	} catch {
+		currentContent = null;
+	}
+	let sameStaleLock = false;
+	if (typeof staleToken === "string" && staleToken.length > 0) {
+		try {
+			const current = JSON.parse(currentContent ?? "");
+			sameStaleLock =
+				current != null &&
+				typeof current === "object" &&
+				String(/** @type {{ token?: unknown }} */ (current).token ?? "") === staleToken;
+		} catch {
+			sameStaleLock = false;
+		}
+	} else {
+		// Corrupt/invalid payloads carry no trustworthy token — compare the
+		// full file content instead.
+		sameStaleLock = currentContent != null && currentContent === staleContent;
+	}
+
+	if (sameStaleLock) {
+		logLockBreak(lockPath, reason);
+		try {
+			fs.unlinkSync(stolenPath);
+		} catch {
+			/* already removed */
+		}
+		return;
+	}
+
+	// The lock at lockPath was replaced between the staleness judgment and the
+	// rename — a new holder now owns it. Put the file back; EEXIST means a
+	// third process already acquired lockPath in the microscopic gap, which is
+	// also fine. Either way the renamed copy is discarded.
+	try {
+		fs.linkSync(stolenPath, lockPath);
+	} catch {
+		/* EEXIST — someone else owns lockPath now; discard the copy below */
+	} finally {
+		try {
+			fs.unlinkSync(stolenPath);
+		} catch {
+			/* already removed */
+		}
+	}
+}
+
+/**
  * Break the lock when the recorded holder cannot still own it: dead PID,
  * abandoned corrupt payload, same-process leak (no active holder), or a live
  * PID whose OS starttime is newer than the recorded start (PID recycled).
@@ -186,9 +273,12 @@ function tryCreateLockFile(lockPath, token) {
 function breakStaleLock(lockPath) {
 	/** @type {{ pid?: number, startedAt?: number, token?: string } | null} */
 	let holder = null;
+	/** @type {string | null} raw payload text, for content-compare steals. */
+	let rawContent = null;
 	let corrupt = false;
 	try {
-		holder = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
+		rawContent = fs.readFileSync(lockPath, "utf-8");
+		holder = JSON.parse(rawContent);
 		if (!holder || typeof holder !== "object") corrupt = true;
 	} catch {
 		corrupt = true;
@@ -211,23 +301,13 @@ function breakStaleLock(lockPath) {
 		} catch {
 			return;
 		}
-		try {
-			logLockBreak(lockPath, "corrupt-stale");
-			fs.unlinkSync(lockPath);
-		} catch {
-			/* raced unlink */
-		}
+		stealIfTokenMatches(lockPath, "", "corrupt-stale", rawContent);
 		return;
 	}
 
 	const holderPid = Number(holder?.pid);
 	if (!Number.isFinite(holderPid) || holderPid <= 0) {
-		try {
-			logLockBreak(lockPath, "invalid-pid");
-			fs.unlinkSync(lockPath);
-		} catch {
-			/* raced unlink */
-		}
+		stealIfTokenMatches(lockPath, "", "invalid-pid", rawContent);
 		return;
 	}
 
@@ -242,12 +322,12 @@ function breakStaleLock(lockPath) {
 		if (stillHeldByToken || stillHeldByPath) {
 			return;
 		}
-		try {
-			logLockBreak(lockPath, `leakedSelf token=${token} mapSize=${heldByThisProcess.size}`);
-			fs.unlinkSync(lockPath);
-		} catch {
-			/* raced unlink */
-		}
+		stealIfTokenMatches(
+			lockPath,
+			token,
+			`leakedSelf token=${token} mapSize=${heldByThisProcess.size}`,
+			rawContent,
+		);
 		return;
 	}
 
@@ -255,12 +335,12 @@ function breakStaleLock(lockPath) {
 	// under suite load the PID is often recycled by an unrelated live process,
 	// and refusing to break left waiters stuck until timeout (stale-lock flake).
 	if (holderPid !== process.pid && !isProcessAlive(holderPid)) {
-		try {
-			logLockBreak(lockPath, `deadPid holder=${holderPid}`);
-			fs.unlinkSync(lockPath);
-		} catch {
-			/* raced unlink */
-		}
+		stealIfTokenMatches(
+			lockPath,
+			String(holder?.token ?? ""),
+			`deadPid holder=${holderPid}`,
+			rawContent,
+		);
 		return;
 	}
 
@@ -281,12 +361,12 @@ function breakStaleLock(lockPath) {
 		}
 		if (liveStart == null || !Number.isFinite(liveStart) || liveStart <= 0) return;
 		if (liveStart - expectedStart > STARTTIME_TOLERANCE_MS) {
-			try {
-				logLockBreak(lockPath, `pidRecycled holder=${holderPid}`);
-				fs.unlinkSync(lockPath);
-			} catch {
-				/* raced unlink */
-			}
+			stealIfTokenMatches(
+				lockPath,
+				String(holder?.token ?? ""),
+				`pidRecycled holder=${holderPid}`,
+				rawContent,
+			);
 		}
 	}
 }
