@@ -1,0 +1,20 @@
+spine-tasks/SP-794-lock-steal-by-rename/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-794-lock-steal-by-rename/.reviews/0-20261002T032320.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-794-lock-steal-by-rename/.reviews/4-20261002T032346.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-794-lock-steal-by-rename/.reviews/final-20261002T032440.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0ec5fe02ae985676a9b21fda4268159d2df06ef4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
