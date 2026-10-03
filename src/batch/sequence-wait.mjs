@@ -3,12 +3,17 @@
  */
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { DEFAULT_SEQUENCE_POLL_MS } from "../config/spine-config-schema.mjs";
-import { isProcessAlive } from "../process/liveness.mjs";
+import {
+	DEFAULT_SEQUENCE_MAX_WAIT_MS,
+	DEFAULT_SEQUENCE_POLL_MS,
+	DEFAULT_SEQUENCE_STALL_MS,
+} from "../config/spine-config-schema.mjs";
+import { isEngineProcessAlive, isProcessAlive } from "../process/liveness.mjs";
 import { approveIntegrateGate, loadGateRecord, maybeAutoApproveIntegrateGate } from "./gate.mjs";
 import { integrateOrchToBase } from "./integrate.mjs";
 import { completeBatch } from "./lifecycle.mjs";
 import { reconcileBatch } from "./reconcile.mjs";
+import { readBatchEnginePid, readBatchEngineStartedAt } from "./state-guards.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 
 const WAVE_BATCH_SETTLED_DIAGNOSES = new Set([
@@ -49,12 +54,28 @@ export async function waitForSequenceBatchTerminal({
 	projectRoot,
 	pollIntervalMs = DEFAULT_SEQUENCE_POLL_MS,
 	timeoutMs = 120_000,
+	maxWaitMs = DEFAULT_SEQUENCE_MAX_WAIT_MS,
+	stallMs = DEFAULT_SEQUENCE_STALL_MS,
 	enginePid = null,
 	reconcileFn = reconcileBatch,
 }) {
-	const deadline = Date.now() + timeoutMs;
+	const startedAt = Date.now();
+	const deadline = startedAt + timeoutMs;
+	const hardCap = startedAt + maxWaitMs;
+	let lastProgressAt = startedAt;
 	let useLightReconcile = false;
 	while (Date.now() < deadline || isEngineStillRunning(enginePid, projectRoot)) {
+		if (Date.now() >= hardCap) {
+			const reconciliation = reconcileFn({ projectRoot });
+			return {
+				ok: false,
+				error: "sequence_wait_timeout",
+				diagnosis: reconciliation.diagnosis ?? null,
+				reconciliation,
+				batchId: reconciliation.batchId ?? null,
+				suggestedCommand: "spine status --diagnose",
+			};
+		}
 		const reconciliation = reconcileFn({ projectRoot, light: useLightReconcile });
 		useLightReconcile = true;
 		const diagnosis = reconciliation.diagnosis;
@@ -75,6 +96,20 @@ export async function waitForSequenceBatchTerminal({
 				batchId: reconciliation.batchId ?? null,
 			};
 		}
+		const progressAt = newestProgressSignalMs(reconciliation);
+		if (progressAt != null && progressAt > lastProgressAt) {
+			lastProgressAt = progressAt;
+		}
+		if (Date.now() - lastProgressAt >= stallMs) {
+			return {
+				ok: false,
+				error: "engine_stalled",
+				diagnosis,
+				reconciliation,
+				batchId: reconciliation.batchId ?? null,
+				suggestedCommand: "spine status --diagnose",
+			};
+		}
 		await sleep(pollIntervalMs);
 	}
 	const reconciliation = reconcileFn({ projectRoot });
@@ -88,14 +123,58 @@ export async function waitForSequenceBatchTerminal({
 }
 
 /**
- * Returns true when a detached engine PID is alive or the batch phase is active,
- * preventing sequence timeout while work is still in progress.
+ * Newest progress signal exposed by a reconciliation, in epoch ms: batch-state
+ * `updatedAt` or the latest journal event timestamp (lane heartbeats are
+ * journal `lane.heartbeat` events, so they are covered by the journal tail).
+ * Returns null when no signal is available (SP-802 / #307).
+ *
+ * @param {object} reconciliation
+ * @returns {number|null}
+ */
+function newestProgressSignalMs(reconciliation) {
+	const signals = reconciliation?.signals ?? {};
+	/** @type {number|null} */
+	let newest = null;
+	const updatedAt = Number(signals.raw?.updatedAt);
+	if (Number.isFinite(updatedAt) && updatedAt > 0) {
+		newest = updatedAt;
+	}
+	const events = Array.isArray(signals.journalEvents) ? signals.journalEvents : [];
+	for (let index = events.length - 1; index >= 0; index -= 1) {
+		const ts = Date.parse(String(events[index]?.timestamp ?? ""));
+		if (Number.isFinite(ts) && ts > 0) {
+			if (newest == null || ts > newest) newest = ts;
+			break;
+		}
+	}
+	return newest;
+}
+
+/**
+ * Returns true when the batch engine is verifiably still running, so the wait
+ * extends past `timeoutMs` while work is in progress. PID-reuse-safe (SP-802 /
+ * #307, #259): the explicit `enginePid` is paired with the state's recorded
+ * `engineStartedAt` when the PIDs match; the state fallback uses the recorded
+ * PID + start time from `resilience`; otherwise it degrades to PID-only
+ * liveness.
+ *
+ * @param {number|null} enginePid
+ * @param {string} projectRoot
  */
 function isEngineStillRunning(enginePid, projectRoot) {
-	if (enginePid && isProcessAlive(enginePid)) return true;
 	const { raw } = loadSpineBatchState(projectRoot);
-	const pid = raw?.enginePid ?? null;
-	if (pid && isProcessAlive(pid)) return true;
+	const statePid = readBatchEnginePid(raw);
+	const stateStartedAt = readBatchEngineStartedAt(raw);
+	const pid = Number(enginePid);
+	if (Number.isFinite(pid) && pid > 0) {
+		if (statePid != null && statePid === pid) {
+			return isEngineProcessAlive(pid, stateStartedAt);
+		}
+		if (isProcessAlive(pid)) return true;
+	}
+	if (statePid != null) {
+		return isEngineProcessAlive(statePid, stateStartedAt);
+	}
 	return false;
 }
 
