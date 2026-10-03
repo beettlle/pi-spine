@@ -181,6 +181,11 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - First post-integrate `release:check`: plain run 2766/2766, coverage run 2765/2766 — `batch-state-handoff.test.mjs` "runBatchComplete clears active batch-state…" failed in teardown only (`ENOTEMPTY` on `rmdir .git` after all assertions passed). Same class as #223/#233: the file used raw `rm` instead of `destroyGitRepo`. Isolation 6/6 green under coverage; wave 3 complete path is fully synchronous (no new async/spawn in `lifecycle.mjs`/`lifecycle-cleanup.mjs`). Fixed by switching the file's 10 teardowns to `destroyGitRepo`.
 - Re-run `npm run release:check` on `main` + fix: 2766 pass / 0 fail (plain and coverage), line coverage 90.12%, exit 0 — log `/tmp/pi-spine-v2.26-wave3.log`.
 
+### Wave 4 — `SP-802,SP-803`
+
+- 2026-10-03 preflight: `git-clean` blocked on the uncommitted `agents.activeProfile=allegretto`. Committed it (workers read config from the main repo root; `.spine/` is not in the npm `files` list). Revert to `hard` after wave 4 lands, before publish.
+- `prelanded-file-scope` warning for SP-802 judged a false positive: the only `main` change to `sequence-wait.mjs` / `sequence-detached-poll.test.mjs` since authoring is SP-793's `bypassOwnerCheck` rename; `sequenceMaxWaitMs` / `sequenceStallMs` are absent from `src` and `tests`.
+
 ---
 
 ## Deferred backlog
