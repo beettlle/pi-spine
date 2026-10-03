@@ -1,0 +1,21 @@
+tests/batch/batch-state-lock-async.test.mjs
+  s_b1faa60cd795aa::t_08d2922fdc7ee3 28-30,34,38-39
+  s_b1faa60cd795aa::t_7d2df3cd8c6fbf 76-78,83-84
+  s_b1faa60cd795aa::t_01dcd0f3b9436f 95-98,105,109-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4138a7bb067d0eaa47d97359504427f75cfb0283",
+  "prompts": {},
+  "sessions": {
+    "s_b1faa60cd795aa": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-bdbc2b97-eccb-4d58-b71b-5c86cbcabf5a",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
