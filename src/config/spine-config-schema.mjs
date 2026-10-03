@@ -12,17 +12,25 @@ export const DEFAULT_SEQUENCE_POLL_MS = 5_000;
 /** Default dashboard SSE poll interval (wired in SP-453). */
 export const DEFAULT_DASHBOARD_POLL_MS = 2_000;
 
+/** Default hard cap for the sequence batch terminal wait (SP-802 / #307). */
+export const DEFAULT_SEQUENCE_MAX_WAIT_MS = 24 * 60 * 60 * 1000;
+
+/** Default no-progress window before the sequence wait exits as stalled (SP-802 / #307). */
+export const DEFAULT_SEQUENCE_STALL_MS = 30 * 60 * 1000;
+
 /** Lower bound for orchestrator poll intervals. */
 export const MIN_ORCHESTRATOR_POLL_MS = 100;
 
 /** Upper bound for orchestrator poll intervals. */
 export const MAX_ORCHESTRATOR_POLL_MS = 60_000;
 
-/** @type {Readonly<{ attachedMilestonePollMs: number; sequencePollMs: number; dashboardPollMs: number }>} */
+/** @type {Readonly<{ attachedMilestonePollMs: number; sequencePollMs: number; dashboardPollMs: number; sequenceMaxWaitMs: number; sequenceStallMs: number }>} */
 export const ORCHESTRATOR_DEFAULTS = Object.freeze({
 	attachedMilestonePollMs: DEFAULT_ATTACHED_MILESTONE_POLL_MS,
 	sequencePollMs: DEFAULT_SEQUENCE_POLL_MS,
 	dashboardPollMs: DEFAULT_DASHBOARD_POLL_MS,
+	sequenceMaxWaitMs: DEFAULT_SEQUENCE_MAX_WAIT_MS,
+	sequenceStallMs: DEFAULT_SEQUENCE_STALL_MS,
 });
 
 /**
@@ -55,6 +63,30 @@ function validatePositivePollMs(value, fieldLabel) {
 }
 
 /**
+ * Positive-integer validation without the poll-interval range clamp: wait/stall
+ * budgets legitimately exceed MAX_ORCHESTRATOR_POLL_MS (SP-802 / #307).
+ *
+ * @param {unknown} value
+ * @param {string} fieldLabel
+ * @returns {{ ok: true, value: number } | { ok: false, code: string, message: string, suggestedCommand: string }}
+ */
+function validatePositiveDurationMs(value, fieldLabel) {
+	if (value == null) {
+		return { ok: true, value: 0 };
+	}
+	const parsed = Number(value);
+	if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+		return {
+			ok: false,
+			code: "CONFIG_ORCHESTRATOR_INVALID",
+			message: `${fieldLabel} must be a positive integer when set`,
+			suggestedCommand: "spine init --force",
+		};
+	}
+	return { ok: true, value: parsed };
+}
+
+/**
  * @param {Record<string, any>} config
  * @returns {null | { code: string; message: string; suggestedCommand: string }}
  */
@@ -77,6 +109,16 @@ export function validateOrchestratorConfig(config) {
 		["dashboardPollMs", "orchestrator.dashboardPollMs"],
 	]) {
 		const result = validatePositivePollMs(orchestrator[key], label);
+		if (!result.ok) {
+			return result;
+		}
+	}
+
+	for (const [key, label] of [
+		["sequenceMaxWaitMs", "orchestrator.sequenceMaxWaitMs"],
+		["sequenceStallMs", "orchestrator.sequenceStallMs"],
+	]) {
+		const result = validatePositiveDurationMs(orchestrator[key], label);
 		if (!result.ok) {
 			return result;
 		}
@@ -119,6 +161,30 @@ export function resolveDashboardPollMs({ config = {} } = {}) {
 		return Math.min(Math.max(configured, MIN_ORCHESTRATOR_POLL_MS), MAX_ORCHESTRATOR_POLL_MS);
 	}
 	return DEFAULT_DASHBOARD_POLL_MS;
+}
+
+/**
+ * @param {object} [params]
+ * @param {object} [params.config]
+ */
+export function resolveSequenceMaxWaitMs({ config = {} } = {}) {
+	const configured = Number(config.orchestrator?.sequenceMaxWaitMs);
+	if (Number.isFinite(configured) && configured > 0) {
+		return configured;
+	}
+	return DEFAULT_SEQUENCE_MAX_WAIT_MS;
+}
+
+/**
+ * @param {object} [params]
+ * @param {object} [params.config]
+ */
+export function resolveSequenceStallMs({ config = {} } = {}) {
+	const configured = Number(config.orchestrator?.sequenceStallMs);
+	if (Number.isFinite(configured) && configured > 0) {
+		return configured;
+	}
+	return DEFAULT_SEQUENCE_STALL_MS;
 }
 
 // --- Named agent model profiles (SP-664 / GitHub #216) ---

@@ -198,3 +198,114 @@ test("waitForSequenceBatchTerminal returns failure diagnosis even with alive eng
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+// --- SP-802 / #307: hard cap, stall exit, PID-reuse-safe liveness ---
+
+test("waitForSequenceBatchTerminal exits engine_stalled when a live engine makes no progress", async () => {
+	const projectRoot = await initGitRepo("sp802-poll-stalled-");
+	try {
+		const state = makeBatchState("20260703T150000", "SP-996");
+		state.phase = "running";
+		state.updatedAt = Date.now();
+		recordBatchEnginePid(state, process.pid);
+		saveSpineBatchState(projectRoot, state);
+
+		const startMs = Date.now();
+		const result = await waitForSequenceBatchTerminal({
+			projectRoot,
+			pollIntervalMs: 40,
+			timeoutMs: 80,
+			stallMs: 250,
+			maxWaitMs: 10_000,
+			enginePid: process.pid,
+		});
+		const elapsedMs = Date.now() - startMs;
+
+		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
+		assert.equal(result.error, "engine_stalled");
+		assert.equal(result.suggestedCommand, "spine status --diagnose");
+		assert.ok(
+			elapsedMs < 5_000,
+			`stall exit should fire well before maxWaitMs (elapsed=${elapsedMs}ms)`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("waitForSequenceBatchTerminal hard-caps at maxWaitMs even while engine progresses", async () => {
+	const projectRoot = await initGitRepo("sp802-poll-maxwait-");
+	try {
+		const state = makeBatchState("20260703T160000", "SP-995");
+		state.phase = "running";
+		state.updatedAt = Date.now();
+		recordBatchEnginePid(state, process.pid);
+		saveSpineBatchState(projectRoot, state);
+
+		// Keep progress signals fresh so only the hard cap can end the wait.
+		const progressTimer = setInterval(() => {
+			state.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+		}, 50);
+
+		const startMs = Date.now();
+		let result;
+		try {
+			result = await waitForSequenceBatchTerminal({
+				projectRoot,
+				pollIntervalMs: 40,
+				timeoutMs: 5_000,
+				stallMs: 10_000,
+				maxWaitMs: 300,
+				enginePid: process.pid,
+			});
+		} finally {
+			clearInterval(progressTimer);
+		}
+		const elapsedMs = Date.now() - startMs;
+
+		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
+		assert.equal(result.error, "sequence_wait_timeout");
+		assert.equal(result.suggestedCommand, "spine status --diagnose");
+		assert.ok(
+			elapsedMs < 2_000,
+			`hard cap should end the wait near maxWaitMs=300 (elapsed=${elapsedMs}ms)`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("waitForSequenceBatchTerminal does not extend the wait for a reused PID (start-time mismatch)", async () => {
+	const projectRoot = await initGitRepo("sp802-poll-pidreuse-");
+	try {
+		const state = makeBatchState("20260703T170000", "SP-994");
+		state.phase = "running";
+		state.updatedAt = Date.now();
+		// Live PID, but recorded start time 10 minutes in the past — this process
+		// started seconds ago, so the pair mismatches beyond the liveness
+		// tolerance and must be treated as a recycled PID (#259).
+		state.resilience = { enginePid: process.pid, engineStartedAt: Date.now() - 10 * 60_000 };
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+
+		const startMs = Date.now();
+		const result = await waitForSequenceBatchTerminal({
+			projectRoot,
+			pollIntervalMs: 40,
+			timeoutMs: 150,
+			stallMs: 10_000,
+			maxWaitMs: 10_000,
+			enginePid: process.pid,
+		});
+		const elapsedMs = Date.now() - startMs;
+
+		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
+		assert.equal(result.error, "timeout_waiting_for_batch");
+		assert.ok(
+			elapsedMs < 3_000,
+			`reused PID must not extend the wait past timeoutMs=150 (elapsed=${elapsedMs}ms)`,
+		);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
