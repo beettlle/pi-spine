@@ -2625,8 +2625,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-795 | Durable `writeJsonAtomic` | S | #302 Partial | 3 | Done |
 | SP-796 | Shrink terminal lock sections | M | #302 Partial | 3 | Done |
 | SP-797 | Async engine lock wait | M | #302 Closes | 3 | Done |
-| SP-802 | Sequence wait deadline + stall exit | M | #307 Closes | 4 | Pending |
-| SP-803 | Runbook: v2.26.0 state and lock hardening | S | docs | 4 | Pending |
+| SP-802 | Sequence wait deadline + stall exit | M | #307 Closes | 4 | Done |
+| SP-803 | Runbook: v2.26.0 state and lock hardening | S | docs | 4 | Done |
 
 **Phase 94 exit criteria:**
 

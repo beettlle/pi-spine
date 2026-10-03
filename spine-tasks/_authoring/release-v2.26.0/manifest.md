@@ -185,6 +185,14 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 
 - 2026-10-03 preflight: `git-clean` blocked on the uncommitted `agents.activeProfile=allegretto`. Committed it (workers read config from the main repo root; `.spine/` is not in the npm `files` list). Revert to `hard` after wave 4 lands, before publish.
 - `prelanded-file-scope` warning for SP-802 judged a false positive: the only `main` change to `sequence-wait.mjs` / `sequence-detached-poll.test.mjs` since authoring is SP-793's `bypassOwnerCheck` rename; `sequenceMaxWaitMs` / `sequenceStallMs` are absent from `src` and `tests`.
+- Batch `20261003T201956-a440`, 20:19 UTC. SP-802 worker finished at 20:41; engine plan review failed at 20:42 with `reviewer exited but produced no artifact` (`plan_review_spawn_failed`, ~10 s reviewer life). Gemini probe with `pi -p` responded; `spine batch retry SP-802` + resume → plan APPROVE, `contract.verified`, final PASS, merged into orch. Occurrence added to [#332](https://github.com/beettlle/pi-spine/issues/332#issuecomment-5973300486). Diagnose had recommended `salvage --integrate`, which would have skipped review.
+- SP-803 worker finished at 20:51 (steps committed, `.DONE` written, tracked tree clean) but failed `GitignoredDirtyWorktree` on untracked ignored artifacts in lane 1 (`.pi-smart-router/` model cache, `.pi/loops/`, `coverage-run.tap.log`, `graphify-out/`; same family as #205/#206). No writers alive; `git clean -fdX` in lane 1 (only those four paths ignored), retry + resume.
+- **SP-803 completed via `skippedDoneOnDisk` with no engine plan/final review or contract verification** (its first run failed before reviews). Manual verification: contract is `testCommand: true`, `fileScopeMustChange` runbook (changed), `fileScopeMustNotChange` `src/**`/`bin/**` (untouched; its stray `.spine/rules-manifest.json` commit did not reach orch). Every identifier, error string and default in the 28-line runbook subsection was checked against orch source (event names, `outOfScopeMergeAllowList` defaults, `TIMEOUT_GRACE_MS = 2000`, `DEFAULT_SEQUENCE_MAX_WAIT_MS` 24 h / `DEFAULT_SEQUENCE_STALL_MS` 30 min) — all match.
+- Gate evidence (2766 tests — `main`, not orch) had 1 failure: `batch-state-lock-async.test.mjs` "event loop keeps running while awaiting a contended lock" (4 heartbeat ticks vs floor 5). Timing flake from SP-797's fixed 500 ms hold: under load the parent observed the holder late. Fixed on `main` (`4138a7bb`): holder keeps the lock until the test releases it (cap 5 s) after `minTicks` heartbeats while the engine waits. 24/24 under 8-way parallel load; mutation check with a blocking lock fails on "engine section ran before the holder was released".
+- Waited for `gate.evidence_completed` + `batch.land_loop_finalized`, approved, integrated as `54989646`; `spine batch complete` archived and `.spine/batch-state.json` was not recreated. 0 `"stub":true` journal events.
+- `agents.activeProfile` restored to `hard` after wave 4.
+- First post-integrate `release:check`: plain run 2768/2769 — `detached-start-orphan-timeout.test.mjs` "persists spawn enginePid before wait on timeout failure path" (`spawned engine should have exited`, `kill(pid, 0)` 30 s after a 50 ms fake engine). Not in the wave 4 diff (`liveness.mjs` untouched); isolation 3/3 pass; likely PID recycling under suite load. Filed [#333](https://github.com/beettlle/pi-spine/issues/333) (deferred).
+- Re-run `npm run release:check` on `main`: 2769 pass / 0 fail (plain and coverage), line coverage 90.13%, exit 0 — log `/tmp/pi-spine-v2.26-wave4.log`.
 
 ---
 
@@ -198,6 +206,8 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 | #299 optional `.DONE` `mode: "stub"` | follow-up | Optional in #299 |
 | TypeScript 7 / `@types/node` 26 | dep major | Own release |
 | #225 / #231 matrix epic | epic | P3 |
+| #332 | bug | Reviewer spawn with no artifact — hit in waves 2 and 4; retry workaround |
+| #333 | test flake | `detached-start-orphan-timeout` PID liveness under load |
 
 ---
 
@@ -213,8 +223,8 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
 - [ ] CI green on `HEAD`
