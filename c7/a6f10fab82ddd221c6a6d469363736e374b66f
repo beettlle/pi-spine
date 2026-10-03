@@ -1,0 +1,24 @@
+tests/batch/batch-state-handoff.test.mjs
+  s_b1faa60cd795aa::t_c287f2a3b53997 6,9
+  s_b1faa60cd795aa::t_be300b7318b3b8 101,134,164,196,244,267,289,316,339,361
+spine-tasks/_authoring/release-v2.26.0/manifest.md
+  s_b1faa60cd795aa::t_4e7d556017c56c 178-182
+spine-tasks/CONTEXT.md
+  s_b1faa60cd795aa::t_4122435c377870 2624-2627
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c7a6f10fab82ddd221c6a6d469363736e374b66f",
+  "prompts": {},
+  "sessions": {
+    "s_b1faa60cd795aa": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-bdbc2b97-eccb-4d58-b71b-5c86cbcabf5a",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
