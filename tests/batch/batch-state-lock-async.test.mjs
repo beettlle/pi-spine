@@ -25,17 +25,18 @@ const LOCK_MODULE_URL = new URL("../../src/batch/batch-state-lock.mjs", import.m
 
 /**
  * Child script: acquire the lock with the SYNCHRONOUS `withBatchStateLock`
- * (CLI-style holder), touch a ready file, hold for holdMs, release. This is
- * the contending CLI process the engine must wait on without freezing.
+ * (CLI-style holder), touch a ready file, hold until the parent writes the
+ * release file (capped at maxHoldMs), release. This is the contending CLI
+ * process the engine must wait on without freezing.
  */
 const CHILD_SCRIPT = String.raw`
 import fs from "node:fs";
-const [projectRoot, lockModuleUrl, readyPath, holdMsRaw] = process.argv.slice(2);
+const [projectRoot, lockModuleUrl, readyPath, releasePath, maxHoldMsRaw] = process.argv.slice(2);
 const { withBatchStateLock } = await import(lockModuleUrl);
 withBatchStateLock(projectRoot, () => {
 	fs.writeFileSync(readyPath, String(process.pid), "utf-8");
-	const end = Date.now() + Number(holdMsRaw);
-	while (Date.now() < end) {
+	const end = Date.now() + Number(maxHoldMsRaw);
+	while (!fs.existsSync(releasePath) && Date.now() < end) {
 		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
 	}
 });
@@ -72,12 +73,15 @@ test(
 			const scriptPath = path.join(projectRoot, "lock-holder-child.mjs");
 			fs.writeFileSync(scriptPath, CHILD_SCRIPT, "utf-8");
 			const readyPath = path.join(projectRoot, "holder-ready");
-			const holdMs = 500;
+			const releasePath = path.join(projectRoot, "holder-release");
+			const maxHoldMs = 5_000;
+			const minTicks = 5;
 			const holder = runChild(scriptPath, [
 				projectRoot,
 				LOCK_MODULE_URL,
 				readyPath,
-				String(holdMs),
+				releasePath,
+				String(maxHoldMs),
 			]);
 
 			// Wait until the holder actually owns the lock before contending.
@@ -88,29 +92,40 @@ test(
 			}
 
 			// Heartbeat-style timer: with the sync lock this counter would freeze
-			// at 0 for the whole wait (Atomics.wait blocks the thread); the async
-			// wait must let it keep firing.
+			// for the whole wait (Atomics.wait blocks the thread); the async wait
+			// must let it keep firing. The holder is released only after the
+			// heartbeat fired minTicks times while the engine still waits, so the
+			// check does not depend on how much of a fixed hold remained.
 			let ticks = 0;
 			const heartbeat = setInterval(() => {
 				ticks += 1;
 			}, 25);
 			const markerPath = path.join(projectRoot, "engine-write.txt");
 			try {
-				const result = await withBatchStateLockAsync(projectRoot, () => {
+				const acquired = withBatchStateLockAsync(projectRoot, () => {
 					fs.writeFileSync(markerPath, "engine-write-landed", "utf-8");
 					return "engine-acquired";
 				});
-				assert.equal(result, "engine-acquired");
+				const tickDeadline = Date.now() + maxHoldMs;
+				while (ticks < minTicks && Date.now() < tickDeadline) {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+				}
+				// A blocking wait would have run the section only after the holder
+				// gave up at maxHoldMs, so the marker must not exist yet.
+				assert.equal(
+					fs.existsSync(markerPath),
+					false,
+					"engine section ran before the holder was released — the lock wait blocked the event loop",
+				);
+				assert.ok(
+					ticks >= minTicks,
+					`event loop froze during async lock wait — heartbeat fired only ${ticks} time(s)`,
+				);
+				fs.writeFileSync(releasePath, "release", "utf-8");
+				assert.equal(await acquired, "engine-acquired");
 			} finally {
 				clearInterval(heartbeat);
 			}
-
-			// ~500ms hold / 25ms interval ≈ 20 ticks; require a conservative
-			// floor so suite-load jitter cannot flake the assertion.
-			assert.ok(
-				ticks >= 5,
-				`event loop froze during async lock wait — heartbeat fired only ${ticks} time(s)`,
-			);
 			// The critical section ran after the holder released.
 			assert.equal(fs.readFileSync(markerPath, "utf-8"), "engine-write-landed");
 			// Lock released after the section.
