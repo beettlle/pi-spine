@@ -1,0 +1,16 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-803-docs-state-lock-hardening/STATUS.md
+  h_2a17159c706ba1 3,20,22-23,26,28-29,32,34-35,43-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c784ff95826029ee4dadedf24b1e1dc996f53f20",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
