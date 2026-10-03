@@ -225,11 +225,12 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 
 - [x] All release-scoped tasks `.DONE` on `main`
 - [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI green on `HEAD`
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded; staged package approved (2FA)
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (2769/2769, 90.04% lines via `preversion` on `cc3deb87`)
+- [x] CI green on `HEAD` (`0e406610`, run 37154582406)
+- [x] `git status` clean
+- [x] Operator approved publish bump type: minor (2026-10-03)
+- [x] `npm version minor` + `git push && git push --tags` (`v2.26.0` → `cc3deb87`)
+- [x] `release.yml` succeeded (run 37155387576); staged package approved (2FA)
+- [x] Post-publish smoke per `docs/release/npm-publish.md` (`scripts/post-publish-smoke.sh 2.26.0` OK)
+- [x] #293, #299, #301, #302, #304, #305, #307 closed with "Shipped in **v2.26.0**"

@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-09-27 (Phase 94 v2.26.0 authored; Next → SP-804)
+**Last Updated:** 2026-10-03 (Phase 94 v2.26.0 published; Next → SP-804)
 **Status:** Active
 **Next Task ID:** SP-804
 
@@ -2630,13 +2630,13 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Phase 94 exit criteria:**
 
-- [ ] Operator approved release scope (manifest)
-- [ ] SP-790–SP-803 `.DONE` and integrated on `main`
-- [ ] #293, #299, #301, #302, #304, #305, #307 CLOSED
-- [ ] `npm run release:check` green; CI green on HEAD
-- [ ] Publish **v2.26.0** only after operator approval
+- [x] Operator approved release scope (manifest)
+- [x] SP-790–SP-803 `.DONE` and integrated on `main` (waves 1–4: `92a53711`, `d631f3d8`, `56fecde6`, `54989646`)
+- [x] #293, #299, #301, #302, #304, #305, #307 CLOSED
+- [x] `npm run release:check` green (2769/2769, 90.04% lines on `v2.26.0`); CI green on HEAD
+- [x] Publish **v2.26.0** only after operator approval (published 2026-10-03; post-publish smoke OK)
 
-**Deferred:** P2 #309–#323; #294; TypeScript 7 / `@types/node` 26.
+**Deferred:** P2 #309–#323; #294; #332 (reviewer exits with no artifact); #333 (`detached-start-orphan-timeout` flake); TypeScript 7 / `@types/node` 26.
 
 ---
 
