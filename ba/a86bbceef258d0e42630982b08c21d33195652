@@ -1,0 +1,20 @@
+spine-tasks/SP-802-sequence-wait-deadline/STATUS.md
+  h_2a17159c706ba1 3-5,14-29
+src/batch/sequence-run.mjs
+  h_2a17159c706ba1 6-10,74-75,86-91,349,362-364,366-374
+src/batch/sequence-wait.mjs
+  h_2a17159c706ba1 6-11,16,57-58,62-65,68-78,99-112,126-162,166-177
+src/config/spine-config-schema.mjs
+  h_2a17159c706ba1 15-20,27,32-33,65-88,117-126,166-189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "baa86bbceef258d0e42630982b08c21d33195652",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
