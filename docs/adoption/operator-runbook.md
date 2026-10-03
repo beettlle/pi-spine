@@ -1874,6 +1874,34 @@ Batch state at .pi/batch-state.json is corrupt and was left unmodified by spine 
 
 For `.pi/batch-state.json`, repair or remove it with the owning tool; spine will not touch it.
 
+### v2.26.0 state and lock hardening (#293, #299, #301, #302, #304, #305, #307)
+
+v2.26.0 closes a class of state and lock races between the engine and operator commands, and makes several failure modes that used to be silent now visible in the journal and stderr.
+
+#### Late finalize and rejected state writes (#293 / #301, SP-790, SP-791, SP-792, SP-793)
+
+A late engine finalize racing `spine batch complete` no longer recreates `.spine/batch-state.json` after the batch was archived. When a guarded write is rejected, the journal records **`batch.late_finalize_skipped`** (finalize path) or **`batch.state_write_rejected`** (general guarded writes, with `reason` and `incomingPhase`) and one `[spine]` stderr line is printed, so the swallowed write is diagnosable. State writes are now atomic read-modify-write under the batch-state lock, so an operator pause and an engine progress save can no longer overwrite each other, and abort/complete/dismiss re-read the state under the lock and archive that freshest snapshot — failing closed with `batch_state_changed_during_terminal_write` if the batch became active again mid-write. Related: preflight's `no-active-batch` check now reports a completed, un-archived batch as "completed batch <id> awaiting archive" with `suggestedCommand: "spine batch complete"`.
+
+#### Race-free stale locks and async lock waits (#302, SP-794, SP-797, SP-796)
+
+Stale-lock breaking is race-free: a breaker only steals the lock if the on-disk ownership token (or full payload, for token-less corrupt locks) still matches the one it judged stale — two concurrent breakers can no longer delete a live lock. `.spine/batch-state.json` writes are fsync'd (file contents before rename, best-effort directory fsync) so a crash cannot leave a torn state file. Engine lock waits now yield asynchronously instead of blocking the event loop, so a CLI-held lock no longer freezes engine heartbeats and stall timers; waits longer than 1 s log one stderr line: `[spine] batch-state lock wait took <ms>ms (<path>) — another spine process held it`. When post-archive cleanup after abort/complete/dismiss fails, the terminal command reports **`cleanupWarnings`** (one `"<step>: <error>"` per failed step) and the journal records **`batch.cleanup_failed`** — cleanup failures are reported, never thrown after the state was archived.
+
+#### Out-of-File-Scope merge conflicts fail closed (#304, SP-798)
+
+A lane merge conflict on a path outside the task's File Scope now fails closed instead of being silently discarded — unless the path matches **`lanes.outOfScopeMergeAllowList`** in `.spine/spine-config.json`. Default allow-list: `.spine/rules-manifest.json`, `package-lock.json`, `**/package-lock.json`. Allow-listed discards are journaled as **`batch.merge_out_of_scope_discarded`**. Merge failures that are not conflicts (hook, lock, untracked-overwrite) are classified **`MergeFailed`** with the git stderr attached. Recovery: add the conflicting path to the task's File Scope, or to `lanes.outOfScopeMergeAllowList`, then retry — the error message says exactly this (`add it to File Scope or lanes.outOfScopeMergeAllowList`).
+
+#### Contract verification no longer blocks lanes; timeouts kill the tree (#305, SP-799, SP-800)
+
+Contract `testCommand` verification runs through an async primitive, so one lane's verification no longer blocks the other lanes' heartbeats and scheduling. A timed-out contract command is **killed with its whole process tree** — SIGTERM, then SIGKILL after a 2 s grace — and the result is reported explicitly as `testCommand timed out after N min and was terminated` (`timedOut: true`) instead of a bare `exit 1`.
+
+#### Sequence wait results (#307, SP-802)
+
+`spine run sequence` waits now end with a classified result instead of hanging: **`sequence_wait_timeout`** when the hard cap `orchestrator.sequenceMaxWaitMs` (default 24 h) is reached, or **`engine_stalled`** when no progress signal lands within `orchestrator.sequenceStallMs` (default 30 min). Both carry the reconciliation result and suggest `spine status --diagnose` for recovery.
+
+#### Missing `pi` fails closed (#299, SP-801)
+
+Without `SPINE_WORKER_STUB=1`, a worker whose PATH lacks the `pi` CLI fails fast with classification **`launch_failed`**, journal **`worker.spawn_failed`** with `reason: "pi_missing"` (phase `preflight`), and output `worker requires pi on PATH (fail closed); set SPINE_WORKER_STUB=1 only for stub runs` — instead of silently falling back to the stub. Fix the PATH (detached engines inherit the launching shell's PATH, so launch from a shell where `pi` resolves) and rerun the lane with `spine batch retry <taskId>`. Execute-only tasks and `agentSession` workers never consult PATH for `pi` and are unaffected.
+
 ### Final review spawn timeout (`final_review_timeout`)
 
 When the journal shows **`review.started`** (final or code) with **no** matching **`review.completed`** / **`review.failed`**, and lane `pi` reviewer children stay alive past the stall budget, the engine was blocked on a hung reviewer spawn (batch `20260617T164948`, SP-279).

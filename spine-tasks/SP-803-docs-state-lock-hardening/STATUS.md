@@ -1,8 +1,8 @@
 # SP-803: Runbook — v2.26.0 state and lock hardening — Status
 
-**Current Step:** Not Started
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-09-27
+**Current Step:** Step 1
+**Status:** 🔄 In Progress
+**Last Updated:** 2026-10-03
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Names confirmed against code
-- [ ] Dependencies satisfied
+- [x] Names confirmed against code
+- [x] Dependencies satisfied
 
 ### Step 1: Write the subsection
 **Status:** ⬜ Not Started
