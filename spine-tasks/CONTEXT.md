@@ -2621,10 +2621,10 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-792 | Abort/complete/dismiss archive in-lock state | M | #301 Partial | 2 | Done |
 | SP-793 | `bypassOwnerCheck` rename + bypass audit | M | #301 Closes | 2 | Done |
 | SP-800 | Async contract verification | M | #305 Closes | 2 | Done |
-| SP-794 | Lock steal-by-rename | M | #302 Partial | 3 | Pending |
-| SP-795 | Durable `writeJsonAtomic` | S | #302 Partial | 3 | Pending |
-| SP-796 | Shrink terminal lock sections | M | #302 Partial | 3 | Pending |
-| SP-797 | Async engine lock wait | M | #302 Closes | 3 | Pending |
+| SP-794 | Lock steal-by-rename | M | #302 Partial | 3 | Done |
+| SP-795 | Durable `writeJsonAtomic` | S | #302 Partial | 3 | Done |
+| SP-796 | Shrink terminal lock sections | M | #302 Partial | 3 | Done |
+| SP-797 | Async engine lock wait | M | #302 Closes | 3 | Done |
 | SP-802 | Sequence wait deadline + stall exit | M | #307 Closes | 4 | Pending |
 | SP-803 | Runbook: v2.26.0 state and lock hardening | S | docs | 4 | Pending |
 

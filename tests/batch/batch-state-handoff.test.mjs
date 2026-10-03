@@ -3,9 +3,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
 import test from "node:test";
 import { runInit } from "../../bin/spine-init.mjs";
+import { destroyGitRepo } from "../helpers/git-fixture.mjs";
 import {
 	clearActiveBatchStateIfMatches,
 	clearStaleTerminalBatchStateForStart,
@@ -97,7 +98,7 @@ test("complete handoff preserves newer active batch (073511 vs 073937 race)", as
 		assert.equal(loaded.raw?.batchId, NEW_BATCH);
 		assert.equal(loaded.raw?.phase, "running");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -130,7 +131,7 @@ test("clearStaleTerminalBatchStateForStart removes completed batch-state pointer
 		assert.equal(result.batchId, OLD_BATCH);
 		assert.equal(fs.existsSync(spineBatchStatePath(projectRoot)), false);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -160,7 +161,7 @@ test("assertNoActiveBatch clears stale completed pointer before start handoff", 
 		assert.doesNotThrow(() => assertNoActiveBatch(projectRoot));
 		assert.equal(fs.existsSync(spineBatchStatePath(projectRoot)), false);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -192,7 +193,7 @@ test("runBatchComplete clears active batch-state when no newer batch took over",
 		assert.equal(completedViaLifecycle.ok, false);
 		assert.match(completedViaLifecycle.headline ?? "", /No active batch/i);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -240,7 +241,7 @@ test("new batch save replaces terminal completed cache with different batchId", 
 		assert.equal(loaded.raw?.batchId, NEW_BATCH);
 		assert.equal(loaded.raw?.phase, "planning");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -263,7 +264,7 @@ test("clearStaleTerminalBatchStateForStart quarantines corrupt spine state inste
 		assert.equal(fs.existsSync(statePath), false);
 		assert.equal(fs.readFileSync(result.quarantinedPath, "utf-8"), corrupt);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -285,7 +286,7 @@ test("clearActiveBatchStateIfMatches quarantines corrupt active state instead of
 		assert.equal(fs.existsSync(statePath), false);
 		assert.equal(fs.readFileSync(result.quarantinedPath, "utf-8"), corrupt);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -312,7 +313,7 @@ test("corrupt .pi/batch-state.json is reported, never modified by start or clear
 		assert.throws(() => assertNoActiveBatch(projectRoot), /left unmodified by spine/);
 		assert.equal(fs.readFileSync(piPath, "utf-8"), corrupt);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -335,7 +336,7 @@ test("terminal .pi/batch-state.json survives the start gate untouched", async ()
 		assert.equal(fs.existsSync(piPath), true);
 		assert.equal(JSON.parse(fs.readFileSync(piPath, "utf-8")).id, "tp-terminal");
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });
 
@@ -357,6 +358,6 @@ test("startBatch refuses with skipPreflight when spine state is corrupt (quarant
 			.filter((name) => name.startsWith("batch-state.corrupt-"));
 		assert.equal(quarantined.length, 1);
 	} finally {
-		await rm(projectRoot, { recursive: true, force: true });
+		await destroyGitRepo(projectRoot);
 	}
 });

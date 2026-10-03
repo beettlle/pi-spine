@@ -175,6 +175,11 @@ Baseline `npm run release:check` on `258f2a7` (pre-authoring): tests 2709 pass /
 - SP-794 and SP-795 completed and merged into orch (`0ec5fe02`, `931386ce`).
 - SP-796 failed on the z.ai **weekly** limit (code 1310, resets 2026-10-06 01:01 UTC+8). Lane 3 keeps Step 1 commit `67c5bfaf` plus uncommitted lifecycle edits. SP-797 is not started (depends on SP-796).
 - Operator approved switching the worker to `kimi-coding/k3` (see Agent pin override). Probed with `pi -p` (responded), then retried SP-796 and resumed.
+- 2026-10-02 16:10 UTC: retry + resume on Kimi. SP-796 passed `contract.verified` (17:04) and completed (17:12; journal shows two `task.completed` events 0.3 s apart — harmless here, worth watching). SP-797 then ran and completed (`contract.verified` 17:54, done 18:02). 0 `"stub":true` journal events (#328 mitigation held).
+- 18:08 UTC: waited for `gate.evidence_completed` + `batch.land_loop_finalized`, then approved. Gate evidence test count (2748) again matched `main`, not orch.
+- Integrated as `56fecde6`; `spine batch complete` archived and `.spine/batch-state.json` was not recreated.
+- First post-integrate `release:check`: plain run 2766/2766, coverage run 2765/2766 — `batch-state-handoff.test.mjs` "runBatchComplete clears active batch-state…" failed in teardown only (`ENOTEMPTY` on `rmdir .git` after all assertions passed). Same class as #223/#233: the file used raw `rm` instead of `destroyGitRepo`. Isolation 6/6 green under coverage; wave 3 complete path is fully synchronous (no new async/spawn in `lifecycle.mjs`/`lifecycle-cleanup.mjs`). Fixed by switching the file's 10 teardowns to `destroyGitRepo`.
+- Re-run `npm run release:check` on `main` + fix: 2766 pass / 0 fail (plain and coverage), line coverage 90.12%, exit 0 — log `/tmp/pi-spine-v2.26-wave3.log`.
 
 ---
 
