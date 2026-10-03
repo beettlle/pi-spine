@@ -1,0 +1,9 @@
+SP-802 complete.
+
+- Live PID with no progress for stallMs → engine_stalled (test: "exits engine_stalled when a live engine makes no progress")
+- Wait never exceeds startedAt + maxWaitMs → sequence_wait_timeout (test: "hard-caps at maxWaitMs even while engine progresses")
+- Reused PID (start-time mismatch) does not extend the wait (test: "does not extend the wait for a reused PID")
+- Extend-while-alive-and-progressing preserved (existing SP-435 tests green)
+- Contract testCommand green; full suite 2769/2769; coverage 90.00% ≥ 77%
+
+Closes #307.
