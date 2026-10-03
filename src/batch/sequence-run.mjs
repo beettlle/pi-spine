@@ -3,7 +3,11 @@
  */
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
-import { resolveSequencePollMs } from "../config/spine-config-schema.mjs";
+import {
+	resolveSequenceMaxWaitMs,
+	resolveSequencePollMs,
+	resolveSequenceStallMs,
+} from "../config/spine-config-schema.mjs";
 import {
 	formatPreflightHuman,
 	runBatchPreflight,
@@ -67,6 +71,8 @@ export async function runSequence(ctx) {
 		profile: profileOverride = null,
 		pollIntervalMs: pollIntervalMsOverride,
 		timeoutMs = 120_000,
+		maxWaitMs: maxWaitMsOverride,
+		stallMs: stallMsOverride,
 		spineBin = null,
 		startBatchFn = startBatch,
 	} = ctx;
@@ -77,6 +83,12 @@ export async function runSequence(ctx) {
 	const pollIntervalMs =
 		pollIntervalMsOverride ??
 		resolveSequencePollMs({ config: configResult.config ?? {} });
+	const maxWaitMs =
+		maxWaitMsOverride ??
+		resolveSequenceMaxWaitMs({ config: configResult.config ?? {} });
+	const stallMs =
+		stallMsOverride ??
+		resolveSequenceStallMs({ config: configResult.config ?? {} });
 
 	let sequenceState = null;
 	let effectiveFromWave = fromWave;
@@ -334,7 +346,7 @@ export async function runSequence(ctx) {
 					batchId,
 					diagnosis: reconcileBatch({ projectRoot }).diagnosis ?? null,
 				}
-			: await waitForSequenceBatchTerminal({ projectRoot, pollIntervalMs, timeoutMs, enginePid: detachedEnginePid ?? null });
+			: await waitForSequenceBatchTerminal({ projectRoot, pollIntervalMs, timeoutMs, maxWaitMs, stallMs, enginePid: detachedEnginePid ?? null });
 
 		if (!wait.ok || isSequenceBatchFailure(wait.diagnosis)) {
 			const reconciliation = wait.reconciliation ?? reconcileBatch({ projectRoot });
@@ -347,13 +359,19 @@ export async function runSequence(ctx) {
 				continue;
 			}
 			if (!stopOnFailure) continue;
-			return haltSequenceAndPersist(projectRoot, sequenceState, completedWaves, {
-				waveIndex: wave.waveIndex,
-				error: wait.error ?? "batch_failed",
-				diagnosis: wait.diagnosis ?? null,
-				batchId: wait.batchId ?? batchId,
+			return haltSequenceAndPersist(
+				projectRoot,
+				sequenceState,
 				completedWaves,
-			});
+				{
+					waveIndex: wave.waveIndex,
+					error: wait.error ?? "batch_failed",
+					diagnosis: wait.diagnosis ?? null,
+					batchId: wait.batchId ?? batchId,
+					completedWaves,
+				},
+				wait.suggestedCommand ? { suggestedCommand: wait.suggestedCommand } : {},
+			);
 		}
 
 		const land = runSequenceWaveLandLoop({ projectRoot, batchId: wait.batchId ?? batchId, autoApproveGate });
