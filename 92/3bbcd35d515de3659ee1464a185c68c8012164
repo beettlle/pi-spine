@@ -1,0 +1,14 @@
+tests/batch/sequence-detached-poll.test.mjs
+  h_2a17159c706ba1 201-311
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "923bbcd35d515de3659ee1464a185c68c8012164",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
