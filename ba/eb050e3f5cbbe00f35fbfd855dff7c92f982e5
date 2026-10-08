@@ -1,0 +1,93 @@
+spine-tasks/SP-809-quota-fallback-auto-retry/STATUS.md
+  s_e3c5d3d86d129e::t_1a33e3de674e21 1-67
+spine-tasks/CONTEXT.md
+  s_e3c5d3d86d129e::t_7b101b53ad2bdd 2641-2671
+  s_e3c5d3d86d129e::t_6278d74212720a 5
+  s_e3c5d3d86d129e::t_60e7899203c49a 3
+spine-tasks/_authoring/release-v2.27.0/manifest.md
+  s_e3c5d3d86d129e::t_1cddb7607a3f66 1-191
+spine-tasks/SP-808-quota-fallback-state-and-override/STATUS.md
+  s_e3c5d3d86d129e::t_6c635c06b4af89 1-64
+spine-tasks/SP-810-quota-fallback-operator-surface/PROMPT.md
+  s_e3c5d3d86d129e::t_7c31033cd5d882 1-139
+spine-tasks/SP-813-review-honor-guard/PROMPT.md
+  s_e3c5d3d86d129e::t_041ce57da1c943 1-133
+spine-tasks/SP-807-quota-fallback-decision/PROMPT.md
+  s_e3c5d3d86d129e::t_99cfc4b0901d35 1-132
+spine-tasks/SP-811-docs-quota-fallback-v2-27/STATUS.md
+  s_e3c5d3d86d129e::t_98f2edf83416c4 1-55
+spine-tasks/SP-812-isolate-tests-from-live-journal/PROMPT.md
+  s_e3c5d3d86d129e::t_13e6fb5197ab8e 1-117
+spine-tasks/SP-814-reviewer-no-artifact-respawn/PROMPT.md
+  s_e3c5d3d86d129e::t_2bedcbaa181f14 1-135
+spine-tasks/SP-817-replace-micromatch-with-picomatch/STATUS.md
+  s_e3c5d3d86d129e::t_8a6b7ae6ec35f2 1-57
+spine-tasks/SP-811-docs-quota-fallback-v2-27/PROMPT.md
+  s_e3c5d3d86d129e::t_7b8f1880487e5b 36
+  s_e3c5d3d86d129e::t_b17dd3808af00c 1-35,37-126
+spine-tasks/SP-814-reviewer-no-artifact-respawn/STATUS.md
+  s_e3c5d3d86d129e::t_821c0aa1843348 1-63
+spine-tasks/SP-815-pending-lane-land-live-engine-guard/STATUS.md
+  s_e3c5d3d86d129e::t_ac7718fc7aba2e 1-53
+spine-tasks/SP-815-pending-lane-land-live-engine-guard/PROMPT.md
+  s_e3c5d3d86d129e::t_5b0174b4c84d6e 1-116
+spine-tasks/SP-805-quota-fallback-config/PROMPT.md
+  s_e3c5d3d86d129e::t_8e4c04a7642deb 62
+  s_e3c5d3d86d129e::t_cdfc7c04338e1a 55
+  s_e3c5d3d86d129e::t_39361e4800f4b5 1-54,56-61,63-132
+spine-tasks/SP-804-provider-quota-classifier/STATUS.md
+  s_e3c5d3d86d129e::t_7e6dbe235749d2 1-56
+spine-tasks/SP-809-quota-fallback-auto-retry/PROMPT.md
+  s_e3c5d3d86d129e::t_e084018144dc96 1-152
+spine-tasks/SP-807-quota-fallback-decision/STATUS.md
+  s_e3c5d3d86d129e::t_8252983ec56d6f 1-54
+spine-tasks/SP-818-pi-coding-agent-1-0/STATUS.md
+  s_e3c5d3d86d129e::t_c6ee02301759a6 1-56
+spine-tasks/SP-813-review-honor-guard/STATUS.md
+  s_e3c5d3d86d129e::t_d83016862cda5d 1-62
+spine-tasks/SP-804-provider-quota-classifier/PROMPT.md
+  s_e3c5d3d86d129e::t_76b7d89a3df302 1-128
+spine-tasks/SP-818-pi-coding-agent-1-0/PROMPT.md
+  s_e3c5d3d86d129e::t_402f14a6e4a458 58
+  s_e3c5d3d86d129e::t_4d80afabba114a 1-57,59-123
+spine-tasks/SP-816-deflake-detached-orphan-timeout-test/STATUS.md
+  s_e3c5d3d86d129e::t_757107440a6490 1-46
+spine-tasks/SP-817-replace-micromatch-with-picomatch/PROMPT.md
+  s_e3c5d3d86d129e::t_f9fd04e5dd5e3b 66
+  s_e3c5d3d86d129e::t_cdf8d58c63a23f 128
+  s_e3c5d3d86d129e::t_09eed3329f2721 1-65,67-97,99-127,129-135
+  s_e3c5d3d86d129e::t_547823b11d798c 98
+spine-tasks/SP-810-quota-fallback-operator-surface/STATUS.md
+  s_e3c5d3d86d129e::t_d11699db6d47cd 1-63
+spine-tasks/SP-816-deflake-detached-orphan-timeout-test/PROMPT.md
+  s_e3c5d3d86d129e::t_9ed243e9d5ff13 1-98
+spine-tasks/SP-805-quota-fallback-config/STATUS.md
+  s_e3c5d3d86d129e::t_00f1a9eb049926 16
+  s_e3c5d3d86d129e::t_0a4b2c407ea3bc 1-15,17-63
+spine-tasks/SP-806-worker-quota-failure-classification/PROMPT.md
+  s_e3c5d3d86d129e::t_71fbaceb0a353c 1-139
+spine-tasks/SP-806-worker-quota-failure-classification/STATUS.md
+  s_e3c5d3d86d129e::t_19682112993f07 1-63
+spine-tasks/SP-812-isolate-tests-from-live-journal/STATUS.md
+  s_e3c5d3d86d129e::t_a7cc191c6e2921 1-55
+spine-tasks/SP-808-quota-fallback-state-and-override/PROMPT.md
+  s_e3c5d3d86d129e::t_07a3ea0b64695c 1-145
+spine-tasks/dependencies.json
+  s_e3c5d3d86d129e::t_2b509933b7571a 2054-2092
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "baeb050e3f5cbbe00f35fbfd855dff7c92f982e5",
+  "prompts": {},
+  "sessions": {
+    "s_e3c5d3d86d129e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-e30858ca-5207-4314-baa0-62580ac6b7cd",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
