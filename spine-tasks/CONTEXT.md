@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-03 (Phase 94 v2.26.0 published; Next → SP-804)
+**Last Updated:** 2026-10-03 (Phase 95 v2.27.0 packets staged; Next → SP-819)
 **Status:** Active
-**Next Task ID:** SP-804
+**Next Task ID:** SP-819
 
 ---
 
@@ -2637,6 +2637,37 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] Publish **v2.26.0** only after operator approval (published 2026-10-03; post-publish smoke OK)
 
 **Deferred:** P2 #309–#323; #294; #332 (reviewer exits with no artifact); #333 (`detached-start-orphan-timeout` flake); TypeScript 7 / `@types/node` 26.
+
+### Phase 95 — v2.27.0 provider quota fallback (#329) + review integrity (#328, #330, #332, #333)
+
+**Authoring:** 2026-10-03 · Manifest: [`spine-tasks/_authoring/release-v2.27.0/manifest.md`](_authoring/release-v2.27.0/manifest.md) · Pin `hard` (zai/glm-5.3); wave 1 starts after the z.ai weekly reset (2026-10-05 17:01 UTC)
+
+| SP-* | Summary | Size | Issue | Wave | Status |
+|------|---------|------|-------|------|--------|
+| SP-804 | Provider quota error classifier | S | #329 Partial | 1 | Staged |
+| SP-805 | `agents.quotaFallbackProfile` + profile override env | M | #329 Partial | 1 | Staged |
+| SP-812 | Isolate tests and CLI final reviews from the live journal | S | #328 Partial | 1 | Staged |
+| SP-815 | No salvage recommendation under a live engine | S | #330 Closes | 1 | Staged |
+| SP-806 | Worker quota failure classification | M | #329 Partial | 2 | Staged |
+| SP-807 | Quota fallback decision | S | #329 Partial | 2 | Staged |
+| SP-813 | Refuse untrusted review honors; contract before final honor | M | #328 Closes | 2 | Staged |
+| SP-814 | Reviewer no-artifact re-spawn + reviewer logs | M | #332 Closes, #294 Partial | 2 | Staged |
+| SP-808 | Quota fallback state + sticky profile override | M | #329 Partial | 3 | Staged |
+| SP-816 | Deflake detached-start orphan-timeout test | S | #333 Closes | 3 | Staged |
+| SP-817 | Replace micromatch with picomatch | S | security | 3 | Staged |
+| SP-818 | pi-coding-agent dev pin ^1.0.1 | S | deps | 3 | Staged |
+| SP-809 | Quota fallback auto-retry | M | #329 Partial | 4 | Staged |
+| SP-810 | Quota fallback diagnose + doctor surface | M | #329 Partial | 4 | Staged |
+| SP-811 | Docs: quota fallback + v2.27.0 runbook | S | #329 Closes | 4 | Staged |
+
+**Phase 95 exit criteria:**
+
+- [x] Operator approved release scope (manifest)
+- [ ] SP-804–SP-818 `.DONE` and integrated on `main`
+- [ ] #328, #329, #330, #332, #333 CLOSED
+- [ ] `npm audit --omit=dev` 0 high
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Publish **v2.27.0** only after operator approval
 
 ---
 
