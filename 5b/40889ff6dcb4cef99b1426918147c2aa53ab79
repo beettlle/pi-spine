@@ -1,0 +1,14 @@
+src/batch/reviewer-output.mjs
+  h_2a17159c706ba1 23-33,79,110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5b40889ff6dcb4cef99b1426918147c2aa53ab79",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
