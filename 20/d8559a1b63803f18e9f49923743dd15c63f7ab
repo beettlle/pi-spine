@@ -1,0 +1,24 @@
+bin/spine-review-step.mjs
+  h_2a17159c706ba1 64-71
+spine-tasks/SP-812-isolate-tests-from-live-journal/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-17,20,22-23,26,28-31,34,54-63
+tests/batch/review.test.mjs
+  h_2a17159c706ba1 10-11,405-407,412,431-501,616
+tests/batch/stub-runner-delivery.test.mjs
+  h_2a17159c706ba1 15,101-102,104
+tests/batch/worker-runner-done-missing.test.mjs
+  h_2a17159c706ba1 16,64-66,105-107
+tests/helpers/live-journal-env.mjs
+  h_2a17159c706ba1 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "20d8559a1b63803f18e9f49923743dd15c63f7ab",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
