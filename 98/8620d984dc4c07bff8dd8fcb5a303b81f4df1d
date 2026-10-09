@@ -1,0 +1,30 @@
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/0-20261009T225908.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/5-20261009T225931.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/final-20261009T230029.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-814-reviewer-no-artifact-respawn/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-24,27,29-30,33,35-37,40,42-46,49,51,60-68
+src/batch/review-spawn.mjs
+  h_2a17159c706ba1 16-20,43-58,223-225,247-249,254,261,274-287,323-326,328
+src/batch/review-step-run.mjs
+  h_2a17159c706ba1 13-14,18,45-122,297,306-307,309-333,335-342,344,346-352,354-357,385-397,406,419,425-440,447-448,460
+src/batch/reviewer-output.mjs
+  h_2a17159c706ba1 1-162
+tests/batch/review-no-artifact-respawn.test.mjs
+  h_2a17159c706ba1 1-387
+tests/batch/review-spawn.test.mjs
+  h_2a17159c706ba1 219-276
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "988620d984dc4c07bff8dd8fcb5a303b81f4df1d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
