@@ -1,7 +1,7 @@
 # SP-816: Deflake detached-start orphan-timeout test — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** ⬜ Not Started
+**Current Step:** Step 2: Testing & Verification
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-10-03
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,15 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied
+- [x] Dependencies satisfied
 
 ### Step 1: Exit marker + dead PID
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Marker
-- [ ] Dead PID before reconcile
+- [x] Marker
+- [x] Dead PID before reconcile
 
 ### Step 2: Testing & Verification
 **Status:** ⬜ Not Started

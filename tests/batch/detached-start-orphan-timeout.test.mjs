@@ -12,7 +12,6 @@ import {
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
-import { isProcessAlive } from "../../src/process/liveness.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const DEAD_PID = 999_999_999;
@@ -103,8 +102,16 @@ test("startBatchDetached persists spawn enginePid before wait on timeout failure
 		state.phase = "running";
 		saveSpineBatchState(projectRoot, state);
 
+		const markerPath = path.join(projectRoot, "engine-exited.marker");
 		const fakeSpine = path.join(projectRoot, "fake-spine.mjs");
-		fs.writeFileSync(fakeSpine, "setTimeout(() => process.exit(0), 50);\n", "utf-8");
+		// The fake engine writes an exit marker just before exiting so the test can
+		// prove the engine exited without relying on PID liveness (recycled PIDs
+		// under full-suite churn made process.kill(pid, 0) flaky).
+		fs.writeFileSync(
+			fakeSpine,
+			`import fs from "node:fs";\nsetTimeout(() => { fs.writeFileSync(${JSON.stringify(markerPath)}, "exited\\n", "utf-8"); process.exit(0); }, 50);\n`,
+			"utf-8",
+		);
 
 		const result = await startBatchDetached({
 			projectRoot,
@@ -121,7 +128,13 @@ test("startBatchDetached persists spawn enginePid before wait on timeout failure
 		const { raw } = loadSpineBatchState(projectRoot);
 		const enginePid = raw?.resilience?.enginePid;
 		assert.ok(Number.isFinite(enginePid) && enginePid > 0, "parent should persist spawn pid before wait");
-		assert.equal(isProcessAlive(enginePid), false, "spawned engine should have exited");
+		assert.ok(fs.existsSync(markerPath), "spawned engine should have written its exit marker");
+
+		// Overwrite the stored pid with a guaranteed-dead PID so the reconcile
+		// diagnosis cannot be defeated by PID reuse of the real engine pid.
+		const { raw: persisted } = loadSpineBatchState(projectRoot);
+		recordBatchEnginePid(persisted, DEAD_PID);
+		saveSpineBatchState(projectRoot, persisted);
 
 		const reconcile = reconcileBatch({ projectRoot, verbose: true });
 		assert.notEqual(reconcile.diagnosis, "running");
