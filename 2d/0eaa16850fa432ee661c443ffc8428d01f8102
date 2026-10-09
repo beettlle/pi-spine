@@ -1,0 +1,36 @@
+package-lock.json
+  h_2a17159c706ba1 12,2941-2943,2946
+package.json
+  h_2a17159c706ba1 84
+spine-tasks/SP-817-replace-micromatch-with-picomatch/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,54-56
+src/batch/contract-exec.mjs
+  h_2a17159c706ba1 8,267
+src/batch/contract-parse.mjs
+  h_2a17159c706ba1 8,202
+src/batch/contract-prelanded.mjs
+  h_2a17159c706ba1 8,16
+src/config/cursor-rules/discover.mjs
+  h_2a17159c706ba1 10,100
+src/config/cursor-rules/match-globs.mjs
+  h_2a17159c706ba1 3,6,123-125,129
+src/planner/file-scope.mjs
+  h_2a17159c706ba1 9,39,267,271,274,278
+src/tasks/packet/validate-contract.mjs
+  h_2a17159c706ba1 6,238-239
+tsconfig.batch.json
+  h_2a17159c706ba1 39
+types/picomatch.d.ts
+  h_2a17159c706ba1 2,4,9-17,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2d0eaa16850fa432ee661c443ffc8428d01f8102",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
