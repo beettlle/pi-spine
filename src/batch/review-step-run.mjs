@@ -10,9 +10,12 @@ import { readJournalEvents } from "./journal.mjs";
 import {
 	ARTIFACT_READY_HONOR_REASON,
 	NESTED_REVIEW_SPAWN_REASON,
+	REVIEW_SPAWN_TIMEOUT_EXIT_CODE,
+	REVIEW_TIMEOUT_REASON,
 	shouldBlockNestedReviewerSpawn,
 	spawnReviewerPi,
 } from "./review-spawn.mjs";
+import { buildReviewerOutputTail, persistReviewerOutputLog } from "./reviewer-output.mjs";
 import {
 	buildFinalReviewArtifactPath,
 	buildReviewArtifactPath,
@@ -38,6 +41,84 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
+
+/** Bounded automatic re-spawn budget for reviewer children (SP-814 / #332). */
+export const REVIEW_SPAWN_MAX_ATTEMPTS = 2;
+
+/** `review.spawn_retry` reason when the reviewer exited 0 without an artifact. */
+export const REVIEW_SPAWN_RETRY_REASON_NO_ARTIFACT = "no_artifact";
+
+/** `review.spawn_retry` reason fallback for a non-timeout spawn failure. */
+export const REVIEW_SPAWN_RETRY_REASON_SPAWN_FAILED = "spawn_failed";
+
+/**
+ * A reviewer attempt may be re-spawned once when it exited 0 without writing
+ * the artifact, or failed for a reason other than a timeout (exit 124 /
+ * `review_timeout`) or the nested-spawn guard — those keep their dedicated
+ * honor/skip paths so engine classification is unchanged (SP-814 / #332).
+ *
+ * @param {object} params
+ * @param {object} params.spawnResult
+ * @param {string} params.artifactPath
+ */
+function isReviewSpawnRetryEligible({ spawnResult, artifactPath }) {
+	if (!spawnResult || spawnResult.honored) return false;
+	if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) return false;
+	if (spawnResult.reason === REVIEW_TIMEOUT_REASON) return false;
+	if (spawnResult.exitCode === REVIEW_SPAWN_TIMEOUT_EXIT_CODE) return false;
+	if (spawnResult.spawnFailed) return true;
+	return !fs.existsSync(artifactPath);
+}
+
+/**
+ * Persist the reviewer log for a failed attempt when the journal context is
+ * available. Log persistence must never fail the review path itself, so a
+ * write error degrades to `null` (the journal event still carries outputTail).
+ *
+ * @param {object} params
+ * @returns {{ logPath: string, logRef: string }|null}
+ */
+function persistReviewerLogForAttempt({
+	journal,
+	taskFolder,
+	stepNumber,
+	reviewType,
+	attempt,
+	spawnResult,
+	config,
+}) {
+	if (!journal?.projectRoot || !journal?.batchId) return null;
+	try {
+		return persistReviewerOutputLog({
+			projectRoot: journal.projectRoot,
+			batchId: journal.batchId,
+			laneNumber: journal.laneNumber ?? 1,
+			taskId: journal.taskId ?? path.basename(taskFolder),
+			reviewType,
+			stepNumber,
+			attempt,
+			spawnResult,
+			config,
+		});
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Diagnostics shared by the `review.failed` payload and the returned result:
+ * reviewer duration plus a redacted combined output tail (≤ 2 KB).
+ *
+ * @param {object} spawnResult
+ * @param {object} config
+ */
+function buildSpawnFailureDiagnostics(spawnResult, config) {
+	const outputTail = buildReviewerOutputTail(spawnResult, config);
+	return {
+		...(typeof spawnResult?.durationMs === "number" ? { durationMs: spawnResult.durationMs } : {}),
+		...(outputTail ? { outputTail } : {}),
+	};
+}
 
 /**
  * @param {object} params
@@ -213,7 +294,7 @@ export async function runStepReview({
 		});
 	}
 
-	const spawnResult = await spawnReviewerPi({
+	const spawnParams = {
 		worktreePath,
 		taskFolder,
 		reviewPrompt,
@@ -222,16 +303,58 @@ export async function runStepReview({
 		artifactPath,
 		reviewType,
 		contractVerifyResult,
-	});
+	};
+	let spawnResult = await spawnReviewerPi(spawnParams);
 
-	if (spawnResult.honored && spawnResult.honorReason === ARTIFACT_READY_HONOR_REASON) {
-		return completeReviewFromHonoredArtifact({
-			artifactPath: spawnResult.artifactPath ?? artifactPath,
-			reviewType,
+	/** @returns {ReturnType<typeof runStepReview>|null} */
+	const completeIfHonored = () =>
+		spawnResult.honored && spawnResult.honorReason === ARTIFACT_READY_HONOR_REASON
+			? completeReviewFromHonoredArtifact({
+					artifactPath: spawnResult.artifactPath ?? artifactPath,
+					reviewType,
+					journal,
+					stepNumber,
+					reviewLevel,
+				})
+			: null;
+
+	const honoredFirstAttempt = completeIfHonored();
+	if (honoredFirstAttempt) return honoredFirstAttempt;
+
+	// One bounded re-spawn for transient no-artifact exits and non-timeout
+	// spawn failures (SP-814 / #332): journal the retry with diagnostics, then
+	// spawn again with the same prompt and artifact path.
+	let attempt = 1;
+	while (
+		attempt < REVIEW_SPAWN_MAX_ATTEMPTS &&
+		isReviewSpawnRetryEligible({ spawnResult, artifactPath })
+	) {
+		const failedAttempt = attempt;
+		const log = persistReviewerLogForAttempt({
 			journal,
+			taskFolder,
 			stepNumber,
-			reviewLevel,
+			reviewType,
+			attempt: failedAttempt,
+			spawnResult,
+			config,
 		});
+		journalReviewEvent("review.spawn_retry", journal, {
+			stepNumber,
+			reviewType,
+			reviewLevel,
+			attempt: failedAttempt + 1,
+			reason: spawnResult.spawnFailed
+				? (spawnResult.reason ?? REVIEW_SPAWN_RETRY_REASON_SPAWN_FAILED)
+				: REVIEW_SPAWN_RETRY_REASON_NO_ARTIFACT,
+			exitCode: spawnResult.exitCode ?? 0,
+			durationMs: spawnResult.durationMs ?? null,
+			...(log?.logRef ? { reviewerOutputLogRef: log.logRef } : {}),
+		});
+		spawnResult = await spawnReviewerPi(spawnParams);
+		attempt += 1;
+		const honoredRetry = completeIfHonored();
+		if (honoredRetry) return honoredRetry;
 	}
 
 	if (spawnResult.spawnFailed) {
@@ -259,6 +382,19 @@ export async function runStepReview({
 			return honored;
 		}
 
+		const log = persistReviewerLogForAttempt({
+			journal,
+			taskFolder,
+			stepNumber,
+			reviewType,
+			attempt,
+			spawnResult,
+			config,
+		});
+		const diagnostics = {
+			...buildSpawnFailureDiagnostics(spawnResult, config),
+			...(log?.logRef ? { reviewerOutputLogRef: log.logRef } : {}),
+		};
 		journalReviewEvent("review.failed", journal, {
 			stepNumber,
 			reviewType,
@@ -267,6 +403,7 @@ export async function runStepReview({
 			spawnFailed: true,
 			exitCode: spawnResult.exitCode,
 			...(spawnResult.reason ? { reason: spawnResult.reason } : {}),
+			...diagnostics,
 		});
 		return {
 			ok: false,
@@ -279,17 +416,36 @@ export async function runStepReview({
 			error: spawnResult.error,
 			exitCode: spawnResult.exitCode ?? 1,
 			reason: spawnResult.reason,
+			...diagnostics,
 		};
 	}
 
 	if (!fs.existsSync(artifactPath)) {
 		const error = "reviewer exited but produced no artifact";
+		const log = persistReviewerLogForAttempt({
+			journal,
+			taskFolder,
+			stepNumber,
+			reviewType,
+			attempt,
+			spawnResult,
+			config,
+		});
+		const diagnostics = {
+			...buildSpawnFailureDiagnostics(spawnResult, config),
+			...(log?.logRef ? { reviewerOutputLogRef: log.logRef } : {}),
+		};
+		// The payload carries the reviewer's real exit code (typically 0) while
+		// the returned result keeps a non-zero exit code: the CLI and worker
+		// tools treat result exit 0 as success and must still fail closed.
 		journalReviewEvent("review.failed", journal, {
 			stepNumber,
 			reviewType,
 			reviewLevel,
 			error,
 			spawnFailed: true,
+			exitCode: spawnResult.exitCode ?? 0,
+			...diagnostics,
 		});
 		return {
 			ok: false,
@@ -301,6 +457,7 @@ export async function runStepReview({
 			spawnFailed: true,
 			error,
 			exitCode: 1,
+			...diagnostics,
 		};
 	}
 
