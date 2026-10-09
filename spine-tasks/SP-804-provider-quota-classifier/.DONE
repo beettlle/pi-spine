@@ -1,0 +1,7 @@
+SP-804 complete.
+Module: src/batch/provider-quota.mjs (classifyProviderQuotaError).
+Tests: tests/batch/provider-quota.test.mjs (16 tests).
+Verification: npm run lint pass; Contract testCommand exit 0 (30/30);
+npm run coverage:check exit 0 — 2785/2785 tests, line coverage 90.09% >= 77%.
+provider-quota.mjs coverage: 100% lines / 90.16% branch / 100% functions.
+Commits: 7f0e01da, 84eacf16, fbce04b4, 786c1615 on lane branch.
