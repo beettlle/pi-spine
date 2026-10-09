@@ -1,8 +1,8 @@
 # SP-805: `agents.quotaFallbackProfile` config + profile override — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-10-03
+**Current Step:** Step 1: Schema + settings
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-10-09
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] settings-set tests located
-- [ ] Validation + source-recording patterns read
-- [ ] Dependencies satisfied
+- [x] settings-set tests located
+- [x] Validation + source-recording patterns read
+- [x] Dependencies satisfied
 
 ### Step 1: Schema + settings
 **Status:** ⬜ Not Started
@@ -57,6 +57,9 @@
 
 | # | Finding |
 |---|---------|
+| 1 | `rg` settings-set hits beyond config suite: `tests/spine-settings-set.test.mjs`, `tests/spine-settings-slash.test.mjs`, `tests/doctor/model-id-validation.test.mjs`, `tests/extensions/slash-commands-handlers.test.mjs` — run locally in Step 4. |
+| 2 | GitNexus impact (`applyEnvOverrides`, `validateAgentProfilesConfig`): LOW risk, no direct upstream callers beyond `loadSpineConfig`/`validateSpineConfig`. |
+| 3 | The initial `sources[configPath] = "file"` seed loop in `applyEnvOverrides` covers every spec uniformly; adding the new spec adds a `file` entry for `agents.activeProfile`, harmless (display code defaults to `file` anyway). |
 
 ## Blockers
 

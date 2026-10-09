@@ -14,13 +14,18 @@ import { validateSettingValue } from "./settings-fields.mjs";
  * @typedef {object} EnvOverrideSpec
  * @property {string} envVar
  * @property {string} configPath Dotted path (e.g. paths.tasksRoot)
- * @property {"tasksRoot" | "maxParallel"} kind
+ * @property {"tasksRoot" | "maxParallel" | "agentProfile"} kind
  */
 
 /** @type {readonly EnvOverrideSpec[]} */
 export const ENV_OVERRIDE_SPECS = Object.freeze([
 	{ envVar: "SPINE_TASKS_ROOT", configPath: "paths.tasksRoot", kind: "tasksRoot" },
 	{ envVar: "SPINE_MAX_LANES", configPath: "lanes.maxParallel", kind: "maxParallel" },
+	{
+		envVar: "SPINE_AGENT_PROFILE_OVERRIDE",
+		configPath: "agents.activeProfile",
+		kind: "agentProfile",
+	},
 ]);
 
 /**
@@ -120,6 +125,7 @@ export function resolveTasksRootPath(projectRoot, config) {
  *   config: object,
  *   sources: Record<string, ConfigValueSource>,
  *   envVars: Record<string, string>,
+ *   warnings: Record<string, string>,
  * } | { ok: false, error: { code: string, message: string, suggestedCommand?: string } }}
  */
 export function applyEnvOverrides(config, projectRoot, env = process.env) {
@@ -127,6 +133,9 @@ export function applyEnvOverrides(config, projectRoot, env = process.env) {
 	const sources = {};
 	/** @type {Record<string, string>} */
 	const envVars = {};
+	/** Reasons an env var was ignored (e.g. unknown agent profile), keyed by config path. */
+	/** @type {Record<string, string>} */
+	const warnings = {};
 
 	for (const spec of ENV_OVERRIDE_SPECS) {
 		sources[spec.configPath] = "file";
@@ -158,6 +167,28 @@ export function applyEnvOverrides(config, projectRoot, env = process.env) {
 			continue;
 		}
 
+		if (spec.kind === "agentProfile") {
+			// Schema validation ran on the file config before env overrides, so the override must
+			// check profile membership itself. Unknown names are ignored (soft-fail) so a stale
+			// export from a previous run cannot break config load; the reason is recorded for display.
+			const requested = String(raw).trim();
+			const profiles = merged?.agents?.profiles;
+			if (
+				profiles == null ||
+				typeof profiles !== "object" ||
+				Array.isArray(profiles) ||
+				!Object.prototype.hasOwnProperty.call(profiles, requested)
+			) {
+				warnings[spec.configPath] =
+					`${spec.envVar} ignored: unknown profile "${requested}"`;
+				continue;
+			}
+			setValueAtPath(merged, spec.configPath, requested);
+			sources[spec.configPath] = "env";
+			envVars[spec.configPath] = spec.envVar;
+			continue;
+		}
+
 		if (spec.kind === "maxParallel") {
 			const validated = validateSettingValue("lanes.maxParallel", raw);
 			if (!validated.ok) {
@@ -176,7 +207,7 @@ export function applyEnvOverrides(config, projectRoot, env = process.env) {
 		}
 	}
 
-	return { ok: true, config: merged, sources, envVars };
+	return { ok: true, config: merged, sources, envVars, warnings };
 }
 
 /**
@@ -196,13 +227,19 @@ export function listEnvAwareDisplayFields() {
  * @param {Record<string, string> | undefined} envVars
  * @param {string} configPath
  * @param {unknown} value
+ * @param {Record<string, string> | undefined} [warnings] Reasons an env override was ignored,
+ * keyed by config path (e.g. an unknown SPINE_AGENT_PROFILE_OVERRIDE profile).
  * @returns {string}
  */
-export function formatConfigSourceDetail(sources, envVars, configPath, value) {
+export function formatConfigSourceDetail(sources, envVars, configPath, value, warnings) {
 	const display = value === undefined || value === null ? "(not set)" : String(value);
 	const source = sources?.[configPath] ?? "file";
+	const warning = warnings?.[configPath];
 	if (source === "env" && envVars?.[configPath]) {
-		return `${display} (source: env, ${envVars[configPath]})`;
+		return `${display} (source: env, ${envVars[configPath]}${warning ? `, ${warning}` : ""})`;
+	}
+	if (warning) {
+		return `${display} (source: ${source}, ${warning})`;
 	}
 	return `${display} (source: ${source})`;
 }
