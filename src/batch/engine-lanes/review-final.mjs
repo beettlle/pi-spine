@@ -260,6 +260,74 @@ export async function runFinalReviewPhase({
 	const stubVerdicts = shouldUseReviewStub() ? createPhaseStubVerdictQueue("final") : null;
 
 	const journalEvents = readJournalEvents(projectRoot, batchId);
+
+	// SP-813 / #328: contract verification must run before the honor fast path
+	// so a task can never complete through an honored final-review verdict
+	// without `contract.verified` in the journal. The result computed here is
+	// consumed by the first poll-loop iteration (contractVerifiedPending) so
+	// the contract is verified exactly once per phase entry; rework iterations
+	// re-verify as before. Respects shouldRunContractVerifyForWorker, so stub
+	// batches (and contracts without verifiable fields) keep skipping.
+	let contractVerifyResult = null;
+	let contractVerifiedPending = false;
+	const runContractVerifyGate = async () => {
+		contractVerifyResult = null;
+		contractVerifiedPending = true;
+		const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
+		const parsedContract = parseContract(promptMarkdown);
+		if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
+			const events = readJournalEvents(projectRoot, batchId);
+			const sinceCommit = resolveTaskStartCommit({
+				journal: events,
+				taskId,
+				laneId: lane.laneId,
+				batchId,
+				worktreePath: wt,
+			});
+			const result = await verifyContract(wt, parsedContract, {
+				...config,
+				baseBranch,
+				sinceCommit: sinceCommit ?? undefined,
+				projectRoot,
+				batchId,
+				taskId,
+				taskFolder: taskFolderInWorktree,
+			});
+			contractVerifyResult = result;
+			task.contractOk = result.ok;
+			saveSpineBatchState(projectRoot, state);
+			appendJournalEvent(projectRoot, batchId, "contract.verified", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				ok: result.ok,
+				checks: result.checks,
+			});
+			if (!result.ok) {
+				removeDoneFile(taskFolderInWorktree);
+				recordContractVerifyTaskFailure({
+					projectRoot,
+					state,
+					batchId,
+					task,
+					lane,
+					laneCorrelationId,
+					contractVerifyResult: result,
+					config,
+					taskFolder: taskFolderInWorktree,
+				});
+				return { contractFailed: true };
+			}
+		}
+		return { contractFailed: false };
+	};
+
+	const preHonorContractGate = await runContractVerifyGate();
+	if (preHonorContractGate.contractFailed) {
+		return { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" };
+	}
+
 	const honoredResult = honorCompletedReview({
 		reviewType: "final",
 		passVerdict: "PASS",
@@ -274,6 +342,7 @@ export async function runFinalReviewPhase({
 		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
+		worktreePath: wt,
 	});
 	if (honoredResult) return honoredResult;
 
@@ -289,52 +358,17 @@ export async function runFinalReviewPhase({
 		invalidVerdictOutput: "final review artifact missing PASS, REVISE, or REPLAN verdict",
 		allowReplan: true,
 		beforeReview: async () => {
-			let contractVerifyResult = null;
-			const promptMarkdown = fs.readFileSync(path.join(taskFolderInWorktree, "PROMPT.md"), "utf-8");
-			const parsedContract = parseContract(promptMarkdown);
-			if (shouldRunContractVerifyForWorker(promptMarkdown, parsedContract, config)) {
-				const events = readJournalEvents(projectRoot, batchId);
-				const sinceCommit = resolveTaskStartCommit({
-					journal: events,
-					taskId,
-					laneId: lane.laneId,
-					batchId,
-					worktreePath: wt,
-				});
-				contractVerifyResult = await verifyContract(wt, parsedContract, {
-					...config,
-					baseBranch,
-					sinceCommit: sinceCommit ?? undefined,
-					projectRoot,
-					batchId,
-					taskId,
-					taskFolder: taskFolderInWorktree,
-				});
-				task.contractOk = contractVerifyResult.ok;
-				saveSpineBatchState(projectRoot, state);
-				appendJournalEvent(projectRoot, batchId, "contract.verified", {
-					taskId,
-					laneNumber,
-					laneId: lane.laneId,
-					correlationId: laneCorrelationId,
-					ok: contractVerifyResult.ok,
-					checks: contractVerifyResult.checks,
-				});
-				if (!contractVerifyResult.ok) {
-					removeDoneFile(taskFolderInWorktree);
-					recordContractVerifyTaskFailure({
-						projectRoot,
-						state,
-						batchId,
-						task,
-						lane,
-						laneCorrelationId,
-						contractVerifyResult,
-						config,
-						taskFolder: taskFolderInWorktree,
-					});
-					return { abort: { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" } };
-				}
+			if (contractVerifiedPending) {
+				// Consume the phase-entry verification so the first poll iteration
+				// does not double-verify; later rework iterations run the full gate.
+				contractVerifiedPending = false;
+				return { extraReviewParams: { contractVerifyResult } };
+			}
+			const gate = await runContractVerifyGate();
+			if (gate.contractFailed) {
+				return {
+					abort: { ok: false, exitReason: "contract_failed", verdict: "CONTRACT_FAIL" },
+				};
 			}
 			return { extraReviewParams: { contractVerifyResult } };
 		},

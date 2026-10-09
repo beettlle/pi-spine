@@ -22,6 +22,7 @@ import {
 	resolveReviewPassKind,
 	shouldEmitReviewResumed,
 } from "../review.mjs";
+import { shouldUseReviewStub } from "./review-stub.mjs";
 
 /**
  * @param {string} taskFolder
@@ -112,6 +113,7 @@ export function appendReviewHonorJournalEvents({
  * @param {string} params.laneCorrelationId
  * @param {string} params.taskFolder
  * @param {Array<Record<string, any>>} params.journalEvents
+ * @param {string} [params.worktreePath] Lane worktree; resolves relative journal artifact paths for the honor guard.
  * @returns {{ ok: boolean, [key: string]: any } | null}
  */
 export function honorCompletedReview({
@@ -128,11 +130,52 @@ export function honorCompletedReview({
 	laneCorrelationId,
 	taskFolder,
 	journalEvents,
+	worktreePath,
 }) {
 	const taskId = task.taskId;
 	const laneNumber = lane.laneNumber;
 	const reviewAttempt = task[attemptField] ?? 0;
-	const honored = findCompletedReview({ taskFolder, journalEvents, taskId });
+	// #328: only honor verdicts the batch can trust. stubMode is computed once
+	// here (the caller of the finders) and passed down, covering both
+	// SPINE_WORKER_STUB and SPINE_REVIEW_STUB engine-stub modes.
+	const stubMode = shouldUseReviewStub();
+	const rejectedSourceIds = new Set(
+		journalEvents
+			.filter(
+				(event) =>
+					event.type === "review.honor_rejected" &&
+				(event.taskId === undefined || event.taskId === taskId),
+			)
+			.map((event) => event.payload?.sourceEventId)
+			.filter((id) => typeof id === "string" && id),
+	);
+	const honored = findCompletedReview({
+		taskFolder,
+		journalEvents,
+		taskId,
+		worktreePath,
+		stubMode,
+		onReject: (event, reason) => {
+			const payload =
+				event.payload && typeof event.payload === "object" ? event.payload : {};
+			const sourceEventId =
+				typeof event.eventId === "string" && event.eventId ? event.eventId : event.timestamp;
+			// Dedupe by source event id so a rejected event journals once, not on
+			// every phase entry that rescans the journal.
+			if (rejectedSourceIds.has(sourceEventId)) return;
+			rejectedSourceIds.add(sourceEventId);
+			appendJournalEvent(projectRoot, batchId, "review.honor_rejected", {
+				taskId,
+				laneNumber,
+				laneId: lane.laneId,
+				correlationId: laneCorrelationId,
+				reviewType,
+				reason,
+				artifactPath: typeof payload.artifactPath === "string" ? payload.artifactPath : "",
+				sourceEventId,
+			});
+		},
+	});
 	if (honored?.verdict !== passVerdict) return null;
 
 	const honorJournalEvent = resolveReviewHonorJournalEvent({

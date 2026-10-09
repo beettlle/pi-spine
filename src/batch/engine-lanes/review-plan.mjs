@@ -23,6 +23,7 @@ import {
 	readReviewLevel,
 	runStepReview,
 } from "../review.mjs";
+import { isHonorableReviewEvent } from "../review-artifacts.mjs";
 import { honorCompletedReview, runReviewPollLoop } from "./review-poll.mjs";
 import {
 	createPhaseStubVerdictQueue,
@@ -52,15 +53,26 @@ function findPlanReviewStepNumber(taskFolder) {
 
 /**
  * Resolve an existing worker or lane plan review from journal and/or artifacts.
- * Mirrors findCompletedCodeReview with reviewType "plan" (SP-695).
+ * Mirrors findCompletedCodeReview with reviewType "plan" (SP-695), including
+ * the honor guard for untrusted journal verdicts (SP-813 / #328).
  *
  * @param {object} params
  * @param {string} params.taskFolder
  * @param {Array<Record<string, any>>} [params.journalEvents]
  * @param {string} [params.taskId]
+ * @param {string} [params.worktreePath] Lane worktree used to resolve relative artifact paths.
+ * @param {boolean} [params.stubMode] Whether the batch runs in review-stub mode (see isHonorableReviewEvent).
+ * @param {(event: Record<string, any>, reason: string) => void} [params.onReject] Invoked once per journal event refused by the honor guard.
  * @returns {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
  */
-function findCompletedPlanReview({ taskFolder, journalEvents = [], taskId }) {
+function findCompletedPlanReview({
+	taskFolder,
+	journalEvents = [],
+	taskId,
+	worktreePath,
+	stubMode,
+	onReject,
+}) {
 	/** @type {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact", seq: number }|null} */
 	let journalMatch = null;
 	for (let index = 0; index < journalEvents.length; index += 1) {
@@ -71,6 +83,13 @@ function findCompletedPlanReview({ taskFolder, journalEvents = [], taskId }) {
 		if (payload.reviewType !== "plan") continue;
 		const verdict = normalizeCodeVerdict(payload.verdict);
 		if (!verdict) continue;
+		const honorGuard = isHonorableReviewEvent(event, { taskFolder, worktreePath, stubMode });
+		if (!honorGuard.ok) {
+			// Untrusted event: skip it exactly as if it were absent so the scan
+			// still honors a later trustworthy event or the artifact fallback.
+			if (typeof onReject === "function") onReject(event, honorGuard.reason);
+			continue;
+		}
 		journalMatch = {
 			verdict,
 			feedback: typeof payload.feedback === "string" ? payload.feedback : "",
@@ -313,6 +332,7 @@ export async function runPlanReviewPhase({
 		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
+		worktreePath: wt,
 	});
 	if (honoredResult) return honoredResult;
 

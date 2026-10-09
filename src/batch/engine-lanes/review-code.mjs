@@ -218,6 +218,7 @@ export async function runCodeReviewPhase({
 		laneCorrelationId,
 		taskFolder: taskFolderInWorktree,
 		journalEvents,
+		worktreePath: wt,
 	});
 	if (honoredResult) return honoredResult;
 
