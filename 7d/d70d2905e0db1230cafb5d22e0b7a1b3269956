@@ -1,0 +1,20 @@
+spine-tasks/SP-805-quota-fallback-config/STATUS.md
+  h_2a17159c706ba1 3,21,23-24,27,29-30
+tests/config/env-overrides.test.mjs
+  h_2a17159c706ba1 13,33-45,93-148,168-202
+tests/config/load.test.mjs
+  h_2a17159c706ba1 162-195,380-412
+tests/config/settings-fields.test.mjs
+  h_2a17159c706ba1 13,221-232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7dd70d2905e0db1230cafb5d22e0b7a1b3269956",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
