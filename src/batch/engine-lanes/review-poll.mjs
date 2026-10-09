@@ -155,7 +155,10 @@ export function honorCompletedReview({
 		taskId,
 		worktreePath,
 		stubMode,
-		onReject: (event, reason) => {
+		onReject: (
+			/** @type {Record<string, any>} */ event,
+			/** @type {string} */ reason,
+		) => {
 			const payload =
 				event.payload && typeof event.payload === "object" ? event.payload : {};
 			const sourceEventId =

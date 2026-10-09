@@ -268,7 +268,10 @@ export async function runFinalReviewPhase({
 	// the contract is verified exactly once per phase entry; rework iterations
 	// re-verify as before. Respects shouldRunContractVerifyForWorker, so stub
 	// batches (and contracts without verifiable fields) keep skipping.
-	let contractVerifyResult = null;
+	let contractVerifyResult =
+		/** @type {{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number } | null} */ (
+			null
+		);
 	let contractVerifiedPending = false;
 	const runContractVerifyGate = async () => {
 		contractVerifyResult = null;
