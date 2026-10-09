@@ -1,0 +1,19 @@
+spine-tasks/SP-812-isolate-tests-from-live-journal/STATUS.md
+  s_66a7b93b130190::t_edfeb78e93441e 3,34,36-40,56-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "62648515d14db500e083b5844c16b98e6c431129",
+  "prompts": {},
+  "sessions": {
+    "s_66a7b93b130190": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ba27133d-ba81-41cb-8ebb-5ea14e04e74f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
