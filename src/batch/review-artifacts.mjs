@@ -1,14 +1,11 @@
 // @ts-nocheck
-/**
- * Review artifact discovery, level parsing, and honor-signal helpers.
- * SP-579 extraction from review.mjs; spawn wiring stays in review.mjs (SP-597).
- */
-
+/* Review artifact discovery, level parsing, honor signals. SP-579 extraction from review.mjs. */
 import fs from "node:fs";
 import path from "node:path";
 import { detectOrphanedReviewStarted } from "./journal-rebuild.mjs";
 import { NESTED_REVIEW_SPAWN_REASON } from "./review-spawn.mjs";
 import { normalizeVerdict, parseReviewLevel, parseReviewVerdict } from "./review-shared.mjs";
+import { shouldUseReviewStub } from "./engine-lanes/review-stub.mjs";
 
 /**
  * @param {string} taskFolder
@@ -71,15 +68,81 @@ export function findLatestStepReviewArtifact(taskFolder, stepNumber) {
 }
 
 /**
+ * Realpath with a lexical fallback for missing targets — the guard must still
+ * classify a vanished foreign artifact, not crash on it.
+ * @param {string} candidatePath
+ */
+function resolveRealPath(candidatePath) {
+	try {
+		return fs.realpathSync(candidatePath);
+	} catch {
+		return path.resolve(candidatePath);
+	}
+}
+
+/**
+ * True when candidatePath is inside folderPath. Both sides are realpath-resolved
+ * so symlinks and /var vs /private/var aliases cannot smuggle a foreign artifact.
+ * @param {string} candidatePath
+ * @param {string} folderPath
+ */
+function isPathInsideFolder(candidatePath, folderPath) {
+	if (!folderPath) return true;
+	const candidate = resolveRealPath(candidatePath);
+	const folder = resolveRealPath(folderPath);
+	return candidate === folder || candidate.startsWith(`${folder}${path.sep}`);
+}
+
+/**
+ * Trust predicate for journaled `review.completed` honors (SP-813 / #328).
+ * A live batch never honors: (a) `payload.stub === true` without
+ * `payload.honored === true` — a foreign stub verdict leaked into the live
+ * journal; the spawn-timeout honor (`honorReason: "spawn_timeout_with_done"`)
+ * journals `honored: true` in real batches and stays honorable. (b) an
+ * absolute `payload.artifactPath` outside the task folder. Relative paths are
+ * worker-relative to the lane worktree and always accepted. `stubMode` comes
+ * from the engine caller via `shouldUseReviewStub(env)`; when omitted it
+ * defaults to the process env so callers that predate the guard
+ * (review-step-run.mjs) keep their stub-batch behavior.
+ * @param {Record<string, any>} event
+ * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {string} [params.worktreePath] Accepted for caller symmetry; relative artifact paths are worker-relative and always trusted.
+ * @param {boolean} [params.stubMode]
+ * @returns {{ ok: true } | { ok: false, reason: "stub_verdict_in_live_batch" | "artifact_outside_task_folder" }}
+ */
+export function isHonorableReviewEvent(event, { taskFolder, worktreePath: _worktreePath, stubMode } = {}) {
+	const payload = event?.payload && typeof event.payload === "object" ? event.payload : {};
+	const effectiveStubMode = stubMode ?? shouldUseReviewStub();
+	if (payload.stub === true && payload.honored !== true && !effectiveStubMode) {
+		return { ok: false, reason: "stub_verdict_in_live_batch" };
+	}
+	const artifactPath = typeof payload.artifactPath === "string" ? payload.artifactPath : "";
+	if (artifactPath && path.isAbsolute(artifactPath) && !isPathInsideFolder(artifactPath, taskFolder)) {
+		return { ok: false, reason: "artifact_outside_task_folder" };
+	}
+	return { ok: true };
+}
+
+/**
  * Resolve an existing worker or lane code review from journal and/or artifacts.
- *
  * @param {object} params
  * @param {string} params.taskFolder
  * @param {object[]} [params.journalEvents]
  * @param {string} [params.taskId]
+ * @param {string} [params.worktreePath] Lane worktree used to resolve relative artifact paths.
+ * @param {boolean} [params.stubMode] Whether the batch runs in review-stub mode (see isHonorableReviewEvent).
+ * @param {(event: Record<string, any>, reason: string) => void} [params.onReject] Invoked once per journal event refused by the honor guard.
  * @returns {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
  */
-export function findCompletedCodeReview({ taskFolder, journalEvents = [], taskId }) {
+export function findCompletedCodeReview({
+	taskFolder,
+	journalEvents = [],
+	taskId,
+	worktreePath,
+	stubMode,
+	onReject,
+}) {
 	/** @type {{ verdict: "APPROVE"|"REVISE", feedback: string, artifactPath: string, source: "journal"|"artifact", seq: number }|null} */
 	let journalMatch = null;
 	for (let index = 0; index < journalEvents.length; index += 1) {
@@ -90,6 +153,12 @@ export function findCompletedCodeReview({ taskFolder, journalEvents = [], taskId
 		if (payload.reviewType !== "code") continue;
 		const verdict = normalizeVerdict(payload.verdict, "code");
 		if (!verdict) continue;
+		const honorGuard = isHonorableReviewEvent(event, { taskFolder, worktreePath, stubMode });
+		if (!honorGuard.ok) {
+			// Skip untrusted events as if absent; later candidates still honor.
+			if (typeof onReject === "function") onReject(event, honorGuard.reason);
+			continue;
+		}
 		journalMatch = {
 			verdict,
 			feedback: typeof payload.feedback === "string" ? payload.feedback : "",
@@ -135,7 +204,6 @@ export const REVIEW_HONOR_JOURNAL_EVENTS = {
 
 /**
  * True when operator retry or reconcile re-enters review with a still-valid prior verdict.
- *
  * @param {object} params
  * @param {object[]} params.journalEvents
  * @param {string} params.taskId
@@ -186,7 +254,6 @@ export function isRetryReconcileFreshReview({
 
 /**
  * True when journal shows a review spawn crash/failure that warrants crash_recovered.
- *
  * @param {object} params
  * @param {object[]} params.journalEvents
  * @param {string} params.taskId
@@ -222,7 +289,6 @@ export function hasReviewSpawnFailureForHonor({ journalEvents = [], taskId, revi
 
 /**
  * Resolve explicit journal event for honoring a completed review artifact.
- *
  * @param {object} params
  * @param {object[]} params.journalEvents
  * @param {string} params.taskId
@@ -255,7 +321,6 @@ export function resolveReviewHonorJournalEvent({
 
 /**
  * Map honor journal event to task.verdict_recorded reviewPassKind.
- *
  * @param {"review.crash_recovered"|"review.skipped_fresh_artifact"|null} honorJournalEvent
  * @returns {"recovered"|"fresh_skip"|"normal"}
  */
@@ -271,7 +336,6 @@ export function resolveReviewPassKind(honorJournalEvent) {
 
 /**
  * True when review should emit review.resumed before spawning after operator retry.
- *
  * @param {object} params
  * @param {object[]} params.journalEvents
  * @param {string} params.taskId
@@ -291,7 +355,6 @@ export function shouldEmitReviewResumed({ journalEvents = [], taskId }) {
 
 /**
  * Latest review honor/resume signal for diagnose and dashboard surfaces.
- *
  * @param {object[]} journalEvents
  * @param {string|null} [activeTaskId]
  * @returns {{ taskId: string, reviewType: string, kind: string, honorSource?: string, reviewPassKind?: string }|null}
@@ -365,14 +428,23 @@ export function findLatestFinalReviewArtifact(taskFolder) {
 /**
  * Resolve an existing worker or lane final review from journal and/or artifacts.
  * Honors PASS from journal `review.completed` or latest final artifact.
- *
  * @param {object} params
  * @param {string} params.taskFolder
  * @param {object[]} [params.journalEvents]
  * @param {string} [params.taskId]
+ * @param {string} [params.worktreePath] Lane worktree used to resolve relative artifact paths.
+ * @param {boolean} [params.stubMode] Whether the batch runs in review-stub mode (see isHonorableReviewEvent).
+ * @param {(event: Record<string, any>, reason: string) => void} [params.onReject] Invoked once per journal event refused by the honor guard.
  * @returns {{ verdict: "PASS"|"REVISE"|"REPLAN", feedback: string, artifactPath: string, source: "journal"|"artifact" }|null}
  */
-export function findCompletedFinalReview({ taskFolder, journalEvents = [], taskId }) {
+export function findCompletedFinalReview({
+	taskFolder,
+	journalEvents = [],
+	taskId,
+	worktreePath,
+	stubMode,
+	onReject,
+}) {
 	/** @type {{ verdict: "PASS"|"REVISE"|"REPLAN", feedback: string, artifactPath: string, source: "journal"|"artifact", seq: number }|null} */
 	let journalMatch = null;
 	for (let index = 0; index < journalEvents.length; index += 1) {
@@ -383,6 +455,12 @@ export function findCompletedFinalReview({ taskFolder, journalEvents = [], taskI
 		if (payload.reviewType !== "final") continue;
 		const verdict = normalizeVerdict(payload.verdict, "final");
 		if (!verdict) continue;
+		const honorGuard = isHonorableReviewEvent(event, { taskFolder, worktreePath, stubMode });
+		if (!honorGuard.ok) {
+			// Skip untrusted events as if absent; later candidates still honor.
+			if (typeof onReject === "function") onReject(event, honorGuard.reason);
+			continue;
+		}
 		journalMatch = {
 			verdict,
 			feedback: typeof payload.feedback === "string" ? payload.feedback : "",

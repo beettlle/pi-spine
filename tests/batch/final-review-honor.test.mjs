@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { runTaskOnLane } from "../../src/batch/engine-lanes.mjs";
+import { runFinalReviewPhase } from "../../src/batch/engine-lanes/review.mjs";
 import {
 	findCompletedFinalReview,
 	findLatestFinalReviewArtifact,
@@ -242,6 +243,100 @@ test("runTaskOnLane honors pre-existing worker final review without spawn failur
 		assert.equal(verdictEvent?.payload?.verdict, "PASS");
 		assert.equal(verdictEvent?.payload?.honored, true);
 		assert.ok(events.some((event) => event.type === "task.completed" && event.taskId === taskId));
+	} finally {
+		restoreEnv(prev, ["stub", "reviewStub"]);
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("runFinalReviewPhase journals contract.verified before a real (non-stub) journal honor", async () => {
+	const projectRoot = await initGitRepo("spine-honor-contract-order-");
+	const prev = {
+		stub: process.env.SPINE_WORKER_STUB,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+	};
+	delete process.env.SPINE_WORKER_STUB;
+	delete process.env.SPINE_REVIEW_STUB;
+	try {
+		const batchId = "20260611T220602";
+		const taskId = "TP-194";
+		const { taskFolderRel } = writeFinalReviewTask(projectRoot, {
+			taskId,
+			suffix: "honor-contract-order",
+		});
+		// A verifiable contract makes the live batch run contract verification
+		// before any honor fast path (SP-813 / #328).
+		fs.appendFileSync(
+			path.join(projectRoot, taskFolderRel, "PROMPT.md"),
+			"\n## Contract\n\n| Field | Value |\n|-------|-------|\n| testCommand | `true` |\n",
+			"utf-8",
+		);
+		fs.writeFileSync(
+			path.join(projectRoot, "spine-tasks", "dependencies.json"),
+			JSON.stringify({ version: 1, tasks: { [taskId]: [] } }, null, 2),
+			"utf-8",
+		);
+		execCommit(projectRoot, "contract order honor fixture");
+
+		const { state, lane, task, wt } = await provisionLaneTask(projectRoot, {
+			batchId,
+			taskId,
+			taskFolderRel,
+		});
+
+		// Worker-style journal honor: relative artifactPath resolved against the
+		// lane worktree stays honorable in a live (non-stub) batch.
+		const reviewsDir = path.join(wt, taskFolderRel, ".reviews");
+		fs.mkdirSync(reviewsDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(reviewsDir, "final-20260611T220602.md"),
+			"### Verdict: PASS\n```json\n{\"verdict\":\"PASS\",\"feedback\":\"worker final pass\"}\n```\n",
+			"utf-8",
+		);
+		appendJournalEvent(projectRoot, batchId, "review.completed", {
+			taskId,
+			laneNumber: 1,
+			correlationId: "corr-worker-final-live",
+			reviewType: "final",
+			verdict: "PASS",
+			feedback: "Worker journal final pass",
+			artifactPath: path.join(taskFolderRel, ".reviews", "final-20260611T220602.md"),
+		});
+
+		const result = await runFinalReviewPhase({
+			projectRoot,
+			state,
+			batchId,
+			config: {},
+			task,
+			lane,
+			taskFolderInWorktree: path.join(wt, taskFolderRel),
+			wt,
+			taskBranch: lane.branch,
+			laneCorrelationId: "corr-honor-contract-order",
+			fileScopePaths: ["src/final-honor.txt"],
+			baseBranch: "main",
+		});
+
+		assert.equal(result.ok, true, result.output ?? result.error);
+		const events = readJournalEvents(projectRoot, batchId);
+		const contractIndex = events.findIndex(
+			(event) => event.type === "contract.verified" && event.taskId === taskId,
+		);
+		assert.ok(contractIndex >= 0, "contract.verified must be journaled for a non-stub honor");
+		assert.equal(events[contractIndex].payload?.ok, true);
+		const verdictIndex = events.findIndex(
+			(event) =>
+				event.type === "task.verdict_recorded" &&
+				event.taskId === taskId &&
+				event.payload?.reviewType === "final" &&
+				event.payload?.honored === true,
+		);
+		assert.ok(
+			verdictIndex > contractIndex,
+			"contract.verified must precede task.verdict_recorded { honored: true }",
+		);
+		assert.equal(events[verdictIndex].payload?.honorSource, "journal");
 	} finally {
 		restoreEnv(prev, ["stub", "reviewStub"]);
 		await destroyGitRepo(projectRoot);
