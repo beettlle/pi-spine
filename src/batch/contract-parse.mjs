@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 import { resolveContractMode } from "../tasks/packet/validate-contract.mjs";
 import {
 	isBaseScopeSatisfied,
@@ -199,7 +199,7 @@ export function listChangedFiles(worktreePath, baseBranch = "main", sinceCommit 
  * @param {string} pattern
  */
 export function matchesContractPattern(file, pattern) {
-	return micromatch.isMatch(file, pattern, { dot: true });
+	return picomatch(pattern, { dot: true })(file);
 }
 
 /**

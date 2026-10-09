@@ -36,6 +36,6 @@
     "src/batch/reconcile-diagnosis-context.mjs",
     "src/batch/reconcile-light-cache.mjs",
     "src/doctor/run-doctor-checks.mjs",
-    "types/micromatch.d.ts"
+    "types/picomatch.d.ts"
   ]
 }

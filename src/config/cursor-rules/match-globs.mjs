@@ -1,9 +1,9 @@
 // @ts-nocheck
 /**
- * Micromatch helpers for PROMPT File Scope vs rule globs (SP-091).
+ * Glob helpers for PROMPT File Scope vs rule globs (SP-091).
  */
 
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 
 /** Synthetic extensions used when expanding directory or wildcard scope entries. */
 export const SYNTHETIC_PROBE_EXTENSIONS = Object.freeze([
@@ -120,11 +120,13 @@ export function ruleGlobsMatchFileScope(globs, fileScope) {
 			return true;
 		}
 
-		if (scopeEntries.some((entry) => micromatch.isMatch(entry, glob))) {
+		const isMatch = picomatch(glob);
+
+		if (scopeEntries.some((entry) => isMatch(entry))) {
 			return true;
 		}
 
-		if (probes.some((probe) => micromatch.isMatch(probe, glob))) {
+		if (probes.some((probe) => isMatch(probe))) {
 			return true;
 		}
 	}
