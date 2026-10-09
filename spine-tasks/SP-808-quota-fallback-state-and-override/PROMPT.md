@@ -142,4 +142,4 @@ Partial #329 — Persist the applied quota fallback in batch state, apply it to 
 
 ## Amendments
 
-_None._
+- **2026-10-09 (operator, v2.27.0 wave 3):** Preflight flags `src/batch/worker-host.mjs` and `src/batch/metrics.mjs` as pre-landed — SP-806 changed them for quota classification. None of this packet's work is on `main` (no `quota-fallback-state.mjs`, no override in `runWorker`, no `workerModel` in metrics), so `fileScopeMustChange` stays as written. `src/batch/worker-host.mjs` is 490 lines against the 500-line module cap (`spine verify phase23-exit`): put the read-only batch-state load in `quota-fallback-state.mjs` (e.g. `loadQuotaFallbackForWorker({ projectRoot, batchId })` returning the fallback state or `null`) so `runWorker` grows only by the call and env/model merge. Add `tests/cli/phase23-exit-verify.test.mjs` to the Step 4 runs.
