@@ -1,0 +1,24 @@
+spine-tasks/SP-813-review-honor-guard/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,59-65
+src/batch/engine-lanes/review-code.mjs
+  h_2a17159c706ba1 221
+src/batch/engine-lanes/review-final.mjs
+  h_2a17159c706ba1 263-330,345,361-371
+src/batch/engine-lanes/review-plan.mjs
+  h_2a17159c706ba1 26,56-57,63-65,68-75,86-92,335
+src/batch/engine-lanes/review-poll.mjs
+  h_2a17159c706ba1 25,116,133,138-178
+src/batch/review-artifacts.mjs
+  h_2a17159c706ba1 12,74-152,160-162,165-172,183-189,470-472,475-482,493-499
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6640ac4c53b05d4e4e293e82460088f72345fa72",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
