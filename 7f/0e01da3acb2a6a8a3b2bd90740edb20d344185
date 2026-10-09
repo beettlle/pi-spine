@@ -1,0 +1,14 @@
+src/batch/provider-quota.mjs
+  h_2a17159c706ba1 1-218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f0e01da3acb2a6a8a3b2bd90740edb20d344185",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
