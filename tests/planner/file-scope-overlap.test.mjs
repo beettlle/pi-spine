@@ -5,6 +5,8 @@ import path from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import test from 'node:test';
 
+import picomatch from 'picomatch';
+
 import { buildPlan } from '../../src/planner/index.mjs';
 import { formatPlanHuman } from '../../src/planner/format-plan.mjs';
 import {
@@ -113,6 +115,25 @@ test('fileScopePatternsOverlap detects .json/.cjs/.yaml extension collisions', (
 	assert.equal(fileScopePatternsOverlap('ci/**', 'ci/workflow.yml'), true);
 	assert.equal(fileScopePatternsOverlap('config/*', 'config/app.json'), true);
 	assert.equal(fileScopePatternsOverlap('config/**', 'other/app.json'), false);
+});
+
+test('picomatch matcher preserves glob semantics after micromatch swap (SP-817)', () => {
+	// Dotfiles: `{ dot: true }` matches `.github/**` trees; default dot:false does not.
+	assert.equal(picomatch('.github/**', { dot: true })('.github/workflows/ci.yml'), true);
+	assert.equal(picomatch('**')('.github/workflows/ci.yml'), false);
+	assert.equal(fileScopePatternsOverlap('.github/**', '.github/workflows/ci.yml'), true);
+
+	// `**` crosses directory boundaries.
+	assert.equal(picomatch('src/**', { dot: true })('src/a/b/c.mjs'), true);
+	assert.equal(fileScopePatternsOverlap('src/**', 'src/a/b/c.mjs'), true);
+
+	// Array patterns match when any entry matches.
+	assert.equal(picomatch(['src/a/**', 'src/b/**'], { dot: true })('src/b/x.mjs'), true);
+	assert.equal(picomatch(['src/a/**', 'src/b/**'], { dot: true })('src/c/x.mjs'), false);
+
+	// Negative match: unrelated paths stay disjoint.
+	assert.equal(picomatch('src/**', { dot: true })('bin/spine.mjs'), false);
+	assert.equal(fileScopePatternsOverlap('src/**', 'bin/spine.mjs'), false);
 });
 
 test('findWaveFileScopeOverlaps returns pairs within the same wave only', () => {
