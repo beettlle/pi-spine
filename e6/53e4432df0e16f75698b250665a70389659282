@@ -1,0 +1,19 @@
+spine-tasks/SP-804-provider-quota-classifier/.DONE
+  s_66a7b93b130190::t_f570373d0149ae 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e653e4432df0e16f75698b250665a70389659282",
+  "prompts": {},
+  "sessions": {
+    "s_66a7b93b130190": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ba27133d-ba81-41cb-8ebb-5ea14e04e74f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
