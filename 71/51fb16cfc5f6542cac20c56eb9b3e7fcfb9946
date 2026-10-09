@@ -1,0 +1,14 @@
+tests/planner/file-scope-overlap.test.mjs
+  h_2a17159c706ba1 8-9,120-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7151fb16cfc5f6542cac20c56eb9b3e7fcfb9946",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
