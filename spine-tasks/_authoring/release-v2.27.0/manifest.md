@@ -9,6 +9,7 @@
 **Composition choice:** #329 quota fallback (7 packets + docs) as the headline enhancement; review-honor and reviewer-spawn hardening (#328, #332) and the mid-review salvage recommendation (#330) as bug fixes; one test flake (#333); dependency hygiene (prod `micromatch` → `picomatch`, dev `pi-coding-agent` 1.0).
 **Worker model pin:** `zai/glm-5.3` via `agents.activeProfile=hard` (restored after v2.26.0 wave 4, `0e406610`) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
+**Extension override:** yes (2026-10-08 — `pi remove npm:@trevonistrevon/pi-loop` (was 0.7.17) for this release. With pi 1.1.0 and pi-loop loaded, `google/gemini-3.1-pro-preview` at thinking `high` fails parallel tool calls (`MALFORMED_FUNCTION_CALL`, HTTP 400 missing `thought_signature`), so every review spawn fails. Repro: 0/2 with pi-loop alone, 3/3 with all other extensions. Model pins unchanged. Reinstall after publish: `pi install npm:@trevonistrevon/pi-loop`.)
 **Start constraint:** the z.ai **weekly** limit (code 1310) recorded in v2.26.0 resets **2026-10-06 01:01 UTC+8 (2026-10-05 17:01 UTC)**. Do not start wave 1 before then. Probe with `pi -p --model zai/glm-5.3 "ping"` before `spine batch start`.
 **GitNexus:** refreshed 2026-10-03 — status up-to-date with HEAD (`c0ce8ac`)
 
@@ -113,6 +114,8 @@
 | 3 | `SP-808,SP-816,SP-817,SP-818` | #329 state/override; #333; deps (SP-818 runs after SP-817 inside the batch) |
 | 4 | `SP-809,SP-810,SP-811` | #329 retry + operator surface; docs last (SP-811 runs after SP-809/SP-810 inside the batch) |
 
+Release waves 1–4 are operator labels, not `--wave` indices. Each wave's explicit scope plans as its own `Wave 0`, so start it with the task IDs only (`spine batch start <ids>`). Adding `--wave N` selects a wave that does not exist in that scope.
+
 ---
 
 ## Sequence runner (Phase 4)
@@ -120,11 +123,13 @@
 ```bash
 spine tasks validate SP-804 SP-805 SP-806 SP-807 SP-808 SP-809 SP-810 SP-811 SP-812 SP-813 SP-814 SP-815 SP-816 SP-817 SP-818
 spine plan SP-804,SP-805,SP-812,SP-815
-spine batch start SP-804,SP-805,SP-812,SP-815 --wave 1    # detached — omit --attached (#163)
-spine status --diagnose
+spine batch start SP-804 SP-805 SP-812 SP-815    # detached — omit --attached (#163); no --wave flag
+spine status --diagnose    # while the engine PID is alive, ignore a salvage recommendation (see below)
 spine gate approve && spine integrate && npm install && spine batch complete
 npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27-wave1.log; test "${PIPESTATUS[0]}" -eq 0
 ```
+
+**Salvage while the engine is alive ([#330](https://github.com/beettlle/pi-spine/issues/330)):** until SP-815 lands, `spine status --diagnose` reports `pending_lane_land` and recommends `spine batch salvage … --integrate` while the engine is still running or reviewing a task. Do not salvage while `Engine PID … still running` appears. Wait with `spine wait`, and salvage only after the batch phase is terminal and the lane work is confirmed unreviewed or failed.
 
 **Model pin policy ([#248](https://github.com/beettlle/pi-spine/issues/248)):** one worker pin (`hard`). Record any override above **before** applying. Quota failures are not grounds for escalation; until SP-809 lands, the interim workaround in #329 applies (record override → `spine settings set agents.activeProfile allegretto` → retry).
 
@@ -146,7 +151,7 @@ All 15 packets are new (lean authoring). See Selected tasks.
 
 ## Execution log
 
-_Not started — waiting for z.ai weekly reset (2026-10-05 17:01 UTC)._
+- **2026-10-08 wave 1, attempt 1** — batch `20261009T012828-2d7d` (`SP-804 SP-805 SP-812 SP-815`, z.ai probe `pong` beforehand). All 4 workers finished, but all 4 tasks failed at engine plan review with `plan_review_spawn_failed`: the Gemini reviewer got HTTP 400 for a missing `thought_signature`, caused by pi-loop under pi 1.1.0. All 4 lanes have `.DONE` and lane commits (`pending_lane_land`, #291 shape). Applied the extension override above; the reviewer probe then passed 5 of 6 runs (the 1 failure was an extension load right after removal, not `MALFORMED_FUNCTION_CALL`). Recovery path pending operator choice.
 
 ---
 
@@ -167,7 +172,8 @@ _Not started — waiting for z.ai weekly reset (2026-10-05 17:01 UTC)._
 
 ## Risks and blockers
 
-- **Wave 1 is blocked on the z.ai weekly reset** (2026-10-05 17:01 UTC). Starting earlier burns retries into the same quota wall (the exact failure #329 fixes).
+- ~~Wave 1 is blocked on the z.ai weekly reset~~ — reset passed; probe returned `pong` on 2026-10-08.
+- Reviewer spawns depend on the user pi extension set. Any extension change mid-release must be recorded as an extension override and re-probed with a parallel-tool-call prompt on the reviewer model.
 - SP-806 changes worker failure `classification` from `failed` to `provider_quota_exhausted` / `provider_overloaded`; any consumer that matches `"failed"` literally must be found (packet requires an `rg` sweep).
 - SP-809 adds the first in-engine automatic retry; it must reuse the same lane worktree and stay within one hop per batch and one auto-retry per task.
 - SP-813 tightens the review honor fast path; legitimate `stub: true, honored: true` (`spawn_timeout_with_done`) and relative `artifactPath` events must still honor.
