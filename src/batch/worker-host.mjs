@@ -12,6 +12,7 @@ import {
 } from "./task-stall-budget.mjs";
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
+import { classifyProviderQuotaError } from "./provider-quota.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import {
 	finalizeWorkerOutput,
@@ -48,6 +49,35 @@ const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000;
  * timeout — never from post-done or stall termination.
  */
 const WORKER_TIMEOUT_EXIT_CODE = 124;
+
+/**
+ * Reclassify a plain `failed` worker exit as a provider quota/overload exit
+ * when forwarded output matches a known provider payload, and journal
+ * `worker.quota_exhausted` for quota-exhausted exits (#329, SP-806). Aborted,
+ * stall, launch and review failures keep their meaning; overload is not
+ * journaled. Callers must run this after finalizeWorkerOutput so output
+ * capture still sees the original `failed` (shouldCaptureWorkerOutput matches
+ * the literal) while consumers receive the provider-quota exit reason.
+ *
+ * @param {{ classification: string, rawOutput: string, config?: object, projectRoot?: string, batchId?: string, taskId?: string, laneNumber?: number, laneCorrelationId?: string }} params
+ * @returns {{ classification: string, providerQuota: import("./provider-quota.mjs").ProviderQuotaError | null }}
+ */
+function applyProviderQuotaClassification({ classification, rawOutput, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId }) {
+	if (classification !== "failed") return { classification, providerQuota: null };
+	const configured = /** @type {{ agents?: { worker?: { model?: unknown } } }} */ (config ?? {}).agents?.worker?.model;
+	const model = typeof configured === "string" ? configured : undefined;
+	const providerQuota = classifyProviderQuotaError(rawOutput, model);
+	if (!providerQuota) return { classification, providerQuota: null };
+	if (providerQuota.kind === "quota_exhausted" && projectRoot && batchId) {
+		appendJournalEvent(projectRoot, batchId, "worker.quota_exhausted", {
+			taskId, laneNumber, correlationId: laneCorrelationId, poolId: providerQuota.poolId,
+			providerCode: providerQuota.providerCode, httpStatus: providerQuota.httpStatus,
+			resetAtRaw: providerQuota.resetAtRaw, ...(model ? { model } : {}),
+		});
+	}
+	const reclassified = providerQuota.kind === "quota_exhausted" ? "provider_quota_exhausted" : "provider_overloaded";
+	return { classification: reclassified, providerQuota };
+}
 
 /**
  * Force-terminate lane worker process trees tracked in batch state.
@@ -131,6 +161,8 @@ function buildWorkerFailureResult({
 		signals,
 		config,
 	});
+	// SP-806 (#329): post-finalize reclassification (see helper doc).
+	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
 	return {
 		ok: false,
 		exitCode,
@@ -138,8 +170,9 @@ function buildWorkerFailureResult({
 		output: finalized.output,
 		workerOutputLogPath: finalized.logPath,
 		workerOutputLogRef: finalized.logRef,
-		classification,
+		classification: quotaOutcome.classification,
 		doneFound,
+		...(quotaOutcome.providerQuota ? { providerQuota: quotaOutcome.providerQuota } : {}),
 	};
 }
 
@@ -440,6 +473,9 @@ export async function runWorker({
 		config,
 	});
 
+	// SP-806 (#329): main post-spawn failure path — post-finalize
+	// reclassification (see helper doc); only plain `failed` exits can match.
+	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput: output, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
 	return {
 		ok,
 		exitCode,
@@ -447,7 +483,8 @@ export async function runWorker({
 		output: finalized.output,
 		workerOutputLogPath: finalized.logPath,
 		workerOutputLogRef: finalized.logRef,
-		classification,
+		classification: quotaOutcome.classification,
 		doneFound,
+		...(quotaOutcome.providerQuota ? { providerQuota: quotaOutcome.providerQuota } : {}),
 	};
 }
