@@ -1,6 +1,6 @@
 # SP-806: Classify worker quota failures — Status
 
-**Current Step:** Step 4: Testing & Verification
+**Current Step:** Step 5: Documentation & Delivery
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-09
 **Review Level:** 2
@@ -43,18 +43,18 @@ Verification: node --check, eslint, `npm run typecheck` ✅
 Verification: `node --test tests/batch/worker-quota-classification.test.mjs tests/batch/run-metrics.test.mjs` → 22 pass / 0 fail (with SPINE_IS_WORKER/SPINE_WORKER_RUNNER unset, SPINE_WORKER_STUB=1)
 
 ### Step 4: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch suite
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`npm run lint` ✅)
+- [x] Contract `testCommand` ✅ — 62/62 (run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT Environment; see Discovery 10)
+- [x] Batch suite ✅ — 1631/1632; sole failure is the pre-existing flaky timing test `waitForSequenceBatchTerminal hard-caps at maxWaitMs` (fails identically on base commit 005287ee, Discovery 11)
+- [x] Coverage gate ✅ — 2809/2809, line coverage 90.11% (≥77%)
+- [x] Fix all failures — `batch-loc-policy` 500-LOC cap: consolidated the three SP-806 helpers into one `applyProviderQuotaClassification`, `worker-host.mjs` 575 → 490 LOC (Discovery 9)
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Discoveries logged in STATUS.md
+- [x] Discoveries logged in STATUS.md
 - [ ] Create `.DONE`
 
 ---
@@ -71,6 +71,10 @@ Verification: `node --test tests/batch/worker-quota-classification.test.mjs test
 | 6 | `src/batch/reconcile-diagnosis.mjs:124` matches `task.status === "failed"` (status, not exitReason) — task.status stays `failed`; unaffected. No dashboard matches in sweep. |
 | 7 | `buildWorkerChildEnv` (`src/batch/worker-spawn.mjs:66`) spreads `...process.env` → `SPINE_WORKER_STUB_FAIL_OUTPUT` set in the test process reaches the stub runner child without code changes. |
 | 8 | **Import-enabling fix outside File Scope:** importing `src/batch/provider-quota.mjs` (required by Mission §1) from `worker-host.mjs` pulls it into the `tsconfig.batch.json` `checkJs` graph for the first time, surfacing latent SP-804 type errors (`resolvePoolId(model)` null arg at :211, `payload.error` access on `object` at :157). Contract `testCommand` runs `npm run typecheck`, so fixed minimally in place: `model ?? undefined` + `Record<string, any>` payload JSDoc types. Behavior unchanged — SP-804 suite (16 tests) passes. |
+| 9 | **500-LOC batch module policy:** `bin/spine-cli/verify.mjs` `batch-loc-policy` (checked by `tests/cli/phase23-exit-verify.test.mjs`, run under `coverage:check`) rejected `worker-host.mjs` at 575 LOC. Consolidated the three helpers (`PROVIDER_QUOTA_CLASSIFICATIONS` map, `resolveWorkerQuotaModel`, `classifyProviderQuotaFailure`, `journalWorkerQuotaExhausted`) into a single `applyProviderQuotaClassification` with compact JSDoc → 490 LOC. Behavior identical; quota classification suite + phase23 verify pass. |
+| 10 | **Worker env leakage:** with `SPINE_IS_WORKER=1` (worker session env) set, every `startBatch` test fails with "Nested batch start blocked" and the coverage suite reports 51 failures. Per PROMPT Environment, all Step 4 commands ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` (coverage additionally unsets the other SPINE_* worker vars). With them unset, contract suite 62/62 and coverage 2809/2809. |
+| 11 | **Pre-existing flaky timing tests (not caused by SP-806):** `tests/batch/sequence-detached-poll.test.mjs` (`waitForSequenceBatchTerminal` reused-PID + hard-cap) fail under full-suite parallel load (elapsed seconds vs ms budgets) but pass in isolation; verified identical 2 failures on a clean worktree at base commit `005287ee`. `tests/batch/reviewer-artifact-early-honor.test.mjs` hit a 300s timeout once under coverage load, passes in isolation. |
+| 12 | `docs/adoption/operator-runbook.md` has no exhaustive exit-reasons table — exit reasons are mentioned narratively (e.g. :1541, :2075 renders `{exitReason}` verbatim, so new values surface correctly). PROMPT defers doc updates to SP-811; no edit made. |
 
 **Plan (Review Level 2):** In `worker-host.mjs`, add `classifyProviderQuotaError` import + two small helpers: (a) reclassify plain `failed` → `provider_quota_exhausted`/`provider_overloaded` and attach `providerQuota`, applied in `buildWorkerFailureResult` after `finalizeWorkerOutput` (keeps capture semantics, see Discovery 4) and in `runWorker`'s final return path; (b) journal `worker.quota_exhausted` when kind is `quota_exhausted` and projectRoot+batchId set. Metrics: `failureKind: "quota"` for the two new exitReasons next to the contract/reviewer mappings. Stub runner: print `SPINE_WORKER_STUB_FAIL_OUTPUT` to stderr before the existing forced-failure line. Tests: new suite driving `startBatch` stub runs + run-metrics mapping extension.
 
