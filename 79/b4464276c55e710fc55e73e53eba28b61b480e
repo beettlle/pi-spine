@@ -1,0 +1,23 @@
+spine-tasks/SP-807-quota-fallback-decision/STATUS.md
+  s_2f5f9faf8a9e83::t_319bbb40539577 3-5,14,16-17,20,22-23,26,28-29,47-63,68-69
+src/batch/quota-fallback.mjs
+  s_2f5f9faf8a9e83::t_009c771ff17dc3 1-307
+tests/batch/quota-fallback.test.mjs
+  s_2f5f9faf8a9e83::t_c3a5efdc0d3dec 1-395
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "79b4464276c55e710fc55e73e53eba28b61b480e",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
