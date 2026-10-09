@@ -1,0 +1,16 @@
+tests/batch/final-review-honor.test.mjs
+  h_2a17159c706ba1 8,252-345
+tests/batch/review-honor-guard.test.mjs
+  h_2a17159c706ba1 1-697
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b00b812f1b59b583a2e19d8445175917435aef66",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
