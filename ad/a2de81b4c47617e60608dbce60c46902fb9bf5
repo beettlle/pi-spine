@@ -1,0 +1,14 @@
+spine-tasks/SP-814-reviewer-no-artifact-respawn/STATUS.md
+  h_2a17159c706ba1 3,21,23-24,27,29-30,33,35-37,40,42-46,49,51,66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ada2de81b4c47617e60608dbce60c46902fb9bf5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
