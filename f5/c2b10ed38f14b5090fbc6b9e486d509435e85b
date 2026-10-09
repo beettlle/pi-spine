@@ -1,0 +1,18 @@
+bin/spine-worker-runner.mjs
+  h_2a17159c706ba1 327-331
+spine-tasks/SP-806-worker-quota-failure-classification/STATUS.md
+  h_2a17159c706ba1 3,29-32,34,37
+src/batch/metrics.mjs
+  h_2a17159c706ba1 158-162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5c2b10ed38f14b5090fbc6b9e486d509435e85b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
