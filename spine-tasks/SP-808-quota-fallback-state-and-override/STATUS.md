@@ -1,8 +1,8 @@
 # SP-808: Persist fallback state + sticky worker override — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-10-03
+**Current Step:** Step 1: State helpers
+**Status:** 🔄 In Progress
+**Last Updated:** 2026-10-09
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,14 +11,14 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Impact analysis recorded
-- [ ] Loader/saver identified
-- [ ] Dependencies satisfied
+- [x] Impact analysis recorded
+- [x] Loader/saver identified
+- [x] Dependencies satisfied
 
 ### Step 1: State helpers
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Apply / retry / exhausted helpers
 - [ ] Env + effective model helpers
@@ -58,6 +58,10 @@
 
 | # | Finding |
 |---|---------|
+| 1 | GitNexus impact: `runWorker` CRITICAL upstream (engine-lanes, matrix-run, resume paths) — change is additive only (env merge + model threading), no signature change. `buildTaskMetricRecord` and `reconstructBatchStateFromRuntime` LOW risk (0 upstream). |
+| 2 | Loader for `runWorker`: `loadSpineBatchState` (`src/batch/state-io.mjs`, read-only). Saver for lane paths: `saveEngineBatchState` (`src/batch/pause.mjs`, async, pause-merge) — matches `engine-lanes/matrix-run.mjs`. |
+| 3 | Dependencies satisfied: SP-805 (`src/config/env-overrides.mjs` `SPINE_AGENT_PROFILE_OVERRIDE`), SP-806 (`applyProviderQuotaClassification` in worker-host), SP-807 (`src/batch/quota-fallback.mjs`) all on this branch. |
+| 4 | Journal rebuild carries `seed.resilience` through (`journal-rebuild-structural.mjs` 237/247), so an archive seed with `resilience.quotaFallback` reaches `priorResilience` in reconstruct. |
 
 ## Blockers
 
