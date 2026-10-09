@@ -3,6 +3,9 @@
  * Pending lane land diagnosis — lane `.DONE` without main land (#201 / SP-645).
  */
 
+import { isEngineProcessAlive } from "../process/liveness.mjs";
+import { readBatchEnginePid, readBatchEngineStartedAt } from "./state-guards.mjs";
+
 /**
  * Tasks with lane `.DONE` but not on main — lane commits never landed (#201 / SP-645).
  *
@@ -15,10 +18,40 @@ export function findPendingLaneLandTasks(tasks) {
 }
 
 /**
- * @param {object} signals
+ * Guard for #330 / SP-815: the batch engine is alive AND the raw batch state
+ * still shows live activity (phase "running" or a running task). Reconciled
+ * signals can already look terminal-success mid-wave because a lane `.DONE`
+ * is reconciled (`done_in_lane_terminal`) before the engine finishes code and
+ * final review — so salvage guidance must be suppressed until the engine
+ * exits or the state goes terminal. Both conditions must hold: a crashed
+ * engine with a stale running phase still deserves salvage guidance.
+ *
+ * @param {object|null|undefined} raw raw batch state (`signals.raw`)
+ * @param {object} [deps]
+ * @param {(raw: object) => boolean} [deps.isEngineAlive] injectable engine liveness probe
  * @returns {boolean}
  */
-export function shouldDiagnosePendingLaneLand(signals) {
+export function isLiveEngineMidTask(raw, deps = {}) {
+	if (!raw || typeof raw !== "object") return false;
+	const isEngineAlive =
+		deps.isEngineAlive ??
+		((state) => isEngineProcessAlive(readBatchEnginePid(state), readBatchEngineStartedAt(state)));
+	if (!isEngineAlive(raw)) return false;
+	if (raw.phase === "running") return true;
+	const tasks = Array.isArray(raw.tasks) ? raw.tasks : [];
+	return tasks.some((task) => task?.status === "running");
+}
+
+/**
+ * @param {object} signals
+ * @param {object} [deps]
+ * @param {(raw: object) => boolean} [deps.isEngineAlive] injectable engine liveness probe
+ * @returns {boolean}
+ */
+export function shouldDiagnosePendingLaneLand(signals, deps = {}) {
+	// Live engine mid-task: the lane may be about to land under the engine
+	// itself — never suggest salvage while it is still running (#330 / SP-815).
+	if (isLiveEngineMidTask(signals?.raw, deps)) return false;
 	const pending = findPendingLaneLandTasks(signals.tasks);
 	if (pending.length === 0) return false;
 	// Only when orch already appears merged — otherwise healthy pre-integrate
