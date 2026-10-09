@@ -296,6 +296,30 @@ export function validateAgentProfilesConfig(config) {
 		}
 	}
 
+	// SP-805 / #329: profile used when quota fallback kicks in; same membership rule as activeProfile.
+	const quotaFallbackProfile = agents.quotaFallbackProfile;
+	if (quotaFallbackProfile != null) {
+		if (typeof quotaFallbackProfile !== "string") {
+			return {
+				code: "CONFIG_AGENT_PROFILE_INVALID",
+				message: "agents.quotaFallbackProfile must be a string when set",
+				suggestedCommand: "spine settings set agents.quotaFallbackProfile default",
+			};
+		}
+		const fallbackTarget = quotaFallbackProfile.trim();
+		// An empty string unsets the fallback profile; otherwise it must name a real profile.
+		if (
+			fallbackTarget !== "" &&
+			(!isPlainObject(profiles) || !Object.prototype.hasOwnProperty.call(profiles, fallbackTarget))
+		) {
+			return {
+				code: "CONFIG_AGENT_PROFILE_INVALID",
+				message: `agents.quotaFallbackProfile "${fallbackTarget}" does not match a defined agents.profiles entry`,
+				suggestedCommand: "spine settings set agents.quotaFallbackProfile default",
+			};
+		}
+	}
+
 	const escalatePolicy = agents.escalatePolicy;
 	if (escalatePolicy != null) {
 		if (!isPlainObject(escalatePolicy)) {

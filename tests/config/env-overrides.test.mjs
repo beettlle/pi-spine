@@ -10,6 +10,7 @@ import { runSpinePlan } from "../../bin/spine-plan.mjs";
 import { runDoctorChecks } from "../../bin/spine.mjs";
 import {
 	applyEnvOverrides,
+	formatConfigSourceDetail,
 	normalizeTasksRootFromEnv,
 	resolveTasksRootPath,
 } from "../../src/config/env-overrides.mjs";
@@ -27,6 +28,19 @@ const BASE_CONFIG = {
 	agents: { worker: { model: "inherit", thinking: "medium" } },
 	lanes: { maxParallel: 3, queueExcess: true },
 	gates: { requireBeforeIntegrate: true },
+};
+
+/** BASE_CONFIG plus named agent profiles so SPINE_AGENT_PROFILE_OVERRIDE has members to name. */
+const PROFILE_CONFIG = {
+	...structuredClone(BASE_CONFIG),
+	agents: {
+		worker: { model: "inherit", thinking: "medium" },
+		profiles: {
+			default: { worker: { model: "provider/base-model" } },
+			allegretto: { worker: { model: "provider/allegretto-model" } },
+		},
+		activeProfile: "default",
+	},
 };
 
 test("normalizeTasksRootFromEnv accepts relative and rejects parent traversal", () => {
@@ -76,6 +90,62 @@ test("applyEnvOverrides rejects invalid SPINE_MAX_LANES", () => {
 	}
 });
 
+// ---------------------------------------------------------------------------
+// SP-805 / #329 — SPINE_AGENT_PROFILE_OVERRIDE
+// ---------------------------------------------------------------------------
+
+test("applyEnvOverrides: SPINE_AGENT_PROFILE_OVERRIDE switches agents.activeProfile to a known profile", () => {
+	const result = applyEnvOverrides(structuredClone(PROFILE_CONFIG), "/proj", {
+		SPINE_AGENT_PROFILE_OVERRIDE: "allegretto",
+	});
+	assert.equal(result.ok, true);
+	if (result.ok) {
+		assert.equal(result.config.agents.activeProfile, "allegretto");
+		assert.equal(result.sources["agents.activeProfile"], "env");
+		assert.equal(result.envVars["agents.activeProfile"], "SPINE_AGENT_PROFILE_OVERRIDE");
+		assert.equal(result.warnings["agents.activeProfile"], undefined);
+	}
+});
+
+test("applyEnvOverrides: SPINE_AGENT_PROFILE_OVERRIDE with an unknown profile is ignored with a recorded reason", () => {
+	const result = applyEnvOverrides(structuredClone(PROFILE_CONFIG), "/proj", {
+		SPINE_AGENT_PROFILE_OVERRIDE: "ghost",
+	});
+	assert.equal(result.ok, true);
+	if (result.ok) {
+		assert.equal(result.config.agents.activeProfile, "default");
+		assert.equal(result.sources["agents.activeProfile"], "file");
+		assert.equal(result.envVars["agents.activeProfile"], undefined);
+		assert.match(
+			result.warnings["agents.activeProfile"],
+			/SPINE_AGENT_PROFILE_OVERRIDE ignored: unknown profile "ghost"/,
+		);
+	}
+});
+
+test("applyEnvOverrides: unset or empty SPINE_AGENT_PROFILE_OVERRIDE leaves agents.activeProfile unchanged", () => {
+	for (const env of [{}, { SPINE_AGENT_PROFILE_OVERRIDE: "" }, { SPINE_AGENT_PROFILE_OVERRIDE: "   " }]) {
+		const result = applyEnvOverrides(structuredClone(PROFILE_CONFIG), "/proj", env);
+		assert.equal(result.ok, true, JSON.stringify(env));
+		if (result.ok) {
+			assert.equal(result.config.agents.activeProfile, "default", JSON.stringify(env));
+			assert.equal(result.warnings["agents.activeProfile"], undefined, JSON.stringify(env));
+		}
+	}
+});
+
+test("formatConfigSourceDetail can surface an ignored SPINE_AGENT_PROFILE_OVERRIDE warning", () => {
+	const detail = formatConfigSourceDetail(
+		{ "agents.activeProfile": "file" },
+		{},
+		"agents.activeProfile",
+		"default",
+		{ "agents.activeProfile": 'SPINE_AGENT_PROFILE_OVERRIDE ignored: unknown profile "ghost"' },
+	);
+	assert.match(detail, /source: file/);
+	assert.match(detail, /SPINE_AGENT_PROFILE_OVERRIDE ignored: unknown profile "ghost"/);
+});
+
 test("loadSpineConfig applies env overrides after file load", async () => {
 	const projectRoot = await initGitRepo("env-load-");
 	const prev = process.env.SPINE_MAX_LANES;
@@ -91,6 +161,41 @@ test("loadSpineConfig applies env overrides after file load", async () => {
 	} finally {
 		if (prev === undefined) delete process.env.SPINE_MAX_LANES;
 		else process.env.SPINE_MAX_LANES = prev;
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("loadSpineConfig resolves SPINE_AGENT_PROFILE_OVERRIDE into the effective worker model (SP-805)", async () => {
+	const projectRoot = await initGitRepo("env-profile-");
+	const configPath = path.join(projectRoot, ".spine", "spine-config.json");
+	const fileConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+	// Two profiles with distinct worker models so the resolved one is observable.
+	fileConfig.agents = {
+		worker: { model: "inherit", thinking: "medium" },
+		profiles: {
+			default: { worker: { model: "provider/base-model" } },
+			allegretto: { worker: { model: "provider/allegretto-model" } },
+		},
+		activeProfile: "default",
+	};
+	fs.writeFileSync(configPath, JSON.stringify(fileConfig, null, "\t"), "utf-8");
+
+	const prev = process.env.SPINE_AGENT_PROFILE_OVERRIDE;
+	process.env.SPINE_AGENT_PROFILE_OVERRIDE = "allegretto";
+	try {
+		const loaded = loadSpineConfig(projectRoot);
+		assert.equal(loaded.error, null);
+		// applyActiveAgentProfile runs after applyEnvOverrides, so the override profile's
+		// worker model must already be resolved at load time.
+		assert.equal(loaded.config?.agents.worker.model, "provider/allegretto-model");
+		assert.equal(loaded.sources?.["agents.activeProfile"], "env");
+
+		// File-only load keeps the base model and never sees the override.
+		const fileOnly = loadSpineConfigFile(projectRoot);
+		assert.equal(fileOnly.config?.agents.worker.model, "inherit");
+	} finally {
+		if (prev === undefined) delete process.env.SPINE_AGENT_PROFILE_OVERRIDE;
+		else process.env.SPINE_AGENT_PROFILE_OVERRIDE = prev;
 		await destroyGitRepo(projectRoot);
 	}
 });

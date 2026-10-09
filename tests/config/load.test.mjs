@@ -160,6 +160,40 @@ test("validateAgentProfilesConfig rejects a non-string escalatePolicy.toProfile"
 });
 
 // ---------------------------------------------------------------------------
+// SP-805 / #329 — agents.quotaFallbackProfile schema rules
+// ---------------------------------------------------------------------------
+
+test("validateAgentProfilesConfig accepts quotaFallbackProfile naming a defined profile", () => {
+	const config = {
+		agents: {
+			profiles: { default: {}, allegretto: {} },
+			activeProfile: "default",
+			quotaFallbackProfile: "allegretto",
+		},
+	};
+	assert.equal(validateAgentProfilesConfig(config), null);
+});
+
+test("validateAgentProfilesConfig allows clearing quotaFallbackProfile with an empty string", () => {
+	assert.equal(validateAgentProfilesConfig({ agents: { quotaFallbackProfile: "" } }), null);
+});
+
+test("validateAgentProfilesConfig rejects quotaFallbackProfile referencing an undefined profile", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { profiles: { default: {} }, quotaFallbackProfile: "ghost" },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /quotaFallbackProfile "ghost" does not match/);
+	assert.match(result.suggestedCommand, /spine settings set agents\.quotaFallbackProfile/);
+});
+
+test("validateAgentProfilesConfig rejects a non-string quotaFallbackProfile", () => {
+	const result = validateAgentProfilesConfig({ agents: { quotaFallbackProfile: true } });
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /quotaFallbackProfile must be a string/);
+});
+
+// ---------------------------------------------------------------------------
 // validateSpineConfig integration
 // ---------------------------------------------------------------------------
 
@@ -338,6 +372,39 @@ test("settings set allows clearing activeProfile with an empty value", () => {
 	config.agents.activeProfile = "hard";
 	const result = runSettingsSetOperation(config, {
 		path: "agents.activeProfile",
+		rawValue: "",
+	});
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.newValue, "");
+});
+
+// ---------------------------------------------------------------------------
+// SP-805 / #329 — `spine settings set agents.quotaFallbackProfile <name>` (completion criterion)
+// ---------------------------------------------------------------------------
+
+test("settings set accepts quotaFallbackProfile naming a defined profile", () => {
+	const result = runSettingsSetOperation(configWithProfiles(), {
+		path: "agents.quotaFallbackProfile",
+		rawValue: "hard",
+	});
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.newValue, "hard");
+});
+
+test("settings set rejects quotaFallbackProfile naming an undefined profile", () => {
+	const result = runSettingsSetOperation(configWithProfiles(), {
+		path: "agents.quotaFallbackProfile",
+		rawValue: "ghost",
+	});
+	assert.equal(result.exitCode, 1);
+	assert.match(result.error, /"ghost" does not match a defined agents\.profiles/);
+});
+
+test("settings set allows clearing quotaFallbackProfile with an empty value", () => {
+	const config = configWithProfiles();
+	config.agents.quotaFallbackProfile = "hard";
+	const result = runSettingsSetOperation(config, {
+		path: "agents.quotaFallbackProfile",
 		rawValue: "",
 	});
 	assert.equal(result.exitCode, 0);

@@ -152,6 +152,12 @@ export const SETTINGS_FIELDS = Object.freeze([
 		optional: true,
 	},
 	{
+		path: "agents.quotaFallbackProfile",
+		label: "Quota fallback agent model profile",
+		type: "string",
+		optional: true,
+	},
+	{
 		path: "dashboard.port",
 		label: "Dashboard port",
 		type: "number",
