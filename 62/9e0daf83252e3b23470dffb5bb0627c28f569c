@@ -1,0 +1,20 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/0-20261009T225908.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/5-20261009T225931.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-814-reviewer-no-artifact-respawn/.reviews/final-20261009T230029.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "629e0daf83252e3b23470dffb5bb0627c28f569c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
