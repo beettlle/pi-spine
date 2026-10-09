@@ -296,7 +296,10 @@ test("timeout (exit 124) is not re-spawned — honour behaviour unchanged", asyn
 		fs.mkdirSync(binDir, { recursive: true });
 		writeFakePi(binDir);
 		process.env.PATH = `${binDir}${path.delimiter}${prev.path ?? ""}`;
-		process.env.SPINE_REVIEW_TIMEOUT_MS = "300";
+		// Generous timeout: under full-suite parallel load the node child can take
+		// well over 300 ms just to start; a too-tight budget SIGTERMs it before the
+		// script runs and the invocation count never increments (flake).
+		process.env.SPINE_REVIEW_TIMEOUT_MS = "4000";
 
 		const countFile = path.join(root, "spawn-count");
 		fs.writeFileSync(countFile, "0", "utf-8");
