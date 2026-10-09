@@ -324,6 +324,11 @@ async function runWorkerRunner() {
 				fs.mkdirSync(path.dirname(dirtyPath), { recursive: true });
 				fs.writeFileSync(dirtyPath, `stub dirty ${new Date().toISOString()}\n`, "utf-8");
 			}
+			// SP-806 (#329): optional provider payload forwarded on stderr so stub
+			// runs can drive quota classification in the worker host. Printed before
+			// the forced-failure line so the payload stays the terminal status-JSON.
+			const failOutput = process.env.SPINE_WORKER_STUB_FAIL_OUTPUT;
+			if (failOutput) console.error(failOutput);
 			console.error(`stub worker forced failure for ${parsedTaskId}`);
 			process.exit(1);
 		}

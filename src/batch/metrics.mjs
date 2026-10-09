@@ -155,6 +155,11 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, 
 	if (task.exitReason) record.exitReason = task.exitReason;
 	if (task.exitReason === "contract_failed") record.failureKind = "contract";
 	if (task.exitReason === "review_exhausted") record.failureKind = "reviewer";
+	// SP-806 (#329): provider quota/overload exits carry their own failure kind
+	// so doctor quota-risk signals can fire on run-metrics without extra config.
+	if (task.exitReason === "provider_quota_exhausted" || task.exitReason === "provider_overloaded") {
+		record.failureKind = "quota";
+	}
 	if (reviewLevel > 0) record.reviewLevel = reviewLevel;
 	if (task.finalVerdict != null) record.finalVerdict = task.finalVerdict;
 	if (task.finalAttempts != null) record.finalAttempts = task.finalAttempts;

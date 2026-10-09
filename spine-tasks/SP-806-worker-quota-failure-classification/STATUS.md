@@ -1,6 +1,6 @@
 # SP-806: Classify worker quota failures — Status
 
-**Current Step:** Step 2: Metrics + stub hook
+**Current Step:** Step 3: Tests
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-09
 **Review Level:** 2
@@ -26,13 +26,15 @@
 Verification: `npm run typecheck` ✅, eslint on changed files ✅, SP-804 suite 16/16 ✅ (after Discovery 8 typing fix)
 
 ### Step 2: Metrics + stub hook
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] `failureKind: "quota"`
-- [ ] `SPINE_WORKER_STUB_FAIL_OUTPUT`
+- [x] `failureKind: "quota"` mapping (`buildTaskMetricRecord`, both new exit reasons)
+- [x] `SPINE_WORKER_STUB_FAIL_OUTPUT` printed to stderr before the forced-failure line
+
+Verification: node --check, eslint, `npm run typecheck` ✅
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] z.ai 1308 stub batch
 - [ ] Overloaded case
