@@ -1,7 +1,7 @@
 # SP-812: Isolate test and worker commands from the live journal — Status
 
-**Current Step:** Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-09
 **Review Level:** 1
 **Review Counter:** 0
@@ -40,10 +40,10 @@
 - [x] Fix all failures — all failures caused by this change fixed; remaining failures proven pre-existing on base
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md (5 entries)
+- [x] Create `.DONE`
 
 ---
 
