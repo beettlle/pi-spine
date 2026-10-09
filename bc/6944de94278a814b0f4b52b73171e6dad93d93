@@ -1,0 +1,14 @@
+spine-tasks/SP-807-quota-fallback-decision/STATUS.md
+  h_2a17159c706ba1 3-4,32,34-37,40,42-43,70-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc6944de94278a814b0f4b52b73171e6dad93d93",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
