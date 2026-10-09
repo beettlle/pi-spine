@@ -1,0 +1,59 @@
+.spine/rules-manifest.json
+  s_2f5f9faf8a9e83::t_3e64a6061960d1 2
+bin/spine-worker-runner.mjs
+  s_13e0e59146a3f6::t_2615c1798456bb 327-331
+src/batch/provider-quota.mjs
+  s_9a6112984fd0bf::t_bc9dade9cb9f84 91,141,211-213
+src/batch/worker-host.mjs
+  s_cd2c54af7c39b1::t_f2b17a21599f23 15,53-81,164-165,173,175,476-478,486,488
+tests/batch/run-metrics.test.mjs
+  s_85976a40cdde51::t_34d5fa7cb02c47 106-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ef559d540225230c492294982ac6f10487f51015",
+  "prompts": {},
+  "sessions": {
+    "s_13e0e59146a3f6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-0e8219c3-aeec-4606-aa1f-838e38ee9f54",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_85976a40cdde51": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-2800d076-8434-428c-80fc-1824135b18c4",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_9a6112984fd0bf": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-282f6472-e767-4132-a09d-671c9bc026e3",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_cd2c54af7c39b1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a12d5fa4-98d9-4a23-b995-bf6fb4c5b21a",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
