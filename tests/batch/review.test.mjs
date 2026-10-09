@@ -7,7 +7,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { runSpineReviewStep } from "../../bin/spine-review-step.mjs";
-import { readJournalEvents } from "../../src/batch/journal.mjs";
+import { journalPath, readJournalEvents } from "../../src/batch/journal.mjs";
+import { LIVE_JOURNAL_ENV_KEYS, withoutLiveJournalEnv } from "../helpers/live-journal-env.mjs";
 import { runWorker } from "../../src/batch/worker-host.mjs";
 import {
 	assertReviewToolAvailable,
@@ -401,10 +402,14 @@ test("runSpineReviewStep CLI --type final emits JSON verdict", async () => {
 		stub: process.env.SPINE_REVIEW_STUB,
 		taskFolder: process.env.SPINE_TASK_FOLDER,
 		worktree: process.env.SPINE_WORKTREE,
+		// Live-journal keys must be cleared so a direct node --test run inside a
+		// worker (#328) cannot resolve the real journal from inherited env.
+		...Object.fromEntries(LIVE_JOURNAL_ENV_KEYS.map((key) => [key, process.env[key]])),
 	};
 	process.env.SPINE_REVIEW_STUB = "1";
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
+	for (const key of LIVE_JOURNAL_ENV_KEYS) delete process.env[key];
 	try {
 		const { exitCode, output, result } = await runSpineReviewStep({
 			taskFolder,
@@ -423,6 +428,77 @@ test("runSpineReviewStep CLI --type final emits JSON verdict", async () => {
 		else process.env.SPINE_TASK_FOLDER = prev.taskFolder;
 		if (prev.worktree === undefined) delete process.env.SPINE_WORKTREE;
 		else process.env.SPINE_WORKTREE = prev.worktree;
+		for (const key of LIVE_JOURNAL_ENV_KEYS) {
+			if (prev[key] === undefined) delete process.env[key];
+			else process.env[key] = prev[key];
+		}
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("CLI final review with worker attach env writes no journal; plan still journals", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-attach-guard-"));
+	const taskFolder = writeReviewTask(root, 2);
+	const batchId = "20260601TattachFinal";
+	const prev = {
+		stub: process.env.SPINE_REVIEW_STUB,
+		taskFolder: process.env.SPINE_TASK_FOLDER,
+		worktree: process.env.SPINE_WORKTREE,
+		suppress: process.env.SPINE_SUPPRESS_JOURNAL_ATTACH,
+		...Object.fromEntries(LIVE_JOURNAL_ENV_KEYS.map((key) => [key, process.env[key]])),
+	};
+	process.env.SPINE_REVIEW_STUB = "1";
+	process.env.SPINE_TASK_FOLDER = taskFolder;
+	process.env.SPINE_WORKTREE = root;
+	// Simulate a live worker env (src/batch/worker-spawn.mjs buildWorkerChildEnv)
+	// without an explicit journal option (#328).
+	process.env.SPINE_JOURNAL_ATTACH = "1";
+	process.env.SPINE_BATCH_ID = batchId;
+	process.env.SPINE_PROJECT_ROOT = root;
+	process.env.SPINE_TASK_ID = "TP-777";
+	delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+	try {
+		// Final review is engine-owned; the CLI must not journal from env.
+		const finalResult = await runSpineReviewStep({
+			taskFolder,
+			worktreePath: root,
+			args: ["--step", "1", "--type", "final", "--stub"],
+		});
+		assert.equal(finalResult.exitCode, 0);
+		assert.equal(finalResult.result?.verdict, "PASS");
+		assert.equal(
+			fs.existsSync(journalPath(root, batchId)),
+			false,
+			"final review must not create a journal from worker env",
+		);
+		assert.equal(readJournalEvents(root, batchId).length, 0);
+
+		// Plan review is the legit worker tool path; env journaling is preserved.
+		const planResult = await runSpineReviewStep({
+			taskFolder,
+			worktreePath: root,
+			args: ["--step", "1", "--type", "plan", "--stub"],
+		});
+		assert.equal(planResult.exitCode, 0);
+		assert.equal(planResult.result?.verdict, "APPROVE");
+		const events = readJournalEvents(root, batchId);
+		assert.ok(
+			events.some((event) => event.type === "review.completed"),
+			"plan review must still journal via env attach",
+		);
+	} finally {
+		if (prev.stub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.stub;
+		if (prev.taskFolder === undefined) delete process.env.SPINE_TASK_FOLDER;
+		else process.env.SPINE_TASK_FOLDER = prev.taskFolder;
+		if (prev.worktree === undefined) delete process.env.SPINE_WORKTREE;
+		else process.env.SPINE_WORKTREE = prev.worktree;
+		if (prev.suppress === undefined) delete process.env.SPINE_SUPPRESS_JOURNAL_ATTACH;
+		else process.env.SPINE_SUPPRESS_JOURNAL_ATTACH = prev.suppress;
+		for (const key of LIVE_JOURNAL_ENV_KEYS) {
+			if (prev[key] === undefined) delete process.env[key];
+			else process.env[key] = prev[key];
+		}
 		await rm(root, { recursive: true, force: true });
 	}
 });
@@ -537,13 +613,7 @@ test("stub worker stops when enforced review spawn fails", () => {
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	try {
-		const isolatedEnv = { ...process.env };
-		delete isolatedEnv.SPINE_BATCH_ID;
-		delete isolatedEnv.SPINE_PROJECT_ROOT;
-		delete isolatedEnv.SPINE_JOURNAL_ATTACH;
-		delete isolatedEnv.SPINE_TASK_ID;
-		delete isolatedEnv.SPINE_LANE_NUMBER;
-		delete isolatedEnv.SPINE_LANE_CORRELATION_ID;
+		const isolatedEnv = withoutLiveJournalEnv();
 		assert.throws(
 			() => {
 				execFileSync(process.execPath, [path.join(PACKAGE_ROOT, "bin/spine-worker-runner.mjs"), "--stub"], {

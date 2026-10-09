@@ -12,6 +12,7 @@ import {
 } from "../../bin/spine-worker-runner.mjs";
 import { verifyStubFileScopeMustChange } from "../../src/batch/contract-verify.mjs";
 import { parseContract } from "../../src/tasks/packet/parse-prompt.mjs";
+import { withoutLiveJournalEnv } from "../helpers/live-journal-env.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -97,8 +98,10 @@ function writeTaskFixture(root, promptMarkdown, folderName) {
  * @param {string} worktreePath
  */
 function runStubWorker(taskFolder, worktreePath) {
+	// Strip inherited worker journal env so the runner subprocess cannot write to
+	// a live batch journal when this test runs inside a worker (#328).
 	const env = {
-		...process.env,
+		...withoutLiveJournalEnv(),
 		SPINE_TASK_FOLDER: taskFolder,
 		SPINE_WORKTREE: worktreePath,
 		SPINE_TASK_ID: "SP-910",

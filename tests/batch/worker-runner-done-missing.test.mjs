@@ -13,6 +13,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildDoneMissingPiOutputFlush } from "../../bin/spine-worker-runner.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
+import { withoutLiveJournalEnv } from "../helpers/live-journal-env.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const RUNNER_PATH = path.join(REPO_ROOT, "bin", "spine-worker-runner.mjs");
@@ -60,7 +61,9 @@ test("runner flushes pi stdout/stderr and exits 1 when pi exits 0 without .DONE"
 		const result = spawnSync(process.execPath, [RUNNER_PATH], {
 			encoding: "utf-8",
 			env: {
-				...process.env,
+				// Strip inherited worker journal env so the runner subprocess cannot
+				// write to a live batch journal inside a worker (#328).
+				...withoutLiveJournalEnv(),
 				PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
 				SPINE_TASK_FOLDER: taskFolder,
 				SPINE_WORKTREE: root,
@@ -99,7 +102,9 @@ test("runner still exits 0 when fake pi writes .DONE (no flush regression)", asy
 		const result = spawnSync(process.execPath, [RUNNER_PATH], {
 			encoding: "utf-8",
 			env: {
-				...process.env,
+				// Strip inherited worker journal env so the runner subprocess cannot
+				// write to a live batch journal inside a worker (#328).
+				...withoutLiveJournalEnv(),
 				PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
 				SPINE_TASK_FOLDER: taskFolder,
 				SPINE_WORKTREE: root,
