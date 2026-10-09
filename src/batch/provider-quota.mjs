@@ -88,7 +88,7 @@ function extractBalancedObject(text, startIndex) {
  * are not provider payloads.
  *
  * @param {string} output
- * @returns {{httpStatus: number, payload: object}[]}
+ * @returns {{httpStatus: number, payload: Record<string, any>}[]}
  */
 function collectStatusPayloads(output) {
 	const candidates = [];
@@ -138,7 +138,7 @@ function extractResetAtRaw(message) {
  *   "currently overloaded" → transient_overload.
  *
  * @param {number} httpStatus
- * @param {object} payload
+ * @param {Record<string, any>} payload
  * @returns {{kind: ProviderQuotaKind, providerCode: string, resetAtRaw: string|null, message: string}|null}
  */
 function classifyPayload(httpStatus, payload) {
@@ -208,7 +208,9 @@ export function classifyProviderQuotaError(output, model) {
 
 	return {
 		kind: classified.kind,
-		poolId: resolvePoolId(model),
+		// Narrow null → undefined for resolvePoolId's optional string param; the
+		// JSDoc accepts null from callers, and both map to pool "unknown".
+		poolId: resolvePoolId(model ?? undefined),
 		httpStatus: last.httpStatus,
 		providerCode: classified.providerCode,
 		resetAtRaw: classified.resetAtRaw,
