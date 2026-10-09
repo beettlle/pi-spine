@@ -1,0 +1,29 @@
+src/config/spine-config-schema.mjs
+  s_b1faa60cd795aa::t_e05eae8adf3114 299-322
+tests/config/load.test.mjs
+  s_577fcdc7eb1566::t_d51404771b3c68 162-195,380-412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "83b3a800c30251f50248effaf9363afe31930d8c",
+  "prompts": {},
+  "sessions": {
+    "s_577fcdc7eb1566": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f778b-ce5c-771a-adc2-2935891adb6c",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    },
+    "s_b1faa60cd795aa": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-bdbc2b97-eccb-4d58-b71b-5c86cbcabf5a",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
