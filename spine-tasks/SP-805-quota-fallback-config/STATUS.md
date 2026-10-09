@@ -1,6 +1,6 @@
 # SP-805: `agents.quotaFallbackProfile` config + profile override — Status
 
-**Current Step:** Step 1: Schema + settings
+**Current Step:** Step 3: Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-09
 **Review Level:** 2
@@ -18,16 +18,16 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Schema + settings
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Schema validation
-- [ ] Settings allowlist
+- [x] Schema validation
+- [x] Settings allowlist
 
 ### Step 2: Profile override
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Override applied before profile resolution
-- [ ] Unknown profile ignored + reported
+- [x] Override applied before profile resolution
+- [x] Unknown profile ignored + reported
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started

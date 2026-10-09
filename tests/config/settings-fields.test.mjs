@@ -10,6 +10,7 @@ import {
 
 const EXPECTED_PATHS = [
 	"agents.activeProfile",
+	"agents.quotaFallbackProfile",
 	"agents.reviewer.code.model",
 	"agents.reviewer.code.thinking",
 	"agents.reviewer.final.model",
@@ -214,6 +215,18 @@ test("agents.activeProfile accepts a profile name string", () => {
 
 test("agents.activeProfile allows an empty value to clear the profile", () => {
 	const result = validateSettingValue("agents.activeProfile", "");
+	assert.equal(result.ok, true);
+	if (result.ok) assert.equal(result.normalizedValue, "");
+});
+
+test("agents.quotaFallbackProfile accepts a profile name string (SP-805)", () => {
+	const result = validateSettingValue("agents.quotaFallbackProfile", "allegretto");
+	assert.equal(result.ok, true);
+	if (result.ok) assert.equal(result.normalizedValue, "allegretto");
+});
+
+test("agents.quotaFallbackProfile allows an empty value to unset the fallback (SP-805)", () => {
+	const result = validateSettingValue("agents.quotaFallbackProfile", "");
 	assert.equal(result.ok, true);
 	if (result.ok) assert.equal(result.normalizedValue, "");
 });
