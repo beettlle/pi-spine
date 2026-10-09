@@ -1,0 +1,18 @@
+spine-tasks/SP-806-worker-quota-failure-classification/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-26,29,62-71
+src/batch/provider-quota.mjs
+  h_2a17159c706ba1 91,141,211-213
+src/batch/worker-host.mjs
+  h_2a17159c706ba1 15,53-138,221-236,244,246,547-563,571,573
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6d09128e83516375fe660c87f6ec90e01f8a18a4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
