@@ -1,0 +1,21 @@
+src/batch/engine-lanes/review-final.mjs
+  s_2f5f9faf8a9e83::t_b7919faa279cf3 271-274
+src/batch/engine-lanes/review-poll.mjs
+  s_2f5f9faf8a9e83::t_978c154345eef2 158-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c725d15ccaa3178a7bcc7b1c656838c1808157b4",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
