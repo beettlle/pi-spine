@@ -1,0 +1,19 @@
+spine-tasks/SP-804-provider-quota-classifier/STATUS.md
+  s_9a6112984fd0bf::t_62843743d2bd2f 3-5,11-14,18,20-22,25,27-28,31,33-35,38,40-43,46,48-49,57-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e8ac794c173e04954612cd0f928046a6a22b60d1",
+  "prompts": {},
+  "sessions": {
+    "s_9a6112984fd0bf": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-282f6472-e767-4132-a09d-671c9bc026e3",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
