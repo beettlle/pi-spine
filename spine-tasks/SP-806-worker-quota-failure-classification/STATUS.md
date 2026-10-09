@@ -1,6 +1,6 @@
 # SP-806: Classify worker quota failures — Status
 
-**Current Step:** Step 3: Tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-09
 **Review Level:** 2
@@ -34,14 +34,16 @@ Verification: `npm run typecheck` ✅, eslint on changed files ✅, SP-804 suite
 Verification: node --check, eslint, `npm run typecheck` ✅
 
 ### Step 3: Tests
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] z.ai 1308 stub batch
-- [ ] Overloaded case
-- [ ] Plain failure unchanged
+- [x] z.ai 1308 stub batch → exitReason `provider_quota_exhausted`, journal `worker.quota_exhausted` (providerCode 1308, poolId zai, model journaled), metrics `failureKind: "quota"`, doctor signal fires
+- [x] Overloaded → `provider_overloaded`, no journal event, metrics failureKind quota
+- [x] Plain forced failure unchanged (`failed`, no providerQuota, no failureKind)
+
+Verification: `node --test tests/batch/worker-quota-classification.test.mjs tests/batch/run-metrics.test.mjs` → 22 pass / 0 fail (with SPINE_IS_WORKER/SPINE_WORKER_RUNNER unset, SPINE_WORKER_STUB=1)
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Lint
 - [ ] Contract `testCommand`

@@ -103,6 +103,30 @@ test("buildTaskMetricRecord omits laneNumber when not a positive lane", () => {
 	assert.ok(Number.isFinite(record.durationMs));
 });
 
+test("buildTaskMetricRecord maps provider quota exit reasons to failureKind quota", () => {
+	// SP-806 (#329): both quota classifications share one failure kind so
+	// doctor quota-risk signals fire on either without extra config.
+	for (const exitReason of ["provider_quota_exhausted", "provider_overloaded"]) {
+		const record = buildTaskMetricRecord({
+			batchId: "20260611T120000",
+			task: { taskId: "SP-806", status: "failed", exitReason },
+			config: {},
+		});
+		assert.equal(record.failureKind, "quota");
+		assert.equal(record.exitReason, exitReason);
+	}
+
+	// Plain failures and unrelated exit reasons keep no failureKind.
+	for (const exitReason of ["failed", "worker_failed", "stall_timeout"]) {
+		const record = buildTaskMetricRecord({
+			batchId: "20260611T120000",
+			task: { taskId: "SP-806", status: "failed", exitReason },
+			config: {},
+		});
+		assert.equal(record.failureKind, undefined);
+	}
+});
+
 test("metrics.enabled false skips append without error", async () => {
 	await withProject((projectRoot) => {
 		const config = { metrics: { enabled: false, path: ".spine/run-metrics.jsonl" } };
