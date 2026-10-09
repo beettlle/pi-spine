@@ -1,0 +1,16 @@
+spine-tasks/SP-807-quota-fallback-decision/.reviews/0-20261009T230645.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-807-quota-fallback-decision/.reviews/final-20261009T230719.md
+  h_2a17159c706ba1 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d566062b607c7098a75b54756db0859ad6e9c3b4",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
