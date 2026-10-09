@@ -1,0 +1,14 @@
+src/batch/worker-host.mjs
+  h_2a17159c706ba1 55-60,62,65-68,71-79,164-165,476-478
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aa6231c8ba7bbc4dd1409550dc901911972bd9ff",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
