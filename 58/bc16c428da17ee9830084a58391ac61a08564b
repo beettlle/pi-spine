@@ -1,0 +1,19 @@
+spine-tasks/SP-805-quota-fallback-config/.DONE
+  s_9a6112984fd0bf::t_19f613f71a8317 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "58bc16c428da17ee9830084a58391ac61a08564b",
+  "prompts": {},
+  "sessions": {
+    "s_9a6112984fd0bf": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-282f6472-e767-4132-a09d-671c9bc026e3",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
