@@ -1,0 +1,14 @@
+spine-tasks/SP-805-quota-fallback-config/STATUS.md
+  h_2a17159c706ba1 3,33,35-37,40,42-46,49,51,63-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9fbb0d44c36b7c760064db3c781c287e7008a799",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
