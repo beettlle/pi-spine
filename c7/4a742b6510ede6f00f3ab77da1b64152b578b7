@@ -1,0 +1,14 @@
+spine-tasks/SP-813-review-honor-guard/STATUS.md
+  h_2a17159c706ba1 3-4,8,21,23-24,27,29,32,34-36,39,41-45,48,50,66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c74a742b6510ede6f00f3ab77da1b64152b578b7",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
