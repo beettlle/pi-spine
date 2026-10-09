@@ -1,0 +1,14 @@
+src/batch/review-artifacts.mjs
+  h_2a17159c706ba1 2,71-72,84-85,98-106,110,114,121-122,158,460
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e1655ab2e5380c2ade322ef3c11f3a17be44a0ad",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
