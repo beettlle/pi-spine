@@ -1,7 +1,7 @@
 # SP-804: Provider quota error classifier — Status
 
 **Current Step:** Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Done
 **Last Updated:** 2026-10-09
 **Review Level:** 1
 **Review Counter:** 0
@@ -43,10 +43,10 @@ Approach: pure scanner in `src/batch/provider-quota.mjs`. Find all `\d{3}[: ]?{`
 - [x] Fix all failures — ts-nocheck guard failure fixed (removed directive, Discovery 1); sequence-detached-poll timing flake was environmental (Discovery 2)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Done
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
