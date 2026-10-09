@@ -1,0 +1,19 @@
+tests/batch/provider-quota.test.mjs
+  s_66a7b93b130190::t_c16736d139f710 1-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "84eacf1640f117f663cf62a7608218579fd77a1e",
+  "prompts": {},
+  "sessions": {
+    "s_66a7b93b130190": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ba27133d-ba81-41cb-8ebb-5ea14e04e74f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
