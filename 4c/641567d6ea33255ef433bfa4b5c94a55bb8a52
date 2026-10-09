@@ -1,0 +1,14 @@
+src/batch/engine-lanes/quota-fallback-state.mjs
+  h_2a17159c706ba1 1-176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c641567d6ea33255ef433bfa4b5c94a55bb8a52",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
