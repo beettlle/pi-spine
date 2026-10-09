@@ -73,18 +73,18 @@
         },
         "reviewer": {
           "model": "google/gemini-3.1-pro-preview",
-          "thinking": "medium",
+          "thinking": "high",
           "plan": {
             "model": "google/gemini-3.1-pro-preview",
-            "thinking": "medium"
+            "thinking": "high"
           },
           "code": {
             "model": "google/gemini-3.1-pro-preview",
-            "thinking": "medium"
+            "thinking": "high"
           },
           "final": {
             "model": "google/gemini-3.1-pro-preview",
-            "thinking": "medium"
+            "thinking": "high"
           }
         },
         "supervisor": {
