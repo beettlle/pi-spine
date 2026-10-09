@@ -1,0 +1,14 @@
+tests/batch/review-no-artifact-respawn.test.mjs
+  h_2a17159c706ba1 299-302
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "acd1710c088a2a2ecc669c235f0123e07184a6b8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
