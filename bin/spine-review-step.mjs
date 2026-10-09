@@ -61,7 +61,14 @@ export async function runSpineReviewStep(options) {
 		if (loaded.config) config = loaded.config;
 	}
 
-	const journal = options.journal ?? resolveBatchJournalContext();
+	// Only plan/code reviews may inherit the env-derived journal: those are the
+	// only types the worker tool requests (extensions/spine/worker-tools.ts), so
+	// the legit worker journal path is preserved. Final reviews are engine-owned
+	// and always run in-process with an explicit journal, so a CLI `--type final`
+	// that inherited worker env (e.g. a test run inside a worker) must not write
+	// to the live journal (#328).
+	const envJournal = reviewType === "final" ? undefined : resolveBatchJournalContext();
+	const journal = options.journal ?? envJournal;
 
 	const result = await runStepReview({
 		taskFolder,

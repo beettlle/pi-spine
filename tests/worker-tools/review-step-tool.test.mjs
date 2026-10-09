@@ -9,6 +9,7 @@ import {
 	executeSpineReviewStep,
 	spineReviewStepTool,
 } from "../../extensions/spine/worker-tools.ts";
+import { LIVE_JOURNAL_ENV_KEYS } from "../helpers/live-journal-env.mjs";
 
 /**
  * @param {string} root
@@ -85,10 +86,15 @@ test("spine_review_step handler returns APPROVE via stub review", async () => {
 		taskFolder: process.env.SPINE_TASK_FOLDER,
 		worktree: process.env.SPINE_WORKTREE,
 		stub: process.env.SPINE_REVIEW_STUB,
+		// Clear inherited worker journal env: plan/code tool calls journal via
+		// env by design, so without isolation a test run inside a worker would
+		// write to the live batch journal (#328).
+		...Object.fromEntries(LIVE_JOURNAL_ENV_KEYS.map((key) => [key, process.env[key]])),
 	};
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	process.env.SPINE_REVIEW_STUB = "1";
+	for (const key of LIVE_JOURNAL_ENV_KEYS) delete process.env[key];
 	try {
 		const result = await spineReviewStepTool.execute("tc-1", { step: 1, type: "plan" });
 		assert.equal(result.isError, false);
@@ -106,6 +112,10 @@ test("spine_review_step handler returns APPROVE via stub review", async () => {
 			if (value === undefined) delete process.env[envKey];
 			else process.env[envKey] = value;
 		}
+		for (const key of LIVE_JOURNAL_ENV_KEYS) {
+			if (prev[key] === undefined) delete process.env[key];
+			else process.env[key] = prev[key];
+		}
 		await rm(root, { recursive: true, force: true });
 	}
 });
@@ -119,11 +129,13 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 		worktree: process.env.SPINE_WORKTREE,
 		stubFail: process.env.SPINE_REVIEW_STUB_FAIL,
 		stub: process.env.SPINE_REVIEW_STUB,
+		...Object.fromEntries(LIVE_JOURNAL_ENV_KEYS.map((key) => [key, process.env[key]])),
 	};
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	process.env.SPINE_REVIEW_STUB = "1";
 	process.env.SPINE_REVIEW_STUB_FAIL = "1";
+	for (const key of LIVE_JOURNAL_ENV_KEYS) delete process.env[key];
 	try {
 		const result = await spineReviewStepTool.execute("tc-2", { step: 1, type: "plan" });
 		assert.equal(result.isError, true);
@@ -142,6 +154,10 @@ test("spine_review_step handler marks stub spawn failure as tool error", async (
 			if (value === undefined) delete process.env[envKey];
 			else process.env[envKey] = value;
 		}
+		for (const key of LIVE_JOURNAL_ENV_KEYS) {
+			if (prev[key] === undefined) delete process.env[key];
+			else process.env[key] = prev[key];
+		}
 		await rm(root, { recursive: true, force: true });
 	}
 });
@@ -155,12 +171,14 @@ test("spine_review_step skips nested reviewer spawn inside worker session", asyn
 		workerRunner: process.env.SPINE_WORKER_RUNNER,
 		stub: process.env.SPINE_REVIEW_STUB,
 		workerStub: process.env.SPINE_WORKER_STUB,
+		...Object.fromEntries(LIVE_JOURNAL_ENV_KEYS.map((key) => [key, process.env[key]])),
 	};
 	process.env.SPINE_TASK_FOLDER = taskFolder;
 	process.env.SPINE_WORKTREE = root;
 	process.env.SPINE_WORKER_RUNNER = path.join(root, "bin", "spine-worker-runner.mjs");
 	delete process.env.SPINE_REVIEW_STUB;
 	delete process.env.SPINE_WORKER_STUB;
+	for (const key of LIVE_JOURNAL_ENV_KEYS) delete process.env[key];
 	try {
 		const result = await spineReviewStepTool.execute("tc-3", { step: 1, type: "code" });
 		assert.equal(result.isError, false);
@@ -180,6 +198,10 @@ test("spine_review_step skips nested reviewer spawn inside worker session", asyn
 			const value = prev[key];
 			if (value === undefined) delete process.env[envKey];
 			else process.env[envKey] = value;
+		}
+		for (const key of LIVE_JOURNAL_ENV_KEYS) {
+			if (prev[key] === undefined) delete process.env[key];
+			else process.env[key] = prev[key];
 		}
 		await rm(root, { recursive: true, force: true });
 	}
