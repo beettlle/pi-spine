@@ -1,0 +1,23 @@
+src/batch/review-spawn-retry.mjs
+  s_2f5f9faf8a9e83::t_f1d51680b1cd13 14-20,37,39,56-62,96-98
+  s_2f5f9faf8a9e83::t_7dba529c3dc6b2 1-13,21-36,38,40-55,63-95,99-106
+src/batch/review-step-run.mjs
+  s_2f5f9faf8a9e83::t_28aa43a059ba49 17-23,50-54
+  s_2f5f9faf8a9e83::t_3a4990a8ccb0ee 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e934b5fdc54a86747a842e45e552b826d66999cd",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
