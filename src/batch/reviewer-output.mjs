@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Reviewer output log persistence (SP-814 / #332).
  *
@@ -20,6 +19,17 @@ import {
 
 /** Diagnostic output tail budget for `review.failed` payloads (SP-814 / #332). */
 export const REVIEWER_FAILURE_OUTPUT_TAIL_MAX_BYTES = 2048;
+
+/**
+ * Shape of the `spawnReviewerPi` result consumed by the log helpers.
+ *
+ * @typedef {object} ReviewerSpawnResult
+ * @property {boolean} [spawnFailed]
+ * @property {number} [exitCode]
+ * @property {number} [durationMs]
+ * @property {string} [stdoutTail]
+ * @property {string} [stderrTail]
+ */
 
 /**
  * Absolute path of the reviewer output log for one (task, reviewType) pair.
@@ -66,7 +76,7 @@ export function reviewerOutputLogRef(batchId, laneNumber, taskId, reviewType) {
  * payloads. Stderr leads because reviewer diagnostics conventionally land
  * there; stdout follows so silent reviewer exits stay explainable.
  *
- * @param {object} spawnResult Result from `spawnReviewerPi`.
+ * @param {ReviewerSpawnResult} spawnResult Result from `spawnReviewerPi`.
  * @param {object} [config]
  */
 export function buildReviewerOutputTail(spawnResult, config = {}) {
@@ -97,7 +107,7 @@ export function buildReviewerOutputTail(spawnResult, config = {}) {
  * @param {string} params.reviewType
  * @param {number|null} [params.stepNumber]
  * @param {number} [params.attempt]
- * @param {object} [params.spawnResult] Result from `spawnReviewerPi`.
+ * @param {ReviewerSpawnResult} [params.spawnResult] Result from `spawnReviewerPi`.
  * @param {object} [params.config]
  * @returns {{ logPath: string, logRef: string }|null}
  */
