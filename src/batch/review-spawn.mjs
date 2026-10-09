@@ -14,6 +14,11 @@ import {
 	resolveReviewerThinkingPin,
 } from "../config/agent-model-resolve.mjs";
 import {
+	captureWorkerOutputTail,
+	redactWorkerOutput,
+	resolveWorkerOutputConfig,
+} from "./worker-output.mjs";
+import {
 	parseTaskSizeFromFolder,
 	resolveReviewArtifactPollIntervalMs,
 	resolveReviewArtifactQuiescenceMs,
@@ -34,6 +39,22 @@ export const DEFAULT_REVIEW_SPAWN_TIMEOUT_MS = 90 * 60 * 1000;
 
 /** Grace period after SIGTERM before SIGKILL on hung reviewer children. */
 const REVIEW_SPAWN_KILL_GRACE_MS = 5_000;
+
+/**
+ * Append a stdout/stderr chunk while keeping only the trailing `maxBytes` so a
+ * chatty reviewer child cannot grow engine memory without bound (SP-814 / #332).
+ * Mirrors the worker output tail budget from `resolveWorkerOutputConfig`.
+ *
+ * @param {string} current
+ * @param {string|Buffer} chunk
+ * @param {number} maxBytes
+ */
+function appendBoundedCapture(current, chunk, maxBytes) {
+	const next = current + String(chunk);
+	const encoded = Buffer.from(next, "utf-8");
+	if (encoded.byteLength <= maxBytes) return next;
+	return encoded.subarray(encoded.byteLength - maxBytes).toString("utf-8");
+}
 
 /** Set by {@link buildWorkerChildEnv} when the batch engine launches a pi worker child. */
 export function isActiveWorkerSession() {
@@ -199,6 +220,9 @@ export function spawnReviewerPi({
 			spawnFailed: true,
 			exitCode: 127,
 			error: "pi not available for reviewer spawn",
+			durationMs: 0,
+			stdoutTail: "",
+			stderrTail: "",
 		});
 	}
 
@@ -220,16 +244,21 @@ export function spawnReviewerPi({
 		});
 	const pollIntervalMs = resolveReviewArtifactPollIntervalMs({ config });
 	const quiescenceMs = resolveReviewArtifactQuiescenceMs({ config });
+	// Reviewer output capture reuses the worker output policy (redaction + tail
+	// caps) so spawn diagnostics obey the same conventions as worker logs.
+	const outputConfig = resolveWorkerOutputConfig(config);
 	/** @type {ArtifactPollState} */
 	const artifactPollState = { lastMtimeMs: null, quiescentSinceMs: null };
 
 	return new Promise((resolve) => {
+		const startedAtMs = Date.now();
 		const child = spawn("pi", piArgs, {
 			cwd: worktreePath || path.dirname(taskFolder),
 			env: buildReviewerChildEnv({ taskFolder, worktreePath }),
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 
+		let stdout = "";
 		let stderr = "";
 		let timedOut = false;
 		let settled = false;
@@ -242,7 +271,20 @@ export function spawnReviewerPi({
 			clearTimeout(timer);
 			clearInterval(pollTimer);
 			clearTimeout(killTimer);
-			resolve(result);
+			// Every result — including exit 0 — carries capture diagnostics so the
+			// engine can journal them when the reviewer produced no artifact.
+			resolve({
+				durationMs: Date.now() - startedAtMs,
+				stdoutTail: captureWorkerOutputTail(
+					redactWorkerOutput(stdout, outputConfig),
+					outputConfig,
+				),
+				stderrTail: captureWorkerOutputTail(
+					redactWorkerOutput(stderr, outputConfig),
+					outputConfig,
+				),
+				...result,
+			});
 		};
 
 		const terminateHungChild = () => {
@@ -278,8 +320,12 @@ export function spawnReviewerPi({
 			});
 		};
 
+		child.stdout?.on("data", (chunk) => {
+			stdout = appendBoundedCapture(stdout, chunk, outputConfig.maxBytes);
+		});
+
 		child.stderr?.on("data", (chunk) => {
-			stderr += String(chunk);
+			stderr = appendBoundedCapture(stderr, chunk, outputConfig.maxBytes);
 		});
 
 		const pollTimer = setInterval(checkArtifact, pollIntervalMs);
