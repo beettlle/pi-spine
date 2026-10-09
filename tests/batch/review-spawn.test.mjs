@@ -216,6 +216,64 @@ test("spawnReviewerPi fails closed when pi unavailable via SPINE_REVIEW_TEST_NO_
 	}
 });
 
+test("spawnReviewerPi returns stdout/stderr tails and durationMs on exit 0", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-review-spawn-capture-"));
+	try {
+		const binDir = path.join(root, "bin");
+		fs.mkdirSync(binDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(binDir, "pi"),
+			[
+				"#!/bin/sh",
+				'echo "PI_STDOUT_MARKER"',
+				'echo "PI_STDERR_MARKER" >&2',
+				"exit 0",
+				"",
+			].join("\n"),
+			{ mode: 0o755 },
+		);
+		const taskFolder = path.join(root, "spine-tasks", "SP-814-capture");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const prev = {
+			path: process.env.PATH,
+			workerRunner: process.env.SPINE_WORKER_RUNNER,
+			taskFolder: process.env.SPINE_TASK_FOLDER,
+			noPi: process.env.SPINE_REVIEW_TEST_NO_PI,
+		};
+		process.env.PATH = `${binDir}${path.delimiter}${process.env.PATH ?? ""}`;
+		delete process.env.SPINE_WORKER_RUNNER;
+		delete process.env.SPINE_TASK_FOLDER;
+		delete process.env.SPINE_REVIEW_TEST_NO_PI;
+		try {
+			const result = await spawnReviewerPi({
+				worktreePath: root,
+				taskFolder,
+				reviewPrompt: "# Review Request: no artifact path",
+				systemPrompt: "",
+				timeoutMs: 10_000,
+			});
+			assert.equal(result.spawnFailed, false);
+			assert.equal(result.exitCode, 0);
+			assert.match(result.stdoutTail ?? "", /PI_STDOUT_MARKER/);
+			assert.match(result.stderrTail ?? "", /PI_STDERR_MARKER/);
+			assert.ok(
+				typeof result.durationMs === "number" && result.durationMs >= 0,
+				`durationMs must be a non-negative number, got ${JSON.stringify(result.durationMs)}`,
+			);
+		} finally {
+			process.env.PATH = prev.path;
+			if (prev.workerRunner === undefined) delete process.env.SPINE_WORKER_RUNNER;
+			else process.env.SPINE_WORKER_RUNNER = prev.workerRunner;
+			if (prev.taskFolder === undefined) delete process.env.SPINE_TASK_FOLDER;
+			else process.env.SPINE_TASK_FOLDER = prev.taskFolder;
+			if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
+			else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
+		}
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("buildReviewerChildEnv strips SPINE_WORKER_RUNNER from reviewer child env", () => {
 	const prev = process.env.SPINE_WORKER_RUNNER;
 	process.env.SPINE_WORKER_RUNNER = "/path/to/spine-worker-runner.mjs";
