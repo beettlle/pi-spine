@@ -10,6 +10,7 @@
 **Worker model pin:** `zai/glm-5.3` via `agents.activeProfile=hard` (restored after v2.26.0 wave 4, `0e406610`) — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
 **Extension override:** yes (2026-10-08 — `pi remove npm:@trevonistrevon/pi-loop` (was 0.7.17) for this release. With pi 1.1.0 and pi-loop loaded, `google/gemini-3.1-pro-preview` at thinking `high` fails parallel tool calls (`MALFORMED_FUNCTION_CALL`, HTTP 400 missing `thought_signature`), so every review spawn fails. Repro: 0/2 with pi-loop alone, 3/3 with all other extensions. Model pins unchanged. Reinstall after publish: `pi install npm:@trevonistrevon/pi-loop`.)
+**Reviewer thinking override:** yes (2026-10-09 — `agents.profiles.hard.reviewer` `thinking`, `plan.thinking`, `code.thinking`, `final.thinking` changed `high` → `medium`; model stays `google/gemini-3.1-pro-preview`; worker pin unchanged. Reason: with pi-loop already removed, the lane-1 SP-804 final review still failed with Gemini HTTP 400 missing `thought_signature` on parallel tool calls at thinking `high` under pi 1.1.0. Revert all four fields to `high` after publish.)
 **Start constraint:** the z.ai **weekly** limit (code 1310) recorded in v2.26.0 resets **2026-10-06 01:01 UTC+8 (2026-10-05 17:01 UTC)**. Do not start wave 1 before then. Probe with `pi -p --model zai/glm-5.3 "ping"` before `spine batch start`.
 **GitNexus:** refreshed 2026-10-03 — status up-to-date with HEAD (`c0ce8ac`)
 
@@ -152,6 +153,7 @@ All 15 packets are new (lean authoring). See Selected tasks.
 ## Execution log
 
 - **2026-10-08 wave 1, attempt 1** — batch `20261009T012828-2d7d` (`SP-804 SP-805 SP-812 SP-815`, z.ai probe `pong` beforehand). All 4 workers finished, but all 4 tasks failed at engine plan review with `plan_review_spawn_failed`: the Gemini reviewer got HTTP 400 for a missing `thought_signature`, caused by pi-loop under pi 1.1.0. All 4 lanes have `.DONE` and lane commits (`pending_lane_land`, #291 shape). Applied the extension override above; the reviewer probe then passed 5 of 6 runs (the 1 failure was an extension load right after removal, not `MALFORMED_FUNCTION_CALL`). Recovery path pending operator choice.
+- **2026-10-09 wave 1 recovery** — operator chose manual final review per lane, then salvage. Contract `testCommand` passed in all 4 lanes (SP-804 30/30, SP-805 69/69, SP-812 51/51, SP-815 63/63) and every `fileScopeMustChange` path is in the lane diff. Lane-1 `spine review step --step 4 --type final` spawn-failed with the same HTTP 400 (`final-20261009T174959.md`). Applied the reviewer thinking override above and re-ran the reviews.
 
 ---
 
