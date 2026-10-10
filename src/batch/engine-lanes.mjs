@@ -31,12 +31,10 @@ import { runWorker } from "./worker-host.mjs";
 import { runCodeReviewPhase, runFinalReviewPhase, runPlanReviewPhase } from "./engine-lanes/review.mjs";
 import { ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 import { resolveWorktreeSetupIgnorePaths } from "../config/spine-config-load.mjs";
-import {
-	acquireLaneSlot,
-	loadMatrixTaskRows,
-	releaseLaneSlot,
-} from "./engine-lanes/matrix.mjs";
+import { resolveWorkerBackend } from "../config/worker-backend.mjs";
+import { acquireLaneSlot, loadMatrixTaskRows, releaseLaneSlot } from "./engine-lanes/matrix.mjs";
 import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
+import { runWithQuotaFallback } from "./engine-lanes/quota-fallback-run.mjs";
 
 export {
 	buildTasksAndLanesFromPlan,
@@ -160,7 +158,8 @@ export async function runTaskOnLane({
 
 	const laneSlot = await acquireLaneSlot(state, config?.lanes?.maxParallel ?? 1);
 	try {
-		return await runNonMatrixTaskOnLane({
+		// SP-809 (#329): single-hop quota fallback retry wraps the lane run.
+		return await runWithQuotaFallback(() => runNonMatrixTaskOnLane({
 			projectRoot,
 			state,
 			batchId,
@@ -171,7 +170,7 @@ export async function runTaskOnLane({
 			taskFolderRel,
 			laneCorrelationId,
 			fileScopePaths,
-		});
+		}), { projectRoot, batchId, state, taskId: task.taskId, config, workerBackend: resolveWorkerBackend(config) });
 	} finally {
 		releaseLaneSlot(state, laneSlot);
 	}
