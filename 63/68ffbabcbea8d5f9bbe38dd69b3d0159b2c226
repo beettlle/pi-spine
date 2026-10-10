@@ -1,0 +1,21 @@
+spine-tasks/SP-811-docs-quota-fallback-v2-27/PROMPT.md
+  s_2f5f9faf8a9e83::t_f5bb6a67486898 126
+spine-tasks/_authoring/release-v2.27.0/manifest.md
+  s_2f5f9faf8a9e83::t_bbd7a68084acf2 165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6368ffbabcbea8d5f9bbe38dd69b3d0159b2c226",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
