@@ -1,0 +1,14 @@
+spine-tasks/SP-809-quota-fallback-auto-retry/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-19,64-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "068ef26232860cc413b24648093f8d1b1fcd7b33",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
