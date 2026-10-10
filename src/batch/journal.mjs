@@ -348,6 +348,23 @@ export function summarizeJournalEvent(event) {
 	if (payload.reason) parts.push(String(payload.reason));
 	if (payload.error) parts.push(String(payload.error).slice(0, 80));
 	if (payload.classification) parts.push(String(payload.classification));
+	// SP-810 (partial #329): quota-fallback events — profile hop, exhausted
+	// pool(s) and reset window(s) are the fields operators act on.
+	if (payload.fromProfile && payload.toProfile) {
+		parts.push(`${payload.fromProfile} → ${payload.toProfile}`);
+	}
+	if (payload.poolId) parts.push(`pool ${payload.poolId}`);
+	if (Array.isArray(payload.exhaustedPools) && payload.exhaustedPools.length > 0) {
+		parts.push(`exhausted: ${payload.exhaustedPools.join(", ")}`);
+	}
+	if (typeof payload.resetAtRaw === "string" && payload.resetAtRaw) {
+		parts.push(`resets ${payload.resetAtRaw}`);
+	} else if (Array.isArray(payload.resetAtRaw) && payload.resetAtRaw.length > 0) {
+		parts.push(`resets ${payload.resetAtRaw.map((reset) => reset ?? "unknown").join(" / ")}`);
+	}
+	if (Array.isArray(payload.taskIds) && payload.taskIds.length > 0) {
+		parts.push(`task(s): ${payload.taskIds.join(", ")}`);
+	}
 	if (payload.workerPhase) parts.push(`phase ${payload.workerPhase}`);
 	if (payload.dirtyPathCount != null && event.type === "lane.progress_snapshot") {
 		parts.push(`${payload.dirtyPathCount} dirty path(s)`);
@@ -428,6 +445,11 @@ export function extractJournalDiagnosisHints(events) {
 		"batch.merge_blocked",
 		"task.failed",
 		"matrix.task_failed",
+		// SP-810 (partial #329): quota events decide retry-vs-wait, so they rank
+		// with the failure signals above the informational review/lane hints.
+		"batch.quota_fallback_applied",
+		"batch.quota_fallback_exhausted",
+		"worker.quota_exhausted",
 		"review.crash_recovered",
 		"review.skipped_fresh_artifact",
 		"review.resumed",

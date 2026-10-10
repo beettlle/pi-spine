@@ -1,6 +1,6 @@
 # SP-810: Operator surface: diagnose + doctor quota fallback — Status
 
-**Current Step:** Step 1: Diagnose context + text
+**Current Step:** Step 2: Doctor
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 2
@@ -18,11 +18,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Diagnose context + text
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Context fields
-- [ ] Background + assessment
-- [ ] Journal hints
+- [x] Context fields
+- [x] Background + assessment
+- [x] Journal hints
 
 ### Step 2: Doctor
 **Status:** ⬜ Not Started
