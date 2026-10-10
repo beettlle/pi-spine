@@ -1,0 +1,16 @@
+AGENTS.md
+  h_2a17159c706ba1 4
+CLAUDE.md
+  h_2a17159c706ba1 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c68915043fb436df7cec5475a2bc66669d480496",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
