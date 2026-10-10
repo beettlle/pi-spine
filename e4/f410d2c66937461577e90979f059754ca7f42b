@@ -1,0 +1,16 @@
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 64,279-280
+spine-tasks/SP-811-docs-quota-fallback-v2-27/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e4f410d2c66937461577e90979f059754ca7f42b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
