@@ -350,42 +350,67 @@ test("loadQuotaFallbackForWorker is read-only, batch-scoped, and fail-open", asy
 	}
 });
 
-test("resolveWorkerQuotaFallbackContext merges the override under caller extraEnv", () => {
-	const config = buildConfig();
-	const fallback = seededFallbackState();
+test("resolveWorkerQuotaFallbackContext merges the override under caller extraEnv", async () => {
+	const projectRoot = await tempProject("spine-qfs-ctx-");
+	try {
+		const config = buildConfig();
+		const fallback = seededFallbackState();
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			spineBatchStatePath(projectRoot),
+			JSON.stringify({ batchId: BATCH_ID, phase: "running", resilience: { quotaFallback: fallback } }),
+			"utf-8",
+		);
 
-	// No projectRoot/batchId → no override, caller env passes through.
-	const withoutBatch = resolveWorkerQuotaFallbackContext({
-		projectRoot: undefined,
-		batchId: undefined,
-		config,
-		extraEnv: { SPINE_MATRIX_ROW: "row-a" },
-	});
-	assert.equal(withoutBatch.fallback, null);
-	assert.equal(withoutBatch.workerModel, "zai/glm-5.3");
-	assert.deepEqual(withoutBatch.extraEnv, { SPINE_MATRIX_ROW: "row-a" });
+		// No projectRoot/batchId → no override, caller env passes through.
+		const withoutBatch = resolveWorkerQuotaFallbackContext({
+			projectRoot: undefined,
+			batchId: undefined,
+			config,
+			extraEnv: { SPINE_MATRIX_ROW: "row-a" },
+		});
+		assert.equal(withoutBatch.fallback, null);
+		assert.equal(withoutBatch.workerModel, "zai/glm-5.3");
+		assert.deepEqual(withoutBatch.extraEnv, { SPINE_MATRIX_ROW: "row-a" });
 
-	// With a hop: override present under the caller's keys, effective model is
-	// the fallback profile's.
-	const projectRoot = "/tmp/does-not-exist-qfs"; // no state file → no fallback
-	const noState = resolveWorkerQuotaFallbackContext({
-		projectRoot,
-		batchId: BATCH_ID,
-		config,
-		extraEnv: undefined,
-	});
-	assert.equal(noState.fallback, null);
-	assert.deepEqual(noState.extraEnv, {});
-	assert.equal(noState.workerModel, "zai/glm-5.3");
+		// With a hop on disk: the fallback loads read-only, the effective model
+		// is the fallback profile's, and the override sits under the caller's keys.
+		const withHop = resolveWorkerQuotaFallbackContext({
+			projectRoot,
+			batchId: BATCH_ID,
+			config,
+			extraEnv: { SPINE_MATRIX_ROW: "row-b" },
+		});
+		assert.deepEqual(withHop.fallback, fallback);
+		assert.equal(withHop.workerModel, "kimi-coding/k3");
+		assert.deepEqual(withHop.extraEnv, {
+			SPINE_AGENT_PROFILE_OVERRIDE: "allegretto",
+			SPINE_MATRIX_ROW: "row-b",
+		});
 
-	// Collision: the caller's key wins over the persisted override.
-	const collision = resolveWorkerQuotaFallbackContext({
-		projectRoot: null,
-		batchId: null,
-		config,
-		extraEnv: { SPINE_AGENT_PROFILE_OVERRIDE: "caller-row" },
-	});
-	assert.deepEqual(collision.extraEnv, { SPINE_AGENT_PROFILE_OVERRIDE: "caller-row" });
+		// Collision: the caller's key wins over the persisted override.
+		const collision = resolveWorkerQuotaFallbackContext({
+			projectRoot,
+			batchId: BATCH_ID,
+			config,
+			extraEnv: { SPINE_AGENT_PROFILE_OVERRIDE: "caller-row" },
+		});
+		assert.equal(collision.fallback?.toProfile, "allegretto");
+		assert.deepEqual(collision.extraEnv, { SPINE_AGENT_PROFILE_OVERRIDE: "caller-row" });
+
+		// Missing state file → no override, behaviour unchanged.
+		const noState = resolveWorkerQuotaFallbackContext({
+			projectRoot: "/tmp/does-not-exist-qfs",
+			batchId: BATCH_ID,
+			config,
+			extraEnv: undefined,
+		});
+		assert.equal(noState.fallback, null);
+		assert.deepEqual(noState.extraEnv, {});
+		assert.equal(noState.workerModel, "zai/glm-5.3");
+	} finally {
+		await rm(projectRoot, { recursive: true, force: true });
+	}
 });
 
 /**

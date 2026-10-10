@@ -142,14 +142,16 @@ export function quotaFallbackWorkerEnv(fallbackState) {
  * @returns {string|undefined}
  */
 export function resolveEffectiveWorkerModel(config, fallbackState) {
+	// The config arrives untyped; read the narrow slice this helper needs.
+	const cfg = /** @type {{ agents?: { profiles?: Record<string, any>, worker?: { model?: unknown } } }} */ (config ?? {});
 	const toProfile = typeof fallbackState?.toProfile === "string" ? fallbackState.toProfile.trim() : "";
 	if (toProfile) {
-		const profileModel = config?.agents?.profiles?.[toProfile]?.worker?.model;
+		const profileModel = cfg.agents?.profiles?.[toProfile]?.worker?.model;
 		if (typeof profileModel === "string" && profileModel !== "") {
 			return profileModel;
 		}
 	}
-	const configured = config?.agents?.worker?.model;
+	const configured = cfg.agents?.worker?.model;
 	return typeof configured === "string" ? configured : undefined;
 }
 
