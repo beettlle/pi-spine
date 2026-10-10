@@ -1,0 +1,18 @@
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/0-20261010T024835.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/5-20261010T024925.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/final-20261010T025151.md
+  h_2a17159c706ba1 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1d8ebd95fba1886ac26672c236df29039774e35d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
