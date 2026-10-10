@@ -1,0 +1,20 @@
+README.md
+  h_2a17159c706ba1 52
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 102
+docs/release/npm-publish.md
+  h_2a17159c706ba1 110,138
+spine-tasks/SP-818-pi-coding-agent-1-0/STATUS.md
+  h_2a17159c706ba1 3,27,29,32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "08d59a616b8ef611d1048cbe652b7a4a1a7159bb",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
