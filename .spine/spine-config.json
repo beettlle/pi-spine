@@ -122,7 +122,8 @@
     "escalatePolicy": {
       "enabled": true,
       "toProfile": "hard"
-    }
+    },
+    "quotaFallbackProfile": "allegretto"
   },
   "lanes": {
     "maxParallel": 4,
