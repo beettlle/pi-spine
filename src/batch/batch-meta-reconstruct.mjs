@@ -321,6 +321,9 @@ export function reconstructBatchStateFromRuntime(projectRoot, options = {}) {
 		...(priorResilience.forceMergedWaves
 			? { forceMergedWaves: priorResilience.forceMergedWaves }
 			: {}),
+		// SP-808 (#329): the sticky quota-fallback hop must survive force-resume
+		// reconstruct so every later worker spawn keeps the override.
+		...(priorResilience.quotaFallback ? { quotaFallback: priorResilience.quotaFallback } : {}),
 	};
 	rebuilt.currentWaveIndex = findResumableWave(rebuilt, computePendingTasks(rebuilt));
 	rebuilt.updatedAt = Date.now();

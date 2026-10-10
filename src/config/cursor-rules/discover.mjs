@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 
 import { writeJsonAtomic } from "../../fs/atomic-write.mjs";
 
@@ -97,7 +97,7 @@ export function getCursorRuleExclusionReason(discovery, relPath) {
 	}
 
 	for (const target of matchTargets) {
-		if (micromatch.isMatch(target, discovery.excludePatterns)) {
+		if (picomatch(discovery.excludePatterns)(target)) {
 			return "excludePattern";
 		}
 	}

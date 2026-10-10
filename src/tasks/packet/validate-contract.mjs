@@ -3,7 +3,7 @@
  * Validate-time checks for PROMPT.md `## Contract` tables (handoff §4.4).
  */
 
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 
 import { matchesContractPattern } from "../../batch/contract-verify.mjs";
 import {
@@ -235,8 +235,8 @@ function isValidContractGlob(pattern) {
 	}
 
 	try {
-		micromatch.isMatch(GLOB_PROBE, trimmed);
-		micromatch.isMatch(trimmed, GLOB_PROBE);
+		picomatch(trimmed)(GLOB_PROBE);
+		picomatch(GLOB_PROBE)(trimmed);
 		return true;
 	} catch {
 		return false;

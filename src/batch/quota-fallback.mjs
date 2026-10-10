@@ -89,11 +89,19 @@ import { resolvePoolId } from "../metrics/quota-snapshot.mjs";
 /** @typedef {QuotaFallbackApplyResult|QuotaFallbackRetryResult|QuotaFallbackStopResult|QuotaFallbackNoneResult} QuotaFallbackDecision */
 
 /**
+ * Structural slice of the resolved spine config this module reads. The config
+ * arrives untyped from config loading; this keeps checkJs honest without
+ * pulling in the full config schema.
+ *
+ * @typedef {{ agents?: { activeProfile?: unknown, worker?: { model?: unknown }, profiles?: Record<string, any>, quotaFallbackProfile?: unknown } }} QuotaFallbackConfig
+ */
+
+/**
  * Reads `agents.quotaFallbackProfile` from a resolved config. An unset,
  * non-string, or blank value disables fallback entirely (SP-805 lets `""`
  * clear the key).
  *
- * @param {object|undefined} config
+ * @param {QuotaFallbackConfig|undefined} config
  * @returns {string|null} Profile name, or null when fallback is disabled.
  */
 function readFallbackProfileName(config) {
@@ -108,16 +116,16 @@ function readFallbackProfileName(config) {
  * schema (`Object.prototype.hasOwnProperty` on a plain object), so inherited
  * or malformed entries cannot fabricate a fallback target.
  *
- * @param {object|undefined} config
+ * @param {QuotaFallbackConfig|undefined} config
  * @param {string} name
- * @returns {object|null}
+ * @returns {{ worker?: { model?: unknown } } | null}
  */
 function lookupProfile(config, name) {
 	const profiles = config?.agents?.profiles;
 	if (!profiles || typeof profiles !== "object") return null;
 	if (!Object.prototype.hasOwnProperty.call(profiles, name)) return null;
 	const profile = profiles[name];
-	return profile && typeof profile === "object" ? profile : null;
+	return profile && typeof profile === "object" ? /** @type {{ worker?: { model?: unknown } }} */ (profile) : null;
 }
 
 /**
@@ -167,7 +175,7 @@ function buildExhaustedReport(fallbackState, classification) {
  * 9. `apply` — perform the single hop.
  *
  * @param {object} [params]
- * @param {object} [params.config] Resolved spine config.
+ * @param {QuotaFallbackConfig} [params.config] Resolved spine config.
  * @param {QuotaFallbackState|null} [params.fallbackState] `state.resilience.quotaFallback ?? null`.
  * @param {ProviderQuotaError|null} [params.classification] SP-804 result.
  * @param {string} [params.taskId] Task the classification came from.
@@ -200,6 +208,10 @@ export function decideQuotaFallback({
 	}
 
 	/** Stop results report every pool exhausted so far so callers can show both reset times. */
+	/**
+	 * @param {QuotaFallbackStopResult["reason"]} reason
+	 * @returns {QuotaFallbackStopResult}
+	 */
 	const stop = (reason) => ({
 		action: "stop",
 		reason,

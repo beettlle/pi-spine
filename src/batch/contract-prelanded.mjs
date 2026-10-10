@@ -5,7 +5,7 @@
 
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
 
 /**
@@ -13,7 +13,7 @@ import { DEFAULT_TASKS_ROOT } from "../config/spine-init-constants.mjs";
  * @param {string} pattern
  */
 function matchesPattern(file, pattern) {
-	return micromatch.isMatch(file, pattern, { dot: true });
+	return picomatch(pattern, { dot: true })(file);
 }
 
 /**

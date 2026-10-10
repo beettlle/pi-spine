@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import micromatch from "micromatch";
+import picomatch from "picomatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import {
 	isBaseFileScopeSatisfied,
@@ -264,7 +264,7 @@ function findArtifactMatch(worktreePath, artifactPattern) {
 				stack.push({ abs: entryAbs, rel: entryRel });
 				continue;
 			}
-			if (micromatch.isMatch(entryRel, normalized)) {
+			if (picomatch(normalized, { dot: true })(entryRel)) {
 				return { ok: true, matchedPath: entryRel };
 			}
 		}
