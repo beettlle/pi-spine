@@ -53,7 +53,7 @@ import { saveEngineBatchState } from "../pause.mjs";
  * @returns {void}
  */
 function pinTaskWorkerModel(state, config, taskId) {
-	const task = (state.tasks ?? []).find((entry) => entry?.taskId === taskId);
+	const task = (state.tasks ?? []).find((/** @type {any} */ entry) => entry?.taskId === taskId);
 	if (task && typeof task === "object") {
 		task.workerModel = resolveEffectiveWorkerModel(config, state.resilience?.quotaFallback);
 	}
@@ -89,6 +89,11 @@ export async function runWithQuotaFallback(
 	}
 	const classification =
 		/** @type {ProviderQuotaError | null} */ (result.workerResult?.providerQuota ?? null);
+	// A quota exit without the SP-806 payload cannot drive a decision; the
+	// SP-807 truth table would answer `none/not_quota`, so bail out here.
+	if (!classification) {
+		return result;
+	}
 
 	// Synchronous decide → apply section: no `await` between the read inside
 	// decideQuotaFallback and the `state.resilience.quotaFallback` write at the
