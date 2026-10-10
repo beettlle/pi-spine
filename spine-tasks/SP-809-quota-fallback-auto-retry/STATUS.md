@@ -1,6 +1,6 @@
 # SP-809: In-lane automatic quota retry — Status
 
-**Current Step:** Step 1: Wrapper
+**Current Step:** Step 2: Wire normal + resume paths
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 2
@@ -19,10 +19,10 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Wrapper
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Decision handling
-- [ ] Synchronous apply; single retry
+- [x] Decision handling
+- [x] Synchronous apply; single retry
 
 ### Step 2: Wire normal + resume paths
 **Status:** ⬜ Not Started
