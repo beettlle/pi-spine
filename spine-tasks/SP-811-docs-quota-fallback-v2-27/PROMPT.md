@@ -123,4 +123,4 @@ Closes #329 — Document quota fallback as provider failover (not escalation) an
 
 ## Amendments
 
-_None._
+- **2026-10-10 (operator, v2.27.0 wave 4):** Preflight flags `docs/adoption/operator-runbook.md` as pre-landed — SP-818 (`08d59a61`) changed only the `@earendil-works/pi-coding-agent` pin there. None of this packet's quota-fallback content is on `main` (no `quotaFallbackProfile` / quota fallback text in the runbook or `skills/spine-release-operator/SKILL.md`), so `fileScopeMustChange` stays as written.
