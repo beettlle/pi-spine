@@ -1,6 +1,6 @@
 ---
 name: create-spine-tasks
-version: 1.1.0
+version: 1.2.0
 description: Decomposes PRDs and feature briefs into spine task packets (PROMPT.md, STATUS.md) under spine-tasks/ for autonomous execution via spine batch. Use when asked to "create a spine task", "decompose a PRD", "stage tasks for spine", "write PROMPT.md for spine", "create SP-* tasks", or queue work for spine workers.
 ---
 
@@ -195,17 +195,10 @@ Run **after Step A.5 — Clarify** and **before Step B — Slice**. Authoring-on
 | **Scope** | One deliverable per task; disjoint **File Scope** when tasks can run in parallel. |
 | **IDs** | Use `Next Task ID` from CONTEXT.md; increment after each new task. Greenfield spine projects typically use `SP-###`; Taskplane migrants may keep `TP-###`. |
 | **Waves** | Order via `## Dependencies` and `{tasksRoot}/dependencies.json`. |
-| **Review** | Score complexity (below). Do not default to Level 0 for implementation work. |
+| **Type** | Pick `execute` / matrix / `llm` per [Step 2a](#step-2a-choose-task-type) before writing steps. Deterministic work never needs an LLM worker. |
+| **Review** | Score complexity (below). Level 1 is the code default; Level 0 for execute and docs-only; Level 2 only for security, data-model, or hot shared modules. |
 
-**Two-deliverable split evidence (Phase 55):** Every superseded composite task split into exactly two children because it bundled independent deliverables:
-
-| Superseded | Split into |
-|------------|------------|
-| SP-419 | SP-466, SP-467 |
-| SP-428 | SP-468, SP-469 |
-| SP-430 | SP-470, SP-471 |
-| SP-436 | SP-474, SP-475 |
-| SP-461 | SP-478, SP-479 |
+Split evidence (Phase 55: five composite tasks, each split into exactly two children) lives in [references/authoring-evidence.md](references/authoring-evidence.md#two-deliverable-split-phase-55).
 
 ### Step C.5: Analyze (optional — LLM structural review after slice)
 
@@ -285,10 +278,29 @@ If `CONTEXT.md` is missing (pre-init legacy repo), ask the user to run `spine in
 Quick reference (full rubric in [Complexity Assessment](#complexity-assessment)):
 
 - Score each dimension 0–2: Blast radius, Pattern novelty, Security, Reversibility
-- Sum → Level: 0–1→L0, 2–3→L1, 4–5→L2, 6–8→L3
+- Sum → Level: 0–1→L0, 2–5→L1, 6–8→L2; **Security = 2 or Reversibility = 2 → L2** regardless of sum
 - Size: S (<2h), M (2–4h), L (4–8h), XL (8h+ → must split)
 
-**Do not default to Review Level 0.** Level 0 is only for trivial changes (doc typo, config knob). Most M-sized tasks score ≥2 and need at least Level 1.
+**Code tasks default to Level 1** (plan + final review). Level 0 is for `Type: execute` tasks, docs-only tasks, and trivial config knobs. Level 2 adds a code review spawn per task — reserve it for security, data-model, or hot shared-module changes ([evidence](references/authoring-evidence.md#review-level-recalibration-token-cost-audit-oct-2026)).
+
+### Step 2a: Choose task type
+
+Every LLM worker turn costs tokens; a shell command does not. Decide the task type **before** writing steps:
+
+| Work | Type | Why |
+|------|------|-----|
+| Deterministic script with a known command (generator, smoke run, evidence collection, deploy, mechanical validation) | `**Type:** execute` | Engine runs Contract `runCommand` in the lane worktree; no LLM worker, no turns spent waiting on output |
+| Same command across N targets (regions, fixtures, models, files) | `**Type:** execute` + `## Matrix` | One packet fans out into rows; `matrixMaxParallel` throttles; failed rows retry alone (`spine batch retry 'SP-X[rowId]'`) |
+| Design, refactor, judgment across files, writing tests | `**Type:** llm` (default) | Needs reasoning and STATUS checkpointing |
+| Script needs to be **written** and then **run** for a long time | Split: `llm` task authors the script → `execute` task (dep edge) runs it | The LLM never supervises a long-running command (the background-and-exit failure in [#276](https://github.com/beettlle/pi-spine/issues/276)) |
+
+Execute-task rules:
+
+- Set **Review Level 0** — nothing for a reviewer to judge. Until [#336](https://github.com/beettlle/pi-spine/issues/336) lands, Level ≥ 1 still spawns plan and final reviewers on execute tasks.
+- Provide `runCommand` **and** a cheap `testCommand` proof (`test -f out/report.json`). Without `runCommand`, the engine runs `testCommand` as the job and again at contract verify — the expensive command runs twice.
+- Required sections and a `### Step N: Testing & Verification` step are still validated; keep steps short (the engine does not execute them).
+- Contract commands refuse `$`, backticks, `;`, `|`, `||`, and lone `&`; wrap complex logic in a script (`sh scripts/run-row.sh`).
+- Syntax and row semantics: [operator-runbook §2.4–2.5](../../docs/adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes); template: [prompt-template.md](references/prompt-template.md#execute-task-variant).
 
 ### Step 3: Create task folder
 
@@ -307,8 +319,8 @@ Use [references/prompt-template.md](references/prompt-template.md). Spine-specif
 - **Environment** — include `npm run typecheck && SPINE_WORKER_STUB=1 npm test` when that is the project test command
 - **Git Commit Convention** — `feat(SP-###): …` at step boundaries
 - **Worker tools** — when Review Level > 0, steps must note `spine_review_step` after each step
-- **Testing step (required for all tasks)** — every packet MUST include `### Step N: Testing & Verification` inside `## Steps`, placed **before** `## Completion Criteria`. This applies to **docs-only Review Level 0 tasks** as well — omitting the step causes `prompt_parse_failed` at batch launch (SP-075). Docs-only tasks still run the full test suite; they may omit lint and coverage-gate checkboxes when no application code changes. **Code tasks:** Contract `testCommand` must prefix project lint/analyze (`npm run lint &&` for pi-spine).
-- **Coverage gate** — when the task changes application code, add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy)
+- **Testing step (required for all tasks)** — every packet MUST include `### Step N: Testing & Verification` inside `## Steps`, placed **before** `## Completion Criteria`. This applies to **docs-only Review Level 0 tasks** as well — omitting the step causes `prompt_parse_failed` at batch launch (SP-075). Docs-only tasks run **scoped** tests: `rg -l '<changed doc path or anchor>' tests/` and run only the hits (none → note "no tests reference this doc"); post-integrate `release:check` owns the full suite. Use `--test-reporter=dot` on `node --test` commands so passing tests do not flood the worker context. **Code tasks:** Contract `testCommand` must prefix project lint/analyze (`npm run lint &&` for pi-spine).
+- **Coverage gate** — when a **Size L** task changes application code (or the Contract sets `minLineCoverage`), add a coverage verification checkbox in the Testing step using `testing.testWithCoverage` (≥77% line coverage policy). S/M tasks rely on post-integrate `release:check` for coverage.
 - **Contract (required for new SP-\* tasks)** — add `## Contract` after `## File Scope` using [references/contract-template.md](references/contract-template.md). Include `testCommand` for code tasks; use `` `true` `` for docs-only S tasks. When `testCommand` is `` `true` `` (docs-only), **always** include `fileScopeMustChange` listing at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). When using `fileScopeMustNotChange`, follow parallel-only semantics and never ban `spine-tasks/**` (see contract template and [File Scope and parallel batches](#file-scope-and-parallel-batches)). Legacy `TP-*` packets may omit Contract when `contract.legacyTaskIdPrefixes` includes `TP-`.
 - **Completion** — worker creates `{task-folder}/.DONE`; batch engine may auto-commit remaining work
 - **Documentation Requirements ↔ File Scope ([#144](https://github.com/beettlle/pi-spine/issues/144))** — every path under **Must Update** in `## Documentation Requirements` **must** also appear in `## File Scope`. Advisory docs belong in **Check If Affected**, not Must Update. Example: if Must Update lists `docs/adoption/operator-runbook.md`, add that path to File Scope alongside code paths — otherwise workers must choose between scope and documentation obligations (SP-435, SP-451).
@@ -343,12 +355,12 @@ In pi: `/spine-plan pending` then `/spine SP-042` (single-task) or `spine batch 
 
 ### Review Levels
 
-| Level | Label | Spine behavior |
-|-------|-------|----------------|
-| 0 | None | No `spine_review_step` |
-| 1 | Plan Only | Plan review before each step (or checkpoint marker) |
-| 2 | Plan + Code | Plan + code review at step boundaries |
-| 3 | Full | Plan + code + test review |
+| Level | Label | Engine reviews after `.DONE` (real pi) | Use for |
+|-------|-------|----------------------------------------|---------|
+| 0 | None | None | `Type: execute`, docs-only, trivial config |
+| 1 | Plan Only | Plan + final | **Default for code tasks** |
+| 2 | Plan + Code | Plan + code + final | Security, data-model / migration, hot shared modules (`engine*.mjs`, `parse-prompt.mjs`, reconcile, worktree) |
+| 3 | Full | Same as Level 2 (`isReviewTypeRequired` treats 3 like 2) | Do not assign — no extra review type exists |
 
 **Environment compatibility ([#150](https://github.com/beettlle/pi-spine/issues/150)):** Review Level **2+** requires cross-model reviewer support in the execution environment. If running `SPINE_WORKER_STUB=1`, reviews are simulated — do not assign Level 2+ for tasks that need real cross-model review unless the operator has verified environment capability (preflight / batch config). Level 2+ in an unsupported environment can stall or kill lanes (e.g. SP-190 review spawn failure).
 
@@ -365,7 +377,7 @@ When Review Level ≥ 1 (v1.3), workers also run a **final** review (`--type fin
 | **Security** | No auth/data | Touches auth | Modifies auth/encryption |
 | **Reversibility** | Easy revert | Needs migration | Data model change |
 
-Score 0–1 → Level 0 · 2–3 → Level 1 · 4–5 → Level 2 · 6–8 → Level 3
+Score 0–1 → Level 0 · 2–5 → Level 1 · 6–8 → Level 2 · Security = 2 or Reversibility = 2 → Level 2. `Type: execute` → Level 0 regardless of score.
 
 ### Per-step override and checkpoint markers
 
@@ -390,14 +402,7 @@ Individual steps can override the task-level review:
 | **XL** | 8+ hours | **Must split** — never ship a single PROMPT with Size XL (validator rejects) |
 | **L** | 4–8 hours | **Prefer split** into 2–3 M tasks; if kept, set Size L and expect longer stall budget (SP-088) |
 
-**Rule of thumb:** More than **4** implementation steps → split. More than **8** file-scope paths → narrow or split.
-
-**Example (incident-driven):** Eight Phase-13 tasks in one batch (`SP-064`…`SP-085`) caused parallel pi stalls. Prefer:
-
-| Instead of | Use |
-|------------|-----|
-| One batch with 8 M tasks | Wave A: 4 tasks → land → Wave B: 4 tasks |
-| One L task “refactor engine + resume + tests” | SP-074 engine scope, SP-076 resume DRY, SP-078 tests (deps) |
+**Rule of thumb:** More than **4** implementation steps → split. More than **8** file-scope paths → narrow or split. Prefer waves of ≤4 M tasks; 8-task waves stalled pi workers ([evidence](references/authoring-evidence.md#mega-wave-stalls-phase-13--phase-15)).
 
 ---
 
@@ -518,7 +523,24 @@ Never ban `spine-tasks/**` — workers must update `STATUS.md` and create `.DONE
 | Review Level 0, Size S, no code deliverable | Size S/M patch with an existing targeted test |
 | Contract proof is doc mtime, not test output | Contract must prove code behavior |
 
-Docs-only tasks still include `### Step N: Testing & Verification` (full suite in the Testing step) — Contract `` `true` `` only means final verify does not re-run tests. See [contract-template decision table](references/contract-template.md#docs-only-vs-scoped-node---test).
+Docs-only tasks still include `### Step N: Testing & Verification` — run the tests that reference the changed docs (`rg -l '<doc path>' tests/`), not the full suite; post-integrate `release:check` covers the rest. Contract `` `true` `` only means final verify does not re-run tests. See [contract-template decision table](references/contract-template.md#docs-only-vs-scoped-node---test).
+
+---
+
+## Cost-aware authoring
+
+Packet shape decides most of a batch's token spend. Each choice below removes LLM turns or reviewer spawns without weakening the merge gate (post-integrate `release:check` still runs the full suite and coverage on `main`).
+
+| Lever | Cheaper choice | Cost avoided |
+|-------|----------------|--------------|
+| Task type | `Type: execute` (+ `## Matrix`) for deterministic commands ([Step 2a](#step-2a-choose-task-type)) | Entire LLM worker session; worker turns spent waiting on long command output |
+| Review Level | 1 for code, 0 for execute/docs ([Review Levels](#review-levels)) | Code-review spawn per task (Level 2); plan + final spawns (Level 0) |
+| Testing step | Scoped `node --test --test-reporter=dot <files>`; docs-only runs only `rg -l` hits | Full-suite runs per task; passing-test output in worker context |
+| File Scope | Concrete paths, not directories | Glob-matched rule packs injected on every worker turn |
+| Context to Read First | Only docs the task needs | Re-reading large docs each iteration |
+| Size | S/M with ≤4 steps | Iteration count; stall retries |
+
+**Measure before and after:** `spine metrics show --batch <id>` (or `--last 5`, `--json`) reports outcome, duration, and attempts per task. Token and cost columns stay empty until [#338](https://github.com/beettlle/pi-spine/issues/338) populates them — compare duration and retry counts until then. Background data: [references/authoring-evidence.md](references/authoring-evidence.md).
 
 ---
 
@@ -545,7 +567,10 @@ Before reporting launch commands:
 - [ ] Authoring mode chosen (lean default; full when ambiguity, L/XL epic, or security surface)
 - [ ] `Next Task ID` read from CONTEXT.md and incremented
 - [ ] Folder at `{tasksRoot}/{PREFIX-###-slug}/`
-- [ ] Complexity scored; review level assigned (0–3)
+- [ ] Complexity scored; review level assigned (0–2; Level 1 for code unless security/data-model/hot module)
+- [ ] Task type chosen ([Step 2a](#step-2a-choose-task-type)): deterministic commands are `Type: execute` (+ `## Matrix` for N targets), not LLM steps
+- [ ] `Type: execute` tasks: Review Level 0, `runCommand` set, cheap `testCommand` proof (no double run of the job)
+- [ ] No LLM step waits on a long-running command — split authoring (`llm`) from running (`execute`) ([#276](https://github.com/beettlle/pi-spine/issues/276))
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
 - [ ] Mission uses `Closes #N` or `Partial #N` on first line when tracking GitHub issues ([#147](https://github.com/beettlle/pi-spine/issues/147))
@@ -562,6 +587,7 @@ Before reporting launch commands:
 - [ ] When parallelism is intended: `spine plan` shows `N lanes in parallel` for that wave — or document why overlapping scopes / real deps forced serial collapse ([#193](https://github.com/beettlle/pi-spine/issues/193))
 - [ ] No false deps: edges only for real data dependencies; preference-order edges that force size-1 waves are rejected ([#193](https://github.com/beettlle/pi-spine/issues/193))
 - [ ] `### Step N: Testing & Verification` present inside `## Steps` before `## Completion Criteria` (required even for docs-only Review Level 0)
+- [ ] Testing step is scoped: `node --test --test-reporter=dot <files>` for code; `rg -l` hits only for docs-only — no full-suite run in S/M packets
 - [ ] STATUS.md with matching steps (hydration markers where needed)
 - [ ] `dependencies.json` updated when task has deps
 - [ ] CONTEXT.md phase table updated for PRD decompositions
@@ -590,7 +616,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - **Lint in code-task contracts** — prefix `testCommand` with project lint/analyze (`npm run lint &&` for pi-spine). Contract verify runs the authored command in-lane; without lint, ESLint failures surface only at operator post-integrate `release:check` (post-mortem v2.15.0 F-C). Docs-only (`testCommand: true`) stays exempt.
 - **Scoped contract ≠ full regression** — changing shared modules (diagnosis, reconcile, parse-prompt) can break tests outside the task's scoped `testCommand`. Authors must `rg` old strings in `tests/` and include related test files in Contract, or rely on operator post-integrate `release:check` on `main` ([post-integrate-regression-gate.md](../spine-release-operator/references/post-integrate-regression-gate.md)).
 - **S/M patch tasks: no coverage gate in Contract** — do not chain `npm run coverage:check` or bare `npm test` in `## Contract` `testCommand` on Size S/M tasks; integrate gate owns full coverage at merge. Use scoped `node --test path/to.test.mjs` (SP-521 / [#141](https://github.com/beettlle/pi-spine/issues/141)). `spine tasks validate` warns when violated.
-- **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. Use `testing.test` from spine config; for **code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only tasks may omit the coverage checkbox.
+- **Testing step required (never omit)** — every task packet needs `### Step N: Testing & Verification` inside `## Steps`, before `## Completion Criteria`. **Do not skip this for docs-only or Review Level 0 tasks** — the worker rejects packets without a Testing step. The step runs the Contract `testCommand` (scoped); for **Size L code deliverables**, also include `testing.testWithCoverage` and a **≥77% line coverage** checkbox (see prompt template). Docs-only and S/M tasks omit the coverage checkbox — post-integrate `release:check` runs the full suite and coverage once per wave.
 - **Documentation in every task** — "Must Update" / "Check If Affected" prevent doc drift.
 - **Concrete deliverables** — name files to create/modify; avoid shortcuttable vague steps.
 - **False deps defeat parallelism** — edge only when B needs A's output; independent work gets disjoint File Scope and no edge. Verify intended parallel waves with `spine plan` (`N lanes in parallel`) before handoff ([#193](https://github.com/beettlle/pi-spine/issues/193)).
@@ -606,6 +632,7 @@ Hydration commits (STATUS.md expansions) may happen mid-step for crash recovery.
 - [references/clarify-template.md](references/clarify-template.md) — Step A.5 `clarify.md` schema (spec-kit `/speckit.clarify` equivalent)
 - [references/requirements-checklist-template.md](references/requirements-checklist-template.md) — Step A.6 `checklist.md` schema (spec-kit `/speckit.checklist` equivalent)
 - [references/context-template.md](references/context-template.md) — `{tasksRoot}/CONTEXT.md` scaffold
+- [references/authoring-evidence.md](references/authoring-evidence.md) — incident and measurement data behind sizing, review-level, and testing rules
 - [docs/PRD.md](../../docs/PRD.md) — task format spec (§13)
 - [docs/adoption/bootstrap-checklist.md](../../docs/adoption/bootstrap-checklist.md) — greenfield setup
 - [docs/adoption/operator-runbook.md](../../docs/adoption/operator-runbook.md) — execution policy

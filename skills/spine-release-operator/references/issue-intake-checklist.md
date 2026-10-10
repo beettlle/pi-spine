@@ -8,7 +8,7 @@ Repo: `beettlle/pi-spine`
 
 ```bash
 gh issue list --repo beettlle/pi-spine --state open --limit 100 \
-  --json number,title,labels,body
+  --json number,title,labels
 
 gh issue list --repo beettlle/pi-spine --state open --label documentation \
   --json number,title,labels
@@ -19,6 +19,8 @@ gh issue list --repo beettlle/pi-spine --state open --label bug \
 gh issue list --repo beettlle/pi-spine --state open --label enhancement \
   --json number,title,labels
 ```
+
+Read bodies only for shortlisted candidates: `gh issue view NNN --repo beettlle/pi-spine --json number,title,labels,body`.
 
 ## Label taxonomy
 

@@ -20,9 +20,12 @@ Use in **pi sessions** when long-running shell work would waste the agent contex
 
 ```text
 Monitor for wave N completed. Run spine status --diagnose.
-- needs_integrate: inspect .spine/runtime/<batchId>/evidence/ → gate approve → integrate → npm install → batch complete.
+- needs_integrate: read .spine/runtime/<batchId>/evidence/summary.md (~2 KB) and
+  rg -n '^ℹ (tests|pass|fail)|^not ok' .spine/runtime/<batchId>/evidence/test-output.txt
+  → gate approve → integrate → npm install → batch complete.
+  Never read test-output.txt or coverage-output.txt in full (hundreds of KB).
 - needs_retry / failed / aborted: follow recovery table; do not start next wave.
-- running: optional LoopCreate watchdog (below) or spine watch.
+- running: one blocking `spine wait --until … --interval 60`; LoopCreate watchdog only if no Monitor covers the batch.
 Paste diagnosis headline and exit evidence. Do not claim success without CLI output.
 ```
 
@@ -30,29 +33,30 @@ Paste diagnosis headline and exit evidence. Do not claim success without CLI out
 
 ```text
 release:check monitor completed. Verify exit code from monitor metadata (not log tail alone).
-Read /tmp/pi-spine-release-check.log for failure details when exit is non-zero.
 If exit 0: present pre-publish checklist from docs/release/npm-publish.md.
-If non-zero: STOP; summarize first failing step; do not bump version.
+If non-zero: rg -n '^not ok|^ℹ fail|Error' /tmp/pi-spine-release-check.log — read only those
+hits plus surrounding lines (rg -C 5) for the first failure; do not load the whole log.
+STOP; summarize first failing step; do not bump version.
 ```
 
 ---
 
 ## When to use LoopCreate (watchdog only)
 
-Use when MonitorCreate's completion wake is insufficient or you need lightweight status polling without blocking the session.
+Use **only** when no MonitorCreate covers the command (for example, a batch started from another shell). Every fire is a full agent turn, so a fast loop over a multi-hour wave spends tokens on "still running".
 
 ```text
 LoopCreate:
-  trigger: "2m"
+  trigger: "15m"
   readOnly: true
-  maxFires: 50
+  maxFires: 8
   prompt: |
     Check spine status --diagnose for batch <batchId>.
     If diagnosis is terminal (needs_integrate, failed, aborted, needs_retry): LoopDelete this loop and run onDone actions.
-    If still running: do nothing.
+    If still running: reply "running" only — do not read logs or evidence.
 ```
 
-Prefer Monitor's built-in completion wake over LoopCreate when MonitorCreate was used for the same command.
+`maxFires: 8` × 15m covers a 2-hour wave; recreate the loop if the wave runs longer. When MonitorCreate already wraps the command, its completion wake replaces the loop — do not run both.
 
 ---
 

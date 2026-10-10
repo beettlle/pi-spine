@@ -15,7 +15,7 @@ Normative schema: [PRD v2.0 implementation handoff §4](../../docs/PRD-v2.0-impl
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/final-verdict.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/final-verdict.test.mjs` |
 | fileScopeMustChange | `src/batch/review.mjs`, `bin/spine-tasks.mjs` |
 | fileScopeMustNotChange | `src/planner/**` |
 | minLineCoverage | 77 |
@@ -39,10 +39,12 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 | `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. **Code tasks:** prefix with project lint/analyze (`npm run lint &&` for pi-spine; `flutter analyze` scoped for Flutter). Contract verify executes this command at final review — lint runs in-lane when authored here. Post-integrate `release:check` remains the whole-repo backstop (full suite + coverage). Use `` `true` `` for docs-only S tasks with no code changes. When `` `true` ``, **always** pair with `fileScopeMustChange` (see below). |
 | `fileScopeMustChange` | When you need proof specific paths were touched; **required** when `testCommand` is `` `true` `` | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). For docs-only tasks, list at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). |
 | `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
-| `minLineCoverage` | When task changes application code | Integer 0–100 (pi-spine policy: **77**) |
+| `minLineCoverage` | Size L tasks that change application code (S/M rely on post-integrate `release:check` coverage) | Integer 0–100 (pi-spine policy: **77**) |
 | `artifactsMustExist` | When deliverables must exist on disk | Comma-separated file paths; **one backtick per path** |
 | `stallTimeoutMinutes` | Long external jobs (operator matrix, CI arms) exceeding global/size stall budget | Positive integer minutes; engine uses `max(global, size floor, contract)` |
 | `extendGraceOnFileScope` | STATUS-only progress during long external work | `true` or `false`; when `true`, file-scope mtime extends stall grace for this task |
+| `runCommand` | `Type: execute` tasks — the job the engine runs instead of an LLM worker | Shell command in backticks; same 500-char and metacharacter rules as `testCommand` (no `$`, backticks, `;`, `\|`, `\|\|`, lone `&`; `&&` allowed). Wrap complex logic in a script. When absent, execute tasks fall back to `testCommand`, which then runs **twice** (as the job and again at contract verify). |
+| `matrixMaxParallel` | `## Matrix` tasks that must not take every lane | Positive integer; effective row concurrency is `min(matrixMaxParallel, lanes.maxParallel)` |
 
 Unknown field names produce **warnings** at validate time (not errors). Duplicate rows are errors.
 
@@ -101,17 +103,17 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/validate-cli.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/tasks/validate-cli.test.mjs` |
 ```
 
-### M task with coverage gate
+### L task with coverage gate
 
 ```markdown
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/tasks/validate-prompt.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/tasks/validate-prompt.test.mjs` |
 | fileScopeMustChange | `src/tasks/packet/validate-prompt.mjs` |
 | minLineCoverage | 77 |
 ```
@@ -162,7 +164,7 @@ Use docs-only when the worker's only product deliverable is documentation. Use s
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/final-verdict.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/final-verdict.test.mjs` |
 | fileScopeMustChange | `src/batch/review.mjs` |
 | fileScopeMustNotChange | `src/planner/**`, `src/batch/journal.mjs` |
 | artifactsMustExist | `tests/batch/final-verdict.test.mjs` |
@@ -177,13 +179,55 @@ Use when a task runs a multi-hour external matrix or CI arm with little in-repo 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/status-classification-align.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/status-classification-align.test.mjs` |
 | stallTimeoutMinutes | 240 |
 | extendGraceOnFileScope | true |
 | fileScopeMustChange | `spine-tasks/SP-029-*/STATUS.md` |
 ```
 
 Recommended: **240** minutes for jobs expected to run 2+ hours. Size S floor (90m) and global default (120m) are additive floors; contract value wins when higher.
+
+When the long job is a **known command**, prefer an execute task (below) — an LLM worker supervising a multi-hour command burns turns waiting for output and can background the command and exit without `.DONE` ([#276](https://github.com/beettlle/pi-spine/issues/276)).
+
+### Execute task (no LLM worker)
+
+`**Type:** execute` in the PROMPT header; Review Level 0. The engine runs `runCommand`; `testCommand` is a cheap proof re-run at contract verify.
+
+```markdown
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `sh scripts/collect-evidence.sh` |
+| testCommand | `test -f out/evidence.json` |
+| fileScopeMustChange | `out/evidence.json` |
+```
+
+**Anti-pattern:** only `testCommand` set to the expensive job (`` `sh scripts/collect-evidence.sh` ``) — the engine runs it as the job **and** again at verify.
+
+### Execute matrix task
+
+Add a `## Matrix` table to the PROMPT; `{matrix.<column>}` placeholders are substituted per row. Write row-distinct outputs so row branches merge cleanly. `matrixMaxParallel` caps concurrent rows (`min(matrixMaxParallel, lanes.maxParallel)`).
+
+```markdown
+## Matrix
+
+| run_id | target |
+|--------|--------|
+| east | us-east-1 |
+| west | us-west-2 |
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `sh scripts/smoke.sh {matrix.target} out/{matrix.run_id}.json` |
+| testCommand | `test -f out/{matrix.run_id}.json` |
+| fileScopeMustChange | `out/{matrix.run_id}.json` |
+| matrixMaxParallel | 2 |
+```
+
+Rows also receive `SPINE_MATRIX_TASK_INDEX` (and Slurm/Kubernetes aliases); contract commands refuse `$`, so read them inside the script. Retry one failed row with `spine batch retry 'SP-X[rowId]'`. Full row semantics: [operator-runbook §2.4](../../../docs/adoption/operator-runbook.md#24-matrix-tasks-parametric-sub-lanes).
 
 ---
 
@@ -222,6 +266,7 @@ Reviewers spawn as **fresh sessions** with no memory of the worker session (FR-R
 | Task type | Recommended `testCommand` |
 |-----------|---------------------------|
 | Docs-only, no code changes | `` `true` `` **and** `fileScopeMustChange` with at least one deliverable doc path |
+| `Type: execute` (deterministic job) | `runCommand` = the job; `testCommand` = cheap artifact proof (`` `test -f out/x.json` ``) |
 | Single module, targeted tests exist (Size S/M) | `` `npm run lint && npm run typecheck && node --test tests/feature.test.mjs` `` or `` `flutter analyze && flutter test test/unit/services/foo_test.dart` `` |
 | **Shared-module behavior change** (diagnosis, reconcile, parse-prompt, worktree, doctor) | `` `npm run lint &&` `` then chain **all** related `tests/**/*.test.mjs` from `rg` for old strings — not only the new test file (see below) |
 | Full-suite safe in lane worktree (Size L) | `` `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 npm test` `` |

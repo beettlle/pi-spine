@@ -2,8 +2,9 @@
 
 Copy this template when creating a new task. Replace all `[bracketed]` fields.
 
-**Before creating:** Verify you have scored complexity and assigned Review Level.
-Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
+**Before creating:** Verify you have chosen the task type (SKILL Step 2a), scored complexity, and assigned Review Level.
+Code tasks default to Level 1; Level 0 is for `Type: execute`, docs-only, and trivial config; Level 2 only for security, data-model, or hot shared modules.
+Deterministic commands use the [execute-task variant](#execute-task-variant) instead of this LLM template.
 
 ---
 
@@ -12,8 +13,9 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 
 **Created:** [YYYY-MM-DD]
 **Size:** [S | M | L]
+**Type:** [llm | execute]
 
-## Review Level: [0-3] ([None | Plan Only | Plan and Code | Full])
+## Review Level: [0-2] ([None | Plan Only | Plan and Code])
 
 **Risk:** [1-2 sentences: severity/blast radius — what breaks and how far the change reaches]
 **Score:** [N]/8 — Blast radius: [N], Pattern novelty: [N], Security: [N], Reversibility: [N]
@@ -76,6 +78,7 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 | Field | Value |
 |-------|-------|
 | testCommand | `[shell command in backticks, or \`true\` for docs-only S tasks]` |
+| runCommand | `[execute tasks only: the job command; testCommand then proves the result]` |
 | fileScopeMustChange | `[optional: comma-separated paths/globs that must change]` |
 | fileScopeMustNotChange | `[optional: comma-separated paths/globs that must not change]` |
 | minLineCoverage | `[optional: integer 0–100; use 77 for code tasks]` |
@@ -117,11 +120,13 @@ Review Level 0 is ONLY for trivial changes. Most M+ tasks need Level ≥1.
 > Operator post-integrate `npm run release:check` owns the whole-repo gate (typecheck → lint → full tests → coverage).
 >
 > **Code tasks** (File Scope touches `src/`, `bin/`, `tests/`, or `scripts/`): include `npm run lint` in Contract `testCommand` and mirror it here.
-> **Docs-only tasks:** keep this step; run the full test suite from project config. Omit lint and coverage checkboxes when no application code changes.
+> **Docs-only tasks:** keep this step; run only tests that reference the changed docs (`rg -l '<doc path>' tests/`). If there are no hits, record "no tests reference this doc". Post-integrate `release:check` owns the full suite. Omit lint and coverage checkboxes when no application code changes.
+>
+> Use `--test-reporter=dot` on `node --test` so passing tests do not flood the worker context.
 
 - [ ] Run lint (code tasks only): `npm run lint` — or project analyze command when present
-- [ ] Run Contract `testCommand`: `[exact command from ## Contract — typically lint && typecheck && scoped node --test]`
-- [ ] Run coverage gate (only when Contract requires it): `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code
+- [ ] Run Contract `testCommand`: `[exact command from ## Contract — typically lint && typecheck && scoped node --test --test-reporter=dot]`
+- [ ] Run coverage gate (Size L, or when Contract sets `minLineCoverage`): `[testWithCoverage command, e.g. npm run coverage:check]` — **≥77% line coverage** on in-scope changed code
 - [ ] Run integration tests (if applicable)
 - [ ] Fix all failures
 
@@ -195,6 +200,65 @@ Use unambiguous field names: `**Risk:**` for severity/blast (pairs with **Score*
 
 ---
 
+## Execute-task variant
+
+Use for deterministic commands (generators, smoke runs, evidence collection, deploys). The engine runs `runCommand` in the lane worktree with **no LLM worker**, then verifies the Contract. `validatePrompt` still requires the standard sections and a Testing step; keep them short — the engine does not execute steps. Add a `## Matrix` table to fan out across targets (see [contract-template.md](contract-template.md#execute-matrix-task)).
+
+````markdown
+# Task: [PREFIX-###] — [Name]
+
+**Created:** [YYYY-MM-DD]
+**Size:** S
+**Type:** execute
+
+## Review Level: 0 (None)
+
+**Risk:** [What the command touches; deterministic, no code authored]
+**Score:** 0/8 — Blast radius: 0, Pattern novelty: 0, Security: 0, Reversibility: 0
+
+## Mission
+
+[Closes #N | Partial #N] — Run `[script]` to produce `[artifact]` for [purpose].
+
+## Dependencies
+
+- **Task:** [PREFIX-###] ([LLM task that authored the script, when split])
+
+## File Scope
+
+- `[out/report.json]`
+
+## Contract
+
+| Field | Value |
+|-------|-------|
+| runCommand | `[sh scripts/collect.sh]` |
+| testCommand | `[test -f out/report.json]` |
+| fileScopeMustChange | `[out/report.json]` |
+
+## Steps
+
+### Step 0: Run command
+
+- [ ] Engine runs Contract `runCommand`
+
+### Step 1: Testing & Verification
+
+- [ ] Contract `testCommand` passes (artifact exists)
+
+## Completion Criteria
+
+- [ ] `runCommand` exit 0 and Contract verified
+
+## Do NOT
+
+- Modify `.spine/`, `AGENTS.md`, `CLAUDE.md`, or `.gitnexus/` ([#149](https://github.com/beettlle/pi-spine/issues/149))
+````
+
+Keep `testCommand` cheap — it re-runs at contract verify. Omitting `runCommand` makes the engine run `testCommand` as the job **and** again at verify.
+
+---
+
 # STATUS.md Template
 
 Create alongside PROMPT.md. If omitted, the execution engine may auto-generate
@@ -206,7 +270,7 @@ this from PROMPT.md.
 **Current Step:** Not Started
 **Status:** 🔵 Ready for Execution
 **Last Updated:** [YYYY-MM-DD]
-**Review Level:** [0-3]
+**Review Level:** [0-2]
 **Review Counter:** 0
 **Iteration:** 0
 **Size:** [S | M | L]
@@ -242,7 +306,7 @@ this from PROMPT.md.
 ### Step [N-1]: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] FULL test suite passing
+- [ ] Contract `testCommand` passing (full suite runs at post-integrate `release:check`)
 - [ ] Coverage gate passes (≥77% line coverage on in-scope code, when applicable)
 - [ ] Integration tests (if applicable)
 - [ ] All failures fixed

@@ -25,6 +25,7 @@ Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle
 | Manifest format | [references/release-manifest-template.md](references/release-manifest-template.md) |
 | Post-integrate regression gate | [references/post-integrate-regression-gate.md](references/post-integrate-regression-gate.md) |
 | npm publish mechanics | `docs/release/npm-publish.md` |
+| Publish failure / smoke recovery | [references/publish-recovery.md](references/publish-recovery.md) |
 | Upstream bug filing | [references/issue-template.md](references/issue-template.md) |
 
 ## Success criteria
@@ -141,9 +142,15 @@ skills/spine-release-operator/scripts/collect-release-intake.sh {TARGET}
 
 ```bash
 gh issue list --repo beettlle/pi-spine --state open --limit 100 \
-  --json number,title,labels,body
+  --json number,title,labels
 gh issue list --repo beettlle/pi-spine --state open --label documentation --json number,title,labels
 gh issue list --repo beettlle/pi-spine --state open --label bug --json number,title,labels
+```
+
+Do **not** pull `body` for the whole backlog — 100 issue bodies cost more context than the rest of intake combined. Shortlist by title and labels, then read bodies only for candidates:
+
+```bash
+gh issue view NNN --repo beettlle/pi-spine --json number,title,labels,body
 ```
 
 **Pending tasks:**
@@ -253,6 +260,12 @@ For every task in manifest scope:
 - [ ] Same-wave tasks have disjoint `fileScopeMustChange`
 - [ ] Code tasks: Contract `testCommand` prefixes project lint/analyze (`npm run lint &&` for pi-spine) — see [contract-template.md](../../create-spine-tasks/references/contract-template.md)
 
+**Cost hygiene** (see create-spine-tasks [Cost-aware authoring](../create-spine-tasks/SKILL.md#cost-aware-authoring)):
+- [ ] Deterministic steps (smoke runs, generators, evidence collection) are `Type: execute` tasks, not LLM steps — no LLM worker supervises a long-running command ([#276](https://github.com/beettlle/pi-spine/issues/276))
+- [ ] Review Level: 1 for code, 0 for execute/docs-only; Level 2 only for security, data-model, or hot shared modules
+- [ ] Testing steps are scoped (`node --test --test-reporter=dot <files>`; docs-only runs `rg -l` hits) — no full-suite run in S/M packets; §4.3a `release:check` owns the full suite
+- [ ] File Scope lists concrete paths (directory globs pull extra rule packs into every worker turn)
+
 ```bash
 spine tasks validate <release-scope>
 spine tasks analyze <release-scope>
@@ -300,7 +313,7 @@ MonitorCreate:
   command: spine batch start <release-scope> --wave N    # detached — omit --attached (#163)
   description: Release wave N
   timeout: 0
-  onDone: spine status --diagnose → §4.3 land loop or §4.4 recovery
+  onDone: spine status --diagnose → read evidence/summary.md → §4.3 land loop or §4.4 recovery
 ```
 
 **Blocking fallback** (Cursor Agent, non-pi, or after MonitorCreate orphan — see [agent-shell-batch-policy.md](../spine-autonomous-operator/references/agent-shell-batch-policy.md)):
@@ -308,7 +321,13 @@ MonitorCreate:
 ```bash
 spine batch start <release-scope> --wave N
 spine status --diagnose
-spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 4h
+spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 4h --interval 60
+```
+
+**Context discipline:** one blocking `spine wait` (or one Monitor wake) per wave — not repeated `spine status` polls. On wake, read `.spine/runtime/<batchId>/evidence/summary.md` (~2 KB). Never read `evidence/test-output.txt` (~240 KB) in full; extract the result lines:
+
+```bash
+rg -n '^ℹ (tests|pass|fail)|^not ok' .spine/runtime/<batchId>/evidence/test-output.txt
 ```
 
 **Foreground `--attached`** (persistent interactive human terminal only):
@@ -322,10 +341,10 @@ spine batch start <release-scope> --wave N --attached
 ```bash
 spine status --diagnose
 # or block:
-spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 2h
+spine wait --until completed,failed,needs_integrate,needs_retry,aborted --timeout 2h --interval 60
 ```
 
-Optional pi watchdog: `LoopCreate` every 2m, `readOnly: true`, `maxFires: 50` — see pi-async-orchestration.
+Optional pi watchdog: `LoopCreate` **only** when no MonitorCreate covers the batch — every 15m, `readOnly: true`, `maxFires: 8` — see pi-async-orchestration. Each fire is a full agent turn; a 2-minute loop over a 4-hour wave costs up to 120 turns of nothing.
 
 > **Wait progress (SP-754):** human-mode `spine wait` is not silent until exit — it prints a start banner, a `Wait progress:` line per poll (diagnosis, phase, wave, elapsed), and a terminal `Wait matched:` (stdout) or `Wait timed out` (stderr) headline. Quiet output between progress lines means the wait is between polls, not hung. Use `--json` when a machine parses the result.
 
@@ -439,7 +458,7 @@ spine preflight
 git status
 ```
 
-**pi async (preferred):** `MonitorCreate` with `npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log`, `timeout: 900000`, `onDone` to read **full log** and verify exit 0 — not log tail alone.
+**pi async (preferred):** `MonitorCreate` with `npm run release:check 2>&1 | tee /tmp/pi-spine-release-check.log`, `timeout: 900000`, `onDone` to verify exit 0 from monitor metadata — not log tail alone. On failure, extract failures with `rg -n '^not ok|^ℹ fail|Error' /tmp/pi-spine-release-check.log` instead of reading the whole log into context.
 
 **Foreground fallback:**
 
@@ -567,52 +586,9 @@ Tag push + green **CI** (`ci.yml`) alone is **not** enough — `ci.yml` does not
 
 ### Publish failure recovery (HARD STOP — do not retag)
 
-When `release.yml` fails, diagnose with the failed job log before any recovery:
+When `release.yml` fails: `gh run view <run-id> --log-failed`, then follow the symptom table in [references/publish-recovery.md](references/publish-recovery.md). Auth/OIDC failures → fix Trusted Publisher and `gh workflow run release.yml -f tag=v{VERSION}` on the **existing** tag; never `npm version` or retag for auth-only failures.
 
-```bash
-gh run view <run-id> --log-failed
-```
-
-| Symptom | Meaning | Action |
-|---------|---------|--------|
-| OIDC / trusted publisher mismatch / `ENEEDAUTH` | Trusted Publisher config wrong (workflow name, Environment name set while job has none, stage permission missing) | Fix npm Trusted Publisher; re-dispatch same tag — do **not** `npm version` again |
-| Legacy `E404` on PUT with `NPMSECRET` | Old token path still in use or secret bad | Prefer OIDC; emergency: rotate `NPMSECRET` only if workflow still uses token |
-| Validation steps failed (typecheck / lint / coverage / CLI smoke) | Tagged commit not release-safe | Fix on `main`, create a **new** patch version + tag; do not force-publish a broken tag |
-| CI gate failed for tagged commit | Pre-tag CI was red or missing | Fix `main` / re-run `ci.yml`; new tag if the old tag pointed at a bad commit |
-| Stage green but install missing version | Not approved yet | Approve with 2FA; do not retag |
-| GitHub Release step failed after stage succeeded | Notes/release page only | Create release manually; do not double-stage the same version without rejecting the prior stage first |
-
-**Re-dispatch existing tag** (after Trusted Publisher / transient registry fix):
-
-```bash
-# Tag must already exist; this re-runs checkout → gate → stage → gh release
-# workflow_dispatch uses the workflow file from the branch you select (usually main)
-gh workflow run release.yml -f tag=v{VERSION}
-gh run list --workflow release.yml --limit 3
-gh run watch --exit-status <new-run-id>
-```
-
-UI equivalent: **Actions → Release → Run workflow** → enter `v{VERSION}`.
-
-**Do not** delete/retag/`npm version` again when the only failure was auth/OIDC — package.json and the `v*` tag are already correct.
-
-Distinguish **stage auth failures** (table above) from **post-approve install E404/ETARGET** (registry lag F9 — smoke section below) and from **pre-approve missing version** (approve pending).
-
-Post-publish smoke per `docs/release/npm-publish.md` — **only after stage success and 2FA approve**. **Retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)):** the first `npm install -g` right after approve can fail with `ETARGET` / "No matching version found" while the registry propagates, even when `npm view` already lists the version. Prefer the bounded wrapper:
-
-```bash
-scripts/post-publish-smoke.sh <version>
-```
-
-Manual equivalent (bounded retries on `ETARGET`/404-class errors only — 5s/10s/20s backoff capped at 60s, max 6 attempts; non-lag install errors fail immediately and exhausted retries fail closed, never masked as lag):
-
-```bash
-npm install -g pi-spine@<version>
-spine version
-spine doctor
-```
-
-If retries exhaust, **STOP** — treat it as a real missing-version failure and investigate the publish; do not keep waiting silently.
+Post-publish smoke (**only after stage success and 2FA approve**): `scripts/post-publish-smoke.sh <version>` — bounded retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)). If retries exhaust, **STOP** and investigate; manual steps in [references/publish-recovery.md](references/publish-recovery.md#post-publish-smoke).
 
 Update `spine-tasks/CONTEXT.md` release note (version + date).
 
@@ -644,6 +620,7 @@ Include the published version/tag in the close comment when closing at Phase 6 (
 8. **Verification** — paste `spine preflight` tail, **`npm run release:check` output** (or log path), test/coverage output
 9. **Publish** — version bumped (Y/N), tag pushed (Y/N), `release.yml` URL + conclusion, stage approved (Y/N), `npm view pi-spine version`, or "awaiting operator approval" / "blocked on Trusted Publisher" / "awaiting stage approve"
 10. **Issue tracker hygiene** — confirm every release-scoped `Closes #NNN` is CLOSED (paste `gh issue view` states or list)
+11. **Spend** — per wave from `spine metrics show --batch <batchId>`: tasks, attempts (retries), failed-attempt wall time, reviewer-infrastructure failures, quota fallbacks. Include token/cost totals once populated ([#338](https://github.com/beettlle/pi-spine/issues/338)); until then write "tokens: not recorded"
 
 ---
 

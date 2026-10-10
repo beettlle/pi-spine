@@ -34,7 +34,14 @@ npm run release:check
 echo "release:check exit: $?"
 ```
 
-**If exit is non-zero:** STOP. Fix on `main`, commit, re-run gate. Do not start the next wave, push, or tag.
+**If exit is non-zero:** STOP. Find the failures without loading the whole log (the full-suite log is hundreds of KB):
+
+```bash
+rg -n '^not ok|^ℹ fail|Error' /tmp/pi-spine-post-integrate-wave-${WAVE:-main}.log
+rg -n -C 5 '^not ok' /tmp/pi-spine-post-integrate-wave-${WAVE:-main}.log   # context for the first failures
+```
+
+Fix on `main`, commit, re-run gate. Do not start the next wave, push, or tag.
 
 ---
 
