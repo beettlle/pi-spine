@@ -1,6 +1,6 @@
 # SP-818: Bump pi-coding-agent dev pin to ^1.0.1 — Status
 
-**Current Step:** Step 1: Bump + fix-ups
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 1
@@ -24,12 +24,12 @@
 - [x] minPiVersion decision
 
 ### Step 2: Docs
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Four doc pins
+- [x] Four doc pins
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Lint
 - [ ] Contract `testCommand`
