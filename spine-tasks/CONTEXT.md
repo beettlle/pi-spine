@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-10 (Phase 95 v2.27.0 published; Next → SP-819)
+**Last Updated:** 2026-10-10 (Phase 96 v2.27.1 authored, awaiting scope approval; Next → SP-826)
 **Status:** Active
-**Next Task ID:** SP-819
+**Next Task ID:** SP-826
 
 ---
 
@@ -2668,6 +2668,28 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] `npm audit --omit=dev` 0 high
 - [x] `npm run release:check` green (2877/2877, 90.39% lines on `2751a6aa`); CI green on HEAD
 - [x] Publish **v2.27.0** only after operator approval (published 2026-10-10; post-publish smoke OK)
+
+### Phase 96 — v2.27.1 reviewer extension isolation (#334) + rules manifest churn (#315) + gate streak fail-closed (#314)
+
+**Authoring:** 2026-10-10 · Manifest: [`spine-tasks/_authoring/release-v2.27.1/manifest.md`](_authoring/release-v2.27.1/manifest.md) · Patch profile · Pin `hard` (zai/glm-5.3), quota fallback `allegretto`
+
+| SP-* | Summary | Size | Issue | Wave | Status |
+|------|---------|------|-------|------|--------|
+| SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Staged |
+| SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Staged |
+| SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Staged |
+| SP-824 | Gate streak reset failure fails closed and is journaled | S | #314 Partial | 1 | Staged |
+| SP-821 | Diagnose recommends re-review, not salvage, for review-infra failures | S | #334 Partial | 2 | Staged |
+| SP-822 | Doctor warns about context-rewriting pi extensions | S | #334 Partial | 2 | Staged |
+| SP-825 | Docs: reviewer isolation and re-review recovery | S | #334 Closes | 2 | Staged |
+
+**Phase 96 exit criteria:**
+
+- [ ] Operator approved release scope (manifest)
+- [ ] SP-819–SP-825 `.DONE` and integrated on `main`
+- [ ] #334, #315 CLOSED; #314 progress noted (stays open for streak locking)
+- [ ] `npm run release:check` green; CI green on HEAD
+- [ ] Publish **v2.27.1** only after operator approval
 
 ---
 
