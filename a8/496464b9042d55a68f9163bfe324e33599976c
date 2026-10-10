@@ -1,0 +1,20 @@
+spine-tasks/SP-810-quota-fallback-operator-surface/STATUS.md
+  h_2a17159c706ba1 3,21,23-25
+src/batch/diagnosis-handoff-packet.mjs
+  h_2a17159c706ba1 7-41,70-90,146-163
+src/batch/journal.mjs
+  h_2a17159c706ba1 351-367,448-452
+src/batch/reconcile-diagnosis-context.mjs
+  h_2a17159c706ba1 45-64,72-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a8496464b9042d55a68f9163bfe324e33599976c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
