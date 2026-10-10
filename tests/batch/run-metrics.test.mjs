@@ -127,6 +127,40 @@ test("buildTaskMetricRecord maps provider quota exit reasons to failureKind quot
 	}
 });
 
+test("buildTaskMetricRecord prefers task.workerModel over the batch-start config model", () => {
+	// SP-808 (#329): SP-809 pins task.workerModel to the model actually used
+	// (the fallback profile after a quota hop); the metric must tell the truth.
+	const config = { agents: { worker: { model: "zai/glm-4.6", thinking: "high" } } };
+	const withWorkerModel = buildTaskMetricRecord({
+		batchId: "20261009T170000",
+		task: { taskId: "SP-808", status: "failed", exitReason: "failed", workerModel: "kimi-coding/k3" },
+		config,
+	});
+	assert.equal(withWorkerModel.model, "kimi-coding/k3");
+
+	// Blank string is treated as unset → today's config-derived value.
+	const blank = buildTaskMetricRecord({
+		batchId: "20261009T170000",
+		task: { taskId: "SP-808", status: "failed", exitReason: "failed", workerModel: "" },
+		config,
+	});
+	assert.equal(blank.model, "zai/glm-4.6");
+
+	// Absent workerModel keeps the pre-SP-808 behaviour (config, then inherit).
+	const absent = buildTaskMetricRecord({
+		batchId: "20261009T170000",
+		task: { taskId: "SP-808", status: "failed", exitReason: "failed" },
+		config,
+	});
+	assert.equal(absent.model, "zai/glm-4.6");
+	const inherit = buildTaskMetricRecord({
+		batchId: "20261009T170000",
+		task: { taskId: "SP-808", status: "failed", exitReason: "failed" },
+		config: { agents: { worker: { model: "inherit", thinking: "high" } } },
+	});
+	assert.equal(inherit.model, "inherit");
+});
+
 test("metrics.enabled false skips append without error", async () => {
 	await withProject((projectRoot) => {
 		const config = { metrics: { enabled: false, path: ".spine/run-metrics.jsonl" } };

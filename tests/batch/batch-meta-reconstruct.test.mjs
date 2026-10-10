@@ -105,6 +105,57 @@ test("reconstructBatchStateFromRuntime rebuilds from meta + journal when state m
 	}
 });
 
+test("reconstructBatchStateFromRuntime keeps resilience.quotaFallback from the archive seed", async () => {
+	const projectRoot = await initGitRepo("spine-batch-meta-qfs-");
+	try {
+		const wavePlan = [["TP-Q1"]];
+		writeMeta(projectRoot, BATCH_ID, wavePlan);
+		seedJournalProgress(projectRoot, BATCH_ID, wavePlan);
+
+		// SP-808 (#329): a hop persisted before the state loss must survive
+		// force-resume reconstruct so later spawns keep the sticky override —
+		// same keep-style as forceMergedWaves.
+		const quotaFallback = {
+			fromProfile: "hard",
+			toProfile: "allegretto",
+			fromModel: "zai/glm-5.3",
+			toModel: "kimi-coding/k3",
+			exhaustedPool: "zai",
+			resetAtRaw: "2026-08-30 09:12:44",
+			triggerTaskId: "TP-Q1",
+			at: "2026-10-03T12:00:00.000Z",
+			retriedTaskIds: [],
+		};
+		const archiveSeedPath = path.join(
+			projectRoot,
+			".spine",
+			"runtime",
+			BATCH_ID,
+			"archive",
+			"batch-state.json",
+		);
+		fs.mkdirSync(path.dirname(archiveSeedPath), { recursive: true });
+		fs.writeFileSync(
+			archiveSeedPath,
+			JSON.stringify({
+				batchId: BATCH_ID,
+				wavePlan,
+				baseBranch: "main",
+				orchBranch: `orch/spine-${BATCH_ID}`,
+				resilience: { quotaFallback },
+			}),
+			"utf-8",
+		);
+
+		const result = reconstructBatchStateFromRuntime(projectRoot);
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.equal(result.state.resilience?.resumeForced, true);
+		assert.deepEqual(result.state.resilience?.quotaFallback, quotaFallback);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("ensureForceResumeBatchState restores corrupt live state from meta", async () => {
 	const projectRoot = await initGitRepo("spine-batch-meta-corrupt-");
 	try {
