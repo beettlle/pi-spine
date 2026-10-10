@@ -1,7 +1,7 @@
 # SP-809: In-lane automatic quota retry — Status
 
-**Current Step:** Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-10
 **Review Level:** 2
 **Review Counter:** 0
@@ -50,10 +50,10 @@
 - [x] Fix all failures (2 typecheck errors in the Step-1 wrapper fixed; pre-existing load flake documented, see Discovery 8)
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
