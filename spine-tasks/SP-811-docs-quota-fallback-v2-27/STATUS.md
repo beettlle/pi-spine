@@ -1,8 +1,8 @@
 # SP-811: Docs: quota fallback policy + v2.27 runbook — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** ⬜ Not Started
-**Last Updated:** 2026-10-03
+**Current Step:** Step 2: Runbook v2.27.0 subsection
+**Status:** 🔄 In Progress
+**Last Updated:** 2026-10-10
 **Review Level:** 0
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,17 +11,17 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Style + rule read
-- [ ] Identifiers collected
-- [ ] Dependencies satisfied
+- [x] Style + rule read
+- [x] Identifiers collected
+- [x] Dependencies satisfied
 
 ### Step 1: Release-operator skill
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Failover vs escalation
-- [ ] Manifest override line
+- [x] Failover vs escalation
+- [x] Manifest override line
 
 ### Step 2: Runbook v2.27.0 subsection
 **Status:** ⬜ Not Started
