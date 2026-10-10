@@ -317,7 +317,15 @@ async function runWorkerRunner() {
 		const failTasks = String(process.env.SPINE_WORKER_STUB_FAIL_TASKS ?? "")
 			.split(/[,\s]+/)
 			.filter(Boolean);
-		if (failTasks.includes(parsedTaskId)) {
+		// SP-809 (#329): after a quota fallback hop the worker host pins
+		// SPINE_AGENT_PROFILE_OVERRIDE to the fallback profile; when the test
+		// marks that profile as passing, the retry takes the normal stub path.
+		const passProfile = process.env.SPINE_WORKER_STUB_PASS_PROFILE;
+		const passOnFallback =
+			typeof passProfile === "string" &&
+			passProfile !== "" &&
+			passProfile === process.env.SPINE_AGENT_PROFILE_OVERRIDE;
+		if (failTasks.includes(parsedTaskId) && !passOnFallback) {
 			const dirtyRel = process.env.SPINE_WORKER_STUB_DIRTY_FILE;
 			if (dirtyRel && worktreePath) {
 				const dirtyPath = path.join(worktreePath, dirtyRel);
