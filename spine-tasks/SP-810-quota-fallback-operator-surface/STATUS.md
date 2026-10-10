@@ -37,13 +37,13 @@
 - [x] Doctor cases
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Batch + doctor suites
-- [ ] Coverage gate
-- [ ] Fix all failures
+- [x] Lint (`npm run lint` clean)
+- [x] Contract `testCommand` (90/90 pass)
+- [x] Batch + doctor suites (1852/1852 pass)
+- [ ] Coverage gate (blocked by pre-existing env flake — see Discovery 8; retrying)
+- [x] Fix all failures (phase23 500-LOC cap breach in journal.mjs fixed by compaction; 497 lines)
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -67,4 +67,5 @@
 
 _None._
 
-| 6 | Doctor same-pool advisory compares the fallback profile worker pool against the *effective* active worker (active profile worker pin, else base `agents.worker.model`), mirroring engine model resolution. Exported as `detectSamePoolQuotaFallback` for direct testing; appended to `buildQuotaRiskDoctorCheck` risks so it stays `ok: true` (never fails preflight). |
+| 6 | Doctor same-pool advisory compares the fallback profile worker pool against the *effective* active worker (active profile worker pin, else base `agents.worker.model`), mirroring engine model resolution. Exported as `detectSamePoolQuotaFallback` for direct testing; appended to `buildQuotaRiskDoctorCheck` risks so it stays `ok: true` (never fails preflight). || 7 | `src/batch/journal.mjs` sits near the 500-LOC batch-module cap (phase23-exit-verify); Step 1 additions breached it (505). Compacted the quota summary block to 497 counted lines. Any future journal.mjs growth must move code out, not in. |
+| 8 | Coverage gate (`npm run coverage:check`) aborts on `tests/batch/sequence-detached-poll.test.mjs` "waitForSequenceBatchTerminal hard-caps at maxWaitMs" — a timing assert (elapsed <2s on a 300ms cap) that fails under machine load 35–50 (sibling lanes running). Reproduced on base commit 6368ffba in a temp worktree (identical failure), so it is pre-existing and unrelated to SP-810. Test passes standalone and in the full batch+doctor suite without coverage instrumentation. |
