@@ -1902,6 +1902,63 @@ Contract `testCommand` verification runs through an async primitive, so one lane
 
 Without `SPINE_WORKER_STUB=1`, a worker whose PATH lacks the `pi` CLI fails fast with classification **`launch_failed`**, journal **`worker.spawn_failed`** with `reason: "pi_missing"` (phase `preflight`), and output `worker requires pi on PATH (fail closed); set SPINE_WORKER_STUB=1 only for stub runs` — instead of silently falling back to the stub. Fix the PATH (detached engines inherit the launching shell's PATH, so launch from a shell where `pi` resolves) and rerun the lane with `spine batch retry <taskId>`. Execute-only tasks and `agentSession` workers never consult PATH for `pi` and are unaffected.
 
+### v2.27.0 changes (#328, #329, #330, #332)
+
+v2.27.0 adds automatic provider quota fallback for workers (#329), hardens review honoring against foreign stub verdicts (#328), re-spawns no-artifact reviewers once (#332), stops recommending salvage while a live engine is mid-task (#330), and replaces `micromatch` with `picomatch`.
+
+#### Automatic provider quota fallback (#329, SP-804–SP-810)
+
+When a **worker** fails with exhausted provider quota (for example Z.ai `429` code `1308`, or a Kimi `403` billing-cycle limit), the engine can move the whole batch to a named fallback profile on a **different provider pool** — automatically, once per batch — and retry the failed task in its own lane worktree, without an operator `spine batch retry`.
+
+**Configuration:** set `agents.quotaFallbackProfile` to a profile defined in `agents.profiles` whose worker model resolves to a different quota pool than the active worker:
+
+```bash
+spine settings set agents.quotaFallbackProfile <profile>
+```
+
+Unset or blank means disabled — behavior and journal output are unchanged.
+
+**Classification:** quota-classified worker exits get `exitReason` **`provider_quota_exhausted`** (hard limit) or **`provider_overloaded`** (transient overload), run-metrics record **`failureKind: "quota"`**, and the journal records **`worker.quota_exhausted`** with the pool, provider code, and raw reset text. **Transient overload never falls back** — it stays on the active profile.
+
+**Behavior:**
+
+- **One hop per batch, sticky.** Once applied, the fallback is recorded at **`state.resilience.quotaFallback`** (survives `spine batch resume`) and never switches back or hops again — parallel lanes hitting the same pool produce exactly one **`batch.quota_fallback_applied`** event.
+- **One automatic retry per task**, in the same lane worktree (partial work kept), journaled as **`task.quota_fallback_retry`**. A second quota failure on that task is only journaled, never retried again.
+- Later worker spawns receive **`SPINE_AGENT_PROFILE_OVERRIDE`** so the fallback takes effect at spawn time — the engine **never edits `.spine/spine-config.json`**.
+- Refused fallbacks (no fallback configured, fallback profile missing, same pool, probe-reported-exhausted fallback pool, or the `agentSession` worker backend which ignores child env) journal **`batch.quota_fallback_exhausted`** with every pool exhausted so far and each pool's raw reset text, and the task keeps its original failure.
+
+**Operator surface:** `spine status --diagnose` shows the exhausted pool and its reset time — **shown raw, in provider local time**, exactly as the provider printed it — plus the active fallback and a paste-ready release-manifest line:
+
+```text
+Agent pin override: yes (<date>, auto quota fallback <pool> -> <profile>, batch <id>)
+```
+
+When no fallback is possible, the diagnosis shows the reset time instead of implying an immediate retry will work; a `provider_overloaded` assessment says retry is reasonable. `spine doctor` includes the fallback profile's worker in its quota-risk targets and warns (advisory — never fails preflight) when the fallback worker resolves to the **same pool** as the active worker: a fallback that can never help.
+
+**Policy (failover, not escalation):** quota fallback changes the provider pool, not model strength, so it is **allowed mid-release** and does not violate the #248 one-pin rule — which still bans *escalating* models on quota/403 or launch storms. Record the fallback in the release manifest by pasting the `Agent pin override` line above. See [spine-release-operator](../../skills/spine-release-operator/SKILL.md).
+
+**Interim workaround retired:** the manual procedure from #329 (record the manifest override, `spine settings set agents.activeProfile <profile>`, `spine batch retry <taskId>` per quota-failed task, switch back at release end) is **no longer needed** once `agents.quotaFallbackProfile` is set — the engine performs the same switch automatically, journaled, sticky, and without editing config. Manual `activeProfile` switching remains available when no fallback profile is configured.
+
+**Out of scope:** reviewer and supervisor fallback, automatic backoff on transient overload, and scheduling a resume at the provider reset time.
+
+#### Review honoring hardened (#328, SP-812, SP-813)
+
+- **Worker-launched test commands can no longer write into the live batch journal** through inherited worker env (`SPINE_JOURNAL_ATTACH` / `SPINE_BATCH_ID` / `SPINE_PROJECT_ROOT` / `SPINE_TASK_ID`): the `spine review step` CLI only uses the env-derived journal context for `--type plan` / `code` (the legitimate worker tool path); `--type final` without an explicit journal does not journal. Tests that spawn CLI or worker processes strip the live-journal keys via `tests/helpers/live-journal-env.mjs` (`withoutLiveJournalEnv`), and `npm test` sets `SPINE_SUPPRESS_JOURNAL_ATTACH=1`.
+- **Foreign stub verdicts and out-of-folder artifacts are refused:** the honor path skips journaled `review.completed` events with `stub: true` in a live (non-stub) batch (`stub_verdict_in_live_batch`) and verdict artifacts outside the task folder (`artifact_outside_task_folder`), journaling **`review.honor_rejected`** once per rejected event instead of honoring them. Legitimate honors (`honorReason: "spawn_timeout_with_done"`, relative artifact paths inside the task folder, stub batches) are unaffected.
+- **Contract verification runs before a final-review honor** completes the task — a task can no longer complete through the honor fast path without `contract.verified` being journaled first.
+
+#### Reviewer no-artifact re-spawn (#332, SP-814)
+
+A reviewer that exits without writing its artifact (empty model turn, exit 0) — previously an immediate `*_review_spawn_failed` — is **re-spawned once automatically** (same prompt, same artifact path), journaled as **`review.spawn_retry`** with `reason: "no_artifact"` or `"spawn_failed"`. Every failed attempt persists a redacted, tail-capped log at `.spine/runtime/<batchId>/lanes/lane-<n>/reviewer-output-<taskId>-<reviewType>.log`; `review.spawn_retry` and `review.failed` payloads carry **`reviewerOutputLogRef`** plus a bounded **`outputTail`** (stderr + stdout, ≤ 2 KB), so empty turns can be told apart from crashes.
+
+#### `pending_lane_land` suppressed while the engine is live (#330, SP-815)
+
+`spine status --diagnose` no longer reports **`pending_lane_land`** or recommends **`spine batch salvage`** while the batch engine process is alive **and** the raw batch state still shows live activity (phase `running` or a task still `running`). A lane `.DONE` is reconciled before the engine finishes that task's code and final review, so mid-wave the lane can still be landed by the engine itself — salvaging then would race it. Salvage guidance returns once the engine has exited or the state is terminal (a crashed engine with a stale `running` phase still gets it).
+
+#### Glob engine: micromatch → picomatch (SP-817)
+
+Glob matching (file-scope checks, Cursor rules selection) now uses **`picomatch`** (`^4.0.7`); **`micromatch` was removed** — it was the last runtime path to the `braces` audit-high advisory (GHSA-vfj7-8cjw-p6xm). Call semantics are unchanged (`picomatch(patterns, { dot: true })(str)` is equivalent to the previous `micromatch.isMatch` calls).
+
 ### Final review spawn timeout (`final_review_timeout`)
 
 When the journal shows **`review.started`** (final or code) with **no** matching **`review.completed`** / **`review.failed`**, and lane `pi` reviewer children stay alive past the stall budget, the engine was blocked on a hung reviewer spawn (batch `20260617T164948`, SP-279).

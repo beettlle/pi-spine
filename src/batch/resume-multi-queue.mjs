@@ -17,6 +17,8 @@ import {
 	markTaskCompleteFromDisk,
 	runResumedTaskOnLane,
 } from "./resume-multi-lanes.mjs";
+import { runWithQuotaFallback } from "./engine-lanes/quota-fallback-run.mjs";
+import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 
 /**
  * Build lane queues and run all tasks in a resume wave.
@@ -113,17 +115,30 @@ export async function executeResumeWave({
 
 		laneQueue.runs.push({
 			taskId,
+			// SP-809 (#329): the resumed path gets the same single-hop quota
+			// fallback retry as the normal lane path.
 			run: () =>
-				runResumedTaskOnLane({
-					projectRoot,
-					state,
-					batchId,
-					config,
-					task,
-					lane,
-					taskFolderRel,
-					laneCorrelationId,
-				}).then((result) => {
+				runWithQuotaFallback(
+					() =>
+						runResumedTaskOnLane({
+							projectRoot,
+							state,
+							batchId,
+							config,
+							task,
+							lane,
+							taskFolderRel,
+							laneCorrelationId,
+						}),
+					{
+						projectRoot,
+						batchId,
+						state,
+						taskId,
+						config,
+						workerBackend: resolveWorkerBackend(config),
+					},
+				).then((result) => {
 					if (result.aborted) batchAborted = true;
 					return result;
 				}),

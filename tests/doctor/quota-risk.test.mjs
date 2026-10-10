@@ -10,6 +10,7 @@ import {
 	buildQuotaRiskDoctorCheck,
 	collectQuotaPinTargets,
 	detectQuotaRiskSignals,
+	detectSamePoolQuotaFallback,
 } from "../../src/doctor/quota-risk.mjs";
 
 const NOW = Date.parse("2026-08-09T12:00:00.000Z");
@@ -84,6 +85,125 @@ test("collectQuotaPinTargets dedupes identical pins and skips inherit", () => {
 		escalatePolicy: { enabled: true, toProfile: "hard" },
 	});
 	assert.deepStrictEqual(collectQuotaPinTargets(config), []);
+});
+
+// --- SP-810: quota fallback profile ---
+
+test("collectQuotaPinTargets includes quota fallback profile worker pin", () => {
+	const config = baseConfig({
+		profiles: {
+			fallback: { worker: { model: "zai/glm-4.6" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	const targets = collectQuotaPinTargets(config);
+	assert.equal(targets.length, 1);
+	assert.equal(targets[0].poolId, "zai");
+	assert.match(targets[0].source, /quota fallback/);
+});
+
+test("collectQuotaPinTargets unchanged when quotaFallbackProfile unset or missing", () => {
+	assert.deepStrictEqual(collectQuotaPinTargets(baseConfig()), []);
+	const missing = baseConfig({ quotaFallbackProfile: "nope" });
+	assert.deepStrictEqual(collectQuotaPinTargets(missing), []);
+});
+
+test("detectSamePoolQuotaFallback warns when fallback pool equals active worker pool", () => {
+	const config = baseConfig({
+		worker: { model: "kimi-coding/kimi-for-coding" },
+		profiles: {
+			fallback: { worker: { model: "kimi-coding/kimi-k2" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	const advisory = detectSamePoolQuotaFallback(config);
+	assert.equal(
+		advisory,
+		"agents.quotaFallbackProfile fallback uses the same quota pool (kimi-coding) as the active worker — fallback can never help",
+	);
+});
+
+test("detectSamePoolQuotaFallback is null when fallback uses a different pool", () => {
+	const config = baseConfig({
+		worker: { model: "kimi-coding/kimi-for-coding" },
+		profiles: {
+			fallback: { worker: { model: "zai/glm-4.6" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	assert.equal(detectSamePoolQuotaFallback(config), null);
+});
+
+test("detectSamePoolQuotaFallback compares against the active profile worker when set", () => {
+	const config = baseConfig({
+		worker: { model: "openai/gpt-4" },
+		activeProfile: "main",
+		profiles: {
+			main: { worker: { model: "zai/glm-4.6" } },
+			fallback: { worker: { model: "zai/glm-4.5" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	assert.match(detectSamePoolQuotaFallback(config), /same quota pool \(zai\)/);
+});
+
+test("detectSamePoolQuotaFallback degrades closed on unknown pools or missing pins", () => {
+	assert.equal(detectSamePoolQuotaFallback(baseConfig()), null);
+	const unknownPool = baseConfig({
+		worker: { model: "openai/gpt-4" },
+		profiles: { fallback: { worker: { model: "openai/gpt-4o" } } },
+		quotaFallbackProfile: "fallback",
+	});
+	assert.equal(detectSamePoolQuotaFallback(unknownPool), null);
+});
+
+test("buildQuotaRiskDoctorCheck surfaces same-pool fallback as a warning, never failing", () => {
+	const config = baseConfig({
+		worker: { model: "kimi-coding/kimi-for-coding" },
+		profiles: {
+			fallback: { worker: { model: "kimi-coding/kimi-k2" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	const probeResults = {
+		"kimi-coding": {
+			poolId: "kimi-coding",
+			source: "live",
+			usage: { taskCount: 0, durationMs: 0, tokensOut: 100 },
+			limit: 1000,
+		},
+	};
+	const check = buildQuotaRiskDoctorCheck({ config, probeResults, metricsLines: [], now: NOW });
+	assert.equal(check.ok, true);
+	assert.equal(check.warning, true);
+	assert.match(check.detail, /fallback can never help/);
+});
+
+test("buildQuotaRiskDoctorCheck stays clear when fallback pool differs and headroom exists", () => {
+	const config = baseConfig({
+		worker: { model: "kimi-coding/kimi-for-coding" },
+		profiles: {
+			fallback: { worker: { model: "zai/glm-4.6" } },
+		},
+		quotaFallbackProfile: "fallback",
+	});
+	const probeResults = {
+		"kimi-coding": {
+			poolId: "kimi-coding",
+			source: "live",
+			usage: { taskCount: 0, durationMs: 0, tokensOut: 100 },
+			limit: 1000,
+		},
+		zai: {
+			poolId: "zai",
+			source: "live",
+			usage: { taskCount: 0, durationMs: 0, estimatedUsd: 5 },
+		},
+	};
+	const check = buildQuotaRiskDoctorCheck({ config, probeResults, metricsLines: [], now: NOW });
+	assert.equal(check.ok, true);
+	assert.equal(check.warning, undefined);
+	assert.doesNotMatch(check.detail, /fallback can never help/);
 });
 
 // --- detectQuotaRiskSignals ---
