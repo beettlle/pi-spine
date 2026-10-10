@@ -1,0 +1,14 @@
+spine-tasks/SP-816-deflake-detached-orphan-timeout-test/STATUS.md
+  h_2a17159c706ba1 3-4,25,27-29,32,34-35,43-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b0d61f10edd2708cf3bf0ee86418d29801568a9b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
