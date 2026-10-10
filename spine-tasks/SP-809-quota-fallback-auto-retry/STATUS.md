@@ -1,6 +1,6 @@
 # SP-809: In-lane automatic quota retry — Status
 
-**Current Step:** Step 3: Integration tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 2
@@ -32,13 +32,13 @@
 - [x] Stub pass-profile hook
 
 ### Step 3: Integration tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fallback succeeds
-- [ ] Fallback pool exhausted
-- [ ] Parallel lanes
-- [ ] Overloaded / unset
-- [ ] Partial work; resume; config untouched
+- [x] Fallback succeeds
+- [x] Fallback pool exhausted
+- [x] Parallel lanes
+- [x] Overloaded / unset
+- [x] Partial work; resume; config untouched
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
