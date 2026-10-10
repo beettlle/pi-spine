@@ -174,3 +174,27 @@ export function loadQuotaFallbackForWorker({ projectRoot, batchId }) {
 	const fallback = state.resilience?.quotaFallback;
 	return fallback && typeof fallback === "object" ? fallback : null;
 }
+
+/**
+ * One-call resolution of everything `runWorker` needs for the sticky
+ * override: the persisted fallback (read-only), the effective worker model
+ * (fallback profile model when a hop is active, else the configured worker
+ * model), and the child env with the profile override merged UNDER the
+ * caller's `extraEnv` (caller keys win — e.g. matrix row identity, #229).
+ * Kept here so `worker-host.mjs` stays under its 500-LOC module cap.
+ *
+ * @param {object} params
+ * @param {string} [params.projectRoot]
+ * @param {string} [params.batchId]
+ * @param {object|undefined} params.config Resolved spine config.
+ * @param {Record<string, string>} [params.extraEnv] Caller-supplied child env.
+ * @returns {{ fallback: QuotaFallbackState|null, workerModel: string|undefined, extraEnv: Record<string, string> }}
+ */
+export function resolveWorkerQuotaFallbackContext({ projectRoot, batchId, config, extraEnv }) {
+	const fallback = projectRoot && batchId ? loadQuotaFallbackForWorker({ projectRoot, batchId }) : null;
+	return {
+		fallback,
+		workerModel: resolveEffectiveWorkerModel(config, fallback),
+		extraEnv: { ...quotaFallbackWorkerEnv(fallback), ...(extraEnv ?? {}) },
+	};
+}
