@@ -1,7 +1,7 @@
 # SP-810: Operator surface: diagnose + doctor quota fallback — Status
 
-**Current Step:** Step 4: Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-10
 **Review Level:** 2
 **Review Counter:** 0
@@ -37,19 +37,19 @@
 - [x] Doctor cases
 
 ### Step 4: Testing & Verification
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Lint (`npm run lint` clean)
 - [x] Contract `testCommand` (90/90 pass)
 - [x] Batch + doctor suites (1852/1852 pass)
-- [ ] Coverage gate (blocked by pre-existing env flake — see Discovery 8; retrying)
+- [x] Coverage gate: 2870/2870 pass, line coverage 90.44% ≥ 77% (green once sibling-lane load dropped; flake in Discovery 8 is pre-existing on base 6368ffba)
 - [x] Fix all failures (phase23 500-LOC cap breach in journal.mjs fixed by compaction; 497 lines)
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
