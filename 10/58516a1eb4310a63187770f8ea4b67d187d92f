@@ -1,0 +1,14 @@
+spine-tasks/SP-808-quota-fallback-state-and-override/STATUS.md
+  h_2a17159c706ba1 3-4,34,36-38,41,43-48,51,53-54,67-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1058516a1eb4310a63187770f8ea4b67d187d92f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
