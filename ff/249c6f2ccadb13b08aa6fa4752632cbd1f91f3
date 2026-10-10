@@ -1,0 +1,87 @@
+README.md
+  s_2f5f9faf8a9e83::t_3898c47d0118fa 52
+docs/adoption/operator-runbook.md
+  s_2f5f9faf8a9e83::t_8ae8d22651f19e 102
+docs/release/npm-publish.md
+  s_2f5f9faf8a9e83::t_6c61653d914e80 110,138
+package-lock.json
+  s_2f5f9faf8a9e83::t_917d56ce59cff1 12,18,41-44,63,87-90,94-95,97-99,107-110,114-117,124-127,131-136,143-146,150-161,168-171,175-179,186-189,193-202,209-212,216-219,226-229,233-238,245-248,252-256,263-266,270-274,281-284,288-290,297-300,304-306,313-316,320-325,332-335,339-345,352-355,359-361,368,386-389,393,400-403,407,414,424-427,434-461,471-474,478-479,485-495,499,501,506,517-520,522,524-527,531,537-540,544-569,575-585,589-592,595-598,600-607,612-801,812,829,846,863,880,897,914,931,948,965,982,999,1016,1033,1050,1067,1084,1101,1118,1135,1152,1169,1173-1175,1178-1181,1183,1186-1192,1194-1198,1200,1310-1334,1425-1584,1616-1622,1646-1655,1683-1707,1711,1714-1725,1728,1731,1734-1740,1770-1779,1805-1866,2035-2041,2063-2093,2140-2219,2246-2273,2294-2323,2374-2397,2412-2434,2475-2486,2488-2489,2492,2525-2602,2653-2673,2695-2697,2700,2716-2757,2788-2825,2849-2853,2856-2857,2860-2873,2925-2934,2961-2998
+package.json
+  s_2f5f9faf8a9e83::t_a770ac04161af6 75,84
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/0-20261010T024835.md
+  s_2f5f9faf8a9e83::t_6419281293039c 1-11
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/5-20261010T024925.md
+  s_2f5f9faf8a9e83::t_206448b85f49bd 1-12
+spine-tasks/SP-808-quota-fallback-state-and-override/.reviews/final-20261010T025151.md
+  s_2f5f9faf8a9e83::t_30b21446a9e76f 1-8
+spine-tasks/SP-808-quota-fallback-state-and-override/STATUS.md
+  s_2f5f9faf8a9e83::t_0167c6545e1af1 3-5,14,16-18,21,23-24,27,29-31,34,36-38,41,43-48,51,53-54,62-70
+spine-tasks/SP-816-deflake-detached-orphan-timeout-test/STATUS.md
+  s_2f5f9faf8a9e83::t_373c6027e486f4 3-4,14,16,19,21-22,25,27-29,32,34-35,43-46
+spine-tasks/SP-817-replace-micromatch-with-picomatch/.reviews/0-20261010T021857.md
+  s_2f5f9faf8a9e83::t_1312693a3bbf75 1-8
+spine-tasks/SP-817-replace-micromatch-with-picomatch/.reviews/final-20261010T021942.md
+  s_2f5f9faf8a9e83::t_07ef41c56c6d19 1-8
+spine-tasks/SP-817-replace-micromatch-with-picomatch/STATUS.md
+  s_2f5f9faf8a9e83::t_74be965c824167 3-5,14,16-18,21,23-25,28,30,33,35-41,44,46-47,55-60
+spine-tasks/SP-818-pi-coding-agent-1-0/.reviews/0-20261010T031824.md
+  s_2f5f9faf8a9e83::t_083bd6e4d2afda 1-8
+spine-tasks/SP-818-pi-coding-agent-1-0/.reviews/final-20261010T031922.md
+  s_2f5f9faf8a9e83::t_df0afb0c43ac16 1-11
+spine-tasks/SP-818-pi-coding-agent-1-0/STATUS.md
+  s_2f5f9faf8a9e83::t_532ecf179593ae 3-5,14,16-17,20,22-24,27,29,32,34-39,42,44-45,53-58
+src/batch/batch-meta-reconstruct.mjs
+  s_2f5f9faf8a9e83::t_3ab32208388a52 324-326
+src/batch/contract-exec.mjs
+  s_2f5f9faf8a9e83::t_80ba5e13f22f88 8,267
+src/batch/contract-parse.mjs
+  s_2f5f9faf8a9e83::t_6296e86f02eb76 8,202
+src/batch/contract-prelanded.mjs
+  s_2f5f9faf8a9e83::t_dcdc321e6c63ca 8,16
+src/batch/engine-lanes/quota-fallback-state.mjs
+  s_2f5f9faf8a9e83::t_79d1ec39636bed 1-202
+src/batch/metrics.mjs
+  s_2f5f9faf8a9e83::t_c89b4de14f31a5 136-143
+src/batch/quota-fallback.mjs
+  s_2f5f9faf8a9e83::t_715f8104824a3b 91-98,104,119,121,128,178,211-214
+src/batch/worker-host.mjs
+  s_2f5f9faf8a9e83::t_c116d46c2548bc 16,63,66,68-70,134,150,169,223-225,327,380,433,487
+src/config/cursor-rules/discover.mjs
+  s_2f5f9faf8a9e83::t_db29a54a5b85bc 10,100
+src/config/cursor-rules/match-globs.mjs
+  s_2f5f9faf8a9e83::t_74d59c9cb67c6e 3,6,123-125,129
+src/planner/file-scope.mjs
+  s_2f5f9faf8a9e83::t_e79209c89e63de 9,39,267,271,274,278
+src/tasks/packet/validate-contract.mjs
+  s_2f5f9faf8a9e83::t_f089f649d9af95 6,238-239
+tests/batch/batch-meta-reconstruct.test.mjs
+  s_2f5f9faf8a9e83::t_66f9d5dc4bdfc8 108-158
+tests/batch/detached-start-orphan-timeout.test.mjs
+  s_2f5f9faf8a9e83::t_5baeac4a39a71c 105,107-114,131-137
+tests/batch/quota-fallback-state.test.mjs
+  s_2f5f9faf8a9e83::t_67d91a21c9e0ca 1-575
+tests/batch/run-metrics.test.mjs
+  s_2f5f9faf8a9e83::t_b3332a5c39a987 130-163
+tests/planner/file-scope-overlap.test.mjs
+  s_2f5f9faf8a9e83::t_ab30f53ba7ebbc 8-9,120-138
+tsconfig.batch.json
+  s_2f5f9faf8a9e83::t_19cdb0455880c2 39
+types/picomatch.d.ts
+  s_2f5f9faf8a9e83::t_621d28ccdd975d 2,4,9-17,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff249c6f2ccadb13b08aa6fa4752632cbd1f91f3",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
