@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-10 (Phase 96 v2.27.1 authored, awaiting scope approval; Next → SP-826)
+**Last Updated:** 2026-10-10 (Phase 96 v2.27.1 authored + SP-826/SP-827 token-cost fixes, awaiting scope approval; Next → SP-828)
 **Status:** Active
-**Next Task ID:** SP-826
+**Next Task ID:** SP-828
 
 ---
 
@@ -2682,12 +2682,14 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-821 | Diagnose recommends re-review, not salvage, for review-infra failures | S | #334 Partial | 2 | Staged |
 | SP-822 | Doctor warns about context-rewriting pi extensions | S | #334 Partial | 2 | Staged |
 | SP-825 | Docs: reviewer isolation and re-review recovery | S | #334 Closes | 2 | Staged |
+| SP-826 | Worker tail prompt names Contract testCommand; worker.md sent once | S | #335 Closes | 2 | Staged |
+| SP-827 | Execute tasks run at effective Review Level 0 (+ validate warning) | S | #336 Closes | 2 | Staged |
 
 **Phase 96 exit criteria:**
 
-- [ ] Operator approved release scope (manifest)
-- [ ] SP-819–SP-825 `.DONE` and integrated on `main`
-- [ ] #334, #315 CLOSED; #314 progress noted (stays open for streak locking)
+- [ ] Operator approved release scope (manifest; 9 tasks — patch cap 8, operator override)
+- [ ] SP-819–SP-827 `.DONE` and integrated on `main`
+- [ ] #334, #315, #335, #336 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD
 - [ ] Publish **v2.27.1** only after operator approval
 
