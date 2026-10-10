@@ -1,6 +1,6 @@
 # SP-810: Operator surface: diagnose + doctor quota fallback — Status
 
-**Current Step:** Step 2: Doctor
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 2
@@ -25,16 +25,16 @@
 - [x] Journal hints
 
 ### Step 2: Doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fallback target
-- [ ] Same-pool advisory
+- [x] Fallback target
+- [x] Same-pool advisory
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Diagnose cases
-- [ ] Doctor cases
+- [x] Diagnose cases
+- [x] Doctor cases
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
@@ -66,3 +66,5 @@
 ## Blockers
 
 _None._
+
+| 6 | Doctor same-pool advisory compares the fallback profile worker pool against the *effective* active worker (active profile worker pin, else base `agents.worker.model`), mirroring engine model resolution. Exported as `detectSamePoolQuotaFallback` for direct testing; appended to `buildQuotaRiskDoctorCheck` risks so it stays `ok: true` (never fails preflight). |
