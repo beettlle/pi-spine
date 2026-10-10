@@ -5,6 +5,41 @@
  */
 
 /**
+ * True when the latest quota-exhaustion journal payload came from
+ * `batch.quota_fallback_exhausted` — the parallel arrays are unique to that
+ * event (SP-808), so a fallback hop that died too is distinguishable from a
+ * plain worker exhaustion without carrying the event type through the ctx.
+ *
+ * @param {object|null} lastQuotaExhausted
+ * @returns {boolean}
+ */
+function isFallbackChainExhausted(lastQuotaExhausted) {
+	return Array.isArray(lastQuotaExhausted?.exhaustedPools);
+}
+
+/**
+ * Human-readable reset windows for the exhausted pool(s): a single
+ * "resets <raw>" for a worker exhaustion, or one per pool when the fallback
+ * chain died too (#329 wants the operator to see every window). Falls back to
+ * "reset time unknown" — the raw provider text carries no timezone, so it is
+ * shown verbatim rather than parsed into a wrong clock time.
+ *
+ * @param {object|null} lastQuotaExhausted
+ * @returns {string}
+ */
+function quotaResetSummary(lastQuotaExhausted) {
+	if (isFallbackChainExhausted(lastQuotaExhausted)) {
+		const pools = /** @type {string[]} */ (lastQuotaExhausted.exhaustedPools);
+		const resets = Array.isArray(lastQuotaExhausted.resetAtRaw) ? lastQuotaExhausted.resetAtRaw : [];
+		return pools
+			.map((pool, index) => `${pool} resets ${resets[index] ?? "unknown"}`)
+			.join(", ");
+	}
+	const reset = lastQuotaExhausted?.resetAtRaw;
+	return typeof reset === "string" && reset ? `resets ${reset}` : "reset time unknown";
+}
+
+/**
  * SBAR Background — short decision-relevant facts that explain the state the
  * assessment was derived from. Facts are additive; consumers that ignore
  * unknown fields keep working.
@@ -30,6 +65,27 @@ export function buildBackground(diagnosis, ctx = {}) {
 	if (ctx.failedTaskId) {
 		facts.push(
 			`Failed task: ${ctx.failedTaskId}${ctx.exitReason ? ` (exit: ${ctx.exitReason})` : ""}`,
+		);
+	}
+	// SP-810 (partial #329): when a fallback hop is active, operators must see
+	// which pool died, when it resets, and where the batch landed — plus the
+	// paste-ready manifest line the #248 pin policy requires them to record.
+	if (ctx.quotaFallback && typeof ctx.quotaFallback === "object" && ctx.quotaFallback.toProfile) {
+		const fallback = ctx.quotaFallback;
+		facts.push(
+			`Quota fallback active: ${fallback.exhaustedPool ?? "?"} exhausted (resets ${
+				fallback.resetAtRaw ?? "unknown"
+			}, provider local time) → ${fallback.toProfile} (${fallback.toModel ?? "?"}) since ${
+				fallback.at ?? "?"
+			}, triggered by ${fallback.triggerTaskId ?? "?"}`,
+		);
+		// Manifest text stays ASCII (`->`) exactly as operators paste it into the
+		// release manifest; the date is the YYYY-MM-DD slice of the hop timestamp.
+		const overrideDate = typeof fallback.at === "string" ? fallback.at.slice(0, 10) : "?";
+		facts.push(
+			`Agent pin override: yes (${overrideDate}, auto quota fallback ${
+				fallback.exhaustedPool ?? "?"
+			} -> ${fallback.toProfile}, batch ${ctx.batchId ?? "?"})`,
 		);
 	}
 	if (ctx.launchFailureKind) {
@@ -87,6 +143,24 @@ export function buildAssessmentReason(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "Work is already on the base branch while the batch record is still active — operator completed it manually";
 		case "needs_retry":
+			// SP-810 (partial #329): a quota exhaustion with no fallback that can
+			// take over must not imply an immediate retry will work — show the
+			// reset window instead. Fallback is hopeless when no hop is persisted
+			// (unset/refused) or the fallback chain itself exhausted (stop event).
+			if (
+				ctx.failedTaskId &&
+				ctx.exitReason === "provider_quota_exhausted" &&
+				(ctx.quotaFallback == null || isFallbackChainExhausted(ctx.lastQuotaExhausted))
+			) {
+				return `Task ${ctx.failedTaskId} exited "provider_quota_exhausted": provider quota is exhausted (${quotaResetSummary(
+					ctx.lastQuotaExhausted,
+				)}, provider local time) and no quota fallback can take over — an immediate retry hits the same quota limit`;
+			}
+			// Transient overload never falls back (#329) and clears on its own, so
+			// here a plain retry genuinely is the right move.
+			if (ctx.failedTaskId && ctx.exitReason === "provider_overloaded") {
+				return `Task ${ctx.failedTaskId} exited "provider_overloaded": transient provider overload — retry is reasonable`;
+			}
 			if (ctx.failedTaskId && ctx.exitReason) {
 				return `Task ${ctx.failedTaskId} exited "${ctx.exitReason}" without completing its contract, so the batch cannot proceed until it is retried`;
 			}

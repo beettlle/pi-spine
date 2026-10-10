@@ -71,6 +71,17 @@ export function collectQuotaPinTargets(config = {}) {
 		});
 	}
 
+	// SP-810: the quota fallback profile worker is a fallback-path pin — when
+	// the engine falls back to it, its pool must have headroom too.
+	const fallbackProfile =
+		typeof agents.quotaFallbackProfile === "string" ? agents.quotaFallbackProfile.trim() : "";
+	if (fallbackProfile && agents.profiles?.[fallbackProfile]) {
+		candidates.push({
+			model: agents.profiles[fallbackProfile]?.worker?.model,
+			source: `agents.profiles.${fallbackProfile}.worker.model (quota fallback)`,
+		});
+	}
+
 	/** @type {QuotaPinTarget[]} */
 	const targets = [];
 	const seen = new Set();
@@ -86,6 +97,37 @@ export function collectQuotaPinTargets(config = {}) {
 		targets.push({ model, poolId, source: candidate.source });
 	}
 	return targets;
+}
+
+/**
+ * SP-810: detect a quota fallback profile pinned to the same provider pool
+ * as the active worker. Falling back within one exhausted pool can never
+ * help, so surface it as an advisory. Advisory only — never fails preflight.
+ *
+ * @param {object} [config]
+ * @returns {string | null}
+ */
+export function detectSamePoolQuotaFallback(config = {}) {
+	const agents = config?.agents;
+	if (!agents || typeof agents !== "object") return null;
+
+	const fallbackProfile =
+		typeof agents.quotaFallbackProfile === "string" ? agents.quotaFallbackProfile.trim() : "";
+	if (!fallbackProfile || !agents.profiles?.[fallbackProfile]) return null;
+
+	const fallbackModel = agents.profiles[fallbackProfile]?.worker?.model;
+	// The active worker is the active profile's worker pin when set, else the
+	// base worker pin — mirroring how the engine resolves the worker model.
+	const activeProfile = typeof agents.activeProfile === "string" ? agents.activeProfile.trim() : "";
+	const activeModel =
+		(activeProfile && agents.profiles?.[activeProfile]?.worker?.model) || agents.worker?.model;
+	if (typeof fallbackModel !== "string" || typeof activeModel !== "string") return null;
+
+	const fallbackPool = resolvePoolId(fallbackModel.trim());
+	const activePool = resolvePoolId(activeModel.trim());
+	if (fallbackPool === "unknown" || fallbackPool !== activePool) return null;
+
+	return `agents.quotaFallbackProfile ${fallbackProfile} uses the same quota pool (${fallbackPool}) as the active worker — fallback can never help`;
 }
 
 /**
@@ -206,6 +248,9 @@ export function buildQuotaRiskDoctorCheck({ config = {}, probeResults, metricsLi
 
 	const signals = detectQuotaRiskSignals(metricsLines, { now });
 	risks.push(...signals);
+
+	const samePoolAdvisory = detectSamePoolQuotaFallback(config);
+	if (samePoolAdvisory) risks.push(samePoolAdvisory);
 
 	if (risks.length === 0) {
 		const detail =

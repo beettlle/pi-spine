@@ -42,6 +42,26 @@ export function buildReconcileDiagnosisContext(params) {
 
 	const pendingLaneLandTasks = findPendingLaneLandTasks(classifiedTasks);
 
+	// SP-810 (partial #329): surface the persisted quota-fallback hop and the
+	// latest quota-exhaustion journal payload so SBAR Background/Assessment can
+	// tell operators the real quota situation. Journal events are reused from
+	// signals.journalEvents (reconcileBatch already read them) — never a second
+	// journal read here. Payloads follow the SP-808 shapes: worker.quota_exhausted
+	// carries a single poolId/resetAtRaw; batch.quota_fallback_exhausted carries
+	// parallel exhaustedPools[]/resetAtRaw[] arrays.
+	const quotaFallbackRaw = signals.raw?.resilience?.quotaFallback;
+	const quotaFallback = quotaFallbackRaw && typeof quotaFallbackRaw === "object" ? quotaFallbackRaw : null;
+	const journalEvents = Array.isArray(signals.journalEvents) ? signals.journalEvents : [];
+	let lastQuotaExhausted = null;
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event?.type !== "worker.quota_exhausted" && event?.type !== "batch.quota_fallback_exhausted") {
+			continue;
+		}
+		lastQuotaExhausted = event.payload && typeof event.payload === "object" ? event.payload : {};
+		break;
+	}
+
 	return {
 		batchId: batch.batchId,
 		baseBranch: batch.baseBranch ?? git.baseBranch ?? "main",
@@ -49,6 +69,8 @@ export function buildReconcileDiagnosisContext(params) {
 		phase: batch.phase,
 		failedTasks: signals.failedTasks,
 		failedTaskId,
+		quotaFallback,
+		lastQuotaExhausted,
 		driftTaskStatus,
 		exitReason,
 		launchFailureKind: resolvedLaunchFailureKind,
