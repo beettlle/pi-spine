@@ -72,7 +72,7 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.87.1",
+    "@earendil-works/pi-coding-agent": "^1.0.1",
     "@types/node": "^22.20.4",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
