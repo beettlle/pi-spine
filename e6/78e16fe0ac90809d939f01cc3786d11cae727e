@@ -1,0 +1,20 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1905-1961
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 64,279-280
+spine-tasks/SP-811-docs-quota-fallback-v2-27/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,23-24,27,29-31,34,36-38,41,43-44,52-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e678e16fe0ac90809d939f01cc3786d11cae727e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
