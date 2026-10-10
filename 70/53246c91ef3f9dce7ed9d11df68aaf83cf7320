@@ -1,0 +1,16 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1905-1961
+spine-tasks/SP-811-docs-quota-fallback-v2-27/STATUS.md
+  h_2a17159c706ba1 3,27,29-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7053246c91ef3f9dce7ed9d11df68aaf83cf7320",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
