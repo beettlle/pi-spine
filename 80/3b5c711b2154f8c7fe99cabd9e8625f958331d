@@ -1,0 +1,23 @@
+bin/spine-worker-runner.mjs
+  s_2f5f9faf8a9e83::t_58141651cd6f03 320-328
+spine-tasks/SP-809-quota-fallback-auto-retry/STATUS.md
+  s_2f5f9faf8a9e83::t_7cedf094e9b852 3,28,30-32
+src/batch/resume-multi-queue.mjs
+  s_2f5f9faf8a9e83::t_1b5ddcb59ebb2d 20-21,118-119,121-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "803b5c711b2154f8c7fe99cabd9e8625f958331d",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
