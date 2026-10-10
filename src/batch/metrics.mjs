@@ -133,7 +133,14 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, 
 		batchId,
 		taskId: task.taskId,
 		agentRole: "worker",
-		model: typeof worker.model === "string" ? worker.model : "inherit",
+		// SP-808 (#329): SP-809 pins task.workerModel to the model actually used
+		// (fallback profile after a hop); prefer it over the batch-start config.
+		model:
+			typeof task.workerModel === "string" && task.workerModel !== ""
+				? task.workerModel
+				: typeof worker.model === "string"
+					? worker.model
+					: "inherit",
 		thinking:
 			worker.thinking === "off" ||
 			worker.thinking === "low" ||

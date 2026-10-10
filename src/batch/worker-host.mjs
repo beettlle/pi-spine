@@ -13,6 +13,7 @@ import {
 import { parseContract, parsePrompt } from "../tasks/packet/parse-prompt.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { classifyProviderQuotaError } from "./provider-quota.mjs";
+import { resolveWorkerQuotaFallbackContext } from "./engine-lanes/quota-fallback-state.mjs";
 import { assertReviewToolAvailable } from "./review.mjs";
 import {
 	finalizeWorkerOutput,
@@ -59,13 +60,14 @@ const WORKER_TIMEOUT_EXIT_CODE = 124;
  * capture still sees the original `failed` (shouldCaptureWorkerOutput matches
  * the literal) while consumers receive the provider-quota exit reason.
  *
- * @param {{ classification: string, rawOutput: string, config?: object, projectRoot?: string, batchId?: string, taskId?: string, laneNumber?: number, laneCorrelationId?: string }} params
+ * @param {{ classification: string, rawOutput: string, workerModel?: string, projectRoot?: string, batchId?: string, taskId?: string, laneNumber?: number, laneCorrelationId?: string }} params
  * @returns {{ classification: string, providerQuota: import("./provider-quota.mjs").ProviderQuotaError | null }}
  */
-function applyProviderQuotaClassification({ classification, rawOutput, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId }) {
+function applyProviderQuotaClassification({ classification, rawOutput, workerModel, projectRoot, batchId, taskId, laneNumber, laneCorrelationId }) {
 	if (classification !== "failed") return { classification, providerQuota: null };
-	const configured = /** @type {{ agents?: { worker?: { model?: unknown } } }} */ (config ?? {}).agents?.worker?.model;
-	const model = typeof configured === "string" ? configured : undefined;
+	// SP-808 (#329): the caller resolves the effective model (fallback profile
+	// when a hop is active) so classification and the journal tell the truth.
+	const model = typeof workerModel === "string" ? workerModel : undefined;
 	const providerQuota = classifyProviderQuotaError(rawOutput, model);
 	if (!providerQuota) return { classification, providerQuota: null };
 	if (providerQuota.kind === "quota_exhausted" && projectRoot && batchId) {
@@ -129,6 +131,7 @@ function sleep(ms) {
  * @param {string} [params.taskId]
  * @param {string} [params.laneCorrelationId]
  * @param {object} [params.config]
+ * @param {string} [params.workerModel] Effective worker model (SP-808).
  * @param {number} [params.stallDeadline]
  * @param {object} [params.signals]
  */
@@ -144,6 +147,7 @@ function buildWorkerFailureResult({
 	taskId,
 	laneCorrelationId,
 	config,
+	workerModel,
 	stallDeadline,
 	signals,
 }) {
@@ -162,7 +166,7 @@ function buildWorkerFailureResult({
 		config,
 	});
 	// SP-806 (#329): post-finalize reclassification (see helper doc).
-	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
+	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput, workerModel, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
 	return {
 		ok: false,
 		exitCode,
@@ -215,6 +219,9 @@ export async function runWorker({
 	if (fs.existsSync(donePath)) {
 		return { ok: true, exitCode: 0, mode: "already-done" };
 	}
+
+	// SP-808 (#329): sticky quota fallback — read-only load; caller extraEnv wins.
+	const quotaCtx = resolveWorkerQuotaFallbackContext({ projectRoot, batchId, config, extraEnv });
 
 	const stubExplicit =
 		process.env.SPINE_WORKER_STUB === "1" || process.env.SPINE_WORKER_STUB === "true";
@@ -317,7 +324,7 @@ export async function runWorker({
 				fileScopePaths,
 				config,
 				workerBackendDeps,
-				extraEnv,
+				extraEnv: quotaCtx.extraEnv,
 			});
 	const workerChild = /** @type {WorkerChildHandle} */ (child);
 	let childPastPreflight = isExecute ? true : !useLaunchScript;
@@ -370,6 +377,7 @@ export async function runWorker({
 				taskId,
 				laneCorrelationId,
 				config,
+				workerModel: quotaCtx.workerModel,
 			}),
 	});
 
@@ -422,6 +430,7 @@ export async function runWorker({
 			taskId,
 			laneCorrelationId,
 			config,
+			workerModel: quotaCtx.workerModel,
 		});
 	}
 	// SP-738 (#273): the runner exits 124 when the `pi` spawn hit its wall-clock
@@ -475,7 +484,7 @@ export async function runWorker({
 
 	// SP-806 (#329): main post-spawn failure path — post-finalize
 	// reclassification (see helper doc); only plain `failed` exits can match.
-	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput: output, config, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
+	const quotaOutcome = applyProviderQuotaClassification({ classification, rawOutput: output, workerModel: quotaCtx.workerModel, projectRoot, batchId, taskId, laneNumber, laneCorrelationId });
 	return {
 		ok,
 		exitCode,
