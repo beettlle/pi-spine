@@ -1,6 +1,6 @@
 # SP-809: In-lane automatic quota retry — Status
 
-**Current Step:** Step 2: Wire normal + resume paths
+**Current Step:** Step 3: Integration tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 2
@@ -25,11 +25,11 @@
 - [x] Synchronous apply; single retry
 
 ### Step 2: Wire normal + resume paths
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Normal path (net ≤ 0 lines)
-- [ ] Resume path
-- [ ] Stub pass-profile hook
+- [x] Normal path (net ≤ 0 lines)
+- [x] Resume path
+- [x] Stub pass-profile hook
 
 ### Step 3: Integration tests
 **Status:** ⬜ Not Started
