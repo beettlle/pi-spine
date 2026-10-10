@@ -6,7 +6,7 @@
  * parallel lane assignment would risk merge conflicts.
  */
 
-import micromatch from 'micromatch';
+import picomatch from 'picomatch';
 
 /** Synthetic basename used when expanding globs into concrete probe paths. */
 const PROBE_BASENAME = '__probe__';
@@ -36,7 +36,7 @@ const SYNTHETIC_PROBE_EXTENSIONS = Object.freeze([
 const MAX_BRACE_EXPANSIONS = 32;
 
 /**
- * Expand `{a,b}` brace groups into concrete entry variants (micromatch-style).
+ * Expand `{a,b}` brace groups into concrete entry variants (picomatch-style).
  * Nested groups are expanded recursively; expansion stops at
  * MAX_BRACE_EXPANSIONS so probe generation stays bounded.
  *
@@ -264,18 +264,18 @@ export function fileScopePatternsOverlap(leftPattern, rightPattern) {
 	const matchOpts = { dot: true };
 
 	for (const probe of leftProbes) {
-		if (micromatch.isMatch(probe, rightEntry, matchOpts)) return true;
+		if (picomatch(rightEntry, matchOpts)(probe)) return true;
 	}
 
 	for (const probe of rightProbes) {
-		if (micromatch.isMatch(probe, leftEntry, matchOpts)) return true;
+		if (picomatch(leftEntry, matchOpts)(probe)) return true;
 	}
 
-	if (!patternHasGlobMeta(leftEntry) && micromatch.isMatch(leftEntry, rightEntry, matchOpts)) {
+	if (!patternHasGlobMeta(leftEntry) && picomatch(rightEntry, matchOpts)(leftEntry)) {
 		return true;
 	}
 
-	if (!patternHasGlobMeta(rightEntry) && micromatch.isMatch(rightEntry, leftEntry, matchOpts)) {
+	if (!patternHasGlobMeta(rightEntry) && picomatch(leftEntry, matchOpts)(rightEntry)) {
 		return true;
 	}
 

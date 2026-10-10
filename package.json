@@ -81,6 +81,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "micromatch": "^4.0.8"
+    "picomatch": "^4.0.7"
   }
 }
