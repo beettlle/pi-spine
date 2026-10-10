@@ -1,6 +1,6 @@
 # SP-811: Docs: quota fallback policy + v2.27 runbook — Status
 
-**Current Step:** Step 2: Runbook v2.27.0 subsection
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 0
@@ -24,11 +24,11 @@
 - [x] Manifest override line
 
 ### Step 2: Runbook v2.27.0 subsection
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Quota fallback
-- [ ] #328, #332, #330, picomatch
-- [ ] Interim workaround
+- [x] Quota fallback
+- [x] #328, #332, #330, picomatch
+- [x] Interim workaround
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
