@@ -1,0 +1,25 @@
+src/batch/batch-meta-reconstruct.mjs
+  s_2f5f9faf8a9e83::t_4da7ff4b7befc7 324-326
+src/batch/engine-lanes/quota-fallback-state.mjs
+  s_2f5f9faf8a9e83::t_d2804a7e2174d6 177-200
+src/batch/metrics.mjs
+  s_2f5f9faf8a9e83::t_5b91c44b4db65d 136-143
+src/batch/worker-host.mjs
+  s_2f5f9faf8a9e83::t_502ff8075e0a03 16,63,66,68-70,134,150,169,223-225,327,380,433,487
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e57d080f8d397a95c07112250e6778e111ff2857",
+  "prompts": {},
+  "sessions": {
+    "s_2f5f9faf8a9e83": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-a88886dc-ee22-426f-8684-fadd6834228d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
