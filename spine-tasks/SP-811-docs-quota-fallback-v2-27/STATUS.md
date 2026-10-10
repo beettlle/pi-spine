@@ -1,7 +1,7 @@
 # SP-811: Docs: quota fallback policy + v2.27 runbook — Status
 
 **Current Step:** Step 4: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-10
 **Review Level:** 0
 **Review Counter:** 0
@@ -38,10 +38,10 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
