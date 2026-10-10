@@ -1,0 +1,16 @@
+.spine/rules-manifest.json
+  h_2a17159c706ba1 2
+spine-tasks/SP-810-quota-fallback-operator-surface/STATUS.md
+  h_2a17159c706ba1 3-4,40,45,49,51-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6a0b28c03e134b3ee022b4acce0556e7c2a07c6a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
