@@ -1,0 +1,14 @@
+spine-tasks/SP-810-quota-fallback-operator-surface/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-18,21,60-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c93b65fc7b817e601d6889a5008b4ef64c741736",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
