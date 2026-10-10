@@ -1,0 +1,20 @@
+spine-tasks/SP-810-quota-fallback-operator-surface/.reviews/0-20261010T050535.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-810-quota-fallback-operator-surface/.reviews/5-20261010T050558.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-810-quota-fallback-operator-surface/.reviews/final-20261010T050738.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-810-quota-fallback-operator-surface/STATUS.md
+  h_2a17159c706ba1 65-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7b5af1ff9498c6c82fbe419f408ffa4a74a3dd39",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
