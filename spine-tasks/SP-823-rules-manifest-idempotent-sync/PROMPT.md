@@ -18,9 +18,11 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 3. **Remove the deprecated wrapper**: replace the call in `integrate-worktree.mjs` with `tryAutoResolveMergeConflicts(worktreePath, {})` (swap the import; no net added lines), drop the re-export in `engine-lanes.mjs`, delete the wrapper in `merge.mjs`, and point `tests/batch/rules-manifest-merge.test.mjs` at `tryAutoResolveMergeConflicts`.
 4. **Tests** — add to `tests/config/cursor-rules/discover.test.mjs`: sync twice with unchanged rules in a temp dir → the file bytes are identical and `generatedAt` is unchanged; change one rule → the file is rewritten with a new fingerprint.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh lenient`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -32,7 +34,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -49,8 +51,9 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/config/cursor-rules/discover.test.mjs tests/cli/spine-rules.test.mjs tests/batch/rules-manifest-merge.test.mjs tests/doctor/rules-manifest.test.mjs tests/batch/integrate-worktree-sync.test.mjs tests/batch/integrate-fast-forward.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/config/cursor-rules/discover.test.mjs tests/cli/spine-rules.test.mjs tests/batch/rules-manifest-merge.test.mjs tests/doctor/rules-manifest.test.mjs tests/batch/integrate-worktree-sync.test.mjs tests/batch/integrate-fast-forward.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `src/config/cursor-rules/discover.mjs`, `src/batch/engine-lanes/merge.mjs`, `tests/cli/spine-rules.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -90,7 +93,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] After `npm test`, `git status --porcelain .spine/rules-manifest.json` is empty (paste into Discoveries)
 - [ ] Fix all failures
@@ -127,4 +130,4 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.

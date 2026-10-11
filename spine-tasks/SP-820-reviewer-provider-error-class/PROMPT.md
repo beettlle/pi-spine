@@ -26,9 +26,11 @@ Partial #334 — A reviewer failure caused by a provider request error is record
    - `runStepReview` with a stub reviewer that writes the Gemini 400 to stderr and exits 1 (follow the stub pattern in `tests/batch/review-no-artifact-respawn.test.mjs`) → result `reason: "review_provider_error"`, and the journaled `review.failed` keeps `providerMessage`.
    - Exit-reason mapping: a provider-error review result yields `code_review_provider_error`; a generic spawn failure still yields `code_review_spawn_failed`.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -41,7 +43,7 @@ Partial #334 — A reviewer failure caused by a provider request error is record
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -56,8 +58,9 @@ Partial #334 — A reviewer failure caused by a provider request error is record
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/reviewer-provider-error.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/batch/provider-quota.test.mjs tests/batch/post-done-plan-review-spawn.test.mjs tests/batch/salvage-final-review-spawn-failed.test.mjs tests/batch/review-spawn-timeout-recovery.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/reviewer-provider-error.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/batch/provider-quota.test.mjs tests/batch/*review-spawn*.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/reviewer-provider-error.mjs`, `src/batch/review-step-run.mjs`, `src/batch/engine-lanes/review-poll.mjs`, `tests/batch/reviewer-provider-error.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -95,7 +98,7 @@ Partial #334 — A reviewer failure caused by a provider request error is record
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
@@ -131,4 +134,4 @@ Partial #334 — A reviewer failure caused by a provider request error is record
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828. To stay under the 500-character `testCommand` limit, `post-done-plan-review-spawn`, `salvage-final-review-spawn-failed`, and `review-spawn-timeout-recovery` are now matched by `tests/batch/*review-spawn*.test.mjs` (which also runs `review-spawn.test.mjs`).

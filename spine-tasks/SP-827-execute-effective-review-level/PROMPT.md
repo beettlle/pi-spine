@@ -21,9 +21,11 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
    - `isReviewTypeRequired(readReviewLevel(folder), t)` is `false` for plan/code/final on an execute packet at Level 2.
    - `validatePrompt` on a valid execute packet at Level 1 → `ok: true`, one warning containing `Review Level`; at Level 0 → no such warning; `llm` packet at Level 2 → no such warning.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -36,7 +38,7 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -51,8 +53,9 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/review-level-execute.test.mjs tests/tasks/validate-contract-warn.test.mjs tests/tasks/validate-prelanded-contract.test.mjs tests/tasks/phase20-fixtures.test.mjs tests/batch/review-honor-guard.test.mjs tests/batch/execution-only.test.mjs tests/arch/ts-nocheck-guard.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/review-level-execute.test.mjs tests/tasks/validate-contract-warn.test.mjs tests/tasks/validate-prelanded-contract.test.mjs tests/tasks/phase20-fixtures.test.mjs tests/batch/review-honor-guard.test.mjs tests/batch/execution-only.test.mjs tests/arch/ts-nocheck-guard.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/review-level-effective.mjs`, `src/batch/review-artifacts.mjs`, `tests/batch/review-level-execute.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 | artifactsMustExist | `src/batch/review-level-effective.mjs`, `tests/batch/review-level-execute.test.mjs` |
 
 ## Steps
@@ -92,7 +95,7 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -128,4 +131,4 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.

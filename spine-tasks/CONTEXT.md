@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-10 (Phase 96 v2.27.1 authored + SP-826/SP-827 token-cost fixes, awaiting scope approval; Next → SP-828)
+**Last Updated:** 2026-10-11 (Phase 96 v2.27.1: SP-828 stet adoption added as wave 0; SP-819–SP-827 code packets stet-gated; awaiting scope approval; Next → SP-829)
 **Status:** Active
-**Next Task ID:** SP-828
+**Next Task ID:** SP-829
 
 ---
 
@@ -1376,13 +1376,18 @@ spine batch start SP-488 SP-489 SP-490
 | SP-437 | Sequence continue after merge_blocked wave | S | **Complete** | SP-387, SP-494 | #82 |
 | SP-471 | Gitignored auto-clean before dirty gate | S | **Complete** | SP-427, SP-470, SP-494 | #95 |
 
-**Stet batch policy (v1.5.0):**
+**Stet batch policy (current, from SP-828 / v2.27.1; supersedes the v1.5.0 policy):**
 
-- **Prerequisite:** LM Studio server at `http://127.0.0.1:1234/v1` with `qwen/qwen3-coder-next` loaded; `stet doctor` exits 0.
-- **Integration:** Option A — `worktreeSetupHook` + contract `testCommand` (`docs/stet-overview.md` §1).
-- **Bootstrap:** SP-494 must complete before v1.5.0 implementation batches.
+- **Prerequisites:** LM Studio at `http://127.0.0.1:1234/v1` with `qwen/qwen3.8-27b` loaded (preset: Enable Thinking off) and OpenJev System One at `http://127.0.0.1:8080` (critic, `systemone_timeout = "90s"`); `stet doctor` exits 0. Without OpenJev, export `STET_CRITIC_ENABLED=false`. Secrets stay env-only (`STET_SYSTEMONE_API_KEY`).
+- **Integration:** Option A — `worktreeSetupHook` (`scripts/spine-worktree-setup.sh` opens the session at the pre-worker HEAD and writes `.review/spine-stet-baseline.ref`; skips when `stet` is not on `PATH`) + contract `testCommand` (`docs/stet-overview.md` §1).
 - **Review scope:** Code files only; non-code excluded via `.review/config.toml` `exclude_patterns`.
-- **Contract:** `stet run --auto-finish-zero --quiet` chained after tests; error-severity findings fail contract.
+- **Contract:** append `&& bash scripts/spine-stet-contract-run.sh <level>` to the packet's scoped tests. The script fails while `stet list` shows active findings, fails when `stet run` fails, and runs `stet finish` at zero findings. Do not use a full `npm test` in stet-gated contracts: the contract wall clock is 10 minutes and a first stet review takes about 3–5 minutes.
+- **Level by task:** docs-only → no stet step; S low-risk → `lenient`; review, gate, diagnosis, security, or config code → `default` (or `strict`).
+- **Concurrency:** `lanes.maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio and OpenJev.
+- **Packet scope:** stet-gated packets list `.review/**` in `fileScopeMustNotChange`; `.review/*` except `config.toml` is gitignored.
+- **Known hazards:** `stet finish` clears the session, so re-running a passed contract starts a fresh review that can resurface dismissed findings. On diffs that add new files the reviewer can invent syntax defects; lint/typecheck/test output beats reviewer claims.
+
+_v1.5.0 policy (historical):_ `qwen/qwen3-coder-next`, `stet run --auto-finish-zero --quiet`, SP-494 bootstrap.
 
 **Stet findings → GitHub issues:**
 
@@ -2675,6 +2680,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Wave | Status |
 |------|---------|------|-------|------|--------|
+| SP-828 | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic; contract script counts active findings | S | — (operator) | 0 | Staged |
 | SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Staged |
 | SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Staged |
 | SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Staged |
@@ -2685,9 +2691,12 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-826 | Worker tail prompt names Contract testCommand; worker.md sent once | S | #335 Closes | 2 | Staged |
 | SP-827 | Execute tasks run at effective Review Level 0 (+ validate warning) | S | #336 Closes | 2 | Staged |
 
+**Stet gating (added 2026-10-11):** SP-828 lands first (release wave 0) and every code packet's Contract ends with the stet review — `default` for SP-819, SP-820, SP-821, SP-824, SP-827; `lenient` for SP-822, SP-823, SP-826; SP-825 (docs) has no stet step. `lanes.maxParallel` is 2 for this release. See "Stet batch policy (current)" under Phase 58.
+
 **Phase 96 exit criteria:**
 
-- [ ] Operator approved release scope (manifest; 9 tasks — patch cap 8, operator override)
+- [ ] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override)
+- [ ] SP-828 `.DONE` and integrated on `main` before wave 1 starts
 - [ ] SP-819–SP-827 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD

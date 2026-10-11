@@ -19,9 +19,11 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
    - `tests/batch/worker-prompt.test.mjs`: tail no longer contains `run npm test`; tail mentions the Contract `testCommand`; `includeAgentInclude: false` omits `@…/worker.md`; default still includes it (existing line ~75 assertion keeps passing).
    - `tests/agents/worker-runner.test.mjs`: `buildWorkerPiArgs` output contains the `worker.md` path exactly once (the `--append-system-prompt` value) and the tail (last arg) has no `@…/worker.md`.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh lenient`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -34,7 +36,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -48,8 +50,9 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/agents/worker-runner.test.mjs tests/agents/template-drift.test.mjs tests/config/worker-context.test.mjs tests/worker-tools/review-step-tool.test.mjs tests/batch/worker-backend.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/agents/worker-runner.test.mjs tests/agents/template-drift.test.mjs tests/config/worker-context.test.mjs tests/worker-tools/review-step-tool.test.mjs tests/batch/worker-backend.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `src/batch/worker-prompt.mjs`, `tests/batch/worker-prompt.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -81,7 +84,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 ### Step 3: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Fix all failures
 
 ### Step 4: Documentation & Delivery
@@ -116,4 +119,4 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.

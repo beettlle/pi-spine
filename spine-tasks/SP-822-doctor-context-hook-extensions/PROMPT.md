@@ -25,6 +25,8 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
    - missing package dir → skipped, no throw;
    - check object: hooks found + `loadUserExtensions: true` → `warning: true`; hooks found + default config → `ok: true` and no `warning`; no hooks → `ok: true`, no `warning`.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh lenient`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
 - **Task:** SP-819 (adds `agents.reviewer.loadUserExtensions` and reviewer `-ne` default)
@@ -39,7 +41,7 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset; never read the real `~/.pi` in tests (always pass a temp `agentDir`)
 
 ## File Scope
@@ -52,8 +54,9 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/doctor/pi-extension-hooks.test.mjs tests/doctor/extension-conflict.test.mjs tests/doctor/quota-risk.test.mjs tests/doctor/duplicate-install.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/doctor/pi-extension-hooks.test.mjs tests/doctor/extension-conflict.test.mjs tests/doctor/quota-risk.test.mjs tests/doctor/duplicate-install.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `src/doctor/pi-extension-hooks.mjs`, `src/doctor/run-doctor-checks.mjs`, `tests/doctor/pi-extension-hooks.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -88,7 +91,7 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] `spine doctor` in the repo exits 0 and lists the new check (paste the line into Discoveries)
 - [ ] Fix all failures
@@ -124,4 +127,4 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, and the stet triage paragraph in Mission. SP-828 is an indirect dependency via SP-819.

@@ -6,7 +6,7 @@
 **Bump type:** patch
 **Profile:** patch
 **Operator approved scope:** no — awaiting operator approval (operator invocation 2026-10-10: "create the next v2.27 release … contain #334 … create the spine tasks and wait for approval before starting development"). Packets are authored; **Phase 4 is blocked until this line reads `yes`.**
-**Composition choice:** #334 (reviewer extension isolation, P1) as the headline bug, split into 4 code packets plus 1 docs packet; #315 (rules-manifest churn that caused a v2.27.0 wave 2 merge conflict) and #314 (gate streak reset fails open, trust decision) as companion bugs. **Added 2026-10-10 (token-cost audit):** #335 (SP-826, worker tail prompt) and #336 (SP-827, execute tasks spawn reviewers) — two S bug fixes that cut per-task worker and reviewer spend; total 9 tasks exceeds the patch cap of 8 (operator override, see Composition audit).
+**Composition choice:** #334 (reviewer extension isolation, P1) as the headline bug, split into 4 code packets plus 1 docs packet; #315 (rules-manifest churn that caused a v2.27.0 wave 2 merge conflict) and #314 (gate streak reset fails open, trust decision) as companion bugs. **Added 2026-10-10 (token-cost audit):** #335 (SP-826, worker tail prompt) and #336 (SP-827, execute tasks spawn reviewers) — two S bug fixes that cut per-task worker and reviewer spend; total 9 tasks exceeds the patch cap of 8 (operator override, see Composition audit). **Added 2026-10-11 (stet adoption):** SP-828 refreshes stet (`qwen/qwen3.8-27b` + OpenJev System One critic, contract script counts active findings) and runs as release wave 0 so every v2.27.1 code packet is stet-reviewed; total 10 tasks (operator override).
 **Worker model pin:** `zai/glm-5.3` via `agents.activeProfile=hard`; `agents.quotaFallbackProfile=allegretto` (`kimi-coding/k3`) is provider failover per #329, not escalation. Do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248)).
 **Agent pin override:** none
 **Extension override:** pending check before wave 1. The installed v2.27.0 engine still spawns reviewers with user extensions until SP-819 lands. Before wave 1, confirm pi-headroom is the patched local build and pi-loop is removed (v2.27.0 manifest: pi-loop still gave 1/2 `MALFORMED_FUNCTION_CALL`), then probe the reviewer with a parallel-tool-call prompt on `google/gemini-3.1-pro-preview` `high`.
@@ -17,7 +17,7 @@
 ## Context
 
 - Current `main`: `2.27.0` @ `c696025` (v2.27.0 on npm)
-- Pending SP-* before authoring: **0** (Next Task ID was **SP-819**; now **SP-828** after SP-826/SP-827)
+- Pending SP-* before authoring: **0** (Next Task ID was **SP-819**; **SP-828** after SP-826/SP-827; now **SP-829** after SP-828)
 - Open issues: **33**. 0 `documentation`. Bugs: #334 (P1), #331, #327, #319, #316, #315, #314, #313, #311, #310, #309, #294. Enhancements: #317, #318, #320–#323, #325, #326, plus P3 items. Epics: #324, #225, #43.
 - `spine status --diagnose`: idle.
 
@@ -35,8 +35,9 @@
 |--------|----------|---------------|--------|
 | Documentation | 1 (SP-825) | 1–2 small | PASS (0 doc issues open; SP-825 documents #334 operator-visible changes) |
 | Bug fixes | 5 issues / 8 packets (#334 ×4 code, #315, #314, #335, #336) | 3–5 | PASS |
+| Tooling | 1 (SP-828 stet adoption; fixes the contract script's dismissed-finding count) | — | PASS with operator override (2026-10-11) |
 | Enhancements | 0 | 0 | PASS (SP-822's doctor check is acceptance criterion 5 of bug #334, not a separate enhancement) |
-| **Total tasks** | 9 | 5–8 | **PASS with operator override** — operator chose SP-826 + SP-827 (2026-10-10, token-cost audit); both S, disjoint File Scope, no deps, run in release wave 2 |
+| **Total tasks** | 10 | 5–8 | **PASS with operator override** — operator chose SP-826 + SP-827 (2026-10-10, token-cost audit); both S, disjoint File Scope, run in release wave 2. Operator added SP-828 (2026-10-11) as release wave 0 so the release is stet-reviewed |
 | Task sizes | all S | S only | PASS |
 | Dep drift check recorded | yes | WARN if missing | PASS |
 
@@ -70,6 +71,7 @@
 | #314 | bug P2 | SP-824 (Partial) | bug | **Select** — fail-closed + journaling; streak locking left open |
 | #335 | bug P2 | SP-826 (Closes) | bug | **Select** (override) — every worker runs the full suite and receives `worker.md` twice |
 | #336 | bug P2 | SP-827 (Closes) | bug | **Select** (override) — execute tasks spawn plan/final reviewers; blocks cheap execute packets |
+| — (operator) | tooling | SP-828 | tooling | **Select** (override, 2026-10-11) — stet proven on 27B + OpenJev in the stet repo; v1.5.0 contract script never passes after dismissals |
 | #337, #338 | bug P2 | — | bug | **Defer** — rules loader cap (#337) and usage fields (#338); M-sized or design needed |
 | #339, #340 | enh P2 | — | enh | **Defer** — worker extension isolation (#339), per-task profile / escalatePolicy (#340); patch allows 0 enh |
 | #341 | enh P3 | — | enh | **Defer** — duplicate full-suite runs per wave |
@@ -94,17 +96,21 @@
 | SP-823 | #315 | bug | S | Idempotent rules manifest sync; drop deprecated merge wrapper | Closes #315 |
 | SP-824 | #314 | bug | S | Gate streak reset failure fails closed and is journaled | Partial #314 (locking left open) |
 | SP-825 | #334 | doc | S | Docs: reviewer isolation and re-review recovery | Closes #334; deps SP-819–SP-822 |
-| SP-826 | #335 | bug | S | Worker tail prompt names Contract testCommand; worker.md sent once | Closes #335; no deps |
-| SP-827 | #336 | bug | S | Execute tasks run at effective Review Level 0 (+ validate warning) | Closes #336; no deps |
+| SP-826 | #335 | bug | S | Worker tail prompt names Contract testCommand; worker.md sent once | Closes #335; deps SP-828 |
+| SP-827 | #336 | bug | S | Execute tasks run at effective Review Level 0 (+ validate warning) | Closes #336; deps SP-828 |
+| SP-828 | — | tooling | S | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic | No deps; SP-819, SP-820, SP-823, SP-824, SP-826, SP-827 depend on it |
 
-**Release scope ID:** `SP-819,SP-820,SP-821,SP-822,SP-823,SP-824,SP-825,SP-826,SP-827`
+**Release scope ID:** `SP-828,SP-819,SP-820,SP-821,SP-822,SP-823,SP-824,SP-825,SP-826,SP-827`
+
+**Stet gating (2026-10-11):** each code packet's Contract ends with `bash scripts/spine-stet-contract-run.sh <level>` — `default` for SP-819, SP-820, SP-821, SP-824, SP-827; `lenient` for SP-822, SP-823, SP-826. SP-825 (docs, `testCommand` `true`) has no stet step. All stet-gated packets list `.review/**` in `fileScopeMustNotChange`.
 
 ### Operator wave plan (explicit scope per wave)
 
 | Wave | Scope | Rationale |
 |------|-------|-----------|
-| 1 | `SP-819,SP-820,SP-823,SP-824` | Independent, disjoint File Scope; 4 lanes |
-| 2 | `SP-821,SP-822,SP-826,SP-827,SP-825` | SP-821 needs SP-820's exit reasons; SP-822 needs SP-819's key; SP-826/SP-827 are independent and fill the 4-lane internal wave; SP-825 (docs) runs after SP-821/SP-822 inside the batch |
+| 0 | `SP-828` | Stet refresh must be on `main` before any stet-gated Contract runs |
+| 1 | `SP-819,SP-820,SP-823,SP-824` | Independent, disjoint File Scope; 2 rounds of 2 lanes at `maxParallel` 2 |
+| 2 | `SP-821,SP-822,SP-826,SP-827,SP-825` | SP-821 needs SP-820's exit reasons; SP-822 needs SP-819's key; SP-826/SP-827 depend only on SP-828 and share the first internal wave (2 rounds of 2 lanes at `maxParallel` 2); SP-825 (docs) runs after SP-821/SP-822 inside the batch |
 
 Release waves 1–2 are operator labels. Start each with its task IDs only (`spine batch start <ids>`); each explicit scope plans its own internal waves.
 
@@ -113,8 +119,12 @@ Release waves 1–2 are operator labels. Start each with its task IDs only (`spi
 ## Sequence runner (Phase 4)
 
 ```bash
-spine tasks validate SP-819 SP-820 SP-821 SP-822 SP-823 SP-824 SP-825 SP-826 SP-827
+spine tasks validate SP-828 SP-819 SP-820 SP-821 SP-822 SP-823 SP-824 SP-825 SP-826 SP-827
+stet doctor                                      # LM Studio qwen/qwen3.8-27b + OpenJev System One OK
 spine preflight
+spine batch start SP-828                         # release wave 0 — stet refresh
+spine status --diagnose
+spine gate approve && spine integrate && npm install && spine batch complete
 spine batch start SP-819 SP-820 SP-823 SP-824    # detached — omit --attached (#163)
 spine status --diagnose
 spine gate approve && spine integrate && npm install && spine batch complete
@@ -135,7 +145,30 @@ All 9 packets are new (lean authoring, 2026-10-10; SP-826/SP-827 added after the
 
 ## Wave plan snapshot
 
-Full release scope (`spine plan SP-819,…,SP-827`, 2026-10-10):
+Full release scope with SP-828 at `maxParallel` 2 (`spine plan SP-828,SP-819,…,SP-827`, 2026-10-11):
+
+```text
+Spine plan — ids
+10 task(s) · 4 wave(s) · maxParallel 2
+
+Wave 0 · 1 task
+  Lane 1: SP-828 — Stet contract review on qwen3.8-27b with the OpenJev critic
+
+Wave 1 · 6 tasks · 3 rounds (queued by maxParallel)
+  Round 1 (2 parallel): SP-819, SP-820
+  Round 2 (2 parallel): SP-823, SP-824
+  Round 3 (2 parallel): SP-826, SP-827
+
+Wave 2 · 2 tasks · 2 lanes in parallel
+  Lane 1: SP-821 · Lane 2: SP-822
+
+Wave 3 · 1 task
+  Lane 1: SP-825
+```
+
+`spine tasks validate` (10 tasks): 10 passed, 0 failed. `spine tasks analyze`: 0 blocking, 1 pre-existing warning (missing `_explore/engine-lanes-split/findings.md`). `stet doctor` with the target config (stet repo, 2026-10-11): `Model: qwen/qwen3.8-27b`, `System One OK`, `System One model: openjev-latest`. The operator wave plan above keeps SP-826/SP-827 in release wave 2.
+
+Previous snapshot, before SP-828 and at `maxParallel` 4 (`spine plan SP-819,…,SP-827`, 2026-10-10):
 
 ```text
 Spine plan — ids
@@ -192,6 +225,10 @@ Wave 1 · 1 task
 
 ## Risks and blockers
 
+- Stet-gated contracts need LM Studio (`qwen/qwen3.8-27b`, Enable Thinking off) and OpenJev up for every task. Run `stet doctor` before each wave. If OpenJev is down, export `STET_CRITIC_ENABLED=false` for the batch rather than editing `.review/config.toml`.
+- The Contract `testCommand` wall clock is 10 minutes. Each contract runs lint, typecheck, scoped tests, then a 3–5 minute first stet review. `lanes.maxParallel` is 2 so lanes do not queue on LM Studio. If a contract times out, retry the task; stet re-runs after dismissals are incremental.
+- SP-828 runs its own Contract with the new script and config from its diff; until it lands, the v1.5.0 contract script on `main` cannot pass after dismissals.
+- Stet reviewer false positives (invented syntax errors on new files, stale hunks) are expected on JS/TS diffs; workers must dismiss with tool evidence, not edit code to satisfy them.
 - Wave 1 still runs on the installed v2.27.0 engine, whose reviewers load user extensions. Re-check the extension set and probe the reviewer before starting (see Extension override above).
 - SP-819 changes every reviewer spawn. If a reviewer needs a built-in pi extension that `-ne` disables, every review breaks. SP-819 Step 0 lists exact-args tests; post-integrate `release:check` and wave 2 reviews (which run on the new code only after `npm install` / relink) are the live check.
 - SP-821 reverses SP-762's salvage routing. #291's complaint was that retry language forced a worker re-run; SP-821 Step 0 must confirm retry resumes at the review before changing anything.
@@ -204,6 +241,7 @@ Wave 1 · 1 task
 ## Publish checklist (Phase 5–6)
 
 - [ ] Operator approved scope (set `Operator approved scope: yes` above)
+- [ ] SP-828 integrated on `main` before release wave 1
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green

@@ -126,7 +126,7 @@
     "quotaFallbackProfile": "allegretto"
   },
   "lanes": {
-    "maxParallel": 4,
+    "maxParallel": 2,
     "queueExcess": true,
     "stallTimeoutMinutes": 120,
     "stallGraceAfterProgressMinutes": 30,

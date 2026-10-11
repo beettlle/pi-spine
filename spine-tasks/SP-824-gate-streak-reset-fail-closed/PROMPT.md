@@ -23,9 +23,11 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
    - throwing increment on approve → the approval is still persisted and `gate.streak_io_failed` `op: "increment"` is journaled.
    - happy path unchanged: reject with working I/O still resets and journals no failure.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -37,7 +39,7 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -49,8 +51,9 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate-posture-streak.test.mjs tests/batch/gate-posture-evaluate.test.mjs tests/batch/gate-posture-stamp.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate-posture-streak.test.mjs tests/batch/gate-posture-evaluate.test.mjs tests/batch/gate-posture-stamp.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/gate-posture-approve.mjs`, `tests/batch/gate-posture-streak-failure.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -86,7 +89,7 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
@@ -122,4 +125,4 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.

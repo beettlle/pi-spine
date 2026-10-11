@@ -22,9 +22,11 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
    - `tests/config/settings-fields.test.mjs`: the new field is listed and typed boolean.
    - Schema: a string value (`"yes"`) is rejected; `true`/`false` accepted. Put these in `tests/config/load.test.mjs` next to the existing agent-profile validation tests.
 
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+
 ## Dependencies
 
-- **None**
+- **Task:** SP-828 (stet contract script and review config used by this Contract)
 
 ## Context to Read First
 
@@ -37,7 +39,7 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 ## Environment
 
 - **Workspace:** pi-spine repo root
-- **Services required:** None
+- **Services required:** LM Studio at `http://127.0.0.1:1234` (`qwen/qwen3.8-27b`) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only (unit tests need neither)
 - **Tests:** run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
@@ -53,8 +55,9 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/review-spawn.test.mjs tests/batch/reviewer-model-resolve.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/config/settings-fields.test.mjs tests/config/load.test.mjs tests/spine-settings-set.test.mjs tests/arch/import-cycles.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/review-spawn.test.mjs tests/batch/reviewer-model-resolve.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/config/settings-fields.test.mjs tests/config/load.test.mjs tests/spine-settings-set.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/review-spawn.mjs`, `src/config/settings-fields.mjs`, `tests/batch/review-spawn.test.mjs` |
+| fileScopeMustNotChange | `.review/**` |
 
 ## Steps
 
@@ -94,7 +97,7 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 ### Step 4: Testing & Verification
 
 - [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand`
+- [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
 - [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
@@ -130,4 +133,4 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 
 ## Amendments
 
-_None._
+- **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
