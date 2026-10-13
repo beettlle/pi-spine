@@ -16,7 +16,7 @@
   "agents": {
     "worker": {
       "model": "zai/glm-5.3-flash",
-      "thinking": "high"
+      "thinking": "medium"
     },
     "reviewer": {
       "model": "google/gemini-3.1-pro-preview",
@@ -38,12 +38,12 @@
       "model": "google/gemini-3.5-flash-lite",
       "thinking": "off"
     },
-    "activeProfile": "hard",
+    "activeProfile": "default",
     "profiles": {
       "default": {
         "worker": {
           "model": "zai/glm-5.3-flash",
-          "thinking": "high"
+          "thinking": "medium"
         },
         "reviewer": {
           "model": "google/gemini-3.1-pro-preview",
@@ -95,7 +95,7 @@
       "allegretto": {
         "worker": {
           "model": "kimi-coding/k3",
-          "thinking": "high"
+          "thinking": "medium"
         },
         "reviewer": {
           "model": "google/gemini-3.1-pro-preview",
