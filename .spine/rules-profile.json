@@ -1,0 +1,39 @@
+{
+  "profileVersion": 1,
+  "worker": {
+    "neverInclude": [
+      "taskplane-worker-cursor.mdc",
+      "documentation-policy.mdc",
+      "general-llm-anti-patterns.mdc",
+      "engineering-philosophy.mdc",
+      "javascript-3-development-standards.mdc"
+    ]
+  },
+  "reviewer": {
+    "neverInclude": [
+      "documentation-policy.mdc",
+      "general-llm-anti-patterns.mdc",
+      "engineering-philosophy.mdc",
+      "javascript-3-development-standards.mdc",
+      "spine-task-authoring.mdc"
+    ]
+  },
+  "discovery": {
+    "excludePatterns": [
+      "aws-*",
+      "go-*",
+      "java-*",
+      "python-*",
+      "rust-*",
+      "swift-*",
+      "ios-*",
+      "ai-ml-*",
+      "obsidian-*",
+      "tufte-*"
+    ],
+    "excludeRelPaths": [
+      "taskplane-worker-cursor.mdc",
+      "taskplane-task-authoring.mdc"
+    ]
+  }
+}
