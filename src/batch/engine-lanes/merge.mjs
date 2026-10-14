@@ -491,14 +491,6 @@ export function tryAutoResolveMergeConflicts(projectRoot, options = {}) {
 }
 
 /**
- * @deprecated use tryAutoResolveMergeConflicts
- * @param {string} projectRoot
- */
-export function tryAutoResolveRulesManifestMergeConflict(projectRoot) {
-	return tryAutoResolveMergeConflicts(projectRoot, {});
-}
-
-/**
  * @param {string} projectRoot
  * @param {string[]} args
  */

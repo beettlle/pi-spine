@@ -11,7 +11,7 @@ import {
 } from "../../src/config/cursor-rules/discover.mjs";
 import {
 	mergeLaneToOrch,
-	tryAutoResolveRulesManifestMergeConflict,
+	tryAutoResolveMergeConflicts,
 } from "../../src/batch/engine-lanes.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -236,7 +236,7 @@ test("mergeLaneToOrch does not auto-resolve when other paths conflict", async ()
 	}
 });
 
-test("tryAutoResolveRulesManifestMergeConflict resolves in-progress merge", async () => {
+test("tryAutoResolveMergeConflicts resolves in-progress merge", async () => {
 	const projectRoot = await initGitRepo("spine-rules-manifest-in-progress-");
 	try {
 		const { orchBranch, taskBranch } = setupManifestMergeFixture(projectRoot, {
@@ -257,7 +257,7 @@ test("tryAutoResolveRulesManifestMergeConflict resolves in-progress merge", asyn
 		}
 		assert.equal(mergeFailed, true);
 
-		const resolved = tryAutoResolveRulesManifestMergeConflict(projectRoot);
+		const resolved = tryAutoResolveMergeConflicts(projectRoot, {});
 		assert.equal(resolved.ok, true);
 		assert.equal(resolved.generatedAt, "2026-06-05T22:30:00.000Z");
 
