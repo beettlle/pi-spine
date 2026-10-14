@@ -1,7 +1,7 @@
 # SP-819: Reviewer spawns skip user pi extensions by default — Status
 
-**Current Step:** Step 5: Documentation & Delivery
-**Status:** 🔵 Executing
+**Current Step:** Complete
+**Status:** ✅ Done — awaiting batch final review
 **Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
@@ -43,10 +43,10 @@
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -65,3 +65,21 @@
 ## Blockers
 
 _None._
+
+---
+
+## Verification Evidence (all run in foreground, in-session)
+
+| Check | Result |
+|-------|--------|
+| `npm run lint` (eslint --max-warnings 0) | Pass, clean |
+| `npm run typecheck` (tsc × 2 projects) | Pass, clean |
+| Contract scoped tests (7 files) | 114/114 pass, 0 fail (TAP: `# pass 114 # fail 0`) |
+| `bash scripts/spine-stet-contract-run.sh default` | 0 findings, exit 0 (after triage: 1 fixed, 8 dismissed with evidence) |
+| File scope | 6 changed files, exactly the File Scope; `.review/**` and worker spawn args untouched |
+
+## Completion Criteria
+
+- [x] `buildReviewerPiArgs` includes `-ne` by default; asserted by "buildReviewerPiArgs passes -ne by default so reviewers skip user pi extensions"
+- [x] With `agents.reviewer.loadUserExtensions: true`, reviewer args omit `-ne`; schema rejects non-boolean (base + profile) and `spine settings set` coerces/accepts the key
+- [x] Reviewer model, thinking, system prompt, and prompt arguments otherwise unchanged (asserted across default/true/false toggles)
