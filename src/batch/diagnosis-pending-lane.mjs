@@ -5,6 +5,10 @@
 
 import { isEngineProcessAlive } from "../process/liveness.mjs";
 import { readBatchEnginePid, readBatchEngineStartedAt } from "./state-guards.mjs";
+import {
+	REVIEW_INFRASTRUCTURE_EXIT_REASONS,
+	resolveTaskPrimaryFailureExitReason,
+} from "./diagnosis-review-infra.mjs";
 
 /**
  * Tasks with lane `.DONE` but not on main — lane commits never landed (#201 / SP-645).
@@ -54,6 +58,20 @@ export function shouldDiagnosePendingLaneLand(signals, deps = {}) {
 	if (isLiveEngineMidTask(signals?.raw, deps)) return false;
 	const pending = findPendingLaneLandTasks(signals.tasks);
 	if (pending.length === 0) return false;
+	// SP-821 / #334: when every pending-lane task's primary failure exit reason
+	// is a review-infrastructure reason (spawn failure / timeout / provider
+	// error), no verdict was ever produced. Re-run the review — never
+	// salvage-integrate unreviewed code. Any other reason (or no failure at
+	// all) keeps today's salvage guidance.
+	if (
+		pending.every((task) =>
+			REVIEW_INFRASTRUCTURE_EXIT_REASONS.has(
+				String(resolveTaskPrimaryFailureExitReason(task, signals) ?? ""),
+			),
+		)
+	) {
+		return false;
+	}
 	// Only when orch already appears merged — otherwise healthy pre-integrate
 	// waves (doneInLane, awaiting integrate) must stay needs_integrate / settled.
 	if (signals.git?.orchMergedToBase !== true) return false;

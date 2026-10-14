@@ -1,6 +1,6 @@
 # SP-821: Diagnose recommends re-review when a review never ran — Status
 
-**Current Step:** Step 1: Exit-reason set and diagnosis
+**Current Step:** Step 3: Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -19,17 +19,17 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Exit-reason set and diagnosis
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Shared set
-- [ ] `needs_retry` mapping
-- [ ] Pending-lane guard
+- [x] Shared set (`src/batch/diagnosis-review-infra.mjs`, 9 reasons incl. provider errors)
+- [x] `needs_retry` mapping (`findPostDoneReviewInfraFailedTask`)
+- [x] Pending-lane guard
 
 ### Step 2: Headline, command, alternatives
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Headline
-- [ ] Command + alternatives
+- [x] Headline
+- [x] Command + alternatives
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started

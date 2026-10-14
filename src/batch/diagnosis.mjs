@@ -67,6 +67,17 @@ export {
 	findPendingLaneLandTasks,
 	shouldDiagnosePendingLaneLand,
 } from "./diagnosis-pending-lane.mjs";
+import {
+	buildReviewInfraHeadline,
+	isReviewInfraExitReason,
+} from "./diagnosis-review-infra.mjs";
+export {
+	buildReviewInfraHeadline,
+	isReviewInfraExitReason,
+	isReviewInfraProviderError,
+	REVIEW_INFRASTRUCTURE_EXIT_REASONS,
+	resolveReviewInfraType,
+} from "./diagnosis-review-infra.mjs";
 export { buildSuggestedCommand } from "./diagnosis-suggested-command.mjs";
 import { buildSuggestedCommand } from "./diagnosis-suggested-command.mjs";
 export { buildBackground, buildAssessmentReason } from "./diagnosis-handoff-packet.mjs";
@@ -101,12 +112,6 @@ const NO_PAUSE_DIAGNOSES = new Set([
 	"engine_orphaned",
 	"integrate_isolated_ok",
 	"engine_still_running",
-]);
-const REVIEW_SPAWN_FAILURE_EXIT_REASONS = new Set([
-	"code_review_spawn_failed",
-	"code_review_timeout",
-	"final_review_spawn_failed",
-	"final_review_timeout",
 ]);
 
 /**
@@ -176,20 +181,14 @@ export function buildHeadline(diagnosis, ctx = {}) {
 			if (ctx.launchFailureKind === "worktree_unhealthy") {
 				return `${batchLabel} failed at worker launch — repair lane worktree git, then retry`;
 			}
-			if (REVIEW_SPAWN_FAILURE_EXIT_REASONS.has(ctx.exitReason ?? "")) {
-				const isFinal = ctx.exitReason.startsWith("final_review");
-				const isTimeout = ctx.exitReason.endsWith("_timeout");
-				const reviewKind = isFinal ? "final review" : "code review";
-
-				if (isTimeout) {
-					return ctx.failedTaskId
-						? `${batchLabel} ${reviewKind} timed out for task ${ctx.failedTaskId} — retry or increase SPINE_REVIEW_TIMEOUT_MS`
-						: `${batchLabel} reviewer spawn timed out — retry`;
-				}
-
-				return ctx.failedTaskId
-					? `${batchLabel} ${reviewKind} spawn failed for task ${ctx.failedTaskId} — retry`
-					: `${batchLabel} reviewer spawn failed — retry`;
+			if (isReviewInfraExitReason(ctx.exitReason)) {
+				// SP-821 / #334: reviewer infrastructure failed (spawn failure /
+				// timeout / provider error, plan+code+final) — no verdict was produced,
+				// so re-run the review rather than salvage-integrating unreviewed code.
+				return (
+					buildReviewInfraHeadline(batchLabel, ctx) ??
+					`${batchLabel} review produced no verdict — re-run the review`
+				);
 			}
 			if (ctx.salvageChangedFileCount > 0 && ctx.failedTaskId) {
 				return `${batchLabel} failed (${ctx.failedTaskId}): ${ctx.salvageChangedFileCount} uncommitted file(s) in scope`;
