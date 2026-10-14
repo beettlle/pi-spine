@@ -165,6 +165,8 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
 - **2026-10-14 readiness** — Scope approved by the operator. pi-loop removed; reviewer probe 3/3 (see Extension override). Worker probe `pi -p --no-session --model zai/glm-5.3-flash "ping"` → `pong` (8 s). `stet doctor` in pi-spine (pre-SP-828 config): `OpenAI-compatible API OK`, `Model: qwen/qwen3-coder-next`. `stet doctor` in `../stet` (the config SP-828 ports): `OpenAI-compatible API OK`, `Model: qwen/qwen3.8-27b`, `System One OK`, `System One model: openjev-latest`. `lms ps`: `qwen/qwen3.8-27b` loaded, context 65536, parallel 1, idle TTL 1 h. `spine tasks validate` (10 tasks): 10 passed. `spine preflight`: all checks pass except `git-clean` before the readiness commit; one warning, `prelanded-file-scope` for SP-825 (`skills/spine-release-operator/SKILL.md` changed by #342 `f39c87d1`), recorded as an SP-825 amendment with `fileScopeMustChange` unchanged (same handling as SP-808 in v2.27.0). No batch started; `main` not pushed. **Next:** `spine batch start SP-828`.
 - **2026-10-14 packet audit** — Commits `5a4b6f28` (packet fixes: `SPINE_STET_NO_AUTO_FINISH=1` required, coverage gates dropped, dot reporter, SP-823/SP-825 scoped checks, SP-828 gitlink check) and `bdf7f6f5` (GitNexus counts). Validate 10/10, analyze 0 blocking, `spine preflight` passed (SP-825 pre-landed warning as above). pi-loop absent; pi-headroom on `fix/preserve-thought-signatures` `7c203c7`; `HEADROOM_URL` unset.
 - **2026-10-14 19:22 UTC wave 0 start** — `spine batch start SP-828` with `SPINE_STET_NO_AUTO_FINISH=1` (confirmed in engine env). Batch `20261014T192255-335e`, engine PID 79446. Peak window opens 2026-10-15 06:00 UTC; start cutoff 04:30 UTC.
+- **2026-10-14 19:50 UTC wave 0 landed** — SP-828 `.DONE`; `contract.verified` ok; final review PASS after one `review.spawn_retry`. `spine integrate` → `31cd2314`. After integrate, main's index re-staged the deleted gitlink `.review/worktrees/stet-0ca229b1c13e` (HEAD tree was correct); cleared with `git rm --cached`. That is a pi-spine integrate bug and is not filed yet. Post-integrate `release:check`: exit 1, 2875/2877 pass (`/tmp/pi-spine-v2.27.1-wave0.log`). Failures: `tests/batch/worker-prompt-rules.test.mjs` "buildWorkerTailPrompt includes critical-rules for JS-scoped task" and "buildWorkerContextAsync appends config.standards end-to-end". Cause: `13ea1975` (`.spine/rules-profile.json` neverInclude, read via the real project root). It reproduces outside stet. Wave 1 is on hold for an operator decision.
+- **2026-10-14 stet issues** — First release gated by stet; SP-828 Discovery 6 had 3 false positives, all dismissed. Filed [stet#7](https://github.com/beettlle/stet/issues/7) (`stet status` `findings:` counts dismissed findings), [stet#8](https://github.com/beettlle/stet/issues/8) (dismissals lost after `stet finish`; the reason for `SPINE_STET_NO_AUTO_FINISH=1`), [stet#9](https://github.com/beettlle/stet/issues/9) (default `.review/worktrees/` committed as a gitlink). False-positive quality is not filed; file it if the pattern recurs in waves 1–2.
 
 ---
 
@@ -255,12 +257,15 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 | #294, #309–#311, #313, #316, #319, #327 | bug | Bug slot full |
 | #317, #318, #320–#323, #325, #326 | enh | Patch profile |
 | TypeScript 7 / `@types/node` 26 | dep major | Own release |
+| `docs/stet-overview.md` still documents `--auto-finish-zero` | docs | SP-828 Discovery 5; outside SP-828 file scope |
+| [stet#7](https://github.com/beettlle/stet/issues/7), [stet#8](https://github.com/beettlle/stet/issues/8), [stet#9](https://github.com/beettlle/stet/issues/9) | upstream bug | Drop `SPINE_STET_NO_AUTO_FINISH=1` once stet#8 ships |
+| `spine integrate` re-stages a gitlink deleted on the branch | bug | Wave 0; HEAD correct, index stale; not yet filed |
 
 ---
 
 ## Risks and blockers
 
-- Stet session lifecycle: without `SPINE_STET_NO_AUTO_FINISH=1`, the worker's passing Contract calls `stet finish`, then the engine's `contract.verified` re-run (and the next task on the same lane, since the setup hook runs once per lane) starts a fresh review from the lane baseline. That review can resurface dismissed findings, include earlier tasks' diffs, and fail with `contract_failed`. Export it for every start and resume.
+- Stet session lifecycle ([stet#8](https://github.com/beettlle/stet/issues/8)): without `SPINE_STET_NO_AUTO_FINISH=1`, the worker's passing Contract calls `stet finish`, then the engine's `contract.verified` re-run (and the next task on the same lane, since the setup hook runs once per lane) starts a fresh review from the lane baseline. That review can resurface dismissed findings, include earlier tasks' diffs, and fail with `contract_failed`. Export it for every start and resume.
 - Stet-gated contracts need LM Studio (`qwen/qwen3.8-27b`, Enable Thinking off) and OpenJev up for every task. Run `stet doctor` before each wave. If OpenJev is down, export `STET_CRITIC_ENABLED=false` for the batch rather than editing `.review/config.toml`.
 - The Contract `testCommand` wall clock is 10 minutes. Each contract runs lint, typecheck, scoped tests, then a 3–5 minute first stet review. `lanes.maxParallel` is 2 so lanes do not queue on LM Studio. If a contract times out, retry the task; stet re-runs after dismissals are incremental.
 - SP-828 runs its own Contract with the new script and config from its diff; until it lands, the v1.5.0 contract script on `main` cannot pass after dismissals.
@@ -278,7 +283,7 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 ## Publish checklist (Phase 5–6)
 
 - [x] Operator approved scope (set `Operator approved scope: yes` above; 2026-10-14)
-- [ ] SP-828 integrated on `main` before release wave 1
+- [x] SP-828 integrated on `main` before release wave 1 (`31cd2314`)
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green

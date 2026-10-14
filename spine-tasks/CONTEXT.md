@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); readiness probes green; ready for wave 0 `spine batch start SP-828`; Next → SP-829)
+**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 1 on hold (release:check 2 failures from `13ea1975`); Next → SP-829)
 **Status:** Active
 **Next Task ID:** SP-829
 
@@ -1386,7 +1386,7 @@ spine batch start SP-488 SP-489 SP-490
 - **Batch env (required):** `export SPINE_STET_NO_AUTO_FINISH=1` before every `spine batch start` / `resume`. The engine re-runs the Contract at final review (`contract.verified`), and `worktreeSetupHook` opens the session once per lane, not per task. With auto-finish, the worker's passing run clears the session, so the engine's re-run (or the next task on the lane) starts a fresh full review from the lane baseline that can resurface dismissed findings and include earlier tasks' diffs.
 - **Concurrency:** `lanes.maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio and OpenJev.
 - **Packet scope:** stet-gated packets list `.review/**` in `fileScopeMustNotChange`; `.review/*` except `config.toml` is gitignored.
-- **Known hazards:** `stet finish` clears the session, so re-running a passed contract starts a fresh review that can resurface dismissed findings. On diffs that add new files the reviewer can invent syntax defects; lint/typecheck/test output beats reviewer claims.
+- **Known hazards:** `stet finish` clears the session, so re-running a passed contract starts a fresh review that can resurface dismissed findings ([stet#8](https://github.com/beettlle/stet/issues/8)). `stet status` `findings:` includes dismissed findings, so count `stet list` instead ([stet#7](https://github.com/beettlle/stet/issues/7)). Stet's default worktree sits under `.review/worktrees/` with no ignore rule, so keep the `.review/*` gitignore ([stet#9](https://github.com/beettlle/stet/issues/9)). On diffs that add new files the reviewer can invent syntax defects; lint/typecheck/test output beats reviewer claims.
 
 _v1.5.0 policy (historical):_ `qwen/qwen3-coder-next`, `stet run --auto-finish-zero --quiet`, SP-494 bootstrap.
 
@@ -2681,7 +2681,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Wave | Status |
 |------|---------|------|-------|------|--------|
-| SP-828 | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic; contract script counts active findings | S | — (operator) | 0 | Staged |
+| SP-828 | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic; contract script counts active findings | S | — (operator) | 0 | Done |
 | SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Staged |
 | SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Staged |
 | SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Staged |
@@ -2697,7 +2697,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Phase 96 exit criteria:**
 
 - [x] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override; 2026-10-14)
-- [ ] SP-828 `.DONE` and integrated on `main` before wave 1 starts
+- [x] SP-828 `.DONE` and integrated on `main` before wave 1 starts (`31cd2314`)
 - [ ] SP-819–SP-827 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD
