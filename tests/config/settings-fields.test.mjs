@@ -15,6 +15,7 @@ const EXPECTED_PATHS = [
 	"agents.reviewer.code.thinking",
 	"agents.reviewer.final.model",
 	"agents.reviewer.final.thinking",
+	"agents.reviewer.loadUserExtensions",
 	"agents.reviewer.model",
 	"agents.reviewer.plan.model",
 	"agents.reviewer.plan.thinking",
@@ -38,6 +39,29 @@ test("SETTINGS_FIELDS lists editable paths including reviewer per-type pins", ()
 	assert.ok(SETTINGS_FIELDS.length >= 5);
 	const paths = SETTINGS_FIELDS.map((f) => f.path);
 	assert.deepEqual(paths.sort(), EXPECTED_PATHS.sort());
+});
+
+test("agents.reviewer.loadUserExtensions is a registered boolean setting (SP-819)", () => {
+	const field = SETTINGS_FIELDS.find((f) => f.path === "agents.reviewer.loadUserExtensions");
+	assert.ok(field, "expected agents.reviewer.loadUserExtensions in SETTINGS_FIELDS");
+	assert.equal(field.type, "boolean");
+	assert.equal(field.label, "Reviewer loads user pi extensions");
+
+	for (const [raw, expected] of [
+		[true, true],
+		[false, false],
+		["true", true],
+		["false", false],
+		["yes", true],
+		["no", false],
+	]) {
+		const result = validateSettingValue("agents.reviewer.loadUserExtensions", raw);
+		assert.equal(result.ok, true, String(raw));
+		if (result.ok) assert.equal(result.normalizedValue, expected);
+	}
+
+	const invalid = validateSettingValue("agents.reviewer.loadUserExtensions", "maybe");
+	assert.equal(invalid.ok, false);
 });
 
 test("listEditableFields returns shallow copies", () => {
