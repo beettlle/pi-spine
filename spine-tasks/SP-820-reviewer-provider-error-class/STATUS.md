@@ -1,6 +1,6 @@
 # SP-820: Classify reviewer provider request errors — Status
 
-**Current Step:** Step 1: Classifier
+**Current Step:** Step 3: Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -19,15 +19,15 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Classifier
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Classifier + reason constant
+- [x] Classifier + reason constant
 
 ### Step 2: Wire result and exit reason
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Result + journal payload
-- [ ] Exit reason mapping
+- [x] Result + journal payload
+- [x] Exit reason mapping
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
@@ -60,6 +60,9 @@
 | 5 | Dependencies satisfied: SP-828 stet adoption present (`scripts/spine-stet-contract-run.sh`, `.review/config.toml`, `.review/**` in fileScopeMustNotChange). |
 | 6 | Spawn-failed branch can carry `reason: review_timeout` (timeout results land there post-honor-check); nested-spawn reason returns earlier. Classifier wiring must therefore classify only when `spawnResult.reason` is unset, leaving timeout/nested paths byte-identical. |
 | 7 | Non-zero-exit spawn failures are SP-814 retry-eligible → stub Gemini-400 test expects exactly 2 spawns and classification on the final attempt. |
+| 9 | Export-only change to `provider-quota.mjs` (`collectStatusPayloads`) — behavior untouched, verified by 1-line diff. |
+| 10 | Line caps met: `review-step-run.mjs` 485, `review-poll.mjs` 499 (≤500). Shared `providerErrorFields` helper lives in the new module to keep the wiring file under the cap. |
+| 11 | Wiring guards classification on `spawnResult.reason` being unset, so the nested-spawn return, timeout (`review_timeout`), and honor/retry-eligibility paths are byte-identical. |
 | 8 | `runReviewPollLoop` takes injectable `runEngineReview`/`recordReviewTaskFailure` → exit-reason mapping testable via DI, no processes. `shouldEmitReviewResumed([], taskId)` → false, so empty `journalEvents` is safe. |
 
 ## Blockers

@@ -43,6 +43,10 @@ import {
 	journalReviewEvent,
 	writeStubReviewArtifact,
 } from "./review-step.mjs";
+import {
+	classifyReviewerSpawnFailure,
+	providerErrorFields,
+} from "./reviewer-provider-error.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, "../..");
@@ -290,6 +294,11 @@ export async function runStepReview({
 		if (honoredRetry) return honoredRetry;
 	}
 
+	// SP-820 / #334: classify the terminal attempt once, after the SP-814
+	// re-spawn loop. A set `reason` means a dedicated path (nested-spawn guard
+	// returned above; timeout keeps `review_timeout`) — those stay unchanged.
+	const providerError = spawnResult.reason ? null : classifyReviewerSpawnFailure(spawnResult);
+
 	if (spawnResult.spawnFailed) {
 		if (spawnResult.reason === NESTED_REVIEW_SPAWN_REASON) {
 			return completeNestedReviewSpawnSkipped({
@@ -335,7 +344,8 @@ export async function runStepReview({
 			error: spawnResult.error,
 			spawnFailed: true,
 			exitCode: spawnResult.exitCode,
-			...(spawnResult.reason ? { reason: spawnResult.reason } : {}),
+			...(spawnResult.reason && !providerError ? { reason: spawnResult.reason } : {}),
+			...providerErrorFields(providerError),
 			...diagnostics,
 		});
 		return {
@@ -348,7 +358,7 @@ export async function runStepReview({
 			spawnFailed: true,
 			error: spawnResult.error,
 			exitCode: spawnResult.exitCode ?? 1,
-			reason: spawnResult.reason,
+			...(providerError ? providerErrorFields(providerError) : { reason: spawnResult.reason }),
 			...diagnostics,
 		};
 	}
@@ -378,6 +388,7 @@ export async function runStepReview({
 			error,
 			spawnFailed: true,
 			exitCode: spawnResult.exitCode ?? 0,
+			...providerErrorFields(providerError),
 			...diagnostics,
 		});
 		return {
@@ -390,6 +401,7 @@ export async function runStepReview({
 			spawnFailed: true,
 			error,
 			exitCode: 1,
+			...providerErrorFields(providerError),
 			...diagnostics,
 		};
 	}
