@@ -49,10 +49,9 @@ snap-*/
 # Graphify rebuild output (post-commit hook writes here; ignore to avoid spine lane DirtyWorktree)
 graphify-out/
 
-# Stet runtime state (config.toml is committed; session/lock are per-worktree)
-.review/lock
-.review/session.json
-.review/spine-stet-baseline.ref
+# Stet runtime state (config.toml is committed; everything else is per-worktree)
+.review/*
+!.review/config.toml
 
 # Coverage suite full TAP (written by scripts/run-coverage.mjs; uploaded on CI)
 coverage-run.tap.log
