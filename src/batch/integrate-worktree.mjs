@@ -341,16 +341,16 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 			existsInMerge = false;
 		}
 
-		if (!existsInMerge) {
-			if (applyDeletions && !operatorTouched && removeMergeDeletedPath(projectRoot, filePath, { timeoutMs: effectiveTimeout })) processedCount++;
-			debugSyncLog(
-				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
-			);
+		if (dirtyPathSet.has(filePath) && operatorTouched) {
+			skippedDirtyPaths.push(filePath);
 			continue;
 		}
 
-		if (dirtyPathSet.has(filePath) && operatorTouched) {
-			skippedDirtyPaths.push(filePath);
+		if (!existsInMerge) {
+			if (applyDeletions && removeMergeDeletedPath(projectRoot, filePath, { timeoutMs: effectiveTimeout })) processedCount++;
+			debugSyncLog(
+				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
+			);
 			continue;
 		}
 

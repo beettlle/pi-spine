@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
-import { syncMergePathsToCheckedOutBase, syncPlumbingMergePathsToWorktree } from "../../src/batch/integrate-worktree.mjs";
+import { syncMergePathsToCheckedOutBase, syncMergeResultToCheckedOutBase, syncPlumbingMergePathsToWorktree } from "../../src/batch/integrate-worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /**
@@ -192,6 +192,142 @@ test("syncPlumbingMergePathsToWorktree skips diff paths absent from merge commit
 		assert.equal(result.ok, true);
 		assert.equal(result.processedPaths, 1);
 		assert.equal(fs.readFileSync(path.join(projectRoot, "present.txt"), "utf-8"), "present\n");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("syncPlumbingMergePathsToWorktree removes merge-deleted paths when applyDeletions is opted in (SP-830)", async () => {
+	const projectRoot = await initGitRepo("spine-sync-delete-on-");
+	try {
+		fs.writeFileSync(path.join(projectRoot, "deleted.txt"), "doomed\n", "utf-8");
+		execFileSync("git", ["add", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", "orch/sync-delete"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["rm", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "delete deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		const mergeCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		const baseSha = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		const result = syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { applyDeletions: true });
+
+		assert.equal(result.ok, true);
+		assert.equal(result.processedPaths, 1);
+		assert.equal(fs.existsSync(path.join(projectRoot, "deleted.txt")), false);
+		assert.equal(execFileSync("git", ["ls-files"], { cwd: projectRoot, encoding: "utf-8" }).includes("deleted.txt"), false);
+		const porcelain = execFileSync("git", ["status", "--porcelain"], { cwd: projectRoot, encoding: "utf-8" }).trim();
+		assert.equal(porcelain, "D  deleted.txt");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("syncPlumbingMergePathsToWorktree keeps merge-deleted paths by default (SP-784 behavior)", async () => {
+	const projectRoot = await initGitRepo("spine-sync-delete-off-");
+	try {
+		fs.writeFileSync(path.join(projectRoot, "deleted.txt"), "kept\n", "utf-8");
+		execFileSync("git", ["add", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", "orch/sync-delete-off"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["rm", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "delete deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		const mergeCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		const baseSha = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		const result = syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit);
+
+		assert.equal(result.ok, true);
+		assert.equal(result.processedPaths, 0);
+		assert.equal(fs.readFileSync(path.join(projectRoot, "deleted.txt"), "utf-8"), "kept\n");
+		assert.equal(execFileSync("git", ["status", "--porcelain"], { cwd: projectRoot, encoding: "utf-8" }).trim(), "");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("syncPlumbingMergePathsToWorktree skips operator-touched merge-deleted paths even when applyDeletions is on (SP-830)", async () => {
+	const projectRoot = await initGitRepo("spine-sync-delete-dirty-");
+	try {
+		fs.writeFileSync(path.join(projectRoot, "gone.txt"), "tracked\n", "utf-8");
+		execFileSync("git", ["add", "gone.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", "orch/sync-delete-dirty"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["rm", "gone.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "delete gone.txt"], { cwd: projectRoot, stdio: "ignore" });
+		const mergeCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+		const baseSha = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		// Operator has an uncommitted edit on the merge-deleted path.
+		fs.writeFileSync(path.join(projectRoot, "gone.txt"), "operator edit\n", "utf-8");
+
+		const result = syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, {
+			applyDeletions: true,
+			dirtyPaths: ["gone.txt"],
+		});
+
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.skippedDirtyPaths, ["gone.txt"]);
+		assert.equal(result.processedPaths, 0);
+		assert.equal(fs.readFileSync(path.join(projectRoot, "gone.txt"), "utf-8"), "operator edit\n");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("syncMergeResultToCheckedOutBase forwards applyDeletions in plumbing mode (SP-830)", async () => {
+	const projectRoot = await initGitRepo("spine-sync-delete-fwd-");
+	try {
+		fs.writeFileSync(path.join(projectRoot, "deleted.txt"), "doomed\n", "utf-8");
+		execFileSync("git", ["add", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "baseline"], { cwd: projectRoot, stdio: "ignore" });
+
+		execFileSync("git", ["checkout", "-b", "orch/sync-delete-fwd"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["rm", "deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "delete deleted.txt"], { cwd: projectRoot, stdio: "ignore" });
+		const orchTip = execFileSync("git", ["rev-parse", "HEAD"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		// Plumbing merge commit: first parent is main, tree takes orch's deletion.
+		const tree = execFileSync("git", ["rev-parse", `${orchTip}^{tree}`], { cwd: projectRoot, encoding: "utf-8" }).trim();
+		const mergeCommit = execFileSync("git", ["commit-tree", tree, "-p", "main", "-p", orchTip, "-m", "plumbing merge"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		const result = syncMergeResultToCheckedOutBase(projectRoot, "main", { mode: "plumbing", mergeCommit }, {
+			dirtyPaths: [],
+		});
+
+		assert.notEqual(result, null);
+		assert.equal(result.ok, true);
+		assert.equal(fs.existsSync(path.join(projectRoot, "deleted.txt")), false);
+		assert.equal(execFileSync("git", ["ls-files"], { cwd: projectRoot, encoding: "utf-8" }).includes("deleted.txt"), false);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
