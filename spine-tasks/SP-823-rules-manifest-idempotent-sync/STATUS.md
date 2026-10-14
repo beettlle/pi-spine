@@ -1,8 +1,8 @@
 # SP-823: Idempotent rules manifest sync — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-10-10
+**Current Step:** Step 1: Idempotent write
+**Status:** 🔵 In Progress
+**Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,12 +11,12 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Impact analysis recorded
-- [ ] Callers in File Scope
-- [ ] Line counts recorded
-- [ ] Dependencies satisfied
+- [x] Impact analysis recorded
+- [x] Callers in File Scope
+- [x] Line counts recorded
+- [x] Dependencies satisfied
 
 ### Step 1: Idempotent write
 **Status:** ⬜ Not Started
@@ -54,6 +54,11 @@
 
 | # | Finding |
 |---|---------|
+| 1 | GitNexus impact `discoverCursorRules` (upstream): **HIGH** risk label, 27 impacted nodes, 4 direct depth-1 callers: `src/cli/rules.mjs:runRulesDiscover`, `src/config/reviewer-context.mjs:buildReviewerContext`, `src/config/spine-init-constants.mjs:runInitRulesDiscover`, `src/config/worker-context.mjs:buildWorkerContextAsync`. Risk is breadth-only: the guard changes write behavior, not the returned manifest schema (`ok`, `manifest`, `manifestPath` all preserved), so callers are compatible. |
+| 2 | GitNexus impact `tryAutoResolveRulesManifestMergeConflict` (upstream): LOW risk, 0 graph callers. Real call sites found by rg, all in File Scope: `merge.mjs:497` (wrapper), `integrate-worktree.mjs:12,425` (import+call), `engine-lanes.mjs:60` (re-export), `tests/batch/rules-manifest-merge.test.mjs:14,239,260`. |
+| 3 | `rules sync` + `REPO_ROOT` sweep: only `tests/cli/spine-rules.test.mjs:157` runs `runSpine(["rules","sync"], { cwd: REPO_ROOT })` — in File Scope. No other callers; no blockers. |
+| 4 | Line counts: `integrate-worktree.mjs` 491 (SP-830 landed, was 498), `engine-lanes.mjs` 498, `merge.mjs` 886 (submodule, outside the 500 cap), tests 272/169/365. Steps 2 changes are line-neutral or removing in the two capped files. |
+| 5 | Dependencies satisfied: `scripts/spine-stet-contract-run.sh` and `.review/config.toml` exist (SP-828); `integrate-worktree.mjs` already reflects SP-830 edits (491 lines). |
 
 ## Blockers
 
