@@ -1,7 +1,7 @@
 # SP-820: Classify reviewer provider request errors — Status
 
-**Current Step:** Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete — .DONE
+**Status:** ✅ Finished
 **Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,17 +35,17 @@
 - [x] Classifier, stub reviewer, and mapping cases
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
