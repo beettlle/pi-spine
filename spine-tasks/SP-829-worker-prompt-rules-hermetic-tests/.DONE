@@ -1,0 +1,1 @@
+SP-829 complete. Hermetic worker-prompt-rules tests committed (a2e3c0f4). Contract testCommand green end-to-end after relaunch: lint, typecheck, 19/19 unit tests, stet review 0 active findings (duplicate false positive f21f4ab re-dismissed — same stet hunk truncation as Discovery 6; see STATUS.md Discovery 7). HEAD 766d1102 + STATUS addendum, worktree clean.
