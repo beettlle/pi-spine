@@ -15,7 +15,12 @@ import { isReviewInfraExitReason } from "./diagnosis-review-infra.mjs";
 export function buildAlternatives(diagnosis, ctx = {}) {
 	const common = ["spine status --diagnose"];
 
-	if ((ctx.pendingLaneLandTasks?.length ?? 0) > 0) {
+	// SP-821 / #334: needs_retry caused by a review-infrastructure exit reason
+	// must take the labeled salvage-dry-run path below, even when the task also
+	// sits in the pending-lane set — salvage --integrate stays forbidden there.
+	const reviewInfraNeedsRetry = diagnosis === "needs_retry" && isReviewInfraExitReason(ctx.exitReason);
+
+	if ((ctx.pendingLaneLandTasks?.length ?? 0) > 0 && !reviewInfraNeedsRetry) {
 		return [
 			ctx.batchId
 				? `spine batch salvage --batch ${ctx.batchId} --dry-run`

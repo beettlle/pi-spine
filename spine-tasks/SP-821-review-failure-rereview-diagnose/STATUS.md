@@ -1,6 +1,6 @@
 # SP-821: Diagnose recommends re-review when a review never ran — Status
 
-**Current Step:** Step 3: Tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -32,10 +32,10 @@
 - [x] Command + alternatives
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Updated tests
-- [ ] New matrix test
+- [x] Updated tests (`post-done-plan-review-spawn.test.mjs`, `salvage-final-review-spawn-failed.test.mjs`)
+- [x] New matrix test (`diagnosis-review-infra-rereview.test.mjs`)
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
