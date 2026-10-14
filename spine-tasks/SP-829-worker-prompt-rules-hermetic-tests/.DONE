@@ -1,0 +1,1 @@
+SP-829 complete. Hermetic worker-prompt-rules tests committed (a2e3c0f4). Contract testCommand green end-to-end: lint, typecheck, 19/19 unit tests, stet review 0 active findings (sole finding dismissed as false_positive — stet hunk context truncated file-top imports; see STATUS.md Discovery 6). HEAD 9d4b084c, worktree clean.
