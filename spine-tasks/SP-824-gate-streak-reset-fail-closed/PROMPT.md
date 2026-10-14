@@ -51,7 +51,7 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate-posture-streak.test.mjs tests/batch/gate-posture-evaluate.test.mjs tests/batch/gate-posture-stamp.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate-posture-streak.test.mjs tests/batch/gate-posture-evaluate.test.mjs tests/batch/gate-posture-stamp.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/gate-posture-approve.mjs`, `tests/batch/gate-posture-streak-failure.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -90,7 +90,6 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -126,3 +125,4 @@ Partial #314 — A failed streak reset can no longer lead to auto-approval, and 
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
+- **2026-10-14 (operator, packet audit):** Removed the coverage gate (#342: S packets use scoped tests; post-integrate `release:check` owns coverage). Added `--test-reporter=dot` to the Contract.

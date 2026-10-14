@@ -51,7 +51,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/config/cursor-rules/discover.test.mjs tests/cli/spine-rules.test.mjs tests/batch/rules-manifest-merge.test.mjs tests/doctor/rules-manifest.test.mjs tests/batch/integrate-worktree-sync.test.mjs tests/batch/integrate-fast-forward.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/config/cursor-rules/discover.test.mjs tests/cli/spine-rules.test.mjs tests/batch/rules-manifest-merge.test.mjs tests/doctor/rules-manifest.test.mjs tests/batch/integrate-worktree-sync.test.mjs tests/batch/integrate-fast-forward.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `src/config/cursor-rules/discover.mjs`, `src/batch/engine-lanes/merge.mjs`, `tests/cli/spine-rules.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -94,8 +94,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
-- [ ] After `npm test`, `git status --porcelain .spine/rules-manifest.json` is empty (paste into Discoveries)
+- [ ] After the Contract run, `git status --porcelain .spine/rules-manifest.json` is empty (paste into Discoveries; post-integrate `release:check` repeats the check for the full suite)
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -113,7 +112,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 ## Completion Criteria
 
-- [ ] `npm test` leaves `.spine/rules-manifest.json` unchanged
+- [ ] The Contract run (which includes `tests/cli/spine-rules.test.mjs`) leaves `.spine/rules-manifest.json` unchanged; the full suite is confirmed at post-integrate `release:check`
 - [ ] `spine rules sync` with no rule changes does not modify the manifest
 - [ ] The deprecated wrapper is removed
 
@@ -131,3 +130,4 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
+- **2026-10-14 (operator, packet audit):** Removed the coverage gate and the full `npm test` run in Step 4 (#342); the manifest-clean check now follows the Contract run, and post-integrate `release:check` repeats it for the full suite. Added `--test-reporter=dot`; dropped `SPINE_SUPPRESS_JOURNAL_ATTACH=1` to stay under 500 characters (SP-812 already isolates tests from the live journal).

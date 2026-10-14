@@ -31,7 +31,7 @@
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
 
-- [ ] Full suite
+- [ ] Doc-referencing tests only
 - [ ] Commands verified
 - [ ] Fix all failures
 

@@ -39,7 +39,6 @@
 
 - [ ] Lint
 - [ ] Contract `testCommand`
-- [ ] Coverage gate
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery

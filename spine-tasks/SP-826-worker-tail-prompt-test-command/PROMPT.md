@@ -66,7 +66,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 
 - [ ] Contract `testCommand` instruction replaces `run npm test`
 - [ ] `includeAgentInclude` option (default `true`)
-- [ ] `buildWorkerPiArgs` passes `includeAgentInclude: false`; net line change in `bin/spine-worker-runner.mjs` ≤ 0 (file is 497 lines; modules stay ≤ 500)
+- [ ] `buildWorkerPiArgs` passes `includeAgentInclude: false`; keep `bin/spine-worker-runner.mjs` ≤ 500 lines (497 today; no unrelated edits to save lines)
 
 **Artifacts:**
 - `src/batch/worker-prompt.mjs` (modified)
@@ -120,3 +120,4 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
+- **2026-10-14 (operator, packet audit):** `bin/spine-worker-runner.mjs` rule is now "≤ 500 lines" instead of "net line change ≤ 0"; no LOC policy covers `bin/`, and the fix needs one line.

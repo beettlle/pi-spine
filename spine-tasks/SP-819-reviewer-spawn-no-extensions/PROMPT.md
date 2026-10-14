@@ -55,7 +55,7 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/review-spawn.test.mjs tests/batch/reviewer-model-resolve.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/config/settings-fields.test.mjs tests/config/load.test.mjs tests/spine-settings-set.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/review-spawn.test.mjs tests/batch/reviewer-model-resolve.test.mjs tests/batch/review-no-artifact-respawn.test.mjs tests/config/settings-fields.test.mjs tests/config/load.test.mjs tests/spine-settings-set.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/review-spawn.mjs`, `src/config/settings-fields.mjs`, `tests/batch/review-spawn.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -98,7 +98,6 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -134,3 +133,4 @@ Partial #334 — Reviewer `pi` spawns pass `-ne` by default. A new opt-out key `
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
+- **2026-10-14 (operator, packet audit):** Removed the coverage gate (#342: S packets use scoped tests; post-integrate `release:check` owns coverage). Added `--test-reporter=dot` to the Contract.

@@ -40,15 +40,15 @@
 ### Step 4: Docs
 **Status:** ⬜ Not Started
 
-- [ ] Runbook §8.1
+- [ ] Runbook §8.1 (incl. `SPINE_STET_NO_AUTO_FINISH=1` required for batches)
 
 ### Step 5: Testing & Verification
 **Status:** ⬜ Not Started
 
 - [ ] Lint
 - [ ] Contract `testCommand`
-- [ ] Coverage gate
 - [ ] `.review` status clean
+- [ ] `git ls-files -s .review` lists only `config.toml` (100644)
 - [ ] Fix all failures
 
 ### Step 6: Documentation & Delivery

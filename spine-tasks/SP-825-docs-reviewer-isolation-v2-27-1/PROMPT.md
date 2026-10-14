@@ -75,7 +75,7 @@ Closes #334 — Document the v2.27.1 reviewer isolation, the new review-failure 
 
 ### Step 3: Testing & Verification
 
-- [ ] Run the full suite: `npm run typecheck && SPINE_WORKER_STUB=1 npm test`
+- [ ] Run only tests that reference the changed docs: `rg -l 'operator-runbook|spine-release-operator/SKILL' tests/`, then `node --experimental-strip-types --test --test-reporter=dot <hits>` (no hits → record "no tests reference these docs"; post-integrate `release:check` owns the full suite)
 - [ ] Every command in the new text matches a real CLI command or settings key (`spine settings show agents.reviewer.loadUserExtensions` succeeds)
 - [ ] Fix all failures
 
@@ -111,3 +111,4 @@ Closes #334 — Document the v2.27.1 reviewer isolation, the new review-failure 
 ## Amendments
 
 - **2026-10-14 (operator, v2.27.1 readiness):** Preflight flags `skills/spine-release-operator/SKILL.md` as pre-landed: `f39c87d1` (#342, token-cost authoring and operator guidance) rewrote parts of it after this packet was authored. None of this packet's content is on `main` (no reviewer `-ne`, `loadUserExtensions`, `*_review_provider_error`, or re-review guidance in the skill), so `fileScopeMustChange` stays as written. SP-828 (release wave 0) also edits `docs/adoption/operator-runbook.md` §8.1 (stet); leave that section as SP-828 left it. Build the Phase 4 paragraph on the post-#342 skill text.
+- **2026-10-14 (operator, packet audit):** Testing step runs only the tests that reference the changed docs instead of the full suite (#342). Review Level stays 0: this packet writes no code, so the engine spawns no plan or final reviewer (`isReviewTypeRequired` returns `false` at level 0).

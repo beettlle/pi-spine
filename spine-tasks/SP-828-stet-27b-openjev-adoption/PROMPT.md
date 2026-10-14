@@ -31,6 +31,7 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
    - `.gitignore`: replace the three `.review/` lines with `.review/*` and `!.review/config.toml`.
    - `git rm --cached .review/worktrees/stet-0ca229b1c13e` (accidental gitlink; do not delete the local directory contents beyond what `git rm --cached` does).
    - `docs/adoption/operator-runbook.md` §8.1: model and env exports (`STET_MODEL=qwen/qwen3.8-27b`), OpenJev prerequisite and the `STET_CRITIC_ENABLED=false` fallback, contract behavior (active findings from `stet list`; `stet run` failure fails the contract; zero findings run `stet finish`), remove the claim that the contract uses `--auto-finish-zero`, level guidance (S low-risk → `lenient` or none; M → `default`; review/gate/security code → `default` or `strict`), and the known hazards below.
+   - In the same section, change `SPINE_STET_NO_AUTO_FINISH=1` from optional to **required for spine batches**: export it before `spine batch start` / `resume`. Reasons: the engine re-runs the Contract at final review (`contract.verified`), and `worktreeSetupHook` opens the session once per lane, not once per task. Without it, the worker's passing run calls `stet finish`, and the engine's re-run (or the next task on the same lane) starts a fresh full review from the lane baseline. That review can resurface dismissed findings and include earlier tasks' diffs. Keep auto-finish as the default for manual, one-off contract runs.
 
 **Known hazards to document (from stet dogfooding):**
 
@@ -55,7 +56,7 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
 
 - **Workspace:** pi-spine repo root
 - **Services required:** LM Studio at `http://127.0.0.1:1234` with `qwen/qwen3.8-27b` loaded (Enable Thinking off) and OpenJev System One at `http://127.0.0.1:8080`, for the stet step of the Contract only. Unit tests use a mock `stet`.
-- **Tests:** `npm test`; run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
+- **Tests:** the Contract `testCommand` (scoped; post-integrate `release:check` runs the full suite); run with `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` unset
 
 ## File Scope
 
@@ -71,10 +72,10 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/scripts/spine-stet-contract-run.test.mjs tests/batch/worktree-setup-hook.test.mjs tests/batch/dirty-worktree-symlink.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/scripts/spine-stet-contract-run.test.mjs tests/batch/worktree-setup-hook.test.mjs tests/batch/dirty-worktree-symlink.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `.review/config.toml`, `scripts/spine-stet-contract-run.sh`, `scripts/spine-worktree-setup.sh`, `tests/scripts/spine-stet-contract-run.test.mjs` |
 | fileScopeMustNotChange | `.spine/**`, `src/**` |
-| completionCriteria | Mock-stet tests cover dismissed findings, `stet run` failure, and invalid strictness; the setup hook skips cleanly without stet; the stet review of this diff exits 0 after triage; per-file coverage gate passes |
+| completionCriteria | Mock-stet tests cover dismissed findings, `stet run` failure, and invalid strictness; the setup hook skips cleanly without stet; the stet review of this diff exits 0 after triage; `git ls-files -s .review` lists only `.review/config.toml` (mode 100644) |
 
 ## Steps
 
@@ -123,8 +124,8 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (includes the stet review of this diff; triage findings per the new triage text)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] `git status --porcelain .review` shows only `config.toml` and the gitlink deletion (paste into Discoveries)
+- [ ] After committing, `git ls-files -s .review` lists only `.review/config.toml` with mode `100644` (paste into Discoveries)
 - [ ] Fix all failures
 
 ### Step 6: Documentation & Delivery
@@ -146,7 +147,8 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
 - [ ] Dismissing every finding turns the contract green
 - [ ] A `stet run` failure fails the contract without finishing the session
 - [ ] The setup hook exits 0 without stet on `PATH`
-- [ ] No tracked gitlink under `.review/`
+- [ ] No tracked gitlink under `.review/`: `git ls-files -s .review` lists only `.review/config.toml` (mode `100644`)
+- [ ] Runbook §8.1 says `SPINE_STET_NO_AUTO_FINISH=1` is required for spine batches
 
 ## Git Commit Convention
 
@@ -157,8 +159,9 @@ Stet-gated contracts review the task diff with `qwen/qwen3.8-27b` and the OpenJe
 - Change `src/**`, the engine's `worktreeSetupHook` handling, or anything under `.spine/`
 - Commit secrets or API keys to `.review/config.toml`
 - Dismiss a real defect to pass the Contract
+- Run `git add -A` or `git add .` while `.review/worktrees/` exists (that is how the stet review worktree got committed as a gitlink); stage File Scope paths explicitly
 - Modify `AGENTS.md`, `CLAUDE.md`, or `.gitnexus/`
 
 ## Amendments
 
-_None._
+- **2026-10-14 (operator, packet audit):** Mission item 4 makes `SPINE_STET_NO_AUTO_FINISH=1` required for spine batches (engine re-runs the Contract at final review; the setup hook runs once per lane). Removed the coverage gate (#342: S packets use scoped tests; `release:check` owns coverage). Added `--test-reporter=dot`, the `git ls-files -s .review` completion check, and the `git add -A` prohibition.

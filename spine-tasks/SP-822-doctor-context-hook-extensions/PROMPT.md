@@ -54,7 +54,7 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/doctor/pi-extension-hooks.test.mjs tests/doctor/extension-conflict.test.mjs tests/doctor/quota-risk.test.mjs tests/doctor/duplicate-install.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/doctor/pi-extension-hooks.test.mjs tests/doctor/extension-conflict.test.mjs tests/doctor/quota-risk.test.mjs tests/doctor/duplicate-install.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
 | fileScopeMustChange | `src/doctor/pi-extension-hooks.mjs`, `src/doctor/run-doctor-checks.mjs`, `tests/doctor/pi-extension-hooks.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -92,7 +92,6 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] `spine doctor` in the repo exits 0 and lists the new check (paste the line into Discoveries)
 - [ ] Fix all failures
 
@@ -128,3 +127,4 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, and the stet triage paragraph in Mission. SP-828 is an indirect dependency via SP-819.
+- **2026-10-14 (operator, packet audit):** Removed the coverage gate (#342: S packets use scoped tests; post-integrate `release:check` owns coverage). Added `--test-reporter=dot` to the Contract.

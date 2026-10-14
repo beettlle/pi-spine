@@ -39,8 +39,7 @@
 
 - [ ] Lint
 - [ ] Contract `testCommand`
-- [ ] Coverage gate
-- [ ] Clean manifest after `npm test`
+- [ ] Clean manifest after the Contract run
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery

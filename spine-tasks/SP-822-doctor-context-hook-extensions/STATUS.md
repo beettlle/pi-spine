@@ -38,7 +38,6 @@
 
 - [ ] Lint
 - [ ] Contract `testCommand`
-- [ ] Coverage gate
 - [ ] `spine doctor` lists the check
 - [ ] Fix all failures
 

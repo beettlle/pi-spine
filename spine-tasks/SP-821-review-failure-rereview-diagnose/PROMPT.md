@@ -62,7 +62,7 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/diagnosis*.test.mjs tests/batch/post-done-plan-review-spawn.test.mjs tests/batch/salvage-final-review-spawn-failed.test.mjs tests/batch/salvage-complete-after-integrate.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/diagnosis*.test.mjs tests/batch/post-done-plan-review-spawn.test.mjs tests/batch/salvage-final-review-spawn-failed.test.mjs tests/batch/salvage-complete-after-integrate.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
 | fileScopeMustChange | `src/batch/reconcile-diagnosis.mjs`, `src/batch/diagnosis-pending-lane.mjs`, `tests/batch/diagnosis-review-infra-rereview.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -109,7 +109,6 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 
 - [ ] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review; triage per Mission)
-- [ ] Coverage gate: `npm run coverage:check` (≥77% line coverage)
 - [ ] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -145,3 +144,4 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 ## Amendments
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, and the stet triage paragraph in Mission. SP-828 is an indirect dependency via SP-820. To stay under the 500-character `testCommand` limit, the four `diagnosis*` tests (including the new `diagnosis-review-infra-rereview`) are now matched by `tests/batch/diagnosis*.test.mjs`, which also runs the other diagnosis suites.
+- **2026-10-14 (operator, packet audit):** Removed the coverage gate (#342: S packets use scoped tests; post-integrate `release:check` owns coverage). Added `--test-reporter=dot` to the Contract.

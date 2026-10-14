@@ -10,13 +10,14 @@
 **Worker model pin:** `zai/glm-5.3-flash` thinking `medium` via `agents.activeProfile=default` (operator, `48e6bc4f`, 2026-10-13). Reviewer unchanged: `google/gemini-3.1-pro-preview` `high` (plan/code/final). `agents.escalatePolicy.toProfile=hard` (`zai/glm-5.3`) is escalation; `agents.quotaFallbackProfile=allegretto` (`kimi-coding/k3`) is provider failover per #329, not escalation. Do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248)).
 **Agent pin override:** none
 **Extension override:** yes (2026-10-14) — `pi remove npm:@trevonistrevon/pi-loop` for this release (v2.27.0 re-probe still gave 1/2 `MALFORMED_FUNCTION_CALL`). pi-headroom stays as the patched local build (`~/Documents/github/pi-headroom`, branch `fix/preserve-thought-signatures`, `7c203c7`). pi is now 1.2.0 (v2.27.0 ran on 1.1.0). Reviewer probe from the repo root, `pi -p --no-session --model google/gemini-3.1-pro-preview --thinking high "Read package.json and tsconfig.json in parallel (two read tool calls in one turn), then reply with the package name only."`: **3/3** answered `pi-spine` (14 s, 14 s, 19 s), no `MALFORMED_FUNCTION_CALL`, no `thought_signature` 400. Each run printed a pi 1.2.0 loader warning that `pi-smart-router` declares `@earendil-works/pi-ai` in `dependencies` instead of `peerDependencies` (`"*"`); harmless for the probe, not a release blocker. The installed v2.27.0 engine still spawns reviewers with user extensions until SP-819 lands. Reinstall after publish: `pi install npm:@trevonistrevon/pi-loop`.
-**GitNexus:** refreshed 2026-10-10 — status up-to-date with HEAD (`c696025`)
+**GitNexus:** refreshed 2026-10-14 at HEAD `13ea1975` (packet audit)
+**Peak-hour policy (operator, 2026-10-14):** do not run GLM workers in z.ai's peak window, 14:00–18:00 UTC+8 = **06:00–10:00 UTC** (23:00–03:00 PDT). Check `date -u` before every `spine batch start` / `resume`. No start or resume after **04:30 UTC**. If a batch is running at **05:00 UTC**, `spine batch pause` (confirm `phase: paused` in `spine status --diagnose`) and let the in-flight worker finish; do not abort. Resume after **10:00 UTC**. Quota fallback to `allegretto` does not lift the pause.
 
 ---
 
 ## Context
 
-- Current `main`: `2.27.0` @ `c696025` (v2.27.0 on npm)
+- Current `main`: `2.27.0` @ `13ea1975` (v2.27.0 on npm; local commits not pushed)
 - Pending SP-* before authoring: **0** (Next Task ID was **SP-819**; **SP-828** after SP-826/SP-827; now **SP-829** after SP-828)
 - Open issues: **33**. 0 `documentation`. Bugs: #334 (P1), #331, #327, #319, #316, #315, #314, #313, #311, #310, #309, #294. Enhancements: #317, #318, #320–#323, #325, #326, plus P3 items. Epics: #324, #225, #43.
 - `spine status --diagnose`: idle.
@@ -40,8 +41,10 @@
 | **Total tasks** | 10 | 5–8 | **PASS with operator override** — operator chose SP-826 + SP-827 (2026-10-10, token-cost audit); both S, disjoint File Scope, run in release wave 2. Operator added SP-828 (2026-10-11) as release wave 0 so the release is stet-reviewed |
 | Task sizes | all S | S only | PASS |
 | Dep drift check recorded | yes | WARN if missing | PASS |
+| No-code tasks at Review Level 0 | SP-825 (docs; `testCommand` `true`) | all no-code tasks | PASS — `isReviewTypeRequired` returns `false` at level 0, so no plan/code/final reviewer spawns. SP-828 changes scripts, config, and tests, so it stays Level 1 |
+| S/M packets without coverage gate or full suite | all 10 | all | PASS (#342; packet audit 2026-10-14) |
 
-**Profile audit:** PASS with operator override (total 9 > cap 8)
+**Profile audit:** PASS with operator override (total 10 > cap 8)
 
 ---
 
@@ -118,18 +121,40 @@ Release waves 1–2 are operator labels. Start each with its task IDs only (`spi
 
 ## Sequence runner (Phase 4)
 
+Use the checkout CLI (`node bin/spine.mjs`, runbook "PATH / `npm link` / checkout CLI"). The global `/opt/homebrew/lib/node_modules/pi-spine` is a copy dated 2026-10-10, not a link, so it would keep spawning reviewers without `-ne` after SP-819 lands. `sp` below is a shell function for the checkout CLI (works in bash and zsh). Check `date -u` against the peak-hour policy before every `start` / `resume`.
+
 ```bash
-spine tasks validate SP-828 SP-819 SP-820 SP-821 SP-822 SP-823 SP-824 SP-825 SP-826 SP-827
+cd /Users/cdelgado/Documents/github/pi-spine
+sp() { node /Users/cdelgado/Documents/github/pi-spine/bin/spine.mjs "$@"; }
+export SPINE_STET_NO_AUTO_FINISH=1               # required: engine re-runs the Contract at final review; setup hook runs once per lane
+set -o pipefail
+sp tasks validate SP-828 SP-819 SP-820 SP-821 SP-822 SP-823 SP-824 SP-825 SP-826 SP-827
 stet doctor                                      # before SP-828 lands this reads the old config; check ../stet too (qwen/qwen3.8-27b + System One OK)
-spine preflight
-spine batch start SP-828                         # release wave 0 — stet refresh
-spine status --diagnose
-spine gate approve && spine integrate && npm install && spine batch complete
-spine batch start SP-819 SP-820 SP-823 SP-824    # detached — omit --attached (#163)
-spine status --diagnose
-spine gate approve && spine integrate && npm install && spine batch complete
-npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave1.log; test "${PIPESTATUS[0]}" -eq 0
+sp preflight
+
+# Release wave 0 — stet refresh
+date -u; sp batch start SP-828                   # detached — omit --attached (#163)
+sp status --diagnose
+sp gate approve && sp integrate && npm install && sp batch complete
+npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave0.log
+stet doctor                                      # now reads the SP-828 config (qwen/qwen3.8-27b + System One)
+
+# Release wave 1
+date -u; sp batch start SP-819 SP-820 SP-823 SP-824
+sp status --diagnose
+sp gate approve && sp integrate && npm install && sp batch complete
+npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave1.log
+git status --porcelain                           # must be empty (SP-823: tests no longer rewrite .spine/rules-manifest.json)
+rg -n -- '-ne\b' src/batch/review-spawn.mjs      # SP-819 on main; checkout CLI reviewers now run pi -ne
+
+# Release wave 2
+date -u; sp batch start SP-821 SP-822 SP-826 SP-827 SP-825
+sp status --diagnose
+sp gate approve && sp integrate && npm install && sp batch complete
+npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave2.log
 ```
+
+Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 UTC, `export SPINE_STET_NO_AUTO_FINISH=1 && sp batch resume`.
 
 **Until SP-821 lands:** if a review spawn fails with `.DONE` in the lane, diagnose still suggests `salvage --integrate`. Do not salvage. Run `spine batch retry <id>` (resumes at the review) or a manual `spine review step --type final` in the lane worktree.
 
@@ -143,7 +168,7 @@ npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave1.log; test "${PIPEST
 
 ## Gaps requiring new packets
 
-All 9 packets are new (lean authoring, 2026-10-10; SP-826/SP-827 added after the token-cost audit).
+All 10 packets are new (lean authoring, 2026-10-10; SP-826/SP-827 added after the token-cost audit; SP-828 added 2026-10-11).
 
 ---
 
@@ -196,14 +221,18 @@ Wave 2 · 1 task
   Lane 1: SP-825 — Docs: reviewer extension isolation and review-failure recovery (v2.27.1)
 ```
 
-The operator wave plan above starts SP-826/SP-827 with release wave 2 instead, so wave 1 keeps 4 lanes and no round queueing. Release wave 2 scope (`spine plan SP-821,SP-822,SP-826,SP-827,SP-825`):
+The operator wave plan above starts SP-826/SP-827 with release wave 2 instead. Release wave 2 scope at `maxParallel` 2 (`spine plan SP-821,SP-822,SP-826,SP-827,SP-825`, re-run 2026-10-14 after the packet audit):
 
 ```text
-Wave 0 · 4 tasks · 4 lanes in parallel
-  Lane 1: SP-821 · Lane 2: SP-822 · Lane 3: SP-826 · Lane 4: SP-827
+5 task(s) · 2 wave(s) · maxParallel 2
+Wave 0 · 4 tasks · 2 rounds (queued by maxParallel)
+  Round 1 (2 parallel): SP-821, SP-822
+  Round 2 (2 parallel): SP-826, SP-827
 Wave 1 · 1 task
   Lane 1: SP-825
 ```
+
+Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tasks analyze` 0 blocking, 1 pre-existing warning; full-scope `spine plan` unchanged from the 2026-10-11 snapshot above.
 
 `spine tasks validate`: 9 passed, 0 failed. `spine tasks analyze`: 0 blocking, 1 pre-existing warning (CONTEXT references a missing `_explore/engine-lanes-split/findings.md`).
 
@@ -229,13 +258,14 @@ Wave 1 · 1 task
 
 ## Risks and blockers
 
+- Stet session lifecycle: without `SPINE_STET_NO_AUTO_FINISH=1`, the worker's passing Contract calls `stet finish`, then the engine's `contract.verified` re-run (and the next task on the same lane, since the setup hook runs once per lane) starts a fresh review from the lane baseline. That review can resurface dismissed findings, include earlier tasks' diffs, and fail with `contract_failed`. Export it for every start and resume.
 - Stet-gated contracts need LM Studio (`qwen/qwen3.8-27b`, Enable Thinking off) and OpenJev up for every task. Run `stet doctor` before each wave. If OpenJev is down, export `STET_CRITIC_ENABLED=false` for the batch rather than editing `.review/config.toml`.
 - The Contract `testCommand` wall clock is 10 minutes. Each contract runs lint, typecheck, scoped tests, then a 3–5 minute first stet review. `lanes.maxParallel` is 2 so lanes do not queue on LM Studio. If a contract times out, retry the task; stet re-runs after dismissals are incremental.
 - SP-828 runs its own Contract with the new script and config from its diff; until it lands, the v1.5.0 contract script on `main` cannot pass after dismissals.
 - Stet reviewer false positives (invented syntax errors on new files, stale hunks) are expected on JS/TS diffs; workers must dismiss with tool evidence, not edit code to satisfy them.
 - Waves 0 and 1 run on the installed v2.27.0 engine, whose reviewers load user extensions until SP-819 lands. Extension check and reviewer probe done 2026-10-14 (pi-loop removed, 3/3); re-probe if any pi package changes before wave 1.
 - LM Studio serves `qwen/qwen3.8-27b` with parallel 1 and a 1 h idle TTL: two lanes' stet reviews queue on one slot, and the first review after an idle hour pays a model reload. Watch contract durations against the 10-minute limit in wave 0 and round 1 of wave 1.
-- SP-819 changes every reviewer spawn. If a reviewer needs a built-in pi extension that `-ne` disables, every review breaks. SP-819 Step 0 lists exact-args tests; post-integrate `release:check` and wave 2 reviews (which run on the new code only after `npm install` / relink) are the live check.
+- SP-819 changes every reviewer spawn. If a reviewer needs a built-in pi extension that `-ne` disables, every review breaks. SP-819 Step 0 lists exact-args tests; post-integrate `release:check` and wave 2 reviews are the live check. Wave 2 reviews run the new code only through the checkout CLI (`node bin/spine.mjs`); the global install is a stale copy (2026-10-10), and `npm install` in the repo does not update it.
 - SP-821 reverses SP-762's salvage routing. #291's complaint was that retry language forced a worker re-run; SP-821 Step 0 must confirm retry resumes at the review before changing anything.
 - SP-823 touches two 498-line batch modules; edits must be net-negative.
 - SP-827 changes `readReviewLevel`, which gates every review phase. A wrong `Type` parse would skip reviews on `llm` packets; its tests cover `llm` at levels 0/1/2. `review-artifacts.mjs` is at 497 lines (net ≤ 3).
