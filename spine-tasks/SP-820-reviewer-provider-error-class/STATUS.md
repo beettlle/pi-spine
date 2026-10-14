@@ -1,8 +1,8 @@
 # SP-820: Classify reviewer provider request errors — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-10-10
+**Current Step:** Step 1: Classifier
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,12 +11,12 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Impact analysis recorded
-- [ ] `_review_spawn_failed` consumers listed
-- [ ] Line counts recorded
-- [ ] Dependencies satisfied
+- [x] Impact analysis recorded
+- [x] `_review_spawn_failed` consumers listed
+- [x] Line counts recorded
+- [x] Dependencies satisfied
 
 ### Step 1: Classifier
 **Status:** ⬜ Not Started
@@ -53,6 +53,14 @@
 
 | # | Finding |
 |---|---------|
+| 1 | GitNexus impact `runStepReview` upstream: LOW risk, 6 impacted — direct callers `runEnginePlanReview`/`runEngineCodeReview`/`runEngineFinalReview`, then 3× `runEngineReview`. No processes affected; changes are additive payload/result fields. |
+| 2 | `runReviewPhaseLoop` is not a top-level graph symbol — the loop is `runReviewPollLoop` (exported, `review-poll.mjs:257`); exit-reason mapping is the `spawnExitReason` ternary at ~line 330. |
+| 3 | `_review_spawn_failed` consumers: producer `review-poll.mjs:332`; `diagnosis.mjs:106,108` (code/final classification lists); `reconcile-diagnosis.mjs:144` (plan); tests `salvage-complete-after-integrate`, `post-done-plan-review-spawn`, `salvage-final-review-spawn-failed` (fixture exit reasons). Per prompt, diagnosis consumers are SP-821's scope — noted, NOT edited; new `*_review_provider_error` reasons fall through diagnosis as generic failures (fail-closed). |
+| 4 | Line counts (preflight): `review-step-run.mjs` 473, `review-poll.mjs` 496, `provider-quota.mjs` 220. Budget: ≤500 each for the first two. |
+| 5 | Dependencies satisfied: SP-828 stet adoption present (`scripts/spine-stet-contract-run.sh`, `.review/config.toml`, `.review/**` in fileScopeMustNotChange). |
+| 6 | Spawn-failed branch can carry `reason: review_timeout` (timeout results land there post-honor-check); nested-spawn reason returns earlier. Classifier wiring must therefore classify only when `spawnResult.reason` is unset, leaving timeout/nested paths byte-identical. |
+| 7 | Non-zero-exit spawn failures are SP-814 retry-eligible → stub Gemini-400 test expects exactly 2 spawns and classification on the final attempt. |
+| 8 | `runReviewPollLoop` takes injectable `runEngineReview`/`recordReviewTaskFailure` → exit-reason mapping testable via DI, no processes. `shouldEmitReviewResumed([], taskId)` → false, so empty `journalEvents` is safe. |
 
 ## Blockers
 
