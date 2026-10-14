@@ -1,7 +1,7 @@
 # SP-823: Idempotent rules manifest sync — Status
 
-**Current Step:** Step 5: Documentation & Delivery
-**Status:** 🔵 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — all completion criteria met
 **Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
@@ -43,10 +43,10 @@
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** 🔵 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Create `.DONE`
 
 ---
 
@@ -64,6 +64,7 @@
 | 8 | **Stet triage (9 findings, all dismissed, 0 real defects in this diff):** evidence per finding — 940b06e (engine-lanes re-export "breaks public API"): full removal was mission item 3; `rg tryAutoResolveRulesManifestMergeConflict src bin tests` → 0 matches. cb72360 (call site "not updated"): `integrate-worktree.mjs:425` IS `tryAutoResolveMergeConflicts(worktreePath, {})` — stale hunk. 4028b42 (undefined `generatedAt` spread): helper requires `typeof generatedAt === "string"` (discover.mjs ~192-205) — impossible by construction. 699d9d9 (barrel export missing): `engine-lanes.mjs:59` exports it, signature `(projectRoot, options = {})` at merge.mjs:320 — stale hunk. ed90e26/4ef4a11 (test name/body mismatch): both renamed/updated — stale hunks. bc826b5 (cpSync needs existing dest): `fs.cpSync` recursive creates the dest tree — verified in node; CLI test passes in isolation (1 pass/0 fail). 30883ff (unused import): used at discover.test.mjs:234-235 — stale hunk. 654bc95 (byte-identical assertion "may fail"): the implementation preserves `generatedAt` on fingerprint match — that is Step 1; suite exit 0. |
 | 9 | **Stet reviewer bug pattern (qwen/qwen3.8-27b):** 5 of 9 findings (cb72360, ed90e26, 4ef4a11, 30883ff, partially 940b06e/699d9d9) claim code "not shown in the hunk" / "still references the old name" for content that IS present in the same commit — the reviewer appears to see only partial diff hunks. Worth an upstream stet issue. |
 | 10 | **Verification evidence:** lint clean (eslint --max-warnings 0); typecheck clean (both tsconfig projects); Contract targeted suite (8 files, 60 tests) exit 0; `bash scripts/spine-stet-contract-run.sh lenient` exit 0 with `0 finding(s)`; post-Contract `git status --porcelain .spine/rules-manifest.json` empty. Line counts after: `integrate-worktree.mjs` 491 (unchanged, line-neutral swap), `engine-lanes.mjs` 497, `merge.mjs` 878. |
+| 11 | **Full suite bonus evidence (operator ask):** `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER npm test` → 2898 tests, 2898 pass, 0 fail, exit 0, 171s; `.spine/rules-manifest.json` still clean afterwards — the #315 regression is dead for the whole suite, not just the targeted files. Post-integrate `release:check` remains the authoritative full-suite gate. |
 
 ## Blockers
 
