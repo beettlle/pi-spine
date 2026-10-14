@@ -12,7 +12,7 @@ import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
-import { removeMergeDeletedPath } from "./integrate-path-delete.mjs";
+import { isTimeoutError, removeMergeDeletedPath } from "./integrate-path-delete.mjs";
 
 export const DEFAULT_SYNC_TIMEOUT_MS = 60_000;
 
@@ -214,15 +214,6 @@ export function plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch,
 	}
 
 	return { ok: true, mergeCommit, mode: "plumbing" };
-}
-
-/**
- * @param {unknown} err
- * @returns {boolean}
- */
-function isTimeoutError(err) {
-	if (!err || typeof err !== "object") return false;
-	return /** @type {any} */ (err).killed === true || /** @type {any} */ (err).code === "ETIMEDOUT";
 }
 
 /** Shared timed-out result for the sync loop's git calls. */

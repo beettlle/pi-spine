@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Merge-deletion materialization for the post-merge base sync (SP-830, #346).
  * Opt-in per call via `applyDeletions` on syncPlumbingMergePathsToWorktree;
@@ -12,11 +11,11 @@ import { execFileSync } from "node:child_process";
 import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 
 /**
- * Mirror of the sync loop's timeout detection (execFileSync timeout kill).
+ * Timeout detection for execFileSync `timeout` kills; shared with the sync loop.
  * @param {unknown} err
  * @returns {boolean}
  */
-function isTimeoutError(err) {
+export function isTimeoutError(err) {
 	if (!err || typeof err !== "object") return false;
 	return /** @type {any} */ (err).killed === true || /** @type {any} */ (err).code === "ETIMEDOUT";
 }
