@@ -62,6 +62,8 @@
 | 7 | Non-zero-exit spawn failures are SP-814 retry-eligible → stub Gemini-400 test expects exactly 2 spawns and classification on the final attempt. |
 | 9 | Export-only change to `provider-quota.mjs` (`collectStatusPayloads`) — behavior untouched, verified by 1-line diff. |
 | 10 | Line caps met: `review-step-run.mjs` 485, `review-poll.mjs` 499 (≤500). Shared `providerErrorFields` helper lives in the new module to keep the wiring file under the cap. |
+| 12 | Stet triage round 1 (10 findings): 8 dismissed as false_positive/out_of_scope — the import/unused-symbol/spread-order claims were all contradicted by the actual code and passing tests; the 2 real ones (payload-unscoped `markerLine` fallback; redundant test import) were fixed in b8deb92a. |
+| 13 | Stet triage round 2 (2 findings, both reviewer errors): 40aec61 claimed `JSON.stringify(payload)` circular-ref TypeError — impossible for `JSON.parse` output (acyclic by construction). 414714f claimed `REVIEW_TIMEOUT_REASON` must come from review-spawn.mjs — it is also re-exported by review.mjs (line 41); the import resolves and tests pass. |
 | 11 | Wiring guards classification on `spawnResult.reason` being unset, so the nested-spawn return, timeout (`review_timeout`), and honor/retry-eligibility paths are byte-identical. |
 | 8 | `runReviewPollLoop` takes injectable `runEngineReview`/`recordReviewTaskFailure` → exit-reason mapping testable via DI, no processes. `shouldEmitReviewResumed([], taskId)` → false, so empty `journalEvents` is safe. |
 
