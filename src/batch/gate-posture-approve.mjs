@@ -4,6 +4,7 @@
  * Kept separate from gate.mjs so the open/check facade stays ≤500 LOC.
  */
 
+import fs from "node:fs";
 import { resolveGatePostureConfig } from "../config/gate-posture-config.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
@@ -11,6 +12,7 @@ import { makeBlocker } from "./blocker-codes.mjs";
 import { GATE_CATEGORIES, POSTURES } from "./gate-posture-defaults.mjs";
 import { evaluateGatePosture } from "./gate-posture-evaluate.mjs";
 import {
+	gatePostureStreakPath,
 	getCategoryStreak,
 	incrementCategoryStreak,
 	incrementKindStreak,
@@ -18,7 +20,7 @@ import {
 	resetKindStreak,
 } from "./gate-posture-streak.mjs";
 import { gateRecordPath, loadGateRecord } from "./gate-evidence-read.mjs";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 
 /** @typedef {import("./gate-posture-defaults.mjs").GateCategory} GateCategory */
 /** @typedef {import("./gate-posture-evaluate.mjs").GatePostureEvaluateResult} GatePostureEvaluateResult */
@@ -27,6 +29,93 @@ import { appendJournalEvent } from "./journal.mjs";
 const INTEGRATE_DEFAULT_CATEGORY = /** @type {GateCategory} */ ("execute");
 
 const CATEGORY_SET = new Set(/** @type {string[]} */ ([...GATE_CATEGORIES]));
+
+/**
+ * Real streak I/O operations (SP-824). Tests may override any subset via
+ * `ctx.streakIo` to inject failures; production always uses these.
+ */
+const DEFAULT_STREAK_IO = Object.freeze({
+	incrementCategoryStreak,
+	incrementKindStreak,
+	resetCategoryStreak,
+	resetKindStreak,
+	/**
+	 * @param {string} projectRoot
+	 */
+	removeStreakFile(projectRoot) {
+		fs.rmSync(gatePostureStreakPath(projectRoot), { force: true });
+	},
+});
+
+/**
+ * @param {unknown} streakIo Optional partial override of streak I/O operations.
+ * @returns {typeof DEFAULT_STREAK_IO}
+ */
+function resolveStreakIo(streakIo) {
+	if (!streakIo || typeof streakIo !== "object" || Array.isArray(streakIo)) {
+		return DEFAULT_STREAK_IO;
+	}
+	return { ...DEFAULT_STREAK_IO, ...streakIo };
+}
+
+/**
+ * Best-effort journal record of a streak I/O failure (SP-824 / #314).
+ * A journal write failure here must never throw out of an already-persisted
+ * approve/reject flow, so the append itself is guarded.
+ *
+ * @param {string} projectRoot
+ * @param {string|null|undefined} batchId
+ * @param {Record<string, unknown>} payload
+ */
+function journalStreakIoFailure(projectRoot, batchId, payload) {
+	if (typeof batchId !== "string" || batchId.trim() === "") return;
+	try {
+		appendJournalEvent(projectRoot, batchId, "gate.streak_io_failed", payload);
+	} catch {
+		// Journaling is best-effort — never reverse the persisted gate decision.
+	}
+}
+
+/**
+ * @param {unknown} error
+ * @returns {string}
+ */
+function errorMessage(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * SP-824 / #314 — does this batch's journal record a `gate.streak_io_failed`
+ * event for a reset whose fail-closed recovery (streak file removal) also
+ * failed? If so the consecutive-approval state is untrustworthy.
+ * A journal read failure itself counts as unreliable (fail closed).
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {boolean}
+ */
+function journalHasUnrecoveredStreakReset(projectRoot, batchId) {
+	/** @type {object[]} */
+	let events;
+	try {
+		events = readJournalEvents(projectRoot, batchId);
+	} catch {
+		return true;
+	}
+	return events.some((event) => {
+		if (!event || typeof event !== "object" || event.type !== "gate.streak_io_failed") {
+			return false;
+		}
+		const payload = event.payload;
+		return (
+			!!payload &&
+			typeof payload === "object" &&
+			!Array.isArray(payload) &&
+			payload.op === "reset" &&
+			payload.recovered === false
+		);
+	});
+}
 
 /**
  * @param {string} projectRoot
@@ -82,38 +171,69 @@ function resolveGateCategory(gate) {
 
 /**
  * Persist consecutive-approval streak after a successful approve.
- * Failures must not undo the gate FSM decision.
+ * Failures must not undo the gate FSM decision; they are journaled instead
+ * (SP-824 / #314). A failed increment only delays auto-approval — the safe
+ * direction — so no recovery is attempted.
  *
  * @param {string} projectRoot
  * @param {object} gate
+ * @param {string} batchId
+ * @param {typeof DEFAULT_STREAK_IO} streakIo
  */
-function recordApprovalStreak(projectRoot, gate) {
+function recordApprovalStreak(projectRoot, gate, batchId, streakIo) {
 	const category = resolveGateCategory(gate);
 	try {
-		incrementCategoryStreak(projectRoot, category);
+		streakIo.incrementCategoryStreak(projectRoot, category);
 		if (typeof gate.kind === "string" && gate.kind.trim() !== "") {
-			incrementKindStreak(projectRoot, gate.kind);
+			streakIo.incrementKindStreak(projectRoot, gate.kind);
 		}
-	} catch {
+	} catch (error) {
 		// Streak I/O must not reverse an already-persisted approval.
+		journalStreakIoFailure(projectRoot, batchId, {
+			op: "increment",
+			category,
+			kind: typeof gate.kind === "string" && gate.kind.trim() !== "" ? gate.kind : null,
+			error: errorMessage(error),
+		});
 	}
 }
 
 /**
  * Reset streak counters after a reject (breaks consecutive-approval chain).
+ * A failed reset would leave a stale consecutive-approval count that could
+ * unlock a later auto-approve despite the rejection, so this fails closed:
+ * best-effort removal of the whole streak store (missing file → zero counts).
  *
  * @param {string} projectRoot
  * @param {object} gate
+ * @param {string} batchId
+ * @param {typeof DEFAULT_STREAK_IO} streakIo
  */
-function recordRejectStreakReset(projectRoot, gate) {
+function recordRejectStreakReset(projectRoot, gate, batchId, streakIo) {
 	const category = resolveGateCategory(gate);
 	try {
-		resetCategoryStreak(projectRoot, category);
+		streakIo.resetCategoryStreak(projectRoot, category);
 		if (typeof gate.kind === "string" && gate.kind.trim() !== "") {
-			resetKindStreak(projectRoot, gate.kind);
+			streakIo.resetKindStreak(projectRoot, gate.kind);
 		}
-	} catch {
+	} catch (error) {
 		// Streak reset failure must not reverse a persisted rejection.
+		let recovered = true;
+		let recoveryError = null;
+		try {
+			streakIo.removeStreakFile(projectRoot);
+		} catch (rmError) {
+			recovered = false;
+			recoveryError = errorMessage(rmError);
+		}
+		journalStreakIoFailure(projectRoot, batchId, {
+			op: "reset",
+			category,
+			kind: typeof gate.kind === "string" && gate.kind.trim() !== "" ? gate.kind : null,
+			error: errorMessage(error),
+			recovered,
+			...(recovered ? {} : { recoveryError }),
+		});
 	}
 }
 
@@ -127,6 +247,7 @@ function recordRejectStreakReset(projectRoot, gate) {
  */
 export function approveIntegrateGate(ctx) {
 	const { projectRoot, batchId, decidedBy = "human", postureEvaluation = null, synthesis } = ctx;
+	const streakIo = resolveStreakIo(ctx.streakIo);
 	const gate = loadGateRecord(projectRoot, batchId);
 
 	if (!gate) {
@@ -168,7 +289,7 @@ export function approveIntegrateGate(ctx) {
 	const synthesisNote = typeof synthesis === "string" && synthesis.trim() !== "" ? synthesis : null;
 	if (synthesisNote) gate.synthesis = synthesisNote;
 	saveGateRecord(projectRoot, gate);
-	recordApprovalStreak(projectRoot, gate);
+	recordApprovalStreak(projectRoot, gate, batchId, streakIo);
 
 	/** @type {Record<string, unknown>} */
 	const journalPayload = {
@@ -213,6 +334,7 @@ export function approveIntegrateGate(ctx) {
  */
 export function maybeAutoApproveIntegrateGate(ctx) {
 	const { projectRoot, batchId, tags = [] } = ctx;
+	const streakIo = resolveStreakIo(ctx.streakIo);
 	const config = ctx.config ?? loadSpineConfig(projectRoot).config ?? null;
 	const gate = loadGateRecord(projectRoot, batchId);
 
@@ -235,6 +357,22 @@ export function maybeAutoApproveIntegrateGate(ctx) {
 	const categoryEntry = optedIn
 		? postureConfig.categories[category]
 		: { posture: POSTURES.LOCKED, autoApproveAfterN: null };
+
+	// SP-824 / #314 fail-closed: a journal-recorded unrecovered streak reset means
+	// the consecutive-approval state cannot be trusted — never auto-approve on it.
+	// Checked before reading the streak so the unreliable state is never consumed.
+	if (journalHasUnrecoveredStreakReset(projectRoot, batchId)) {
+		return {
+			ok: true,
+			approved: false,
+			evaluation: { decision: "require-manual", reason: "streak_unreliable", tier: null },
+			optedIn,
+			category,
+			consecutiveApprovals: null,
+			reason: "streak_unreliable",
+			gate,
+		};
+	}
 
 	const consecutiveApprovals = getCategoryStreak(projectRoot, category);
 	/** @type {string[]} */
@@ -275,6 +413,7 @@ export function maybeAutoApproveIntegrateGate(ctx) {
 		batchId,
 		decidedBy: "auto",
 		postureEvaluation: evaluation,
+		streakIo,
 	});
 
 	return {
@@ -336,7 +475,8 @@ export function rejectIntegrateGate(ctx) {
 	const synthesisNote = typeof synthesis === "string" && synthesis.trim() !== "" ? synthesis : null;
 	if (synthesisNote) gate.synthesis = synthesisNote;
 	saveGateRecord(projectRoot, gate);
-	recordRejectStreakReset(projectRoot, gate);
+	const streakIo = resolveStreakIo(ctx.streakIo);
+	recordRejectStreakReset(projectRoot, gate, batchId, streakIo);
 
 	appendJournalEvent(projectRoot, batchId, "gate.rejected", {
 		gateId: gate.gateId,
