@@ -1,8 +1,8 @@
 # SP-822: Doctor warns about context-rewriting pi extensions — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-10-10
+**Current Step:** Step 5: Documentation & Delivery
+**Status:** ✅ Complete
+**Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -34,18 +34,18 @@
 - [x] Fixture cases — 14 tests: hook patterns (incl. false-positive guard on non-exported `context`), canonical order, npm + project settings discovery, dedupe, package without `pi.extensions`, entry cap, 512KB truncation, warn/trusted/clean check states, `runDoctorChecks` integration via `PI_AGENT_DIR` env. All pass.
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] `spine doctor` lists the check
-- [ ] Fix all failures
+- [x] Lint — `eslint --max-warnings 0` green.
+- [x] Contract `testCommand` — green end-to-end: lint + typecheck + scoped runner (75 tests: pi-extension-hooks, extension-conflict, quota-risk, duplicate-install, import-cycles) exit 0 + `spine-stet-contract-run.sh lenient SP-822` exit 0 with 0 active findings.
+- [x] `spine doctor` lists the check — `✅ pi context-rewriting extension hooks (no context-rewriting hooks found in 8 installed pi package(s))` on this machine.
+- [x] Fix all failures — stet triaged: 7ac810c fixed (bounded open-time read), b1e2e5d dismissed false_positive (import used at run-doctor-checks.mjs:498), 05e6e86 dismissed false_positive (node:test per-file process isolation; Date.now axis hardened to mkdtemp), 0f88739 fixed (package-dir containment check + regression test) then dismissed already_correct.
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -57,6 +57,8 @@
 | 2 | pi packages declare extension entries in `package.json` → `pi.extensions` (array of entry files); pi loads only `settings.json` `packages` entries, so settings-driven scanning is complete and bounded. |
 | 3 | Count/order test survey: only `tests/cli/phase23-exit-verify.test.mjs:100` asserts count (`checks.length >= 5`, lower bound — safe); all doctor tests use `.find()` by label/id; no changes needed outside File Scope. |
 | 4 | Config key `reviewers.piExtensionIsolation` needs no schema change — config validation is field-scoped, unknown keys pass through. |
+| 5 | Full `npm test` has 54 failures that pre-exist the lane: verified identical on base 95d3ac9d via temp worktree (tests/spine-run.test.mjs 2/2 fail on base; batch-start-superseded-guard + adoption fixture 3/9 fail on both base and lane). Subprocess-heavy integration tests; Contract's scoped run is this S task's gate per packet amendment. |
+| 6 | Stet re-reviews the cumulative task diff; a fixed finding can persist in the store referencing the pre-fix hunk — dismiss with `already_correct` after the fix commit (0f88739 → containment check at pi-extension-hooks.mjs:174 + `skips entries escaping the package directory` test). |
 
 ## Blockers
 
