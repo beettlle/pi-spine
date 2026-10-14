@@ -1,6 +1,6 @@
 # SP-824: Gate streak reset failure fails closed — Status
 
-**Current Step:** Step 4: Testing & Verification
+**Current Step:** Step 5: Documentation & Delivery
 **Status:** 🔵 Ready for Execution
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -35,11 +35,11 @@
 - [x] Four cases
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete (2026-10-14)
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -60,6 +60,8 @@
 | 5 | Gates always carry `kind: "integrate"` (src/batch/gate.mjs:124), so both category AND kind streak ops run on every approve/reject; the `streakIo` seam must cover both. |
 | 6 | Journals are PER-BATCH (`.spine/runtime/<batchId>/journal/events.jsonl`, journal.mjs:60-62) while streak state is project-wide — so the `streak_unreliable` check must scan all project batch journals, not just the current batch's (caught by the cross-batch test case B). |
 | 7 | Design note: an unrecovered-reset journal event blocks auto-approve indefinitely (no expiry) — fail-closed by design; manual approval remains the path forward since a later successful reset does not erase the historical event. |
+| 8 | Contract LOC gate: `gate-posture-approve.mjs` is capped at 500 lines (batch-loc-policy, no grandfathering) — implementation compacted to 498 lines; any future additions to this file must budget LOC. |
+| 9 | Stet triage (6 findings, all dismissed with evidence): `348bd12`/`f00ea66` (claimed `streakIo` ReferenceError in `approveIntegrateGate`/`maybeAutoApproveIntegrateGate`) are **stet reviewer bugs** — invented errors on stale hunks; `streakIo` is declared at lines 250/337/477 before use and tests exercise those exact paths green. `0fb67ff` (whole-file rmSync "overly destructive") — wrong_suggestion: PROMPT step 2 mandates `fs.rmSync(gatePostureStreakPath(...))`; zeroing all categories is fail-closed by design (worst case = manual approval, never wrongful auto-approve). `207d475`/`c8565a5` (journal scan I/O on approval path) — out_of_scope: substring pre-filter bounds parsing, runtime dirs are per-batch and pruned; performance tuning not in packet scope. `802c06f` (test should inject streakIo into `maybeAutoApproveIntegrateGate`) — already_correct: detection is deliberately journal-based so later calls need no injection; the reviewer's own alternative ("persist the unreliability state visible to subsequent calls without injection") is exactly the implemented design, and the test passes. |
 
 ## Blockers
 
