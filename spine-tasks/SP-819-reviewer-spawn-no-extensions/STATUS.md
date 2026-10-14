@@ -1,6 +1,6 @@
 # SP-819: Reviewer spawns skip user pi extensions by default — Status
 
-**Current Step:** Step 1: Reviewer args
+**Current Step:** Step 5: Documentation & Delivery
 **Status:** 🔵 Executing
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -19,28 +19,28 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Reviewer args
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `-ne` default + opt-out
+- [x] `-ne` default + opt-out
 
 ### Step 2: Config key
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Settings field
-- [ ] Schema validation
+- [x] Settings field
+- [x] Schema validation
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Arg cases
-- [ ] Settings and schema cases
+- [x] Arg cases
+- [x] Settings and schema cases
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] Fix all failures
+- [x] Lint
+- [x] Contract `testCommand`
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -59,6 +59,8 @@
 | 3 | Schema strictness: `src/config/spine-config-schema.mjs` does NOT reject unknown `agents.reviewer` keys — validation is per-key (e.g. `validateAgentSectionModelTypes`, `escalatePolicy.enabled`). An explicit boolean check for `loadUserExtensions` on base `agents.reviewer` and `agents.profiles.<name>.reviewer` is required (added in Step 2, code `CONFIG_AGENT_PROFILE_INVALID`). |
 | 4 | Dependencies satisfied: `scripts/spine-stet-contract-run.sh`, `.review/config.toml`, and the `stet` binary (version dev) are all present. |
 | 5 | `tests/spine-settings-show.test.mjs` asserts field lists relative to `SETTINGS_FIELDS` (`length`, mirrored deepEqual) — adding a field cannot break it. `tests/spine-settings-set.test.mjs` has no argv/field-enumeration coupling to the new key. |
+| 6 | Stet triage (Contract, SP-828 script): 9 findings. Fixed 1 real defect — `assertReviewerArgShape` JSDoc missing `worktreePath` property (39c95c0). Dismissed 8 with evidence: 5 false positives (critic saw partial diff hunks — `validateReviewerLoadUserExtensions` IS called twice in the diff; `applyActiveAgentProfile` IS used; base-reviewer check runs before the profiles early-return, proven by no-profiles tests; `validateSpineConfig` delegates at `spine-config-load.mjs` ~313; 'pi' is the CLI name, not a typo), 2 already_correct (opt-out documented in JSDoc; `spine init --force` matches sibling profile-error convention), 1 out_of_scope (index assertions are the file's pre-existing pattern and PROMPT-mandated position checks). |
+| 7 | Stet reviewer bug (stale hunk): after the 39c95c0 fix was committed, the re-run still reported the finding against the pre-fix hunk (file verified fixed on disk, `stet doctor` healthy). Dismissed `already_correct` citing the fix commit; follow-up re-run reported 0 findings. |
 
 ## Blockers
 
