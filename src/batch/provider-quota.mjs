@@ -90,7 +90,7 @@ function extractBalancedObject(text, startIndex) {
  * @param {string} output
  * @returns {{httpStatus: number, payload: Record<string, any>}[]}
  */
-function collectStatusPayloads(output) {
+export function collectStatusPayloads(output) {
 	const candidates = [];
 	STATUS_JSON_PATTERN.lastIndex = 0;
 	let match;
