@@ -54,7 +54,11 @@ list)
   exit 0
   ;;
 status)
-  echo "baseline: deadbeef"
+  if [[ -f "$STATE/baseline" ]]; then
+    echo "baseline: $(cat "$STATE/baseline")"
+  else
+    echo "baseline: deadbeef"
+  fi
   echo "findings: $(( $(cat "$STATE/findings") + $(cat "$STATE/dismissed") ))"
   echo "dismissed: $(cat "$STATE/dismissed")"
   exit 0
@@ -283,6 +287,160 @@ test("restores session from baseline ref when session.json is missing", async ()
 		assert.equal(fs.readFileSync(path.join(stateDir, "baseline"), "utf-8").trim(), "abc123deadbeef");
 	} finally {
 		await rm(root, { recursive: true, force: true });
+	}
+});
+
+/**
+ * @param {string} root
+ * @param {string[]} args
+ */
+function git(root, args) {
+	return execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args], {
+		cwd: root,
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "pipe"],
+	}).trim();
+}
+
+/**
+ * @param {string} root
+ * @param {string} relPath
+ * @param {string} message
+ * @returns {string} new HEAD sha
+ */
+function commitFile(root, relPath, message) {
+	mkdirSync(path.dirname(path.join(root, relPath)), { recursive: true });
+	writeFileSync(path.join(root, relPath), `${message}\n`, "utf-8");
+	git(root, ["add", relPath]);
+	git(root, ["commit", "-q", "-m", message]);
+	return git(root, ["rev-parse", "HEAD"]);
+}
+
+/**
+ * Lane with task A then task B serialized: lane baseline, A's STATUS + code, B's STATUS + code.
+ * @param {string} root
+ */
+function seedSerializedLane(root) {
+	git(root, ["init", "-q"]);
+	const laneBaseline = commitFile(root, "README", "lane base");
+	commitFile(root, "spine-tasks/SP-1-a/STATUS.md", "A step 0");
+	const taskBaseline = commitFile(root, "src/a.mjs", "A code");
+	commitFile(root, "spine-tasks/SP-2-b/STATUS.md", "B step 0");
+	commitFile(root, "src/b.mjs", "B code");
+	return { laneBaseline, taskBaseline };
+}
+
+test("restores lane baseline from the git-dir copy when .review was cleaned", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-gitdir-"));
+	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0 });
+	try {
+		const { laneBaseline } = seedSerializedLane(root);
+		mkdirSync(path.join(root, ".review"), { recursive: true });
+		const gitDirRef = path.resolve(root, git(root, ["rev-parse", "--git-path", "spine-stet-baseline.ref"]));
+		writeFileSync(gitDirRef, `${laneBaseline}\n`, "utf-8");
+		runContract(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+			SPINE_STET_NO_AUTO_FINISH: "1",
+		});
+		assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "1");
+		assert.equal(fs.readFileSync(path.join(stateDir, "baseline"), "utf-8").trim(), laneBaseline);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+		await rm(mockBin, { recursive: true, force: true });
+	}
+});
+
+for (const [label, taskId, stderrPattern] of [
+	["malformed task id", "SP-2;rm", /invalid task id/],
+	["task id without a folder", "SP-9", /found 0/],
+]) {
+	test(`${label} exits 2 before touching stet`, async () => {
+		const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-badtask-"));
+		const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+		mkdirSync(mockBin, { recursive: true });
+		const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0 });
+		try {
+			const { laneBaseline } = seedSerializedLane(root);
+			seedReviewDir(root, { session: false, baseline: laneBaseline });
+			const result = runContractExpectFail(
+				root,
+				{ PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}` },
+				["default", taskId],
+			);
+			assert.equal(result.status, 2);
+			assert.match(result.stderr, stderrPattern);
+			assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "0");
+		} finally {
+			await rm(root, { recursive: true, force: true });
+			await rm(mockBin, { recursive: true, force: true });
+		}
+	});
+}
+
+test("task id scopes the baseline to the parent of the task's first commit", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-task-"));
+	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0 });
+	try {
+		const { laneBaseline, taskBaseline } = seedSerializedLane(root);
+		seedReviewDir(root, { session: false, baseline: laneBaseline });
+		runContract(
+			root,
+			{ PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`, SPINE_STET_NO_AUTO_FINISH: "1" },
+			["default", "SP-2"],
+		);
+		assert.equal(fs.readFileSync(path.join(stateDir, "baseline"), "utf-8").trim(), taskBaseline);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+		await rm(mockBin, { recursive: true, force: true });
+	}
+});
+
+test("task id restarts a session left open at another baseline", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-restart-"));
+	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0 });
+	try {
+		const { laneBaseline, taskBaseline } = seedSerializedLane(root);
+		seedReviewDir(root, { baseline: laneBaseline });
+		writeFileSync(path.join(stateDir, "baseline"), `${laneBaseline}\n`, "utf-8");
+		runContract(
+			root,
+			{ PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`, SPINE_STET_NO_AUTO_FINISH: "1" },
+			["default", "SP-2"],
+		);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "1");
+		assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "1");
+		assert.equal(fs.readFileSync(path.join(stateDir, "baseline"), "utf-8").trim(), taskBaseline);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+		await rm(mockBin, { recursive: true, force: true });
+	}
+});
+
+test("task id reuses a session already at the task baseline (keeps dismissals)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-reuse-"));
+	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, dismissed: 2, runExit: 0 });
+	try {
+		const { laneBaseline, taskBaseline } = seedSerializedLane(root);
+		seedReviewDir(root, { baseline: laneBaseline });
+		writeFileSync(path.join(stateDir, "baseline"), `${taskBaseline}\n`, "utf-8");
+		runContract(
+			root,
+			{ PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`, SPINE_STET_NO_AUTO_FINISH: "1" },
+			["default", "SP-2"],
+		);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
+		assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "0");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+		await rm(mockBin, { recursive: true, force: true });
 	}
 });
 

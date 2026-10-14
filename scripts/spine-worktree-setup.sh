@@ -13,4 +13,7 @@ baseline="$(git rev-parse HEAD)"
 stet start "$baseline" --allow-dirty --quiet >&2
 mkdir -p .review
 printf '%s\n' "$baseline" > .review/spine-stet-baseline.ref
+# The engine's lane-commit sanitizer runs `git clean -fdX -- .review` between serialized tasks;
+# the per-worktree git dir copy survives it.
+printf '%s\n' "$baseline" > "$(git rev-parse --git-path spine-stet-baseline.ref)"
 echo '{"ok":true}'
