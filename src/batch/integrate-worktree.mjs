@@ -225,6 +225,11 @@ function isTimeoutError(err) {
 	return /** @type {any} */ (err).killed === true || /** @type {any} */ (err).code === "ETIMEDOUT";
 }
 
+/** Shared timed-out result for the sync loop's git calls. */
+function timeoutSyncResult(error, processedCount, totalPaths) {
+	return { ok: false, timedOut: true, error, processedPaths: processedCount, totalPaths: totalPaths };
+}
+
 /**
  * Git exec with per-subprocess timeout. Uses execFileSync directly to bypass
  * gitExec which does not support timeout passthrough (#114).
@@ -330,27 +335,28 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 				pathExistsInTree(projectRoot, baseSha, filePath, { timeoutMs: effectiveTimeout });
 		} catch (err) {
 			if (isTimeoutError(err)) {
-				return {
-					ok: false,
-					timedOut: true,
-					error: `git cat-file timed out for ${filePath} after ${effectiveTimeout}ms`,
-					processedPaths: processedCount,
-					totalPaths: paths.length,
-				};
+				return timeoutSyncResult(`git cat-file timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
 			}
 			existsInMerge = false;
 		}
 
-		if (dirtyPathSet.has(filePath) && operatorTouched) {
-			skippedDirtyPaths.push(filePath);
-			continue;
-		}
-
 		if (!existsInMerge) {
-			if (applyDeletions && removeMergeDeletedPath(projectRoot, filePath, { timeoutMs: effectiveTimeout })) processedCount++;
+			if (applyDeletions) {
+				try {
+					if (removeMergeDeletedPath(projectRoot, baseSha, filePath, { timeoutMs: effectiveTimeout }).removed) processedCount++;
+					else if (dirtyPathSet.has(filePath) && operatorTouched) skippedDirtyPaths.push(filePath);
+				} catch (err) {
+					if (isTimeoutError(err)) return timeoutSyncResult(`git rm timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
+				}
+			}
 			debugSyncLog(
 				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
 			);
+			continue;
+		}
+
+		if (dirtyPathSet.has(filePath) && operatorTouched) {
+			skippedDirtyPaths.push(filePath);
 			continue;
 		}
 
@@ -362,13 +368,7 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 			);
 		} catch (err) {
 			if (isTimeoutError(err)) {
-				return {
-					ok: false,
-					timedOut: true,
-					error: `git restore timed out for ${filePath} after ${effectiveTimeout}ms`,
-					processedPaths: processedCount,
-					totalPaths: paths.length,
-				};
+				return timeoutSyncResult(`git restore timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
 			}
 			if (isPathspecMismatchError(err)) {
 				debugSyncLog(
