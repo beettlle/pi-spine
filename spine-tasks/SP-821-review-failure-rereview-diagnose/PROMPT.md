@@ -114,7 +114,7 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 ### Step 5: Documentation & Delivery
 
 - [ ] Discoveries logged in STATUS.md (include the SP-762 reversal)
-- [ ] Create `.DONE`
+- [ ] Create `spine-tasks/SP-821-review-failure-rereview-diagnose/.DONE` (this task folder, not the worktree root)
 
 ## Documentation Requirements
 

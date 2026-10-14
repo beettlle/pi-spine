@@ -82,7 +82,7 @@ Closes #334 — Document the v2.27.1 reviewer isolation, the new review-failure 
 ### Step 4: Documentation & Delivery
 
 - [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [ ] Create `spine-tasks/SP-825-docs-reviewer-isolation-v2-27-1/.DONE` (this task folder, not the worktree root)
 
 ## Documentation Requirements
 

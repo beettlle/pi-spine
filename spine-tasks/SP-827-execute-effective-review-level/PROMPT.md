@@ -101,7 +101,7 @@ Closes #336 — Execute tasks get an effective Review Level of 0; authors are wa
 ### Step 5: Documentation & Delivery
 
 - [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [ ] Create `spine-tasks/SP-827-execute-effective-review-level/.DONE` (this task folder, not the worktree root)
 
 ## Documentation Requirements
 

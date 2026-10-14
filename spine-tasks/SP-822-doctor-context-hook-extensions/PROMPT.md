@@ -98,7 +98,7 @@ Partial #334 — `spine doctor` warns when an installed pi package registers a `
 ### Step 5: Documentation & Delivery
 
 - [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [ ] Create `spine-tasks/SP-822-doctor-context-hook-extensions/.DONE` (this task folder, not the worktree root)
 
 ## Documentation Requirements
 

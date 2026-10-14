@@ -91,7 +91,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 ### Step 4: Documentation & Delivery
 
 - [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [ ] Create `spine-tasks/SP-826-worker-tail-prompt-test-command/.DONE` (this task folder, not the worktree root)
 
 ## Documentation Requirements
 
