@@ -153,10 +153,20 @@ test("runSpineRules select requires manifest", async () => {
 	}
 });
 
-test("spine rules sync via CLI exits zero in pi-spine repo", () => {
-	const result = runSpine(["rules", "sync"], { cwd: REPO_ROOT });
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-	assert.match(result.stdout, /Discovered/);
+test("spine rules sync via CLI exits zero in temp repo with repo rules", async () => {
+	const projectRoot = await initGitRepo("spine-rules-sync-cli-");
+	try {
+		// Copy the repo's .cursor/rules so the CLI sync exercises the real rules
+		// set without touching REPO_ROOT/.spine/rules-manifest.json (#315).
+		fs.cpSync(path.join(REPO_ROOT, ".cursor", "rules"), path.join(projectRoot, ".cursor", "rules"), {
+			recursive: true,
+		});
+		const result = runSpine(["rules", "sync"], { cwd: projectRoot });
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Discovered/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
 });
 
 test("parseRulesArgv defaults role to worker", () => {
