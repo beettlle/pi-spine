@@ -49,6 +49,7 @@
 | 4 | Invalid profiles (`RULES_PROFILE_INVALID`, e.g. `..` traversal in `neverInclude`, `reviewer.maxRules: 0`) make `buildWorkerContextAsync` fall back to static mode with `selection.profileError` set. |
 | 5 | `npm run test:batch` fails en masse inside worker sessions because inherited `SPINE_IS_WORKER=1` blocks nested batch spawns; baseline verification (git stash) shows the same files pass without the env var. Unrelated to SP-829. |
 | 6 | Stet reviewer bug (false positive, dismissed `5f9106b…` as `false_positive`): the finding claimed `createRulesFixture` uses `fs` without importing it (confidence 0.95, severity error), but `tests/batch/worker-prompt-rules.test.mjs` line 2 is `import fs from "node:fs";`. Root cause visible in the stet prompt shadow (`.review/session.json`): the review hunk starts at `@@ -4,102`, so lines 1–2 (the `assert` and `fs` imports) were outside the reviewer's context. Evidence: file lints clean, typechecks, and all 6 of its tests execute the fixture helper successfully (`node --test`, 6/6 pass). Reviewer-context truncation at file top → report at https://github.com/beettlle/stet/issues. |
+| 7 | Post-done contract attempt 2 re-surfaced the same false positive against `.DONE:1` (finding `f21f4ab`, same missing-`fs` claim; same hunk truncation). Re-verified line 2 `import fs from "node:fs"`, re-ran the full contract `testCommand` after relaunch: lint ✓, typecheck ✓, 19/19 tests, stet 0 active findings, exit 0. `.DONE` restored. |
 
 ## Blockers
 
