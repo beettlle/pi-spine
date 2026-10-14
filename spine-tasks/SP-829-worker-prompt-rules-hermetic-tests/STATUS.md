@@ -1,7 +1,7 @@
 # SP-829: Hermetic worker-prompt-rules tests — Status
 
-**Current Step:** Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done (commit a2e3c0f4)
 **Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
@@ -32,10 +32,10 @@
 - [x] Fix all failures (baseline 2 failures eliminated; suite-wide `SPINE_IS_WORKER=1` interference proven pre-existing via `git stash` baseline — 3/3 pass without env, unrelated to this change)
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
