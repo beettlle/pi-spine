@@ -1,6 +1,6 @@
 # SP-828: Stet contract review on qwen3.8-27b with the OpenJev critic — Status
 
-**Current Step:** Step 1: Config and hygiene
+**Current Step:** Step 5: Testing & Verification
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -18,29 +18,31 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Config and hygiene
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review config
-- [ ] `.gitignore`
-- [ ] Gitlink removed
+- [x] Review config
+- [x] `.gitignore`
+- [x] Gitlink removed
 
 ### Step 2: Scripts
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract script
-- [ ] Setup hook
+- [x] Contract script
+- [x] Setup hook
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Mock `list` + dismissed count
-- [ ] Existing cases pass
-- [ ] New cases
+- [x] Mock `list` + dismissed count
+- [x] Existing cases pass
+- [x] New cases
+
+Note: the suite strips inherited `SPINE_STET_NO_AUTO_FINISH` / `SPINE_IS_WORKER` / `SPINE_WORKER_RUNNER` from the child env — spine worker sessions export `SPINE_STET_NO_AUTO_FINISH=1`, which leaked into the first run and (correctly) suppressed finish.
 
 ### Step 4: Docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook §8.1 (incl. `SPINE_STET_NO_AUTO_FINISH=1` required for batches)
+- [x] Runbook §8.1 (incl. `SPINE_STET_NO_AUTO_FINISH=1` required for batches)
 
 ### Step 5: Testing & Verification
 **Status:** ⬜ Not Started

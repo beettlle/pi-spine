@@ -2185,35 +2185,65 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 ---
 
-## 8.1 Stet code review (v1.5.0)
+## 8.1 Stet code review (v2.27.x)
 
-v1.5.0 uses **stet** for per-task LLM code review via Option A (baseline-at-setup + contract `testCommand`). See [stet integration overview](../stet-overview.md) §1.
+pi-spine uses **stet** for per-task LLM code review via Option A (baseline-at-setup + contract `testCommand`). See [stet integration overview](../stet-overview.md) §1.
 
 ### Preflight (operator)
 
-Before starting a v1.5.0 batch:
+Before starting a stet-gated batch:
 
-1. **stet** on `PATH` (`stet doctor` exits 0).
-2. **LM Studio** local server at `http://127.0.0.1:1234/v1` with model **`qwen/qwen3-coder-next`** loaded.
-3. Verify:
+1. **stet** on `PATH` (`stet doctor` exits 0). The scripts degrade cleanly without it: `scripts/spine-worktree-setup.sh` prints `{"ok":true,"skipped":"stet not on PATH"}` and exits 0.
+2. **LM Studio** local server at `http://127.0.0.1:1234/v1` with model **`qwen/qwen3.8-27b`** loaded (stet SP-039 model comparison: fits in memory next to OpenJev; `qwen3-coder-next` does not). The model's LM Studio preset must have **Enable Thinking off** — reasoning tokens share `max_completion_tokens` (4096).
+3. **OpenJev System One** critic server at `http://127.0.0.1:8080` running (config: `systemone_model = "openjev-latest"`, `systemone_timeout = "90s"`). If OpenJev is down, set `STET_CRITIC_ENABLED=false` to run without the second-pass critic.
+4. Verify:
 
 ```bash
 export STET_PROVIDER=openai
 export STET_OPENAI_BASE_URL=http://127.0.0.1:1234/v1
-export STET_MODEL=qwen/qwen3-coder-next
-stet doctor   # expect: OpenAI-compatible API OK, Model: qwen/qwen3-coder-next
+export STET_MODEL=qwen/qwen3.8-27b
+stet doctor   # expect: OpenAI-compatible API OK, Model: qwen/qwen3.8-27b
 ```
 
-Config is committed at `.review/config.toml` so lane worktrees inherit settings without per-worker env exports.
+Config is committed at `.review/config.toml` so lane worktrees inherit settings without per-worker env exports. Secrets stay env-only (`STET_SYSTEMONE_API_KEY`).
+
+### Required for spine batches: `SPINE_STET_NO_AUTO_FINISH=1`
+
+**Export `SPINE_STET_NO_AUTO_FINISH=1` before `spine batch start` / `spine batch resume`.** This is required for batch runs, not optional:
+
+- The engine re-runs the task Contract at final review (`contract.verified`), and `worktreeSetupHook` opens the stet session **once per lane**, not once per task.
+- Without the flag, the worker's passing contract run calls `stet finish`, which clears the session. The engine's re-run — or the next task on the same lane — then starts a **fresh full review from the lane baseline**: it can resurface dismissed findings and re-review earlier tasks' diffs as if they were new.
+
+Keep auto-finish (the default, no env var) for manual, one-off contract runs, where a fresh review is what you want.
 
 ### How it runs
 
 | Phase | Mechanism | Command |
 |-------|-----------|---------|
-| Lane setup | `worktreeSetupHook` | `stet start HEAD --allow-dirty --quiet` (writes `.review/spine-stet-baseline.ref`) |
-| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review). **Non-zero findings fail contract** with triage instructions; session stays open until dismissals. Zero findings auto-finish as before. |
+| Lane setup | `worktreeSetupHook` (`scripts/spine-worktree-setup.sh`) | `git rev-parse HEAD` → `stet start "$baseline" --allow-dirty --quiet`; writes `.review/spine-stet-baseline.ref`; prints `{"ok":true}` (no `node -e`; skips cleanly when stet is missing) |
+| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default\|strict]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review) |
+
+Contract behavior (ported from the stet repo's dogfooding scripts, stet SP-035–SP-040):
+
+- `stet run --strictness <level>` runs the review. A **`stet run` failure fails the contract with that exit code** and prints a hint (`stet doctor`; LM Studio / OpenJev up); the contract never calls `stet finish` after a failed run.
+- Active findings are counted from **`stet list`** (one line per non-dismissed finding). `stet status` also counts dismissed findings, so it is not used. A failing `stet list` exits 1.
+- Active findings > 0 → contract exits 1 with triage text; session stays open. Dismissing every finding turns the re-run green.
+- Zero active findings → `stet finish`, unless `SPINE_STET_NO_AUTO_FINISH=1` (required for spine batches, see above).
+- Any strictness other than `lenient|default|strict` exits 2 before touching stet.
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
+
+### Strictness by task
+
+- S tasks, low risk → `lenient` or no stet gate
+- M tasks → `default`
+- Review / gate / security code → `default` or `strict`
+
+### Known hazards (from stet dogfooding)
+
+- **`stet finish` clears the session.** Re-running a contract after it passed starts a fresh review that can resurface dismissed findings and invent new ones. This is why `SPINE_STET_NO_AUTO_FINISH=1` is required for spine batches (above).
+- **New-file diffs can produce hallucinated syntax findings.** The reviewer may report syntax or indentation defects that lint/typecheck/tests disprove. Tool output beats reviewer claims — dismiss with that evidence.
+- **Time budget.** The Contract `testCommand` wall clock is 10 minutes (not configurable). A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
 
 ### Triage
 
@@ -2221,15 +2251,15 @@ Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_pa
 - `stet dismiss <id> <reason>` — reasons: `false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope` (see `.cursor/rules/stet-integration.mdc`)
 - `scripts/spine-stet-file-issues.sh [SP-XXX]` — file GitHub issues on beettlle/pi-spine with label `stet`
 
-**Findings policy:** Project code defects → beettlle/pi-spine issues (`stet` label). stet CLI bugs → https://github.com/beettlle/stet/issues.
+**Findings policy:** Project code defects → fix in the task diff, or file beettlle/pi-spine issues (`stet` label). stet reviewer bugs (bad prompt, parser, critic) → dismiss with a reason, record under Discoveries in the task STATUS, and file at https://github.com/beettlle/stet/issues. Never dismiss a real defect without a fix.
 
 ### State & feedback loop (`history.jsonl`)
 
-Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id> <reason>`, auto-dismiss during re-review, or `stet finish` when the session had findings. The contract script uses `--auto-finish-zero`; **zero-finding sessions do not create `history.jsonl`**. That is expected — stet ran; no dismissals were recorded.
+Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id> <reason>`, auto-dismiss during re-review, or `stet finish` when the session had findings. **Zero-finding sessions that finish do not create `history.jsonl`** — that is expected; stet ran, no dismissals were recorded.
 
 | Symptom | Likely cause |
 |---------|--------------|
-| No `.review/history.jsonl` | No dismissals and no finish-with-findings yet (common in v1.5.0 batches with 0 findings) |
+| No `.review/history.jsonl` | No dismissals and no finish-with-findings yet (common in batches with 0 findings) |
 | `stet optimize` fails or no-ops | Same — optimizer reads `history.jsonl` |
 | Git notes on `refs/notes/stet` exist | Sessions finished; notes are analytics, not the optimizer input |
 
@@ -2237,7 +2267,7 @@ Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id
 
 **Contract failure → triage → re-run:** When contract verify reports findings, `scripts/spine-stet-contract-run.sh` exits non-zero and prints triage steps. Dismiss each finding (with reason), then re-run the task `testCommand` (or `scripts/spine-stet-contract-run.sh` alone). Do not dismiss project code defects without a filed issue or documented reason in `STATUS.md`.
 
-**Optional env — keep session open:** Set `SPINE_STET_NO_AUTO_FINISH=1` before contract stet to skip auto-finish even when findings are zero (manual triage window; session and worktree remain until `stet finish`).
+**Session lifetime:** in spine batches the session stays open across the lane (`SPINE_STET_NO_AUTO_FINISH=1`, see above); the lane operator closes it with `stet finish` after integrate, or it is reused by the next task on the lane.
 
 **Quality loop (optional cadence):**
 
