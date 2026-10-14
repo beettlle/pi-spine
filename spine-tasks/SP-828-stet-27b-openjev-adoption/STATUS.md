@@ -1,7 +1,7 @@
 # SP-828: Stet contract review on qwen3.8-27b with the OpenJev critic — Status
 
-**Current Step:** Step 5: Testing & Verification
-**Status:** 🔄 In Progress
+**Current Step:** Step 6: Documentation & Delivery — complete; `.DONE` pending
+**Status:** ✅ All completion criteria met
 **Last Updated:** 2026-10-14
 **Review Level:** 1
 **Review Counter:** 0
@@ -54,10 +54,12 @@ Note: the suite strips inherited `SPINE_STET_NO_AUTO_FINISH` / `SPINE_IS_WORKER`
 - [x] Fix all failures
 
 ### Step 6: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [ ] Create `.DONE` (immediately after this commit)
+
+Note: the run prompt's generic "run npm test" is superseded by the packet Contract (scoped testCommand; post-integrate `release:check` owns the full suite — packet amendment 2026-10-14). Lint + typecheck + the three scoped test files (23 tests) + stet contract review all green.
 
 ---
 
