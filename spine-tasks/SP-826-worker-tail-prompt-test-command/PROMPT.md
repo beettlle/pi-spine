@@ -19,7 +19,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
    - `tests/batch/worker-prompt.test.mjs`: tail no longer contains `run npm test`; tail mentions the Contract `testCommand`; `includeAgentInclude: false` omits `@…/worker.md`; default still includes it (existing line ~75 assertion keeps passing).
    - `tests/agents/worker-runner.test.mjs`: `buildWorkerPiArgs` output contains the `worker.md` path exactly once (the `--append-system-prompt` value) and the tail (last arg) has no `@…/worker.md`.
 
-**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh lenient`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh lenient SP-826`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
 
 ## Dependencies
 
@@ -51,7 +51,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/agents/worker-runner.test.mjs tests/agents/template-drift.test.mjs tests/config/worker-context.test.mjs tests/worker-tools/review-step-tool.test.mjs tests/batch/worker-backend.test.mjs && bash scripts/spine-stet-contract-run.sh lenient` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/agents/worker-runner.test.mjs tests/agents/template-drift.test.mjs tests/config/worker-context.test.mjs tests/worker-tools/review-step-tool.test.mjs tests/batch/worker-backend.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-826` |
 | fileScopeMustChange | `src/batch/worker-prompt.mjs`, `tests/batch/worker-prompt.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -123,3 +123,4 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
 - **2026-10-14 (operator, packet audit):** `bin/spine-worker-runner.mjs` rule is now "≤ 500 lines" instead of "net line change ≤ 0"; no LOC policy covers `bin/`, and the fix needs one line.
 - **2026-10-14 (operator, wave 0 follow-up):** Added the dependency on SP-829. After `13ea1975`, two tests in `tests/batch/worker-prompt-rules.test.mjs` fail on `main`, and this Contract runs that file.
+- **2026-10-14 (operator, wave 1 stet recovery):** The Contract passes this task's ID to `spine-stet-contract-run.sh`, so stet reviews only this task's commits when another task ran first on the same lane. The lane-commit sanitizer deletes `.review/` session state between serialized tasks.

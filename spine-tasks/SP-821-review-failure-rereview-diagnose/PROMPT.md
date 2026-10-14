@@ -27,7 +27,7 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
    - Update `tests/batch/post-done-plan-review-spawn.test.mjs` and `tests/batch/salvage-final-review-spawn-failed.test.mjs` to the new expectation (`needs_retry`, retry command, no salvage). Record the SP-762 reversal in Discoveries.
    - New `tests/batch/diagnosis-review-infra-rereview.test.mjs`: for each review type × {spawn_failed, timeout, provider_error} with `doneInLane: true` → `needs_retry`, command `spine batch retry <id>`, headline mentions re-running the review; a provider-error case mentions `spine doctor`; a pending-lane task with exit reason `contract_failed` (or no failure) still gets `pending_lane_land`.
 
-**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
+**Stet review (Contract):** the Contract ends with `bash scripts/spine-stet-contract-run.sh default SP-821`, which reviews this task's diff with stet (`.review/config.toml`: `qwen/qwen3.8-27b` on LM Studio with the OpenJev critic). When it reports active findings, run `stet list`, fix real defects in this task's diff, and dismiss the rest with `stet dismiss <id> <reason>` (`false_positive`, `already_correct`, `wrong_suggestion`, `out_of_scope`), citing lint/typecheck/test evidence. Record stet reviewer bugs (invented syntax errors, stale hunks, parse failures) under Discoveries in STATUS.md. Never dismiss a real defect without fixing it. If stet itself fails (`stet doctor`), record a blocker; do not edit `.review/`.
 
 ## Dependencies
 
@@ -62,7 +62,7 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/diagnosis*.test.mjs tests/batch/post-done-plan-review-spawn.test.mjs tests/batch/salvage-final-review-spawn-failed.test.mjs tests/batch/salvage-complete-after-integrate.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/diagnosis*.test.mjs tests/batch/post-done-plan-review-spawn.test.mjs tests/batch/salvage-final-review-spawn-failed.test.mjs tests/batch/salvage-complete-after-integrate.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default SP-821` |
 | fileScopeMustChange | `src/batch/reconcile-diagnosis.mjs`, `src/batch/diagnosis-pending-lane.mjs`, `tests/batch/diagnosis-review-infra-rereview.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
@@ -145,3 +145,4 @@ Partial #334 — For a failed task whose lane work is done but whose engine revi
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh default`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, and the stet triage paragraph in Mission. SP-828 is an indirect dependency via SP-820. To stay under the 500-character `testCommand` limit, the four `diagnosis*` tests (including the new `diagnosis-review-infra-rereview`) are now matched by `tests/batch/diagnosis*.test.mjs`, which also runs the other diagnosis suites.
 - **2026-10-14 (operator, packet audit):** Removed the coverage gate (#342: S packets use scoped tests; post-integrate `release:check` owns coverage). Added `--test-reporter=dot` to the Contract.
+- **2026-10-14 (operator, wave 1 stet recovery):** The Contract passes this task's ID to `spine-stet-contract-run.sh`, so stet reviews only this task's commits when another task ran first on the same lane. The lane-commit sanitizer deletes `.review/` session state between serialized tasks.

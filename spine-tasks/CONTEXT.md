@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; Next → SP-831)
+**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; Next → SP-831)
 **Status:** Active
 **Next Task ID:** SP-831
 
@@ -1386,7 +1386,7 @@ spine batch start SP-488 SP-489 SP-490
 - **Batch env (required):** `export SPINE_STET_NO_AUTO_FINISH=1` before every `spine batch start` / `resume`. The engine re-runs the Contract at final review (`contract.verified`), and `worktreeSetupHook` opens the session once per lane, not per task. With auto-finish, the worker's passing run clears the session, so the engine's re-run (or the next task on the lane) starts a fresh full review from the lane baseline that can resurface dismissed findings and include earlier tasks' diffs.
 - **Concurrency:** `lanes.maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio and OpenJev.
 - **Packet scope:** stet-gated packets list `.review/**` in `fileScopeMustNotChange`; `.review/*` except `config.toml` is gitignored.
-- **Known hazards:** `stet finish` clears the session, so re-running a passed contract starts a fresh review that can resurface dismissed findings ([stet#8](https://github.com/beettlle/stet/issues/8)). `stet status` `findings:` includes dismissed findings, so count `stet list` instead ([stet#7](https://github.com/beettlle/stet/issues/7)). Stet's default worktree sits under `.review/worktrees/` with no ignore rule, so keep the `.review/*` gitignore ([stet#9](https://github.com/beettlle/stet/issues/9)). On diffs that add new files the reviewer can invent syntax defects; lint/typecheck/test output beats reviewer claims.
+- **Known hazards:** `stet finish` clears the session, so re-running a passed contract starts a fresh review that can resurface dismissed findings ([stet#8](https://github.com/beettlle/stet/issues/8)). `stet status` `findings:` includes dismissed findings, so count `stet list` instead ([stet#7](https://github.com/beettlle/stet/issues/7)). Stet's default worktree sits under `.review/worktrees/` with no ignore rule, so keep the `.review/*` gitignore ([stet#9](https://github.com/beettlle/stet/issues/9)). On diffs that add new files the reviewer can invent syntax defects; lint/typecheck/test output beats reviewer claims. The lane-commit sanitizer (`git clean -fdX -- .review`) deletes the stet session and `.review/spine-stet-baseline.ref` between tasks serialized on one lane ([#349](https://github.com/beettlle/pi-spine/issues/349)), so Contracts end with `bash scripts/spine-stet-contract-run.sh <level> <task-id>`: the script reads the git-dir baseline copy and reviews from the parent of the task's first lane commit. Keep the main checkout clean while a batch runs; the wave merge checks out the orch branch in place and fails on uncommitted edits.
 
 _v1.5.0 policy (historical):_ `qwen/qwen3-coder-next`, `stet run --auto-finish-zero --quiet`, SP-494 bootstrap.
 
@@ -2684,10 +2684,10 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-828 | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic; contract script counts active findings | S | — (operator) | 0 | Done |
 | SP-829 | Hermetic worker-prompt-rules tests (`release:check` red after `13ea1975`) | S | — (operator) | 0b | Done |
 | SP-830 | Integrate removes branch-deleted paths from the base checkout | S | #346 Closes | 0b | Done |
-| SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Staged |
-| SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Staged |
-| SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Staged |
-| SP-824 | Gate streak reset failure fails closed and is journaled | S | #314 Partial | 1 | Staged |
+| SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Done |
+| SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Done |
+| SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Done |
+| SP-824 | Gate streak reset failure fails closed and is journaled | S | #314 Partial | 1 | Done |
 | SP-821 | Diagnose recommends re-review, not salvage, for review-infra failures | S | #334 Partial | 2 | Staged |
 | SP-822 | Doctor warns about context-rewriting pi extensions | S | #334 Partial | 2 | Staged |
 | SP-825 | Docs: reviewer isolation and re-review recovery | S | #334 Closes | 2 | Staged |
@@ -2701,7 +2701,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override; 2026-10-14)
 - [x] SP-828 `.DONE` and integrated on `main` before wave 1 starts (`31cd2314`)
 - [x] SP-829 and SP-830 `.DONE` and integrated on `main` before wave 1 starts; post-integrate `release:check` green (`089a7903`, fix `5df55050`)
-- [ ] SP-819–SP-827 `.DONE` and integrated on `main`
+- [x] Wave 1 SP-819, SP-820, SP-823, SP-824 `.DONE` and integrated on `main`; post-integrate `release:check` green (`1b0a522a`)
+- [ ] SP-821, SP-822, SP-825, SP-826, SP-827 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD
 - [ ] Publish **v2.27.1** only after operator approval
