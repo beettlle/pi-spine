@@ -5,11 +5,11 @@
 **Target version:** v2.27.1
 **Bump type:** patch
 **Profile:** patch
-**Operator approved scope:** no — awaiting operator approval (operator invocation 2026-10-10: "create the next v2.27 release … contain #334 … create the spine tasks and wait for approval before starting development"). Packets are authored; **Phase 4 is blocked until this line reads `yes`.**
+**Operator approved scope:** yes (2026-10-14, operator) — 10 tasks including SP-828 as release wave 0. Do not push to `origin` until the release work is done (operator instruction 2026-10-14).
 **Composition choice:** #334 (reviewer extension isolation, P1) as the headline bug, split into 4 code packets plus 1 docs packet; #315 (rules-manifest churn that caused a v2.27.0 wave 2 merge conflict) and #314 (gate streak reset fails open, trust decision) as companion bugs. **Added 2026-10-10 (token-cost audit):** #335 (SP-826, worker tail prompt) and #336 (SP-827, execute tasks spawn reviewers) — two S bug fixes that cut per-task worker and reviewer spend; total 9 tasks exceeds the patch cap of 8 (operator override, see Composition audit). **Added 2026-10-11 (stet adoption):** SP-828 refreshes stet (`qwen/qwen3.8-27b` + OpenJev System One critic, contract script counts active findings) and runs as release wave 0 so every v2.27.1 code packet is stet-reviewed; total 10 tasks (operator override).
-**Worker model pin:** `zai/glm-5.3` via `agents.activeProfile=hard`; `agents.quotaFallbackProfile=allegretto` (`kimi-coding/k3`) is provider failover per #329, not escalation. Do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248)).
+**Worker model pin:** `zai/glm-5.3-flash` thinking `medium` via `agents.activeProfile=default` (operator, `48e6bc4f`, 2026-10-13). Reviewer unchanged: `google/gemini-3.1-pro-preview` `high` (plan/code/final). `agents.escalatePolicy.toProfile=hard` (`zai/glm-5.3`) is escalation; `agents.quotaFallbackProfile=allegretto` (`kimi-coding/k3`) is provider failover per #329, not escalation. Do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248)).
 **Agent pin override:** none
-**Extension override:** pending check before wave 1. The installed v2.27.0 engine still spawns reviewers with user extensions until SP-819 lands. Before wave 1, confirm pi-headroom is the patched local build and pi-loop is removed (v2.27.0 manifest: pi-loop still gave 1/2 `MALFORMED_FUNCTION_CALL`), then probe the reviewer with a parallel-tool-call prompt on `google/gemini-3.1-pro-preview` `high`.
+**Extension override:** yes (2026-10-14) — `pi remove npm:@trevonistrevon/pi-loop` for this release (v2.27.0 re-probe still gave 1/2 `MALFORMED_FUNCTION_CALL`). pi-headroom stays as the patched local build (`~/Documents/github/pi-headroom`, branch `fix/preserve-thought-signatures`, `7c203c7`). pi is now 1.2.0 (v2.27.0 ran on 1.1.0). Reviewer probe from the repo root, `pi -p --no-session --model google/gemini-3.1-pro-preview --thinking high "Read package.json and tsconfig.json in parallel (two read tool calls in one turn), then reply with the package name only."`: **3/3** answered `pi-spine` (14 s, 14 s, 19 s), no `MALFORMED_FUNCTION_CALL`, no `thought_signature` 400. Each run printed a pi 1.2.0 loader warning that `pi-smart-router` declares `@earendil-works/pi-ai` in `dependencies` instead of `peerDependencies` (`"*"`); harmless for the probe, not a release blocker. The installed v2.27.0 engine still spawns reviewers with user extensions until SP-819 lands. Reinstall after publish: `pi install npm:@trevonistrevon/pi-loop`.
 **GitNexus:** refreshed 2026-10-10 — status up-to-date with HEAD (`c696025`)
 
 ---
@@ -120,7 +120,7 @@ Release waves 1–2 are operator labels. Start each with its task IDs only (`spi
 
 ```bash
 spine tasks validate SP-828 SP-819 SP-820 SP-821 SP-822 SP-823 SP-824 SP-825 SP-826 SP-827
-stet doctor                                      # LM Studio qwen/qwen3.8-27b + OpenJev System One OK
+stet doctor                                      # before SP-828 lands this reads the old config; check ../stet too (qwen/qwen3.8-27b + System One OK)
 spine preflight
 spine batch start SP-828                         # release wave 0 — stet refresh
 spine status --diagnose
@@ -133,7 +133,11 @@ npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave1.log; test "${PIPEST
 
 **Until SP-821 lands:** if a review spawn fails with `.DONE` in the lane, diagnose still suggests `salvage --integrate`. Do not salvage. Run `spine batch retry <id>` (resumes at the review) or a manual `spine review step --type final` in the lane worktree.
 
-**Model pin policy ([#248](https://github.com/beettlle/pi-spine/issues/248)):** one worker pin (`hard`). Automatic quota fallback to `allegretto` is allowed (#329); paste the `Agent pin override` line from `spine status --diagnose` above when it fires.
+**Model pin policy ([#248](https://github.com/beettlle/pi-spine/issues/248)):** one worker pin (`default`: `zai/glm-5.3-flash`, `medium`). `escalatePolicy` may move a task to `hard`; automatic quota fallback to `allegretto` is allowed (#329); paste the `Agent pin override` line from `spine status --diagnose` above when it fires.
+
+### Execution log
+
+- **2026-10-14 readiness** — Scope approved by the operator. pi-loop removed; reviewer probe 3/3 (see Extension override). Worker probe `pi -p --no-session --model zai/glm-5.3-flash "ping"` → `pong` (8 s). `stet doctor` in pi-spine (pre-SP-828 config): `OpenAI-compatible API OK`, `Model: qwen/qwen3-coder-next`. `stet doctor` in `../stet` (the config SP-828 ports): `OpenAI-compatible API OK`, `Model: qwen/qwen3.8-27b`, `System One OK`, `System One model: openjev-latest`. `lms ps`: `qwen/qwen3.8-27b` loaded, context 65536, parallel 1, idle TTL 1 h. `spine tasks validate` (10 tasks): 10 passed. `spine preflight`: all checks pass except `git-clean` before the readiness commit; one warning, `prelanded-file-scope` for SP-825 (`skills/spine-release-operator/SKILL.md` changed by #342 `f39c87d1`), recorded as an SP-825 amendment with `fileScopeMustChange` unchanged (same handling as SP-808 in v2.27.0). No batch started; `main` not pushed. **Next:** `spine batch start SP-828`.
 
 ---
 
@@ -229,7 +233,8 @@ Wave 1 · 1 task
 - The Contract `testCommand` wall clock is 10 minutes. Each contract runs lint, typecheck, scoped tests, then a 3–5 minute first stet review. `lanes.maxParallel` is 2 so lanes do not queue on LM Studio. If a contract times out, retry the task; stet re-runs after dismissals are incremental.
 - SP-828 runs its own Contract with the new script and config from its diff; until it lands, the v1.5.0 contract script on `main` cannot pass after dismissals.
 - Stet reviewer false positives (invented syntax errors on new files, stale hunks) are expected on JS/TS diffs; workers must dismiss with tool evidence, not edit code to satisfy them.
-- Wave 1 still runs on the installed v2.27.0 engine, whose reviewers load user extensions. Re-check the extension set and probe the reviewer before starting (see Extension override above).
+- Waves 0 and 1 run on the installed v2.27.0 engine, whose reviewers load user extensions until SP-819 lands. Extension check and reviewer probe done 2026-10-14 (pi-loop removed, 3/3); re-probe if any pi package changes before wave 1.
+- LM Studio serves `qwen/qwen3.8-27b` with parallel 1 and a 1 h idle TTL: two lanes' stet reviews queue on one slot, and the first review after an idle hour pays a model reload. Watch contract durations against the 10-minute limit in wave 0 and round 1 of wave 1.
 - SP-819 changes every reviewer spawn. If a reviewer needs a built-in pi extension that `-ne` disables, every review breaks. SP-819 Step 0 lists exact-args tests; post-integrate `release:check` and wave 2 reviews (which run on the new code only after `npm install` / relink) are the live check.
 - SP-821 reverses SP-762's salvage routing. #291's complaint was that retry language forced a worker re-run; SP-821 Step 0 must confirm retry resumes at the review before changing anything.
 - SP-823 touches two 498-line batch modules; edits must be net-negative.
@@ -240,7 +245,7 @@ Wave 1 · 1 task
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] Operator approved scope (set `Operator approved scope: yes` above)
+- [x] Operator approved scope (set `Operator approved scope: yes` above; 2026-10-14)
 - [ ] SP-828 integrated on `main` before release wave 1
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)

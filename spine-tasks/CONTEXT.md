@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-11 (Phase 96 v2.27.1: SP-828 stet adoption added as wave 0; SP-819–SP-827 code packets stet-gated; awaiting scope approval; Next → SP-829)
+**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); readiness probes green; ready for wave 0 `spine batch start SP-828`; Next → SP-829)
 **Status:** Active
 **Next Task ID:** SP-829
 
@@ -2676,7 +2676,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 96 — v2.27.1 reviewer extension isolation (#334) + rules manifest churn (#315) + gate streak fail-closed (#314)
 
-**Authoring:** 2026-10-10 · Manifest: [`spine-tasks/_authoring/release-v2.27.1/manifest.md`](_authoring/release-v2.27.1/manifest.md) · Patch profile · Pin `hard` (zai/glm-5.3), quota fallback `allegretto`
+**Authoring:** 2026-10-10 · Manifest: [`spine-tasks/_authoring/release-v2.27.1/manifest.md`](_authoring/release-v2.27.1/manifest.md) · Patch profile · Pin `default` (zai/glm-5.3-flash, medium; operator 2026-10-13), escalation `hard`, quota fallback `allegretto`
 
 | SP-* | Summary | Size | Issue | Wave | Status |
 |------|---------|------|-------|------|--------|
@@ -2695,7 +2695,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 **Phase 96 exit criteria:**
 
-- [ ] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override)
+- [x] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override; 2026-10-14)
 - [ ] SP-828 `.DONE` and integrated on `main` before wave 1 starts
 - [ ] SP-819–SP-827 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336 CLOSED; #314 progress noted (stays open for streak locking)

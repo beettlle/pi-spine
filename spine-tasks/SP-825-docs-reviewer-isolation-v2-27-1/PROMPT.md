@@ -110,4 +110,4 @@ Closes #334 — Document the v2.27.1 reviewer isolation, the new review-failure 
 
 ## Amendments
 
-_None._
+- **2026-10-14 (operator, v2.27.1 readiness):** Preflight flags `skills/spine-release-operator/SKILL.md` as pre-landed: `f39c87d1` (#342, token-cost authoring and operator guidance) rewrote parts of it after this packet was authored. None of this packet's content is on `main` (no reviewer `-ne`, `loadUserExtensions`, `*_review_provider_error`, or re-review guidance in the skill), so `fileScopeMustChange` stays as written. SP-828 (release wave 0) also edits `docs/adoption/operator-runbook.md` §8.1 (stet); leave that section as SP-828 left it. Build the Phase 4 paragraph on the post-#342 skill text.
