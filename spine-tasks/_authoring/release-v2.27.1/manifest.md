@@ -5,7 +5,7 @@
 **Target version:** v2.27.1
 **Bump type:** patch
 **Profile:** patch
-**Operator approved scope:** yes (2026-10-14, operator) — 10 tasks including SP-828 as release wave 0. Do not push to `origin` until the release work is done (operator instruction 2026-10-14).
+**Operator approved scope:** yes (2026-10-14, operator) — 10 tasks including SP-828 as release wave 0; **12** after the operator approved wave 0b (SP-829, SP-830) on 2026-10-14 to fix the wave 0 blockers. Do not push to `origin` until the release work is done (operator instruction 2026-10-14).
 **Composition choice:** #334 (reviewer extension isolation, P1) as the headline bug, split into 4 code packets plus 1 docs packet; #315 (rules-manifest churn that caused a v2.27.0 wave 2 merge conflict) and #314 (gate streak reset fails open, trust decision) as companion bugs. **Added 2026-10-10 (token-cost audit):** #335 (SP-826, worker tail prompt) and #336 (SP-827, execute tasks spawn reviewers) — two S bug fixes that cut per-task worker and reviewer spend; total 9 tasks exceeds the patch cap of 8 (operator override, see Composition audit). **Added 2026-10-11 (stet adoption):** SP-828 refreshes stet (`qwen/qwen3.8-27b` + OpenJev System One critic, contract script counts active findings) and runs as release wave 0 so every v2.27.1 code packet is stet-reviewed; total 10 tasks (operator override).
 **Worker model pin:** `zai/glm-5.3-flash` thinking `medium` via `agents.activeProfile=default` (operator, `48e6bc4f`, 2026-10-13). Reviewer unchanged: `google/gemini-3.1-pro-preview` `high` (plan/code/final). `agents.escalatePolicy.toProfile=hard` (`zai/glm-5.3`) is escalation; `agents.quotaFallbackProfile=allegretto` (`kimi-coding/k3`) is provider failover per #329, not escalation. Do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248)).
 **Agent pin override:** none
@@ -38,11 +38,11 @@
 | Bug fixes | 5 issues / 8 packets (#334 ×4 code, #315, #314, #335, #336) | 3–5 | PASS |
 | Tooling | 1 (SP-828 stet adoption; fixes the contract script's dismissed-finding count) | — | PASS with operator override (2026-10-11) |
 | Enhancements | 0 | 0 | PASS (SP-822's doctor check is acceptance criterion 5 of bug #334, not a separate enhancement) |
-| **Total tasks** | 10 | 5–8 | **PASS with operator override** — operator chose SP-826 + SP-827 (2026-10-10, token-cost audit); both S, disjoint File Scope, run in release wave 2. Operator added SP-828 (2026-10-11) as release wave 0 so the release is stet-reviewed |
+| **Total tasks** | 12 | 5–8 | **PASS with operator override** — operator chose SP-826 + SP-827 (2026-10-10, token-cost audit); both S, disjoint File Scope, run in release wave 2. Operator added SP-828 (2026-10-11) as release wave 0 so the release is stet-reviewed, and SP-829 + SP-830 (2026-10-14) as wave 0b to fix the wave 0 blockers |
 | Task sizes | all S | S only | PASS |
 | Dep drift check recorded | yes | WARN if missing | PASS |
 | No-code tasks at Review Level 0 | SP-825 (docs; `testCommand` `true`) | all no-code tasks | PASS — `isReviewTypeRequired` returns `false` at level 0, so no plan/code/final reviewer spawns. SP-828 changes scripts, config, and tests, so it stays Level 1 |
-| S/M packets without coverage gate or full suite | all 10 | all | PASS (#342; packet audit 2026-10-14) |
+| S/M packets without coverage gate or full suite | all 12 | all | PASS (#342; packet audit 2026-10-14) |
 
 **Profile audit:** PASS with operator override (total 10 > cap 8)
 
@@ -102,8 +102,10 @@
 | SP-826 | #335 | bug | S | Worker tail prompt names Contract testCommand; worker.md sent once | Closes #335; deps SP-828 |
 | SP-827 | #336 | bug | S | Execute tasks run at effective Review Level 0 (+ validate warning) | Closes #336; deps SP-828 |
 | SP-828 | — | tooling | S | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic | No deps; SP-819, SP-820, SP-823, SP-824, SP-826, SP-827 depend on it |
+| SP-829 | — (`13ea1975` regression) | bug | S | Hermetic worker-prompt-rules tests | Wave 0b; restores `release:check`; SP-826 depends on it (its Contract runs the file) |
+| SP-830 | [#346](https://github.com/beettlle/pi-spine/issues/346) | bug | S | Integrate removes branch-deleted paths from the base checkout | Wave 0b; Closes #346; Review Level 2, stet `default` |
 
-**Release scope ID:** `SP-828,SP-819,SP-820,SP-821,SP-822,SP-823,SP-824,SP-825,SP-826,SP-827`
+**Release scope ID:** `SP-828,SP-829,SP-830,SP-819,SP-820,SP-821,SP-822,SP-823,SP-824,SP-825,SP-826,SP-827`
 
 **Stet gating (2026-10-11):** each code packet's Contract ends with `bash scripts/spine-stet-contract-run.sh <level>` — `default` for SP-819, SP-820, SP-821, SP-824, SP-827; `lenient` for SP-822, SP-823, SP-826. SP-825 (docs, `testCommand` `true`) has no stet step. All stet-gated packets list `.review/**` in `fileScopeMustNotChange`.
 
@@ -112,6 +114,7 @@
 | Wave | Scope | Rationale |
 |------|-------|-----------|
 | 0 | `SP-828` | Stet refresh must be on `main` before any stet-gated Contract runs |
+| 0b | `SP-829,SP-830` | Wave 0 blockers: `release:check` red from `13ea1975`, and integrate leaving branch deletions staged (#346). Both land before wave 1, so wave 1's integrate runs the fixed sync. 1 round of 2 lanes |
 | 1 | `SP-819,SP-820,SP-823,SP-824` | Independent, disjoint File Scope; 2 rounds of 2 lanes at `maxParallel` 2 |
 | 2 | `SP-821,SP-822,SP-826,SP-827,SP-825` | SP-821 needs SP-820's exit reasons; SP-822 needs SP-819's key; SP-826/SP-827 depend only on SP-828 and share the first internal wave (2 rounds of 2 lanes at `maxParallel` 2); SP-825 (docs) runs after SP-821/SP-822 inside the batch |
 
@@ -139,12 +142,19 @@ sp gate approve && sp integrate && npm install && sp batch complete
 npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave0.log
 stet doctor                                      # now reads the SP-828 config (qwen/qwen3.8-27b + System One)
 
+# Release wave 0b — wave 0 blockers (SP-829 tests, SP-830 integrate deletions #346)
+date -u; sp batch start SP-829 SP-830
+sp status --diagnose
+sp gate approve && sp integrate && npm install && sp batch complete
+git status --short                               # this integrate still runs the pre-SP-830 sync; clear stale deletions by hand
+npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave0b.log   # must be green before wave 1
+
 # Release wave 1
 date -u; sp batch start SP-819 SP-820 SP-823 SP-824
 sp status --diagnose
 sp gate approve && sp integrate && npm install && sp batch complete
 npm run release:check 2>&1 | tee /tmp/pi-spine-v2.27.1-wave1.log
-git status --porcelain                           # must be empty (SP-823: tests no longer rewrite .spine/rules-manifest.json)
+git status --porcelain                           # must be empty (SP-823: tests no longer rewrite .spine/rules-manifest.json; SP-830: no stale deletions after integrate)
 rg -n -- '-ne\b' src/batch/review-spawn.mjs      # SP-819 on main; checkout CLI reviewers now run pi -ne
 
 # Release wave 2
@@ -165,7 +175,7 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
 - **2026-10-14 readiness** — Scope approved by the operator. pi-loop removed; reviewer probe 3/3 (see Extension override). Worker probe `pi -p --no-session --model zai/glm-5.3-flash "ping"` → `pong` (8 s). `stet doctor` in pi-spine (pre-SP-828 config): `OpenAI-compatible API OK`, `Model: qwen/qwen3-coder-next`. `stet doctor` in `../stet` (the config SP-828 ports): `OpenAI-compatible API OK`, `Model: qwen/qwen3.8-27b`, `System One OK`, `System One model: openjev-latest`. `lms ps`: `qwen/qwen3.8-27b` loaded, context 65536, parallel 1, idle TTL 1 h. `spine tasks validate` (10 tasks): 10 passed. `spine preflight`: all checks pass except `git-clean` before the readiness commit; one warning, `prelanded-file-scope` for SP-825 (`skills/spine-release-operator/SKILL.md` changed by #342 `f39c87d1`), recorded as an SP-825 amendment with `fileScopeMustChange` unchanged (same handling as SP-808 in v2.27.0). No batch started; `main` not pushed. **Next:** `spine batch start SP-828`.
 - **2026-10-14 packet audit** — Commits `5a4b6f28` (packet fixes: `SPINE_STET_NO_AUTO_FINISH=1` required, coverage gates dropped, dot reporter, SP-823/SP-825 scoped checks, SP-828 gitlink check) and `bdf7f6f5` (GitNexus counts). Validate 10/10, analyze 0 blocking, `spine preflight` passed (SP-825 pre-landed warning as above). pi-loop absent; pi-headroom on `fix/preserve-thought-signatures` `7c203c7`; `HEADROOM_URL` unset.
 - **2026-10-14 19:22 UTC wave 0 start** — `spine batch start SP-828` with `SPINE_STET_NO_AUTO_FINISH=1` (confirmed in engine env). Batch `20261014T192255-335e`, engine PID 79446. Peak window opens 2026-10-15 06:00 UTC; start cutoff 04:30 UTC.
-- **2026-10-14 19:50 UTC wave 0 landed** — SP-828 `.DONE`; `contract.verified` ok; final review PASS after one `review.spawn_retry`. `spine integrate` → `31cd2314`. After integrate, main's index re-staged the deleted gitlink `.review/worktrees/stet-0ca229b1c13e` (HEAD tree was correct); cleared with `git rm --cached`. That is a pi-spine integrate bug and is not filed yet. Post-integrate `release:check`: exit 1, 2875/2877 pass (`/tmp/pi-spine-v2.27.1-wave0.log`). Failures: `tests/batch/worker-prompt-rules.test.mjs` "buildWorkerTailPrompt includes critical-rules for JS-scoped task" and "buildWorkerContextAsync appends config.standards end-to-end". Cause: `13ea1975` (`.spine/rules-profile.json` neverInclude, read via the real project root). It reproduces outside stet. Wave 1 is on hold for an operator decision.
+- **2026-10-14 19:50 UTC wave 0 landed** — SP-828 `.DONE`; `contract.verified` ok; final review PASS after one `review.spawn_retry`. `spine integrate` → `31cd2314`. After integrate, main's index re-staged the deleted gitlink `.review/worktrees/stet-0ca229b1c13e` (HEAD tree was correct); cleared with `git rm --cached`. That is a pi-spine integrate bug, filed as [#346](https://github.com/beettlle/pi-spine/issues/346) (fix: SP-830). Post-integrate `release:check`: exit 1, 2875/2877 pass (`/tmp/pi-spine-v2.27.1-wave0.log`). Failures: `tests/batch/worker-prompt-rules.test.mjs` "buildWorkerTailPrompt includes critical-rules for JS-scoped task" and "buildWorkerContextAsync appends config.standards end-to-end". Cause: `13ea1975` (`.spine/rules-profile.json` neverInclude, read via the real project root). It reproduces outside stet. Wave 1 is on hold for an operator decision. The operator approved wave 0b (SP-829, SP-830) before wave 1.
 - **2026-10-14 stet issues** — First release gated by stet; SP-828 Discovery 6 had 3 false positives, all dismissed. Filed [stet#7](https://github.com/beettlle/stet/issues/7) (`stet status` `findings:` counts dismissed findings), [stet#8](https://github.com/beettlle/stet/issues/8) (dismissals lost after `stet finish`; the reason for `SPINE_STET_NO_AUTO_FINISH=1`), [stet#9](https://github.com/beettlle/stet/issues/9) (default `.review/worktrees/` committed as a gitlink). False-positive quality is not filed; file it if the pattern recurs in waves 1–2.
 
 ---
@@ -259,8 +269,6 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 | TypeScript 7 / `@types/node` 26 | dep major | Own release |
 | `docs/stet-overview.md` still documents `--auto-finish-zero` | docs | SP-828 Discovery 5; outside SP-828 file scope |
 | [stet#7](https://github.com/beettlle/stet/issues/7), [stet#8](https://github.com/beettlle/stet/issues/8), [stet#9](https://github.com/beettlle/stet/issues/9) | upstream bug | Drop `SPINE_STET_NO_AUTO_FINISH=1` once stet#8 ships |
-| `spine integrate` re-stages a gitlink deleted on the branch | bug | Wave 0; HEAD correct, index stale; not yet filed |
-
 ---
 
 ## Risks and blockers

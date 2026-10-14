@@ -23,6 +23,7 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 ## Dependencies
 
 - **Task:** SP-828 (stet contract script and review config used by this Contract)
+- **Task:** SP-830 (also edits `src/batch/integrate-worktree.mjs`; lands first in wave 0b)
 
 ## Context to Read First
 
@@ -131,3 +132,4 @@ Closes #315 — An unchanged rules set never rewrites the manifest, `npm test` l
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
 - **2026-10-14 (operator, packet audit):** Removed the coverage gate and the full `npm test` run in Step 4 (#342); the manifest-clean check now follows the Contract run, and post-integrate `release:check` repeats it for the full suite. Added `--test-reporter=dot`; dropped `SPINE_SUPPRESS_JOURNAL_ATTACH=1` to stay under 500 characters (SP-812 already isolates tests from the live journal).
+- **2026-10-14 (operator, wave 0b):** SP-830 lands before this task and edits `src/batch/integrate-worktree.mjs` ~295-414 (up to 2 added lines, still 500 or fewer). Line references here can shift by 2; re-read the line count in Step 0. The no-net-added-lines rule is unchanged. Added the dependency on SP-830 (`spine tasks analyze` flagged the shared File Scope).

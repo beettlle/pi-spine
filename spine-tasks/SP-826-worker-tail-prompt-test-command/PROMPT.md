@@ -24,6 +24,7 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 ## Dependencies
 
 - **Task:** SP-828 (stet contract script and review config used by this Contract)
+- **Task:** SP-829 (makes `tests/batch/worker-prompt-rules.test.mjs`, which this Contract runs, pass again)
 
 ## Context to Read First
 
@@ -121,3 +122,4 @@ Closes #335 — Make the worker tail prompt cheaper and consistent with the pack
 
 - **2026-10-11 (operator, SP-828 stet adoption):** Contract `testCommand` ends with `bash scripts/spine-stet-contract-run.sh lenient`; added `fileScopeMustNotChange` `.review/**`, the LM Studio and OpenJev services, the stet triage paragraph in Mission, and the dependency on SP-828.
 - **2026-10-14 (operator, packet audit):** `bin/spine-worker-runner.mjs` rule is now "≤ 500 lines" instead of "net line change ≤ 0"; no LOC policy covers `bin/`, and the fix needs one line.
+- **2026-10-14 (operator, wave 0 follow-up):** Added the dependency on SP-829. After `13ea1975`, two tests in `tests/batch/worker-prompt-rules.test.mjs` fail on `main`, and this Contract runs that file.
