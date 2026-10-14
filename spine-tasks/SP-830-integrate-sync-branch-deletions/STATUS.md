@@ -11,11 +11,11 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Impact analysis recorded
-- [ ] Line count recorded
-- [ ] Dependencies satisfied
+- [x] Impact analysis recorded
+- [x] Line count recorded
+- [x] Dependencies satisfied
 
 ### Step 1: Deletion helper and opt-in
 **Status:** ⬜ Not Started
@@ -49,6 +49,11 @@
 
 | # | Finding |
 |---|---------|
+| 1 | Impact `syncPlumbingMergePathsToWorktree`: LOW risk, 2 direct callers (`syncMergePathsToCheckedOutBase` same file; `syncHumanCheckoutWithBase` in src/cli/sync-base.mjs — stays opt-out, no changes there). |
+| 2 | Impact `syncMergeResultToCheckedOutBase`: HIGH risk — direct callers `integrateOrchToBase` (src/batch/integrate.mjs:349) and `integrateSalvageableLane` (src/batch/salvage-batch-integrate.mjs:354); flows runSequence/wave-land-loop affected. Both callers pass `{ dirtyPaths }` only, so forcing `applyDeletions: true` inside the wrapper opts integrate in without touching those files. |
+| 3 | Line counts: integrate-worktree.mjs 498/500 (budget 2 net lines: +1 import, +1 deletion branch), test file 198, sync-base.mjs 354 (untouched). |
+| 4 | Empirical git check: after a CAS ref move (stale index vs new HEAD), plain `git rm --cached <path>` succeeds when the worktree file matches the index, and FAILS (exit 128, "staged content") when the worktree file has local edits — deletion attempt falls back to skip, preserving operator edits. `--cached` leaves the worktree file, so helper rmSync's the leftover. |
+| 5 | SP-828 landed (commits cd03cda1, e6f55569): sync primitives exist in tree. Dependencies satisfied. |
 
 ## Blockers
 

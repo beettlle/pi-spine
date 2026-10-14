@@ -12,6 +12,7 @@ import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
+import { removeMergeDeletedPath } from "./integrate-path-delete.mjs";
 
 export const DEFAULT_SYNC_TIMEOUT_MS = 60_000;
 
@@ -289,10 +290,10 @@ function pathExistsInTree(cwd, treeRef, filePath, { timeoutMs } = {}) {
  * @param {string} projectRoot
  * @param {string} baseSha
  * @param {string} mergeCommit
- * @param {{ timeoutMs?: number, dirtyPaths?: string[] }} [options]
+ * @param {{ timeoutMs?: number, dirtyPaths?: string[], applyDeletions?: boolean }} [options]
  * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] }}
  */
-export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS, dirtyPaths } = {}) {
+export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS, dirtyPaths, applyDeletions } = {}) {
 	const envTimeoutMs = process.env.SPINE_SYNC_TIMEOUT_MS
 		? Number(process.env.SPINE_SYNC_TIMEOUT_MS)
 		: null;
@@ -341,6 +342,7 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 		}
 
 		if (!existsInMerge) {
+			if (applyDeletions && !operatorTouched && removeMergeDeletedPath(projectRoot, filePath, { timeoutMs: effectiveTimeout })) processedCount++;
 			debugSyncLog(
 				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
 			);
@@ -404,11 +406,11 @@ export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha,
 export function syncMergeResultToCheckedOutBase(projectRoot, baseBranch, mergeResult, options) {
 	const { mode, mergeCommit } = mergeResult;
 	if (mode === "fast-forward") {
-		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, mergeResult.baseShaBefore, mergeCommit, options);
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, mergeResult.baseShaBefore, mergeCommit, { ...options, applyDeletions: true });
 	}
 	if (mode === "plumbing") {
 		const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, options);
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, { ...options, applyDeletions: true });
 	}
 	return null;
 }
