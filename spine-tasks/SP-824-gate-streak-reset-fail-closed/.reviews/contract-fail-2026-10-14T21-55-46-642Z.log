@@ -1,0 +1,21 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-wire-approve.test.mjs tests/batch/gate-posture-streak.test.mjs tests/batch/gate-posture-evaluate.test.mjs tests/batch/gate-posture-stamp.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-14T21:55:46.642Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.0 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.0 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+.............
+
+stet: no session and missing .review/spine-stet-baseline.ref (worktreeSetupHook did not run?)
