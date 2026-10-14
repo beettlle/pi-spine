@@ -11,27 +11,27 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Config flow into doctor checks recorded
-- [ ] Count/order tests listed
-- [ ] Dependencies satisfied
+- [x] Config flow into doctor checks recorded — `runDoctorChecks` calls `loadSpineConfig(projectRoot)`; config-driven checks are pushed inside the valid-config branch (`configResult.config` passed to builders). New check reads `config.reviewers?.piExtensionIsolation`; schema is field-scoped (unknown keys pass through), so no schema change needed.
+- [x] Count/order tests listed — only `tests/cli/phase23-exit-verify.test.mjs:100` asserts count (`checks.length >= 5`, lower bound — safe, no change needed; outside File Scope). All other doctor tests use `.find()` by label/id; no order assertions found.
+- [x] Dependencies satisfied — SP-819 landed on main (95d3ac9d); extension-conflict module (`src/doctor/pi-extension-conflict.mjs`) provides reusable `resolvePiAgentDir`, `readPiPackageSources`, `resolvePiPackageSourcePath`.
 
 ### Step 1: Scanner and check
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Bounded scanner
-- [ ] Advisory check
+- [x] Bounded scanner — `src/doctor/pi-extension-hooks.mjs`: scans only settings-declared packages (`agentDir/settings.json` + `projectRoot/.pi/settings.json`), only `package.json` → `pi.extensions` entries (cap 16/package), only first 512KB per entry file.
+- [x] Advisory check — `buildPiContextHookDoctorCheck`: always `ok: true`; `warning: true` + `suggestedCommand` when hooks found and `reviewers.piExtensionIsolation` ≠ `trusted`; trusted config downgrades to plain detail.
 
 ### Step 2: Wire into doctor
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Check pushed
+- [x] Check pushed — `run-doctor-checks.mjs` pushes the check inside the valid-config branch after the SP-710 evidence-warn loop; advisory, no issueCount increment.
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fixture cases
+- [x] Fixture cases — 14 tests: hook patterns (incl. false-positive guard on non-exported `context`), canonical order, npm + project settings discovery, dedupe, package without `pi.extensions`, entry cap, 512KB truncation, warn/trusted/clean check states, `runDoctorChecks` integration via `PI_AGENT_DIR` env. All pass.
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
@@ -53,6 +53,10 @@
 
 | # | Finding |
 |---|---------|
+| 1 | `runDoctorChecks` upstream impact is HIGH (batch preflight, CLI, issue-draft) — mitigated by additive-only change: one advisory check pushed, no existing check/return shape/control flow touched. |
+| 2 | pi packages declare extension entries in `package.json` → `pi.extensions` (array of entry files); pi loads only `settings.json` `packages` entries, so settings-driven scanning is complete and bounded. |
+| 3 | Count/order test survey: only `tests/cli/phase23-exit-verify.test.mjs:100` asserts count (`checks.length >= 5`, lower bound — safe); all doctor tests use `.find()` by label/id; no changes needed outside File Scope. |
+| 4 | Config key `reviewers.piExtensionIsolation` needs no schema change — config validation is field-scoped, unknown keys pass through. |
 
 ## Blockers
 

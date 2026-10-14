@@ -31,6 +31,7 @@ import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck 
 import { buildInheritProviderAuthDoctorCheck } from "./agents-model-inherit.mjs";
 import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
+import { buildPiContextHookDoctorCheck } from "./pi-extension-hooks.mjs";
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
 import { buildQuotaRiskDoctorCheck } from "./quota-risk.mjs";
@@ -490,6 +491,15 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		for (const evidenceWarnCheck of buildEvidenceConfigWarnDoctorChecks(configResult.config)) {
 			checks.push(evidenceWarnCheck);
 		}
+		// Advisory only (SP-822): warn when installed pi packages register
+		// context-rewriting hooks (context, context_with_system,
+		// before_provider_request) while reviewers load user extensions.
+		checks.push(
+			buildPiContextHookDoctorCheck({
+				projectRoot,
+				config: configResult.config,
+			}),
+		);
 		let quotaMetricsLines;
 		try {
 			quotaMetricsLines = readMetricsLines(
