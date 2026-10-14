@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 staged (release:check fix, integrate deletions #346); Next → SP-831)
+**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; Next → SP-831)
 **Status:** Active
 **Next Task ID:** SP-831
 
@@ -2682,8 +2682,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-* | Summary | Size | Issue | Wave | Status |
 |------|---------|------|-------|------|--------|
 | SP-828 | Stet contract review on `qwen/qwen3.8-27b` + OpenJev critic; contract script counts active findings | S | — (operator) | 0 | Done |
-| SP-829 | Hermetic worker-prompt-rules tests (`release:check` red after `13ea1975`) | S | — (operator) | 0b | Staged |
-| SP-830 | Integrate removes branch-deleted paths from the base checkout | S | #346 Closes | 0b | Staged |
+| SP-829 | Hermetic worker-prompt-rules tests (`release:check` red after `13ea1975`) | S | — (operator) | 0b | Done |
+| SP-830 | Integrate removes branch-deleted paths from the base checkout | S | #346 Closes | 0b | Done |
 | SP-819 | Reviewer spawns pass `pi -ne` by default; `agents.reviewer.loadUserExtensions` opt-out | S | #334 Partial | 1 | Staged |
 | SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Staged |
 | SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Staged |
@@ -2700,7 +2700,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 - [x] Operator approved release scope (manifest; 10 tasks — patch cap 8, operator override; 2026-10-14)
 - [x] SP-828 `.DONE` and integrated on `main` before wave 1 starts (`31cd2314`)
-- [ ] SP-829 and SP-830 `.DONE` and integrated on `main` before wave 1 starts; post-integrate `release:check` green
+- [x] SP-829 and SP-830 `.DONE` and integrated on `main` before wave 1 starts; post-integrate `release:check` green (`089a7903`, fix `5df55050`)
 - [ ] SP-819–SP-827 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD

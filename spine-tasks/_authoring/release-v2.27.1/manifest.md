@@ -177,6 +177,10 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
 - **2026-10-14 19:22 UTC wave 0 start** — `spine batch start SP-828` with `SPINE_STET_NO_AUTO_FINISH=1` (confirmed in engine env). Batch `20261014T192255-335e`, engine PID 79446. Peak window opens 2026-10-15 06:00 UTC; start cutoff 04:30 UTC.
 - **2026-10-14 19:50 UTC wave 0 landed** — SP-828 `.DONE`; `contract.verified` ok; final review PASS after one `review.spawn_retry`. `spine integrate` → `31cd2314`. After integrate, main's index re-staged the deleted gitlink `.review/worktrees/stet-0ca229b1c13e` (HEAD tree was correct); cleared with `git rm --cached`. That is a pi-spine integrate bug, filed as [#346](https://github.com/beettlle/pi-spine/issues/346) (fix: SP-830). Post-integrate `release:check`: exit 1, 2875/2877 pass (`/tmp/pi-spine-v2.27.1-wave0.log`). Failures: `tests/batch/worker-prompt-rules.test.mjs` "buildWorkerTailPrompt includes critical-rules for JS-scoped task" and "buildWorkerContextAsync appends config.standards end-to-end". Cause: `13ea1975` (`.spine/rules-profile.json` neverInclude, read via the real project root). It reproduces outside stet. Wave 1 is on hold for an operator decision. The operator approved wave 0b (SP-829, SP-830) before wave 1.
 - **2026-10-14 stet issues** — First release gated by stet; SP-828 Discovery 6 had 3 false positives, all dismissed. Filed [stet#7](https://github.com/beettlle/stet/issues/7) (`stet status` `findings:` counts dismissed findings), [stet#8](https://github.com/beettlle/stet/issues/8) (dismissals lost after `stet finish`; the reason for `SPINE_STET_NO_AUTO_FINISH=1`), [stet#9](https://github.com/beettlle/stet/issues/9) (default `.review/worktrees/` committed as a gitlink). False-positive quality is not filed; file it if the pattern recurs in waves 1–2.
+- **2026-10-14 20:06 UTC wave 0b start** — `spine batch start SP-829 SP-830` with `SPINE_STET_NO_AUTO_FINISH=1`. Batch `20261014T200611-ebe3`. Two retries per task before both passed:
+  - SP-829: the worker claimed Contract success without running stet. The engine's `contract.verified` re-run raised a false "`fs` not imported" finding (the import is on line 2; JS/TS hunk expansion omits imports). Filed [stet#10](https://github.com/beettlle/stet/issues/10). Dismissed as `false_positive`, then a second finding hit the `.DONE` marker text (`.DONE` matched no `exclude_patterns`). Dismissed and resumed with `STET_EXCLUDE_PATTERNS` = config list + `.DONE` (confirmed in the engine env). Final review PASS.
+  - SP-830 (GLM worker): wrote `.DONE` at the lane root twice instead of the task folder. `spine batch retry` re-ran the worker each time; the third run wrote it correctly. Plan and code review APPROVE, `contract.verified` ok, final PASS.
+- **2026-10-14 20:58 UTC wave 0b landed** — Gate approved, `spine integrate` → `089a7903` (fast-forward), `git status` clean with no manual index fix (integrate ran pre-SP-830 code; wave 1 is the live #346 check). `batch complete` returned `batch_state_changed_during_terminal_write` because the engine was still running extended gate evidence (full suite) after the early gate approval; `batch.completed` followed at 20:58:28 with no operator action. Post-integrate `release:check`: exit 1, 2 regressions from SP-830 that its Contract did not cover — new `@ts-nocheck` in `src/batch/integrate-path-delete.mjs` (`ts-nocheck-guard`) and `src/batch/integrate-worktree.mjs` at 501 counted lines (`phase23-exit-verify`). Fixed on `main` in `5df55050` (typed module, shared `isTimeoutError`; `integrate-worktree.mjs` 491 lines). `.DONE` added to `.review/config.toml` `exclude_patterns` in `cbb5e791`. Re-run `release:check`: exit 0, 2883/2883 pass, line coverage 90.44% (`/tmp/pi-spine-v2.27.1-wave0b.log`).
 
 ---
 
@@ -268,7 +272,10 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 | #317, #318, #320–#323, #325, #326 | enh | Patch profile |
 | TypeScript 7 / `@types/node` 26 | dep major | Own release |
 | `docs/stet-overview.md` still documents `--auto-finish-zero` | docs | SP-828 Discovery 5; outside SP-828 file scope |
-| [stet#7](https://github.com/beettlle/stet/issues/7), [stet#8](https://github.com/beettlle/stet/issues/8), [stet#9](https://github.com/beettlle/stet/issues/9) | upstream bug | Drop `SPINE_STET_NO_AUTO_FINISH=1` once stet#8 ships |
+| [stet#7](https://github.com/beettlle/stet/issues/7), [stet#8](https://github.com/beettlle/stet/issues/8), [stet#9](https://github.com/beettlle/stet/issues/9), [stet#10](https://github.com/beettlle/stet/issues/10) | upstream bug | Drop `SPINE_STET_NO_AUTO_FINISH=1` once stet#8 ships |
+| SP-829 precedence test | test gap | Test covers profile `neverInclude` over `alwaysInclude`, not over `config.standards` as the Mission asked; final reviewer flagged it |
+| Contract scope for new `src/` modules | process | SP-830's Contract omitted `ts-nocheck-guard` and `phase23-exit-verify`; packets that add or grow `src/batch/` modules should run both |
+| Worker `.DONE` placement / skipped stet | worker reliability | SP-830 (GLM) wrote `.DONE` at the lane root twice; SP-829 claimed Contract success without the stet step |
 ---
 
 ## Risks and blockers
@@ -292,6 +299,7 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 
 - [x] Operator approved scope (set `Operator approved scope: yes` above; 2026-10-14)
 - [x] SP-828 integrated on `main` before release wave 1 (`31cd2314`)
+- [x] SP-829 and SP-830 integrated on `main` before release wave 1 (`089a7903`; follow-up fix `5df55050`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave0b.log`)
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green
