@@ -12,6 +12,7 @@ import { resolveGitCommitEnv } from "./git-commit-env.mjs";
 import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
+import { removeMergeDeletedPath } from "./integrate-path-delete.mjs";
 
 export const DEFAULT_SYNC_TIMEOUT_MS = 60_000;
 
@@ -224,6 +225,11 @@ function isTimeoutError(err) {
 	return /** @type {any} */ (err).killed === true || /** @type {any} */ (err).code === "ETIMEDOUT";
 }
 
+/** Shared timed-out result for the sync loop's git calls. */
+function timeoutSyncResult(error, processedCount, totalPaths) {
+	return { ok: false, timedOut: true, error, processedPaths: processedCount, totalPaths: totalPaths };
+}
+
 /**
  * Git exec with per-subprocess timeout. Uses execFileSync directly to bypass
  * gitExec which does not support timeout passthrough (#114).
@@ -289,10 +295,10 @@ function pathExistsInTree(cwd, treeRef, filePath, { timeoutMs } = {}) {
  * @param {string} projectRoot
  * @param {string} baseSha
  * @param {string} mergeCommit
- * @param {{ timeoutMs?: number, dirtyPaths?: string[] }} [options]
+ * @param {{ timeoutMs?: number, dirtyPaths?: string[], applyDeletions?: boolean }} [options]
  * @returns {{ ok: boolean, timedOut?: boolean, error?: string, processedPaths?: number, totalPaths?: number, skippedDirtyPaths?: string[] }}
  */
-export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS, dirtyPaths } = {}) {
+export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeCommit, { timeoutMs = DEFAULT_SYNC_TIMEOUT_MS, dirtyPaths, applyDeletions } = {}) {
 	const envTimeoutMs = process.env.SPINE_SYNC_TIMEOUT_MS
 		? Number(process.env.SPINE_SYNC_TIMEOUT_MS)
 		: null;
@@ -329,18 +335,20 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 				pathExistsInTree(projectRoot, baseSha, filePath, { timeoutMs: effectiveTimeout });
 		} catch (err) {
 			if (isTimeoutError(err)) {
-				return {
-					ok: false,
-					timedOut: true,
-					error: `git cat-file timed out for ${filePath} after ${effectiveTimeout}ms`,
-					processedPaths: processedCount,
-					totalPaths: paths.length,
-				};
+				return timeoutSyncResult(`git cat-file timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
 			}
 			existsInMerge = false;
 		}
 
 		if (!existsInMerge) {
+			if (applyDeletions) {
+				try {
+					if (removeMergeDeletedPath(projectRoot, baseSha, filePath, { timeoutMs: effectiveTimeout }).removed) processedCount++;
+					else if (dirtyPathSet.has(filePath) && operatorTouched) skippedDirtyPaths.push(filePath);
+				} catch (err) {
+					if (isTimeoutError(err)) return timeoutSyncResult(`git rm timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
+				}
+			}
 			debugSyncLog(
 				`syncPlumbingMergePathsToWorktree: skip ${filePath} — not present in merge commit ${mergeCommit}`,
 			);
@@ -360,13 +368,7 @@ export function syncPlumbingMergePathsToWorktree(projectRoot, baseSha, mergeComm
 			);
 		} catch (err) {
 			if (isTimeoutError(err)) {
-				return {
-					ok: false,
-					timedOut: true,
-					error: `git restore timed out for ${filePath} after ${effectiveTimeout}ms`,
-					processedPaths: processedCount,
-					totalPaths: paths.length,
-				};
+				return timeoutSyncResult(`git restore timed out for ${filePath} after ${effectiveTimeout}ms`, processedCount, paths.length);
 			}
 			if (isPathspecMismatchError(err)) {
 				debugSyncLog(
@@ -404,11 +406,11 @@ export function syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha,
 export function syncMergeResultToCheckedOutBase(projectRoot, baseBranch, mergeResult, options) {
 	const { mode, mergeCommit } = mergeResult;
 	if (mode === "fast-forward") {
-		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, mergeResult.baseShaBefore, mergeCommit, options);
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, mergeResult.baseShaBefore, mergeCommit, { ...options, applyDeletions: true });
 	}
 	if (mode === "plumbing") {
 		const baseSha = git(projectRoot, ["rev-parse", `${mergeCommit}^1`]);
-		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, options);
+		return syncMergePathsToCheckedOutBase(projectRoot, baseBranch, baseSha, mergeCommit, { ...options, applyDeletions: true });
 	}
 	return null;
 }
