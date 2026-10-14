@@ -18,7 +18,6 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { chmodSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
@@ -148,7 +147,7 @@ process.exit(Number(process.env.SPX820_EXIT ?? 3));
 `;
 	const piPath = path.join(binDir, "pi");
 	fs.writeFileSync(piPath, script, "utf-8");
-	chmodSync(piPath, 0o755);
+	fs.chmodSync(piPath, 0o755);
 	return piPath;
 }
 

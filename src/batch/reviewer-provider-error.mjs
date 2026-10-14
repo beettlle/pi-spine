@@ -106,7 +106,10 @@ export function classifyReviewerProviderError(output) {
 			return {
 				httpStatus,
 				providerMessage: truncateProviderMessage(
-					payloadProviderMessage(payload) ?? markerLine(output) ?? JSON.stringify(payload),
+					// The message must describe THIS payload — an unrelated earlier
+					// marker line must not be attributed to the terminal 4xx. The
+					// raw payload text is the faithful fallback (stet 3295372).
+					payloadProviderMessage(payload) ?? JSON.stringify(payload),
 				),
 			};
 		}
