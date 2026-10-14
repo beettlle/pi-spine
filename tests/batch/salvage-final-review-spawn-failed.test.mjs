@@ -71,7 +71,11 @@ test("salvage lists commits and diagnose identifies no-verdict review after fina
 		// SP-821 / #334: re-review copy replaces the old "final review spawn
 		// failed … retry" copy; the lane work is already done, so the review re-runs.
 		assert.doesNotMatch(diagnosis.headline ?? "", /increase SPINE_REVIEW_TIMEOUT_MS/);
-		assert.match(diagnosis.headline, /final review produced no verdict for task TP-999/);
+		assert.match(diagnosis.headline, /final review produced no verdict/);
+		assert.ok(
+			diagnosis.headline.includes(`final review produced no verdict for task ${taskId}`),
+			`headline should name the task: ${diagnosis.headline}`,
+		);
 		assert.match(diagnosis.headline, /re-run the review/);
 		assert.equal(diagnosis.suggestedCommand, `spine batch retry ${taskId}`);
 		assert.doesNotMatch(diagnosis.suggestedCommand ?? "", /salvage/);
