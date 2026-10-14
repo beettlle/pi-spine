@@ -99,6 +99,35 @@ function readPackageExtensionEntries(packageDir) {
 }
 
 /**
+ * Read at most MAX_PI_EXTENSION_SOURCE_BYTES bytes from a file without ever
+ * allocating more than the cap, regardless of the file size on disk.
+ *
+ * @param {string} filePath
+ * @returns {string | null} Null when the file cannot be opened or read.
+ */
+function readBoundedText(filePath) {
+	let fd;
+	try {
+		fd = fs.openSync(filePath, "r");
+		const stat = fs.fstatSync(fd);
+		const length = Math.min(stat.size, MAX_PI_EXTENSION_SOURCE_BYTES);
+		const buffer = Buffer.alloc(length);
+		const bytesRead = fs.readSync(fd, buffer, 0, length, 0);
+		return buffer.toString("utf-8", 0, bytesRead);
+	} catch {
+		return null;
+	} finally {
+		if (fd !== undefined) {
+			try {
+				fs.closeSync(fd);
+			} catch {
+				// Close errors must not mask read results.
+			}
+		}
+	}
+}
+
+/**
  * Scan settings-declared pi packages for context-rewriting extension hooks.
  *
  * @param {object} [options]
@@ -142,15 +171,8 @@ export function collectPiContextHookFindings({
 
 		for (const entry of parsed.entries) {
 			const entryPath = path.resolve(resolvedDir, entry);
-			let text;
-			try {
-				text = fs.readFileSync(entryPath, "utf-8");
-			} catch {
-				continue;
-			}
-			if (text.length > MAX_PI_EXTENSION_SOURCE_BYTES) {
-				text = text.slice(0, MAX_PI_EXTENSION_SOURCE_BYTES);
-			}
+			const text = readBoundedText(entryPath);
+			if (text === null) continue;
 			const hooks = scanPiExtensionSourceForContextHooks(text);
 			if (hooks.length > 0) {
 				findings.push({

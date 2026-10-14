@@ -292,7 +292,7 @@ test("isTrustedReviewerExtensionIsolation accepts only the trusted value", () =>
 test("runDoctorChecks lists the context hook check", async () => {
 	const projectRoot = await initGitRepo("spine-hooks-doctor-");
 	const prevAgentDir = process.env.PI_AGENT_DIR;
-	const agentDir = path.join(os.tmpdir(), `spine-hooks-agent-${Date.now()}`);
+	const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-agent-"));
 	process.env.PI_AGENT_DIR = agentDir;
 	try {
 		installFakePackage({
