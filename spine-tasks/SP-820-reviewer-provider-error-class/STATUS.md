@@ -1,6 +1,6 @@
 # SP-820: Classify reviewer provider request errors — Status
 
-**Current Step:** Step 3: Tests
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-14
 **Review Level:** 1
@@ -30,9 +30,9 @@
 - [x] Exit reason mapping
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Classifier, stub reviewer, and mapping cases
+- [x] Classifier, stub reviewer, and mapping cases
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
