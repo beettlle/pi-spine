@@ -1,7 +1,7 @@
 # SP-830: Integrate removes branch-deleted paths — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** ✅ Complete — awaiting review
 **Last Updated:** 2026-10-14
 **Review Level:** 2
 **Review Counter:** 0
@@ -38,10 +38,10 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -62,3 +62,10 @@
 ## Blockers
 
 _None._
+
+## Completion Criteria Evidence
+
+- Branch-deleted paths leave no staged entry after integrate/salvage: `syncMergeResultToCheckedOutBase` forces `applyDeletions: true` in both modes; fast-forward contract test asserts empty `git status --porcelain` (integrate-worktree-sync.test.mjs).
+- Dirty paths and gitlink directories never deleted: helper `git diff --quiet` guard + `160000` branch keeps `sub/` on disk (tests 2–3).
+- `spine sync-base` unchanged: `src/cli/sync-base.mjs` untouched (git diff clean); its direct `syncPlumbingMergePathsToWorktree` calls omit `applyDeletions`, keeping the skip (test 4).
+- Runbook conditional checked: docs/adoption/operator-runbook.md's `git rm --cached` mentions cover gitignored-dirty diagnostics only; no hand-clearing guidance for merge-deleted paths, so no update required ("Must Update: None").
