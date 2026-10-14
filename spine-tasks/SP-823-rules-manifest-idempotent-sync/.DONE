@@ -1,0 +1,15 @@
+SP-823 complete.
+
+Mission (closes #315):
+1. Idempotent manifest write: `discoverCursorRules` (src/config/cursor-rules/discover.mjs) skips the write when `fingerprintRulesManifest(existing) === fingerprintRulesManifest(next)`, keeps the existing `generatedAt`, still returns `manifestPath`; unreadable/invalid existing files fall through to a normal write.
+2. CLI test isolation: `tests/cli/spine-rules.test.mjs` "sync via CLI" now runs in an initGitRepo temp repo with a copy of the repo's `.cursor/rules`; assertions kept.
+3. Deprecated wrapper `tryAutoResolveRulesManifestMergeConflict` removed: call site swapped to `tryAutoResolveMergeConflicts(worktreePath, {})` (integrate-worktree.mjs:425), re-export dropped (engine-lanes.mjs:59), wrapper deleted (merge.mjs), test migrated (rules-manifest-merge.test.mjs).
+4. Tests: idempotency (bytes identical + generatedAt unchanged), rewrite-on-change (new fingerprint), corrupt-manifest recovery added to tests/config/cursor-rules/discover.test.mjs.
+
+Verification:
+- lint clean; typecheck clean; Contract targeted suite (8 files) exit 0
+- stet contract review: 9 findings, all triaged as false_positive/already_correct with evidence (0 real defects); re-run → 0 finding(s), exit 0
+- post-Contract `git status --porcelain .spine/rules-manifest.json` empty
+- full `npm test`: 2898 pass / 0 fail, manifest still clean afterwards (post-integrate release:check repeats for the gate)
+
+Notes: stet session was missing in this lane worktree; recovered by running the sanctioned scripts/spine-worktree-setup.sh at the pre-worker baseline f4320d42 (no .review/ hand-edits). Stet reviewer stale-hunk pattern recorded in STATUS.md Discoveries.

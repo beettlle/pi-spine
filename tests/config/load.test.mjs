@@ -194,6 +194,72 @@ test("validateAgentProfilesConfig rejects a non-string quotaFallbackProfile", ()
 });
 
 // ---------------------------------------------------------------------------
+// SP-819 / #334 — agents.reviewer.loadUserExtensions schema rules
+// ---------------------------------------------------------------------------
+
+test("validateAgentProfilesConfig accepts boolean loadUserExtensions on the base reviewer", () => {
+	for (const value of [true, false]) {
+		assert.equal(
+			validateAgentProfilesConfig({ agents: { reviewer: { loadUserExtensions: value } } }),
+			null,
+		);
+	}
+});
+
+test("validateAgentProfilesConfig accepts a reviewer without loadUserExtensions", () => {
+	assert.equal(
+		validateAgentProfilesConfig({ agents: { reviewer: { model: "inherit" } } }),
+		null,
+	);
+});
+
+test("validateAgentProfilesConfig rejects a non-boolean loadUserExtensions on the base reviewer", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { reviewer: { loadUserExtensions: "yes" } },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /agents\.reviewer\.loadUserExtensions must be a boolean/);
+	assert.match(result.suggestedCommand, /spine settings set agents\.reviewer\.loadUserExtensions/);
+});
+
+test("validateAgentProfilesConfig accepts boolean loadUserExtensions inside a profile reviewer", () => {
+	const result = validateAgentProfilesConfig({
+		agents: {
+			profiles: { ext: { reviewer: { loadUserExtensions: true } } },
+			activeProfile: "ext",
+		},
+	});
+	assert.equal(result, null);
+});
+
+test("validateAgentProfilesConfig rejects a non-boolean loadUserExtensions inside a profile reviewer", () => {
+	const result = validateAgentProfilesConfig({
+		agents: {
+			profiles: { ext: { reviewer: { loadUserExtensions: "yes" } } },
+			activeProfile: "ext",
+		},
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(
+		result.message,
+		/agents\.profiles\.ext\.reviewer\.loadUserExtensions must be a boolean/,
+	);
+});
+
+test("validateSpineConfig rejects a non-boolean loadUserExtensions on the base reviewer", () => {
+	const config = baseConfig({
+		agents: {
+			reviewer: { model: "inherit", thinking: "medium", loadUserExtensions: "sure" },
+			profiles: { default: {} },
+			activeProfile: "default",
+		},
+	});
+	const result = validateSpineConfig(config);
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /loadUserExtensions must be a boolean/);
+});
+
+// ---------------------------------------------------------------------------
 // validateSpineConfig integration
 // ---------------------------------------------------------------------------
 
