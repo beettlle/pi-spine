@@ -5,6 +5,7 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
 import { resolveGatePostureConfig } from "../config/gate-posture-config.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
@@ -20,7 +21,7 @@ import {
 	resetKindStreak,
 } from "./gate-posture-streak.mjs";
 import { gateRecordPath, loadGateRecord } from "./gate-evidence-read.mjs";
-import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 
 /** @typedef {import("./gate-posture-defaults.mjs").GateCategory} GateCategory */
 /** @typedef {import("./gate-posture-evaluate.mjs").GatePostureEvaluateResult} GatePostureEvaluateResult */
@@ -85,36 +86,59 @@ function errorMessage(error) {
 }
 
 /**
- * SP-824 / #314 — does this batch's journal record a `gate.streak_io_failed`
- * event for a reset whose fail-closed recovery (streak file removal) also
- * failed? If so the consecutive-approval state is untrustworthy.
- * A journal read failure itself counts as unreliable (fail closed).
+ * SP-824 / #314 — does ANY batch journal of this project record a
+ * `gate.streak_io_failed` event for a reset whose fail-closed recovery
+ * (streak file removal) also failed? If so the project-wide consecutive-
+ * approval state is untrustworthy. Streak state spans batches, so every
+ * batch journal is scanned (`.spine/runtime/<batchId>/journal/events.jsonl`);
+ * the cheap substring pre-filter keeps JSON parsing to matching lines only.
  *
  * @param {string} projectRoot
- * @param {string} batchId
  * @returns {boolean}
  */
-function journalHasUnrecoveredStreakReset(projectRoot, batchId) {
-	/** @type {object[]} */
-	let events;
+function journalHasUnrecoveredStreakReset(projectRoot) {
+	const runtimeDir = path.join(projectRoot, ".spine", "runtime");
+	/** @type {string[]} */
+	let batchDirNames;
 	try {
-		events = readJournalEvents(projectRoot, batchId);
+		batchDirNames = fs
+			.readdirSync(runtimeDir, { withFileTypes: true })
+			.filter((entry) => entry.isDirectory())
+			.map((entry) => entry.name);
 	} catch {
-		return true;
+		return false; // no runtime dir → no journals → no recorded unrecovered reset
 	}
-	return events.some((event) => {
-		if (!event || typeof event !== "object" || event.type !== "gate.streak_io_failed") {
-			return false;
+	for (const batchId of batchDirNames) {
+		const eventsPath = path.join(runtimeDir, batchId, "journal", "events.jsonl");
+		/** @type {string} */
+		let content;
+		try {
+			content = fs.readFileSync(eventsPath, "utf-8");
+		} catch {
+			continue; // unreadable journal — keep scanning the others
 		}
-		const payload = event.payload;
-		return (
-			!!payload &&
-			typeof payload === "object" &&
-			!Array.isArray(payload) &&
-			payload.op === "reset" &&
-			payload.recovered === false
-		);
-	});
+		for (const line of content.split("\n")) {
+			const trimmed = line.trim();
+			if (!trimmed || !trimmed.includes("gate.streak_io_failed")) continue;
+			try {
+				const event = JSON.parse(trimmed);
+				const payload = event && typeof event === "object" ? event.payload : null;
+				if (
+					event?.type === "gate.streak_io_failed" &&
+					!!payload &&
+					typeof payload === "object" &&
+					!Array.isArray(payload) &&
+					payload.op === "reset" &&
+					payload.recovered === false
+				) {
+					return true;
+				}
+			} catch {
+				// skip malformed journal line
+			}
+		}
+	}
+	return false;
 }
 
 /**
@@ -361,7 +385,7 @@ export function maybeAutoApproveIntegrateGate(ctx) {
 	// SP-824 / #314 fail-closed: a journal-recorded unrecovered streak reset means
 	// the consecutive-approval state cannot be trusted — never auto-approve on it.
 	// Checked before reading the streak so the unreliable state is never consumed.
-	if (journalHasUnrecoveredStreakReset(projectRoot, batchId)) {
+	if (journalHasUnrecoveredStreakReset(projectRoot)) {
 		return {
 			ok: true,
 			approved: false,
