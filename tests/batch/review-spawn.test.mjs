@@ -197,7 +197,7 @@ test("buildReviewerPiArgs cascades per-type inherit to top-level reviewer pin", 
  * -p/--no-session/append-system-prompt/model/thinking/prompt spine.
  *
  * @param {string[]} piArgs
- * @param {{ withNe: boolean, model?: string, thinking?: string, systemPrompt: string, reviewPrompt: string }} expected
+ * @param {{ withNe: boolean, model?: string, thinking?: string, systemPrompt: string, reviewPrompt: string, worktreePath: string }} expected
  */
 function assertReviewerArgShape(piArgs, expected) {
 	const wanted = [];
