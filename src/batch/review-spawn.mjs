@@ -108,6 +108,13 @@ function reviewerPiCommandExists(cmd) {
 }
 
 /**
+ * Build the argv for a reviewer `pi` spawn.
+ *
+ * SP-819 / #334: reviewers pass `-ne` (pi `--no-extensions`) by default so operator-installed
+ * pi extensions (e.g. context-rewriting hooks) cannot break review runs. Core tools are not
+ * extensions, so reviewers keep read/bash/write. `agents.reviewer.loadUserExtensions: true`
+ * opts back into user extensions.
+ *
  * @param {object} params
  */
 export function buildReviewerPiArgs({
@@ -122,7 +129,11 @@ export function buildReviewerPiArgs({
 	const reviewerModel = resolveReviewerModelPin(config, reviewType);
 	const reviewerThinking = resolveReviewerThinkingPin(config, reviewType);
 
-	const piArgs = ["-p", "--no-session"];
+	const piArgs = [];
+	if (config?.agents?.reviewer?.loadUserExtensions !== true) {
+		piArgs.push("-ne");
+	}
+	piArgs.push("-p", "--no-session");
 	if (reviewerAgentPath && fs.existsSync(reviewerAgentPath)) {
 		piArgs.push("--append-system-prompt", reviewerAgentPath);
 	}

@@ -57,7 +57,6 @@ export {
 	mergeWaveLanesToOrch,
 	resolveRulesManifestIntegrateDrift,
 	tryAutoResolveMergeConflicts,
-	tryAutoResolveRulesManifestMergeConflict,
 } from "./engine-lanes/merge.mjs";
 
 export { syncLaneWorktreeFromOrch } from "./worktree.mjs";

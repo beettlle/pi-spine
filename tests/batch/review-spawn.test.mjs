@@ -10,6 +10,7 @@ import {
 	spawnReviewerPi,
 	shouldBlockNestedReviewerSpawn,
 } from "../../src/batch/review-spawn.mjs";
+import { applyActiveAgentProfile } from "../../src/config/spine-config-load.mjs";
 
 /**
  * @param {string[]} piArgs
@@ -70,8 +71,8 @@ test("buildReviewerPiArgs omits --model when reviewer model is inherit", async (
 		});
 
 		assert.equal(modelIndex(piArgs), -1);
-		assert.equal(thinkingIndex(piArgs), 2);
-		assert.equal(piArgs[3], "high");
+		assert.equal(thinkingIndex(piArgs), 3);
+		assert.equal(piArgs[4], "high");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -182,6 +183,187 @@ test("buildReviewerPiArgs cascades per-type inherit to top-level reviewer pin", 
 		assert.ok(planModelIdx >= 0);
 		assert.equal(planArgs[planModelIdx + 1], "google/gemini-3.1-pro-preview");
 		assert.equal(planArgs[thinkingIndex(planArgs) + 1], "medium");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// SP-819 / #334 — reviewers pass -ne (pi --no-extensions) by default
+// ---------------------------------------------------------------------------
+
+/**
+ * Assert the full reviewer argv shape: optional leading `-ne`, then the stable
+ * -p/--no-session/append-system-prompt/model/thinking/prompt spine.
+ *
+ * @param {string[]} piArgs
+ * @param {{ withNe: boolean, model?: string, thinking?: string, systemPrompt: string, reviewPrompt: string, worktreePath: string }} expected
+ */
+function assertReviewerArgShape(piArgs, expected) {
+	const wanted = [];
+	if (expected.withNe) wanted.push("-ne");
+	wanted.push("-p", "--no-session");
+	wanted.push("--append-system-prompt", path.join(expected.worktreePath, ".spine", "agents", "reviewer.md"));
+	wanted.push("--append-system-prompt", expected.systemPrompt);
+	if (expected.model) wanted.push("--model", expected.model);
+	if (expected.thinking) wanted.push("--thinking", expected.thinking);
+	wanted.push(expected.reviewPrompt);
+	assert.deepEqual(piArgs, wanted);
+}
+
+/**
+ * Create a temp worktree with a task folder, a review prompt, and the reviewer
+ * agent prompt file so both `--append-system-prompt` entries are exercised.
+ */
+async function makeReviewerSpawnFixture(prefix) {
+	const root = await mkdtemp(path.join(os.tmpdir(), prefix));
+	const taskFolder = path.join(root, "spine-tasks", "SP-819");
+	fs.mkdirSync(taskFolder, { recursive: true });
+	const reviewerAgentPath = path.join(root, ".spine", "agents", "reviewer.md");
+	fs.mkdirSync(path.dirname(reviewerAgentPath), { recursive: true });
+	fs.writeFileSync(reviewerAgentPath, "You are the spine reviewer.\n");
+	const reviewPrompt = path.join(taskFolder, "review-request.md");
+	return { root, taskFolder, reviewPrompt };
+}
+
+test("buildReviewerPiArgs passes -ne by default so reviewers skip user pi extensions", async () => {
+	const { root, taskFolder, reviewPrompt } = await makeReviewerSpawnFixture(
+		"spine-review-spawn-ne-default-",
+	);
+	try {
+		const piArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt,
+			systemPrompt: "Review contract.",
+			config: { agents: { reviewer: {} } },
+		});
+
+		assert.equal(piArgs[0], "-ne");
+		assert.equal(piArgs[1], "-p");
+		assert.equal(piArgs[2], "--no-session");
+		assertReviewerArgShape(piArgs, {
+			withNe: true,
+			systemPrompt: "Review contract.",
+			reviewPrompt,
+			worktreePath: root,
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs omits -ne when loadUserExtensions is true", async () => {
+	const { root, taskFolder, reviewPrompt } = await makeReviewerSpawnFixture(
+		"spine-review-spawn-ne-optout-",
+	);
+	try {
+		const piArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt,
+			systemPrompt: "Review contract.",
+			config: { agents: { reviewer: { loadUserExtensions: true } } },
+		});
+
+		assert.ok(!piArgs.includes("-ne"), `expected no -ne in argv: ${JSON.stringify(piArgs)}`);
+		assert.equal(piArgs[0], "-p");
+		assertReviewerArgShape(piArgs, {
+			withNe: false,
+			systemPrompt: "Review contract.",
+			reviewPrompt,
+			worktreePath: root,
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs keeps -ne when loadUserExtensions is explicitly false", async () => {
+	const { root, taskFolder, reviewPrompt } = await makeReviewerSpawnFixture(
+		"spine-review-spawn-ne-false-",
+	);
+	try {
+		const piArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt,
+			systemPrompt: "Review contract.",
+			config: { agents: { reviewer: { loadUserExtensions: false } } },
+		});
+
+		assert.equal(piArgs[0], "-ne");
+		assertReviewerArgShape(piArgs, {
+			withNe: true,
+			systemPrompt: "Review contract.",
+			reviewPrompt,
+			worktreePath: root,
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs keeps model/thinking/prompt positions stable across -ne toggles", async () => {
+	const { root, taskFolder, reviewPrompt } = await makeReviewerSpawnFixture(
+		"spine-review-spawn-ne-stable-",
+	);
+	try {
+		for (const loadUserExtensions of [undefined, true, false]) {
+			const piArgs = buildReviewerPiArgs({
+				worktreePath: root,
+				taskFolder,
+				reviewPrompt,
+				systemPrompt: "Review contract.",
+				config: {
+					agents: {
+						reviewer: {
+							model: "google/gemini-3.1-pro-preview",
+							thinking: "high",
+							loadUserExtensions,
+						},
+					},
+				},
+			});
+
+			assertReviewerArgShape(piArgs, {
+				withNe: loadUserExtensions !== true,
+				model: "google/gemini-3.1-pro-preview",
+				thinking: "high",
+				systemPrompt: "Review contract.",
+				reviewPrompt,
+				worktreePath: root,
+			});
+		}
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerPiArgs honors profile-resolved loadUserExtensions (SP-819)", async () => {
+	const { root, taskFolder, reviewPrompt } = await makeReviewerSpawnFixture(
+		"spine-review-spawn-ne-profile-",
+	);
+	try {
+		const config = applyActiveAgentProfile({
+			agents: {
+				reviewer: { model: "inherit", thinking: "off" },
+				profiles: {
+					ext: { reviewer: { loadUserExtensions: true } },
+				},
+				activeProfile: "ext",
+			},
+		});
+
+		const piArgs = buildReviewerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			reviewPrompt,
+			systemPrompt: "Review contract.",
+			config,
+		});
+
+		assert.ok(!piArgs.includes("-ne"), `expected no -ne in argv: ${JSON.stringify(piArgs)}`);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

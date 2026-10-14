@@ -182,6 +182,31 @@ export function writeRulesManifestAtomic(projectRoot, manifest) {
 }
 
 /**
+ * Read an existing rules manifest for fingerprint comparison. Returns null when
+ * the file is missing, unreadable, or not a parseable manifest — the caller then
+ * falls through to a normal write.
+ *
+ * @param {string} manifestPath
+ * @returns {CursorRulesManifest | null}
+ */
+function loadExistingManifestForFingerprint(manifestPath) {
+	try {
+		const parsed = parseRulesManifestJson(fs.readFileSync(manifestPath, "utf-8"));
+		if (
+			!parsed.ok ||
+			!Array.isArray(parsed.manifest?.rules) ||
+			!Array.isArray(parsed.manifest?.excluded) ||
+			typeof parsed.manifest.generatedAt !== "string"
+		) {
+			return null;
+		}
+		return parsed.manifest;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {import("./profile.mjs").RulesProfile} [params.profile]
@@ -256,7 +281,19 @@ export function discoverCursorRules({ projectRoot, profile, writeManifest = true
 	/** @type {DiscoverCursorRulesResult} */
 	const result = { ok: true, manifest };
 	if (writeManifest) {
-		result.manifestPath = writeRulesManifestAtomic(projectRoot, manifest);
+		const manifestPath = path.join(projectRoot, RULES_MANIFEST_REL_PATH);
+		const existing = loadExistingManifestForFingerprint(manifestPath);
+		if (
+			existing &&
+			fingerprintRulesManifest(existing) === fingerprintRulesManifest(manifest)
+		) {
+			// Unchanged rules set: skip the write and keep the existing `generatedAt`
+			// so `spine rules sync` is idempotent (#315).
+			result.manifest = { ...manifest, generatedAt: existing.generatedAt };
+			result.manifestPath = manifestPath;
+		} else {
+			result.manifestPath = writeRulesManifestAtomic(projectRoot, manifest);
+		}
 	}
 	return result;
 }

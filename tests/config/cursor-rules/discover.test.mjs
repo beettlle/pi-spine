@@ -8,6 +8,7 @@ import test from "node:test";
 import {
 	classifyCursorRuleSpineClass,
 	discoverCursorRules,
+	fingerprintRulesManifest,
 	getCursorRuleExclusionReason,
 	loadRulesManifest,
 	RULES_MANIFEST_REL_PATH,
@@ -166,4 +167,101 @@ test("getCursorRuleExclusionReason matches excludeRelPaths exactly", () => {
 		getCursorRuleExclusionReason(DEFAULT_RULES_PROFILE.discovery, "taskplane-worker-cursor.mdc"),
 		null,
 	);
+});
+
+test("discoverCursorRules skips manifest rewrite when rules are unchanged", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-discover-idempotent-"));
+	try {
+		const rulesRoot = makeRulesRoot(root);
+		await writeFile(
+			path.join(rulesRoot, "manual-rule.mdc"),
+			"---\nalwaysApply: false\n---\n",
+			"utf-8",
+		);
+
+		const first = discoverCursorRules({
+			projectRoot: root,
+			profile: DEFAULT_RULES_PROFILE,
+			writeManifest: true,
+		});
+		assert.equal(first.ok, true);
+		assert.ok(first.manifestPath);
+		const firstBytes = fs.readFileSync(first.manifestPath, "utf-8");
+
+		const second = discoverCursorRules({
+			projectRoot: root,
+			profile: DEFAULT_RULES_PROFILE,
+			writeManifest: true,
+		});
+		assert.equal(second.ok, true);
+		assert.equal(second.manifestPath, first.manifestPath);
+		assert.equal(second.manifest.generatedAt, first.manifest.generatedAt);
+		assert.equal(fs.readFileSync(second.manifestPath, "utf-8"), firstBytes);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("discoverCursorRules rewrites manifest with new fingerprint when a rule changes", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-discover-rewrite-"));
+	try {
+		const rulesRoot = makeRulesRoot(root);
+		const rulePath = path.join(rulesRoot, "manual-rule.mdc");
+		await writeFile(rulePath, "---\nalwaysApply: false\n---\n", "utf-8");
+
+		const first = discoverCursorRules({
+			projectRoot: root,
+			profile: DEFAULT_RULES_PROFILE,
+			writeManifest: true,
+		});
+		assert.equal(first.ok, true);
+		const firstBytes = fs.readFileSync(first.manifestPath, "utf-8");
+
+		await writeFile(rulePath, "---\nalwaysApply: true\ndescription: updated\n---\n", "utf-8");
+
+		const second = discoverCursorRules({
+			projectRoot: root,
+			profile: DEFAULT_RULES_PROFILE,
+			writeManifest: true,
+		});
+		assert.equal(second.ok, true);
+		const secondBytes = fs.readFileSync(second.manifestPath, "utf-8");
+		assert.notEqual(secondBytes, firstBytes);
+		const onDisk = JSON.parse(secondBytes);
+		assert.equal(onDisk.generatedAt, second.manifest.generatedAt);
+		assert.equal(onDisk.rules[0].alwaysApply, true);
+		assert.notEqual(
+			fingerprintRulesManifest(onDisk),
+			fingerprintRulesManifest(JSON.parse(firstBytes)),
+		);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("discoverCursorRules rewrites unreadable or invalid existing manifest", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-discover-invalid-"));
+	try {
+		const rulesRoot = makeRulesRoot(root);
+		await writeFile(
+			path.join(rulesRoot, "manual-rule.mdc"),
+			"---\nalwaysApply: false\n---\n",
+			"utf-8",
+		);
+		const manifestPath = path.join(root, RULES_MANIFEST_REL_PATH);
+		fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+		fs.writeFileSync(manifestPath, "not json{{{", "utf-8");
+
+		const result = discoverCursorRules({
+			projectRoot: root,
+			profile: DEFAULT_RULES_PROFILE,
+			writeManifest: true,
+		});
+		assert.equal(result.ok, true);
+		const onDisk = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+		assert.equal(onDisk.generatedAt, result.manifest.generatedAt);
+		assert.equal(onDisk.rules.length, 1);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
 });

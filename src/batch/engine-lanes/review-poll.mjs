@@ -23,6 +23,7 @@ import {
 	shouldEmitReviewResumed,
 } from "../review.mjs";
 import { shouldUseReviewStub } from "./review-stub.mjs";
+import { REVIEW_PROVIDER_ERROR_REASON } from "../reviewer-provider-error.mjs";
 
 /**
  * @param {string} taskFolder
@@ -329,7 +330,9 @@ export async function runReviewPollLoop({
 			const spawnExitReason =
 				reviewResult.reason === REVIEW_TIMEOUT_REASON
 					? `${reviewType}_review_timeout`
-					: `${reviewType}_review_spawn_failed`;
+					: reviewResult.reason === REVIEW_PROVIDER_ERROR_REASON
+						? `${reviewType}_review_provider_error`
+						: `${reviewType}_review_spawn_failed`;
 			recordReviewTaskFailure({
 				projectRoot,
 				state,

@@ -9,7 +9,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { gitExec } from "./git-exec.mjs";
 import { resolveGitCommitEnv } from "./git-commit-env.mjs";
-import { tryAutoResolveRulesManifestMergeConflict } from "./engine-lanes/merge.mjs";
+import { tryAutoResolveMergeConflicts } from "./engine-lanes/merge.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { listIntegrateDirtyPaths } from "./rules-manifest-drift.mjs";
 import { isTimeoutError, removeMergeDeletedPath } from "./integrate-path-delete.mjs";
@@ -422,7 +422,7 @@ function mergeInIntegrateWorktree({ projectRoot, worktreePath, baseBranch, orchB
 	try {
 		git(worktreePath, ["merge", "--no-ff", orchBranch, "-m", mergeMessage]);
 	} catch {
-		const autoResolved = tryAutoResolveRulesManifestMergeConflict(worktreePath);
+		const autoResolved = tryAutoResolveMergeConflicts(worktreePath, {});
 		if (!autoResolved.ok) {
 			try {
 				execFileSync("git", ["merge", "--abort"], {
