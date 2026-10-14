@@ -236,6 +236,31 @@ function validateAgentSectionModelTypes(agents, label) {
 }
 
 /**
+ * SP-819 / #334: type-check `reviewer.loadUserExtensions` (boolean, default false) wherever
+ * a reviewer section appears: the base `agents.reviewer` and any
+ * `agents.profiles.<name>.reviewer`. Absent values are valid (defaults to false).
+ *
+ * @param {any} reviewer A reviewer-shaped section (may be undefined or a non-object).
+ * @param {string} label Dotted path used in the error message.
+ * @param {string} suggestedCommand Repair hint shown to the operator.
+ * @returns {null | { code: string; message: string; suggestedCommand: string }}
+ */
+function validateReviewerLoadUserExtensions(reviewer, label, suggestedCommand) {
+	if (
+		isPlainObject(reviewer) &&
+		reviewer.loadUserExtensions != null &&
+		typeof reviewer.loadUserExtensions !== "boolean"
+	) {
+		return {
+			code: "CONFIG_AGENT_PROFILE_INVALID",
+			message: `${label}.loadUserExtensions must be a boolean when set`,
+			suggestedCommand,
+		};
+	}
+	return null;
+}
+
+/**
  * Validate `agents.profiles`, `agents.activeProfile`, and `agents.escalatePolicy`.
  *
  * Named profiles mirror the base `worker`/`reviewer`/`supervisor` shape; the active
@@ -250,6 +275,13 @@ export function validateAgentProfilesConfig(config) {
 	if (agents == null || !isPlainObject(agents)) {
 		return null;
 	}
+
+	const reviewerLoadError = validateReviewerLoadUserExtensions(
+		agents.reviewer,
+		"agents.reviewer",
+		"spine settings set agents.reviewer.loadUserExtensions false",
+	);
+	if (reviewerLoadError) return reviewerLoadError;
 
 	const profiles = agents.profiles;
 	if (profiles != null) {
@@ -270,6 +302,12 @@ export function validateAgentProfilesConfig(config) {
 			}
 			const shapeError = validateAgentSectionModelTypes(profile, `agents.profiles.${name}`);
 			if (shapeError) return shapeError;
+			const profileReviewerError = validateReviewerLoadUserExtensions(
+				profile.reviewer,
+				`agents.profiles.${name}.reviewer`,
+				"spine init --force",
+			);
+			if (profileReviewerError) return profileReviewerError;
 		}
 	}
 

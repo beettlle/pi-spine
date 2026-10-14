@@ -87,6 +87,11 @@ export const SETTINGS_FIELDS = Object.freeze([
 		enum: ["off", "low", "medium", "high", "inherit"],
 	},
 	{
+		path: "agents.reviewer.loadUserExtensions",
+		label: "Reviewer loads user pi extensions",
+		type: "boolean",
+	},
+	{
 		path: "agents.reviewer.plan.model",
 		label: "Plan reviewer model",
 		type: "string",
