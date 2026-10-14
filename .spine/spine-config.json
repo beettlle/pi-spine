@@ -128,6 +128,7 @@
   "lanes": {
     "maxParallel": 2,
     "queueExcess": true,
+    "streamWorkerOutputLive": true,
     "stallTimeoutMinutes": 120,
     "stallGraceAfterProgressMinutes": 30,
     "heartbeatIntervalMinutes": 10,
