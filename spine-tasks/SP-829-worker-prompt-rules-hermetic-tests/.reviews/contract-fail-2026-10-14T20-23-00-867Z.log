@@ -1,0 +1,31 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt-rules.test.mjs tests/config/worker-context.test.mjs tests/batch/worker-prompt.test.mjs && bash scripts/spine-stet-contract-run.sh lenient
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-14T20:23:00.867Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.0 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.0 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+...................
+5f9106b  tests/batch/worker-prompt-rules.test.mjs:22  ERROR  The helper function `createRulesFixture` uses `fs.mkdirSync` and `fs.writeFileSync`, but the `fs` module is not imported in the file. The imports only include `os`, `path`, `mkdtemp`/`rm` from `node:fs/promises`, and `test`. This will cause a `ReferenceError` at runtime.
+1 finding.
+
+stet: contract review found 1 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
