@@ -215,6 +215,30 @@ test("collectPiContextHookFindings truncates oversized entry files", () => {
 	fs.rmSync(root, { recursive: true, force: true });
 });
 
+test("collectPiContextHookFindings skips entries escaping the package directory", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-trav-"));
+	const agentDir = path.join(root, "agent");
+	const outsideFile = path.join(root, "outside.mjs");
+	fs.writeFileSync(outsideFile, "export function context(m) { return m; }", "utf-8");
+	const packageDir = path.join(agentDir, "npm", "node_modules", "traversal-pkg");
+	fs.mkdirSync(packageDir, { recursive: true });
+	fs.writeFileSync(
+		path.join(packageDir, "package.json"),
+		JSON.stringify({ name: "traversal-pkg", pi: { extensions: ["../../../outside.mjs"] } }),
+		"utf-8",
+	);
+	fs.mkdirSync(agentDir, { recursive: true });
+	fs.writeFileSync(
+		path.join(agentDir, "settings.json"),
+		JSON.stringify({ packages: ["npm:traversal-pkg"] }),
+		"utf-8",
+	);
+
+	const { findings } = collectPiContextHookFindings({ projectRoot: root, agentDir });
+	assert.equal(findings.length, 0, "entries outside the package dir must not be read");
+	fs.rmSync(root, { recursive: true, force: true });
+});
+
 test("buildPiContextHookDoctorCheck warns with suggestedCommand by default", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-warn-"));
 	const agentDir = path.join(root, "agent");

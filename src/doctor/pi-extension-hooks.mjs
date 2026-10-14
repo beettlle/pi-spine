@@ -171,6 +171,10 @@ export function collectPiContextHookFindings({
 
 		for (const entry of parsed.entries) {
 			const entryPath = path.resolve(resolvedDir, entry);
+			if (entryPath !== resolvedDir && !entryPath.startsWith(resolvedDir + path.sep)) {
+				// Manifest entry escapes the package directory — never read outside it.
+				continue;
+			}
 			const text = readBoundedText(entryPath);
 			if (text === null) continue;
 			const hooks = scanPiExtensionSourceForContextHooks(text);
