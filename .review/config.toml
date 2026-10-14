@@ -1,5 +1,12 @@
+# Repo stet config used when stet reviews pi-spine lane diffs (contract
+# `testCommand` review of the worker's task diff). Secrets stay env-only:
+# STET_SYSTEMONE_API_KEY.
+
 provider = "openai"
-model = "qwen/qwen3-coder-next"
+# qwen3.8-27b per stet SP-039 (docs/research/model-comparison-qwen3-coder-next-vs-qwen3.8-27b.md):
+# fits in memory alongside OpenJev; coder-next does not. Its LM Studio preset
+# must have Enable Thinking off; reasoning tokens share max_completion_tokens.
+model = "qwen/qwen3.8-27b"
 openai_base_url = "http://127.0.0.1:1234/v1"
 
 num_ctx = 65536
@@ -11,9 +18,22 @@ strictness = "default"
 nitpicky = false
 auto_finish_zero_findings = false
 
+# Second-pass verification via the local OpenJev System One server, which must
+# be running (set STET_CRITIC_ENABLED=false otherwise). Local OpenJev takes
+# 7-51s per request.
+critic_enabled = true
+critic_backend = "systemone"
+systemone_base_url = "http://127.0.0.1:8080"
+systemone_model = "openjev-latest"
+systemone_timeout = "90s"
+
+# Off until the pilot measures the contract time budget.
+rules_selector = false
+rules_annotate = false
+
 exclude_patterns = [
-  "*.md", "*.mdc", "*.txt", "*.json", "*.jsonc", "*.toml", "*.yaml", "*.yml", "*.lock",
-  "*.html", "*.xml", "*.svg", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.ico",
+  "*.md", "*.mdc", "*.txt", "*.json", "*.jsonc", "*.jsonl", "*.toml", "*.yaml", "*.yml", "*.lock",
+  "*.sum", "*.html", "*.xml", "*.svg", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.ico",
   "*.woff", "*.woff2", "*.eot", "*.csv", "*.rst", "*.adoc", "*.log", "*.patch", "*.diff",
   "*.gitignore", "*.npmrc", "*.editorconfig", "*.prettierrc", "*.eslintrc", "*.nvmrc",
 ]
