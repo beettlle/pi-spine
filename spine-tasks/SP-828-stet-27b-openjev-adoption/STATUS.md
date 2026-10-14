@@ -45,18 +45,18 @@ Note: the suite strips inherited `SPINE_STET_NO_AUTO_FINISH` / `SPINE_IS_WORKER`
 - [x] Runbook §8.1 (incl. `SPINE_STET_NO_AUTO_FINISH=1` required for batches)
 
 ### Step 5: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lint
-- [ ] Contract `testCommand`
-- [ ] `.review` status clean
-- [ ] `git ls-files -s .review` lists only `config.toml` (100644)
-- [ ] Fix all failures
+- [x] Lint (`npm run lint` — clean) + typecheck (clean)
+- [x] Contract `testCommand`: 23 mock-stet/hook tests pass; stet review found 3 findings → triaged (all `false_positive`, evidence in Discoveries #6) → re-run `0 finding(s)`, exit 0
+- [x] `git status --porcelain .review` → empty (all committed; runtime state ignored by `.review/*`)
+- [x] `git ls-files -s .review` → only `.review/config.toml` mode `100644`
+- [x] Fix all failures
 
 ### Step 6: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
-- [ ] Discoveries logged in STATUS.md
+- [x] Discoveries logged in STATUS.md
 - [ ] Create `.DONE`
 
 ---
@@ -70,6 +70,7 @@ Note: the suite strips inherited `SPINE_STET_NO_AUTO_FINISH` / `SPINE_IS_WORKER`
 | 3 | Engine (`src/batch/lane-dirty-check.mjs`, `src/batch/lane-dirty-check-commit.mjs`) matches `.review/` as a gitignored-artifact marker by prefix, independent of the real `.gitignore` — switching to `.review/*` + `!.review/config.toml` is safe. Repo `.spine/spine-config.json` has `gitignoredPaths: []`. |
 | 4 | Lane worktree has a live stet session: `.review/session.json` + `.review/spine-stet-baseline.ref` = `bdf7f6f5` (pre-worker HEAD), so the Step 5 contract review covers this task's diff. |
 | 5 | `docs/stet-overview.md` (out of File Scope) needs edits: line 52 claims the v1.5.0 contract path uses `--auto-finish-zero`; lines 78/81/197–203 show example testCommands with `--auto-finish-zero`; no model name there, but examples should mirror the new ported-contract behavior. Recorded for a follow-up docs packet. |
+| 6 | Contract stet review (strictness `lenient`) reported 3 findings; all dismissed `false_positive` after triage — (a) contract script exits 1 on active findings "making NO_AUTO_FINISH unreachable": misreads the gate; exit-on-findings is intended, the flag only governs zero-finding finish (runbook §8.1 documents this). (b) setup hook fail-fast when `stet start` fails: intended lane-setup failure mode; matches the packet-mandated stet-repo reference verbatim; engine treats hook failure as setup error with stet stderr surfaced. (c) "runContractExpectFail without await": the helper is synchronous (`execFileSync`); the test's `async` keyword is for `await rm()` cleanup — verified in source. The first review ran ~2–3 min (27B + OpenJev critic, JIT-loaded); the post-dismissal re-run was incremental. Re-run proof of the port: `stet status` still counts the 3 dismissed findings (`findings: 3`) but `stet list` is empty → contract exits 0 where the old `stet status`-based script would have stayed red. |
 
 ## Blockers
 
