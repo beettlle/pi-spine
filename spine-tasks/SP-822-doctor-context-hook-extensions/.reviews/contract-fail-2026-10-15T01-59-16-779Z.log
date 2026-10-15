@@ -1,0 +1,35 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_SUPPRESS_JOURNAL_ATTACH=1 SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/doctor/pi-extension-hooks.test.mjs tests/doctor/extension-conflict.test.mjs tests/doctor/quota-risk.test.mjs tests/doctor/duplicate-install.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-822
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-15T01:59:16.779Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.0 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.0 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+..................
+9cd6778  src/doctor/run-doctor-checks.mjs:347  ERROR  The code calls `loadSpineConfig(projectRoot)` and accesses `configResult.config`. However, the provided definition of `loadSpineConfig` indicates it returns a `fileResult` object (which has an `error` property). It does not appear to return an object with a `config` property. This will likely result in `configResult.config` being `undefined`, causing the new doctor check to receive an undefined config and potentially fail or behave incorrectly.
+27a8259  src/doctor/run-doctor-checks.mjs:421  ERROR  The variable `configResult` is used immediately after its declaration line was removed. This will cause a ReferenceError at runtime because `configResult` is no longer defined in this scope.
+2 finding(s).
+
+stet: contract review found 2 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

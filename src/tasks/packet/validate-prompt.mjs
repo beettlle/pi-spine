@@ -12,6 +12,8 @@ import {
 	validatePrompt as validatePromptStructure,
 } from "./parse-prompt.mjs";
 import { validateContract } from "./validate-contract.mjs";
+import { collectExecuteReviewLevelWarnings } from "../validate-contract-warn.mjs";
+import { parseReviewLevel } from "../../batch/review-shared.mjs";
 
 /** Operator-facing hint when fileScopeMustChange may already be satisfied on main. */
 export const STALE_FILE_SCOPE_AMENDMENT_HINT =
@@ -46,10 +48,18 @@ export function validatePrompt(markdown, options = {}) {
 
 	errors.push(...contractValidation.errors);
 
+	const warnings = [...contractValidation.warnings];
+	warnings.push(
+		...collectExecuteReviewLevelWarnings({
+			type: structure.prompt.type,
+			reviewLevel: parseReviewLevel(markdown),
+		}),
+	);
+
 	return {
 		ok: errors.length === 0,
 		errors,
-		warnings: contractValidation.warnings,
+		warnings,
 		prompt: structure.prompt,
 		contract,
 	};

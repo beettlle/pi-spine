@@ -1,0 +1,46 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/review-level-execute.test.mjs tests/tasks/validate-contract-warn.test.mjs tests/tasks/validate-prelanded-contract.test.mjs tests/tasks/phase20-fixtures.test.mjs tests/batch/review-honor-guard.test.mjs tests/batch/execution-only.test.mjs tests/arch/ts-nocheck-guard.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh default SP-827
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-10-15T02:30:16.785Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.0 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.0 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+.......
+bdb1949  src/batch/review-artifacts.mjs:7  WARNING  The import of `parseReviewLevel` was removed, but `effectiveReviewLevel` is imported from a new module. If `parseReviewLevel` is still used anywhere in this file (outside the diff context), it will cause a runtime ReferenceError. If it was replaced by `effectiveReviewLevel`, verify that `effectiveReviewLevel` provides the same interface/behavior as `parseReviewLevel` to avoid subtle logic changes in how review levels are determined.
+d83272a  src/batch/review-artifacts.mjs:17  WARNING  The change replaces `parseReviewLevel` with `effectiveReviewLevel`, which returns 0 for 'execute' type prompts. This alters the behavior of `readReviewLevel` for execute tasks, potentially bypassing review logic that was previously applied based on the parsed level. If `readReviewLevel` is used to determine whether to run a review step, execute tasks will now always return 0, which may be intended but is a significant behavioral change that should be verified against the task's intent (SP-822).
+ddb95e7  src/batch/review-level-effective.mjs:16  WARNING  The function calls `parsePrompt(markdown)` and `parseReviewLevel(markdown)` separately, causing the markdown string to be parsed twice. `parsePrompt` likely performs regex matching and line number calculations, which can be expensive for large files. This is a common performance anti-pattern when multiple parsers are needed for the same input.
+32debb9  src/tasks/packet/validate-prompt.mjs:52  WARNING  `parseReviewLevel` returns `NaN` if the markdown contains a review level marker with a non-numeric value (e.g., `<!-- review-level: abc -->`). In `collectExecuteReviewLevelWarnings`, the condition `reviewLevel <= 0` evaluates to `false` for `NaN`, causing the function to proceed to the `switch` statement. Since `NaN` does not match any case, it falls through to the `default` case, which incorrectly returns a warning about 'unrecognized review level' instead of ignoring the invalid input or treating it as 0.
+cc988af  src/tasks/validate-contract-warn.mjs:32  WARNING  The function destructures `reviewLevel` but does not validate its type. If `reviewLevel` is `undefined` or `null` (which is common for optional fields), the comparison `reviewLevel <= 0` evaluates to `false` (since `undefined <= 0` is `false`), causing the function to return a misleading warning for execute tasks that simply omit the field. The JSDoc specifies `number`, but runtime data may not conform.
+77a3d93  tests/batch/review-level-execute.test.mjs:53  ERROR  The function `writeTaskFolder` references `tempFolders` before it is declared. In JavaScript, `const` declarations are not hoisted in a way that allows access before their definition (they are in the Temporal Dead Zone). This will cause a `ReferenceError` at runtime when the first test calls `writeTaskFolder`.
+6 finding(s).
+bdb1949  src/batch/review-artifacts.mjs:7  WARNING  The import of `parseReviewLevel` was removed, but `effectiveReviewLevel` is imported from a new module. If `parseReviewLevel` is still used anywhere in this file (outside the diff context), it will cause a runtime ReferenceError. If it was replaced by `effectiveReviewLevel`, verify that `effectiveReviewLevel` provides the same interface/behavior as `parseReviewLevel` to avoid subtle logic changes in how review levels are determined.
+d83272a  src/batch/review-artifacts.mjs:17  WARNING  The change replaces `parseReviewLevel` with `effectiveReviewLevel`, which returns 0 for 'execute' type prompts. This alters the behavior of `readReviewLevel` for execute tasks, potentially bypassing review logic that was previously applied based on the parsed level. If `readReviewLevel` is used to determine whether to run a review step, execute tasks will now always return 0, which may be intended but is a significant behavioral change that should be verified against the task's intent (SP-822).
+ddb95e7  src/batch/review-level-effective.mjs:16  WARNING  The function calls `parsePrompt(markdown)` and `parseReviewLevel(markdown)` separately, causing the markdown string to be parsed twice. `parsePrompt` likely performs regex matching and line number calculations, which can be expensive for large files. This is a common performance anti-pattern when multiple parsers are needed for the same input.
+32debb9  src/tasks/packet/validate-prompt.mjs:52  WARNING  `parseReviewLevel` returns `NaN` if the markdown contains a review level marker with a non-numeric value (e.g., `<!-- review-level: abc -->`). In `collectExecuteReviewLevelWarnings`, the condition `reviewLevel <= 0` evaluates to `false` for `NaN`, causing the function to proceed to the `switch` statement. Since `NaN` does not match any case, it falls through to the `default` case, which incorrectly returns a warning about 'unrecognized review level' instead of ignoring the invalid input or treating it as 0.
+cc988af  src/tasks/validate-contract-warn.mjs:32  WARNING  The function destructures `reviewLevel` but does not validate its type. If `reviewLevel` is `undefined` or `null` (which is common for optional fields), the comparison `reviewLevel <= 0` evaluates to `false` (since `undefined <= 0` is `false`), causing the function to return a misleading warning for execute tasks that simply omit the field. The JSDoc specifies `number`, but runtime data may not conform.
+77a3d93  tests/batch/review-level-execute.test.mjs:53  ERROR  The function `writeTaskFolder` references `tempFolders` before it is declared. In JavaScript, `const` declarations are not hoisted in a way that allows access before their definition (they are in the Temporal Dead Zone). This will cause a `ReferenceError` at runtime when the first test calls `writeTaskFolder`.
+6 finding(s).
+
+stet: contract review found 6 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

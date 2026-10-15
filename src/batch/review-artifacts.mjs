@@ -4,7 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { detectOrphanedReviewStarted } from "./journal-rebuild.mjs";
 import { NESTED_REVIEW_SPAWN_REASON } from "./review-spawn.mjs";
-import { normalizeVerdict, parseReviewLevel, parseReviewVerdict } from "./review-shared.mjs";
+import { normalizeVerdict, parseReviewVerdict } from "./review-shared.mjs";
+import { effectiveReviewLevel } from "./review-level-effective.mjs";
 import { shouldUseReviewStub } from "./engine-lanes/review-stub.mjs";
 
 /**
@@ -13,7 +14,7 @@ import { shouldUseReviewStub } from "./engine-lanes/review-stub.mjs";
 export function readReviewLevel(taskFolder) {
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	if (!fs.existsSync(promptPath)) return 0;
-	return parseReviewLevel(fs.readFileSync(promptPath, "utf-8"));
+	return effectiveReviewLevel(fs.readFileSync(promptPath, "utf-8"));
 }
 
 /**
