@@ -1,6 +1,6 @@
 # SP-826: Worker tail prompt names Contract testCommand and sends worker.md once — Status
 
-**Current Step:** Step 2: Tests
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 1
@@ -25,10 +25,10 @@
 - [x] Runner passes `false`; runner is 498 lines (≤ 500)
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Tail text and include cases
-- [ ] Single `worker.md` occurrence
+- [x] Tail text and include cases
+- [x] Single `worker.md` occurrence
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started

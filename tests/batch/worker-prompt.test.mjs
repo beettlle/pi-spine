@@ -52,6 +52,47 @@ test("buildWorkerTailPrompt includes tools hint and task id from folder", async 
 	assert.equal(taskIdFromFolder(taskFolder), "TP-100");
 });
 
+test("buildWorkerTailPrompt names the Contract testCommand and drops run npm test", async () => {
+	const taskFolder = path.join(os.tmpdir(), "spine-tasks", "TP-826-testcmd");
+	const tail = await buildWorkerTailPrompt({
+		worktreePath: "/wt",
+		taskFolder,
+		donePath: path.join(taskFolder, ".DONE"),
+		reviewLevel: 0,
+		includePromptInclude: false,
+	});
+	assert.doesNotMatch(tail, /run npm test/);
+	assert.match(tail, /Contract testCommand/);
+	assert.match(tail, /release:check/);
+});
+
+test("buildWorkerTailPrompt omits the worker.md include when includeAgentInclude is false", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-agent-include-"));
+	try {
+		const worktreePath = path.join(root, "wt");
+		const taskFolder = path.join(root, "spine-tasks", "SP-826-agent-include");
+		const agentPath = path.join(worktreePath, ".spine", "agents", "worker.md");
+		fs.mkdirSync(path.dirname(agentPath), { recursive: true });
+		fs.mkdirSync(taskFolder, { recursive: true });
+		fs.writeFileSync(agentPath, "# worker\n", "utf-8");
+
+		const tail = await buildWorkerTailPrompt({
+			worktreePath,
+			taskFolder,
+			donePath: path.join(taskFolder, ".DONE"),
+			reviewLevel: 0,
+			includeAgentInclude: false,
+		});
+
+		assert.ok(
+			!tail.includes(`@${agentPath}`),
+			"includeAgentInclude: false omits the @worker.md include",
+		);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("buildWorkerTailPrompt appends worker agent and PROMPT when present", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-worker-prompt-"));
 	try {
