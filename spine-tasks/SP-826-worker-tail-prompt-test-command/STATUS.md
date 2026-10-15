@@ -1,6 +1,6 @@
 # SP-826: Worker tail prompt names Contract testCommand and sends worker.md once — Status
 
-**Current Step:** Step 1: Tail prompt changes
+**Current Step:** Step 2: Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 1
@@ -18,11 +18,11 @@
 - [x] Dependencies satisfied
 
 ### Step 1: Tail prompt changes
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract `testCommand` instruction
-- [ ] `includeAgentInclude` option
-- [ ] Runner passes `false`; runner net lines ≤ 0
+- [x] Contract `testCommand` instruction
+- [x] `includeAgentInclude` option
+- [x] Runner passes `false`; runner is 498 lines (≤ 500)
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started
