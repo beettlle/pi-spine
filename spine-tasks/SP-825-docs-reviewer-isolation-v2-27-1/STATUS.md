@@ -1,6 +1,6 @@
 # SP-825: Docs — reviewer isolation and re-review recovery — Status
 
-**Current Step:** Step 1: Operator runbook
+**Current Step:** Step 2: Release operator skill
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-15
 **Review Level:** 0
@@ -17,11 +17,11 @@
 - [x] Dependencies satisfied (SP-819/820/821/822 landed on `main` via batch 20261014T223221-7ba1, commit 487b8567)
 
 ### Step 1: Operator runbook
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Agent model pins
-- [ ] Post-DONE review failure section
-- [ ] Provider errors subsection
+- [x] Agent model pins (§~548: reviewer `pi -ne` default, `loadUserExtensions` opt-out incl. per-profile)
+- [x] Post-DONE review failure section (§~1547 rewritten; diagnosis-table row §~907 and cross-link §~1535 updated; anchor retitled)
+- [x] Provider errors subsection (§~1983: reason meaning, `review.failed` `providerMessage`/`httpStatus`, reviewer output log, doctor hooks check, pi-headroom sentence)
 
 ### Step 2: Release operator skill
 **Status:** ⬜ Not Started
