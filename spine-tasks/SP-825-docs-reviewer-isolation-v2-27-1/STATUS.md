@@ -1,6 +1,6 @@
 # SP-825: Docs — reviewer isolation and re-review recovery — Status
 
-**Current Step:** Step 2: Release operator skill
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-15
 **Review Level:** 0
@@ -24,9 +24,9 @@
 - [x] Provider errors subsection (§~1983: reason meaning, `review.failed` `providerMessage`/`httpStatus`, reviewer output log, doctor hooks check, pi-headroom sentence)
 
 ### Step 2: Release operator skill
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Phase 4 paragraph
+- [x] Phase 4 paragraph (after Model pin: `pi -ne` default v2.27.1 #334, overrides only when `loadUserExtensions` true, re-review not salvage)
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
