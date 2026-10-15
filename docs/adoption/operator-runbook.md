@@ -545,6 +545,14 @@ spine batch start <task-id>
 
 Spine passes `pi --model` and `pi --thinking` from `.spine/spine-config.json` when `agents.worker.model` / `agents.reviewer.model` are set and **not** `inherit` (SP-232). Reviewers already honored pins; workers now do too.
 
+**Reviewer extension isolation (v2.27.1 / #334):** reviewers spawn with `pi -ne` (`--no-extensions`) by default, so installed pi packages cannot rewrite the context a reviewer model sees. Workers are unchanged — they already spawn isolated. To opt out and load user extensions in reviewers, set `agents.reviewer.loadUserExtensions` to `true` (also valid per profile as `agents.profiles.<name>.reviewer.loadUserExtensions`):
+
+```bash
+spine settings show agents.reviewer.loadUserExtensions   # unset or false → isolated (pi -ne)
+spine settings set agents.reviewer.loadUserExtensions true
+spine doctor   # warns when loaded packages register context-rewriting hooks
+```
+
 | `agents.*.model` | Worker/reviewer behavior |
 |------------------|--------------------------|
 | `cursor/auto` (greenfield default after `spine init`) | Explicit pin — batch agents use Cursor auto, not pi's global default |
@@ -904,7 +912,7 @@ Both formats read `.spine/runtime/<batchId>/journal/events.jsonl` and exit non-z
 | `needs_retry` + `DirtyWorktree` | Lane worktree dirty after worker completion | Follow the diagnose `suggestedCommand` — it is built from the **actual dirty paths** ([#288](https://github.com/beettlle/pi-spine/issues/288)): `git checkout -- <dirty paths (cap 5)> && spine batch retry <id>`; when no dirty paths are known it falls back to `git -C <laneWorktree> status --porcelain && spine batch retry <id>`. If a dirty path is tracked **and** ignore-matched, untrack it instead ([#289](https://github.com/beettlle/pi-spine/issues/289)) — see the `DirtyWorktree` recurring row in the [lane merge conflicts recovery table](#lane-merge-conflicts-before-integrate) |
 | `needs_retry` + `review_exhausted` | Final review REVISE cap reached | Fix implementation or packet scope, then `spine batch retry <id>` |
 | `needs_retry` + `contract_failed` | Final `contract.verified` failed | Edit `PROMPT.md` scope, then `spine batch retry <id>` |
-| `pending_lane_land` | Lane work complete on disk (`.DONE`, lane commits) but not on base — includes post-DONE plan-review spawn failure (#291), where `plan_review_spawn_failed`/`plan_review_timeout` after done evidence maps here instead of `needs_retry` | Do **not** retry the worker — run the [salvage → complete land loop](#salvage--complete-land-loop-after-post-done-plan-review-spawn-failure-291-292): `spine batch salvage --batch <id> --dry-run` → `--lane <n> --integrate` → `spine batch complete` |
+| `pending_lane_land` | Lane work complete on disk (`.DONE`, lane commits) but not on base. Post-DONE review-infrastructure failures (`plan|code|final_review_spawn_failed` / `_timeout` / `_provider_error`) no longer map here — SP-821 diagnoses them `needs_retry` for re-review (#334) | Re-review: `spine batch retry <id>` → `spine batch resume` — see [Post-DONE review failure recovery](#post-done-review-failure-recovery-re-review-first-salvage-last-291-292-331). Salvage is a last resort for abandoned batches only |
 | `worker_orphaned` | Lane worker PID dead while task still `running` | `spine batch retry <id>` or `spine batch abort` |
 | `worker_done_missing` | Worker exited without `.DONE` (early pi exit) | `spine batch retry <id>` — inspect worker output log in headline |
 | `engine_orphaned` | Batch engine died mid-run | `spine batch retry <id>` when task still `running`; detached `spine batch resume --force` when tasks are terminal-success ([#196](https://github.com/beettlle/pi-spine/issues/196)); `--attached` only in a persistent human TTY |
@@ -1532,28 +1540,27 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 - Merge conflicts fail loud with `MergeConflict` — `main` is not silently updated. Resolve on the lane branch or `main`, then re-run salvage integrate.
 - Journal events: `batch.salvage_gate_opened` (when salvage opens a missing gate), `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
 
-**Typical workflow:** abort → `salvage --dry-run` → `salvage --lane N --integrate` (opens gate if missing) → `spine gate approve` if the gate is pending → re-run `salvage --lane N --integrate --yes` per salvageable lane → `spine batch complete` to finalize when every remaining failure was salvageable ([#292](https://github.com/beettlle/pi-spine/issues/292); see [Salvage → complete land loop](#salvage--complete-land-loop-after-post-done-plan-review-spawn-failure-291-292)).
+**Typical workflow:** abort → `salvage --dry-run` → `salvage --lane N --integrate` (opens gate if missing) → `spine gate approve` if the gate is pending → re-run `salvage --lane N --integrate --yes` per salvageable lane → `spine batch complete` to finalize when every remaining failure was salvageable ([#292](https://github.com/beettlle/pi-spine/issues/292); see [Post-DONE review failure recovery](#post-done-review-failure-recovery-re-review-first-salvage-last-291-292-331)).
 
 After abort, salvage lists lanes whose task branches have commits ahead of base when the task reached terminal-success / lane `.DONE` — even if journal status cache disagrees (SP-614 / [#196](https://github.com/beettlle/pi-spine/issues/196)). Do not assume "no salvageable commits" means the lane branch is empty; re-check with `salvage --dry-run` and `git log main..<lane-task-branch>`.
 
-### Salvage → complete land loop after post-DONE plan-review spawn failure (#291, #292)
+### Post-DONE review failure recovery: re-review first, salvage last (#291, #292, #331)
 
-A task can fail **after** the worker finished: the worker wrote `.DONE` and committed lane work, but the engine's plan review then failed to spawn or timed out (`plan_review_spawn_failed` / `plan_review_timeout` exit reasons). No review verdict exists, so the engine records the task as failed — but the implementation itself never failed.
+A task can fail **after** the worker finished: the worker wrote `.DONE` and committed lane work, but a review then failed without producing a verdict — spawn failure, timeout, or provider error (`plan_review_spawn_failed`, `plan_review_timeout`, `plan_review_provider_error`, plus the `code_review_*` / `final_review_*` variants). The engine records the task as failed, but the implementation itself never failed. Since SP-821 (#334), all nine review-infrastructure exit reasons diagnose as **`needs_retry`** — not `pending_lane_land` — and the recovery is to **re-run the review**.
 
-**Do not retry the worker.** `spine batch retry` re-runs expensive work that is already on disk. Since SP-762, `spine status --diagnose` classifies this shape as **`pending_lane_land`**, not `needs_retry`: a failed task with done evidence (`.DONE` in lane / terminal-success classification) plus a plan-review spawn-failure or timeout exit reason maps to the salvage land loop (#291).
-
-**Recovery sequence:**
+**Re-review first.** `spine batch retry` re-runs only the review: the worker short-circuits on the existing lane `.DONE` (no re-execution), the journal records `review.resumed`, and the engine re-spawns the reviewer.
 
 ```bash
-spine status --diagnose                                    # expect pending_lane_land, not needs_retry
-spine batch salvage --batch <batchId> --dry-run            # lane shows commits ahead of base
-spine batch salvage --batch <batchId> --lane <n> --integrate --yes   # run spine gate approve first if the gate is pending
-spine batch complete                                       # finalize — no dismiss --force
+spine status --diagnose                                    # expect needs_retry; suggestedCommand cites spine batch retry <taskId>
+spine batch retry <taskId>                                 # resumes at the review — .DONE skips the worker
+spine batch resume                                         # continue the batch
 ```
 
-**`spine batch complete` after salvage integrate (#292):** once `salvage --integrate` lands the lane on the base branch, the failed-task gate is healed — each salvaged task is promoted to succeeded with a reconciled `task.completed` journal event (`reconcileReason: salvage_integrated`). `spine batch complete` then finalizes and archives the batch normally. **`spine batch dismiss --force` is no longer part of this path** — it discards the batch record instead of closing it.
+**Salvage is a last resort.** `spine batch salvage --integrate` lands lane work **no reviewer saw**; use it only for abandoned batches (dead engine, terminal failure) where re-review is impossible or the operator explicitly signs off on landing unreviewed work. The #292 heal still applies when you do: once `salvage --integrate` lands the lane, each salvaged task is promoted with a reconciled `task.completed` journal event (`reconcileReason: salvage_integrated`), and `spine batch complete` finalizes normally — **`spine batch dismiss --force` is not part of this path**.
 
-**Limits:** the heal touches only the salvage set. Non-salvageable failures (contract/review failures, evidence-less worker deaths) stay failed and keep blocking `batch complete` — fix or skip those tasks first. Journal `batch.salvage_heal_failed` means the merge landed but the heal did not; inspect with `spine status --diagnose` and re-run the integrate if needed.
+**Caveat (#331):** a retried post-hoc plan review can still **reject** finished work. That is the review working as intended — fix the findings or renegotiate packet scope; do not bypass the verdict with salvage.
+
+**Limits:** the salvage heal touches only the salvage set. Non-salvageable failures (contract/review verdicts, evidence-less worker deaths) stay failed and keep blocking `batch complete` — fix or skip those tasks first. Journal `batch.salvage_heal_failed` means the merge landed but the heal did not; inspect with `spine status --diagnose` and re-run the integrate if needed.
 
 ### Force-resume from batch-meta after abort limbo (#126)
 
@@ -1972,6 +1979,14 @@ When the journal shows **`review.started`** (final or code) with **no** matching
 3. Retry failed lane: `spine batch retry <taskId>` then `spine batch resume --attached --force`.
 
 Reviewer spawn uses **async** `pi` with timeout aligned to **`resolveReviewSpawnTimeoutMs`** (same stall budget as workers). Override for tests or emergencies: `SPINE_REVIEW_TIMEOUT_MS`.
+
+### Reviewer provider errors (`*_review_provider_error`)
+
+`plan_review_provider_error`, `code_review_provider_error`, and `final_review_provider_error` (SP-820) mean the reviewer `pi` process spawned but the model provider rejected the request — a terminal 4xx payload in the reviewer output — so no verdict was produced. Like spawn failures and timeouts, this is review **infrastructure** failing, not the implementation: `spine status --diagnose` reports `needs_retry`, and recovery is re-review (`spine batch retry <taskId>` → `spine batch resume`).
+
+**Where the provider message lives:** the journal `review.failed` event carries `reason: review_provider_error` plus `providerMessage` (and `httpStatus` when the provider returned one); the full reviewer output is in `.spine/runtime/<batchId>/lanes/lane-<n>/reviewer-output-<taskId>-<reviewType>.log`.
+
+**Rule out context-rewriting extensions:** `spine doctor` lists installed pi packages that register `context`, `context_with_system`, or `before_provider_request` hooks (check label "pi extensions rewriting reviewer context"). It warns only when `agents.reviewer.loadUserExtensions` is `true` — with the default isolation (`pi -ne`) those packages never load in reviewers. Context: in v2.27.0 the third-party `pi-headroom` extension rewrote reviewer context and broke every Gemini review with HTTP 400, which motivated reviewer isolation (#334).
 
 ### Hung reviewer with on-disk artifact (`artifact_ready`)
 
