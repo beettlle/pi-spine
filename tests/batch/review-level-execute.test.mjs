@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 
 import { readReviewLevel } from "../../src/batch/review-artifacts.mjs";
 import { isReviewTypeRequired } from "../../src/batch/review-shared.mjs";
@@ -57,9 +57,19 @@ x
  */
 function writeTaskFolder(markdown) {
 	const folder = fs.mkdtempSync(path.join(os.tmpdir(), "sp827-review-level-"));
+	tempFolders.push(folder);
 	fs.writeFileSync(path.join(folder, "PROMPT.md"), markdown);
 	return folder;
 }
+
+/** @type {string[]} */
+const tempFolders = [];
+
+after(() => {
+	for (const folder of tempFolders) {
+		fs.rmSync(folder, { recursive: true, force: true });
+	}
+});
 
 test("readReviewLevel: llm packet without Type line returns declared level 0/1/2", () => {
 	for (const level of [0, 1, 2]) {
