@@ -1,7 +1,7 @@
 # SP-825: Docs — reviewer isolation and re-review recovery — Status
 
-**Current Step:** Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Done — awaiting engine review/integrate
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-15
 **Review Level:** 0
 **Review Counter:** 0
@@ -29,17 +29,24 @@
 - [x] Phase 4 paragraph (after Model pin: `pi -ne` default v2.27.1 #334, overrides only when `loadUserExtensions` true, re-review not salvage)
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Doc-referencing tests only
-- [ ] Commands verified
-- [ ] Fix all failures
+- [x] Doc-referencing tests: `rg -l 'operator-runbook|spine-release-operator/SKILL' tests/` → 4 hits; `tests/fixtures/scenarios/registry.json` is a fixture, not a test — ran the 3 `.test.mjs` files: **17 tests, 17 pass, 0 fail** (spine-init, adoption-doc-merge, release-workflow). (Full suite owned by post-integrate `release:check`.)
+- [x] Commands verified live: `spine settings show agents.reviewer.loadUserExtensions` → `(not set)` exit 0; `settings set … true` → `show` → `true`; reverted to unset via `git checkout` (tracked file). `spine doctor` prints label **"pi extensions rewriting reviewer context"** with detail "…reviewers isolated (pi -ne)" and detects `pi-headroom (context)` — matches runbook text exactly. `spine status --diagnose` exit 0; `spine batch retry|resume` present in CLI usage.
+- [x] No failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] `.DONE` created in this task folder
+- [x] README advisory check: no `agents.reviewer`/`loadUserExtensions` references — no change needed (README out of scope per PROMPT)
+
+## Completion Criteria
+
+- [x] Runbook documents reviewer isolation + opt-out key (§~548), provider-error classification + doctor check (§~1983), re-review recovery (§~1547, diagnosis table §~915)
+- [x] No remaining runbook text recommends `salvage --integrate` first after a post-`.DONE` review spawn failure (old §1539 heading/anchor retired; both in-file links retargeted)
+- [x] Closes #334
 
 ---
 
