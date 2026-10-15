@@ -1,6 +1,6 @@
 # SP-827: Execute tasks run at effective Review Level 0 — Status
 
-**Current Step:** Step 1: Effective level
+**Current Step:** Step 4: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-10
 **Review Level:** 1
@@ -20,20 +20,20 @@
 ### Step 1: Effective level
 **Status:** ⬜ Not Started
 
-- [ ] `effectiveReviewLevel` (typed module)
-- [ ] `readReviewLevel` wired (net ≤ 3 lines)
+- [x] `effectiveReviewLevel` (typed module)
+- [x] `readReviewLevel` wired (net ≤ 3 lines)
 
 ### Step 2: Validate warning
 **Status:** ⬜ Not Started
 
-- [ ] Warning helper
-- [ ] Wired into `validatePrompt`
+- [x] Warning helper
+- [x] Wired into `validatePrompt`
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
 
-- [ ] Review level cases
-- [ ] Validate warning cases
+- [x] Review level cases
+- [x] Validate warning cases
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
