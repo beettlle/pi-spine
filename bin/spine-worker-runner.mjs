@@ -126,6 +126,7 @@ export async function buildWorkerPiArgs({
 		taskIdHint: taskIdFromFolder(taskFolder),
 		reviewLevel: readReviewLevel(taskFolder),
 		includePromptInclude: false,
+		includeAgentInclude: false,
 		config: spineConfig,
 		projectRoot,
 		taskFileScope,

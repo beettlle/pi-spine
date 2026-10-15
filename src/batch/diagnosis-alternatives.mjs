@@ -2,18 +2,25 @@
  * Alternative operator commands per diagnosis (extracted for module size budget).
  */
 import { buildWorkerDoneMissingAlternatives } from "./diagnosis-worker-done-missing.mjs";
+import { isReviewInfraExitReason } from "./diagnosis-review-infra.mjs";
 
 /**
  * @param {string} diagnosis
  * @param {object} [ctx]
  * @param {string|null} [ctx.failedTaskId]
  * @param {string|null} [ctx.batchId]
+ * @param {string|null} [ctx.exitReason]
  * @param {object[]} [ctx.pendingLaneLandTasks]
  */
 export function buildAlternatives(diagnosis, ctx = {}) {
 	const common = ["spine status --diagnose"];
 
-	if ((ctx.pendingLaneLandTasks?.length ?? 0) > 0) {
+	// SP-821 / #334: needs_retry caused by a review-infrastructure exit reason
+	// must take the labeled salvage-dry-run path below, even when the task also
+	// sits in the pending-lane set — salvage --integrate stays forbidden there.
+	const reviewInfraNeedsRetry = diagnosis === "needs_retry" && isReviewInfraExitReason(ctx.exitReason);
+
+	if ((ctx.pendingLaneLandTasks?.length ?? 0) > 0 && !reviewInfraNeedsRetry) {
 		return [
 			ctx.batchId
 				? `spine batch salvage --batch ${ctx.batchId} --dry-run`
@@ -43,6 +50,14 @@ export function buildAlternatives(diagnosis, ctx = {}) {
 		case "integrate_isolated_ok":
 			return ["git pull", "spine batch complete", ...common];
 		case "needs_retry":
+			if (isReviewInfraExitReason(ctx.exitReason)) {
+				// SP-821 / #334: salvage stays available as a dry-run inspection only,
+				// explicitly labeled as landing unreviewed work.
+				const salvageDryRun = ctx.batchId
+					? `spine batch salvage --batch ${ctx.batchId} --dry-run (lands unreviewed work)`
+					: "spine batch salvage --batch <batchId> --dry-run (lands unreviewed work)";
+				return [salvageDryRun, "spine batch abort", ...common];
+			}
 			return ["spine batch abort", "/spine-skip-task", "/spine-resume --force", ...common];
 		case "worker_orphaned":
 			return ["spine batch abort", "spine batch resume --force", ...common];

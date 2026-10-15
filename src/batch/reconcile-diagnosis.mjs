@@ -2,6 +2,11 @@
 
 import { inferLaunchFailureKind } from "./diagnosis.mjs";
 import {
+	REVIEW_INFRASTRUCTURE_EXIT_REASONS,
+	resolvePrimaryFailureExitReason,
+	resolveTaskPrimaryFailureExitReason,
+} from "./diagnosis-review-infra.mjs";
+import {
 	findPendingLaneLandTasks,
 	shouldDiagnosePendingLaneLand,
 } from "./diagnosis-pending-lane.mjs";
@@ -20,56 +25,6 @@ export {
 	hasGhostRunningCluster,
 	laneTaskBranchForDiagnosis,
 } from "./reconcile-diagnosis-enrich.mjs";
-
-/**
- * @param {unknown} rawTasks
- * @param {string|null} failedTaskId
- * @returns {string|null}
- */
-function resolveFailedExitReason(rawTasks, failedTaskId) {
-	if (!failedTaskId || !Array.isArray(rawTasks)) return null;
-	const match = rawTasks.find((/** @type {any} */ entry) => {
-		if (!entry || typeof entry !== "object") return false;
-		return String(entry.taskId ?? entry.id ?? "") === failedTaskId;
-	});
-	if (!match || typeof match !== "object") return null;
-	const exitReason = /** @type {{ exitReason?: unknown }} */ (match).exitReason;
-	return typeof exitReason === "string" && exitReason ? exitReason : null;
-}
-
-/**
- * @param {string|null} failedTaskId
- * @param {Record<string, any>} signals
- * @returns {string|null}
- */
-function resolvePrimaryFailureExitReason(failedTaskId, signals) {
-	const fromTask = resolveFailedExitReason(signals.raw?.tasks, failedTaskId);
-	if (fromTask) return fromTask;
-	if (!failedTaskId) return null;
-	if (Array.isArray(signals.segments)) {
-		const segment = signals.segments.find((/** @type {any} */ entry) => entry?.taskId === failedTaskId);
-		const classification = segment?.classification;
-		if (
-			typeof classification === "string" &&
-			classification &&
-			classification !== "terminal-failure"
-		) {
-			return classification;
-		}
-	}
-	if (Array.isArray(signals.journalEvents)) {
-		for (let index = signals.journalEvents.length - 1; index >= 0; index -= 1) {
-			const event = signals.journalEvents[index];
-			if (event.type !== "task.failed") continue;
-			const eventTaskId = event.taskId ?? event.payload?.taskId;
-			if (eventTaskId !== failedTaskId) continue;
-			const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
-			const reason = payload.exitReason ?? payload.classification;
-			if (typeof reason === "string" && reason) return reason;
-		}
-	}
-	return null;
-}
 
 /**
  * @param {string|null} failedTaskId
@@ -135,32 +90,23 @@ function hasNeedsReplanBlocker(signals) {
 }
 
 /**
- * Plan-review exit reasons where reviewer infrastructure failed after the
- * worker had already completed its lane work (#291 / SP-762). Mirrors the
- * SP-718 final-review distinction: spawn failure / timeout mean no verdict
- * was produced — the implementation itself is not the failure.
- */
-const POST_DONE_PLAN_REVIEW_EXIT_REASONS = new Set([
-	"plan_review_spawn_failed",
-	"plan_review_timeout",
-]);
-
-/**
  * Failed task whose lane work already completed (done evidence / `.DONE` in
- * the lane worktree) but whose engine plan review failed to spawn or timed
- * out. Such tasks are salvageable land-loop candidates — a full worker retry
- * would re-run expensive work that is already on disk (#291 / SP-762).
+ * the lane worktree) but whose engine review (plan, code, or final) failed to
+ * spawn, timed out, or hit a provider error — no verdict was ever produced
+ * (SP-821 / #334). Such tasks get re-review guidance, not salvage: the retry
+ * command resumes at the review (`runWorker` no-ops on existing `.DONE`),
+ * whereas `salvage --integrate` lands code no reviewer saw. This reverses the
+ * SP-762 pending_lane_land mapping for the plan-review case (#291) and
+ * extends the shared reason set to code/final and provider errors.
  *
  * Parsed batch-state tasks drop `exitReason` (normalizeTasks), so the exit
  * reason is resolved the same way deriveFailureContext resolves it: from the
  * task entry when present, else raw state / journal `task.failed` events.
- * The salvage command itself hard-gates on commits-ahead, so pointing at it
- * without lane commits is safe (dry-run reports none salvageable).
  *
  * @param {Record<string, any>} signals
  * @returns {Record<string, any>|null}
  */
-function findPostDonePlanReviewSpawnFailedTask(signals) {
+function findPostDoneReviewInfraFailedTask(signals) {
 	const tasks = Array.isArray(signals.tasks) ? signals.tasks : [];
 	for (const task of tasks) {
 		if (String(task?.status ?? "").toLowerCase() !== "failed") continue;
@@ -170,9 +116,8 @@ function findPostDonePlanReviewSpawnFailedTask(signals) {
 			task?.doneFileFound === true ||
 			String(task?.classification ?? "").toLowerCase() === "terminal-success";
 		if (!hasDoneEvidence) continue;
-		const taskId = String(task?.taskId ?? "");
-		const exitReason = task?.exitReason ?? resolvePrimaryFailureExitReason(taskId, signals);
-		if (!POST_DONE_PLAN_REVIEW_EXIT_REASONS.has(String(exitReason ?? ""))) continue;
+		const exitReason = resolveTaskPrimaryFailureExitReason(task, signals);
+		if (!REVIEW_INFRASTRUCTURE_EXIT_REASONS.has(String(exitReason ?? ""))) continue;
 		return task;
 	}
 	return null;
@@ -278,14 +223,16 @@ export function deriveDiagnosis(signals) {
 		if (doneMissing) {
 			return withFailureContext("worker_done_missing", failedTaskId, signals);
 		}
-		// Post-DONE plan-review spawn failure: lane work is complete, so map to
-		// pending_lane_land (salvage / land-loop guidance) instead of needs_retry,
-		// whose retry language would force an expensive worker re-run (#291 / SP-762).
-		const postDonePlanReviewTask = findPostDonePlanReviewSpawnFailedTask(signals);
-		if (postDonePlanReviewTask) {
+		// Post-DONE review-infrastructure failure (plan/code/final spawn failure,
+		// timeout, or provider error): lane work is complete but no verdict was
+		// produced. Map to needs_retry — `spine batch retry` resumes at the review
+		// because runWorker no-ops on the existing lane .DONE. Salvage --integrate
+		// would land code no reviewer saw (SP-821 / #334, reversing SP-762).
+		const postDoneReviewInfraTask = findPostDoneReviewInfraFailedTask(signals);
+		if (postDoneReviewInfraTask) {
 			return withFailureContext(
-				"pending_lane_land",
-				postDonePlanReviewTask.taskId ?? failedTaskId,
+				"needs_retry",
+				postDoneReviewInfraTask.taskId ?? failedTaskId,
 				signals,
 			);
 		}

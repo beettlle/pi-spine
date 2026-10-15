@@ -10,7 +10,7 @@ import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.m
 import { laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
-test("salvage lists commits and diagnose identifies spawn failure after final review spawn failed", async () => {
+test("salvage lists commits and diagnose identifies no-verdict review after final review spawn failed", async () => {
 	const projectRoot = await initGitRepo("salvage-final-review-spawn-");
 	const batchId = "testbatch009";
 	const taskId = "TP-999";
@@ -68,8 +68,17 @@ test("salvage lists commits and diagnose identifies spawn failure after final re
 
 		const diagnosis = reconcileBatch({ projectRoot, batchId, verbose: true });
 		assert.equal(diagnosis.diagnosis, "needs_retry");
-		assert.ok(!diagnosis.headline.includes("increase SPINE_REVIEW_TIMEOUT_MS"));
-		assert.match(diagnosis.headline, /final review spawn/i);
+		// SP-821 / #334: re-review copy replaces the old "final review spawn
+		// failed … retry" copy; the lane work is already done, so the review re-runs.
+		assert.doesNotMatch(diagnosis.headline ?? "", /increase SPINE_REVIEW_TIMEOUT_MS/);
+		assert.match(diagnosis.headline, /final review produced no verdict/);
+		assert.ok(
+			diagnosis.headline.includes(`final review produced no verdict for task ${taskId}`),
+			`headline should name the task: ${diagnosis.headline}`,
+		);
+		assert.match(diagnosis.headline, /re-run the review/);
+		assert.equal(diagnosis.suggestedCommand, `spine batch retry ${taskId}`);
+		assert.doesNotMatch(diagnosis.suggestedCommand ?? "", /salvage/);
 		
 	} finally {
 		await destroyGitRepo(projectRoot);

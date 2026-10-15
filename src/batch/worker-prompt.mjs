@@ -48,6 +48,7 @@ export async function buildWorkerTailPrompt({
 	taskIdHint = taskIdFromFolder(taskFolder),
 	reviewLevel = 0,
 	includePromptInclude = false,
+	includeAgentInclude = true,
 	config = {},
 	projectRoot = worktreePath || process.cwd(),
 	taskFileScope = [],
@@ -58,7 +59,9 @@ export async function buildWorkerTailPrompt({
 		: null;
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	const agentAppend =
-		workerAgentPath && fs.existsSync(workerAgentPath) ? `\n\n@${workerAgentPath}` : "";
+		includeAgentInclude && workerAgentPath && fs.existsSync(workerAgentPath)
+			? `\n\n@${workerAgentPath}`
+			: "";
 	const promptInclude =
 		includePromptInclude && fs.existsSync(promptPath) ? `\n\n@${promptPath}` : "";
 
@@ -70,7 +73,7 @@ export async function buildWorkerTailPrompt({
 	});
 
 	return (
-		`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, run npm test. ` +
+		`Complete this task in the worktree (${worktreePath || "."}). Follow PROMPT.md, keep STATUS.md current, and run the Contract testCommand from PROMPT.md; the full suite runs at post-integrate release:check. ` +
 		WORKER_TOOLS_HINT +
 		buildReviewLevelHint(reviewLevel) +
 		buildCommitBoundaryHint(taskIdHint) +

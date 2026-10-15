@@ -90,6 +90,43 @@ test("buildWorkerPiArgs includes -ne before -p when extension conflict detected"
 	}
 });
 
+test("buildWorkerPiArgs references worker.md exactly once (system prompt only)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-pi-args-once-"));
+	const agentDir = path.join(root, "agent");
+	fs.mkdirSync(agentDir, { recursive: true });
+	fs.writeFileSync(
+		path.join(agentDir, "settings.json"),
+		JSON.stringify({ packages: ["npm:pi-lmstudio"] }),
+		"utf-8",
+	);
+	const workerAgentPath = path.join(root, ".spine", "agents", "worker.md");
+	fs.mkdirSync(path.dirname(workerAgentPath), { recursive: true });
+	fs.writeFileSync(workerAgentPath, "# worker\n", "utf-8");
+	const previousAgentDir = process.env.PI_AGENT_DIR;
+	process.env.PI_AGENT_DIR = agentDir;
+	try {
+		const taskFolder = await writeSmokeTask(root, "SP-826-once");
+		const piArgs = await buildWorkerPiArgs({
+			worktreePath: root,
+			taskFolder,
+			donePath: path.join(taskFolder, ".DONE"),
+			spineConfig: {},
+		});
+
+		const workerMdArgs = piArgs.filter((arg) => arg.includes("worker.md"));
+		assert.deepEqual(workerMdArgs, [workerAgentPath]);
+		const tail = piArgs[piArgs.length - 1];
+		assert.ok(
+			!tail.includes(`@${workerAgentPath}`),
+			"tail prompt omits the @worker.md include",
+		);
+	} finally {
+		if (previousAgentDir === undefined) delete process.env.PI_AGENT_DIR;
+		else process.env.PI_AGENT_DIR = previousAgentDir;
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("formatPiExtensionConflictHint surfaces pi-web-access remediation", () => {
 	const hint = formatPiExtensionConflictHint(
 		'Tool "web_search" conflicts with /tmp/pi-web-access/index.ts',

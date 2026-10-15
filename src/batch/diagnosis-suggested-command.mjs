@@ -19,6 +19,7 @@ import { buildPrimaryFailureSuggestedCommand } from "./diagnosis-primary-failure
 import { buildEngineOrphanParentExitSuggestedCommand } from "./diagnosis-parent-exit.mjs";
 import { sanitizeRetrySuggestedCommand } from "./diagnosis-retry-command.mjs";
 import { buildPendingLaneLandSuggestedCommand } from "./diagnosis-pending-lane.mjs";
+import { isReviewInfraExitReason } from "./diagnosis-review-infra.mjs";
 
 /**
  * @param {string} diagnosis
@@ -88,6 +89,14 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 			}
 			if (ctx.launchFailureKind === "worktree_unhealthy") {
 				return "spine doctor";
+			}
+			// SP-821 / #334: review-infrastructure failures must re-run the review —
+			// `spine batch retry` resumes at the review (runWorker no-ops on the
+			// existing lane .DONE). Never a salvage command for these reasons.
+			if (isReviewInfraExitReason(ctx.exitReason)) {
+				return ctx.failedTaskId
+					? `spine batch retry ${ctx.failedTaskId}`
+					: "spine status --diagnose";
 			}
 			if (ctx.salvageRetryCommand) {
 				return sanitizeRetrySuggestedCommand(ctx.salvageRetryCommand, ctx.failedTaskId);
