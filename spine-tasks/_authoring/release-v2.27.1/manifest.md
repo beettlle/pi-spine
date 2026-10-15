@@ -196,6 +196,8 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
   - SP-827's `contract_failed` deleted its `.DONE`, so the retry restarted the worker on k3, which hit Kimi's weekly (7-day) limit at 02:35. The work was complete (STATUS done, stet 0 findings), so the operator restored the tracked `.DONE` and retried: `contract.verified`, final PASS.
   - SP-825 skipped in this batch (`spine batch skip`): GLM had reset (probe OK 02:36) but the sticky hop kept every worker on Kimi. SP-825 runs in a fresh batch on GLM.
 - **2026-10-15 02:45 UTC wave 2 (4 of 5) landed** — Gate approved, `spine integrate` → `42fb9c66`, `batch complete` archived. `git status --porcelain` empty with no manual index fix; no root `.DONE` on `main`. Post-integrate `release:check`: exit 0, 2949/2949 pass, line coverage 90.66% (`/tmp/pi-spine-v2.27.1-wave2.log`).
+- **2026-10-15 02:52 UTC wave 2b (SP-825) start** — `spine batch start SP-825` (fresh batch `20261015T025227-0f17`, no quota fallback hop, worker on `zai/glm-5.3-flash`). Review Level 0; `.DONE` in the task folder on the first run. Operator read the docs diff before the gate: the worker runner passes `-ne`, `spine settings show` exists, and no links point at the removed "Salvage → complete land loop" anchor.
+- **2026-10-15 03:10 UTC wave 2b landed** — Gate approved, `spine integrate` → `846effde`, `batch complete` archived. All 12 release tasks `.DONE` on `main`. `release:check` on final `HEAD`: exit 0, 2949/2949 pass, line coverage 90.67% (`/tmp/pi-spine-v2.27.1-wave2b.log`). `spine preflight` green. Stopped for operator publish approval.
 
 ---
 
@@ -322,15 +324,15 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 - [x] Operator approved scope (set `Operator approved scope: yes` above; 2026-10-14)
 - [x] SP-828 integrated on `main` before release wave 1 (`31cd2314`)
 - [x] SP-829 and SP-830 integrated on `main` before release wave 1 (`089a7903`; follow-up fix `5df55050`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave0b.log`)
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [x] All release-scoped tasks `.DONE` on `main` (12/12, 2026-10-15 03:10 UTC)
 - [x] Wave 1 (SP-819, SP-820, SP-823, SP-824) integrated on `main` (`1b0a522a`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave1.log`)
 - [x] Wave 2 SP-821, SP-822, SP-826, SP-827 integrated on `main` (`42fb9c66`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave2.log`)
-- [ ] SP-825 (docs) integrated on `main` (fresh batch on GLM)
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI green on `HEAD`
-- [ ] `git status` clean
+- [x] SP-825 (docs) integrated on `main` (`846effde`, batch `20261015T025227-0f17` on GLM); `release:check` green (`/tmp/pi-spine-v2.27.1-wave2b.log`)
+- [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
+- [x] `spine preflight` green (2026-10-15 03:15 UTC)
+- [x] `npm run release:check` green on final `HEAD` (`846effde`: 2949/2949, line coverage 90.67%)
+- [ ] CI green on `HEAD` (runs after push; `main` is local-only until publish approval)
+- [x] `git status` clean
 - [ ] Operator approved publish bump type: patch
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded; staged package approved (2FA)
