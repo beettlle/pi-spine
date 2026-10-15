@@ -50,6 +50,8 @@
 - [x] Discoveries logged in STATUS.md
 - [x] Create `.DONE`
 
+**Re-verification (2026-10-14, .DONE missing after lane serialization):** full Contract re-run green — lint ✅, typecheck ✅, 78 scoped dot tests ✅, `spine-stet-contract-run.sh lenient SP-822` → 0 findings ✅. `spine doctor` exit 0, check line present: `✅ pi extensions rewriting reviewer context (1 package(s) register context hooks (../../Documents/github/pi-headroom (context)); reviewers isolated (pi -ne))`. `.DONE` re-created.
+
 ---
 
 ## Discoveries
