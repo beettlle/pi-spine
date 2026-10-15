@@ -186,6 +186,16 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
   - SP-824 then hit `contract_failed`. It ran second on lane 2, and the lane-commit sanitizer (`git clean -fdX -- .review`) had deleted the stet session and baseline ref left from SP-820. Filed [#349](https://github.com/beettlle/pi-spine/issues/349). Restored the baseline (`48b50791`), ran stet, dismissed 7 findings (false_positive / wrong_suggestion / out_of_scope / already_correct), retried. `contract.verified` ok, final PASS at 22:06.
   - Workaround on `main` (`982ec8ed`): the setup hook also writes the baseline ref under the git dir, and `spine-stet-contract-run.sh <level> <task-id>` reviews from the parent of the task's first lane commit, restarting the session when stet's baseline differs. The wave 2 code packets (SP-821, SP-822, SP-826, SP-827) pass their task ID (operator amendment 2026-10-14).
 - **2026-10-14 22:25 UTC wave 1 landed** — The first wave merge (22:06) failed with `merge_blocked`: the engine checks out the orch branch in the main checkout, and uncommitted operator edits to the wave 2 PROMPT.md files blocked `git checkout`. Stashed them, `spine batch resume --force` re-ran only the merge (both lanes merged at 22:19). Gate approved, `spine integrate` → `1b0a522a`, `batch complete` archived. `git status --porcelain` empty after integrate with no manual index fix (live check of SP-830 #346 and SP-823 #315 passed). `rg -- '-ne\b' src/batch/review-spawn.mjs`: SP-819 default at line 134. Post-integrate `release:check`: exit 0, 2914/2914 pass, line coverage 90.59% (`/tmp/pi-spine-v2.27.1-wave1.log`).
+- **2026-10-14 22:32 UTC wave 2 start** — `spine batch start SP-821 SP-822 SP-826 SP-827 SP-825` with `SPINE_STET_NO_AUTO_FINISH=1`. Batch `20261014T223221-7ba1`. Both lanes had the worktree and git-dir baseline refs and an open stet session (`982ec8ed` workaround live).
+  - SP-821 and SP-822 (GLM) both wrote `.DONE` at the lane root; SP-821 also committed it. Moved into the task folders (`git mv` + commit for SP-821). SP-822 plan review REVISE (invented config key instead of `agents.reviewer.loadUserExtensions`, missing `extensions/` fallback scan).
+  - 23:07 UTC: GLM 429 (code 1308) during the SP-822 revision. The quota fallback applied `allegretto` (`kimi-coding/k3`), which returned 403 (5-hour limit) at once. SP-822, SP-826, SP-827 failed `provider_quota_exhausted`; batch failed.
+  - 23:12 UTC: `batch retry SP-821` (review-only on Gemini): plan APPROVE, `contract.verified`, final PASS.
+  - 01:45 UTC: Kimi reset (probe OK). Retried SP-822, SP-826, SP-827 one at a time (`batch retry` takes one task ID; extra IDs are ignored silently). Workers ran on k3 because the fallback hop is sticky for the batch ([#350](https://github.com/beettlle/pi-spine/issues/350)).
+  - SP-822 and SP-827 Contracts failed on stet false positives (`configResult` scope, `loadSpineConfig` return shape, `NaN` review level, TDZ). Each fresh task-scoped session re-raised findings the previous session had dismissed. Verified each against code, lint, and tests; dismissed (false_positive / wrong_suggestion / already_correct); re-ran the stet step in the lane to 0 findings; retried.
+  - SP-826 plan reviewer exited 0 with no artifact twice (transient; Gemini probe OK); retried. SP-826 and SP-827 final reviews returned `### Verdict: APPROVE`, rejected as `final_review_invalid_verdict` (3 times in total). The tracked `.spine/agents/reviewer.md` predates the template's final-verdict section and tells reviewers "APPROVE or REVISE", which conflicts with the final request's PASS/REVISE/REPLAN. Retries passed.
+  - SP-827's `contract_failed` deleted its `.DONE`, so the retry restarted the worker on k3, which hit Kimi's weekly (7-day) limit at 02:35. The work was complete (STATUS done, stet 0 findings), so the operator restored the tracked `.DONE` and retried: `contract.verified`, final PASS.
+  - SP-825 skipped in this batch (`spine batch skip`): GLM had reset (probe OK 02:36) but the sticky hop kept every worker on Kimi. SP-825 runs in a fresh batch on GLM.
+- **2026-10-15 02:45 UTC wave 2 (4 of 5) landed** — Gate approved, `spine integrate` → `42fb9c66`, `batch complete` archived. `git status --porcelain` empty with no manual index fix; no root `.DONE` on `main`. Post-integrate `release:check`: exit 0, 2949/2949 pass, line coverage 90.66% (`/tmp/pi-spine-v2.27.1-wave2.log`).
 
 ---
 
@@ -280,8 +290,12 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 | [stet#7](https://github.com/beettlle/stet/issues/7), [stet#8](https://github.com/beettlle/stet/issues/8), [stet#9](https://github.com/beettlle/stet/issues/9), [stet#10](https://github.com/beettlle/stet/issues/10) | upstream bug | Drop `SPINE_STET_NO_AUTO_FINISH=1` once stet#8 ships |
 | SP-829 precedence test | test gap | Test covers profile `neverInclude` over `alwaysInclude`, not over `config.standards` as the Mission asked; final reviewer flagged it |
 | Contract scope for new `src/` modules | process | SP-830's Contract omitted `ts-nocheck-guard` and `phase23-exit-verify`; packets that add or grow `src/batch/` modules should run both |
-| Worker `.DONE` placement / skipped stet | worker reliability | SP-830 (GLM) wrote `.DONE` at the lane root twice; SP-829 claimed Contract success without the stet step; SP-820 and SP-824 repeated the root `.DONE` in wave 1 |
+| Worker `.DONE` placement / skipped stet | worker reliability | SP-830 (GLM) wrote `.DONE` at the lane root twice; SP-829 claimed Contract success without the stet step; SP-820 and SP-824 repeated the root `.DONE` in wave 1; SP-821 and SP-822 in wave 2 |
 | [#349](https://github.com/beettlle/pi-spine/issues/349) | bug | Lane-commit sanitizer deletes the stet session between serialized lane tasks; worked around in `982ec8ed` (git-dir baseline ref, task-scoped contract review) |
+| [#350](https://github.com/beettlle/pi-spine/issues/350) | bug | Quota fallback hop is sticky for the batch; no expiry or clear after the primary pool resets |
+| Stale `.spine/agents/reviewer.md` | config drift | Tracked copy lacks the template's final-verdict (PASS/REVISE/REPLAN) section and says "APPROVE or REVISE"; 3 final reviews in wave 2 returned APPROVE and failed `final_review_invalid_verdict`. Refresh from `templates/agents/reviewer.md` |
+| `spine batch retry` with several IDs | CLI | Only the first task ID is reset; the rest are ignored without an error |
+| `contract_failed` deletes `.DONE` | recovery | A Contract that fails only on stet false positives still deletes `.DONE`, so the retry re-runs the worker; the lane commit can also pick up another task's untracked `.DONE` (SP-822's commit carried SP-827's) |
 ---
 
 ## Risks and blockers
@@ -310,6 +324,8 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 - [x] SP-829 and SP-830 integrated on `main` before release wave 1 (`089a7903`; follow-up fix `5df55050`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave0b.log`)
 - [ ] All release-scoped tasks `.DONE` on `main`
 - [x] Wave 1 (SP-819, SP-820, SP-823, SP-824) integrated on `main` (`1b0a522a`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave1.log`)
+- [x] Wave 2 SP-821, SP-822, SP-826, SP-827 integrated on `main` (`42fb9c66`); `release:check` green (`/tmp/pi-spine-v2.27.1-wave2.log`)
+- [ ] SP-825 (docs) integrated on `main` (fresh batch on GLM)
 - [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD`

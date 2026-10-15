@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; Next → SP-831)
+**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 pending; Next → SP-831)
 **Status:** Active
 **Next Task ID:** SP-831
 
@@ -2688,11 +2688,11 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-820 | Classify reviewer provider request errors (`*_review_provider_error`) | S | #334 Partial | 1 | Done |
 | SP-823 | Idempotent rules manifest sync; drop deprecated merge wrapper | S | #315 Closes | 1 | Done |
 | SP-824 | Gate streak reset failure fails closed and is journaled | S | #314 Partial | 1 | Done |
-| SP-821 | Diagnose recommends re-review, not salvage, for review-infra failures | S | #334 Partial | 2 | Staged |
-| SP-822 | Doctor warns about context-rewriting pi extensions | S | #334 Partial | 2 | Staged |
+| SP-821 | Diagnose recommends re-review, not salvage, for review-infra failures | S | #334 Partial | 2 | Done |
+| SP-822 | Doctor warns about context-rewriting pi extensions | S | #334 Partial | 2 | Done |
 | SP-825 | Docs: reviewer isolation and re-review recovery | S | #334 Closes | 2 | Staged |
-| SP-826 | Worker tail prompt names Contract testCommand; worker.md sent once | S | #335 Closes | 2 | Staged |
-| SP-827 | Execute tasks run at effective Review Level 0 (+ validate warning) | S | #336 Closes | 2 | Staged |
+| SP-826 | Worker tail prompt names Contract testCommand; worker.md sent once | S | #335 Closes | 2 | Done |
+| SP-827 | Execute tasks run at effective Review Level 0 (+ validate warning) | S | #336 Closes | 2 | Done |
 
 **Stet gating (added 2026-10-11):** SP-828 lands first (release wave 0) and every code packet's Contract ends with the stet review — `default` for SP-819, SP-820, SP-821, SP-824, SP-827; `lenient` for SP-822, SP-823, SP-826; SP-825 (docs) has no stet step. `lanes.maxParallel` is 2 for this release. See "Stet batch policy (current)" under Phase 58.
 
@@ -2702,7 +2702,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] SP-828 `.DONE` and integrated on `main` before wave 1 starts (`31cd2314`)
 - [x] SP-829 and SP-830 `.DONE` and integrated on `main` before wave 1 starts; post-integrate `release:check` green (`089a7903`, fix `5df55050`)
 - [x] Wave 1 SP-819, SP-820, SP-823, SP-824 `.DONE` and integrated on `main`; post-integrate `release:check` green (`1b0a522a`)
-- [ ] SP-821, SP-822, SP-825, SP-826, SP-827 `.DONE` and integrated on `main`
+- [x] Wave 2 SP-821, SP-822, SP-826, SP-827 `.DONE` and integrated on `main`; post-integrate `release:check` green (`42fb9c66`)
+- [ ] SP-825 `.DONE` and integrated on `main`
 - [ ] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
 - [ ] `npm run release:check` green; CI green on HEAD
 - [ ] Publish **v2.27.1** only after operator approval
