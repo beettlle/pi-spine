@@ -9,11 +9,11 @@ import path from "node:path";
 import test from "node:test";
 
 import {
-	buildPiContextHookDoctorCheck,
-	collectPiContextHookFindings,
-	isTrustedReviewerExtensionIsolation,
+	buildContextHookExtensionDoctorCheck,
+	findContextRewritingExtensions,
 	MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE,
 	MAX_PI_EXTENSION_SOURCE_BYTES,
+	MAX_PI_PACKAGES_SCANNED,
 	PI_CONTEXT_HOOK_NAMES,
 	scanPiExtensionSourceForContextHooks,
 } from "../../src/doctor/pi-extension-hooks.mjs";
@@ -21,35 +21,50 @@ import { runDoctorChecks } from "../../src/doctor/run-doctor-checks.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const HOOK_EXTENSION_SOURCE = `
-export function context(messages) { return messages; }
+pi.on("context", (event) => event);
 pi.on("before_provider_request", (event) => event);
-export function context_with_system(messages) { return messages; }
+pi.on('context_with_system', (event) => event);
 `;
 
 /**
- * Install a fake pi package whose extension entries declare context hooks.
+ * Install a fake pi package and declare it in the agent settings.json.
  *
  * @param {object} options
  * @param {string} options.agentDir Fake PI agent dir (npm packages resolve here).
  * @param {string[]} options.sources Package source strings for settings.json.
- * @param {string[]} options.entrySources Extension entry file contents.
+ * @param {Array<{ entry: string, source: string }>} options.files Files to
+ *   write inside the package (entry is relative to the package root).
+ * @param {object | null} [options.manifest] package.json contents; pass null
+ *   to omit the manifest entirely. Defaults to a manifest whose
+ *   `pi.extensions` lists every file entry.
  * @param {string} [options.packageName]
  * @returns {string} package dir
  */
-function installFakePackage({ agentDir, sources, entrySources, packageName = "fake-hooks-pkg" }) {
+function installFakePackage({
+	agentDir,
+	sources,
+	files,
+	manifest,
+	packageName = "fake-hooks-pkg",
+}) {
 	const packageDir = path.join(agentDir, "npm", "node_modules", packageName);
 	fs.mkdirSync(packageDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(packageDir, "package.json"),
-		JSON.stringify({
+	if (manifest !== null) {
+		const resolved = manifest ?? {
 			name: packageName,
-			pi: { extensions: entrySources.map((_, index) => `./ext-${index}.mjs`) },
-		}),
-		"utf-8",
-	);
-	entrySources.forEach((source, index) => {
-		fs.writeFileSync(path.join(packageDir, `ext-${index}.mjs`), source, "utf-8");
-	});
+			pi: { extensions: files.map((file) => `./${file.entry}`) },
+		};
+		fs.writeFileSync(
+			path.join(packageDir, "package.json"),
+			JSON.stringify(resolved),
+			"utf-8",
+		);
+	}
+	for (const file of files) {
+		const filePath = path.join(packageDir, file.entry);
+		fs.mkdirSync(path.dirname(filePath), { recursive: true });
+		fs.writeFileSync(filePath, file.source, "utf-8");
+	}
 	fs.mkdirSync(agentDir, { recursive: true });
 	fs.writeFileSync(
 		path.join(agentDir, "settings.json"),
@@ -59,44 +74,37 @@ function installFakePackage({ agentDir, sources, entrySources, packageName = "fa
 	return packageDir;
 }
 
-test("scanPiExtensionSourceForContextHooks detects exported context handler", () => {
+/** @param {string} root */
+function cleanup(root) {
+	fs.rmSync(root, { recursive: true, force: true });
+}
+
+test("scanPiExtensionSourceForContextHooks detects pi.on hook registrations", () => {
+	assert.deepEqual(scanPiExtensionSourceForContextHooks('pi.on("context", handler);'), [
+		"context",
+	]);
+	assert.deepEqual(scanPiExtensionSourceForContextHooks("pi.on('context', handler);"), [
+		"context",
+	]);
 	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks("export function context(messages) {}"),
-		["context"],
+		scanPiExtensionSourceForContextHooks('pi.on( "context_with_system" , handler);'),
+		["context_with_system"],
 	);
 	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks("export async function context (messages) {}"),
-		["context"],
-	);
-	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks("export const context = (messages) => messages;"),
-		["context"],
+		scanPiExtensionSourceForContextHooks('agent.on("before_provider_request", handler);'),
+		["before_provider_request"],
 	);
 });
 
-test("scanPiExtensionSourceForContextHooks ignores non-exported context identifiers", () => {
+test("scanPiExtensionSourceForContextHooks ignores non-hook identifiers", () => {
 	assert.deepEqual(
 		scanPiExtensionSourceForContextHooks(`
 			const context = buildContext();
 			function render(context) {}
+			pi.on("tool_call", (event) => event);
 			pi.on("session", (ctx) => ctx.context);
 		`),
 		[],
-	);
-});
-
-test("scanPiExtensionSourceForContextHooks detects hook identifiers", () => {
-	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks(HOOK_EXTENSION_SOURCE),
-		["context", "context_with_system", "before_provider_request"],
-	);
-	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks('pi.on("before_provider_request", handler);'),
-		["before_provider_request"],
-	);
-	assert.deepEqual(
-		scanPiExtensionSourceForContextHooks("export const context_with_system = fn;"),
-		["context_with_system"],
 	);
 });
 
@@ -107,35 +115,115 @@ test("scanPiExtensionSourceForContextHooks returns canonical order and empty def
 	assert.deepEqual(scanPiExtensionSourceForContextHooks(undefined), []);
 });
 
-test("collectPiContextHookFindings flags npm package extensions with hooks", () => {
+test("findContextRewritingExtensions flags manifest entry with pi.on('context')", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-npm-"));
 	const agentDir = path.join(root, "agent");
 	installFakePackage({
 		agentDir,
 		sources: ["npm:fake-hooks-pkg"],
-		entrySources: [HOOK_EXTENSION_SOURCE],
+		files: [{ entry: "src/ext.ts", source: 'pi.on("context", (event) => event);' }],
+		manifest: { name: "fake-hooks-pkg", pi: { extensions: ["./src/ext.ts"] } },
 	});
 
-	const { findings, packagesScanned } = collectPiContextHookFindings({
+	const { packages, packagesScanned, skipped } = findContextRewritingExtensions({
 		projectRoot: root,
 		agentDir,
 	});
 	assert.equal(packagesScanned, 1);
-	assert.equal(findings.length, 1);
-	assert.equal(findings[0].source, "npm:fake-hooks-pkg");
-	assert.equal(findings[0].packageName, "fake-hooks-pkg");
-	assert.equal(findings[0].extension, "./ext-0.mjs");
-	assert.deepEqual(findings[0].hooks, ["context", "context_with_system", "before_provider_request"]);
-	fs.rmSync(root, { recursive: true, force: true });
+	assert.equal(packages.length, 1);
+	assert.equal(packages[0].source, "npm:fake-hooks-pkg");
+	assert.deepEqual(packages[0].hooks, ["context"]);
+	assert.deepEqual(skipped, []);
+	cleanup(root);
 });
 
-test("collectPiContextHookFindings scans project settings and dedupes packages", () => {
+test("findContextRewritingExtensions falls back to extensions/ when no manifest list", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-fallback-"));
+	const agentDir = path.join(root, "agent");
+	installFakePackage({
+		agentDir,
+		sources: ["npm:no-manifest-hooks"],
+		packageName: "no-manifest-hooks",
+		manifest: { name: "no-manifest-hooks" },
+		files: [
+			{
+				entry: "extensions/index.js",
+				source: 'pi.on("before_provider_request", (event) => event);',
+			},
+		],
+	});
+
+	const { packages } = findContextRewritingExtensions({ projectRoot: root, agentDir });
+	assert.equal(packages.length, 1);
+	assert.equal(packages[0].source, "npm:no-manifest-hooks");
+	assert.deepEqual(packages[0].hooks, ["before_provider_request"]);
+	cleanup(root);
+});
+
+test("findContextRewritingExtensions falls back to root index files", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-index-"));
+	const agentDir = path.join(root, "agent");
+	installFakePackage({
+		agentDir,
+		sources: ["npm:root-index-hooks"],
+		packageName: "root-index-hooks",
+		manifest: null,
+		files: [{ entry: "index.mjs", source: "pi.on('context', (event) => event);" }],
+	});
+
+	const { packages } = findContextRewritingExtensions({ projectRoot: root, agentDir });
+	assert.equal(packages.length, 1);
+	assert.deepEqual(packages[0].hooks, ["context"]);
+	cleanup(root);
+});
+
+test("findContextRewritingExtensions ignores packages with only non-context hooks", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-tool-"));
+	const agentDir = path.join(root, "agent");
+	installFakePackage({
+		agentDir,
+		sources: ["npm:tool-only-pkg"],
+		packageName: "tool-only-pkg",
+		files: [{ entry: "ext.mjs", source: 'pi.on("tool_call", (event) => event);' }],
+	});
+
+	const { packages, packagesScanned } = findContextRewritingExtensions({
+		projectRoot: root,
+		agentDir,
+	});
+	assert.equal(packagesScanned, 1);
+	assert.equal(packages.length, 0);
+	cleanup(root);
+});
+
+test("findContextRewritingExtensions skips missing package dirs without throwing", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-missing-"));
+	const agentDir = path.join(root, "agent");
+	fs.mkdirSync(agentDir, { recursive: true });
+	fs.writeFileSync(
+		path.join(agentDir, "settings.json"),
+		JSON.stringify({ packages: ["npm:does-not-exist"] }),
+		"utf-8",
+	);
+
+	const { packages, packagesScanned, skipped } = findContextRewritingExtensions({
+		projectRoot: root,
+		agentDir,
+	});
+	assert.equal(packagesScanned, 0);
+	assert.equal(packages.length, 0);
+	assert.equal(skipped.length, 1);
+	assert.equal(skipped[0].source, "npm:does-not-exist");
+	cleanup(root);
+});
+
+test("findContextRewritingExtensions scans project settings and dedupes packages", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-proj-"));
 	const agentDir = path.join(root, "agent");
 	installFakePackage({
 		agentDir,
 		sources: ["npm:fake-hooks-pkg"],
-		entrySources: ["export function context(m) { return m; }"],
+		files: [{ entry: "ext.mjs", source: 'pi.on("context", (event) => event);' }],
 	});
 	fs.mkdirSync(path.join(root, ".pi"), { recursive: true });
 	fs.writeFileSync(
@@ -144,176 +232,194 @@ test("collectPiContextHookFindings scans project settings and dedupes packages",
 		"utf-8",
 	);
 
-	const { findings, packagesScanned } = collectPiContextHookFindings({
+	const { packages, packagesScanned } = findContextRewritingExtensions({
 		projectRoot: root,
 		agentDir,
 	});
 	assert.equal(packagesScanned, 1, "same package listed twice must be scanned once");
-	assert.equal(findings.length, 1);
-	fs.rmSync(root, { recursive: true, force: true });
+	assert.equal(packages.length, 1);
+	cleanup(root);
 });
 
-test("collectPiContextHookFindings skips packages without extension entries", () => {
+test("findContextRewritingExtensions scans packages without extension entries without flagging", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-clean-"));
 	const agentDir = path.join(root, "agent");
-	const packageDir = path.join(agentDir, "npm", "node_modules", "plain-pkg");
-	fs.mkdirSync(packageDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(packageDir, "package.json"),
-		JSON.stringify({ name: "plain-pkg" }),
-		"utf-8",
-	);
-	fs.mkdirSync(agentDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(agentDir, "settings.json"),
-		JSON.stringify({ packages: ["npm:plain-pkg"] }),
-		"utf-8",
-	);
+	installFakePackage({
+		agentDir,
+		sources: ["npm:plain-pkg"],
+		packageName: "plain-pkg",
+		manifest: { name: "plain-pkg" },
+		files: [{ entry: "README.md", source: "# plain" }],
+	});
 
-	const { findings, packagesScanned } = collectPiContextHookFindings({
+	const { packages, packagesScanned } = findContextRewritingExtensions({
 		projectRoot: root,
 		agentDir,
 	});
-	assert.equal(packagesScanned, 0);
-	assert.equal(findings.length, 0);
-	fs.rmSync(root, { recursive: true, force: true });
+	assert.equal(packagesScanned, 1);
+	assert.equal(packages.length, 0);
+	cleanup(root);
 });
 
-test("collectPiContextHookFindings caps extension entries per package", () => {
-	assert.equal(MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE, 16);
+test("findContextRewritingExtensions caps extension entries per package", () => {
+	assert.equal(MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE, 20);
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-cap-"));
 	const agentDir = path.join(root, "agent");
-	const entrySources = Array.from(
+	const files = Array.from(
 		{ length: MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE + 4 },
-		(_, index) => (index >= MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE
-			? "export function context(m) { return m; }"
-			: "export const benign = 1;"),
+		(_, index) => ({
+			entry: `ext-${index}.mjs`,
+			source: index >= MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE
+				? 'pi.on("context", (event) => event);'
+				: "export const benign = 1;",
+		}),
 	);
-	installFakePackage({ agentDir, sources: ["npm:fake-hooks-pkg"], entrySources });
+	installFakePackage({ agentDir, sources: ["npm:fake-hooks-pkg"], files });
 
-	const { findings } = collectPiContextHookFindings({ projectRoot: root, agentDir });
-	assert.equal(findings.length, 0, "hook entries beyond the cap must not be scanned");
-	fs.rmSync(root, { recursive: true, force: true });
+	const { packages } = findContextRewritingExtensions({ projectRoot: root, agentDir });
+	assert.equal(packages.length, 0, "hook entries beyond the cap must not be scanned");
+	cleanup(root);
 });
 
-test("collectPiContextHookFindings truncates oversized entry files", () => {
+test("findContextRewritingExtensions caps scanned packages", () => {
+	assert.equal(MAX_PI_PACKAGES_SCANNED, 50);
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-pcap-"));
+	const agentDir = path.join(root, "agent");
+	const sources = [];
+	for (let index = 0; index < MAX_PI_PACKAGES_SCANNED + 2; index++) {
+		const packageName = `bulk-pkg-${index}`;
+		sources.push(`npm:${packageName}`);
+		installFakePackage({
+			agentDir,
+			sources,
+			packageName,
+			files: [{ entry: "ext.mjs", source: "export const benign = 1;" }],
+		});
+	}
+
+	const { packagesScanned, skipped } = findContextRewritingExtensions({
+		projectRoot: root,
+		agentDir,
+	});
+	assert.equal(packagesScanned, MAX_PI_PACKAGES_SCANNED);
+	assert.equal(skipped.length, 2, "packages beyond the cap must be skipped");
+	cleanup(root);
+});
+
+test("findContextRewritingExtensions truncates oversized entry files", () => {
 	assert.equal(MAX_PI_EXTENSION_SOURCE_BYTES, 512 * 1024);
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-big-"));
 	const agentDir = path.join(root, "agent");
 	const filler = "// pad\n".repeat(MAX_PI_EXTENSION_SOURCE_BYTES / 6 + 1);
-	const oversized = filler + "export function context(m) { return m; }";
+	const oversized = filler + 'pi.on("context", (event) => event);';
 	assert.ok(oversized.length > MAX_PI_EXTENSION_SOURCE_BYTES);
 	installFakePackage({
 		agentDir,
 		sources: ["npm:fake-hooks-pkg"],
-		entrySources: [oversized, "export function context(m) { return m; }"],
+		files: [
+			{ entry: "ext-0.mjs", source: oversized },
+			{ entry: "ext-1.mjs", source: 'pi.on("context", (event) => event);' },
+		],
 	});
 
-	const { findings } = collectPiContextHookFindings({ projectRoot: root, agentDir });
-	assert.equal(findings.length, 1, "only the within-bounds entry is flagged");
-	assert.equal(findings[0].extension, "./ext-1.mjs");
-	fs.rmSync(root, { recursive: true, force: true });
+	const { packages } = findContextRewritingExtensions({ projectRoot: root, agentDir });
+	assert.equal(packages.length, 1, "only the within-bounds entry is flagged");
+	assert.deepEqual(packages[0].hooks, ["context"]);
+	cleanup(root);
 });
 
-test("collectPiContextHookFindings skips entries escaping the package directory", () => {
+test("findContextRewritingExtensions skips entries escaping the package directory", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-trav-"));
 	const agentDir = path.join(root, "agent");
 	const outsideFile = path.join(root, "outside.mjs");
-	fs.writeFileSync(outsideFile, "export function context(m) { return m; }", "utf-8");
-	const packageDir = path.join(agentDir, "npm", "node_modules", "traversal-pkg");
-	fs.mkdirSync(packageDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(packageDir, "package.json"),
-		JSON.stringify({ name: "traversal-pkg", pi: { extensions: ["../../../outside.mjs"] } }),
-		"utf-8",
-	);
-	fs.mkdirSync(agentDir, { recursive: true });
-	fs.writeFileSync(
-		path.join(agentDir, "settings.json"),
-		JSON.stringify({ packages: ["npm:traversal-pkg"] }),
-		"utf-8",
-	);
+	fs.writeFileSync(outsideFile, 'pi.on("context", (event) => event);', "utf-8");
+	installFakePackage({
+		agentDir,
+		sources: ["npm:traversal-pkg"],
+		packageName: "traversal-pkg",
+		manifest: { name: "traversal-pkg", pi: { extensions: ["../../../outside.mjs"] } },
+		files: [],
+	});
 
-	const { findings } = collectPiContextHookFindings({ projectRoot: root, agentDir });
-	assert.equal(findings.length, 0, "entries outside the package dir must not be read");
-	fs.rmSync(root, { recursive: true, force: true });
+	const { packages, skipped } = findContextRewritingExtensions({
+		projectRoot: root,
+		agentDir,
+	});
+	assert.equal(packages.length, 0, "entries outside the package dir must not be read");
+	assert.equal(skipped.length, 1);
+	assert.match(skipped[0].reason, /escapes package directory/);
+	cleanup(root);
 });
 
-test("buildPiContextHookDoctorCheck warns with suggestedCommand by default", () => {
+test("buildContextHookExtensionDoctorCheck warns when reviewers load user extensions", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-warn-"));
 	const agentDir = path.join(root, "agent");
 	installFakePackage({
 		agentDir,
 		sources: ["npm:fake-hooks-pkg"],
-		entrySources: [HOOK_EXTENSION_SOURCE],
+		files: [{ entry: "ext.mjs", source: HOOK_EXTENSION_SOURCE }],
 	});
 
-	const check = buildPiContextHookDoctorCheck({ projectRoot: root, agentDir });
+	const check = buildContextHookExtensionDoctorCheck({
+		projectRoot: root,
+		agentDir,
+		config: { agents: { reviewer: { loadUserExtensions: true } } },
+	});
+	assert.equal(check.label, "pi extensions rewriting reviewer context");
 	assert.equal(check.ok, true, "advisory check never hard-fails");
 	assert.equal(check.warning, true);
-	assert.match(check.detail, /fake-hooks-pkg register context-rewriting hook\(s\)/);
+	assert.match(check.detail, /fake-hooks-pkg/);
 	assert.match(check.detail, /before_provider_request/);
-	assert.match(check.detail, /reviewers load user extensions by default/);
+	assert.match(check.detail, /agents\.reviewer\.loadUserExtensions=true/);
 	assert.equal(
 		check.suggestedCommand,
-		"spine settings set reviewers.piExtensionIsolation trusted",
+		"spine settings set agents.reviewer.loadUserExtensions false",
 	);
-	fs.rmSync(root, { recursive: true, force: true });
+	cleanup(root);
 });
 
-test("buildPiContextHookDoctorCheck stays clean without hook packages", () => {
+test("buildContextHookExtensionDoctorCheck stays advisory-only by default config", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-iso-"));
+	const agentDir = path.join(root, "agent");
+	installFakePackage({
+		agentDir,
+		sources: ["npm:fake-hooks-pkg"],
+		files: [{ entry: "ext.mjs", source: HOOK_EXTENSION_SOURCE }],
+	});
+
+	for (const config of [undefined, {}, { agents: { reviewer: {} } }]) {
+		const check = buildContextHookExtensionDoctorCheck({
+			projectRoot: root,
+			agentDir,
+			config,
+		});
+		assert.equal(check.ok, true);
+		assert.equal(check.warning, undefined, "isolated reviewers must not warn");
+		assert.equal(check.suggestedCommand, undefined);
+		assert.match(check.detail, /1 package\(s\) register context hooks/);
+		assert.match(check.detail, /reviewers isolated \(pi -ne\)/);
+	}
+	cleanup(root);
+});
+
+test("buildContextHookExtensionDoctorCheck stays clean without hook packages", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-none-"));
 	const agentDir = path.join(root, "agent");
 	fs.mkdirSync(agentDir, { recursive: true });
 	fs.writeFileSync(
 		path.join(agentDir, "settings.json"),
-		JSON.stringify({ packages: ["npm:pi-lmstudio"] }),
+		JSON.stringify({ packages: ["npm:not-installed"] }),
 		"utf-8",
 	);
 
-	const check = buildPiContextHookDoctorCheck({ projectRoot: root, agentDir });
+	const check = buildContextHookExtensionDoctorCheck({ projectRoot: root, agentDir });
 	assert.equal(check.ok, true);
 	assert.equal(check.warning, undefined);
 	assert.match(check.detail, /no context-rewriting hooks found in 0 installed pi package/);
-	fs.rmSync(root, { recursive: true, force: true });
+	cleanup(root);
 });
 
-test("buildPiContextHookDoctorCheck trusted config acknowledges exposure", () => {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-trust-"));
-	const agentDir = path.join(root, "agent");
-	installFakePackage({
-		agentDir,
-		sources: ["npm:fake-hooks-pkg"],
-		entrySources: [HOOK_EXTENSION_SOURCE],
-	});
-
-	const check = buildPiContextHookDoctorCheck({
-		projectRoot: root,
-		agentDir,
-		config: { reviewers: { piExtensionIsolation: "trusted" } },
-	});
-	assert.equal(check.ok, true);
-	assert.equal(check.warning, undefined);
-	assert.equal(check.suggestedCommand, undefined);
-	assert.match(check.detail, /reviewers\.piExtensionIsolation=trusted acknowledges/);
-	fs.rmSync(root, { recursive: true, force: true });
-});
-
-test("isTrustedReviewerExtensionIsolation accepts only the trusted value", () => {
-	assert.equal(isTrustedReviewerExtensionIsolation(null), false);
-	assert.equal(isTrustedReviewerExtensionIsolation(undefined), false);
-	assert.equal(isTrustedReviewerExtensionIsolation({}), false);
-	assert.equal(
-		isTrustedReviewerExtensionIsolation({ reviewers: { piExtensionIsolation: "paranoid" } }),
-		false,
-	);
-	assert.equal(
-		isTrustedReviewerExtensionIsolation({ reviewers: { piExtensionIsolation: "trusted" } }),
-		true,
-	);
-});
-
-test("runDoctorChecks lists the context hook check", async () => {
+test("runDoctorChecks lists the context hook check after extension-conflict", async () => {
 	const projectRoot = await initGitRepo("spine-hooks-doctor-");
 	const prevAgentDir = process.env.PI_AGENT_DIR;
 	const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "spine-hooks-agent-"));
@@ -322,21 +428,30 @@ test("runDoctorChecks lists the context hook check", async () => {
 		installFakePackage({
 			agentDir,
 			sources: ["npm:fake-hooks-pkg"],
-			entrySources: [HOOK_EXTENSION_SOURCE],
+			files: [{ entry: "ext.mjs", source: HOOK_EXTENSION_SOURCE }],
 		});
 
 		const result = runDoctorChecks(projectRoot);
-		const check = result.checks.find(
-			(entry) => entry.label === "pi context-rewriting extension hooks",
+		const index = result.checks.findIndex(
+			(entry) => entry.label === "pi extensions rewriting reviewer context",
 		);
-		assert.ok(check, "context hook check expected in doctor output");
+		assert.ok(index >= 0, "context hook check expected in doctor output");
+		const conflictIndex = result.checks.findIndex(
+			(entry) => entry.label === "pi-web-access extension conflict",
+		);
+		assert.ok(
+			conflictIndex >= 0 && index === conflictIndex + 1,
+			"check must be pushed right after the extension-conflict check",
+		);
+		const check = result.checks[index];
 		assert.equal(check.ok, true);
-		assert.equal(check.warning, true);
+		assert.equal(check.warning, undefined, "default config keeps reviewers isolated");
 		assert.match(check.detail, /fake-hooks-pkg/);
+		assert.match(check.detail, /reviewers isolated \(pi -ne\)/);
 	} finally {
 		if (prevAgentDir === undefined) delete process.env.PI_AGENT_DIR;
 		else process.env.PI_AGENT_DIR = prevAgentDir;
-		fs.rmSync(agentDir, { recursive: true, force: true });
+		cleanup(agentDir);
 		await destroyGitRepo(projectRoot);
 	}
 });

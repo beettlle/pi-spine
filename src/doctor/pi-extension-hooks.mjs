@@ -1,18 +1,22 @@
 /**
  * Detect context-rewriting pi extension hooks (SP-822).
  *
- * Batch workers can pass `pi -ne` to skip user extension discovery, but
- * reviewers (plan/code/final) load user extensions by default. A pi package
- * that registers a context-rewriting hook (`context`, `context_with_system`,
- * `before_provider_request`) can silently rewrite what reviewers see. This
- * scanner reports which installed packages register such hooks so doctor can
- * surface an advisory warning. It never hard-fails: extensions are a legitimate
- * feature, so the check is informational with an opt-out config key.
+ * Batch workers can pass `pi -ne` to skip user extension discovery, and per
+ * SP-819 reviewers do the same unless spine config opts in with
+ * `agents.reviewer.loadUserExtensions: true`. When that opt-in is set, a pi
+ * package that registers a context-rewriting hook (`context`,
+ * `context_with_system`, `before_provider_request`) can silently rewrite what
+ * reviewers see. This scanner reports which installed packages register such
+ * hooks so doctor can surface an advisory warning. It never hard-fails:
+ * extensions are a legitimate feature, so the check is informational with an
+ * opt-out config key.
  *
  * Scan scope stays bounded: only packages declared in pi `settings.json`
  * `packages` arrays are inspected (that is the set pi actually loads), and
  * within each package only the entry files named in `package.json` →
- * `pi.extensions`.
+ * `pi.extensions` — or, when the manifest declares none, the conventional
+ * `extensions/` directory plus root `index.{ts,js,mjs}` files that pi
+ * discovers for manifest-less packages.
  */
 
 import fs from "node:fs";
@@ -31,28 +35,35 @@ export const PI_CONTEXT_HOOK_NAMES = Object.freeze([
 	"before_provider_request",
 ]);
 
+/** Max installed packages scanned per run (bounded scan). */
+export const MAX_PI_PACKAGES_SCANNED = 50;
+
 /** Max extension entry files scanned per package (bounded scan). */
-export const MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE = 16;
+export const MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE = 20;
 
 /** Max bytes read from a single extension entry file (bounded scan). */
 export const MAX_PI_EXTENSION_SOURCE_BYTES = 512 * 1024;
 
-/** Config value that acknowledges reviewer exposure to user extensions. */
-export const REVIEWER_EXTENSION_ISOLATION_TRUSTED = "trusted";
+/** File extensions pi treats as extension entry files. */
+const EXTENSION_ENTRY_FILE_PATTERN = /\.(?:ts|js|mjs)$/;
+
+/** Conventional root entry files pi discovers when no manifest list exists. */
+const FALLBACK_ROOT_ENTRIES = Object.freeze(["index.ts", "index.js", "index.mjs"]);
 
 /**
  * Patterns that indicate a context hook registration in an extension source
- * file. `context_with_system` and `before_provider_request` are unique
- * identifiers; plain `context` requires an exported-handler shape to avoid
- * false positives on unrelated `context` identifiers.
+ * file. All three hooks register through `pi.on("<event>", ...)`, so the
+ * patterns match the `.on("<event>"` / `.on('<event>'` call shape (see
+ * pi-coding-agent docs/extensions.md, "Events and concurrency"). Matching the
+ * call shape avoids false positives on unrelated identifiers that merely
+ * mention the event names.
  *
  * @type {ReadonlyArray<{ hook: string, pattern: RegExp }>}
  */
 const HOOK_PATTERNS = Object.freeze([
-	{ hook: "context", pattern: /\bexport\s+(?:async\s+)?function\s+context\s*\(/ },
-	{ hook: "context", pattern: /\bexport\s+const\s+context\s*[:=]/ },
-	{ hook: "context_with_system", pattern: /\bcontext_with_system\b/ },
-	{ hook: "before_provider_request", pattern: /\bbefore_provider_request\b/ },
+	{ hook: "context", pattern: /\.on\(\s*["']context["']/ },
+	{ hook: "context_with_system", pattern: /\.on\(\s*["']context_with_system["']/ },
+	{ hook: "before_provider_request", pattern: /\.on\(\s*["']before_provider_request["']/ },
 ]);
 
 /**
@@ -71,11 +82,46 @@ export function scanPiExtensionSourceForContextHooks(sourceText) {
 }
 
 /**
- * Read `package.json` → `pi.extensions` entry list for an installed package.
+ * List the conventional entry files pi discovers when the manifest declares
+ * no `pi.extensions`: files in `extensions/` plus root `index.{ts,js,mjs}`.
+ *
+ * @param {string} packageDir Absolute path to the package root.
+ * @returns {string[]} Entry paths relative to the package root, sorted and
+ *   capped at MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE.
+ */
+function discoverFallbackExtensionEntries(packageDir) {
+	/** @type {string[]} */
+	const entries = [];
+	const extensionsDir = path.join(packageDir, "extensions");
+	try {
+		for (const fileName of fs.readdirSync(extensionsDir).sort()) {
+			if (!EXTENSION_ENTRY_FILE_PATTERN.test(fileName)) continue;
+			if (!fs.statSync(path.join(extensionsDir, fileName)).isFile()) continue;
+			entries.push(path.join("extensions", fileName));
+		}
+	} catch {
+		// No readable extensions/ directory — fall through to root entries.
+	}
+	for (const rootEntry of FALLBACK_ROOT_ENTRIES) {
+		try {
+			if (fs.statSync(path.join(packageDir, rootEntry)).isFile()) {
+				entries.push(rootEntry);
+			}
+		} catch {
+			// Missing root entry — skip.
+		}
+	}
+	return entries.slice(0, MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE);
+}
+
+/**
+ * Resolve the extension entry files for an installed package: the
+ * `package.json` → `pi.extensions` list when present, else the conventional
+ * `extensions/` directory and root `index.{ts,js,mjs}` files pi discovers.
  *
  * @param {string} packageDir Absolute path to the package root.
  * @returns {{ name: string, entries: string[] } | null} Null when the package
- *   declares no extension entries or cannot be read.
+ *   has no extension entries to scan.
  */
 function readPackageExtensionEntries(packageDir) {
 	const manifestPath = path.join(packageDir, "package.json");
@@ -83,19 +129,21 @@ function readPackageExtensionEntries(packageDir) {
 	try {
 		manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
 	} catch {
-		return null;
+		manifest = null;
 	}
-	const rawEntries = manifest?.pi?.extensions;
-	if (!Array.isArray(rawEntries)) return null;
-	const entries = rawEntries
-		.map((entry) => String(entry ?? "").trim())
-		.filter(Boolean)
-		.slice(0, MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE);
-	if (entries.length === 0) return null;
 	const name = typeof manifest?.name === "string" && manifest.name.trim()
 		? manifest.name.trim()
 		: path.basename(packageDir);
-	return { name, entries };
+	const rawEntries = manifest?.pi?.extensions;
+	if (Array.isArray(rawEntries) && rawEntries.length > 0) {
+		const entries = rawEntries
+			.map((entry) => String(entry ?? "").trim())
+			.filter(Boolean)
+			.slice(0, MAX_PI_EXTENSION_ENTRIES_PER_PACKAGE);
+		return entries.length > 0 ? { name, entries } : null;
+	}
+	const entries = discoverFallbackExtensionEntries(packageDir);
+	return entries.length > 0 ? { name, entries } : null;
 }
 
 /**
@@ -129,13 +177,15 @@ function readBoundedText(filePath) {
 
 /**
  * Scan settings-declared pi packages for context-rewriting extension hooks.
+ * Missing or unreadable paths are skipped and noted in `skipped`; nothing is
+ * ever thrown.
  *
  * @param {object} [options]
  * @param {string} [options.projectRoot]
  * @param {string} [options.agentDir]
- * @returns {{ findings: Array<{ source: string, packageName: string, extension: string, hooks: string[] }>, packagesScanned: number }}
+ * @returns {{ packages: Array<{ source: string, hooks: string[] }>, packagesScanned: number, skipped: Array<{ source: string, reason: string }> }}
  */
-export function collectPiContextHookFindings({
+export function findContextRewritingExtensions({
 	projectRoot = process.cwd(),
 	agentDir = resolvePiAgentDir(),
 } = {}) {
@@ -154,62 +204,74 @@ export function collectPiContextHookFindings({
 
 	/** @type {Set<string>} */
 	const seenPackages = new Set();
-	/** @type {Array<{ source: string, packageName: string, extension: string, hooks: string[] }>} */
-	const findings = [];
+	/** @type {Array<{ source: string, hooks: string[] }>} */
+	const packages = [];
+	/** @type {Array<{ source: string, reason: string }>} */
+	const skipped = [];
 	let packagesScanned = 0;
 
 	for (const { source, settingsDir } of declared) {
 		const packageDir = resolvePiPackageSourcePath(source, settingsDir, agentDir);
-		if (!packageDir) continue;
+		if (!packageDir) {
+			skipped.push({ source: String(source), reason: "unresolvable package source" });
+			continue;
+		}
 		const resolvedDir = path.resolve(packageDir);
 		if (seenPackages.has(resolvedDir)) continue;
 		seenPackages.add(resolvedDir);
+		if (packagesScanned >= MAX_PI_PACKAGES_SCANNED) {
+			skipped.push({ source: String(source), reason: "package scan cap reached" });
+			continue;
+		}
+		if (!fs.existsSync(resolvedDir)) {
+			skipped.push({ source: String(source), reason: "package path not found" });
+			continue;
+		}
+		packagesScanned++;
 
 		const parsed = readPackageExtensionEntries(resolvedDir);
 		if (!parsed) continue;
-		packagesScanned++;
 
+		/** @type {Set<string>} */
+		const packageHooks = new Set();
 		for (const entry of parsed.entries) {
 			const entryPath = path.resolve(resolvedDir, entry);
 			if (entryPath !== resolvedDir && !entryPath.startsWith(resolvedDir + path.sep)) {
 				// Manifest entry escapes the package directory — never read outside it.
+				skipped.push({
+					source: String(source),
+					reason: `entry escapes package directory: ${entry}`,
+				});
 				continue;
 			}
 			const text = readBoundedText(entryPath);
-			if (text === null) continue;
-			const hooks = scanPiExtensionSourceForContextHooks(text);
-			if (hooks.length > 0) {
-				findings.push({
-					source: String(source),
-					packageName: parsed.name,
-					extension: entry,
-					hooks,
-				});
+			if (text === null) {
+				skipped.push({ source: String(source), reason: `unreadable entry: ${entry}` });
+				continue;
 			}
+			for (const hook of scanPiExtensionSourceForContextHooks(text)) {
+				packageHooks.add(hook);
+			}
+		}
+		if (packageHooks.size > 0) {
+			packages.push({
+				source: String(source),
+				hooks: PI_CONTEXT_HOOK_NAMES.filter((hook) => packageHooks.has(hook)),
+			});
 		}
 	}
 
-	return { findings, packagesScanned };
+	return { packages, packagesScanned, skipped };
 }
 
 /**
- * Whether config acknowledges reviewer exposure to user extensions.
- *
- * @param {Record<string, any> | null | undefined} config
- * @returns {boolean}
- */
-export function isTrustedReviewerExtensionIsolation(config) {
-	return config?.reviewers?.piExtensionIsolation === REVIEWER_EXTENSION_ISOLATION_TRUSTED;
-}
-
-/**
- * @param {Array<{ packageName: string, hooks: string[] }>} findings
+ * @param {Array<{ source: string, hooks: string[] }>} packages
  * @returns {string}
  */
-function summarizeFindings(findings) {
-	const packages = [...new Set(findings.map((finding) => finding.packageName))];
-	const hooks = [...new Set(findings.flatMap((finding) => finding.hooks))];
-	return `${packages.join(", ")} register context-rewriting hook(s) (${hooks.join(", ")})`;
+function summarizeFindings(packages) {
+	return packages
+		.map((pkg) => `${pkg.source} (${pkg.hooks.join(", ")})`)
+		.join("; ");
 }
 
 /**
@@ -222,18 +284,18 @@ function summarizeFindings(findings) {
  * @param {object} [options]
  * @param {string} [options.projectRoot]
  * @param {string} [options.agentDir]
- * @param {Record<string, any>} [options.config] Loaded spine config.
+ * @param {Record<string, any> | null} [options.config] Loaded spine config.
  * @returns {{ label: string, ok: true, warning?: boolean, detail: string, suggestedCommand?: string }}
  */
-export function buildPiContextHookDoctorCheck({
+export function buildContextHookExtensionDoctorCheck({
 	projectRoot = process.cwd(),
 	agentDir = resolvePiAgentDir(),
 	config,
 } = {}) {
-	const label = "pi context-rewriting extension hooks";
-	const { findings, packagesScanned } = collectPiContextHookFindings({ projectRoot, agentDir });
+	const label = "pi extensions rewriting reviewer context";
+	const { packages, packagesScanned } = findContextRewritingExtensions({ projectRoot, agentDir });
 
-	if (findings.length === 0) {
+	if (packages.length === 0) {
 		return {
 			label,
 			ok: true,
@@ -241,20 +303,20 @@ export function buildPiContextHookDoctorCheck({
 		};
 	}
 
-	const summary = summarizeFindings(findings);
-	if (isTrustedReviewerExtensionIsolation(config)) {
+	const summary = summarizeFindings(packages);
+	if (config?.agents?.reviewer?.loadUserExtensions === true) {
 		return {
 			label,
 			ok: true,
-			detail: `${summary} — reviewers.piExtensionIsolation=trusted acknowledges reviewer exposure`,
+			warning: true,
+			detail: `${summary} register context-rewriting hook(s) and reviewers load user extensions (agents.reviewer.loadUserExtensions=true); these hooks can rewrite reviewer context`,
+			suggestedCommand: "spine settings set agents.reviewer.loadUserExtensions false",
 		};
 	}
 
 	return {
 		label,
 		ok: true,
-		warning: true,
-		detail: `${summary} — reviewers load user extensions by default; run reviewers with pi -ne or set reviewers.piExtensionIsolation trusted to acknowledge`,
-		suggestedCommand: "spine settings set reviewers.piExtensionIsolation trusted",
+		detail: `${packages.length} package(s) register context hooks (${summary}); reviewers isolated (pi -ne)`,
 	};
 }

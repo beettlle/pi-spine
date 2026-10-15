@@ -31,7 +31,7 @@ import { buildAgentModelInheritDoctorCheck, buildReviewerPerTypePinsDoctorCheck 
 import { buildInheritProviderAuthDoctorCheck } from "./agents-model-inherit.mjs";
 import { buildAgentModelIdsDoctorCheck } from "./agent-models.mjs";
 import { buildPiExtensionConflictDoctorCheck } from "./pi-extension-conflict.mjs";
-import { buildPiContextHookDoctorCheck } from "./pi-extension-hooks.mjs";
+import { buildContextHookExtensionDoctorCheck } from "./pi-extension-hooks.mjs";
 import { buildSupervisorConfigDoctorCheck } from "./supervisor.mjs";
 import { buildAttachedOrphanRiskDoctorCheck } from "./attached-orphan-risk.mjs";
 import { buildQuotaRiskDoctorCheck } from "./quota-risk.mjs";
@@ -344,7 +344,20 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 			projectRoot,
 		}),
 	);
+	// Load config once here so the advisory SP-822 check (pushed right after
+	// the extension-conflict check) and the config-driven checks below share it.
+	const configResult = loadSpineConfig(projectRoot);
 	checks.push(buildPiExtensionConflictDoctorCheck({ projectRoot }));
+	// Advisory only (SP-822): warn when installed pi packages register
+	// context-rewriting hooks (context, context_with_system,
+	// before_provider_request) while reviewers load user extensions
+	// (agents.reviewer.loadUserExtensions). Never hard-fails.
+	checks.push(
+		buildContextHookExtensionDoctorCheck({
+			projectRoot,
+			config: configResult.config,
+		}),
+	);
 	checks.push(buildAttachedOrphanRiskDoctorCheck());
 
 	const piVersionText = getVersion("pi");
@@ -405,7 +418,6 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		warning: modelCheck.warning,
 	});
 
-	const configResult = loadSpineConfig(projectRoot);
 	if (configResult.error) {
 		record(".spine/spine-config.json valid", false, {
 			detail: configResult.error.message,
@@ -491,15 +503,6 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		for (const evidenceWarnCheck of buildEvidenceConfigWarnDoctorChecks(configResult.config)) {
 			checks.push(evidenceWarnCheck);
 		}
-		// Advisory only (SP-822): warn when installed pi packages register
-		// context-rewriting hooks (context, context_with_system,
-		// before_provider_request) while reviewers load user extensions.
-		checks.push(
-			buildPiContextHookDoctorCheck({
-				projectRoot,
-				config: configResult.config,
-			}),
-		);
 		let quotaMetricsLines;
 		try {
 			quotaMetricsLines = readMetricsLines(
