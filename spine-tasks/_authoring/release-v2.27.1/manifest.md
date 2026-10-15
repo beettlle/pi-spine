@@ -198,6 +198,7 @@ Peak window: if a batch is running at 05:00 UTC, `sp batch pause`; after 10:00 U
 - **2026-10-15 02:45 UTC wave 2 (4 of 5) landed** — Gate approved, `spine integrate` → `42fb9c66`, `batch complete` archived. `git status --porcelain` empty with no manual index fix; no root `.DONE` on `main`. Post-integrate `release:check`: exit 0, 2949/2949 pass, line coverage 90.66% (`/tmp/pi-spine-v2.27.1-wave2.log`).
 - **2026-10-15 02:52 UTC wave 2b (SP-825) start** — `spine batch start SP-825` (fresh batch `20261015T025227-0f17`, no quota fallback hop, worker on `zai/glm-5.3-flash`). Review Level 0; `.DONE` in the task folder on the first run. Operator read the docs diff before the gate: the worker runner passes `-ne`, `spine settings show` exists, and no links point at the removed "Salvage → complete land loop" anchor.
 - **2026-10-15 03:10 UTC wave 2b landed** — Gate approved, `spine integrate` → `846effde`, `batch complete` archived. All 12 release tasks `.DONE` on `main`. `release:check` on final `HEAD`: exit 0, 2949/2949 pass, line coverage 90.67% (`/tmp/pi-spine-v2.27.1-wave2b.log`). `spine preflight` green. Stopped for operator publish approval.
+- **2026-10-15 05:20–16:37 UTC published** — Operator approved publish. Pushed `main` (`e3482d03`); CI green. `npm version patch` → `7ca76c60` + tag `v2.27.1`; pushed. `release.yml` staged the package and created the GitHub Release; operator approved stage `b6a9240a-…` with 2FA. `npm view` → `2.27.1` `latest`; `scripts/post-publish-smoke.sh 2.27.1` OK. Closed #315, #346, #342 (#334, #335, #336 auto-closed by the push); progress comment on #314. #349 and #350 stay open as backlog.
 
 ---
 
@@ -331,11 +332,11 @@ Packet audit 2026-10-14: `spine tasks validate` (10 tasks) 10 passed; `spine tas
 - [x] Post-integrate `release:check` green after **each wave** (log paths recorded)
 - [x] `spine preflight` green (2026-10-15 03:15 UTC)
 - [x] `npm run release:check` green on final `HEAD` (`846effde`: 2949/2949, line coverage 90.67%)
-- [ ] CI green on `HEAD` (runs after push; `main` is local-only until publish approval)
+- [x] CI green on `HEAD` (`e3482d03`, [run 38686308991](https://github.com/beettlle/pi-spine/actions/runs/38686308991))
 - [x] `git status` clean
-- [ ] Operator approved publish bump type: patch
-- [ ] `npm version patch` + `git push && git push --tags`
-- [ ] `release.yml` succeeded; staged package approved (2FA)
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] #334, #315, #335, #336 closed; #314 progress comment (stays open)
-- [ ] #342 closed once the skills commit is pushed to `origin/main`
+- [x] Operator approved publish bump type: patch (2026-10-15)
+- [x] `npm version patch` + `git push && git push --tags` (`7ca76c60`, tag `v2.27.1`; `preversion` `release:check` 2949/2949, line coverage 90.65%)
+- [x] `release.yml` succeeded ([run 38687934667](https://github.com/beettlle/pi-spine/actions/runs/38687934667)); staged package `b6a9240a-b1af-4faa-9919-50b068802789` approved (2FA); `npm view pi-spine version` → `2.27.1` (`latest`)
+- [x] Post-publish smoke per `docs/release/npm-publish.md` (`scripts/post-publish-smoke.sh 2.27.1` OK, 2026-10-15 16:37 UTC)
+- [x] #334, #335, #336 closed (auto-closed by the push); #315, #346 closed; #314 progress comment (stays open)
+- [x] #342 closed (`f39c87d1` on `origin/main`)

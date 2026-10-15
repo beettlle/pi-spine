@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-14 (Phase 96 v2.27.1: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green, awaiting publish approval; Next → SP-831)
+**Last Updated:** 2026-10-15 (Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-831)
 **Status:** Active
 **Next Task ID:** SP-831
 
@@ -2704,9 +2704,9 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] Wave 1 SP-819, SP-820, SP-823, SP-824 `.DONE` and integrated on `main`; post-integrate `release:check` green (`1b0a522a`)
 - [x] Wave 2 SP-821, SP-822, SP-826, SP-827 `.DONE` and integrated on `main`; post-integrate `release:check` green (`42fb9c66`)
 - [x] SP-825 `.DONE` and integrated on `main` (`846effde`); `release:check` green on final `HEAD`
-- [ ] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
-- [ ] `npm run release:check` green; CI green on HEAD
-- [ ] Publish **v2.27.1** only after operator approval
+- [x] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
+- [x] `npm run release:check` green; CI green on HEAD (`e3482d03` / [38686308991](https://github.com/beettlle/pi-spine/actions/runs/38686308991))
+- [x] Publish **v2.27.1** only after operator approval (`7ca76c60`, [release.yml 38687934667](https://github.com/beettlle/pi-spine/actions/runs/38687934667), stage approved 2026-10-15, smoke OK)
 
 ---
 
