@@ -117,6 +117,32 @@
           "model": "google/gemini-3.5-flash-lite",
           "thinking": "off"
         }
+      },
+      "qwen-flash": {
+        "worker": {
+          "model": "llama.cpp/qwen3.8-flash-next-iq3_s",
+          "thinking": "medium"
+        },
+        "reviewer": {
+          "model": "google/gemini-3.1-pro-preview",
+          "thinking": "high",
+          "plan": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          },
+          "code": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          },
+          "final": {
+            "model": "google/gemini-3.1-pro-preview",
+            "thinking": "high"
+          }
+        },
+        "supervisor": {
+          "model": "google/gemini-3.5-flash-lite",
+          "thinking": "off"
+        }
       }
     },
     "escalatePolicy": {

@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-15 (Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-831)
+**Last Updated:** 2026-10-15 (Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
-**Next Task ID:** SP-831
+**Next Task ID:** SP-832
 
 ---
 
@@ -2707,6 +2707,16 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 - [x] #334, #315, #335, #336, #346 CLOSED; #314 progress noted (stays open for streak locking)
 - [x] `npm run release:check` green; CI green on HEAD (`e3482d03` / [38686308991](https://github.com/beettlle/pi-spine/actions/runs/38686308991))
 - [x] Publish **v2.27.1** only after operator approval (`7ca76c60`, [release.yml 38687934667](https://github.com/beettlle/pi-spine/actions/runs/38687934667), stage approved 2026-10-15, smoke OK)
+
+### Phase 97 — Numeric task ID sort (#352, P0) + local worker model trial
+
+**Authoring:** 2026-10-15 · Worker: trial profile `qwen-flash` (`llama.cpp/qwen3.8-flash-next-iq3_s`, medium, 32.8K context) via `SPINE_AGENT_PROFILE_OVERRIDE`; reviewers unchanged (`google/gemini-3.1-pro-preview`, high). `activeProfile` stays `default`.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-831 | Planner and `spine deps` sort task IDs with `compareTaskIds` (SP-999 before SP-1000) | S | #352 Closes | Staged |
+
+**Batch env:** `SPINE_STET_NO_AUTO_FINISH=1`, `SPINE_AGENT_PROFILE_OVERRIDE=qwen-flash`, `STET_CRITIC_ENABLED=false` (the llama.cpp server holds `127.0.0.1:8080`, the OpenJev critic port; `.review/config.toml` unchanged).
 
 ---
 
