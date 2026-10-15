@@ -23,6 +23,22 @@ const PATCH_TASK_SIZES = new Set(["S", "M"]);
 const LINT_IN_TEST_COMMAND_RE = /\b(?:lint|eslint|analyze)\b/;
 
 /**
+ * Warn when an execute packet declares a Review Level above 0 (SP-827 / #336):
+ * execute tasks run no reviewers, so the declared level is misleading.
+ *
+ * @param {{ type: string, reviewLevel: number }} options
+ * @returns {string[]}
+ */
+export function collectExecuteReviewLevelWarnings({ type, reviewLevel }) {
+	if (type !== "execute" || reviewLevel <= 0) {
+		return [];
+	}
+	return [
+		`Type: execute task declares Review Level ${reviewLevel}; execute tasks run no reviewers — set Review Level 0.`,
+	];
+}
+
+/**
  * @param {string | null | undefined} testCommand
  * @returns {boolean}
  */
