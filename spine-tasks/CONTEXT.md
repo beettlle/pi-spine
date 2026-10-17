@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-10-15 (Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
+**Last Updated:** 2026-10-17 (Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
 **Next Task ID:** SP-832
 
@@ -2714,9 +2714,11 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-831 | Planner and `spine deps` sort task IDs with `compareTaskIds` (SP-999 before SP-1000) | S | #352 Closes | Staged |
+| SP-831 | Planner and `spine deps` sort task IDs with `compareTaskIds` (SP-999 before SP-1000) | S | #352 Closes | **Done** (`ea16ee56`) |
 
 **Batch env:** `SPINE_STET_NO_AUTO_FINISH=1`, `SPINE_AGENT_PROFILE_OVERRIDE=qwen-flash`, `STET_CRITIC_ENABLED=false` (the llama.cpp server holds `127.0.0.1:8080`, the OpenJev critic port; `.review/config.toml` unchanged).
+
+- [x] SP-831 integrated `ea16ee56` (batch `20261017T040331-ba48`); `lmstudio/meta/muse-glimmer` worker trial skipped stet triage and `.DONE`, so `google/gemini-4-argon` finished the worker run; release:check green (2955/2955)
 
 ---
 
