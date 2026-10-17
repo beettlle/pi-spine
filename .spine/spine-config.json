@@ -16,21 +16,21 @@
   "agents": {
     "worker": {
       "model": "zai/glm-5.3-flash",
-      "thinking": "medium"
+      "thinking": "high"
     },
     "reviewer": {
-      "model": "google/gemini-3.1-pro-preview",
+      "model": "google/gemini-2.5-pro",
       "thinking": "high",
       "plan": {
-        "model": "google/gemini-3.1-pro-preview",
-        "thinking": "high"
+        "model": "google/gemini-2.5-pro",
+        "thinking": "medium"
       },
       "code": {
-        "model": "google/gemini-3.1-pro-preview",
+        "model": "google/gemini-2.5-pro",
         "thinking": "high"
       },
       "final": {
-        "model": "google/gemini-3.1-pro-preview",
+        "model": "google/gemini-2.5-pro",
         "thinking": "high"
       }
     },
@@ -43,113 +43,39 @@
       "default": {
         "worker": {
           "model": "zai/glm-5.3-flash",
-          "thinking": "medium"
-        },
-        "reviewer": {
-          "model": "google/gemini-3.1-pro-preview",
-          "thinking": "high",
-          "plan": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "code": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "final": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          }
-        },
-        "supervisor": {
-          "model": "google/gemini-3.5-flash-lite",
-          "thinking": "off"
-        }
-      },
-      "hard": {
-        "worker": {
-          "model": "zai/glm-5.3",
           "thinking": "high"
-        },
-        "reviewer": {
-          "model": "google/gemini-3.1-pro-preview",
-          "thinking": "high",
-          "plan": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "code": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "final": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          }
-        },
-        "supervisor": {
-          "model": "google/gemini-3.5-flash-lite",
-          "thinking": "off"
         }
       },
       "allegretto": {
         "worker": {
           "model": "kimi-coding/k3",
-          "thinking": "medium"
-        },
-        "reviewer": {
-          "model": "google/gemini-3.1-pro-preview",
-          "thinking": "high",
-          "plan": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "code": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "final": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          }
-        },
-        "supervisor": {
-          "model": "google/gemini-3.5-flash-lite",
-          "thinking": "off"
+          "thinking": "high"
+        }
+      },
+      "gemini4": {
+        "worker": {
+          "model": "google/gemini-4-argon",
+          "thinking": "high"
+        }
+      },
+      "cursor": {
+        "worker": {
+          "model": "cursor/auto",
+          "thinking": "high"
         }
       },
       "qwen-flash": {
         "worker": {
           "model": "llama.cpp/qwen3.8-flash-next-iq3_s",
           "thinking": "medium"
-        },
-        "reviewer": {
-          "model": "google/gemini-3.1-pro-preview",
-          "thinking": "high",
-          "plan": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "code": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          },
-          "final": {
-            "model": "google/gemini-3.1-pro-preview",
-            "thinking": "high"
-          }
-        },
-        "supervisor": {
-          "model": "google/gemini-3.5-flash-lite",
-          "thinking": "off"
         }
       }
     },
     "escalatePolicy": {
       "enabled": true,
-      "toProfile": "hard"
+      "toProfile": "cursor"
     },
-    "quotaFallbackProfile": "allegretto"
+    "quotaFallbackProfile": "gemini4"
   },
   "lanes": {
     "maxParallel": 2,
