@@ -13,7 +13,7 @@ import path from 'node:path';
 import { summarizePendingScope } from './pending.mjs';
 
 // Single source of truth (SP-785, #300): re-export the shared task-ID regex.
-import { TASK_ID_RE } from '../tasks/packet/discover.mjs';
+import { TASK_ID_RE, compareTaskIds } from '../tasks/packet/discover.mjs';
 export { TASK_ID_RE };
 
 export const NO_PENDING_TASKS_ERROR = 'No pending tasks (all discovered tasks have .DONE).';
@@ -74,7 +74,7 @@ function tokenizeScope(scope) {
  * @returns {{ mode: 'all'|'pending'|'ids'|'glob'|'custom', taskIds: string[], excludedCount?: number }}
  */
 export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
-	const allTaskIds = discoveredTasks.map((t) => t.taskId).sort();
+	const allTaskIds = discoveredTasks.map((t) => t.taskId).sort(compareTaskIds);
 	const tasksRootPosix = String(tasksRoot).replace(/\\/g, '/');
 	const tasksRootBase = path.posix.basename(tasksRootPosix);
 
@@ -135,7 +135,7 @@ export function parseScope(scopeArg, { tasksRoot, discoveredTasks }) {
 
 	const resolved = Array.from(selected)
 		.filter((id) => allTaskIds.includes(id))
-		.sort();
+		.sort(compareTaskIds);
 
 	if (resolved.length === 0) {
 		throw new Error(`Scope did not match any discovered task(s): ${String(scopeArg)}`);

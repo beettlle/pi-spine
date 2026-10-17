@@ -12,6 +12,7 @@ import {
 import { buildGraph, topoWaves } from '../planner/graph.mjs';
 import { findCyclePath } from '../planner/cycles.mjs';
 import { parseScope } from '../planner/scope.mjs';
+import { compareTaskIds } from '../tasks/packet/discover.mjs';
 
 /**
  * @param {string} projectRoot
@@ -42,7 +43,7 @@ export function depsToEdges(depsByTask) {
 		}
 	}
 
-	edges.sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to));
+	edges.sort((a, b) => compareTaskIds(a.from, b.from) || compareTaskIds(a.to, b.to));
 	return edges;
 }
 
@@ -55,7 +56,7 @@ export function cycleNodesFromPath(cyclePath) {
 	const nodes = cyclePath[cyclePath.length - 1] === cyclePath[0]
 		? cyclePath.slice(0, -1)
 		: cyclePath;
-	return [...new Set(nodes.map(String))].sort();
+	return [...new Set(nodes.map(String))].sort(compareTaskIds);
 }
 
 /**

@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { TASK_ID_RE } from "./scope.mjs";
+import { TASK_ID_RE, compareTaskIds } from "../tasks/packet/discover.mjs";
 
 /**
  * @param {Array<{ taskId: string, folderPath: string }>} discoveredTasks
@@ -23,7 +23,7 @@ export function filterPendingTaskIds(discoveredTasks, tasksRoot) {
 		}
 	}
 
-	return pending.sort();
+	return pending.sort(compareTaskIds);
 }
 
 /**

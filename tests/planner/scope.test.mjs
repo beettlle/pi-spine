@@ -26,6 +26,28 @@ async function createTasksRootFixture() {
 	return { root, tasksRoot };
 }
 
+test("parseScope('all') selects all discovered tasks sorted numerically", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-scope-"));
+	const tasksRoot = path.join(root, "spine-tasks");
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	function writeTask(folderName, taskId) {
+		const folder = path.join(tasksRoot, folderName);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(path.join(folder, "PROMPT.md"), `# Task: ${taskId} — Test
+`, "utf-8");
+	}
+	writeTask("SP-1000-test", "SP-1000");
+	writeTask("SP-999-test", "SP-999");
+	try {
+		const discovered = discoverTasks(tasksRoot);
+		const res = parseScope("all", { tasksRoot, discoveredTasks: discovered });
+		assert.deepEqual(res.taskIds, ["SP-999", "SP-1000"]);
+		assert.equal(res.mode, "all");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
 test("parseScope('all') selects all discovered tasks", async () => {
 	const { root, tasksRoot } = await createTasksRootFixture();
 	try {
@@ -45,6 +67,28 @@ test("parseScope('TP-002') selects explicit task IDs", async () => {
 		const res = parseScope("TP-002", { tasksRoot, discoveredTasks: discovered });
 		assert.deepEqual(res.taskIds, ["TP-002"]);
 		assert.equal(res.mode, "ids");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("parseScope glob sorts SP-999 before SP-1000", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-scope-glob-sort-"));
+	const tasksRoot = path.join(root, "spine-tasks");
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	function writeTask(folderName, taskId) {
+		const folder = path.join(tasksRoot, folderName);
+		fs.mkdirSync(folder, { recursive: true });
+		fs.writeFileSync(path.join(folder, "PROMPT.md"), `# Task: ${taskId} — Test
+`, "utf-8");
+	}
+	writeTask("SP-1000-test", "SP-1000");
+	writeTask("SP-999-test", "SP-999");
+	try {
+		const discovered = discoverTasks(tasksRoot);
+		const res = parseScope("SP-*", { tasksRoot, discoveredTasks: discovered });
+		assert.deepEqual(res.taskIds, ["SP-999", "SP-1000"]);
+		assert.equal(res.mode, "glob");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
