@@ -4,6 +4,38 @@ import test from "node:test";
 import { buildGraph, topoWaves } from "../../src/planner/graph.mjs";
 import { findCyclePath } from "../../src/planner/cycles.mjs";
 
+test("topoWaves sorts SP-999 before SP-1000 in waves", () => {
+	const depsByTask = {
+		"SP-999": [],
+		"SP-1000": [],
+	};
+	const graph = buildGraph(depsByTask);
+	const { waves, remainingWithDeps } = topoWaves(graph);
+	assert.deepEqual(remainingWithDeps, []);
+	assert.deepEqual(waves, [["SP-999", "SP-1000"]]);
+});
+
+test("topoWaves sorts SP-999 before SP-1000 with shared dependency", () => {
+	const depsByTask = {
+		"SP-100": [],
+		"SP-999": ["SP-100"],
+		"SP-1000": ["SP-100"],
+	};
+	const graph = buildGraph(depsByTask);
+	const { waves } = topoWaves(graph);
+	assert.deepEqual(waves, [["SP-100"], ["SP-999", "SP-1000"]]);
+});
+
+test("topoWaves remainingWithDeps sorts SP-999 before SP-1000 in cycles", () => {
+	const depsByTask = {
+		"SP-999": ["SP-1000"],
+		"SP-1000": ["SP-999"],
+	};
+	const graph = buildGraph(depsByTask);
+	const { remainingWithDeps } = topoWaves(graph);
+	assert.deepEqual(remainingWithDeps, ["SP-999", "SP-1000"]);
+});
+
 test("topoWaves groups tasks into deterministic dependency waves", () => {
 	// A and B have no deps; C depends on both; D depends on C.
 	const depsByTask = {

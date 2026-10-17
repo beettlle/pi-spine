@@ -10,6 +10,8 @@
  * included in the graph.
  */
 
+import { compareTaskIds } from '../tasks/packet/discover.mjs';
+
 /**
  * @param {Record<string, string[]>} depsByTask
  * @returns {{ nodes: string[], depsByTask: Record<string, string[]>, dependentsByTask: Record<string, string[]> }}
@@ -37,9 +39,9 @@ export function buildGraph(depsByTask) {
 		if (!dependentsByTask[id]) dependentsByTask[id] = [];
 	}
 
-	const nodes = Array.from(nodesSet).sort();
+	const nodes = Array.from(nodesSet).sort(compareTaskIds);
 	for (const id of Object.keys(dependentsByTask)) {
-		dependentsByTask[id].sort();
+		dependentsByTask[id].sort(compareTaskIds);
 	}
 
 	return { nodes, depsByTask: normalized, dependentsByTask };
@@ -69,7 +71,7 @@ export function topoWaves(graph) {
 	const zero = Array.from(indegree.entries())
 		.filter(([, deg]) => deg === 0)
 		.map(([id]) => id)
-		.sort();
+		.sort(compareTaskIds);
 
 	const waves = [];
 	let current = zero;
@@ -88,13 +90,13 @@ export function topoWaves(graph) {
 			}
 		}
 
-		current = next.sort();
+		current = next.sort(compareTaskIds);
 	}
 
 	const remainingWithDeps = Array.from(indegree.entries())
 		.filter(([, deg]) => deg > 0)
 		.map(([id]) => id)
-		.sort();
+		.sort(compareTaskIds);
 
 	return { waves, remainingWithDeps };
 }

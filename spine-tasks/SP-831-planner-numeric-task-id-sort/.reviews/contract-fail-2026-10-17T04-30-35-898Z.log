@@ -1,0 +1,23 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/planner/graph.test.mjs tests/planner/pending-scope.test.mjs tests/planner/scope.test.mjs tests/planner/integration.test.mjs tests/tasks/discover-boundary.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-831
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-10-17T04:30:35.898Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+................
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Warning: proceeding with uncommitted changes; review scope may be unclear
+Critic failed for src/cli/deps.mjs (System One at http://127.0.0.1:8080).
+Details: system one verify: request for findings 0-0: system one post /v1/systemone: system one server unreachable: HTTP 500: Internal Server Error

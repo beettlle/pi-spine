@@ -1,0 +1,1 @@
+SP-831 completed: Planner and `spine deps` sort task IDs numerically via `compareTaskIds` (#352).
