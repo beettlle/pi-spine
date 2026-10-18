@@ -1,0 +1,37 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/task-agent-profile.test.mjs tests/batch/engine-reviewer-profile.test.mjs tests/batch/review-spawn.test.mjs tests/batch/review-retry-reconcile.test.mjs tests/batch/quota-fallback-integration.test.mjs tests/batch/engine.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-834
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-18T23:20:39.132Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+.......
+c36e55c  src/batch/engine-lanes.mjs:60  NITPICK  The diff reformats the export statement from multi-line to single-line, which is a style-only change unrelated to the commit's stated intent (effective reviewer profile with family guard). This introduces unnecessary noise into the diff.
+fede908  src/batch/engine-lanes.mjs:430  WARNING  The diff changes the `config` parameter passed to `runCodeReviewPhase` from the original `config` to `reviewConfig`. However, `runPlanReviewPhase` (line 420) and `runFinalReviewPhase` (line 440) still use the original `config`. This creates an inconsistent state where the code review phase uses the per-task effective reviewer profile, but the plan and final review phases use the base config. If `applyTaskReviewProfile` modifies the config to enforce specific reviewer models or thinking settings, the plan and final reviews will not respect these constraints, potentially leading to inconsistent review behavior or bypassing intended restrictions.
+52b96fc  tests/batch/task-agent-profile.test.mjs:180  WARNING  The test 'same-family pairing with no alternative is reported as blocked' asserts that `built.warnings.length > 0`, but the implementation of `buildTaskReviewConfig` does not push any entries to the `warnings` array. It only populates the `blocked` array. This assertion will fail at runtime.
+3 finding(s) at 436.0 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 3 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
