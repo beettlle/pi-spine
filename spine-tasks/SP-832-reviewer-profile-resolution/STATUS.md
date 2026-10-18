@@ -69,6 +69,7 @@
 | `tests/config/settings-fields.test.mjs` pins the exact settable path list; added `agents.reviewerProfile` there (outside PROMPT file scope, required by new settings key) | Done | tests/config/settings-fields.test.mjs |
 | `src/doctor/run-doctor-checks.mjs` edited (outside PROMPT file scope) to count the failed check as a doctor issue | Done | src/doctor/run-doctor-checks.mjs |
 | Doctor pairing for non-active profiles uses `profiles[name].worker.model`, else the merged `agents.worker.model`; `agents.reviewer` fallback is the active profile's merged block, per spec | Noted | src/doctor/agent-model-inherit.mjs |
+| Stet (9 findings) dismissed as false_positive: hunk-limited unused-import/dead-code claims (symbols are used), `cursor/gemini-3.1-pro` has a single slash, doctor `issueCount` counted once (checks.push, not record), settings-fields order is correct ('.' < 'P') | Dismissed | stet |
 
 ## Execution Log
 
@@ -77,3 +78,4 @@
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
 | 2026-10-18 | Steps 0-4 implemented | Targeted tests pass |
 | 2026-10-18 | Contract testCommand | lint, typecheck, listed tests pass; stet 0 findings; arch/doctor/config suites pass |
+| 2026-10-18 | Contract re-run + stet triage | lint, typecheck, tests pass; stet 0 active findings |
