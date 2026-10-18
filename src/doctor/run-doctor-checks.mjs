@@ -460,7 +460,10 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		);
 		checks.push(buildStallConfigDoctorCheck({ config: configResult.config }));
 		checks.push(buildPiWorkerTimeoutDoctorCheck({ config: configResult.config }));
-		checks.push(buildReviewerPerTypePinsDoctorCheck({ config: configResult.config }));
+		const reviewerPinsCheck = buildReviewerPerTypePinsDoctorCheck({ config: configResult.config });
+		checks.push(reviewerPinsCheck);
+		// SP-832 / #355: same-family worker/reviewer pairing blocks doctor and (via doctor) preflight.
+		if (!reviewerPinsCheck.ok) issueCount++;
 		checks.push(buildAgentModelInheritDoctorCheck({
 			config: configResult.config,
 			projectRoot,

@@ -194,6 +194,66 @@ test("validateAgentProfilesConfig rejects a non-string quotaFallbackProfile", ()
 });
 
 // ---------------------------------------------------------------------------
+// SP-832 / #355 — reviewerProfile schema rules
+// ---------------------------------------------------------------------------
+
+test("validateAgentProfilesConfig accepts agents.reviewerProfile and profile reviewerProfile naming defined profiles", () => {
+	const config = {
+		agents: {
+			profiles: { gem: { reviewerProfile: "claude" }, claude: { reviewer: { model: "anthropic/claude-sonnet-5-5" } } },
+			reviewerProfile: "claude",
+		},
+	};
+	assert.equal(validateAgentProfilesConfig(config), null);
+});
+
+test("validateAgentProfilesConfig allows clearing reviewerProfile with an empty string", () => {
+	assert.equal(
+		validateAgentProfilesConfig({ agents: { profiles: { a: { reviewerProfile: "" } }, reviewerProfile: "" } }),
+		null,
+	);
+});
+
+test("validateAgentProfilesConfig rejects agents.reviewerProfile naming an undefined profile", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { profiles: { default: {} }, reviewerProfile: "ghost" },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /agents\.reviewerProfile "ghost" does not match/);
+	assert.match(result.suggestedCommand, /spine settings set agents\.reviewerProfile/);
+});
+
+test("validateAgentProfilesConfig rejects a non-string agents.reviewerProfile", () => {
+	const result = validateAgentProfilesConfig({ agents: { reviewerProfile: 7 } });
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /reviewerProfile must be a string/);
+});
+
+test("validateAgentProfilesConfig rejects profile reviewerProfile naming an undefined profile", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { profiles: { gem: { reviewerProfile: "ghost" } } },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /agents\.profiles\.gem\.reviewerProfile "ghost" does not match/);
+});
+
+test("validateAgentProfilesConfig rejects a profile naming itself as reviewerProfile", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { profiles: { gem: { reviewerProfile: "gem" } } },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /agents\.profiles\.gem\.reviewerProfile must not name the profile itself/);
+});
+
+test("validateAgentProfilesConfig rejects a non-string profile reviewerProfile", () => {
+	const result = validateAgentProfilesConfig({
+		agents: { profiles: { gem: { reviewerProfile: 1 } } },
+	});
+	assert.equal(result?.code, "CONFIG_AGENT_PROFILE_INVALID");
+	assert.match(result.message, /agents\.profiles\.gem\.reviewerProfile must be a string/);
+});
+
+// ---------------------------------------------------------------------------
 // SP-819 / #334 — agents.reviewer.loadUserExtensions schema rules
 // ---------------------------------------------------------------------------
 
