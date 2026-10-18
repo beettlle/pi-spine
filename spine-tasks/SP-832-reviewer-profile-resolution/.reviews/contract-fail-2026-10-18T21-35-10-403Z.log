@@ -1,0 +1,49 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/config/model-family.test.mjs tests/batch/reviewer-model-resolve.test.mjs tests/doctor/agent-model-inherit.test.mjs tests/config/load.test.mjs tests/spine-preflight.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-832
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-18T21:35:10.403Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+....................
+...............
+151482b  src/config/agent-model-resolve.mjs:163  ERROR  The `sameFamily` flag is not reset to `false` when a candidate is successfully selected. If the first candidate is skipped (setting `sameFamily` to `true`) and the second candidate is selected (where `isSameModelFamily` returns `false`), the `sameFamily` variable retains its previous `true` value. This causes the code to incorrectly push a `same_model_family` entry to the `blocked` array even though a valid cross-family candidate was found and selected.
+2276846  src/config/model-family.mjs:38  WARNING  The logic for extracting the model name is flawed when the model ID contains multiple slashes (e.g., 'cursor/gemini-3.1-pro'). `normalized.lastIndexOf('/')` will find the slash before '3.1-pro', resulting in `name` being '3.1-pro' instead of 'gemini-3.1-pro'. This causes the regex rules to fail to match, and the function incorrectly falls back to provider-based resolution (returning 'unknown' for 'cursor').
+7721b41  src/config/settings-fields.mjs:165  WARNING  The new path 'agents.reviewerProfile' is not in alphabetical order. It should be placed before 'agents.reviewer.*' paths because 'P' (80) is less than 'c' (99) in ASCII. The existing list is sorted alphabetically, and inserting it after 'agents.reviewer.thinking' breaks the sort order, which will likely cause the test to fail if it asserts strict ordering.
+ac1d7df  src/config/spine-config-schema.mjs:322  WARNING  The self-reference check `reviewerTarget === name` compares the trimmed target against the untrimmed profile key. If a profile is defined with a name containing leading or trailing whitespace (e.g., `"  my-profile  "`), and its `reviewerProfile` is set to the trimmed name (`"my-profile"`), the validation will incorrectly fail with a 'does not match a defined agents.profiles entry' error instead of correctly identifying it as a self-reference. This is inconsistent with how other profile references (like `activeProfile`) are validated, which correctly use the trimmed value for lookup.
+1952f78  src/config/spine-config-schema.mjs:396  WARNING  The validation for `agents.reviewerProfile` fails to enforce the self-reference prohibition that is enforced for profile-level `reviewerProfile` (where `reviewerTarget === name` is rejected). This allows a profile to set `agents.reviewerProfile` to its own name, which contradicts the design intent that a reviewer profile must be distinct from the profile it reviews.
+4e406f4  tests/batch/reviewer-model-resolve.test.mjs:4  WARNING  The imported function `resolveEffectiveReviewer` is not used in the provided code hunk. This is a dead import that will likely cause a linting error or be flagged as unused.
+6c77082  tests/batch/reviewer-model-resolve.test.mjs:263  ERROR  The test asserts that `result.plan.model` is `"google/gemini-2.5-pro"` when the family guard blocks the candidate. However, the implementation in `src/config/agent-model-resolve.mjs` (lines 163-165) explicitly sets `model` and `thinking` to `null` when a candidate is blocked by the family guard (`if (sameFamily) { model = null; thinking = null; }`). Therefore, the assertion `assert.equal(result.plan.model, "google/gemini-2.5-pro")` will fail at runtime.
+829370b  tests/config/model-family.test.mjs:13  ERROR  The test case `['cursor/gemini-3.1-pro', 'gemini']` will fail because `resolveModelFamily` uses `lastIndexOf('/')` to extract the model name. For 'cursor/gemini-3.1-pro', this extracts '3.1-pro' instead of 'gemini-3.1-pro', causing the regex to fail and the function to fall back to the provider 'cursor', which resolves to 'unknown'.
+d6889f5  tests/config/settings-fields.test.mjs:23  ERROR  The new path 'agents.reviewerProfile' is not in alphabetical order. It should be placed before 'agents.reviewer.*' paths because 'P' (80) is less than 'c' (99) in ASCII. The existing list is sorted alphabetically, and inserting it after 'agents.reviewer.thinking' breaks the sort order, which will likely cause the test to fail if it asserts strict ordering.
+d438bf8  tests/config/settings-fields.test.mjs:258  WARNING  The test asserts that `validateSettingValue` returns `ok: true` for `agents.reviewerProfile`, but does not verify that the field is actually registered in `SETTINGS_FIELDS` or that `parseSettingPath` recognizes it. If the field is missing from the registry, `parseSettingPath` will likely return `ok: false`, causing the test to fail. The test should explicitly assert that the path is valid and the field is listed in `SETTINGS_FIELDS` to ensure the feature is fully wired up.
+c302cdb  tests/doctor/agent-model-inherit.test.mjs:7  WARNING  The import of `runDoctorChecks` from `../../bin/spine.mjs` is likely incorrect. The `bin` directory typically contains executable entry points (e.g., `spine.mjs` or `spine.js`) which often contain CLI argument parsing, process exit logic, or side effects that are not suitable for unit tests. The function `runDoctorChecks` is likely defined in a library module (e.g., `src/doctor/run-doctor-checks.mjs` or similar) rather than the CLI entry point. Importing from `bin` can cause tests to fail due to side effects or incorrect module resolution.
+4e2d22c  tests/doctor/agent-model-inherit.test.mjs:233  WARNING  The test asserts `result.issueCount >= 1`, but `runDoctorChecks` increments `issueCount` for every check where `ok` is false. The `buildReviewerPerTypePinsDoctorCheck` implementation also manually increments `issueCount` if the check fails. This results in `issueCount` being incremented twice for the same issue, leading to an incorrect count (2 instead of 1).
+12 finding(s) at 834.8 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 12 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
