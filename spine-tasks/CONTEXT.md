@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-17 (Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
+**Last Updated:** 2026-10-17 (Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
-**Next Task ID:** SP-832
+**Next Task ID:** SP-844
 
 ---
 
@@ -2719,6 +2719,25 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 **Batch env:** `SPINE_STET_NO_AUTO_FINISH=1`, `SPINE_AGENT_PROFILE_OVERRIDE=qwen-flash`, `STET_CRITIC_ENABLED=false` (the llama.cpp server holds `127.0.0.1:8080`, the OpenJev critic port; `.review/config.toml` unchanged).
 
 - [x] SP-831 integrated `ea16ee56` (batch `20261017T040331-ba48`); `lmstudio/meta/muse-glimmer` worker trial skipped stet triage and `.DONE`, so `google/gemini-4-argon` finished the worker run; release:check green (2955/2955)
+
+### Phase 98 — Release v2.28.0: reviewer profiles, per-task worker profiles, reviewer metrics, quota fixes
+
+**Authoring:** 2026-10-17 · Manifest: `spine-tasks/_authoring/release-v2.28.0/manifest.md` · Worker: `activeProfile: sonnet` (`anthropic/claude-sonnet-5-5`, high); quota fallback `gemini4`. GLM and Kimi pools exhausted — no `zai/*` / `kimi-coding/*` pins. After SP-834 lands, reviewer profiles are switched on so no worker is reviewed by its own model family.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-832 | Reviewer profile resolution + model-family guard | M | #355 Partial | Staged |
+| SP-833 | PROMPT `**Profile:**` / `**Thinking:**` / `**Reviewer Profile:**` | M | #340, #355 Partial | Staged |
+| SP-834 | Engine reviews use effective reviewer profile | M | #355 Closes | Staged |
+| SP-835 | Worker per-task profile/thinking override | M | #340 Partial | Staged |
+| SP-836 | `retry --profile` + `escalatePolicy` | M | #340 Closes | Staged |
+| SP-837 | Reviewer rows in run-metrics | M | #325 Closes | Staged |
+| SP-838 | Google/Anthropic quota classification | S | #351 Partial | Staged |
+| SP-839 | Z.ai/Kimi quota probes | S | #351 Closes | Staged |
+| SP-840 | Engine code review baseline | S | #343 Closes | Staged |
+| SP-841 | Worker prompt drops per-step plan review | S | #354 Closes | Staged |
+| SP-842 | Heartbeat reads live preflight state | S | #353 Closes | Staged |
+| SP-843 | Quota fallback expiry / clear | M | #350 Closes | Staged |
 
 ---
 
