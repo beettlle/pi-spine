@@ -37,7 +37,11 @@ import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
 import { runWithQuotaFallback } from "./engine-lanes/quota-fallback-run.mjs";
 import { applyTaskReviewProfile } from "./engine-lanes/task-agent-profile.mjs";
 
-export { buildTasksAndLanesFromPlan, loadTaskFileScopePaths, skipTaskDoneOnDisk } from "./engine-lanes/queue.mjs";
+export {
+	buildTasksAndLanesFromPlan,
+	loadTaskFileScopePaths,
+	skipTaskDoneOnDisk,
+} from "./engine-lanes/queue.mjs";
 
 export {
 	buildFinalReviewArtifactPath,
@@ -57,7 +61,10 @@ export {
 } from "./engine-lanes/merge.mjs";
 
 export { syncLaneWorktreeFromOrch } from "./worktree.mjs";
-export { collectSharedScopeSatisfiedDeps, ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
+export {
+	collectSharedScopeSatisfiedDeps,
+	ensureLaneSyncedForSharedScopeDeps,
+} from "./engine-lanes/orch-sync.mjs";
 
 export {
 	acquireLaneSlot,
