@@ -14,6 +14,11 @@ Deterministic commands use the [execute-task variant](#execute-task-variant) ins
 **Created:** [YYYY-MM-DD]
 **Size:** [S | M | L]
 **Type:** [llm | execute]
+**Profile:** [optional — worker profile name from `agents.profiles`]
+**Thinking:** [optional — off | minimal | low | medium | high | xhigh]
+**Reviewer Profile:** [optional — profile from `agents.profiles` whose `reviewer` block judges this task]
+
+> **Agent header fields (#355):** All three are optional; omit them to use `agents.activeProfile`. Names allow `A-Z a-z 0-9 . _ -`. Engine reviews resolve the reviewer per task: `**Reviewer Profile:**` → `agents.profiles.<worker profile>.reviewerProfile` → `agents.reviewerProfile` → `agents.reviewer`, skipping any reviewer in the same model family as the worker. When no cross-family reviewer remains, the task fails with `review_blocked` before any reviewer spawns. `**Profile:**` feeds that resolution today; the worker spawn does not yet apply `**Profile:**` or `**Thinking:**`. See the operator runbook, "Reviewer profiles".
 
 ## Review Level: [0-2] ([None | Plan Only | Plan and Code])
 

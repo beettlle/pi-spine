@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveReviewerModelPin, resolveReviewerThinkingPin } from "../config/agent-model-resolve.mjs";
 import { readJournalEvents } from "./journal.mjs";
 import {
 	ARTIFACT_READY_HONOR_REASON,
@@ -127,11 +128,14 @@ export async function runStepReview({
 		contractVerifyResult,
 	});
 
+	// SP-834 (#355): effective reviewer of the (per-task) config; null means inherit.
 	journalReviewEvent("review.started", journal, {
 		stepNumber,
 		reviewType,
 		reviewLevel,
 		artifactPath,
+		reviewerModel: resolveReviewerModelPin(config, reviewType),
+		reviewerThinking: resolveReviewerThinkingPin(config, reviewType),
 	});
 
 	const useStub =

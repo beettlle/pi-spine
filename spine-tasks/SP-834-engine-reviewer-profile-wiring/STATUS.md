@@ -1,7 +1,7 @@
 # SP-834: Engine reviewer spawns use the effective reviewer profile — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Not Started
+**Current Step:** Step 5: Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,43 +11,43 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `runNonMatrixTaskOnLane`, `runPlanReviewPhase`, `runCodeReviewPhase`, `runFinalReviewPhase`, `runStepReview` — record callers in Discoveries
-- [ ] Find where the lane's parsed PROMPT is available (queue packet vs re-parse) and record it
+- [x] GitNexus impact on `runNonMatrixTaskOnLane`, `runPlanReviewPhase`, `runCodeReviewPhase`, `runFinalReviewPhase`, `runStepReview` — record callers in Discoveries
+- [x] Find where the lane's parsed PROMPT is available (queue packet vs re-parse) and record it
 
 ### Step 1: Task agent context helpers
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `resolveTaskWorkerProfile` and `buildTaskReviewConfig` (pure)
+- [x] `resolveTaskWorkerProfile` and `buildTaskReviewConfig` (pure)
 
 ### Step 2: Engine + resume wiring and runtime guard
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Review phases receive the per-task review config (fresh run and resume)
-- [ ] `review.blocked` fails the task before spawning; `review.reviewer_resolved` journaled
-- [ ] `review.started` carries `reviewerModel` / `reviewerThinking`
+- [x] Review phases receive the per-task review config (fresh run and resume)
+- [x] `review.blocked` fails the task before spawning; `review.reviewer_resolved` journaled
+- [x] `review.started` carries `reviewerModel` / `reviewerThinking`
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Helpers: PROMPT reviewer profile wins; worker profile `reviewerProfile` used when PROMPT absent; `agents.reviewerProfile` default; per-type plan/code/final pins differ correctly
-- [ ] Quota fallback hop to a Gemini worker switches the reviewer to the fallback profile's `reviewerProfile` (cross-family)
-- [ ] Same-family with no alternative → `review.blocked`, no reviewer spawn (stub engine run)
-- [ ] `review.started` payload includes reviewer model/thinking
+- [x] Helpers: PROMPT reviewer profile wins; worker profile `reviewerProfile` used when PROMPT absent; `agents.reviewerProfile` default; per-type plan/code/final pins differ correctly
+- [x] Quota fallback hop to a Gemini worker switches the reviewer to the fallback profile's `reviewerProfile` (cross-family)
+- [x] Same-family with no alternative → `review.blocked`, no reviewer spawn (stub engine run)
+- [x] `review.started` payload includes reviewer model/thinking
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
+- [x] Run lint: `npm run lint`
 - [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook "Reviewer profiles" section and prompt-template fields
-- [ ] Discoveries logged in STATUS.md
+- [x] Runbook "Reviewer profiles" section and prompt-template fields
+- [x] Discoveries logged in STATUS.md
 - [ ] Create `spine-tasks/SP-834-engine-reviewer-profile-wiring/.DONE`
 
 ---
@@ -56,9 +56,16 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| GitNexus impact: `runNonMatrixTaskOnLane` — LOW, 1 caller (`runTaskOnLane`, via `runWithQuotaFallback`). `runPlanReviewPhase` — HIGH, callers `runNonMatrixTaskOnLane` and `runLaneReviewPhasesBeforeCommit` (→ `resume.mjs`, `resume-multi-lanes.mjs` ×2). `runStepReview` — HIGH, callers `runEnginePlanReview` / `runEngineCodeReview` / `runEngineFinalReview`. Code/final phases share the plan phase's callers. | Recorded | Step 0 |
+| Parsed PROMPT is not retained on the lane/queue packet (`loadTaskFileScopePaths` returns only `fileScopePaths`), so the review config re-parses `PROMPT.md` in the worktree via `loadTaskPacket`. | Implemented (`applyTaskReviewProfile`) | `src/batch/engine-lanes/task-agent-profile.mjs` |
+| `src/batch/engine-lanes.mjs` sits at the 500-LOC batch module cap; all orchestration (journal, guard, task failure) lives in `task-agent-profile.mjs` and two re-exports were collapsed to one line each. | Resolved | `src/batch/engine-lanes.mjs` |
+| Review Level 1 runs plan + final reviews, so a blocked pairing journals two `review.blocked` events (plan, final); the task fails with the first (`plan_review_blocked`). | By design | `tests/batch/engine-reviewer-profile.test.mjs` |
+| Stub-mode engine plan review (`runEnginePlanReview` stub branch, `review-plan.mjs`) journals `review.started` without `reviewerModel` / `reviewerThinking`; only `runStepReview` (real spawn path and `stub:true` direct calls) carries them. `review-plan.mjs` is outside this task's File Scope. | Not changed — follow-up if stub parity is wanted | `src/batch/engine-lanes/review-plan.mjs` |
+| The worker spawn does not yet read PROMPT `**Profile:**` / `**Thinking:**` (SP-835); the prompt template says so. | Documented | `skills/create-spine-tasks/references/prompt-template.md` |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
+| 2026-10-18 | Steps 0–3 and 5 (docs) implemented | lint, typecheck and Contract unit tests pass (stet pending) |
