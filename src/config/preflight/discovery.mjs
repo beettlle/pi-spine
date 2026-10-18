@@ -311,6 +311,7 @@ export function checkTasksValidate(ctx) {
 			const validation = validatePrompt(promptMarkdown, {
 				taskId: discoveredTask.taskId,
 				contract: config.contract,
+				agents: config.agents,
 			});
 			if (!validation.ok) {
 				failures.push(

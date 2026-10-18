@@ -217,6 +217,7 @@ export async function runSpineTasksValidate({
 
 		const packet = loadTaskPacket(discoveredTask.folderPath, {
 			contract: config.contract,
+			agents: config.agents,
 		});
 		const failure = collectPromptValidationFailure(packet, taskId);
 		/** @type {string[]} */

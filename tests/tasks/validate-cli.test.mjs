@@ -395,3 +395,28 @@ test('spine tasks validate CLI exits 2 for config error', async () => {
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test('spine tasks validate CLI reports unknown **Profile:** from agents.profiles (SP-833)', async () => {
+	const projectRoot = await initGitRepo('spine-validate-cli-profile-');
+	try {
+		writeTask(
+			projectRoot,
+			'FX-105-profile',
+			'FX-105',
+			validPromptMarkdown('FX-105', { title: 'Profile fixture' }).replace(
+				'## Mission',
+				'**Profile:** nonexistent-profile\n\n## Mission',
+			),
+		);
+
+		const result = spawnSync(process.execPath, [SPINE_BIN, 'tasks', 'validate', 'FX-105'], {
+			cwd: projectRoot,
+			encoding: 'utf-8',
+		});
+
+		assert.equal(result.status, 1, result.stderr);
+		assert.match(result.stdout + result.stderr, /Profile:\*\* "nonexistent-profile" is not defined in agents\.profiles/);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

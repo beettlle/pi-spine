@@ -13,6 +13,9 @@ import {
 } from "./parse-prompt.mjs";
 import { validateContract } from "./validate-contract.mjs";
 import { collectExecuteReviewLevelWarnings } from "../validate-contract-warn.mjs";
+import { resolveEffectiveReviewer } from "../../config/agent-model-resolve.mjs";
+import { isSameModelFamily } from "../../config/model-family.mjs";
+import { PROMPT_PROFILE_NAME_RE } from "./parse-prompt.mjs";
 import { parseReviewLevel } from "../../batch/review-shared.mjs";
 
 /** Operator-facing hint when fileScopeMustChange may already be satisfied on main. */
@@ -20,10 +23,154 @@ export const STALE_FILE_SCOPE_AMENDMENT_HINT =
 	"Amend PROMPT.md ## Contract before batch start (e.g. point fileScopeMustChange at delivery artifacts such as STATUS.md, or add an ## Amendments note documenting pre-landed implementation)";
 
 /**
+ * @param {unknown} value
+ * @returns {value is Record<string, any>}
+ */
+function isRecord(value) {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Per-type reviewer model pin (type-specific wins over top-level; `inherit` is no pin).
+ *
+ * @param {Record<string, any>} reviewer
+ * @param {"plan"|"code"|"final"} reviewType
+ * @returns {string|null}
+ */
+function pickReviewerModel(reviewer, reviewType) {
+	for (const candidate of [reviewer[reviewType]?.model, reviewer.model]) {
+		if (typeof candidate === "string" && candidate !== "" && candidate !== "inherit") {
+			return candidate;
+		}
+	}
+	return null;
+}
+
+/**
+ * Warnings for per-task agent fields on `**Type:** execute` tasks (no LLM worker/reviewer).
+ *
+ * @param {ReturnType<typeof validatePromptStructure>["prompt"]} prompt
+ * @returns {string[]}
+ */
+function collectExecuteAgentFieldWarnings(prompt) {
+	if (prompt.type !== "execute") return [];
+	/** @type {string[]} */
+	const warnings = [];
+	for (const [label, value] of [
+		["Profile", prompt.profile],
+		["Thinking", prompt.thinking],
+		["Reviewer Profile", prompt.reviewerProfile],
+	]) {
+		if (value !== null) {
+			warnings.push(
+				`**${label}:** is ignored on a **Type:** execute task (no LLM worker or reviewer to configure)`,
+			);
+		}
+	}
+	return warnings;
+}
+
+/**
+ * Config-aware checks of `**Profile:**` / `**Reviewer Profile:**` against `agents` (SP-833 / #355).
+ * Skipped by callers when no `agents` option is supplied (planner, queue).
+ *
+ * @param {ReturnType<typeof validatePromptStructure>["prompt"]} prompt
+ * @param {Record<string, any>} agents Effective `config.agents`
+ * @returns {{ errors: string[], warnings: string[] }}
+ */
+function collectAgentProfileFindings(prompt, agents) {
+	/** @type {string[]} */
+	const errors = [];
+	/** @type {string[]} */
+	const warnings = [];
+	if (prompt.type === "execute") return { errors, warnings };
+	if (prompt.profile === null && prompt.reviewerProfile === null) return { errors, warnings };
+
+	const profiles = isRecord(agents.profiles) ? agents.profiles : {};
+	const definedNames = Object.keys(profiles);
+	const known = (name) => PROMPT_PROFILE_NAME_RE.test(name) && Object.hasOwn(profiles, name);
+	const hint = definedNames.length > 0 ? ` (defined: ${definedNames.join(", ")})` : " (none defined)";
+
+	const wellFormed = (name) => name === null || PROMPT_PROFILE_NAME_RE.test(name);
+	let resolvable = true;
+	if (prompt.profile !== null && wellFormed(prompt.profile) && !known(prompt.profile)) {
+		errors.push(`**Profile:** "${prompt.profile}" is not defined in agents.profiles${hint}`);
+		resolvable = false;
+	}
+	if (prompt.reviewerProfile !== null && wellFormed(prompt.reviewerProfile)) {
+		if (!known(prompt.reviewerProfile)) {
+			errors.push(
+				`**Reviewer Profile:** "${prompt.reviewerProfile}" is not defined in agents.profiles${hint}`,
+			);
+			resolvable = false;
+		} else if (!isRecord(profiles[prompt.reviewerProfile]?.reviewer)) {
+			warnings.push(
+				`**Reviewer Profile:** "${prompt.reviewerProfile}" has no reviewer block; it falls back to the next reviewer precedence level`,
+			);
+		}
+	}
+
+	// Malformed names already fail structural validation; unknown names already errored above.
+	if (!resolvable || !wellFormed(prompt.profile) || !wellFormed(prompt.reviewerProfile)) {
+		return { errors, warnings };
+	}
+
+	const workerModel =
+		(prompt.profile !== null ? profiles[prompt.profile]?.worker?.model : null) ??
+		agents.worker?.model ??
+		null;
+	/** @type {Array<"plan"|"code"|"final">} */
+	const reviewTypes = [];
+	/** @type {Set<string>} */
+	const models = new Set();
+	let subject = "effective reviewer";
+	const reviewerBlock =
+		prompt.reviewerProfile !== null ? profiles[prompt.reviewerProfile]?.reviewer : null;
+	if (prompt.reviewerProfile !== null && isRecord(reviewerBlock)) {
+		// The named profile itself must be cross-family; fallback candidates do not rescue it.
+		subject = `**Reviewer Profile:** "${prompt.reviewerProfile}"`;
+		for (const reviewType of ["plan", "code", "final"]) {
+			const model = pickReviewerModel(reviewerBlock, reviewType);
+			if (isSameModelFamily(model, workerModel)) {
+				reviewTypes.push(reviewType);
+				models.add(model);
+			}
+		}
+	} else {
+		const resolved = resolveEffectiveReviewer(
+			{ agents },
+			{
+				promptReviewerProfile: prompt.reviewerProfile,
+				workerProfile: prompt.profile,
+				workerModel,
+			},
+		);
+		for (const entry of resolved.blocked) {
+			if (entry.reason === "same_model_family") {
+				reviewTypes.push(entry.reviewType);
+				models.add(resolved[entry.reviewType].model);
+			} else if (entry.reason === "unknown_reviewer_profile") {
+				errors.push(
+					"Reviewer profile resolution failed: a referenced reviewerProfile is not defined in agents.profiles",
+				);
+				break;
+			}
+		}
+	}
+	if (reviewTypes.length > 0) {
+		errors.push(
+			`${subject} uses model "${[...models].join(", ")}" in the same model family as the worker model "${workerModel}" (${reviewTypes.join(", ")} review); pick a cross-family reviewer`,
+		);
+	}
+	return { errors, warnings };
+}
+
+/**
  * Validate PROMPT.md structure and ## Contract per contract.mode (handoff §3.1, §4.4).
  *
  * @param {string} markdown PROMPT.md contents
- * @param {{ mode?: string, legacyTaskIdPrefixes?: string[], contract?: { mode?: string, legacyTaskIdPrefixes?: string[] } }} [options]
+ * @param {{ mode?: string, legacyTaskIdPrefixes?: string[], contract?: { mode?: string, legacyTaskIdPrefixes?: string[] }, agents?: Record<string, any> }} [options]
+ *   `agents` (effective `config.agents`) enables profile-name and reviewer-family checks (SP-833).
  * @returns {{ ok: boolean, errors: string[], warnings: string[], prompt: ReturnType<typeof parsePrompt>, contract: ReturnType<typeof parseContract> }}
  */
 export function validatePrompt(markdown, options = {}) {
@@ -55,6 +202,14 @@ export function validatePrompt(markdown, options = {}) {
 			reviewLevel: parseReviewLevel(markdown),
 		}),
 	);
+
+	warnings.push(...collectExecuteAgentFieldWarnings(structure.prompt));
+
+	if (isRecord(options.agents)) {
+		const findings = collectAgentProfileFindings(structure.prompt, options.agents);
+		errors.push(...findings.errors);
+		warnings.push(...findings.warnings);
+	}
 
 	return {
 		ok: errors.length === 0,

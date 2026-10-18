@@ -144,6 +144,31 @@ export function formatRefusedContractMetacharMessage(command) {
 	const issue = findContractCommandMetacharIssue(String(command ?? "").trim());
 	return `Contract testCommand refused before spawn: ${issue ?? "shell metacharacters"} (command: ${command}). Contract testCommand runs through a shell; remove $, backticks, ;, |, || or lone & — && chains are allowed (#268).`;
 }
+/** Allowed `**Thinking:**` levels (SP-833 / #340). */
+export const PROMPT_THINKING_LEVELS = Object.freeze([
+	"off",
+	"minimal",
+	"low",
+	"medium",
+	"high",
+	"xhigh",
+]);
+/** Profile names accepted by `**Profile:**` / `**Reviewer Profile:**`. */
+export const PROMPT_PROFILE_NAME_RE = /^[A-Za-z0-9._-]+$/;
+const PROFILE_LINE_RE = /^\*\*Profile:\*\*[ \t]*(.*?)[ \t]*$/im;
+const THINKING_LINE_RE = /^\*\*Thinking:\*\*[ \t]*(.*?)[ \t]*$/im;
+const REVIEWER_PROFILE_LINE_RE = /^\*\*Reviewer Profile:\*\*[ \t]*(.*?)[ \t]*$/im;
+
+/**
+ * @param {RegExp} re
+ * @param {string} markdown
+ * @returns {string|null} Trimmed value, or null when absent/empty
+ */
+function parseHeaderValue(re, markdown) {
+	const value = re.exec(markdown)?.[1]?.trim();
+	return value ? value : null;
+}
+
 export const SEE_FILE_SCOPE_RE = /^see\s+file\s+scope$/i;
 const CONTRACT_EM_DASH_PLACEHOLDER_RE = /^[—\-]$/;
 const CONTRACT_NONE_VALUES = new Set([
@@ -177,6 +202,9 @@ export function parsePrompt(markdown) {
 	const size = parseSizeLineFromMarkdown(markdown);
 	const typeMatch = /^\*\*Type:\*\*\s*(llm|execute)\s*$/im.exec(markdown);
 	const type = typeMatch ? typeMatch[1].toLowerCase() : "llm";
+	const profile = parseHeaderValue(PROFILE_LINE_RE, markdown);
+	const thinking = parseHeaderValue(THINKING_LINE_RE, markdown);
+	const reviewerProfile = parseHeaderValue(REVIEWER_PROFILE_LINE_RE, markdown);
 	
 	let matrix = null;
 	let matrixColumns = null;
@@ -193,6 +221,9 @@ export function parsePrompt(markdown) {
 		title,
 		size,
 		type,
+		profile,
+		thinking,
+		reviewerProfile,
 		headingLine,
 		sections,
 		steps,
@@ -236,6 +267,22 @@ export function validatePrompt(markdown) {
 	}
 
 	errors.push(...collectDuplicateStepNumberErrors(prompt.steps));
+
+	if (prompt.thinking !== null && !PROMPT_THINKING_LEVELS.includes(prompt.thinking)) {
+		errors.push(
+			`**Thinking:** must be one of ${PROMPT_THINKING_LEVELS.join("|")} (got "${prompt.thinking}")`,
+		);
+	}
+	for (const [label, value] of [
+		["Profile", prompt.profile],
+		["Reviewer Profile", prompt.reviewerProfile],
+	]) {
+		if (value !== null && !PROMPT_PROFILE_NAME_RE.test(value)) {
+			errors.push(
+				`**${label}:** malformed profile name "${value}" (allowed characters: A-Z a-z 0-9 . _ -)`,
+			);
+		}
+	}
 
 	if (prompt.type === "execute") {
 		const contract = parseContract(markdown);
