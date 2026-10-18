@@ -59,7 +59,7 @@ Already on `main` since v2.27.1 (ships in v2.28.0): SP-831 / #352 (numeric task 
 
 ## Wave plan
 
-1. **Batch A:** SP-832 (alone).
+1. **Batch A:** SP-832 (alone). **Landed** `49c6a719` (batch `20261018T021242-e161`). First contract run timed out (10 min) because a concurrent stet run was sharing LM Studio; second run failed with 12 stet findings, all triaged by the operator as false positives or wrong suggestions (tests 77/77 green) and dismissed. Post-integrate `release:check` passed on rerun (2999/2999); the first run had one timing flake in `tests/batch/sequence-detached-poll.test.mjs` (hard-cap test), which passed 3/3 in isolation.
 2. **Batch B:** SP-833 (alone).
 3. **Batch C:** SP-834 (alone) — completes #355.
 4. **Config switch** (operator-requested): add reviewer profiles (`review-gemini` = `google/gemini-2.5-pro`, `review-claude` = Anthropic), `agents.reviewerProfile: review-gemini`, `profiles.gemini4.reviewerProfile: review-claude`. Verify with `spine doctor` pairing line and `spine preflight`.
