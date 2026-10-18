@@ -163,6 +163,12 @@ export const SETTINGS_FIELDS = Object.freeze([
 		optional: true,
 	},
 	{
+		path: "agents.reviewerProfile",
+		label: "Reviewer agent model profile (cross-family review)",
+		type: "string",
+		optional: true,
+	},
+	{
 		path: "dashboard.port",
 		label: "Dashboard port",
 		type: "number",

@@ -308,6 +308,31 @@ export function validateAgentProfilesConfig(config) {
 				"spine init --force",
 			);
 			if (profileReviewerError) return profileReviewerError;
+			// SP-832 / #355: profile-level reviewer profile; must name another defined profile.
+			if (profile.reviewerProfile != null) {
+				if (typeof profile.reviewerProfile !== "string") {
+					return {
+						code: "CONFIG_AGENT_PROFILE_INVALID",
+						message: `agents.profiles.${name}.reviewerProfile must be a string when set`,
+						suggestedCommand: "spine init --force",
+					};
+				}
+				const reviewerTarget = profile.reviewerProfile.trim();
+				if (reviewerTarget !== "" && reviewerTarget === name) {
+					return {
+						code: "CONFIG_AGENT_PROFILE_INVALID",
+						message: `agents.profiles.${name}.reviewerProfile must not name the profile itself`,
+						suggestedCommand: "spine settings set agents.reviewerProfile default",
+					};
+				}
+				if (reviewerTarget !== "" && !Object.prototype.hasOwnProperty.call(profiles, reviewerTarget)) {
+					return {
+						code: "CONFIG_AGENT_PROFILE_INVALID",
+						message: `agents.profiles.${name}.reviewerProfile "${reviewerTarget}" does not match a defined agents.profiles entry`,
+						suggestedCommand: "spine settings set agents.reviewerProfile default",
+					};
+				}
+			}
 		}
 	}
 
@@ -354,6 +379,30 @@ export function validateAgentProfilesConfig(config) {
 				code: "CONFIG_AGENT_PROFILE_INVALID",
 				message: `agents.quotaFallbackProfile "${fallbackTarget}" does not match a defined agents.profiles entry`,
 				suggestedCommand: "spine settings set agents.quotaFallbackProfile default",
+			};
+		}
+	}
+
+	// SP-832 / #355: profile whose reviewer block reviews all workers; same membership rule as quotaFallbackProfile.
+	const reviewerProfile = agents.reviewerProfile;
+	if (reviewerProfile != null) {
+		if (typeof reviewerProfile !== "string") {
+			return {
+				code: "CONFIG_AGENT_PROFILE_INVALID",
+				message: "agents.reviewerProfile must be a string when set",
+				suggestedCommand: "spine settings set agents.reviewerProfile default",
+			};
+		}
+		const reviewerTarget = reviewerProfile.trim();
+		// An empty string unsets the reviewer profile; otherwise it must name a real profile.
+		if (
+			reviewerTarget !== "" &&
+			(!isPlainObject(profiles) || !Object.prototype.hasOwnProperty.call(profiles, reviewerTarget))
+		) {
+			return {
+				code: "CONFIG_AGENT_PROFILE_INVALID",
+				message: `agents.reviewerProfile "${reviewerTarget}" does not match a defined agents.profiles entry`,
+				suggestedCommand: "spine settings set agents.reviewerProfile default",
 			};
 		}
 	}

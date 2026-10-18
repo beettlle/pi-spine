@@ -20,6 +20,7 @@ const EXPECTED_PATHS = [
 	"agents.reviewer.plan.model",
 	"agents.reviewer.plan.thinking",
 	"agents.reviewer.thinking",
+	"agents.reviewerProfile",
 	"agents.supervisor.autoNudge",
 	"agents.supervisor.enabled",
 	"agents.supervisor.model",
@@ -253,4 +254,9 @@ test("agents.quotaFallbackProfile allows an empty value to unset the fallback (S
 	const result = validateSettingValue("agents.quotaFallbackProfile", "");
 	assert.equal(result.ok, true);
 	if (result.ok) assert.equal(result.normalizedValue, "");
+});
+
+test("agents.reviewerProfile accepts a profile name and an empty value (SP-832)", () => {
+	assert.equal(validateSettingValue("agents.reviewerProfile", "claude").ok, true);
+	assert.equal(validateSettingValue("agents.reviewerProfile", "").ok, true);
 });
