@@ -35,12 +35,9 @@ import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { acquireLaneSlot, loadMatrixTaskRows, releaseLaneSlot } from "./engine-lanes/matrix.mjs";
 import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
 import { runWithQuotaFallback } from "./engine-lanes/quota-fallback-run.mjs";
+import { applyTaskReviewProfile } from "./engine-lanes/task-agent-profile.mjs";
 
-export {
-	buildTasksAndLanesFromPlan,
-	loadTaskFileScopePaths,
-	skipTaskDoneOnDisk,
-} from "./engine-lanes/queue.mjs";
+export { buildTasksAndLanesFromPlan, loadTaskFileScopePaths, skipTaskDoneOnDisk } from "./engine-lanes/queue.mjs";
 
 export {
 	buildFinalReviewArtifactPath,
@@ -60,10 +57,7 @@ export {
 } from "./engine-lanes/merge.mjs";
 
 export { syncLaneWorktreeFromOrch } from "./worktree.mjs";
-export {
-	collectSharedScopeSatisfiedDeps,
-	ensureLaneSyncedForSharedScopeDeps,
-} from "./engine-lanes/orch-sync.mjs";
+export { collectSharedScopeSatisfiedDeps, ensureLaneSyncedForSharedScopeDeps } from "./engine-lanes/orch-sync.mjs";
 
 export {
 	acquireLaneSlot,
@@ -388,11 +382,18 @@ async function runNonMatrixTaskOnLane({
 		correlationId: laneCorrelationId,
 	});
 
+	// SP-834 (#355): per-task effective reviewer config; blocked pairings fail before any spawn.
+	const reviewProfile = await applyTaskReviewProfile({
+		projectRoot, state, batchId, config, task, lane, taskFolderInWorktree, laneCorrelationId,
+	});
+	if (!reviewProfile.ok) return reviewProfile;
+	const reviewConfig = reviewProfile.config;
+
 	const planReview = await runPlanReviewPhase({
 		projectRoot,
 		state,
 		batchId,
-		config,
+		config: reviewConfig,
 		task,
 		lane,
 		taskFolderInWorktree,
@@ -409,7 +410,7 @@ async function runNonMatrixTaskOnLane({
 		projectRoot,
 		state,
 		batchId,
-		config,
+		config: reviewConfig,
 		task,
 		lane,
 		taskFolderInWorktree,
@@ -426,7 +427,7 @@ async function runNonMatrixTaskOnLane({
 		projectRoot,
 		state,
 		batchId,
-		config,
+		config: reviewConfig,
 		task,
 		lane,
 		taskFolderInWorktree,

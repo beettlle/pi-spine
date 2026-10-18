@@ -631,6 +631,38 @@ spine rules select --role reviewer --review-type code --task SP-042
 
 **Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and the hook template copied by `spine init` to `scripts/spine-worktree-setup-flutter.sh` ([#80](https://github.com/beettlle/pi-spine/issues/80) / SP-459).
 
+### Reviewer profiles
+
+Engine plan, code, and final reviews use a reviewer chosen **per task** (#355), not the batch-wide `agents.reviewer` block. The worker is unaffected.
+
+**Precedence** (first candidate whose model is in a different family than the worker wins, per review type):
+
+1. PROMPT header `**Reviewer Profile:** <name>`
+2. `agents.profiles.<worker profile>.reviewerProfile`
+3. `agents.reviewerProfile`
+4. The merged `agents.reviewer` block
+
+The worker profile is, in order: the active quota-fallback hop (when its exhausted pool is the pool of the task's worker model), the PROMPT `**Profile:**` header, then `agents.activeProfile`. After a quota hop to a Gemini worker, for example, the reviewer follows the fallback profile's `reviewerProfile`.
+
+Each named profile supplies its pins in `agents.profiles.<name>.reviewer` (`model`, `thinking`, and optional `plan` / `code` / `final` overrides).
+
+```bash
+spine settings set agents.reviewerProfile claude-rev
+# Per-profile `reviewerProfile` is edited in .spine/spine-config.json:
+#   "agents": { "profiles": { "hard": { "reviewerProfile": "gemini-rev" } } }
+spine doctor   # "reviewer model pins (per-type)" shows each worker → reviewer pairing
+```
+
+**Family rule.** Families are coarser than providers (`google/gemini-*` and `cursor/gemini-*` are both `gemini`; also `claude`, `glm`, `kimi`, `gpt`, `qwen`). A reviewer in the worker's family is skipped. Unknown families and `inherit` never conflict.
+
+**Journal.** The engine writes `review.reviewer_resolved` once per task (`plan`, `code`, `final` pins, `warnings`). `review.started` carries `reviewerModel` and `reviewerThinking` (`null` means inherit).
+
+**Recovery from `review.blocked`.** When no cross-family reviewer exists for a review type that will run, the engine journals `review.blocked` (`taskId`, `reviewType`, `reason`, `workerModel`, `reviewerModel`), spawns no reviewer, sets `exitReason` to `<type>_review_blocked`, and fails the task with classification `review_blocked`. Reasons: `same_model_family`, `unknown_reviewer_profile`. To recover:
+
+1. Set `agents.profiles.<workerProfile>.reviewerProfile` or `agents.reviewerProfile` to a profile from another model family (or fix the profile name for `unknown_reviewer_profile`).
+2. Run `spine doctor` and confirm the pairing no longer fails.
+3. Retry the task: `spine batch retry <task-id>`.
+
 ### Hybrid model recipes (worker ≠ reviewer)
 
 Closes [#210](https://github.com/beettlle/pi-spine/issues/210). Hybrid setups run the worker and reviewer on **different models** so you trade cost vs. quality deliberately instead of paying one model everywhere. Every recipe below reuses the same two knobs already covered in [Agent model pins](#agent-model-pins-pi-inheritance-vs-spine-config) — `agents.worker.model` and `agents.reviewer.model` — plus optional per-review-type overrides. Set them once, then start batches normally; the worker subprocess and reviewer subprocess each receive their own `pi --model` (and `pi --thinking`).
