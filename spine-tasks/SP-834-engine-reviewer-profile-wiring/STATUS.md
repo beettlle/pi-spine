@@ -1,7 +1,7 @@
 # SP-834: Engine reviewer spawns use the effective reviewer profile — Status
 
-**Current Step:** Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -40,7 +40,7 @@
 **Status:** ✅ Complete
 
 - [x] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
+- [x] Run Contract `testCommand` (ends with the stet review)
 - [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
@@ -48,7 +48,7 @@
 
 - [x] Runbook "Reviewer profiles" section and prompt-template fields
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-834-engine-reviewer-profile-wiring/.DONE`
+- [x] Create `spine-tasks/SP-834-engine-reviewer-profile-wiring/.DONE`
 
 ---
 
@@ -68,4 +68,6 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
-| 2026-10-18 | Steps 0–3 and 5 (docs) implemented | lint, typecheck and Contract unit tests pass (stet pending) |
+| 2026-10-18 | Steps 0–3 and 5 (docs) implemented | lint, typecheck and Contract unit tests pass |
+| 2026-10-18 | Stet review (lenient) | 3 findings dismissed with evidence (LOC-cap reformat, config early-return, stub env); rerun reports 0 findings |
+| 2026-10-18 | Contract `testCommand` | Exit 0 |
