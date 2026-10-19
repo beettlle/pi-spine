@@ -64,6 +64,36 @@ test("classifier: z.ai 1308 quota payload returns null — quota keeps its own p
 	assert.equal(classifyReviewerProviderError(ZAI_1308), null);
 });
 
+// SP-838 (#351): Google / Anthropic quota and overload output is quota's own
+// path — the reviewer classifier must return null for every shape.
+const GOOGLE_QUOTA_BARE =
+	'{"error":{"code":429,"message":"You exceeded your current quota.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"34s"}]}}';
+const QUOTA_OVERLOAD_SHAPES = {
+	"Google bare RESOURCE_EXHAUSTED": GOOGLE_QUOTA_BARE,
+	"Google streaming got status": `got status: RESOURCE_EXHAUSTED. ${GOOGLE_QUOTA_BARE}`,
+	"Anthropic 529": '529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}',
+	"Anthropic SSE overloaded": '{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}',
+	"Anthropic 429 rate limit":
+		'429 {"type":"error","error":{"type":"rate_limit_error","message":"This request would exceed the rate limit for your organization."}}',
+	"Anthropic credit balance":
+		'400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}',
+};
+
+for (const [name, output] of Object.entries(QUOTA_OVERLOAD_SHAPES)) {
+	test(`classifier: ${name} returns null — quota classifier wins`, () => {
+		assert.equal(classifyReviewerProviderError(output), null);
+		assert.equal(classifyReviewerSpawnFailure({ error: "pi exited 1", stderrTail: output }), null);
+	});
+}
+
+test("classifier: unprefixed Google INVALID_ARGUMENT envelope is a provider error with httpStatus 400", () => {
+	const output =
+		'got status: INVALID_ARGUMENT. {"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}}';
+	const result = classifyReviewerProviderError(output);
+	assert.equal(result?.httpStatus, 400);
+	assert.match(result?.providerMessage ?? "", /invalid argument/);
+});
+
 test("classifier: empty, non-string, generic, and boundary statuses return null", () => {
 	assert.equal(classifyReviewerProviderError(""), null);
 	assert.equal(classifyReviewerProviderError(undefined), null);
