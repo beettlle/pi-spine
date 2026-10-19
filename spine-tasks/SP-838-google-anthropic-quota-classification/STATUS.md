@@ -1,7 +1,7 @@
 # SP-838: Classify Google and Anthropic quota/overload errors — Status
 
 **Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -34,14 +34,14 @@
 **Status:** ✅ Complete
 
 - [x] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
+- [x] Run Contract `testCommand` (ends with the stet review)
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
 **Status:** ✅ Complete
 
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-838-google-anthropic-quota-classification/.DONE`
+- [x] Create `spine-tasks/SP-838-google-anthropic-quota-classification/.DONE`
 
 ---
 
@@ -51,6 +51,7 @@
 |-----------|-------------|----------|
 | `@google/genai` / pi-ai / `@anthropic-ai/sdk` not installed in repo node_modules | Fixtures are pasted production strings with comments naming the producing code path | tests/batch/provider-quota.test.mjs |
 | Reviewer classifier already returns null whenever the quota classifier matches; no change needed. Bare Google 400 `INVALID_ARGUMENT` envelopes are now also collected as 4xx provider errors (httpStatus 400) | No change to reviewer-provider-error.mjs; test added | tests/batch/reviewer-provider-error.test.mjs |
+| stet findings c4e402f, 27f9724, 7005bc1 dismissed false_positive: Google rule is intentionally scoped to RESOURCE_EXHAUSTED (Anthropic 429 has its own rule), `collectStatusPayloads` is used in tests, `ZAI_1308` is defined at file top; lint+tests pass | Dismissed | stet |
 | Kimi 429 `rate_limit_error` without "currently overloaded" now classifies transient_overload (Anthropic rule, per mission) | Intended | src/batch/provider-quota.mjs |
 
 ## Execution Log
