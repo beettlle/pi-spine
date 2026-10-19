@@ -140,6 +140,7 @@ export function buildReviewRequest({
 			"## Output",
 			`Write your review to: \`${outputPath}\``,
 			"Include `### Verdict: PASS`, `### Verdict: REVISE`, or `### Verdict: REPLAN` and a JSON block.",
+			'Final verdicts are PASS, REVISE, or REPLAN only — APPROVE is rejected. JSON shape: `{"verdict":"PASS","feedback":"..."}`',
 		].join("\n");
 	}
 	if (reviewType === "plan") {
