@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { resolveTaskStartCommit } from "../../src/batch/contract-task-start.mjs";
+import { isValidCommitSha, resolveTaskStartCommit } from "../../src/batch/contract-task-start.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 const BATCH_ID = "20260701T020526";
@@ -204,4 +204,73 @@ test("resolveTaskStartCommit resolves git HEAD at task.started timestamp when jo
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
+});
+
+test("isValidCommitSha accepts 7-40 char hex only", () => {
+	const cases = [
+		["abcdef1", true],
+		["ABCDEF1234", true],
+		["a".repeat(40), true],
+		["a".repeat(6), false],
+		["a".repeat(41), false],
+		["--evil", false],
+		["-abcdef1", false],
+		["abcdefg", false],
+		["abc def1", false],
+		["abcdef1\n--x", false],
+		["", false],
+		[null, false],
+		[undefined, false],
+		[1234567, false],
+	];
+	for (const [value, expected] of cases) {
+		assert.equal(isValidCommitSha(value), expected, JSON.stringify(value));
+	}
+});
+
+test("resolveTaskStartCommit returns null for invalid payload or lane commit values", () => {
+	const started = (payload) => ({
+		type: "task.started",
+		batchId: BATCH_ID,
+		laneId: "lane-1",
+		taskId: "SP-001",
+		timestamp: "2026-07-01T02:10:00.000Z",
+		payload: { laneNumber: 1, taskId: "SP-001", ...payload },
+	});
+	assert.equal(
+		resolveTaskStartCommit({
+			journal: [started({ taskStartCommit: "--evil" })],
+			taskId: "SP-001",
+			laneId: "lane-1",
+			batchId: BATCH_ID,
+		}),
+		null,
+	);
+	assert.equal(
+		resolveTaskStartCommit({
+			journal: [
+				{
+					type: "lane.committed",
+					batchId: BATCH_ID,
+					laneId: "lane-1",
+					taskId: "SP-000",
+					payload: { laneNumber: 1, commitSha: "--upload-pack=x" },
+				},
+				started({}),
+			],
+			taskId: "SP-001",
+			laneId: "lane-1",
+			batchId: BATCH_ID,
+		}),
+		null,
+	);
+	assert.equal(
+		resolveTaskStartCommit({
+			journal: [started({ taskStartCommit: "abcdef1234567" })],
+			taskId: "SP-001",
+			laneId: "lane-1",
+			batchId: BATCH_ID,
+		}),
+		"abcdef1234567",
+	);
 });
