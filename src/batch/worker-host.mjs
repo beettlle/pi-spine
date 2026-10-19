@@ -363,7 +363,6 @@ export async function runWorker({
 		laneCorrelationId,
 		useStub,
 		workerBackend,
-		childPastPreflight,
 		isPastPreflight: () => childPastPreflight,
 		onHeartbeat,
 		workerMode,
