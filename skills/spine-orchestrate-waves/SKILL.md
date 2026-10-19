@@ -30,7 +30,10 @@ Invoke explicitly: `/skill:spine-orchestrate-waves`, `/spine-orchestrate pending
 
 ## Prerequisites
 
-- pi-spine installed (`pi install npm:pi-spine` or local link)
+- pi-spine checkout available; every `spine …` command in this skill means that checkout's CLI, not the global install:
+  - dogfooding in pi-spine: `node bin/spine.mjs <args>` from the repo root;
+  - consumer repo: `node <path-to-pi-spine-checkout>/bin/spine.mjs <args>` (keep the checkout on latest `main` and `npm install` after pulling).
+  The global `spine` (Homebrew/npm `-g`, `pi install npm:pi-spine`) is the last published release and lacks fixes on `main`. The engine loads worker/reviewer code from the package that launched it, so verify a detached engine with `ps -o command= -p <enginePid>`.
 - `.spine/spine-config.json` present (`spine init` if missing)
 - Tasks decomposed into waves (`spine plan pending` shows wave structure)
 - Familiarity with [operator-runbook §4 land loop](../../docs/adoption/operator-runbook.md#4-land-loop)

@@ -25,7 +25,7 @@ Apply when the user:
 
 - Node.js ≥ 22, git, `pi` on PATH
 - `.spine/spine-config.json` (`spine init`)
-- Install: `pi install npm:pi-spine` or `npm install -g pi-spine`
+- **Always run the pi-spine checkout's CLI**, not the global install: `node bin/spine.mjs <args>` inside the pi-spine repo, or `node <path-to-pi-spine-checkout>/bin/spine.mjs <args>` from a consumer repo. Every `spine …` command below means that binary. The global `spine` (`pi install npm:pi-spine`, `npm install -g pi-spine`, Homebrew) is the last published release and lacks fixes on `main`. The engine loads worker/reviewer code from the package that launched it; verify a detached engine with `ps -o command= -p <enginePid>`.
 
 ## Command reference
 

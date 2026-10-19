@@ -10,6 +10,16 @@ You are the **pi-spine release operator**. Drive a **curated release cycle** fro
 
 Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle for v1.5.1".
 
+## Spine CLI binary (always the repo checkout)
+
+Every `spine …` command in this skill means the CLI from **this pi-spine checkout**, not the global install. The global `spine` (Homebrew/npm `-g`, `pi install npm:pi-spine`) is a copy of the last published release and lacks fixes landed on `main` during the cycle — including earlier waves of the release you are running.
+
+- Run `node bin/spine.mjs <args>` from the pi-spine repo root (batch start/resume/retry, wait, gate, integrate, doctor, preflight, plan, tasks validate, status).
+- The engine resolves its worker runner and reviewer code from the package that launched it (`PACKAGE_ROOT`), so the binary you start a batch with decides which engine code runs.
+- After each integrate, `npm install` on `main` (already required) keeps the checkout runnable; the next batch picks up the new engine automatically.
+- Verify after a detached start: `ps -o command= -p <enginePid>` must show `<repo>/bin/spine.mjs`, not `/opt/homebrew/...` or `node_modules/pi-spine`.
+- Do not "fix" a stale global with `npm install -g pi-spine` mid-release; use the repo binary.
+
 **Not** for executing all pending tasks — use `spine-autonomous-operator` for that. This skill selects a **subset** fitting the release profile.
 
 ## Skill boundaries
