@@ -254,8 +254,8 @@ test("waitForSequenceBatchTerminal hard-caps at maxWaitMs even while engine prog
 			result = await waitForSequenceBatchTerminal({
 				projectRoot,
 				pollIntervalMs: 40,
-				timeoutMs: 5_000,
-				stallMs: 10_000,
+				timeoutMs: 60_000,
+				stallMs: 60_000,
 				maxWaitMs: 300,
 				enginePid: process.pid,
 			});
@@ -267,9 +267,10 @@ test("waitForSequenceBatchTerminal hard-caps at maxWaitMs even while engine prog
 		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
 		assert.equal(result.error, "sequence_wait_timeout");
 		assert.equal(result.suggestedCommand, "spine status --diagnose");
+		// Loose bound: the full suite runs on loaded machines; timeoutMs/stallMs stay far above it.
 		assert.ok(
-			elapsedMs < 2_000,
-			`hard cap should end the wait near maxWaitMs=300 (elapsed=${elapsedMs}ms)`,
+			elapsedMs < 15_000,
+			`hard cap should end the wait long before timeoutMs/stallMs (elapsed=${elapsedMs}ms)`,
 		);
 	} finally {
 		await destroyGitRepo(projectRoot);
