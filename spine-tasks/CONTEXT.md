@@ -2728,7 +2728,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 |------|---------|------|-------|--------|
 | SP-832 | Reviewer profile resolution + model-family guard | M | #355 Partial | **Done** (`49c6a719`) |
 | SP-833 | PROMPT `**Profile:**` / `**Thinking:**` / `**Reviewer Profile:**` | M | #340, #355 Partial | **Done** (`cdfe5e7a`) |
-| SP-834 | Engine reviews use effective reviewer profile | M | #355 Closes | Staged |
+| SP-834 | Engine reviews use effective reviewer profile | M | #355 Closes | **Done** (`8b5d9996`) |
 | SP-835 | Worker per-task profile/thinking override | M | #340 Partial | Staged |
 | SP-836 | `retry --profile` + `escalatePolicy` | M | #340 Closes | Staged |
 | SP-837 | Reviewer rows in run-metrics | M | #325 Closes | Staged |
