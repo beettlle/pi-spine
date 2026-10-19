@@ -2732,11 +2732,11 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-835 | Worker per-task profile/thinking override | M | #340 Partial | Staged |
 | SP-836 | `retry --profile` + `escalatePolicy` | M | #340 Closes | Staged |
 | SP-837 | Reviewer rows in run-metrics | M | #325 Closes | Staged |
-| SP-838 | Google/Anthropic quota classification | S | #351 Partial | Staged |
-| SP-839 | Z.ai/Kimi quota probes | S | #351 Closes | Staged |
-| SP-840 | Engine code review baseline | S | #343 Closes | Staged |
-| SP-841 | Worker prompt drops per-step plan review | S | #354 Closes | Staged |
-| SP-842 | Heartbeat reads live preflight state | S | #353 Closes | Staged |
+| SP-838 | Google/Anthropic quota classification | S | #351 Partial | Done `bcadee3b` |
+| SP-839 | Z.ai/Kimi quota probes | S | #351 Closes | Done `5179fa03` |
+| SP-840 | Engine code review baseline | S | #343 Closes | Done `5a91c788` |
+| SP-841 | Worker prompt drops per-step plan review | S | #354 Closes | Done `8114d3c6` |
+| SP-842 | Heartbeat reads live preflight state | S | #353 Closes | Done `8dbf7fcf` |
 | SP-843 | Quota fallback expiry / clear | M | #350 Closes | Staged |
 
 ---
