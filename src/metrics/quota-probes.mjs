@@ -35,7 +35,7 @@ const DEFAULT_AUTH_PATH = path.join(os.homedir(), ".pi", "agent", "auth.json");
 
 const PROBE_URLS = {
 	zai: "https://api.z.ai/api/monitor/usage/quota/limit",
-	"kimi-coding": "https://api.moonshot.ai/v1/users/me/balance",
+	"kimi-coding": "https://api.kimi.com/coding/v1/usages",
 	cursor: "https://api.cursor.com/teams/daily-usage-data",
 	anthropic: "https://api.anthropic.com/v1/organizations/usage_report/messages",
 };
@@ -61,13 +61,33 @@ export const PROBE_POOLS = {
  */
 
 /**
+ * One quota window reported by a provider (for example the 5-hour or weekly
+ * window). `percentUsed` is 0-100 and is only set from provider-reported data.
+ *
+ * @typedef {object} QuotaWindow
+ * @property {string} window Window id: `"5h"`, `"weekly"`, or `"monthly_tool_calls"`.
+ * @property {number} percentUsed
+ * @property {number} [used]
+ * @property {number} [limit]
+ * @property {string} [resetAt] ISO 8601 reset time.
+ */
+
+/**
+ * `source` is `"live"` only when at least one window or usage value was
+ * parsed. A successful HTTP response with no recognised quota fields is
+ * `"unparsed"`; missing credentials, non-2xx responses, and network errors are
+ * `"absent"`.
+ *
  * @typedef {object} ProbeResult
  * @property {string} poolId
- * @property {"live" | "absent"} source
+ * @property {"live" | "absent" | "unparsed"} source
  * @property {PoolUsage} [usage]
  * @property {number} [limit]
- * @property {Error} [error]
+ * @property {QuotaWindow[]} [windows]
+ * @property {Error | string} [error]
  */
+
+const UNPARSED_ERROR = "HTTP 200 but no quota fields recognised";
 
 /**
  * Read and parse the pi agent auth file, returning `null` when it is missing
@@ -198,6 +218,24 @@ async function fetchJsonWithBearer(url, key, fetch) {
 }
 
 /**
+ * Coerce a provider value to a finite non-negative number. Numeric strings
+ * (`"63"`) are accepted because some providers serialise counters as strings.
+ *
+ * @param {unknown} value
+ * @returns {number | undefined}
+ */
+function toNonNegativeNumber(value) {
+	if (typeof value === "number") {
+		return Number.isFinite(value) && value >= 0 ? value : undefined;
+	}
+	if (typeof value === "string" && value.trim() !== "") {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+	}
+	return undefined;
+}
+
+/**
  * Extract a numeric limit from a provider response when it is explicitly
  * present; otherwise return `undefined` so the snapshot does not invent one.
  *
@@ -208,8 +246,8 @@ async function fetchJsonWithBearer(url, key, fetch) {
 function extractLimit(data, fields) {
 	if (!data || typeof data !== "object") return undefined;
 	for (const field of fields) {
-		const value = data[field];
-		if (Number.isFinite(value) && value >= 0) return value;
+		const value = toNonNegativeNumber(data[field]);
+		if (value !== undefined) return value;
 	}
 	return undefined;
 }
@@ -223,19 +261,183 @@ function extractLimit(data, fields) {
  * @returns {number | undefined}
  */
 function extractNumber(data, fields) {
-	if (!data || typeof data !== "object") return undefined;
-	for (const field of fields) {
-		const value = data[field];
-		if (Number.isFinite(value) && value >= 0) return value;
+	return extractLimit(data, fields);
+}
+
+/**
+ * Round a percentage to two decimals so float noise (62.74999999999999) does
+ * not reach reports.
+ *
+ * @param {number} value
+ * @returns {number}
+ */
+function roundPercent(value) {
+	return Math.round(value * 100) / 100;
+}
+
+/**
+ * Normalise a reset time (epoch milliseconds as number or numeric string, or
+ * an ISO 8601 string) to an ISO string. Returns `undefined` when unparseable.
+ *
+ * @param {unknown} value
+ * @returns {string | undefined}
+ */
+function toIsoTime(value) {
+	if (value === undefined || value === null || value === "") return undefined;
+	const epoch = toNonNegativeNumber(value);
+	const date = new Date(epoch !== undefined ? epoch : /** @type {string} */ (value));
+	if (Number.isNaN(date.getTime())) return undefined;
+	return date.toISOString();
+}
+
+/**
+ * Build a window entry, omitting fields the provider did not report.
+ *
+ * @param {string} window
+ * @param {number | undefined} percentUsed
+ * @param {{ used?: number, limit?: number, resetAt?: string }} [extra]
+ * @returns {QuotaWindow | undefined}
+ */
+function makeWindow(window, percentUsed, extra = {}) {
+	if (percentUsed === undefined) return undefined;
+	/** @type {QuotaWindow} */
+	const entry = { window, percentUsed: roundPercent(percentUsed) };
+	if (extra.used !== undefined) entry.used = extra.used;
+	if (extra.limit !== undefined) entry.limit = extra.limit;
+	if (extra.resetAt !== undefined) entry.resetAt = extra.resetAt;
+	return entry;
+}
+
+/**
+ * Percentage from explicit `used` / `limit` counters; `undefined` when the
+ * limit is missing or zero.
+ *
+ * @param {number | undefined} used
+ * @param {number | undefined} limit
+ * @returns {number | undefined}
+ */
+function percentFromCounts(used, limit) {
+	if (used === undefined || limit === undefined || limit <= 0) return undefined;
+	return (used / limit) * 100;
+}
+
+/**
+ * Parse Z.ai `data.limits[]` into quota windows. `TOKENS_LIMIT` entries map by
+ * `unit`/`number` (3/5 = 5-hour, 6/1 = weekly); `TIME_LIMIT` is the monthly
+ * tool-call allowance. Unknown entries are skipped, never guessed.
+ *
+ * @param {unknown} limits
+ * @returns {QuotaWindow[]}
+ */
+function parseZaiWindows(limits) {
+	if (!Array.isArray(limits)) return [];
+	/** @type {QuotaWindow[]} */
+	const windows = [];
+	const seen = new Set();
+	for (const item of limits) {
+		if (!item || typeof item !== "object") continue;
+		let id;
+		if (item.type === "TOKENS_LIMIT") {
+			const unit = toNonNegativeNumber(item.unit);
+			const number = toNonNegativeNumber(item.number);
+			if (unit === 3 && number === 5) id = "5h";
+			else if (unit === 6 && number === 1) id = "weekly";
+		} else if (item.type === "TIME_LIMIT") {
+			id = "monthly_tool_calls";
+		}
+		if (!id || seen.has(id)) continue;
+
+		// For TIME_LIMIT, `usage` is the allowance and `currentValue` the count used.
+		const limit = id === "monthly_tool_calls" ? toNonNegativeNumber(item.usage) : undefined;
+		const used = id === "monthly_tool_calls" ? toNonNegativeNumber(item.currentValue) : undefined;
+		const percent = toNonNegativeNumber(item.percentage) ?? percentFromCounts(used, limit);
+		const entry = makeWindow(id, percent, { used, limit, resetAt: toIsoTime(item.nextResetTime) });
+		if (!entry) continue;
+		seen.add(id);
+		windows.push(entry);
 	}
-	return undefined;
+	return windows;
+}
+
+/**
+ * True when a Kimi `limits[]` window descriptor is the 5-hour window
+ * (300 minutes or 5 hours).
+ *
+ * @param {object | undefined} win
+ * @returns {boolean}
+ */
+function isKimiFiveHourWindow(win) {
+	if (!win || typeof win !== "object") return false;
+	const duration = toNonNegativeNumber(win.duration);
+	if (duration === undefined) return false;
+	if (win.timeUnit === "TIME_UNIT_MINUTE") return duration === 300;
+	if (win.timeUnit === "TIME_UNIT_HOUR") return duration === 5;
+	return false;
+}
+
+/**
+ * Build a window from a Kimi `{ used, limit, resetTime }` counter block.
+ *
+ * @param {string} id
+ * @param {object | undefined} block
+ * @returns {QuotaWindow | undefined}
+ */
+function kimiCounterWindow(id, block) {
+	if (!block || typeof block !== "object") return undefined;
+	const used = toNonNegativeNumber(block.used);
+	const limit = toNonNegativeNumber(block.limit);
+	return makeWindow(id, percentFromCounts(used, limit), {
+		used,
+		limit,
+		resetAt: toIsoTime(block.resetTime),
+	});
+}
+
+/**
+ * Parse the Kimi Coding `/coding/v1/usages` response. `usages.limit_5h` and
+ * `usages.limit_7d` (`used_ratio`, `reset_time`) are preferred; `limits[]`
+ * detail (5-hour) and top-level `usage` (weekly) are fallbacks.
+ *
+ * @param {object} data
+ * @returns {QuotaWindow[]}
+ */
+function parseKimiWindows(data) {
+	/** @type {QuotaWindow[]} */
+	const windows = [];
+	const usages = data.usages && typeof data.usages === "object" ? data.usages : {};
+
+	const ratioWindow = (id, block) => {
+		if (!block || typeof block !== "object") return undefined;
+		const ratio = toNonNegativeNumber(block.used_ratio);
+		return makeWindow(id, ratio === undefined ? undefined : ratio * 100, {
+			resetAt: toIsoTime(block.reset_time),
+		});
+	};
+
+	let fiveHour = ratioWindow("5h", usages.limit_5h);
+	if (!fiveHour && Array.isArray(data.limits)) {
+		for (const item of data.limits) {
+			if (!item || typeof item !== "object" || !isKimiFiveHourWindow(item.window)) continue;
+			fiveHour = kimiCounterWindow("5h", item.detail);
+			if (fiveHour) break;
+		}
+	}
+	if (fiveHour) windows.push(fiveHour);
+
+	const weekly = ratioWindow("weekly", usages.limit_7d) ?? kimiCounterWindow("weekly", data.usage);
+	if (weekly) windows.push(weekly);
+
+	return windows;
 }
 
 /**
  * Z.ai probe — uses the bearer key from `auth.json` to request the quota
  * monitor endpoint.
  *
- * Expected shape (used by mocked tests): `{ used: number, total: number }`.
+ * Real shape: `{ data: { limits: [{ type, unit, number, percentage,
+ * nextResetTime }] } }` (see #351). Flat `{ used, total }` bodies are still
+ * read when present. A 2xx response with nothing recognised is `"unparsed"`,
+ * never `"live"`.
  *
  * @param {object | null} auth
  * @param {typeof globalThis.fetch} fetch
@@ -259,8 +461,14 @@ async function probeZai(auth, fetch) {
 			extractLimit(data, ["total", "total_tokens", "limit"]) ??
 			extractLimit(data.data, ["total", "total_tokens", "limit"]);
 
+		const windows = parseZaiWindows(data.data?.limits);
+
+		if (used === undefined && windows.length === 0) {
+			return { poolId: "zai", source: "unparsed", error: UNPARSED_ERROR };
+		}
 		const result = { poolId: "zai", source: "live", usage };
 		if (limit !== undefined) result.limit = limit;
+		if (windows.length > 0) result.windows = windows;
 		return result;
 	} catch (error) {
 		return { poolId: "zai", source: "absent", error };
@@ -268,10 +476,10 @@ async function probeZai(auth, fetch) {
 }
 
 /**
- * Kimi (Moonshot) probe — uses the bearer key from `auth.json` to request the
- * balance endpoint.
- *
- * Expected shape (used by mocked tests): `{ used: number, total: number }`.
+ * Kimi Coding probe — uses the bearer key from `auth.json` to request the
+ * `/coding/v1/usages` endpoint (the Moonshot platform balance endpoint rejects
+ * Kimi Coding plan keys). Numbers arrive as strings. A 2xx response with
+ * nothing recognised is `"unparsed"`, never `"live"`.
  *
  * @param {object | null} auth
  * @param {typeof globalThis.fetch} fetch
@@ -285,24 +493,13 @@ async function probeKimi(auth, fetch) {
 		const data = await fetchJsonWithBearer(PROBE_URLS["kimi-coding"], key, fetch);
 		if (!data) return { poolId: "kimi-coding", source: "absent" };
 
+		const windows = parseKimiWindows(data);
+		if (windows.length === 0) {
+			return { poolId: "kimi-coding", source: "unparsed", error: UNPARSED_ERROR };
+		}
 		/** @type {PoolUsage} */
 		const usage = { taskCount: 0, durationMs: 0 };
-		const used = extractNumber(data, ["used", "used_tokens"])
-			?? extractNumber(data.data, ["used", "used_tokens"]);
-		if (used !== undefined) usage.tokensOut = used;
-
-		const balance =
-			extractNumber(data, ["balance", "cash"]) ??
-			extractNumber(data.data, ["balance", "cash"]);
-		if (balance !== undefined) usage.estimatedUsd = balance;
-
-		const limit =
-			extractLimit(data, ["total", "total_tokens", "limit"]) ??
-			extractLimit(data.data, ["total", "total_tokens", "limit"]);
-
-		const result = { poolId: "kimi-coding", source: "live", usage };
-		if (limit !== undefined) result.limit = limit;
-		return result;
+		return { poolId: "kimi-coding", source: "live", usage, windows };
 	} catch (error) {
 		return { poolId: "kimi-coding", source: "absent", error };
 	}

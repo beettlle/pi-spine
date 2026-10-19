@@ -220,14 +220,24 @@ test("runQuotaReport enriches pools with live probes under mocked fetch", async 
 		const authPath = path.join(root, "auth.json");
 		fs.writeFileSync(authPath, JSON.stringify({ zai: { key: "probe-key-do-not-leak" } }), "utf-8");
 
-		// Mocked fetch: live usage for the Z.ai quota endpoint; everything else 404s
-		// so adapters fail closed. kimi-coding and cursor have no creds here, so only
+		// Mocked fetch: real Z.ai quota response (#351); everything else 404s so
+		// adapters fail closed. kimi-coding and cursor have no creds here, so only
 		// the zai probe reaches the network mock.
 		const mockFetch = async (url) => {
 			if (String(url).includes("/quota/limit")) {
 				return {
 					ok: true,
-					text: async () => JSON.stringify({ used: 12345, total: 50000 }),
+					text: async () =>
+						JSON.stringify({
+							code: 200,
+							data: {
+								limits: [
+									{ type: "TOKENS_LIMIT", unit: 3, number: 5, percentage: 63, nextResetTime: 1792060376601 },
+									{ type: "TOKENS_LIMIT", unit: 6, number: 1, percentage: 82, nextResetTime: 1792429296983 },
+								],
+							},
+							success: true,
+						}),
 				};
 			}
 			return { ok: false, text: async () => "" };
@@ -246,8 +256,21 @@ test("runQuotaReport enriches pools with live probes under mocked fetch", async 
 		// zai had observed metrics (estimate baseline); the live probe promotes it.
 		assert.equal(snapshot.snapshotSource, "live");
 		assert.equal(snapshot.pools.zai.source, "live");
-		assert.equal(snapshot.pools.zai.usage.tokensOut, 12345);
-		assert.equal(snapshot.pools.zai.limit, 50000);
+		assert.deepEqual(snapshot.pools.zai.windows, [
+			{ window: "5h", percentUsed: 63, resetAt: new Date(1792060376601).toISOString() },
+			{ window: "weekly", percentUsed: 82, resetAt: new Date(1792429296983).toISOString() },
+		]);
+
+		// Human summary lists each window with percentage and reset time.
+		const human = await runQuotaReport({
+			projectRoot: root,
+			args: [],
+			authPath,
+			fetch: mockFetch,
+			now: "2026-07-21T12:34:56.789Z",
+		});
+		assert.match(human.output, /^ {4}5h 63% \(resets 2026-10-\d\dT\d\d:\d\d:\d\dZ\)$/m);
+		assert.match(human.output, /^ {4}weekly 82% \(resets 2026-10-\d\dT\d\d:\d\d:\d\dZ\)$/m);
 		// Probes must never leak the credential or any prompt body into JSON output.
 		assert.ok(!result.output.includes("probe-key-do-not-leak"));
 		assert.ok(!result.output.includes("apiKey"));
