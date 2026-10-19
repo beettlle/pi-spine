@@ -247,24 +247,27 @@ test("resolveTaskWorkerProfile falls back to agents.worker.thinking for a profil
  */
 function runPrepare({ promptExtras = "", config = precedenceConfig(), state = {}, task = { taskId: "SP-835" } } = {}) {
 	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "spine-prepare-attempt-"));
-	const taskFolder = path.join(projectRoot, "spine-tasks", "SP-835-fixture");
-	fs.mkdirSync(taskFolder, { recursive: true });
-	const base = minimalValidPromptMarkdown("SP-835", { fileScope: "src/a.txt" });
-	fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), base.replace("\n", `\n\n${promptExtras}\n`), "utf-8");
-	const batchId = "20261019T000000";
-	const attempt = prepareWorkerAttempt({
-		projectRoot,
-		state,
-		batchId,
-		config,
-		task,
-		lane: { laneNumber: 1, laneId: "lane-1" },
-		taskFolderInWorktree: taskFolder,
-		laneCorrelationId: "corr-1",
-	});
-	const events = readJournalEvents(projectRoot, batchId);
-	fs.rmSync(projectRoot, { recursive: true, force: true });
-	return { attempt, task, events };
+	try {
+		const taskFolder = path.join(projectRoot, "spine-tasks", "SP-835-fixture");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const base = minimalValidPromptMarkdown("SP-835", { fileScope: "src/a.txt" });
+		fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), base.replace("\n", `\n\n${promptExtras}\n`), "utf-8");
+		const batchId = "20261019T000000";
+		const attempt = prepareWorkerAttempt({
+			projectRoot,
+			state,
+			batchId,
+			config,
+			task,
+			lane: { laneNumber: 1, laneId: "lane-1" },
+			taskFolderInWorktree: taskFolder,
+			laneCorrelationId: "corr-1",
+		});
+		const events = readJournalEvents(projectRoot, batchId);
+		return { attempt, task, events };
+	} finally {
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
 }
 
 test("prepareWorkerAttempt: no overrides passes no env and records the active profile", () => {

@@ -128,6 +128,7 @@ export function prepareWorkerAttempt(params) {
 	if (context.thinking) task.workerThinking = context.thinking;
 	else delete task.workerThinking;
 	if (context.model) task.workerModel = context.model;
+	else delete task.workerModel;
 
 	if (Object.keys(extraEnv).length > 0 && resolveWorkerBackend(config) === "agentSession") {
 		appendJournalEvent(projectRoot, batchId, "worker.profile_override_ignored", {
