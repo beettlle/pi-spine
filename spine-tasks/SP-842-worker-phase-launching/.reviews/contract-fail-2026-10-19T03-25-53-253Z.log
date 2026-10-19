@@ -1,0 +1,16 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/heartbeat.test.mjs tests/batch/contract-stall-override.test.mjs tests/batch/worker-host.test.mjs tests/config/worker-launch-script.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-842
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-10-19T03:25:53.253Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+........

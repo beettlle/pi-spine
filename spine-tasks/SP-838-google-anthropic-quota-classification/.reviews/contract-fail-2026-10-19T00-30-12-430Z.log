@@ -1,0 +1,22 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/provider-quota.test.mjs tests/batch/reviewer-provider-error.test.mjs tests/batch/worker-quota-classification.test.mjs tests/batch/quota-fallback.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-838
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-10-19T00:30:12.430Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+........
+
+Warning: proceeding with uncommitted changes; review scope may be unclear
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more

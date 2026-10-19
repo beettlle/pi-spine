@@ -110,7 +110,8 @@ export function createWorkerPollState(startedAt, workerPhase) {
  * @param {string} [params.laneCorrelationId]
  * @param {boolean} params.useStub
  * @param {string} params.workerBackend
- * @param {boolean} params.childPastPreflight
+ * @param {boolean} [params.childPastPreflight] Static snapshot of preflight state; kept for existing callers.
+ * @param {() => boolean} [params.isPastPreflight] Live preflight getter read on every poll (#353); wins over `childPastPreflight`.
  * @param {(timestamp: number) => void} [params.onHeartbeat]
  * @param {(failure: {
  *   rawOutput: string;
@@ -147,6 +148,7 @@ export async function pollWorkerUntilSettled({
 	useStub,
 	workerBackend,
 	childPastPreflight,
+	isPastPreflight,
 	onHeartbeat,
 	buildFailureResult,
 	workerMode,
@@ -240,7 +242,13 @@ export async function pollWorkerUntilSettled({
 						: undefined,
 			}),
 		);
-		const nextWorkerPhase = resolveWorkerPhase({ childPastPreflight, useStub, workerBackend });
+		const pastPreflight =
+			typeof isPastPreflight === "function" ? isPastPreflight() : Boolean(childPastPreflight);
+		const nextWorkerPhase = resolveWorkerPhase({
+			childPastPreflight: pastPreflight,
+			useStub,
+			workerBackend,
+		});
 		if (nextWorkerPhase !== "launching" && workerPhase === "launching") {
 			stallAnchorAt = now;
 			lastCheckpointAt = now;

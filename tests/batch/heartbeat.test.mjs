@@ -463,6 +463,81 @@ test("exited child settles even when the next poll lands past the stall deadline
 	}
 });
 
+test("pollWorkerUntilSettled reads live preflight state each poll; heartbeats leave launching (#353)", async () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hb-live-preflight-"));
+	const batchId = "20261017T000000";
+	const child = new EventEmitter();
+	child.pid = 0;
+	/** @type {number | null} */
+	child.exitCode = null;
+	let virtualNow = 0;
+	let pastPreflight = false;
+	let releaseChildDone = () => {};
+	const childDone = new Promise((resolve) => {
+		releaseChildDone = resolve;
+	});
+	const deps = {
+		now: () => virtualNow,
+		sleep: async (ms) => {
+			virtualNow += ms;
+			// Launch script hands off to pi after the first heartbeat (t=100) is journaled.
+			if (virtualNow >= 200) pastPreflight = true;
+			if (virtualNow >= 500 && child.exitCode === null) {
+				child.exitCode = 0;
+				releaseChildDone({ exitCode: 0, output: "" });
+			}
+		},
+	};
+	const stallConfig = {
+		...resolveStallConfig({
+			lanes: {
+				stallTimeoutMinutes: 60,
+				stallGraceAfterProgressMinutes: 30,
+				heartbeatIntervalMinutes: 60,
+			},
+		}),
+		heartbeatIntervalMs: 100,
+		pollIntervalMs: 100,
+	};
+	try {
+		const result = await pollWorkerUntilSettled({
+			donePath: path.join(dir, ".DONE"),
+			workerChild: child,
+			childDone,
+			stallConfig,
+			startedAt: 0,
+			pollState: createWorkerPollState(0, "launching"),
+			worktreePath: dir,
+			taskFolder: dir,
+			projectRoot: dir,
+			batchId,
+			laneNumber: 1,
+			taskId: "SP-842",
+			useStub: false,
+			workerBackend: "cli",
+			// Stale snapshot (the pre-fix by-value bug): the getter must win.
+			childPastPreflight: false,
+			isPastPreflight: () => pastPreflight,
+			buildFailureResult: (input) => ({ classification: input.classification }),
+			workerMode: "cli",
+			deps,
+		});
+		assert.equal(result.kind, "settled");
+
+		const phases = readJournalEvents(dir, batchId)
+			.filter((event) => event.type === "lane.heartbeat")
+			.map((event) => event.payload.workerPhase);
+		assert.equal(phases[0], "launching", "first poll precedes the preflight flip");
+		assert.ok(phases.length > 1, "expected heartbeats after the flip");
+		assert.ok(
+			phases.slice(1).every((phase) => phase === "pi"),
+			`later heartbeats report the post-preflight phase, got ${JSON.stringify(phases)}`,
+		);
+	} finally {
+		fs.rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("resolveStallConfig applies lane overrides", () => {
 	const cfg = resolveStallConfig({
 		lanes: {

@@ -5,6 +5,19 @@
 
 import { execFileSync } from "node:child_process";
 
+const COMMIT_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
+
+/**
+ * Hex-only commit SHA check (7-40 chars). Rejects option-like values (leading `-`)
+ * before they reach git argv or reviewer prompts (#313, #343).
+ *
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+export function isValidCommitSha(value) {
+	return typeof value === "string" && COMMIT_SHA_PATTERN.test(value);
+}
+
 const PAYLOAD_COMMIT_KEYS = ["taskStartCommit", "startCommit", "commitSha", "headCommit", "laneBranchHead"];
 
 /**
@@ -178,7 +191,16 @@ function findFirstTaskStarted(journal, taskId, laneId, batchId) {
  * @param {{ journal: object[], taskId: string, laneId?: string|null, batchId?: string|null, worktreePath?: string|null }} options
  * @returns {string|null}
  */
-export function resolveTaskStartCommit({ journal, taskId, laneId, batchId, worktreePath }) {
+export function resolveTaskStartCommit(options) {
+	const commit = resolveRawTaskStartCommit(options);
+	return isValidCommitSha(commit) ? commit : null;
+}
+
+/**
+ * @param {{ journal: object[], taskId: string, laneId?: string|null, batchId?: string|null, worktreePath?: string|null }} options
+ * @returns {string|null}
+ */
+function resolveRawTaskStartCommit({ journal, taskId, laneId, batchId, worktreePath }) {
 	if (!Array.isArray(journal) || !taskId) {
 		return null;
 	}

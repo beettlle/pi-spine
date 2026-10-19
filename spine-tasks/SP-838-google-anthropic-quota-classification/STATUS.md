@@ -1,7 +1,7 @@
 # SP-838: Classify Google and Anthropic quota/overload errors — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Not Started
+**Current Step:** Step 3
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,37 +11,37 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `classifyProviderQuotaError`, `collectStatusPayloads`, `classifyReviewerProviderError`
-- [ ] Check whether `ApiError` / `formatProviderError` can be imported in tests; record the decision
+- [x] GitNexus impact on `classifyProviderQuotaError`, `collectStatusPayloads`, `classifyReviewerProviderError`
+- [x] Check whether `ApiError` / `formatProviderError` can be imported in tests; record the decision
 
 ### Step 1: Envelopes + rules
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Unprefixed Google / Anthropic envelopes collected
-- [ ] Google, Anthropic rules; Kimi and z.ai unchanged
+- [x] Unprefixed Google / Anthropic envelopes collected
+- [x] Google, Anthropic rules; Kimi and z.ai unchanged
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Google daily quota → `quota_exhausted`; per-minute / short retry → `transient_overload`; streaming `got status:` variant
-- [ ] Anthropic 529, unprefixed SSE overload, 429 rate limit → `transient_overload`; credit balance → `quota_exhausted`
-- [ ] Reviewer classifier returns null for these; existing z.ai/Kimi cases unchanged
-- [ ] A non-quota Google 400 `INVALID_ARGUMENT` stays unclassified
+- [x] Google daily quota → `quota_exhausted`; per-minute / short retry → `transient_overload`; streaming `got status:` variant
+- [x] Anthropic 529, unprefixed SSE overload, 429 rate limit → `transient_overload`; credit balance → `quota_exhausted`
+- [x] Reviewer classifier returns null for these; existing z.ai/Kimi cases unchanged
+- [x] A non-quota Google 400 `INVALID_ARGUMENT` stays unclassified
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand` (ends with the stet review)
+- [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-838-google-anthropic-quota-classification/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-838-google-anthropic-quota-classification/.DONE`
 
 ---
 
@@ -49,6 +49,10 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `@google/genai` / pi-ai / `@anthropic-ai/sdk` not installed in repo node_modules | Fixtures are pasted production strings with comments naming the producing code path | tests/batch/provider-quota.test.mjs |
+| Reviewer classifier already returns null whenever the quota classifier matches; no change needed. Bare Google 400 `INVALID_ARGUMENT` envelopes are now also collected as 4xx provider errors (httpStatus 400) | No change to reviewer-provider-error.mjs; test added | tests/batch/reviewer-provider-error.test.mjs |
+| stet findings c4e402f, 27f9724, 7005bc1 dismissed false_positive: Google rule is intentionally scoped to RESOURCE_EXHAUSTED (Anthropic 429 has its own rule), `collectStatusPayloads` is used in tests, `ZAI_1308` is defined at file top; lint+tests pass | Dismissed | stet |
+| Kimi 429 `rate_limit_error` without "currently overloaded" now classifies transient_overload (Anthropic rule, per mission) | Intended | src/batch/provider-quota.mjs |
 
 ## Execution Log
 

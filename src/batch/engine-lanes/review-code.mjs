@@ -4,6 +4,7 @@
 
 import { recordLaneTaskMetric } from "./queue.mjs";
 import { REVIEW_DEFAULTS } from "../../config/defaults.mjs";
+import { isValidCommitSha, resolveTaskStartCommit } from "../contract-task-start.mjs";
 import { appendJournalEvent, readJournalEvents } from "../journal.mjs";
 import {
 	recomputeTaskCounters,
@@ -35,6 +36,7 @@ import {
  * @param {number} [params.attempt]
  * @param {Record<string, any>} [params.journal]
  * @param {{ next: () => string } | null} [params.stubVerdicts]
+ * @param {string|null} [params.baseline] Validated task start commit (#343).
  * @returns {Promise<{ ok: boolean, [key: string]: any }>}
  */
 export async function runEngineCodeReview({
@@ -44,6 +46,7 @@ export async function runEngineCodeReview({
 	attempt = 1,
 	journal,
 	stubVerdicts = null,
+	baseline = null,
 }) {
 	const reviewLevel = readReviewLevel(taskFolder);
 	if (!shouldRunCodeReview({ reviewLevel })) {
@@ -113,6 +116,7 @@ export async function runEngineCodeReview({
 		reviewType: "code",
 		config,
 		journal,
+		...(isValidCommitSha(baseline) ? { baseline } : {}),
 	});
 }
 
@@ -224,6 +228,21 @@ export async function runCodeReviewPhase({
 
 	const stubVerdicts = shouldUseReviewStub() ? createPhaseStubVerdictQueue("code") : null;
 
+	// #343: workers commit per step, so diff against the task start commit, not the working tree.
+	const baseline = resolveTaskStartCommit({
+		journal: journalEvents,
+		taskId: task.taskId,
+		laneId: lane.laneId,
+		batchId,
+		worktreePath: wt,
+	});
+	if (!baseline) {
+		appendJournalEvent(projectRoot, batchId, "review.baseline_missing", {
+			taskId: task.taskId,
+			reviewType: "code",
+		});
+	}
+
 	return await runReviewPollLoop({
 		reviewType: "code",
 		passVerdict: "APPROVE",
@@ -234,6 +253,7 @@ export async function runCodeReviewPhase({
 			runEngineCodeReview(/** @type {any} */ ({ ...params, stubVerdicts })),
 		recordReviewTaskFailure: recordCodeReviewTaskFailure,
 		invalidVerdictOutput: "code review artifact missing APPROVE or REVISE verdict",
+		beforeReview: async () => ({ extraReviewParams: baseline ? { baseline } : {} }),
 		journalEvents,
 		projectRoot,
 		state,
