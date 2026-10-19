@@ -1,0 +1,41 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-prompt.test.mjs tests/agents/template-drift.test.mjs tests/agents/worker-runner.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-841
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-10-19T00:55:56.176Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+.................
+21eaa43  src/batch/worker-prompt.mjs:16  WARNING  The prompt instructs the worker to 'exit immediately' after creating .DONE, but the new text says to 'address it when resumed' if the engine returns REVISE feedback. This creates a logical contradiction: if the worker exits immediately, it cannot be resumed to address the feedback. The worker must remain alive (or the engine must restart it) to handle REVISE feedback, but the prompt explicitly forbids further tool calls and mandates immediate exit.
+6ac7f1e  tests/agents/template-drift.test.mjs:21  WARNING  The assertion `assert.match(text, /in-worker calls are skipped/i)` is brittle because it relies on a specific phrase in the template. If the template wording is updated (e.g., to "in-worker calls are bypassed" or "skipped in-worker calls"), the test will fail even if the intended behavior is preserved.
+b50e8d2  tests/agents/template-drift.test.mjs:50  WARNING  The test asserts that `WORKER_TOOLS_HINT` contains `spine_report_progress`, but the provided source code for `WORKER_TOOLS_HINT` in `src/batch/worker-prompt.mjs` explicitly recommends `spine_review_step` and `spine_report_progress`. Since the commit message indicates the goal is to drop per-step plan review instructions (and the test asserts `buildReviewLevelHint` does not contain `--type plan`), it is highly likely that `spine_review_step` was also removed from `WORKER_TOOLS_HINT` to prevent the worker from calling it. If `spine_review_step` was removed from the constant, the assertion `assert.match(WORKER_TOOLS_HINT, /spine_report_progress/)` will fail because the string no longer contains `spine_report_progress`.
+7f46655  tests/batch/worker-prompt.test.mjs:19  WARNING  The test asserts that the hint contains the phrase 'plan review, code review, and final review after .DONE'. This is a brittle assertion that tightly couples the test to the exact wording of the prompt. If the implementation is refactored to use slightly different phrasing (e.g., 'plan, code, and final reviews' or 'reviews for plan, code, and final'), the test will fail even if the semantic intent (delegating all reviews to the engine) is preserved. It is better to assert on the key semantic tokens (e.g., 'code review', 'final review', 'engine') rather than the full sentence structure.
+4 finding(s) at 130.3 tokens/sec.
+21eaa43  src/batch/worker-prompt.mjs:16  WARNING  The prompt instructs the worker to 'exit immediately' after creating .DONE, but the new text says to 'address it when resumed' if the engine returns REVISE feedback. This creates a logical contradiction: if the worker exits immediately, it cannot be resumed to address the feedback. The worker must remain alive (or the engine must restart it) to handle REVISE feedback, but the prompt explicitly forbids further tool calls and mandates immediate exit.
+6ac7f1e  tests/agents/template-drift.test.mjs:21  WARNING  The assertion `assert.match(text, /in-worker calls are skipped/i)` is brittle because it relies on a specific phrase in the template. If the template wording is updated (e.g., to "in-worker calls are bypassed" or "skipped in-worker calls"), the test will fail even if the intended behavior is preserved.
+b50e8d2  tests/agents/template-drift.test.mjs:50  WARNING  The test asserts that `WORKER_TOOLS_HINT` contains `spine_report_progress`, but the provided source code for `WORKER_TOOLS_HINT` in `src/batch/worker-prompt.mjs` explicitly recommends `spine_review_step` and `spine_report_progress`. Since the commit message indicates the goal is to drop per-step plan review instructions (and the test asserts `buildReviewLevelHint` does not contain `--type plan`), it is highly likely that `spine_review_step` was also removed from `WORKER_TOOLS_HINT` to prevent the worker from calling it. If `spine_review_step` was removed from the constant, the assertion `assert.match(WORKER_TOOLS_HINT, /spine_report_progress/)` will fail because the string no longer contains `spine_report_progress`.
+7f46655  tests/batch/worker-prompt.test.mjs:19  WARNING  The test asserts that the hint contains the phrase 'plan review, code review, and final review after .DONE'. This is a brittle assertion that tightly couples the test to the exact wording of the prompt. If the implementation is refactored to use slightly different phrasing (e.g., 'plan, code, and final reviews' or 'reviews for plan, code, and final'), the test will fail even if the semantic intent (delegating all reviews to the engine) is preserved. It is better to assert on the key semantic tokens (e.g., 'code review', 'final review', 'engine') rather than the full sentence structure.
+4 finding(s).
+
+Warning: proceeding with uncommitted changes; review scope may be unclear
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 4 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

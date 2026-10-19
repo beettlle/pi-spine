@@ -15,9 +15,10 @@ import {
 
 test("buildReviewLevelHint delegates code and final review to engine", () => {
 	const hint = buildReviewLevelHint(2);
-	assert.match(hint, /plan review only/i);
-	assert.match(hint, /type plan/i);
-	assert.match(hint, /batch engine runs those after \.DONE/i);
+	assert.match(hint, /batch engine after \.DONE/i);
+	assert.match(hint, /do not call spine_review_step or spine review step from the worker/i);
+	assert.match(hint, /plan review, code review, and final review after \.DONE/i);
+	assert.doesNotMatch(hint, /plan review only|--type plan|type=plan/i);
 	assert.match(hint, /exit immediately/i);
 	assert.doesNotMatch(hint, /type=code|--type code/i);
 	assert.equal(buildReviewLevelHint(0), "");

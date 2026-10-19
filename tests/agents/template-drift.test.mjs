@@ -18,6 +18,8 @@ test("worker.md documents spine tools, stall checkpoint, and coverage policy", (
 	const text = fs.readFileSync(WORKER_TEMPLATE, "utf-8");
 	assert.match(text, /spine_review_step/);
 	assert.match(text, /spine_report_progress/);
+	assert.match(text, /in-worker calls are skipped/i);
+	assert.doesNotMatch(text, /--type plan|type=plan/i);
 	assert.match(text, /lane\.checkpoint_warning|stall grace/i);
 	assert.match(text, /77%/);
 });
@@ -45,8 +47,9 @@ test("worker-prompt tail aligns with worker.md commit and review conventions", (
 	assert.doesNotMatch(commitHint, /\{taskId\} step \{n\}/i);
 
 	const reviewHint = buildReviewLevelHint(2);
-	assert.match(reviewHint, /spine review step/i);
-	assert.match(reviewHint, /batch engine runs those after \.DONE/i);
+	assert.match(reviewHint, /do not call spine_review_step or spine review step from the worker/i);
+	assert.match(reviewHint, /batch engine after \.DONE/i);
+	assert.doesNotMatch(reviewHint, /--type plan|type=plan/i);
 
 	assert.match(WORKER_TOOLS_HINT, /spine_report_progress/);
 });
