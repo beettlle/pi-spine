@@ -178,7 +178,7 @@ test("buildTaskMetricRecord records the per-task profile and prefers task.worker
 	assert.equal(overridden.model, "google/gemini-4-pro");
 	assert.equal(overridden.thinking, "xhigh");
 
-	// Unsupported pins are ignored; the config value (then "high") still applies.
+	// An unsupported pin is ignored; the batch-start config thinking ("medium" here) applies.
 	const invalid = buildTaskMetricRecord({
 		batchId: "20261019T000000",
 		task: { taskId: "SP-835", status: "succeeded", workerThinking: "ultra" },
