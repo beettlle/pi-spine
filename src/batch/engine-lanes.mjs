@@ -265,7 +265,7 @@ async function runNonMatrixTaskOnLane({
 	if (!task.startedAt) task.startedAt = Date.now();
 	updateSegmentForTask(state, taskId, "running");
 	await saveEngineBatchState(projectRoot, state);
-	// SP-835 (#340): per-attempt worker profile/thinking; re-resolved on every quota-fallback retry.
+	// SP-835 (#340): per-attempt worker profile/thinking. runWithQuotaFallback re-enters this function on a retry, so a hop is re-resolved.
 	const attempt = prepareWorkerAttempt({ projectRoot, state, batchId, config, task, lane, taskFolderInWorktree, laneCorrelationId });
 	appendJournalEvent(projectRoot, batchId, "task.started", {
 		taskId,

@@ -73,3 +73,4 @@
 | 2026-10-19 | Contract lint + typecheck + test files | all green (worker env unset) |
 | 2026-10-19 | Re-run after engine contract fail | Added journal rationale comment; dismissed 5 noise findings; Contract exit 0, 0 findings |
 | 2026-10-19 | Stet (lenient, SP-835) | Several runs; each re-review produced new, mostly noise findings (stale-hunk context, imports that are used, `agent-session-worker` thinking levels). One real nit fixed (test comment). The rest dismissed with evidence; final run: 0 findings, exit 0 |
+| 2026-10-19 | Engine re-ran Contract (worker env set → nested-batch guard failures; re-run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT) | Reworded the retry comment in `engine-lanes.mjs` (stet bf03c29); dismissed 4 noise findings (hypothetical `ultra`, used imports, wrong sticky-hop claim, env already restored in `finally`); Contract exit 0, 0 findings |
