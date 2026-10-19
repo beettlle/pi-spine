@@ -23,7 +23,7 @@ import { resolvePoolId } from "../metrics/quota-snapshot.mjs";
  * @property {ProviderQuotaKind} kind Why the output was classified.
  * @property {string} poolId Shared quota pool the model belongs to (`resolvePoolId`).
  * @property {number|null} httpStatus Three-digit HTTP status preceding the JSON payload, when present.
- * @property {string|null} providerCode z.ai `code` Kimi/Anthropic `error.type`, or Google `error.status` of the matched rule, when matched.
+ * @property {string|null} providerCode z.ai `code`, Kimi/Anthropic `error.type`, or Google `error.status` of the matched rule, when matched.
  * @property {string|null} resetAtRaw Raw text after "reset at" in the provider message (z.ai), when present.
  * @property {null} resetAt Always null for now: the z.ai reset text carries no timezone (UTC+8 is inferred, not confirmed — #329).
  * @property {string} message Provider message string, truncated to 300 characters.
