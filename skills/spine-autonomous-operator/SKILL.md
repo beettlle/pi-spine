@@ -13,10 +13,6 @@ For **curated semver releases** (subset scope, publish gates), use [`skills/spin
 
 Invoke explicitly: `/skill:spine-autonomous-operator`
 
-## Spine CLI binary (always the repo checkout)
-
-Every `spine …` command in this skill means the CLI from **this pi-spine checkout**: run `node bin/spine.mjs <args>` from the repo root. The global `spine` (Homebrew/npm `-g`, `pi install npm:pi-spine`) is the last published release and lacks fixes on `main`. The engine loads its worker runner and reviewer code from the package that launched it, so the binary used for `batch start|resume|retry` decides which engine runs. Verify a detached engine with `ps -o command= -p <enginePid>` (must show `<repo>/bin/spine.mjs`). Run `npm install` on `main` after integrate (already required) so the next wave uses the newly landed engine.
-
 ## Success criteria
 
 1. `spine plan pending` shows **0 pending tasks**

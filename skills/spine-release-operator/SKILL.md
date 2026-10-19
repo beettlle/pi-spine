@@ -10,15 +10,15 @@ You are the **pi-spine release operator**. Drive a **curated release cycle** fro
 
 Invoke explicitly: `/skill:spine-release-operator` or "run a spine release cycle for v1.5.1".
 
-## Spine CLI binary (always the repo checkout)
+## Spine CLI binary (repo checkout inside pi-spine only)
 
-Every `spine …` command in this skill means the CLI from **this pi-spine checkout**, not the global install. The global `spine` (Homebrew/npm `-g`, `pi install npm:pi-spine`) is a copy of the last published release and lacks fixes landed on `main` during the cycle — including earlier waves of the release you are running.
+Every `spine …` command in this skill means the CLI from **this pi-spine checkout**, not the global install. The release cycle is the dogfood run for unreleased `main`; the global `spine` (npm `-g`, `pi install npm:pi-spine`) stays on the last published release because `main` can be unstable between releases. Other projects keep using the published global.
 
 - Run `node bin/spine.mjs <args>` from the pi-spine repo root (batch start/resume/retry, wait, gate, integrate, doctor, preflight, plan, tasks validate, status).
 - The engine resolves its worker runner and reviewer code from the package that launched it (`PACKAGE_ROOT`), so the binary you start a batch with decides which engine code runs.
 - After each integrate, `npm install` on `main` (already required) keeps the checkout runnable; the next batch picks up the new engine automatically.
 - Verify after a detached start: `ps -o command= -p <enginePid>` must show `<repo>/bin/spine.mjs`, not `/opt/homebrew/...` or `node_modules/pi-spine`.
-- Do not "fix" a stale global with `npm install -g pi-spine` mid-release; use the repo binary.
+- Never `npm link` the checkout or point the global at it; do not reinstall the global mid-release. Upgrade the global only after publish (Phase 6).
 
 **Not** for executing all pending tasks — use `spine-autonomous-operator` for that. This skill selects a **subset** fitting the release profile.
 
@@ -601,6 +601,8 @@ Tag push + green **CI** (`ci.yml`) alone is **not** enough — `ci.yml` does not
 When `release.yml` fails: `gh run view <run-id> --log-failed`, then follow the symptom table in [references/publish-recovery.md](references/publish-recovery.md). Auth/OIDC failures → fix Trusted Publisher and `gh workflow run release.yml -f tag=v{VERSION}` on the **existing** tag; never `npm version` or retag for auth-only failures.
 
 Post-publish smoke (**only after stage success and 2FA approve**): `scripts/post-publish-smoke.sh <version>` — bounded retry on registry lag (F9, [#247](https://github.com/beettlle/pi-spine/issues/247)). If retries exhaust, **STOP** and investigate; manual steps in [references/publish-recovery.md](references/publish-recovery.md#post-publish-smoke).
+
+After smoke passes, upgrade the machine's global install to the new release (the only point the global changes): `npm install -g pi-spine@<version>`, then `spine --version` must print `<version>`. If pi loads the extension via `npm:pi-spine`, run `pi update` as well.
 
 Update `spine-tasks/CONTEXT.md` release note (version + date).
 
