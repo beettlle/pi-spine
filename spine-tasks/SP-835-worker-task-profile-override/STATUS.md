@@ -61,6 +61,7 @@
 | `runResumedTaskOnLane` (resume path) does not call `prepareWorkerAttempt`, so resumed tasks ignore `**Profile:**` / `**Thinking:**` | Follow-up (out of File Scope) | `src/batch/resume-multi-lanes.mjs` |
 | A sticky hop for a pool other than the task's own is now pinned away in the child env (`SPINE_AGENT_PROFILE_OVERRIDE=<resolved profile>`), keeping the journaled profile equal to what the child runs | Done, tested | `task-agent-profile.mjs` |
 | Metrics `thinking` now accepts `minimal` / `xhigh` (previously coerced to `high`) | Done | `src/batch/metrics.mjs` |
+| Stet re-reviews re-surfaced dismissed findings under new ids and repeatedly cited `agent-session-worker.mjs` (only off/low/medium/high) against the subprocess path | Dismissed as stet reviewer noise; not a project defect | n/a |
 
 ## Execution Log
 
@@ -69,3 +70,4 @@
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
 | 2026-10-19 | Steps 0-3 implemented | GitNexus impact: `runNonMatrixTaskOnLane` LOW (1 caller), `runWorker` CRITICAL but unchanged, `buildTaskMetricRecord` LOW; `runOnce` re-enters `runNonMatrixTaskOnLane`, so `prepareWorkerAttempt` runs per attempt |
 | 2026-10-19 | Contract lint + typecheck + test files | all green (worker env unset) |
+| 2026-10-19 | Stet (lenient, SP-835) | Several runs; each re-review produced new, mostly noise findings (stale-hunk context, imports that are used, `agent-session-worker` thinking levels). One real nit fixed (test comment). The rest dismissed with evidence; final run: 0 findings, exit 0 |
