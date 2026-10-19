@@ -53,7 +53,7 @@ Spine documents honest `.DONE` + lane auto-commit behavior below — `.DONE` mea
 
 | Tool | When to use |
 |------|-------------|
-| `spine_review_step` | Plan review at step checkpoints when Review Level ≥ 1 (`type=plan` only) |
+| `spine_review_step` | Engine-run in real-pi batches; in-worker calls are skipped (do not call it from the worker) |
 | `spine_report_progress` | After completing a step — emits `task.step_completed` for stall detection |
 | `spine_request_gate` | Rare — request operator attention (v1.1 returns `not_supported`; integrate gates are automatic) |
 
@@ -66,40 +66,36 @@ Task packets declare a **Review Level** (0–3) in `PROMPT.md`. Read it at task 
 | Level | Label | When to call `spine_review_step` |
 |-------|-------|----------------------------------|
 | 0 | None | Never — reviewer is not spawned |
-| 1 | Plan Only | Plan review before each step (or at `**Plan-review checkpoint**` markers) |
-| 2 | Plan + Code | **Plan review in worker** at step boundaries; **code review runs on the engine** after `.DONE` |
-| 3 | Full | Plan review in worker; code + final review run on the **engine** after `.DONE` |
+| 1 | Plan Only | Never from the worker — the engine runs plan review (and final review) after `.DONE` |
+| 2 | Plan + Code | Never from the worker — the engine runs plan + code review after `.DONE` |
+| 3 | Full | Never from the worker — the engine runs plan, code, and final review after `.DONE` |
 
-**FR-WORK-07:** when Review Level ≥ 1, call **`spine_review_step`** (Pi tool) or `spine review step --step N --type plan` at plan-review checkpoints in PROMPT. **Do not** spawn code or final reviewers from inside the worker (SP-194/SP-195) — the batch engine runs those phases after you create `.DONE`.
+**FR-WORK-07:** when Review Level ≥ 1, plan, code (Level ≥ 2), and final reviews run in the **batch engine** after you create `.DONE` (SP-194/SP-195/SP-695). **Do not** call `spine_review_step` / `spine review step` from inside the worker — in real-pi batches every in-worker call is skipped.
 
-Checkpoint markers in PROMPT (`**Plan-review checkpoint**`, `**Code review checkpoint**`) consolidate reviews on single-deliverable tasks; otherwise default is per-step reviews when steps are independent.
+Checkpoint markers in PROMPT (`**Plan-review checkpoint**`, `**Code review checkpoint**`) tell the engine which step to review; they are not instructions to call the review tool yourself.
 
-## Level 2+ order of operations
+## Order of operations
 
-For tasks at **Review Level ≥ 2**, complete **each step** in this strict order:
+For tasks at **Review Level ≥ 1**, complete **each step** in this strict order:
 
 1. **Finish step work** — all outcomes for this step in PROMPT.
 2. **Update outcome checkboxes** in `STATUS.md` as each outcome completes (immediate checkbox rule).
 3. **Commit** step work on the lane branch: `feat(TASK-ID): complete Step N — {step title}`
-4. **Request plan review** — `spine_review_step` with `type=plan` when PROMPT requires a plan-review checkpoint (all levels ≥ 1).
-5. **On APPROVE only** — set the step **Status** to complete in `STATUS.md`, advance `Current Step`, then call **`spine_report_progress`**.
+4. **Do not request review from the worker** — the engine reviews after `.DONE`.
+5. **Mark the step complete** — set the step **Status** to complete in `STATUS.md`, advance `Current Step`, then call **`spine_report_progress`**.
 
-**While review is pending:** do **not** mark the step **Status** complete or advance to the next step. Outcome checkboxes may already be checked.
+**On REVISE (FR-REV-03):** the engine re-runs the worker with feedback in `{taskFolder}/.reviews/`; address it, re-commit, and recreate `.DONE`.
 
-**On REVISE (FR-REV-03):** address feedback in `{taskFolder}/.reviews/`; re-commit if needed; call `spine_review_step` again. Do **not** start the next step until you receive **APPROVE**.
-
-**On review spawn failure (FR-REV-06):** exit with a **non-zero** status — fail closed. Do not mark the step complete, advance `Current Step`, or create `.DONE`.
-
-For **Review Level 0**, skip `spine_review_step`. For **Level 1**, follow PROMPT plan-review markers; still commit at step boundaries and mark step **Status** complete only after plan review **APPROVE** when a review was required for that step.
+For **Review Level 0**, no reviewer runs. For **Level 1+**, still commit at step boundaries; reviews happen on the engine after `.DONE`.
 
 ## Checkpoint discipline
 
 1. Update `STATUS.md` **before starting** each step (`Current Step`, step status → in progress).
 2. Mark **outcome** checkboxes **immediately** when each outcome completes (see Checkbox discipline).
 3. **Commit** at step boundaries when you change files: `feat(TASK-ID): complete Step N — {step title}`
-4. When Review Level ≥ 2, follow **Level 2+ order of operations** (commit → review → APPROVE → mark step Status complete). When Review Level is 1, call **`spine_review_step`** for required plan reviews before marking the step complete.
-5. On **REVISE**, fix feedback and re-request review; do not advance step **Status** or `Current Step` until **APPROVE**.
-6. Call **`spine_report_progress`** after the step is marked complete (after review **APPROVE** when review level > 0).
+4. Follow the **order of operations** above (finish → checkboxes → commit → mark step Status complete). Do **not** call `spine_review_step` from the worker; the engine reviews after `.DONE`.
+5. On **REVISE** feedback from a resumed run, fix it before recreating `.DONE`.
+6. Call **`spine_report_progress`** after the step is marked complete.
 7. Run **`./scripts/worker-verify.sh`** (or `npm run typecheck && SPINE_WORKER_STUB=1 npm test`) before creating `.DONE`.
 8. Create `.DONE` only when every completion criterion in PROMPT is satisfied (tests pass, STATUS current). The **engine** runs contract verification, code review (RL ≥ 2), and final review (RL ≥ 1) **after** `.DONE` — do not spawn those reviewers yourself.
 9. **After `.DONE`:** exit immediately. No further tool calls, commits, or reviewer spawns (prevents SP-190-class wedges).

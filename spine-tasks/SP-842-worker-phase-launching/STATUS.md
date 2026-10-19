@@ -1,7 +1,7 @@
 # SP-842: Worker phase leaves `launching` after the launch script — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Not Started
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,32 +11,32 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `pollWorkerUntilSettled`, `resolveWorkerPhase`
+- [x] GitNexus impact on `pollWorkerUntilSettled`, `resolveWorkerPhase`
 
 ### Step 1: Live preflight state
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Getter accepted and used per poll; host passes it
+- [x] Getter accepted and used per poll; host passes it
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Phase changes after preflight flips mid-poll
+- [x] Phase changes after preflight flips mid-poll
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand` (ends with the stet review)
+- [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-842-worker-phase-launching/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-842-worker-phase-launching/.DONE`
 
 ---
 
@@ -44,9 +44,14 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| stet: 3 lenient findings (Boolean() coercion; closure "by value"; test timing) | Dismissed false_positive/already_correct with evidence; stet closure claim is wrong for JS `let` capture | `.review` session |
+| stet contract run took ~35 min on the local LM Studio model | Noted; no action | n/a |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
+| 2026-10-17 | Impact: `pollWorkerUntilSettled` LOW (callers: runWorker + tests); `resolveWorkerPhase` CRITICAL but unchanged | Proceeded |
+| 2026-10-17 | Added `isPastPreflight` getter to `pollWorkerUntilSettled`; host passes `() => childPastPreflight`; regression test added (fails without fix) | lint, typecheck, 4 test files pass |
+| 2026-10-17 | Contract testCommand incl. stet (0 active findings after triage) | Pass |

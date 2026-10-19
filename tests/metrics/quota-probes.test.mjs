@@ -23,6 +23,60 @@ const baseConfig = () => ({
 	},
 });
 
+const ZAI_URL = "https://api.z.ai/api/monitor/usage/quota/limit";
+const KIMI_URL = "https://api.kimi.com/coding/v1/usages";
+const MOONSHOT_URL = "https://api.moonshot.ai/v1/users/me/balance";
+
+// Real response bodies from #351.
+const ZAI_BODY = {
+	code: 200,
+	msg: "Operation successful",
+	data: {
+		limits: [
+			{ type: "TOKENS_LIMIT", unit: 3, number: 5, percentage: 3, nextResetTime: 1792060376601 },
+			{ type: "TOKENS_LIMIT", unit: 6, number: 1, percentage: 82, nextResetTime: 1792429296983 },
+			{
+				type: "TIME_LIMIT",
+				unit: 5,
+				number: 1,
+				usage: 100,
+				currentValue: 0,
+				remaining: 100,
+				percentage: 0,
+				nextResetTime: 1794613818998,
+				usageDetails: ["..."],
+			},
+		],
+		level: "lite",
+	},
+	success: true,
+};
+
+const KIMI_BODY = {
+	usage: { limit: "100", used: "100", resetTime: "2026-10-20T20:28:41.692533Z" },
+	limits: [
+		{
+			window: { duration: 300, timeUnit: "TIME_UNIT_MINUTE" },
+			detail: { limit: "100", used: "63", remaining: "37", resetTime: "2026-10-15T06:28:41.692533Z" },
+		},
+	],
+	usages: {
+		limit_5h: { used_ratio: 0.6275, reset_time: "2026-10-15T06:28:40Z" },
+		limit_7d: { used_ratio: 1, reset_time: "2026-10-20T20:28:41Z" },
+	},
+};
+
+async function withAuth(auth, fn) {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
+	const authPath = path.join(root, "auth.json");
+	fs.writeFileSync(authPath, JSON.stringify(auth));
+	try {
+		return await fn(authPath);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+}
+
 function createMockFetch(responses) {
 	return async (url, _init) => {
 		for (const response of responses) {
@@ -56,40 +110,130 @@ test("loadAuthCredentials parses auth file and returns null on failure", async (
 	}
 });
 
-test("runQuotaProbes returns live usage for all providers with mocked responses", async () => {
-	const root = await mkdtemp(path.join(os.tmpdir(), "spine-quota-probes-"));
-	const authPath = path.join(root, "auth.json");
-	fs.writeFileSync(
-		authPath,
-		JSON.stringify({
+test("runQuotaProbes parses real Z.ai, Kimi Coding, and Cursor responses", async () => {
+	await withAuth(
+		{
 			zai: { type: "api_key", key: "zai-key" },
 			"kimi-coding": { type: "api_key", key: "kimi-key" },
 			cursor: { type: "admin_key", key: "cursor-admin-key" },
-		}),
+		},
+		async (authPath) => {
+			const fetch = createMockFetch([
+				{ url: ZAI_URL, status: 200, body: ZAI_BODY },
+				{ url: KIMI_URL, status: 200, body: KIMI_BODY },
+				{ url: "https://api.cursor.com/teams/daily-usage-data", status: 200, body: { used_tokens: 500 } },
+			]);
+			const results = await runQuotaProbes({ authPath, fetch });
+
+			assert.equal(results.zai.source, "live");
+			assert.deepEqual(results.zai.windows, [
+				{ window: "5h", percentUsed: 3, resetAt: new Date(1792060376601).toISOString() },
+				{ window: "weekly", percentUsed: 82, resetAt: new Date(1792429296983).toISOString() },
+				{
+					window: "monthly_tool_calls",
+					percentUsed: 0,
+					used: 0,
+					limit: 100,
+					resetAt: new Date(1794613818998).toISOString(),
+				},
+			]);
+
+			assert.equal(results["kimi-coding"].source, "live");
+			assert.deepEqual(results["kimi-coding"].windows, [
+				{ window: "5h", percentUsed: 62.75, resetAt: "2026-10-15T06:28:40.000Z" },
+				{ window: "weekly", percentUsed: 100, resetAt: "2026-10-20T20:28:41.000Z" },
+			]);
+
+			assert.equal(results.cursor.source, "live");
+			assert.equal(results.cursor.usage.tokensOut, 500);
+			assert.equal("limit" in results.cursor, false);
+		},
 	);
-	try {
-		const fetch = createMockFetch([
-			{ url: "https://api.z.ai/api/monitor/usage/quota/limit", status: 200, body: { used: 1000, total: 50000 } },
-			{ url: "https://api.moonshot.ai/v1/users/me/balance", status: 200, body: { used: 2000, balance: 0.5, total: 10000 } },
-			{ url: "https://api.cursor.com/teams/daily-usage-data", status: 200, body: { used_tokens: 500 } },
-		]);
-		const results = await runQuotaProbes({ authPath, fetch });
+});
+
+test("probeZai still reads flat used/total bodies", async () => {
+	await withAuth({ zai: { key: "zai-key" } }, async (authPath) => {
+		const fetch = createMockFetch([{ url: ZAI_URL, status: 200, body: { data: { used: "1000", total: "50000" } } }]);
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.zai] });
 
 		assert.equal(results.zai.source, "live");
 		assert.equal(results.zai.usage.tokensOut, 1000);
 		assert.equal(results.zai.limit, 50000);
+		assert.equal("windows" in results.zai, false);
+	});
+});
+
+test("Z.ai probe skips unknown limit entries and accepts numeric-string fields", async () => {
+	await withAuth({ zai: { key: "zai-key" } }, async (authPath) => {
+		const body = {
+			data: {
+				limits: [
+					{ type: "TOKENS_LIMIT", unit: 9, number: 9, percentage: 50, nextResetTime: 1792060376601 },
+					{ type: "TOKENS_LIMIT", unit: "3", number: "5", percentage: "41.5", nextResetTime: "1792060376601" },
+					{ type: "TOKENS_LIMIT", unit: 6, number: 1 },
+				],
+			},
+		};
+		const fetch = createMockFetch([{ url: ZAI_URL, status: 200, body }]);
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.zai] });
+
+		assert.equal(results.zai.source, "live");
+		assert.deepEqual(results.zai.windows, [
+			{ window: "5h", percentUsed: 41.5, resetAt: new Date(1792060376601).toISOString() },
+		]);
+	});
+});
+
+test("Kimi Coding probe calls the coding usages URL, never the Moonshot balance URL", async () => {
+	await withAuth({ "kimi-coding": { key: "kimi-key" } }, async (authPath) => {
+		const urls = [];
+		let seenAuth;
+		const fetch = async (url, init) => {
+			urls.push(url);
+			seenAuth = init?.headers?.Authorization;
+			return { ok: true, status: 200, text: async () => JSON.stringify(KIMI_BODY) };
+		};
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.kimiCoding] });
+
+		assert.deepEqual(urls, [KIMI_URL]);
+		assert.equal(urls.includes(MOONSHOT_URL), false);
+		assert.equal(seenAuth, "Bearer kimi-key");
+		assert.equal(results["kimi-coding"].source, "live");
+	});
+});
+
+test("Kimi Coding probe falls back to limits[].detail (5h) and top-level usage (weekly)", async () => {
+	await withAuth({ "kimi-coding": { key: "kimi-key" } }, async (authPath) => {
+		const { usages: _omit, ...body } = KIMI_BODY;
+		const fetch = createMockFetch([{ url: KIMI_URL, status: 200, body }]);
+		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.kimiCoding] });
 
 		assert.equal(results["kimi-coding"].source, "live");
-		assert.equal(results["kimi-coding"].usage.tokensOut, 2000);
-		assert.equal(results["kimi-coding"].usage.estimatedUsd, 0.5);
-		assert.equal(results["kimi-coding"].limit, 10000);
+		assert.deepEqual(results["kimi-coding"].windows, [
+			{ window: "5h", percentUsed: 63, used: 63, limit: 100, resetAt: "2026-10-15T06:28:41.692Z" },
+			{ window: "weekly", percentUsed: 100, used: 100, limit: 100, resetAt: "2026-10-20T20:28:41.692Z" },
+		]);
+	});
+});
 
-		assert.equal(results.cursor.source, "live");
-		assert.equal(results.cursor.usage.tokensOut, 500);
-		assert.equal("limit" in results.cursor, false);
-	} finally {
-		await rm(root, { recursive: true, force: true });
-	}
+test("HTTP 200 with an unknown shape is unparsed, not live", async () => {
+	await withAuth(
+		{ zai: { key: "zai-key" }, "kimi-coding": { key: "kimi-key" } },
+		async (authPath) => {
+			const fetch = createMockFetch([
+				{ url: ZAI_URL, status: 200, body: { code: 200, data: { level: "lite", limits: [] } } },
+				{ url: KIMI_URL, status: 200, body: { hello: "world" } },
+			]);
+			const results = await runQuotaProbes({ authPath, fetch });
+
+			for (const id of ["zai", "kimi-coding"]) {
+				assert.equal(results[id].source, "unparsed");
+				assert.equal(results[id].error, "HTTP 200 but no quota fields recognised");
+				assert.equal("usage" in results[id], false);
+				assert.equal("windows" in results[id], false);
+			}
+		},
+	);
 });
 
 test("runQuotaProbes degrades to absent when auth is missing", async () => {
@@ -119,8 +263,8 @@ test("runQuotaProbes degrades to absent on 403 and non-Enterprise errors", async
 	);
 	try {
 		const fetch = createMockFetch([
-			{ url: "https://api.z.ai/api/monitor/usage/quota/limit", status: 403, body: {} },
-			{ url: "https://api.moonshot.ai/v1/users/me/balance", status: 401, body: {} },
+			{ url: ZAI_URL, status: 403, body: {} },
+			{ url: KIMI_URL, status: 401, body: {} },
 			{ url: "https://api.cursor.com/teams/daily-usage-data", status: 404, body: {} },
 		]);
 		const results = await runQuotaProbes({ authPath, fetch });
@@ -212,7 +356,7 @@ test("runQuotaProbes never includes secrets in results", async () => {
 	);
 	try {
 		const fetch = createMockFetch([
-			{ url: "https://api.z.ai/api/monitor/usage/quota/limit", status: 200, body: { used: 100 } },
+			{ url: ZAI_URL, status: 200, body: ZAI_BODY },
 		]);
 		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.zai] });
 		const text = JSON.stringify(results);
@@ -235,7 +379,7 @@ test("runQuotaProbes does not invent a remaining limit", async () => {
 	);
 	try {
 		const fetch = createMockFetch([
-			{ url: "https://api.z.ai/api/monitor/usage/quota/limit", status: 200, body: { used: 100 } },
+			{ url: ZAI_URL, status: 200, body: ZAI_BODY },
 		]);
 		const results = await runQuotaProbes({ authPath, fetch, providers: [PROBE_POOLS.zai] });
 
@@ -613,4 +757,47 @@ test("buildQuotaSnapshot ignores malformed probe results", async () => {
 
 	assert.equal(snapshot.pools.zai.source, "estimate");
 	assert.equal(snapshot.pools.zai.usage.tokensOut, 20);
+});
+
+test("buildQuotaSnapshot passes probe windows through for live pools", async () => {
+	const windows = [{ window: "5h", percentUsed: 63, resetAt: "2026-10-15T06:28:41.000Z" }];
+	const snapshot = buildQuotaSnapshot({
+		projectRoot: "/tmp",
+		config: baseConfig(),
+		metricsLines: [],
+		probeResults: {
+			"kimi-coding": {
+				poolId: "kimi-coding",
+				source: "live",
+				usage: { taskCount: 0, durationMs: 0 },
+				windows: [...windows, { window: "bad", percentUsed: "x" }],
+			},
+		},
+		now: Date.now(),
+	});
+
+	assert.equal(snapshot.pools["kimi-coding"].source, "live");
+	assert.deepEqual(snapshot.pools["kimi-coding"].windows, windows);
+	assert.equal("windows" in snapshot.pools.zai, false);
+});
+
+test("buildQuotaSnapshot treats an unparsed probe like absent (estimate fallback)", async () => {
+	const snapshot = buildQuotaSnapshot({
+		projectRoot: "/tmp",
+		config: baseConfig(),
+		metricsLines: [
+			{ recordType: "task", model: "zai/glm-5.2", durationMs: 1200, tokensOut: 20 },
+		],
+		probeResults: {
+			zai: { poolId: "zai", source: "unparsed", error: "HTTP 200 but no quota fields recognised" },
+			"kimi-coding": { poolId: "kimi-coding", source: "unparsed", error: "HTTP 200 but no quota fields recognised" },
+		},
+		now: Date.now(),
+	});
+
+	assert.equal(snapshot.pools.zai.source, "estimate");
+	assert.equal(snapshot.pools.zai.usage.tokensOut, 20);
+	assert.equal(snapshot.pools["kimi-coding"].source, "absent");
+	assert.equal(snapshot.snapshotSource, "estimate");
+	assert.equal("windows" in snapshot.pools.zai, false);
 });

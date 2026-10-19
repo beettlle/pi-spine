@@ -450,6 +450,7 @@ export function extractJournalDiagnosisHints(events) {
 		"lane.stall_killed",
 		"review.blocked",
 		"review.failed",
+		"review.baseline_missing",
 		"lane.salvage_inspection",
 		"lane.salvage_commit",
 		"lane.checkpoint_warning",

@@ -364,6 +364,7 @@ export async function runWorker({
 		useStub,
 		workerBackend,
 		childPastPreflight,
+		isPastPreflight: () => childPastPreflight,
 		onHeartbeat,
 		workerMode,
 		buildFailureResult: (

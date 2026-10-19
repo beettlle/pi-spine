@@ -13,16 +13,15 @@ export function buildReviewLevelHint(reviewLevel) {
 		return "";
 	}
 	let hint =
-		"When Review Level ≥ 1, run plan review only at step checkpoints: spine review step --step N --type plan (or spine_review_step with type=plan). ";
+		"Reviews run in the batch engine after .DONE, not in the worker: do not call spine_review_step or spine review step from the worker. ";
 	if (reviewLevel >= 2) {
 		hint +=
-			"Do not run code or final review from inside the worker — the batch engine runs those after .DONE. ";
+			"At Review Level 2 the engine runs plan review, code review, and final review after .DONE. ";
 	} else {
-		hint +=
-			"Do not run final review from the worker — the batch engine runs final review after .DONE. ";
+		hint += "At Review Level 1 the engine runs plan review and final review after .DONE. ";
 	}
 	hint +=
-		"On REVISE, fix feedback before continuing. On review spawn failure, stop with non-zero exit. After creating .DONE, exit immediately with no further tool calls or reviewer spawns. ";
+		"If the engine returns REVISE feedback, address it when resumed. After creating .DONE, exit immediately with no further tool calls or reviewer spawns. ";
 	return hint;
 }
 

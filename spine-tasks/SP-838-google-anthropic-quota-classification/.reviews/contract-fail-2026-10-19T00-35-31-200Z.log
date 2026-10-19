@@ -1,0 +1,40 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/provider-quota.test.mjs tests/batch/reviewer-provider-error.test.mjs tests/batch/worker-quota-classification.test.mjs tests/batch/quota-fallback.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-838
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T00:35:31.200Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+........
+8653ab9  src/batch/provider-quota.mjs:26  NITPICK  The JSDoc description for `providerCode` is missing a separator between the z.ai and Kimi/Anthropic sources, making it read as a run-on phrase.
+91a54d4  src/batch/provider-quota.mjs:106  WARNING  The function `bareEnvelopeStatus` requires `payload.error` to be an object to derive a status. However, the regex `BARE_ENVELOPE_PATTERN` also matches Anthropic-style envelopes like `{"type":"error", ...}` where the `error` field is a string (e.g., `{"type":"error","error":"Overloaded"}`). In this case, `payload.error` is a string, so `typeof payload.error === "object"` is false, `error` becomes null, and the function returns null. This means valid Anthropic mid-stream SSE errors with string error fields will not be recognized, failing to satisfy the documented intent of the function.
+1d10e0a  src/batch/provider-quota.mjs:183  WARNING  The constant `GOOGLE_TRANSIENT_RETRY_SECONDS` is defined but never used in the provided code. The helper functions `parseRetryDelaySeconds` and `readGoogleQuotaDetails` do not reference it, and it is not exported. This is dead code.
+0fcd748  src/batch/provider-quota.mjs:290  WARNING  The condition `httpStatus === 429 && error.code === 429 && error.status === "RESOURCE_EXHAUSTED"` is redundant and likely incorrect. `httpStatus` is the HTTP status code (e.g., 429), while `error.code` is the provider-specific error code from the JSON payload (e.g., 429 for Google, but potentially different for other providers). Requiring `error.code === 429` will fail for any provider that returns a 429 HTTP status but uses a different internal error code (like Anthropic's `rate_limit_error` which doesn't have a numeric `code` field, or other providers). This will cause valid 429 errors to fall through to `return null` if they don't match the specific Google pattern.
+7005bc1  tests/batch/provider-quota.test.mjs:283  ERROR  The test 'bare envelopes keep last-payload-wins across prefixed and unprefixed payloads' references the constant `ZAI_1308`, which is not defined in the added code or the file imports. This will cause a ReferenceError and crash the test suite.
+600791e  tests/batch/reviewer-provider-error.test.mjs:86  ERROR  The test asserts that `classifyReviewerProviderError` returns a non-null result with `httpStatus: 400` for a Google `INVALID_ARGUMENT` payload. However, the implementation contract (defined in `spine-tasks/SP-820-reviewer-provider-error-class/PROMPT.md`) explicitly states that the function must return `null` when `classifyProviderQuotaError(output)` matches. Since `RESOURCE_EXHAUSTED` and `INVALID_ARGUMENT` are both standard Google quota/exhaustion markers, the quota classifier will match this payload, causing `classifyReviewerProviderError` to return `null`. Consequently, `result?.httpStatus` will be `undefined`, causing the assertion `assert.equal(result?.httpStatus, 400)` to fail.
+6 finding(s) at 403.7 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 6 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

@@ -166,6 +166,7 @@ function buildPoolDrift(expectedModels, observedModels) {
  * @property {string[]} observedModels
  * @property {PoolUsage} usage
  * @property {number} [limit]
+ * @property {import("./quota-probes.mjs").QuotaWindow[]} [windows] Per-window percent/reset from a live probe.
  * @property {{unexpectedModels: string[], missingModels: string[]}} drift
  */
 
@@ -239,11 +240,20 @@ export function buildQuotaSnapshot({ projectRoot, config, metricsLines, probeRes
 		/** @type {PoolUsage} */
 		let usage = aggregatePoolUsage(observedRecords);
 		let limit;
+		let windows;
 
+		// Only a "live" probe enriches the pool. "unparsed" (HTTP 200 with no
+		// recognised quota fields) and "absent" both fall back to the estimate.
 		if (probe?.source === "live") {
 			source = "live";
 			usage = probe.usage && typeof probe.usage === "object" ? probe.usage : usage;
 			if (Number.isFinite(probe.limit) && probe.limit >= 0) limit = probe.limit;
+			if (Array.isArray(probe.windows)) {
+				const valid = probe.windows.filter(
+					(w) => w && typeof w.window === "string" && Number.isFinite(w.percentUsed),
+				);
+				if (valid.length > 0) windows = valid;
+			}
 		}
 
 		if (source === "live") overallHasLive = true;
@@ -259,6 +269,7 @@ export function buildQuotaSnapshot({ projectRoot, config, metricsLines, probeRes
 			drift: buildPoolDrift([...expectedSet], [...observedSet]),
 		};
 		if (limit !== undefined) pool.limit = limit;
+		if (windows !== undefined) pool.windows = windows;
 		pools[poolId] = pool;
 	}
 

@@ -33,6 +33,18 @@ function formatReportFilename(now) {
 }
 
 /**
+ * Format one quota window as `5h 63% (resets 2026-10-15T06:28:41Z)`.
+ *
+ * @param {import("./quota-probes.mjs").QuotaWindow} win
+ * @returns {string}
+ */
+function formatWindow(win) {
+	let text = `${win.window} ${Math.round(win.percentUsed)}%`;
+	if (win.resetAt) text += ` (resets ${win.resetAt.replace(/\.\d+Z$/, "Z")})`;
+	return text;
+}
+
+/**
  * Format a short human-readable summary of the snapshot.
  *
  * @param {import("./quota-snapshot.mjs").QuotaSnapshot} snapshot
@@ -60,6 +72,9 @@ function formatHumanSummary(snapshot, reportPath) {
 		if (usage.tokensOut) parts.push(`${usage.tokensOut} out-tokens`);
 		if (usage.estimatedUsd) parts.push(`$${usage.estimatedUsd.toFixed(4)} est`);
 		lines.push(`  ${parts.join(", ")}`);
+		for (const win of pool.windows ?? []) {
+			lines.push(`    ${formatWindow(win)}`);
+		}
 	}
 
 	if (reportPath) {
