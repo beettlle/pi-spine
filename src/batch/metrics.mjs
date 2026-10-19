@@ -13,6 +13,7 @@ import { readReviewLevel } from "./review.mjs";
 // Metrics additionally redacts prompt text (worker prompts may embed
 // secrets) while preserving usage counters for cost rollup.
 const METRICS_REDACT_KEY_PATTERN = /key|token|secret|password|prompt/i;
+const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"];
 const USAGE_KEYS = new Set(["tokensIn", "tokensOut", "estimatedUsd"]);
 
 /**
@@ -141,18 +142,16 @@ export function buildTaskMetricRecord({ batchId, task, config = {}, taskFolder, 
 				: typeof worker.model === "string"
 					? worker.model
 					: "inherit",
-		thinking:
-			worker.thinking === "off" ||
-			worker.thinking === "low" ||
-			worker.thinking === "medium" ||
-			worker.thinking === "high"
-				? worker.thinking
-				: "high",
+		// SP-835 (#340): prefer the per-attempt pin (`**Thinking:**` / profile) over batch-start config.
+		thinking: [task.workerThinking, worker.thinking].find((level) => THINKING_LEVELS.includes(level)) ?? "high",
 		startedAt: new Date(startedMs).toISOString(),
 		endedAt: new Date(endedMs).toISOString(),
 		outcome: resolveTaskMetricOutcome(task),
 	};
 
+	if (typeof task.workerProfile === "string" && task.workerProfile !== "") {
+		record.profile = task.workerProfile;
+	}
 	if (Number.isFinite(resolvedLaneNumber) && resolvedLaneNumber > 0) {
 		record.laneNumber = resolvedLaneNumber;
 	}

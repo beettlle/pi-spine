@@ -42,7 +42,7 @@ import {
 	isPiExtensionConflictOutput,
 	shouldWorkerUsePiNoExtensions,
 } from "../src/doctor/pi-extension-conflict.mjs";
-import { parseContract, parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
+import { PROMPT_THINKING_LEVELS, parseContract, parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
 
 /**
  * Actionable hint when pi worker spawn fails on duplicate extension tool registration.
@@ -66,13 +66,26 @@ function buildReviewJournal() {
 
 /**
  * Append worker model/thinking flags from spine-config (mirrors reviewer spawn in review.mjs).
+ * `SPINE_WORKER_THINKING_OVERRIDE` (per-task `**Thinking:**`, SP-835 / #340) wins over
+ * `agents.worker.thinking`; invalid values warn on stderr and are ignored.
  *
  * @param {string[]} piArgs
  * @param {object} [config]
+ * @param {Record<string, string|undefined>} [env] Defaults to `process.env`.
  */
-export function appendWorkerAgentModelArgs(piArgs, config = {}) {
+export function appendWorkerAgentModelArgs(piArgs, config = {}, env = process.env) {
 	const workerModel = config?.agents?.worker?.model;
-	const workerThinking = config?.agents?.worker?.thinking;
+	let workerThinking = config?.agents?.worker?.thinking;
+	const thinkingOverride = env?.SPINE_WORKER_THINKING_OVERRIDE?.trim();
+	if (thinkingOverride) {
+		if (PROMPT_THINKING_LEVELS.includes(thinkingOverride)) {
+			workerThinking = thinkingOverride;
+		} else {
+			console.error(
+				`SPINE_WORKER_THINKING_OVERRIDE="${thinkingOverride}" ignored (expected ${PROMPT_THINKING_LEVELS.join("|")})`,
+			);
+		}
+	}
 	if (workerModel && workerModel !== "inherit") {
 		piArgs.push("--model", workerModel);
 	}

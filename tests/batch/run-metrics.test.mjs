@@ -161,6 +161,60 @@ test("buildTaskMetricRecord prefers task.workerModel over the batch-start config
 	assert.equal(inherit.model, "inherit");
 });
 
+test("buildTaskMetricRecord records the per-task profile and prefers task.workerThinking (SP-835)", () => {
+	const config = { agents: { worker: { model: "zai/glm-5.3", thinking: "medium" } } };
+	const overridden = buildTaskMetricRecord({
+		batchId: "20261019T000000",
+		task: {
+			taskId: "SP-835",
+			status: "succeeded",
+			workerModel: "google/gemini-4-pro",
+			workerProfile: "gemini4",
+			workerThinking: "xhigh",
+		},
+		config,
+	});
+	assert.equal(overridden.profile, "gemini4");
+	assert.equal(overridden.model, "google/gemini-4-pro");
+	assert.equal(overridden.thinking, "xhigh");
+
+	// Unsupported pins are ignored; the config value (then "high") still applies.
+	const invalid = buildTaskMetricRecord({
+		batchId: "20261019T000000",
+		task: { taskId: "SP-835", status: "succeeded", workerThinking: "ultra" },
+		config,
+	});
+	assert.equal(invalid.thinking, "medium");
+});
+
+test("buildTaskMetricRecord stays backward compatible without profile/thinking pins (SP-835)", () => {
+	const record = buildTaskMetricRecord({
+		batchId: "20261019T000000",
+		task: { taskId: "SP-835", status: "succeeded" },
+		config: { agents: { worker: { model: "zai/glm-5.3", thinking: "low" } } },
+	});
+	assert.equal("profile" in record, false);
+	assert.equal(record.thinking, "low");
+	assert.equal(
+		buildTaskMetricRecord({ batchId: "b", task: { taskId: "SP-835", status: "succeeded" }, config: {} }).thinking,
+		"high",
+	);
+});
+
+test("readMetricsLines parses old records (no profile) next to new ones (SP-835)", async () => {
+	await withProject((projectRoot) => {
+		const file = path.join(projectRoot, ".spine", "run-metrics.jsonl");
+		const legacy = { recordType: "task", schemaVersion: 1, batchId: "b1", taskId: "SP-1", model: "m", thinking: "high" };
+		const current = { ...legacy, batchId: "b2", profile: "gemini4", thinking: "xhigh" };
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		fs.writeFileSync(file, `${JSON.stringify(legacy)}\n${JSON.stringify(current)}\n`, "utf-8");
+		const lines = readMetricsLines(file);
+		assert.equal(lines.length, 2);
+		assert.equal(lines[0].profile, undefined);
+		assert.equal(lines[1].profile, "gemini4");
+	});
+});
+
 test("metrics.enabled false skips append without error", async () => {
 	await withProject((projectRoot) => {
 		const config = { metrics: { enabled: false, path: ".spine/run-metrics.jsonl" } };

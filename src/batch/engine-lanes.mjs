@@ -12,11 +12,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {
-	loadTaskFileScopePaths,
-	recordLaneTaskMetric,
-	recordPromptParseFailure,
-} from "./engine-lanes/queue.mjs";
+import { loadTaskFileScopePaths, recordLaneTaskMetric, recordPromptParseFailure } from "./engine-lanes/queue.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { commitLaneAndValidateWorktree } from "./engine-lanes/commit.mjs";
 import { recordTaskFailureSalvage } from "./salvage.mjs";
@@ -35,7 +31,7 @@ import { resolveWorkerBackend } from "../config/worker-backend.mjs";
 import { acquireLaneSlot, loadMatrixTaskRows, releaseLaneSlot } from "./engine-lanes/matrix.mjs";
 import { runMatrixTaskOnLane } from "./engine-lanes/matrix-run.mjs";
 import { runWithQuotaFallback } from "./engine-lanes/quota-fallback-run.mjs";
-import { applyTaskReviewProfile } from "./engine-lanes/task-agent-profile.mjs";
+import { applyTaskReviewProfile, prepareWorkerAttempt } from "./engine-lanes/task-agent-profile.mjs";
 
 export { buildTasksAndLanesFromPlan, loadTaskFileScopePaths, skipTaskDoneOnDisk } from "./engine-lanes/queue.mjs";
 
@@ -269,11 +265,14 @@ async function runNonMatrixTaskOnLane({
 	if (!task.startedAt) task.startedAt = Date.now();
 	updateSegmentForTask(state, taskId, "running");
 	await saveEngineBatchState(projectRoot, state);
+	// SP-835 (#340): per-attempt worker profile/thinking; re-resolved on every quota-fallback retry.
+	const attempt = prepareWorkerAttempt({ projectRoot, state, batchId, config, task, lane, taskFolderInWorktree, laneCorrelationId });
 	appendJournalEvent(projectRoot, batchId, "task.started", {
 		taskId,
 		laneNumber,
 		laneId: lane.laneId,
 		correlationId: laneCorrelationId,
+		...attempt.startedPayload,
 	});
 
 	const workerResult = /** @type {any} */ (await runWorker({
@@ -287,6 +286,7 @@ async function runNonMatrixTaskOnLane({
 		laneCorrelationId,
 		fileScopePaths,
 		config,
+		extraEnv: attempt.extraEnv,
 		// Fire-and-forget saves (SP-797 / #302): the host never awaits these callbacks.
 		// Safe — the save serializes live state at lock-acquire time, never a stale snapshot.
 		onHeartbeat: async (timestamp) => {
