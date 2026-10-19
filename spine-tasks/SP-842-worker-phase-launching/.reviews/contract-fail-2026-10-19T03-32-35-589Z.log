@@ -1,0 +1,43 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/heartbeat.test.mjs tests/batch/contract-stall-override.test.mjs tests/batch/worker-host.test.mjs tests/config/worker-launch-script.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-842
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T03:32:35.589Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+...............
+c145046  src/batch/worker-heartbeat.mjs:113  WARNING  The JSDoc documents a new `isPastPreflight` parameter that is intended to win over `childPastPreflight`, but the diff only shows the documentation change. If the implementation does not explicitly check for the presence of `isPastPreflight` (e.g., `if (params.isPastPreflight) { ... }`) and instead uses a fallback like `params.isPastPreflight ?? params.childPastPreflight`, the behavior will be incorrect. Since `isPastPreflight` is a function (truthy) and `childPastPreflight` is a boolean, a simple `??` or `||` will always prefer the function if provided, but if the function returns `false`, it will still be used (which is correct), but if the intent is for the *static* boolean to be used when the getter is *not provided*, the logic must be `params.isPastPreflight ? params.isPastPreflight() : params.childPastPreflight`. If the implementation uses `params.isPastPreflight?.() ?? params.childPastPreflight`, it will work, but if it uses `params.isPastPreflight || params.childPastPreflight`, it will always return the function object (truthy) instead of the boolean result, leading to type errors or incorrect logic downstream. Please verify the implementation correctly invokes the getter and falls back to the static value only when the getter is absent.
+f8a6c91  src/batch/worker-heartbeat.mjs:151  WARNING  The newly added `isPastPreflight` parameter is destructured but never used in the visible function body. If the intent is to replace the static `childPastPreflight` with a live state reader (as suggested by the commit message), the function body must be updated to call `isPastPreflight()` instead of reading `childPastPreflight`. As it stands, this is dead code that does not fulfill the stated intent.
+e7cf35a  src/batch/worker-host.mjs:367  ERROR  The `isPastPreflight` function is defined as a closure that captures the local variable `childPastPreflight` by reference. However, `childPastPreflight` is a primitive boolean. If the intent is for `isPastPreflight` to reflect the *live* state of the worker's preflight status (as suggested by the commit message "read live preflight state"), this implementation is flawed because it will always return the value of `childPastPreflight` at the time the object literal is created (likely `false`), and will not update if `childPastPreflight` is later reassigned (e.g., by `markChildPastPreflight`). If `childPastPreflight` is a mutable object or a getter, this might be fine, but given it's passed as a primitive in the destructuring, it's likely a bug where the heartbeat will never see the updated state.
+1b17196  tests/batch/heartbeat.test.mjs:532  WARNING  The assertion `phases.slice(1).every((phase) => phase === "pi")` is fragile and likely incorrect. The test setup flips `pastPreflight` to `true` when `virtualNow >= 200`. With a `pollIntervalMs` of 100, the polling loop will likely check the state at t=0, t=100, t=200, etc. If the implementation checks the state *before* sleeping, the check at t=100 will still see `pastPreflight` as `false` (since the flip happens after the sleep that ends at t=200). This means the second heartbeat (emitted after the t=100 check) will still be `launching`, causing the assertion to fail. The test assumes the second heartbeat is emitted *after* the flip, but the timing of the flip relative to the check/sleep cycle makes this ambiguous and likely flaky.
+4 finding(s) at 270.6 tokens/sec.
+c145046  src/batch/worker-heartbeat.mjs:113  WARNING  The JSDoc documents a new `isPastPreflight` parameter that is intended to win over `childPastPreflight`, but the diff only shows the documentation change. If the implementation does not explicitly check for the presence of `isPastPreflight` (e.g., `if (params.isPastPreflight) { ... }`) and instead uses a fallback like `params.isPastPreflight ?? params.childPastPreflight`, the behavior will be incorrect. Since `isPastPreflight` is a function (truthy) and `childPastPreflight` is a boolean, a simple `??` or `||` will always prefer the function if provided, but if the function returns `false`, it will still be used (which is correct), but if the intent is for the *static* boolean to be used when the getter is *not provided*, the logic must be `params.isPastPreflight ? params.isPastPreflight() : params.childPastPreflight`. If the implementation uses `params.isPastPreflight?.() ?? params.childPastPreflight`, it will work, but if it uses `params.isPastPreflight || params.childPastPreflight`, it will always return the function object (truthy) instead of the boolean result, leading to type errors or incorrect logic downstream. Please verify the implementation correctly invokes the getter and falls back to the static value only when the getter is absent.
+f8a6c91  src/batch/worker-heartbeat.mjs:151  WARNING  The newly added `isPastPreflight` parameter is destructured but never used in the visible function body. If the intent is to replace the static `childPastPreflight` with a live state reader (as suggested by the commit message), the function body must be updated to call `isPastPreflight()` instead of reading `childPastPreflight`. As it stands, this is dead code that does not fulfill the stated intent.
+e7cf35a  src/batch/worker-host.mjs:367  ERROR  The `isPastPreflight` function is defined as a closure that captures the local variable `childPastPreflight` by reference. However, `childPastPreflight` is a primitive boolean. If the intent is for `isPastPreflight` to reflect the *live* state of the worker's preflight status (as suggested by the commit message "read live preflight state"), this implementation is flawed because it will always return the value of `childPastPreflight` at the time the object literal is created (likely `false`), and will not update if `childPastPreflight` is later reassigned (e.g., by `markChildPastPreflight`). If `childPastPreflight` is a mutable object or a getter, this might be fine, but given it's passed as a primitive in the destructuring, it's likely a bug where the heartbeat will never see the updated state.
+1b17196  tests/batch/heartbeat.test.mjs:532  WARNING  The assertion `phases.slice(1).every((phase) => phase === "pi")` is fragile and likely incorrect. The test setup flips `pastPreflight` to `true` when `virtualNow >= 200`. With a `pollIntervalMs` of 100, the polling loop will likely check the state at t=0, t=100, t=200, etc. If the implementation checks the state *before* sleeping, the check at t=100 will still see `pastPreflight` as `false` (since the flip happens after the sleep that ends at t=200). This means the second heartbeat (emitted after the t=100 check) will still be `launching`, causing the assertion to fail. The test assumes the second heartbeat is emitted *after* the flip, but the timing of the flip relative to the check/sleep cycle makes this ambiguous and likely flaky.
+4 finding(s).
+
+Warning: proceeding with uncommitted changes; review scope may be unclear
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+warning: no new hunks to review; --strictness had no effect (pass them to "stet start" or use "stet rerun")
+stet: contract review found 4 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
