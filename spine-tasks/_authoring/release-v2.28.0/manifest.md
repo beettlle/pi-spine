@@ -7,7 +7,7 @@
 **Profile:** minor
 **Operator approved scope:** yes (2026-10-17, with amendments: pull in #340, #325 and #350; reviewer must never share the worker's model family)
 **Worker model pin:** `anthropic/claude-sonnet-5-5` (high) via `activeProfile: sonnet`; quota fallback `gemini4` (`google/gemini-4-argon`). GLM and Kimi pools are out of tokens, so no `zai/*` or `kimi-coding/*` pins this release.
-**Agent pin override:** planned (2026-10-17, operator request) — after SP-832..SP-834 land #355, add reviewer profiles and set `agents.reviewerProfile` plus `profiles.gemini4.reviewerProfile` so no worker is reviewed by its own family. Reviewer change only; worker pin unchanged. Record the exact config diff here before applying.
+**Agent pin override:** applied 2026-10-18 after SP-834 landed (operator request). Reviewer change only; worker pin unchanged. Added `profiles.review-gemini.reviewer` (`google/gemini-2.5-pro`, plan medium / code+final high) and `profiles.review-claude.reviewer` (`anthropic/claude-sonnet-5-5`, plan medium / code+final high); set `agents.reviewerProfile: review-gemini` and `profiles.gemini4.reviewerProfile: review-claude`. Repo `spine doctor` pairings: sonnet→gemini, gemini4→claude, cursor→gemini. Batches D+ run via `node bin/spine.mjs` (installed global is a v2.27.1 copy without the reviewer-profile engine).
 
 ---
 
