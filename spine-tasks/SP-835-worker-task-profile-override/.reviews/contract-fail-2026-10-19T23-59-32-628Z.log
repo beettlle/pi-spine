@@ -1,0 +1,48 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/task-agent-profile.test.mjs tests/batch/worker-model-pin.test.mjs tests/agents/worker-runner.test.mjs tests/batch/run-metrics.test.mjs tests/batch/quota-fallback-integration.test.mjs tests/batch/quota-fallback-state.test.mjs tests/batch/engine.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-835
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T23:59:32.628Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+
+6cc7bd9  src/batch/engine-lanes.mjs:34  WARNING  The import of `prepareWorkerAttempt` is added but is not used in the visible code hunk. If this function is not utilized in the rest of the file, it is dead code. If it is intended to be used, the implementation is missing from this hunk, which may indicate an incomplete change.
+d9de1c5  src/batch/engine-lanes.mjs:289  WARNING  The comment claims the worker profile is 're-resolved on every quota-fallback retry', but `prepareWorkerAttempt` is only called once here. If `runWorker` internally handles quota fallbacks, the `extraEnv` and `startedPayload` are fixed for the initial attempt and will not be re-resolved for subsequent fallback attempts, contradicting the comment and potentially causing incorrect worker configuration during retries.
+4b4b746  src/batch/engine-lanes/task-agent-profile.mjs:12  ERROR  Import of `resolveWorkerBackend` is added but not used in the visible code hunk. If this function is not utilized in the rest of the file, it is dead code. If it is intended to be used, the implementation is missing from this hunk, which may indicate an incomplete change.
+644fb59  src/batch/journal.mjs:415  INFO  The constant JOURNAL_HINT_RECENT_MS is missing a JSDoc comment explaining its purpose and units.
+e5ff3e0  src/batch/journal.mjs:443  INFO  The new priority entry `worker.profile_override_ignored` lacks a rationale comment, unlike the adjacent quota events which include a comment explaining their ranking (SP-810).
+95f811f  src/batch/metrics.mjs:146  WARNING  The `THINKING_LEVELS` array includes `"minimal"` and `"xhigh"`, but the worker execution logic in `src/batch/agent-session-worker.mjs` only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. If a task is configured with `"minimal"` or `"xhigh"`, the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+80fc2a5  tests/batch/task-agent-profile.test.mjs:63  WARNING  The test name is 'resolveTaskWorkerProfile defaults to agents.activeProfile pins', but the assertion checks for source 'active_profile'. This mismatch suggests the test name is outdated or the implementation is not distinguishing the source as intended. If the implementation returns 'active_profile', the test name should be updated to reflect the actual source identifier (e.g., 'defaults to active profile pins').
+a4ce313  tests/batch/task-agent-profile.test.mjs:74  WARNING  The test name states 'prefers prompt.profile', but the assertion checks for source 'prompt'. This mismatch suggests the test name is outdated or the implementation is not distinguishing the source as intended. If the implementation returns 'prompt', the test name should be updated to reflect the actual source identifier (e.g., 'prefers prompt profile').
+d90947c  tests/batch/task-agent-profile.test.mjs:109  WARNING  The test name is 'resolveTaskWorkerProfile ignores a quota hop for a different pool', but the assertion checks that the source is 'prompt'. This is a mismatch: the test name implies the quota hop is being ignored (which would typically result in a source like 'active_profile' or 'default'), but the assertion verifies that the prompt profile is used. If the implementation correctly ignores the quota hop and falls back to the prompt, the test name should be updated to reflect that the prompt profile is used when the quota hop is for a different pool. Alternatively, if the intent is to verify that the quota hop is ignored, the assertion should check for the fallback source, not 'prompt'.
+360352d  tests/batch/task-agent-profile.test.mjs:248  WARNING  The `runPrepare` helper does not clean up the temporary directory (`projectRoot`) if `prepareWorkerAttempt` or `readJournalEvents` throws an exception. This can lead to disk space exhaustion in CI environments if tests fail frequently.
+1a0c033  tests/batch/worker-model-pin.test.mjs:7  WARNING  The test modifies `process.env` (via `Object.assign`) but does not restore the original values in a `finally` block. If `startBatch` or the stub worker throws an exception, the test will fail and leave `SPINE_WORKER_STUB` and related variables set in the environment, potentially causing side effects or failures in subsequent tests running in the same process.
+e42e1b7  tests/batch/worker-model-pin.test.mjs:117  WARNING  The test asserts that 'minimal' and 'xhigh' are valid thinking levels, but the worker execution logic in src/batch/agent-session-worker.mjs only accepts 'off', 'low', 'medium', and 'high'. If a task is configured with 'minimal' or 'xhigh', the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+12 finding(s) at 866.4 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 12 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
