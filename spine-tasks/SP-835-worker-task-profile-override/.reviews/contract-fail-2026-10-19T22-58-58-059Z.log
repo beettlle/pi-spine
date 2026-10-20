@@ -1,0 +1,42 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/task-agent-profile.test.mjs tests/batch/worker-model-pin.test.mjs tests/agents/worker-runner.test.mjs tests/batch/run-metrics.test.mjs tests/batch/quota-fallback-integration.test.mjs tests/batch/quota-fallback-state.test.mjs tests/batch/engine.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-835
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T22:58:58.059Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+
+86b24f7  src/batch/engine-lanes.mjs:15  NITPICK  Import statement exceeds 80 characters, violating the JavaScript/TypeScript Brutal Audit Workflow rule 1.4 (Semicolons/Formatting) and general style guidelines.
+4396a10  src/batch/engine-lanes/task-agent-profile.mjs:130  WARNING  The condition for setting `SPINE_AGENT_PROFILE_OVERRIDE` in `extraEnv` is flawed. It sets the override when `context.profile !== activeProfile`, which is true for `prompt` and `retry_override` sources. However, the child process (`bin/spine-worker-runner.mjs`) only applies `SPINE_AGENT_PROFILE_OVERRIDE` if the resolved profile is different from the prompt's profile. If the prompt has a profile, the child will ignore the override, causing the worker to run with the prompt's profile instead of the intended `retry_override` or `quota_fallback` profile.
+e5ff3e0  src/batch/journal.mjs:443  INFO  The new priority entry `worker.profile_override_ignored` lacks a rationale comment, unlike the adjacent quota events which include a comment explaining their ranking (SP-810).
+95f811f  src/batch/metrics.mjs:146  WARNING  The `THINKING_LEVELS` array includes `"minimal"` and `"xhigh"`, but the worker execution logic in `src/batch/agent-session-worker.mjs` only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. If a task is configured with `"minimal"` or `"xhigh"`, the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+665440e  tests/batch/task-agent-profile.test.mjs:213  WARNING  The test asserts that `resolveTaskWorkerProfile` accepts `"xhigh"` as a valid thinking level, but the worker execution logic in `src/batch/agent-session-worker.mjs` only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. This creates a mismatch between the recorded metrics and the actual execution behavior.
+b5b8896  tests/batch/worker-model-pin.test.mjs:118  WARNING  The test asserts that 'minimal' and 'xhigh' are valid thinking levels, but the worker execution logic in src/batch/agent-session-worker.mjs only accepts 'off', 'low', 'medium', and 'high'. If a task is configured with 'minimal' or 'xhigh', the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+6 finding(s) at 1025.8 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 6 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

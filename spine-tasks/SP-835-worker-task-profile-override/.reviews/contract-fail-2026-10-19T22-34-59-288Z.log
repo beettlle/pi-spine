@@ -1,0 +1,45 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/task-agent-profile.test.mjs tests/batch/worker-model-pin.test.mjs tests/agents/worker-runner.test.mjs tests/batch/run-metrics.test.mjs tests/batch/quota-fallback-integration.test.mjs tests/batch/quota-fallback-state.test.mjs tests/batch/engine.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-835
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T22:34:59.288Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+
+f9324fb  bin/spine-worker-runner.mjs:81  WARNING  The validation check `PROMPT_THINKING_LEVELS.includes(thinkingOverride)` is case-sensitive. If the environment variable `SPINE_WORKER_THINKING_OVERRIDE` is set to a value with different casing (e.g., "High" or "HIGH"), it will fail the check, log a warning, and be ignored, even though the intended thinking level is valid. This makes the override fragile and inconsistent with typical environment variable handling.
+7e9057f  src/batch/engine-lanes/task-agent-profile.mjs:145  WARNING  Stale `workerModel` is not cleaned up when the resolved model is null. The code explicitly deletes `workerProfile` and `workerThinking` when they resolve to null, but only assigns `workerModel` if it is truthy. If a task previously had a `workerModel` set and a subsequent attempt (e.g., after a profile change or removal) resolves to a null model, the stale value will remain on the task object, leading to incorrect metrics reporting.
+e5ff3e0  src/batch/journal.mjs:443  INFO  The new priority entry `worker.profile_override_ignored` lacks a rationale comment, unlike the adjacent quota events which include a comment explaining their ranking (SP-810).
+6b46e67  src/batch/metrics.mjs:16  WARNING  The `THINKING_LEVELS` array includes `"minimal"` and `"xhigh"`, but the worker execution logic in `src/batch/agent-session-worker.mjs` only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. If a task is configured with `"minimal"` or `"xhigh"`, the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+3916efa  src/batch/metrics.mjs:146  WARNING  The `thinking` field validation now accepts `"minimal"` and `"xhigh"` because it checks against the full `THINKING_LEVELS` array. However, the actual worker execution logic in `src/batch/agent-session-worker.mjs` (line 162) only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. If a task is configured with `"minimal"` or `"xhigh"`, the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+50e7e3e  tests/batch/task-agent-profile.test.mjs:63  WARNING  The test asserts that the `source` is `"active_profile"`, but the test name and intent state that the profile defaults to `agents.activeProfile`. If the implementation returns `"active_profile"` instead of `"agents.activeProfile"`, the test is likely incorrect or the implementation is not distinguishing the source as intended. This could lead to incorrect behavior if the source is used for logging or debugging.
+887a331  tests/batch/task-agent-profile.test.mjs:109  WARNING  The assertion `assert.equal(result.source, "prompt")` is likely incorrect. The test name and intent indicate that the profile is coming from `prompt.profile` (specifically `prompt.profile.worker`). If the implementation returns `"prompt"` instead of `"prompt.profile"`, the test is verifying the wrong source string, which could lead to incorrect behavior if the source is used for logging, debugging, or metrics.
+360352d  tests/batch/task-agent-profile.test.mjs:248  WARNING  The `runPrepare` helper does not clean up the temporary directory (`projectRoot`) if `prepareWorkerAttempt` or `readJournalEvents` throws an exception. This can lead to disk space exhaustion in CI environments if tests fail frequently.
+1a0c033  tests/batch/worker-model-pin.test.mjs:7  WARNING  The test modifies `process.env` (via `Object.assign`) but does not restore the original values in a `finally` block. If `startBatch` or the stub worker throws an exception, the test will fail and leave `SPINE_WORKER_STUB` and related variables set in the environment, potentially causing side effects or failures in subsequent tests running in the same process.
+9 finding(s) at 959.5 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 9 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

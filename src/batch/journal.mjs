@@ -412,9 +412,6 @@ export function summarizeJournalEvent(event) {
 	return parts.join("; ") || "—";
 }
 
-/**
- * @param {object[]} events
- */
 const JOURNAL_HINT_RECENT_MS = 30 * 60 * 1000;
 
 /**
@@ -443,6 +440,8 @@ export function extractJournalDiagnosisHints(events) {
 		"batch.quota_fallback_applied",
 		"batch.quota_fallback_exhausted",
 		"worker.quota_exhausted",
+		// SP-835 (#340): override dropped by the agentSession backend — operator-visible, rank with quota events.
+		"worker.profile_override_ignored",
 		"review.crash_recovered",
 		"review.skipped_fresh_artifact",
 		"review.resumed",

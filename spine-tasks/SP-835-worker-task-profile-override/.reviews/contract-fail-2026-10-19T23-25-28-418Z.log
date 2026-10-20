@@ -1,0 +1,46 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/task-agent-profile.test.mjs tests/batch/worker-model-pin.test.mjs tests/agents/worker-runner.test.mjs tests/batch/run-metrics.test.mjs tests/batch/quota-fallback-integration.test.mjs tests/batch/quota-fallback-state.test.mjs tests/batch/engine.test.mjs tests/arch/import-cycles.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-835
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-19T23:25:28.418Z
+Buffer overflow: no
+---
+
+> pi-spine@2.27.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.27.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+
+bf03c29  src/batch/engine-lanes.mjs:268  WARNING  The comment claims the worker profile is 're-resolved on every quota-fallback retry', but `prepareWorkerAttempt` is only called once here. If `runWorker` internally handles quota fallbacks, the `extraEnv` and `startedPayload` are fixed for the initial attempt and will not be re-resolved for subsequent fallback attempts, contradicting the comment and potentially causing incorrect worker configuration during retries.
+d9de1c5  src/batch/engine-lanes.mjs:289  WARNING  The comment claims the worker profile is 're-resolved on every quota-fallback retry', but `prepareWorkerAttempt` is only called once here. If `runWorker` internally handles quota fallbacks, the `extraEnv` and `startedPayload` are fixed for the initial attempt and will not be re-resolved for subsequent fallback attempts, contradicting the comment and potentially causing incorrect worker configuration during retries.
+26f80bc  src/batch/engine-lanes/task-agent-profile.mjs:12  WARNING  The import of `resolveWorkerBackend` is added but is not used in the visible code hunk. If this function is not utilized in the rest of the file, it is dead code. If it is intended to be used, the implementation is missing from this hunk, which may indicate an incomplete change.
+4396a10  src/batch/engine-lanes/task-agent-profile.mjs:130  WARNING  The condition for setting `SPINE_AGENT_PROFILE_OVERRIDE` in `extraEnv` is flawed. It sets the override when `context.profile !== activeProfile`, which is true for `prompt` and `retry_override` sources. However, the child process (`bin/spine-worker-runner.mjs`) only applies `SPINE_AGENT_PROFILE_OVERRIDE` if the resolved profile is different from the prompt's profile. If the prompt has a profile, the child will ignore the override, causing the worker to run with the prompt's profile instead of the intended `retry_override` or `quota_fallback` profile.
+644fb59  src/batch/journal.mjs:415  INFO  The constant JOURNAL_HINT_RECENT_MS is missing a JSDoc comment explaining its purpose and units.
+95f811f  src/batch/metrics.mjs:146  WARNING  The `THINKING_LEVELS` array includes `"minimal"` and `"xhigh"`, but the worker execution logic in `src/batch/agent-session-worker.mjs` only accepts `"off"`, `"low"`, `"medium"`, and `"high"`. If a task is configured with `"minimal"` or `"xhigh"`, the metrics will record that value, but the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+80fc2a5  tests/batch/task-agent-profile.test.mjs:63  WARNING  The test name is 'resolveTaskWorkerProfile defaults to agents.activeProfile pins', but the assertion checks for source 'active_profile'. This mismatch suggests the test name is outdated or the implementation is not distinguishing the source as intended. If the implementation returns 'active_profile', the test name should be updated to reflect the actual source identifier (e.g., 'defaults to active profile pins').
+006e39f  tests/batch/task-agent-profile.test.mjs:74  WARNING  The test asserts that `result.source` is "prompt", but the test name and intent indicate that the profile is coming from `prompt.profile`. If the implementation returns "prompt" instead of "prompt.profile", the test is likely incorrect or the implementation is not distinguishing between the two sources as intended. This could lead to incorrect behavior if the source is used for logging or debugging.
+b0d0bdb  tests/batch/task-agent-profile.test.mjs:213  WARNING  The test asserts that 'xhigh' is a valid thinking level, but the worker execution logic in src/batch/agent-session-worker.mjs only accepts 'off', 'low', 'medium', and 'high'. If a task is configured with 'xhigh', the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+7f01a81  tests/batch/worker-model-pin.test.mjs:118  WARNING  The test asserts that 'minimal' and 'xhigh' are valid thinking levels, but the worker execution logic in src/batch/agent-session-worker.mjs only accepts 'off', 'low', 'medium', and 'high'. If a task is configured with 'minimal' or 'xhigh', the worker will fall back to the default, causing a mismatch between the recorded metrics and the actual execution behavior.
+10 finding(s) at 913.1 tokens/sec.
+
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 10 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.

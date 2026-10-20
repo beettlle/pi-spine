@@ -2,14 +2,15 @@
  * Per-task agent context for engine reviews (SP-834 / #355).
  *
  * Engine review spawns used the batch-wide `config` loaded at engine start. This module
- * resolves, per task, the worker profile in effect (PROMPT `**Profile:**`, quota fallback
- * hop, `agents.activeProfile`) and the reviewer chosen by `resolveEffectiveReviewer`
+ * resolves, per task, the worker profile in effect (retry override, PROMPT `**Profile:**`,
+ * quota fallback hop, `agents.activeProfile`) and the reviewer chosen by `resolveEffectiveReviewer`
  * (SP-832), then hands the review phases a config whose `agents.reviewer` carries those
  * pins. `resolveTaskWorkerProfile` and `buildTaskReviewConfig` are pure;
  * `applyTaskReviewProfile` adds the I/O (PROMPT load, journal, runtime family guard).
  */
 
 import { resolveEffectiveReviewer } from "../../config/agent-model-resolve.mjs";
+import { resolveWorkerBackend } from "../../config/worker-backend.mjs";
 import { resolvePoolId } from "../../metrics/quota-snapshot.mjs";
 import { loadTaskPacket } from "../../tasks/packet/index.mjs";
 import { appendJournalEvent } from "../journal.mjs";
@@ -50,34 +51,107 @@ function pickWorkerPins(agents, profile) {
 /**
  * Worker profile / model / thinking in effect for one task.
  *
- * Order: active quota fallback hop (when its `exhaustedPool` is the pool of the task's own
- * worker model), then `prompt.profile`, then `agents.activeProfile`. `model` / `thinking`
- * come from `agents.profiles[profile].worker`, falling back to `agents.worker`.
+ * Profile order: active quota fallback hop (when its `exhaustedPool` is the pool of the
+ * candidate profile's worker model), then `task.profileOverride` (`spine batch retry
+ * --profile`, SP-836), then `prompt.profile`, then `agents.activeProfile`. `model` comes
+ * from `agents.profiles[profile].worker`, falling back to `agents.worker`. Thinking order:
+ * `prompt.thinking`, then the resolved profile's `worker.thinking`, then
+ * `agents.worker.thinking` (SP-835 / #340).
  *
  * Pure: no I/O.
  *
  * @param {object} params
  * @param {Record<string, any>} [params.config]
- * @param {{ profile?: string|null }|null} [params.prompt] Parsed PROMPT (SP-833).
+ * @param {{ profile?: string|null, thinking?: string|null }|null} [params.prompt] Parsed PROMPT (SP-833).
  * @param {{ toProfile?: string, exhaustedPool?: string }|null} [params.quotaFallback] `state.resilience.quotaFallback`.
- * @returns {{ profile: string|null, model: string|null, thinking: string|null, source: "quota_fallback"|"prompt.profile"|"agents.activeProfile"|"none" }}
+ * @param {{ profileOverride?: string|null }|null} [params.task] Batch-state task row.
+ * @returns {{ profile: string|null, model: string|null, thinking: string|null, source: "quota_fallback"|"retry_override"|"prompt"|"active_profile" }}
  */
-export function resolveTaskWorkerProfile({ config, prompt = null, quotaFallback = null } = {}) {
+export function resolveTaskWorkerProfile({ config, prompt = null, quotaFallback = null, task = null } = {}) {
 	const agents = config?.agents ?? {};
+	const retryProfile = nonEmpty(task?.profileOverride);
 	const promptProfile = nonEmpty(prompt?.profile);
-	const activeProfile = nonEmpty(agents.activeProfile);
-	const ownProfile = promptProfile ?? activeProfile;
-	const ownSource = promptProfile ? "prompt.profile" : activeProfile ? "agents.activeProfile" : "none";
+	const ownProfile = retryProfile ?? promptProfile ?? nonEmpty(agents.activeProfile);
+	const ownSource = retryProfile ? "retry_override" : promptProfile ? "prompt" : "active_profile";
+	const promptThinking = nonEmpty(prompt?.thinking);
+
+	/** @param {string|null} profile @param {"quota_fallback"|"retry_override"|"prompt"|"active_profile"} source */
+	const resolved = (profile, source) => {
+		const pins = pickWorkerPins(agents, profile);
+		return { profile, model: pins.model, thinking: promptThinking ?? pins.thinking, source };
+	};
 
 	const hopProfile = nonEmpty(quotaFallback?.toProfile);
 	const hopPool = nonEmpty(quotaFallback?.exhaustedPool);
-	if (hopProfile && hopPool) {
-		const own = pickWorkerPins(agents, ownProfile);
-		if (resolvePoolId(own.model ?? undefined) === hopPool) {
-			return { profile: hopProfile, ...pickWorkerPins(agents, hopProfile), source: "quota_fallback" };
-		}
+	if (hopProfile && hopPool && resolvePoolId(pickWorkerPins(agents, ownProfile).model ?? undefined) === hopPool) {
+		return resolved(hopProfile, "quota_fallback");
 	}
-	return { profile: ownProfile, ...pickWorkerPins(agents, ownProfile), source: ownSource };
+	return resolved(ownProfile, ownSource);
+}
+
+/**
+ * Per-attempt worker spawn context (SP-835 / #340): resolves the effective worker
+ * profile / model / thinking, records them on the task row (metrics read them), builds the
+ * child `extraEnv` overrides, and journals `worker.profile_override_ignored` on the
+ * `agentSession` backend (which drops `extraEnv`, #317). Called once per worker attempt,
+ * inside the path `runWithQuotaFallback` re-runs, so a hop applied mid-task is picked up.
+ *
+ * @param {Record<string, any>} params Lane-run params bag (`projectRoot`, `state`, `batchId`,
+ *   `config`, `task`, `lane`, `taskFolderInWorktree`, `laneCorrelationId`).
+ * @returns {{
+ *   context: ReturnType<typeof resolveTaskWorkerProfile>,
+ *   extraEnv: Record<string, string>,
+ *   startedPayload: Record<string, string|null>,
+ * }}
+ */
+export function prepareWorkerAttempt(params) {
+	const { projectRoot, state, batchId, config, task, lane, taskFolderInWorktree, laneCorrelationId } = params;
+	const prompt = loadPromptSafely(taskFolderInWorktree);
+	const quotaFallback =
+		state?.resilience?.quotaFallback ?? loadQuotaFallbackForWorker({ projectRoot, batchId });
+	const context = resolveTaskWorkerProfile({ config, prompt, quotaFallback, task });
+
+	// A sticky hop that does not apply to this task's pool must not leak into the child
+	// (`runWorker` merges the hop env under caller keys), so pin the resolved profile then too.
+	const activeProfile = nonEmpty(config?.agents?.activeProfile);
+	const hopProfile = nonEmpty(quotaFallback?.toProfile);
+	/** @type {Record<string, string>} */
+	const extraEnv = {};
+	if (context.profile && (context.profile !== activeProfile || (hopProfile && hopProfile !== context.profile))) {
+		extraEnv.SPINE_AGENT_PROFILE_OVERRIDE = context.profile;
+	}
+	const promptThinking = nonEmpty(prompt?.thinking);
+	if (promptThinking) extraEnv.SPINE_WORKER_THINKING_OVERRIDE = promptThinking;
+
+	if (context.profile) task.workerProfile = context.profile;
+	else delete task.workerProfile;
+	if (context.thinking) task.workerThinking = context.thinking;
+	else delete task.workerThinking;
+	if (context.model) task.workerModel = context.model;
+	else delete task.workerModel;
+
+	if (Object.keys(extraEnv).length > 0 && resolveWorkerBackend(config) === "agentSession") {
+		appendJournalEvent(projectRoot, batchId, "worker.profile_override_ignored", {
+			taskId: task.taskId,
+			laneNumber: lane?.laneNumber,
+			laneId: lane?.laneId,
+			correlationId: laneCorrelationId,
+			backend: "agentSession",
+			reason: "agentSession backend drops extraEnv (#317)",
+			profile: context.profile,
+			thinking: promptThinking,
+		});
+	}
+	return {
+		context,
+		extraEnv,
+		startedPayload: {
+			workerProfile: context.profile,
+			workerModel: context.model,
+			workerThinking: context.thinking,
+			workerProfileSource: context.source,
+		},
+	};
 }
 
 /**
@@ -164,7 +238,7 @@ export async function applyTaskReviewProfile(params) {
 	const prompt = loadPromptSafely(taskFolderInWorktree);
 	const quotaFallback =
 		state?.resilience?.quotaFallback ?? loadQuotaFallbackForWorker({ projectRoot, batchId });
-	const workerContext = resolveTaskWorkerProfile({ config, prompt, quotaFallback });
+	const workerContext = resolveTaskWorkerProfile({ config, prompt, quotaFallback, task });
 	const built = buildTaskReviewConfig({ config, prompt, workerContext });
 
 	const meta = {
