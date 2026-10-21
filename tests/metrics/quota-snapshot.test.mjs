@@ -174,6 +174,57 @@ test("buildQuotaSnapshot joins config and observed metrics", () => {
 	assert.equal(snapshot.pools.zai.drift.missingModels.length, 0);
 });
 
+test("buildQuotaSnapshot counts reviewer rows toward observed models and pool usage", () => {
+	const lines = [
+		{ recordType: "task", model: "zai/glm-5.2", durationMs: 1000 },
+		{
+			recordType: "review",
+			reviewType: "code",
+			model: "kimi-coding/kimi-for-coding",
+			durationMs: 300,
+			tokensIn: 7,
+			outcome: "verdict",
+		},
+		{ recordType: "review", reviewType: "plan", model: "google/gemini-flash-latest", outcome: "timeout" },
+		{ recordType: "review", reviewType: "final", model: "google/gemini-3.1-pro-preview", durationMs: 200 },
+	];
+	const withReviews = buildQuotaSnapshot({
+		projectRoot: "/tmp",
+		config: baseConfig(),
+		metricsLines: lines,
+		now: "2026-07-21T00:00:00.000Z",
+	});
+	const taskOnly = buildQuotaSnapshot({
+		projectRoot: "/tmp",
+		config: baseConfig(),
+		metricsLines: lines.filter((line) => line.recordType === "task"),
+		now: "2026-07-21T00:00:00.000Z",
+	});
+
+	const kimi = withReviews.pools["kimi-coding"];
+	assert.equal(kimi.source, "estimate");
+	assert.deepEqual(kimi.observedModels, ["kimi-coding/kimi-for-coding"]);
+	assert.deepEqual(kimi.drift.missingModels, [], "reviewer model no longer reported missing");
+	assert.equal(kimi.usage.taskCount, 0, "reviewer rows never count as tasks");
+	assert.equal(kimi.usage.reviewCount, 1);
+	assert.equal(kimi.usage.durationMs, 300);
+	assert.equal(kimi.usage.tokensIn, 7);
+
+	const google = withReviews.pools.google;
+	assert.deepEqual(google.observedModels, [
+		"google/gemini-3.1-pro-preview",
+		"google/gemini-flash-latest",
+	]);
+	assert.equal(google.usage.reviewCount, 2);
+	assert.equal(google.usage.taskCount, 0);
+	// Only the unobserved supervisor model remains missing; reviewer models are observed.
+	assert.deepEqual(google.drift.missingModels, ["google/gemini-flash-lite-latest"]);
+
+	assert.deepEqual(taskOnly.pools["kimi-coding"].drift.missingModels, ["kimi-coding/kimi-for-coding"]);
+	assert.equal(withReviews.pools.zai.usage.taskCount, taskOnly.pools.zai.usage.taskCount);
+	assert.equal("reviewCount" in withReviews.pools.zai.usage, false);
+});
+
 test("buildQuotaSnapshot marks unobserved pools as absent", () => {
 	const snapshot = buildQuotaSnapshot({
 		projectRoot: "/tmp",

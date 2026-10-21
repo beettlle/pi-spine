@@ -199,6 +199,8 @@ function recordFinalReviewTaskFailure({
 	task.status = "failed";
 	task.endedAt = Date.now();
 	task.exitReason = exitReason;
+	// SP-837 (#325): surface the final verdict on the worker task metric record.
+	if (verdict != null) task.finalVerdict = verdict;
 	updateSegmentForTask(state, taskId, "failed");
 	recomputeTaskCounters(state);
 	saveSpineBatchState(projectRoot, state);
@@ -347,9 +349,12 @@ export async function runFinalReviewPhase({
 		journalEvents,
 		worktreePath: wt,
 	});
-	if (honoredResult) return honoredResult;
+	if (honoredResult) {
+		task.finalVerdict = honoredResult.verdict;
+		return honoredResult;
+	}
 
-	return await runReviewPollLoop({
+	const pollResult = await runReviewPollLoop({
 		reviewType: "final",
 		passVerdict: "PASS",
 		attemptField: "finalAttempts",
@@ -388,4 +393,7 @@ export async function runFinalReviewPhase({
 		laneCorrelationId,
 		fileScopePaths,
 	});
+	// SP-837 (#325): REVISE/REPLAN/invalid verdicts are set by recordFinalReviewTaskFailure.
+	if (pollResult.ok && pollResult.verdict === "PASS") task.finalVerdict = "PASS";
+	return pollResult;
 }

@@ -67,6 +67,7 @@ function formatHumanSummary(snapshot, reportPath) {
 	for (const pool of pools) {
 		const usage = pool.usage;
 		const parts = [`${pool.poolId}: ${usage.taskCount} tasks`];
+		if (usage.reviewCount) parts.push(`${usage.reviewCount} reviews`);
 		if (usage.durationMs > 0) parts.push(`${usage.durationMs}ms`);
 		if (usage.tokensIn) parts.push(`${usage.tokensIn} in-tokens`);
 		if (usage.tokensOut) parts.push(`${usage.tokensOut} out-tokens`);

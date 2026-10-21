@@ -9,8 +9,10 @@ import { fileURLToPath } from "node:url";
 import { skipTaskDoneOnDisk } from "../../src/batch/engine-lanes.mjs";
 import {
 	appendBatchMetric,
+	appendReviewMetric,
 	appendTaskMetric,
 	buildBatchMetricRecord,
+	buildReviewMetricRecord,
 	buildTaskMetricRecord,
 	filterMetricsLines,
 	formatMetricsTable,
@@ -20,7 +22,7 @@ import {
 	recordBatchTerminalMetric,
 	resolveTaskMetricOutcome,
 } from "../../src/batch/metrics.mjs";
-import { formatMetricsRollups, rollupMetrics } from "../../src/batch/metrics-rollup.mjs";
+import { formatMetricsRollups, rollupMetrics, rollupReviews } from "../../src/batch/metrics-rollup.mjs";
 import { dismissBatch } from "../../src/batch/lifecycle.mjs";
 import { createInitialBatchState } from "../../src/batch/state.mjs";
 
@@ -618,6 +620,149 @@ test("formatMetricsRollups prints tables when usage present", () => {
 	assert.match(output, /50/);
 	assert.match(output, /Usage by model/);
 	assert.match(output, /Usage by role/);
+});
+
+const REVIEW_LINES = [
+	{ recordType: "review", batchId: "b1", taskId: "T-1", reviewType: "plan", model: "m-rev", attempt: 1, verdict: "REVISE", outcome: "verdict" },
+	{ recordType: "review", batchId: "b1", taskId: "T-1", reviewType: "plan", model: "m-rev", attempt: 2, verdict: "APPROVE", outcome: "verdict" },
+	{ recordType: "review", batchId: "b1", taskId: "T-1", reviewType: "final", model: "m-rev", attempt: 1, outcome: "timeout" },
+	{ recordType: "review", batchId: "b1", taskId: "T-1", reviewType: "final", model: "m-other", attempt: 1, verdict: "PASS", outcome: "verdict" },
+	// Tolerated: a review row missing every optional field.
+	{ recordType: "review" },
+];
+
+test("buildReviewMetricRecord / appendReviewMetric write a reviewer row", async () => {
+	await withProject((projectRoot) => {
+		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
+		const record = buildReviewMetricRecord({
+			batchId: "b1",
+			taskId: "T-1",
+			laneNumber: 2,
+			reviewType: "code",
+			model: "anthropic/claude-sonnet-4-5",
+			thinking: "medium",
+			verdict: "REVISE",
+			attempt: 1,
+			durationMs: 1234,
+			outcome: "verdict",
+			endedAtMs: Date.parse("2026-10-17T00:00:00.000Z"),
+		});
+		assert.equal(record.recordType, "review");
+		assert.equal(record.schemaVersion, 1);
+		assert.equal(record.agentRole, "reviewer");
+		assert.equal(record.role, "reviewer");
+		assert.equal(record.endedAt, "2026-10-17T00:00:00.000Z");
+		assert.equal(record.laneNumber, 2);
+
+		appendReviewMetric(projectRoot, record, config);
+		const [line] = readMetricsLines(metricsFilePath(projectRoot, config));
+		assert.deepEqual(line, record);
+
+		assert.equal(appendReviewMetric(projectRoot, record, { metrics: { enabled: false } }), null);
+	});
+});
+
+test("buildReviewMetricRecord defaults model/thinking to inherit and rejects unknown outcomes", () => {
+	const record = buildReviewMetricRecord({
+		batchId: "b1",
+		taskId: "T-1",
+		reviewType: "plan",
+		outcome: /** @type {any} */ ("bogus"),
+	});
+	assert.equal(record.model, "inherit");
+	assert.equal(record.thinking, "inherit");
+	assert.equal(record.outcome, "verdict");
+	assert.equal(record.verdict, undefined);
+});
+
+test("rollupReviews groups by (reviewType, model) with verdict counts, mean attempts and failures", () => {
+	const reviews = rollupReviews(REVIEW_LINES);
+	assert.deepEqual(
+		reviews.map((group) => [group.reviewType, group.model, group.count]),
+		[
+			["plan", "m-rev", 2],
+			["final", "m-other", 1],
+			["final", "m-rev", 1],
+			["—", "inherit", 1],
+		],
+	);
+	const plan = reviews[0];
+	assert.deepEqual(plan.verdicts, { REVISE: 1, APPROVE: 1 });
+	assert.equal(plan.meanAttempts, 1.5);
+	assert.equal(plan.failureCount, 0);
+	const finalRev = reviews[2];
+	assert.deepEqual(finalRev.failures, { timeout: 1 });
+	assert.equal(finalRev.failureCount, 1);
+	assert.equal(finalRev.meanAttempts, null);
+	assert.equal(reviews[3].meanAttempts, null);
+});
+
+test("rollupMetrics includes reviews even with no usage; old records without new fields still read", () => {
+	const rollups = rollupMetrics([
+		{ recordType: "task", batchId: "b1", model: "model-a", role: "worker", outcome: "completed" },
+		{ recordType: "batch", batchId: "b1" },
+		...REVIEW_LINES,
+	]);
+	assert.ok(rollups);
+	assert.deepEqual(rollups.byModel, {});
+	assert.equal(rollups.reviews.length, 4);
+
+	const output = formatMetricsRollups(rollups);
+	assert.match(output, /Reviews by type and model/);
+	assert.match(output, /REVISE=1 APPROVE=1/);
+	assert.match(output, /1\.50/);
+	assert.match(output, /timeout=1/);
+	assert.doesNotMatch(output, /Usage by/);
+
+	// Legacy-only metrics keep the previous shape-less contract.
+	assert.equal(rollupReviews([{ recordType: "task", model: "m" }]).length, 0);
+});
+
+test("formatMetricsTable handles mixed task, batch and review records", () => {
+	const table = formatMetricsTable([
+		{ recordType: "task", batchId: "b1", taskId: "T-1", outcome: "completed", endedAt: "2026-10-17T00:00:00.000Z" },
+		...REVIEW_LINES.slice(0, 3),
+		{ recordType: "batch", batchId: "b1", diagnosis: "ok" },
+		{ recordType: "review" },
+	]);
+	assert.match(table, /review:plan\s+b1\s+T-1\s+REVISE/);
+	assert.match(table, /review:final\s+b1\s+T-1\s+timeout/);
+	assert.match(table, /task\s+b1\s+T-1\s+completed/);
+	assert.match(table, /batch\s+b1/);
+});
+
+test("spine metrics show --json rollups include reviews", async () => {
+	await withProject(async (projectRoot) => {
+		const config = { metrics: { enabled: true, path: ".spine/run-metrics.jsonl" } };
+		fs.mkdirSync(path.join(projectRoot, ".spine"), { recursive: true });
+		fs.writeFileSync(
+			path.join(projectRoot, ".spine", "spine-config.json"),
+			JSON.stringify({ metrics: config.metrics }),
+			"utf-8",
+		);
+		for (const line of REVIEW_LINES) appendReviewMetric(projectRoot, line, config);
+
+		const spineBin = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../bin/spine.mjs");
+		const env = { ...process.env };
+		delete env.SPINE_IS_WORKER;
+		delete env.SPINE_WORKER_RUNNER;
+		const stdout = execFileSync(process.execPath, [spineBin, "metrics", "show", "--json"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			env,
+		});
+		const parsed = JSON.parse(stdout);
+		assert.equal(parsed.lines.length, REVIEW_LINES.length);
+		assert.equal(parsed.rollups.reviews.length, 4);
+		assert.deepEqual(parsed.rollups.reviews[0].verdicts, { REVISE: 1, APPROVE: 1 });
+
+		const human = execFileSync(process.execPath, [spineBin, "metrics", "show"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			env,
+		});
+		assert.match(human, /Reviews by type and model/);
+	});
 });
 
 test("spine metrics show --json includes usage rollups when present", async () => {
