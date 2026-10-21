@@ -53,13 +53,15 @@ Include contract verification results from the review request when judging PASS 
 
 Write the review file using the `write` tool. Include:
 
-1. `### Verdict: APPROVE` or `### Verdict: REVISE`
+1. `### Verdict: APPROVE` or `### Verdict: REVISE` (plan/code); `### Verdict: PASS`, `### Verdict: REVISE`, or `### Verdict: REPLAN` (final)
 2. `### Summary` with 2–3 sentences
 3. A fenced JSON block (required — the batch engine parses this):
 
 ```json
 {"verdict":"APPROVE","feedback":"..."}
 ```
+
+Final reviews use `{"verdict":"PASS","feedback":"..."}` (or `REVISE` / `REPLAN`). The engine rejects `APPROVE` on a final review.
 
 ### REVISE structure (FR-REV-03)
 
