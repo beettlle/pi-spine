@@ -1,7 +1,7 @@
 # SP-836: `spine batch retry --profile` and `agents.escalatePolicy` escalation — Status
 
-**Current Step:** Step 3 — verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -43,7 +43,7 @@
 
 - [x] Runbook retry/escalation section
 - [x] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-836-retry-profile-escalation/.DONE`
+- [x] Create `spine-tasks/SP-836-retry-profile-escalation/.DONE`
 
 ---
 
@@ -61,3 +61,4 @@
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
 | 2026-10-17 | Implemented --profile / --no-escalate / escalatePolicy; tests + runbook | lint, typecheck, retry tests pass |
+| 2026-10-17 | Contract testCommand: lint, typecheck, retry tests, stet lenient | pass; 4 stet findings dismissed (false_positive/already_correct, evidence in dismiss reasons) |
