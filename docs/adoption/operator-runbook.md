@@ -631,6 +631,28 @@ spine rules select --role reviewer --review-type code --task SP-042
 
 **Related engine issues:** [#78](https://github.com/beettlle/pi-spine/issues/78), [#80](https://github.com/beettlle/pi-spine/issues/80) (lane worktree setup hook and analyzer hygiene). **Flutter repos:** see [Flutter lane worktree guide](./flutter-worktree-guide.md) for gitignored pubspec assets, `worktreeSetupHook` symlinks, scoped `flutter analyze`, and the hook template copied by `spine init` to `scripts/spine-worktree-setup-flutter.sh` ([#80](https://github.com/beettlle/pi-spine/issues/80) / SP-459).
 
+### Retry on another profile (`--profile`) and escalation policy
+
+Closes [#340](https://github.com/beettlle/pi-spine/issues/340) (SP-836). A task that failed on content can be retried on a stronger `agents.profiles` entry:
+
+```bash
+spine batch retry SP-123 --profile hard      # manual: run the retry on profile "hard"
+spine batch retry SP-123 --no-escalate       # skip agents.escalatePolicy for this retry only
+```
+
+**Eligible failure classes** (`ESCALATION_ELIGIBLE_CLASSES`): only `contract_failed` and `review_exhausted` — content/contract failures a stronger model can plausibly fix. Every other class (`provider_quota_exhausted`, `provider_overloaded`, `launch_failed`, stall/orphan classes, `review_blocked`, reviewer spawn/timeout/provider errors) is ineligible.
+
+- `--profile <name>` on an ineligible class exits 1: `--profile is for content/contract failures; <class> is a provider/infra failure — use agents.quotaFallbackProfile or retry without --profile`. An unknown profile exits 1 and lists the defined profiles. `--profile` applies to whole-task retry, not `SP-X[rowId]`.
+- **Automatic escalation:** when `agents.escalatePolicy.enabled` is `true`, `agents.escalatePolicy.toProfile` names a defined profile, and the previous class is eligible, a plain `spine batch retry <taskId>` sets the override to `toProfile`. It is a no-op when that profile is already set, and `--no-escalate` skips it. Escalation happens only when you run retry — the engine never retries on its own.
+- The override is stored as `task.profileOverride`, survives later retries, and takes precedence over the PROMPT `**Profile:**` header and `agents.activeProfile` for the worker (and the per-task reviewer pairing). The journal's `task.retry_requested` payload carries `profileOverride` and `escalation` (`"manual"`, `"auto"`, or `null`).
+
+```bash
+spine settings set agents.escalatePolicy.enabled true
+spine settings set agents.escalatePolicy.toProfile hard
+```
+
+**Quota and 403 failures never escalate.** Provider quota exhaustion, 403s, overload, and launch storms are provider/infra failures (#248, #329): a more expensive model does not fix them and spends more of the scarce pool. They use quota fallback (`agents.quotaFallbackProfile`) or a plain retry without `--profile`.
+
 ### Reviewer profiles
 
 Engine plan, code, and final reviews use a reviewer chosen **per task** (#355), not the batch-wide `agents.reviewer` block. The worker is unaffected.
