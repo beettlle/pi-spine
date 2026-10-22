@@ -2730,8 +2730,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-833 | PROMPT `**Profile:**` / `**Thinking:**` / `**Reviewer Profile:**` | M | #340, #355 Partial | **Done** (`cdfe5e7a`) |
 | SP-834 | Engine reviews use effective reviewer profile | M | #355 Closes | **Done** (`8b5d9996`) |
 | SP-835 | Worker per-task profile/thinking override | M | #340 Partial | Done `7ecae1dc` |
-| SP-836 | `retry --profile` + `escalatePolicy` | M | #340 Closes | Staged |
-| SP-837 | Reviewer rows in run-metrics | M | #325 Closes | Staged |
+| SP-836 | `retry --profile` + `escalatePolicy` | M | #340 Closes | Done (`c391a40d`, merge `69a85f17`) |
+| SP-837 | Reviewer rows in run-metrics | M | #325 Closes | Done (`8c269742`, merge `69a85f17`) |
 | SP-838 | Google/Anthropic quota classification | S | #351 Partial | Done `bcadee3b` |
 | SP-839 | Z.ai/Kimi quota probes | S | #351 Closes | Done `5179fa03` |
 | SP-840 | Engine code review baseline | S | #343 Closes | Done `5a91c788` |
