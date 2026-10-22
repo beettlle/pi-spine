@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+	QUOTA_FALLBACK_EXPIRY_GRACE_MS,
 	buildQuotaFallbackState,
 	decideQuotaFallback,
+	isQuotaFallbackExpired,
 	markQuotaFallbackRetry,
+	parseQuotaResetAt,
 } from "../../src/batch/quota-fallback.mjs";
 
 // Classification fixtures mirror the SP-804 result shape for the real
@@ -339,6 +342,7 @@ test("buildQuotaFallbackState captures the hop shape", () => {
 		toModel: "kimi-coding/k3",
 		exhaustedPool: "zai",
 		resetAtRaw: "2026-08-30 09:12:44",
+		resetAt: 1788052364000, // 2026-08-30 09:12:44 at UTC+8
 		triggerTaskId: "SP-100",
 		at: "2026-10-03T12:00:00.000Z",
 		retriedTaskIds: [],
@@ -355,6 +359,7 @@ test("buildQuotaFallbackState captures the hop shape", () => {
 			toModel: "zai/glm-5.3",
 			exhaustedPool: "kimi-coding",
 			resetAtRaw: null,
+			resetAt: null,
 			triggerTaskId: "SP-200",
 			at: "2026-10-03T12:00:00.000Z",
 			retriedTaskIds: [],
@@ -392,4 +397,71 @@ test("decideQuotaFallback and helpers never mutate their inputs", () => {
 	decideQuotaFallback({ config, fallbackState: state, classification: KIMI_EXHAUSTED, taskId: "SP-101", workerBackend: "subprocess" });
 	markQuotaFallbackRetry(state, "SP-101");
 	assert.deepEqual(state, stateSnapshot);
+});
+
+// SP-843 (#350): reset parsing, expiry, and Row 5 respecting a cleared hop.
+test("parseQuotaResetAt reads z.ai wall-clock text as UTC+8", () => {
+	assert.equal(parseQuotaResetAt("2026-08-30 09:12:44"), Date.UTC(2026, 7, 30, 1, 12, 44));
+	assert.equal(parseQuotaResetAt("  2026-08-30 09:12:44 "), Date.UTC(2026, 7, 30, 1, 12, 44));
+	// Crossing midnight: 02:00 at UTC+8 is 18:00 UTC the previous day.
+	assert.equal(parseQuotaResetAt("2026-01-01 02:00:00"), Date.UTC(2025, 11, 31, 18, 0, 0));
+});
+
+test("parseQuotaResetAt resolves `retry in <N>s` relative to `at`", () => {
+	const at = Date.UTC(2026, 9, 3, 12, 0, 0);
+	assert.equal(parseQuotaResetAt("retry in 3600s", { at }), at + 3_600_000);
+	assert.equal(parseQuotaResetAt("retry in 34.5s", { at: new Date(at) }), at + 34_500);
+	assert.equal(parseQuotaResetAt("retry in 90s", { at: "2026-10-03T12:00:00.000Z" }), at + 90_000);
+	assert.equal(parseQuotaResetAt("retry in 90s"), null, "relative text needs a base time");
+	assert.equal(parseQuotaResetAt("retry in 90s", { at: "not-a-date" }), null);
+});
+
+test("parseQuotaResetAt returns null for anything else", () => {
+	for (const raw of [null, undefined, 42, "", "10pm PT", "midnight", "2026-13-40 99:99:99", "2026-02-31 10:00:00", "retry in soon"]) {
+		assert.equal(parseQuotaResetAt(raw, { at: 0 }), null, String(raw));
+	}
+});
+
+test("isQuotaFallbackExpired honors the 5-minute grace and never expires without resetAt", () => {
+	const resetAt = Date.UTC(2026, 9, 3, 12, 0, 0);
+	const hop = { resetAt };
+	assert.equal(QUOTA_FALLBACK_EXPIRY_GRACE_MS, 5 * 60 * 1000);
+	assert.equal(isQuotaFallbackExpired(hop, resetAt), false);
+	assert.equal(isQuotaFallbackExpired(hop, resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS - 1), false);
+	assert.equal(isQuotaFallbackExpired(hop, resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS), true);
+	assert.equal(isQuotaFallbackExpired(hop, new Date(resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS)), true);
+	assert.equal(isQuotaFallbackExpired({ resetAt: null }, Number.MAX_SAFE_INTEGER), false);
+	assert.equal(isQuotaFallbackExpired({}, Number.MAX_SAFE_INTEGER), false, "pre-SP-843 hops never expire");
+	assert.equal(isQuotaFallbackExpired(null, Number.MAX_SAFE_INTEGER), false);
+});
+
+test("buildQuotaFallbackState stores resetAt from the injected clock for relative reset text", () => {
+	const decision = decideQuotaFallback({
+		config: buildConfig(),
+		classification: { ...ZAI_EXHAUSTED, resetAtRaw: "retry in 7200s" },
+		taskId: "SP-100",
+		workerBackend: "subprocess",
+	});
+	const state = buildQuotaFallbackState(decision, {
+		classification: { ...ZAI_EXHAUSTED, resetAtRaw: "retry in 7200s" },
+		taskId: "SP-100",
+		now: NOW,
+	});
+	assert.equal(state.resetAt, NOW.getTime() + 7_200_000);
+});
+
+test("row 5: an expired hop is treated as cleared, so the batch can hop again", () => {
+	const hop = appliedFallbackState();
+	const afterExpiry = hop.resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS;
+	const common = { config: buildConfig(), fallbackState: hop, classification: ZAI_EXHAUSTED, taskId: "SP-100", workerBackend: "subprocess" };
+	// Sticky before expiry (or when `now` is omitted): the retry-spent task stops.
+	const retried = { ...common, fallbackState: markQuotaFallbackRetry(hop, "SP-100") };
+	assert.equal(decideQuotaFallback({ ...retried, now: afterExpiry - 1 }).action, "stop");
+	assert.equal(decideQuotaFallback(retried).action, "stop");
+	// Expired: the hop is gone, so the same exhaustion applies a fresh hop.
+	const decision = decideQuotaFallback({ ...retried, now: afterExpiry });
+	assert.equal(decision.action, "apply");
+	// An unparsable reset never expires, however late `now` is.
+	const kimiHop = { ...hop, resetAt: null };
+	assert.equal(decideQuotaFallback({ ...common, fallbackState: kimiHop, now: Number.MAX_SAFE_INTEGER }).action, "retry");
 });
