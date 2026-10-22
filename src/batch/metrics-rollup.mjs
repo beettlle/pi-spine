@@ -8,10 +8,72 @@
  */
 
 const USAGE_FIELDS = ["tokensIn", "tokensOut", "estimatedUsd"];
+const REVIEW_TYPE_ORDER = ["plan", "code", "final"];
+
+/**
+ * Group `recordType: "review"` rows by `(reviewType, model)` (SP-837 / #325).
+ * Tolerates rows missing any new field (`—` / `inherit` buckets, zero counts).
+ *
+ * @param {object[]} lines
+ * @returns {Array<{ reviewType: string, model: string, count: number, verdicts: Record<string, number>, meanAttempts: number | null, failures: Record<string, number>, failureCount: number }>}
+ */
+export function rollupReviews(lines) {
+	/** @type {Map<string, { reviewType: string, model: string, count: number, verdicts: Record<string, number>, attemptSum: number, attemptCount: number, failures: Record<string, number>, failureCount: number }>} */
+	const groups = new Map();
+	for (const line of lines) {
+		if (!line || typeof line !== "object" || line.recordType !== "review") continue;
+		const reviewType = typeof line.reviewType === "string" ? line.reviewType : "—";
+		const model = typeof line.model === "string" && line.model !== "" ? line.model : "inherit";
+		const key = `${reviewType}\u0000${model}`;
+		let group = groups.get(key);
+		if (!group) {
+			group = {
+				reviewType,
+				model,
+				count: 0,
+				verdicts: {},
+				attemptSum: 0,
+				attemptCount: 0,
+				failures: {},
+				failureCount: 0,
+			};
+			groups.set(key, group);
+		}
+		group.count += 1;
+		const isFailure = typeof line.outcome === "string" && line.outcome !== "verdict";
+		if (isFailure) {
+			group.failures[line.outcome] = (group.failures[line.outcome] ?? 0) + 1;
+			group.failureCount += 1;
+		} else {
+			const verdict = typeof line.verdict === "string" && line.verdict !== "" ? line.verdict : "—";
+			group.verdicts[verdict] = (group.verdicts[verdict] ?? 0) + 1;
+			if (Number.isFinite(line.attempt)) {
+				group.attemptSum += line.attempt;
+				group.attemptCount += 1;
+			}
+		}
+	}
+
+	const orderOf = (type) => {
+		const index = REVIEW_TYPE_ORDER.indexOf(type);
+		return index === -1 ? REVIEW_TYPE_ORDER.length : index;
+	};
+	return [...groups.values()]
+		.sort(
+			(a, b) =>
+				orderOf(a.reviewType) - orderOf(b.reviewType) ||
+				a.reviewType.localeCompare(b.reviewType) ||
+				a.model.localeCompare(b.model),
+		)
+		.map(({ attemptSum, attemptCount, ...group }) => ({
+			...group,
+			meanAttempts: attemptCount > 0 ? attemptSum / attemptCount : null,
+		}));
+}
 
 /**
  * @param {object[]} lines
- * @returns {{ byBatch: Record<string, object>, byModel: Record<string, object>, byRole: Record<string, object> } | null}
+ * @returns {{ byBatch: Record<string, object>, byModel: Record<string, object>, byRole: Record<string, object>, reviews: ReturnType<typeof rollupReviews> } | null}
  */
 export function rollupMetrics(lines) {
 	/** @type {Record<string, Record<string, number>>} */
@@ -31,8 +93,9 @@ export function rollupMetrics(lines) {
 		if (hitBatch || hitModel || hitRole) anyUsage = true;
 	}
 
-	if (!anyUsage) return null;
-	return { byBatch, byModel, byRole };
+	const reviews = rollupReviews(lines);
+	if (!anyUsage && reviews.length === 0) return null;
+	return { byBatch, byModel, byRole, reviews };
 }
 
 /**
@@ -64,7 +127,7 @@ function addUsage(store, key, line) {
 /**
  * Format rollups as a short human-readable section with one table per grouping.
  *
- * @param {{ byBatch: Record<string, object>, byModel: Record<string, object>, byRole: Record<string, object> }} rollups
+ * @param {{ byBatch: Record<string, object>, byModel: Record<string, object>, byRole: Record<string, object>, reviews?: ReturnType<typeof rollupReviews> }} rollups
  * @returns {string}
  */
 export function formatMetricsRollups(rollups) {
@@ -74,10 +137,41 @@ export function formatMetricsRollups(rollups) {
 		formatRollupTable("Usage by batch", rollups.byBatch),
 		formatRollupTable("Usage by model", rollups.byModel),
 		formatRollupTable("Usage by role", rollups.byRole),
+		formatReviewRollupTable(rollups.reviews),
 	];
 	const body = sections.filter(Boolean).join("\n");
 	if (!body) return "";
 	return `\n${body}`;
+}
+
+/**
+ * @param {ReturnType<typeof rollupReviews> | undefined} reviews
+ * @returns {string}
+ */
+function formatReviewRollupTable(reviews) {
+	if (!Array.isArray(reviews) || reviews.length === 0) return "";
+
+	const header = ["Review", "Model", "Records", "Verdicts", "Mean Attempts", "Failures"];
+	const formatCounts = (counts) =>
+		Object.entries(counts)
+			.map(([name, count]) => `${name}=${count}`)
+			.join(" ") || "—";
+	const rows = reviews.map((group) => [
+		group.reviewType,
+		group.model,
+		String(group.count),
+		formatCounts(group.verdicts),
+		group.meanAttempts == null ? "—" : group.meanAttempts.toFixed(2),
+		group.failureCount > 0 ? formatCounts(group.failures) : "0",
+	]);
+
+	const widths = header.map((col, index) =>
+		Math.max(col.length, ...rows.map((row) => String(row[index]).length)),
+	);
+	const formatRow = (row) =>
+		row.map((cell, index) => String(cell).padStart(widths[index])).join("  ");
+
+	return `Reviews by type and model:\n${[formatRow(header), ...rows.map(formatRow)].join("\n")}`;
 }
 
 /**

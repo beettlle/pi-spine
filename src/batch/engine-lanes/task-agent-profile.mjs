@@ -14,6 +14,7 @@ import { resolveWorkerBackend } from "../../config/worker-backend.mjs";
 import { resolvePoolId } from "../../metrics/quota-snapshot.mjs";
 import { loadTaskPacket } from "../../tasks/packet/index.mjs";
 import { appendJournalEvent } from "../journal.mjs";
+import { recordReviewMetric } from "../metrics.mjs";
 import { saveEngineBatchState } from "../pause.mjs";
 import { readReviewLevel } from "../review.mjs";
 import { isReviewTypeRequired, shouldRunCodeReview, shouldRunFinalReview } from "../review-shared.mjs";
@@ -287,6 +288,17 @@ export async function applyTaskReviewProfile(params) {
 			reason,
 			workerModel: workerContext.model,
 			reviewerModel: built.reviewer[reviewType].model,
+		});
+		// SP-837 (#325): reviewer row for the blocked pairing (no reviewer spawns).
+		recordReviewMetric({
+			projectRoot,
+			config: built.config,
+			batchId,
+			taskId,
+			laneNumber: lane?.laneNumber,
+			reviewType,
+			outcome: "blocked",
+			failureReason: reason,
 		});
 	}
 	const first = blocking[0];

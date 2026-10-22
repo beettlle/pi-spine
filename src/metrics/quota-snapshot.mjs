@@ -93,6 +93,7 @@ export function collectExpectedModels(config) {
 /**
  * @typedef {object} PoolUsage
  * @property {number} taskCount
+ * @property {number} [reviewCount] Reviewer rows (SP-837); present only when > 0, not part of `taskCount`.
  * @property {number} durationMs
  * @property {number} [tokensIn]
  * @property {number} [tokensOut]
@@ -118,7 +119,11 @@ export function aggregatePoolUsage(records) {
 
 	for (const record of records) {
 		if (!record || typeof record !== "object") continue;
-		usage.taskCount += 1;
+		if (record.recordType === "review") {
+			usage.reviewCount = (usage.reviewCount ?? 0) + 1;
+		} else {
+			usage.taskCount += 1;
+		}
 		if (Number.isFinite(record.durationMs)) {
 			usage.durationMs += Math.max(0, record.durationMs);
 		}
@@ -196,8 +201,11 @@ export function buildQuotaSnapshot({ projectRoot, config, metricsLines, probeRes
 		const filePath = metricsFilePath(projectRoot, config);
 		lines = readMetricsLines(filePath);
 	}
+	// SP-837 (#325): reviewer rows count toward observed models and pool usage;
+	// aggregatePoolUsage keeps them out of taskCount.
 	const taskRecords = (lines ?? []).filter(
-		(line) => line && typeof line === "object" && line.recordType === "task",
+		(line) =>
+			line && typeof line === "object" && (line.recordType === "task" || line.recordType === "review"),
 	);
 
 	const expectedModels = collectExpectedModels(config);

@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { recordLaneTaskMetric } from "./queue.mjs";
 import { appendJournalEvent } from "../journal.mjs";
+import { recordReviewMetric } from "../metrics.mjs";
 import {
 	recomputeTaskCounters,
 	saveSpineBatchState,
@@ -317,6 +318,7 @@ export async function runReviewPollLoop({
 			extraReviewParams = gate?.extraReviewParams ?? {};
 		}
 
+		const reviewStartedAt = Date.now();
 		const reviewResult = await runEngineReview({
 			taskFolder: taskFolderInWorktree,
 			worktreePath: wt,
@@ -333,6 +335,24 @@ export async function runReviewPollLoop({
 					: reviewResult.reason === REVIEW_PROVIDER_ERROR_REASON
 						? `${reviewType}_review_provider_error`
 						: `${reviewType}_review_spawn_failed`;
+			// SP-837 (#325): one reviewer row per spawn failure / timeout / provider error.
+			recordReviewMetric({
+				projectRoot,
+				config,
+				batchId,
+				taskId,
+				laneNumber,
+				reviewType,
+				attempt: reviewAttempt + 1,
+				durationMs: Date.now() - reviewStartedAt,
+				outcome:
+					reviewResult.reason === REVIEW_TIMEOUT_REASON
+						? "timeout"
+						: reviewResult.reason === REVIEW_PROVIDER_ERROR_REASON
+							? "provider_error"
+							: "spawn_failed",
+				failureReason: typeof reviewResult.reason === "string" ? reviewResult.reason : undefined,
+			});
 			recordReviewTaskFailure({
 				projectRoot,
 				state,
@@ -367,6 +387,19 @@ export async function runReviewPollLoop({
 			feedback: reviewResult.feedback,
 			artifactPath: reviewResult.artifactPath,
 			[attemptKey]: reviewAttempt + 1,
+		});
+		// SP-837 (#325): one reviewer row per recorded verdict (attempt is 1-based).
+		recordReviewMetric({
+			projectRoot,
+			config,
+			batchId,
+			taskId,
+			laneNumber,
+			reviewType,
+			verdict: typeof reviewResult.verdict === "string" ? reviewResult.verdict : undefined,
+			attempt: reviewAttempt + 1,
+			durationMs: Date.now() - reviewStartedAt,
+			outcome: "verdict",
 		});
 
 		if (reviewResult.verdict === passVerdict) {

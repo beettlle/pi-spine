@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { resolveReviewerModelPin, resolveReviewerThinkingPin } from "../config/agent-model-resolve.mjs";
 import { METRICS_DEFAULTS } from "../config/defaults.mjs";
 import { redactSecretsDeep } from "../util/secret-redact.mjs";
 import { readReviewLevel } from "./review.mjs";
@@ -215,6 +216,126 @@ export function recordTaskTerminalMetric({
 	return appendTaskMetric(projectRoot, record, config);
 }
 
+/** Reviewer row outcomes: a recorded verdict, or why no verdict was produced. */
+export const REVIEW_METRIC_OUTCOMES = Object.freeze([
+	"verdict",
+	"spawn_failed",
+	"timeout",
+	"provider_error",
+	"blocked",
+]);
+
+/**
+ * Effective reviewer pins for a review type on the config the review ran with
+ * (`"inherit"` when the pin resolves to null).
+ *
+ * @param {object} config
+ * @param {"plan"|"code"|"final"} reviewType
+ * @returns {{ model: string, thinking: string }}
+ */
+export function resolveReviewMetricPins(config, reviewType) {
+	return {
+		model: resolveReviewerModelPin(config, reviewType) ?? "inherit",
+		thinking: resolveReviewerThinkingPin(config, reviewType) ?? "inherit",
+	};
+}
+
+/**
+ * One `recordType: "review"` row per reviewer verdict or reviewer failure (SP-837 / #325).
+ *
+ * @param {object} params
+ * @param {string} params.batchId
+ * @param {string} params.taskId
+ * @param {number} [params.laneNumber]
+ * @param {"plan"|"code"|"final"} params.reviewType
+ * @param {number} [params.stepNumber] Plan/code review step (code/plan reviews are per task today).
+ * @param {string} [params.model]
+ * @param {string} [params.thinking]
+ * @param {string} [params.profile]
+ * @param {string} [params.verdict] Recorded verdict (APPROVE/PASS/REVISE/REPLAN) for `outcome: "verdict"`.
+ * @param {number} [params.attempt] 1-based review attempt index.
+ * @param {number} [params.durationMs]
+ * @param {"verdict"|"spawn_failed"|"timeout"|"provider_error"|"blocked"} [params.outcome]
+ * @param {string} [params.failureReason]
+ * @param {number} [params.endedAtMs]
+ */
+export function buildReviewMetricRecord({
+	batchId,
+	taskId,
+	laneNumber,
+	reviewType,
+	stepNumber,
+	model,
+	thinking,
+	profile,
+	verdict,
+	attempt,
+	durationMs,
+	outcome = "verdict",
+	failureReason,
+	endedAtMs = Date.now(),
+}) {
+	/** @type {Record<string, unknown>} */
+	const record = {
+		recordType: "review",
+		schemaVersion: 1,
+		batchId,
+		taskId,
+		agentRole: "reviewer",
+		role: "reviewer",
+		reviewType,
+		model: typeof model === "string" && model !== "" ? model : "inherit",
+		thinking: THINKING_LEVELS.includes(/** @type {string} */ (thinking)) ? thinking : "inherit",
+		endedAt: new Date(endedAtMs).toISOString(),
+		outcome: REVIEW_METRIC_OUTCOMES.includes(outcome) ? outcome : "verdict",
+	};
+
+	if (Number.isFinite(laneNumber) && /** @type {number} */ (laneNumber) > 0) record.laneNumber = laneNumber;
+	if (Number.isFinite(stepNumber)) record.stepNumber = stepNumber;
+	if (typeof profile === "string" && profile !== "") record.profile = profile;
+	if (typeof verdict === "string" && verdict !== "") record.verdict = verdict;
+	if (Number.isFinite(attempt)) record.attempt = attempt;
+	if (Number.isFinite(durationMs)) record.durationMs = Math.max(0, /** @type {number} */ (durationMs));
+	if (typeof failureReason === "string" && failureReason !== "") record.failureReason = failureReason;
+
+	return sanitizeMetricRecord(record);
+}
+
+/**
+ * @param {string} projectRoot
+ * @param {object} record
+ * @param {object} [config]
+ */
+export function appendReviewMetric(projectRoot, record, config = {}) {
+	return appendTaskMetric(projectRoot, record, config);
+}
+
+/**
+ * Build and append a reviewer row, resolving model/thinking from the pins on
+ * the config the review ran with. No-op when `metrics.enabled` is false.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {object} [params.config] Per-task review config (effective reviewer pins).
+ * @param {"plan"|"code"|"final"} params.reviewType
+ * @param {string} params.batchId
+ * @param {string} params.taskId
+ * @param {number} [params.laneNumber]
+ * @param {number} [params.stepNumber]
+ * @param {string} [params.model] Overrides the config-resolved model.
+ * @param {string} [params.verdict]
+ * @param {number} [params.attempt]
+ * @param {number} [params.durationMs]
+ * @param {"verdict"|"spawn_failed"|"timeout"|"provider_error"|"blocked"} [params.outcome]
+ * @param {string} [params.failureReason]
+ */
+export function recordReviewMetric({ projectRoot, config = {}, model, ...rest }) {
+	if (!isMetricsEnabled(config)) return null;
+	const pins = resolveReviewMetricPins(config, rest.reviewType);
+	const record = buildReviewMetricRecord({ ...rest, model: model ?? pins.model, thinking: pins.thinking });
+	return appendReviewMetric(projectRoot, record, config);
+}
+
 /**
  * @param {object} params
  * @param {string} params.batchId
@@ -321,10 +442,15 @@ export function formatMetricsTable(lines) {
 
 	const header = ["Type", "Batch", "Task", "Outcome", "Diagnosis", "Ended"];
 	const rows = lines.map((line) => [
-		line.recordType ?? "—",
+		line.recordType === "review" && typeof line.reviewType === "string"
+			? `review:${line.reviewType}`
+			: (line.recordType ?? "—"),
 		line.batchId ?? "—",
 		line.taskId ?? "—",
-		line.outcome ?? line.diagnosis ?? "—",
+		(line.recordType === "review" && line.outcome === "verdict" ? line.verdict : null) ??
+			line.outcome ??
+			line.diagnosis ??
+			"—",
 		line.diagnosis ?? "—",
 		line.endedAt ?? "—",
 	]);
