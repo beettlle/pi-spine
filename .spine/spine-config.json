@@ -38,7 +38,7 @@
       "model": "google/gemini-3.5-flash-lite",
       "thinking": "off"
     },
-    "activeProfile": "sonnet",
+    "activeProfile": "default",
     "profiles": {
       "default": {
         "worker": {
@@ -112,13 +112,19 @@
             "thinking": "high"
           }
         }
+      },
+      "anthropic": {
+        "worker": {
+          "model": "anthropic/claude-opus-5-5",
+          "thinking": "high"
+        }
       }
     },
     "escalatePolicy": {
       "enabled": true,
-      "toProfile": "cursor"
+      "toProfile": "anthropic"
     },
-    "quotaFallbackProfile": "gemini4",
+    "quotaFallbackProfile": "allegretto",
     "reviewerProfile": "review-gemini"
   },
   "lanes": {
