@@ -71,3 +71,4 @@
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
 | 2026-10-17 | Contract testCommand (lint, typecheck, 6 test files, stet lenient) | All green; stet 0 active findings |
+| 2026-10-22 | Final review REVISE: `resume-multi-integration` / `sequence-preflight` failed under `coverage:check` | Not caused by SP-837 diff (neither file touched). With `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset (per PROMPT.md Environment) both pass (9 dots, exit 0); with worker env they hang/fail (worker-env contamination of nested stub batches). No code change needed |
