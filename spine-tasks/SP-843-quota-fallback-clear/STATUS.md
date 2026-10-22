@@ -1,7 +1,7 @@
 # SP-843: Quota fallback hop can expire or be cleared — Status
 
-**Current Step:** Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-10-17
 **Review Level:** 1
 **Review Counter:** 0
@@ -37,18 +37,18 @@
 - [x] A new quota error after clear can hop again
 
 ### Step 4: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand` (ends with the stet review)
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
 - [x] Runbook quota fallback section: expiry and `spine batch quota-fallback clear`
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-843-quota-fallback-clear/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-843-quota-fallback-clear/.DONE`
 
 ---
 
@@ -62,6 +62,7 @@
 | Existing quota tests used a past z.ai reset (`2026-08-30`) with the real clock, so the new expiry fired | Fixtures moved to `2099-08-30` where the real clock is used; hop-shape expectations gained `resetAt` | `tests/batch/quota-fallback-state.test.mjs`, `tests/batch/quota-fallback-integration.test.mjs`, `tests/batch/quota-fallback.test.mjs` |
 | `loadQuotaFallbackForWorker` stays read-only: it returns null for an expired hop; deletion and journaling live in `clearExpiredQuotaFallback` (engine) | Design choice | `src/batch/engine-lanes/quota-fallback-state.mjs` |
 | Hops persisted before SP-843 have no `resetAt` and never expire (operator clear still works) | Accepted | — |
+| Stet (lenient) raised 13 findings on the first review; none was a real defect (unused-import/dispatch claims ignored code outside the hunk, the `await` sits before the decide→apply section, epoch values verified with node). All dismissed with evidence; re-run reports 0 findings | Dismissed | stet session |
 | `skills/spine-release-operator/SKILL.md` described the hop as single-hop/sticky; updated for expiry/clear | Done | `skills/spine-release-operator/SKILL.md` |
 
 ## Execution Log
@@ -70,3 +71,4 @@
 |-----------|--------|---------|
 | 2026-10-17 | Task staged (release v2.28.0) | PROMPT.md + STATUS.md created |
 | 2026-10-22 | Steps 0-3, 5 (docs) implemented; lint + typecheck green; targeted tests green | Contract testCommand run pending |
+| 2026-10-22 | Contract testCommand: lint, typecheck, targeted tests (incl. batch-help) green; stet lenient 0 findings after triage | `.DONE` created |
