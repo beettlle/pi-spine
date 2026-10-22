@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Retry profile escalation decision (SP-836 / #340).
  */
