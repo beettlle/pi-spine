@@ -46,9 +46,9 @@ const ZAI_EXHAUSTED = {
 	poolId: "zai",
 	httpStatus: 429,
 	providerCode: "1308",
-	resetAtRaw: "2026-08-30 09:12:44",
+	resetAtRaw: "2099-08-30 09:12:44",
 	resetAt: null,
-	message: "Usage limit reached for 5 hour. Your limit will reset at 2026-08-30 09:12:44",
+	message: "Usage limit reached for 5 hour. Your limit will reset at 2099-08-30 09:12:44",
 };
 const KIMI_EXHAUSTED = {
 	kind: "quota_exhausted",
@@ -129,7 +129,8 @@ test("applyQuotaFallback persists resilience.quotaFallback and journals once", a
 			fromModel: "zai/glm-5.3",
 			toModel: "kimi-coding/k3",
 			exhaustedPool: "zai",
-			resetAtRaw: "2026-08-30 09:12:44",
+			resetAtRaw: "2099-08-30 09:12:44",
+			resetAt: 4091735564000, // 2099-08-30 09:12:44 at UTC+8
 			triggerTaskId: "SP-100",
 			at: "2026-10-03T12:00:00.000Z",
 			retriedTaskIds: [],
@@ -151,7 +152,7 @@ test("applyQuotaFallback persists resilience.quotaFallback and journals once", a
 			fromModel: "zai/glm-5.3",
 			toModel: "kimi-coding/k3",
 			exhaustedPool: "zai",
-			resetAtRaw: "2026-08-30 09:12:44",
+			resetAtRaw: "2099-08-30 09:12:44",
 			taskIds: ["SP-100"],
 		});
 	} finally {
@@ -268,7 +269,7 @@ test("recordQuotaFallbackExhausted journals both pools with aligned reset times 
 		assert.deepEqual(events[0].payload, {
 			reason: "fallback_pool_exhausted",
 			exhaustedPools: ["zai", "kimi-coding"],
-			resetAtRaw: ["2026-08-30 09:12:44", null],
+			resetAtRaw: ["2099-08-30 09:12:44", null],
 		});
 		// Pure journal side effect — never writes batch state.
 		assert.equal(fs.existsSync(spineBatchStatePath(projectRoot)), false);

@@ -1983,10 +1983,17 @@ Unset or blank means disabled — behavior and journal output are unchanged.
 
 **Behavior:**
 
-- **One hop per batch, sticky.** Once applied, the fallback is recorded at **`state.resilience.quotaFallback`** (survives `spine batch resume`) and never switches back or hops again — parallel lanes hitting the same pool produce exactly one **`batch.quota_fallback_applied`** event.
+- **One hop at a time, sticky.** Once applied, the fallback is recorded at **`state.resilience.quotaFallback`** (survives `spine batch resume`) and never switches back or hops again until it expires or is cleared (see below) — parallel lanes hitting the same pool produce exactly one **`batch.quota_fallback_applied`** event.
 - **One automatic retry per task**, in the same lane worktree (partial work kept), journaled as **`task.quota_fallback_retry`**. A second quota failure on that task is only journaled, never retried again.
 - Later worker spawns receive **`SPINE_AGENT_PROFILE_OVERRIDE`** so the fallback takes effect at spawn time — the engine **never edits `.spine/spine-config.json`**.
 - Refused fallbacks (no fallback configured, fallback profile missing, same pool, probe-reported-exhausted fallback pool, or the `agentSession` worker backend which ignores child env) journal **`batch.quota_fallback_exhausted`** with every pool exhausted so far and each pool's raw reset text, and the task keeps its original failure.
+
+**Expiry and clear (#350, SP-843):** the hop does not strand the batch on the fallback pool forever. It ends in one of two ways, and both journal **`batch.quota_fallback_cleared`** with `reason`, `fromProfile`, `toProfile`, `exhaustedPool`, and `resetAt`:
+
+- **Expiry.** The engine parses the exhausted pool's reset text when it applies the hop and stores it as `resetAt` (epoch ms) on `state.resilience.quotaFallback`. Z.ai `YYYY-MM-DD HH:MM:SS` is read as **UTC+8** (the provider prints local time without a zone); Google `retry in <N>s` is relative to the hop time. Once `now >= resetAt + 5 minutes`, the next worker run deletes the hop (`reason: "expired"`, journaled once), spawns on the primary profile, and a later quota error may hop again. A reset text that does not parse (for example Kimi `10pm PT`, or no reset text) **never expires** — clear it by hand.
+- **Operator clear.** `spine batch quota-fallback clear` deletes the hop (`reason: "operator"`) and prints the next command (`spine batch retry <taskId>` for each failed task, then `spine batch resume`). It works only on a **paused / failed / needs_retry** batch (pause a running batch first) and errors when no hop is active. Plain `spine batch retry` never clears the hop — clearing is always explicit.
+
+Use the operator clear when the primary pool has reset but the hop has not expired (unparsable reset text, or you are inside the 5-minute grace), or when the fallback pool is also exhausted: `spine status --diagnose` then names the command.
 
 **Operator surface:** `spine status --diagnose` shows the exhausted pool and its reset time — **shown raw, in provider local time**, exactly as the provider printed it — plus the active fallback and a paste-ready release-manifest line:
 
@@ -1994,7 +2001,7 @@ Unset or blank means disabled — behavior and journal output are unchanged.
 Agent pin override: yes (<date>, auto quota fallback <pool> -> <profile>, batch <id>)
 ```
 
-When no fallback is possible, the diagnosis shows the reset time instead of implying an immediate retry will work; a `provider_overloaded` assessment says retry is reasonable. `spine doctor` includes the fallback profile's worker in its quota-risk targets and warns (advisory — never fails preflight) when the fallback worker resolves to the **same pool** as the active worker: a fallback that can never help.
+While a hop is active, the diagnosis also prints `Quota fallback expires <iso>` (or `no parsable reset time`) and, when the fallback pool is exhausted too, suggests `spine batch quota-fallback clear`. When no fallback is possible, the diagnosis shows the reset time instead of implying an immediate retry will work; a `provider_overloaded` assessment says retry is reasonable. `spine doctor` includes the fallback profile's worker in its quota-risk targets and warns (advisory — never fails preflight) when the fallback worker resolves to the **same pool** as the active worker: a fallback that can never help.
 
 **Policy (failover, not escalation):** quota fallback changes the provider pool, not model strength, so it is **allowed mid-release** and does not violate the #248 one-pin rule — which still bans *escalating* models on quota/403 or launch storms. Record the fallback in the release manifest by pasting the `Agent pin override` line above. See [spine-release-operator](../../skills/spine-release-operator/SKILL.md).
 

@@ -7,7 +7,9 @@
  * SP-804 classification, and the worker backend:
  *
  * - at most one hop per batch (sticky once applied — a second exhaustion can
- *   only re-route lanes still pinned to the old pool, never pick a new pool);
+ *   only re-route lanes still pinned to the old pool, never pick a new pool)
+ *   until the hop is cleared: it expires once its parsed reset time plus a
+ *   grace window has passed, or the operator clears it (SP-843, #350);
  * - one auto-retry per task (`retriedTaskIds`), so no task ping-pongs;
  * - transient overload, an unset fallback key, and the in-process
  *   `agentSession` backend never fall back;
@@ -38,6 +40,7 @@ import { resolvePoolId } from "../metrics/quota-snapshot.mjs";
  * @property {string} toModel Worker model after the hop.
  * @property {string} exhaustedPool Pool whose exhaustion triggered the hop.
  * @property {string|null} resetAtRaw Raw provider reset text for that pool, when it had one.
+ * @property {number|null} [resetAt] Epoch ms the exhausted pool resets (SP-843), or null when `resetAtRaw` is not parsable. Absent on hops persisted before SP-843 (never expires).
  * @property {string} triggerTaskId Task whose failure triggered the hop.
  * @property {string} at ISO timestamp of the hop.
  * @property {string[]} retriedTaskIds Tasks already auto-retried onto the fallback pool.
@@ -95,6 +98,73 @@ import { resolvePoolId } from "../metrics/quota-snapshot.mjs";
  *
  * @typedef {{ agents?: { activeProfile?: unknown, worker?: { model?: unknown }, profiles?: Record<string, any>, quotaFallbackProfile?: unknown } }} QuotaFallbackConfig
  */
+
+/** Grace after the parsed reset time before the hop expires (provider clocks drift). */
+export const QUOTA_FALLBACK_EXPIRY_GRACE_MS = 5 * 60 * 1000;
+
+/** z.ai reset text carries no timezone; the provider's local time is assumed UTC+8 (#329). */
+const ZAI_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const ZAI_RESET_PATTERN = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+const RETRY_IN_PATTERN = /^retry in (\d+(?:\.\d+)?)s$/i;
+
+/**
+ * Parses the raw provider reset text into an epoch-ms reset time. Pure.
+ *
+ * - z.ai `YYYY-MM-DD HH:MM:SS` → that wall-clock time read as UTC+8;
+ * - Google `retry in <N>s` → `at + N*1000` (relative to when the error was seen);
+ * - anything else (Kimi `10pm PT`, blank, non-string, impossible dates) → `null`.
+ *
+ * @param {unknown} resetAtRaw
+ * @param {{ at?: Date|number|string|null }} [options] `at`: when the exhaustion was observed (hop time); needed for `retry in <N>s`.
+ * @returns {number|null}
+ */
+export function parseQuotaResetAt(resetAtRaw, { at = null } = {}) {
+	if (typeof resetAtRaw !== "string") return null;
+	const text = resetAtRaw.trim();
+
+	const zai = ZAI_RESET_PATTERN.exec(text);
+	if (zai) {
+		const [year, month, day, hour, minute, second] = zai.slice(1).map(Number);
+		const wall = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+		// Date.UTC rolls impossible values over (month 13, Feb 31); reject them.
+		if (
+			wall.getUTCFullYear() !== year ||
+			wall.getUTCMonth() !== month - 1 ||
+			wall.getUTCDate() !== day ||
+			wall.getUTCHours() !== hour ||
+			wall.getUTCMinutes() !== minute ||
+			wall.getUTCSeconds() !== second
+		) {
+			return null;
+		}
+		return wall.getTime() - ZAI_UTC_OFFSET_MS;
+	}
+
+	const relative = RETRY_IN_PATTERN.exec(text);
+	if (relative && at !== null && at !== undefined) {
+		const base = new Date(at).getTime();
+		if (!Number.isFinite(base)) return null;
+		return base + Math.round(Number(relative[1]) * 1000);
+	}
+	return null;
+}
+
+/**
+ * True when a persisted hop has a parsed reset time and `now` is past it plus
+ * {@link QUOTA_FALLBACK_EXPIRY_GRACE_MS}. A hop without a parsable reset
+ * (`resetAt` null/absent, including hops persisted before SP-843) never expires.
+ *
+ * @param {QuotaFallbackState|null|undefined} fallbackState
+ * @param {Date|number} now
+ * @returns {boolean}
+ */
+export function isQuotaFallbackExpired(fallbackState, now) {
+	const resetAt = fallbackState?.resetAt;
+	if (typeof resetAt !== "number" || !Number.isFinite(resetAt)) return false;
+	const nowMs = new Date(now).getTime();
+	return Number.isFinite(nowMs) && nowMs >= resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS;
+}
 
 /**
  * Reads `agents.quotaFallbackProfile` from a resolved config. An unset,
@@ -162,7 +232,9 @@ function buildExhaustedReport(fallbackState, classification) {
  *    ignore child env pins, so fallback cannot reach them.
  * 4. `stop/profile_missing` — fallback profile absent from `agents.profiles`
  *    (defensive: the schema normally rejects this; fail closed on drift).
- * 5. Fallback already applied (sticky, one hop per batch):
+ * 5. Fallback already applied (sticky until it expires or is cleared; one
+ *    hop at a time). A hop that is expired at `now` counts as cleared, so a
+ *    later exhaustion can hop again (SP-843):
  *    `stop/task_retry_spent` when the task already used its auto-retry;
  *    `retry` when the classification hits the original pool (a lane still
  *    pinned there) — re-route it, no new hop; otherwise
@@ -181,16 +253,21 @@ function buildExhaustedReport(fallbackState, classification) {
  * @param {string} [params.taskId] Task the classification came from.
  * @param {string} [params.workerBackend] Resolved worker backend.
  * @param {string[]} [params.probeExhaustedPools] Pools a live probe reported exhausted.
+ * @param {Date|number} [params.now] When set, an expired `fallbackState` is treated as cleared (SP-843). Omitted: no expiry check.
  * @returns {QuotaFallbackDecision}
  */
 export function decideQuotaFallback({
 	config,
-	fallbackState = null,
+	fallbackState: persistedFallbackState = null,
 	classification = null,
 	taskId,
 	workerBackend,
 	probeExhaustedPools,
+	now,
 } = {}) {
+	const fallbackState =
+		now !== undefined && isQuotaFallbackExpired(persistedFallbackState, now) ? null : persistedFallbackState;
+
 	// Row 1 — no fallback target configured.
 	const toProfileName = readFallbackProfileName(config);
 	if (toProfileName === null) {
@@ -224,7 +301,8 @@ export function decideQuotaFallback({
 		return stop("profile_missing");
 	}
 
-	// Row 5 — sticky: once the hop happened, no second hop is ever decided.
+	// Row 5 — sticky: while the hop is active, no second hop is decided. An
+	// expired or cleared hop is `null` here, so the batch may hop again.
 	if (fallbackState) {
 		const retriedTaskIds = Array.isArray(fallbackState.retriedTaskIds) ? fallbackState.retriedTaskIds : [];
 		if (taskId !== undefined && taskId !== null && retriedTaskIds.includes(taskId)) {
@@ -283,15 +361,18 @@ export function decideQuotaFallback({
  * @returns {QuotaFallbackState}
  */
 export function buildQuotaFallbackState(decision, { classification, taskId, now }) {
+	const at = new Date(now);
+	const resetAtRaw = typeof classification.resetAtRaw === "string" ? classification.resetAtRaw : null;
 	return {
 		fromProfile: decision.fromProfile,
 		toProfile: decision.toProfile,
 		fromModel: decision.fromModel,
 		toModel: decision.toModel,
 		exhaustedPool: decision.exhaustedPool,
-		resetAtRaw: typeof classification.resetAtRaw === "string" ? classification.resetAtRaw : null,
+		resetAtRaw,
+		resetAt: parseQuotaResetAt(resetAtRaw, { at }),
 		triggerTaskId: taskId,
-		at: new Date(now).toISOString(),
+		at: at.toISOString(),
 		retriedTaskIds: [],
 	};
 }

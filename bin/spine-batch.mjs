@@ -13,6 +13,7 @@ import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { parseBatchStartWaveFilter } from "../src/planner/wave-scope.mjs";
 import { pauseBatch } from "../src/batch/pause.mjs";
 import { resumeBatch } from "../src/batch/resume.mjs";
+import { clearQuotaFallbackByOperator } from "../src/batch/engine-lanes/quota-fallback-state.mjs";
 import { retryTask, skipTask } from "../src/batch/retry.mjs";
 import { retryTaskRow, skipTaskRow, parseMatrixRowRef } from "../src/batch/retry-row.mjs";
 import { reconcileBatch } from "../src/batch/reconcile.mjs";
@@ -40,10 +41,11 @@ const BATCH_FLAG_VALUE_TAKERS = new Set([
  */
 export function printBatchHelp() {
 	return (
-		"Usage: spine batch start <scope>|pause|resume|retry <taskId|[rowId]> [--profile NAME] [--no-escalate]|skip <taskId|[rowId]>|force-merge [--wave N]|salvage|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n" +
+		"Usage: spine batch start <scope>|pause|resume|retry <taskId|[rowId]> [--profile NAME] [--no-escalate]|skip <taskId|[rowId]>|force-merge [--wave N]|salvage|quota-fallback clear|abort|dismiss|complete [--batch ID] [--lane N] [--integrate] [--yes] [--reason TEXT] [--hard] [--force] [--force-superseded] [--attached] [--dry-run] [--wave N] [--through-wave N] [--skip-preflight] [--detect-manual-merge] [--json]\n" +
 		"  Row identity: retry/skip 'SP-X[rowId]' targets one matrix row; plain SP-X targets the whole task.\n" +
 		"  retry --profile NAME  Retry on another agents.profiles entry (content/contract failures only; quota/infra failures use agents.quotaFallbackProfile)\n" +
 		"  retry --no-escalate   Skip agents.escalatePolicy for this retry\n" +
+		"  quota-fallback clear  Delete the active quota fallback hop so workers return to the primary profile (paused/failed batches only)\n" +
 		"  abort --dry-run  Preview abort (reason/archive target); does not archive, journal, or clear live batch\n"
 	);
 }
@@ -70,6 +72,7 @@ export function isBatchHelpRequest(args) {
 			"skip",
 			"force-merge",
 			"salvage",
+			"quota-fallback",
 		].includes(token),
 	);
 	if (subcommand && args.includes("help")) {
@@ -190,7 +193,8 @@ export function parseBatchArgs(args) {
 				t === "retry" ||
 				t === "skip" ||
 				t === "force-merge" ||
-				t === "salvage",
+				t === "salvage" ||
+				t === "quota-fallback",
 		) ?? null;
 
 	let waveFilter = null;
@@ -405,6 +409,18 @@ export async function runSpineBatch(options) {
 		return {
 			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
 			output: lines.join("\n"),
+			result,
+		};
+	}
+
+	if (parsed.subcommand === "quota-fallback") {
+		if (parsed.scope !== "clear") {
+			return { exitCode: 1, output: "Usage: spine batch quota-fallback clear [--json]\n" };
+		}
+		const result = clearQuotaFallbackByOperator({ projectRoot });
+		return {
+			exitCode: result.exitCode ?? (result.ok ? 0 : 1),
+			output: parsed.json ? `${JSON.stringify(result, null, 2)}\n` : result.output,
 			result,
 		};
 	}

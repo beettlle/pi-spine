@@ -4,6 +4,8 @@
  * Kept out of diagnosis.mjs so the parent stays under the phase23 LOC cap.
  */
 
+import { QUOTA_FALLBACK_EXPIRY_GRACE_MS } from "./quota-fallback.mjs";
+
 /**
  * True when the latest quota-exhaustion journal payload came from
  * `batch.quota_fallback_exhausted` — the parallel arrays are unique to that
@@ -87,6 +89,22 @@ export function buildBackground(diagnosis, ctx = {}) {
 				fallback.exhaustedPool ?? "?"
 			} -> ${fallback.toProfile}, batch ${ctx.batchId ?? "?"})`,
 		);
+		// SP-843 (#350): the hop is sticky until its reset time passes or the operator
+		// clears it — show which, and name the clear command once the fallback pool died too.
+		const expiresAtMs =
+			typeof fallback.resetAt === "number" && Number.isFinite(fallback.resetAt)
+				? fallback.resetAt + QUOTA_FALLBACK_EXPIRY_GRACE_MS
+				: null;
+		facts.push(
+			expiresAtMs !== null
+				? `Quota fallback expires ${new Date(expiresAtMs).toISOString()}`
+				: "Quota fallback has no parsable reset time (no automatic expiry)",
+		);
+		if (isFallbackChainExhausted(ctx.lastQuotaExhausted)) {
+			facts.push(
+				"Fallback pool is also exhausted: after the primary pool resets, run `spine batch quota-fallback clear` (paused/failed batch), then `spine batch retry <taskId>` / `spine batch resume`",
+			);
+		}
 	}
 	if (ctx.launchFailureKind) {
 		facts.push(`Launch failure kind: ${ctx.launchFailureKind}`);
