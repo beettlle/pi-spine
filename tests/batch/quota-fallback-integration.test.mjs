@@ -34,8 +34,8 @@ import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /** z.ai usage-limit payload as pi forwards it on worker stderr (#329 §3). */
 const ZAI_1308_PAYLOAD =
-	'429: {"code":"1308","message":"Usage limit reached for 5 hour. Your limit will reset at 2026-08-30 09:12:44"}';
-const ZAI_RESET_AT_RAW = "2026-08-30 09:12:44";
+	'429: {"code":"1308","message":"Usage limit reached for 5 hour. Your limit will reset at 2099-08-30 09:12:44"}';
+const ZAI_RESET_AT_RAW = "2099-08-30 09:12:44";
 
 /** Kimi transient-overload payload (429, rate_limit_error, overloaded). */
 const KIMI_OVERLOADED_PAYLOAD =

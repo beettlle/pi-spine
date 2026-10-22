@@ -25,11 +25,16 @@
  *   again (the SP-807 decision returns `stop/task_retry_spent` for a task
  *   already in `retriedTaskIds`).
  *
+ * - an active hop whose parsed reset time (plus grace) has passed is cleared
+ *   before the run and again before each decision (SP-843, #350), so the task
+ *   spawns on the primary profile and a later exhaustion may hop again.
+ *
  * Matrix tasks, reviewer, and supervisor runs are out of scope by design.
  */
 
 import {
 	applyQuotaFallback,
+	clearExpiredQuotaFallback,
 	recordQuotaFallbackExhausted,
 	recordQuotaFallbackRetry,
 	resolveEffectiveWorkerModel,
@@ -82,6 +87,7 @@ export async function runWithQuotaFallback(
 	runOnce,
 	{ projectRoot, batchId, state, taskId, config, workerBackend, now = Date.now() },
 ) {
+	await clearExpiredQuotaFallback({ projectRoot, batchId, state, now });
 	pinTaskWorkerModel(state, config, taskId);
 	const result = await runOnce();
 	if (result.ok || result.workerResult?.classification !== "provider_quota_exhausted") {
@@ -95,6 +101,10 @@ export async function runWithQuotaFallback(
 		return result;
 	}
 
+	// A long task can outlive the hop; clear it first so the decision below sees
+	// the primary pool as active (this is the only `await` before the decision).
+	await clearExpiredQuotaFallback({ projectRoot, batchId, state, now });
+
 	// Synchronous decide → apply section: no `await` between the read inside
 	// decideQuotaFallback and the `state.resilience.quotaFallback` write at the
 	// top of applyQuotaFallback, so parallel lanes cannot both decide `apply`.
@@ -104,6 +114,7 @@ export async function runWithQuotaFallback(
 		classification,
 		taskId,
 		workerBackend,
+		now,
 	});
 	if (decision.action === "stop") {
 		recordQuotaFallbackExhausted({ projectRoot, batchId, decision, taskId });

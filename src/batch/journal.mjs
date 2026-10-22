@@ -439,6 +439,7 @@ export function extractJournalDiagnosisHints(events) {
 		// SP-810 (partial #329): quota events decide retry-vs-wait — rank with failures.
 		"batch.quota_fallback_applied",
 		"batch.quota_fallback_exhausted",
+		"batch.quota_fallback_cleared",
 		"worker.quota_exhausted",
 		// SP-835 (#340): override dropped by the agentSession backend — operator-visible, rank with quota events.
 		"worker.profile_override_ignored",
