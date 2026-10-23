@@ -1,6 +1,6 @@
 # SP-844: Lane commits keep tool state and earlier tasks' .DONE markers — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -17,10 +17,10 @@
 - [x] `rg -n "lane-dirty-check-commit" src bin tests scripts` — record every reference
 
 ### Step 1: Reproduce `.DONE` deletion
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Failing test: two tasks committed in sequence on one lane worktree; the first task's `.DONE` must survive the second lane commit
-- [ ] Record the deleting call path in STATUS.md Discoveries
+- [x] Failing test: two tasks committed in sequence on one lane worktree; the first task's `.DONE` must survive the second lane commit
+- [x] Record the deleting call path in STATUS.md Discoveries
 
 ### Step 2: Keep paths + single sanitizer
 **Status:** ⬜ Not Started
@@ -64,6 +64,7 @@
 | Impact `commitLaneAndValidateWorktree`: risk HIGH — direct callers `runNonMatrixTaskOnLane`, `runMatrixTaskOnLane`, reaching `startBatch` | Acknowledged | src/batch/engine-lanes/commit.mjs |
 | `sanitizeGitignoredArtifactsBeforeLaneCommit` duplicated: live copy in `lane-dirty-check.mjs` (2 direct callers) + dead-ish copy in `lane-dirty-check-commit.mjs` (0 direct callers per graph) | Confirms Step 2 consolidation; delete duplicate | src/batch/lane-dirty-check.mjs:326, src/batch/lane-dirty-check-commit.mjs:203 |
 | `rg lane-dirty-check-commit` hits: `tests/arch/ts-nocheck-guard.test.mjs:84`, `tests/batch/pi-smart-router-dirty.test.mjs:12` (import of `GITIGNORED_ARTIFACT_MARKERS`). No src/bin/scripts references | Both in file scope; repoint/delete in Step 2 | tests/ |
+| Deleting call path (#349): `commitLaneWorktree` (lane-commit.mjs:395) post-commit → `sanitizeGitignoredArtifactsBeforeLaneCommit` (lane-dirty-check.mjs:327) → `listGitignoredArtifactRoots` maps `.review/session.json` → root `.review` → `git clean -fdX -- .review` wipes session.json + spine-stet-baseline.ref. Same sanitizer also runs pre-commit via `commitLaneAndValidateWorktree` (engine-lanes/commit.mjs:50) — deletion happens at task A's own commit, breaking task B's stet-gated contract. `.DONE` markers themselves survive today (committed + outside artifact roots); keep-path assertions guard the fix against broader cleaning | Confirmed by red test `two tasks serialized on one lane keep .review state and both .DONE markers` | src/batch/lane-commit.mjs, src/batch/lane-dirty-check.mjs, src/batch/engine-lanes/commit.mjs |
 
 ## Execution Log
 
@@ -71,6 +72,7 @@
 |-----------|--------|---------|
 | 2026-10-22 | Task staged | PROMPT.md created |
 | 2026-10-23 | Step 0 preflight | Impact CRITICAL/HIGH recorded; 2 refs to lane-dirty-check-commit found (both tests/) |
+| 2026-10-23 | Step 1 reproduce | Red test written; deleting path = sanitizer `git clean -fdX -- .review` pre+post lane commit |
 
 ## Blockers
 

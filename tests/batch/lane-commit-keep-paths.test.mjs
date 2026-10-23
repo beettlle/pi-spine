@@ -1,0 +1,139 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+import { commitLaneWorktree } from "../../src/batch/lane-commit.mjs";
+import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
+
+/**
+ * Lane worktree fixture shared by the keep-paths tests (#349): an orch branch
+ * plus a task branch checked out as a linked worktree, exactly as the engine
+ * creates lanes for `lanes.maxParallel` >= 2.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {{ worktreePath: string, taskBranch: string }}
+ */
+function setupLaneWorktree(projectRoot, batchId) {
+	const taskBranch = `task/spine-lane-1-${batchId}`;
+	const worktreePath = path.join(projectRoot, ".worktrees", `spine-${batchId}`, "lane-1");
+	execFileSync("git", ["branch", `orch/spine-${batchId}`, "main"], {
+		cwd: projectRoot,
+		stdio: "ignore",
+	});
+	fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
+	execFileSync("git", ["worktree", "add", "-b", taskBranch, worktreePath, `orch/spine-${batchId}`], {
+		cwd: projectRoot,
+		stdio: "ignore",
+	});
+	return { worktreePath, taskBranch };
+}
+
+/**
+ * Mirror the adoption-repo stet ignore rules: `.review/*` is gitignored except
+ * the tracked `config.toml`, so `session.json` and the baseline ref are
+ * worktree-only gitignored files — the state the lane-commit sanitizer treats
+ * as cleanable artifact roots today (#349).
+ *
+ * @param {string} worktreePath
+ */
+function seedStetState(worktreePath) {
+	fs.writeFileSync(
+		path.join(worktreePath, ".gitignore"),
+		".review/*\n!.review/config.toml\n.pi-smart-router/\n",
+		"utf-8",
+	);
+	fs.mkdirSync(path.join(worktreePath, ".review"), { recursive: true });
+	fs.writeFileSync(path.join(worktreePath, ".review", "config.toml"), "# stet config\n", "utf-8");
+	fs.writeFileSync(path.join(worktreePath, ".review", "session.json"), '{"open":true}\n', "utf-8");
+	fs.writeFileSync(
+		path.join(worktreePath, ".review", "spine-stet-baseline.ref"),
+		"abc123\n",
+		"utf-8",
+	);
+	execFileSync("git", ["add", ".gitignore", ".review/config.toml"], {
+		cwd: worktreePath,
+		stdio: "ignore",
+	});
+	execFileSync("git", ["commit", "-m " + "chore: stet state"], { cwd: worktreePath, stdio: "ignore" });
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} taskId
+ */
+function seedCompletedTask(worktreePath, taskId) {
+	const taskFolder = path.join(worktreePath, "spine-tasks", `${taskId}-smoke`);
+	fs.mkdirSync(taskFolder, { recursive: true });
+	fs.writeFileSync(path.join(worktreePath, `feature-${taskId}.txt`), `${taskId}\n`, "utf-8");
+	fs.writeFileSync(path.join(taskFolder, ".DONE"), "done\n", "utf-8");
+	return taskFolder;
+}
+
+/**
+ * @param {string} worktreePath
+ * @param {string} taskId
+ */
+function gitLsFiles(worktreePath, taskId) {
+	return execFileSync("git", ["ls-files", "--", `spine-tasks/${taskId}-smoke/`], {
+		cwd: worktreePath,
+		encoding: "utf-8",
+	});
+}
+
+test("two tasks serialized on one lane keep .review state and both .DONE markers (#349)", async () => {
+	const projectRoot = await initGitRepo("spine-lane-commit-keep-paths-");
+	try {
+		const batchId = "20261023T120000";
+		const { worktreePath, taskBranch } = setupLaneWorktree(projectRoot, batchId);
+		seedStetState(worktreePath);
+
+		// Task A completes and auto-commits on the lane branch.
+		const taskAFolder = seedCompletedTask(worktreePath, "TP-901");
+		const resultA = commitLaneWorktree({
+			worktreePath,
+			taskBranch,
+			taskId: "TP-901",
+			batchId,
+			taskFolder: taskAFolder,
+			projectRoot,
+		});
+		assert.equal(resultA.ok, true);
+		assert.equal(resultA.committed, true);
+
+		// Task B serializes onto the same lane worktree and auto-commits.
+		const taskBFolder = seedCompletedTask(worktreePath, "TP-902");
+		const resultB = commitLaneWorktree({
+			worktreePath,
+			taskBranch,
+			taskId: "TP-902",
+			batchId,
+			taskFolder: taskBFolder,
+			projectRoot,
+		});
+		assert.equal(resultB.ok, true);
+		assert.equal(resultB.committed, true);
+
+		// Both completion markers survive the second lane commit.
+		assert.equal(fs.existsSync(path.join(taskAFolder, ".DONE")), true, "task A .DONE deleted");
+		assert.equal(fs.existsSync(path.join(taskBFolder, ".DONE")), true, "task B .DONE deleted");
+		assert.match(gitLsFiles(worktreePath, "TP-901"), /TP-901-smoke\/\.DONE/);
+		assert.match(gitLsFiles(worktreePath, "TP-902"), /TP-902-smoke\/\.DONE/);
+
+		// Stet session state the worktreeSetupHook created survives both commits.
+		assert.equal(
+			fs.existsSync(path.join(worktreePath, ".review", "session.json")),
+			true,
+			".review/session.json deleted by lane commit",
+		);
+		assert.equal(
+			fs.existsSync(path.join(worktreePath, ".review", "spine-stet-baseline.ref")),
+			true,
+			".review/spine-stet-baseline.ref deleted by lane commit",
+		);
+		assert.equal(fs.existsSync(path.join(worktreePath, ".review", "config.toml")), true);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
