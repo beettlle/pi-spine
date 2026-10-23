@@ -1,6 +1,6 @@
 # SP-845: Separate contract review step with its own timeout and policy — Status
 
-**Current Step:** Step 4
+**Current Step:** Step 5
 **Status:** 🔵 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -38,11 +38,11 @@
 - [x] Parser rejects metacharacters and newlines in `reviewCommand`
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand` (ends with the stet review)
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
