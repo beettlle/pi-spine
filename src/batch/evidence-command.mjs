@@ -5,9 +5,9 @@
  */
 
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import { validateWorkerLaunchScriptPath } from "../config/worker-launch-script.mjs";
 import { EvidenceCommandError } from "./evidence-command-error.mjs";
+import { EVIDENCE_DEFAULT_MAX_BYTES, runEvidenceArgvToFile } from "./evidence-exec.mjs";
 import {
 	expandEvidencePathEntries,
 	isAllowedEvidencePathEntry,
@@ -376,8 +376,8 @@ function collectEvidencePathPrefixEntries(command) {
  * @param {string} command
  * @param {number} [maxBytes]
  */
-export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) {
-	if (!command) return { ok: false, skipped: true, output: "" };
+export function runEvidenceCommand(projectRoot, command, maxBytes = EVIDENCE_DEFAULT_MAX_BYTES) {
+	if (!command) return { ok: false, skipped: true, output: "", truncated: false };
 
 	try {
 		const chain = parseEvidenceCommandChain(command);
@@ -393,35 +393,32 @@ export function runEvidenceCommand(projectRoot, command, maxBytes = 256 * 1024) 
 		}
 		/** @type {string[]} */
 		const outputs = [];
+		let truncated = false;
 		for (const argv of chain) {
 			const execArgv = resolveEvidenceScriptsArgv(projectRoot, argv);
-			const output = execFileSync(execArgv[0], execArgv.slice(1), {
-				cwd: projectRoot,
-				encoding: "utf-8",
-				stdio: ["ignore", "pipe", "pipe"],
-				timeout: 10 * 60 * 1000,
-				maxBuffer: maxBytes,
-				...(env ? { env } : {}),
-			});
-			outputs.push(String(output ?? ""));
+			const step = runEvidenceArgvToFile({ projectRoot, argv: execArgv, env, maxBytes });
+			outputs.push(step.output);
+			truncated = truncated || step.truncated;
+			if (!step.ok) {
+				return {
+					ok: false,
+					skipped: false,
+					output: `${outputs.join("")}\n[exit] ${step.exitDetail}`.trim(),
+					truncated,
+				};
+			}
 		}
-		return { ok: true, skipped: false, output: outputs.join("") };
+		return { ok: true, skipped: false, output: outputs.join(""), truncated };
 	} catch (err) {
 		if (err instanceof EvidenceCommandError) {
 			return {
 				ok: false,
 				skipped: false,
 				output: `[rejected] ${err.message}`,
+				truncated: false,
 			};
 		}
-
-		const stdout = err && typeof err === "object" && "stdout" in err ? String(err.stdout ?? "") : "";
-		const stderr = err && typeof err === "object" && "stderr" in err ? String(err.stderr ?? "") : "";
 		const message = err instanceof Error ? err.message : String(err);
-		return {
-			ok: false,
-			skipped: false,
-			output: `${stdout}${stderr}\n[exit] ${message}`.trim(),
-		};
+		return { ok: false, skipped: false, output: `[exit] ${message}`, truncated: false };
 	}
 }

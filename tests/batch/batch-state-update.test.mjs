@@ -175,6 +175,43 @@ test("guard rejection surfaces stale_engine_pid and keeps disk state", async () 
 	}
 });
 
+test("repeated stale_engine_pid rejections journal once, then at 10 and 100", async () => {
+	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	const projectRoot = await mkdtemp(path.join(os.tmpdir(), "spine-state-update-dedupe-"));
+	try {
+		const batchId = "20261022T000000-dedu";
+		const state = { batchId, phase: "running" };
+		recordBatchEnginePid(state, owner.pid);
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+
+		for (let attempt = 0; attempt < 100; attempt += 1) {
+			const result = updateSpineBatchState(projectRoot, (draft) => {
+				draft.phase = "paused";
+			});
+			assert.equal(result.reason, "stale_engine_pid");
+		}
+
+		const rejected = readJournalEvents(projectRoot, batchId).filter(
+			(event) => event.type === "batch.state_write_rejected",
+		);
+		assert.deepEqual(
+			rejected.map((event) => event.payload?.rejectedCount),
+			[1, 10, 100],
+		);
+		assert.equal(rejected[0].payload?.ownerPid, owner.pid);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "running");
+	} finally {
+		try {
+			owner.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		await rm(projectRoot, { recursive: true, force: true });
+	}
+});
+
 test("bypassOwnerCheck passes through to the shared guard/write path", async () => {
 	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
 		stdio: "ignore",

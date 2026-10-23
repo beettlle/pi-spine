@@ -10,6 +10,7 @@ import { withBatchStateLock } from "./batch-state-lock.mjs";
 import {
 	clearBatchEnginePid,
 	evaluateBatchStateWriteGuard,
+	readBatchEnginePid,
 	TERMINAL_BATCH_PHASES,
 } from "./state-guards.mjs";
 
@@ -54,28 +55,53 @@ function archivedBatchStatePath(projectRoot, batchId) {
 }
 
 /**
+ * Rejection counts per `projectRoot|batchId|reason|ownerPid`. A non-engine writer
+ * can hit the guard dozens of times during one contract/merge (28 in v2.28 Batch B);
+ * one report per key, plus a count at each power of ten, keeps the signal without
+ * the noise.
+ *
+ * @type {Map<string, number>}
+ */
+const rejectedWriteCounts = new Map();
+
+/** @param {number} count */
+function isRejectionReportMilestone(count) {
+	return count === 1 || (count >= 10 && Number.isInteger(Math.log10(count)));
+}
+
+/**
  * Make a rejected batch-state write visible instead of silent (#293 / SP-790):
  * journal `batch.state_write_rejected` (when the incoming state carries a batchId)
  * and print one `[spine]` line to stderr so a swallowed late write is diagnosable.
+ * Repeats of the same rejection are counted and reported at 10, 100, 1000, …
  *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
  * @param {string} reason
+ * @param {number|null} ownerPid Engine PID recorded on disk when the write was refused.
  */
-function reportRejectedBatchStateWrite(projectRoot, state, reason) {
+function reportRejectedBatchStateWrite(projectRoot, state, reason, ownerPid) {
 	const batchId = String(state?.batchId ?? "");
+	const key = `${projectRoot}|${batchId}|${reason}|${ownerPid ?? ""}`;
+	const count = (rejectedWriteCounts.get(key) ?? 0) + 1;
+	rejectedWriteCounts.set(key, count);
+	if (!isRejectionReportMilestone(count)) return;
+
 	if (batchId) {
 		try {
 			appendJournalEvent(projectRoot, batchId, "batch.state_write_rejected", {
 				reason,
 				incomingPhase: String(state.phase ?? ""),
+				ownerPid,
+				rejectedCount: count,
 			});
 		} catch {
 			/* journal failure must not turn a guarded no-op into a crash */
 		}
 	}
+	const repeat = count > 1 ? ` (${count} rejections so far)` : "";
 	console.error(
-		`[spine] refused batch-state write (${reason}) for batch ${batchId || "unknown"} — keeping on-disk state`,
+		`[spine] refused batch-state write (${reason}) for batch ${batchId || "unknown"} — keeping on-disk state${repeat}`,
 	);
 }
 
@@ -101,8 +127,8 @@ function persistSpineBatchStateGuarded(projectRoot, state, options) {
 	});
 	if (!guard.allowed) {
 		const reason = String(guard.reason ?? "unknown");
-		reportRejectedBatchStateWrite(projectRoot, state, reason);
 		const loaded = loadSpineBatchState(projectRoot);
+		reportRejectedBatchStateWrite(projectRoot, state, reason, loaded.raw ? readBatchEnginePid(loaded.raw) : null);
 		return { ok: false, reason, state: loaded.raw ?? state };
 	}
 

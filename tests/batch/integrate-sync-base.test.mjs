@@ -170,6 +170,40 @@ test("inspectHumanBaseSync reports human_base_diverged when human commits overla
 	}
 });
 
+test("inspectHumanBaseSync ignores paths both sides changed to identical content", async () => {
+	const projectRoot = await initGitRepo("spine-sync-base-identical-");
+	const orchBranch = "orch/spine-20261022T130000";
+	try {
+		const snapshotHead = execFileSync("git", ["rev-parse", "main"], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+		}).trim();
+
+		// Same template sync lands on both orch and main (v2.28 reviewer.md case).
+		execFileSync("git", ["checkout", "-b", orchBranch], { cwd: projectRoot, stdio: "ignore" });
+		fs.writeFileSync(path.join(projectRoot, "shared.txt"), "synced template\n", "utf-8");
+		execFileSync("git", ["add", "shared.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "orch sync"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
+
+		fs.writeFileSync(path.join(projectRoot, "shared.txt"), "synced template\n", "utf-8");
+		execFileSync("git", ["add", "shared.txt"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "human sync"], { cwd: projectRoot, stdio: "ignore" });
+
+		const inspection = inspectHumanBaseSync({
+			projectRoot,
+			baseBranch: "main",
+			baseBranchHeadAtStart: snapshotHead,
+			orchBranch,
+			git: { inGitRepo: true, orchMergedToBase: false, orchBranchExists: true },
+			journalEvents: [],
+		});
+		assert.notEqual(inspection?.diagnosis, "human_base_diverged");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("spine sync-base CLI merges landed main into feature branch", async () => {
 	const projectRoot = await initGitRepo("spine-sync-base-feature-");
 	const orchBranch = "orch/spine-20260705T140000";

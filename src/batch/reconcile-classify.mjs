@@ -299,6 +299,30 @@ export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch)
 	}
 }
 
+/**
+ * Paths touched on both sides only overlap when their contents differ: the same
+ * template sync landing on main and orch is not a divergence. One `git diff`
+ * call covers every candidate; a git failure keeps all candidates (fail closed).
+ *
+ * @param {string} projectRoot @param {string} humanRef @param {string} orchRef @param {string[]} candidatePaths
+ * @returns {string[]}
+ */
+function keepPathsWithDifferentContent(projectRoot, humanRef, orchRef, candidatePaths) {
+	if (candidatePaths.length === 0 || !orchRef) return candidatePaths;
+	try {
+		const output = execFileSync("git", ["diff", "--name-only", humanRef, orchRef, "--", ...candidatePaths], {
+			cwd: projectRoot,
+			encoding: "utf-8",
+			stdio: ["ignore", "pipe", "pipe"],
+			timeout: 5000,
+		});
+		const differing = new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+		return candidatePaths.filter((filePath) => differing.has(filePath));
+	} catch {
+		return candidatePaths;
+	}
+}
+
 /** @param {string} projectRoot @param {string} ref @param {string} filePath */
 function pathExistsAtRef(projectRoot, ref, filePath) {
 	try {
@@ -382,7 +406,10 @@ export function inspectHumanBaseSync(ctx) {
 		resolvedOrch && gitRefExists(projectRoot, resolvedOrch)
 			? listGitChangedPaths(projectRoot, snapshot, resolvedOrch)
 			: landPaths;
-	const overlapPaths = humanPaths.filter((filePath) => orchPaths.includes(filePath));
+	const orchPathSet = new Set(orchPaths);
+	const touchedByBoth = humanPaths.filter((filePath) => orchPathSet.has(filePath));
+	const orchContentRef = resolvedOrch ?? baseTip;
+	const overlapPaths = keepPathsWithDifferentContent(projectRoot, humanHead, orchContentRef, touchedByBoth);
 
 	if (overlapPaths.length > 0) {
 		return {
