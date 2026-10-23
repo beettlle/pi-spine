@@ -1,6 +1,6 @@
 # SP-845: Separate contract review step with its own timeout and policy — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 4
 **Status:** 🔵 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -23,19 +23,19 @@
 - [x] `contract.reviewTimeoutMs` / `contract.reviewPolicy` validated; settings fields added
 
 ### Step 2: Review step
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `contract-review.mjs`: blocking and advisory outcomes, timeout label
-- [ ] `verifyContract` runs it after a passing `testCommand`; `contract.review_advisory` journal event + STATUS Discoveries line
-- [ ] Review-timeout diagnosis suggests `spine settings set contract.reviewTimeoutMs …`
+- [x] `contract-review.mjs`: blocking and advisory outcomes, timeout label
+- [x] `verifyContract` runs it after a passing `testCommand`; `contract.review_advisory` journal event + STATUS Discoveries line
+- [x] Review-timeout diagnosis suggests `spine settings set contract.reviewTimeoutMs …`
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Blocking: failing review fails the contract with a `reviewCommand` check; test failure skips review
-- [ ] Advisory: failing review passes, journals `contract.review_advisory`, writes STATUS line
-- [ ] Review timeout honors `contract.reviewTimeoutMs` independently of `contract.testTimeoutMs`
-- [ ] Parser rejects metacharacters and newlines in `reviewCommand`
+- [x] Blocking: failing review fails the contract with a `reviewCommand` check; test failure skips review
+- [x] Advisory: failing review passes, journals `contract.review_advisory`, writes STATUS line
+- [x] Review timeout honors `contract.reviewTimeoutMs` independently of `contract.testTimeoutMs`
+- [x] Parser rejects metacharacters and newlines in `reviewCommand`
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started

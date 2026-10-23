@@ -75,6 +75,37 @@ test("isContractTimeoutFailure reads the latest contract event for the task", ()
 	assert.equal(isContractTimeoutFailure(laterPass, "SP-843"), false);
 });
 
+const REVIEW_TIMEOUT_CHECK = {
+	field: "reviewCommand",
+	ok: false,
+	message: "Contract reviewCommand failed: reviewCommand timed out after 20 min and was terminated",
+};
+
+test("isContractTimeoutFailure distinguishes a reviewCommand timeout (SP-845)", () => {
+	const events = [
+		{ type: "contract.failed", payload: { taskId: "SP-845", ok: false, checks: [REVIEW_TIMEOUT_CHECK] } },
+	];
+	assert.equal(isContractTimeoutFailure(events, "SP-845"), "review");
+	assert.equal(isContractTimeoutFailure(events, "SP-999"), false);
+	// A testCommand timeout on the same task is still a plain boolean true.
+	const testEvents = [
+		{ type: "contract.failed", payload: { taskId: "SP-845", ok: false, checks: [TIMEOUT_CHECK] } },
+	];
+	assert.equal(isContractTimeoutFailure(testEvents, "SP-845"), true);
+});
+
+test("review-timeout diagnosis suggests contract.reviewTimeoutMs, not the test key (SP-845)", () => {
+	const ctx = { exitReason: "contract_failed", failedTaskId: "SP-845", contractTimedOut: "review" };
+	const headline = buildPrimaryFailureHeadline("Batch B1", ctx) ?? "";
+	assert.match(headline, /contract reviewCommand timed out/);
+	assert.match(headline, /contract\.reviewTimeoutMs/);
+	assert.doesNotMatch(headline, /contract\.testTimeoutMs/);
+	assert.equal(
+		buildPrimaryFailureSuggestedCommand(ctx),
+		"spine settings set contract.reviewTimeoutMs 2400000 && spine batch retry SP-845",
+	);
+});
+
 test("contract timeout diagnosis names the timeout key instead of PROMPT.md scope", () => {
 	const ctx = { exitReason: "contract_failed", failedTaskId: "SP-843", contractTimedOut: true };
 	const headline = buildPrimaryFailureHeadline("Batch B1", ctx) ?? "";

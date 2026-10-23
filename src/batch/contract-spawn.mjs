@@ -33,6 +33,37 @@ const DEFAULT_MAX_BUFFER = 10 * 1024 * 1024;
 const SPAWN_ERROR_EXIT_CODE = 127;
 
 /**
+ * Worker-only env keys stripped from contract command subprocesses so full-suite
+ * tests match operator re-run outside worker-host (SP-491, issue #155).
+ */
+export const CONTRACT_TEST_WORKER_ENV_KEYS = ["SPINE_IS_WORKER"];
+
+/**
+ * Build env for contract testCommand/reviewCommand subprocess — omits worker-only
+ * keys inherited from worker-host.mjs that would false-fail batch-spawn integration
+ * tests (SP-482 guard). Preserves parent batch id as SPINE_PARENT_BATCH_ID so the
+ * nested-spawn guard can block live engines in lane worktrees while still allowing
+ * isolated fixture tests (#162).
+ *
+ * Lives here (not in contract-exec.mjs) so the test and review runners (SP-845)
+ * share one implementation without an import cycle.
+ *
+ * @param {NodeJS.ProcessEnv} [sourceEnv]
+ * @returns {NodeJS.ProcessEnv}
+ */
+export function buildContractTestEnv(sourceEnv = process.env) {
+	const env = { ...sourceEnv };
+	for (const key of CONTRACT_TEST_WORKER_ENV_KEYS) {
+		delete env[key];
+	}
+	if (env.SPINE_BATCH_ID && !env.SPINE_PARENT_BATCH_ID) {
+		env.SPINE_PARENT_BATCH_ID = env.SPINE_BATCH_ID;
+	}
+	delete env.SPINE_BATCH_ID;
+	return env;
+}
+
+/**
  * Resolve the contract shell exactly like runContractTestCommand: $SHELL, else
  * cmd.exe on Windows and /bin/sh elsewhere, with the matching command flag.
  * Lives here (not in contract-exec.mjs) so the sync and async runners share one
