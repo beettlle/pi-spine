@@ -1,8 +1,8 @@
 # SP-844: Lane commits keep tool state and earlier tasks' .DONE markers — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-10-22
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-10-23
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `sanitizeGitignoredArtifactsBeforeLaneCommit`, `commitLaneWorktree`, `commitLaneAndValidateWorktree`
-- [ ] `rg -n "lane-dirty-check-commit" src bin tests scripts` — record every reference
+- [x] GitNexus impact on `sanitizeGitignoredArtifactsBeforeLaneCommit`, `commitLaneWorktree`, `commitLaneAndValidateWorktree`
+- [x] `rg -n "lane-dirty-check-commit" src bin tests scripts` — record every reference
 
 ### Step 1: Reproduce `.DONE` deletion
 **Status:** ⬜ Not Started
@@ -60,12 +60,17 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Impact `commitLaneWorktree`: risk CRITICAL — 4 direct callers (`commitLaneAndValidateWorktree`, `markTaskCompleteFromDisk`, `runResumedTaskOnLane`, `resumeBatch`), 6 processes across Engine-lanes + Batch modules | Acknowledged; task explicitly targets this path; minimal signature-preserving edits | src/batch/lane-commit.mjs |
+| Impact `commitLaneAndValidateWorktree`: risk HIGH — direct callers `runNonMatrixTaskOnLane`, `runMatrixTaskOnLane`, reaching `startBatch` | Acknowledged | src/batch/engine-lanes/commit.mjs |
+| `sanitizeGitignoredArtifactsBeforeLaneCommit` duplicated: live copy in `lane-dirty-check.mjs` (2 direct callers) + dead-ish copy in `lane-dirty-check-commit.mjs` (0 direct callers per graph) | Confirms Step 2 consolidation; delete duplicate | src/batch/lane-dirty-check.mjs:326, src/batch/lane-dirty-check-commit.mjs:203 |
+| `rg lane-dirty-check-commit` hits: `tests/arch/ts-nocheck-guard.test.mjs:84`, `tests/batch/pi-smart-router-dirty.test.mjs:12` (import of `GITIGNORED_ARTIFACT_MARKERS`). No src/bin/scripts references | Both in file scope; repoint/delete in Step 2 | tests/ |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-10-22 | Task staged | PROMPT.md created |
+| 2026-10-23 | Step 0 preflight | Impact CRITICAL/HIGH recorded; 2 refs to lane-dirty-check-commit found (both tests/) |
 
 ## Blockers
 
