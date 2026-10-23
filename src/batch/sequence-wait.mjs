@@ -58,14 +58,16 @@ export async function waitForSequenceBatchTerminal({
 	stallMs = DEFAULT_SEQUENCE_STALL_MS,
 	enginePid = null,
 	reconcileFn = reconcileBatch,
+	now = Date.now,
+	sleepFn = sleep,
 }) {
-	const startedAt = Date.now();
+	const startedAt = now();
 	const deadline = startedAt + timeoutMs;
 	const hardCap = startedAt + maxWaitMs;
 	let lastProgressAt = startedAt;
 	let useLightReconcile = false;
-	while (Date.now() < deadline || isEngineStillRunning(enginePid, projectRoot)) {
-		if (Date.now() >= hardCap) {
+	while (now() < deadline || isEngineStillRunning(enginePid, projectRoot)) {
+		if (now() >= hardCap) {
 			const reconciliation = reconcileFn({ projectRoot });
 			return {
 				ok: false,
@@ -100,7 +102,7 @@ export async function waitForSequenceBatchTerminal({
 		if (progressAt != null && progressAt > lastProgressAt) {
 			lastProgressAt = progressAt;
 		}
-		if (Date.now() - lastProgressAt >= stallMs) {
+		if (now() - lastProgressAt >= stallMs) {
 			return {
 				ok: false,
 				error: "engine_stalled",
@@ -110,7 +112,7 @@ export async function waitForSequenceBatchTerminal({
 				suggestedCommand: "spine status --diagnose",
 			};
 		}
-		await sleep(pollIntervalMs);
+		await sleepFn(pollIntervalMs);
 	}
 	const reconciliation = reconcileFn({ projectRoot });
 	return {

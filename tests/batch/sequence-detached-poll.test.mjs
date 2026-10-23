@@ -51,6 +51,43 @@ function markStateCompleted(state) {
 	}
 }
 
+/**
+ * Deterministic clock for the poll loop: sleeps advance fake time instantly, so
+ * assertions hold regardless of host load.
+ */
+function createFakeClock(startMs = 1_800_000_000_000) {
+	let current = startMs;
+	return {
+		now: () => current,
+		elapsed: () => current - startMs,
+		options: {
+			now: () => current,
+			sleepFn: async (/** @type {number} */ ms) => {
+				current += ms;
+			},
+		},
+	};
+}
+
+/** @param {number} updatedAt */
+function runningReconciliation(updatedAt) {
+	return { diagnosis: "running", batchId: "fake", signals: { raw: { updatedAt }, journalEvents: [] } };
+}
+
+/**
+ * Engine liveness is still read from disk, so record this live process as the engine.
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @param {string} taskId
+ */
+function saveRunningStateWithLiveEngine(projectRoot, batchId, taskId) {
+	const state = makeBatchState(batchId, taskId);
+	state.phase = "running";
+	state.updatedAt = Date.now();
+	recordBatchEnginePid(state, process.pid);
+	saveSpineBatchState(projectRoot, state);
+}
+
 // --- readCurrentBatchLogTail tests ---
 
 test("readCurrentBatchLogTail returns null for missing file", () => {
@@ -143,34 +180,24 @@ test("waitForSequenceBatchTerminal returns settled when batch completes before t
 test("waitForSequenceBatchTerminal does not exit while engine PID is alive", async () => {
 	const projectRoot = await initGitRepo("sp435-poll-alive-");
 	try {
-		const state = makeBatchState("20260703T130000", "SP-998");
-		state.phase = "running";
-		state.updatedAt = Date.now();
-		recordBatchEnginePid(state, process.pid);
-		saveSpineBatchState(projectRoot, state);
-
-		const startMs = Date.now();
-		const resultPromise = waitForSequenceBatchTerminal({
+		saveRunningStateWithLiveEngine(projectRoot, "20260703T130000", "SP-998");
+		const clock = createFakeClock();
+		const result = await waitForSequenceBatchTerminal({
 			projectRoot,
 			pollIntervalMs: 50,
 			timeoutMs: 100,
+			stallMs: 60_000,
+			maxWaitMs: 60_000,
 			enginePid: process.pid,
+			...clock.options,
+			reconcileFn: () =>
+				clock.elapsed() >= 300
+					? { diagnosis: "completed", batchId: "20260703T130000" }
+					: runningReconciliation(clock.now()),
 		});
 
-		setTimeout(() => {
-			const updated = makeBatchState("20260703T130000", "SP-998");
-			markStateCompleted(updated);
-			saveSpineBatchState(projectRoot, updated, { bypassOwnerCheck: true });
-		}, 300);
-
-		const result = await resultPromise;
-		const elapsedMs = Date.now() - startMs;
-
 		assert.equal(result.ok, true, `expected ok=true but got ${JSON.stringify(result)}`);
-		assert.ok(
-			elapsedMs >= 200,
-			`should have polled past the 100ms timeout (elapsed=${elapsedMs}ms) because engine PID is alive`,
-		);
+		assert.ok(clock.elapsed() >= 300, `should poll past timeoutMs=100 (fake elapsed=${clock.elapsed()}ms)`);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -204,13 +231,9 @@ test("waitForSequenceBatchTerminal returns failure diagnosis even with alive eng
 test("waitForSequenceBatchTerminal exits engine_stalled when a live engine makes no progress", async () => {
 	const projectRoot = await initGitRepo("sp802-poll-stalled-");
 	try {
-		const state = makeBatchState("20260703T150000", "SP-996");
-		state.phase = "running";
-		state.updatedAt = Date.now();
-		recordBatchEnginePid(state, process.pid);
-		saveSpineBatchState(projectRoot, state);
-
-		const startMs = Date.now();
+		saveRunningStateWithLiveEngine(projectRoot, "20260703T150000", "SP-996");
+		const clock = createFakeClock();
+		const frozenProgressAt = clock.now();
 		const result = await waitForSequenceBatchTerminal({
 			projectRoot,
 			pollIntervalMs: 40,
@@ -218,16 +241,15 @@ test("waitForSequenceBatchTerminal exits engine_stalled when a live engine makes
 			stallMs: 250,
 			maxWaitMs: 10_000,
 			enginePid: process.pid,
+			...clock.options,
+			reconcileFn: () => runningReconciliation(frozenProgressAt),
 		});
-		const elapsedMs = Date.now() - startMs;
 
 		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
 		assert.equal(result.error, "engine_stalled");
 		assert.equal(result.suggestedCommand, "spine status --diagnose");
-		assert.ok(
-			elapsedMs < 5_000,
-			`stall exit should fire well before maxWaitMs (elapsed=${elapsedMs}ms)`,
-		);
+		assert.ok(clock.elapsed() >= 250, `stall needs stallMs of no progress (fake elapsed=${clock.elapsed()}ms)`);
+		assert.ok(clock.elapsed() < 10_000, "stall exit must fire before maxWaitMs");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -236,42 +258,25 @@ test("waitForSequenceBatchTerminal exits engine_stalled when a live engine makes
 test("waitForSequenceBatchTerminal hard-caps at maxWaitMs even while engine progresses", async () => {
 	const projectRoot = await initGitRepo("sp802-poll-maxwait-");
 	try {
-		const state = makeBatchState("20260703T160000", "SP-995");
-		state.phase = "running";
-		state.updatedAt = Date.now();
-		recordBatchEnginePid(state, process.pid);
-		saveSpineBatchState(projectRoot, state);
-
-		// Keep progress signals fresh so only the hard cap can end the wait.
-		const progressTimer = setInterval(() => {
-			state.updatedAt = Date.now();
-			saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
-		}, 50);
-
-		const startMs = Date.now();
-		let result;
-		try {
-			result = await waitForSequenceBatchTerminal({
-				projectRoot,
-				pollIntervalMs: 40,
-				timeoutMs: 60_000,
-				stallMs: 60_000,
-				maxWaitMs: 300,
-				enginePid: process.pid,
-			});
-		} finally {
-			clearInterval(progressTimer);
-		}
-		const elapsedMs = Date.now() - startMs;
+		saveRunningStateWithLiveEngine(projectRoot, "20260703T160000", "SP-995");
+		const clock = createFakeClock();
+		const result = await waitForSequenceBatchTerminal({
+			projectRoot,
+			pollIntervalMs: 40,
+			timeoutMs: 60_000,
+			stallMs: 60_000,
+			maxWaitMs: 300,
+			enginePid: process.pid,
+			...clock.options,
+			// Fresh progress on every poll, so only the hard cap can end the wait.
+			reconcileFn: () => runningReconciliation(clock.now()),
+		});
 
 		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
 		assert.equal(result.error, "sequence_wait_timeout");
 		assert.equal(result.suggestedCommand, "spine status --diagnose");
-		// Loose bound: the full suite runs on loaded machines; timeoutMs/stallMs stay far above it.
-		assert.ok(
-			elapsedMs < 15_000,
-			`hard cap should end the wait long before timeoutMs/stallMs (elapsed=${elapsedMs}ms)`,
-		);
+		assert.ok(clock.elapsed() >= 300, `hard cap fires at maxWaitMs (fake elapsed=${clock.elapsed()}ms)`);
+		assert.ok(clock.elapsed() < 300 + 40, "hard cap fires on the first poll at or past maxWaitMs");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
@@ -289,7 +294,7 @@ test("waitForSequenceBatchTerminal does not extend the wait for a reused PID (st
 		state.resilience = { enginePid: process.pid, engineStartedAt: Date.now() - 10 * 60_000 };
 		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
 
-		const startMs = Date.now();
+		const clock = createFakeClock();
 		const result = await waitForSequenceBatchTerminal({
 			projectRoot,
 			pollIntervalMs: 40,
@@ -297,15 +302,14 @@ test("waitForSequenceBatchTerminal does not extend the wait for a reused PID (st
 			stallMs: 10_000,
 			maxWaitMs: 10_000,
 			enginePid: process.pid,
+			...clock.options,
+			reconcileFn: () => runningReconciliation(clock.now()),
 		});
-		const elapsedMs = Date.now() - startMs;
 
+		// A live-engine extension would instead run on to stallMs/maxWaitMs.
 		assert.equal(result.ok, false, `expected ok=false but got ${JSON.stringify(result)}`);
 		assert.equal(result.error, "timeout_waiting_for_batch");
-		assert.ok(
-			elapsedMs < 3_000,
-			`reused PID must not extend the wait past timeoutMs=150 (elapsed=${elapsedMs}ms)`,
-		);
+		assert.ok(clock.elapsed() < 150 + 40, `reused PID must not extend past timeoutMs (fake elapsed=${clock.elapsed()}ms)`);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

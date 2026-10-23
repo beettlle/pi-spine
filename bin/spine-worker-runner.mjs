@@ -405,12 +405,12 @@ async function runWorkerRunner() {
 		if (hangMs > 0 || process.env.SPINE_WORKER_STUB_SAT020 === "1") {
 			const effectiveHang =
 				hangMs > 0 ? hangMs : Number(process.env.SPINE_WORKER_STUB_SAT020_HANG_MS || 25_000);
+			// Wall-clock deadline: summing slice lengths ignores per-spawn overhead, which
+			// stretched a 6s hang past 30s on loaded hosts and flipped stall-budget tests.
 			const step = 100;
-			let elapsed = 0;
-			while (elapsed < effectiveHang) {
-				const slice = Math.min(step, effectiveHang - elapsed);
-				spawnSync("sleep", [String(slice / 1000)], { stdio: "ignore" });
-				elapsed += slice;
+			const hangDeadline = Date.now() + effectiveHang;
+			for (let remaining = effectiveHang; remaining > 0; remaining = hangDeadline - Date.now()) {
+				spawnSync("sleep", [String(Math.min(step, remaining) / 1000)], { stdio: "ignore" });
 			}
 			console.error("stub worker hang finished without .DONE");
 			process.exit(1);
