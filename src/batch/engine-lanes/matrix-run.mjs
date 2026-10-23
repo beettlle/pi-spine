@@ -322,6 +322,8 @@ export async function runMatrixSubLane({
 					const verify = await verifyContract(worktreePath, contract, {
 						matrixRow: values,
 						baseBranch,
+						contract: config?.contract,
+						contractTestMaxBuffer: config?.contractTestMaxBuffer,
 					});
 					if (verify.ok) {
 						result = {

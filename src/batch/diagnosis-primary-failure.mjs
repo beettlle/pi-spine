@@ -14,6 +14,31 @@ export const PRIMARY_TASK_FAILURE_EXIT_REASONS = new Set([
 
 const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]);
 
+/** Suggested `contract.testTimeoutMs` after a timeout: double the 10-minute default. */
+const CONTRACT_TIMEOUT_SUGGESTED_MS = 20 * 60 * 1000;
+
+/**
+ * True when the latest contract verification for `taskId` failed because its
+ * testCommand timed out (#369), so diagnosis can name the timeout instead of
+ * pointing at PROMPT.md scope.
+ *
+ * @param {Array<{ type?: string, payload?: Record<string, any> }>} journalEvents
+ * @param {string|null|undefined} taskId
+ */
+export function isContractTimeoutFailure(journalEvents, taskId) {
+	if (!taskId || !Array.isArray(journalEvents)) return false;
+	for (let index = journalEvents.length - 1; index >= 0; index -= 1) {
+		const event = journalEvents[index];
+		if (event?.type !== "contract.verified" && event?.type !== "contract.failed") continue;
+		if (event.payload?.taskId !== taskId) continue;
+		const checks = Array.isArray(event.payload?.checks) ? event.payload.checks : [];
+		return checks.some(
+			(check) => check?.field === "testCommand" && check.ok === false && /timed out after/.test(String(check.message ?? "")),
+		);
+	}
+	return false;
+}
+
 /**
  * @param {string|null|undefined} exitReason
  */
@@ -27,6 +52,7 @@ export function isPrimaryTaskFailureExitReason(exitReason) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.failedTaskId]
  * @param {boolean} [ctx.mergeGitignoredFailure]
+ * @param {boolean} [ctx.contractTimedOut]
  */
 export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 	if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
@@ -48,6 +74,10 @@ export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 		return ctx.failedTaskId
 			? `${batchLabel} task ${ctx.failedTaskId} exhausted final review attempts — fix scope or implementation, then retry`
 			: `${batchLabel} review attempts exhausted — fix scope or implementation, then retry`;
+	}
+	if (ctx.exitReason === "contract_failed" && ctx.contractTimedOut) {
+		const subject = ctx.failedTaskId ? `task ${ctx.failedTaskId} contract testCommand` : "contract testCommand";
+		return `${batchLabel} ${subject} timed out — raise contract.testTimeoutMs or speed up the command, then retry`;
 	}
 	if (ctx.exitReason === "contract_failed") {
 		return ctx.failedTaskId
@@ -95,6 +125,7 @@ export function buildDirtyWorktreeSuggestedCommand(ctx = {}) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.failedTaskId]
  * @param {string} [ctx.tasksRoot]
+ * @param {boolean} [ctx.contractTimedOut]
  */
 export function buildPrimaryFailureSuggestedCommand(ctx = {}) {
 	if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
@@ -109,6 +140,10 @@ export function buildPrimaryFailureSuggestedCommand(ctx = {}) {
 		return ctx.failedTaskId
 			? `spine batch retry ${ctx.failedTaskId}`
 			: "spine status --diagnose";
+	}
+	if (ctx.exitReason === "contract_failed" && ctx.contractTimedOut) {
+		const retry = ctx.failedTaskId ? `spine batch retry ${ctx.failedTaskId}` : "spine batch resume";
+		return `spine settings set contract.testTimeoutMs ${CONTRACT_TIMEOUT_SUGGESTED_MS} && ${retry}`;
 	}
 	if (ctx.exitReason === "contract_failed") {
 		const tasksRoot = ctx.tasksRoot ?? "spine-tasks";

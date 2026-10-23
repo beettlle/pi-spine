@@ -70,8 +70,7 @@ test("verifyContract surfaces the timeout message instead of an exit code", asyn
 			testCommand: "sleep 30",
 			artifactsMustExist: [],
 		}, {
-			contract: { testRetries: 0 },
-			contractTestTimeoutMs: 500,
+			contract: { testRetries: 0, testTimeoutMs: 500 },
 		});
 
 		assert.equal(result.ok, false);

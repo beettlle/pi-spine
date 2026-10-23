@@ -1,6 +1,7 @@
 /** Diagnosis output context after reconcile signal enrichment (#201 / SP-645). */
 
 import { findPendingLaneLandTasks } from "./diagnosis-pending-lane.mjs";
+import { isContractTimeoutFailure } from "./diagnosis-primary-failure.mjs";
 
 /**
  * @param {Record<string, any>} params
@@ -73,6 +74,7 @@ export function buildReconcileDiagnosisContext(params) {
 		lastQuotaExhausted,
 		driftTaskStatus,
 		exitReason,
+		contractTimedOut: exitReason === "contract_failed" && isContractTimeoutFailure(journalEvents, failedTaskId),
 		launchFailureKind: resolvedLaunchFailureKind,
 		gitMerged: git.orchMergedToBase,
 		pendingTaskCount,

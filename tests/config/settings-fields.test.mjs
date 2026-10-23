@@ -27,6 +27,7 @@ const EXPECTED_PATHS = [
 	"agents.supervisor.pollIntervalMs",
 	"agents.worker.model",
 	"agents.worker.thinking",
+	"contract.testTimeoutMs",
 	"dashboard.port",
 	"gates.requireBeforeIntegrate",
 	"lanes.autoIntegrateBetweenWaves",

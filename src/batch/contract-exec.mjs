@@ -302,9 +302,8 @@ export function prepareContractVerifyEnvironment(worktreePath, parsedContract, c
  * @param {string} [config.batchId] Batch ID for journal events (optional).
  * @param {string} [config.taskId] Task ID for journal events (optional).
  * @param {string} [config.taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
- * @param {{ testRetries?: number, testRetryDelayMs?: number }} [config.contract] Retry tuning for testCommand attempts.
+ * @param {{ testRetries?: number, testRetryDelayMs?: number, testTimeoutMs?: number }} [config.contract] Retry and per-attempt timeout tuning (#369).
  * @param {number} [config.contractTestMaxBuffer] stdout/stderr capture limit override.
- * @param {number} [config.contractTestTimeoutMs] Wall-clock timeout override for testCommand attempts.
  * @param {{ test?: string, testWithCoverage?: string }} [config.testing] Coverage command selection.
  * @returns {Promise<{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }>}
  */
@@ -338,7 +337,7 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		for (let attempt = 1; attempt <= totalAttempts; attempt++) {
 			lastResult = await runContractTestCommand(worktreePath, parsedContract.testCommand, {
 				maxBuffer: config?.contractTestMaxBuffer,
-				timeoutMs: config?.contractTestTimeoutMs,
+				timeoutMs: config?.contract?.testTimeoutMs,
 			});
 
 			if (lastResult.ok) {

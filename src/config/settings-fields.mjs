@@ -8,6 +8,8 @@
  * Only `lanes.maxParallel` is editable via `spine settings set`; tasks root is env/file only.
  */
 
+import { CONTRACT_TEST_TIMEOUT_MAX_MS, CONTRACT_TEST_TIMEOUT_MIN_MS } from "./contract.mjs";
+
 /** @typedef {"boolean" | "number" | "string" | "enum"} SettingFieldType */
 
 /**
@@ -61,6 +63,13 @@ export const SETTINGS_FIELDS = Object.freeze([
 		type: "number",
 		min: 1,
 		max: 10,
+	},
+	{
+		path: "contract.testTimeoutMs",
+		label: "Contract testCommand timeout per attempt (ms; default 600000)",
+		type: "number",
+		min: CONTRACT_TEST_TIMEOUT_MIN_MS,
+		max: CONTRACT_TEST_TIMEOUT_MAX_MS,
 	},
 	{
 		path: "agents.worker.model",

@@ -240,8 +240,11 @@ New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.m
 |------------|------|---------|-------------|
 | `contract.testRetries` | integer ≥ 0 | `1` | Max retries after first `testCommand` failure (total attempts = retries + 1) |
 | `contract.testRetryDelayMs` | integer ≥ 0 | `5000` | Delay in milliseconds between retry attempts |
+| `contract.testTimeoutMs` | integer 1000–14400000 | `600000` (10 min) | Wall-clock limit per `testCommand` attempt; the command is terminated when it expires ([#369](https://github.com/beettlle/pi-spine/issues/369)) |
 
 Set `contract.testRetries: 0` to disable retry (pre-SP-485 behavior). For flaky environments, `2` gives three total attempts.
+
+Retries do not help a command that is slow every time: each attempt hits the same `contract.testTimeoutMs`. Raise the limit instead, for example `spine settings set contract.testTimeoutMs 1200000` (20 min). When a contract fails on a timeout, `spine status --diagnose` names the timeout and this key rather than suggesting a PROMPT.md scope fix.
 
 | `contract.mode` | Behavior |
 |-----------------|----------|
@@ -2321,7 +2324,7 @@ Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_pa
 
 - **`stet finish` clears the session.** Re-running a contract after it passed starts a fresh review that can resurface dismissed findings and invent new ones. This is why `SPINE_STET_NO_AUTO_FINISH=1` is required for spine batches (above).
 - **New-file diffs can produce hallucinated syntax findings.** The reviewer may report syntax or indentation defects that lint/typecheck/tests disprove. Tool output beats reviewer claims — dismiss with that evidence.
-- **Time budget.** The Contract `testCommand` wall clock is 10 minutes (not configurable). A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
+- **Time budget.** The Contract `testCommand` wall clock defaults to 10 minutes per attempt; raise it with `contract.testTimeoutMs` (for example `spine settings set contract.testTimeoutMs 1800000` for 30 minutes) when a local stet review shares the command. A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
 
 ### Triage
 
