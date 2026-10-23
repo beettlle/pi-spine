@@ -1,0 +1,47 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/lane-commit-keep-paths.test.mjs tests/batch/pi-smart-router-dirty.test.mjs tests/batch/gitignored-auto-clean.test.mjs tests/batch/graphify-out-dirty.test.mjs tests/config/settings-fields.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-844
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-23T04:47:08.486Z
+Buffer overflow: no
+---
+
+> pi-spine@2.28.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.28.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+.
+7eb4ef9  src/batch/lane-commit.mjs:237  WARNING  The JSDoc comment adds documentation for a `keepPaths` parameter, but the diff does not show the corresponding implementation change in the `commitLaneWorktree` function signature or body to actually accept and use this parameter. If the function signature is not updated to destructure `keepPaths`, the documentation will be misleading and the feature will not work.
+fd42a31  src/batch/lane-dirty-check-commit.mjs:1  ERROR  The diff removes the entire implementation of `lane-dirty-check-commit.mjs` (366 lines) without adding any replacement code. This will cause `SyntaxError: The requested module does not provide an export named ...` for all consumers importing from this file, breaking the build and runtime.
+f85c56a  src/batch/lane-dirty-check.mjs:330  WARNING  The function signature and JSDoc were updated to accept `keepPaths` and return `keptRoots`, but the diff hunk does not show any implementation logic using `keepPaths` or returning `keptRoots`. If the rest of the function body (not shown) still ignores `keepPaths` or returns only `{ cleanedRoots }`, the function will violate its new contract and fail to bypass the dirty gate for kept paths as intended by the commit message.
+ad6e638  src/batch/lane-dirty-check.mjs:348  ERROR  The variable `identityRoot` is referenced but is not defined in the function scope. The function destructures `projectRoot` from the options object, but the code uses `identityRoot` when calling `loadSpineConfig` and `gitExec`. This will cause a ReferenceError at runtime.
+b4628b9  src/config/settings-fields.mjs:302  WARNING  The `validateStringList` function is defined but never called or exported in the provided context. If this function is intended to be used by the settings validation logic (e.g., in the `validate` function or similar), it is currently dead code and will not be executed. If it is meant to be used by other modules, it is not exported.
+c839b8b  src/config/spine-config-schema.mjs:53  WARNING  The function `resolveLaneCommitKeepPaths` returns a mutable array of strings. While the default constant is frozen, the returned array from the explicit config path is not. If a caller mutates the returned array (e.g., `resolveLaneCommitKeepPaths(...).push('foo')`), it will not affect the frozen default, but it breaks the expectation of a stable configuration object if the caller assumes immutability. More importantly, if the caller expects the returned array to be safe to pass to functions that might mutate it, this is a risk. However, the bigger issue is that the JSDoc says `@returns {string[]}` but the default is `Readonly<string[]>`. Consistency suggests returning a frozen array or documenting that the returned array is mutable. Given the context of configuration, returning a frozen array is safer to prevent accidental mutation by downstream consumers.
+bdd8c9d  tests/arch/ts-nocheck-guard.test.mjs:84  WARNING  Removing 'src/batch/lane-dirty-check-commit.mjs' from the NOCHECK_ALLOWLIST will cause the test to fail if the file still exists and contains '@ts-nocheck' directives. The commit message indicates the file's implementation was removed, but if the file itself still exists with the directive, the guard test will break.
+8d51e46  tests/batch/gitignored-auto-clean.test.mjs:215  WARNING  The test name was updated to 'preserves stet .review state by default', but the diff does not show any changes to the test body. If the test body still asserts that files are removed (the old behavior), the test will fail against the new implementation which preserves them. The test assertions must be updated to match the new expected behavior.
+9ee14a9  tests/batch/gitignored-auto-clean.test.mjs:243  ERROR  The test asserts that `keptRoots` is `['.review']` and that the files are preserved, but the implementation of `sanitizeGitignoredArtifactsBeforeLaneCommit` does not actually use the `keepPaths` parameter to filter out roots from cleaning. It calculates `artifactRoots` and cleans all of them unconditionally. Consequently, `keptRoots` will be `[]` and the files will be deleted, causing the assertions to fail.
+dad7f09  tests/batch/pi-smart-router-dirty.test.mjs:12  ERROR  The removed import `GITIGNORED_ARTIFACT_MARKERS as commitMarkers` from `lane-dirty-check-commit.mjs` is likely still used in the test file. If the test file references `commitMarkers` anywhere, this will cause a ReferenceError at runtime. The symbol `GITIGNORED_ARTIFACT_MARKERS` is defined in `lane-dirty-check.mjs` (line 52), but the import was from `lane-dirty-check-commit.mjs` with a different alias. If the test needs this constant, it should be imported from the correct module or the usage should be updated.
+b174ef7  tests/config/settings-fields.test.mjs:34  WARNING  The added path `lanes.laneCommitKeepPaths` is not in alphabetical order. It should appear before `lanes.maxParallel` and after `lanes.autoIntegrateBetweenWaves`, but `laneCommitKeepPaths` (lowercase 'l') sorts before `maxParallel` (lowercase 'm'). However, looking at the existing list, `lanes.autoIntegrateBetweenWaves` is followed by `lanes.maxParallel`. `laneCommitKeepPaths` should be placed between them to maintain alphabetical order if the test asserts sorted paths.
+11 finding(s) at 656.9 tokens/sec.
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 11 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
