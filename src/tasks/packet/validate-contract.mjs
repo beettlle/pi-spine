@@ -215,6 +215,8 @@ function patternBlocksCurrentTaskFolder(pattern, taskId, tasksRoot) {
 function isContractTableEmpty(parsed) {
 	return (
 		parsed.testCommand === null &&
+		parsed.runCommand === null &&
+		parsed.reviewCommand === null &&
 		parsed.fileScopeMustChange.length === 0 &&
 		parsed.fileScopeMustNotChange.length === 0 &&
 		parsed.minLineCoverage === null &&

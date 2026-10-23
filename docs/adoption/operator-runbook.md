@@ -241,10 +241,12 @@ New `SP-*` tasks require a `## Contract` section in `PROMPT.md` when `contract.m
 | `contract.testRetries` | integer ≥ 0 | `1` | Max retries after first `testCommand` failure (total attempts = retries + 1) |
 | `contract.testRetryDelayMs` | integer ≥ 0 | `5000` | Delay in milliseconds between retry attempts |
 | `contract.testTimeoutMs` | integer 1000–14400000 | `600000` (10 min) | Wall-clock limit per `testCommand` attempt; the command is terminated when it expires ([#369](https://github.com/beettlle/pi-spine/issues/369)) |
+| `contract.reviewTimeoutMs` | integer 1000–14400000 | `1200000` (20 min) | Wall-clock limit for the contract `reviewCommand` step (SP-845); independent of `contract.testTimeoutMs` and never retried |
+| `contract.reviewPolicy` | `blocking` \| `advisory` | `blocking` | What a failing `reviewCommand` does: `blocking` fails the contract; `advisory` passes but journals `contract.review_advisory` and appends a STATUS Discoveries row (SP-845) |
 
 Set `contract.testRetries: 0` to disable retry (pre-SP-485 behavior). For flaky environments, `2` gives three total attempts.
 
-Retries do not help a command that is slow every time: each attempt hits the same `contract.testTimeoutMs`. Raise the limit instead, for example `spine settings set contract.testTimeoutMs 1200000` (20 min). When a contract fails on a timeout, `spine status --diagnose` names the timeout and this key rather than suggesting a PROMPT.md scope fix.
+Retries do not help a command that is slow every time: each attempt hits the same `contract.testTimeoutMs`. Raise the limit instead, for example `spine settings set contract.testTimeoutMs 1200000` (20 min). When a contract fails on a timeout, `spine status --diagnose` names the timeout and this key rather than suggesting a PROMPT.md scope fix. A `reviewCommand` timeout is diagnosed separately: the headline names `reviewCommand` and the suggested command raises `contract.reviewTimeoutMs` (default `spine settings set contract.reviewTimeoutMs 2400000`).
 
 | `contract.mode` | Behavior |
 |-----------------|----------|
@@ -1234,7 +1236,7 @@ Conflicts during **lane → orch** wave merge surface as `needs_merge` or failed
 | `needs_merge` | Fix failed lane(s); `spine batch retry <taskId>` or `spine batch resume --force` after resolving git state in lane worktrees |
 | `needs_merge` + gitignored paths in `lastError` | On the lane task branch: `git rm -r --cached -- <gitignored-paths>` (e.g. committed `coverage/` or `__pycache__`), commit, then `spine batch resume --force`. Diagnosis headline mentions gitignored merge failure. |
 | `GitignoredDirtyWorktree` (index-tracked) | Gitignored paths are in the git index — error message suggests `git rm --cached` on the task branch. Common with force-added `coverage/` or `__pycache__`. |
-| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`, `graphify-out/`, `.review/`, `.pi-smart-router/`, `.spine/runtime/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95), [SP-463](https://github.com/beettlle/pi-spine/issues/113), [#189](https://github.com/beettlle/pi-spine/issues/189), [#205](https://github.com/beettlle/pi-spine/issues/205) / SP-656). Marked roots are **re-cleaned** after commit hooks that regenerate them ([#206](https://github.com/beettlle/pi-spine/issues/206) / SP-659 — see [v2.8.0 dogfood land](#v280-dogfood-land-recovery-205206207)). Set `lanes.autoCleanGitignoredArtifacts: false` in `.spine/spine-config.json` to disable. Common after `npm test` generates ephemeral coverage artifacts, graphify post-commit hook rebuilds `graphify-out/`, Pi WAL under `.pi-smart-router/`, or stet review writes `.review/lock` and session files. |
+| `GitignoredDirtyWorktree` (worktree-only) | Gitignored paths exist only in the worktree (never in the index) — pi-spine auto-cleans known artifact dirs (`coverage/`, `node_modules/`, `__pycache__/`, `graphify-out/`, `.review/`, `.pi-smart-router/`, `.spine/runtime/`) with `git clean -fdX` before the lane dirty gate ([SP-471](https://github.com/beettlle/pi-spine/issues/95), [SP-463](https://github.com/beettlle/pi-spine/issues/113), [#189](https://github.com/beettlle/pi-spine/issues/189), [#205](https://github.com/beettlle/pi-spine/issues/205) / SP-656). Marked roots are **re-cleaned** after commit hooks that regenerate them ([#206](https://github.com/beettlle/pi-spine/issues/206) / SP-659 — see [v2.8.0 dogfood land](#v280-dogfood-land-recovery-205206207)). Keep paths (v2.29.0+, SP-844 / [#349](https://github.com/beettlle/pi-spine/issues/349)): `.review/` is preserved by default via `lanes.laneCommitKeepPaths` (stet session state survives lane commits); kept paths are also excluded from the dirty gate, so a worktree whose only dirt is kept state commits cleanly without staging. Set `lanes.laneCommitKeepPaths: []` to restore the pre-v2.29.0 clean-everything behavior. Set `lanes.autoCleanGitignoredArtifacts: false` to disable auto-clean entirely. Common after `npm test` generates ephemeral coverage artifacts, graphify post-commit hook rebuilds `graphify-out/`, Pi WAL under `.pi-smart-router/`, or stet review writes `.review/lock` and session files. |
 | `DirtyWorktree` after PASS with only `**/coverage/**` dirty | Regenerated coverage reports from `npm test` are ephemeral when not in task File Scope — pi-spine restores or excludes them at lane commit ([SP-427](https://github.com/beettlle/pi-spine/issues/73)). Prefer `.gitignore` for generated coverage; if reports stay committed, expect engine hygiene rather than task failure. |
 | `DirtyWorktree` after PASS with only `worktreeSetupHook` symlink deletions (e.g. ` D assets/bundled_skins`) | Hook-managed symlinks can drift when workers or tooling remove them — pi-spine re-runs `worktreeSetupHook` before the dirty gate, then ignores remaining deletion-only drift when a hook is configured ([SP-429](https://github.com/beettlle/pi-spine/issues/87)). List hook paths in `worktreeSetupIgnorePaths` only when you need basename ignores without re-running the hook. |
 | `DirtyWorktree` after PASS with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) rebuilds `graphify-out/` in the background after lane commits — pi-spine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)). Ensure `graphify-out/` is in `.gitignore`; if it was previously tracked, run `git rm -r --cached graphify-out/` once on the repo |
@@ -2302,7 +2304,15 @@ Keep auto-finish (the default, no env var) for manual, one-off contract runs, wh
 | Phase | Mechanism | Command |
 |-------|-----------|---------|
 | Lane setup | `worktreeSetupHook` (`scripts/spine-worktree-setup.sh`) | `git rev-parse HEAD` → `stet start "$baseline" --allow-dirty --quiet`; writes `.review/spine-stet-baseline.ref`; prints `{"ok":true}` (no `node -e`; skips cleanly when stet is missing) |
-| Contract verify | task `testCommand` suffix | `scripts/spine-stet-contract-run.sh [lenient\|default\|strict]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review) |
+| Contract verify | task `reviewCommand` (v2.30.0+, SP-845) | `scripts/spine-stet-contract-run.sh [lenient\|default\|strict] [task-id]` — restores session from baseline ref if needed; **do not** run `stet start HEAD` here (resets baseline → 0 hunks, no LLM review). Legacy packets still chain the script onto `testCommand`; new packets put it in `reviewCommand` |
+
+### Lane commit keep paths: stet state survives serialized tasks (v2.29.0+)
+
+The lane-commit sanitizer treats gitignored artifact roots as regenerable and runs `git clean -fdX` on them. Before v2.29.0 that included `.review/`, so the **second task serialized on a lane** lost the stet session and `.review/spine-stet-baseline.ref` the setup hook created — its contract then failed with `contract_failed` or re-reviewed earlier tasks' diffs from the lane baseline ([#349](https://github.com/beettlle/pi-spine/issues/349)).
+
+Since v2.29.0 (SP-844), `lanes.laneCommitKeepPaths` (default `[".review/"]`) protects those roots: the sanitizer skips them, kept paths do not trip the `GitignoredDirtyWorktree` gate, and the session + baseline ref survive every lane commit. `spine settings set lanes.laneCommitKeepPaths ".review/, .other-state/"` adds roots; an empty list restores the old clean-everything behavior.
+
+The workaround this replaces — the setup hook's second baseline copy under the git dir (`git rev-parse --git-path spine-stet-baseline.ref`, which `git clean` does not touch) and the task-scoped re-review in `scripts/spine-stet-contract-run.sh <level> <task-id>` — remains in place as a safety net for operators on older versions or with `laneCommitKeepPaths: []`.
 
 Contract behavior (ported from the stet repo's dogfooding scripts, stet SP-035–SP-040):
 
@@ -2314,6 +2324,14 @@ Contract behavior (ported from the stet repo's dogfooding scripts, stet SP-035�
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
 
+### Review step: own timeout and policy (v2.30.0+, SP-845)
+
+Since SP-845 the stet call lives in the packet's `reviewCommand` Contract field instead of chained onto `testCommand`. The review step runs **once**, only when the test step passed (a failed `testCommand` fails the contract and skips the review), and **never retries** — reviewers resume their own session, so a re-run would re-review.
+
+- **`contract.reviewTimeoutMs`** (default 20 min, same 1000–14400000 bounds as `contract.testTimeoutMs`) bounds the review alone, so a slow local-LLM review can no longer eat the test step's 10-minute budget.
+- **`contract.reviewPolicy`** decides what a failing review does. `blocking` (default) fails the contract with a `reviewCommand` check. `advisory` passes the contract but journals `contract.review_advisory` (taskId, exitCode, timedOut, summary) and appends a row to the task STATUS.md Discoveries table, so the failure stays visible without blocking lanes on local-LLM review noise. Set it with `spine settings set contract.reviewPolicy advisory`.
+- Both keys validate in `src/config/contract.mjs` and are editable through `spine settings` (`contract.reviewTimeoutMs`, `contract.reviewPolicy`).
+
 ### Strictness by task
 
 - S tasks, low risk → `lenient` or no stet gate
@@ -2324,7 +2342,7 @@ Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_pa
 
 - **`stet finish` clears the session.** Re-running a contract after it passed starts a fresh review that can resurface dismissed findings and invent new ones. This is why `SPINE_STET_NO_AUTO_FINISH=1` is required for spine batches (above).
 - **New-file diffs can produce hallucinated syntax findings.** The reviewer may report syntax or indentation defects that lint/typecheck/tests disprove. Tool output beats reviewer claims — dismiss with that evidence.
-- **Time budget.** The Contract `testCommand` wall clock defaults to 10 minutes per attempt; raise it with `contract.testTimeoutMs` (for example `spine settings set contract.testTimeoutMs 1800000` for 30 minutes) when a local stet review shares the command. A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
+- **Time budget.** The Contract `testCommand` wall clock defaults to 10 minutes per attempt; raise it with `contract.testTimeoutMs` (for example `spine settings set contract.testTimeoutMs 1800000` for 30 minutes). Since SP-845, stet reviews run in `reviewCommand` with their own budget (`contract.reviewTimeoutMs`, default 20 minutes) — only packets that still chain stet onto `testCommand` need to stretch the test timeout. A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
 
 ### Triage
 

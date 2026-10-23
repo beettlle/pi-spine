@@ -9,7 +9,9 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveLaneCommitKeepPaths } from "../config/spine-config-schema.mjs";
 import { resolveWorktreeSetupHook } from "../config/worktree-setup-hook.mjs";
+import { partitionArtifactRootsByKeepPaths } from "./lane-commit-keep-paths.mjs";
 import { gitPorcelain } from "./lane-commit.mjs";
 import { gitExec } from "./git-exec.mjs";
 
@@ -319,16 +321,17 @@ function listIgnoredUntrackedPaths(worktreePath) {
 
 /**
  * Auto-clean worktree-only gitignored artifacts under known dirs before lane dirty gate.
+ * Roots covered by keep paths (`lanes.laneCommitKeepPaths`, default `.review/`) survive — active tool state, not artifacts (SP-844 / #349).
  *
  * @param {string} worktreePath
- * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean }} [options]
- * @returns {{ cleanedRoots: string[] }}
+ * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean, keepPaths?: string[] }} [options]
+ * @returns {{ cleanedRoots: string[], keptRoots: string[] }}
  */
 export function sanitizeGitignoredArtifactsBeforeLaneCommit(
 	worktreePath,
-	{ projectRoot, porcelain, enabled = true } = {},
+	{ projectRoot, porcelain, enabled = true, keepPaths } = {},
 ) {
-	if (!enabled) return { cleanedRoots: [] };
+	if (!enabled) return { cleanedRoots: [], keptRoots: [] };
 
 	const identityRoot = projectRoot ?? worktreePath;
 	const rawPorcelain = typeof porcelain === "string" ? porcelain : "";
@@ -336,19 +339,26 @@ export function sanitizeGitignoredArtifactsBeforeLaneCommit(
 	const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
 	const gitignoredCandidates = [...new Set([...dirtyPaths, ...ignoredUntrackedPaths])];
 	if (gitignoredCandidates.length === 0) {
-		return { cleanedRoots: [] };
+		return { cleanedRoots: [], keptRoots: [] };
 	}
 
 	const { worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredCandidates);
 	const artifactRoots = listGitignoredArtifactRoots(worktreeOnly);
-	for (const root of artifactRoots) {
+	const effectiveKeepPaths = Array.isArray(keepPaths)
+		? keepPaths
+		: resolveLaneCommitKeepPaths({ config: loadSpineConfig(identityRoot).config ?? {} });
+	const { cleanableRoots, keptRoots } = partitionArtifactRootsByKeepPaths(
+		artifactRoots,
+		effectiveKeepPaths,
+	);
+	for (const root of cleanableRoots) {
 		gitExec(worktreePath, ["clean", "-fdX", "--", root], {
 			projectRoot: identityRoot,
 			throwOnError: false,
 		});
 	}
 
-	return { cleanedRoots: artifactRoots };
+	return { cleanedRoots: cleanableRoots, keptRoots };
 }
 
 export function classifyGitignoredPaths(worktreePath, gitignoredPaths) {

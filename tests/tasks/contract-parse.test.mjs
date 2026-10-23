@@ -143,10 +143,71 @@ test("parseContract returns hasSection false when Contract heading is absent", (
 	assert.equal(parsed.rawTableValid, false);
 });
 
+test("parseContract extracts reviewCommand like testCommand (SP-845)", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| testCommand | \`npm test\` |
+| reviewCommand | \`bash scripts/spine-stet-contract-run.sh lenient SP-845\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.equal(parsed.errors.length, 0, parsed.errors.join("; "));
+	assert.equal(parsed.testCommand, "npm test");
+	assert.equal(parsed.reviewCommand, "bash scripts/spine-stet-contract-run.sh lenient SP-845");
+});
+
+test("parseContract accepts && chains in reviewCommand (SP-845)", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| reviewCommand | \`bash one.sh && bash two.sh\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.equal(parsed.reviewCommand, "bash one.sh && bash two.sh");
+	assert.equal(parsed.errors.length, 0, parsed.errors.join("; "));
+});
+
+test("parseContract rejects shell metacharacters in reviewCommand (SP-845)", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| reviewCommand | \`bash one.sh; bash two.sh\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+
+	assert.match(
+		parsed.errors.join("\n"),
+		/Contract reviewCommand contains forbidden shell metacharacters/,
+	);
+});
+
+test("validateContract treats a reviewCommand-only table as non-empty (SP-845)", () => {
+	const table = `## Contract
+
+| Field | Value |
+|-------|-------|
+| reviewCommand | \`true\` |
+`;
+
+	const parsed = parseContract(promptWithContract(table));
+	const result = validateContract(parsed, { mode: "required" });
+
+	assert.doesNotMatch(result.errors.join("\n"), /Contract table is empty/);
+});
+
 test("CONTRACT_FIELD_NAMES lists all normative contract fields", () => {
 	assert.deepEqual(CONTRACT_FIELD_NAMES, [
 		"testCommand",
 		"runCommand",
+		"reviewCommand",
 		"fileScopeMustChange",
 		"fileScopeMustNotChange",
 		"minLineCoverage",
