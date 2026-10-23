@@ -31,6 +31,7 @@ const EXPECTED_PATHS = [
 	"dashboard.port",
 	"gates.requireBeforeIntegrate",
 	"lanes.autoIntegrateBetweenWaves",
+	"lanes.laneCommitKeepPaths",
 	"lanes.maxParallel",
 	"lanes.workerBackend",
 	"review.maxCodeReviewAttempts",

@@ -9,7 +9,6 @@ import {
 	listGitignoredArtifactRoots,
 	sanitizeGitignoredArtifactsBeforeLaneCommit,
 } from "../../src/batch/lane-dirty-check.mjs";
-import { GITIGNORED_ARTIFACT_MARKERS as commitMarkers } from "../../src/batch/lane-dirty-check-commit.mjs";
 import { gitPorcelain } from "../../src/batch/lane-commit.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
@@ -18,15 +17,9 @@ function execCommit(projectRoot, message) {
 	execFileSync("git", ["commit", "-m", message], { cwd: projectRoot, stdio: "ignore" });
 }
 
-test("GITIGNORED_ARTIFACT_MARKERS include .pi-smart-router in both modules", () => {
+test("GITIGNORED_ARTIFACT_MARKERS include .pi-smart-router in the single sanitizer module", () => {
 	assert.ok(GITIGNORED_ARTIFACT_MARKERS.includes("/.pi-smart-router/"));
 	assert.ok(GITIGNORED_ARTIFACT_MARKERS.includes(".pi-smart-router/"));
-	assert.ok(commitMarkers.includes("/.pi-smart-router/"));
-	assert.ok(commitMarkers.includes(".pi-smart-router/"));
-	assert.deepEqual(
-		GITIGNORED_ARTIFACT_MARKERS.filter((m) => m.includes("pi-smart-router")),
-		commitMarkers.filter((m) => m.includes("pi-smart-router")),
-	);
 });
 
 test("isGitignoredArtifactPath matches .pi-smart-router shm/wal/state paths", () => {

@@ -4,6 +4,18 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { commitLaneWorktree } from "../../src/batch/lane-commit.mjs";
+import {
+	isKeptArtifactRoot,
+	normalizeKeepPath,
+	partitionArtifactRootsByKeepPaths,
+} from "../../src/batch/lane-commit-keep-paths.mjs";
+import { sanitizeGitignoredArtifactsBeforeLaneCommit } from "../../src/batch/lane-dirty-check.mjs";
+import {
+	DEFAULT_LANE_COMMIT_KEEP_PATHS,
+	resolveLaneCommitKeepPaths,
+} from "../../src/config/spine-config-schema.mjs";
+import { validateSettingValue } from "../../src/config/settings-fields.mjs";
+import { gitPorcelain } from "../../src/batch/lane-commit.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /**
@@ -81,6 +93,88 @@ function gitLsFiles(worktreePath, taskId) {
 		encoding: "utf-8",
 	});
 }
+test("normalizeKeepPath strips trailing slashes, ./, and backslashes", () => {
+	assert.equal(normalizeKeepPath(".review/"), ".review");
+	assert.equal(normalizeKeepPath(".review//"), ".review");
+	assert.equal(normalizeKeepPath("./.review/"), ".review");
+	assert.equal(normalizeKeepPath(".spine\\runtime\\"), ".spine/runtime");
+	assert.equal(normalizeKeepPath("  "), "");
+});
+
+test("isKeptArtifactRoot matches the root and everything under it", () => {
+	assert.equal(isKeptArtifactRoot(".review", [".review/"]), true);
+	assert.equal(isKeptArtifactRoot(".review/worktrees/x", [".review/"]), true);
+	assert.equal(isKeptArtifactRoot(".pi-smart-router", [".review/"]), false);
+	assert.equal(isKeptArtifactRoot(".reviewer-notes", [".review/"]), false, "prefix must not match partial segments");
+	assert.equal(isKeptArtifactRoot(".review", []), false);
+});
+
+test("partitionArtifactRootsByKeepPaths splits cleanable from kept roots", () => {
+	const { cleanableRoots, keptRoots } = partitionArtifactRootsByKeepPaths(
+		[".pi-smart-router", ".review", "node_modules"],
+		[".review/"],
+	);
+	assert.deepEqual(cleanableRoots, [".pi-smart-router", "node_modules"]);
+	assert.deepEqual(keptRoots, [".review"]);
+});
+
+test("resolveLaneCommitKeepPaths defaults to .review/ and replaces on explicit arrays", () => {
+	assert.deepEqual(resolveLaneCommitKeepPaths({}), [...DEFAULT_LANE_COMMIT_KEEP_PATHS]);
+	assert.deepEqual(resolveLaneCommitKeepPaths({ config: {} }), [...DEFAULT_LANE_COMMIT_KEEP_PATHS]);
+	assert.deepEqual(resolveLaneCommitKeepPaths({ config: { lanes: {} } }), [
+		...DEFAULT_LANE_COMMIT_KEEP_PATHS,
+	]);
+	assert.deepEqual(resolveLaneCommitKeepPaths({ config: { lanes: { laneCommitKeepPaths: [] } } }), []);
+	assert.deepEqual(
+		resolveLaneCommitKeepPaths({ config: { lanes: { laneCommitKeepPaths: [".review/", " ", ".cache/"] } } }),
+		[".review/", ".cache/"],
+	);
+	assert.deepEqual(
+		resolveLaneCommitKeepPaths({ config: { lanes: { laneCommitKeepPaths: [1, null] } } }),
+		[],
+	);
+});
+
+test("lanes.laneCommitKeepPaths validates as a comma-separated string list", () => {
+	const parsed = validateSettingValue("lanes.laneCommitKeepPaths", ".review/, .cache/");
+	assert.equal(parsed.ok, true);
+	assert.deepEqual(parsed.normalizedValue, [".review/", ".cache/"]);
+	const empty = validateSettingValue("lanes.laneCommitKeepPaths", "");
+	assert.equal(empty.ok, true);
+	assert.deepEqual(empty.normalizedValue, []);
+	const bad = validateSettingValue("lanes.laneCommitKeepPaths", ["ok", ""]);
+	assert.equal(bad.ok, false);
+});
+
+test("sanitizer cleans .pi-smart-router but preserves keep-path roots", async () => {
+	const projectRoot = await initGitRepo("spine-keep-paths-sanitize-");
+	try {
+		fs.writeFileSync(
+			path.join(projectRoot, ".gitignore"),
+			".review/*\n!.review/config.toml\n.pi-smart-router/\n",
+			"utf-8",
+		);
+		execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+		execFileSync("git", ["commit", "-m", "gitignore"], { cwd: projectRoot, stdio: "ignore" });
+
+		fs.mkdirSync(path.join(projectRoot, ".review"), { recursive: true });
+		fs.writeFileSync(path.join(projectRoot, ".review", "session.json"), "{}\n", "utf-8");
+		const routerDir = path.join(projectRoot, ".pi-smart-router");
+		fs.mkdirSync(routerDir, { recursive: true });
+		fs.writeFileSync(path.join(routerDir, "state.db"), "db\n", "utf-8");
+
+		const { cleanedRoots, keptRoots } = sanitizeGitignoredArtifactsBeforeLaneCommit(projectRoot, {
+			porcelain: gitPorcelain(projectRoot),
+			keepPaths: [".review/"],
+		});
+		assert.deepEqual(cleanedRoots, [".pi-smart-router"]);
+		assert.deepEqual(keptRoots, [".review"]);
+		assert.equal(fs.existsSync(path.join(projectRoot, ".review", "session.json")), true);
+		assert.equal(fs.existsSync(path.join(routerDir, "state.db")), false);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
 
 test("two tasks serialized on one lane keep .review state and both .DONE markers (#349)", async () => {
 	const projectRoot = await initGitRepo("spine-lane-commit-keep-paths-");

@@ -1,6 +1,6 @@
 # SP-844: Lane commits keep tool state and earlier tasks' .DONE markers — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -23,11 +23,11 @@
 - [x] Record the deleting call path in STATUS.md Discoveries
 
 ### Step 2: Keep paths + single sanitizer
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `lanes.laneCommitKeepPaths` schema + settings field (default `[".review/"]`)
-- [ ] Keep-path filtering in `lane-commit-keep-paths.mjs`; sanitizer skips kept roots
-- [ ] Delete `lane-dirty-check-commit.mjs`; repoint tests
+- [x] `lanes.laneCommitKeepPaths` schema + settings field (default `[".review/"]`)
+- [x] Keep-path filtering in `lane-commit-keep-paths.mjs`; sanitizer skips kept roots
+- [x] Delete `lane-dirty-check-commit.mjs`; repoint tests
 
 ### Step 3: Fix `.DONE` deletion
 **Status:** ⬜ Not Started
@@ -73,6 +73,7 @@
 | 2026-10-22 | Task staged | PROMPT.md created |
 | 2026-10-23 | Step 0 preflight | Impact CRITICAL/HIGH recorded; 2 refs to lane-dirty-check-commit found (both tests/) |
 | 2026-10-23 | Step 1 reproduce | Red test written; deleting path = sanitizer `git clean -fdX -- .review` pre+post lane commit |
+| 2026-10-23 | Step 2 keep paths | New stringList settings type (first array-typed field); lane-commit-keep-paths.mjs written without @ts-nocheck (guard allowlist closed); lane-dirty-check.mjs at exactly 500 lines (criterion ≤500) |
 
 ## Blockers
 

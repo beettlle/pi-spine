@@ -81,7 +81,6 @@ const NOCHECK_ALLOWLIST = new Set([
 	"src/batch/journal-rebuild.mjs",
 	"src/batch/journal.mjs",
 	"src/batch/lane-commit.mjs",
-	"src/batch/lane-dirty-check-commit.mjs",
 	"src/batch/lane-dirty-check-git.mjs",
 	"src/batch/lane-dirty-check.mjs",
 	"src/batch/lifecycle-archive.mjs",

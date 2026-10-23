@@ -10,7 +10,7 @@
 
 import { CONTRACT_TEST_TIMEOUT_MAX_MS, CONTRACT_TEST_TIMEOUT_MIN_MS } from "./contract.mjs";
 
-/** @typedef {"boolean" | "number" | "string" | "enum"} SettingFieldType */
+/** @typedef {"boolean" | "number" | "string" | "enum" | "stringList"} SettingFieldType */
 
 /**
  * @typedef {object} SettingField
@@ -44,6 +44,11 @@ export const SETTINGS_FIELDS = Object.freeze([
 		path: "lanes.autoIntegrateBetweenWaves",
 		label: "Auto integrate between waves",
 		type: "boolean",
+	},
+	{
+		path: "lanes.laneCommitKeepPaths",
+		label: "Lane commit keep paths (comma-separated gitignored roots the sanitizer preserves, e.g. .review/)",
+		type: "stringList",
 	},
 	{
 		path: "gates.requireBeforeIntegrate",
@@ -245,6 +250,8 @@ function validateForField(field, rawValue) {
 			return validateString(rawValue, field);
 		case "enum":
 			return validateEnum(rawValue, field);
+		case "stringList":
+			return validateStringList(rawValue);
 		default:
 			return { ok: false, error: `Unsupported field type: ${field.type}` };
 	}
@@ -283,6 +290,35 @@ function validateNumber(rawValue, field) {
 		return { ok: false, error: `Value must be <= ${field.max}` };
 	}
 	return { ok: true, normalizedValue: coerced };
+}
+
+/**
+ * Comma-separated path list. Accepts a raw string from the settings CLI / slash
+ * command or an already-split array; normalizes to a string array so the
+ * written spine-config.json value matches `resolveLaneCommitKeepPaths`.
+ *
+ * @param {unknown} rawValue
+ */
+function validateStringList(rawValue) {
+	if (rawValue == null) {
+		return { ok: true, normalizedValue: [] };
+	}
+	if (Array.isArray(rawValue)) {
+		for (const entry of rawValue) {
+			if (typeof entry !== "string" || entry.trim() === "") {
+				return { ok: false, error: "List entries must be non-empty strings" };
+			}
+		}
+		return { ok: true, normalizedValue: rawValue.map((entry) => entry.trim()) };
+	}
+	if (typeof rawValue !== "string" && typeof rawValue !== "number") {
+		return { ok: false, error: "Expected a comma-separated string" };
+	}
+	const parts = String(rawValue)
+		.split(",")
+		.map((part) => part.trim())
+		.filter((part) => part !== "");
+	return { ok: true, normalizedValue: parts };
 }
 
 /**
