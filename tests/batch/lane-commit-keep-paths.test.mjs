@@ -231,3 +231,68 @@ test("two tasks serialized on one lane keep .review state and both .DONE markers
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("lane commit preserves .review state and still cleans .pi-smart-router (#349)", async () => {
+	const projectRoot = await initGitRepo("spine-lane-commit-keep-router-");
+	try {
+		const batchId = "20261023T120100";
+		const { worktreePath, taskBranch } = setupLaneWorktree(projectRoot, batchId);
+		seedStetState(worktreePath);
+		const taskFolder = seedCompletedTask(worktreePath, "TP-903");
+		const routerDir = path.join(worktreePath, ".pi-smart-router");
+		fs.mkdirSync(routerDir, { recursive: true });
+		fs.writeFileSync(path.join(routerDir, "state.db"), "db\n", "utf-8");
+
+		const result = commitLaneWorktree({
+			worktreePath,
+			taskBranch,
+			taskId: "TP-903",
+			batchId,
+			taskFolder,
+			projectRoot,
+		});
+
+		assert.equal(result.ok, true, result.error);
+		assert.equal(result.committed, true);
+		assert.equal(
+			fs.existsSync(path.join(worktreePath, ".review", "session.json")),
+			true,
+			".review/session.json must survive the lane commit",
+		);
+		assert.equal(
+			fs.existsSync(path.join(worktreePath, ".review", "spine-stet-baseline.ref")),
+			true,
+			".review/spine-stet-baseline.ref must survive the lane commit",
+		);
+		assert.equal(fs.existsSync(path.join(routerDir, "state.db")), false, ".pi-smart-router must still be cleaned");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("lane commit with only kept-path residue succeeds without staging", async () => {
+	const projectRoot = await initGitRepo("spine-lane-commit-kept-residue-");
+	try {
+		const batchId = "20261023T120200";
+		const { worktreePath, taskBranch } = setupLaneWorktree(projectRoot, batchId);
+		seedStetState(worktreePath);
+		// No worker changes — only stet state (kept) is present in the worktree.
+		const taskFolder = path.join(worktreePath, "spine-tasks", "TP-904-smoke");
+		fs.mkdirSync(taskFolder, { recursive: true });
+
+		const result = commitLaneWorktree({
+			worktreePath,
+			taskBranch,
+			taskId: "TP-904",
+			batchId,
+			taskFolder,
+			projectRoot,
+		});
+
+		assert.equal(result.ok, true, result.error);
+		assert.equal(result.committed, false);
+		assert.equal(fs.existsSync(path.join(worktreePath, ".review", "session.json")), true);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});

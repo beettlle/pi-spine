@@ -1,6 +1,6 @@
 # SP-844: Lane commits keep tool state and earlier tasks' .DONE markers — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -30,10 +30,10 @@
 - [x] Delete `lane-dirty-check-commit.mjs`; repoint tests
 
 ### Step 3: Fix `.DONE` deletion
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fix the path found in Step 1; Step 1 test passes
-- [ ] Test: `.review/session.json` and `.review/spine-stet-baseline.ref` survive a lane commit; `.pi-smart-router/` still cleaned
+- [x] Fix the path found in Step 1; Step 1 test passes
+- [x] Test: `.review/session.json` and `.review/spine-stet-baseline.ref` survive a lane commit; `.pi-smart-router/` still cleaned
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started
@@ -74,6 +74,7 @@
 | 2026-10-23 | Step 0 preflight | Impact CRITICAL/HIGH recorded; 2 refs to lane-dirty-check-commit found (both tests/) |
 | 2026-10-23 | Step 1 reproduce | Red test written; deleting path = sanitizer `git clean -fdX -- .review` pre+post lane commit |
 | 2026-10-23 | Step 2 keep paths | New stringList settings type (first array-typed field); lane-commit-keep-paths.mjs written without @ts-nocheck (guard allowlist closed); lane-dirty-check.mjs at exactly 500 lines (criterion ≤500) |
+| 2026-10-23 | Step 3 fix | Keep-path fix also had to cover commitLaneWorktree's GitignoredDirtyWorktree gate: kept `.review/` residue after pre-commit sanitize previously failed the only-gitignored-dirty branch; kept paths now filtered before the gate (only-kept → ok committed:false, matching pre-fix pi-smart-router behavior). engine-lanes/commit.mjs passes config-derived keepPaths; commitLaneWorktree falls back to disk-config resolution. engine-lanes-commit-order test needs env -u SPINE_IS_WORKER (nested-batch guard, pre-existing, unrelated) |
 
 ## Blockers
 

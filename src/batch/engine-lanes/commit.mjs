@@ -9,6 +9,7 @@ import {
 	sanitizeGitignoredArtifactsBeforeLaneCommit,
 	sanitizeOutOfScopeCoverageBeforeLaneCommit,
 } from "../lane-dirty-check.mjs";
+import { resolveLaneCommitKeepPaths } from "../../config/spine-config-schema.mjs";
 import {
 	recomputeTaskCounters,
 	saveSpineBatchState,
@@ -54,10 +55,12 @@ export function commitLaneAndValidateWorktree({
 	config,
 }) {
 	const preCommitPorcelain = gitPorcelain(worktreePath);
+	const keepPaths = resolveLaneCommitKeepPaths({ config });
 	sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
 		projectRoot,
 		porcelain: preCommitPorcelain,
 		enabled: config?.lanes?.autoCleanGitignoredArtifacts !== false,
+		keepPaths,
 	});
 	sanitizeOutOfScopeCoverageBeforeLaneCommit(worktreePath, fileScopePaths, {
 		projectRoot,
@@ -79,6 +82,7 @@ export function commitLaneAndValidateWorktree({
 		ignorePatterns,
 		fileScopePaths,
 		canceledMatrixRowIds,
+		keepPaths,
 	});
 	if (!laneCommit.ok) {
 		task.status = "failed";

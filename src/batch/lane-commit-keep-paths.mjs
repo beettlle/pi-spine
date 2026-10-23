@@ -60,3 +60,16 @@ export function partitionArtifactRootsByKeepPaths(artifactRoots, keepPaths = [])
 	}
 	return { cleanableRoots, keptRoots };
 }
+
+/**
+ * Whether a gitignored path sits under a kept root — kept paths are
+ * operator-blessed tool state, not cleanable artifacts, so the lane-commit
+ * dirty gate must not count them (SP-844 / #349).
+ *
+ * @param {string} filePath
+ * @param {string[]} keepPaths
+ * @returns {boolean}
+ */
+export function isPathUnderKeptRoot(filePath, keepPaths) {
+	return isKeptArtifactRoot(filePath, keepPaths);
+}
