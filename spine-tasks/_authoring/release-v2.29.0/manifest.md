@@ -1,7 +1,7 @@
 # Release manifest — v2.29.0
 
 **Created:** 2026-10-22
-**Current version:** 2.28.0 (v2.28.1 patch staged: direct S fixes from the v2.28 retrospective)
+**Current version:** 2.28.1 (published 2026-10-23 UTC, `3cd34c59`; direct S fixes from the v2.28 retrospective; global install is 2.28.1)
 **Target version:** v2.29.0
 **Bump type:** minor
 **Profile:** minor
@@ -47,7 +47,7 @@
 
 ---
 
-## Already in v2.28.1 (direct, not packets)
+## Already in v2.28.1 (direct, not packets; published, #367/#368/#369 closed)
 
 - #368 mutating subcommands honor `--help` (gate, integrate, settings set, issue, rules sync); strict flag parsing on gate/integrate
 - #369 `contract.testTimeoutMs` setting wired to contract `testCommand`; timeout diagnosis suggests raising it
