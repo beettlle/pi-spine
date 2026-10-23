@@ -180,6 +180,9 @@ function extractResetAtRaw(message) {
 	return match[1].trim().replace(/[.!]+$/, "");
 }
 
+/** Kimi's flat-body `type` for the weekly (7-day) usage limit (#367). */
+const KIMI_WEEKLY_QUOTA_TYPE = "exceeded_current_quota_error";
+
 /** Google retry hints below this many seconds mean a short (per-minute) window. */
 const GOOGLE_TRANSIENT_RETRY_SECONDS = 120;
 
@@ -229,6 +232,8 @@ function readGoogleQuotaDetails(details) {
  * Rules (#329):
  * - z.ai 429, top-level `code` "1308" (5-hour window) or "1310"
  *   (weekly/monthly) → quota_exhausted.
+ * - Kimi 429, flat top-level `type` "exceeded_current_quota_error"
+ *   (weekly 7-day limit) → quota_exhausted (#367).
  * - Kimi 403, `error.type` "permission_error", message mentions
  *   "usage limit" (billing-cycle exhaustion) → quota_exhausted.
  * - Kimi 429, `error.type` "rate_limit_error", message mentions
@@ -253,6 +258,20 @@ function classifyPayload(httpStatus, payload) {
 			kind: "quota_exhausted",
 			providerCode: payload.code,
 			resetAtRaw: extractResetAtRaw(payload.message),
+			message: truncateMessage(payload.message),
+		};
+	}
+
+	// Kimi weekly (7-day) limit: flat `{"message":"...","type":"exceeded_current_quota_error"}` (#367).
+	if (
+		httpStatus === 429 &&
+		payload.type === KIMI_WEEKLY_QUOTA_TYPE &&
+		typeof payload.message === "string"
+	) {
+		return {
+			kind: "quota_exhausted",
+			providerCode: KIMI_WEEKLY_QUOTA_TYPE,
+			resetAtRaw: null,
 			message: truncateMessage(payload.message),
 		};
 	}

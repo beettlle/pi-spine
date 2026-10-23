@@ -41,6 +41,10 @@ const ZAI_RESET_AT_RAW = "2099-08-30 09:12:44";
 const KIMI_OVERLOADED_PAYLOAD =
 	'429: {"error":{"type":"rate_limit_error","message":"The server is currently overloaded, please retry later"}}';
 
+/** Kimi weekly (7-day) limit: flat body, top-level `type` (#367). */
+const KIMI_WEEKLY_PAYLOAD =
+	'429: {"message":"You\'ve reached your weekly (7-day) usage limit. Your quota will reset when the current 7-day window ends.","type":"exceeded_current_quota_error"}';
+
 const FALLBACK_PROFILE = "allegretto";
 const PRIMARY_MODEL = "zai/glm-5.3";
 const FALLBACK_MODEL = "kimi-coding/k3";
@@ -240,6 +244,31 @@ test("quota failure falls back once and the retry succeeds on the fallback profi
 		assert.equal(completed[0].model, FALLBACK_MODEL);
 
 		assert.equal(readConfigBytes(projectRoot), configBytes, "config must stay untouched");
+	} finally {
+		restore();
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("Kimi weekly exceeded_current_quota_error triggers the quota fallback hop (#367)", async () => {
+	const taskId = "TQ-867";
+	const projectRoot = await initGitRepo("spine-qf-kimi-weekly-");
+	const restore = setStubEnv({
+		SPINE_WORKER_STUB_FAIL_TASKS: taskId,
+		SPINE_WORKER_STUB_FAIL_OUTPUT: KIMI_WEEKLY_PAYLOAD,
+		SPINE_WORKER_STUB_PASS_PROFILE: FALLBACK_PROFILE,
+	});
+	try {
+		writeQuotaConfig(projectRoot);
+		writeSmokeTask(projectRoot, taskId);
+		writeDependencies(projectRoot, [taskId]);
+		execCommit(projectRoot, "add kimi weekly quota task");
+
+		const result = await startBatch({ projectRoot, scope: taskId, skipPreflight: true });
+		assert.equal(result.ok, true, result.output ?? result.error);
+		assert.equal(eventsOfType(projectRoot, result.batchId, "batch.quota_fallback_applied").length, 1);
+		assert.equal(eventsOfType(projectRoot, result.batchId, "task.quota_fallback_retry").length, 1);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.phase, "completed");
 	} finally {
 		restore();
 		await destroyGitRepo(projectRoot);

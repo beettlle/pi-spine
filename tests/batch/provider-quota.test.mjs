@@ -14,6 +14,24 @@ const KIMI_403 =
 const KIMI_429 =
 	'429 {"error":{"type":"rate_limit_error","message":"The engine is currently overloaded, please try again later"},"type":"error"}';
 
+const KIMI_WEEKLY_429 =
+	'429: {"message":"You\'ve reached your weekly (7-day) usage limit. Your quota will reset when the current 7-day window ends. To continue now, purchase extra usage or upgrade your plan: https://www.kimi.com/membership/subscription?tab=quota","type":"exceeded_current_quota_error"}';
+
+test("Kimi 429 weekly exceeded_current_quota_error classifies as quota_exhausted (#367)", () => {
+	const result = classifyProviderQuotaError(KIMI_WEEKLY_429, "kimi-coding/k3");
+	assert.equal(result?.kind, "quota_exhausted");
+	assert.equal(result?.poolId, "kimi-coding");
+	assert.equal(result?.httpStatus, 429);
+	assert.equal(result?.providerCode, "exceeded_current_quota_error");
+	assert.equal(result?.resetAtRaw, null);
+	assert.match(result?.message ?? "", /weekly \(7-day\) usage limit/);
+});
+
+test("exceeded_current_quota_error on a non-429 status stays unclassified", () => {
+	const output = KIMI_WEEKLY_429.replace(/^429:/, "403:");
+	assert.equal(classifyProviderQuotaError(output, "kimi-coding/k3"), null);
+});
+
 test("z.ai 1308 five-hour usage limit classifies as quota_exhausted", () => {
 	const result = classifyProviderQuotaError(ZAI_1308, "zai/glm-5.3");
 	assert.deepEqual(result, {
