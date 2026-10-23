@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-10-22 (Phase 99 v2.28.0 **published** 2026-10-22 — `7604bf00`, tag `v2.28.0`, npm `latest` 2.28.0, smoke OK, #350/#352/#355 closed; Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
-**Next Task ID:** SP-844
+**Next Task ID:** SP-846
 
 ---
 
@@ -2738,6 +2738,15 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-841 | Worker prompt drops per-step plan review | S | #354 Closes | Done `8114d3c6` |
 | SP-842 | Heartbeat reads live preflight state | S | #353 Closes | Done `8dbf7fcf` |
 | SP-843 | Quota fallback expiry / clear | M | #350 Closes | Staged |
+
+### Phase 100 — Release v2.29.0: lane commit keep paths, separate contract review step
+
+**Authoring:** 2026-10-22 · Manifest: `spine-tasks/_authoring/release-v2.29.0/manifest.md` (guardrails: ≤ 2 M packets, scope freeze at Phase 3, published global binary only, chain depth ≤ 2). Scope approval pending.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-844 | Lane commit keep paths (`.review/`), one sanitizer, `.DONE` survival | M | #349 Closes | Staged |
+| SP-845 | `reviewCommand` + `contract.reviewTimeoutMs` + `contract.reviewPolicy` | M | — | Staged |
 
 ---
 

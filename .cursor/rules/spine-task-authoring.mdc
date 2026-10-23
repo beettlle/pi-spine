@@ -110,6 +110,8 @@ Legacy `**Assessment:**` alone remains valid — validators do not parse or reje
 
 Docs-only tasks use `` `testCommand: true` `` with `fileScopeMustChange` on deliverable doc paths — no lint prefix.
 
+- **Structural guards in every code `testCommand`** — Append `tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` to the scoped test list. The 500-line module cap and the `@ts-nocheck` ban otherwise surface only in the release gate, after the lane has merged.
+- **Structure budget** — For every File Scope path already over 450 lines, state in File Scope how the task keeps it at or under 500 (net ≤ 0 lines, or the new logic goes in a named new module). New modules and new tests must not use `@ts-nocheck`.
 - **Testing & Verification step** — Mandatory penultimate step before Completion Criteria (SP-075). Use `testing.testWithCoverage` from config when present; else `testing.test`.
 - **Max 4 implementation steps** (excluding Testing and Completion Criteria).
 - **File Scope** — Disjoint across tasks intended to run in the same wave; overlapping paths force serial lanes.
@@ -143,6 +145,8 @@ Docs-only tasks use `` `testCommand: true` `` with `fileScopeMustChange` on deli
 - [ ] Folder matches `SP-###-slug`; heading matches folder ID
 - [ ] Contract table present for `SP-*` (when required)
 - [ ] Testing & Verification step with Contract `testCommand` (lint + scoped tests for code tasks)
+- [ ] Code `testCommand` includes `tests/cli/phase23-exit-verify.test.mjs` and `tests/arch/ts-nocheck-guard.test.mjs`
+- [ ] Structure budget stated for every File Scope path over 450 lines
 - [ ] `dependencies.json` edges match PROMPT Dependencies
 - [ ] Review level assigned; size S/M/L (XL split)
 - [ ] File scopes disjoint for parallel wave mates
