@@ -22,6 +22,7 @@ import { handleBatch, handleNext, handleRun } from "./spine-cli/batch.mjs";
 import { handleGate } from "./spine-cli/gate.mjs";
 import { handleIntegrate } from "./spine-cli/integrate.mjs";
 import { handlePlan } from "./spine-cli/plan.mjs";
+import { formatSubcommandHelp, shouldInterceptSubcommandHelp } from "./spine-cli/cli-args.mjs";
 import {
 	c,
 	die,
@@ -278,8 +279,10 @@ function cmdVersion() {
 	console.log();
 }
 
-function printHelp() {
-	console.log(`
+const printHelp = () => console.log(helpText());
+
+function helpText() {
+	return `
 ${c.bold}pi-spine${c.reset} — orchestration spine for long-running pi development
 
 ${c.bold}Usage:${c.reset}
@@ -384,7 +387,7 @@ ${c.bold}Examples:${c.reset}
   spine scenarios show orphan-running-resume    # show one scenario entry
   spine scenarios materialize orphan-running-resume --target .  # write batch-state + journal
   spine version                                 # show package and environment info
-`);
+`;
 }
 
 if (isCliEntrypoint(import.meta.url)) {
@@ -394,6 +397,10 @@ if (isCliEntrypoint(import.meta.url)) {
 	const [command = "help", ...args] = process.argv.slice(2);
 
 	const runCli = async () => {
+		if (command !== "help" && shouldInterceptSubcommandHelp(command, args)) {
+			process.stdout.write(formatSubcommandHelp(command, helpText()));
+			return;
+		}
 		switch (command) {
 			case "init":
 				cmdInit(args);

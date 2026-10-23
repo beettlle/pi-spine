@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { buildIssueDraftBody } from "../src/cli/issue-draft.mjs";
 import { commandExists } from "../src/util/command-exists.mjs";
 import { c, die, isCliEntrypoint } from "./spine-cli/shared.mjs";
+import { hasHelpFlag } from "./spine-cli/cli-args.mjs";
 
 const DEFAULT_OUT_PATH = ".spine/issue-draft.md";
 
@@ -178,7 +179,7 @@ export function runSpineIssue(options) {
 	const sub = argv[0];
 	if (sub !== "draft") {
 		return {
-			exitCode: 1,
+			exitCode: hasHelpFlag(argv) ? 0 : 1,
 			output:
 				`Usage: spine issue draft [--type bug|enhancement|question] [--title TITLE] [--json] [--out PATH] [--create]\n`,
 		};

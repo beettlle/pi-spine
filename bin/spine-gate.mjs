@@ -5,6 +5,7 @@
  */
 
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
+import { parseStrictArgs, strictArgsError } from "./spine-cli/cli-args.mjs";
 import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
 import {
 	approveIntegrateGate,
@@ -12,6 +13,22 @@ import {
 	rejectIntegrateGate,
 	reopenIntegrateGateForCompletedBatch,
 } from "../src/batch/gate.mjs";
+
+const GATE_USAGE = `
+Usage: spine gate [approve|reject|status|reopen] [options]
+
+  approve   Approve the pending integrate gate
+  reject    Reject the pending integrate gate
+  status    Show the integrate gate (default)
+  reopen    Re-open the gate for a completed batch
+
+Options:
+  --batch ID          Target batch (default: active batch)
+  --reason TEXT       Rejection reason (reject)
+  --synthesis TEXT    Operator readback recorded on the gate
+  --json              Machine-readable output
+  --help, -h          Show this help without changing state
+`;
 
 /**
  * @param {object} result
@@ -75,29 +92,19 @@ function resolveActiveBatchId(projectRoot, batchId) {
  */
 export function runSpineGate(options) {
 	const { projectRoot, args } = options;
-	const flags = new Set(args.filter((a) => a.startsWith("--")));
-	const positional = args.filter((a) => !a.startsWith("--"));
-	const action = positional[0] ?? "status";
-
-	let batchId = null;
-	const batchIdx = args.indexOf("--batch");
-	if (batchIdx >= 0 && args[batchIdx + 1]) {
-		batchId = args[batchIdx + 1];
+	const parsed = parseStrictArgs(args, { valued: ["--batch", "--reason", "--synthesis"], boolean: ["--json"] });
+	const flags = parsed.flags;
+	if (parsed.help) {
+		return { exitCode: 0, output: GATE_USAGE, result: { ok: true, help: true } };
 	}
-
-	let reason = null;
-	const reasonIdx = args.indexOf("--reason");
-	if (reasonIdx >= 0 && args[reasonIdx + 1]) {
-		reason = args[reasonIdx + 1];
+	const usageError = strictArgsError(parsed);
+	if (usageError) {
+		return { exitCode: 2, output: `${usageError}\n${GATE_USAGE}`, result: { ok: false, error: usageError } };
 	}
-
-	let synthesis = null;
-	const synthesisIdx = args.indexOf("--synthesis");
-	if (synthesisIdx >= 0 && args[synthesisIdx + 1]) {
-		synthesis = args[synthesisIdx + 1];
-	}
-
-	batchId = resolveActiveBatchId(projectRoot, batchId);
+	const action = parsed.positional[0] ?? "status";
+	const reason = parsed.values.get("--reason") ?? null;
+	const synthesis = parsed.values.get("--synthesis") ?? null;
+	const batchId = resolveActiveBatchId(projectRoot, parsed.values.get("--batch") ?? null);
 	if (!batchId) {
 		const result = {
 			ok: false,

@@ -1,4 +1,18 @@
 import { integrateOrchToBase } from "../src/batch/integrate.mjs";
+import { parseStrictArgs, strictArgsError } from "./spine-cli/cli-args.mjs";
+
+const INTEGRATE_USAGE = `
+Usage: spine integrate [options]
+
+  Merge the batch orch branch into the base branch (requires an approved gate).
+
+Options:
+  --batch ID           Target batch (default: active batch)
+  --dry-run            Show the merge plan without changing anything
+  --force-integrate    Bypass the gate (requires SPINE_ALLOW_FORCE=1)
+  --json               Machine-readable output
+  --help, -h           Show this help without changing state
+`;
 
 /**
  * @param {object} result
@@ -54,18 +68,25 @@ export function formatIntegrateHuman(result, json = false) {
  */
 export function runSpineIntegrate(options) {
 	const { projectRoot, args } = options;
-	const flags = new Set(args.filter((a) => a.startsWith("--")));
-
-	let batchId = null;
-	const batchIdx = args.indexOf("--batch");
-	if (batchIdx >= 0 && args[batchIdx + 1]) {
-		batchId = args[batchIdx + 1];
+	const parsed = parseStrictArgs(args, {
+		valued: ["--batch"],
+		boolean: ["--dry-run", "--force-integrate", "--json"],
+	});
+	const flags = parsed.flags;
+	if (parsed.help) {
+		return { exitCode: 0, output: INTEGRATE_USAGE, result: { ok: true, help: true } };
+	}
+	const usageError =
+		strictArgsError(parsed) ??
+		(parsed.positional.length > 0 ? `Unexpected argument(s): ${parsed.positional.join(" ")}` : null);
+	if (usageError) {
+		return { exitCode: 2, output: `${usageError}\n${INTEGRATE_USAGE}`, result: { ok: false, error: usageError } };
 	}
 
 	const result = integrateOrchToBase({
 		projectRoot,
 		dryRun: flags.has("--dry-run"),
-		batchId,
+		batchId: parsed.values.get("--batch") ?? null,
 		forceIntegrate: flags.has("--force-integrate"),
 	});
 

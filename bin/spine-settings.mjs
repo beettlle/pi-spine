@@ -9,6 +9,7 @@
  */
 
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
+import { hasHelpFlag } from "./spine-cli/cli-args.mjs";
 import { loadSpineConfig, loadSpineConfigFile } from "./spine-config.mjs";
 import { formatSettingsShow } from "../src/cli/settings-show.mjs";
 import {
@@ -134,6 +135,9 @@ export function runSpineSettingsSet({ projectRoot, args }) {
  * @param {string[]} options.args
  */
 export function runSpineSettings({ projectRoot, args }) {
+	if (hasHelpFlag(args)) {
+		return { exitCode: 0, output: settingsHelpText() };
+	}
 	const sub = args[0];
 
 	if (sub === "show" || sub === undefined) {
@@ -151,8 +155,8 @@ export function runSpineSettings({ projectRoot, args }) {
 	};
 }
 
-function printSettingsHelp() {
-	console.log(`
+function settingsHelpText() {
+	return `
 Usage:
   spine settings show [path] [--json]
   spine settings set <path> <value> [--dry-run] [--json]
@@ -161,17 +165,11 @@ Show editable spine-config fields and their current values.
 With path, print a single registered setting value.
 
 Set updates one registered field after validation; use --dry-run to preview without writing.
-`);
+`;
 }
 
 async function main() {
 	const argv = process.argv.slice(2);
-
-	if (argv.includes("--help") || argv.includes("-h")) {
-		printSettingsHelp();
-		return;
-	}
-
 	const result = runSpineSettings({ projectRoot: process.cwd(), args: argv });
 	process.stdout.write(result.output);
 	if (result.exitCode !== 0) {
