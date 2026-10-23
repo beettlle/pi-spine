@@ -33,6 +33,34 @@ test("contract.testTimeoutMs is editable through spine settings", () => {
 	assert.equal(parsed.ok, true);
 });
 
+test("contract.reviewTimeoutMs accepts integers within bounds (SP-845)", () => {
+	assert.equal(validateContractConfig({ contract: { reviewTimeoutMs: 1_200_000 } }), null);
+	assert.equal(validateContractConfig({ contract: { reviewTimeoutMs: 1000 } }), null);
+});
+
+test("contract.reviewTimeoutMs rejects non-integers, zero, and values over 4 hours", () => {
+	for (const reviewTimeoutMs of [0, -1, 1.5, "600000", 999, 4 * 60 * 60 * 1000 + 1]) {
+		const error = validateContractConfig({ contract: { reviewTimeoutMs } });
+		assert.equal(error?.code, "CONFIG_CONTRACT_REVIEW_TIMEOUT_INVALID", String(reviewTimeoutMs));
+		assert.match(error?.suggestedCommand ?? "", /spine settings set contract\.reviewTimeoutMs/);
+	}
+});
+
+test("contract.reviewPolicy accepts blocking and advisory, rejects the rest (SP-845)", () => {
+	assert.equal(validateContractConfig({ contract: { reviewPolicy: "blocking" } }), null);
+	assert.equal(validateContractConfig({ contract: { reviewPolicy: "advisory" } }), null);
+	for (const reviewPolicy of ["off", "warn", 1, true]) {
+		const error = validateContractConfig({ contract: { reviewPolicy } });
+		assert.equal(error?.code, "CONFIG_CONTRACT_REVIEW_POLICY_INVALID", String(reviewPolicy));
+		assert.match(error?.suggestedCommand ?? "", /spine settings set contract\.reviewPolicy blocking/);
+	}
+});
+
+test("contract.reviewTimeoutMs is editable through spine settings", () => {
+	assert.equal(parseSettingPath("contract.reviewTimeoutMs").ok, true);
+	assert.equal(parseSettingPath("contract.reviewPolicy").ok, true);
+});
+
 test("isContractTimeoutFailure reads the latest contract event for the task", () => {
 	const events = [
 		{ type: "contract.verified", payload: { taskId: "SP-843", ok: false, checks: [TIMEOUT_CHECK] } },

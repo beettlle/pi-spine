@@ -77,6 +77,19 @@ export const SETTINGS_FIELDS = Object.freeze([
 		max: CONTRACT_TEST_TIMEOUT_MAX_MS,
 	},
 	{
+		path: "contract.reviewTimeoutMs",
+		label: "Contract reviewCommand timeout (ms; default 1200000)",
+		type: "number",
+		min: CONTRACT_TEST_TIMEOUT_MIN_MS,
+		max: CONTRACT_TEST_TIMEOUT_MAX_MS,
+	},
+	{
+		path: "contract.reviewPolicy",
+		label: "Contract reviewCommand policy (blocking fails the contract, advisory only records)",
+		type: "enum",
+		enum: ["blocking", "advisory"],
+	},
+	{
 		path: "agents.worker.model",
 		label: "Worker model",
 		type: "string",

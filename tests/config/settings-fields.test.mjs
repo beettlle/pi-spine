@@ -28,6 +28,8 @@ const EXPECTED_PATHS = [
 	"agents.worker.model",
 	"agents.worker.thinking",
 	"contract.testTimeoutMs",
+	"contract.reviewPolicy",
+	"contract.reviewTimeoutMs",
 	"dashboard.port",
 	"gates.requireBeforeIntegrate",
 	"lanes.autoIntegrateBetweenWaves",
@@ -42,6 +44,8 @@ test("SETTINGS_FIELDS lists editable paths including reviewer per-type pins", ()
 	assert.ok(SETTINGS_FIELDS.length >= 5);
 	const paths = SETTINGS_FIELDS.map((f) => f.path);
 	assert.deepEqual(paths.sort(), EXPECTED_PATHS.sort());
+	assert.ok(paths.includes("contract.reviewTimeoutMs"));
+	assert.ok(paths.includes("contract.reviewPolicy"));
 });
 
 test("agents.reviewer.loadUserExtensions is a registered boolean setting (SP-819)", () => {
@@ -261,4 +265,21 @@ test("agents.quotaFallbackProfile allows an empty value to unset the fallback (S
 test("agents.reviewerProfile accepts a profile name and an empty value (SP-832)", () => {
 	assert.equal(validateSettingValue("agents.reviewerProfile", "claude").ok, true);
 	assert.equal(validateSettingValue("agents.reviewerProfile", "").ok, true);
+});
+
+test("contract.reviewTimeoutMs accepts in-bounds integers and rejects the rest (SP-845)", () => {
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", "1200000").ok, true);
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", 1000).ok, true);
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", 0).ok, false);
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", 999).ok, false);
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", 4 * 60 * 60 * 1000 + 1).ok, false);
+	assert.equal(validateSettingValue("contract.reviewTimeoutMs", "soon").ok, false);
+});
+
+test("contract.reviewPolicy accepts blocking/advisory only (SP-845)", () => {
+	for (const value of ["blocking", "advisory"]) {
+		assert.equal(validateSettingValue("contract.reviewPolicy", value).ok, true, value);
+	}
+	assert.equal(validateSettingValue("contract.reviewPolicy", "off").ok, false);
+	assert.equal(validateSettingValue("contract.reviewPolicy", "").ok, false);
 });

@@ -1,8 +1,8 @@
 # SP-845: Separate contract review step with its own timeout and policy — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-10-22
+**Current Step:** Step 2
+**Status:** 🔵 In Progress
+**Last Updated:** 2026-10-23
 **Review Level:** 2
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,16 +11,16 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `verifyContract`, `runContractTestCommand`, `parseContract`, `validateContractConfig`
-- [ ] Confirm every test file in the Contract exists; changes go through Amendments
+- [x] GitNexus impact on `verifyContract`, `runContractTestCommand`, `parseContract`, `validateContractConfig`
+- [x] Confirm every test file in the Contract exists; changes go through Amendments
 
 ### Step 1: Parse + config
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `reviewCommand` parsed and validated like `testCommand`
-- [ ] `contract.reviewTimeoutMs` / `contract.reviewPolicy` validated; settings fields added
+- [x] `reviewCommand` parsed and validated like `testCommand`
+- [x] `contract.reviewTimeoutMs` / `contract.reviewPolicy` validated; settings fields added
 
 ### Step 2: Review step
 **Status:** ⬜ Not Started
