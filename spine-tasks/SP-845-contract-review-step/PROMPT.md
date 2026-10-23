@@ -61,7 +61,7 @@ Contract review runs as its own step with its own timeout and an explicit policy
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/contract-review.test.mjs tests/batch/contract-timeout-config.test.mjs tests/config/settings-fields.test.mjs tests/tasks/contract-parse.test.mjs tests/batch/contract-exec.test.mjs tests/batch/contract-verify.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-845` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/contract-review.test.mjs tests/batch/contract-timeout-config.test.mjs tests/config/settings-fields.test.mjs tests/tasks/contract-parse.test.mjs tests/batch/contract-exec.test.mjs tests/batch/contract-verify.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
 | fileScopeMustChange | `src/batch/contract-review.mjs`, `src/config/contract.mjs`, `src/tasks/packet/parse-prompt.mjs`, `tests/batch/contract-review.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 

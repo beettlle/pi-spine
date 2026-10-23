@@ -24,6 +24,7 @@ const STEP_HEADING_RE = /^### Step (\d+): (.+)$/gm;
 export const CONTRACT_FIELD_NAMES = Object.freeze([
 	"testCommand",
 	"runCommand",
+	"reviewCommand",
 	"fileScopeMustChange",
 	"fileScopeMustNotChange",
 	"minLineCoverage",
@@ -328,6 +329,7 @@ function collectDuplicateStepNumberErrors(steps) {
  * @returns {{
  *   testCommand: string | null,
  *   runCommand: string | null,
+ *   reviewCommand: string | null,
  *   fileScopeMustChange: string[],
  *   fileScopeMustNotChange: string[],
  *   minLineCoverage: number | null,
@@ -352,6 +354,7 @@ export function parseContract(markdown) {
 	const parsed = {
 		testCommand: null,
 		runCommand: null,
+		reviewCommand: null,
 		fileScopeMustChange: [],
 		fileScopeMustNotChange: [],
 		minLineCoverage: null,
@@ -469,44 +472,26 @@ function applyContractField(parsed, field, rawValue) {
 	}
 
 	switch (field) {
-		case "testCommand": {
+		case "testCommand":
+		case "runCommand":
+		case "reviewCommand": {
 			const command = parseContractScalar(value);
 			if (command.includes("\n")) {
-				parsed.errors.push("Contract testCommand must not contain newlines");
+				parsed.errors.push(`Contract ${field} must not contain newlines`);
 				return;
 			}
 			if (command.length > TEST_COMMAND_MAX_LENGTH) {
-				parsed.errors.push(`Contract testCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
+				parsed.errors.push(`Contract ${field} exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
 				return;
 			}
-			const testCommandIssue = findContractCommandMetacharIssue(command);
-			if (testCommandIssue) {
+			const commandMetacharIssue = findContractCommandMetacharIssue(command);
+			if (commandMetacharIssue) {
 				parsed.errors.push(
-					`Contract testCommand contains forbidden shell metacharacters: ${testCommandIssue}; ${CONTRACT_METACHAR_FIX_HINT}`,
+					`Contract ${field} contains forbidden shell metacharacters: ${commandMetacharIssue}; ${CONTRACT_METACHAR_FIX_HINT}`,
 				);
 				return;
 			}
-			parsed.testCommand = command;
-			return;
-		}
-		case "runCommand": {
-			const command = parseContractScalar(value);
-			if (command.includes("\n")) {
-				parsed.errors.push("Contract runCommand must not contain newlines");
-				return;
-			}
-			if (command.length > TEST_COMMAND_MAX_LENGTH) {
-				parsed.errors.push(`Contract runCommand exceeds ${TEST_COMMAND_MAX_LENGTH} characters`);
-				return;
-			}
-			const runCommandIssue = findContractCommandMetacharIssue(command);
-			if (runCommandIssue) {
-				parsed.errors.push(
-					`Contract runCommand contains forbidden shell metacharacters: ${runCommandIssue}; ${CONTRACT_METACHAR_FIX_HINT}`,
-				);
-				return;
-			}
-			parsed.runCommand = command;
+			parsed[field] = command;
 			return;
 		}
 		case "fileScopeMustChange":

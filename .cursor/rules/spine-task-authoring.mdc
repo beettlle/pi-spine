@@ -103,6 +103,7 @@ Legacy `**Assessment:**` alone remains valid — validators do not parse or reje
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/review.test.mjs` |
+| reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-###` |
 | fileScopeMustChange | `src/batch/review.mjs` |
 | fileScopeMustNotChange | `src/planner/**` |
 | completionCriteria | Lint, typecheck, and scoped tests pass |
@@ -110,6 +111,7 @@ Legacy `**Assessment:**` alone remains valid — validators do not parse or reje
 
 Docs-only tasks use `` `testCommand: true` `` with `fileScopeMustChange` on deliverable doc paths — no lint prefix.
 
+- **reviewCommand for stet (SP-845)** — Put the stet call in `reviewCommand`, not chained onto `testCommand`. It runs once after `testCommand` passes (skipped when the test step fails), never retries, and gets its own wall clock via `contract.reviewTimeoutMs` (default 20 min) with policy `contract.reviewPolicy` (`blocking` default; `advisory` journals `contract.review_advisory` and records a STATUS Discoveries row instead of failing). Keep long reviews off the 10-minute test timeout.
 - **Structural guards in every code `testCommand`** — Append `tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` to the scoped test list. The 500-line module cap and the `@ts-nocheck` ban otherwise surface only in the release gate, after the lane has merged.
 - **Structure budget** — For every File Scope path already over 450 lines, state in File Scope how the task keeps it at or under 500 (net ≤ 0 lines, or the new logic goes in a named new module). New modules and new tests must not use `@ts-nocheck`.
 - **Testing & Verification step** — Mandatory penultimate step before Completion Criteria (SP-075). Use `testing.testWithCoverage` from config when present; else `testing.test`.

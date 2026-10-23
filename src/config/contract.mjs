@@ -11,6 +11,17 @@ export const CONTRACT_TEST_TIMEOUT_MIN_MS = 1000;
 export const CONTRACT_TEST_TIMEOUT_MAX_MS = 4 * 60 * 60 * 1000;
 
 /**
+ * Bounds for `contract.reviewTimeoutMs` (SP-845): same envelope as the test
+ * timeout, but a 20-minute default because review runs once with no retries.
+ */
+export const CONTRACT_REVIEW_TIMEOUT_MIN_MS = CONTRACT_TEST_TIMEOUT_MIN_MS;
+export const CONTRACT_REVIEW_TIMEOUT_MAX_MS = CONTRACT_TEST_TIMEOUT_MAX_MS;
+export const CONTRACT_REVIEW_TIMEOUT_DEFAULT_MS = 20 * 60 * 1000;
+
+/** Policies for `contract.reviewPolicy` (SP-845). */
+export const CONTRACT_REVIEW_POLICIES = Object.freeze(["blocking", "advisory"]);
+
+/**
  * @param {unknown} config
  * @returns {{ code: string, message: string, suggestedCommand: string } | null}
  */
@@ -60,6 +71,35 @@ export function validateContractConfig(config) {
 				code: "CONFIG_CONTRACT_TEST_TIMEOUT_INVALID",
 				message: `contract.testTimeoutMs must be an integer between ${CONTRACT_TEST_TIMEOUT_MIN_MS} and ${CONTRACT_TEST_TIMEOUT_MAX_MS} when set`,
 				suggestedCommand: "spine settings set contract.testTimeoutMs 1200000",
+			};
+		}
+	}
+
+	if (contract.reviewTimeoutMs != null) {
+		const reviewTimeoutMs = contract.reviewTimeoutMs;
+		const isValidReviewTimeout =
+			typeof reviewTimeoutMs === "number" &&
+			Number.isInteger(reviewTimeoutMs) &&
+			reviewTimeoutMs >= CONTRACT_REVIEW_TIMEOUT_MIN_MS &&
+			reviewTimeoutMs <= CONTRACT_REVIEW_TIMEOUT_MAX_MS;
+		if (!isValidReviewTimeout) {
+			return {
+				code: "CONFIG_CONTRACT_REVIEW_TIMEOUT_INVALID",
+				message: `contract.reviewTimeoutMs must be an integer between ${CONTRACT_REVIEW_TIMEOUT_MIN_MS} and ${CONTRACT_REVIEW_TIMEOUT_MAX_MS} when set`,
+				suggestedCommand: "spine settings set contract.reviewTimeoutMs 1200000",
+			};
+		}
+	}
+
+	if (contract.reviewPolicy != null) {
+		if (
+			typeof contract.reviewPolicy !== "string" ||
+			!CONTRACT_REVIEW_POLICIES.includes(contract.reviewPolicy)
+		) {
+			return {
+				code: "CONFIG_CONTRACT_REVIEW_POLICY_INVALID",
+				message: `contract.reviewPolicy must be one of: ${CONTRACT_REVIEW_POLICIES.join(", ")}`,
+				suggestedCommand: "spine settings set contract.reviewPolicy blocking",
 			};
 		}
 	}

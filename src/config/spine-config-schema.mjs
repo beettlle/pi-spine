@@ -34,6 +34,38 @@ export const ORCHESTRATOR_DEFAULTS = Object.freeze({
 });
 
 /**
+ * Gitignored artifact roots the lane-commit sanitizer must not `git clean`.
+ * `.review/` holds the stet session the worktreeSetupHook opened for the whole
+ * lane; cleaning it breaks the next task's stet-gated contract (SP-844 / #349).
+ *
+ * @type {Readonly<string[]>}
+ */
+export const DEFAULT_LANE_COMMIT_KEEP_PATHS = Object.freeze([".review/"]);
+
+/**
+ * Resolve `lanes.laneCommitKeepPaths`. An explicit array replaces the default;
+ * anything else (unset, wrong type) falls back to it. Entries are trimmed;
+ * empty entries are dropped, so `[""]` degrades to "no keeps".
+ *
+ * @param {{ config?: Record<string, any> }} [options]
+ * @returns {string[]}
+ */
+export function resolveLaneCommitKeepPaths({ config = {} } = {}) {
+	const raw = config?.lanes?.laneCommitKeepPaths;
+	if (!Array.isArray(raw)) {
+		return [...DEFAULT_LANE_COMMIT_KEEP_PATHS];
+	}
+	const paths = [];
+	for (const entry of raw) {
+		if (typeof entry !== "string") continue;
+		const trimmed = entry.trim();
+		if (trimmed === "") continue;
+		paths.push(trimmed);
+	}
+	return paths;
+}
+
+/**
  * @param {unknown} value
  * @param {string} fieldLabel
  * @returns {{ ok: true, value: number } | { ok: false, code: string, message: string, suggestedCommand: string }}

@@ -17,13 +17,21 @@ const LANE_COMMIT_EXIT_REASONS = new Set(["DirtyWorktree", "lane_commit_failed"]
 /** Suggested `contract.testTimeoutMs` after a timeout: double the 10-minute default. */
 const CONTRACT_TIMEOUT_SUGGESTED_MS = 20 * 60 * 1000;
 
+/** Suggested `contract.reviewTimeoutMs` after a review timeout: double the 20-minute default (SP-845). */
+const CONTRACT_REVIEW_TIMEOUT_SUGGESTED_MS = 40 * 60 * 1000;
+
 /**
  * True when the latest contract verification for `taskId` failed because its
  * testCommand timed out (#369), so diagnosis can name the timeout instead of
  * pointing at PROMPT.md scope.
  *
+ * SP-845: a `reviewCommand` timeout is distinguished from a test timeout —
+ * returns `"review"` for review timeouts (truthy, so `contractTimedOut`
+ * consumers keep working while builders can name `contract.reviewTimeoutMs`).
+ *
  * @param {Array<{ type?: string, payload?: Record<string, any> }>} journalEvents
  * @param {string|null|undefined} taskId
+ * @returns {boolean | "review"}
  */
 export function isContractTimeoutFailure(journalEvents, taskId) {
 	if (!taskId || !Array.isArray(journalEvents)) return false;
@@ -32,6 +40,13 @@ export function isContractTimeoutFailure(journalEvents, taskId) {
 		if (event?.type !== "contract.verified" && event?.type !== "contract.failed") continue;
 		if (event.payload?.taskId !== taskId) continue;
 		const checks = Array.isArray(event.payload?.checks) ? event.payload.checks : [];
+		if (
+			checks.some(
+				(check) => check?.field === "reviewCommand" && check.ok === false && /timed out after/.test(String(check.message ?? "")),
+			)
+		) {
+			return "review";
+		}
 		return checks.some(
 			(check) => check?.field === "testCommand" && check.ok === false && /timed out after/.test(String(check.message ?? "")),
 		);
@@ -52,7 +67,7 @@ export function isPrimaryTaskFailureExitReason(exitReason) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.failedTaskId]
  * @param {boolean} [ctx.mergeGitignoredFailure]
- * @param {boolean} [ctx.contractTimedOut]
+ * @param {boolean | "review"} [ctx.contractTimedOut] SP-845: "review" marks a reviewCommand timeout.
  */
 export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 	if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
@@ -76,8 +91,11 @@ export function buildPrimaryFailureHeadline(batchLabel, ctx = {}) {
 			: `${batchLabel} review attempts exhausted — fix scope or implementation, then retry`;
 	}
 	if (ctx.exitReason === "contract_failed" && ctx.contractTimedOut) {
-		const subject = ctx.failedTaskId ? `task ${ctx.failedTaskId} contract testCommand` : "contract testCommand";
-		return `${batchLabel} ${subject} timed out — raise contract.testTimeoutMs or speed up the command, then retry`;
+		const isReviewTimeout = ctx.contractTimedOut === "review";
+		const field = isReviewTimeout ? "reviewCommand" : "testCommand";
+		const key = isReviewTimeout ? "contract.reviewTimeoutMs" : "contract.testTimeoutMs";
+		const subject = ctx.failedTaskId ? `task ${ctx.failedTaskId} contract ${field}` : `contract ${field}`;
+		return `${batchLabel} ${subject} timed out — raise ${key} or speed up the command, then retry`;
 	}
 	if (ctx.exitReason === "contract_failed") {
 		return ctx.failedTaskId
@@ -125,7 +143,7 @@ export function buildDirtyWorktreeSuggestedCommand(ctx = {}) {
  * @param {string|null} [ctx.exitReason]
  * @param {string|null} [ctx.failedTaskId]
  * @param {string} [ctx.tasksRoot]
- * @param {boolean} [ctx.contractTimedOut]
+ * @param {boolean | "review"} [ctx.contractTimedOut] SP-845: "review" marks a reviewCommand timeout.
  */
 export function buildPrimaryFailureSuggestedCommand(ctx = {}) {
 	if (LANE_COMMIT_EXIT_REASONS.has(ctx.exitReason ?? "")) {
@@ -143,7 +161,12 @@ export function buildPrimaryFailureSuggestedCommand(ctx = {}) {
 	}
 	if (ctx.exitReason === "contract_failed" && ctx.contractTimedOut) {
 		const retry = ctx.failedTaskId ? `spine batch retry ${ctx.failedTaskId}` : "spine batch resume";
-		return `spine settings set contract.testTimeoutMs ${CONTRACT_TIMEOUT_SUGGESTED_MS} && ${retry}`;
+		const suggested =
+			ctx.contractTimedOut === "review"
+				? CONTRACT_REVIEW_TIMEOUT_SUGGESTED_MS
+				: CONTRACT_TIMEOUT_SUGGESTED_MS;
+		const key = ctx.contractTimedOut === "review" ? "contract.reviewTimeoutMs" : "contract.testTimeoutMs";
+		return `spine settings set ${key} ${suggested} && ${retry}`;
 	}
 	if (ctx.exitReason === "contract_failed") {
 		const tasksRoot = ctx.tasksRoot ?? "spine-tasks";

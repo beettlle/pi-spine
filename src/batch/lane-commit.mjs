@@ -7,6 +7,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { filterGitignoredPaths, gitAddFilteredPaths } from "./git-helpers.mjs";
+import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { resolveLaneCommitKeepPaths } from "../config/spine-config-schema.mjs";
+import { isPathUnderKeptRoot } from "./lane-commit-keep-paths.mjs";
 import {
 	classifyGitignoredPaths,
 	formatGitignoredRemediationMessage,
@@ -231,6 +234,7 @@ function listPorcelainPaths(porcelain) {
  * @param {string[]} [params.ignorePatterns] Hook paths to skip (default includes `.venv`)
  * @param {string[]} [params.fileScopePaths] Task fileScope — paths here are never skipped
  * @param {string[]} [params.canceledMatrixRowIds] Row ids canceled by the operator (#230) — their expanded fileScope patterns are excluded
+ * @param {string[]} [params.keepPaths] Gitignored roots to preserve (default `lanes.laneCommitKeepPaths`, `.review/`)
  * @returns {{ ok: true, committed: boolean, commitSha?: string, skippedGitignoredPaths?: string[], skippedIgnorePaths?: string[] } | { ok: false, error: string, failureClass: string, gitignoredPaths?: string[] }}
  */
 export function commitLaneWorktree({
@@ -244,11 +248,15 @@ export function commitLaneWorktree({
 	ignorePatterns,
 	fileScopePaths = [],
 	canceledMatrixRowIds = [],
+	keepPaths,
 }) {
 	const identityRoot = projectRoot ?? worktreePath;
 	const effectiveIgnorePatterns = Array.isArray(ignorePatterns)
 		? ignorePatterns
 		: [...DEFAULT_WORKTREE_SETUP_IGNORE_PATHS];
+	const effectiveKeepPaths = Array.isArray(keepPaths)
+		? keepPaths
+		: resolveLaneCommitKeepPaths({ config: loadSpineConfig(identityRoot).config ?? {} });
 	try {
 		const porcelain = gitPorcelain(worktreePath);
 		const dirtyPaths = listPorcelainPaths(porcelain);
@@ -258,7 +266,9 @@ export function commitLaneWorktree({
 		const stageCandidatePaths = dirtyPaths.filter(
 			(filePath) => !shouldSkipHookIgnorePath(filePath, effectiveIgnorePatterns, fileScopePaths),
 		);
-		const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath);
+		const ignoredUntrackedPaths = listIgnoredUntrackedPaths(worktreePath).filter(
+			(filePath) => !isPathUnderKeptRoot(filePath, effectiveKeepPaths),
+		);
 		// Only-hook-noise dirty (e.g. untracked `.venv` symlink) is not a DirtyWorktree failure.
 		if (stageCandidatePaths.length === 0 && ignoredUntrackedPaths.length === 0) {
 			return {
@@ -333,7 +343,9 @@ export function commitLaneWorktree({
 			worktreePath,
 			stageCandidatePaths,
 		);
-		let gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])];
+		let gitignoredPaths = [...new Set([...gitignoredDirtyPaths, ...ignoredUntrackedPaths])].filter(
+			(filePath) => !isPathUnderKeptRoot(filePath, effectiveKeepPaths),
+		);
 		if (stageable.length === 0 && gitignoredPaths.length > 0) {
 			let { indexTracked, worktreeOnly } = classifyGitignoredPaths(worktreePath, gitignoredPaths);
 			// SP-659 / #206: marked artifacts may regenerate after the pre-commit sanitize.
@@ -345,8 +357,11 @@ export function commitLaneWorktree({
 			if (worktreeOnlyMarkedArtifacts) {
 				sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
 					projectRoot: identityRoot,
+					keepPaths: effectiveKeepPaths,
 				});
-				gitignoredPaths = listIgnoredUntrackedPaths(worktreePath);
+				gitignoredPaths = listIgnoredUntrackedPaths(worktreePath).filter(
+					(filePath) => !isPathUnderKeptRoot(filePath, effectiveKeepPaths),
+				);
 				if (gitignoredPaths.length === 0) {
 					return {
 						ok: true,
@@ -393,6 +408,7 @@ export function commitLaneWorktree({
 		// SP-659 / #206: post-commit hooks may regenerate marked gitignored artifacts.
 		sanitizeGitignoredArtifactsBeforeLaneCommit(worktreePath, {
 			projectRoot: identityRoot,
+			keepPaths: effectiveKeepPaths,
 		});
 		return {
 			ok: true,

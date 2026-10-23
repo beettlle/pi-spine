@@ -26,7 +26,12 @@ import {
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
-import { runShellCommandAsync } from "./contract-spawn.mjs";
+import { buildContractTestEnv, runShellCommandAsync } from "./contract-spawn.mjs";
+import { runContractReviewStep } from "./contract-review.mjs";
+
+// Worker env stripping + re-export moved to contract-spawn.mjs (SP-845 keeps
+// contract-review.mjs cycle-free); the public surface is unchanged.
+export { CONTRACT_TEST_WORKER_ENV_KEYS, buildContractTestEnv } from "./contract-spawn.mjs";
 
 // Shared pre-spawn refusal envelope for the npm-scope (#187) and metachar (#268) guards.
 function refusedBeforeSpawnResult(/** @type {string} */ summary) {
@@ -41,33 +46,6 @@ export const CONTRACT_TEST_DEFAULT_RETRIES = 1;
 
 /** Default delay in ms between testCommand retry attempts. */
 export const CONTRACT_TEST_RETRY_DELAY_MS = 5000;
-
-/**
- * Worker-only env keys stripped from contract testCommand subprocesses so full-suite
- * tests match operator re-run outside worker-host (SP-491, issue #155).
- */
-export const CONTRACT_TEST_WORKER_ENV_KEYS = ["SPINE_IS_WORKER"];
-
-/**
- * Build env for contract testCommand subprocess — omits worker-only keys inherited from
- * worker-host.mjs that would false-fail batch-spawn integration tests (SP-482 guard).
- * Preserves parent batch id as SPINE_PARENT_BATCH_ID so nested-spawn guard can block
- * live engines in lane worktrees while still allowing isolated fixture tests (#162).
- *
- * @param {NodeJS.ProcessEnv} [sourceEnv]
- * @returns {NodeJS.ProcessEnv}
- */
-export function buildContractTestEnv(sourceEnv = process.env) {
-	const env = { ...sourceEnv };
-	for (const key of CONTRACT_TEST_WORKER_ENV_KEYS) {
-		delete env[key];
-	}
-	if (env.SPINE_BATCH_ID && !env.SPINE_PARENT_BATCH_ID) {
-		env.SPINE_PARENT_BATCH_ID = env.SPINE_BATCH_ID;
-	}
-	delete env.SPINE_BATCH_ID;
-	return env;
-}
 
 /**
  * @param {number} byteCount
@@ -302,7 +280,7 @@ export function prepareContractVerifyEnvironment(worktreePath, parsedContract, c
  * @param {string} [config.batchId] Batch ID for journal events (optional).
  * @param {string} [config.taskId] Task ID for journal events (optional).
  * @param {string} [config.taskFolder] Task folder path for writing failure logs to .reviews/ (optional).
- * @param {{ testRetries?: number, testRetryDelayMs?: number, testTimeoutMs?: number }} [config.contract] Retry and per-attempt timeout tuning (#369).
+ * @param {{ reviewPolicy?: "blocking" | "advisory", reviewTimeoutMs?: number, testRetries?: number, testRetryDelayMs?: number, testTimeoutMs?: number }} [config.contract] Retry/timeout tuning (#369) and review step policy (SP-845).
  * @param {number} [config.contractTestMaxBuffer] stdout/stderr capture limit override.
  * @param {{ test?: string, testWithCoverage?: string }} [config.testing] Coverage command selection.
  * @returns {Promise<{ ok: boolean, checks: Array<{ field: string, ok: boolean, message: string }>, retries?: number }>}
@@ -384,6 +362,13 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 						? `Contract testCommand failed after ${totalAttempts} attempt(s): ${finalResult.summary}`
 						: `Contract testCommand failed after ${totalAttempts} attempt(s) (exit ${finalResult.exitCode}): ${finalResult.summary || "(no output)"}`,
 		});
+	}
+
+	// SP-845: reviewCommand runs once, only when the test step passed (or is absent).
+	// Failures never retry — reviewers resume their own session.
+	if (parsedContract.reviewCommand && (!parsedContract.testCommand || testCommandOk)) {
+		const reviewCheck = await runContractReviewStep(worktreePath, parsedContract, config);
+		if (reviewCheck) checks.push(reviewCheck);
 	}
 
 	for (const pattern of parsedContract.fileScopeMustChange ?? []) {

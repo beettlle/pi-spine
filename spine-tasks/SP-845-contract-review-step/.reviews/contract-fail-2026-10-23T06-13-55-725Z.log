@@ -1,0 +1,54 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/contract-review.test.mjs tests/batch/contract-timeout-config.test.mjs tests/config/settings-fields.test.mjs tests/tasks/contract-parse.test.mjs tests/batch/contract-exec.test.mjs tests/batch/contract-verify.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-845
+Exit code: 1
+Attempt: 2 of 2
+Timestamp: 2026-10-23T06:13:55.725Z
+Buffer overflow: no
+---
+
+> pi-spine@2.28.1 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.28.1 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+....................
+....................
+....................
+....................
+....................
+...
+183b2fb  src/batch/contract-exec.mjs:283  WARNING  The JSDoc for `config.contract` was updated to include `reviewPolicy` and `reviewTimeoutMs`, but the diff does not show the implementation of `prepareContractVerifyEnvironment` (or the function it calls, likely `verifyContract`) being updated to actually read and use these new properties. If the implementation does not destructure and pass `reviewPolicy` and `reviewTimeoutMs` to `runContractReviewStep`, the documentation will be misleading and the new review step policy will not be applied.
+215e3cb  src/batch/contract-review.mjs:44  WARNING  formatReviewTimeoutLabel produces incorrect labels for timeouts under 1 minute. The regex /\.?0+$/ strips trailing zeros from the 2-decimal string, which removes the decimal point and all digits for values like '0.50', resulting in '0 min' instead of '0.5 min'.
+2ea8fbe  src/batch/diagnosis-primary-failure.mjs:40  WARNING  The function `isContractTimeoutFailure` is expected to return a boolean, but the added code returns the string `"review"`. This breaks the boolean contract for any callers using strict equality checks (e.g., `=== true` or `=== false`), which will fail for the `"review"` case. Additionally, the function name does not reflect that it can return a specific failure type.
+93671e9  src/batch/diagnosis-primary-failure.mjs:70  WARNING  The JSDoc type for `ctx.contractTimedOut` was updated to `boolean | "review"`, but the diff does not show any corresponding implementation changes in `buildPrimaryFailureHeadline` to handle the new `"review"` value. If the function body still uses a simple boolean check (e.g., `if (ctx.contractTimedOut)`), the string `"review"` will be truthy and may incorrectly trigger the generic contract timeout logic instead of the specific review timeout logic intended by SP-845.
+8ca59c4  src/batch/diagnosis-primary-failure.mjs:148  WARNING  The JSDoc type for `ctx.contractTimedOut` was updated to `boolean | "review"`, but the diff does not show any corresponding implementation changes in `buildPrimaryFailureSuggestedCommand` to handle the new `"review"` value. If the function body still uses a simple boolean check (e.g., `if (ctx.contractTimedOut)`), the string `"review"` will be truthy and may incorrectly trigger the generic contract timeout logic instead of the specific review timeout logic intended by SP-845.
+f8f9684  src/config/contract.mjs:17  WARNING  CONTRACT_REVIEW_TIMEOUT_MIN_MS and CONTRACT_REVIEW_TIMEOUT_MAX_MS are defined as aliases for the test timeout bounds, but they are not used in the validation logic shown in the diff. If the validation function still uses CONTRACT_TEST_TIMEOUT_MIN_MS/MAX_MS to validate reviewTimeoutMs, these new constants are dead code and the validation bounds may not match the intended review-specific envelope.
+8587745  src/config/contract.mjs:88  WARNING  The suggestedCommand for an invalid reviewTimeoutMs is hardcoded to 1200000, which may be outside the valid range defined by CONTRACT_REVIEW_TIMEOUT_MIN_MS and CONTRACT_REVIEW_TIMEOUT_MAX_MS. If the maximum allowed timeout is less than 1200000 ms, the suggested command will produce another validation error.
+febf6a3  src/config/settings-fields.mjs:82  WARNING  The `contract.reviewTimeoutMs` field uses `CONTRACT_TEST_TIMEOUT_MIN_MS` and `CONTRACT_TEST_TIMEOUT_MAX_MS` for its bounds. The JSDoc in `contract.mjs` states that the review timeout has the 'same envelope' as the test timeout, but it is a distinct setting with a different default (20 minutes vs test timeout). Reusing the test timeout constants couples the two settings' validation bounds. If the review timeout bounds are ever intended to differ (e.g., a different minimum or maximum), this will silently enforce the wrong limits. Consider defining `CONTRACT_REVIEW_TIMEOUT_MIN_MS` and `CONTRACT_REVIEW_TIMEOUT_MAX_MS` in `contract.mjs` and importing them here.
+8e13031  src/tasks/packet/parse-prompt.mjs:27  WARNING  The `CONTRACT_FIELD_NAMES` array is updated to include `reviewCommand`, but the diff does not show the corresponding implementation change in the `parsePrompt` function body to actually parse and return this field. If the function does not return `reviewCommand`, the type contract is violated and consumers relying on it will receive `undefined` instead of a string or null.
+6e7da15  src/tasks/packet/parse-prompt.mjs:332  WARNING  The JSDoc `@returns` type was updated to include `reviewCommand`, but the diff does not show the corresponding implementation change in the function body to actually parse and return this field. If the function does not return `reviewCommand`, the type contract is violated and consumers relying on it will receive `undefined` instead of a string or null.
+c2311ca  src/tasks/packet/parse-prompt.mjs:357  WARNING  The `reviewCommand` field is initialized to `null` in the `parsed` object, but the diff does not show any corresponding implementation in `applyContractField` or `CONTRACT_KNOWN_FIELDS` to actually parse and populate this field from the markdown table. If the parsing logic is not updated, `reviewCommand` will always remain `null`, violating the intent of adding the field and potentially causing downstream consumers to fail or ignore the review command.
+cde3bb9  src/tasks/packet/validate-contract.mjs:218  WARNING  The `isContractTableEmpty` function checks `parsed.runCommand === null` and `parsed.reviewCommand === null`, but the `parse-prompt.mjs` parser (as noted in the previously dismissed false positives) does not actually return these fields, meaning they will be `undefined` rather than `null`. This will cause the function to incorrectly return `false` (indicating the table is not empty) even when the contract table is actually empty, because `undefined === null` evaluates to `false`.
+56c4b0f  tests/batch/contract-review.test.mjs:18  ERROR  The test imports `verifyContract` from `../../src/batch/contract-verify.mjs`, but the provided symbol definitions indicate that `verifyContract` is exported from `src/batch/contract-exec.mjs`. This will cause a runtime `SyntaxError` or `ReferenceError` because the module `contract-verify.mjs` likely does not export `verifyContract`.
+a715e61  tests/config/settings-fields.test.mjs:30  WARNING  The EXPECTED_PATHS array is not sorted alphabetically. The added paths `contract.reviewPolicy` and `contract.reviewTimeoutMs` are placed after `contract.testTimeoutMs`, but alphabetically `r` comes before `t`. If the test asserts that `listEditableFields()` returns paths in a specific sorted order, this will cause a test failure.
+69e8971  tests/config/settings-fields.test.mjs:47  ERROR  The test asserts that `paths` (derived from `SETTINGS_FIELDS`) contains `contract.reviewTimeoutMs` and `contract.reviewPolicy`, but the preceding assertion `assert.deepEqual(paths.sort(), EXPECTED_PATHS.sort())` requires `paths` to be exactly equal to `EXPECTED_PATHS`. Since `EXPECTED_PATHS` does not include these new contract paths, the test will fail if the `SETTINGS_FIELDS` array is updated to include them (as required by the new assertions), or it will fail if `SETTINGS_FIELDS` does not include them (as the new assertions require). The `EXPECTED_PATHS` array must be updated to include the new paths to satisfy both the deep equality check and the new inclusion checks.
+b21a9d2  tests/config/settings-fields.test.mjs:271  WARNING  The test asserts that `validateSettingValue("contract.reviewTimeoutMs", 1000).ok` is `true`, but the validation logic in `src/config/contract.mjs` requires the value to be >= `CONTRACT_REVIEW_TIMEOUT_MIN_MS`. If the minimum bound is greater than 1000 (e.g., 10000 or 60000), this assertion will fail at runtime because the function will return an error object instead of `null`/`ok: true`.
+16 finding(s) at 821.3 tokens/sec.
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+stet: rule budget of 8192 tokens dropped 87 rule section(s) from review prompts (e.g. ["general-llm-anti-patterns.mdc: 10.1 Reasoning Mode Misuse (CRIT)" "general-llm-anti-patterns.mdc: 10.2 Long Context Waste (CRIT)" "general-llm-anti-patterns.mdc: 10.3 Multimodal Misuse (CRIT)"]); raise rules_max_tokens to include more
+stet: contract review found 16 active finding(s). Triage, then re-run the contract:
+
+  stet list
+  stet dismiss <id> <reason>
+
+Dismiss reasons: false_positive, already_correct, wrong_suggestion, out_of_scope.
+Fix real defects in this task's diff. If a finding exposes a stet reviewer bug (bad prompt,
+parser, critic), dismiss it with a reason and record it under Discoveries in STATUS.md.
+Never dismiss a real defect without fixing it.
+Project code defects → file issues on beettlle/pi-spine (label stet); stet reviewer bugs →
+https://github.com/beettlle/stet/issues.
+See docs/adoption/operator-runbook.md §8.1.
