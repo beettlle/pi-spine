@@ -13,7 +13,7 @@
  */
 export function normalizeKeepPath(keepPath) {
 	let normalized = String(keepPath).trim().replace(/\\/g, "/");
-	if (normalized.startsWith("./")) normalized = normalized.slice(2);
+	while (normalized.startsWith("./")) normalized = normalized.slice(2);
 	while (normalized.endsWith("/")) {
 		normalized = normalized.slice(0, -1);
 	}

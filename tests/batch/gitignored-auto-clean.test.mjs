@@ -212,7 +212,7 @@ test("listGitignoredArtifactRoots deduplicates nested .review paths", () => {
 	assert.deepEqual(roots, [".review"]);
 });
 
-test("sanitizeGitignoredArtifactsBeforeLaneCommit removes worktree-only stet .review files", async () => {
+test("sanitizeGitignoredArtifactsBeforeLaneCommit preserves stet .review state by default (SP-844)", async () => {
 	const projectRoot = await initGitRepo("spine-gitignored-clean-review-");
 	try {
 		fs.writeFileSync(
@@ -235,11 +235,25 @@ test("sanitizeGitignoredArtifactsBeforeLaneCommit removes worktree-only stet .re
 			"utf-8",
 		);
 
-		const { cleanedRoots } = sanitizeGitignoredArtifactsBeforeLaneCommit(projectRoot, {
+		const { cleanedRoots, keptRoots } = sanitizeGitignoredArtifactsBeforeLaneCommit(projectRoot, {
 			porcelain: gitPorcelain(projectRoot),
 		});
-		assert.deepEqual(cleanedRoots, [".review"]);
+		assert.deepEqual(cleanedRoots, []);
+		assert.deepEqual(keptRoots, [".review"]);
+		assert.equal(fs.existsSync(path.join(projectRoot, ".review", "session.json")), true);
+		assert.equal(
+			fs.existsSync(path.join(projectRoot, ".review", "spine-stet-baseline.ref")),
+			true,
+		);
+
+		// Operators restore the pre-SP-844 cleaning with an empty keep list (#349).
+		const forced = sanitizeGitignoredArtifactsBeforeLaneCommit(projectRoot, {
+			porcelain: gitPorcelain(projectRoot),
+			keepPaths: [],
+		});
+		assert.deepEqual(forced.cleanedRoots, [".review"]);
 		assert.equal(gitPorcelain(projectRoot), "");
+		assert.equal(fs.existsSync(path.join(projectRoot, ".review", "lock")), false);
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

@@ -1,6 +1,6 @@
 # SP-844: Lane commits keep tool state and earlier tasks' .DONE markers — Status
 
-**Current Step:** Step 4
+**Current Step:** Step 5
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-10-23
 **Review Level:** 2
@@ -36,11 +36,11 @@
 - [x] Test: `.review/session.json` and `.review/spine-stet-baseline.ref` survive a lane commit; `.pi-smart-router/` still cleaned
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run lint: `npm run lint`
-- [ ] Run Contract `testCommand` (ends with the stet review)
-- [ ] Fix all failures
+- [x] Run lint: `npm run lint`
+- [x] Run Contract `testCommand` (ends with the stet review)
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -75,6 +75,7 @@
 | 2026-10-23 | Step 1 reproduce | Red test written; deleting path = sanitizer `git clean -fdX -- .review` pre+post lane commit |
 | 2026-10-23 | Step 2 keep paths | New stringList settings type (first array-typed field); lane-commit-keep-paths.mjs written without @ts-nocheck (guard allowlist closed); lane-dirty-check.mjs at exactly 500 lines (criterion ≤500) |
 | 2026-10-23 | Step 3 fix | Keep-path fix also had to cover commitLaneWorktree's GitignoredDirtyWorktree gate: kept `.review/` residue after pre-commit sanitize previously failed the only-gitignored-dirty branch; kept paths now filtered before the gate (only-kept → ok committed:false, matching pre-fix pi-smart-router behavior). engine-lanes/commit.mjs passes config-derived keepPaths; commitLaneWorktree falls back to disk-config resolution. engine-lanes-commit-order test needs env -u SPINE_IS_WORKER (nested-batch guard, pre-existing, unrelated) |
+| 2026-10-23 | Step 4 verify | SCOPE NOTE: edited tests/batch/gitignored-auto-clean.test.mjs (not in SPINE_TASK_FILE_SCOPE) — its stet test asserted the old `.review`-cleaning behavior this task reverses, and the Contract testCommand includes that file; repointed to assert default-preserve + keepPaths:[] escape hatch. phase23-exit-verify LOC check counts split(/\r?\n/).length (trailing newline = +1) — trimmed lane-dirty-check.mjs to 499 wc lines. Stet: 8 findings → 2 real fixed (while-loop './.' strip; import merge — stet's "duplicate import" was wrong, removal broke gitPorcelain), 6 dismissed as hunk-visibility false positives; final contract run: 0 findings |
 
 ## Blockers
 

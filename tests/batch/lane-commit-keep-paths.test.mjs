@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { commitLaneWorktree } from "../../src/batch/lane-commit.mjs";
+import { commitLaneWorktree, gitPorcelain } from "../../src/batch/lane-commit.mjs";
 import {
 	isKeptArtifactRoot,
 	normalizeKeepPath,
@@ -15,7 +15,6 @@ import {
 	resolveLaneCommitKeepPaths,
 } from "../../src/config/spine-config-schema.mjs";
 import { validateSettingValue } from "../../src/config/settings-fields.mjs";
-import { gitPorcelain } from "../../src/batch/lane-commit.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
 
 /**

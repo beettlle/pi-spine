@@ -321,8 +321,7 @@ function listIgnoredUntrackedPaths(worktreePath) {
 
 /**
  * Auto-clean worktree-only gitignored artifacts under known dirs before lane dirty gate.
- * Roots covered by keep paths (`lanes.laneCommitKeepPaths`, default `.review/`) survive —
- * they hold active tool state, not regenerable artifacts (SP-844 / #349).
+ * Roots covered by keep paths (`lanes.laneCommitKeepPaths`, default `.review/`) survive — active tool state, not artifacts (SP-844 / #349).
  *
  * @param {string} worktreePath
  * @param {{ projectRoot?: string, porcelain?: string, enabled?: boolean, keepPaths?: string[] }} [options]
