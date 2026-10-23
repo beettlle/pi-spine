@@ -93,7 +93,10 @@ Already on `main` since v2.27.1 (ships in v2.28.0): SP-831 / #352 (numeric task 
 - [x] `spine preflight` green (2026-10-22, `node bin/spine.mjs preflight`; only warning: global `spine` stale vs checkout)
 - [x] `npm run release:check` green on final `HEAD` (`611da6a2`, 3127/3127, 90.94%; later commits are manifest-only)
 - [x] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [x] Pre-tag CI green on `3de256e1` (run 39876418341)
+- [x] Operator approved publish bump type: minor
+- [x] `npm version minor` (preversion `release:check` 3127/3127, 90.91%) → `7604bf00`, tag `v2.28.0`; pushed
+- [x] `release.yml` succeeded (run 39877989231; stage `868d23c1-e585-4481-adf9-002f0025f8dd`; GitHub Release v2.28.0)
+- [x] Staged package approved (2FA); `npm view pi-spine version` = 2.28.0
+- [x] Post-publish smoke per `docs/release/npm-publish.md` (`scripts/post-publish-smoke.sh 2.28.0` OK; global `spine` v2.28.0)
+- [x] Phase 6 issue sweep: #352 closed; all release-scoped `Closes` issues CLOSED
