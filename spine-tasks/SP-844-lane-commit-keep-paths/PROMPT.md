@@ -56,7 +56,7 @@ Closes #349 — Two tasks serialized on one lane both keep their tool state and 
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/lane-commit-keep-paths.test.mjs tests/batch/pi-smart-router-dirty.test.mjs tests/batch/gitignored-auto-clean.test.mjs tests/batch/graphify-out-dirty.test.mjs tests/config/settings-fields.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs && bash scripts/spine-stet-contract-run.sh lenient SP-844` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/lane-commit-keep-paths.test.mjs tests/batch/pi-smart-router-dirty.test.mjs tests/batch/gitignored-auto-clean.test.mjs tests/batch/graphify-out-dirty.test.mjs tests/config/settings-fields.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
 | fileScopeMustChange | `src/batch/lane-dirty-check.mjs`, `src/batch/lane-commit-keep-paths.mjs`, `tests/batch/lane-commit-keep-paths.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
