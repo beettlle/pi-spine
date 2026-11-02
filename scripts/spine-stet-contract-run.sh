@@ -1,10 +1,20 @@
 #!/bin/bash
-# Spine contract step: review the lane worker's diff with stet and fail while active findings remain.
+# Spine contract step: review the lane worker's diff with stet and fail only on findings at or above
+# the severity/confidence threshold.
 # Usage: scripts/spine-stet-contract-run.sh [lenient|default|strict] [task-id]
 # Run from the lane worktree root, after scripts/spine-worktree-setup.sh opened the session.
 # With task-id (e.g. SP-827), the review is scoped to that task's commits so a second task
 # serialized onto the same lane does not re-review the first task's diff.
-# SPINE_STET_NO_AUTO_FINISH=1 keeps the session open after a zero-finding review.
+# SPINE_STET_NO_AUTO_FINISH=1 keeps the session open after a review with no threshold findings.
+#
+# Gate policy: the contract fails only when `stet list --min-severity --min-confidence` shows
+# findings at or above the threshold. Defaults: severity warning, confidence 0.8; override with
+# SPINE_STET_MIN_SEVERITY (one of error, warning, info, nitpick; anything else exits 2 before
+# touching stet) and SPINE_STET_MIN_CONFIDENCE (0 to 1; validated by `stet list`, whose non-zero
+# exit fails the script). Active findings below the threshold are reported to stderr but do not
+# block the lane.
+# Fallback: an installed stet without the threshold flags (pre-v1.4.0, detected via
+# `stet list --help`) gates on ALL active findings after warning on stderr — never silently pass.
 set -euo pipefail
 
 strictness="${1:-default}"
@@ -13,6 +23,16 @@ case "$strictness" in
 	lenient|default|strict) ;;
 	*)
 		echo "stet: invalid strictness '$strictness' (expected lenient, default, or strict)" >&2
+		exit 2
+		;;
+esac
+
+min_severity="${SPINE_STET_MIN_SEVERITY:-warning}"
+min_confidence="${SPINE_STET_MIN_CONFIDENCE:-0.8}"
+case "$min_severity" in
+	error|warning|info|nitpick) ;;
+	*)
+		echo "stet: invalid SPINE_STET_MIN_SEVERITY '$min_severity' (expected error, warning, info, or nitpick)" >&2
 		exit 2
 		;;
 esac
@@ -85,10 +105,37 @@ if ! active_list="$(stet list)"; then
 	echo "stet: 'stet list' failed; cannot verify active findings" >&2
 	exit 1
 fi
+# The gating list hides findings below the threshold; the full list is for triage output. An older
+# stet without the threshold flags (pre-v1.4.0) falls back to gating on all active findings.
+thresholds_supported=1
+if ! list_help="$(stet list --help 2>/dev/null)" || ! printf '%s' "$list_help" | grep -q -- '--min-severity'; then
+	thresholds_supported=0
+	echo "stet: installed stet does not support 'stet list --min-severity'; gating on all active findings" >&2
+fi
+if [[ "$thresholds_supported" -eq 1 ]]; then
+	if ! gating_list="$(stet list --min-severity "$min_severity" --min-confidence "$min_confidence")"; then
+		echo "stet: 'stet list' failed; cannot verify active findings" >&2
+		exit 1
+	fi
+else
+	gating_list="$active_list"
+fi
+gating_count="$(printf '%s' "$gating_list" | grep -c . || true)"
 active_count="$(printf '%s' "$active_list" | grep -c . || true)"
-if [[ "$active_count" -gt 0 ]]; then
+
+if [[ "$gating_count" -gt 0 ]]; then
+	{
+		if [[ "$thresholds_supported" -eq 1 ]]; then
+			echo "stet: contract review found ${gating_count} finding(s) at or above the ${min_severity}/${min_confidence} threshold."
+		else
+			echo "stet: contract review found ${gating_count} active finding(s); this stet cannot filter by threshold, so any active finding blocks."
+		fi
+		echo "Full list of active findings (all severities, for triage):"
+		printf '%s\n' "$active_list"
+		echo
+	} >&2
 	cat >&2 <<EOF
-stet: contract review found ${active_count} active finding(s). Triage, then re-run the contract:
+Triage, then re-run the contract:
 
   stet list
   stet dismiss <id> <reason>
@@ -102,6 +149,10 @@ https://github.com/beettlle/stet/issues.
 See docs/adoption/operator-runbook.md §8.1.
 EOF
 	exit 1
+fi
+
+if [[ "$active_count" -gt 0 ]]; then
+	echo "stet: ${active_count} finding(s) below the ${min_severity}/${min_confidence} threshold did not block this lane" >&2
 fi
 
 if [[ "${SPINE_STET_NO_AUTO_FINISH:-}" == "1" ]]; then

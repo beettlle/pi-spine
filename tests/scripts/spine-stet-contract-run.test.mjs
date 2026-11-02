@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,19 +13,28 @@ const contractScript = path.join(repoRoot, "scripts/spine-stet-contract-run.sh")
 
 /**
  * @param {string} mockBin
- * @param {{ findings?: number, dismissed?: number, runExit?: number, listFails?: boolean }} opts
+ * @param {{ findings?: number, dismissed?: number, runExit?: number, listFails?: boolean, gating?: number, listHelp?: boolean }} opts
+ *
+ * `gating` is the count served when the script filters with `stet list --min-severity …
+ * --min-confidence …` (defaults to `findings`, i.e. nothing falls below the threshold);
+ * `listHelp` controls whether `stet list --help` documents `--min-severity` (default true).
+ * listHelp=false models an older stet and exercises the all-findings fallback.
  */
 function writeMockStet(mockBin, opts = {}) {
 	const findings = opts.findings ?? 0;
 	const dismissed = opts.dismissed ?? 0;
 	const runExit = opts.runExit ?? 0;
 	const listFails = opts.listFails ?? false;
+	const gating = opts.gating ?? findings;
+	const listHelp = opts.listHelp ?? true;
 	const stateDir = path.join(mockBin, "stet-mock-state");
 	mkdirSync(stateDir, { recursive: true });
 	writeFileSync(path.join(stateDir, "findings"), String(findings), "utf-8");
 	writeFileSync(path.join(stateDir, "dismissed"), String(dismissed), "utf-8");
 	writeFileSync(path.join(stateDir, "run_exit"), String(runExit), "utf-8");
 	writeFileSync(path.join(stateDir, "list_fails"), listFails ? "1" : "0", "utf-8");
+	writeFileSync(path.join(stateDir, "gating"), String(gating), "utf-8");
+	writeFileSync(path.join(stateDir, "list_help"), listHelp ? "1" : "0", "utf-8");
 	writeFileSync(path.join(stateDir, "start_called"), "0", "utf-8");
 	writeFileSync(path.join(stateDir, "finish_called"), "0", "utf-8");
 
@@ -43,11 +52,28 @@ run)
   exit "$(cat "$STATE/run_exit")"
   ;;
 list)
+  sub="\${2:-}"
+  if [[ "$sub" == "--help" ]]; then
+    if [[ "$(cat "$STATE/list_help")" == "1" ]]; then
+      echo "Usage: stet list [options]"
+      echo "  --min-severity <error|warning|info|nitpick>  minimum severity"
+      echo "  --min-confidence <0..1>  minimum confidence"
+    else
+      echo "Usage: stet list"
+    fi
+    exit 0
+  fi
   if [[ "$(cat "$STATE/list_fails")" == "1" ]]; then
     echo "mock stet: list failed" >&2
     exit 1
   fi
-  n="$(cat "$STATE/findings")"
+  if [[ "$sub" == "--min-severity" ]]; then
+    shift
+    printf '%s\\n' "\${*}" > "$STATE/list_args"
+    n="$(cat "$STATE/gating")"
+  else
+    n="$(cat "$STATE/findings")"
+  fi
   for ((i = 1; i <= n; i++)); do
     echo "F-$i: active finding $i"
   done
@@ -123,6 +149,25 @@ function runContract(root, env = {}, args = ["default"]) {
 }
 
 /**
+ * Like runContract but never throws: returns { status, stdout, stderr } for both exit paths.
+ * @param {string} root
+ * @param {Record<string, string | undefined>} env
+ * @param {string[]} args
+ */
+function runContractCapture(root, env = {}, args = ["default"]) {
+	const result = spawnSync("bash", [contractScript, ...args], {
+		cwd: root,
+		env: childEnv(env),
+		encoding: "utf8",
+	});
+	return {
+		status: result.status ?? 1,
+		stdout: result.stdout ?? "",
+		stderr: result.stderr ?? "",
+	};
+}
+
+/**
  * @param {string} root
  * @param {Record<string, string | undefined>} env
  * @param {string[]} args
@@ -177,7 +222,7 @@ test("dismissed-only findings pass and finish (status counts them, list omits th
 	}
 });
 
-test("non-zero active findings fail contract with triage instructions and leave session open", async () => {
+test("findings at or above the threshold fail the contract with threshold, full list, and triage instructions", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-findings-"));
 	const mockBin = path.join(root, "bin");
 	mkdirSync(mockBin, { recursive: true });
@@ -188,11 +233,136 @@ test("non-zero active findings fail contract with triage instructions and leave 
 			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
 		});
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /found 2 active finding/);
+		assert.match(result.stderr, /found 2 finding\(s\) at or above the warning\/0\.8 threshold/);
+		assert.match(result.stderr, /Full list of active findings/);
+		assert.match(result.stderr, /F-1: active finding 1/);
+		assert.match(result.stderr, /F-2: active finding 2/);
 		assert.match(result.stderr, /stet list/);
 		assert.match(result.stderr, /stet dismiss/);
 		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
 		assert.equal(fs.existsSync(path.join(root, ".review/session.json")), true);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("only sub-threshold findings pass with a below-threshold note and auto-finish", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-subthreshold-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 3, gating: 0, runExit: 0 });
+	seedReviewDir(root);
+	try {
+		const result = runContractCapture(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+		});
+		assert.equal(result.status, 0);
+		assert.match(result.stderr, /3 finding\(s\) below the warning\/0\.8 threshold did not block this lane/);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "1");
+		assert.equal(fs.existsSync(path.join(root, ".review/session.json")), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("SPINE_STET_NO_AUTO_FINISH=1 keeps the session open on sub-threshold findings", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-subthreshold-nofinish-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 2, gating: 0, runExit: 0 });
+	seedReviewDir(root);
+	try {
+		const result = runContractCapture(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+			SPINE_STET_NO_AUTO_FINISH: "1",
+		});
+		assert.equal(result.status, 0);
+		assert.match(result.stderr, /2 finding\(s\) below the warning\/0\.8 threshold did not block this lane/);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
+		assert.equal(fs.existsSync(path.join(root, ".review/session.json")), true);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("old stet without --min-severity in help gates on all active findings with a warning", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-oldstet-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 1, runExit: 0, listHelp: false });
+	seedReviewDir(root);
+	try {
+		const result = runContractExpectFail(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+		});
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /does not support 'stet list --min-severity'; gating on all active findings/);
+		assert.match(result.stderr, /found 1 active finding\(s\); this stet cannot filter by threshold/);
+		assert.match(result.stderr, /stet dismiss/);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
+		assert.equal(fs.existsSync(path.join(root, ".review/session.json")), true);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("old stet with zero findings still passes and finishes (fallback never blocks clean lanes)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-oldstet-zero-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0, listHelp: false });
+	seedReviewDir(root);
+	try {
+		const result = runContractCapture(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+		});
+		assert.equal(result.status, 0);
+		assert.match(result.stderr, /does not support 'stet list --min-severity'/);
+		assert.doesNotMatch(result.stderr, /below the .* threshold/);
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "1");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("SPINE_STET_MIN_SEVERITY=bogus exits 2 before touching stet", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-badsev-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 0, runExit: 0 });
+	seedReviewDir(root);
+	try {
+		const result = runContractExpectFail(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+			SPINE_STET_MIN_SEVERITY: "bogus",
+		});
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /invalid SPINE_STET_MIN_SEVERITY 'bogus'/);
+		assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "0");
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("severity and confidence overrides are passed through to the gating stet list", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-contract-override-"));
+	const mockBin = path.join(root, "bin");
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin, { findings: 1, gating: 1, runExit: 0 });
+	seedReviewDir(root);
+	try {
+		const result = runContractExpectFail(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+			SPINE_STET_MIN_SEVERITY: "error",
+			SPINE_STET_MIN_CONFIDENCE: "0.5",
+		});
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /found 1 finding\(s\) at or above the error\/0\.5 threshold/);
+		assert.equal(
+			fs.readFileSync(path.join(stateDir, "list_args"), "utf-8").trim(),
+			"--min-severity error --min-confidence 0.5",
+		);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
