@@ -1,0 +1,16 @@
+scripts/spine-stet-contract-run.sh
+  h_2a17159c706ba1 2-3,8-17,30-39,108-123,125-136,138,154-157
+spine-tasks/SP-846-stet-threshold-gate/STATUS.md
+  h_2a17159c706ba1 3,20,22-25,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "477b12be83e003534b6c2a9bcc9c028538420471",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
