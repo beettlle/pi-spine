@@ -1,7 +1,7 @@
 # SP-846: Stet contract script gates on severity and confidence thresholds — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -42,11 +42,11 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Script header comment documents the gate policy, env overrides, and fallback
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-846-stet-threshold-gate/.DONE`
+- [x] Script header comment documents the gate policy, env overrides, and fallback
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-846-stet-threshold-gate/.DONE`
 
 ---
 
@@ -64,6 +64,8 @@
 | Test count grew 15 → 21 (6 new: threshold hit, sub-threshold ×2, old-stet ×2, bogus severity, env pass-through; threshold-hit folded into the existing findings test) | Done | `tests/scripts/spine-stet-contract-run.test.mjs` |
 | First full Contract run had 2 flaky ENOTEMPTY failures: graphify background rebuild (fired by worker git commits) wrote `.git/ai/working_logs` in the tests' temp repos during cleanup; re-run green once rebuild settled | Environmental, no code change | Contract testCommand logs |
 | `stet finish` failure message still says "zero-finding review"; semantically it now means "no threshold findings" — left unchanged per "finish logic unchanged" in PROMPT | Accepted | `scripts/spine-stet-contract-run.sh:163` |
+| `scripts/worker-verify.sh` (full stub suite) has 62 pre-existing failures (3131/3193 pass) in spawn-heavy attached-batch/adoption tests; verified pre-existing: `tests/batch/batch-start-superseded-guard.test.mjs` (6/8) and `tests/batch/attached-batch-exit.test.mjs` (2/4) fail identically at lane base 1a20bcc8 with SP-846 absent | Pre-existing, out of SP-846 scope; Contract gate green | `/tmp/sp846-verify.log`, base worktree runs |
+| `npm run typecheck` passes (worker-verify step 1); Contract testCommand passes end-to-end (exit 0): lint + 30 tests across the three contract files | Green | Contract gate |
 
 ## Execution Log
 
