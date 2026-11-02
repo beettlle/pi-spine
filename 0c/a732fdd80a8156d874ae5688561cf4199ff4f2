@@ -1,0 +1,16 @@
+.cursor/rules/spine-task-authoring.mdc
+  h_2a17159c706ba1 114
+spine-tasks/SP-848-stet-reviewcommand-authoring/STATUS.md
+  h_2a17159c706ba1 3,26,28-29,32,61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0ca732fdd80a8156d874ae5688561cf4199ff4f2",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
