@@ -2270,13 +2270,13 @@ Same task folders (`taskplane-tasks/`, `PROMPT.md`, `dependencies.json`) work in
 
 ## 8.1 Stet code review (v2.27.x)
 
-pi-spine uses **stet** for per-task LLM code review via Option A (baseline-at-setup + contract `testCommand`). See [stet integration overview](../stet-overview.md) §1.
+pi-spine uses **stet** for per-task LLM code review via Option A (baseline-at-setup + contract `reviewCommand` since v2.30.0, SP-845). See [stet integration overview](../stet-overview.md) §1.
 
 ### Preflight (operator)
 
 Before starting a stet-gated batch:
 
-1. **stet** on `PATH` (`stet doctor` exits 0). The scripts degrade cleanly without it: `scripts/spine-worktree-setup.sh` prints `{"ok":true,"skipped":"stet not on PATH"}` and exits 0.
+1. **stet ≥ v1.4.0** on `PATH` (`stet --version`; `stet doctor` exits 0). The contract gate uses `stet list --min-severity/--min-confidence`, added in stet v1.4.0; an older stet falls back to gating on every active finding (with a stderr warning). Without stet at all the scripts degrade cleanly: `scripts/spine-worktree-setup.sh` prints `{"ok":true,"skipped":"stet not on PATH"}` and exits 0.
 2. **LM Studio** local server at `http://127.0.0.1:1234/v1` with model **`qwen/qwen3.8-27b`** loaded (stet SP-039 model comparison: fits in memory next to OpenJev; `qwen3-coder-next` does not). The model's LM Studio preset must have **Enable Thinking off** — reasoning tokens share `max_completion_tokens` (4096).
 3. **OpenJev System One** critic server at `http://127.0.0.1:8080` running (config: `systemone_model = "openjev-latest"`, `systemone_timeout = "90s"`). If OpenJev is down, set `STET_CRITIC_ENABLED=false` to run without the second-pass critic.
 4. Verify:
@@ -2317,10 +2317,11 @@ The workaround this replaces — the setup hook's second baseline copy under the
 Contract behavior (ported from the stet repo's dogfooding scripts, stet SP-035–SP-040):
 
 - `stet run --strictness <level>` runs the review. A **`stet run` failure fails the contract with that exit code** and prints a hint (`stet doctor`; LM Studio / OpenJev up); the contract never calls `stet finish` after a failed run.
-- Active findings are counted from **`stet list`** (one line per non-dismissed finding). `stet status` also counts dismissed findings, so it is not used. A failing `stet list` exits 1.
-- Active findings > 0 → contract exits 1 with triage text; session stays open. Dismissing every finding turns the re-run green.
-- Zero active findings → `stet finish`, unless `SPINE_STET_NO_AUTO_FINISH=1` (required for spine batches, see above).
-- Any strictness other than `lenient|default|strict` exits 2 before touching stet.
+- Gating counts findings from **`stet list --min-severity "$SPINE_STET_MIN_SEVERITY" --min-confidence "$SPINE_STET_MIN_CONFIDENCE"`** (defaults `warning`, `0.8`). Findings below either threshold stay active but do not fail the gate; the script prints a stderr note when every finding is below threshold. Plain `stet list` (no flags) still shows all active findings, including gated-out ones. `stet status` also counts dismissed findings, so it is not used. A failing `stet list` exits 1.
+- Findings at or above both thresholds → contract exits 1 with triage text; session stays open. Dismissing them (or raising the thresholds) turns the re-run green.
+- Zero gating findings → `stet finish`, unless `SPINE_STET_NO_AUTO_FINISH=1` (required for spine batches, see above).
+- Any strictness other than `lenient|default|strict`, or a `SPINE_STET_MIN_SEVERITY` outside `error|warning|info|nitpick`, exits 2 before touching stet.
+- **stet older than v1.4.0** (no `--min-severity`/`--min-confidence` flags) gates on every active finding and prints a stderr warning — upgrade stet for threshold gating.
 
 Non-code files (markdown, config, lockfiles, assets) are skipped via `exclude_patterns` in `.review/config.toml`.
 
@@ -2342,7 +2343,8 @@ Since SP-845 the stet call lives in the packet's `reviewCommand` Contract field 
 
 - **`stet finish` clears the session.** Re-running a contract after it passed starts a fresh review that can resurface dismissed findings and invent new ones. This is why `SPINE_STET_NO_AUTO_FINISH=1` is required for spine batches (above).
 - **New-file diffs can produce hallucinated syntax findings.** The reviewer may report syntax or indentation defects that lint/typecheck/tests disprove. Tool output beats reviewer claims — dismiss with that evidence.
-- **Time budget.** The Contract `testCommand` wall clock defaults to 10 minutes per attempt; raise it with `contract.testTimeoutMs` (for example `spine settings set contract.testTimeoutMs 1800000` for 30 minutes). Since SP-845, stet reviews run in `reviewCommand` with their own budget (`contract.reviewTimeoutMs`, default 20 minutes) — only packets that still chain stet onto `testCommand` need to stretch the test timeout. A first stet review of a small diff takes ~3–5 minutes with the critic; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
+- **Dismissals survive line shifts (stet ≥ v1.4.0, stet #38).** A finding dismissed once stays dismissed when edits above it shift its lines; it resurfaces only if its own lines change. Do not expect line drift to re-surface old findings — audit with `stet list --min-severity info`.
+- **Time budget.** The Contract `testCommand` wall clock defaults to 10 minutes per attempt; raise it with `contract.testTimeoutMs` (for example `spine settings set contract.testTimeoutMs 1800000` for 30 minutes). Since SP-845, stet reviews run in `reviewCommand` with their own budget (`contract.reviewTimeoutMs`, default 20 minutes) — only packets that still chain stet onto `testCommand` need to stretch the test timeout. Since stet v1.4.0, critic requests carry the reviewer's expanded context (imports and symbol definitions, up to 16384 characters), so critic-enabled reviews take longer — for stet-gated batches set `spine settings set contract.reviewTimeoutMs 1800000` (30 minutes). A first stet review of a small diff took ~3–5 minutes with the critic on stet v1.3.x; re-runs after dismissals are incremental (<1s). Use `maxParallel` 2 for stet-gated waves so lanes do not starve LM Studio.
 
 ### Triage
 
@@ -2364,7 +2366,7 @@ Stet writes `.review/history.jsonl` only when feedback occurs: `stet dismiss <id
 
 **When findings exist:** triage before the session auto-finishes — `stet list`, then `stet dismiss <id> <reason>` for each finding you accept as suppressed. Each dismiss appends to `history.jsonl` and feeds prompt shadowing.
 
-**Contract failure → triage → re-run:** When contract verify reports findings, `scripts/spine-stet-contract-run.sh` exits non-zero and prints triage steps. Dismiss each finding (with reason), then re-run the task `testCommand` (or `scripts/spine-stet-contract-run.sh` alone). Do not dismiss project code defects without a filed issue or documented reason in `STATUS.md`.
+**Contract failure → triage → re-run:** When contract verify reports findings, `scripts/spine-stet-contract-run.sh` exits non-zero and prints triage steps. Dismiss each finding (with reason), then re-run the task `reviewCommand` (or `scripts/spine-stet-contract-run.sh` alone). Do not dismiss project code defects without a filed issue or documented reason in `STATUS.md`.
 
 **Session lifetime:** in spine batches the session stays open across the lane (`SPINE_STET_NO_AUTO_FINISH=1`, see above); the lane operator closes it with `stet finish` after integrate, or it is reused by the next task on the lane.
 
