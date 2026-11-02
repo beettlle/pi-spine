@@ -1,0 +1,14 @@
+spine-tasks/SP-847-stet-gate-runbook-docs/STATUS.md
+  h_2a17159c706ba1 3,5,32,34-35,38,40-41,54-56,65-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "96d6f9f8465ee896c6d8e032d6a15045f2820a04",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
