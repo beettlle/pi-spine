@@ -1,0 +1,16 @@
+skills/create-spine-tasks/references/contract-template.md
+  h_2a17159c706ba1 40,118
+spine-tasks/SP-848-stet-reviewcommand-authoring/STATUS.md
+  h_2a17159c706ba1 3,14,16,19,21-23,26,60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a414cc26975fcc0df9a73fd5e6f919c5f0364616",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
