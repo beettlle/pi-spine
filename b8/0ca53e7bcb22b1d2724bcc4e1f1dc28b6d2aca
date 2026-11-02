@@ -1,0 +1,14 @@
+spine-tasks/SP-854-deps-pi-coding-agent-audit/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-17,48-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b80ca53e7bcb22b1d2724bcc4e1f1dc28b6d2aca",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
