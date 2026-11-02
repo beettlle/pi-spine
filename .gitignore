@@ -55,6 +55,7 @@ graphify-out/
 
 # Coverage suite full TAP (written by scripts/run-coverage.mjs; uploaded on CI)
 coverage-run.tap.log
+coverage-err.log
 
 # Dependencies
 node_modules/

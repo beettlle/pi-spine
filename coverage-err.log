@@ -1,4 +1,0 @@
-npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-Wrote full coverage TAP to coverage-run.tap.log
-Coverage suite process: status=1 signal=null tests=3193 pass=3192 fail=1
-Coverage run aborted: 1 test failure(s) (not ok: 0).
