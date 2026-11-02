@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-10-22 (v2.28.1 **published** 2026-10-23 UTC — `3cd34c59`, tag `v2.28.1`, npm `latest` 2.28.1 (staged by release.yml, operator-approved), global smoke OK, #367/#368/#369 closed; Phase 100 v2.29.0 **published** 2026-10-24 — `4a83edc8`, tag `v2.29.0`, npm `latest` 2.29.0 (staged by release.yml, operator-approved), global smoke OK (version, doctor exit 0, new settings fields recognized); SP-844/SP-845 integrated `a78f5098` (batch 20261023T030941-33c5; stet dropped from both contract testCommands after repeated hunk-only false positives), release:check green 3193/3193, 91.31%; Phase 99 v2.28.0 **published** 2026-10-22 — `7604bf00`, tag `v2.28.0`, npm `latest` 2.28.0, smoke OK, #350/#352/#355 closed; Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
+**Last Updated:** 2026-11-01 (Phase 101 v2.30.0 staged SP-846–SP-856 — stet v1.4.0 threshold gate + blocking stet `reviewCommand`, #356, #370, #337, #345, #357, #371, audit high; scope approved 2026-11-01; v2.28.1 **published** 2026-10-23 UTC — `3cd34c59`, tag `v2.28.1`, npm `latest` 2.28.1 (staged by release.yml, operator-approved), global smoke OK, #367/#368/#369 closed; Phase 100 v2.29.0 **published** 2026-10-24 — `4a83edc8`, tag `v2.29.0`, npm `latest` 2.29.0 (staged by release.yml, operator-approved), global smoke OK (version, doctor exit 0, new settings fields recognized); SP-844/SP-845 integrated `a78f5098` (batch 20261023T030941-33c5; stet dropped from both contract testCommands after repeated hunk-only false positives), release:check green 3193/3193, 91.31%; Phase 99 v2.28.0 **published** 2026-10-22 — `7604bf00`, tag `v2.28.0`, npm `latest` 2.28.0, smoke OK, #350/#352/#355 closed; Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
-**Next Task ID:** SP-846
+**Next Task ID:** SP-857
 
 ---
 
@@ -2747,6 +2747,24 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 |------|---------|------|-------|--------|
 | SP-844 | Lane commit keep paths (`.review/`), one sanitizer, `.DONE` survival | M | #349 Closes | Done — integrated `a78f5098` |
 | SP-845 | `reviewCommand` + `contract.reviewTimeoutMs` + `contract.reviewPolicy` | M | — | Done — integrated `a78f5098` |
+
+### Phase 101 — Release v2.30.0: stet v1.4.0 adoption, diagnosis and land-loop fixes
+
+**Authoring:** 2026-11-01 · Manifest: `spine-tasks/_authoring/release-v2.30.0/manifest.md` (guardrails carried from v2.29.0; Batch A without stet, Batch B with blocking stet `reviewCommand`). Scope approved 2026-11-01.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-846 | Stet contract script: severity/confidence threshold gate | S | — | Staged (Batch A) |
+| SP-847 | Runbook + stet overview: threshold gate, v1.4.0 floor | S | — | Staged (Batch A) |
+| SP-848 | Authoring: stet in `reviewCommand`, strictness by size | S | — | Staged (Batch A) |
+| SP-854 | `pi-coding-agent` 1.4.0; `npm audit` no high | S | — | Staged (Batch A) |
+| SP-849 | Doctor: stet version floor v1.4.0 | S | — | Staged (Batch B) |
+| SP-850 | Task in review is not state drift; live engine → wait | S | #356 Closes | Staged (Batch B) |
+| SP-851 | Detached resume ignores pre-resume failed state | S | #370 Closes | Staged (Batch B) |
+| SP-852 | Worker rules loader skips oversize rule | S | #337 Closes | Staged (Batch B) |
+| SP-853 | `worker.rules_selected` post-load fields | S | #345 Closes | Staged (Batch B, after SP-852) |
+| SP-855 | Code/final reviewer rules scoped to task files | S | #357 Closes | Staged (Batch B) |
+| SP-856 | Integrate/complete suggest wait while engine finalizes | S | #371 Closes | Staged (Batch B) |
 
 ---
 
