@@ -1,7 +1,7 @@
 # SP-846: Stet contract script gates on severity and confidence thresholds — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-01
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read the upstream script; list the threshold pieces to port and the local pieces to keep (task-id scoping, git-dir baseline ref)
-- [ ] Run the existing test file once to record the baseline pass count
+- [x] Read the upstream script; list the threshold pieces to port and the local pieces to keep (task-id scoping, git-dir baseline ref)
+- [x] Run the existing test file once to record the baseline pass count
 
 ### Step 1: Threshold gate
 **Status:** ⬜ Not Started
@@ -59,6 +59,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Upstream threshold logic: env defaults (`warning`/`0.8`), severity case → exit 2, `stet list --help` grep probe for `--min-severity`, gating list vs full list, gated failure msg + full triage list, below-threshold stderr note | Ported in Step 1 | upstream `beettlle/stet scripts/spine-stet-contract-run.sh` |
+| Baseline test run: 15 tests pass, 0 fail (dot reporter) | Recorded | `tests/scripts/spine-stet-contract-run.test.mjs` |
 
 ## Execution Log
 
