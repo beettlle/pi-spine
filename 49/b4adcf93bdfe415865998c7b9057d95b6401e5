@@ -1,0 +1,19 @@
+.gitignore
+  s_492205e36b7649::t_3237c6ae365f47 58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "49b4adcf93bdfe415865998c7b9057d95b6401e5",
+  "prompts": {},
+  "sessions": {
+    "s_492205e36b7649": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1273fe28-48d3-4cba-8506-381f825e357e",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
