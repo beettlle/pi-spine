@@ -1,6 +1,6 @@
 # SP-846: Stet contract script gates on severity and confidence thresholds — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-01
 **Review Level:** 1
@@ -17,15 +17,15 @@
 - [x] Run the existing test file once to record the baseline pass count
 
 ### Step 1: Threshold gate
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Severity validation (exit 2), confidence passed through to `stet list`
-- [ ] Gating list vs full list; failure message shows threshold, gating count, full list
-- [ ] Below-threshold stderr note; finish logic unchanged
-- [ ] `stet list --help` capability probe and all-findings fallback with stderr warning
+- [x] Severity validation (exit 2), confidence passed through to `stet list`
+- [x] Gating list vs full list; failure message shows threshold, gating count, full list
+- [x] Below-threshold stderr note; finish logic unchanged
+- [x] `stet list --help` capability probe and all-findings fallback with stderr warning
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Mock stet: `list --help` with/without `--min-severity`; `list --min-severity …` returns the gating count
 - [ ] Threshold hit → exit 1, stderr names the threshold and shows the full list
