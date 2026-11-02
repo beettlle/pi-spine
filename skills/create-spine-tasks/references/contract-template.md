@@ -37,6 +37,7 @@ Avoid `` `bin/a.mjs,bin/b.mjs` `` — `tasks validate` warns (or errors in requi
 | Field | When to include | Value format |
 |-------|-----------------|--------------|
 | `testCommand` | **Required** for code tasks (Review Level ≥ 1, Size M/L, or implementation steps) | Shell command in backticks; max 500 chars; no newlines. **Code tasks:** prefix with project lint/analyze (`npm run lint &&` for pi-spine; `flutter analyze` scoped for Flutter). Contract verify executes this command at final review — lint runs in-lane when authored here. Post-integrate `release:check` remains the whole-repo backstop (full suite + coverage). Use `` `true` `` for docs-only S tasks with no code changes. When `` `true` ``, **always** pair with `fileScopeMustChange` (see below). |
+| `reviewCommand` | Code tasks adding a stet review gate (SP-845); **omit** for docs-only and `Type: execute` packets | `` `bash scripts/spine-stet-contract-run.sh <lenient\|default\|strict> SP-###` ``. Runs **once** after `testCommand` passes (skipped when the test step fails), never retries, and is bounded by `contract.reviewTimeoutMs` (default 20 min) with policy `contract.reviewPolicy` (`blocking` default; `advisory` journals `contract.review_advisory` and records a STATUS Discoveries row instead of failing). **Never chain stet onto `testCommand`** — the review then spends the test timeout. Strictness by size: S → `lenient` or `default`; M → `default`; security-sensitive → `strict`. The gate blocks only findings at severity `warning` or above with confidence ≥ 0.8 (override with `SPINE_STET_MIN_SEVERITY` / `SPINE_STET_MIN_CONFIDENCE`). |
 | `fileScopeMustChange` | When you need proof specific paths were touched; **required** when `testCommand` is `` `true` `` | Comma-separated paths/globs relative to repo root; **one backtick per path** (not `` `a.mjs,b.mjs` ``). Trailing `/` means directory prefix match (e.g. `src/domain/types/` matches any file under that directory). For docs-only tasks, list at least one documentation deliverable path — without it, workers can pass contract by creating only `.DONE` (SP-214 batch `20260612T204048`, SP-457 batch `20260703T022335`). |
 | `fileScopeMustNotChange` | When **parallel lanes** must not collide on product paths (see semantics below) | Comma-separated paths/globs relative to repo root; **one backtick per path** |
 | `minLineCoverage` | Size L tasks that change application code (S/M rely on post-integrate `release:check` coverage) | Integer 0–100 (pi-spine policy: **77**) |
@@ -114,6 +115,7 @@ Symptom in journal: `testCommand` passes but `fileScopeMustNotChange` fails with
 | Field | Value |
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/tasks/validate-prompt.test.mjs` |
+| reviewCommand | `bash scripts/spine-stet-contract-run.sh <lenient\|default\|strict> SP-###` |
 | fileScopeMustChange | `src/tasks/packet/validate-prompt.mjs` |
 | minLineCoverage | 77 |
 ```

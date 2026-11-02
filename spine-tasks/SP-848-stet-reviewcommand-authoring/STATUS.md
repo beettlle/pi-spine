@@ -1,6 +1,6 @@
 # SP-848: Authoring guidance: stet in reviewCommand, strictness by size — Status
 
-**Current Step:** Step 0
+**Current Step:** Step 2
 **Status:** 🔵 Not Started
 **Last Updated:** 2026-11-01
 **Review Level:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read both files; note every Contract table and example that would need a `reviewCommand` row
+- [x] Read both files; note every Contract table and example that would need a `reviewCommand` row
 
 ### Step 1: Contract template
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `reviewCommand` field row and code-task example
-- [ ] Semantics: once, after passing `testCommand`, no retries, `contract.reviewTimeoutMs`, `contract.reviewPolicy`
-- [ ] Omit for docs-only and `Type: execute`
+- [x] `reviewCommand` field row and code-task example
+- [x] Semantics: once, after passing `testCommand`, no retries, `contract.reviewTimeoutMs`, `contract.reviewPolicy`
+- [x] Omit for docs-only and `Type: execute`
 
 ### Step 2: Strictness and threshold guidance
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Strictness by size in both files
 - [ ] Threshold note (`warning` / 0.8, env overrides) in both files
@@ -57,6 +57,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-01 | Task staged | PROMPT.md created |
+| 2026-11-02 | Step 0 preflight | Template field table lacks `reviewCommand` row; authoring rule example (L106) + SP-845 bullet (L114) already exist; `scripts/spine-stet-contract-run.sh` accepts `lenient\|default\|strict` + task-id; env overrides `SPINE_STET_MIN_SEVERITY`/`SPINE_STET_MIN_CONFIDENCE` confirmed in src (SP-846); `reviewCommand` is a known contract field (`src/tasks/packet/parse-prompt.mjs`) |
 
 ## Blockers
 
