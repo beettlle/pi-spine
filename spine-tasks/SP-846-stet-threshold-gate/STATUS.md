@@ -1,6 +1,6 @@
 # SP-846: Stet contract script gates on severity and confidence thresholds — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-01
 **Review Level:** 1
@@ -35,14 +35,14 @@
 - [x] Existing task-id and baseline tests still pass
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`
-- [ ] `bash -n scripts/spine-stet-contract-run.sh`
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`
+- [x] `bash -n scripts/spine-stet-contract-run.sh`
+- [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Script header comment documents the gate policy, env overrides, and fallback
 - [ ] Discoveries logged in STATUS.md
@@ -61,6 +61,9 @@
 |-----------|-------------|----------|
 | Upstream threshold logic: env defaults (`warning`/`0.8`), severity case → exit 2, `stet list --help` grep probe for `--min-severity`, gating list vs full list, gated failure msg + full triage list, below-threshold stderr note | Ported in Step 1 | upstream `beettlle/stet scripts/spine-stet-contract-run.sh` |
 | Baseline test run: 15 tests pass, 0 fail (dot reporter) | Recorded | `tests/scripts/spine-stet-contract-run.test.mjs` |
+| Test count grew 15 → 21 (6 new: threshold hit, sub-threshold ×2, old-stet ×2, bogus severity, env pass-through; threshold-hit folded into the existing findings test) | Done | `tests/scripts/spine-stet-contract-run.test.mjs` |
+| First full Contract run had 2 flaky ENOTEMPTY failures: graphify background rebuild (fired by worker git commits) wrote `.git/ai/working_logs` in the tests' temp repos during cleanup; re-run green once rebuild settled | Environmental, no code change | Contract testCommand logs |
+| `stet finish` failure message still says "zero-finding review"; semantically it now means "no threshold findings" — left unchanged per "finish logic unchanged" in PROMPT | Accepted | `scripts/spine-stet-contract-run.sh:163` |
 
 ## Execution Log
 
