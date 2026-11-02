@@ -1,0 +1,6 @@
+SP-848 complete.
+
+- `skills/create-spine-tasks/references/contract-template.md`: `reviewCommand` field row (semantics: once after passing testCommand, no retries, contract.reviewTimeoutMs / contract.reviewPolicy, never chain stet onto testCommand, omit for docs-only and Type: execute; strictness by size; warning/0.8 threshold with SPINE_STET_MIN_SEVERITY / SPINE_STET_MIN_CONFIDENCE overrides) + `reviewCommand` row in the L-task code example.
+- `.cursor/rules/spine-task-authoring.mdc`: SP-845 bullet extended with strictness-by-size (S lenient/default, M default, security-sensitive strict) and threshold note (warning >=, confidence >= 0.8, env overrides SP-846). Existing Contract example kept.
+- Verification: rg over tests/ for both doc paths — zero matches, no tests reference these docs. Contract testCommand (`true`) passes trivially.
+- Commits: a414cc26 (Step 1), 0ca732fd (Step 2), 7e56ddfc (Step 3), 5ff3041a (Step 4).
