@@ -1,0 +1,67 @@
+spine-tasks/CONTEXT.md
+  s_492205e36b7649::t_d4c96ea2f065e7 3,5,2751-2768
+spine-tasks/SP-846-stet-threshold-gate/PROMPT.md
+  s_492205e36b7649::t_311f3d7d3d24f3 1-120
+spine-tasks/SP-846-stet-threshold-gate/STATUS.md
+  s_492205e36b7649::t_8c290bc8ba57b4 1-71
+spine-tasks/SP-847-stet-gate-runbook-docs/PROMPT.md
+  s_492205e36b7649::t_8c60de89b0c788 1-107
+spine-tasks/SP-847-stet-gate-runbook-docs/STATUS.md
+  s_492205e36b7649::t_71d535436bb000 1-63
+spine-tasks/SP-848-stet-reviewcommand-authoring/PROMPT.md
+  s_492205e36b7649::t_15df7da3978c04 1-106
+spine-tasks/SP-848-stet-reviewcommand-authoring/STATUS.md
+  s_492205e36b7649::t_844fb9b0eb0b1e 1-63
+spine-tasks/SP-849-doctor-stet-version-floor/PROMPT.md
+  s_492205e36b7649::t_2039299fac834c 1-113
+spine-tasks/SP-849-doctor-stet-version-floor/STATUS.md
+  s_492205e36b7649::t_0cdf86b056e8d6 1-63
+spine-tasks/SP-850-diagnose-review-not-drift/PROMPT.md
+  s_492205e36b7649::t_abcc1241d124a4 1-125
+spine-tasks/SP-850-diagnose-review-not-drift/STATUS.md
+  s_492205e36b7649::t_4fbc13c7d6f0dc 1-70
+spine-tasks/SP-851-detached-resume-stale-failed/PROMPT.md
+  s_492205e36b7649::t_92ddda4f525356 1-107
+spine-tasks/SP-851-detached-resume-stale-failed/STATUS.md
+  s_492205e36b7649::t_f35f57f8f0680c 1-61
+spine-tasks/SP-852-worker-rules-skip-oversize/PROMPT.md
+  s_492205e36b7649::t_a197c7a1dd86a7 1-112
+spine-tasks/SP-852-worker-rules-skip-oversize/STATUS.md
+  s_492205e36b7649::t_72151d2931a9be 1-63
+spine-tasks/SP-853-worker-rules-journal-post-load/PROMPT.md
+  s_492205e36b7649::t_292281e658058b 1-108
+spine-tasks/SP-853-worker-rules-journal-post-load/STATUS.md
+  s_492205e36b7649::t_0e07bbc21ebbf2 1-61
+spine-tasks/SP-854-deps-pi-coding-agent-audit/PROMPT.md
+  s_492205e36b7649::t_2189c9b4acc4ec 1-101
+spine-tasks/SP-854-deps-pi-coding-agent-audit/STATUS.md
+  s_492205e36b7649::t_8b9256967370d5 1-57
+spine-tasks/SP-855-reviewer-rules-scope-final/PROMPT.md
+  s_492205e36b7649::t_f66c3028789d3c 1-116
+spine-tasks/SP-855-reviewer-rules-scope-final/STATUS.md
+  s_492205e36b7649::t_21dccdc3580668 1-63
+spine-tasks/SP-856-integrate-live-engine-wait/PROMPT.md
+  s_492205e36b7649::t_5962639cac0ae3 1-125
+spine-tasks/SP-856-integrate-live-engine-wait/STATUS.md
+  s_492205e36b7649::t_344856d9c35214 1-68
+spine-tasks/_authoring/release-v2.30.0/manifest.md
+  s_492205e36b7649::t_0279a028cbb5c0 1-150
+spine-tasks/dependencies.json
+  s_492205e36b7649::t_1f9c6d379c9f6c 2162-2177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fa59d18b398c28eeffbfd13ec057adc7b3c98655",
+  "prompts": {},
+  "sessions": {
+    "s_492205e36b7649": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1273fe28-48d3-4cba-8506-381f825e357e",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
