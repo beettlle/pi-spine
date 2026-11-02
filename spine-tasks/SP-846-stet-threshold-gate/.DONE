@@ -1,0 +1,6 @@
+REVISE round 1 resolved on 2026-11-02: final review's only blocker was a coverage:check
+failure in tests/cli/mutating-help.test.mjs caused by the host git-ai daemon annotating
+test temp repos (refs/notes/ai) mid-snapshot. Confirmed by experiment; fixed for the run
+via `git-ai bg shutdown` -> coverage:check 3193/3193 pass, 0 fail, 91.31% line coverage ->
+Contract testCommand exit 0 -> `bash -n` OK -> `git-ai bg start` restored. See STATUS.md
+Reviews (F2) and Discoveries for details.
