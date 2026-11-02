@@ -1,7 +1,7 @@
 # SP-848: Authoring guidance: stet in reviewCommand, strictness by size — Status
 
-**Current Step:** Step 4
-**Status:** 🔄 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-02
 **Review Level:** 0
 **Review Counter:** 0
@@ -35,10 +35,10 @@
 - [x] Fix all failures — none to fix (Contract `testCommand: true` passes trivially)
 
 ### Step 4: Documentation & Delivery
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-848-stet-reviewcommand-authoring/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-848-stet-reviewcommand-authoring/.DONE`
 
 ---
 
@@ -63,6 +63,7 @@
 | 2026-11-02 | Step 1 complete | `reviewCommand` row added to contract-template field table + `validate-prompt` code-task example; semantics (once, after test pass, no retry, `contract.reviewTimeoutMs`/`reviewPolicy`, no stet chaining, omit for docs-only/execute) in the row |
 | 2026-11-02 | Step 2 complete | Strictness-by-size + `warning`/0.8 threshold note added to SP-845 bullet in authoring rule (a414cc26 already covers the template) |
 | 2026-11-02 | Step 3 verified | `rg -l 'contract-template.md|spine-task-authoring.mdc' tests/` → zero matches; no tests reference these docs |
+| 2026-11-02 | Task complete | Completion criteria verified against accumulated diff (f24cd8f2..HEAD): both sources show stet in `reviewCommand` with strictness + threshold guidance; no example chains stet onto `testCommand` |
 
 ## Blockers
 
