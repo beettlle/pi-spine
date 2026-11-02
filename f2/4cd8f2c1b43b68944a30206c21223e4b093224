@@ -1,0 +1,22 @@
+coverage-err.log
+  h_2a17159c706ba1 1-4
+spine-tasks/SP-846-stet-threshold-gate/.DONE
+  h_2a17159c706ba1 1-6
+spine-tasks/SP-846-stet-threshold-gate/.reviews/0-20261102T212823.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-846-stet-threshold-gate/.reviews/final-20261102T212858.md
+  h_2a17159c706ba1 1-49
+spine-tasks/SP-846-stet-threshold-gate/.reviews/final-20261102T215248.md
+  h_2a17159c706ba1 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f24cd8f2c1b43b68944a30206c21223e4b093224",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
