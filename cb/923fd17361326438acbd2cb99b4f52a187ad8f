@@ -1,0 +1,18 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 2273,2279,2320-2324,2346-2347,2369
+docs/stet-overview.md
+  h_2a17159c706ba1 28,64,75,78-79,82,190,192,194,198-199,202,205,212,218
+spine-tasks/SP-847-stet-gate-runbook-docs/STATUS.md
+  h_2a17159c706ba1 3,5,14,16,19,21-24,27,29,60-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cb923fd17361326438acbd2cb99b4f52a187ad8f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
