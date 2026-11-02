@@ -1,0 +1,16 @@
+spine-tasks/SP-854-deps-pi-coding-agent-audit/.reviews/0-20261102T221126.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-854-deps-pi-coding-agent-audit/.reviews/final-20261102T221204.md
+  h_2a17159c706ba1 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "08b2d5f76cf7cda5fe77b9a25fdbb6b167a56188",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
