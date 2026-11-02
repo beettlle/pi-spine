@@ -1,0 +1,14 @@
+.spine/spine-config.json
+  h_2a17159c706ba1 51,125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d7eff4845fa73b57a72ee68eebe2f8dee468fe0c",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
