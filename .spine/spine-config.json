@@ -48,7 +48,7 @@
       },
       "allegretto": {
         "worker": {
-          "model": "kimi-coding/k3",
+          "model": "kimi-coding/k3.1-pro",
           "thinking": "high"
         }
       },
@@ -122,7 +122,7 @@
     },
     "escalatePolicy": {
       "enabled": true,
-      "toProfile": "anthropic"
+      "toProfile": "allegretto"
     },
     "quotaFallbackProfile": "allegretto",
     "reviewerProfile": "review-gemini"
