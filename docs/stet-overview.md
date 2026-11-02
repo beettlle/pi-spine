@@ -25,7 +25,7 @@ Stet is a local-first, LLM-powered code review CLI written in Go. It reviews git
 
 The two hook paths above execute commands under **different security models**. Task authors and operators must not assume a command that works in one slot works in the other.
 
-**Contract `testCommand` (PROMPT.md `## Contract`) — shell execution.** `src/batch/contract-exec.mjs` (`runContractTestCommand`) spawns the command through the operator's shell (`spawnSync($SHELL, ["-c", …])`) in the lane worktree. Full shell semantics apply: `&&` chaining, pipes, env-var prefixes (`SPINE_WORKER_STUB=1 npm test`), and `$` expansion all work today. That is why Approaches 1 and 5 below chain stet with `npm run typecheck && … stet run …` in the contract. **This is changing:** [#268](https://github.com/beettlle/pi-spine/issues/268) / **SP-723** will reject `$`, backticks, `;`, `|`, `&&`, `||` in contract testCommand **before shell spawn**, with error copy distinct from the gate evidence path. Once SP-723 lands, write contract testCommands as single commands or `scripts/…` wrappers (see [operator-runbook §2.3](adoption/operator-runbook.md#23-contract-authoring-v20--fr-cdo-01)) instead of `&&`-chained stet invocations.
+**Contract `testCommand` (PROMPT.md `## Contract`) — shell execution.** `src/batch/contract-exec.mjs` (`runContractTestCommand`) spawns the command through the operator's shell (`spawnSync($SHELL, ["-c", …])`) in the lane worktree. Full shell semantics apply: `&&` chaining, pipes, env-var prefixes (`SPINE_WORKER_STUB=1 npm test`), and `$` expansion all work today. That is why Approaches 1 and 5 below keep stet in `reviewCommand` (SP-845) instead of chaining it onto `testCommand`. **This is changing:** [#268](https://github.com/beettlle/pi-spine/issues/268) / **SP-723** will reject `$`, backticks, `;`, `|`, `&&`, `||` in contract testCommand **before shell spawn**, with error copy distinct from the gate evidence path. Once SP-723 lands, write contract testCommands as single commands or `scripts/…` wrappers (see [operator-runbook §2.3](adoption/operator-runbook.md#23-contract-authoring-v20--fr-cdo-01)) instead of `&&`-chained stet invocations.
 
 **Gate evidence commands (`testing.build` / `testing.test` / `testing.testWithCoverage`, plus the `testing.review` wrapper) — hardened no-shell execution.** `src/batch/evidence-command.mjs` runs these through `execFileSync` with an allowlist ([#254](https://github.com/beettlle/pi-spine/issues/254), SP-639/SP-653/SP-710): the first token must be `npm` / `node` / `npx` / `pnpm` / `yarn` / `cargo` / `task`, bare `python3` (SP-760 / [#290](https://github.com/beettlle/pi-spine/issues/290)), a project-local `.venv/bin/python`, or a `scripts/` wrapper, `&&` chains are allowed (Phase B), and `;`, `|`, redirects, backticks, and `$VAR` / `$(…)` expansions are rejected fail-closed (bounded `PATH="…"` prefixes excepted). Approach 2's `scripts/spine-evidence-review.sh` wrapper exists precisely because this path forbids inline shell metacharacters — put complex review logic in a script, not in the config string.
 
@@ -61,7 +61,7 @@ For audit findings, operator playbook, and next-release improvements, see [stet 
 
 ### 1. Baseline-at-Setup, Review-at-Contract (recommended first)
 
-Hook into: worktreeSetupHook + contract testCommand
+Hook into: worktreeSetupHook + contract reviewCommand (SP-845)
 
 The cleanest two-phase integration. During lane setup, establish the stet baseline at the pre-worker commit. At contract verification, run stet against the worker's changes.
 
@@ -72,13 +72,14 @@ stet start HEAD --allow-dirty --quiet
 echo '{"ok":true}'
 ```
 
-Then in each task PROMPT's contract testCommand, chain stet:
+Then in each task PROMPT's Contract, keep stet out of `testCommand` — since SP-845 the stet call lives in `reviewCommand`, which runs once and only when `testCommand` passed:
 
 ```
-npm run typecheck && SPINE_WORKER_STUB=1 npm test && stet run --json --strictness strict --auto-finish-zero
+| testCommand | `npm run typecheck && SPINE_WORKER_STUB=1 npm test` |
+| reviewCommand | `scripts/spine-stet-contract-run.sh strict` |
 ```
 
-Stet exits non-zero if it encounters errors, failing the contract. The `--auto-finish-zero` flag auto-finishes the session when no findings remain, keeping the worktree clean.
+The script runs `stet run --strictness strict`, then gates on `stet list --min-severity "$SPINE_STET_MIN_SEVERITY" --min-confidence "$SPINE_STET_MIN_CONFIDENCE"` (defaults `warning`, `0.8`; needs stet ≥ v1.4.0 — older stet falls back to gating on every active finding). Findings at or above both thresholds fail the contract; a `stet run` failure fails it too. Batches must export `SPINE_STET_NO_AUTO_FINISH=1` so the contract never calls `stet finish` (see [operator-runbook §8.1](adoption/operator-runbook.md#required-for-spine-batches-spine_stet_no_auto_finish1)).
 
 **Pros:** Per-task granularity; catches defects at the earliest point; blocks bad code from ever reaching the gate. Uses existing config without any spine code changes.
 
@@ -186,33 +187,34 @@ This could be scripted as `scripts/stet-pre-integrate.sh` and called by the oper
 
 ### 5. Contract Strictness Escalation (stet as quality gate)
 
-Hook into: Contract testCommand with tiered strictness
+Hook into: Contract reviewCommand with tiered strictness (SP-845)
 
-Use stet's `--strictness` presets to create a tiered quality gate. S-size tasks get lenient review, M/L tasks get strict review. The contract fails only on error-severity findings.
+Use stet's `--strictness` presets to create a tiered quality gate. S-size tasks get lenient review, M/L tasks get strict review. The gate fails on findings at or above the severity/confidence thresholds — defaults `warning` and `0.8`, overridable with `SPINE_STET_MIN_SEVERITY` / `SPINE_STET_MIN_CONFIDENCE` (the script passes them to `stet list --min-severity/--min-confidence`, stet ≥ v1.4.0; invalid severity exits 2).
 
-In the task PROMPT contract, vary by task size:
+In the task PROMPT Contract, keep `testCommand` test-only and vary `reviewCommand` by task size:
 
 ```
 # S-size tasks:
-| testCommand | `npm run typecheck && npm test && stet start HEAD~1 --quiet && stet run --strictness lenient --auto-finish-zero --quiet` |
+| testCommand | `npm run typecheck && npm test` |
+| reviewCommand | `scripts/spine-stet-contract-run.sh lenient` |
 
 # M-size tasks:
-| testCommand | `npm run typecheck && npm test && stet start HEAD~1 --quiet && stet run --strictness default --verify --auto-finish-zero --quiet` |
+| reviewCommand | `scripts/spine-stet-contract-run.sh default` |
 
 # Security-sensitive tasks:
-| testCommand | `npm run typecheck && npm test && stet start HEAD~1 --quiet && stet run --strictness strict --verify --nitpicky --auto-finish-zero --quiet` |
+| reviewCommand | `scripts/spine-stet-contract-run.sh strict` |
 ```
 
 To make this systematic, you could update the create-spine-tasks skill to auto-include stet in contract templates based on task metadata (size, security score from the PROMPT assessment).
 
 **Pros:** Proportional quality enforcement -- lightweight for small tasks, rigorous for complex ones; integrates into the existing contract system; task authors can tune per-task.
 
-**Cons:** Requires updating task templates and existing task PROMPTs; `HEAD~1` as baseline assumes the worker made a single commit (may need adjustment for multi-commit workers).
+**Cons:** Requires updating task templates and existing task PROMPTs; the baseline comes from `worktreeSetupHook` (not `HEAD~1`), so it survives multi-commit workers.
 
 ---
 
 ## Recommendation
 
-Start with Approach 1 (baseline-at-setup + contract testCommand) for the highest-value integration with zero spine code changes. It uses the existing worktreeSetupHook and contract system, catches defects per-task before they reach the gate, and can be rolled out incrementally by updating task PROMPTs.
+Start with Approach 1 (baseline-at-setup + contract reviewCommand) for the highest-value integration with zero spine code changes. It uses the existing worktreeSetupHook and the `reviewCommand` contract field, catches defects per-task before they reach the gate, and can be rolled out incrementally by updating task PROMPTs.
 
 Layer Approach 2 (gate evidence) on top for wave-level visibility -- the operator gets a full-wave stet report alongside build/test evidence before approving the integrate gate.
