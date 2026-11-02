@@ -1,0 +1,14 @@
+spine-tasks/SP-848-stet-reviewcommand-authoring/.DONE
+  h_2a17159c706ba1 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a85cbac0b24e1d245e78abf4c493101fca6568f3",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
