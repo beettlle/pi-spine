@@ -1,6 +1,6 @@
 # SP-846: Stet contract script gates on severity and confidence thresholds — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-01
 **Review Level:** 1
@@ -25,14 +25,14 @@
 - [x] `stet list --help` capability probe and all-findings fallback with stderr warning
 
 ### Step 2: Tests
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Mock stet: `list --help` with/without `--min-severity`; `list --min-severity …` returns the gating count
-- [ ] Threshold hit → exit 1, stderr names the threshold and shows the full list
-- [ ] Only sub-threshold findings → exit 0, below-threshold note, `stet finish` called (or not, under `SPINE_STET_NO_AUTO_FINISH=1`)
-- [ ] Old stet (no flag in help) → warning, any active finding exits 1
-- [ ] `SPINE_STET_MIN_SEVERITY=bogus` → exit 2 before `stet run`
-- [ ] Existing task-id and baseline tests still pass
+- [x] Mock stet: `list --help` with/without `--min-severity`; `list --min-severity …` returns the gating count
+- [x] Threshold hit → exit 1, stderr names the threshold and shows the full list
+- [x] Only sub-threshold findings → exit 0, below-threshold note, `stet finish` called (or not, under `SPINE_STET_NO_AUTO_FINISH=1`)
+- [x] Old stet (no flag in help) → warning, any active finding exits 1
+- [x] `SPINE_STET_MIN_SEVERITY=bogus` → exit 2 before `stet run`
+- [x] Existing task-id and baseline tests still pass
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
