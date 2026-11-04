@@ -63,6 +63,7 @@ All green in the foreground: `eslint --max-warnings 0` clean, both tsc projects 
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): d509463  src/batch/detached-wait.mjs:313  WARNING  The new logic allows the polling loop to continue indefinitely (until timeout) | advisory — noted, not blocking | contract review step |
 | `skills/spine-release-operator/SKILL.md` already documents the advisory `ok:true, warning:true` doctor pattern (line 76); new stet version check follows the same contract — no edit needed | Checked, not affected | skills/spine-release-operator/SKILL.md |
 | tsc checkJs requires explicit JSDoc types on helper params; `StetSemVer` typedef added, net file budget exactly +45 | Noted | src/doctor/stet-capacity.mjs |
 | `phase23-exit-verify` asserts `checks.length >= 5`; new check appends (does not reorder) so assertion holds | Noted | tests/cli/phase23-exit-verify.test.mjs |
