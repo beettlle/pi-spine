@@ -1,6 +1,6 @@
 # SP-856: Integrate and batch complete tell the operator to wait while the engine finishes its land loop — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -28,10 +28,10 @@
 - [x] Live engine in an active phase → `spine wait --until completed --timeout 10m`, `spine batch complete` in alternatives
 
 ### Step 3: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Complete with live / dead engine PID
-- [ ] Integrate with live engine
+- [x] Complete with live / dead engine PID
+- [x] Integrate with live engine
 
 ### Step 4: Testing & Verification
 **Status:** ⬜ Not Started

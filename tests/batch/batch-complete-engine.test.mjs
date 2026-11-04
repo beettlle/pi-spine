@@ -9,9 +9,11 @@ import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
+import { formatLifecycleHuman } from "../../bin/spine-batch.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { archiveBatchStatePath, completeBatch } from "../../src/batch/lifecycle.mjs";
+import { reloadStateForTerminalWrite } from "../../src/batch/lifecycle-archive.mjs";
 import { recordBatchEnginePid } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -25,6 +27,36 @@ function writeSpineBatchState(projectRoot, fixture) {
 		JSON.stringify(fixture, null, 2),
 		"utf-8",
 	);
+}
+
+/**
+ * Serve a stale snapshot on the first read of `statePath`, then the real file
+ * (SP-792 stale-writer pattern): simulates a concurrent engine save that lands
+ * between a terminal write's pre-lock read and its in-lock reload.
+ */
+function serveStaleStateOnFirstRead(statePath, stale) {
+	const realReadFileSync = fs.readFileSync;
+	let served = false;
+	fs.readFileSync = (/** @type {any[]} */ ...args) => {
+		if (!served && String(args[0]) === statePath) {
+			served = true;
+			return `${JSON.stringify(stale, null, 2)}\n`;
+		}
+		return realReadFileSync(...args);
+	};
+	return () => {
+		fs.readFileSync = realReadFileSync;
+	};
+}
+
+function spawnLiveEngine() {
+	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	return new Promise((resolve, reject) => {
+		child.once("spawn", () => resolve(child));
+		child.once("error", reject);
+	});
 }
 
 function createOrchWithWork(projectRoot, orchBranch) {
@@ -245,6 +277,129 @@ test("completeBatch succeeds when engine PID is dead", async () => {
 		assert.equal(result.ok, true);
 		assert.equal(result.diagnosis, "completed");
 		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite returns engine_finishing_land_loop for a live engine (injected liveness) (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-land-loop-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+
+		const { refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+			deps: { isEngineAlive: () => true },
+		});
+
+		assert.equal(refusal.ok, false);
+		assert.equal(refusal.pending, true);
+		assert.equal(refusal.exitCode, 1);
+		assert.equal(refusal.error, "engine_finishing_land_loop");
+		assert.equal(refusal.headline, "Engine is finishing the land loop — wait for it to complete");
+		assert.equal(refusal.suggestedCommand, "spine wait --until completed --timeout 10m");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite keeps the generic refusal when the engine PID is dead (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-land-loop-dead-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		const state = { ...fixture, phase: "running" };
+		recordBatchEnginePid(state, DEAD_PID);
+		writeSpineBatchState(projectRoot, state);
+
+		const { refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+		});
+
+		assert.equal(refusal.pending, undefined);
+		assert.equal(refusal.error, "batch_state_changed_during_terminal_write");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("formatLifecycleHuman prints Batch lifecycle pending for pending refusals (#371)", () => {
+	const output = formatLifecycleHuman({
+		ok: false,
+		exitCode: 1,
+		pending: true,
+		error: "engine_finishing_land_loop",
+		headline: "Engine is finishing the land loop — wait for it to complete",
+		suggestedCommand: "spine wait --until completed --timeout 10m",
+		batchId: "20260601T120000",
+	});
+	assert.match(output, /Batch lifecycle pending/);
+	assert.doesNotMatch(output, /Batch lifecycle failed/);
+	assert.match(output, /Engine is finishing the land loop/);
+	assert.match(output, /spine wait --until completed --timeout 10m/);
+});
+
+test("completeBatch reports pending while a live engine finishes its land loop (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-complete-land-loop-");
+	const child = await spawnLiveEngine();
+	try {
+		const { fixture } = prepareCompletableBatch(projectRoot);
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		// #371 race: the engine's land-loop save (active phase + live PID) lands
+		// between the pre-lock read and the in-lock reload. Serve the terminal
+		// pre-lock snapshot on the first read; the in-lock re-read sees running.
+		const onDisk = { ...fixture, phase: "running" };
+		recordBatchEnginePid(onDisk, child.pid ?? 0);
+		writeSpineBatchState(projectRoot, onDisk);
+		const restore = serveStaleStateOnFirstRead(statePath, fixture);
+
+		const result = completeBatch({ projectRoot });
+		restore();
+
+		assert.equal(result.ok, false);
+		assert.equal(result.exitCode, 1);
+		assert.equal(result.pending, true);
+		assert.equal(result.error, "engine_finishing_land_loop");
+		assert.equal(result.headline, "Engine is finishing the land loop — wait for it to complete");
+		assert.equal(result.suggestedCommand, "spine wait --until completed --timeout 10m");
+		assert.ok(fs.existsSync(statePath), "active batch-state must not be archived");
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
+	} finally {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("completeBatch keeps the generic refusal when the land-loop engine PID is dead (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-complete-land-loop-dead-");
+	try {
+		const { fixture } = prepareCompletableBatch(projectRoot);
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		const onDisk = { ...fixture, phase: "running" };
+		recordBatchEnginePid(onDisk, DEAD_PID);
+		writeSpineBatchState(projectRoot, onDisk);
+		const restore = serveStaleStateOnFirstRead(statePath, fixture);
+
+		const result = completeBatch({ projectRoot });
+		restore();
+
+		assert.equal(result.ok, false);
+		assert.equal(result.pending, undefined);
+		assert.equal(result.error, "batch_state_changed_during_terminal_write");
+		assert.equal(result.headline, "Batch state changed during complete — re-run spine status --diagnose");
+		assert.ok(fs.existsSync(statePath), "active batch-state must not be archived");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
