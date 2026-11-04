@@ -1,6 +1,6 @@
 # SP-851: Detached resume ignores the batch's pre-resume failed state — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -16,9 +16,9 @@
 - [x] GitNexus impact on `waitForDetachedBatchResume`; report the blast radius in STATUS
 
 ### Step 1: Fix the ordering
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] `failed` / `aborted` are engine failures only with `updatedAt > updatedAtBefore`
+- [x] `failed` / `aborted` are engine failures only with `updatedAt > updatedAtBefore`
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started
