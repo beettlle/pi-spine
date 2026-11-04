@@ -120,14 +120,16 @@ const STET_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/beett
 
 /**
  * @param {string} text raw `stet --version` stdout, e.g. "stet version v1.4.0"
- * @returns {{ major: number, minor: number, patch: number }|null}
+ * @returns {StetSemVer|null}
  */
 export function parseStetVersion(text) {
 	const match = /(\d+)\.(\d+)\.(\d+)/.exec(text);
 	return match ? { major: +match[1], minor: +match[2], patch: +match[3] } : null;
 }
 
-/** Numeric per-component compare, so 1.10.0 ≥ 1.4.0 (string compare would not). */
+/** @typedef {{ major: number, minor: number, patch: number }} StetSemVer */
+
+/** Numeric per-component compare (1.10.0 ≥ 1.4.0; string compare would not). @param {StetSemVer} v @param {StetSemVer} min */
 function atLeast(v, min) {
 	return v.major !== min.major ? v.major > min.major
 		: v.minor !== min.minor ? v.minor > min.minor

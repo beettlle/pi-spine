@@ -1,6 +1,6 @@
 # SP-849: `spine doctor` warns when stet is older than v1.4.0 — Status
 
-**Current Step:** Step 3
+**Current Step:** .DONE
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -37,17 +37,19 @@
 - [x] Missing, 1.3.0, 1.4.0, 1.10.0, garbage
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
+- [x] Fix all failures
+
+All green in the foreground: `eslint --max-warnings 0` clean, both tsc projects clean, contract suite 21/21 pass. One typecheck failure (`atLeast` implicit-any params under checkJs) was fixed mid-step.
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook §8.1 prerequisites mention the doctor check
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-849-doctor-stet-version-floor/.DONE`
+- [x] Runbook §8.1 prerequisites mention the doctor check
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-849-doctor-stet-version-floor/.DONE`
 
 ---
 
@@ -60,12 +62,17 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `skills/spine-release-operator/SKILL.md` already documents the advisory `ok:true, warning:true` doctor pattern (line 76); new stet version check follows the same contract — no edit needed | Checked, not affected | skills/spine-release-operator/SKILL.md |
+| tsc checkJs requires explicit JSDoc types on helper params; `StetSemVer` typedef added, net file budget exactly +45 | Noted | src/doctor/stet-capacity.mjs |
+| `phase23-exit-verify` asserts `checks.length >= 5`; new check appends (does not reorder) so assertion holds | Noted | tests/cli/phase23-exit-verify.test.mjs |
+| `npm run coverage:check` fails with 61 batch e2e failures when the worker's inherited `SPINE_IS_WORKER=1` reaches child processes (`nested_batch_spawn_blocked`); re-run with `env -u SPINE_IS_WORKER` → 3198/3198 pass, 91.28% line coverage (≥ 77%). Matches PROMPT Environment note | Noted | /tmp logs; .spine env contract |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-01 | Task staged | PROMPT.md created |
+| 2026-11-03 | Steps 0–4 complete; contract testCommand green (lint + typecheck + 21 tests) | Implementation + tests + runbook committed |
 
 ## Blockers
 
