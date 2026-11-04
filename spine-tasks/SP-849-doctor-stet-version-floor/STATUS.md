@@ -22,11 +22,14 @@
 - 4 affected processes (doctor CLI + batch preflight). HIGH rating comes from preflight reachability — mitigated by the new check being a separate export that never sets `ok: false`, and the existing capacity check untouched.
 
 ### Step 1: Version check
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Parse `vX.Y.Z` from `stet --version`; numeric compare against 1.4.0
-- [ ] Skip / ok / warning results as specified; never `ok: false`
-- [ ] Wired into `run-doctor-checks.mjs`
+- [x] Parse `vX.Y.Z` from `stet --version`; numeric compare against 1.4.0
+- [x] Skip / ok / warning results as specified; never `ok: false`
+- [x] Wired into `run-doctor-checks.mjs`
+
+**Artifacts:**
+- `src/doctor/stet-capacity.mjs` (+44, within ≤ +45), `src/doctor/run-doctor-checks.mjs` (net +2, within ≤ +3) (modified)
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started

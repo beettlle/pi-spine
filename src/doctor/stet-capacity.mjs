@@ -114,6 +114,50 @@ export const DEFAULT_STET_CAPACITY_PROBES = {
 	totalMemBytes: () => os.totalmem(),
 };
 
+/** Contract gating needs `stet list --min-severity/--min-confidence`, added in stet v1.4.0. */
+export const STET_MIN_VERSION = { major: 1, minor: 4, patch: 0 };
+const STET_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/beettlle/stet/main/install.sh | bash";
+
+/**
+ * @param {string} text raw `stet --version` stdout, e.g. "stet version v1.4.0"
+ * @returns {{ major: number, minor: number, patch: number }|null}
+ */
+export function parseStetVersion(text) {
+	const match = /(\d+)\.(\d+)\.(\d+)/.exec(text);
+	return match ? { major: +match[1], minor: +match[2], patch: +match[3] } : null;
+}
+
+/** Numeric per-component compare, so 1.10.0 ≥ 1.4.0 (string compare would not). */
+function atLeast(v, min) {
+	return v.major !== min.major ? v.major > min.major
+		: v.minor !== min.minor ? v.minor > min.minor
+		: v.patch >= min.patch;
+}
+
+/**
+ * Advisory doctor check: warns (never fails) when stet predates the version that
+ * contract gating needs (`stet list --min-severity/--min-confidence`, stet v1.4.0+).
+ * @param {{ stetVersion?: () => string|null }} [opts]
+ */
+export function buildStetVersionDoctorCheck(opts = {}) {
+	const probes = { stetVersion: () => tryExec("stet", ["--version"])?.trim() ?? null, ...opts };
+	const label = "stet version";
+	const raw = probes.stetVersion();
+	if (raw === null) return { label, ok: true, detail: "stet not on PATH (skipped)" };
+	const version = parseStetVersion(raw);
+	if (version !== null && atLeast(version, STET_MIN_VERSION)) {
+		return { label, ok: true, detail: `stet v${version.major}.${version.minor}.${version.patch}` };
+	}
+	const shown = raw.split("\n")[0].slice(0, 60) || "(no output)";
+	return {
+		label,
+		ok: true,
+		warning: true,
+		detail: `${shown}: older than or incompatible with stet v${STET_MIN_VERSION.major}.${STET_MIN_VERSION.minor}.${STET_MIN_VERSION.patch} — the contract gate falls back to gating on every active finding`,
+		suggestedCommand: STET_INSTALL_COMMAND,
+	};
+}
+
 /** @param {number} bytes */
 const gib = (bytes) => `${(bytes / (1024 * BYTES_PER_MIB)).toFixed(1)} GiB`;
 
