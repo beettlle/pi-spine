@@ -2,7 +2,7 @@
 
 **Current Step:** Complete
 **Status:** ✅ Done — verification green
-**Last Updated:** 2026-11-03
+**Last Updated:** 2026-11-04
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -89,6 +89,7 @@ Coverage beyond the packet minimum (see Execution Log): other-task pipeline even
 | 2026-11-03 | Coverage gate, contract environment (`env -u SPINE_IS_WORKER npm run coverage:check`) | ✅ 3207/3207 pass, 0 fail; line coverage 91.36% ≥ 77% |
 | 2026-11-03 | `./scripts/worker-verify.sh` in worker shell | exit 1 — 61 pre-existing `SPINE_IS_WORKER=1` artifacts only; no regression vs pristine baseline |
 | 2026-11-03 | `.DONE` created | Task complete |
+| 2026-11-04 | Scheduler re-invocation on finished task; `.DONE` absent (consumed by engine) | State re-verified on lane tip `93e6bf67`: scope diff b4647a14..HEAD empty, Contract `testCommand` green (lint + typecheck + 34 tests, exit 0, `SPINE_IS_WORKER` unset per packet Environment); `.DONE` recreated — no work redone |
 
 ## Blockers
 
