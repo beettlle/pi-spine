@@ -1,6 +1,6 @@
 # SP-856: Integrate and batch complete tell the operator to wait while the engine finishes its land loop — Status
 
-**Current Step:** Step 4
+**Current Step:** Step 5
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -34,10 +34,10 @@
 - [x] Integrate with live engine
 
 ### Step 4: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
+- [x] Fix all failures
 
 ### Step 5: Documentation & Delivery
 **Status:** ⬜ Not Started
