@@ -1,7 +1,7 @@
 # SP-855: Code and final reviewers get glob-scoped rules for the task's files — Status
 
-**Current Step:** Step 3
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -51,17 +51,17 @@ Risk warning acknowledged per repo policy. Mitigation: function signatures uncha
 - `tests/batch/review-scope.test.mjs` (modified)
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
+- [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discovery doc table row and skill Tier 4 / Reviewer rules text updated
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-855-reviewer-rules-scope-final/.DONE`
+- [x] Discovery doc table row and skill Tier 4 / Reviewer rules text updated
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-855-reviewer-rules-scope-final/.DONE`
 
 **Stet review (Contract `reviewCommand`, blocking):** fix real defects in this task's diff. For a stet false positive, `stet dismiss <id> <reason>` citing lint/typecheck/test evidence, record it under Discoveries, and file it at https://github.com/beettlle/stet/issues. Never edit `.review/` or remove the `reviewCommand`.
 
@@ -80,6 +80,8 @@ Risk warning acknowledged per repo policy. Mitigation: function signatures uncha
 | D2: Engine `final` reviews (review-final.mjs → runStepReview) currently pass no baseline, so under the new spec they resolve to the PROMPT File Scope — exactly the #357 fix intent. `runEngineCodeReview` passes the validated task-start commit (#343) as baseline. | Noted; no code change needed beyond scope resolver. | `src/batch/engine-lanes/review-final.mjs` |
 | D3: GitNexus index is 24 commits behind HEAD (staleness hint); impact results still matched the live call graph for both symbols (verified via `gitnexus_context`: callers are exactly `buildReviewerSystemPrompt`, `runRulesSelect`, tests). | Noted. | `.gitnexus/` |
 | D4: `parseGlobsValue` (src/config/cursor-rules/parse-frontmatter.mjs) parses bracketed globs with `JSON.parse` — single-quoted YAML arrays (`['**/*.mjs']`) fail with `parseStatus: "warn"`, `globs: []`. The CLI fixture used single quotes; the old test never caught it because it asserted the glob rule was *excluded*. Fixed the fixture to JSON syntax (`["**/*.mjs"]`). Parser itself untouched (out of File Scope). | Fixed fixture; parser limitation filed as observation for a future task. | `tests/cli/spine-rules.test.mjs` |
+| D5: First `worker-verify.sh` run failed 2 tests in `tests/spine-run.test.mjs` with `nested_batch_spawn_blocked` — the suite inherited `SPINE_IS_WORKER=1` from this worker session and the SP-482 guard blocks the `spine run` spawns those tests exercise. Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER` per PROMPT Environment; all 3206 tests pass. Environmental, no repo change. | Verified unrelated to task diff. | `tests/spine-run.test.mjs` |
+| D6: `docs/adoption/operator-runbook.md:628` mentions FR-REV-08 (reviewer bounded rule subset, 16 KiB cap) — description remains accurate under the new scope behavior; no runbook edit required. | Checked, unaffected. | `docs/adoption/operator-runbook.md` |
 
 ## Execution Log
 
@@ -88,6 +90,8 @@ Risk warning acknowledged per repo policy. Mitigation: function signatures uncha
 | 2026-11-01 | Task staged | PROMPT.md created |
 | 2026-11-03 | Step 0 preflight | Impact analysis (CRITICAL/HIGH warnings recorded) + assertion scan complete; D1–D3 logged |
 | 2026-11-03 | Steps 1–2 | `resolveReviewScopePaths` code/final fallbacks implemented; 5 new batch tests + CLI test updated; 25/25 pass (batch scope + CLI rules) |
+| 2026-11-03 | Step 3 | Contract `testCommand` green (lint, typecheck, 30/30); `worker-verify.sh` full suite 3206/3206 pass — run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT Environment (D5) |
+| 2026-11-03 | Step 4 | Discovery doc review-scope table + skill Tier 4 / Reviewer rules text updated; D6 runbook check logged; `.DONE` created |
 
 ## Blockers
 
