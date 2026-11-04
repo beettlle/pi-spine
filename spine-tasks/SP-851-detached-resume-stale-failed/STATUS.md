@@ -1,7 +1,7 @@
 # SP-851: Detached resume ignores the batch's pre-resume failed state — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-03
 **Review Level:** 1
 **Review Counter:** 0
@@ -33,10 +33,10 @@
 - [x] Fix all failures
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-851-detached-resume-stale-failed/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-851-detached-resume-stale-failed/.DONE`
 
 ---
 
@@ -59,6 +59,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-01 | Task staged | PROMPT.md created |
+| 2026-11-03 | Step 0 | GitNexus impact LOW risk (1 caller) |
+| 2026-11-03 | Step 1 | Freshness gate added in detached-wait.mjs (commit 22f24d12) |
+| 2026-11-03 | Step 2 | 4 SP-851 tests added, all pass |
+| 2026-11-03 | Step 3 | typecheck clean; 3202/3202 pass; coverage 91.35% ≥ 77% |
+| 2026-11-03 | Step 4 | worker-verify.sh exit 0; .DONE created |
 
 ## Blockers
 
