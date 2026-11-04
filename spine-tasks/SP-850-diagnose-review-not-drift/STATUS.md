@@ -72,6 +72,7 @@ Coverage beyond the packet minimum (see Execution Log): other-task pipeline even
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 9ee685d  bin/spine-batch.mjs:115  WARNING  The ternary chain `result.ok ? ... : result.pending ? ... : ...` assumes that `result. | advisory — noted, not blocking | contract review step |
 | Worker-shell test runs inherit `SPINE_IS_WORKER=1` (SP-482 nested-spawn guard) → 61 env-caused suite failures; the engine's contract verify strips the key (`buildContractTestEnv`, SP-491/#155) and passes | Env artifact, not a regression — validate with `env -u SPINE_IS_WORKER`; failing-file set (25 files) run pristine-vs-changed: identical 84/54 both ways | scripts/run-coverage.mjs, src/batch/contract-spawn.mjs:39 |
 | First-cut drift skip (`pipeline open → suppress`) broke the v181/#170 heal: `incident-replay-v181` expected `succeeded`, got `running`, because `reconcileBatchStateDrift` consumes the doneInLane entry when terminal artifacts are complete | Fixed — gate now suppresses only when `journalShowsDoneInLaneTerminalArtifacts` is incomplete | src/batch/journal-rebuild-drift.mjs |
 | `A && B && C && D \|\| E` precedence bug made the gate fire in exactly the window meant for suppression | Fixed — `\|\|` group parenthesized | src/batch/journal-rebuild-drift.mjs |
