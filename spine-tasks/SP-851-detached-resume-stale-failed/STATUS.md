@@ -2,7 +2,7 @@
 
 **Current Step:** Complete
 **Status:** ✅ Complete
-**Last Updated:** 2026-11-03
+**Last Updated:** 2026-11-04
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -64,6 +64,7 @@
 | 2026-11-03 | Step 2 | 4 SP-851 tests added, all pass |
 | 2026-11-03 | Step 3 | typecheck clean; 3202/3202 pass; coverage 91.35% ≥ 77% |
 | 2026-11-03 | Step 4 | worker-verify.sh exit 0; .DONE created |
+| 2026-11-04 | Scheduler re-invocation on finished task; `.DONE` absent (consumed by engine) | State re-verified on lane tip `766465c9`: fix in detached-wait.mjs + 4 SP-851 tests present; Contract `testCommand` green (lint + typecheck + 16 tests, exit 0, `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per packet Environment) and 4/4 SP-851 tests pass on lane tip; `.DONE` recreated — no work redone |
 
 ## Blockers
 
