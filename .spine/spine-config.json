@@ -160,7 +160,7 @@
     "legacyTaskIdPrefixes": [
       "TP-"
     ],
-    "reviewPolicy": "blocking",
+    "reviewPolicy": "advisory",
     "reviewTimeoutMs": 1800000
   },
   "worktreeSetupHook": "scripts/spine-worktree-setup.sh",
