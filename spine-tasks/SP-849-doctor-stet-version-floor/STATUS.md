@@ -1,6 +1,6 @@
 # SP-849: `spine doctor` warns when stet is older than v1.4.0 — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -32,9 +32,9 @@
 - `src/doctor/stet-capacity.mjs` (+44, within ≤ +45), `src/doctor/run-doctor-checks.mjs` (net +2, within ≤ +3) (modified)
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Missing, 1.3.0, 1.4.0, 1.10.0, garbage
+- [x] Missing, 1.3.0, 1.4.0, 1.10.0, garbage
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
