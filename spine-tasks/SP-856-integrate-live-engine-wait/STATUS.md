@@ -1,8 +1,8 @@
 # SP-856: Integrate and batch complete tell the operator to wait while the engine finishes its land loop — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-11-01
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-11-03
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `reloadStateForTerminalWrite`, `formatLifecycleHuman`, and the integrate result builder; report the blast radius in STATUS
-- [ ] `rg -n "batch_state_changed_during_terminal_write|suggestedCommand: \"spine batch complete\"" tests/` — list assertions that change
+- [x] GitNexus impact on `reloadStateForTerminalWrite`, `formatLifecycleHuman`, and the integrate result builder; report the blast radius in STATUS
+- [x] `rg -n "batch_state_changed_during_terminal_write|suggestedCommand: \"spine batch complete\"" tests/` — list assertions that change
 
 ### Step 1: Complete refusal + headline
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Live-engine active-phase refusal returns `engine_finishing_land_loop`, `pending: true`, wait suggestion
 - [ ] `formatLifecycleHuman` prints `Batch lifecycle pending` for pending results
@@ -56,12 +56,16 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Impact `reloadStateForTerminalWrite`: GitNexus HIGH — 3 direct callers: `completeBatch.inLock` (lifecycle.mjs:438), `dismissBatch.inLock` (lifecycle.mjs:217), `abortBatch.inLock` (abort.mjs:233). New behavior guarded to the `requireTerminalPhase && !force` active-phase branch; abort never passes it, and dismiss/complete fixtures in existing tests carry no engine PID (default liveness → dead), so their generic refusals are unchanged. | Noted | src/batch/lifecycle-archive.mjs |
+| `formatLifecycleHuman` missing from GitNexus index (24 commits stale); grep found its only callers in `bin/spine-batch.mjs` (3 result-render sites). Headline prefix switches on `pending` only; nothing else sets `pending: true` today. | Noted | bin/spine-batch.mjs |
+| Integrate result builder is `integrateOrchToBase`; `suggestedCommand: "spine batch complete"` returned at integrate.mjs:166 (already-merged) and :408 (success). `rg` found no test asserting those two suggestions; `tests/cli/sequence.test.mjs:131` matches `sequence-plan.mjs` output (untouched). Generic-refusal assertions (lifecycle.test.mjs:352/449, abort.test.mjs:410/452) use PID-less fixtures → unchanged. | Noted | tests/ |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-01 | Task staged | PROMPT.md created |
+| 2026-11-03 | Step 0 complete | Impact + refusal-assertion audit logged in Discoveries |
 
 ## Blockers
 
