@@ -1,8 +1,8 @@
 # SP-851: Detached resume ignores the batch's pre-resume failed state — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-11-01
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-11-03
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,9 +11,9 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `waitForDetachedBatchResume`; report the blast radius in STATUS
+- [x] GitNexus impact on `waitForDetachedBatchResume`; report the blast radius in STATUS
 
 ### Step 1: Fix the ordering
 **Status:** ⬜ Not Started
@@ -49,6 +49,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| GitNexus impact `waitForDetachedBatchResume` (upstream): **LOW risk** — 1 direct caller `resumeBatchDetached` (src/batch/detached-run.mjs:276), 1 process affected (`ResumeBatchDetached`), 1 module (Batch). Test callers: detached-start.test.mjs, detached-resume-gate.test.mjs. | recorded | src/batch/detached-wait.mjs:290 |
 
 ## Execution Log
 
