@@ -251,6 +251,176 @@ test("waitForDetachedBatchResume with waitTerminal returns resume_completed", as
 	}
 });
 
+test("SP-851: stale pre-resume failed phase keeps polling until engine writes running", async () => {
+	const projectRoot = await initGitRepo("spine-sp851-stale-failed-");
+	try {
+		const batchId = "20260603T120010";
+		const taskId = "TP-930";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: `spine-tasks/${taskId}-smoke` }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "failed";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		// persistSpineBatchStateGuarded bumps updatedAt on save — capture the on-disk
+		// value, mirroring resumeCheck.updatedAt read just before the engine spawns.
+		const updatedAtBefore = loadSpineBatchState(projectRoot).raw.updatedAt;
+
+		setTimeout(() => {
+			const next = loadSpineBatchState(projectRoot).raw;
+			next.phase = "running";
+			next.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, next);
+		}, 300);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, true);
+		assert.equal(wait.status, "engine_started");
+		assert.equal(wait.phase, "running");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-851: stale pre-resume aborted phase keeps polling until engine writes running", async () => {
+	const projectRoot = await initGitRepo("spine-sp851-stale-aborted-");
+	try {
+		const batchId = "20260603T120011";
+		const taskId = "TP-931";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: `spine-tasks/${taskId}-smoke` }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "aborted";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		// persistSpineBatchStateGuarded bumps updatedAt on save — capture the on-disk
+		// value, mirroring resumeCheck.updatedAt read just before the engine spawns.
+		const updatedAtBefore = loadSpineBatchState(projectRoot).raw.updatedAt;
+
+		setTimeout(() => {
+			const next = loadSpineBatchState(projectRoot).raw;
+			next.phase = "running";
+			next.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, next);
+		}, 300);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, true);
+		assert.equal(wait.status, "engine_started");
+		assert.equal(wait.phase, "running");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-851: failed phase written after resume start returns batch_engine_failed", async () => {
+	const projectRoot = await initGitRepo("spine-sp851-fresh-failed-");
+	try {
+		const batchId = "20260603T120012";
+		const taskId = "TP-932";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: `spine-tasks/${taskId}-smoke` }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "failed";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		// persistSpineBatchStateGuarded bumps updatedAt on save — capture the on-disk
+		// value, mirroring resumeCheck.updatedAt read just before the engine spawns.
+		const updatedAtBefore = loadSpineBatchState(projectRoot).raw.updatedAt;
+
+		setTimeout(() => {
+			const next = loadSpineBatchState(projectRoot).raw;
+			next.phase = "failed";
+			next.lastError = "worker SP-851 crashed";
+			next.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, next);
+		}, 300);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, false);
+		assert.equal(wait.error, "batch_engine_failed");
+		assert.equal(wait.phase, "failed");
+		assert.equal(wait.lastError, "worker SP-851 crashed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-851: aborted phase written after resume start returns batch_engine_failed", async () => {
+	const projectRoot = await initGitRepo("spine-sp851-fresh-aborted-");
+	try {
+		const batchId = "20260603T120013";
+		const taskId = "TP-933";
+		const state = createInitialBatchState({
+			batchId,
+			baseBranch: "main",
+			orchBranch: `orch/spine-${batchId}`,
+			wavePlan: [[taskId]],
+			tasks: [{ taskId, laneNumber: 1, status: "running", taskFolder: `spine-tasks/${taskId}-smoke` }],
+			lanes: [{ laneNumber: 1, laneId: "lane-1", worktreePath: ".worktrees/x", branch: "task/x", taskIds: [taskId] }],
+		});
+		state.phase = "aborted";
+		state.updatedAt = Date.now() - 5_000;
+		saveSpineBatchState(projectRoot, state);
+		// persistSpineBatchStateGuarded bumps updatedAt on save — capture the on-disk
+		// value, mirroring resumeCheck.updatedAt read just before the engine spawns.
+		const updatedAtBefore = loadSpineBatchState(projectRoot).raw.updatedAt;
+
+		setTimeout(() => {
+			const next = loadSpineBatchState(projectRoot).raw;
+			next.phase = "aborted";
+			next.updatedAt = Date.now();
+			saveSpineBatchState(projectRoot, next);
+		}, 300);
+
+		const wait = await waitForDetachedBatchResume({
+			projectRoot,
+			batchId,
+			updatedAtBefore,
+			taskId,
+			timeoutMs: 5_000,
+		});
+		assert.equal(wait.ok, false);
+		assert.equal(wait.error, "batch_engine_failed");
+		assert.equal(wait.phase, "aborted");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
 test("collectDetachedFailureDiagnostics includes task.failed summary and log tails", async () => {
 	const projectRoot = await initGitRepo("spine-detached-failure-diag-");
 	try {

@@ -1,6 +1,6 @@
 # SP-851: Detached resume ignores the batch's pre-resume failed state — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -21,10 +21,10 @@
 - [x] `failed` / `aborted` are engine failures only with `updatedAt > updatedAtBefore`
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Stale `failed` then fresh `running` → `engine_started`
-- [ ] Fresh `failed` / `aborted` → `batch_engine_failed`
+- [x] Stale `failed` then fresh `running` → `engine_started`
+- [x] Fresh `failed` / `aborted` → `batch_engine_failed`
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
@@ -50,6 +50,8 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | GitNexus impact `waitForDetachedBatchResume` (upstream): **LOW risk** — 1 direct caller `resumeBatchDetached` (src/batch/detached-run.mjs:276), 1 process affected (`ResumeBatchDetached`), 1 module (Batch). Test callers: detached-start.test.mjs, detached-resume-gate.test.mjs. | recorded | src/batch/detached-wait.mjs:290 |
+| `saveSpineBatchState` bumps `updatedAt` to `Date.now()` on every persist (state-io.mjs:140) — tests must capture `updatedAtBefore` from the reloaded on-disk state, not the in-memory object. | mitigated | tests/batch/detached-start.test.mjs (SP-851 tests) |
+| Pre-existing failure: `batch start returns quickly and runs engine in background` (detached-start.test.mjs:110) times out after 30s spawning a real detached engine — reproduced on base commit 9258edd0, unrelated to SP-851. | documented | tests/batch/detached-start.test.mjs:110 |
 
 ## Execution Log
 
