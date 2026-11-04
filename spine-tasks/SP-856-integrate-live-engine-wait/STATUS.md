@@ -1,6 +1,6 @@
 # SP-856: Integrate and batch complete tell the operator to wait while the engine finishes its land loop — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-03
 **Review Level:** 1
@@ -17,15 +17,15 @@
 - [x] `rg -n "batch_state_changed_during_terminal_write|suggestedCommand: \"spine batch complete\"" tests/` — list assertions that change
 
 ### Step 1: Complete refusal + headline
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Live-engine active-phase refusal returns `engine_finishing_land_loop`, `pending: true`, wait suggestion
-- [ ] `formatLifecycleHuman` prints `Batch lifecycle pending` for pending results
+- [x] Live-engine active-phase refusal returns `engine_finishing_land_loop`, `pending: true`, wait suggestion
+- [x] `formatLifecycleHuman` prints `Batch lifecycle pending` for pending results
 
 ### Step 2: Integrate suggestion
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Live engine in an active phase → `spine wait --until completed --timeout 10m`, `spine batch complete` in alternatives
+- [x] Live engine in an active phase → `spine wait --until completed --timeout 10m`, `spine batch complete` in alternatives
 
 ### Step 3: Tests
 **Status:** ⬜ Not Started
