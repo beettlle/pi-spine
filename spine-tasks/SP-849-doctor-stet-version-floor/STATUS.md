@@ -1,8 +1,8 @@
 # SP-849: `spine doctor` warns when stet is older than v1.4.0 — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-11-01
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-11-03
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,9 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `buildStetCapacityDoctorCheck` and the doctor check list; report the blast radius in STATUS
+- [x] GitNexus impact on `buildStetCapacityDoctorCheck` and the doctor check list; report the blast radius in STATUS
+
+**Blast radius (GitNexus upstream, depth 3, risk HIGH — additive change, no behavior edits to the capacity check):**
+- d=1 direct caller: `runDoctorChecks` (src/doctor/run-doctor-checks.mjs:542 push site); also called from tests/doctor/stet-capacity.test.mjs
+- d=2: `checkDoctor` (src/config/spine-preflight-lib.mjs), `buildIssueDraftBody` (src/cli/issue-draft.mjs)
+- d=3: `runBatchPreflight` (src/config/spine-preflight-lib.mjs) → batch start paths
+- 4 affected processes (doctor CLI + batch preflight). HIGH rating comes from preflight reachability — mitigated by the new check being a separate export that never sets `ok: false`, and the existing capacity check untouched.
 
 ### Step 1: Version check
 **Status:** ⬜ Not Started
