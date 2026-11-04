@@ -102,6 +102,11 @@ function defaultRunGit(command, args, cwd) {
 /**
  * Resolve scope paths for reviewer rule glob matching by review phase.
  *
+ * `code` uses `git diff` paths, falling back to the PROMPT File Scope when the
+ * diff resolves to no paths (no baseline, git error, or empty diff) (#357).
+ * `final` uses baseline diff paths when a baseline is given and non-empty,
+ * else the PROMPT File Scope.
+ *
  * @param {object} params
  * @param {string} params.worktreePath Git worktree root for code reviews
  * @param {string} [params.baseline] Baseline commit for code review diff (optional)
@@ -123,12 +128,20 @@ export function resolveReviewScopePaths({
 		case "plan":
 			scopePaths = resolvePlanReviewScopePaths(taskFolder);
 			break;
-		case "code":
-			scopePaths = resolveCodeReviewScopePaths(worktreePath, baseline, runGit);
+		case "code": {
+			const diffPaths = resolveCodeReviewScopePaths(worktreePath, baseline, runGit);
+			scopePaths =
+				diffPaths.length > 0 ? diffPaths : resolvePlanReviewScopePaths(taskFolder);
 			break;
-		case "final":
-			scopePaths = [];
+		}
+		case "final": {
+			const diffPaths = baseline
+				? resolveCodeReviewScopePaths(worktreePath, baseline, runGit)
+				: [];
+			scopePaths =
+				diffPaths.length > 0 ? diffPaths : resolvePlanReviewScopePaths(taskFolder);
 			break;
+		}
 		default:
 			scopePaths = [];
 	}

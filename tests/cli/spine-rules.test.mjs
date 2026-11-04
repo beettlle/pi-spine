@@ -268,7 +268,7 @@ test("runSpineRules select reviewer plan uses PROMPT file scope", async () => {
 	}
 });
 
-test("runSpineRules select reviewer final returns empty scope", async () => {
+test("runSpineRules select reviewer final falls back to prompt file scope", async () => {
 	const projectRoot = await initGitRepo("spine-rules-reviewer-final-");
 	try {
 		const rulesRoot = path.join(projectRoot, ".cursor", "rules");
@@ -280,7 +280,7 @@ test("runSpineRules select reviewer final returns empty scope", async () => {
 		);
 		fs.writeFileSync(
 			path.join(rulesRoot, "glob-rule.mdc"),
-			"---\nglobs: ['**/*.mjs']\n---\n# Glob\n",
+			"---\nglobs: [\"**/*.mjs\"]\n---\n# Glob\n",
 			"utf-8",
 		);
 
@@ -305,9 +305,9 @@ test("runSpineRules select reviewer final returns empty scope", async () => {
 		assert.equal(result.exitCode, 0, result.output);
 		const payload = JSON.parse(result.output);
 		assert.equal(payload.reviewType, "final");
-		assert.deepEqual(payload.scopePaths, []);
+		assert.deepEqual(payload.scopePaths, ["src/cli/rules.mjs"]);
 		assert.ok(payload.selection.paths.includes(".cursor/rules/always-rule.mdc"));
-		assert.ok(!payload.selection.paths.includes(".cursor/rules/glob-rule.mdc"));
+		assert.ok(payload.selection.paths.includes(".cursor/rules/glob-rule.mdc"));
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
