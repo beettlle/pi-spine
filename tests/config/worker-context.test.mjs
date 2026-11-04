@@ -46,7 +46,10 @@ test("buildWorkerContext honors neverLoad and byte cap", async () => {
 		assert.doesNotMatch(result.text, /docs\/b\.md/);
 		assert.doesNotMatch(result.text, /cccccccccc/);
 		assert.equal(result.truncated, true);
-		assert.ok(result.skipped.some((entry) => /docs\/c\.md/.test(entry)));
+		assert.deepEqual(result.skipped, [
+			{ path: "docs/c.md", reason: "byte_cap", sizeBytes: Buffer.byteLength("cccccccccc\n", "utf-8") },
+		]);
+		assert.equal(result.bytesUsed, Buffer.byteLength("alpha\n", "utf-8"));
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -149,7 +152,7 @@ test("validateSpineConfig rejects invalid referenceDocs", () => {
 	assert.equal(error?.code, "CONFIG_WORKER_CONTEXT_INVALID");
 });
 
-test("loadContextDocEntries stops at byte cap", async () => {
+test("loadContextDocEntries skips an oversize entry and keeps loading at byte cap", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-cap-"));
 	try {
 		fs.writeFileSync(path.join(root, "one.md"), "x".repeat(100), "utf-8");
@@ -162,6 +165,10 @@ test("loadContextDocEntries stops at byte cap", async () => {
 		assert.equal(loaded.ok, true);
 		assert.equal(loaded.truncated, true);
 		assert.equal(loaded.entries.length, 1);
+		assert.deepEqual(loaded.skipped, [
+			{ path: "two.md", reason: "byte_cap", sizeBytes: 100 },
+		]);
+		assert.equal(loaded.bytesUsed, 100);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -169,4 +176,73 @@ test("loadContextDocEntries stops at byte cap", async () => {
 
 test("DEFAULT_WORKER_CONTEXT_BYTE_CAP is 32KiB", () => {
 	assert.equal(DEFAULT_WORKER_CONTEXT_BYTE_CAP, 32_768);
+});
+
+test("loadContextDocEntries skips an oversize first rule and loads later rules (worker cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-skip-first-"));
+	try {
+		const oversize = "x".repeat(DEFAULT_WORKER_CONTEXT_BYTE_CAP + 1);
+		fs.writeFileSync(path.join(root, "big.md"), oversize, "utf-8");
+		fs.writeFileSync(path.join(root, "small.md"), "small rule\n", "utf-8");
+
+		const loaded = loadContextDocEntries({
+			projectRoot: root,
+			paths: ["big.md", "small.md"],
+		});
+
+		assert.equal(loaded.ok, true);
+		assert.equal(loaded.truncated, true);
+		assert.equal(loaded.byteCap, DEFAULT_WORKER_CONTEXT_BYTE_CAP);
+		assert.deepEqual(loaded.entries.map((entry) => entry.relPath), ["small.md"]);
+		assert.deepEqual(loaded.skipped, [
+			{ path: "big.md", reason: "byte_cap", sizeBytes: DEFAULT_WORKER_CONTEXT_BYTE_CAP + 1 },
+		]);
+		assert.equal(loaded.bytesUsed, Buffer.byteLength("small rule\n", "utf-8"));
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("loadContextDocEntries skips an oversize middle rule and loads both neighbors (worker cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-skip-mid-"));
+	try {
+		const oversize = "x".repeat(DEFAULT_WORKER_CONTEXT_BYTE_CAP + 1);
+		fs.writeFileSync(path.join(root, "a.md"), "a\n", "utf-8");
+		fs.writeFileSync(path.join(root, "big.md"), oversize, "utf-8");
+		fs.writeFileSync(path.join(root, "b.md"), "b\n", "utf-8");
+
+		const loaded = loadContextDocEntries({
+			projectRoot: root,
+			paths: ["a.md", "big.md", "b.md"],
+		});
+
+		assert.equal(loaded.ok, true);
+		assert.equal(loaded.truncated, true);
+		assert.deepEqual(loaded.entries.map((entry) => entry.relPath), ["a.md", "b.md"]);
+		assert.deepEqual(loaded.skipped, [
+			{ path: "big.md", reason: "byte_cap", sizeBytes: DEFAULT_WORKER_CONTEXT_BYTE_CAP + 1 },
+		]);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("loadContextDocEntries reports nothing skipped when all paths fit (worker cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-all-fit-"));
+	try {
+		fs.writeFileSync(path.join(root, "a.md"), "a\n", "utf-8");
+		fs.writeFileSync(path.join(root, "b.md"), "b\n", "utf-8");
+
+		const loaded = loadContextDocEntries({
+			projectRoot: root,
+			paths: ["a.md", "b.md"],
+		});
+
+		assert.equal(loaded.ok, true);
+		assert.equal(loaded.truncated, false);
+		assert.deepEqual(loaded.skipped, []);
+		assert.deepEqual(loaded.entries.map((entry) => entry.relPath), ["a.md", "b.md"]);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
 });
