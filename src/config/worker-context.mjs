@@ -66,22 +66,37 @@ export function resolveContextDocPath(projectRoot, relPath) {
 }
 
 /**
+ * A path that was not loaded, with the reason it was skipped.
+ *
+ * @typedef {object} ContextDocSkip
+ * @property {string} path
+ * @property {"never_load"|"missing"|"byte_cap"} reason
+ * @property {number} [sizeBytes] UTF-8 size of the file, set for `byte_cap` skips.
+ */
+
+/**
+ * SP-852: a path whose content would exceed the remaining byte budget is
+ * recorded in `skipped` and loading continues, so one oversize rule no longer
+ * drops later rules that fit.
+ *
  * @param {object} params
  * @param {string} params.projectRoot
  * @param {string[]} params.paths
  * @param {Set<string>} [params.neverLoad]
  * @param {number} [params.byteCap]
+ * @returns {{ ok: boolean, entries?: { relPath: string, content: string }[], truncated?: boolean, skipped?: ContextDocSkip[], bytesUsed?: number, byteCap?: number, error?: string, relPath?: string }}
  */
 export function loadContextDocEntries({ projectRoot, paths, neverLoad = new Set(), byteCap = DEFAULT_WORKER_CONTEXT_BYTE_CAP }) {
 	/** @type {{ relPath: string, content: string }[]} */
 	const loaded = [];
 	let totalBytes = 0;
-	/** @type {string[]} */
+	/** @type {ContextDocSkip[]} */
 	const skipped = [];
+	let capSkipped = false;
 
 	for (const relPath of paths) {
 		if (neverLoad.has(relPath)) {
-			skipped.push(relPath);
+			skipped.push({ path: relPath, reason: "never_load" });
 			continue;
 		}
 
@@ -91,21 +106,16 @@ export function loadContextDocEntries({ projectRoot, paths, neverLoad = new Set(
 		}
 
 		if (!fs.existsSync(resolved.absPath) || !fs.statSync(resolved.absPath).isFile()) {
-			skipped.push(relPath);
+			skipped.push({ path: relPath, reason: "missing" });
 			continue;
 		}
 
 		const content = fs.readFileSync(resolved.absPath, "utf-8");
 		const size = Buffer.byteLength(content, "utf-8");
 		if (totalBytes + size > byteCap) {
-			return {
-				ok: true,
-				entries: loaded,
-				truncated: true,
-				skipped: [...skipped, relPath, "...remaining paths omitted (byte cap)"],
-				bytesUsed: totalBytes,
-				byteCap,
-			};
+			skipped.push({ path: relPath, reason: "byte_cap", sizeBytes: size });
+			capSkipped = true;
+			continue;
 		}
 
 		loaded.push({ relPath: resolved.relPath, content });
@@ -115,7 +125,7 @@ export function loadContextDocEntries({ projectRoot, paths, neverLoad = new Set(
 	return {
 		ok: true,
 		entries: loaded,
-		truncated: false,
+		truncated: capSkipped,
 		skipped,
 		bytesUsed: totalBytes,
 		byteCap,
@@ -223,7 +233,7 @@ export function emitWorkerRulesSelected(journal, payload) {
  * @param {string[]} [params.taskFileScope]
  * @param {number} [params.byteCap]
  * @param {WorkerRulesJournalContext} [params.journal]
- * @returns {{ text: string, entries: object[], truncated: boolean, skipped: string[], bytesUsed: number, byteCap: number, selection: object, error?: string, blockedPath?: string }}
+ * @returns {{ text: string, entries: object[], truncated: boolean, skipped: ContextDocSkip[], bytesUsed: number, byteCap: number, selection: object, error?: string, blockedPath?: string }}
  */
 export function buildWorkerContextAsync({
 	config = {},
