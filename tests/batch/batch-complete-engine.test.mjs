@@ -349,8 +349,10 @@ test("formatLifecycleHuman prints Batch lifecycle pending for pending refusals (
 
 test("completeBatch reports pending while a live engine finishes its land loop (#371)", async () => {
 	const projectRoot = await initGitRepo("spine-complete-land-loop-");
-	const child = await spawnLiveEngine();
+	/** @type {import("node:child_process").ChildProcess|null} */
+	let child = null;
 	try {
+		child = await spawnLiveEngine();
 		const { fixture } = prepareCompletableBatch(projectRoot);
 		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
 		// #371 race: the engine's land-loop save (active phase + live PID) lands
@@ -360,9 +362,12 @@ test("completeBatch reports pending while a live engine finishes its land loop (
 		recordBatchEnginePid(onDisk, child.pid ?? 0);
 		writeSpineBatchState(projectRoot, onDisk);
 		const restore = serveStaleStateOnFirstRead(statePath, fixture);
-
-		const result = completeBatch({ projectRoot });
-		restore();
+		let result;
+		try {
+			result = completeBatch({ projectRoot });
+		} finally {
+			restore();
+		}
 
 		assert.equal(result.ok, false);
 		assert.equal(result.exitCode, 1);
@@ -374,7 +379,7 @@ test("completeBatch reports pending while a live engine finishes its land loop (
 		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
 	} finally {
 		try {
-			child.kill("SIGKILL");
+			child?.kill("SIGKILL");
 		} catch {
 			/* ignore */
 		}
@@ -391,9 +396,12 @@ test("completeBatch keeps the generic refusal when the land-loop engine PID is d
 		recordBatchEnginePid(onDisk, DEAD_PID);
 		writeSpineBatchState(projectRoot, onDisk);
 		const restore = serveStaleStateOnFirstRead(statePath, fixture);
-
-		const result = completeBatch({ projectRoot });
-		restore();
+		let result;
+		try {
+			result = completeBatch({ projectRoot });
+		} finally {
+			restore();
+		}
 
 		assert.equal(result.ok, false);
 		assert.equal(result.pending, undefined);
