@@ -49,6 +49,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 0617beb  src/batch/detached-wait.mjs:316  WARNING  The condition `updatedAt > updatedAtBefore` uses a strict inequality. If the r | advisory — noted, not blocking | contract review step |
 | GitNexus impact `waitForDetachedBatchResume` (upstream): **LOW risk** — 1 direct caller `resumeBatchDetached` (src/batch/detached-run.mjs:276), 1 process affected (`ResumeBatchDetached`), 1 module (Batch). Test callers: detached-start.test.mjs, detached-resume-gate.test.mjs. | recorded | src/batch/detached-wait.mjs:290 |
 | `saveSpineBatchState` bumps `updatedAt` to `Date.now()` on every persist (state-io.mjs:140) — tests must capture `updatedAtBefore` from the reloaded on-disk state, not the in-memory object. | mitigated | tests/batch/detached-start.test.mjs (SP-851 tests) |
 | Pre-existing failure: `batch start returns quickly and runs engine in background` (detached-start.test.mjs:110) times out after 30s spawning a real detached engine — reproduced on base commit 9258edd0, unrelated to SP-851. | documented | tests/batch/detached-start.test.mjs:110 |
