@@ -413,7 +413,7 @@ Individual steps can override the task-level review:
 | **1** | PROMPT.md + STATUS.md | Always |
 | **2** | `{tasksRoot}/CONTEXT.md` | When listed in "Context to Read First" |
 | **3** | Specific reference docs | Only what the task needs |
-| **4** | Cursor rules (when `.cursor/rules/` exists) | **Workers:** auto-selected per task via profile `worker.*`, PROMPT File Scope globs, `config.standards` append (FR-WORK-05). **Reviewers:** separate `profile.reviewer.*` selection with review-type scope — plan uses File Scope, code uses git diff paths, final uses always-only rules; 16 KiB cap, no `referenceDocs` (FR-REV-08) |
+| **4** | Cursor rules (when `.cursor/rules/` exists) | **Workers:** auto-selected per task via profile `worker.*`, PROMPT File Scope globs, `config.standards` append (FR-WORK-05). **Reviewers:** separate `profile.reviewer.*` selection with review-type scope — plan uses File Scope; code uses git diff paths with File Scope fallback on empty diff or git error; final uses baseline diff paths with File Scope fallback; 16 KiB cap, no `referenceDocs` (FR-REV-08) |
 
 Populate "Context to Read First" from `referenceDocs` in spine config. Never list docs in `neverLoad`.
 
@@ -486,7 +486,7 @@ When decomposing a PRD, assign non-overlapping file scopes to tasks that should 
 
 **Worker rules:** File Scope also drives **glob-matched Cursor rules** injected into batch workers (FR-WORK-05). Tasks touching `**/*.{js,mjs}` activate JS standards; Swift/Python tasks need scope paths that match those rule globs. Keep scope precise — wide scope pulls more rules and increases prompt byte usage.
 
-**Reviewer rules (FR-REV-08):** Plan reviews use the same File Scope for glob matching; code reviews use changed paths from `git diff`. Final reviews load always-on rules only. Worker-only packs (`taskplane-worker-cursor.mdc`) are excluded from reviewer context by default.
+**Reviewer rules (FR-REV-08):** Plan reviews use the same File Scope for glob matching; code reviews use changed paths from `git diff`, falling back to the File Scope when the diff is empty or git fails (#357). Final reviews use baseline diff paths when available, else the File Scope — code and final reviews never run with an empty scope when the packet has a File Scope. Worker-only packs (`taskplane-worker-cursor.mdc`) are excluded from reviewer context by default.
 
 **Documentation paths in File Scope ([#144](https://github.com/beettlle/pi-spine/issues/144)):** Every path under **Must Update** in `## Documentation Requirements` **must** also appear in `## File Scope`. If a doc is advisory only, move it to **Check If Affected** — do not require workers to edit paths outside File Scope. Mismatches (e.g. SP-435, SP-451) caused out-of-scope edits and merge dirty-file failures.
 

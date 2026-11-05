@@ -61,6 +61,13 @@ export function buildSuggestedCommand(diagnosis, ctx = {}) {
 		case "completed_manual":
 			return "spine batch dismiss";
 		case "state_drift":
+			// SP-850 / #356, #371: the engine is verifiably alive and the phase is
+			// running — the drift window is the in-flight post-`.DONE`
+			// review/contract pipeline. Wait for it instead of force-resuming over
+			// live work.
+			if (ctx.phase === "running" && ctx.engineStillRunning === true) {
+				return "spine wait --until completed,failed,needs_integrate --timeout 2h";
+			}
 			// Agent-safe detached recovery (#196 / SP-613) — never suggest --attached.
 			if (
 				ctx.phase === "running" ||

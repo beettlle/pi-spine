@@ -111,7 +111,12 @@ export function stripBatchFlagValueTokens(args) {
 export function formatLifecycleHuman(result, json = false) {
 	if (json) return `${JSON.stringify(result, null, 2)}\n`;
 
-	const lines = ["", result.ok ? "Batch lifecycle" : "Batch lifecycle failed", "", `  ${result.headline}`];
+	const lines = [
+		"",
+		result.ok ? "Batch lifecycle" : result.pending ? "Batch lifecycle pending" : "Batch lifecycle failed",
+		"",
+		`  ${result.headline}`,
+	];
 
 	if (result.error) {
 		lines.push("", `  Error: ${result.error}`);

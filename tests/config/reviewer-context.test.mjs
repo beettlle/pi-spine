@@ -228,3 +228,108 @@ test("emitReviewerRulesSelected is no-op without journal context", () => {
 	emitReviewerRulesSelected(undefined, { mode: "skipped" });
 	emitReviewerRulesSelected({ projectRoot: "/tmp", batchId: "" }, { mode: "skipped" });
 });
+
+function writeReviewerRule(rulesDir, name, content) {
+	fs.writeFileSync(path.join(rulesDir, name), content, "utf-8");
+}
+
+test("buildReviewerContext skips an oversize first rule and loads later rules (reviewer cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-reviewer-skip-first-"));
+	try {
+		const rulesDir = path.join(root, ".cursor", "rules");
+		fs.mkdirSync(rulesDir, { recursive: true });
+		const oversizeContent = `---\nalwaysApply: true\n---\n# A\n${"x".repeat(DEFAULT_REVIEWER_CONTEXT_BYTE_CAP)}\n`;
+		writeReviewerRule(rulesDir, "rule-a.mdc", oversizeContent);
+		writeReviewerRule(rulesDir, "rule-b.mdc", "---\nalwaysApply: true\n---\n# B\nsmall\n");
+
+		const result = buildReviewerContext({
+			projectRoot: root,
+			config: {},
+			reviewType: "plan",
+			scopePaths: [],
+		});
+
+		assert.equal(result.truncated, true);
+		assert.equal(result.byteCap, DEFAULT_REVIEWER_CONTEXT_BYTE_CAP);
+		assert.deepEqual(
+			result.entries.map((entry) => entry.relPath),
+			[".cursor/rules/rule-b.mdc"],
+		);
+		assert.deepEqual(result.skipped, [
+			{
+				path: ".cursor/rules/rule-a.mdc",
+				reason: "byte_cap",
+				sizeBytes: Buffer.byteLength(oversizeContent, "utf-8"),
+			},
+		]);
+		assert.ok(result.skipped[0].sizeBytes > DEFAULT_REVIEWER_CONTEXT_BYTE_CAP);
+		assert.match(result.text, /Project standards for review/);
+		assert.match(result.text, /rule-b\.mdc/);
+		assert.doesNotMatch(result.text, /rule-a\.mdc/);
+		assert.ok(result.bytesUsed <= DEFAULT_REVIEWER_CONTEXT_BYTE_CAP);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerContext skips an oversize middle rule and loads both neighbors (reviewer cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-reviewer-skip-mid-"));
+	try {
+		const rulesDir = path.join(root, ".cursor", "rules");
+		fs.mkdirSync(rulesDir, { recursive: true });
+		const oversizeContent = `---\nalwaysApply: true\n---\n# B\n${"x".repeat(DEFAULT_REVIEWER_CONTEXT_BYTE_CAP)}\n`;
+		writeReviewerRule(rulesDir, "rule-a.mdc", "---\nalwaysApply: true\n---\n# A\nsmall\n");
+		writeReviewerRule(rulesDir, "rule-b.mdc", oversizeContent);
+		writeReviewerRule(rulesDir, "rule-c.mdc", "---\nalwaysApply: true\n---\n# C\nsmall\n");
+
+		const result = buildReviewerContext({
+			projectRoot: root,
+			config: {},
+			reviewType: "plan",
+			scopePaths: [],
+		});
+
+		assert.equal(result.truncated, true);
+		assert.deepEqual(
+			result.entries.map((entry) => entry.relPath),
+			[".cursor/rules/rule-a.mdc", ".cursor/rules/rule-c.mdc"],
+		);
+		assert.deepEqual(result.skipped, [
+			{
+				path: ".cursor/rules/rule-b.mdc",
+				reason: "byte_cap",
+				sizeBytes: Buffer.byteLength(oversizeContent, "utf-8"),
+			},
+		]);
+		assert.match(result.text, /rule-a\.mdc/);
+		assert.match(result.text, /rule-c\.mdc/);
+		assert.doesNotMatch(result.text, /rule-b\.mdc/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildReviewerContext reports nothing skipped when all rules fit (reviewer cap)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-reviewer-all-fit-"));
+	try {
+		const rulesDir = path.join(root, ".cursor", "rules");
+		fs.mkdirSync(rulesDir, { recursive: true });
+		writeReviewerRule(rulesDir, "rule-a.mdc", "---\nalwaysApply: true\n---\n# A\nsmall\n");
+		writeReviewerRule(rulesDir, "rule-b.mdc", "---\nalwaysApply: true\n---\n# B\nsmall\n");
+
+		const result = buildReviewerContext({
+			projectRoot: root,
+			config: {},
+			reviewType: "plan",
+			scopePaths: [],
+		});
+
+		assert.equal(result.truncated, false);
+		assert.deepEqual(result.skipped, []);
+		assert.equal(result.entries.length, 2);
+		assert.match(result.text, /rule-a\.mdc/);
+		assert.match(result.text, /rule-b\.mdc/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});

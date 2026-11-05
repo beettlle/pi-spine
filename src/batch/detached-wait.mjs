@@ -306,17 +306,24 @@ export async function waitForDetachedBatchResume({
 			continue;
 		}
 
+		const updatedAt = Number(raw.updatedAt ?? 0);
+
 		if (raw.phase === "failed" || raw.phase === "aborted") {
-			return {
-				ok: false,
-				error: "batch_engine_failed",
-				batchId,
-				phase: raw.phase,
-				lastError: raw.lastError ?? null,
-			};
+			// SP-851: only a failure written after the resume started
+			// (updatedAt > updatedAtBefore) is an engine failure. A pre-resume
+			// terminal state (e.g. resuming an already-failed batch) keeps polling
+			// until the new engine writes `running` or the wait times out.
+			if (updatedAt > updatedAtBefore) {
+				return {
+					ok: false,
+					error: "batch_engine_failed",
+					batchId,
+					phase: raw.phase,
+					lastError: raw.lastError ?? null,
+				};
+			}
 		}
 
-		const updatedAt = Number(raw.updatedAt ?? 0);
 		if (raw.phase === "running" && updatedAt > updatedAtBefore) {
 			engineStarted = true;
 			if (!waitTerminal) {

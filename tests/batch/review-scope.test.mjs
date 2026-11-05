@@ -106,13 +106,107 @@ test("resolveReviewScopePaths plan uses task PROMPT file scope", () => {
 	}
 });
 
-test("resolveReviewScopePaths final returns empty scope", () => {
+test("resolveReviewScopePaths code falls back to file scope on empty diff", () => {
+	const root = fs.mkdtempSync(path.join(fs.realpathSync("/tmp"), "spine-scope-code-empty-"));
+	try {
+		const taskFolder = writeScopeTask(root);
+		const result = resolveReviewScopePaths({
+			worktreePath: root,
+			reviewType: "code",
+			taskFolder,
+			runGit: () => "",
+		});
+		assert.deepEqual(result, {
+			scopePaths: ["src/batch/review-scope.mjs", "tests/batch/review-scope.test.mjs"],
+		});
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("resolveReviewScopePaths code falls back to file scope on git error", () => {
+	const root = fs.mkdtempSync(path.join(fs.realpathSync("/tmp"), "spine-scope-code-error-"));
+	try {
+		const taskFolder = writeScopeTask(root);
+		const result = resolveReviewScopePaths({
+			worktreePath: "/nonexistent",
+			baseline: "bad",
+			reviewType: "code",
+			taskFolder,
+			runGit: () => {
+				throw new Error("git failed");
+			},
+		});
+		assert.deepEqual(result, {
+			scopePaths: ["src/batch/review-scope.mjs", "tests/batch/review-scope.test.mjs"],
+		});
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("resolveReviewScopePaths final with baseline uses diff paths", () => {
+	const calls = [];
 	const result = resolveReviewScopePaths({
-		worktreePath: "/tmp/worktree",
+		worktreePath: "/tmp/wt",
+		baseline: "abc123",
 		reviewType: "final",
 		taskFolder: "/tmp/task",
+		runGit: (command, args, cwd) => {
+			calls.push({ command, args, cwd });
+			return "src/final.mjs\nspine-tasks/TP/.DONE\n";
+		},
 	});
-	assert.deepEqual(result, { scopePaths: [] });
+	assert.deepEqual(calls, [
+		{
+			command: "git",
+			args: ["diff", "--name-only", "abc123..HEAD"],
+			cwd: "/tmp/wt",
+		},
+	]);
+	assert.deepEqual(result, { scopePaths: ["src/final.mjs"] });
+});
+
+test("resolveReviewScopePaths final without baseline falls back to file scope", () => {
+	const root = fs.mkdtempSync(path.join(fs.realpathSync("/tmp"), "spine-scope-final-nobase-"));
+	try {
+		const taskFolder = writeScopeTask(root);
+		const gitCalls = [];
+		const result = resolveReviewScopePaths({
+			worktreePath: root,
+			reviewType: "final",
+			taskFolder,
+			runGit: (...args) => {
+				gitCalls.push(args);
+				return "src/never.mjs\n";
+			},
+		});
+		assert.deepEqual(gitCalls, []);
+		assert.deepEqual(result, {
+			scopePaths: ["src/batch/review-scope.mjs", "tests/batch/review-scope.test.mjs"],
+		});
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("resolveReviewScopePaths final with baseline and empty diff falls back to file scope", () => {
+	const root = fs.mkdtempSync(path.join(fs.realpathSync("/tmp"), "spine-scope-final-empty-"));
+	try {
+		const taskFolder = writeScopeTask(root);
+		const result = resolveReviewScopePaths({
+			worktreePath: root,
+			baseline: "abc123",
+			reviewType: "final",
+			taskFolder,
+			runGit: () => "",
+		});
+		assert.deepEqual(result, {
+			scopePaths: ["src/batch/review-scope.mjs", "tests/batch/review-scope.test.mjs"],
+		});
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
 });
 
 test("resolveCodeReviewScopePaths uses baseline..HEAD when baseline provided", async () => {

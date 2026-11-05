@@ -3,9 +3,11 @@ import test from "node:test";
 
 import {
 	buildStetCapacityDoctorCheck,
+	buildStetVersionDoctorCheck,
 	parseDarwinSwapFreeBytes,
 	parseLinuxSwapFreeBytes,
 	parseLmsLoadedModels,
+	parseStetVersion,
 } from "../../src/doctor/stet-capacity.mjs";
 
 const GIB = 1024 ** 3;
@@ -77,4 +79,52 @@ test("unavailable probes are reported, not treated as healthy or failing", () =>
 	});
 	assert.equal(check.warning, undefined);
 	assert.match(check.detail, /not probed: stet processes, LM Studio models/);
+});
+
+const INSTALL = "curl -fsSL https://raw.githubusercontent.com/beettlle/stet/main/install.sh | bash";
+
+function stetVersionCheck(output) {
+	return buildStetVersionDoctorCheck({ stetVersion: () => output });
+}
+
+test("parses stet --version output numerically", () => {
+	assert.deepEqual(parseStetVersion("stet version v1.4.0"), { major: 1, minor: 4, patch: 0 });
+	assert.deepEqual(parseStetVersion("stet version v1.10.0\nbuild 2f4086"), { major: 1, minor: 10, patch: 0 });
+	assert.equal(parseStetVersion("no version here"), null);
+});
+
+test("version check skips when stet is not on PATH", () => {
+	const check = stetVersionCheck(null);
+	assert.equal(check.ok, true);
+	assert.equal(check.warning, undefined);
+	assert.equal(check.detail, "stet not on PATH (skipped)");
+});
+
+test("version check passes for stet v1.4.0 and v1.10.0 (numeric compare)", () => {
+	const atFloor = stetVersionCheck("stet version v1.4.0");
+	assert.equal(atFloor.ok, true);
+	assert.equal(atFloor.warning, undefined);
+	assert.equal(atFloor.detail, "stet v1.4.0");
+	const newer = stetVersionCheck("stet version v1.10.0");
+	assert.equal(newer.ok, true);
+	assert.equal(newer.warning, undefined);
+	assert.equal(newer.detail, "stet v1.10.0");
+});
+
+test("version check warns (never fails) for stet v1.3.0", () => {
+	const check = stetVersionCheck("stet version v1.3.0");
+	assert.equal(check.ok, true);
+	assert.equal(check.warning, true);
+	assert.match(check.detail, /stet version v1\.3\.0/);
+	assert.match(check.detail, /falls back to gating on every active finding/);
+	assert.equal(check.suggestedCommand, INSTALL);
+});
+
+test("version check warns on unparseable output", () => {
+	const check = stetVersionCheck("stet: command produced nonsense");
+	assert.equal(check.ok, true);
+	assert.equal(check.warning, true);
+	assert.match(check.detail, /command produced nonsense/);
+	assert.match(check.detail, /falls back to gating on every active finding/);
+	assert.equal(check.suggestedCommand, INSTALL);
 });

@@ -38,6 +38,44 @@ function hasJournalTerminalLifecycle(lastEvent) {
 	return JOURNAL_TERMINAL_LIFECYCLE.has(String(lastEvent.type ?? ""));
 }
 
+/** @type {ReadonlySet<string>} Review/contract pipeline events that show the engine is mid-flight on post-`.DONE` work (SP-850 / #356, #371). */
+const POST_DONE_PIPELINE_EVENT_TYPES = new Set([
+	"review.started",
+	"review.completed",
+	"review.failed",
+	"contract.verified",
+	"contract.failed",
+	"task.verdict_recorded",
+]);
+
+/**
+ * True when the journal shows post-`.DONE` engine work still open for a task
+ * (SP-850 / #356, #371): an unresolved `review.started` (code/plan/final), or a
+ * resolved review with no terminal lifecycle yet — the engine is between
+ * reviews or running contract verification (which has no "started" marker; it
+ * only journals `contract.verified`/`contract.failed` when it finishes). A
+ * worker legitimately writes `.DONE` before the engine reviews it, so this
+ * window is not state drift. Terminal lifecycle resolution is checked by the
+ * caller (`hasJournalTerminalLifecycle`); terminal-artifact completeness is
+ * checked separately via `journalShowsDoneInLaneTerminalArtifacts` so the
+ * #170 heal keeps its drift trigger.
+ *
+ * @param {object[]} events
+ * @param {string} taskId
+ */
+export function journalHasOpenPostDonePipeline(events, taskId) {
+	if (!Array.isArray(events)) return false;
+	for (const event of events) {
+		const type = String(event?.type ?? "");
+		if (!POST_DONE_PIPELINE_EVENT_TYPES.has(type)) continue;
+		const payload = event.payload && typeof event.payload === "object" ? event.payload : {};
+		const eventTaskId = event.taskId ?? payload.taskId;
+		if (eventTaskId !== taskId) continue;
+		return true;
+	}
+	return false;
+}
+
 /**
  * @param {object|null|undefined} classified
  */
@@ -244,7 +282,14 @@ export function detectBatchStateDrift(cachedState, rebuiltState, events = [], cl
 		if (
 			NON_TERMINAL_CACHE_STATUSES.has(cachedStatus) &&
 			classifiedShowsDoneInLaneDrift(classified) &&
-			!hasJournalTerminalLifecycle(lastEvent)
+			!hasJournalTerminalLifecycle(lastEvent) &&
+			// SP-850 / #356, #371: suppress the doneInLane drift entry while the
+			// post-`.DONE` review/contract pipeline is open (engine reviewing or
+			// verifying) and the terminal-artifact signature is not yet complete.
+			// When the signature IS complete (#170), keep the entry so
+			// reconcileBatchStateDrift can heal the stale cache to succeeded.
+			(!journalHasOpenPostDonePipeline(events, taskId) ||
+				journalShowsDoneInLaneTerminalArtifacts(events, taskId))
 		) {
 			entries.push({
 				taskId,
