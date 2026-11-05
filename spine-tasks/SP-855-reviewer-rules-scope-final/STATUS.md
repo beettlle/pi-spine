@@ -2,7 +2,7 @@
 
 **Current Step:** Complete
 **Status:** ✅ Complete
-**Last Updated:** 2026-11-03
+**Last Updated:** 2026-11-04
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -92,6 +92,7 @@ Risk warning acknowledged per repo policy. Mitigation: function signatures uncha
 | 2026-11-03 | Steps 1–2 | `resolveReviewScopePaths` code/final fallbacks implemented; 5 new batch tests + CLI test updated; 25/25 pass (batch scope + CLI rules) |
 | 2026-11-03 | Step 3 | Contract `testCommand` green (lint, typecheck, 30/30); `worker-verify.sh` full suite 3206/3206 pass — run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per PROMPT Environment (D5) |
 | 2026-11-03 | Step 4 | Discovery doc review-scope table + skill Tier 4 / Reviewer rules text updated; D6 runbook check logged; `.DONE` created |
+| 2026-11-04 | Scheduler re-invocation on finished task; `.DONE` absent (consumed by engine) | State re-verified on lane tip `608de689`: fallback implementation in review-scope.mjs + 13 batch tests present (commits `5a0f1533`, `04bedc6e`); plan review APPROVE in `.reviews/`; Contract `testCommand` green (lint + typecheck + 30/30, exit 0, `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset per packet Environment); `.DONE` recreated — no work redone |
 
 ## Blockers
 
