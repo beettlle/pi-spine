@@ -327,8 +327,10 @@ function spawnLiveEngine() {
 
 test("integrateOrchToBase suggests wait while the engine is still finalizing (already merged) (#371)", async () => {
 	const projectRoot = await initGitRepo("spine-integrate-live-engine-merged-");
-	const child = await spawnLiveEngine();
+	/** @type {import("node:child_process").ChildProcess|null} */
+	let child = null;
 	try {
+		child = await spawnLiveEngine();
 		const orchBranch = "orch/spine-20260601T120000";
 		createOrchWithWork(projectRoot, orchBranch);
 		const fixture = completedBatchFixture(orchBranch);
@@ -348,7 +350,7 @@ test("integrateOrchToBase suggests wait while the engine is still finalizing (al
 		assert.deepEqual(result.alternatives, ["spine batch complete"]);
 	} finally {
 		try {
-			child.kill("SIGKILL");
+			child?.kill("SIGKILL");
 		} catch {
 			/* ignore */
 		}
@@ -358,8 +360,10 @@ test("integrateOrchToBase suggests wait while the engine is still finalizing (al
 
 test("integrateOrchToBase suggests wait on success while the engine is still finalizing (#371)", async () => {
 	const projectRoot = await initGitRepo("spine-integrate-live-engine-");
-	const child = await spawnLiveEngine();
+	/** @type {import("node:child_process").ChildProcess|null} */
+	let child = null;
 	try {
+		child = await spawnLiveEngine();
 		const orchBranch = "orch/spine-20260601T120000";
 		const batchId = "20260601T120000";
 		createOrchWithWork(projectRoot, orchBranch);
@@ -377,7 +381,7 @@ test("integrateOrchToBase suggests wait on success while the engine is still fin
 		assert.ok(!result.alreadyMerged);
 	} finally {
 		try {
-			child.kill("SIGKILL");
+			child?.kill("SIGKILL");
 		} catch {
 			/* ignore */
 		}
