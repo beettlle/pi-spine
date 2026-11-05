@@ -111,6 +111,21 @@ Wave 1 · SP-853 (after SP-852)
 
 ---
 
+## Execution log (Phase 4)
+
+**Batch A** (`20261102T211511-62e0`, 58 min): 4/4 succeeded. Operator decisions: the leftover v2.29.0 batch `20261023T030941-33c5` was archived before start, and the swap-capacity warning was accepted (Batch A runs no stet). Integrated `655973a5`. Follow-up `49b4adcf` deleted a stray `coverage-err.log` that the SP-846 worker had committed, and added it to `.gitignore`. `release:check` initially failed 3192/3193 because the host git-ai daemon added `refs/notes/ai` to a test temp repo ([#372](https://github.com/beettlle/pi-spine/issues/372)). With git-ai paused it exited 0 (3193/3193). `npm audit --audit-level=high` exits 0.
+
+**Batch B wave 0** (`20261104T002520-ddb2`): blocking stet review policy and a 30-minute review timeout (`18cb39ff`). The swap warning was accepted by the operator. First pass: SP-852 succeeded; the other five failed only on the stet `reviewCommand`, and every `testCommand` passed.
+
+- Stet triage: 23 findings at `warning`/`0.8` or above. 2 were real, both test-hygiene issues in SP-856: `spawnLiveEngine()` called before `try`, and the `fs` patch not restored in `finally`. They were fixed in the lane in `93e6bf67`. 21 were false positives or already correct; they were dismissed and filed as [beettlle/stet#39](https://github.com/beettlle/stet/issues/39).
+- With the batch stopped, the operator switched to the advisory policy (`5f02b29f`) and retried all five, which escalated them to the `allegretto` profile. All 6 succeeded. The advisory re-reviews surfaced one more real case of the same pattern in `tests/batch/integrate.test.mjs`, fixed on main in `3aadfbb3`.
+- Integrated `45fd75c4`. `release:check` exit 0 (3233/3233, git-ai paused). Closed #356, #370, #337, #357, #371.
+- #349: keep-paths verified live, closed. The run also exposed two problems in the contract script's task scoping: retried tasks were reviewed on later lane tasks' commits, and dismissals were lost across baseline switches ([#373](https://github.com/beettlle/pi-spine/issues/373)).
+
+**Batch B wave 1** (SP-853): advisory stet policy.
+
+---
+
 ## Deferred backlog
 
 | Item | Type | Rationale |
