@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import test from "node:test";
 import { runSpineIntegrate } from "../../bin/spine-integrate.mjs";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { assertOrchIntegratable, integrateOrchToBase } from "../../src/batch/integrate.mjs";
+import { recordBatchEnginePid } from "../../src/batch/state.mjs";
 import { completeBatch } from "../../src/batch/lifecycle.mjs";
 import { readJournalEvents } from "../../src/batch/journal.mjs";
 import { reconcileBatch } from "../../src/batch/reconcile.mjs";
@@ -309,6 +310,77 @@ test("runSpineIntegrate CLI succeeds when orch tip already matches main", async 
 		assert.equal(cli.exitCode, 0);
 		assert.match(cli.output, /already merged/i);
 	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/** Spawn a dummy live process to back a recorded engine PID (#371 tests). */
+function spawnLiveEngine() {
+	const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 60_000)"], {
+		stdio: "ignore",
+	});
+	return new Promise((resolve, reject) => {
+		child.once("spawn", () => resolve(child));
+		child.once("error", reject);
+	});
+}
+
+test("integrateOrchToBase suggests wait while the engine is still finalizing (already merged) (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-live-engine-merged-");
+	const child = await spawnLiveEngine();
+	try {
+		const orchBranch = "orch/spine-20260601T120000";
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedBatchFixture(orchBranch);
+		fixture.phase = "running";
+		recordBatchEnginePid(fixture, child.pid ?? 0);
+		writeSpineBatchState(projectRoot, fixture);
+		// Post-integrate state: orch already landed on main.
+		execFileSync("git", ["merge", "--no-ff", orchBranch, "-m", "merge orch"], {
+			cwd: projectRoot,
+			stdio: "ignore",
+		});
+
+		const result = integrateOrchToBase({ projectRoot });
+		assert.equal(result.ok, true);
+		assert.equal(result.alreadyMerged, true);
+		assert.equal(result.suggestedCommand, "spine wait --until completed --timeout 10m");
+		assert.deepEqual(result.alternatives, ["spine batch complete"]);
+	} finally {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("integrateOrchToBase suggests wait on success while the engine is still finalizing (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-integrate-live-engine-");
+	const child = await spawnLiveEngine();
+	try {
+		const orchBranch = "orch/spine-20260601T120000";
+		const batchId = "20260601T120000";
+		createOrchWithWork(projectRoot, orchBranch);
+		const fixture = completedBatchFixture(orchBranch, batchId);
+		fixture.phase = "running";
+		recordBatchEnginePid(fixture, child.pid ?? 0);
+		writeSpineBatchState(projectRoot, fixture);
+		approveGateForIntegrate(projectRoot, fixture, batchId);
+
+		const result = integrateOrchToBase({ projectRoot });
+		assert.equal(result.ok, true);
+		assert.ok(result.mergeCommit);
+		assert.equal(result.suggestedCommand, "spine wait --until completed --timeout 10m");
+		assert.deepEqual(result.alternatives, ["spine batch complete", "spine status --diagnose"]);
+		assert.ok(!result.alreadyMerged);
+	} finally {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
 		await destroyGitRepo(projectRoot);
 	}
 });

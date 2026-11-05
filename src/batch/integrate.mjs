@@ -23,6 +23,7 @@ export { assertOrchIntegratable } from "./integrate-assert.mjs";
 import { tryRestoreBranch } from "./integrate-git.mjs";
 export { tryRestoreBranch } from "./integrate-git.mjs";
 import { checkIntegrateGate } from "./gate.mjs";
+import { isLiveEngineInActivePhase } from "./lifecycle-archive.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
@@ -76,6 +77,20 @@ function runIntegrateMerge({ projectRoot, baseBranch, orchBranch, batchId }) {
 		return mergeOrchIntoBaseIsolated({ projectRoot, baseBranch, orchBranch, batchId });
 	}
 	return plumbingMergeOrchIntoBase({ projectRoot, baseBranch, orchBranch, mergeMessage });
+}
+
+/**
+ * Post-merge suggestion (#371): a live engine in an active phase is still
+ * finishing its land loop — wait instead of pointing at a refusing complete.
+ * @param {unknown} raw raw batch state read at entry
+ * @returns {{ suggestedCommand: string, alternatives: string[] }|null}
+ */
+function postMergeCompletionSuggestion(raw) {
+	if (!isLiveEngineInActivePhase(raw)) return null;
+	return {
+		suggestedCommand: "spine wait --until completed --timeout 10m",
+		alternatives: ["spine batch complete"],
+	};
 }
 
 /**
@@ -156,6 +171,7 @@ export function integrateOrchToBase(ctx) {
 	});
 
 	if (gitState.orchMergedToBase) {
+		const waiting = postMergeCompletionSuggestion(loaded.raw);
 		return {
 			ok: true,
 			exitCode: 0,
@@ -163,7 +179,8 @@ export function integrateOrchToBase(ctx) {
 			baseBranch,
 			orchBranch,
 			headline: `Orch branch already merged into ${baseBranch}`,
-			suggestedCommand: "spine batch complete",
+			suggestedCommand: waiting?.suggestedCommand ?? "spine batch complete",
+			...(waiting ? { alternatives: waiting.alternatives } : {}),
 			alreadyMerged: true,
 		};
 	}
@@ -395,6 +412,7 @@ export function integrateOrchToBase(ctx) {
 			baseCheckedOutAtStart,
 		});
 
+		const waiting = postMergeCompletionSuggestion(loaded.raw);
 		return {
 			ok: true,
 			exitCode: 0,
@@ -405,8 +423,10 @@ export function integrateOrchToBase(ctx) {
 			commitsAhead,
 			gateRequired: gateCheck.required ?? false,
 			headline: `Integrated ${orchBranch} into ${baseBranch}`,
-			suggestedCommand: "spine batch complete",
-			alternatives: ["spine status --diagnose"],
+			suggestedCommand: waiting?.suggestedCommand ?? "spine batch complete",
+			alternatives: waiting
+				? ["spine batch complete", "spine status --diagnose"]
+				: ["spine status --diagnose"],
 			...(dirtyOverlapWarning ? { warnings: [dirtyOverlapWarning] } : {}),
 		};
 	} catch (err) {

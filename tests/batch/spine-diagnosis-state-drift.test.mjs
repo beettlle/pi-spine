@@ -33,3 +33,38 @@ test("buildSuggestedCommand for state_drift without task id falls back to diagno
 	assert.equal(command, "spine status --diagnose");
 	assert.doesNotMatch(command, /retry --force/);
 });
+
+test("buildSuggestedCommand for state_drift with live engine suggests spine wait (SP-850)", () => {
+	const command = buildSuggestedCommand("state_drift", {
+		failedTaskId: "SP-441",
+		phase: "running",
+		driftTaskStatus: "running",
+		engineStillRunning: true,
+		staleEnginePid: false,
+		enginePid: 1234,
+	});
+	assert.equal(command, "spine wait --until completed,failed,needs_integrate --timeout 2h");
+	assert.doesNotMatch(command, /resume --force/);
+});
+
+test("buildSuggestedCommand for state_drift with dead engine still suggests resume --force (SP-850)", () => {
+	const command = buildSuggestedCommand("state_drift", {
+		failedTaskId: "SP-441",
+		phase: "running",
+		driftTaskStatus: "running",
+		engineStillRunning: false,
+		engineDead: true,
+	});
+	assert.equal(command, "spine batch resume --force");
+});
+
+test("buildSuggestedCommand for state_drift with stale engine pid still suggests resume --force (SP-850)", () => {
+	const command = buildSuggestedCommand("state_drift", {
+		failedTaskId: "SP-441",
+		phase: "running",
+		driftTaskStatus: "running",
+		staleEnginePid: true,
+		engineStillRunning: false,
+	});
+	assert.equal(command, "spine batch resume --force");
+});

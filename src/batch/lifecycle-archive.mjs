@@ -12,6 +12,8 @@ import {
 	readBatchStateId,
 } from "./batch-state-io.mjs";
 import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs";
+import { isEngineProcessAlive } from "../process/liveness.mjs";
+import { readBatchEnginePid, readBatchEngineStartedAt } from "./state-guards.mjs";
 
 /**
  * Phases a resume/pause/engine writer can leave behind between a terminal
@@ -22,6 +24,27 @@ import { removeLaneWorktrees, maxLaneNumberFromBatchState } from "./worktree.mjs
  * allows dismiss (limbo_stale).
  */
 const ACTIVE_RESUME_PHASES = new Set(["planning", "running", "paused", "merging"]);
+
+/**
+ * True when the batch is in an active resume phase and the recorded engine
+ * PID is alive — i.e. a detached engine is still finalizing its land loop
+ * (#371). Liveness is injectable so callers and tests can stub the probe
+ * (same shape as `isLiveEngineMidTask`).
+ *
+ * @param {unknown} raw raw batch state (e.g. the in-lock re-read)
+ * @param {object} [deps]
+ * @param {(raw: object) => boolean} [deps.isEngineAlive] injectable engine liveness probe
+ * @returns {boolean}
+ */
+export function isLiveEngineInActivePhase(raw, deps = {}) {
+	if (!raw || typeof raw !== "object") return false;
+	const phase = String(/** @type {{ phase?: string }} */ (raw).phase ?? "");
+	if (!ACTIVE_RESUME_PHASES.has(phase)) return false;
+	const isEngineAlive =
+		deps.isEngineAlive ??
+		((state) => isEngineProcessAlive(readBatchEnginePid(state), readBatchEngineStartedAt(state)));
+	return Boolean(isEngineAlive(raw));
+}
 
 /**
  * Re-read the active batch state inside the terminal lock section
@@ -43,6 +66,8 @@ const ACTIVE_RESUME_PHASES = new Set(["planning", "running", "paused", "merging"
  * @param {boolean} [params.requireTerminalPhase] re-validate the terminal-phase precondition on the in-lock state
  * @param {boolean} [params.force] `dismiss --force` skips the phase re-validation
  * @param {string|null} [params.diagnosis] pre-lock diagnosis echoed on refusal
+ * @param {object} [params.deps]
+ * @param {(raw: object) => boolean} [params.deps.isEngineAlive] injectable engine liveness probe (#371)
  * @returns {{ state: { path: string, raw: object }|null, refusal: object|null }}
  */
 export function reloadStateForTerminalWrite({
@@ -53,6 +78,7 @@ export function reloadStateForTerminalWrite({
 	requireTerminalPhase = false,
 	force = false,
 	diagnosis = null,
+	deps = {},
 }) {
 	const refuse = () => ({
 		ok: false,
@@ -77,6 +103,24 @@ export function reloadStateForTerminalWrite({
 	if (requireTerminalPhase && !force) {
 		const phase = String(/** @type {{ phase?: string }} */ (reloaded.raw).phase ?? "");
 		if (ACTIVE_RESUME_PHASES.has(phase)) {
+			// #371: a live engine turned the batch active again between the pre-lock
+			// read and this reload — it is finishing its land loop, not crashing.
+			// Report a pending wait instead of the generic mid-write failure.
+			if (isLiveEngineInActivePhase(reloaded.raw, deps)) {
+				return {
+					state: null,
+					refusal: {
+						ok: false,
+						exitCode: 1,
+						pending: true,
+						error: "engine_finishing_land_loop",
+						headline: "Engine is finishing the land loop — wait for it to complete",
+						suggestedCommand: "spine wait --until completed --timeout 10m",
+						diagnosis: diagnosis ?? null,
+						batchId,
+					},
+				};
+			}
 			return { state: null, refusal: refuse() };
 		}
 	}
