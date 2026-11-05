@@ -56,6 +56,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 9ee685d  bin/spine-batch.mjs:115  WARNING  The ternary chain `result.ok ? ... : result.pending ? ... : ...` assumes that `result. | advisory — noted, not blocking | contract review step |
 | Impact `reloadStateForTerminalWrite`: GitNexus HIGH — 3 direct callers: `completeBatch.inLock` (lifecycle.mjs:438), `dismissBatch.inLock` (lifecycle.mjs:217), `abortBatch.inLock` (abort.mjs:233). New behavior guarded to the `requireTerminalPhase && !force` active-phase branch; abort never passes it, and dismiss/complete fixtures in existing tests carry no engine PID (default liveness → dead), so their generic refusals are unchanged. | Noted | src/batch/lifecycle-archive.mjs |
 | `formatLifecycleHuman` missing from GitNexus index (24 commits stale); grep found its only callers in `bin/spine-batch.mjs` (3 result-render sites). Headline prefix switches on `pending` only; nothing else sets `pending: true` today. | Noted | bin/spine-batch.mjs |
 | Integrate result builder is `integrateOrchToBase`; `suggestedCommand: "spine batch complete"` returned at integrate.mjs:166 (already-merged) and :408 (success). `rg` found no test asserting those two suggestions; `tests/cli/sequence.test.mjs:131` matches `sequence-plan.mjs` output (untouched). Generic-refusal assertions (lifecycle.test.mjs:352/449, abort.test.mjs:410/452) use PID-less fixtures → unchanged. | Noted | tests/ |
