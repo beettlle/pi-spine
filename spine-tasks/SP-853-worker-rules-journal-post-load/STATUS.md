@@ -1,8 +1,8 @@
 # SP-853: `worker.rules_selected` reports what actually loaded — Status
 
-**Current Step:** Step 0
-**Status:** 🔵 Not Started
-**Last Updated:** 2026-11-01
+**Current Step:** Step 1
+**Status:** 🔵 In Progress
+**Last Updated:** 2026-11-05
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `buildWorkerContextAsync`; report the blast radius in STATUS
-- [ ] `rg -n "worker.rules_selected" src tests` — list consumers; confirm the change is additive for each
+- [x] GitNexus impact on `buildWorkerContextAsync`; report the blast radius in STATUS
+- [x] `rg -n "worker.rules_selected" src tests` — list consumers; confirm the change is additive for each
 
 ### Step 1: Post-load journal
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Event emitted after loading with `bytesUsed`, `byteCap`, `truncated`, `skipped`
 
@@ -49,12 +49,15 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Impact `buildWorkerContextAsync` upstream: LOW risk; 3 impacted symbols — d1 `buildWorkerTailPrompt`, d2 `buildAgentSessionWorkerPrompt`, d3 `startAgentSessionWorker`; 1 affected process (`spawnWorkerHandle`). Index staleness: 66 commits behind HEAD (epistemic: exact). | noted | STATUS.md Step 0 |
+| `worker.rules_selected` consumers: emitter `src/config/worker-context.mjs`; `tests/batch/worker-prompt-rules.test.mjs:204` asserts exactly 1 event + `mode`/`paths`/`entries` (additive change preserves count and fields); `tests/batch/resume-orphan-recovery.test.mjs:123` only writes its own fixture event, does not read ours. Change is additive for all consumers. | confirmed additive | STATUS.md Step 0 |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-01 | Task staged | PROMPT.md created |
+| 2026-11-05 | Step 0 preflight | impact LOW (3 upstream symbols, 1 process); consumers additive |
 
 ## Blockers
 
