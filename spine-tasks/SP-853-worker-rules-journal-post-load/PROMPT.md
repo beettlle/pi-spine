@@ -90,7 +90,7 @@ Closes #345 — `worker.rules_selected` matches the reviewer event's post-load s
 
 ## Completion Criteria
 
-- [ ] `worker.rules_selected` reports bytes used, cap, truncation, and skipped paths
+- [x] `worker.rules_selected` reports bytes used, cap, truncation, and skipped paths
 
 ## Git Commit Convention
 

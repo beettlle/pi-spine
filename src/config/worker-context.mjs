@@ -313,7 +313,7 @@ export function buildWorkerContextAsync({
 		...referenceDocs.filter((entry) => !neverLoad.has(entry) && !selectedSet.has(entry)),
 	];
 
-	emitWorkerRulesSelected(journal, {
+	const journalPayload = {
 		mode: "auto",
 		manifestSource,
 		profileSource: profileResult.source,
@@ -328,9 +328,12 @@ export function buildWorkerContextAsync({
 		referenceDocCount: referenceDocs.filter(
 			(entry) => !neverLoad.has(entry) && !selectedSet.has(entry),
 		).length,
-	});
+	};
+	const emitPostLoad = (loadStats) =>
+		emitWorkerRulesSelected(journal, { ...journalPayload, ...loadStats });
 
 	if (orderedPaths.length === 0) {
+		emitPostLoad({ bytesUsed: 0, byteCap, truncated: false, skipped: [] });
 		return {
 			text: "",
 			entries: [],
@@ -354,6 +357,7 @@ export function buildWorkerContextAsync({
 		byteCap,
 	});
 	if (!loaded.ok) {
+		emitPostLoad({ bytesUsed: 0, byteCap, truncated: false, skipped: [] });
 		return {
 			text: "",
 			entries: [],
@@ -371,6 +375,13 @@ export function buildWorkerContextAsync({
 			},
 		};
 	}
+
+	emitPostLoad({
+		bytesUsed: loaded.bytesUsed,
+		byteCap: loaded.byteCap,
+		truncated: loaded.truncated,
+		skipped: loaded.skipped,
+	});
 
 	const parts = loaded.entries.map(
 		(entry) => `--- ${entry.relPath} ---\n${entry.content.trim()}\n`,
