@@ -49,6 +49,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): d731ebb  src/config/worker-context.mjs:316  ERROR  The diff changes the direct call `emitWorkerRulesSelected(journal, { ... })` t | advisory — noted, not blocking | contract review step |
 | Impact `buildWorkerContextAsync` upstream: LOW risk; 3 impacted symbols — d1 `buildWorkerTailPrompt`, d2 `buildAgentSessionWorkerPrompt`, d3 `startAgentSessionWorker`; 1 affected process (`spawnWorkerHandle`). Index staleness: 66 commits behind HEAD (epistemic: exact). | noted | STATUS.md Step 0 |
 | `worker.rules_selected` consumers: emitter `src/config/worker-context.mjs`; `tests/batch/worker-prompt-rules.test.mjs:204` asserts exactly 1 event + `mode`/`paths`/`entries` (additive change preserves count and fields); `tests/batch/resume-orphan-recovery.test.mjs:123` only writes its own fixture event, does not read ours. Change is additive for all consumers. | confirmed additive | STATUS.md Step 0 |
 | Emission design: auto path now emits once per call from a shared `journalPayload` + `emitPostLoad(loadStats)` helper — post-load in all 3 branches (empty selection, load error, success). `skipped` passed through as loader result (`{ path, reason, sizeBytes? }`); existing fields unchanged. Net +11 lines (414→425, cap 430/+15). Static-mode fallback emissions left unchanged (already effectively post-load via `buildWorkerContext`; auto path was the reported bug). | noted | src/config/worker-context.mjs |
