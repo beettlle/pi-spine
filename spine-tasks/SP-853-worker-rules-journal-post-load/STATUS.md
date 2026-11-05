@@ -1,6 +1,6 @@
 # SP-853: `worker.rules_selected` reports what actually loaded — Status
 
-**Current Step:** Step 1
+**Current Step:** Step 3
 **Status:** 🔵 In Progress
 **Last Updated:** 2026-11-05
 **Review Level:** 1
@@ -17,17 +17,17 @@
 - [x] `rg -n "worker.rules_selected" src tests` — list consumers; confirm the change is additive for each
 
 ### Step 1: Post-load journal
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Event emitted after loading with `bytesUsed`, `byteCap`, `truncated`, `skipped`
+- [x] Event emitted after loading with `bytesUsed`, `byteCap`, `truncated`, `skipped`
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Over-cap selection journals truncation and the skipped path
+- [x] Over-cap selection journals truncation and the skipped path
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Run Contract `testCommand`; the engine then runs the stet `reviewCommand`
 - [ ] Fix all failures

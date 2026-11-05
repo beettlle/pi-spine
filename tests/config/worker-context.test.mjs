@@ -16,6 +16,7 @@ import {
 	normalizeContextPathList,
 } from "../../src/config/worker-context.mjs";
 import { buildWorkerTailPrompt } from "../../src/batch/worker-prompt.mjs";
+import { readJournalEvents } from "../../src/batch/journal.mjs";
 
 test("normalizeContextPathList rejects non-arrays", () => {
 	assert.deepEqual(normalizeContextPathList(["a.md"]), ["a.md"]);
@@ -243,6 +244,53 @@ test("loadContextDocEntries reports nothing skipped when all paths fit (worker c
 		assert.deepEqual(loaded.skipped, []);
 		assert.deepEqual(loaded.entries.map((entry) => entry.relPath), ["a.md", "b.md"]);
 	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("buildWorkerContextAsync journals over-cap selection as truncated with skipped path (SP-853)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-cap-"));
+	const journalRoot = await mkdtemp(path.join(os.tmpdir(), "spine-ctx-cap-journal-"));
+	const batchId = "batch-sp853-cap";
+	try {
+		const rulesDir = path.join(root, ".cursor", "rules");
+		fs.mkdirSync(rulesDir, { recursive: true });
+		const smallBody = "---\nalwaysApply: true\n---\n# Small\n";
+		const bigBody = `---\nalwaysApply: true\n---\n# Big\n${"x".repeat(4096)}`;
+		fs.writeFileSync(path.join(rulesDir, "a-small.mdc"), smallBody, "utf-8");
+		fs.writeFileSync(path.join(rulesDir, "z-big.mdc"), bigBody, "utf-8");
+		fs.mkdirSync(path.join(journalRoot, ".spine", "runtime", batchId, "journal"), {
+			recursive: true,
+		});
+
+		const byteCap = Buffer.byteLength(smallBody, "utf-8") + 1;
+		await buildWorkerContextAsync({
+			config: {},
+			projectRoot: root,
+			taskFileScope: [],
+			byteCap,
+			journal: {
+				projectRoot: journalRoot,
+				batchId,
+				taskId: "SP-853",
+				laneNumber: 1,
+				correlationId: "corr-sp853",
+			},
+		});
+
+		const events = readJournalEvents(journalRoot, batchId);
+		assert.equal(events.length, 1);
+		assert.equal(events[0].type, "worker.rules_selected");
+		const payload = events[0].payload;
+		assert.equal(payload.mode, "auto");
+		assert.equal(payload.byteCap, byteCap);
+		assert.equal(payload.truncated, true);
+		assert.ok(payload.bytesUsed <= byteCap);
+		const capSkip = payload.skipped.find((entry) => entry.reason === "byte_cap");
+		assert.ok(capSkip);
+		assert.ok(capSkip.path.endsWith(".mdc"));
+	} finally {
+		await rm(journalRoot, { recursive: true, force: true });
 		await rm(root, { recursive: true, force: true });
 	}
 });
