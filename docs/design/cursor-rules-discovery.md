@@ -149,8 +149,8 @@ Set `"enabled": false` in `.spine/rules-profile.json` to disable reviewer rule i
 | Review type | Scope paths for glob matching | Notes |
 |-------------|------------------------------|-------|
 | `plan` | PROMPT **File Scope** | Same paths workers use for the task packet |
-| `code` | `git diff --name-only` changed paths | Optional baseline: `git diff --name-only <baseline>..HEAD` |
-| `final` | **Empty** | Only `alwaysInclude`, manifest `alwaysApply`, and `standards` apply |
+| `code` | `git diff --name-only` changed paths, else PROMPT **File Scope** | Falls back when the diff resolves to no paths (no baseline, git error, or empty diff); optional baseline: `git diff --name-only <baseline>..HEAD` (#357) |
+| `final` | Baseline diff paths when non-empty, else PROMPT **File Scope** | No git call without a baseline; empty diff also falls back to File Scope, so glob rules stay active for final reviews (#357) |
 
 Noise paths (`.DONE`, `.reviews/`, `.spine/runtime/`) are filtered from scope.
 

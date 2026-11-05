@@ -1,0 +1,3 @@
+Completed: 2026-11-04T23:50:00Z
+Task: SP-851
+Note: scheduler re-invocation on finished task; state re-verified green on lane tip 766465c9, .DONE restored

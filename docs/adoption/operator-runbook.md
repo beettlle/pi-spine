@@ -2276,7 +2276,7 @@ pi-spine uses **stet** for per-task LLM code review via Option A (baseline-at-se
 
 Before starting a stet-gated batch:
 
-1. **stet ≥ v1.4.0** on `PATH` (`stet --version`; `stet doctor` exits 0). The contract gate uses `stet list --min-severity/--min-confidence`, added in stet v1.4.0; an older stet falls back to gating on every active finding (with a stderr warning). Without stet at all the scripts degrade cleanly: `scripts/spine-worktree-setup.sh` prints `{"ok":true,"skipped":"stet not on PATH"}` and exits 0.
+1. **stet ≥ v1.4.0** on `PATH` (`stet --version`; `stet doctor` exits 0). The contract gate uses `stet list --min-severity/--min-confidence`, added in stet v1.4.0; an older stet falls back to gating on every active finding (with a stderr warning). Without stet at all the scripts degrade cleanly: `scripts/spine-worktree-setup.sh` prints `{"ok":true,"skipped":"stet not on PATH"}` and exits 0. `spine doctor` flags this too: its **stet version** check compares `stet --version` numerically against v1.4.0 and warns (`ok: true, warning: true`, with the install command) when stet is older or unparseable — advisory only, it never fails preflight or doctor.
 2. **LM Studio** local server at `http://127.0.0.1:1234/v1` with model **`qwen/qwen3.8-27b`** loaded (stet SP-039 model comparison: fits in memory next to OpenJev; `qwen3-coder-next` does not). The model's LM Studio preset must have **Enable Thinking off** — reasoning tokens share `max_completion_tokens` (4096).
 3. **OpenJev System One** critic server at `http://127.0.0.1:8080` running (config: `systemone_model = "openjev-latest"`, `systemone_timeout = "90s"`). If OpenJev is down, set `STET_CRITIC_ENABLED=false` to run without the second-pass critic.
 4. Verify:

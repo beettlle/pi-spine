@@ -24,7 +24,7 @@ import {
 } from "./stall-config.mjs";
 import { buildRulesManifestDoctorCheck } from "./rules-manifest.mjs";
 import { buildAgentTemplateDriftDoctorCheck } from "./agent-template-drift.mjs";
-import { buildStetCapacityDoctorCheck } from "./stet-capacity.mjs";
+import { buildStetCapacityDoctorCheck, buildStetVersionDoctorCheck } from "./stet-capacity.mjs";
 import { buildWorktreeHealthDoctorCheck } from "./worktree-health.mjs";
 import { buildGitignoredPubspecAssetsDoctorCheck } from "../config/worktree-setup-hook.mjs";
 import { buildStaleWorktreesDoctorCheck } from "./stale-worktrees.mjs";
@@ -539,6 +539,7 @@ export function runDoctorChecks(projectRoot = process.cwd()) {
 		});
 	}
 	checks.push(buildAgentTemplateDriftDoctorCheck({ projectRoot }));
+	checks.push(buildStetVersionDoctorCheck());
 	checks.push(buildStetCapacityDoctorCheck());
 
 	const tasksRootPath = resolveTasksRoot(projectRoot, configResult);
