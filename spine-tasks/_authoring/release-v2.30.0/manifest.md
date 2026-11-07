@@ -122,7 +122,9 @@ Wave 1 · SP-853 (after SP-852)
 - Integrated `45fd75c4`. `release:check` exit 0 (3233/3233, git-ai paused). Closed #356, #370, #337, #357, #371.
 - #349: keep-paths verified live, closed. The run also exposed two problems in the contract script's task scoping: retried tasks were reviewed on later lane tasks' commits, and dismissals were lost across baseline switches ([#373](https://github.com/beettlle/pi-spine/issues/373)).
 
-**Batch B wave 1** (SP-853): advisory stet policy.
+**Batch B wave 1** (`20261105T004549-a7e9`, SP-853, 20 min): advisory stet policy. Succeeded on the first pass; its 3 advisory findings were dismissed (none real). Integrated `901e003f`. `release:check` exit 0 (3234/3234). Closed #345.
+
+**Publish** (2026-11-06): `ci.yml` green on `901e003f`. `npm version minor` (its `preversion` hook re-ran `release:check`, exit 0) created `aad31d39` and tag `v2.30.0`. [release.yml](https://github.com/beettlle/pi-spine/actions/runs/42257052784) staged the package; the operator approved it with 2FA. `npm view pi-spine version` 2.30.0; `scripts/post-publish-smoke.sh 2.30.0` OK; global `spine --version` 2.30.0. `contract.reviewPolicy` stays `advisory` until #373 and beettlle/stet#39 are fixed.
 
 ---
 
