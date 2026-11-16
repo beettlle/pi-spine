@@ -28,7 +28,7 @@ Quick check before sending: **Quality** (evidence or "verification pending" + co
 | Manner | Lead with answer; then steps/evidence; proportional length |
 | Clear prose | Active voice; short full sentences; one claim per sentence; cut pleasantries/filler; keep code/paths/APIs/errors exact |
 
-Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
+Details: `general-llm-anti-patterns-07-09.mdc` § 9.6–9.8a
 
 ## Top 15 Universal Anti-Patterns
 
@@ -72,35 +72,35 @@ Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
 ❌ Bad: Multi-step search workaround when direct lookup API exists
 ✅ Good: Verify framework documentation, use official APIs
 ⚠️ Why: Fragile code, security risk (slopsquatting), build failures
-📍 Details: `general-llm-anti-patterns.mdc` section 4.1
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 4.1
 
 ### 7. Hardcoded Secrets
 
 ❌ Bad: `apiKey = "sk-live-1234567890abcdef"` in source code
 ✅ Good: `apiKey = process.env.API_KEY` (environment variables)
 ⚠️ Why: Security vulnerability, credential exposure, compliance violations
-📍 Details: `general-llm-anti-patterns.mdc` section 5.1
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 5.1
 
 ### 8. Missing Input Validation
 
 ❌ Bad: `database.query("SELECT * FROM users WHERE id = " + userInput)`
 ✅ Good: Validate input, use parameterized queries
 ⚠️ Why: SQL injection, XSS, command injection, system compromise
-📍 Details: `general-llm-anti-patterns.mdc` section 5.2
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 ### 9. Silent Failures
 
 ❌ Bad: `try { op() } catch { pass }` (swallows errors)
 ✅ Good: Handle specific errors or explicitly propagate with context
 ⚠️ Why: Hidden bugs, difficult debugging, silent data loss
-📍 Details: `general-llm-anti-patterns.mdc` section 5.3
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 5.3
 
 ### 10. Test-Implementation Mismatch
 
 ❌ Bad: Mock returns different types/behavior than real implementation
 ✅ Good: Mocks match real API signatures and behavior exactly
 ⚠️ Why: False confidence, integration failures, production bugs
-📍 Details: `general-llm-anti-patterns.mdc` section 6.1
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 6.1
 
 ### 11. Warning Dismissal Anti-Pattern
 
@@ -130,7 +130,7 @@ Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
 ✅ Good: Verify package exists in registry, check maintainer, check download stats, verify owner
 ⚠️ Why: Security risk (slopsquatting), attackers register packages with LLM-hallucinated names, build failures
 🔧 Fix: Always verify packages exist, check package registry before importing, verify maintainer identity
-📍 Details: `general-llm-anti-patterns.mdc` section 4.2d
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 4.2d
 
 **Detect:** Import statements without verification, plausible-sounding but unverified packages, no package registry checks
 
@@ -139,7 +139,7 @@ Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
 ❌ Bad: Example code used verbatim without adaptation
 ✅ Good: Adapt examples to project patterns, verify examples match requirements
 ⚠️ Why: Example code may not fit project patterns, introduces inconsistencies
-📍 Details: `general-llm-anti-patterns.mdc` section 4.4
+📍 Details: `general-llm-anti-patterns-04-06.mdc` section 4.4
 
 **Detect:** Example code used verbatim, example code not adapted to project patterns, copy-paste without modification
 
@@ -165,7 +165,7 @@ Details: `general-llm-anti-patterns.mdc` §9.6–9.8a
 
 ### File and Directory Naming (Guidance)
 
-No spaces; safe chars [a-zA-Z0-9_.-]; dates YYYY-MM-DD or YYYYMMDD; zero-pad versions (v01, v02); one convention per project. Optional for non-source assets: subject_date_code with dashes in subject, underscores between parts. If project has a convention, keep it; new projects use industry standard. Details: `general-llm-anti-patterns.mdc` Category 12
+No spaces; safe chars [a-zA-Z0-9_.-]; dates YYYY-MM-DD or YYYYMMDD; zero-pad versions (v01, v02); one convention per project. Optional for non-source assets: subject_date_code with dashes in subject, underscores between parts. If project has a convention, keep it; new projects use industry standard. Details: `general-llm-anti-patterns-10-12.mdc` Category 12
 
 ---
 

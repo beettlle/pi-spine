@@ -1,0 +1,241 @@
+---
+description: "UIKit development standards - scene lifecycle, Observation + updateProperties, diffable collections, Auto Layout, traits, adaptivity, deprecated API replacements"
+globs: ["**/*.swift"]
+alwaysApply: false
+---
+
+## Persona: UIKit Craftsman
+
+- **Role:** UIKit app engineer. **Philosophy:** Modern UIKit (scenes, Observation, diffable data, configurations), not iOS 12-era patterns.
+- **Traits:** Scene-local context over globals, declarative state over manual sync, system components over custom chrome
+
+**Apply when:** File imports `UIKit` or subclasses `UIViewController`, `UIView`, `UICollectionViewCell`, `UIResponder`. **Prune:** Delete in SwiftUI-only projects.
+
+---
+
+# UIKit Development Standards
+
+**For universal anti-patterns:** See `general-llm-anti-patterns.mdc`
+**For Swift language, layers, concurrency:** See `swift-5-9-development-standards.mdc` or `swift-6-development-standards.mdc` (project language mode)
+**For HIG and Liquid Glass:** See `ios-ui-development-focus.mdc` (SwiftUI examples; HIG rules apply to UIKit too)
+**Reference:** <https://developer.apple.com/documentation/uikit>; Xcode `uikit-app-modernization` skill (`xcrun agent skills export`)—link only, do not vendor
+
+**Forbidden:** Inventing UIKit API names; gating code on an OS version without `#available` matching the project deployment target; claiming UI works without building and running (see `ios-build-automation.mdc`).
+
+## API Availability (verify against deployment target)
+
+|API|Introduced|Fallback below floor|
+|---|---|---|
+|Cell registrations, list configurations, content configurations|iOS 14|`register(_:forCellWithReuseIdentifier:)`|
+|`UIButton.Configuration`, `keyboardLayoutGuide`, `reconfigureItems`|iOS 15|Manual button styling, keyboard notifications, `reloadItems`|
+|`UIHostingConfiguration`|iOS 16|`UIHostingController` child|
+|`registerForTraitChanges`, `contentUnavailableConfiguration`|iOS 17|`traitCollectionDidChange` (deprecated)|
+|Automatic Observation tracking|iOS 18 opt-in (`UIObservationTrackingEnabled` Info.plist key), default iOS 26|Manual `didSet` → update|
+|`updateProperties()`, `.flushUpdates`, `UIGlassEffect`, `UIButton.Configuration.glass()`|iOS 26|`viewWillLayoutSubviews` (tracked on iOS 18)|
+|Scene life cycle required to launch|iOS 27 SDK builds|None: adopt scenes|
+
+---
+
+## 1. App Structure (CRIT)
+
+### 1.1 Scene-Based Life Cycle (CRIT)
+
+**CRITICAL:** UIKit apps own windows in a `UIWindowSceneDelegate`; apps built with the iOS 27 SDK without scenes fail to launch.
+
+❌ Bad: `func application(_:didFinishLaunchingWithOptions:) { window = UIWindow(frame: UIScreen.main.bounds) }`
+✅ Good: `func scene(_ scene: UIScene, willConnectTo: UISceneSession, options: UIScene.ConnectionOptions) { guard let ws = scene as? UIWindowScene else { return }; window = UIWindow(windowScene: ws) }`
+⚠️ Why: Launch assertion on iOS 27 SDK; no multi-window, iPad resizing, or iPhone Mirroring support
+🔧 Fix: Add `UIApplicationSceneManifest` to Info.plist; move UI-state callbacks (`applicationDidBecomeActive`, etc.) to scene equivalents; keep app delegate for process-level setup
+📍 See: TN3187 <https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle>
+
+**Detect:** No `UIApplicationSceneManifest`, `UIWindow(frame:)` in app delegate, `applicationWillResignActive` doing UI work, missing launch screen key (`UILaunchScreen` / `UILaunchStoryboardName`)
+
+### 1.2 No Global Screen/Window State (CRIT)
+
+**CRITICAL:** Read geometry and environment from the current view, window, scene, or trait collection, never from process-wide singletons.
+
+❌ Bad: `UIScreen.main.bounds.width`, `UIApplication.shared.windows.first`, `UIApplication.shared.keyWindow`
+✅ Good: `view.bounds.width`, `traitCollection.displayScale`, `view.window?.windowScene?.screen`
+⚠️ Why: Wrong values with multiple windows, iPad resizing, external displays, and resizable iPhone apps
+🔧 Fix: Pass context in; use `traitCollection` for scale/size class; `UIScreen.main` is deprecated (iOS 26)
+📍 See: Section 3.3 (size classes)
+
+**Detect:** `UIScreen.main`, `UIApplication.shared.windows`, `keyWindow`, `statusBarOrientation`, `UIDevice.current.orientation` for layout
+
+---
+
+## 2. State and Updates
+
+### 2.1 Observable Models Drive Views
+
+**CRITICAL:** Read `@Observable` model properties inside tracked methods; UIKit invalidates and re-runs them on change.
+
+❌ Bad: `var name: String { didSet { label.text = name } }` (manual sync in every setter)
+✅ Good: `override func updateProperties() { super.updateProperties(); label.text = model.name }`
+⚠️ Why: Manual sync drifts, duplicates code, misses updates
+🔧 Fix: iOS 26+: `updateProperties()`; iOS 18–25: `viewWillLayoutSubviews` / `layoutSubviews` with plist key; call `setNeedsUpdateProperties()` only for non-observable inputs
+📍 See: <https://developer.apple.com/documentation/uikit/updating-views-automatically-with-observation-tracking-in-uikit>
+
+**Detect:** `didSet { someView.` patterns, `NotificationCenter`/Combine used only to refresh labels, `ObservableObject` + `sink` in new UIKit code, calling `updateProperties()` directly
+
+### 2.2 Content in updateProperties, Geometry in Layout
+
+❌ Bad: `override func layoutSubviews() { super.layoutSubviews(); label.text = model.title; badge.isHidden = model.count == 0 }`
+✅ Good: Text/colors/visibility in `updateProperties()`; frames/constraints in `layoutSubviews()` / `updateConstraints()`
+⚠️ Why: Content changes then force full layout passes; slower and harder to reason about
+🔧 Fix: Split content from geometry; use `.flushUpdates` animation option instead of manual `layoutIfNeeded()` around state changes (iOS 26+)
+
+**Detect:** Text or color assignments in `layoutSubviews`, `layoutIfNeeded()` inside animation blocks after model mutation
+
+---
+
+## 3. Layout
+
+### 3.1 Auto Layout Hygiene
+
+❌ Bad: `v.frame = CGRect(x: 16, y: 100, width: 343, height: 44)` (magic numbers, device-specific)
+✅ Good: `v.translatesAutoresizingMaskIntoConstraints = false; NSLayoutConstraint.activate([...])` against `safeAreaLayoutGuide` / `layoutMarginsGuide`
+⚠️ Why: Breaks on other sizes, Dynamic Type, rotation, resizing
+🔧 Fix: Constraints or `UIStackView`; activate in batches; no fixed heights for text containers
+
+**Detect:** Hardcoded frame literals, missing `translatesAutoresizingMaskIntoConstraints = false`, `isActive = true` per constraint in loops, fixed height on cells with labels, "Unable to simultaneously satisfy constraints" ignored
+
+### 3.2 Keyboard Avoidance
+
+❌ Bad: Observe `keyboardWillShowNotification` and adjust `bottomConstraint.constant` manually
+✅ Good: `field.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)`
+⚠️ Why: Manual math misses floating/split keyboards and animation curves
+🔧 Fix: Constrain to `keyboardLayoutGuide` (iOS 15+)
+
+**Detect:** `UIResponder.keyboardWillShowNotification` observers, `keyboardFrameEndUserInfoKey` math
+
+### 3.3 Adapt to Size, Not Device or Orientation
+
+❌ Bad: `if UIDevice.current.userInterfaceIdiom == .pad || isLandscape { twoColumns() }`
+✅ Good: `if traitCollection.horizontalSizeClass == .regular { twoColumns() }` re-run via automatic trait tracking or `registerForTraitChanges`
+⚠️ Why: iPad windows, Stage Manager, and resizable iPhone apps (iOS 27) produce any size on any device
+🔧 Fix: Branch on size class or available width; set initial state in `viewIsAppearing(_:)`; declare orientations in `UIWindowSceneDelegate.supportedInterfaceOrientations(for:)` on iOS 27 SDK
+
+**Detect:** `userInterfaceIdiom` for layout, `interfaceOrientation` checks, `traitCollectionDidChange` overrides, layout in `viewWillAppear` that reads traits
+
+---
+
+## 4. Lists and Collections
+
+### 4.1 Diffable Data + Cell Registrations (CRIT)
+
+**CRITICAL:** New lists use `UICollectionView` with diffable data sources, cell registrations, and compositional layout.
+
+❌ Bad: `func collectionView(_:numberOfItemsInSection:)` + `dequeueReusableCell(withReuseIdentifier: "Cell")` + `reloadData()` after edits
+✅ Good: `let reg = UICollectionView.CellRegistration<UICollectionViewListCell, Item.ID> { cell, _, id in ... }`; apply `NSDiffableDataSourceSnapshot`
+⚠️ Why: Index-path crashes (`NSInternalInconsistencyException`), no animations, string reuse IDs
+🔧 Fix: Snapshot of stable IDs (not full models); `reconfigureItems` for content changes; `UICollectionLayoutListConfiguration` for table-like lists
+
+**Detect:** `UITableViewDataSource` in new code, string reuse identifiers, `reloadData()` after single-item change, snapshots of mutable model structs, `performBatchUpdates` with manual index math
+
+### 4.2 Content Configurations
+
+❌ Bad: `cell.textLabel?.text = item.title` (deprecated cell properties)
+✅ Good: `var c = cell.defaultContentConfiguration(); c.text = item.title; cell.contentConfiguration = c`
+⚠️ Why: Deprecated; no state-based styling; no automatic Dynamic Type
+🔧 Fix: `UIListContentConfiguration` or `UIHostingConfiguration` (SwiftUI cell content); `contentUnavailableConfiguration` for empty states
+
+**Detect:** `textLabel`, `detailTextLabel`, `imageView` on cells, custom empty-state overlay views
+
+---
+
+## 5. View Controllers
+
+### 5.1 Child Containment
+
+❌ Bad: `view.addSubview(child.view)` (no containment calls)
+✅ Good: `addChild(child); view.addSubview(child.view); child.didMove(toParent: self)`; reverse: `willMove(toParent: nil)`, `removeFromSuperview()`, `removeFromParent()`
+⚠️ Why: Child misses appearance callbacks, traits, rotation, safe areas
+
+**Detect:** `addSubview(*.view)` without `addChild`, missing `didMove(toParent:)`, removal without `removeFromParent()`
+
+### 5.2 Retain Cycles in Closures
+
+❌ Bad: `button.addAction(UIAction { _ in self.save() }, for: .primaryActionTriggered)`
+✅ Good: `UIAction { [weak self] _ in self?.save() }`; `registerForTraitChanges` handlers receive `self` as parameter (no capture needed)
+⚠️ Why: View controller never deallocates; tasks and observers keep running
+🔧 Fix: `[weak self]` in stored closures (actions, registrations, timers, notifications); verify `deinit` fires with Memory Graph
+
+**Detect:** `self.` in `UIAction`, `CellRegistration`, `Timer`, `NotificationCenter` closures without weak capture, missing `deinit` log in debug
+
+### 5.3 Task Lifetime
+
+❌ Bad: `override func viewDidLoad() { Task { for await x in stream { label.text = x } } }` (unowned, never cancelled)
+✅ Good: Store `loadTask = Task { [weak self] in ... }`; cancel in `viewDidDisappear(_:)`
+⚠️ Why: Leaks, stale UI updates, wasted work after dismissal
+🔧 Fix: Own and cancel tasks; UI types are `@MainActor`, so no `DispatchQueue.main.async` hops in Swift 6 code
+📍 See: `swift-6-development-standards.mdc` concurrency sections
+
+**Detect:** Fire-and-forget `Task {` in view controllers, `DispatchQueue.main.async` in `@MainActor` types, UI mutation from `Task.detached`
+
+---
+
+## 6. Appearance and Accessibility
+
+### 6.1 Button Configurations and Semantic Styling
+
+❌ Bad: `button.backgroundColor = .blue; button.layer.cornerRadius = 8; button.setTitleColor(.white, for: .normal)`
+✅ Good: `button.configuration = .filled()` (or `.glass()` / `.prominentGlass()` on iOS 26+)
+⚠️ Why: Manual styling ignores states, Dynamic Type, accessibility contrast, Liquid Glass
+🔧 Fix: `UIButton.Configuration` + `configurationUpdateHandler`; semantic colors (`.label`, `.systemBackground`, `.tintColor`); no hardcoded hex for text/background
+
+**Detect:** `setTitleColor`, `layer.cornerRadius` on buttons, `UIColor(red:green:blue:)` for text/backgrounds, `contentEdgeInsets` (deprecated)
+
+### 6.2 Do Not Fight System Bars (Liquid Glass)
+
+❌ Bad: `appearance.configureWithOpaqueBackground(); appearance.backgroundColor = .white` applied to every navigation bar
+✅ Good: Standard `UINavigationController`/`UITabBarController`/toolbars; customize via `UINavigationItem` and bar button items
+⚠️ Why: Opaque overrides remove Liquid Glass and scroll edge effects; looks dated on iOS 26+
+🔧 Fix: Remove global appearance overrides unless design requires; `UIGlassEffect` only for custom floating controls; no glass on glass
+📍 See: `ios-ui-development-focus.mdc` Liquid Glass
+
+**Detect:** Global `UINavigationBar.appearance()` background overrides, custom tab bar views replacing `UITabBarController`, `UIVisualEffectView` blur stacked inside bars
+
+### 6.3 Dynamic Type and Labels
+
+❌ Bad: `label.font = .systemFont(ofSize: 17)`; image-only button without label
+✅ Good: `label.font = .preferredFont(forTextStyle: .body); label.adjustsFontForContentSizeCategory = true`; `button.accessibilityLabel = "Delete"`
+⚠️ Why: Text ignores user size; VoiceOver reads "button"
+🔧 Fix: Text styles or `UIFontMetrics.scaledFont(for:)`; `numberOfLines = 0`; test at accessibility sizes
+
+**Detect:** `systemFont(ofSize:` for body text, missing `adjustsFontForContentSizeCategory`, `UIImage(systemName:)` buttons without `accessibilityLabel`, `numberOfLines = 1` on variable text
+
+---
+
+## 7. Deprecated API Replacements
+
+|Avoid|Use|
+|---|---|
+|`UIWebView`|`WKWebView`|
+|`UIAlertView`, `UIActionSheet`|`UIAlertController`|
+|`UIGraphicsBeginImageContext`|`UIGraphicsImageRenderer`|
+|`traitCollectionDidChange(_:)`|Automatic trait tracking or `registerForTraitChanges`|
+|`UIScreen.main`, `keyWindow`, `windows`|Scene/view/trait context (§1.2)|
+|`UIScreen` display link|`UIWindowScene` display link (iOS 27 SDK)|
+|`application(_:supportedInterfaceOrientationsFor:)`|`UIWindowSceneDelegate.supportedInterfaceOrientations(for:)`|
+|`UIAccelerometer`|Core Motion|
+|Cell `textLabel` / `imageView`|Content configurations (§4.2)|
+
+**iOS 27 SDK behavior changes:** menu images hidden by default on iPadOS/macOS (set `preferredImageVisibility`); drag delegate may run without a user drag (move UI from `sessionWillBegin` to `sessionDidMove`); traits propagate through presentation hierarchy (check custom `UIPresentationController`).
+
+---
+
+## 8. SwiftUI Interop
+
+❌ Bad: Rebuilding a SwiftUI screen in UIKit (or vice versa) to avoid bridging
+✅ Good: `UIHostingController(rootView:)` as child VC; `UIHostingConfiguration` in cells; share state via one `@Observable` model
+⚠️ Why: Duplicate UI, divergent state
+🔧 Fix: Contain hosting controllers per §5.1; size with `sizingOptions = .intrinsicContentSize` when embedded
+
+**Detect:** `UIHostingController.view` added without `addChild`, duplicated view logic across frameworks, two sources of truth for one screen
+
+---
+
+## Final Verification
+
+Build and run on a simulator; resize (iPad windowing), rotate, set largest Dynamic Type, toggle Dark Mode, run VoiceOver on new screens. Then run `swift-5-9-brutal-audit.mdc` or `swift-6-brutal-audit.mdc`.

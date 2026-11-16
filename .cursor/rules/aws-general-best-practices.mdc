@@ -34,7 +34,7 @@ This file contains general AWS best practices aligned with the [AWS Well-Archite
 ✅ Good: IAM roles for Fargate tasks (task execution role + task role), least privilege policies (specific actions/resources), MFA required for console access, quarterly access reviews
 ⚠️ Why: Credentials in code exposed in version control/logs/container images; overly permissive policies increase attack surface; missing MFA enables credential theft
 🔧 Fix: Use IAM task roles for Fargate, AWS Secrets Manager for secrets, grant only required permissions, enable MFA for all users, review access quarterly
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.1
 
 **Detect:** Hardcoded `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, access keys in environment variables, `"Action": "*"` policies, no MFA enforcement, IAM roles with excessive permissions, unused access keys (>90 days)
 
@@ -48,7 +48,7 @@ This file contains general AWS best practices aligned with the [AWS Well-Archite
 ✅ Good: All resources in private subnets, security groups with least privilege (specific IPs/CIDR or security group references), RDS `PubliclyAccessible = false`, OpenSearch domain in VPC, VPC endpoints for AWS services (S3, CloudWatch Logs, Secrets Manager)
 ⚠️ Why: Public subnets expose resources to internet; open security groups allow unauthorized access; VPC endpoints keep traffic within AWS network for privacy/security
 🔧 Fix: Deploy resources in private subnets, disable public accessibility, restrict security groups to specific sources, use VPC endpoints for AWS service access
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 **Detect:** Resources with public IPs, security groups with `0.0.0.0/0` ingress, OpenSearch domains without VPC config, RDS `PubliclyAccessible = true`, Fargate tasks in public subnets, missing VPC endpoints
 
 ---
@@ -61,7 +61,7 @@ This file contains general AWS best practices aligned with the [AWS Well-Archite
 ✅ Good: RDS encryption at rest with customer-managed KMS key, OpenSearch encryption at rest with customer-managed KMS key, all connections use TLS 1.2+ (RDS, OpenSearch, ALB), ALB with SSL/TLS certificates (ACM), CloudWatch Logs encryption enabled, KMS key rotation enabled
 ⚠️ Why: Unencrypted data vulnerable to unauthorized access; encryption protects data if storage compromised; customer-managed keys provide control/auditability
 🔧 Fix: Enable encryption at rest during resource creation (cannot enable after for RDS), enable TLS for all connections, use customer-managed KMS keys, enable key rotation
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.1
 **Detect:** RDS `StorageEncrypted = false`, OpenSearch domains without encryption settings, non-HTTPS connections to ALB, missing TLS in connection strings, default KMS keys used, CloudWatch log groups without encryption, KMS key rotation disabled
 
 ---
@@ -74,7 +74,7 @@ This file contains general AWS best practices aligned with the [AWS Well-Archite
 ✅ Good: AWS Secrets Manager for database credentials, IAM task role has permission to read specific secrets only, automatic secret rotation (RDS master password), secrets versioned and audited
 ⚠️ Why: Hardcoded secrets are security vulnerabilities; Secrets Manager provides encryption/rotation/audit logging; environment variables visible in task definitions/logs
 🔧 Fix: Migrate all secrets to AWS Secrets Manager, use IAM roles to access secrets, enable automatic rotation, never commit secrets to version control
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.1
 
 **Detect:** Secrets in environment variables, secrets in code/config files, secrets in Dockerfiles/build artifacts, missing IAM permissions for Secrets Manager, secrets in CloudWatch Logs, secrets without rotation, secrets in git history
 
@@ -88,7 +88,7 @@ This file contains general AWS best practices aligned with the [AWS Well-Archite
 ✅ Good: CloudTrail enabled in all regions (multi-region trail), CloudTrail log file validation enabled, CloudWatch Logs encryption enabled, CloudWatch alarms for security events (failed IAM auth, unauthorized API calls, root account usage), log retention 90 days minimum (1 year for compliance), SNS topics for security alerts
 ⚠️ Why: CloudTrail provides audit trail of all AWS API calls; missing logs prevent security monitoring/compliance; alarms enable rapid response to security events
 🔧 Fix: Enable CloudTrail for all regions, enable log file validation, encrypt logs, create security alarms, configure SNS notifications, enable AWS Config
-📍 See: `general-llm-anti-patterns.mdc` section 11.4
+📍 See: `general-llm-anti-patterns-10-12.mdc` section 11.4
 **Detect:** CloudTrail disabled or single-region only, missing CloudWatch alarms for security events, log retention <90 days, no log encryption, missing AWS Config rules, CloudTrail log file validation disabled
 
 ---

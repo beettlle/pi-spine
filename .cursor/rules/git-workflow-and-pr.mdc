@@ -119,7 +119,7 @@ Use when performing Git operations or drafting PRs. Ensures clean history, revie
 ✅ Good: Summary → Test plan → Risks (when applicable); each claim traceable to changed files
 ⚠️ Why: Reviewers scan for purpose and verification first; off-diff claims erode trust
 🔧 Fix: Use ordered sections; verify every claim against diff before submit
-📍 See: §5.1 PR Description and Diff Consistency, `general-llm-anti-patterns.mdc` §9.7–9.8
+📍 See: §5.1 PR Description and Diff Consistency, `general-llm-anti-patterns-07-09.mdc` § 9.7–9.8
 
 **Detect:** No test plan for testable changes, risks buried in prose, claims without diff support, unstructured description
 

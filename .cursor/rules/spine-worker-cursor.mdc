@@ -7,7 +7,7 @@ alwaysApply: false
 
 Manually execute a **spine task packet** in Cursor when **no spine batch** is active on the same tasks. Inherits the Taskplane worker loop; adds spine **Contract** and Testing-step requirements.
 
-**Related:** `@taskplane-worker-cursor.mdc` (execution loop—follow it); `@spine-task-authoring.mdc` (authoring); `@spine-operator-cursor.mdc` (batch ops). Verification: `general-llm-anti-patterns.mdc` §3.8–3.9.
+**Related:** `@taskplane-worker-cursor.mdc` (execution loop—follow it); `@spine-task-authoring.mdc` (authoring); `@spine-operator-cursor.mdc` (batch ops). Verification: `general-llm-anti-patterns.mdc` § 3.8–3.9.
 
 Manual activation: `@spine-worker-cursor`.
 
@@ -81,7 +81,7 @@ Mandatory penultimate step (SP-075). Use `testing.testWithCoverage` from config 
 
 ## End state
 
-Report: changed paths, Contract fields satisfied, test evidence or verification pending, remaining checkboxes. Not a generic "done." See `general-llm-anti-patterns.mdc` §9.8.
+Report: changed paths, Contract fields satisfied, test evidence or verification pending, remaining checkboxes. Not a generic "done." See `general-llm-anti-patterns-07-09.mdc` § 9.8.
 
 ## Common mistakes
 

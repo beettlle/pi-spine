@@ -37,7 +37,7 @@ alwaysApply: false
 ✅ Good: `foo()?` or `foo().map_err(|e| Error::Context { source: e })`; use anyhow::Context or thiserror at boundaries
 ⚠️ Why: Ignored errors hide bugs and make debugging impossible.
 🔧 Fix: Use ? and add context at API boundaries; use typed errors (thiserror/anyhow).
-📍 See: Rust Book ch 9; `general-llm-anti-patterns.mdc` section 5.3
+📍 See: Rust Book ch 9; `general-llm-anti-patterns-04-06.mdc` section 5.3
 
 **Detect:** `let _ =` on Result/IO, unwrap() in lib, bare ? at public API without context
 
@@ -49,7 +49,7 @@ alwaysApply: false
 ✅ Good: `fn load(path: &Path) -> Result<Config, Error> { ... }`; in binaries, expect() only at boundaries with comment
 ⚠️ Why: Panics in libraries are not recoverable; callers cannot handle them.
 🔧 Fix: Return Result/Option; use ?; document any remaining panics in doc comment.
-📍 See: Rust Book ch 9; `general-llm-anti-patterns.mdc` section 5.3
+📍 See: Rust Book ch 9; `general-llm-anti-patterns-04-06.mdc` section 5.3
 
 **Detect:** `.unwrap(`, `.expect(` outside main/tests/examples, panic! in library code
 
@@ -113,7 +113,7 @@ alwaysApply: false
 ✅ Good: Arc<Mutex<Vec<u8>>> or channel for cross-thread communication
 ⚠️ Why: Unsynchronized shared mutable state is undefined behavior.
 🔧 Fix: Use Arc+Mutex/RwLock or channels; no static mut without sync.
-📍 See: `general-llm-anti-patterns.mdc` section 5.6
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.6
 
 **Detect:** Rc<RefCell<T>> across thread boundary, static mut without sync
 
@@ -237,7 +237,7 @@ alwaysApply: false
 ✅ Good: Check crates.io, version pin in Cargo.toml, prefer std when sufficient
 ⚠️ Why: Slopsquatting and hallucinated names cause build failures and supply-chain risk.
 🔧 Fix: Verify before adding; pin version; document replace/patches.
-📍 See: `general-llm-anti-patterns.mdc` section 4.2, 4.2d
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.2, 4.2d
 
 **Detect:** Unverified crate in Cargo.toml, no version constraint, heavy dep for trivial use
 
@@ -295,11 +295,11 @@ alwaysApply: false
 
 ### 7.4 Source File Naming (Guidance)
 
-**Guidance:** snake_case .rs files; mod name matches file name. Per general-llm-anti-patterns.mdc Category 12.
+**Guidance:** snake_case .rs files; mod name matches file name. Per general-llm-anti-patterns-10-12.mdc Category 12.
 
 ❌ Bad: CamelCase.rs, MyModule.rs
 ✅ Good: config.rs, http_client.rs
-📍 See: Rust API Guidelines; `general-llm-anti-patterns.mdc` Category 12
+📍 See: Rust API Guidelines; `general-llm-anti-patterns-10-12.mdc` Category 12
 
 **Detect:** PascalCase or mixed case .rs filenames
 
@@ -315,7 +315,7 @@ alwaysApply: false
 ✅ Good: #[cfg(test)] mod tests beside logic; tests for Ok/Err and edge cases
 ⚠️ Why: Untested code regresses; missing error-path tests hide bugs.
 🔧 Fix: Add unit tests next to code; cover Err/None and boundaries.
-📍 See: Rust Book ch 11; `general-llm-anti-patterns.mdc` section 6.2
+📍 See: Rust Book ch 11; `general-llm-anti-patterns-04-06.mdc` section 6.2
 
 **Detect:** No #[cfg(test)] mod tests, only Ok() tested
 
@@ -339,7 +339,7 @@ alwaysApply: false
 ✅ Good: tests/*.rs for crate API; mockall/traits or manual mocks that match real behavior
 ⚠️ Why: Wrong mocks give false confidence; integration tests should exercise real API.
 🔧 Fix: tests/ for integration; ensure mocks match real API (general 6.1).
-📍 See: `general-llm-anti-patterns.mdc` section 6.1, 6.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 6.1, 6.2
 
 **Detect:** No tests/ layout, mock returning different type/behavior than real
 

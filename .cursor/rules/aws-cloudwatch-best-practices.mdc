@@ -44,7 +44,7 @@ This file contains CloudWatch-specific anti-patterns and best practices for moni
 ✅ Good: Structured logging (JSON format) with CloudWatchJSONFormatter, consistent format across services
 ⚠️ Why: Unstructured logs difficult to parse/query; structured logs enable efficient searching with CloudWatch Logs Insights
 🔧 Fix: Use JSON formatters for all logs, include consistent context fields, structure logs for querying
-📍 See: `general-llm-anti-patterns.mdc` section 11.1
+📍 See: `general-llm-anti-patterns-10-12.mdc` section 11.1
 
 **Detect:** Plain text logs, inconsistent log formats, missing log context, CloudWatch Logs Insights queries ineffective
 

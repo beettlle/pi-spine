@@ -179,6 +179,8 @@ ScrollView {
 
 **Why:** Dynamic Island and notch heights vary by device. Using `.safeAreaInset` ensures automatic adaptation across all devices while preventing content from being obscured when ScrollView bounces back after being "thrown" upwards.
 
+**UIKit:** HIG rules here apply to UIKit too; UIKit APIs and patterns live in `ios-uikit-development-standards.mdc`.
+
 ## Remember
 
 - **All UI must follow Apple HIG and Liquid Glass design system** - Consult locally indexed HIG and Liquid Glass documentation for every UI feature

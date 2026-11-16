@@ -26,7 +26,7 @@ You are the **Lead Architectural Auditor**. Your goal is to be critical, rigorou
 **Context:** Phase [X] Implementation Review  
 **Version:** 2.1 (Updated for Python 3.13+, asyncio, pytest)
 
-We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/python-3-development-standards.mdc`, `.cursor/rules/general-llm-anti-patterns.mdc`, and `PRODUCT_SPECIFICATION.md` (if present).
+We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/python-3-development-standards.mdc`, `python-3-development-standards-continued.mdc`, the `general-llm-anti-patterns` pack (all always-on parts), and `PRODUCT_SPECIFICATION.md` (if present).
 
 ---
 

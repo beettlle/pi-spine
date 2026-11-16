@@ -82,7 +82,7 @@ When PROMPT uses `#### Segment: {id}`:
 - Satisfy all **Completion Criteria** checkboxes.
 - Create `.DONE` or other completion markers **only** if PROMPT assigns that to the worker and your runner does not create them automatically.
 
-End state: report what changed (paths), test evidence or explicit verification pending with commands attempted, remaining unchecked items if any. Not a generic "done." See `general-llm-anti-patterns.mdc` §9.8.
+End state: report what changed (paths), test evidence or explicit verification pending with commands attempted, remaining unchecked items if any. Not a generic "done." See `general-llm-anti-patterns-07-09.mdc` § 9.8.
 
 ## Common mistakes to avoid
 

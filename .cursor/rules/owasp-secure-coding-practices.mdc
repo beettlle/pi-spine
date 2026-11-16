@@ -24,7 +24,7 @@ Validate on trusted system (server); use allow-list; canonicalize before validat
 ✅ Good: Server-side validation at boundaries, allow-list for type/range/length, parameterized queries
 ⚠️ Why: Injection, XSS, command injection; client can be bypassed
 🔧 Fix: Centralized validation routine; validate all untrusted sources (DB, file, network); fail closed
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 **Detect:** User input in query strings unparameterized, no server-side validation, validation only in UI
 
@@ -51,7 +51,7 @@ Central auth on trusted system; fail secure; strong salted hashes; no credential
 ✅ Good: Server-side auth, POST for credentials, cryptographically strong one-way salted hashes, credentials in secure store, re-auth for critical operations
 ⚠️ Why: Credential theft, session hijack, brute force
 🔧 Fix: Use framework/federation auth where possible; store hashes only; enforce complexity and lockout
-📍 See: `general-llm-anti-patterns.mdc` section 5.1 for secrets
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.1 for secrets
 
 **Detect:** Passwords in URL/query, auth logic on client only, no hashing/salt, default credentials
 
@@ -118,7 +118,7 @@ Least privilege; encrypt sensitive data at rest where required; no sensitive dat
 ✅ Good: Sensitive data in body/headers with TLS, purge temp/cache when done, disable autocomplete on auth/sensitive forms, restrict access to sensitive data
 ⚠️ Why: Leakage via referer/cache, exposure in logs/proxy
 🔧 Fix: GET for idempotent/non-sensitive only; encrypt at rest for auth data; least privilege access
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.1
 
 **Detect:** Tokens or PII in query string, long-lived temp files with secrets, autocomplete on password
 
@@ -159,7 +159,7 @@ Parameterized queries; least privilege DB user; no connection strings in code; c
 ✅ Good: Parameterized/prepared statements, connection string in secure config, dedicated low-privilege DB user, connection pooling/close promptly
 ⚠️ Why: SQL injection, credential leak, privilege escalation
 🔧 Fix: Never build SQL from user input; use stored procedures or ORM safely; encrypt connection strings
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 **Detect:** String concat into SQL, connection string in repo, single shared DB admin user
 
@@ -199,6 +199,6 @@ No user input to dynamic execution (eval/exec/dynamic include); use checksums fo
 ✅ Good: No user-controlled data to eval/exec; allow-list for includes; use safe APIs for OS tasks
 ⚠️ Why: Remote code execution, arbitrary command execution
 🔧 Fix: Never pass user or untrusted input to eval/exec/dynamic code; use task-specific APIs
-📍 See: `javascript-3-development-standards.mdc` section 9 (eval), `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `javascript-3-development-standards.mdc` section 9 (eval), `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 **Detect:** eval/exec with user input, user input in dynamic include path, shell command built from user input

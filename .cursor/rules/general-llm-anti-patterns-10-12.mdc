@@ -1,0 +1,275 @@
+---
+alwaysApply: true
+description: "Universal LLM anti-patterns pack part 4: Categories 10–12 (modern LLM, operations, naming) + Summary"
+---
+
+**Pack:** `general-llm-anti-patterns.mdc` (0–3) · `general-llm-anti-patterns-04-06.mdc` (4–6) · `general-llm-anti-patterns-07-09.mdc` (7–9) · `general-llm-anti-patterns-10-12.mdc` (10–12 + Summary)
+
+# General LLM Anti-Patterns (continued)
+
+Companion to `general-llm-anti-patterns.mdc`. Section numbers preserved.
+
+## Category 10: Modern LLM Capability Anti-Patterns
+
+### 10.1 Reasoning Mode Misuse (CRIT)
+
+**CRITICAL:** Don't use reasoning modes for simple tasks that don't require complex analysis.
+
+❌ Bad: Using reasoning mode for trivial operations, extended reasoning for straightforward code, verbose reasoning for simple tasks
+✅ Good: Use reasoning modes only for complex multi-step tasks, instant mode for simple operations, brief reasoning for straightforward code
+⚠️ Why: Wastes tokens, adds latency, unnecessary for simple tasks, slows down simple operations
+🔧 Fix: Use reasoning modes only when truly needed; use instant mode for simple tasks; match mode to task complexity
+
+**Detect:** Reasoning mode for simple operations, extended reasoning for straightforward code, verbose reasoning for trivial tasks, unnecessary reasoning mode usage
+
+---
+
+### 10.2 Long Context Waste (CRIT)
+
+**CRITICAL:** Don't use @codebase for single-file changes. Use @filename for targeted context.
+
+❌ Bad: `@codebase` for single-file changes, loading entire repository for localized edits, no context management
+✅ Good: `@filename` for targeted changes, load only necessary files, manage context size actively
+⚠️ Why: Wastes tokens, reduces coherence, slows processing, unnecessary context loading
+🔧 Fix: Use @filename for targeted changes; load only necessary files; manage context size actively
+📍 See: `cursor-integration.mdc` section 1.2
+
+**Detect:** @codebase for single-file changes, entire repo loading for localized edits, no context size management, excessive context usage
+
+---
+
+### 10.3 Multimodal Misuse (CRIT)
+
+**CRITICAL:** Don't request image analysis for text-only tasks. Use visual aids only for UI/design work.
+
+❌ Bad: Requesting image analysis for text-only tasks, including screenshots when code inspection would suffice, visual analysis for non-visual problems
+✅ Good: Use visual aids only for UI/design work, text descriptions for code issues, images for visual problems only
+⚠️ Why: Wastes tokens, adds latency, unnecessary processing, slows down text-only tasks
+🔧 Fix: Use images only for visual problems; use text for code issues; match input type to task
+📍 See: `general-llm-anti-patterns-07-09.mdc` section 9.2 (Verbose Text-Only Prompts)
+
+**Detect:** Image analysis for text-only tasks, screenshots for code inspection, visual analysis for non-visual problems, multimodal input when text suffices
+
+---
+
+### 10.4 Structured Output Overuse (CRIT)
+
+**CRITICAL:** Don't force structured output when plain text is clearer.
+
+❌ Bad: JSON schemas for simple responses, structured output for straightforward text, forcing structure when text suffices
+✅ Good: Use structured output only for machine-readable data, plain text for simple responses, match format to use case
+⚠️ Why: Adds complexity, wastes tokens, unnecessary structure, makes simple responses harder
+🔧 Fix: Use structured output only when needed; use plain text for simple responses; match format to use case
+
+**Detect:** JSON schemas for simple responses, structured output for straightforward text, forcing structure when text suffices, unnecessary structured formats
+
+---
+
+### 10.5 Tool Use Anti-Patterns (CRIT)
+
+**CRITICAL:** Don't over-call tools or invent tool parameters. Batch operations when possible.
+
+❌ Bad: Over-calling tools for simple operations, not batching tool calls, inventing tool parameters, single tool call per item in loop
+✅ Good: Batch tool calls when possible, verify tool parameters, use tools efficiently, combine related operations
+⚠️ Why: Adds latency, wastes tokens, inefficient processing, slower execution
+🔧 Fix: Batch tool calls when possible; verify tool parameters; use tools efficiently; combine related operations
+
+**Detect:** Over-calling tools, not batching tool calls, inventing tool parameters, single tool call per item, inefficient tool usage
+
+---
+
+### 10.6 Extended Reasoning Anti-Patterns (CRIT)
+
+**CRITICAL:** Don't use extended reasoning for simple operations.
+
+❌ Bad: Extended reasoning for simple operations, excessive reasoning traces for straightforward code, long reasoning for trivial tasks
+✅ Good: Extended reasoning only for complex multi-step tasks, brief reasoning for simple operations, reasoning checkpoints for long tasks
+⚠️ Why: Wastes compute time, adds latency, unnecessary for simple operations, slows down simple tasks
+🔧 Fix: Use extended reasoning only for complex tasks; use brief reasoning for simple operations; add checkpoints for long tasks
+
+**Detect:** Extended reasoning for simple operations, excessive traces for straightforward code, long reasoning for trivial tasks, unnecessary extended reasoning
+
+---
+
+### 10.7 Large Context Window Misuse (CRIT)
+
+**CRITICAL:** Don't load entire codebase when targeted files suffice, even with large context capacity.
+
+❌ Bad: Loading entire codebase for single-file changes, using @codebase for localized edits, no context window management
+✅ Good: Use @filename for targeted changes, manage context window size, only load necessary files
+⚠️ Why: Reduces coherence even with large capacity, slows processing, wastes tokens, unnecessary context loading
+🔧 Fix: Use targeted file loading; manage context size actively; only load necessary files for task
+📍 See: `cursor-integration.mdc` section 1.2, `general-llm-anti-patterns-07-09.mdc` section 7.2a
+
+**Detect:** @codebase for single-file changes, entire repo loading unnecessarily, no context size management, context window exhaustion
+
+---
+
+## Category 11: Operations Anti-Patterns
+
+### 11.1 Logging Anti-Patterns (CRIT)
+
+**CRITICAL:** Avoid over-logging, under-logging, and log injection vulnerabilities.
+
+❌ Bad: Excessive logging in hot paths, missing structured logs, user input in log messages, no log redaction
+✅ Good: Structured logging (JSON), log levels appropriate to context, redact sensitive data, log only necessary information
+⚠️ Why: Over-logging wastes resources, under-logging hides issues, log injection creates security risks
+🔧 Fix: Use structured logging; redact sensitive data; log at appropriate levels; validate log inputs
+
+**Detect:** Excessive logging in loops, missing structured logs, user input in logs, no log redaction, log injection vulnerabilities
+
+---
+
+### 11.2 Metrics Anti-Patterns (CRIT)
+
+**CRITICAL:** Use correct metric types and include necessary labels.
+
+❌ Bad: Wrong metric types (gauge vs counter), missing labels, no metric collection, metrics without context
+✅ Good: Correct metric types (counter/gauge/histogram), appropriate labels, consistent metric naming, metrics with context
+⚠️ Why: Wrong types give incorrect insights, missing labels prevent filtering, no metrics means no observability
+🔧 Fix: Use correct metric types; include necessary labels; follow naming conventions; collect metrics consistently
+
+**Detect:** Wrong metric types, missing labels, no metric collection, metrics without context, inconsistent naming
+
+---
+
+### 11.3 Error Tracking Anti-Patterns (CRIT)
+
+**CRITICAL:** Provide error context and avoid generic error messages.
+
+❌ Bad: Generic error messages, missing stack traces, no error context, errors without correlation IDs
+✅ Good: Specific error messages with context, stack traces included, correlation IDs for tracing, error categorization
+⚠️ Why: Generic errors are hard to debug, missing context delays resolution, no correlation prevents tracing
+🔧 Fix: Include error context; add stack traces; use correlation IDs; categorize errors appropriately
+
+**Detect:** Generic error messages, missing stack traces, no error context, errors without correlation IDs, untraceable errors
+
+---
+
+### 11.4 Observability Blindness (CRIT)
+
+**CRITICAL:** Implement monitoring, alerting, and observability for production systems.
+
+❌ Bad: No monitoring, missing alerts, no observability, no health checks, no performance tracking
+✅ Good: Comprehensive monitoring, appropriate alerts, observability tools, health checks, performance metrics
+⚠️ Why: No observability means blind operations, missing alerts delay incident response, no health checks prevent proactive detection
+🔧 Fix: Implement monitoring; configure alerts; use observability tools; add health checks; track performance metrics
+
+**Detect:** No monitoring, missing alerts, no observability tools, no health checks, no performance tracking
+
+---
+
+## Category 12: File and Directory Naming (Guidance)
+
+**Scope:** Applies to source files, test files, and project-controlled artifacts (logs, exports, generated files in repo or tooling). Industry standard (Google, Maven, NASA): same principles for source and artifacts—lowercase, alphanumeric + hyphen/underscore, descriptive, version when relevant. **Guidance:** Prefer these rules; if project already has a convention, keep it; new projects follow below.
+
+### 12.1 No Spaces in File or Directory Names (Guidance)
+
+**Guidance:** Use underscores, hyphens, or language-appropriate case instead of spaces.
+
+❌ Bad: `my project file.py`, `Reports/2024 Q1/`
+✅ Good: `my_project_file.py`, `reports/2024-q1/` (or language convention)
+⚠️ Why: Spaces break shell commands, scripts, URLs; require escaping or quoting
+🔧 Fix: Replace spaces with underscores, hyphens, or camelCase/PascalCase per language
+📍 See: Language-specific rules for source file naming
+
+**Detect:** Spaces in file/dir names, names requiring quotes in commands
+
+---
+
+### 12.2 Safe Characters Only (Guidance)
+
+**Guidance:** Restrict to letters (A–Z, a–z), digits (0–9), underscore, hyphen. Dot only for extensions or hidden files.
+
+❌ Bad: `report!final$.txt`, `data#1.xlsx`
+✅ Good: `report_final.txt`, `data-1.xlsx`
+⚠️ Why: Special chars cause tool/script/URL issues across platforms
+🔧 Fix: Use only [a-zA-Z0-9_.-]; avoid !$&*?#%
+
+**Detect:** Special characters in file/dir names, punctuation other than . - _
+
+---
+
+### 12.3 Descriptively Concise (Guidance)
+
+**Guidance:** Names clear and as short as reasonable; avoid cryptic or overly long.
+
+❌ Bad: `x.py`, `the_file_that_contains_the_user_authentication_logic.java`
+✅ Good: `auth_helper.py`, `UserAuthService.java`
+⚠️ Why: Unclear names waste time; excessive length hurts typing and readability
+🔧 Fix: Describe content/purpose in minimal words
+
+**Detect:** Single-letter or cryptic names, names over ~40 chars without clear benefit
+
+---
+
+### 12.4 Case and Consistency (Guidance)
+
+**Guidance:** Assume case sensitivity. Prefer lowercase unless language convention is PascalCase (e.g. Java/Swift source files). Use one convention per project.
+
+❌ Bad: `Report.PY` and `report.py` in same project, mixing camelCase and snake_case for same file type
+✅ Good: Lowercase for modules/dirs where language allows; match existing project convention
+⚠️ Why: Case-insensitive filesystems cause collisions; inconsistency annoys tooling and peers
+🔧 Fix: Prefer lowercase; follow existing project style; document convention
+
+**Detect:** Mixed casing for same artifact type, inconsistent word separators in one project
+
+---
+
+### 12.5 Dates in Names (Guidance)
+
+**Guidance:** Use YYYY-MM-DD or YYYYMMDD (with leading zeros) so lexicographic sort matches chronological order.
+
+❌ Bad: `report_12_1_2024.txt`, `log-3-15-2024`
+✅ Good: `report_2024-12-01.txt`, `log_20240315`
+⚠️ Why: MM-DD-YYYY or DD-MM-YYYY sorts incorrectly
+🔧 Fix: Year first, then month, then day; zero-pad month/day
+
+**Detect:** Dates in file names not in ISO order, missing leading zeros
+
+---
+
+### 12.6 Version Suffixes (Guidance)
+
+**Guidance:** Use zero-padded version numbers (e.g. v01, v02) so v10+ sorts correctly.
+
+❌ Bad: `draft_v1`, `draft_v2`, `draft_v10` (sorts v1, v10, v2)
+✅ Good: `draft_v01`, `draft_v02`, `draft_v10`
+⚠️ Why: Lexicographic sort puts v10 before v2 without zero-padding
+🔧 Fix: Zero-pad numeric suffixes (at least two digits if versions may reach 10+)
+
+**Detect:** Version numbers in names without zero-padding, sort order broken at v10+
+
+---
+
+### 12.7 Productivity Pattern for Non-Source Assets (Guidance)
+
+**Guidance:** For docs, exports, logs, or other non-source artifacts: optional three-part pattern **subject_date_code** (order flexible). Use **dashes** where spaces would go in subject; use **underscores** to separate the three parts. Code can be version (v01), initials, or draft/final.
+
+❌ Bad: `New Hire Process 12-1-24 v1.docx` (spaces, ambiguous date)
+✅ Good: `new-hire-process_20241201_V01.docx`, `20241201_report_DRAFT.pdf`
+⚠️ Why: Sortable, script-friendly, consistent with industry (descriptive + date + identifier)
+🔧 Fix: `subject-part-with-dashes_YYYYMMDD_CODE`; keep code segment distinct (e.g. caps for code)
+
+**Detect:** Multi-word subjects with spaces, dates not YYYYMMDD, no separator between subject/date/code
+
+---
+
+## Summary: Critical Rules
+
+These six patterns represent the most critical "making it work vs. making it right" violations:
+
+1. **Ghost Layer Prevention** - No pass-through services
+2. **Placeholder & Dead Code Ban** - No TODOs/FIXMEs in production
+3. **Performance-First Collection Handling** - No I/O in loops
+4. **Business Logic Location** - Keep domain pure
+5. **Zero-Hallucination Policy** - Verify all APIs
+6. **Hardcoded Secrets** - Use environment variables
+
+**Quick Ref:** Arch: Ghost layers, fake abstractions, dead code, logic leakage, state confusion, god objects, file size limit, Strangler Fig | Perf: O(N²), unoptimized hot paths, performance blindness | Quality: Duplication, defensive comments, context blindness, over/under-engineering, formatting, magic values, warning dismissal | API: Hallucination, dependency issues, workaround-first | Security: Hardcoded secrets, missing validation, silent failures, resource leaks, error handling, global state | Testing: Mock mismatches, missing error paths, incomplete coverage, flaky tests | Context: Ignoring patterns, context window limitations, ambiguity intolerance, large context strategies, exhaustion patterns | Process: Pre-execution planning, AST-based detection | Agent: UI-first, verbose prompts, pattern propagation, multi-agent coordination, feedback loops, cooperative communication (9.6–9.8a) | Modern LLM: Reasoning mode misuse, long context waste, multimodal misuse, structured output overuse, tool use anti-patterns, extended reasoning, large context misuse | Operations: Logging anti-patterns, metrics anti-patterns, error tracking, observability blindness | File naming: no spaces, safe chars, dates YYYY-MM-DD, consistency, productivity pattern (subject_date_code)
+
+**For language-specific implementations:** See your project's language-specific anti-trap rules file for concrete detection patterns and code examples in your target language.
+
+---
+
+*This file consolidates patterns identified across multiple expert architectural audits and applies universally to LLM-driven development across all programming languages and frameworks.*

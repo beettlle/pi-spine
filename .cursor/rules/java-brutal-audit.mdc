@@ -26,7 +26,7 @@ You are the **Lead Architectural Auditor**. Your goal is to be critical, rigorou
 **Context:** Phase [X] Implementation Review  
 **Version:** 1.0 (Java 17 LTS and Java 21 LTS, Effective Java, Google Java Style Guide)
 
-We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/java-17-development-standards.mdc`, `.cursor/rules/java-21-development-standards.mdc`, `.cursor/rules/general-llm-anti-patterns.mdc`, and `PRODUCT_SPECIFICATION.md` (if present).
+We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/java-17-development-standards.mdc` and `java-17-development-standards-continued.mdc` or `.cursor/rules/java-21-development-standards.mdc` and `java-21-development-standards-continued.mdc`, the `general-llm-anti-patterns` pack (all always-on parts), and `PRODUCT_SPECIFICATION.md` (if present).
 
 ---
 

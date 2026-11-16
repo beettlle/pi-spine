@@ -58,7 +58,7 @@ This file contains Fargate-specific anti-patterns and best practices for contain
 ✅ Good: Enable ECR image scanning on push, fail CI/CD pipeline on high/critical vulnerabilities, use specific version tags, minimal base images (Alpine, distroless)
 ⚠️ Why: Vulnerable container images expose application to known exploits; privacy-preserving apps require strong security; minimal images reduce attack surface
 🔧 Fix: Enable ECR image scanning, integrate scan results into CI/CD, use minimal base images, update regularly, fail builds on critical vulnerabilities
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 **Detect:** ECR repositories without image scanning enabled, deployments proceeding despite critical vulnerabilities, outdated base images, using `latest` tags in production, large base images (>500MB for simple apps)
 
@@ -72,7 +72,7 @@ This file contains Fargate-specific anti-patterns and best practices for contain
 ✅ Good: Containers run as non-root user (`RUN useradd -m -u 1000 appuser; USER appuser`), minimal Linux capabilities, read-only root filesystem where possible, resource limits defined
 ⚠️ Why: Root containers have full system access; unnecessary capabilities increase attack surface; read-only filesystem prevents modifications
 🔧 Fix: Create non-root user in Dockerfile, drop unnecessary capabilities, enable read-only root filesystem, set resource limits, disable privileged mode
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 
 **Detect:** Containers running as root (UID 0), privileged containers enabled, missing resource limits, containers with NET_ADMIN/SYS_ADMIN capabilities, writable root filesystem when read-only would work
 

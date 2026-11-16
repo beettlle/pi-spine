@@ -1,8 +1,10 @@
 ---
-description: "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions"
+description: "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions (core: Categories 1–4)"
 globs: ["**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs", "**/*.ts", "**/*.tsx"]
 alwaysApply: false
 ---
+
+**Continued rules:** `javascript-3-development-standards-continued.mdc` (same globs).
 
 ## Persona: Senior JavaScript Architect
 - **Role:** Modern JavaScript/TypeScript expert (Node.js, React, frontend ecosystems). **Philosophy:** "Explicit > implicit", "Readability counts", "Type safety where possible"
@@ -60,7 +62,7 @@ JavaScript's evolution (ES6+) has transformed it into a powerful, expressive lan
 ✅ Good: `const userName = 'John';`, `let userCount = 0; userCount = getUserCount();` (only when reassignment needed), `for (let i = 0; i < items.length; i++)` (proper scoping), `for (const item of items)` (prefer for...of), `const users = []; users.push({ name: 'John' });` (const for objects/arrays even if contents change)
 ⚠️ Why: `var` has function scope and hoisting issues; `var` in loops creates closure bugs; using `let` when `const` would work reduces intent clarity; variables can be declared but undefined causing bugs
 🔧 Fix: Always use `const` unless reassignment is needed; use `let` only when variable will be reassigned; never use `var` in new code; initialize variables when declaring; use `const` for arrays/objects even if contents change (reference is constant)
-📍 See: `general-llm-anti-patterns.mdc` section 5.6
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.6
 **Detect:** Using `var` declarations, using `let` when `const` would work, variables declared but not initialized, reassigning `const` variables, `var` in loops creating closure bugs
 
 ---
@@ -73,7 +75,7 @@ JavaScript's evolution (ES6+) has transformed it into a powerful, expressive lan
 ✅ Good: `'use strict';` directive at top of file, ES modules (`export function processData(data) {}`) are strict by default, configure ESLint to enforce strict mode
 ⚠️ Why: Silent failures (undeclared variables become globals); allows dangerous features (eval with access to enclosing scope); not catching common mistakes; poor error messages
 🔧 Fix: Always use `'use strict';` or ES modules; ES modules are strict by default (preferred); configure ESLint to enforce strict mode; never disable strict mode
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.2
 **Detect:** Missing `'use strict';` directive, not using ES modules, silent failures that strict mode would catch, undeclared variables becoming globals
 
 ---
@@ -203,7 +205,7 @@ JavaScript's evolution (ES6+) has transformed it into a powerful, expressive lan
 ✅ Good: `async function loadData() { try { const data = await fetchData(); processData(data); } catch (error) { console.error('Failed to load data:', error); } }` (error handling with try/catch), `fetch('/analytics', ...).catch(error => console.error('Analytics failed:', error));` (fire-and-forget with error handling)
 ⚠️ Why: Unhandled promise rejections can crash Node.js; silent failures in production; no visibility into errors; difficult to debug
 🔧 Fix: Use `try/catch` for async/await; use `.catch()` for promise chains; handle fire-and-forget promises; use top-level error handlers
-📍 See: `general-llm-anti-patterns.mdc` section 5.3
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.3
 **Detect:** Promises without `.catch()` or `try/catch`, async functions without error handling, fire-and-forget promises, unhandled promise rejections
 
 ---
@@ -286,7 +288,7 @@ JavaScript's evolution (ES6+) has transformed it into a powerful, expressive lan
 
 ### 4.2a Source File Naming (Guidance)
 
-If project has convention keep it. New projects: kebab-case for most files; PascalCase for React/component files. No spaces or special chars. 📍 See: Google JS Style Guide; `general-llm-anti-patterns.mdc` Category 12.
+If project has convention keep it. New projects: kebab-case for most files; PascalCase for React/component files. No spaces or special chars. 📍 See: Google JS Style Guide; `general-llm-anti-patterns-10-12.mdc` Category 12.
 
 ---
 
@@ -301,257 +303,3 @@ If project has convention keep it. New projects: kebab-case for most files; Pasc
 **Detect:** Unorganized imports, mixing import types, no blank lines between import groups, relative imports before external dependencies
 
 ---
-
-## Category 5: Code Quality & Best Practices
-
-### 5.1 Early Returns and Guard Clauses (CRIT)
-
-**CRITICAL:** Use early returns and guard clauses to reduce nesting and improve readability.
-
-❌ Bad: Deeply nested if statements, `if (valid) { ... } else { return; }` (else clause unnecessary)
-✅ Good: `if (!user) return null; if (!user.active) return null; processUser(user);` (early returns), guard clauses at function start, reduced nesting, clearer control flow
-⚠️ Why: Deeply nested code is hard to read; unnecessary else clauses add complexity; guard clauses make preconditions explicit
-🔧 Fix: Use early returns for error cases; use guard clauses at function start; reduce nesting; remove unnecessary else clauses
-📍 See: `general-llm-anti-patterns.mdc` section 1.4
-**Detect:** Deeply nested if statements, unnecessary else clauses, missing guard clauses, nested conditionals that could use early returns
-
----
-
-### 5.2 Avoid Side Effects (CRIT)
-
-**CRITICAL:** Minimize side effects. Prefer pure functions when possible.
-
-❌ Bad: Functions that modify global state, functions that mutate parameters, functions with hidden side effects, impure functions when pure would work
-✅ Good: Pure functions (same input always produces same output), `function add(a, b) { return a + b; }` (no side effects), `function process(items) { return items.map(item => ({ ...item, processed: true })); }` (immutable transformations), explicit side effects when necessary
-⚠️ Why: Side effects make functions unpredictable; hard to test; hard to reason about; causes bugs; violates functional programming principles
-🔧 Fix: Prefer pure functions; avoid modifying global state; avoid mutating parameters; make side effects explicit; use immutable data structures when possible
-📍 See: `general-llm-anti-patterns.mdc` section 5.6
-**Detect:** Functions that modify global state, functions that mutate parameters, functions with hidden side effects, impure functions when pure would work
-
----
-
-### 5.3 Avoid Magic Numbers and Strings (CRIT)
-
-**CRITICAL:** Extract magic numbers and strings to named constants.
-
-❌ Bad: `if (count > 100) {}` (magic number), `status === 'active'` (magic string), repeated magic values throughout code
-✅ Good: `const MAX_ITEMS = 100; if (count > MAX_ITEMS) {}`, `const STATUS_ACTIVE = 'active'; if (status === STATUS_ACTIVE) {}`, named constants for all magic values, grouped related constants together
-⚠️ Why: Magic values are hard to understand; no single source of truth; makes code fragile; hard to maintain
-🔧 Fix: Extract magic values to named constants; use UPPER_CASE for constants; group related constants together; document constant meanings
-📍 See: `general-llm-anti-patterns.mdc` section 3.6
-**Detect:** Hardcoded numbers/strings, repeated magic values throughout code, no constants file or configuration, magic values without explanation
-
----
-
-### 5.4 Naming Conventions (CRIT)
-
-**CRITICAL:** Follow consistent naming conventions: camelCase for variables/functions, PascalCase for classes, UPPER_CASE for constants.
-
-❌ Bad: Inconsistent naming, `user_name` (snake_case in JavaScript), `UserName` for variables, mixing naming conventions
-✅ Good: `const userName = 'John';` (camelCase for variables), `function processData() {}` (camelCase for functions), `class UserService {}` (PascalCase for classes), `const MAX_ITEMS = 100;` (UPPER_CASE for constants), consistent naming throughout codebase
-⚠️ Why: Inconsistent naming reduces readability; violates JavaScript conventions; makes codebase harder to navigate
-🔧 Fix: Use camelCase for variables and functions; use PascalCase for classes; use UPPER_CASE for constants; be consistent throughout codebase; configure ESLint to enforce naming conventions
-**Detect:** Inconsistent naming, snake_case in JavaScript, PascalCase for variables, mixing naming conventions
-
----
-
-## Category 6: Error Handling
-
-### 6.1 Explicit Error Handling (CRIT)
-
-**CRITICAL:** Always handle errors explicitly. Never use empty catch blocks or ignore errors.
-
-❌ Bad: `try { processData(); } catch {}` (empty catch block), `try { processData(); } catch (e) {}` (ignoring errors), generic catch blocks without specific error handling
-✅ Good: `try { processData(); } catch (error) { console.error('Failed to process:', error); throw error; }` (explicit error handling), catch specific error types when possible, handle errors appropriately (log, retry, or rethrow), use error objects with meaningful messages
-⚠️ Why: Silent failures hide bugs; empty catch blocks swallow errors; generic error handling loses context; difficult debugging
-🔧 Fix: Always handle errors explicitly; never use empty catch blocks; catch specific error types when possible; log errors with context; rethrow or handle appropriately
-📍 See: `general-llm-anti-patterns.mdc` section 5.3
-**Detect:** Empty catch blocks, ignoring errors, generic catch blocks without specific error handling, silent failures
-
----
-
-### 6.2 Custom Error Classes (CRIT)
-
-**CRITICAL:** Use custom error classes for better error handling and debugging.
-
-❌ Bad: Throwing generic `Error` objects, `throw 'Something went wrong';` (throwing strings), no error context or codes
-✅ Good: `class ValidationError extends Error { constructor(message) { super(message); this.name = 'ValidationError'; } }`, `throw new ValidationError('Invalid user input');`, custom error classes with context, error codes for programmatic handling
-⚠️ Why: Generic errors are hard to handle programmatically; throwing strings loses stack traces; no error context makes debugging difficult
-🔧 Fix: Create custom error classes extending `Error`; include error context and codes; throw error instances not strings; handle specific error types
-**Detect:** Throwing generic `Error` objects, throwing strings, no error context or codes, missing custom error classes
-
----
-
-## Category 7: Testing
-
-### 7.1 Test Structure and Organization (CRIT)
-
-**CRITICAL:** Write tests for all critical functionality. Use descriptive test names and organize tests logically.
-
-❌ Bad: No tests, tests with unclear names, tests that test multiple things, tests without organization
-✅ Good: `test('should return error when user is not found', () => { ... });` (descriptive test names), one assertion per test concept, organized test files mirroring source structure, use test frameworks (Jest, Mocha, Vitest)
-⚠️ Why: No tests means no confidence in code; unclear test names make failures hard to understand; tests that test multiple things are hard to debug; poor organization makes tests hard to find
-🔧 Fix: Write tests for all critical functionality; use descriptive test names; organize tests logically; use test frameworks; maintain test coverage
-📍 See: `general-llm-anti-patterns.mdc` section 6.2
-**Detect:** No tests, tests with unclear names, tests that test multiple things, tests without organization, missing test coverage
-
----
-
-### 7.2 Async Testing (CRIT)
-
-**CRITICAL:** Properly handle async operations in tests. Use `async/await` or promise assertions.
-
-❌ Bad: Tests that don't wait for async operations, `setTimeout` for async testing, not awaiting promises in tests
-✅ Good: `test('should fetch user data', async () => { const user = await fetchUser(id); expect(user).toBeDefined(); });` (async/await in tests), `await expect(fetchUser(id)).resolves.toBeDefined();` (promise assertions), proper async test handling
-⚠️ Why: Tests that don't wait for async operations give false positives; `setTimeout` is flaky; not awaiting promises causes race conditions
-🔧 Fix: Use `async/await` in async tests; use promise assertions; wait for all async operations; avoid `setTimeout` for async testing
-📍 See: `general-llm-anti-patterns.mdc` section 6.4
-**Detect:** Tests that don't wait for async operations, `setTimeout` for async testing, not awaiting promises in tests, flaky async tests
-
----
-
-### 7.3 Test Isolation and Mocking (CRIT)
-
-**CRITICAL:** Tests must be isolated. Mock external dependencies and avoid shared state.
-
-❌ Bad: Tests that depend on each other, tests that modify shared state, tests that hit real APIs/databases, no mocking of external dependencies
-✅ Good: Each test is independent, mock external dependencies, `jest.mock('./api');` (mock modules), `const mockFetch = jest.fn();` (mock functions), use test fixtures for data, clean up after tests
-⚠️ Why: Tests that depend on each other are brittle; shared state causes test interference; hitting real APIs/databases makes tests slow and unreliable; no mocking makes tests depend on external systems
-🔧 Fix: Make tests independent; mock external dependencies; use test fixtures; clean up after tests; avoid shared state
-📍 See: `general-llm-anti-patterns.mdc` section 6.1, 6.4
-**Detect:** Tests that depend on each other, tests that modify shared state, tests that hit real APIs/databases, no mocking of external dependencies, shared test data
-
----
-
-## Category 8: Performance and Optimization
-
-### 8.1 Avoid Premature Optimization (CRIT)
-
-**CRITICAL:** Don't optimize prematurely. Profile first, then optimize based on actual bottlenecks.
-
-❌ Bad: Optimizing code without profiling, micro-optimizations that reduce readability, optimizing code that's not a bottleneck
-✅ Good: Profile code first to identify bottlenecks, optimize only hot paths, measure before and after optimization, prioritize readability over micro-optimizations
-⚠️ Why: Premature optimization wastes time; optimizations may not be needed; reduces code readability; may introduce bugs
-🔧 Fix: Profile code first; identify actual bottlenecks; optimize only hot paths; measure optimization impact; prioritize readability
-📍 See: `general-llm-anti-patterns.mdc` section 0.1
-**Detect:** Optimizing code without profiling, micro-optimizations that reduce readability, optimizing code that's not a bottleneck
-
----
-
-### 8.2 Efficient Data Structures and Algorithms (CRIT)
-
-**CRITICAL:** Use appropriate data structures and algorithms. Consider time and space complexity.
-
-❌ Bad: Using arrays for lookups (O(n)), nested loops when single pass possible (O(n²)), inefficient algorithms
-✅ Good: Use `Map` or `Set` for O(1) lookups, use `Set` for membership tests, avoid nested loops when possible, use efficient algorithms (e.g., binary search for sorted arrays)
-⚠️ Why: Inefficient data structures cause performance issues; O(n²) algorithms don't scale; wrong data structure for use case
-🔧 Fix: Use appropriate data structures; consider time/space complexity; avoid nested loops when possible; use efficient algorithms
-📍 See: `general-llm-anti-patterns.mdc` section 2.3
-**Detect:** Using arrays for lookups, nested loops when single pass possible, inefficient algorithms, not considering time/space complexity
-
----
-
-## Category 9: Security
-
-### 9.1 Input Validation and Sanitization (CRIT)
-
-**CRITICAL:** Always validate and sanitize user input. Never trust user input.
-
-❌ Bad: `db.users.insert({ name: userData.name, email: userData.email });` (no validation), `document.getElementById('comments').innerHTML = comment;` (XSS vulnerability), direct use of user input in queries/HTML
-✅ Good: `const validated = userSchema.parse(userData); db.users.insert(validated);` (input validation with Zod/Joi/Yup), `const sanitized = DOMPurify.sanitize(comment); document.getElementById('comments').innerHTML = sanitized;` (sanitize HTML output), `await db.query('SELECT * FROM users WHERE id = ?', [userId]);` (parameterized queries), never trust user input
-⚠️ Why: Security vulnerabilities (XSS, injection); data corruption; runtime errors; compliance violations
-🔧 Fix: Validate all user input; sanitize HTML output; use parameterized queries; never trust user input
-📍 See: `general-llm-anti-patterns.mdc` section 5.2
-**Detect:** No input validation, direct use of user input in queries/HTML, no sanitization, trusting user input
-
----
-
-### 9.2 Avoid eval() and Function Constructor (CRIT)
-
-**CRITICAL:** Never use `eval()` or `Function` constructor. Use JSON.parse() or safe alternatives.
-
-❌ Bad: `eval(code);` (eval - NEVER DO THIS), `new Function('a', 'b', 'return a + b');` (Function constructor), executing user input as code, dynamic code generation
-✅ Good: `JSON.parse(jsonString);` (JSON.parse for data), use proper parsing libraries, if code execution absolutely needed use strict sandboxing (`vm.createContext` in Node.js with timeout)
-⚠️ Why: Major security vulnerability; allows arbitrary code execution; no way to sanitize; performance issues
-🔧 Fix: Never use `eval()`; never use `Function()` constructor; use `JSON.parse()` for data; use proper parsing libraries; if code execution absolutely needed use strict sandboxing
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
-**Detect:** Using `eval()`, using `Function()` constructor, executing user input as code, dynamic code generation
-
----
-
-### 9.3 Environment Variables (CRIT)
-
-**CRITICAL:** Use environment variables for configuration. Never commit secrets.
-
-❌ Bad: `const apiKey = "sk-live-1234567890abcdef";` (hardcoded secrets), passwords in code, secrets in version control
-✅ Good: `const apiKey = process.env.API_KEY;` (environment variables), use `.env` files (not committed), use secrets management services in production, never commit secrets
-⚠️ Why: Hardcoded secrets are security risk; can't be changed without code change; get committed to version control; security breach if repository is compromised
-🔧 Fix: Use environment variables for all secrets; use `.env` files (not committed); use secrets management in production; never commit secrets
-📍 See: `general-llm-anti-patterns.mdc` section 5.1
-**Detect:** Hardcoded API keys, passwords in code, secrets in version control, environment variables not used for secrets
-
----
-
-## Category 10: Node.js Specific
-
-### 10.1 Process Management and Graceful Shutdown (CRIT)
-
-**CRITICAL:** Handle process signals for graceful shutdown. Clean up resources before exiting.
-
-❌ Bad: No signal handlers, abrupt process termination, resources not cleaned up, active connections not closed
-✅ Good: `process.on('SIGTERM', async () => { await cleanup(); process.exit(0); });` (signal handlers for graceful shutdown), close database connections, close HTTP servers, clean up resources, use health checks
-⚠️ Why: Abrupt termination loses data; resources not cleaned up cause leaks; active connections cause errors; poor user experience
-🔧 Fix: Handle SIGTERM/SIGINT signals; clean up resources before exiting; close connections gracefully; use health checks
-**Detect:** No signal handlers, abrupt process termination, resources not cleaned up, active connections not closed
-
----
-
-### 10.2 Stream Processing (CRIT)
-
-**CRITICAL:** Use streams for large data processing. Don't load entire files into memory.
-
-❌ Bad: `const data = fs.readFileSync('large-file.txt');` (loading entire file into memory), `const json = JSON.parse(fs.readFileSync('large.json'));` (loading large JSON into memory)
-✅ Good: `fs.createReadStream('large-file.txt').pipe(process.stdout);` (streaming), `const stream = fs.createReadStream('large.json');` (use streams for large files), process data in chunks, use pipeline for stream composition
-⚠️ Why: Loading large files into memory causes memory issues; streams process data in chunks; more efficient for large files; better performance
-🔧 Fix: Use streams for large data processing; don't load entire files into memory; process data in chunks; use pipeline for stream composition
-📍 See: `general-llm-anti-patterns.mdc` section 2.2
-**Detect:** Loading entire files into memory, not using streams for large files, memory issues with large data, synchronous file operations
-
----
-
-## Category 11: Tooling and Configuration
-
-### 11.1 ESLint Configuration (CRIT)
-
-**CRITICAL:** Use ESLint to enforce code quality and catch common errors.
-
-❌ Bad: No ESLint configuration, ESLint disabled, ignoring ESLint rules without justification, inconsistent code style
-✅ Good: ESLint configured with appropriate rules, use recommended presets (eslint:recommended, @typescript-eslint/recommended), configure rules for project needs, fix ESLint errors, use pre-commit hooks
-⚠️ Why: No code quality enforcement; inconsistent code style; common errors not caught; harder code reviews
-🔧 Fix: Configure ESLint with appropriate rules; use recommended presets; fix ESLint errors; use pre-commit hooks; enforce consistent code style
-**Detect:** No ESLint configuration, ESLint disabled, ignoring ESLint rules without justification, inconsistent code style
-
----
-
-### 11.2 Prettier Configuration (CRIT)
-
-**CRITICAL:** Use Prettier for consistent code formatting. Configure to match team preferences.
-
-❌ Bad: No Prettier configuration, inconsistent formatting, manual formatting, formatting conflicts in code reviews
-✅ Good: Prettier configured with `.prettierrc`, format on save, use pre-commit hooks, consistent formatting across codebase
-⚠️ Why: Inconsistent formatting wastes time; manual formatting is error-prone; formatting conflicts in reviews
-🔧 Fix: Configure Prettier; format on save; use pre-commit hooks; ensure consistent formatting
-**Detect:** No Prettier configuration, inconsistent formatting, manual formatting, formatting conflicts in code reviews
-
----
-
-## References
-
-- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
-- [Google JavaScript Style Guide](https://google.github.io/styleguide/jsguide.html)
-- [MDN JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide)
-- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
-
----
-
-*This file consolidates JavaScript/ECMAScript-specific development standards. For universal anti-patterns, see `general-llm-anti-patterns.mdc`.*

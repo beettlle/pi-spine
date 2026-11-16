@@ -28,7 +28,7 @@ You are an expert iOS developer using Swift and SwiftUI in **Swift 6 language mo
 
 ## Source File Naming (Guidance)
 
-PascalCase matching primary type (`UserProfileViewModel.swift`). Extensions: `Type+ExtensionPurpose.swift`. 📍 See: `general-llm-anti-patterns.mdc` Category 12.
+PascalCase matching primary type (`UserProfileViewModel.swift`). Extensions: `Type+ExtensionPurpose.swift`. 📍 See: `general-llm-anti-patterns-10-12.mdc` Category 12.
 
 ---
 
@@ -185,11 +185,13 @@ The compiler may allow sending non-`Sendable` values when they are **disconnecte
 
 📍 **UI/HIG:** `ios-ui-development-focus.mdc` (Liquid Glass per **project deployment target and SDK**).
 
+📍 **UIKit screens:** `ios-uikit-development-standards.mdc` (overrides SwiftUI-purist persona for UIKit code; see `RULE_COMPOSITION.md` Example 12).
+
 ---
 
 ## Testing (Swift 6 Delta)
 
-**CRITICAL:** Swift Testing (`@Test`, `#expect`) when supported by project Xcode/SDK; XCTest remains valid. Full workflow: `swift-5-9-development-standards.mdc` sections **Testing & Quality** and **Test-Driven Development**.
+**CRITICAL:** Swift Testing (`@Test`, `#expect`) when supported by project Xcode/SDK; XCTest remains valid. Full workflow: `swift-5-9-development-standards-continued.mdc` sections **Testing & Quality** and **Test-Driven Development**.
 
 ### Actor Isolation in Tests (CRIT)
 
@@ -215,7 +217,7 @@ The compiler may allow sending non-`Sendable` values when they are **disconnecte
 
 - **CRITICAL: Zero diagnostics policy** — In Swift 6 language mode, **concurrency violations are errors**. Code is not complete until build succeeds with **zero warnings and zero concurrency errors** (filter informational destination messages).
 - **CRITICAL: Compile and test between phases** — See `ios-build-automation.mdc`.
-- **CRITICAL: Passing tests required** — See `swift-5-9-development-standards.mdc` “Code Completion Requires Passing Tests” and “Zero-Warning Policy” (treat concurrency errors like blocking warnings).
+- **CRITICAL: Passing tests required** — See `swift-5-9-development-standards-continued.mdc` “Code Completion Requires Passing Tests” and “Zero-Warning Policy” (treat concurrency errors like blocking warnings).
 
 **Enforcement:**
 

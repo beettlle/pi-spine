@@ -1,0 +1,230 @@
+---
+alwaysApply: true
+description: "Universal LLM anti-patterns pack part 2: Categories 4–6 (API/framework, security, testing)"
+---
+
+**Pack:** `general-llm-anti-patterns.mdc` (0–3) · `general-llm-anti-patterns-04-06.mdc` (4–6) · `general-llm-anti-patterns-07-09.mdc` (7–9) · `general-llm-anti-patterns-10-12.mdc` (10–12 + Summary)
+
+# General LLM Anti-Patterns (continued)
+
+Companion to `general-llm-anti-patterns.mdc`. Section numbers preserved.
+
+## Category 4: API/Framework Usage Anti-Patterns
+
+### 4.1 Zero-Hallucination Policy (CRIT)
+
+**CRITICAL:** Verify every third-party import and API call against current documentation. If an API seems "too perfect," it's likely a hallucination.
+
+❌ Bad: Multi-step workarounds when direct API exists, unverified/hallucinated packages, using search when direct lookup exists
+✅ Good: Verify all APIs against documentation, use direct APIs, verify package exists in registry before importing
+⚠️ Why: Turns O(1) lookup into O(Search) fuzzy search, security risk (slopsquatting), build failures
+🔧 Fix: Always check official documentation first; verify package exists in registry before importing; use direct APIs instead of workarounds
+📍 See: Examples in `critical-rules-quick-reference.mdc` section 6
+
+**Detect:** Multi-step workarounds when direct API exists, comments like "Framework X doesn't provide Y" without verification, invented packages/methods, import statements that fail resolution
+
+---
+
+### 4.2 Dependency Management
+
+**CRITICAL:** Manage dependencies carefully. Three related but distinct issues:
+
+❌ Bad: (4.2a) Importing heavy library for simple operation, adding 100MB dependency to sort a list | (4.2b) Import statements that fail resolution, plausible-sounding but non-existent packages | (4.2c) Choosing obscure libraries agents don't know well, trendy but poorly-documented packages
+✅ Good: (4.2a) Prefer standard library over external dependencies | (4.2b) Verify all imports exist before using, check package registry | (4.2c) Popular well-documented packages, standard library when possible, verify agent knowledge, consider agent training data coverage
+⚠️ Why: (4.2a) Increases bundle size, slows builds, adds security surface | (4.2b) Build failures, security risk (slopsquatting) | (4.2c) Agents work better with familiar libraries; obscure packages lead to more errors and slower iteration
+🔧 Fix: Prefer standard library for simple operations; verify all imports exist; check package registry and documentation; use dependency scanning tools; consider agent knowledge when selecting dependencies
+
+**Dependency Selection Criteria:**
+| Criteria | Question |
+|----------|----------|
+| Maintenance | Is it well-maintained? |
+| Dependencies | How about peer dependencies? |
+| Popularity | Is it popular? (affects AI agent knowledge) |
+| Documentation | Is documentation comprehensive? |
+| Agent Knowledge | Will agents struggle with this choice? |
+
+**Detect:** (4.2a) Importing heavy library for simple operation, using framework when standard library suffices | (4.2b) Import statements that fail resolution, packages with no source/documentation | (4.2c) Obscure libraries, poorly-documented packages, packages agents don't know well
+
+---
+
+### 4.2d Slopsquatting Protection (CRIT)
+
+**CRITICAL:** Hallucinated package names can be registered maliciously. Always verify package legitimacy.
+
+❌ Bad: Importing plausible-sounding packages without verification (`import ml_utils`, `import data_processor`)
+✅ Good: Check package registry (PyPI, npm), verify maintainer identity, check download stats, verify spelling
+⚠️ Why: Attackers register packages with LLM-hallucinated names (slopsquatting), supply chain attacks, code execution risk
+🔧 Fix: Always verify packages exist before importing, check maintainer history, use only trusted packages
+📍 See: `critical-rules-quick-reference.mdc` section 14
+
+**Detect:** Import statements without verification, plausible-sounding but unverified packages, no package registry checks, similar-sounding package names (typosquatting)
+
+---
+
+### 4.3 Workaround-First Mentality
+
+**CRITICAL:** Before implementing custom solutions, check if the framework provides the functionality.
+
+❌ Bad: Custom implementation before checking official APIs, reinventing standard functionality, multi-step custom solution when framework provides one-step
+✅ Good: Always check framework documentation first, use framework-provided functionality when available
+⚠️ Why: Reinvents the wheel, misses framework updates, more code to maintain, may have bugs framework already solved
+🔧 Fix: Always check framework documentation first; use framework-provided functionality when available; only implement custom when framework doesn't provide
+
+**Detect:** Custom implementation before checking official APIs, reinventing standard functionality, comments suggesting framework limitation without verification
+
+---
+
+### 4.4 Example Over-Reliance (CRIT)
+
+**CRITICAL:** Don't copy-paste example code without adaptation to project context.
+
+❌ Bad: Example code used verbatim without modification, inappropriate example reuse, missing adaptation to project context
+✅ Good: Adapt examples to project patterns, verify examples match requirements, customize examples for specific use case
+⚠️ Why: Example code may not fit project patterns, introduces inconsistencies, creates technical debt
+🔧 Fix: Always adapt examples to project context; verify examples match requirements; customize for specific use case
+📍 See: `general-llm-anti-patterns.mdc` section 3.3 (Context Window Blindness)
+
+**Detect:** Example code used verbatim, example code not adapted to project patterns, example code that doesn't match requirements, copy-paste without modification
+
+---
+
+## Category 5: Security & Reliability Anti-Patterns
+
+**OWASP alignment:** Security practices below align with [OWASP Secure Coding Practices - Quick Reference](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/stable-en/02-checklist/05-checklist.html) (input validation, output encoding, auth, session, access control, crypto, error/logging, data protection, communication, system config, database, file, memory, general). Extended checklist: `owasp-secure-coding-practices.mdc`.
+
+### 5.1 Hardcoded Secrets (CRIT)
+
+**CRITICAL:** Never hardcode API keys, tokens, passwords, or credentials in source code, even placeholders.
+
+❌ Bad: API keys in source code (`api_key = "sk-..."`), passwords in code, tokens committed to version control
+✅ Good: Use environment variables for all secrets, never commit secrets to version control, use secret management services
+⚠️ Why: Security vulnerability, credential exposure, compliance violations, cannot rotate without code change
+🔧 Fix: Use environment variables for all secrets; never commit secrets to version control; use secret management services for production
+📍 See: Examples in `critical-rules-quick-reference.mdc` section 7
+
+**Detect:** API keys in source code, passwords in code, tokens committed to version control, placeholder credentials that look real
+
+---
+
+### 5.2 Missing Input Validation
+
+**CRITICAL:** Always validate user and external input at system boundaries.
+
+❌ Bad: No validation of user/external input, direct use of user input in queries (`"SELECT * FROM users WHERE id = " + id`), unchecked parameters
+✅ Good: Validate all input at system boundaries, use parameterized queries, sanitize output, use type-safe validation libraries
+⚠️ Why: Security vulnerabilities (SQL injection, XSS, command injection), crashes, data corruption, system compromise
+🔧 Fix: Validate all input at system boundaries; use parameterized queries; sanitize output; fail fast on invalid input
+📍 See: Examples in `critical-rules-quick-reference.mdc` section 8
+
+**Detect:** No validation of user/external input, direct use of user input in queries, unchecked parameters, trusting external API responses without validation
+
+---
+
+### 5.3 Silent Failures
+
+**CRITICAL:** Never use bare try/except or generic catch blocks that swallow errors.
+
+❌ Bad: `except: pass` patterns, `catch (Exception e) { }` empty blocks, generic error handling that loses context
+✅ Good: Always handle or explicitly propagate errors, use specific error types, preserve error context, log with detail
+⚠️ Why: Hidden bugs, difficult debugging, silent data loss, unknown system state
+🔧 Fix: Always handle or explicitly propagate errors; use specific error types; preserve error context (chain errors); never silently swallow
+📍 See: Examples in `critical-rules-quick-reference.mdc` section 9
+
+**Detect:** `except: pass` patterns, empty catch blocks, generic error handling that loses context, errors logged but not handled
+
+---
+
+### 5.4 Resource Leaks
+
+**CRITICAL:** Always close files, connections, and release resources.
+
+❌ Bad: Not closing file handles, database connections not released, memory not freed, network connections left open
+✅ Good: Always close resources in finally blocks, use language resource management (using, with, defer), use connection pooling
+⚠️ Why: Resource exhaustion, memory leaks, system crashes at scale, poor performance
+🔧 Fix: Always close resources in finally blocks; use language resource management; use connection pooling; monitor resource usage
+
+**Detect:** Not closing file handles, database connections not released, memory not freed, network connections left open
+
+---
+
+### 5.5 Error Handling Anti-Patterns
+
+**CRITICAL:** Handle errors appropriately. Don't catch errors that cannot occur, and preserve error context.
+
+❌ Bad: Try/catch for errors that cannot occur, lost error context (generic error types), catching and rethrowing without adding context
+✅ Good: Only catch errors that can actually occur, use specific error types, preserve error context (chain errors)
+⚠️ Why: Dead code, lost debugging information, generic errors don't help, wastes CPU on unnecessary error handling
+🔧 Fix: Only catch errors that can actually occur; use specific error types; preserve error context; add context when rethrowing
+
+**Detect:** Try/catch for errors that cannot occur, lost error context, catching and rethrowing without adding context, phantom error handling
+
+---
+
+### 5.6 Global State
+
+**CRITICAL:** Avoid modifying global variables or module-level state. Use dependency injection.
+
+❌ Bad: Global variables (`global my_var`), module-level mutable state, singleton patterns that hold mutable state
+✅ Good: Use dependency injection, pass state explicitly, use immutable state when possible, make dependencies explicit
+⚠️ Why: Testing impossible, unpredictable behavior, race conditions in concurrent code, hidden dependencies
+🔧 Fix: Use dependency injection; pass state explicitly, don't use globals; use immutable state when possible; avoid singleton patterns with mutable state
+
+**Detect:** Global variables, module-level mutable state, singleton patterns that hold mutable state, shared mutable state across modules
+
+---
+
+## Category 6: Testing & Quality Anti-Patterns
+
+### 6.1 Test-Implementation Mismatch
+
+**CRITICAL:** Mocks must accurately reflect real implementation behavior. Tests that pass but integration fails indicate this problem.
+
+❌ Bad: Mocks that don't match real API behavior, mock returns different shape than real API, mock doesn't throw errors that real API throws
+✅ Good: Mocks match real API signatures and behavior, test both success and failure cases, verify mocks against real API documentation
+⚠️ Why: False confidence, integration failures, production bugs, wasted debugging time
+🔧 Fix: Mocks must match real API signatures and behavior; test both success and failure cases; verify mocks against real API documentation; use contract testing
+📍 See: Examples in `critical-rules-quick-reference.mdc` section 10
+
+**Detect:** Mocks that don't match real API behavior, mock behavior differs from production, tests pass but integration fails, mock returns different shape or types, mock doesn't throw errors that real API throws, mock has different method signatures
+
+---
+
+### 6.2 Missing Error Path Tests
+
+**CRITICAL:** Test error conditions and edge cases, not just happy paths. Test both positive and negative space: valid data, invalid data, boundaries, and valid→invalid transitions.
+
+❌ Bad: Only testing happy paths, no tests for error conditions, missing edge case tests, no boundary condition tests, only valid inputs
+✅ Good: Test error conditions explicitly; test boundary conditions (0, -1, max, empty, null); test valid and invalid data; test valid→invalid transitions; use negative testing
+⚠️ Why: Undiscovered bugs in error paths, system fails in production on edge cases, no confidence in error handling. An analysis of production failures in distributed systems found that most catastrophic failures stem from incorrect handling of non-fatal errors.
+🔧 Fix: Test error conditions explicitly; test boundary conditions; test positive and negative space (valid, invalid, boundaries, transitions); aim for high code coverage on error paths
+📍 See: OSDI'14 "Simple Testing Can Prevent Most Critical Failures" (error-handling code causes majority of catastrophic failures)
+
+**Detect:** Only testing happy paths, no tests for error conditions, missing edge case tests, no boundary condition tests, no invalid-data tests, no valid→invalid boundary tests
+
+---
+
+### 6.3 Incomplete Test Coverage
+
+**CRITICAL:** Critical business logic must be tested. Untested code is a liability.
+
+❌ Bad: Complex calculations untested, state transitions untested, business rules untested, critical paths with low coverage
+✅ Good: Test all critical business logic, aim for high coverage on business rules, test complex calculations with multiple cases
+⚠️ Why: Regression risk, no confidence in business logic, bugs in critical paths, difficult to refactor safely
+🔧 Fix: Test all critical business logic; aim for high coverage on business rules; test complex calculations with multiple cases; use code coverage tools
+
+**Detect:** Complex calculations untested, state transitions untested, business rules untested, critical paths with low coverage
+
+---
+
+### 6.4 Flaky Tests
+
+**CRITICAL:** Tests must be deterministic. Tests that depend on timing or external state are unreliable.
+
+❌ Bad: Tests that sometimes pass/fail, tests that depend on execution order, tests that use real time (sleep), tests that depend on external services
+✅ Good: Make tests deterministic (no timing, no external state), use setup/teardown for test data, isolate test state, mock external services
+⚠️ Why: Unreliable CI/CD, wastes time debugging false failures, hides real bugs, reduces confidence in test suite
+🔧 Fix: Make tests deterministic; use setup/teardown for test data; isolate test state (no shared variables); mock external services; avoid sleep/wait in tests
+
+**Detect:** Tests that sometimes pass/fail, tests that depend on execution order, tests that use real time, tests that depend on external services or state
+
+---

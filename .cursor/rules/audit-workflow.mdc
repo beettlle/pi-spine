@@ -93,7 +93,7 @@ The repository includes comprehensive brutal audit workflows:
 
 These audits complement the always-on rules:
 
-- **Always-on rules** (`general-llm-anti-patterns.mdc`, language-specific standards) prevent issues during development
+- **Always-on rules** (`general-llm-anti-patterns` pack, language-specific standards packs) prevent issues during development
 - **Brutal audits** provide deep, milestone-based validation after phase completion
 
 Both work together to ensure code quality throughout the development lifecycle.

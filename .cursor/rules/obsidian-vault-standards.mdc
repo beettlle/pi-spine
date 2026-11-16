@@ -18,7 +18,7 @@ alwaysApply: false
 ✅ Good: Documented callouts (`note`, `warning`); verify [OFM](https://help.obsidian.md/obsidian-flavored-markdown)
 ⚠️ Why: Invalid syntax breaks reading view and link graph
 🔧 Fix: obsidian-markdown skill or official docs
-📍 See: `general-llm-anti-patterns.mdc` section 4.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.1
 
 **Detect:** Invented callout types, unverified frontmatter, "Obsidian supports X" without citation
 
@@ -30,7 +30,7 @@ alwaysApply: false
 ✅ Good: `[[Meeting Notes]]`, `[[Note#Heading]]`; `[text](https://...)` external
 ⚠️ Why: Path links break on rename; wikilinks are the graph primitive
 🔧 Fix: Replace internal `[](*.md)` with `[[wikilinks]]`
-📍 See: `general-llm-anti-patterns.mdc` section 4.3
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.3
 
 **Detect:** `.md` in `[]()` for vault notes, missing `[[` for internal refs
 
@@ -54,7 +54,7 @@ alwaysApply: false
 ✅ Good: `displayName: "Status: Active"`, `label: 'if(done, "Yes", "No")'`
 ⚠️ Why: `.base` fails to load
 🔧 Fix: Quote strings; single-quote formula wrappers
-📍 See: `general-llm-anti-patterns.mdc` section 5.3
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 5.3
 
 **Detect:** Unquoted colons, nested double quotes in formulas
 
@@ -78,7 +78,7 @@ alwaysApply: false
 ✅ Good: Define under `formulas:` before `formula.total` reference
 ⚠️ Why: Empty or broken view columns
 🔧 Fix: Add definition; validate YAML
-📍 See: `general-llm-anti-patterns.mdc` section 4.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.1
 
 **Detect:** `formula.*` without matching `formulas:` key
 
@@ -90,7 +90,7 @@ alwaysApply: false
 ✅ Good: Unique IDs; parseable JSON per [JSON Canvas 1.0](https://jsoncanvas.org/spec/1.0/)
 ⚠️ Why: Canvas won't render connections
 🔧 Fix: json-canvas skill validation checklist
-📍 See: `general-llm-anti-patterns.mdc` section 4.1
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.1
 
 **Detect:** Duplicate ids, orphan edges, invalid `.canvas` JSON
 
@@ -102,7 +102,7 @@ alwaysApply: false
 ✅ Good: `"text": "Line1\nLine2"` (escaped newline in JSON)
 ⚠️ Why: Visible `\n` artifacts in UI
 🔧 Fix: Proper JSON string escaping
-📍 See: `general-llm-anti-patterns.mdc` section 4.4
+📍 See: `general-llm-anti-patterns-04-06.mdc` section 4.4
 
 **Detect:** Literal `\\n` in canvas text fields
 

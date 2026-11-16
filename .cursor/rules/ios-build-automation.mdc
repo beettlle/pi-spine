@@ -206,7 +206,7 @@ Executed 45 tests, with 2 failures (2 unexpected) in 2.345 seconds
 
 **If warnings exist:**
 
-- ⚠️ **FIX** - Per zero-warning/zero-error policy (see `swift-5-9-development-standards.mdc` or `swift-6-development-standards.mdc` per project language mode)
+- ⚠️ **FIX** - Per zero-warning/zero-error policy (see `swift-5-9-development-standards-continued.mdc` or `swift-6-development-standards.mdc` per project language mode)
 - Extract all warning details
 - Fix warnings in code
 - **Loop back to Step 1** until zero warnings
@@ -275,7 +275,7 @@ Executed 45 tests, with 2 failures (2 unexpected) in 2.345 seconds
 
 ### Zero-Warning Policy
 
-**Reference:** `swift-5-9-development-standards.mdc` or `swift-6-development-standards.mdc` - "Zero-Warning Policy" / "Development Process"
+**Reference:** `swift-5-9-development-standards-continued.mdc` or `swift-6-development-standards.mdc` - "Zero-Warning Policy" / "Development Process"
 
 **Enforcement:**
 
@@ -285,7 +285,7 @@ Executed 45 tests, with 2 failures (2 unexpected) in 2.345 seconds
 
 ### Test Requirements
 
-**Reference:** `swift-5-9-development-standards.mdc` (Swift 5.9) or `swift-6-development-standards.mdc` (Swift 6) - "Code Completion Requires Passing Tests"
+**Reference:** `swift-5-9-development-standards-continued.mdc` (Swift 5.9) or `swift-6-development-standards.mdc` (Swift 6) - "Code Completion Requires Passing Tests"
 
 **Enforcement:**
 

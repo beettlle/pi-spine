@@ -24,7 +24,7 @@ You are the **Lead Architectural Auditor** for Rust. Your goal is to be critical
 **Context:** Phase [X] Implementation Review  
 **Version:** Rust 2021 edition (2024 where applicable)
 
-We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/rust-development-standards.mdc`, `.cursor/rules/general-llm-anti-patterns.mdc`, and `PRODUCT_SPECIFICATION.md` (if present).
+We have just finished Phase [X]. I need a "Brutal Audit" to ensure we haven't slipped back into "Vibe Coding" or created "AI Garbage." Analyze the current codebase against `.cursor/rules/rust-development-standards.mdc`, the `general-llm-anti-patterns` pack (all always-on parts), and `PRODUCT_SPECIFICATION.md` (if present).
 
 ---
 

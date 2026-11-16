@@ -1,0 +1,258 @@
+---
+alwaysApply: true
+description: "Universal LLM anti-patterns pack part 3: Categories 7–9 (context, process, agent workflow)"
+---
+
+**Pack:** `general-llm-anti-patterns.mdc` (0–3) · `general-llm-anti-patterns-04-06.mdc` (4–6) · `general-llm-anti-patterns-07-09.mdc` (7–9) · `general-llm-anti-patterns-10-12.mdc` (10–12 + Summary)
+
+# General LLM Anti-Patterns (continued)
+
+Companion to `general-llm-anti-patterns.mdc`. Section numbers preserved.
+
+## Category 7: Context & Understanding Anti-Patterns
+
+### 7.1 Ignoring Existing Patterns
+
+**CRITICAL:** Before implementing, check existing codebase patterns and conventions.
+
+❌ Bad: Not following established codebase conventions, different pattern for same problem, duplicate implementations, ignoring architectural decisions
+✅ Good: Review existing code before implementing, follow established patterns and conventions, use consistent naming and structure
+⚠️ Why: Creates inconsistency, makes codebase harder to understand, violates established architecture, wastes effort
+🔧 Fix: Review existing code before implementing; follow established patterns and conventions; use consistent naming and structure; ask questions if pattern unclear
+
+**Detect:** Not following established codebase conventions, different pattern for same problem, duplicate implementations, ignoring architectural decisions
+
+---
+
+### 7.2 Context Window Limitations
+
+**CRITICAL:** Break down complex tasks. Don't try to implement entire features in one response.
+
+❌ Bad: Trying to implement entire feature in one go, not breaking down complex tasks, incomplete implementations due to context limits, restarting sessions unnecessarily for related tasks
+✅ Good: Break complex tasks into smaller steps, implement one piece at a time, review and test each step, keep context loaded for related tasks when working on connected features
+⚠️ Why: Context window exhaustion, incomplete implementations, missing important details, difficult to review and test; maintaining context for related tasks improves coherence and reduces redundant file loading
+🔧 Fix: Break complex tasks into smaller steps; implement one piece at a time; review and test each step; use iterative development; maintain context for related tasks (don't restart unnecessarily)
+
+**Context Management Strategy:**
+- **For related tasks:** Keep session active to maintain loaded context
+- **For unrelated tasks:** New session is acceptable
+- **For very large codebases:** Use `@` symbols to explicitly include only needed files
+- **For complex features:** Break into phases, maintain context within each phase
+
+**Note:** Modern models generally work efficiently with fuller context. Don't restart sessions unnecessarily for related work, but do break down tasks that exceed model capabilities.
+
+**Detect:** Trying to implement entire feature in one go, not breaking down complex tasks, incomplete implementations due to context limits, missing important details due to truncation, restarting sessions unnecessarily for related tasks
+
+---
+
+### 7.2a Large Context Window Strategies (CRIT)
+
+**CRITICAL:** Even with large context capacity, use targeted context loading.
+
+❌ Bad: Loading entire codebase for single-file changes, using @codebase for localized edits, no context management
+✅ Good: Use @filename for targeted changes, load only necessary files, monitor context size
+⚠️ Why: Large contexts reduce coherence, slow processing, waste tokens regardless of capacity
+🔧 Fix: Use targeted file loading; manage context size actively; only load necessary files
+📍 See: `cursor-integration.mdc` section 1.2
+
+**Detect:** @codebase for single-file changes, entire repo loading unnecessarily, no context size management, context window exhaustion
+
+---
+
+### 7.2b Context Window Exhaustion Patterns (CRIT)
+
+**CRITICAL:** Detect and prevent context exhaustion despite large capacity.
+
+❌ Bad: Loading all rules simultaneously, redundant rule loading, inefficient cross-referencing
+✅ Good: Load only necessary rules, use glob patterns effectively, efficient cross-references
+⚠️ Why: Context exhaustion wastes tokens, reduces rule effectiveness, slows agent processing
+🔧 Fix: Use glob patterns to load only relevant rules; avoid redundant loading; optimize cross-references
+📍 See: `cursor-integration.mdc` section 1.3
+
+**Detect:** All rules loaded simultaneously, redundant rule files, inefficient cross-referencing, context window exhaustion warnings
+
+---
+
+### 7.3 Ambiguity Intolerance
+
+**CRITICAL:** Do not guess when requirements are vague. Ask clarifying questions before implementing.
+
+❌ Bad: Guessing what "fix it" means, implementing without understanding actual issue, multiple possible interpretations of request
+✅ Good: Always ask clarifying questions for vague requests, identify which layer/component is affected, understand expected vs actual behavior
+⚠️ Why: Implements wrong solution, wastes time on incorrect implementation, may introduce new bugs, creates "Prompt Debt"
+🔧 Fix: Always ask clarifying questions for vague requests; identify which layer/component is affected; verify the problem before proposing solution; don't guess
+
+**Detect:** Request uses vague terms like "fix it", "make it better", missing critical details, multiple possible interpretations, request could apply to multiple components
+
+---
+
+## Category 8: Process & Planning Anti-Patterns
+
+### 8.1 Pre-Execution Planning (CRIT)
+
+**CRITICAL:** Before generating code for complex tasks, briefly outline your plan. This ensures architectural rules are considered before implementation.
+
+❌ Bad: Jumping directly to code without understanding problem, not considering how changes fit into existing architecture, implementing without checking side effects
+✅ Good: Output brief plan before coding (Goal, Architecture, Safety, Verification), check existing codebase, consider if new module needed vs editing existing
+⚠️ Why: Violates existing architectural patterns, creates duplicate functionality, introduces breaking changes, wastes effort on wrong approach
+🔧 Fix: For complex tasks, output brief plan before coding (Goal, Architecture, Safety, Verification); check existing codebase; consider if new module needed vs editing existing
+
+**Detect:** Jumping directly to code without understanding problem, not considering how changes fit into existing architecture, implementing without checking for side effects, not verifying if new module needed
+
+---
+
+### 8.2 Strangler Fig Pattern (Legacy Code Refactoring)
+
+**CRITICAL:** When editing large, legacy, or complex files, prefer creating new modules over direct modification.
+
+❌ Bad: Editing large legacy file directly (>200 lines, complex logic), modifying complex code you don't fully understand, adding functionality to "God Object"
+✅ Good: Create new module for new functionality, intercept calls from old system, test new module in isolation, gradually retire old code paths
+⚠️ Why: Direct edits risk breaking existing functionality, adds complexity, makes testing difficult, violates SRP
+🔧 Fix: Create new module for new functionality; intercept calls from old system; test new module in isolation; only use for legacy/complex files, not active development
+
+**Detect:** Editing large legacy file directly (>200 lines, complex logic), modifying complex code you don't fully understand, changes could have cascading side effects, file violates SRP
+
+---
+
+### 8.3 AST-Based Detection Enhancement (Optional)
+
+**ENHANCEMENT:** Consider AST-based tools as complementary to manual audits for structural analysis.
+
+❌ Bad: Relying only on manual code review, missing structural patterns, no automated structural analysis
+✅ Good: Use AST-based tools for ghost layer detection, complement manual audits with structural analysis, identify unnecessary abstraction layers
+⚠️ Why: AST analysis can identify patterns missed by manual review, complements manual audits, enables automated structural detection
+🔧 Fix: Consider AST-based tools for structural analysis; use as complement to manual audits; identify ghost layers via AST
+
+**Detect:** No structural analysis tools, missing AST-based detection, relying only on manual review, no automated pattern detection
+
+---
+
+## Category 9: Agent Workflow Anti-Patterns
+
+### 9.1 UI-First Development Anti-Pattern (CRIT)
+
+**CRITICAL:** Start with core logic/domain layer implementation before building UI layers.
+
+❌ Bad: Building UI/extension first, starting with complex frontend before core logic works, UI tightly coupled to business logic, SwiftUI views before domain layer exists
+✅ Good: Core logic first (CLI, domain layer, or testable interfaces), verify logic works, then build UI/extensions, keep UI as thin layer; for iOS/Swift: Domain layer (Pure Swift) first, then Presentation layer (SwiftUI)
+⚠️ Why: Core logic layer allows agents to test and verify directly; UI-first delays verification and adds complexity; agents work faster with testable interfaces; domain layer enables proper separation of concerns
+🔧 Fix: Always start with core logic/domain layer for core functionality; build UI after logic is proven and working; for iOS/Swift: build Pure Swift domain layer before SwiftUI presentation layer
+
+**Exception:** Pure UI apps with minimal business logic may iterate rapidly between UI and logic.
+
+📍 See: `engineering-philosophy.mdc` section 1.5, `swift-5-9-development-standards.mdc` section "Architectural Layers"
+
+**Detect:** Starting with UI/extension code, building frontend before core logic works, no way to test logic directly, business logic in UI layer, SwiftUI views importing SwiftData/MusicKit directly, domain layer importing SwiftUI
+
+---
+
+### 9.2 Verbose Text-Only Prompts (CRIT)
+
+**CRITICAL:** Use visual aids (screenshots, images) for UI/design work instead of lengthy text descriptions.
+
+❌ Bad: Long text descriptions of UI issues, 500-word prompt explaining visual problems, trying to describe visual problems in words, verbose explanations when image would suffice
+✅ Good: Short prompt + screenshot/image, "fix padding" with visual, concise instructions, show what's wrong visually, use images for UI iteration
+⚠️ Why: Visual aids are more efficient than text descriptions, shorter prompts preserve context, faster iteration, images are more accurate than descriptions, reduces ambiguity
+🔧 Fix: Use images for UI issues, keep text prompts brief when visuals are available, include screenshots/clips for UI work, use images for design work
+
+**Detect:** Long prompts for simple issues, text descriptions of visual problems, verbose explanations when image would suffice, no visual aids for UI work, trying to describe layout/design in words
+
+---
+
+### 9.3 Pattern Propagation (CRIT)
+
+**CRITICAL:** When discovering improvements, apply them across all similar projects.
+
+❌ Bad: Fixing pattern in one project, leaving similar issues in other projects, inconsistent patterns across codebase, better patterns only applied to one project
+✅ Good: When finding improvement, apply to all similar projects, maintain consistency across codebase, use scripts to find and update related codebases, update changelogs
+⚠️ Why: Prevents pattern drift, reduces maintenance burden, ensures consistency, leverages improvements broadly, reduces context switching
+🔧 Fix: When finding pattern improvement, search for similar projects/patterns, apply change consistently, use scripts to propagate changes, update changelogs
+
+**Detect:** Pattern fixed in one place but not others, inconsistent implementations, improvements not propagated, manual updates needed everywhere, patterns only in one place
+
+---
+
+### 9.4 Multi-Agent Coordination Anti-Pattern (CRIT)
+
+**CRITICAL:** Don't orchestrate multiple agents when a single pipeline suffices.
+
+❌ Bad: Multiple agents for simple tasks, complex agent orchestration, agent coordination that adds latency without benefit
+✅ Good: Single agent workflow, simple pipelines, avoid agent complexity, use multiple agents only when truly needed
+⚠️ Why: Adds latency, complexity, difficult debugging, often unnecessary, wastes resources
+🔧 Fix: Use single agent; only use multiple agents when truly needed; avoid unnecessary orchestration
+
+**Detect:** Multiple agents for simple tasks, complex agent orchestration, agent coordination adding latency, unnecessary multi-agent patterns
+
+---
+
+### 9.5 Feedback Loop Integration (CRIT)
+
+**CRITICAL:** Monitor rule effectiveness and update based on real-world patterns.
+
+❌ Bad: Static rules never updated, ignoring common false positives, no rule effectiveness tracking, rules that don't improve
+✅ Good: Track which rules catch most issues, refine based on patterns, monitor rule effectiveness, update rules based on feedback
+⚠️ Why: Static rules become outdated, false positives waste time, no tracking means no improvement, ineffective rules persist
+🔧 Fix: Monitor rule effectiveness; track which rules catch issues; refine based on patterns; update rules based on feedback
+
+**Detect:** Static rules never updated, ignoring false positives, no rule effectiveness tracking, rules that don't improve, outdated rules
+
+---
+
+### 9.6 Cooperative Communication (Gricean Maxims) (CRIT)
+
+**CRITICAL:** Agent↔user communication follows Grice's cooperative maxims. Quantity = what to include; Manner = how to order and word it.
+
+| Maxim | Agent↔user communication | Already enforced by |
+|---|---|---|
+| Epistemic quality | Truthful, evidence-backed; no unsupported claims | §3.7–3.9, §4.1, Forbidden Phrases |
+| Quantity | Match information units to task stage | §0.5, §3.5, §10.4 |
+| Relation | Answer what was asked; stay on-scope | §7.3 → §9.7 |
+| Manner | Clear, brief, orderly; lead with outcome | §0.1, §3.5 → §9.8–9.8a |
+
+📍 See: `critical-rules-quick-reference.mdc` Cooperative Communication, `engineering-philosophy.mdc` §2.7
+
+**Detect:** Unsupported claims in chat, essay answers to simple asks, off-topic narration, buried lede, generic "done" without evidence
+
+---
+
+### 9.7 Scope Relevance (Relation) (CRIT)
+
+**CRITICAL:** Answer the user's actual request; do not expand scope silently in chat or code.
+
+❌ Bad: Answering a different question; unrequested refactors or docs; silent scope creep; pursuing tangents without asking
+✅ Good: Address the actual request; flag tangents as a brief note without acting; ask when ambiguous (§7.3)
+⚠️ Why: Off-scope work wastes time, risks unwanted edits, buries the answer
+🔧 Fix: Restate the ask if ambiguous; confine changes to scope; flag side issues, don't pursue unasked
+📍 See: §7.3 Ambiguity Intolerance, §8.1 Pre-Execution Planning, `documentation-policy.mdc`, `taskplane-worker-cursor.mdc` File Scope
+
+**Detect:** Unrequested refactors, answer to adjacent question, scope expansion without confirmation, unsolicited repo docs
+
+---
+
+### 9.8 Orderly Responses (Manner / Quantity) (CRIT)
+
+**CRITICAL:** Agent↔user prose is clear, brief, and orderly; lead with the outcome. This governs chat and review text, not code clarity (§0.1 governs code).
+
+❌ Bad: Burying result under preamble; wall-of-text; restating whole file/diff; generic "done" without paths or evidence
+✅ Good: Outcome first; proportional depth (yes/no → short; audit → structured evidence); changed lines only in code citations
+⚠️ Why: Readers need the result first; verbosity hides signal; under-answer hides verification status
+🔧 Fix: Answer-first; 1–3 sentence summary of what changed and why; cite paths in backticks; state verification pending with commands attempted
+📍 See: §3.5 Formatting Trap, §0.5 Chain-of-Thought Over-Use, §9.8a Clear Technical Prose, `critical-rules-quick-reference.mdc` Output Format
+
+**Detect:** Long lead-ins, full-file echoes, no clear takeaway, generic completion without paths/evidence, unstructured prose for structured data
+
+---
+
+### 9.8a Clear Technical Prose (Manner) (CRIT)
+
+**CRITICAL:** Prefer active voice, short full sentences, and plain words in chat, commits, PRs, and STATUS; keep code, paths, APIs, and errors exact. Scope: agent↔user and review prose—not identifiers or domain jargon.
+
+❌ Bad: `Sure! I'd be happy to help. We should leverage initiating the migration in order to seamlessly...` (pleasantries, filler, synonym padding, stock metaphor)
+✅ Good: `Auth middleware compares expiry with <. Use <=. Fix in auth.ts.` (active, one claim per sentence, short verbs)
+⚠️ Why: Filler and synonym chains hide the action; broken fragments and dropped articles create ambiguity; exact terms prevent mis-edits
+🔧 Fix: Cut filler/pleasantries/stock metaphors; one instruction or claim per sentence; prefer one everyday verb (`start` not `initiate`/`commence`); keep articles and full sentences; expand to full prose for security, irreversible ops, or ambiguous step order; keep precise technical terms when they are the accurate word
+📍 See: §9.8 Orderly Responses, §0.5 Chain-of-Thought Over-Use, `engineering-philosophy.mdc` §2.7, `critical-rules-quick-reference.mdc` Cooperative Communication
+
+**Detect:** Pleasantries (`happy to help`, `certainly`), filler (`just`/`really`/`basically`/`actually`/`simply`), synonym padding (`implement a solution for`), stock metaphors, article-less fragments as default, tool-call narration, invented prose abbreviations (`cfg`/`impl`)
+
+---

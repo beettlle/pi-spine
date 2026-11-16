@@ -88,7 +88,7 @@ alwaysApply: false
 ✅ Good: Clear structure following conventions agents are trained on, consistent patterns, obvious file organization, standard project layouts (docs/, src/, tests/)
 ⚠️ Why: Agents work faster and more accurately when codebase follows predictable patterns they're trained on; fighting model conventions wastes tokens and time
 🔧 Fix: Use standard project structures, consistent naming, clear separation of concerns, follow established patterns from training data
-📍 See: `general-llm-anti-patterns.mdc` section 9.1 (UI-First Development Anti-Pattern)
+📍 See: `general-llm-anti-patterns-07-09.mdc` section 9.1 (UI-First Development Anti-Pattern)
 
 **Detect:** Unclear project structure, inconsistent patterns, files in unexpected locations, non-standard layouts, custom patterns requiring explanation
 
@@ -105,7 +105,7 @@ alwaysApply: false
 
 **Exception:** Pure UI apps with minimal business logic may iterate rapidly between UI and logic.
 
-📍 See: `general-llm-anti-patterns.mdc` section 9.1, `swift-5-9-development-standards.mdc` section "Architectural Layers"
+📍 See: `general-llm-anti-patterns-07-09.mdc` section 9.1, `swift-5-9-development-standards.mdc` section "Architectural Layers"
 
 **Detect:** Building UI before core logic, complex interfaces before domain layer, skipping testable logic layer, business logic embedded in UI layer, SwiftUI views importing SwiftData/MusicKit directly
 
@@ -245,7 +245,7 @@ alwaysApply: false
 ✅ Good: Outcome first; proportional depth; evidence or explicit "verification pending" with commands attempted
 ⚠️ Why: Readers need the result and trust signal first; verbosity and under-answer both waste time
 🔧 Fix: Match information units to task; lead with answer; cross-ref cooperative communication rules for detail
-📍 See: `general-llm-anti-patterns.mdc` §9.6–9.8a (incl. Clear Technical Prose), `critical-rules-quick-reference.mdc` Cooperative Communication
+📍 See: `general-llm-anti-patterns-07-09.mdc` § 9.6–9.8a (incl. Clear Technical Prose), `critical-rules-quick-reference.mdc` Cooperative Communication
 
 **Detect:** Long preamble before answer, one-liner when design tradeoffs requested, completion without paths/evidence
 
@@ -266,5 +266,5 @@ alwaysApply: false
 
 ## References
 
-- `general-llm-anti-patterns.mdc` - Related anti-patterns
+- `general-llm-anti-patterns` pack (`general-llm-anti-patterns.mdc` + `-04-06` / `-07-09` / `-10-12`) - Related anti-patterns
 - Language-specific standards files for implementation details
