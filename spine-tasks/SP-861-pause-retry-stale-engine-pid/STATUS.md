@@ -50,6 +50,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 1ed4b61  src/batch/attached-runner-reconcile.mjs:159  WARNING  The function `hasEngineAcknowledgedPause` reads and parses the ent | advisory — noted, not blocking | contract review step |
 | `evaluateBatchStateWriteGuard` blast radius CRITICAL (348 symbols / 151 processes / 18 modules) — mitigation: deny-by-default kept; only narrow live-owner refusal for on-disk phase `paused` (pause = ownership handoff) | acknowledged | Step 0 |
 | `batch.paused` journal lands AFTER `engine.pause_observed` (pauseBatch journals at the end, after confirmation). Acknowledgement discriminator = last `engine.pause_observed` index > last `batch.resumed` index | design input | Step 0 |
 | All pinned `stale_engine_pid` test refusals use running on-disk phase → paused-phase guard narrowing keeps them green; unacknowledged live-PID resume refusals (`attached-engine-lock`, `resume-single-owner`) keep refusing because tests journal no `engine.pause_observed` | design input | Step 0 |
