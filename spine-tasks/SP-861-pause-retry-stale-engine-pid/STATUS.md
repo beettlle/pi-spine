@@ -1,7 +1,7 @@
 # SP-861: pause-retry stale_engine_pid — Status
 
-**Current Step:** Step 1 (Guard + resume ownership)
-**Status:** 🔄 In Progress — Step 1
+**Current Step:** Step 2 (Tests)
+**Status:** 🔄 In Progress — Step 2
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -17,10 +17,10 @@
 - [x] `rg -n "stale_engine_pid|Attached batch engine already running" src/ tests/`
 
 ### Step 1: Guard + resume ownership
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] Pause+retry persists without false `stale_engine_pid`
-- [ ] Detached resume not blocked by false attached ownership; true live engine still refuses
+- [x] Pause+retry persists without false `stale_engine_pid`
+- [x] Detached resume not blocked by false attached ownership; true live engine still refuses
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started

@@ -62,6 +62,14 @@ export function isBatchArchived(projectRoot, batchId) {
  * engine writers cannot be blocked by their own recorded PID; resurrection
  * protection always runs.
  *
+ * A live recorded PID does not reject writes to a **paused** batch (SP-861 / #376):
+ * a confirmed operator pause is an ownership handoff — the engine acknowledged the
+ * pause (persisted phase: paused + journaled `engine.pause_observed`) and stopped
+ * driving the batch, so its lingering process is not a writer owner. Refusing
+ * operator retry/skip recovery writes there dead-ends pause → retry → resume
+ * recovery. Engine-driven phases (`running`/`planning`) still refuse for any
+ * live foreign PID.
+ *
  * @param {string} projectRoot
  * @param {Record<string, any>} state
  * @param {{ skipOwnerCheck?: boolean, allowArchivedResurrection?: boolean }} [options]
@@ -92,7 +100,8 @@ export function evaluateBatchStateWriteGuard(projectRoot, state, options = {}) {
 				!options.skipOwnerCheck &&
 				ownerPid &&
 				ownerPid !== process.pid &&
-				isEngineProcessAlive(ownerPid, ownerStartedAt)
+				isEngineProcessAlive(ownerPid, ownerStartedAt) &&
+				onDiskPhase !== "paused"
 			) {
 				return { allowed: false, reason: "stale_engine_pid" };
 			}

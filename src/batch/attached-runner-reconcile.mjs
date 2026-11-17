@@ -144,9 +144,36 @@ export function releaseResumeHandoffLock(projectRoot, batchId) {
 const LIVE_RESUME_OWNER_PHASES = new Set(["running", "gating"]);
 
 /**
+ * True when the engine acknowledged the current pause episode: an
+ * `engine.pause_observed` journal event exists after the latest `batch.resumed`
+ * (SP-861 / #376). `pauseBatch` journals `batch.paused` only after the engine
+ * persisted phase: paused, and that engine-side persist also journals
+ * `engine.pause_observed` right before the engine loop stops — so after a
+ * confirmed pause the recorded enginePid belongs to a winding-down process that
+ * no longer drives the batch, i.e. a stale attached-child bookkeeping bit, not
+ * a live owner.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ */
+function hasEngineAcknowledgedPause(projectRoot, batchId) {
+	const events = readJournalEvents(projectRoot, batchId);
+	let lastResumedIdx = -1;
+	let lastObservedIdx = -1;
+	for (let i = 0; i < events.length; i++) {
+		const type = String(events[i].type ?? "");
+		if (type === "batch.resumed") lastResumedIdx = i;
+		if (type === "engine.pause_observed") lastObservedIdx = i;
+	}
+	return lastObservedIdx >= 0 && lastObservedIdx > lastResumedIdx;
+}
+
+/**
  * Reject a second attached engine when resilience.enginePid is alive (SP-434, GitHub #89).
  * Serialized forced resume handoff when another resume --force is in flight (SP-533, #167).
  * Fail-fast while a live engine already owns a running batch (SP-660, #207).
+ * A paused batch whose engine acknowledged the pause hands recovery to the
+ * operator instead of refusing (SP-861, #376).
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -237,6 +264,22 @@ export function enforceAttachedEngineSingleOwner({ projectRoot, force = false, o
 			stalePid: terminateResult.stalePid ?? enginePid,
 			releaseResumeLock,
 		};
+	}
+
+	// A paused batch whose engine acknowledged the pause has no live owner
+	// (SP-861 / #376): the recorded pid is a stale attached-child bookkeeping bit
+	// left behind by the pause handoff. Detached recovery must not be refused
+	// with a false "Attached batch engine already running" — clear the stale
+	// ownership instead so the resuming engine takes over cleanly. A live pid on
+	// a non-paused batch (engine still driving) keeps the refuse below.
+	if (fromPhase === "paused" && hasEngineAcknowledgedPause(projectRoot, batchId)) {
+		clearBatchEnginePid(state);
+		saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+		appendJournalEvent(projectRoot, batchId, "engine.stale_ownership_cleared", {
+			stalePid: enginePid,
+			fromPhase,
+		});
+		return releaseResumeLock ? { ok: true, releaseResumeLock } : { ok: true };
 	}
 
 	const operationLabel = operation === "start" ? "start" : "resume";
