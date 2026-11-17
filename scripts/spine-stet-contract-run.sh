@@ -3,9 +3,23 @@
 # the severity/confidence threshold.
 # Usage: scripts/spine-stet-contract-run.sh [lenient|default|strict] [task-id]
 # Run from the lane worktree root, after scripts/spine-worktree-setup.sh opened the session.
-# With task-id (e.g. SP-827), the review is scoped to that task's commits so a second task
-# serialized onto the same lane does not re-review the first task's diff.
+# With task-id (e.g. SP-827), the review is scoped to that task's own commits —
+# parent(first task-folder commit after the lane baseline)..(last commit touching the task
+# folder) — so a second task serialized onto the same lane does not re-review the first
+# task's diff, and a retried task is not gated on later siblings' commits (SP-863 / #373).
+# stet reviews baseline..HEAD, so bounding the end temporarily detaches HEAD at the task's
+# last folder commit and restores the lane HEAD on exit; if that checkout fails (e.g. a
+# dirty worktree), the script exits 1 — fail closed — instead of reviewing an unbounded
+# range that would attribute later siblings' commits to this task (SP-863 final review).
+# With no task commits, the unbounded lane-baseline behavior is kept (fail-closed /
+# empty task diff).
+# Sessions: the open session is kept whenever the task-scoped baseline is unchanged, so a
+# sibling committing on the lane never wipes `stet dismiss` triage; a genuine task switch
+# still finishes and restarts, and stet v1.4+ restores recorded dismissals into the new
+# session with line-shift remapping.
 # SPINE_STET_NO_AUTO_FINISH=1 keeps the session open after a review with no threshold findings.
+# SPINE_STET_PRINT_RANGE=1 prints the computed range (baseline/end/paths) and exits 0
+# without touching stet; used by tests and for debugging.
 #
 # Gate policy: the contract fails only when `stet list --min-severity --min-confidence` shows
 # findings at or above the threshold. Defaults: severity warning, confidence 0.8; override with
@@ -67,18 +81,73 @@ if [[ -f "$baseline_ref" ]]; then
 fi
 
 baseline="$lane_baseline"
+end_ref=""
 if [[ -n "$task_folder" && -n "$lane_baseline" ]]; then
 	# Workers commit STATUS.md from Step 0, so the task's first commit touches its folder.
 	first_task_commit="$(git rev-list --reverse "${lane_baseline}..HEAD" -- "$task_folder" | sed -n 1p)"
 	if [[ -n "$first_task_commit" ]]; then
 		baseline="$(git rev-parse "${first_task_commit}^")"
+		# SP-863 (#373): bound the end at the last commit touching this task's folder so a
+		# retried task does not review later siblings' commits (stet reviews baseline..HEAD
+		# and HEAD may already contain sibling commits). rev-list is newest-first here.
+		end_ref="$(git rev-list "${lane_baseline}..HEAD" -- "$task_folder" | sed -n 1p)"
+		if [[ -n "$end_ref" ]]; then
+			end_ref="$(git rev-parse "$end_ref")"
+		fi
 	fi
 fi
 
+# Debug aid (SP-863): print the computed review range without touching stet.
+if [[ "${SPINE_STET_PRINT_RANGE:-}" == "1" ]]; then
+	echo "lane_baseline: $lane_baseline"
+	echo "baseline: $baseline"
+	if [[ -n "$end_ref" ]]; then
+		echo "end: $end_ref"
+	fi
+	if [[ -n "$task_folder" && -n "$baseline" && -n "$end_ref" ]]; then
+		git diff --name-only "$baseline" "$end_ref" | sed 's/^/path: /'
+	fi
+	exit 0
+fi
+
+# Session triage (stet dismiss) lives in the open session; finish only on a genuine
+# task-scoped baseline change (task switch), never because siblings moved HEAD. stet
+# v1.4+ restores recorded dismissals into the new session with line-shift remapping.
+# This runs before the detach so the finished session's note lands on the current HEAD.
 if [[ -f .review/session.json && -n "$task_folder" && -n "$baseline" ]]; then
 	session_baseline="$(stet status | sed -n 's/^baseline: *//p')"
 	if [[ "$session_baseline" != "$baseline" ]]; then
 		stet finish >/dev/null
+	fi
+fi
+
+# SP-863 (#373): review exactly baseline..end_ref by parking HEAD at the task's last
+# folder commit for the duration of the stet calls; the lane HEAD is restored on exit.
+orig_branch=""
+orig_head=""
+restore_lane_head() {
+	[[ -n "$orig_head" ]] || return 0
+	if [[ -n "$orig_branch" ]]; then
+		git checkout -q "$orig_branch" 2>/dev/null ||
+			echo "stet: WARNING: failed to restore HEAD to branch $orig_branch" >&2
+	else
+		git checkout -q --detach "$orig_head" 2>/dev/null ||
+			echo "stet: WARNING: failed to restore HEAD to $orig_head" >&2
+	fi
+	return 0
+}
+if [[ -n "$end_ref" && "$end_ref" != "$(git rev-parse HEAD)" ]]; then
+	orig_branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+	orig_head="$(git rev-parse HEAD)"
+	if git checkout -q --detach "$end_ref" 2>/dev/null; then
+		trap restore_lane_head EXIT
+		trap 'restore_lane_head; trap - EXIT; exit 130' INT TERM
+		echo "stet: review scoped to task commits $(git rev-parse --short "$baseline")..$(git rev-parse --short "$end_ref") (HEAD temporarily detached)" >&2
+	else
+		# Fail closed (SP-863 final review): an unbounded fallback would attribute later
+		# siblings' commits to this task — the exact bug this scoping fixes.
+		echo "stet: could not check out $end_ref to bound the review range (dirty worktree or conflicting local changes); failing closed instead of reviewing baseline..HEAD" >&2
+		exit 1
 	fi
 fi
 

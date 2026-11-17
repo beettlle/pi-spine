@@ -85,6 +85,17 @@ function createPendingGateProject(projectRoot) {
 }
 
 /**
+ * git-ai tooling annotates commits asynchronously (#372): it adds `refs/notes/*`
+ * refs and writes scratch files under `.git/ai/**` seconds after a commit. No
+ * spine command writes either, so the side-effect snapshot ignores them.
+ *
+ * @param {string} refLine one `%(refname) %(objectname)` line from `git for-each-ref`
+ */
+function isGitAiAnnotation(refLine) {
+	return refLine.startsWith("refs/notes/");
+}
+
+/**
  * Content hash of every file outside `.git`, plus all git refs and HEAD.
  *
  * @param {string} projectRoot
@@ -95,6 +106,7 @@ function snapshotProject(projectRoot) {
 	/** @param {string} dir */
 	const walk = (dir) => {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			// `.git` is skipped wholesale, which also excludes git-ai's `.git/ai/**` (#372).
 			if (entry.name === ".git") continue;
 			const full = path.join(dir, entry.name);
 			if (entry.isDirectory()) {
@@ -109,7 +121,10 @@ function snapshotProject(projectRoot) {
 	const refs = execFileSync("git", ["for-each-ref", "--format=%(refname) %(objectname)"], {
 		cwd: projectRoot,
 		encoding: "utf-8",
-	});
+	})
+		.split("\n")
+		.filter((refLine) => !isGitAiAnnotation(refLine))
+		.join("\n");
 	const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: projectRoot, encoding: "utf-8" });
 	return [...entries.sort(), refs, head].join("\n");
 }
@@ -189,6 +204,30 @@ test("runSpineIntegrate rejects --help, unknown flags and stray positionals with
 		const stray = runSpineIntegrate({ projectRoot, args: ["now"] });
 		assert.equal(stray.exitCode, 2);
 		assert.equal(snapshotProject(projectRoot), before);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("snapshotProject ignores git-ai refs/notes and .git/ai annotations (#372)", async () => {
+	const projectRoot = await initGitRepo("spine-git-ai-notes-");
+	try {
+		createPendingGateProject(projectRoot);
+		const before = snapshotProject(projectRoot);
+		// Synthetic git-ai annotations appearing only in the "after" snapshot — no spine
+		// command runs; the helper must not report side effects for them (#372).
+		execFileSync("git", ["update-ref", "refs/notes/ai", "HEAD"], { cwd: projectRoot, stdio: "ignore" });
+		fs.mkdirSync(path.join(projectRoot, ".git", "ai"), { recursive: true });
+		fs.writeFileSync(path.join(projectRoot, ".git", "ai", "authorship.json"), '{"note":"ai"}', "utf-8");
+		assert.equal(
+			snapshotProject(projectRoot),
+			before,
+			"refs/notes/* and .git/ai/** appearing after the snapshot must not fail the equality check",
+		);
+
+		// No broad silence: an ordinary ref change must still be detected.
+		execFileSync("git", ["update-ref", "refs/heads/side-effect", "HEAD"], { cwd: projectRoot, stdio: "ignore" });
+		assert.notEqual(snapshotProject(projectRoot), before, "non-notes ref changes must still fail the snapshot");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
