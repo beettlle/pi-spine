@@ -171,6 +171,27 @@ export function clearCompletedBatchState(projectRoot, batchStatePath, batchId) {
 }
 
 /**
+ * True when reconcile signals show live lane activity (running/pending tasks,
+ * or a lane whose status is running/active) — dismiss treats this as a live
+ * batch and requires --force.
+ *
+ * @param {object} signals
+ * @returns {boolean}
+ */
+export function hasLiveLanes(signals) {
+	if (!signals) return false;
+	if (signals.hasRunningTasks || signals.hasPendingTasks) return true;
+	const lanes = signals.lanes;
+	return (
+		Array.isArray(lanes) &&
+		lanes.some((lane) => {
+			const status = String(lane?.status ?? "").toLowerCase();
+			return status === "running" || status === "active";
+		})
+	);
+}
+
+/**
  * @param {object|null|undefined} config
  */
 function shouldCleanupWorktreesOnComplete(config) {

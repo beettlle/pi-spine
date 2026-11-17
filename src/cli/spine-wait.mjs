@@ -3,6 +3,7 @@
  */
 
 import { DIAGNOSIS_TAXONOMY } from "../batch/diagnosis.mjs";
+import { RUNNING_PHASES } from "../batch/reconcile-light-cache.mjs";
 
 /** Operator-facing wait targets not in reconcile diagnosis taxonomy. */
 export const WAIT_UNTIL_PSEUDO_DIAGNOSES = [
@@ -96,12 +97,52 @@ export function diagnosisMatchesUntil(diagnosis, untilDiagnoses) {
 }
 
 /**
+ * Partial-failure diagnoses that reconcile can report while sibling lane
+ * workers are still running (#375). All three derive from reconcile's
+ * `hasFailedTasks` branch, which fires on the first terminal-failure task —
+ * even mid-batch — so waking a land loop on them while a sibling lane is
+ * still live would pause/salvage/kill healthy lanes.
+ *
+ * @type {ReadonlySet<string>}
+ */
+export const WAIT_LIVE_SIBLING_GATED_DIAGNOSES = new Set([
+	"needs_retry",
+	"worker_done_missing",
+	"needs_replan",
+]);
+
+/**
+ * Whether any in-scope lane task is still live (#375). Prefers
+ * `signals.hasRunningTasks` — the per-task running classification reconcile
+ * itself derives — and only falls back to the batch phase when the result
+ * carries no signals block (injected reconcile fns, non-verbose results):
+ * the engine holds the phase in a live run state while lane workers are
+ * active and transitions to failed/completed only after lanes settle.
+ *
+ * @param {import("../batch/reconcile.mjs").ReconciliationResult & Record<string, unknown>} result
+ * @returns {boolean}
+ */
+export function hasLiveSiblingLaneWorker(result) {
+	const signals = /** @type {Record<string, unknown> | null | undefined} */ (result?.signals);
+	if (signals != null && typeof signals === "object") {
+		return signals.hasRunningTasks === true;
+	}
+	return RUNNING_PHASES.has(String(result?.phase ?? ""));
+}
+
+/**
+ * Resolve which `--until` entry (taxonomy diagnosis, `failed` phase alias, or
+ * land-loop pseudo) a reconcile result matches; null when nothing matches.
+ * Single source of truth for match order — `describeMatchedDiagnosis` in the
+ * wait poll names the matched token through this helper.
+ *
  * @param {import("../batch/reconcile.mjs").ReconciliationResult & Record<string, unknown>} result
  * @param {Set<string>} untilDiagnoses
+ * @returns {string | null}
  */
-export function reconciliationMatchesUntil(result, untilDiagnoses) {
+export function matchReconciliationUntil(result, untilDiagnoses) {
 	if (diagnosisMatchesUntil(result.diagnosis ?? null, untilDiagnoses)) {
-		return true;
+		return result.diagnosis;
 	}
 
 	// `--until failed` must wake on terminal batch failure even when reconcile
@@ -109,14 +150,35 @@ export function reconciliationMatchesUntil(result, untilDiagnoses) {
 	// engine_orphaned) instead of the literal "failed" token (#252). Explicit
 	// diagnosis tokens still match directly via the check above.
 	if (untilDiagnoses.has("failed") && result.phase === "failed") {
-		return true;
+		return "failed";
 	}
 
 	for (const pseudo of deriveWaitPseudoDiagnoses(result)) {
 		if (untilDiagnoses.has(pseudo)) {
-			return true;
+			return pseudo;
 		}
 	}
 
-	return false;
+	return null;
+}
+
+/**
+ * @param {import("../batch/reconcile.mjs").ReconciliationResult & Record<string, unknown>} result
+ * @param {Set<string>} untilDiagnoses
+ */
+export function reconciliationMatchesUntil(result, untilDiagnoses) {
+	const matched = matchReconciliationUntil(result, untilDiagnoses);
+	if (matched == null) {
+		return false;
+	}
+	// Partial-failure hold (#375): needs_retry / worker_done_missing /
+	// needs_replan fire on the first failed task even while sibling lane
+	// workers are still running. Hold the match until the live siblings
+	// settle; terminal aliases (`failed`), success/integrate diagnoses, and
+	// gate pseudos keep their current behavior so a fully terminal batch
+	// never waits on imaginary siblings.
+	if (WAIT_LIVE_SIBLING_GATED_DIAGNOSES.has(matched) && hasLiveSiblingLaneWorker(result)) {
+		return false;
+	}
+	return true;
 }

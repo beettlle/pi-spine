@@ -12,6 +12,7 @@ import {
 import {
 	archiveBatchState,
 	clearCompletedBatchState,
+	hasLiveLanes,
 	reloadStateForTerminalWrite,
 } from "./lifecycle-archive.mjs";
 export { archiveBatchStatePath } from "./lifecycle-archive.mjs";
@@ -84,22 +85,6 @@ export function recordMergeBlocked({
 		fromPhase,
 		lastError: message,
 	};
-}
-
-/**
- * @param {object} signals
- */
-function hasLiveLanes(signals) {
-	if (!signals) return false;
-	if (signals.hasRunningTasks || signals.hasPendingTasks) return true;
-	const lanes = signals.lanes;
-	return (
-		Array.isArray(lanes) &&
-		lanes.some((lane) => {
-			const status = String(lane?.status ?? "").toLowerCase();
-			return status === "running" || status === "active";
-		})
-	);
 }
 
 /**
@@ -177,7 +162,13 @@ export function dismissBatch(ctx) {
 		};
 	}
 
-	if (diagnosis && !DISMISS_ALLOWED.has(diagnosis) && !force) {
+	// SP-862 / #374: needs_merge/needs_integrate after a full salvage heal is the
+	// empty batch shell (orch land loop never ran) — dismiss without --force.
+	const salvageCompleted =
+		Boolean(reconciliation.signals?.raw?.salvageLandedAllTasks) &&
+		Boolean(reconciliation.signals?.allTasksTerminalSuccess);
+
+	if (diagnosis && !DISMISS_ALLOWED.has(diagnosis) && !force && !salvageCompleted) {
 		const output = buildDiagnosisOutput(diagnosis, {
 			batchId,
 			phase: reconciliation.phase,
@@ -323,7 +314,13 @@ export function completeBatch(ctx) {
 	const diagnosis = reconciliation.diagnosis;
 	const batchId = reconciliation.batchId ?? String(loaded.raw.batchId ?? loaded.raw.id ?? "");
 	const signals = reconciliation.signals ?? {};
-	const mergeSatisfied = !signals.mergeResultsEmpty || Boolean(signals.git?.orchMergedToBase);
+	// SP-862 / #374: salvage merges lane branches onto base (not orch) — after a
+	// full heal the salvage land is the merge evidence (fail-closed: evidence is
+	// only written when the heal left zero unresolved tasks, and allSuccess below
+	// still applies).
+	const salvageSatisfied = Boolean(signals.raw?.salvageLandedAllTasks);
+	const mergeSatisfied =
+		!signals.mergeResultsEmpty || Boolean(signals.git?.orchMergedToBase) || salvageSatisfied;
 	const manualMergeOk =
 		detectManualMerge &&
 		(diagnosis === "completed_manual" || Boolean(signals.git?.orchMergedToBase));
@@ -372,6 +369,7 @@ export function completeBatch(ctx) {
 		orchBranch: batch?.orchBranch ?? loaded.raw.orchBranch ?? null,
 		mergeResultsEmpty: signals.mergeResultsEmpty,
 		orchMergedToBase: Boolean(signals.git?.orchMergedToBase),
+		salvageLanded: salvageSatisfied,
 	});
 
 	if (!integratable.ok && !manualMergeOk) {

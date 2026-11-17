@@ -1,0 +1,8 @@
+SP-858 complete. All completion criteria met:
+
+- npm-publish.md documents git-ai `refs/notes/ai` hazard (#372), SP-859 ignore, and `git-ai bg shutdown` workaround (release flow step 1 + pre-publish checklist)
+- Peer `@earendil-works/pi-coding-agent` 1.5.2 for v2.31.0 noted (SP-864; Version floors section + checklist; stale `^1.0.1` pin corrected to `^1.4.0`)
+- Verification: `rg -l` test hits 8/8 pass; Contract `testCommand` (`true`) exit 0 in foreground; scenario-registry failure pre-existing at base and out of File Scope (logged in STATUS Discoveries)
+- Only `docs/release/npm-publish.md` changed in repo docs/src/bin/scripts/lockfiles; runbook (SP-857) untouched
+
+Commits: eb0758c7, 89d867ef

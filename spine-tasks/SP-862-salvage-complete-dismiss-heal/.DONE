@@ -1,0 +1,1 @@
+SP-862 complete: after salvage --integrate lands all salvageable work, complete/complete --detect-manual-merge/dismiss succeed without --force; non-salvageable failures still block. Contract testCommand exit 0.

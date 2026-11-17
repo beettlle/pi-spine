@@ -12,9 +12,8 @@ import path from "node:path";
 
 import { reconcileBatch } from "../batch/reconcile.mjs";
 import {
-	deriveWaitPseudoDiagnoses,
-	diagnosisMatchesUntil,
 	parseUntilDiagnoses,
+	matchReconciliationUntil,
 	reconciliationMatchesUntil,
 } from "./spine-wait.mjs";
 import {
@@ -132,19 +131,7 @@ function formatWaitElapsed(ms) {
  * @returns {string}
  */
 function describeMatchedDiagnosis(result, untilDiagnoses) {
-	const diagnosis = result.diagnosis ?? null;
-	if (diagnosisMatchesUntil(diagnosis, untilDiagnoses)) {
-		return diagnosis;
-	}
-	if (untilDiagnoses.has("failed") && result.phase === "failed") {
-		return "failed";
-	}
-	for (const pseudo of deriveWaitPseudoDiagnoses(result)) {
-		if (untilDiagnoses.has(pseudo)) {
-			return pseudo;
-		}
-	}
-	return diagnosis ?? "matched";
+	return matchReconciliationUntil(result, untilDiagnoses) ?? result.diagnosis ?? "matched";
 }
 
 /**
@@ -341,7 +328,11 @@ export async function runSpineWait(options) {
 
 	try {
 		while (running) {
-			const result = reconcileFn({ projectRoot });
+			// verbose: true (#375) — exposes signals.hasRunningTasks so the
+			// partial-failure match gate uses reconcile's own live-task
+			// classification instead of the phase fallback. buildWatchSnapshot
+			// picks explicit fields, so signals never leak into --json output.
+			const result = reconcileFn({ projectRoot, verbose: true });
 			if (!scopedBatchIdCaptured) {
 				const candidate = result.batchId ?? null;
 				if (candidate != null) {
