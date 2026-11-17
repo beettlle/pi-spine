@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import test from "node:test";
+import {
+	enforceAttachedEngineSingleOwner,
+	releaseResumeHandoffLock,
+} from "../../src/batch/attached-runner.mjs";
 import { maybeFinalizeAttachedEngineAfterHostLandLoop } from "../../src/batch/attached-runner-promote.mjs";
 import { saveGateRecord } from "../../src/batch/gate.mjs";
 import { resolveDefaultResumeWaitTerminal } from "../../src/batch/detached-start.mjs";
@@ -7,6 +12,7 @@ import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.m
 import {
 	createInitialBatchState,
 	loadSpineBatchState,
+	recordBatchEnginePid,
 	saveSpineBatchState,
 } from "../../src/batch/state.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -160,6 +166,136 @@ test("SP-636: gate.opened finalizes without forcing process exit", async () => {
 			),
 		);
 	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/**
+ * Seed a batch with a live foreign process recorded as engine owner (SP-861 fixtures).
+ *
+ * @param {string} projectRoot
+ * @param {object} options
+ * @param {number|undefined} options.enginePid
+ * @param {string} options.phase
+ * @returns {{ batchId: string }}
+ */
+function writeBatchWithLiveEngine(projectRoot, { enginePid, phase }) {
+	const batchId = "20261116T130000";
+	const state = createInitialBatchState({
+		batchId,
+		baseBranch: "main",
+		orchBranch: `orch/spine-${batchId}`,
+		wavePlan: [["SP-861"]],
+		tasks: [{ taskId: "SP-861", laneNumber: 1, status: "failed" }],
+		lanes: [{ laneNumber: 1, laneId: "lane-1", taskIds: ["SP-861"] }],
+	});
+	state.phase = phase;
+	if (enginePid != null) recordBatchEnginePid(state, enginePid);
+	saveSpineBatchState(projectRoot, state, { bypassOwnerCheck: true });
+	return { batchId };
+}
+
+test("SP-861: detached resume not blocked by acknowledged-pause engine pid on a paused batch (#376)", async () => {
+	const lingering = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"]);
+	const projectRoot = await initGitRepo("spine-detached-wait-pause-ack-");
+	try {
+		const { batchId } = writeBatchWithLiveEngine(projectRoot, {
+			enginePid: lingering.pid,
+			phase: "paused",
+		});
+		// Confirmed pause contract: the engine persisted phase: paused and
+		// journaled the observation right before its loop stopped.
+		appendJournalEvent(projectRoot, batchId, "engine.pause_observed", {
+			enginePid: lingering.pid,
+		});
+
+		const lock = enforceAttachedEngineSingleOwner({
+			projectRoot,
+			force: false,
+			operation: "resume",
+		});
+		assert.equal(lock.ok, true, lock.output ?? "");
+
+		// Stale ownership bit cleared so the resuming engine takes over cleanly.
+		assert.equal(loadSpineBatchState(projectRoot).raw?.resilience?.enginePid, undefined);
+		const events = readJournalEvents(projectRoot, batchId);
+		const cleared = events.find((event) => event.type === "engine.stale_ownership_cleared");
+		assert.equal(cleared?.payload?.stalePid, lingering.pid);
+	} finally {
+		try {
+			lingering.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		releaseResumeHandoffLock(projectRoot, "20261116T130000");
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-861: unacknowledged live engine on a paused batch still refuses detached resume", async () => {
+	const liveEngine = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"]);
+	const projectRoot = await initGitRepo("spine-detached-wait-pause-unacked-");
+	try {
+		writeBatchWithLiveEngine(projectRoot, {
+			enginePid: liveEngine.pid,
+			phase: "paused",
+		});
+		// No engine.pause_observed journaled: the engine never acknowledged the
+		// pause, so the live pid remains a true owner candidate.
+
+		const lock = enforceAttachedEngineSingleOwner({
+			projectRoot,
+			force: false,
+			operation: "resume",
+		});
+		assert.equal(lock.ok, false);
+		assert.equal(lock.error, "attached_engine_already_running");
+		assert.equal(lock.enginePid, liveEngine.pid);
+		assert.match(lock.output ?? "", /Attached batch engine already running/);
+		assert.equal(loadSpineBatchState(projectRoot).raw?.resilience?.enginePid, liveEngine.pid);
+	} finally {
+		try {
+			liveEngine.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		releaseResumeHandoffLock(projectRoot, "20261116T130000");
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("SP-861: true live engine on a running batch still refuses detached resume", async () => {
+	const liveEngine = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"]);
+	const projectRoot = await initGitRepo("spine-detached-wait-running-live-");
+	try {
+		writeBatchWithLiveEngine(projectRoot, {
+			enginePid: liveEngine.pid,
+			phase: "running",
+		});
+		appendJournalEvent(projectRoot, "20261116T130000", "engine.pause_observed", {
+			enginePid: liveEngine.pid,
+		});
+
+		const lock = enforceAttachedEngineSingleOwner({
+			projectRoot,
+			force: false,
+			operation: "resume",
+		});
+		assert.equal(lock.ok, false);
+		assert.equal(lock.error, "attached_engine_already_running");
+		assert.equal(lock.enginePid, liveEngine.pid);
+		assert.equal(
+			loadSpineBatchState(projectRoot).raw?.resilience?.enginePid,
+			liveEngine.pid,
+			"running-phase ownership must not be cleared",
+		);
+	} finally {
+		try {
+			liveEngine.kill("SIGKILL");
+		} catch {
+			/* ignore */
+		}
+		releaseResumeHandoffLock(projectRoot, "20261116T130000");
 		await destroyGitRepo(projectRoot);
 	}
 });

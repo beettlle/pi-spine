@@ -167,6 +167,27 @@ test("write guard blocks a live engine whose start time matches (same batchId on
 	}
 });
 
+test("write guard does not block a paused batch on a live engine with matching start time (SP-861 / #376)", async () => {
+	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"]);
+	const projectRoot = makeProjectWithOnDiskState({
+		batchId: "20260823T000000",
+		// Pause is an ownership handoff: the acknowledged engine's lingering pid
+		// must not refuse operator recovery writes (retry/skip) on a paused batch.
+		phase: "paused",
+		resilience: { enginePid: owner.pid, engineStartedAt: Date.now() },
+	});
+	try {
+		const verdict = evaluateBatchStateWriteGuard(projectRoot, {
+			batchId: "20260823T000000",
+			phase: "failed",
+		});
+		assert.deepEqual(verdict, { allowed: true });
+	} finally {
+		owner.kill("SIGKILL");
+		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});
+
 test("write guard does not block on PID reuse: pid alive but start time mismatched (#259)", async () => {
 	const owner = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"]);
 	const projectRoot = makeProjectWithOnDiskState({

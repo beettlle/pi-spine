@@ -1,7 +1,7 @@
 # SP-861: pause-retry stale_engine_pid — Status
 
-**Current Step:** Step 2 (Tests)
-**Status:** 🔄 In Progress — Step 2
+**Current Step:** Step 3 (Testing & Verification)
+**Status:** 🔄 In Progress — Step 3
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -23,9 +23,9 @@
 - [x] Detached resume not blocked by false attached ownership; true live engine still refuses
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Pause+retry write; false vs true attached resume cases
+- [x] Pause+retry write; false vs true attached resume cases
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
