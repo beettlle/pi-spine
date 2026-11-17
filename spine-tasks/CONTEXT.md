@@ -2768,7 +2768,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 102 — Release v2.31.0: wait/pause-retry/salvage dogfood + stet range + git-ai snapshot + peer 1.5.2
 
-**Authoring:** 2026-11-16 · Manifest: `spine-tasks/_authoring/release-v2.31.0/manifest.md`. Scope approved 2026-11-16. Tagged **v2.31.0** (`6710faa0`) 2026-11-17; `release.yml` stage green; awaiting maintainer 2FA approve (`npm view` still 2.30.0). #338 deferred. Closed #372–#376.
+**Authoring:** 2026-11-16 · Manifest: `spine-tasks/_authoring/release-v2.31.0/manifest.md`. Scope approved 2026-11-16. **Published v2.31.0** 2026-11-17 — tag `v2.31.0` (`6710faa0`), npm `latest` 2.31.0 (OIDC stage + 2FA approve `172ac1ad-da11-40e0-8ec8-f63b5a77325e`), global smoke OK. #338 deferred. Closed #372–#376.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
