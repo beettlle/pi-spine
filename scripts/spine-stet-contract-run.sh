@@ -8,9 +8,11 @@
 # folder) — so a second task serialized onto the same lane does not re-review the first
 # task's diff, and a retried task is not gated on later siblings' commits (SP-863 / #373).
 # stet reviews baseline..HEAD, so bounding the end temporarily detaches HEAD at the task's
-# last folder commit and restores the lane HEAD on exit (falls back to unbounded HEAD with
-# a warning if the checkout fails). With no task commits, the unbounded lane-baseline
-# behavior is kept (fail-closed / empty task diff).
+# last folder commit and restores the lane HEAD on exit; if that checkout fails (e.g. a
+# dirty worktree), the script exits 1 — fail closed — instead of reviewing an unbounded
+# range that would attribute later siblings' commits to this task (SP-863 final review).
+# With no task commits, the unbounded lane-baseline behavior is kept (fail-closed /
+# empty task diff).
 # Sessions: the open session is kept whenever the task-scoped baseline is unchanged, so a
 # sibling committing on the lane never wipes `stet dismiss` triage; a genuine task switch
 # still finishes and restarts, and stet v1.4+ restores recorded dismissals into the new
@@ -142,9 +144,10 @@ if [[ -n "$end_ref" && "$end_ref" != "$(git rev-parse HEAD)" ]]; then
 		trap 'restore_lane_head; trap - EXIT; exit 130' INT TERM
 		echo "stet: review scoped to task commits $(git rev-parse --short "$baseline")..$(git rev-parse --short "$end_ref") (HEAD temporarily detached)" >&2
 	else
-		orig_branch=""
-		orig_head=""
-		echo "stet: WARNING: could not check out $end_ref; reviewing baseline..HEAD (later sibling commits may be included)" >&2
+		# Fail closed (SP-863 final review): an unbounded fallback would attribute later
+		# siblings' commits to this task — the exact bug this scoping fixes.
+		echo "stet: could not check out $end_ref to bound the review range (dirty worktree or conflicting local changes); failing closed instead of reviewing baseline..HEAD" >&2
+		exit 1
 	fi
 fi
 

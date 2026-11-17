@@ -216,6 +216,36 @@ test("retried first task's computed range ends at its last folder commit, exclud
 	}
 });
 
+test("checkout failure fails closed: exits non-zero instead of reviewing unbounded sibling HEAD", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-range-failclosed-"));
+	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
+	mkdirSync(mockBin, { recursive: true });
+	const stateDir = writeMockStet(mockBin);
+	try {
+		const { laneBaseline, bHead } = seedSerializedLane(root);
+		seedBaselineRef(root, laneBaseline);
+		seedOpenSessionAt(root, stateDir, laneBaseline);
+		// A local modification to a file that differs between HEAD and the task's last
+		// folder commit makes `git checkout --detach` refuse — the dirty-worktree scenario
+		// the fail-closed guard exists for.
+		writeFileSync(path.join(root, "src", "b.mjs"), "dirty\n", "utf-8");
+		const result = runContractCapture(root, {
+			PATH: `${mockBin}${path.delimiter}${process.env.PATH ?? ""}`,
+			SPINE_STET_NO_AUTO_FINISH: "1",
+		}, ["default", "SP-1"]);
+		assert.notEqual(result.status, 0, "fail closed when the range-bound checkout is refused");
+		assert.match(result.stderr, /could not check out/);
+		assert.match(result.stderr, /failing closed/);
+		assert.equal(fs.existsSync(path.join(stateDir, "head_at_run")), false, "stet run never executed with an unbounded range");
+		assert.equal(fs.readFileSync(path.join(stateDir, "finish_called"), "utf-8").trim(), "0");
+		assert.equal(fs.readFileSync(path.join(stateDir, "start_called"), "utf-8").trim(), "0");
+		assert.equal(git(root, ["rev-parse", "HEAD"]), bHead, "lane HEAD untouched by the failed run");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+		await rm(mockBin, { recursive: true, force: true });
+	}
+});
+
 test("contract run for the retried first task reviews the task range and restores lane HEAD", async () => {
 	const root = await mkdtemp(path.join(os.tmpdir(), "spine-stet-range-detach-"));
 	const mockBin = path.join(os.tmpdir(), `${path.basename(root)}-bin`);
