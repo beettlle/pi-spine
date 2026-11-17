@@ -1,6 +1,6 @@
 # SP-863: stet task commit range — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
@@ -28,10 +28,10 @@
 - [x] Fixture: earlier task re-review excludes later task commits/paths
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract `testCommand` passing
-- [ ] All failures fixed
+- [x] Contract `testCommand` passing
+- [x] All failures fixed
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
