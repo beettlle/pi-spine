@@ -1,7 +1,7 @@
 # SP-859: mutating-help ignore git-ai notes — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,10 +29,10 @@
 - [x] All failures fixed
 
 ### Step 3: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -58,3 +58,8 @@
 ## Blockers
 
 *None*
+
+## Completion Criteria
+- [x] Snapshot ignores `refs/notes/*` and `.git/ai/**`
+- [x] Synthetic notes-ref case does not fail the equality helper
+- [x] Contract `testCommand` exits 0
