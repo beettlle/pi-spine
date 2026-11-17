@@ -139,9 +139,9 @@ Release scope: SP-857,SP-858,SP-859,SP-860,SP-861,SP-862,SP-863,SP-864
 - [x] `npm run release:check` green on final `HEAD` (same log; CI parity)
 - [x] CI workflow green on `HEAD` — https://github.com/beettlle/pi-spine/actions/runs/44002106275 (`conclusion: success`)
 - [x] `git status` clean; `main` synced to `origin`
-- [ ] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded (OIDC stage)
-- [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.31.0
+- [x] Operator approved publish bump type: **minor** (2026-11-17)
+- [x] `npm version minor` + `git push && git push --tags` — tag `v2.31.0`, commit `6710faa0`
+- [x] `release.yml` succeeded (OIDC stage) — https://github.com/beettlle/pi-spine/actions/runs/44137936724
+- [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.31.0 (still 2.30.0 until approve)
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 - [x] Every release-scoped `Closes #NNN` CLOSED (#372, #373, #374, #375, #376)

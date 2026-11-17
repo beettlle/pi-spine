@@ -2768,18 +2768,18 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 102 — Release v2.31.0: wait/pause-retry/salvage dogfood + stet range + git-ai snapshot + peer 1.5.2
 
-**Authoring:** 2026-11-16 · Manifest: `spine-tasks/_authoring/release-v2.31.0/manifest.md`. Scope approved 2026-11-16 (publish approval deferred). #338 deferred.
+**Authoring:** 2026-11-16 · Manifest: `spine-tasks/_authoring/release-v2.31.0/manifest.md`. Scope approved 2026-11-16. Tagged **v2.31.0** (`6710faa0`) 2026-11-17; `release.yml` stage green; awaiting maintainer 2FA approve (`npm view` still 2.30.0). #338 deferred. Closed #372–#376.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-857 | Runbook: wait / pause-retry / salvage recovery | S | — | Staged |
-| SP-858 | Docs: git-ai notes + peer 1.5.2 | S | — | Staged |
-| SP-859 | mutating-help ignores refs/notes + .git/ai | S | #372 Closes | Staged |
-| SP-860 | wait ignores needs_retry while siblings run | S | #375 Closes | Staged |
-| SP-861 | pause/retry without stale_engine_pid dead-end | S | #376 Closes | Staged |
-| SP-862 | complete/dismiss after salvage without --force | S | #374 Closes | Staged |
-| SP-863 | Stet review bounded to task commits | S | #373 Closes | Staged |
-| SP-864 | Lockfile pi-coding-agent 1.5.2 | S | — | Staged |
+| SP-857 | Runbook: wait / pause-retry / salvage recovery | S | — | Done — batch `20261117T000334-0f39` |
+| SP-858 | Docs: git-ai notes + peer 1.5.2 | S | — | Done — batch `20261117T000334-0f39` |
+| SP-859 | mutating-help ignores refs/notes + .git/ai | S | #372 Closes | Done — closed |
+| SP-860 | wait ignores needs_retry while siblings run | S | #375 Closes | Done — closed |
+| SP-861 | pause/retry without stale_engine_pid dead-end | S | #376 Closes | Done — closed |
+| SP-862 | complete/dismiss after salvage without --force | S | #374 Closes | Done — closed |
+| SP-863 | Stet review bounded to task commits | S | #373 Closes | Done — closed |
+| SP-864 | Lockfile pi-coding-agent 1.5.2 | S | — | Done — batch `20261117T000334-0f39` |
 
 ---
 
