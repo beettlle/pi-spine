@@ -1,7 +1,7 @@
 # SP-861: pause-retry stale_engine_pid — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 (Guard + resume ownership)
+**Status:** 🔄 In Progress — Step 1
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `evaluateBatchStateWriteGuard`, attached-resume refuse path; report blast radius
-- [ ] `rg -n "stale_engine_pid|Attached batch engine already running" src/ tests/`
+- [x] GitNexus impact on `evaluateBatchStateWriteGuard`, attached-resume refuse path; report blast radius
+- [x] `rg -n "stale_engine_pid|Attached batch engine already running" src/ tests/`
 
 ### Step 1: Guard + resume ownership
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Pause+retry persists without false `stale_engine_pid`
 - [ ] Detached resume not blocked by false attached ownership; true live engine still refuses
@@ -50,6 +50,10 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `evaluateBatchStateWriteGuard` blast radius CRITICAL (348 symbols / 151 processes / 18 modules) — mitigation: deny-by-default kept; only narrow live-owner refusal for on-disk phase `paused` (pause = ownership handoff) | acknowledged | Step 0 |
+| `batch.paused` journal lands AFTER `engine.pause_observed` (pauseBatch journals at the end, after confirmation). Acknowledgement discriminator = last `engine.pause_observed` index > last `batch.resumed` index | design input | Step 0 |
+| All pinned `stale_engine_pid` test refusals use running on-disk phase → paused-phase guard narrowing keeps them green; unacknowledged live-PID resume refusals (`attached-engine-lock`, `resume-single-owner`) keep refusing because tests journal no `engine.pause_observed` | design input | Step 0 |
+| Retry's persisted save clears enginePid (terminal `failed` phase → `clearBatchEnginePid` in `persistSpineBatchStateGuarded`), so pause→retry→resume is unblocked once the guard allows the retry write | design input | Step 0 |
 
 ## Execution Log
 
