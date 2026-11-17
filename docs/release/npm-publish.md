@@ -10,6 +10,13 @@ Release flow: `npm version <patch|minor|major>` → `git push --tags` → [`.git
    ```
    Equivalent to: `typecheck` → `lint` → `SPINE_WORKER_STUB=1 npm test` → `coverage:check`.
    See [test-layout-coverage-notes.md](test-layout-coverage-notes.md) for coverage-safe test layout guidance that affects the coverage gate.
+
+   **git-ai hosts (`refs/notes/ai`, [#372](https://github.com/beettlle/pi-spine/issues/372)):** hosts running the git-ai daemon (`git-ai bg run`, wired via `trace2.eventtarget` in `~/.gitconfig`) annotate any repo seconds after a commit — including the temp repo used by the `mutating-help` side-effect test — so the before/after ref snapshot picks up `refs/notes/ai` and `release:check` fails on an otherwise clean tree. CI is unaffected. Once SP-859 lands (v2.31.0), the mutating-help snapshot ignores `refs/notes/*` and `.git/ai/**` (refs no spine command writes). Until then, pause the daemon around the gate — config-level mitigations (`GIT_TRACE2_EVENT=0`, `GIT_CONFIG_GLOBAL=/dev/null`) do **not** stop it:
+   ```bash
+   git-ai bg shutdown
+   npm run release:check
+   git-ai bg start
+   ```
 2. **Bump version and tag** — uses npm's built-in versioning:
    ```bash
    npm version patch   # or minor / major
@@ -107,9 +114,11 @@ gh run view <run-id> --log-failed
 |-------|-------|-------------|
 | `engines.node` | `>=22.19.0` | npm `engines` check at install; CI runs Node 22 |
 | `pi.minPiVersion` | `0.80.0` | `spine doctor` "pi version supported" warning when the installed pi is older |
-| `@earendil-works/pi-coding-agent` (tested peer) | `^1.0.1` dev pin | `npm audit` highs cleared via 0.85.1 (maintained through 0.87.1); extension tool schemas tested against it |
+| `@earendil-works/pi-coding-agent` (tested peer) | `^1.4.0` dev pin (raised from `^1.0.1` in v2.30.0, SP-854) | `npm audit` highs cleared via 0.85.1 (maintained through 0.87.1); extension tool schemas tested against it |
 
 The `peerDependencies` entries for `@earendil-works/pi-coding-agent` and `typebox` stay `*` (optional) — the tested pin lives in `devDependencies`. When bumping the peer, also raise `pi.minPiVersion` if the new pi requires it, and update the workflow pi stubs that emulate `pi --version` (`ci.yml`, `release.yml`) so they report a version at or above the new minimum.
+
+**v2.31.0 peer bump (SP-864):** this release resolves the `@earendil-works/pi-coding-agent` lockfile to **1.5.2** (dev pin `^1.4.0` already covers it). The `pi` installed on the release host is already 1.5.2, so no host upgrade is needed — the lockfile is catching up to the runtime used for local `release:check`.
 
 ### Wave B toolchain (dev, [#285](https://github.com/beettlle/pi-spine/issues/285))
 
@@ -121,7 +130,7 @@ GitHub workflow Actions are pinned to current majors: `actions/checkout@v7` and 
 
 ## Pre-publish checklist
 
-- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI)
+- [ ] `npm run release:check` green (typecheck, lint, tests, coverage — parity with CI). On git-ai hosts, pause the daemon around the gate first — see the git-ai note in step 1 of the release flow
 - [ ] **CI workflow green on release commit** — before `npm version` / tag push:
   ```bash
   COMMIT=$(git rev-parse HEAD)
@@ -135,7 +144,7 @@ GitHub workflow Actions are pinned to current majors: `actions/checkout@v7` and 
   - **`cancelled` or no run exists for `HEAD`:** re-run **CI** via `workflow_dispatch` — `gh workflow run ci.yml` (dispatch trigger added in `edb7919d`) — then `gh run list` again and wait for `conclusion: success` on current `HEAD`.
   - Do **not** treat a cancelled run as green or as red, and do **not** `npm version` or `git push --tags` until a green run exists on `HEAD`.
 - [ ] `package.json` `files` includes `bin/`, `src/`, `extensions/`, `skills/`, `templates/`, `scripts/coverage-parse.mjs`
-- [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^1.0.1` (see [Version floors](#version-floors-engines--minpiversion--peer))
+- [ ] Version floors consistent: `engines.node` `>=22.19.0`, `pi.minPiVersion` `0.80.0`, pi-coding-agent dev pin `^1.4.0` (lockfile resolved to 1.5.2 since v2.31.0 — see [Version floors](#version-floors-engines--minpiversion--peer))
 - [ ] Version bump committed (via `npm version`)
 - [ ] Tag pushed (`git push --tags`)
 - [ ] `release.yml` succeeded (**stage** complete)
