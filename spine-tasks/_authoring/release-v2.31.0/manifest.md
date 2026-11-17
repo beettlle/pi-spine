@@ -133,15 +133,15 @@ Release scope: SP-857,SP-858,SP-859,SP-860,SP-861,SP-862,SP-863,SP-864
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
-- [ ] `git status` clean
+- [x] All release-scoped tasks `.DONE` on `main` (batch `20261117T000334-0f39`, merge `85535994`)
+- [x] Post-integrate `release:check` green after wave 0 — log `/tmp/pi-spine-post-integrate-wave-0.log` (3260/3260, 91.46%, exit 0)
+- [x] `spine preflight` green (0 pending)
+- [x] `npm run release:check` green on final `HEAD` (same log; CI parity)
+- [x] CI workflow green on `HEAD` — https://github.com/beettlle/pi-spine/actions/runs/44002106275 (`conclusion: success`)
+- [x] `git status` clean; `main` synced to `origin`
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
 - [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.31.0
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Every release-scoped `Closes #NNN` CLOSED (#372, #373, #374, #375, #376)
+- [x] Every release-scoped `Closes #NNN` CLOSED (#372, #373, #374, #375, #376)
