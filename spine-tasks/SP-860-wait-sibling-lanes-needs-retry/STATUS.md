@@ -50,6 +50,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 2af6f2c  src/cli/spine-wait.mjs:6  WARNING  Importing RUNNING_PHASES (a Set of phase names like 'planning', 'running') into a mod | advisory — noted, not blocking | contract review step |
 | GitNexus impact `reconciliationMatchesUntil` upstream: **CRITICAL** (212 impacted, 149 processes, 18 modules) but depth-1 direct callers = 1 (`runSpineWait`); production consumer is only `bin/spine-cli/wait.mjs` → `handleWait`. Gate change is contained to the wait CLI surface. | accepted with warning | src/cli/spine-wait.mjs |
 | Non-verbose `reconcileBatch` result exposes no task statuses (`signals` only when `ctx.verbose`); reconcile computes `signals.hasRunningTasks` from `classifiedTasks.some(classification === "running")` — the live task status reconcile itself uses. Fix: wait poll passes `verbose: true`; match helper prefers `signals.hasRunningTasks`, falls back to `RUNNING_PHASES.has(phase)` for injected/non-verbose results. | chosen approach | src/cli/spine-wait.mjs |
 | `deriveDiagnosis` `hasFailedTasks` branch (reconcile-diagnosis.mjs) returns `needs_retry`/`worker_done_missing`/`needs_replan` on first terminal-failure task with no running-sibling consideration — the #375 root cause. Gate exactly these three partial-failure diagnoses; `failed`/`completed`/`needs_integrate`/`aborted`/pseudos untouched. | scoped | src/cli/spine-wait.mjs |
