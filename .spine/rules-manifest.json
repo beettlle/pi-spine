@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-07T00:19:06.597Z",
+  "generatedAt": "2026-11-17T00:02:17.507Z",
   "rulesRoot": ".cursor/rules",
   "rules": [
     {
@@ -29,10 +29,34 @@
       "parseStatus": "ok"
     },
     {
+      "relPath": "general-llm-anti-patterns-04-06.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Universal LLM anti-patterns pack part 2: Categories 4–6 (API/framework, security, testing)",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "general-llm-anti-patterns-07-09.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Universal LLM anti-patterns pack part 3: Categories 7–9 (context, process, agent workflow)",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
+      "relPath": "general-llm-anti-patterns-10-12.mdc",
+      "spineClass": "always",
+      "alwaysApply": true,
+      "description": "Universal LLM anti-patterns pack part 4: Categories 10–12 (modern LLM, operations, naming) + Summary",
+      "globs": [],
+      "parseStatus": "ok"
+    },
+    {
       "relPath": "general-llm-anti-patterns.mdc",
       "spineClass": "always",
       "alwaysApply": true,
-      "description": "Universal language-agnostic rules to prevent common LLM-induced anti-patterns across all programming languages and frameworks",
+      "description": "Universal LLM anti-patterns pack part 1: Categories 0–3 (optimization, architecture, performance, code quality)",
       "globs": [],
       "parseStatus": "ok"
     },
@@ -45,10 +69,25 @@
       "parseStatus": "ok"
     },
     {
+      "relPath": "javascript-3-development-standards-continued.mdc",
+      "spineClass": "glob",
+      "alwaysApply": false,
+      "description": "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions (continued: Categories 5–11)",
+      "globs": [
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "parseStatus": "ok"
+    },
+    {
       "relPath": "javascript-3-development-standards.mdc",
       "spineClass": "glob",
       "alwaysApply": false,
-      "description": "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions",
+      "description": "JavaScript/ECMAScript development standards following modern best practices, Airbnb/Google style guides, and JavaScript community conventions (core: Categories 1–4)",
       "globs": [
         "**/*.js",
         "**/*.jsx",
@@ -164,6 +203,11 @@
       "spineClass": "excluded"
     },
     {
+      "relPath": "go-1-21-development-standards-continued.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
       "relPath": "go-1-21-development-standards.mdc",
       "reason": "excludePattern",
       "spineClass": "excluded"
@@ -179,7 +223,22 @@
       "spineClass": "excluded"
     },
     {
+      "relPath": "ios-uikit-development-standards.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "java-17-development-standards-continued.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
       "relPath": "java-17-development-standards.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "java-21-development-standards-continued.mdc",
       "reason": "excludePattern",
       "spineClass": "excluded"
     },
@@ -214,6 +273,11 @@
       "spineClass": "excluded"
     },
     {
+      "relPath": "python-3-development-standards-continued.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
       "relPath": "python-3-development-standards.mdc",
       "reason": "excludePattern",
       "spineClass": "excluded"
@@ -230,6 +294,11 @@
     },
     {
       "relPath": "swift-5-9-brutal-audit.mdc",
+      "reason": "excludePattern",
+      "spineClass": "excluded"
+    },
+    {
+      "relPath": "swift-5-9-development-standards-continued.mdc",
       "reason": "excludePattern",
       "spineClass": "excluded"
     },

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-06 (Phase 101 v2.30.0 **published** 2026-11-06 — `aad31d39`, tag `v2.30.0`, npm `latest` 2.30.0 (staged by release.yml, operator-approved), global smoke OK; SP-846–SP-856 done; closed #356, #370, #337, #345, #357, #371, #349; follow-ups #372, #373, beettlle/stet#39; `contract.reviewPolicy` left `advisory`; v2.28.1 **published** 2026-10-23 UTC — `3cd34c59`, tag `v2.28.1`, npm `latest` 2.28.1 (staged by release.yml, operator-approved), global smoke OK, #367/#368/#369 closed; Phase 100 v2.29.0 **published** 2026-10-24 — `4a83edc8`, tag `v2.29.0`, npm `latest` 2.29.0 (staged by release.yml, operator-approved), global smoke OK (version, doctor exit 0, new settings fields recognized); SP-844/SP-845 integrated `a78f5098` (batch 20261023T030941-33c5; stet dropped from both contract testCommands after repeated hunk-only false positives), release:check green 3193/3193, 91.31%; Phase 99 v2.28.0 **published** 2026-10-22 — `7604bf00`, tag `v2.28.0`, npm `latest` 2.28.0, smoke OK, #350/#352/#355 closed; Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
 **Status:** Active
-**Next Task ID:** SP-857
+**Next Task ID:** SP-865
 
 ---
 
@@ -2765,6 +2765,21 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | SP-853 | `worker.rules_selected` post-load fields | S | #345 Closes | Done — integrated `901e003f` |
 | SP-855 | Code/final reviewer rules scoped to task files | S | #357 Closes | Done — integrated `45fd75c4` |
 | SP-856 | Integrate/complete suggest wait while engine finalizes | S | #371 Closes | Done — integrated `45fd75c4` |
+
+### Phase 102 — Release v2.31.0: wait/pause-retry/salvage dogfood + stet range + git-ai snapshot + peer 1.5.2
+
+**Authoring:** 2026-11-16 · Manifest: `spine-tasks/_authoring/release-v2.31.0/manifest.md`. Scope approved 2026-11-16 (publish approval deferred). #338 deferred.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-857 | Runbook: wait / pause-retry / salvage recovery | S | — | Staged |
+| SP-858 | Docs: git-ai notes + peer 1.5.2 | S | — | Staged |
+| SP-859 | mutating-help ignores refs/notes + .git/ai | S | #372 Closes | Staged |
+| SP-860 | wait ignores needs_retry while siblings run | S | #375 Closes | Staged |
+| SP-861 | pause/retry without stale_engine_pid dead-end | S | #376 Closes | Staged |
+| SP-862 | complete/dismiss after salvage without --force | S | #374 Closes | Staged |
+| SP-863 | Stet review bounded to task commits | S | #373 Closes | Staged |
+| SP-864 | Lockfile pi-coding-agent 1.5.2 | S | — | Staged |
 
 ---
 
