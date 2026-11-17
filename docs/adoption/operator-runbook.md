@@ -41,7 +41,7 @@ Omit `--attached`. Detached is the CLI default for `spine batch start` and `spin
 ```bash
 spine batch start pending --wave 2          # detached — engine survives parent shell exit
 spine batch resume --force                  # detached orphan recovery
-spine wait --until completed,needs_integrate,failed,aborted --timeout 4h
+spine wait --until completed,needs_integrate,failed,aborted --timeout 4h   # quiet-wave set — see multi-lane wait wake rule (#375)
 spine status --diagnose
 ```
 
@@ -61,6 +61,8 @@ Default detached `start`/`resume` return when the engine **starts**, not when wo
 **Single attached engine:** only one foreground `--attached` engine may own a batch at a time. `resilience.enginePid` is checked before attached `start`/`resume`. If that PID is still alive, the CLI fails fast with `attached_engine_already_running`. Use `spine batch resume --attached --force` to orphan the prior engine (`engine.orphan_terminated` in the journal) before handoff — do not run two `spine.mjs batch … --attached` processes for the same batch.
 
 **PID-reuse-safe engine liveness (SP-715 / #259):** engine ownership checks pair `resilience.enginePid` with `resilience.engineStartedAt` — on macOS/Linux the recorded start time is compared against the live process start time (`ps lstart` / `/proc/<pid>/starttime`), so a recycled PID owned by an unrelated process is treated as a dead engine and no longer blocks writes or skips orphan recovery. **Windows limitation:** liveness remains PID-only (`kill(pid, 0)`), so a recycled PID can still masquerade as the engine there.
+
+**Stale engine pid is not a live attached engine (SP-861 / [#376](https://github.com/beettlle/pi-spine/issues/376)):** a stale `resilience.enginePid` left behind by a paused-then-retried batch is not ownership. Detached `spine batch resume` / `resume --force` must not be refused with a false "Attached batch engine already running" — SP-861 clears the `stale_engine_pid` finding instead of blocking. If `spine status --diagnose` reports `stale_engine_pid`, follow its `suggestedCommand`; do not kill engine PIDs blindly and do not reach for `resume --attached --force` to orphan an engine that is already dead. `resume --attached` stays reserved for a persistent human TTY and is never required to clear this class.
 
 After `engine_orphaned`, `worker_orphaned`, `worker_done_missing`, or `state_drift`, detached `resume` defaults to `--wait-terminal` (blocks until terminal phase). Pass `--no-wait-terminal` for the old quick-return behavior.
 
@@ -609,7 +611,7 @@ For **curated release cycles** (see [spine-release-operator](../../skills/spine-
 
 **Out of scope (deferred):** a `spine doctor`/preflight quota-risk escalate signal ([#248](https://github.com/beettlle/pi-spine/issues/248) optional AC) is intentionally not implemented this release; the one-pin policy above is the policy-level mitigation until then.
 
-Full release-phase procedure: [spine-release-operator/SKILL.md](../../skills/spine-release-operator/SKILL.md). Post-mortem: [`docs/release/post-mortem-v2.12.1.md`](../release/post-mortem-v2.12.1.md) §§F1/F7/F8.
+Full release-phase procedure: [spine-release-operator/SKILL.md](../../skills/spine-release-operator/SKILL.md). Post-mortem: [`docs/release/post-mortem-v2.12.1.md`](../release/post-mortem-v2.12.1.md) §§F1/F7/F8. Publish-gate notes (git-ai `refs/notes/*` mutating-help snapshots, `pi-coding-agent` 1.5.2 peer bump): [`docs/release/npm-publish.md`](../release/npm-publish.md).
 
 ### Cross-model PROMPT authoring (issue #84)
 
@@ -874,6 +876,7 @@ Part of the [Operator monitoring toolkit epic (#43)](https://github.com/beettlle
 | Live compact reconcile poll in the terminal (default 5s)? | `spine watch` |
 | Single reconcile snapshot for scripts or CI? | `spine watch --json --once` or `spine status --json` |
 | Block until diagnosis reaches a target set (CI/automation)? | `spine wait --until completed,needs_integrate,failed,aborted --timeout 2h` |
+| Multi-lane wave: block without waking under live siblings? | Same quiet-wave set first; add `needs_retry` only after `spine status --diagnose` shows no live workers (#375) |
 | Block until integrate gate opens during land loop? | `spine wait --until gate_open,needs_approval --timeout 30m` |
 | Block until post-merge limbo clears (gate not yet open)? | `spine wait --until post_merge_limbo --timeout 15m` |
 | Live control-plane journal events as they append? | `spine journal follow` |
@@ -913,6 +916,8 @@ Idle repos omit these fields. `spine watch --json` wraps the same reconcile fiel
 `spine wait` reuses the same reconcile poll interval as `spine watch` (default 5s, overridable with `--interval`). It blocks until `diagnosis` is in the `--until` set, exits **0** on match and **1** on `--timeout`. With `--json`, stdout receives one final reconcile snapshot (match or timeout) for CI parsers — no continuous NDJSON stream.
 
 Land-loop pseudo-diagnoses for `--until` (SP-479, issue #105): `gate_open` and `needs_approval` match when reconcile suggests `spine gate approve` (integrate gate opened, awaiting operator approval); `post_merge_limbo` matches when merges finished but the gate is not yet open (`spine batch resume --force` suggestion). These complement taxonomy diagnoses such as `needs_integrate`.
+
+**Multi-lane wait wake rule (#375, SP-860):** in a multi-lane wave, `needs_retry` must not wake the waiter while sibling lanes are still `running` — one lane failing early would release the waiter mid-wave, and a retry fired then collides with live sibling workers. `spine wait` therefore does not match `needs_retry` while any sibling lane is `running`. Operational pattern: wait on the quiet-wave set (`--until completed,needs_integrate,failed,aborted`) until the wave is quiet, confirm with `spine status --diagnose` (or a `--json` snapshot) that no workers are live, and only then add `needs_retry` to catch lanes that need a retry.
 
 For `state_drift`, `spine status --diagnose` suggests **`suggestedCommand`**: `spine batch retry <taskId>` when the drift task is not `running`, or `spine batch resume --force` when still `running` (SP-512 — not `pause && retry`, which deadlocks). **`spine batch retry --force` is invalid** — retry always requires a task id.
 
@@ -1570,6 +1575,8 @@ When a **live attached engine** (foreground `spine batch start --attached` / `re
 
 **Recovery when pause fails:** stop the attached engine (Ctrl+C or kill the engine PID), confirm `phase: paused` or run `spine batch pause` again, then `spine batch retry <taskId>` when you need to reset a failed task. `spine batch retry` is allowed when phase is **`paused`** or **`failed`**, not while phase is **`running`**.
 
+**Pause → retry → resume without `stale_engine_pid` dead-ends (#376, SP-861):** after `spine batch pause` + `spine batch retry <taskId>`, resume **detached** — `spine batch resume`, or `spine batch resume --force` when segment state is stale. A stale engine record from the pause must not surface a false "Attached batch engine already running" refusal on detached resume: SP-861 clears the `stale_engine_pid` ownership instead of blocking, so no `dismiss --force` / cold-start workaround is needed for this class. If `spine status --diagnose` still reports `stale_engine_pid`, follow its `suggestedCommand` — do not kill engine PIDs blindly. `resume --attached` remains a persistent-human-TTY-only option and is never required here.
+
 ### Batch abort recovery (salvage)
 
 After **`spine batch abort`** or **`spine batch dismiss --force`**, succeeded lane commits may remain on lane task branches without reaching `main`. Use salvage to list and land that work without manual cherry-pick (**Closes** [#158](https://github.com/beettlle/pi-spine/issues/158)).
@@ -1600,6 +1607,8 @@ spine batch salvage --batch <batchId> --lane <n> --integrate --yes
 - Journal events: `batch.salvage_gate_opened` (when salvage opens a missing gate), `batch.salvage_integrate_started`, `batch.salvage_integrated`, or `batch.salvage_integrate_failed`.
 
 **Typical workflow:** abort → `salvage --dry-run` → `salvage --lane N --integrate` (opens gate if missing) → `spine gate approve` if the gate is pending → re-run `salvage --lane N --integrate --yes` per salvageable lane → `spine batch complete` to finalize when every remaining failure was salvageable ([#292](https://github.com/beettlle/pi-spine/issues/292); see [Post-DONE review failure recovery](#post-done-review-failure-recovery-re-review-first-salvage-last-291-292-331)).
+
+**Finalize without `--force` (#374, SP-862):** after the last `salvage --lane N --integrate` lands (gate approved), `spine batch complete` — and `spine batch dismiss`, if you are abandoning the shell — succeed **without `--force`** when the only unresolved failures are the salvaged ones; the salvage heal reconciles them so no `--force` dismiss is needed. If complete/dismiss still refuses, re-check `spine status --diagnose` for non-salvageable failures (contract/review verdicts, evidence-less worker deaths) and resolve those first — do not add `--force` to paper over them.
 
 After abort, salvage lists lanes whose task branches have commits ahead of base when the task reached terminal-success / lane `.DONE` — even if journal status cache disagrees (SP-614 / [#196](https://github.com/beettlle/pi-spine/issues/196)). Do not assume "no salvageable commits" means the lane branch is empty; re-check with `salvage --dry-run` and `git log main..<lane-task-branch>`.
 
