@@ -16,7 +16,7 @@ import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { approveIntegrateGate, openIntegrateGate } from "../../src/batch/gate.mjs";
-import { archiveBatchStatePath, completeBatch } from "../../src/batch/lifecycle.mjs";
+import { archiveBatchStatePath, completeBatch, dismissBatch } from "../../src/batch/lifecycle.mjs";
 import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { integrateSalvageableLane } from "../../src/batch/salvage-batch.mjs";
 import { createInitialBatchState } from "../../src/batch/state.mjs";
@@ -50,6 +50,29 @@ function unresolvedFailedTask(overrides = {}) {
 		exitReason: "contract_failed",
 		...overrides,
 	};
+}
+
+/**
+ * #374 dogfood variant: the land loop merged wave work into the batch orch
+ * branch before dying, so the orch branch has commits that never reached base
+ * (`orchMergedToBase` false, `mergeResults` empty) even though salvage later
+ * landed the lane task branches onto base directly.
+ *
+ * @param {string} projectRoot
+ */
+function advanceOrchBranchWithOrphanCommit(projectRoot) {
+	execFileSync("git", ["checkout", `orch/spine-${BATCH_ID}`], { cwd: projectRoot, stdio: "ignore" });
+	fs.writeFileSync(
+		path.join(projectRoot, "orch-orphan.txt"),
+		"wave 0 lane merge landed on orch before the land loop died\n",
+		"utf-8",
+	);
+	execFileSync("git", ["add", "-A"], { cwd: projectRoot, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "wave 0 land loop merge (engine died before orch to base)"], {
+		cwd: projectRoot,
+		stdio: "ignore",
+	});
+	execFileSync("git", ["checkout", "main"], { cwd: projectRoot, stdio: "ignore" });
 }
 
 /**
@@ -112,11 +135,19 @@ function seedSalvageJournal(projectRoot, options = {}) {
 		classification: "plan_review_spawn_failed",
 	});
 	if (options.includeSecondTask) {
+		const exitReason = options.secondTaskSalvageable ? "plan_review_spawn_failed" : "contract_failed";
 		appendJournalEvent(projectRoot, BATCH_ID, "task.started", { taskId: "SP-771", laneNumber: 2 });
+		if (options.secondTaskSalvageable) {
+			appendJournalEvent(projectRoot, BATCH_ID, "lane.committed", {
+				taskId: "SP-771",
+				laneNumber: 2,
+				commitSha: "lane2sha",
+			});
+		}
 		appendJournalEvent(projectRoot, BATCH_ID, "task.failed", {
 			taskId: "SP-771",
-			exitReason: "contract_failed",
-			classification: "contract_failed",
+			exitReason,
+			classification: exitReason,
 		});
 	}
 	appendJournalEvent(projectRoot, BATCH_ID, "batch.failed", { reason: "task_failed", taskId: "SP-770" });
@@ -259,6 +290,161 @@ test("complete still refuses when unresolved failed tasks remain after salvage i
 		assert.match(refused.headline ?? "", /complete refused/i);
 		assert.ok(fs.existsSync(path.join(projectRoot, BATCH_STATE_REL)));
 		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, BATCH_ID)));
+
+		// Unresolved failure still blocks non-force dismiss (SP-862 fail-closed).
+		const dismissRefused = dismissBatch({ projectRoot });
+		assert.equal(dismissRefused.ok, false);
+		assert.match(dismissRefused.headline ?? "", /dismiss refused/i);
+		assert.ok(fs.existsSync(path.join(projectRoot, BATCH_STATE_REL)));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+/**
+ * #374 core scenario: salvageable-only failed batch whose orch branch has
+ * orphan land-loop commits (never merged to base). Runs salvage integrate and
+ * asserts the heal + salvage-land evidence.
+ *
+ * @param {string} projectRoot
+ * @param {object} [options]
+ * @param {boolean} [options.includeSecondSalvageableLane] seed a second salvageable lane 2 task (not salvaged here)
+ */
+async function runOrchOrphanSalvageScenario(projectRoot, options = {}) {
+	const tasks = [salvageableFailedTask()];
+	if (options.includeSecondSalvageableLane) {
+		tasks.push(
+			salvageableFailedTask({
+				taskId: "SP-771",
+				laneNumber: 2,
+				taskFolder: "SP-771-fixture",
+			}),
+		);
+	}
+	const batchState = writeActiveFailedBatch(projectRoot, tasks);
+	advanceOrchBranchWithOrphanCommit(projectRoot);
+	seedSalvageJournal(projectRoot, { includeSecondTask: options.includeSecondSalvageableLane === true });
+	commitLaneBranchWork(projectRoot, 1, "salvage-orch-orphan.txt", "SP-770-fixture");
+	if (options.includeSecondSalvageableLane) {
+		commitLaneBranchWork(projectRoot, 2, "salvage-orch-orphan-lane2.txt", "SP-771-fixture");
+	}
+	approveGateForSalvage(projectRoot, batchState);
+
+	// #374 step 5: complete refuses before salvage (lane merges pending).
+	const before = completeBatch({ projectRoot });
+	assert.equal(before.ok, false);
+
+	return integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+		yes: true,
+		confirmFn: async () => true,
+	});
+}
+
+test("salvage integrate lands merge evidence and complete succeeds even when the orch branch never merged (#374)", async () => {
+	const projectRoot = await initGitRepo("salvage-complete-orch-orphan-");
+	try {
+		const result = await runOrchOrphanSalvageScenario(projectRoot);
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.healedTaskIds, ["SP-770"]);
+
+		// Salvage-land evidence: heal left zero unresolved tasks.
+		const healed = readActiveState(projectRoot);
+		assert.ok(healed.salvageLandedAllTasks, "expected salvageLandedAllTasks evidence");
+		assert.deepEqual(healed.salvageLandedAllTasks.tasks, ["SP-770"]);
+		assert.ok(healed.salvageLandedAllTasks.mergeCommit);
+		const events = readJournalEvents(projectRoot, BATCH_ID);
+		assert.ok(
+			events.find((event) => event.type === "batch.salvage_landed_all_tasks"),
+			"expected batch.salvage_landed_all_tasks journal event",
+		);
+
+		// The #374 contract: complete succeeds without --force even though the
+		// orch branch never merged (needs_merge diagnosis pre-fix).
+		const completed = completeBatch({ projectRoot });
+		assert.equal(completed.ok, true);
+		assert.equal(completed.diagnosis, "completed");
+		assert.ok(!fs.existsSync(path.join(projectRoot, BATCH_STATE_REL)));
+		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, BATCH_ID)));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("complete --detect-manual-merge succeeds after salvage land when the orch branch never merged (#374)", async () => {
+	const projectRoot = await initGitRepo("salvage-complete-orch-manual-");
+	try {
+		const result = await runOrchOrphanSalvageScenario(projectRoot);
+		assert.equal(result.ok, true);
+
+		const completed = completeBatch({ projectRoot, detectManualMerge: true });
+		assert.equal(completed.ok, true);
+		assert.equal(completed.diagnosis, "completed");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("dismiss without --force succeeds after salvage land when the orch branch never merged (#374)", async () => {
+	const projectRoot = await initGitRepo("salvage-dismiss-after-salvage-");
+	try {
+		const result = await runOrchOrphanSalvageScenario(projectRoot);
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.healedTaskIds, ["SP-770"]);
+
+		// needs_merge diagnosis is outside DISMISS_ALLOWED — the salvage-land
+		// evidence must clear the gate without --force (SP-862).
+		const dismissed = dismissBatch({ projectRoot });
+		assert.equal(dismissed.ok, true);
+		assert.ok(!fs.existsSync(path.join(projectRoot, BATCH_STATE_REL)));
+		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, BATCH_ID)));
+		const events = readJournalEvents(projectRoot, BATCH_ID);
+		assert.ok(events.find((event) => event.type === "batch.dismissed"));
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("multi-lane salvage: complete stays blocked until every salvageable lane is landed, then succeeds (#374)", async () => {
+	const projectRoot = await initGitRepo("salvage-complete-multilane-");
+	try {
+		const batchState = writeActiveFailedBatch(projectRoot, [
+			salvageableFailedTask(),
+			salvageableFailedTask({
+				taskId: "SP-771",
+				laneNumber: 2,
+				taskFolder: "SP-771-fixture",
+			}),
+		]);
+		seedSalvageJournal(projectRoot, { includeSecondTask: true, secondTaskSalvageable: true });
+		commitLaneBranchWork(projectRoot, 1, "salvage-multilane-1.txt", "SP-770-fixture");
+		commitLaneBranchWork(projectRoot, 2, "salvage-multilane-2.txt", "SP-771-fixture");
+		approveGateForSalvage(projectRoot, batchState);
+
+		// Land lane 1 only: SP-771 is salvageable but still unlanded — block.
+		const lane1 = await integrateSalvageableLane(projectRoot, BATCH_ID, 1, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+		assert.equal(lane1.ok, true);
+		assert.deepEqual(lane1.healedTaskIds, ["SP-770"]);
+		let midway = readActiveState(projectRoot);
+		assert.equal(midway.salvageLandedAllTasks, undefined, "no evidence while a salvageable task is unresolved");
+		const blocked = completeBatch({ projectRoot });
+		assert.equal(blocked.ok, false);
+
+		// Land lane 2: zero unresolved tasks remain — evidence + complete.
+		const lane2 = await integrateSalvageableLane(projectRoot, BATCH_ID, 2, {
+			yes: true,
+			confirmFn: async () => true,
+		});
+		assert.equal(lane2.ok, true);
+		assert.deepEqual(lane2.healedTaskIds, ["SP-771"]);
+		midway = readActiveState(projectRoot);
+		assert.deepEqual(midway.salvageLandedAllTasks?.tasks, ["SP-771"]);
+
+		const completed = completeBatch({ projectRoot });
+		assert.equal(completed.ok, true);
+		assert.equal(completed.diagnosis, "completed");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
