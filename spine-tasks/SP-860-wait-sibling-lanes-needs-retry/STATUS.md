@@ -1,7 +1,7 @@
 # SP-860: wait sibling lanes needs_retry — Status
 
-**Current Step:** Step 3 (Testing & Verification)
-**Status:** 🟡 In Progress — Step 3
+**Current Step:** Step 4 (Documentation & Delivery)
+**Status:** 🟡 In Progress — Step 4
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,10 +28,10 @@
 - [x] Sibling-running vs sibling-terminal cases
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract `testCommand` passing
-- [ ] All failures fixed
+- [x] Contract `testCommand` passing
+- [x] All failures fixed (no failures attributable to SP-860 — see Discoveries)
 
 ### Step 4: Documentation & Delivery
 **Status:** ⬜ Not Started
@@ -54,6 +54,8 @@
 | Non-verbose `reconcileBatch` result exposes no task statuses (`signals` only when `ctx.verbose`); reconcile computes `signals.hasRunningTasks` from `classifiedTasks.some(classification === "running")` — the live task status reconcile itself uses. Fix: wait poll passes `verbose: true`; match helper prefers `signals.hasRunningTasks`, falls back to `RUNNING_PHASES.has(phase)` for injected/non-verbose results. | chosen approach | src/cli/spine-wait.mjs |
 | `deriveDiagnosis` `hasFailedTasks` branch (reconcile-diagnosis.mjs) returns `needs_retry`/`worker_done_missing`/`needs_replan` on first terminal-failure task with no running-sibling consideration — the #375 root cause. Gate exactly these three partial-failure diagnoses; `failed`/`completed`/`needs_integrate`/`aborted`/pseudos untouched. | scoped | src/cli/spine-wait.mjs |
 | Orphan reconcile heals zombie `running` bits via retry/resume paths (PID checks), so a stuck running bit converges — gate is not a permanent wedge; `--timeout` bounds waits. | noted | src/batch/reconcile-orphan.mjs |
+| Full-suite (`worker-verify.sh`) has pre-existing failures (e.g. `tests/spine-run.test.mjs`, engine integration tests) — verified NOT attributable to SP-860: identical pass/fail counts (8 pass / 12 fail) on the affected files with source reverted to base `029e7b2b` in the same worktree/environment; contract testCommand (5 in-scope files + lint + typecheck) passes with exit 0. | verified pre-existing | scripts/worker-verify.sh |
+| `gitnexus_detect_changes` compare vs batch base `029e7b2b`: **medium** risk, changed symbols exactly the 3 intended (`reconciliationMatchesUntil`, `describeMatchedDiagnosis`, `runSpineWait`), affected processes confined to RunSpineWait flows. Pre-edit CRITICAL blast-resolve confirmed contained. | verified | GitNexus |
 | Existing fixture `needs-retry-batch.json` has all tasks terminal (phase "paused") → gate does not fire; fabricated needs_retry results in wait.test.mjs supersede tests lack `phase`/`signals` → fallback matches as today; superseded guard preempts match anyway. Existing suites stay green. | verified | tests/cli/wait.test.mjs |
 
 ## Execution Log
