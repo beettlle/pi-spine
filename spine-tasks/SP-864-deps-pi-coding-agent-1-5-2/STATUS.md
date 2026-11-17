@@ -1,7 +1,7 @@
 # SP-864: deps pi-coding-agent 1.5.2 — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Bump
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Record `npm audit` summary and `npm outdated` before changes in STATUS Discoveries
-- [ ] `npm view @earendil-works/pi-coding-agent@1.5.2 version`
+- [x] Record `npm audit` summary and `npm outdated` before changes in STATUS Discoveries
+- [x] `npm view @earendil-works/pi-coding-agent@1.5.2 version`
 
 ### Step 1: Bump
 **Status:** ⬜ Not Started
@@ -45,12 +45,15 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Preflight `npm audit`: 0 high/critical, 4 moderate — all via minimatch GHSA-g3hv-75wg-m249 in pi-coding-agent ≤1.4.0, eslint 10.0–10.14, @eslint/config-array 0.23.0–0.23.5 | Info — both bump targets are in the vulnerable ranges; audit exit 0 at --audit-level=high | STATUS Discoveries |
+| Preflight `npm outdated`: picomatch MISSING (node_modules absent in fresh worktree); registry confirms pi-coding-agent@1.5.2 exists (`npm view` → 1.5.2) | Info — npm install will populate node_modules for contract testCommand | STATUS Discoveries |
 
 ## Execution Log
 
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-16 | Task staged | PROMPT.md created |
+| 2026-11-16 | Step 0 preflight | audit 4 moderate/0 high; registry 1.5.2 confirmed; node_modules absent |
 
 ## Blockers
 
