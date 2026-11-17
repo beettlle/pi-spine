@@ -1,7 +1,7 @@
 # SP-863: stet task commit range — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,16 +11,16 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Read the current baseline/first_task_commit/session-switch block; list exact lines that open `..HEAD` and that finish/restart sessions
-- [ ] `rg -n "spine-stet-contract-run|first_task_commit" tests/`
+- [x] Read the current baseline/first_task_commit/session-switch block; list exact lines that open `..HEAD` and that finish/restart sessions
+- [x] `rg -n "spine-stet-contract-run|first_task_commit" tests/`
 
 ### Step 1: Bound range + preserve dismissals
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] End range at last task-folder commit (not later siblings' HEAD)
-- [ ] Avoid dismissal-wiping session restart across task switches when baseline for this task is stable
+- [x] End range at last task-folder commit (not later siblings' HEAD)
+- [x] Avoid dismissal-wiping session restart across task switches when baseline for this task is stable
 
 ### Step 2: Tests
 **Status:** ⬜ Not Started
