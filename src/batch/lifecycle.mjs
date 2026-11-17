@@ -12,6 +12,7 @@ import {
 import {
 	archiveBatchState,
 	clearCompletedBatchState,
+	hasLiveLanes,
 	reloadStateForTerminalWrite,
 } from "./lifecycle-archive.mjs";
 export { archiveBatchStatePath } from "./lifecycle-archive.mjs";
@@ -84,22 +85,6 @@ export function recordMergeBlocked({
 		fromPhase,
 		lastError: message,
 	};
-}
-
-/**
- * @param {object} signals
- */
-function hasLiveLanes(signals) {
-	if (!signals) return false;
-	if (signals.hasRunningTasks || signals.hasPendingTasks) return true;
-	const lanes = signals.lanes;
-	return (
-		Array.isArray(lanes) &&
-		lanes.some((lane) => {
-			const status = String(lane?.status ?? "").toLowerCase();
-			return status === "running" || status === "active";
-		})
-	);
 }
 
 /**
@@ -177,14 +162,10 @@ export function dismissBatch(ctx) {
 		};
 	}
 
-	// SP-862 / #374: after a full salvage heal (zero unresolved tasks, work
-	// landed on base) the batch shell may diagnose needs_merge/needs_integrate
-	// because the orch-branch land loop never ran — allow non-force dismiss for
-	// that terminal-success salvage outcome. Fail-closed: any unresolved failure
-	// (allTasksTerminalSuccess false) or missing salvage evidence keeps the
-	// existing --force requirement.
+	// SP-862 / #374: needs_merge/needs_integrate after a full salvage heal is the
+	// empty batch shell (orch land loop never ran) — dismiss without --force.
 	const salvageCompleted =
-		Boolean(reconciliation.signals?.salvageLandedAllTasks) &&
+		Boolean(reconciliation.signals?.raw?.salvageLandedAllTasks) &&
 		Boolean(reconciliation.signals?.allTasksTerminalSuccess);
 
 	if (diagnosis && !DISMISS_ALLOWED.has(diagnosis) && !force && !salvageCompleted) {
@@ -333,11 +314,11 @@ export function completeBatch(ctx) {
 	const diagnosis = reconciliation.diagnosis;
 	const batchId = reconciliation.batchId ?? String(loaded.raw.batchId ?? loaded.raw.id ?? "");
 	const signals = reconciliation.signals ?? {};
-	// SP-862 / #374: salvage integrate merges lane task branches onto base, not
-	// the batch orch branch — after a full salvage heal (zero unresolved tasks)
-	// the salvage land itself is the merge evidence. Fail-closed: the evidence is
-	// only recorded by the heal, and the all-success check below still applies.
-	const salvageSatisfied = Boolean(signals.salvageLandedAllTasks);
+	// SP-862 / #374: salvage merges lane branches onto base (not orch) — after a
+	// full heal the salvage land is the merge evidence (fail-closed: evidence is
+	// only written when the heal left zero unresolved tasks, and allSuccess below
+	// still applies).
+	const salvageSatisfied = Boolean(signals.raw?.salvageLandedAllTasks);
 	const mergeSatisfied =
 		!signals.mergeResultsEmpty || Boolean(signals.git?.orchMergedToBase) || salvageSatisfied;
 	const manualMergeOk =

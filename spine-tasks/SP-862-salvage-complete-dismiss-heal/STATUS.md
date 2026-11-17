@@ -1,6 +1,6 @@
 # SP-862: salvage complete dismiss heal — Status
 
-**Current Step:** 2 (Tests)
+**Current Step:** 3 (Testing & Verification)
 **Status:** 🔄 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
@@ -22,13 +22,13 @@
 - [x] Close the v2.30.0 gap so salvaged-only batches can complete/dismiss without `--force`
 
 ### Step 2: Tests
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
-- [ ] complete, complete --detect-manual-merge, dismiss without --force after salvage land
-- [ ] unresolved failure still blocks
+- [x] complete, complete --detect-manual-merge, dismiss without --force after salvage land
+- [x] unresolved failure still blocks
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Contract `testCommand` passing
 - [ ] All failures fixed
