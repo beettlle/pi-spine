@@ -1,7 +1,7 @@
 # SP-861: pause-retry stale_engine_pid — Status
 
-**Current Step:** Step 3 (Testing & Verification)
-**Status:** 🔄 In Progress — Step 3
+**Current Step:** Complete
+**Status:** ✅ Complete — all steps done
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -28,16 +28,16 @@
 - [x] Pause+retry write; false vs true attached resume cases
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract `testCommand` passing
-- [ ] All failures fixed
+- [x] Contract `testCommand` passing
+- [x] All failures fixed
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -54,6 +54,16 @@
 | `batch.paused` journal lands AFTER `engine.pause_observed` (pauseBatch journals at the end, after confirmation). Acknowledgement discriminator = last `engine.pause_observed` index > last `batch.resumed` index | design input | Step 0 |
 | All pinned `stale_engine_pid` test refusals use running on-disk phase → paused-phase guard narrowing keeps them green; unacknowledged live-PID resume refusals (`attached-engine-lock`, `resume-single-owner`) keep refusing because tests journal no `engine.pause_observed` | design input | Step 0 |
 | Retry's persisted save clears enginePid (terminal `failed` phase → `clearBatchEnginePid` in `persistSpineBatchStateGuarded`), so pause→retry→resume is unblocked once the guard allows the retry write | design input | Step 0 |
+| Guard narrowing keys on ON-DISK phase (`paused`), not incoming phase — all pinned `stale_engine_pid` refusals (`batch-state-update`, SP-793 gate-reopen) seed running disk phase, so they stay green | implementation | Step 1 |
+| `retryTask` on a paused batch with the last failed task **unblocks** (phase stays `paused`; enginePid stays recorded because paused is non-terminal) — detached resume after pause+retry therefore relies on the acknowledged-pause allow in `enforceAttachedEngineSingleOwner`; the two changes compose and are both required | implementation | Step 2 |
+| Runbook for this class is already correct: SP-857 (landed) documents "SP-861 clears the `stale_engine_pid` ownership instead of blocking" — matches this implementation; no doc edits needed here (runbook owned by SP-857) | docs | Step 4 |
+
+### Verification evidence
+
+- `npm run lint` → exit 0
+- `npm run typecheck` → exit 0
+- Contract test files (`--test`): 36/36 pass, 0 fail
+- Wider regression sweep (pause/resume/retry/orphan/batch-state/attached/detached/lifecycle/reconcile suites): 367/367 pass, 0 fail
 
 ## Execution Log
 
