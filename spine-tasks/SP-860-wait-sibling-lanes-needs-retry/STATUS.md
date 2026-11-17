@@ -1,7 +1,7 @@
 # SP-860: wait sibling lanes needs_retry — Status
 
-**Current Step:** Step 4 (Documentation & Delivery)
-**Status:** 🟡 In Progress — Step 4
+**Current Step:** Complete
+**Status:** ✅ Finished — all steps complete
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -34,10 +34,10 @@
 - [x] All failures fixed (no failures attributable to SP-860 — see Discoveries)
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `.DONE`
 
 ---
 
@@ -63,6 +63,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-16 | Task staged | PROMPT.md created |
+| 2026-11-16 | Step 0 complete | Impact: CRITICAL pre-edit (contained: 1 direct caller); approach chosen |
+| 2026-11-16 | Step 1 complete | Gate shipped (2bd0f15e) |
+| 2026-11-16 | Step 2 complete | 10 new #375 tests, 67 in-scope tests green (87b870b0) |
+| 2026-11-16 | Step 3 complete | Contract exit 0; full-suite failures proven pre-existing (80f85c35) |
+| 2026-11-16 | Step 4 complete | Final contract re-run exit 0; .DONE |
 
 ## Blockers
 
