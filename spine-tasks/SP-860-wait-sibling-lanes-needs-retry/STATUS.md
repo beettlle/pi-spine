@@ -1,7 +1,7 @@
 # SP-860: wait sibling lanes needs_retry — Status
 
-**Current Step:** Step 2 (Tests)
-**Status:** 🟡 In Progress — Step 2
+**Current Step:** Step 3 (Testing & Verification)
+**Status:** 🟡 In Progress — Step 3
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -23,9 +23,9 @@
 - [x] Match once siblings are terminal
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Sibling-running vs sibling-terminal cases
+- [x] Sibling-running vs sibling-terminal cases
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started

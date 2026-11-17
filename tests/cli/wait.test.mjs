@@ -758,3 +758,167 @@ test("runSpineWait prints no banner when the first poll matches (#286)", async (
 	assert.match(stdout[0], /Wait matched: completed/);
 	assert.ok(!stdout[0].includes("Waiting for"));
 });
+
+// --- Live sibling lane gate (#375) ----------------------------------------------
+//
+// needs_retry (and its partial-failure siblings worker_done_missing /
+// needs_replan) fire from reconcile's hasFailedTasks branch on the FIRST
+// terminal-failure task — even while sibling lane workers are still running.
+// Waking a land loop on that partial state pauses/salvages healthy lanes
+// (#375): the wait must hold the match until the live siblings settle.
+
+test("runSpineWait holds needs_retry while a sibling lane worker is still running (#375)", async () => {
+	let calls = 0;
+	const sleeps = [];
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["completed", "needs_retry"]),
+		intervalSec: 1,
+		reconcileFn: () => {
+			calls += 1;
+			if (calls === 1) {
+				return {
+					diagnosis: "needs_retry",
+					batchId: "b1",
+					phase: "running",
+					signals: { hasRunningTasks: true },
+					headline: "b1 needs retry — sibling lane still running",
+					suggestedCommand: "spine batch retry SP-9",
+				};
+			}
+			return {
+				diagnosis: "needs_retry",
+				batchId: "b1",
+				phase: "failed",
+				signals: { hasRunningTasks: false },
+				headline: "b1 needs retry — all lanes settled",
+				suggestedCommand: "spine batch retry SP-9",
+			};
+		},
+		sleepFn: async (ms) => {
+			sleeps.push(ms);
+		},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(result.diagnosis, "needs_retry");
+	assert.equal(calls, 2);
+	assert.deepEqual(sleeps, [1_000]);
+});
+
+test("runSpineWait falls back to batch phase when the result carries no signals (#375)", async () => {
+	let calls = 0;
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["needs_retry"]),
+		intervalSec: 1,
+		reconcileFn: () => {
+			calls += 1;
+			return {
+				diagnosis: "needs_retry",
+				batchId: "b1",
+				phase: calls === 1 ? "running" : "failed",
+				headline: "b1 needs retry",
+				suggestedCommand: "spine batch retry SP-9",
+			};
+		},
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(calls, 2);
+});
+
+test("runSpineWait still matches failed immediately while a sibling lane worker runs (#375)", async () => {
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["failed"]),
+		intervalSec: 5,
+		reconcileFn: () => ({
+			diagnosis: "failed",
+			batchId: "b1",
+			phase: "failed",
+			signals: { hasRunningTasks: true },
+			headline: "b1 failed",
+			suggestedCommand: "spine status --diagnose",
+		}),
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+	assert.equal(result.diagnosis, "failed");
+});
+
+test("runSpineWait still matches gate_open pseudo while a sibling lane worker runs (#375)", async () => {
+	const result = await runSpineWait({
+		projectRoot: "/tmp/unused",
+		untilDiagnoses: new Set(["gate_open"]),
+		intervalSec: 5,
+		reconcileFn: () => ({
+			diagnosis: "needs_integrate",
+			batchId: "b1",
+			phase: "running",
+			signals: { hasRunningTasks: true },
+			macroPhase: "gating",
+			headline: "Batch b1 gate opened — approve to continue land loop",
+			suggestedCommand: "spine gate approve",
+		}),
+		sleepFn: async () => {},
+		writeStdout: () => {},
+		writeStderr: () => {},
+	});
+
+	assert.equal(result.exitCode, 0);
+	assert.equal(result.matched, true);
+});
+
+test("spine wait holds needs_retry while a sibling lane task is running, then matches once settled (#375)", async () => {
+	const projectRoot = await initGitRepo("spine-wait-sibling-hold-");
+	try {
+		const fixture = loadFixture("needs-retry-batch.json");
+		fixture.phase = "running";
+		const sibling = fixture.tasks.find((task) => task.taskId === "TP-003");
+		sibling.status = "running";
+		delete sibling.doneFileFound;
+		writeSpineBatchState(projectRoot, fixture);
+
+		const held = runSpine(
+			["wait", "--until", "needs_retry", "--timeout", "1s", "--interval", "1", "--json"],
+			{ cwd: projectRoot },
+		);
+		assert.equal(held.status, 1, held.stderr || held.stdout);
+		const heldSnapshot = JSON.parse(held.stdout.trim());
+		assert.equal(heldSnapshot.diagnosis, "needs_retry");
+		assert.equal(heldSnapshot.phase, "running");
+		assert.equal(heldSnapshot.signals, undefined);
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+
+	const settledRoot = await initGitRepo("spine-wait-sibling-match-");
+	try {
+		const fixture = loadFixture("needs-retry-batch.json");
+		fixture.phase = "failed";
+		writeSpineBatchState(settledRoot, fixture);
+
+		const matched = runSpine(
+			["wait", "--until", "needs_retry", "--json"],
+			{ cwd: settledRoot },
+		);
+		assert.equal(matched.status, 0, matched.stderr || matched.stdout);
+		const snapshot = JSON.parse(matched.stdout.trim());
+		assert.equal(snapshot.diagnosis, "needs_retry");
+		assert.equal(snapshot.phase, "failed");
+	} finally {
+		await destroyGitRepo(settledRoot);
+	}
+});
