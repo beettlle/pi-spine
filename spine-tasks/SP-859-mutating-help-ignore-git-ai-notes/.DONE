@@ -1,0 +1,6 @@
+SP-859 complete — all completion criteria met (see STATUS.md).
+
+- Snapshot filter: snapshotProject strips refs/notes/* lines from git for-each-ref; .git/ai/** excluded via documented wholesale .git skip. No broad silence (refs/heads regression assertion).
+- Regression test: "snapshotProject ignores git-ai refs/notes and .git/ai annotations (#372)" — passes 1/1.
+- Contract testCommand: lint + typecheck + 18 tests (mutating-help, phase23-exit-verify, ts-nocheck-guard) exit 0.
+- Commits: 36795e35 (fix), fcec196b (STATUS).

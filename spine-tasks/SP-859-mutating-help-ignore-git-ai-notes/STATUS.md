@@ -45,6 +45,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): e66b502  tests/cli/mutating-help.test.mjs:94  WARNING  The helper `isGitAiAnnotation` is defined but never called in the visible  | advisory — noted, not blocking | contract review step |
 | `snapshotProject` is test-local (not exported): GitNexus impact upstream = 0 callers, risk UNKNOWN; text search confirms the only uses are lines 92/183/191/201/211 of `tests/cli/mutating-help.test.mjs` | Documented (no upstream blast radius) | tests/cli/mutating-help.test.mjs |
 | `.git/ai/**` was already excluded: `snapshotProject`'s `walk` skips `.git` wholesale; the actual false-failure source was the `git for-each-ref` listing including `refs/notes/ai`. Fix filters `refs/notes/*` lines and documents the `.git/ai` exclusion. No broad silence — `refs/heads/side-effect` regression assertion proves ordinary refs still fail the snapshot | Fixed | tests/cli/mutating-help.test.mjs |
 | SP-854 STATUS independently documented this exact flake (git-ai annotates `refs/notes/ai` asynchronously in tmpdir fixtures; reproduces at baseline b80ca53e) — confirms problem theory | Confirmed | spine-tasks/SP-854.../STATUS.md |
