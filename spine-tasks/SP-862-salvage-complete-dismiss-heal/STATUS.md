@@ -1,7 +1,7 @@
 # SP-862: salvage complete dismiss heal — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** 1 (Heal / gate gap)
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,13 +11,13 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on `healAfterSalvageLand` / complete dismiss gates; report blast radius
-- [ ] Reproduce the refuse path from #374 in the existing salvage-complete test harness (or document the missing case)
+- [x] GitNexus impact on `healAfterSalvageLand` / complete dismiss gates; report blast radius
+- [x] Reproduce the refuse path from #374 in the existing salvage-complete test harness (or document the missing case)
 
 ### Step 1: Heal / gate gap
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] Close the v2.30.0 gap so salvaged-only batches can complete/dismiss without `--force`
 

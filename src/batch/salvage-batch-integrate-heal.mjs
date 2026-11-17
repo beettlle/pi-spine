@@ -16,6 +16,17 @@
  * Tasks outside the salvage set are never touched: non-salvageable failures
  * (contract/review failures) and evidence-less worker deaths remain failed and
  * keep blocking complete (SP-763 completion criteria).
+ *
+ * SP-862 / #374: when the heal leaves zero non-terminal tasks, the batch has no
+ * unresolved failure left, so the state also records `salvageLandedAllTasks`
+ * evidence (+ a `batch.salvage_landed_all_tasks` journal event). `complete` and
+ * `dismiss` use it to accept the salvage land as the batch's merge evidence —
+ * salvage merges lane task branches onto base, not the batch orch branch, so
+ * the orch-based merge gates (`mergeSatisfied`, needs_merge dismiss gate) would
+ * otherwise keep refusing and force `dismiss --force`. Fail-closed: the
+ * evidence alone never opens a gate — complete/dismiss still require every
+ * task terminal-success at gate time, so a later retry that re-opens tasks
+ * re-arms the refusal.
  */
 
 import { loadBatchStateFile } from "./batch-state-io.mjs";
@@ -107,10 +118,43 @@ export function healSalvagedTasksAfterIntegrate(projectRoot, batchId, options = 
 			return { ok: true, healedTaskIds, reason: "nothing_to_heal", error: null };
 		}
 
+		// SP-862 / #374: no unresolved task remains after this heal — record the
+		// salvage land as batch-level merge evidence so complete/dismiss can accept
+		// it without --force (see module docstring for the fail-closed contract).
+		if (allTasksTerminalSuccess(loaded.raw)) {
+			loaded.raw.salvageLandedAllTasks = {
+				at: Date.now(),
+				mergeCommit: mergeCommit ?? null,
+				tasks: [...healedTaskIds],
+			};
+			appendJournalEvent(projectRoot, batchId, "batch.salvage_landed_all_tasks", {
+				mergeCommit: mergeCommit ?? null,
+				healedTaskIds: [...healedTaskIds],
+			});
+		}
+
 		saveSpineBatchState(projectRoot, loaded.raw);
 		return { ok: true, healedTaskIds, reason: null, error: null };
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		return { ok: false, healedTaskIds: [], reason: "heal_threw", error: message };
 	}
+}
+
+/**
+ * True when every task in the raw batch state is terminal-success
+ * (`succeeded` / `skipped`) — i.e. no unresolved failure is left after the
+ * salvage heal. Unknown/missing statuses fail closed.
+ *
+ * @param {object} raw
+ * @returns {boolean}
+ */
+function allTasksTerminalSuccess(raw) {
+	const tasks = Array.isArray(raw?.tasks) ? raw.tasks : [];
+	if (tasks.length === 0) return false;
+	return tasks.every((task) => {
+		if (!task || typeof task !== "object") return false;
+		const status = String(task.status ?? "").toLowerCase();
+		return status === "succeeded" || status === "skipped";
+	});
 }

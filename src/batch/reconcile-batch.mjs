@@ -170,6 +170,10 @@ export function reconcileBatch(ctx, _lightRetry = false) {
 		hasSegmentDrift,
 		failedTaskId: failedTask?.taskId ?? driftTask?.taskId ?? null,
 		mergeResultsEmpty: batch.mergeResults.length === 0,
+		// SP-862 / #374: set by the salvage heal when a salvage integrate left zero
+		// unresolved tasks — complete/dismiss treat the salvage land as the batch's
+		// merge evidence (salvage merges lane branches onto base, not orch).
+		salvageLandedAllTasks: batch.raw?.salvageLandedAllTasks ?? null,
 		git,
 		tasks: classifiedTasks,
 		tasksRoot,

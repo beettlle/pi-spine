@@ -177,7 +177,17 @@ export function dismissBatch(ctx) {
 		};
 	}
 
-	if (diagnosis && !DISMISS_ALLOWED.has(diagnosis) && !force) {
+	// SP-862 / #374: after a full salvage heal (zero unresolved tasks, work
+	// landed on base) the batch shell may diagnose needs_merge/needs_integrate
+	// because the orch-branch land loop never ran — allow non-force dismiss for
+	// that terminal-success salvage outcome. Fail-closed: any unresolved failure
+	// (allTasksTerminalSuccess false) or missing salvage evidence keeps the
+	// existing --force requirement.
+	const salvageCompleted =
+		Boolean(reconciliation.signals?.salvageLandedAllTasks) &&
+		Boolean(reconciliation.signals?.allTasksTerminalSuccess);
+
+	if (diagnosis && !DISMISS_ALLOWED.has(diagnosis) && !force && !salvageCompleted) {
 		const output = buildDiagnosisOutput(diagnosis, {
 			batchId,
 			phase: reconciliation.phase,
@@ -323,7 +333,13 @@ export function completeBatch(ctx) {
 	const diagnosis = reconciliation.diagnosis;
 	const batchId = reconciliation.batchId ?? String(loaded.raw.batchId ?? loaded.raw.id ?? "");
 	const signals = reconciliation.signals ?? {};
-	const mergeSatisfied = !signals.mergeResultsEmpty || Boolean(signals.git?.orchMergedToBase);
+	// SP-862 / #374: salvage integrate merges lane task branches onto base, not
+	// the batch orch branch — after a full salvage heal (zero unresolved tasks)
+	// the salvage land itself is the merge evidence. Fail-closed: the evidence is
+	// only recorded by the heal, and the all-success check below still applies.
+	const salvageSatisfied = Boolean(signals.salvageLandedAllTasks);
+	const mergeSatisfied =
+		!signals.mergeResultsEmpty || Boolean(signals.git?.orchMergedToBase) || salvageSatisfied;
 	const manualMergeOk =
 		detectManualMerge &&
 		(diagnosis === "completed_manual" || Boolean(signals.git?.orchMergedToBase));
@@ -372,6 +388,7 @@ export function completeBatch(ctx) {
 		orchBranch: batch?.orchBranch ?? loaded.raw.orchBranch ?? null,
 		mergeResultsEmpty: signals.mergeResultsEmpty,
 		orchMergedToBase: Boolean(signals.git?.orchMergedToBase),
+		salvageLanded: salvageSatisfied,
 	});
 
 	if (!integratable.ok && !manualMergeOk) {
