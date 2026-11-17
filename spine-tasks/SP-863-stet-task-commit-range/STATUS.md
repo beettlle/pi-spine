@@ -1,6 +1,6 @@
 # SP-863: stet task commit range — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-16
 **Review Level:** 1
@@ -23,9 +23,9 @@
 - [x] Avoid dismissal-wiping session restart across task switches when baseline for this task is stable
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Fixture: earlier task re-review excludes later task commits/paths
+- [x] Fixture: earlier task re-review excludes later task commits/paths
 
 ### Step 3: Testing & Verification
 **Status:** ⬜ Not Started
