@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 
@@ -22,6 +23,22 @@ import {
 	isRefusedContractMetacharCommand,
 	parseContract,
 } from "../../src/tasks/packet/parse-prompt.mjs";
+import {
+	collectArtifactTraversalWarnings,
+	isUnsafeArtifactScopePattern,
+} from "../../src/tasks/validate-contract-warn.mjs";
+
+async function withGitRepoNoCommits(run) {
+	const worktreePath = await mkdtemp(path.join(os.tmpdir(), "spine-contract-norev-"));
+	try {
+		// git init without commits: `git diff --name-only HEAD` fails deterministically
+		// (no HEAD revision) even when the tmpdir happens to sit inside a parent repo.
+		runGit(worktreePath, ["init"]);
+		await run(worktreePath);
+	} finally {
+		await rm(worktreePath, { recursive: true, force: true });
+	}
+}
 
 async function withWorktree(run) {
 	const worktreePath = await mkdtemp(path.join(os.tmpdir(), "spine-contract-metachar-"));
@@ -30,6 +47,10 @@ async function withWorktree(run) {
 	} finally {
 		await rm(worktreePath, { recursive: true, force: true });
 	}
+}
+
+function runGit(cwd, args) {
+	execFileSync("git", args, { cwd, stdio: "ignore" });
 }
 
 function buildPrompt(contractRow) {
@@ -194,4 +215,155 @@ test("parseContract keeps happy-path && testCommand fixtures valid", () => {
 		parsed.testCommand,
 		"npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test tests/batch/contract-exec.test.mjs",
 	);
+});
+
+// --------------------------------------------------------------------------
+// #309 / SP-867 — fail-closed contract evidence
+//
+// 1. artifactsMustExist patterns with `..` or absolute paths are rejected
+//    (never probe outside the lane worktree, even when the target exists there).
+// 2. double-star globs walk from the longest literal prefix, so `src/**` +
+//    `/*.md` matches real nested files instead of a literal `src/**` directory.
+// 3. a failed `git diff --name-only HEAD` must fail fileScopeMustNotChange —
+//    not pass on an empty changed-file list.
+// --------------------------------------------------------------------------
+
+test("isUnsafeArtifactScopePattern flags parent-directory and absolute patterns", () => {
+	for (const unsafe of [
+		"../outside.txt",
+		"src/../../outside.txt",
+		"a/../..",
+		"/etc/hosts",
+		"C:/Windows",
+		"C:\\Windows",
+	]) {
+		assert.equal(isUnsafeArtifactScopePattern(unsafe), true, unsafe);
+	}
+	for (const safe of ["src/batch/contract-exec.mjs", "tests/**", "out/run-1.log", "**"]) {
+		assert.equal(isUnsafeArtifactScopePattern(safe), false, safe);
+	}
+	assert.equal(isUnsafeArtifactScopePattern(""), false);
+	assert.equal(isUnsafeArtifactScopePattern(null), false);
+});
+
+test("collectArtifactTraversalWarnings flags only escaping artifactsMustExist patterns", () => {
+	const warnings = collectArtifactTraversalWarnings({
+		artifactsMustExist: ["../escape.md", "ok/nested.md", "/absolute.md"],
+	});
+	assert.equal(warnings.length, 2);
+	assert.match(warnings[0], /\.\.\/escape\.md/);
+	assert.match(warnings[1], /\/absolute\.md/);
+	assert.deepEqual(
+		collectArtifactTraversalWarnings({ artifactsMustExist: ["ok/nested.md"] }),
+		[],
+	);
+	assert.deepEqual(collectArtifactTraversalWarnings(undefined), []);
+});
+
+test("verifyContract rejects parent-directory and absolute artifactsMustExist patterns (#309)", async () => {
+	await withWorktree(async (worktreePath) => {
+		// The file EXISTS just outside the worktree — the contract must still fail:
+		// traversal must never probe or be satisfied by host files.
+		const outsideFile = path.join(path.dirname(worktreePath), "sp867-outside-proof.txt");
+		fs.writeFileSync(outsideFile, "host file", "utf-8");
+		try {
+			const result = await verifyContract(worktreePath, {
+				testCommand: "true",
+				artifactsMustExist: ["../sp867-outside-proof.txt", "a/../../sp867-outside-proof.txt", "/etc/hosts"],
+			}, { contract: { testRetries: 0 } });
+
+			assert.equal(result.ok, false);
+			const artifactChecks = result.checks.filter((check) => check.field === "artifactsMustExist");
+			assert.equal(artifactChecks.length, 3);
+			for (const check of artifactChecks) {
+				assert.equal(check.ok, false);
+				assert.match(check.message, /rejected unsafe pattern/);
+				assert.match(check.message, /#309/);
+			}
+		} finally {
+			fs.rmSync(outsideFile, { force: true });
+		}
+	});
+});
+
+test("verifyContract matches double-star glob patterns under the worktree (#309)", async () => {
+	await withWorktree(async (worktreePath) => {
+		fs.mkdirSync(path.join(worktreePath, "src", "batch", "deep"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "src", "batch", "deep", "note.md"), "hit", "utf-8");
+		fs.mkdirSync(path.join(worktreePath, "docs"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, "docs", "guide.md"), "hit", "utf-8");
+
+		const result = await verifyContract(worktreePath, {
+			testCommand: "true",
+			artifactsMustExist: [
+				"src/**/*.md",
+				"docs/**",
+				"**/*.md",
+				// Still fail-closed on genuine misses.
+				"src/**/*.ts",
+				"nope/**/*.md",
+			],
+		}, { contract: { testRetries: 0 } });
+
+		assert.equal(result.ok, false);
+		// artifactsMustExist checks appear in pattern order.
+		const artifactChecks = result.checks.filter((check) => check.field === "artifactsMustExist");
+		assert.equal(artifactChecks.length, 5);
+
+		// `src/**` + `/*.md` matches nested files (was a literal `src/**` dir before #309).
+		assert.equal(artifactChecks[0].ok, true);
+		assert.match(artifactChecks[0].message, /artifact exists: src\/batch\/deep\/note\.md/);
+		// Trailing `**` still matches files directly under the literal prefix.
+		assert.equal(artifactChecks[1].ok, true);
+		assert.match(artifactChecks[1].message, /artifact exists: docs\/guide\.md/);
+		// Rooted `**` walks the whole worktree.
+		assert.equal(artifactChecks[2].ok, true);
+		assert.match(artifactChecks[2].message, /artifact exists: .+\.md/);
+		// Genuine misses still fail.
+		assert.equal(artifactChecks[3].ok, false);
+		assert.match(artifactChecks[3].message, /missing src\/\*\*\/\*\.ts/);
+		assert.equal(artifactChecks[4].ok, false);
+		assert.match(artifactChecks[4].message, /missing nope\/\*\*\/\*\.md/);
+	});
+});
+
+test("verifyContract fails fileScopeMustNotChange when git diff fails (#309)", async () => {
+	await withGitRepoNoCommits(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
+			testCommand: "true",
+			fileScopeMustChange: [],
+			fileScopeMustNotChange: [".review/**"],
+			artifactsMustExist: [],
+		}, { contract: { testRetries: 0 } });
+
+		assert.equal(result.ok, false, JSON.stringify(result.checks));
+		const diffCheck = result.checks.find(
+			(check) => check.field === "fileScopeMustNotChange",
+		);
+		assert.ok(diffCheck, "expected a fileScopeMustNotChange check");
+		assert.equal(diffCheck.ok, false);
+		assert.match(diffCheck.message, /git diff --name-only HEAD failed/);
+		assert.match(diffCheck.message, /#309/);
+		assert.ok(
+			!result.checks.some((check) => check.message.includes("respected")),
+			"must-not-change must not be reported respected when the diff failed",
+		);
+	});
+});
+
+test("verifyContract without must-not-change patterns does not invent a git-diff failure check (#309)", async () => {
+	await withGitRepoNoCommits(async (worktreePath) => {
+		const result = await verifyContract(worktreePath, {
+			testCommand: "true",
+			fileScopeMustChange: [],
+			fileScopeMustNotChange: [],
+			artifactsMustExist: [],
+		}, { contract: { testRetries: 0 } });
+
+		assert.equal(result.ok, true);
+		assert.deepEqual(
+			result.checks.map((check) => check.field),
+			["testCommand"],
+		);
+	});
 });

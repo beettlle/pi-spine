@@ -5,7 +5,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import picomatch from "picomatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import {
 	isBaseFileScopeSatisfied,
@@ -24,7 +23,7 @@ import {
 import {
 	NPM_TEST_DASH_DASH_RE,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
-	isUnsafeArtifactScopePattern,
+	findArtifactMatch,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
 import { buildContractTestEnv, runShellCommandAsync } from "./contract-spawn.mjs";
@@ -208,76 +207,6 @@ async function resolveLineCoverage(worktreePath, parsedContract, config, testCom
 		output = coverageResult.output;
 	}
 	return parseAggregateLineCoverage(output);
-}
-
-/** Matches any glob-magic character in a single path segment. */
-const GLOB_MAGIC_RE = /[*?[\]{}]/;
-
-/**
- * Locate an artifact inside the lane worktree, literal path or glob (#309).
- *
- * Fail-closed: patterns containing `..` or resolving outside `worktreePath` are
- * rejected with `unsafe: true` — they must never probe the host filesystem.
- * Glob patterns walk from the longest literal prefix so double-star patterns
- * match files under the worktree instead of a literal double-star segment.
- *
- * @param {string} worktreePath
- * @param {string} artifactPattern
- * @returns {{ ok: boolean, matchedPath?: string, unsafe?: boolean }}
- */
-function findArtifactMatch(worktreePath, artifactPattern) {
-	// `src/**` + `/*.md` walks from `src/`, not from a literal `src/**` directory (#309).
-	const normalized = String(artifactPattern ?? "").replace(/\\/g, "/");
-	if (!normalized) {
-		return { ok: false };
-	}
-
-	if (isUnsafeArtifactScopePattern(normalized)) {
-		return { ok: false, unsafe: true };
-	}
-
-	// Containment guard: resolve against the worktree and require the result to stay inside it.
-	const worktreeRoot = path.resolve(worktreePath);
-	const resolved = path.resolve(worktreeRoot, normalized);
-	if (resolved !== worktreeRoot && !resolved.startsWith(worktreeRoot + path.sep)) {
-		return { ok: false, unsafe: true };
-	}
-
-	if (!GLOB_MAGIC_RE.test(normalized)) {
-		return fs.existsSync(resolved) ? { ok: true, matchedPath: normalized } : { ok: false };
-	}
-
-	// Longest literal prefix of glob segments is the search root: `src/**/*.md`
-	// walks from `src/` instead of a literal `src/**` directory (#309).
-	const segments = normalized.split("/");
-	let literalCount = 0;
-	while (literalCount < segments.length && !GLOB_MAGIC_RE.test(segments[literalCount])) {
-		literalCount += 1;
-	}
-	const baseDir = literalCount > 0 ? segments.slice(0, literalCount).join("/") : ".";
-	const searchRoot = path.join(worktreeRoot, baseDir);
-	if (!fs.existsSync(searchRoot)) {
-		return { ok: false };
-	}
-
-	/** @type {Array<{ abs: string, rel: string }>} */
-	const stack = [{ abs: searchRoot, rel: baseDir === "." ? "" : baseDir }];
-	while (stack.length > 0) {
-		const { abs, rel } = /** @type {{ abs: string, rel: string }} */ (stack.pop());
-		for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-			const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
-			const entryAbs = path.join(abs, entry.name);
-			if (entry.isDirectory()) {
-				stack.push({ abs: entryAbs, rel: entryRel });
-				continue;
-			}
-			if (picomatch(normalized, { dot: true })(entryRel)) {
-				return { ok: true, matchedPath: entryRel };
-			}
-		}
-	}
-
-	return { ok: false };
 }
 
 /**

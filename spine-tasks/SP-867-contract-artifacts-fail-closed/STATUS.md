@@ -30,17 +30,21 @@ Blast radius (GitNexus): `impact`/`context` for `findArtifactMatch`/`verifyContr
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Add/adjust unit tests for the three behaviors
+- [x] Add/adjust unit tests for the three behaviors
+
+Added to `tests/batch/contract-exec.test.mjs`: (1) `isUnsafeArtifactScopePattern` + `collectArtifactTraversalWarnings` unit tests, (2) runtime reject of `../` and absolute patterns incl. an existing outside-worktree file, (3) `**` glob hit tests (`src/**` + `/*.md`, `docs/**`, rooted `**`), (4) git-diff failure → must-not-change fail + no invented check when no patterns declared. 19/19 pass in the two scoped files.
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
+- [x] Fix all failures
+
+Contract testCommand exits 0 (lint + typecheck + 28 tests across the 4 contract files). Found + fixed en route: phase23-exit LOC gate failed (contract-exec.mjs 531 > 500) → moved `findArtifactMatch` into `src/tasks/validate-contract-warn.mjs` (460 LOC now). Broader tests/batch has 55 pre-existing failures verified byte-identical on baseline d54768e1 (zero regressions, no contract-* among them). All 146 tests across contract-* + validate-contract-warn suites pass.
 
 ---
 
