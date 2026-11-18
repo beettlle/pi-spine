@@ -267,6 +267,26 @@ Retries do not help a command that is slow every time: each attempt hits the sam
 
 Authoring guidance: [create-spine-tasks skill](../../skills/create-spine-tasks/SKILL.md) and [upstream-execution-workflow.md](./upstream-execution-workflow.md).
 
+#### Fail-closed contract checks (issue [#309](https://github.com/beettlle/pi-spine/issues/309), SP-867)
+
+Contract evidence checks are **fail-closed**: when evidence cannot be gathered, the check fails — it never passes on missing data. Two behaviors matter when authoring and diagnosing contracts.
+
+**`artifactsMustExist` traversal and glob rules:**
+
+| Rule | Behavior |
+|------|----------|
+| `..` patterns rejected | Artifact patterns containing `..` — or that resolve outside the lane worktree — are rejected, both at `spine tasks validate` time and again at final contract verify. Artifact paths must stay inside the worktree; probe targets cannot escape the lane. |
+| `**` globs match subtrees | A pattern containing `**` matches files **under** the intended tree — e.g. `tests/batch/**` matches `tests/batch/contract-exec.test.mjs`. The pattern is never read as a literal `**` directory segment. |
+| Plain paths | Non-glob patterns check existence of the path relative to the worktree root, as before. |
+
+On failure the journal records `Contract artifactsMustExist: missing <pattern>`. Author patterns relative to the repo root and never escape the worktree with `..` — list an in-scope deliverable path (or a `dir/**` glob for "everything under `dir`") instead.
+
+**`fileScopeMustNotChange` fails closed when git diff fails:**
+
+Changed-file evidence comes from `git diff --name-only HEAD` (plus the committed lane diff). If that git call fails or times out, the check **fails** with a message citing the git failure — it does **not** pass on an empty changed-file list. Before SP-867, a failed diff silently produced an empty list, so must-not-change passed on no evidence (fail-open); [#309](https://github.com/beettlle/pi-spine/issues/309) closes that hole. `fileScopeMustChange` stays fail-closed as before — a failed diff can never satisfy a must-change pattern either.
+
+**Diagnosis:** a `fileScopeMustNotChange` failure whose messages cite the git diff failure (rather than `forbidden change <file>`) is a git-health problem, not a scope violation. Check git state in the lane worktree (`.worktrees/spine-<batchId>/lane-N/`): index lock, detached/broken HEAD, git binary availability — then `spine batch retry <taskId>`.
+
 ### 2.4 Matrix tasks (parametric sub-lanes)
 
 A matrix task fans out one `PROMPT.md` into **parallel sub-lanes**, one per row of a `## Matrix` table. Each row supplies its own parameter values, and `{matrix.<column>}` placeholders in the contract and steps are substituted per row. Matrix tasks are useful for running the same procedure against multiple targets (environments, files, test targets) without copying the PROMPT.
@@ -2705,6 +2725,8 @@ Regression coverage: `tests/batch/contract-resume-baseline.test.mjs`.
 
 `fileScopeMustNotChange` is for **parallel lane** collision detection (concurrent lanes editing the same product path). On serialized lanes, scoped verify (SP-416) prevents false failures from prior same-lane commits; use disjoint `fileScopeMustChange` paths when `spine plan` reports overlap — do not rely on must-not-change for queue ordering.
 
+> **Fail-closed git failures (#309, SP-867):** since SP-867 a `fileScopeMustNotChange` failure can also mean the lane `git diff` itself failed or timed out — the check fails closed instead of passing on an empty diff. If the journal messages cite the git failure instead of listing `forbidden change <file>`, fix git health in the lane worktree and retry; see [Fail-closed contract checks](#fail-closed-contract-checks-issue-309-sp-867).
+
 **Fix:**
 
 1. Edit `PROMPT.md` **## Contract** — remove `spine-tasks/**` and the current task folder from `fileScopeMustNotChange`.
@@ -2753,6 +2775,7 @@ Spine classifies this as **`DirtyWorktree`** → `task.failed` → wave **`merge
 | Problem | Command / fix |
 |---------|----------------|
 | `contract.verified` pass on `testCommand`, fail on `fileScopeMustNotChange` for `spine-tasks/**` | Remove `spine-tasks/**` from must-not-change; see [Contract fileScopeMustNotChange failures](#contract-filescopemustnotchange-failures-issue-63) |
+| `contract.verified` fail on `fileScopeMustNotChange` with a **git diff failure** message (no `forbidden change` lines) | Fail-closed by design ([#309](https://github.com/beettlle/pi-spine/issues/309), SP-867) — fix git health in the lane worktree (index lock, broken HEAD), then `spine batch retry <taskId>`; see [Fail-closed contract checks](#fail-closed-contract-checks-issue-309-sp-867) |
 | Preflight git dirty | Commit or stash; lanes need clean tree |
 | `DirtyWorktree` / `merge_blocked` with only `graphify-out/**` dirty | [Graphify post-commit hook](#graphify-post-commit-hook-vs-spine-batches) — gitignore `graphify-out/`; engine auto-cleans gitignored hook output ([SP-463](https://github.com/beettlle/pi-spine/issues/113)) |
 | `no-active-batch` while you think batch runs | Check `.spine/runtime/detached-engine.log`; `spine status --diagnose` |

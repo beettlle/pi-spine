@@ -1,7 +1,7 @@
 # SP-865: Runbook: contract artifactsMustExist / fileScopeMustNotChange fail-closed — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,18 +11,18 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Locate runbook contract / fileScopeMustNotChange sections; list sentences that contradict fail-closed #309
+- [x] Locate runbook contract / fileScopeMustNotChange sections; list sentences that contradict fail-closed #309
 
 ---
 
 ### Step 1: Contract fail-closed docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document artifactsMustExist `..` rejection and `**` glob behavior
-- [ ] Document fileScopeMustNotChange fail-closed when git diff fails
-- [ ] Cross-link SP-867 / #309
+- [x] Document artifactsMustExist `..` rejection and `**` glob behavior
+- [x] Document fileScopeMustNotChange fail-closed when git diff fails
+- [x] Cross-link SP-867 / #309
 
 ---
 
