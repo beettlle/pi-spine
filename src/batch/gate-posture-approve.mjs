@@ -374,25 +374,16 @@ export function maybeAutoApproveIntegrateGate(ctx) {
 		};
 	}
 
-	// SP-868 / #314: the streak read → posture decision → auto-approve + streak
-	// increment sequence must be atomic against concurrent locked streak RMWs
-	// (reject resets, sibling approvals), or a stale high count read before a
-	// concurrent reset could unlock auto-approve. Production streak I/O is
-	// lock-wrapped and re-enters this hold harmlessly; injected test stubs run
-	// as-is. A lock-acquisition failure propagates (no auto-approve happened —
-	// fail-closed), matching batch-state writer behavior.
+	// SP-868 / #314: streak read → decision → auto-approve + increment must be
+	// atomic against concurrent locked streak RMWs, or a stale high count read
+	// before a reset could unlock auto-approve. Lock-acquisition failure
+	// propagates (no auto-approve happened — fail-closed), matching batch-state
+	// writer behavior; production streak I/O re-enters this hold harmlessly.
 	return withGatePostureStreakLock(projectRoot, () => {
 		const consecutiveApprovals = getCategoryStreak(projectRoot, category);
-		/** @type {string[]} */
-		const mergedTags = [];
-		if (Array.isArray(gate.tags)) {
-			for (const tag of gate.tags) {
-				if (typeof tag === "string") mergedTags.push(tag);
-			}
-		}
-		for (const tag of tags) {
-			if (typeof tag === "string") mergedTags.push(tag);
-		}
+		const mergedTags = [...(Array.isArray(gate.tags) ? gate.tags : []), ...tags].filter(
+			(tag) => typeof tag === "string",
+		);
 
 		const evaluation = evaluateGatePosture({
 			category,

@@ -1,6 +1,6 @@
 # SP-868: Gate approval-streak: lock streak read-modify-write (#314 remainder) — Status
 
-**Current Step:** Step 3
+**Current Step:** Step 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -53,10 +53,16 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
+- [x] Fix all failures
+
+**Contract run:** `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/gate-posture-streak-failure.test.mjs tests/batch/gate-posture-streak.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` → **exit 0** (28 tests).
+
+**Failure found and fixed:** first contract run failed `tests/cli/phase23-exit-verify.test.mjs` — the `batch-loc-policy` check (500 LOC cap for `src/batch/*.mjs`) tripped because `gate-posture-approve.mjs` went 498 → 508 LOC. Fixed by compacting my own additions inside `maybeAutoApproveIntegrateGate` (comment tightened; `mergedTags` loop rewritten as one spread+filter with identical semantics: gate.tags first then tags, string-filtered). File now 499 LOC; no grandfather-list changes (out of scope by policy). Behavior verified unchanged by re-running the contract plus gate/sequence sweeps.
+
+**Extra sweeps (beyond contract, all exit 0):** `gate.test.mjs`, `gate-posture-wire-approve/evaluate/stamp/defaults`, `batch-salvage-integrate`, `sequence-auto-approve(-flag)` — 90 tests. GitNexus `detect_changes` on the fix: no symbol-graph changes, risk low.
 
 ---
 
@@ -90,6 +96,7 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 | 2026-11-18 | Step 0 preflight | SP-824 fail-closed confirmed; streak I/O in `gate-posture-streak.mjs`; GitNexus UNKNOWN risk resolved by text-search caller audit |
 | 2026-11-18 | Step 1 lock streak RMW | `withGatePostureStreakLock` added (delegates to `withBatchStateLock`); 5 RMW fns + auto-approve read-decide-act wrapped; 15/15 streak tests pass; typecheck clean |
 | 2026-11-18 | Step 2 lock tests | 4 SP-868 tests added (multi-process RMW, hold-and-observe, foreign-holder timeout, auto-approve lock proof); lint + typecheck exit 0 |
+| 2026-11-18 | Step 3 contract | testCommand exit 0 (28 tests) after LOC fix (508→499, mergedTags compaction); gate/sequence sweeps exit 0 (90 tests) |
 
 ---
 
