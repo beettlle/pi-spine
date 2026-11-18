@@ -93,6 +93,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): e4c242d  bin/spine-gate.mjs:83  ERROR  The function `resolveActiveBatchId` is expected to return a string (the batch ID), but `va | advisory — noted, not blocking | contract review step |
 | reviewCommand failed (exit 1): `bin/spine-batch.mjs:270` — bare `--batch` (flag without a value) bypassed validation and fell back to the active batch | **Fixed in revise cycle** (final review made it blocking): `parseBatchArgs` now captures bare `--batch` as `""`, validation guards changed from truthiness to `!= null` in `spine-batch`/`spine-journal` (replay+export)/`spine-state`/`handoff`; regression test seeds an active batch and asserts it is untouched | `bin/spine-batch.mjs`, `bin/spine-journal.mjs`, `bin/spine-state.mjs`, `src/cli/handoff.mjs`, `tests/batch/batch-id-validation.test.mjs` |
 | GitNexus `impact` returned UNKNOWN (no `.gitnexus/` in lane worktree; task forbids modifying `.gitnexus/`) | Confirmed blast radius by exhaustive `rg` text search instead (callers of `validateBatchId`, `resolveCodeReviewScopePaths`, `buildReviewRequest`, `resolveReviewScopePaths`) | STATUS Step 0 |
 | `bin/spine.mjs` (`metrics show`) and `src/cli/lane-logs.mjs` are `--batch` readers outside File Scope | No change needed: lane-logs already validates via `resolveFollowBatchId`; metrics `batchId` is a JSONL line-equality filter (`filterMetricsLines`), never joined into paths. Follow-up only if metrics gains path joins | `src/batch/metrics.mjs:426` |
