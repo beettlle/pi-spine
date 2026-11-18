@@ -40,6 +40,28 @@ async function withGitRepoNoCommits(run) {
 	}
 }
 
+async function withGitRepoNoMainBranch(run) {
+	const worktreePath = await mkdtemp(path.join(os.tmpdir(), "spine-contract-nomain-"));
+	try {
+		// Repo with commits but NO `main` branch: `git diff main...HEAD` fails
+		// deterministically while `git diff --name-only HEAD` succeeds, isolating a
+		// committed-file lookup failure from the uncommitted-diff gate (#309).
+		runGit(worktreePath, ["init"]);
+		runGit(worktreePath, ["config", "user.email", "test@example.com"]);
+		runGit(worktreePath, ["config", "user.name", "Test User"]);
+		fs.writeFileSync(path.join(worktreePath, "README.md"), "init", "utf-8");
+		fs.mkdirSync(path.join(worktreePath, ".review"), { recursive: true });
+		fs.writeFileSync(path.join(worktreePath, ".review", "secret.md"), "committed violation", "utf-8");
+		runGit(worktreePath, ["add", "-A"]);
+		runGit(worktreePath, ["commit", "-m", "init"]);
+		runGit(worktreePath, ["branch", "-M", "master"]);
+		runGit(worktreePath, ["checkout", "-b", "task/lane"]);
+		await run(worktreePath);
+	} finally {
+		await rm(worktreePath, { recursive: true, force: true });
+	}
+}
+
 async function withWorktree(run) {
 	const worktreePath = await mkdtemp(path.join(os.tmpdir(), "spine-contract-metachar-"));
 	try {
@@ -365,5 +387,67 @@ test("verifyContract without must-not-change patterns does not invent a git-diff
 			result.checks.map((check) => check.field),
 			["testCommand"],
 		);
+	});
+});
+
+// SP-867 REVISE: the committed-changes lookup (listChangedFiles) swallows git
+// errors into [] — must-not-change must fail closed when IT fails, not just
+// when the uncommitted `git diff HEAD` fails (#309).
+test("verifyContract fails fileScopeMustNotChange when the committed-changes lookup fails (#309)", async () => {
+	await withGitRepoNoMainBranch(async (worktreePath) => {
+		// Clean worktree: `git diff HEAD` succeeds with [] — the only change
+		// evidence is the committed lookup, which fails (no `main`). Before the
+		// committed-range probe this contract PASSED despite a committed
+		// .review file (fail-open).
+		const result = await verifyContract(worktreePath, {
+			testCommand: "true",
+			fileScopeMustChange: [],
+			fileScopeMustNotChange: [".review/**"],
+			artifactsMustExist: [],
+		}, { baseBranch: "main", contract: { testRetries: 0 } });
+
+		assert.equal(result.ok, false, JSON.stringify(result.checks));
+		const probeCheck = result.checks.find(
+			(check) => check.field === "fileScopeMustNotChange",
+		);
+		assert.ok(probeCheck, "expected a fileScopeMustNotChange check");
+		assert.equal(probeCheck.ok, false);
+		assert.match(probeCheck.message, /main\.\.\.HEAD failed/);
+		assert.match(probeCheck.message, /#309/);
+		assert.ok(
+			!result.checks.some((check) => check.message.includes("respected")),
+			"must-not-change must not be reported respected when the committed lookup failed",
+		);
+	});
+});
+
+test("verifyContract fails fileScopeMustNotChange when the sinceCommit range lookup fails (#309)", async () => {
+	await withWorktree(async (worktreePath) => {
+		runGit(worktreePath, ["init"]);
+		runGit(worktreePath, ["config", "user.email", "test@example.com"]);
+		runGit(worktreePath, ["config", "user.name", "Test User"]);
+		fs.writeFileSync(path.join(worktreePath, "README.md"), "init", "utf-8");
+		runGit(worktreePath, ["add", "-A"]);
+		runGit(worktreePath, ["commit", "-m", "init"]);
+
+		// HEAD diff succeeds (clean tree); the scoped committed range fails —
+		// listChangedFiles returns [] for it (no fallback on scoped ranges), so
+		// must-not-change must fail closed on the committed path alone (#309).
+		const result = await verifyContract(worktreePath, {
+			testCommand: "true",
+			fileScopeMustChange: [],
+			fileScopeMustNotChange: [".review/**"],
+			artifactsMustExist: [],
+		}, { baseBranch: "main", sinceCommit: "definitely-not-a-rev", contract: { testRetries: 0 } });
+
+		assert.equal(result.ok, false, JSON.stringify(result.checks));
+		const probeCheck = result.checks.find(
+			(check) => check.field === "fileScopeMustNotChange",
+		);
+		assert.ok(probeCheck, "expected a fileScopeMustNotChange check");
+		assert.equal(probeCheck.ok, false);
+		assert.match(probeCheck.message, /definitely-not-a-rev\.\.HEAD failed/);
+		// The uncommitted diff is healthy — the failure is purely the committed range.
+		assert.ok(!probeCheck.message.includes("git diff --name-only HEAD failed"));
 	});
 });

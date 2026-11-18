@@ -262,6 +262,24 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 	const mustNotChangePatterns = parsedContract.fileScopeMustNotChange ?? [];
 	const diffFailed = diffResult.exitCode !== 0;
 
+	// Fail-closed (#309): `listChangedFiles` (contract-parse.mjs) swallows git
+	// errors into an empty or partial committed-file list, so a failed committed
+	// lookup could let must-not-change pass on incomplete evidence. Re-run the
+	// same committed range with a visible exit code — gated on declared
+	// must-not-change patterns (same scoping as the diffFailed gate).
+	const scopedSince = String(sinceCommit ?? "").trim();
+	const committedRange = scopedSince ? `${scopedSince}..HEAD` : `${baseBranch}...HEAD`;
+	const committedProbeCommand = `git diff --name-only ${committedRange}`;
+	const committedProbe = mustNotChangePatterns.length > 0 &&
+		!isRefusedContractMetacharCommand(committedProbeCommand)
+		? await runShellCommandAsync(worktreePath, committedProbeCommand, {
+			timeoutMs: 30 * 1000,
+			maxBuffer: CONTRACT_TEST_COMMAND_MAX_BUFFER,
+		})
+		: null;
+	const committedLookupFailed = mustNotChangePatterns.length > 0 &&
+		(committedProbe == null || committedProbe.exitCode !== 0);
+
 	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
 	prepareContractVerifyEnvironment(worktreePath, parsedContract, config);
@@ -387,15 +405,28 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		});
 	}
 
-	if (mustNotChangePatterns.length > 0 && diffFailed) {
+	if (mustNotChangePatterns.length > 0 && (diffFailed || committedLookupFailed)) {
+		const failureReasons = [];
+		if (diffFailed) {
+			failureReasons.push(
+				`git diff --name-only HEAD failed (${
+					diffResult.timedOut ? "timed out" : `exit ${diffResult.exitCode}`
+				})`,
+			);
+		}
+		if (committedLookupFailed) {
+			failureReasons.push(
+				committedProbe == null
+					? `git diff --name-only ${committedRange} refused (unsafe range)`
+					: `git diff --name-only ${committedRange} failed (${
+						committedProbe.timedOut ? "timed out" : `exit ${committedProbe.exitCode}`
+					})`,
+			);
+		}
 		checks.push({
 			field: "fileScopeMustNotChange",
 			ok: false,
-			message: `Contract fileScopeMustNotChange: git diff --name-only HEAD failed (${
-				diffResult.timedOut
-					? "timed out"
-					: `exit ${diffResult.exitCode}`
-			}) — cannot verify must-not-change scope, failing closed (#309)`,
+			message: `Contract fileScopeMustNotChange: ${failureReasons.join("; ")} — cannot verify must-not-change scope, failing closed (#309)`,
 		});
 	} else {
 		for (const pattern of mustNotChangePatterns) {

@@ -1,8 +1,8 @@
 # SP-867: Contract: reject .. in artifacts; fix ** globs; fail-closed on git diff failure — Status
 
 **Current Step:** Complete
-**Status:** ✅ Finished
-**Last Updated:** 2026-11-18
+**Status:** ✅ Finished (revise cycle 1 addressed)
+**Last Updated:** 2026-11-18 (revise 1)
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -26,6 +26,7 @@ Blast radius (GitNexus): `impact`/`context` for `findArtifactMatch`/`verifyContr
 - [x] Reject `..` / out-of-worktree artifact patterns
 - [x] Fix `**` glob search root
 - [x] Fail `fileScopeMustNotChange` when git diff fails
+- [x] Revise 1: also fail `fileScopeMustNotChange` when the committed-changes lookup fails (`.reviews/final-20261118T224205.md`)
 
 ---
 
@@ -62,6 +63,7 @@ Runbook untouched (SP-865 owns it). No docs affected.
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | Final | 4 | REVISE | `.reviews/final-20261118T224205.md` |
 
 ---
 
@@ -69,6 +71,8 @@ Runbook untouched (SP-865 owns it). No docs affected.
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Final review REVISE: `fileScopeMustNotChange` only gated on uncommitted `git diff HEAD` failure; a failed `listChangedFiles` (committed files, swallows errors into `[]`) could pass on incomplete evidence | Fixed in contract-exec.mjs: committed-range probe (`git diff --name-only <since>..HEAD` or `<base>...HEAD`, visible exit code, metachar-guarded) gated on declared must-not-change patterns; failure now names the range and mentions #309. 2 new tests (no-`main` fixture; invalid `sinceCommit`) | `src/batch/contract-exec.mjs`, `tests/batch/contract-exec.test.mjs` |
+| reviewCommand failed (exit 1): 0518f21  src/batch/contract-exec.mjs:261  WARNING  The fail-closed guard for must-not-change scope is incomplete: it only trigger | advisory — noted, not blocking; resolved by revise-1 fix above | contract review step |
 | GitNexus index lacks `findArtifactMatch`/`verifyContract` symbols (stale) | Resolved via text-search blast radius per AGENTS UNKNOWN rule; findings in Step 0 | `src/batch/contract-exec.mjs`, `src/batch/contract-verify.mjs`, `src/batch/engine-lanes/{review-final,matrix-run}.mjs` |
 | Batch 500-LOC gate (tests/cli/phase23-exit-verify) failed at 531 LOC | Moved `findArtifactMatch` + `GLOB_MAGIC_RE` into in-scope `src/tasks/validate-contract-warn.mjs`; contract-exec.mjs now 460 LOC | `scripts/loc-capstone.mjs`, `src/tasks/validate-contract-warn.mjs` |
 | JSDoc block comments cannot contain a double-star-slash glob sequence (`*/` inside `**/` terminates the comment) | Concrete glob examples go in `//` line comments only | `src/tasks/validate-contract-warn.mjs` |
@@ -83,6 +87,7 @@ Runbook untouched (SP-865 owns it). No docs affected.
 |-----------|--------|---------|
 | 2026-11-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-18 | Step 1 complete | findArtifactMatch rejects ../abs + containment guard, glob root = literal prefix, git diff failure fails must-not-change; smoke-tested all behaviors |
+| 2026-11-18 | Revise 1 (final review) | Added committed-range probe → must-not-change fails when committed lookup fails; message names range + #309; 2 new tests; contract testCommand exit 0 (30/30); neighbor suites 33/33; coverage 90.22%; LOC 491/500 |
 
 ---
 
@@ -94,9 +99,10 @@ Runbook untouched (SP-865 owns it). No docs affected.
 
 ## Notes
 
-**Completion evidence (all green):**
-- Contract `testCommand` exits 0 (lint + typecheck + 28 tests: contract-exec, contract-verify-async, phase23-exit-verify, ts-nocheck-guard).
-- 146/146 across all contract-* + validate-contract-warn suites.
-- Changed-module line coverage: contract-exec.mjs 92.39%, validate-contract-warn.mjs 94.10% (≥77% floor).
+**Completion evidence (all green, re-verified after revise 1):**
+- Contract `testCommand` exits 0 (lint + typecheck + 30 tests: contract-exec, contract-verify-async, phase23-exit-verify, ts-nocheck-guard).
+- Neighbor suites with must-not-change fixtures (contract-verify, contract-resume-baseline, contract-verify-serialized, contract-untracked-files, contract-base-satisfied, contract-prelanded): 33/33 pass — no regressions outside file scope.
+- Changed-module line coverage (8 contract suites): contract-exec.mjs 90.22% (≥77% floor).
+- contract-exec.mjs 491 LOC < 500 (phase23 batch-loc-policy gate green).
 - Full-suite failures (61) proven pre-existing on d54768e1 — zero regressions, none in contract/artifact areas.
 - `fileScopeMustChange` (`src/batch/contract-exec.mjs`, `tests/batch/contract-exec.test.mjs`) both changed ✓; `fileScopeMustNotChange` (`.review/**`) untouched ✓.
