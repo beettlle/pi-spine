@@ -1,7 +1,7 @@
 # SP-867: Contract: reject .. in artifacts; fix ** globs; fail-closed on git diff failure — Status
 
-**Current Step:** Step 1 — Fail-closed contract checks
-**Status:** 🔄 Executing
+**Current Step:** Complete
+**Status:** ✅ Finished
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -49,10 +49,12 @@ Contract testCommand exits 0 (lint + typecheck + 28 tests across the 4 contract 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged (runbook owned by SP-865)
-- [ ] Create `spine-tasks/SP-867-contract-artifacts-fail-closed/.DONE`
+- [x] Discoveries logged (runbook owned by SP-865)
+- [x] Create `spine-tasks/SP-867-contract-artifacts-fail-closed/.DONE`
+
+Runbook untouched (SP-865 owns it). No docs affected.
 
 ---
 
@@ -67,6 +69,11 @@ Contract testCommand exits 0 (lint + typecheck + 28 tests across the 4 contract 
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| GitNexus index lacks `findArtifactMatch`/`verifyContract` symbols (stale) | Resolved via text-search blast radius per AGENTS UNKNOWN rule; findings in Step 0 | `src/batch/contract-exec.mjs`, `src/batch/contract-verify.mjs`, `src/batch/engine-lanes/{review-final,matrix-run}.mjs` |
+| Batch 500-LOC gate (tests/cli/phase23-exit-verify) failed at 531 LOC | Moved `findArtifactMatch` + `GLOB_MAGIC_RE` into in-scope `src/tasks/validate-contract-warn.mjs`; contract-exec.mjs now 460 LOC | `scripts/loc-capstone.mjs`, `src/tasks/validate-contract-warn.mjs` |
+| JSDoc block comments cannot contain a double-star-slash glob sequence (`*/` inside `**/` terminates the comment) | Concrete glob examples go in `//` line comments only | `src/tasks/validate-contract-warn.mjs` |
+| 55 tests/batch + 2 adoption + a few timeout-class failures are PRE-EXISTING on baseline d54768e1 (failure sets byte-identical); `coverage:check` aborts on them before thresholds | Not SP-867's; engine/environment concern — recommend a separate investigation task | `coverage-run.tap.log`, baseline probe via detached worktree |
+| `collectArtifactTraversalWarnings` exported but not yet wired into `validateContract` (`src/tasks/packet/validate-contract.mjs` out of file scope) | Runtime rejection in `findArtifactMatch` is the enforcing path; wiring is a one-liner for a follow-up task | `src/tasks/packet/validate-contract.mjs:131` |
 
 ---
 
@@ -81,10 +88,15 @@ Contract testCommand exits 0 (lint + typecheck + 28 tests across the 4 contract 
 
 ## Blockers
 
-*None*
+*None blocking for SP-867.* Note: `scripts/worker-verify.sh` (full `npm test`) and `npm run coverage:check` exit 1 in this environment due to the pre-existing baseline failures documented in Discoveries (55 tests/batch + 2 adoption + spine-run + timeout-class, all reproduced byte-identical on d54768e1). The task's Contract `testCommand` — the declared completion gate — exits 0. Recommend an environment/infrastructure investigation task for the engine-test failures.
 
 ---
 
 ## Notes
 
-*Reserved for execution notes*
+**Completion evidence (all green):**
+- Contract `testCommand` exits 0 (lint + typecheck + 28 tests: contract-exec, contract-verify-async, phase23-exit-verify, ts-nocheck-guard).
+- 146/146 across all contract-* + validate-contract-warn suites.
+- Changed-module line coverage: contract-exec.mjs 92.39%, validate-contract-warn.mjs 94.10% (≥77% floor).
+- Full-suite failures (61) proven pre-existing on d54768e1 — zero regressions, none in contract/artifact areas.
+- `fileScopeMustChange` (`src/batch/contract-exec.mjs`, `tests/batch/contract-exec.test.mjs`) both changed ✓; `fileScopeMustNotChange` (`.review/**`) untouched ✓.
