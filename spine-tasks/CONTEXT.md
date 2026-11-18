@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-11-06 (Phase 101 v2.30.0 **published** 2026-11-06 — `aad31d39`, tag `v2.30.0`, npm `latest` 2.30.0 (staged by release.yml, operator-approved), global smoke OK; SP-846–SP-856 done; closed #356, #370, #337, #345, #357, #371, #349; follow-ups #372, #373, beettlle/stet#39; `contract.reviewPolicy` left `advisory`; v2.28.1 **published** 2026-10-23 UTC — `3cd34c59`, tag `v2.28.1`, npm `latest` 2.28.1 (staged by release.yml, operator-approved), global smoke OK, #367/#368/#369 closed; Phase 100 v2.29.0 **published** 2026-10-24 — `4a83edc8`, tag `v2.29.0`, npm `latest` 2.29.0 (staged by release.yml, operator-approved), global smoke OK (version, doctor exit 0, new settings fields recognized); SP-844/SP-845 integrated `a78f5098` (batch 20261023T030941-33c5; stet dropped from both contract testCommands after repeated hunk-only false positives), release:check green 3193/3193, 91.31%; Phase 99 v2.28.0 **published** 2026-10-22 — `7604bf00`, tag `v2.28.0`, npm `latest` 2.28.0, smoke OK, #350/#352/#355 closed; Phase 98 v2.28.0 staged SP-832–SP-843 (#355, #340, #325, #351, #343, #354, #353, #350); Phase 97 SP-831 integrated `ea16ee56` (worker `google/gemini-4-argon` via `activeProfile` gemini4, then restored to `default`), release:check green; Phase 96 v2.27.1 **published** 2026-10-15 — `7ca76c60`, npm `latest` 2.27.1, smoke OK, #315/#342/#346 closed; Phase 97 SP-831 staged (#352, qwen-flash worker trial); earlier: scope approved; worker pin `default` (zai/glm-5.3-flash, medium); wave 0 SP-828 integrated `31cd2314`; stet bugs filed stet#7–#9; wave 0b SP-829 + SP-830 integrated `089a7903` + fix `5df55050`, release:check green; stet#10 filed; wave 1 SP-819/SP-820/SP-823/SP-824 integrated `1b0a522a`, release:check green; #349 filed, stet contract hardening `982ec8ed`; wave 2 SP-821/SP-822/SP-826/SP-827 integrated `42fb9c66`, release:check green; #350 filed (sticky quota fallback); SP-825 integrated `846effde`, all 12 tasks done, release:check green; Next → SP-832)
+**Last Updated:** 2026-11-18 (Phase 103 v2.32.0 staged — SP-865–SP-872; scope approved; Next → SP-873)
 **Status:** Active
-**Next Task ID:** SP-865
+**Next Task ID:** SP-873
 
 ---
 
@@ -2810,6 +2810,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | **P1** | Stall epic docs + SAT-020 fixture | 11 | **Done (SP-060)** |
 | **P1** | 77% code coverage policy | 12 | **Staged (SP-061)** |
 | **P1** | Agent prompt improvements (worker/reviewer/supervisor) | 12 | **Staged (SP-062–069)** |
+
+
+### Phase 103 — Release v2.32.0: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop
+
+**Authoring:** 2026-11-18 · Manifest: `spine-tasks/_authoring/release-v2.32.0/manifest.md`. Scope approved 2026-11-18. Theme: #309/#314/#313/#316/#359 bugs + #344 enh + companion runbook docs. Deps deferred (audit clean).
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-865 | Runbook: contract artifacts / must-not-change fail-closed | S | — | Pending |
+| SP-866 | Runbook: gate streak lock + integrate gate line | S | — | Pending |
+| SP-867 | Contract: reject `..`; fix `**`; fail-closed git diff | S | #309 Closes | Pending |
+| SP-868 | Gate streak RMW lock (#314 remainder) | S | #314 Closes | Pending |
+| SP-869 | Validate `--batch` IDs + review baseline | S | #313 Closes | Pending |
+| SP-870 | Dashboard Host allowlist, snapshot errors, SSE cap | S | #316 Closes | Pending |
+| SP-871 | Integrate omits approval-required Gate line after success | S | #359 Closes | Pending |
+| SP-872 | Drop Taskplane from default worker alwaysInclude | S | #344 Closes | Pending |
+
 
 ---
 
