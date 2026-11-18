@@ -1,7 +1,7 @@
 # SP-869: Validate --batch IDs at CLI entry points; sanitize review baseline — Status
 
-**Current Step:** Step 2 — Tests
-**Status:** 🟡 In Progress (Step 2)
+**Current Step:** Step 3 — Testing & Verification
+**Status:** 🟡 In Progress (Step 3)
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -41,10 +41,14 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Malicious `--batch` rejected
-- [ ] Malicious baseline rejected; safe SHA still works
+- [x] Malicious `--batch` rejected
+  - `tests/cli/gate-batch-id.test.mjs` (NEW): traversal ID for every gate action (exit 2, human), `--json` structured error, option-shaped values (strict-argv `Unknown option`, exit 2), parseable-but-unsafe values (`a..b`, whitespace, `/etc/passwd` → `Invalid batch ID`), and a valid ID proceeding past the boundary (`No integrate gate on record`, exit 0).
+  - `tests/batch/batch-id-validation.test.mjs` (extended): `spine integrate`, `spine batch abort`, `spine journal replay/export` (incl. `--batch --output=/` option-injection value), `spine state validate` (human + json), `spine handoff` rejections.
+- [x] Malicious baseline rejected; safe SHA still works
+  - `tests/batch/review-baseline-validate.test.mjs` (NEW): allowlist accept matrix (short/full SHA, `main`, `origin/main`, `v1.2.3`), reject matrix (`--output=…`, `-x`, `../evil`, `main..HEAD`, whitespace/newlines, `HEAD~1`/`HEAD^`/`@{u}`, backslash, absolute path, non-strings), `resolveCodeReviewScopePaths` throws **before git runs** (gitRan asserted false), safe SHA passes as single rev arg `abc1234..HEAD`, `resolveReviewScopePaths` fails closed for code+final (no silent File-Scope fallback), `buildReviewRequest` throws pre-interpolation and keeps `git diff abc1234..HEAD` for safe SHAs.
+  - Result: 28/28 pass across the three files.
 
 ---
 
