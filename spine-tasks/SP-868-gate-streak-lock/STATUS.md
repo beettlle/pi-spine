@@ -1,6 +1,6 @@
 # SP-868: Gate approval-streak: lock streak read-modify-write (#314 remainder) — Status
 
-**Current Step:** Step 2
+**Current Step:** Step 3
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -38,9 +38,17 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Lock / concurrency coverage; keep existing streak-failure tests green
+- [x] Lock / concurrency coverage; keep existing streak-failure tests green
+
+**Tests added to `tests/batch/gate-posture-streak.test.mjs` (batch-state-lock child-writer pattern):**
+1. `concurrent multi-process increments lose no updates under the streak lock` — 3 spawned child processes × 10 `incrementCategoryStreak` RMW cycles; asserts final count 30 and lock file released.
+2. `locked RMW waits for an external holder and applies on top of its write (no lost update)` — child acquires the lock, writes streak 7 through the unlocked load/save pair while holding it, signals readiness, holds 250ms, releases; parent's locked increment blocks, then yields 8 (would clobber to 1 without the lock). Ready-file barrier keeps it deterministic.
+3. `withGatePostureStreakLock times out against a live foreign holder instead of racing` — crafted lock owned by a live foreign PID (test runner ppid + probed OS starttime so stale-breaking never steals); asserts `/Timed out acquiring batch-state lock/`, streak untouched, holder lock file preserved.
+4. `auto-approve decision holds the streak lock through read, approve, and increment` — proof stub wrapping the real increment asserts the lock file exists at increment-commit time inside `maybeAutoApproveIntegrateGate`; gate approves (auto), streak 1→2, lock released.
+
+Verification: 15/15 tests in the file pass (`node --experimental-strip-types --test`), including all pre-existing streak tests; `npm run lint` exit 0; `npm run typecheck` exit 0.
 
 ---
 
@@ -81,6 +89,7 @@
 | 2026-11-18 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-18 | Step 0 preflight | SP-824 fail-closed confirmed; streak I/O in `gate-posture-streak.mjs`; GitNexus UNKNOWN risk resolved by text-search caller audit |
 | 2026-11-18 | Step 1 lock streak RMW | `withGatePostureStreakLock` added (delegates to `withBatchStateLock`); 5 RMW fns + auto-approve read-decide-act wrapped; 15/15 streak tests pass; typecheck clean |
+| 2026-11-18 | Step 2 lock tests | 4 SP-868 tests added (multi-process RMW, hold-and-observe, foreign-holder timeout, auto-approve lock proof); lint + typecheck exit 0 |
 
 ---
 
