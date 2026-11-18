@@ -20,6 +20,7 @@ import {
 import { redactSecretsDeep, redactTextSecrets } from "../util/secret-redact.mjs";
 import { computePendingTasks } from "../batch/resume-multi-validate.mjs";
 import { formatJournalTailEntry } from "../dashboard/snapshot.mjs";
+import { batchIdRejectionReason } from "../batch/batch-id.mjs";
 
 const JOURNAL_TAIL_LIMIT = 10;
 
@@ -443,6 +444,16 @@ export function parseHandoffArgs(argv) {
 export function runSpineHandoff(options) {
 	const { projectRoot, args: argv = [] } = options;
 	const args = parseHandoffArgs(argv);
+	// SP-869 (#313): reject unsafe --batch IDs before archive path joins.
+	if (args.batchId) {
+		const reason = batchIdRejectionReason(args.batchId);
+		if (reason) {
+			return {
+				exitCode: 1,
+				output: `Invalid batch ID ${JSON.stringify(String(args.batchId))}: ${reason}\n`,
+			};
+		}
+	}
 	const data = assembleHandoffData(projectRoot, args.batchId ?? undefined);
 	const handoffPath = path.resolve(projectRoot, data.handoffPath ?? resolveHandoffPath(projectRoot));
 	const markdown = renderHandoffMarkdown(data);

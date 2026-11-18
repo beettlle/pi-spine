@@ -11,6 +11,7 @@ import { appendJournalEvent } from "./journal.mjs";
 import { loadSpineBatchState } from "./state.mjs";
 import { buildReviewerContext } from "../config/reviewer-context.mjs";
 import { resolveReviewScopePaths } from "./review-scope.mjs";
+import { validateReviewBaseline } from "./batch-id.mjs";
 import { commandExists as pathCommandExists } from "../util/command-exists.mjs";
 import {
 	ARTIFACT_READY_HONOR_REASON,
@@ -161,6 +162,8 @@ export function buildReviewRequest({
 		].join("\n");
 	}
 
+	// SP-869 (#313): fail closed on unsafe baselines before prompt interpolation.
+	if (baseline) validateReviewBaseline(baseline);
 	const diffNamesCmd = baseline ? `git diff ${baseline}..HEAD --name-only` : "git diff --name-only";
 	const diffCmd = baseline ? `git diff ${baseline}..HEAD` : "git diff";
 

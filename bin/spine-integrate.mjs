@@ -1,4 +1,5 @@
 import { integrateOrchToBase } from "../src/batch/integrate.mjs";
+import { validateBatchId } from "../src/batch/batch-id.mjs";
 import { parseStrictArgs, strictArgsError } from "./spine-cli/cli-args.mjs";
 
 const INTEGRATE_USAGE = `
@@ -81,6 +82,21 @@ export function runSpineIntegrate(options) {
 		(parsed.positional.length > 0 ? `Unexpected argument(s): ${parsed.positional.join(" ")}` : null);
 	if (usageError) {
 		return { exitCode: 2, output: `${usageError}\n${INTEGRATE_USAGE}`, result: { ok: false, error: usageError } };
+	}
+
+	// SP-869 (#313): reject unsafe --batch IDs before runtime path joins.
+	const batchArg = parsed.values.get("--batch") ?? null;
+	if (batchArg) {
+		try {
+			validateBatchId(batchArg);
+		} catch (err) {
+			const error = err instanceof Error ? err.message : String(err);
+			return {
+				exitCode: 2,
+				output: `${error}\n${INTEGRATE_USAGE}`,
+				result: { ok: false, error },
+			};
+		}
 	}
 
 	const result = integrateOrchToBase({
