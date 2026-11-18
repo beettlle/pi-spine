@@ -1,7 +1,7 @@
 # SP-868: Gate approval-streak: lock streak read-modify-write (#314 remainder) — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-824 fail-closed behavior still present; locate streak I/O module(s)
-- [ ] GitNexus impact on streak helpers; report in STATUS
+- [x] Confirm SP-824 fail-closed behavior still present; locate streak I/O module(s)
+- [x] GitNexus impact on streak helpers; report in STATUS
+
+**Preflight findings:**
+- SP-824 fail-closed confirmed in `src/batch/gate-posture-approve.mjs`: `journalHasUnrecoveredStreakReset` → `streak_unreliable` early return before any streak read; `recordRejectStreakReset` does best-effort streak-file removal + journals `gate.streak_io_failed` with `recovered` flag; `recordApprovalStreak` journals increment failures without reversing the persisted approval.
+- Streak I/O module located: `src/batch/gate-posture-streak.mjs`. Unlocked RMW functions: `incrementCategoryStreak`, `incrementKindStreak`, `resetCategoryStreak`, `resetKindStreak`, `resetAllStreaks` (each load → mutate → `saveGatePostureStreaks`). Reads (`getCategoryStreak`, `getKindStreak`, `loadGatePostureStreaks`) are lock-free today; the auto-approve decision read lives in `gate-posture-approve.mjs:maybeAutoApproveIntegrateGate`.
+- GitNexus impact on `incrementCategoryStreak`: risk UNKNOWN (index resolved the test stub in `tests/batch/gate-posture-streak-failure.test.mjs`, and index is 1 commit behind HEAD). Per the UNKNOWN rule, confirmed callers via text search: streak helpers are consumed only by `gate-posture-approve.mjs` `DEFAULT_STREAK_IO`; gate approve/auto-approve callers are `bin/spine-gate.mjs` (CLI), `src/batch/sequence-wait.mjs`, `src/batch/salvage-batch-integrate-gate.mjs`, and the `src/batch/gate.mjs` facade. None of these callers hold the batch-state lock around gate calls, and `appendJournalEvent` takes no lock — so serializing streak RMW on the shared `withBatchStateLock` primitive (re-entrant per process) is deadlock-safe here. Lock-ordering rules (SP-722) hold: streak critical sections never acquire the resume handoff lock.
 
 ---
 
@@ -68,6 +73,7 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-18 | Step 0 preflight | SP-824 fail-closed confirmed; streak I/O in `gate-posture-streak.mjs`; GitNexus UNKNOWN risk resolved by text-search caller audit |
 
 ---
 
