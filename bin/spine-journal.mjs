@@ -91,9 +91,10 @@ const JOURNAL_USAGE =
  */
 function runJournalReplay(projectRoot, args) {
 	const batchIdx = args.indexOf("--batch");
-	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
-	// SP-869 (#313): reject unsafe --batch IDs before journal path joins.
-	if (batchId) {
+	const batchId = batchIdx >= 0 ? (args[batchIdx + 1] ?? "") : null;
+	// SP-869 (#313): reject unsafe --batch IDs (including a bare flag with no
+	// value, captured as "") before journal path joins.
+	if (batchId != null) {
 		const reason = batchIdRejectionReason(batchId);
 		if (reason) {
 			return {
@@ -141,9 +142,10 @@ function runJournalExport(projectRoot, args) {
 	const exportUsage =
 		"Usage: spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 	const batchIdx = args.indexOf("--batch");
-	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
-	// SP-869 (#313): reject unsafe --batch IDs before journal path joins.
-	if (batchId) {
+	const batchId = batchIdx >= 0 ? (args[batchIdx + 1] ?? "") : null;
+	// SP-869 (#313): reject unsafe --batch IDs (including a bare flag with no
+	// value, captured as "") before journal path joins.
+	if (batchId != null) {
 		const reason = batchIdRejectionReason(batchId);
 		if (reason) {
 			return {

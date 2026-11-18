@@ -430,7 +430,9 @@ export function parseHandoffArgs(argv) {
 	const args = { batchId: null, json: false };
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
-		if (arg === "--batch") args.batchId = argv[++i] ?? null;
+		// SP-869 (#313): a bare `--batch` (flag without a value) is captured as ""
+		// so the validator below rejects it instead of falling back silently.
+		if (arg === "--batch") args.batchId = argv[++i] ?? "";
 		else if (arg === "--json") args.json = true;
 	}
 	return args;
@@ -445,7 +447,7 @@ export function runSpineHandoff(options) {
 	const { projectRoot, args: argv = [] } = options;
 	const args = parseHandoffArgs(argv);
 	// SP-869 (#313): reject unsafe --batch IDs before archive path joins.
-	if (args.batchId) {
+	if (args.batchId != null) {
 		const reason = batchIdRejectionReason(args.batchId);
 		if (reason) {
 			return {

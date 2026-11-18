@@ -159,8 +159,10 @@ export function parseBatchArgs(args) {
 
 	let batchId = null;
 	const batchIdx = args.indexOf("--batch");
-	if (batchIdx >= 0 && args[batchIdx + 1]) {
-		batchId = args[batchIdx + 1];
+	if (batchIdx >= 0) {
+		// SP-869 (#313): a bare `--batch` (flag without a value) must not fall
+		// through to active-batch fallbacks; capture "" so the validator rejects.
+		batchId = args[batchIdx + 1] ?? "";
 	}
 
 	let reason = null;

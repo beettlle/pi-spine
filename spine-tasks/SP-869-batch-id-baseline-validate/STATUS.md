@@ -46,9 +46,10 @@
 - [x] Malicious `--batch` rejected
   - `tests/cli/gate-batch-id.test.mjs` (NEW): traversal ID for every gate action (exit 2, human), `--json` structured error, option-shaped values (strict-argv `Unknown option`, exit 2), parseable-but-unsafe values (`a..b`, whitespace, `/etc/passwd` → `Invalid batch ID`), and a valid ID proceeding past the boundary (`No integrate gate on record`, exit 0).
   - `tests/batch/batch-id-validation.test.mjs` (extended): `spine integrate`, `spine batch abort`, `spine journal replay/export` (incl. `--batch --output=/` option-injection value), `spine state validate` (human + json), `spine handoff` rejections.
+- [x] **Revise cycle:** bare `--batch` (flag without a value) regression test — seeds an active `.spine/batch-state.json`, asserts `dismiss --batch` is rejected with `Invalid batch ID ""` and the active batch is untouched; also covers `dismiss --batch --yes` (`--yes` consumed as the value → rejected), journal replay/export, state validate, and handoff bare-flag cases.
 - [x] Malicious baseline rejected; safe SHA still works
   - `tests/batch/review-baseline-validate.test.mjs` (NEW): allowlist accept matrix (short/full SHA, `main`, `origin/main`, `v1.2.3`), reject matrix (`--output=…`, `-x`, `../evil`, `main..HEAD`, whitespace/newlines, `HEAD~1`/`HEAD^`/`@{u}`, backslash, absolute path, non-strings), `resolveCodeReviewScopePaths` throws **before git runs** (gitRan asserted false), safe SHA passes as single rev arg `abc1234..HEAD`, `resolveReviewScopePaths` fails closed for code+final (no silent File-Scope fallback), `buildReviewRequest` throws pre-interpolation and keeps `git diff abc1234..HEAD` for safe SHAs.
-  - Result: 28/28 pass across the three files.
+  - Result: 28/28 pass across the three files; 34/34 after the revise cycle.
 
 ---
 
@@ -58,8 +59,10 @@
 - [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
   - Contract `testCommand` exit 0: `npm run lint` clean, `npm run typecheck` clean (both tsconfig projects), 33/33 targeted tests pass.
   - Additionally ran `./scripts/worker-verify.sh` (typecheck + full suite). First run failed with 45+ `nested_batch_spawn_blocked` errors — the script inherits `SPINE_IS_WORKER=1` from the worker session; PROMPT Environment requires the vars unset. Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER ./scripts/worker-verify.sh`: **exit 0, 3284/3284 tests pass**. None of the first-run failures touched task files; all were the nested-spawn guard.
+  - **Revise cycle re-run:** Contract `testCommand` exit 0 (lint + typecheck clean, 34/34 targeted tests incl. the new bare-flag regression test); full suite `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER ./scripts/worker-verify.sh` **exit 0, 3285/3285 pass**.
 - [x] Fix all failures
-  - No task-code failures; the only failures were environment-caused (see above) and pass with the prescribed environment.
+  - Initial run: no task-code failures; the only failures were environment-caused (see above) and pass with the prescribed environment.
+  - Revise cycle: bare `--batch` validation bypass flagged by final review — fixed and re-verified (see Step 2 and Discoveries).
 
 ---
 
@@ -81,6 +84,8 @@
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | 0 | APPROVE | `.reviews/0-20261118T232018.md` |
+| 2 | final | — | REVISE → addressed (bare `--batch` bypass) | `.reviews/final-20261118T233137.md` |
 
 ---
 
@@ -88,6 +93,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): `bin/spine-batch.mjs:270` — bare `--batch` (flag without a value) bypassed validation and fell back to the active batch | **Fixed in revise cycle** (final review made it blocking): `parseBatchArgs` now captures bare `--batch` as `""`, validation guards changed from truthiness to `!= null` in `spine-batch`/`spine-journal` (replay+export)/`spine-state`/`handoff`; regression test seeds an active batch and asserts it is untouched | `bin/spine-batch.mjs`, `bin/spine-journal.mjs`, `bin/spine-state.mjs`, `src/cli/handoff.mjs`, `tests/batch/batch-id-validation.test.mjs` |
 | GitNexus `impact` returned UNKNOWN (no `.gitnexus/` in lane worktree; task forbids modifying `.gitnexus/`) | Confirmed blast radius by exhaustive `rg` text search instead (callers of `validateBatchId`, `resolveCodeReviewScopePaths`, `buildReviewRequest`, `resolveReviewScopePaths`) | STATUS Step 0 |
 | `bin/spine.mjs` (`metrics show`) and `src/cli/lane-logs.mjs` are `--batch` readers outside File Scope | No change needed: lane-logs already validates via `resolveFollowBatchId`; metrics `batchId` is a JSONL line-equality filter (`filterMetricsLines`), never joined into paths. Follow-up only if metrics gains path joins | `src/batch/metrics.mjs:426` |
 | `parseStrictArgs` (gate/integrate) already refuses `--`-prefixed values before ID validation | Defense-in-depth retained; manual parsers (journal/state/handoff/batch) rely on `batchIdRejectionReason` | `bin/spine-gate.mjs`, `bin/spine-integrate.mjs` |
