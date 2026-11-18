@@ -24,6 +24,7 @@ import {
 import {
 	NPM_TEST_DASH_DASH_RE,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
+	isUnsafeArtifactScopePattern,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
 import { buildContractTestEnv, runShellCommandAsync } from "./contract-spawn.mjs";
@@ -209,24 +210,52 @@ async function resolveLineCoverage(worktreePath, parsedContract, config, testCom
 	return parseAggregateLineCoverage(output);
 }
 
+/** Matches any glob-magic character in a single path segment. */
+const GLOB_MAGIC_RE = /[*?[\]{}]/;
+
 /**
+ * Locate an artifact inside the lane worktree, literal path or glob (#309).
+ *
+ * Fail-closed: patterns containing `..` or resolving outside `worktreePath` are
+ * rejected with `unsafe: true` — they must never probe the host filesystem.
+ * Glob patterns walk from the longest literal prefix so double-star patterns
+ * match files under the worktree instead of a literal double-star segment.
+ *
  * @param {string} worktreePath
  * @param {string} artifactPattern
- * @returns {{ ok: boolean, matchedPath?: string }}
+ * @returns {{ ok: boolean, matchedPath?: string, unsafe?: boolean }}
  */
 function findArtifactMatch(worktreePath, artifactPattern) {
+	// `src/**` + `/*.md` walks from `src/`, not from a literal `src/**` directory (#309).
 	const normalized = String(artifactPattern ?? "").replace(/\\/g, "/");
 	if (!normalized) {
 		return { ok: false };
 	}
 
-	if (!/[*?[\]{}]/.test(normalized)) {
-		const fullPath = path.join(worktreePath, normalized);
-		return fs.existsSync(fullPath) ? { ok: true, matchedPath: normalized } : { ok: false };
+	if (isUnsafeArtifactScopePattern(normalized)) {
+		return { ok: false, unsafe: true };
 	}
 
-	const baseDir = path.dirname(normalized);
-	const searchRoot = path.join(worktreePath, baseDir);
+	// Containment guard: resolve against the worktree and require the result to stay inside it.
+	const worktreeRoot = path.resolve(worktreePath);
+	const resolved = path.resolve(worktreeRoot, normalized);
+	if (resolved !== worktreeRoot && !resolved.startsWith(worktreeRoot + path.sep)) {
+		return { ok: false, unsafe: true };
+	}
+
+	if (!GLOB_MAGIC_RE.test(normalized)) {
+		return fs.existsSync(resolved) ? { ok: true, matchedPath: normalized } : { ok: false };
+	}
+
+	// Longest literal prefix of glob segments is the search root: `src/**/*.md`
+	// walks from `src/` instead of a literal `src/**` directory (#309).
+	const segments = normalized.split("/");
+	let literalCount = 0;
+	while (literalCount < segments.length && !GLOB_MAGIC_RE.test(segments[literalCount])) {
+		literalCount += 1;
+	}
+	const baseDir = literalCount > 0 ? segments.slice(0, literalCount).join("/") : ".";
+	const searchRoot = path.join(worktreeRoot, baseDir);
 	if (!fs.existsSync(searchRoot)) {
 		return { ok: false };
 	}
@@ -298,6 +327,11 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		maxBuffer: CONTRACT_TEST_COMMAND_MAX_BUFFER,
 	});
 	const indexAndWorktreeFiles = diffResult.exitCode === 0 ? diffResult.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
+	// Fail-closed (#309): a failed/timed-out `git diff` must not pass must-not-change
+	// on an empty file list. Only enforced when the contract declares patterns —
+	// without patterns there is no scope to verify either way.
+	const mustNotChangePatterns = parsedContract.fileScopeMustNotChange ?? [];
+	const diffFailed = diffResult.exitCode !== 0;
 
 	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
@@ -424,21 +458,33 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		});
 	}
 
-	for (const pattern of parsedContract.fileScopeMustNotChange ?? []) {
-		const forbidden = changedFiles.filter((file) => matchesContractPattern(file, pattern));
-		if (forbidden.length === 0) {
-			checks.push({
-				field: "fileScopeMustNotChange",
-				ok: true,
-				message: `fileScopeMustNotChange respected: ${pattern}`,
-			});
-		} else {
-			for (const file of forbidden) {
+	if (mustNotChangePatterns.length > 0 && diffFailed) {
+		checks.push({
+			field: "fileScopeMustNotChange",
+			ok: false,
+			message: `Contract fileScopeMustNotChange: git diff --name-only HEAD failed (${
+				diffResult.timedOut
+					? "timed out"
+					: `exit ${diffResult.exitCode}`
+			}) — cannot verify must-not-change scope, failing closed (#309)`,
+		});
+	} else {
+		for (const pattern of mustNotChangePatterns) {
+			const forbidden = changedFiles.filter((file) => matchesContractPattern(file, pattern));
+			if (forbidden.length === 0) {
 				checks.push({
 					field: "fileScopeMustNotChange",
-					ok: false,
-					message: `Contract fileScopeMustNotChange: forbidden change ${file}`,
+					ok: true,
+					message: `fileScopeMustNotChange respected: ${pattern}`,
 				});
+			} else {
+				for (const file of forbidden) {
+					checks.push({
+						field: "fileScopeMustNotChange",
+						ok: false,
+						message: `Contract fileScopeMustNotChange: forbidden change ${file}`,
+					});
+				}
 			}
 		}
 	}
@@ -471,7 +517,9 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 			ok: match.ok,
 			message: match.ok
 				? `artifact exists: ${match.matchedPath ?? artifactPath}`
-				: `Contract artifactsMustExist: missing ${artifactPath}`,
+				: match.unsafe
+					? `Contract artifactsMustExist: rejected unsafe pattern ${artifactPath} — parent-directory traversal outside the lane worktree is not allowed (#309)`
+					: `Contract artifactsMustExist: missing ${artifactPath}`,
 		});
 	}
 

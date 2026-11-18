@@ -199,3 +199,48 @@ export function collectTestCommandScopeWarnings(parsed, options = {}) {
 
 	return warnings;
 }
+
+/**
+ * True when an artifact/scope pattern would resolve outside the lane worktree (#309):
+ * a `..` path segment (parent-directory traversal) or an absolute path
+ * (`/etc/...`, `C:/...`, `C:\\...`). Operates on the raw pattern string so both the
+ * validation collector and the runtime `findArtifactMatch` share one rule.
+ *
+ * @param {string | null | undefined} pattern
+ * @returns {boolean}
+ */
+export function isUnsafeArtifactScopePattern(pattern) {
+	const normalized = String(pattern ?? "").replace(/\\\\/g, "/");
+	if (!normalized) {
+		return false;
+	}
+	if (normalized.split("/").includes("..")) {
+		return true;
+	}
+	return normalized.startsWith("/") || /^[A-Za-z]:/.test(normalized);
+}
+
+/** Fix hint for artifactsMustExist patterns that escape the lane worktree (#309). */
+export const ARTIFACT_TRAVERSAL_FIX_HINT =
+	"Use worktree-relative paths or globs without '..'; parent-directory traversal outside the lane worktree is rejected (#309).";
+
+/**
+ * Warn when Contract artifactsMustExist patterns contain `..` traversal or are
+ * absolute paths — both resolve outside the lane worktree (#309).
+ *
+ * @param {ReturnType<import("./packet/parse-prompt.mjs").parseContract>} parsed
+ * @returns {string[]}
+ */
+export function collectArtifactTraversalWarnings(parsed) {
+	const patterns = parsed?.artifactsMustExist ?? [];
+	/** @type {string[]} */
+	const warnings = [];
+	for (const pattern of patterns) {
+		if (isUnsafeArtifactScopePattern(pattern)) {
+			warnings.push(
+				`Contract artifactsMustExist pattern escapes the lane worktree: ${pattern}. ${ARTIFACT_TRAVERSAL_FIX_HINT}`,
+			);
+		}
+	}
+	return warnings;
+}
