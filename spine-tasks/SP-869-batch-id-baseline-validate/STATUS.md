@@ -1,7 +1,7 @@
 # SP-869: Validate --batch IDs at CLI entry points; sanitize review baseline — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress (Step 3)
+**Current Step:** Complete
+**Status:** ✅ All Steps Complete
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -53,18 +53,27 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
+  - Contract `testCommand` exit 0: `npm run lint` clean, `npm run typecheck` clean (both tsconfig projects), 33/33 targeted tests pass.
+  - Additionally ran `./scripts/worker-verify.sh` (typecheck + full suite). First run failed with 45+ `nested_batch_spawn_blocked` errors — the script inherits `SPINE_IS_WORKER=1` from the worker session; PROMPT Environment requires the vars unset. Re-ran with `env -u SPINE_IS_WORKER -u SPINE_WORKER_RUNNER ./scripts/worker-verify.sh`: **exit 0, 3284/3284 tests pass**. None of the first-run failures touched task files; all were the nested-spawn guard.
+- [x] Fix all failures
+  - No task-code failures; the only failures were environment-caused (see above) and pass with the prescribed environment.
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-869-batch-id-baseline-validate/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-869-batch-id-baseline-validate/.DONE`
+
+## Completion Criteria
+
+- [x] All `--batch` CLI entry points validate IDs — `spine gate`, `spine integrate`, `spine batch`, `spine journal` (replay/export), `spine state`, `spine handoff` all reject unsafe IDs with non-zero exit + clear error; out-of-scope readers (`metrics show`, `lane logs`) audited and either already validated or not a path-join sink (see Discoveries).
+- [x] Unsafe baselines rejected before git/prompt use — `validateReviewBaseline` enforces the allowlist at `resolveCodeReviewScopePaths` (git argv) and `buildReviewRequest` (prompt text), failing the review step closed.
+- [x] Contract `testCommand` exits 0 — lint clean, typecheck clean, 33/33 targeted tests pass; full suite 3284/3284 via `worker-verify.sh` with `SPINE_IS_WORKER` unset.
 
 ---
 
@@ -79,6 +88,13 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| GitNexus `impact` returned UNKNOWN (no `.gitnexus/` in lane worktree; task forbids modifying `.gitnexus/`) | Confirmed blast radius by exhaustive `rg` text search instead (callers of `validateBatchId`, `resolveCodeReviewScopePaths`, `buildReviewRequest`, `resolveReviewScopePaths`) | STATUS Step 0 |
+| `bin/spine.mjs` (`metrics show`) and `src/cli/lane-logs.mjs` are `--batch` readers outside File Scope | No change needed: lane-logs already validates via `resolveFollowBatchId`; metrics `batchId` is a JSONL line-equality filter (`filterMetricsLines`), never joined into paths. Follow-up only if metrics gains path joins | `src/batch/metrics.mjs:426` |
+| `parseStrictArgs` (gate/integrate) already refuses `--`-prefixed values before ID validation | Defense-in-depth retained; manual parsers (journal/state/handoff/batch) rely on `batchIdRejectionReason` | `bin/spine-gate.mjs`, `bin/spine-integrate.mjs` |
+| Engine code-review baseline was already SHA-gated via `isValidCommitSha` (#343) | New sink validation covers the raw CLI paths: `spine review step --baseline` and `spine rules --baseline` | `src/batch/contract-task-start.mjs:17`, `src/batch/engine-lanes/review-code.mjs:119` |
+| Baseline allowlist intentionally excludes revision syntax (`~`, `^`, `@{`) and `:` | Operators pass a SHA instead; `/` allowed for plain refs (`origin/main`); documented in JSDoc | `src/batch/batch-id.mjs` |
+| `docs/adoption/operator-runbook.md` check | No update needed: error messages are self-explanatory at the point of failure (`Invalid batch ID "…": <reason>`); preferring Discoveries per PROMPT | — |
+| `worker-verify.sh` inherits `SPINE_IS_WORKER=1`, breaking engine-integration tests inside worker sessions | Re-ran with vars unset per PROMPT Environment; consider unsetting in the script upstream (out of scope here) | `scripts/worker-verify.sh` |
 
 ---
 
