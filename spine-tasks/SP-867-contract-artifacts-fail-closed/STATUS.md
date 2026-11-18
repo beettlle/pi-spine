@@ -71,6 +71,7 @@ Runbook untouched (SP-865 owns it). No docs affected.
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 616007d  src/batch/contract-exec.mjs:390  WARNING  The fail-closed branch for `git diff` failure is unreachable. `diffFailed` is  | advisory — noted, not blocking | contract review step |
 | Final review REVISE: `fileScopeMustNotChange` only gated on uncommitted `git diff HEAD` failure; a failed `listChangedFiles` (committed files, swallows errors into `[]`) could pass on incomplete evidence | Fixed in contract-exec.mjs: committed-range probe (`git diff --name-only <since>..HEAD` or `<base>...HEAD`, visible exit code, metachar-guarded) gated on declared must-not-change patterns; failure now names the range and mentions #309. 2 new tests (no-`main` fixture; invalid `sinceCommit`) | `src/batch/contract-exec.mjs`, `tests/batch/contract-exec.test.mjs` |
 | reviewCommand failed (exit 1): 0518f21  src/batch/contract-exec.mjs:261  WARNING  The fail-closed guard for must-not-change scope is incomplete: it only trigger | advisory — noted, not blocking; resolved by revise-1 fix above | contract review step |
 | GitNexus index lacks `findArtifactMatch`/`verifyContract` symbols (stale) | Resolved via text-search blast radius per AGENTS UNKNOWN rule; findings in Step 0 | `src/batch/contract-exec.mjs`, `src/batch/contract-verify.mjs`, `src/batch/engine-lanes/{review-final,matrix-run}.mjs` |
