@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeJsonAtomic } from "../fs/atomic-write.mjs";
+import { withBatchStateLock } from "./batch-state-lock.mjs";
 import { GATE_CATEGORIES } from "./gate-posture-defaults.mjs";
 
 /** @typedef {import("./gate-posture-defaults.mjs").GateCategory} GateCategory */
@@ -32,6 +33,33 @@ export const GATE_POSTURE_STREAK_REL = path.join(
 );
 
 const CATEGORY_SET = new Set(/** @type {string[]} */ ([...GATE_CATEGORIES]));
+
+/**
+ * SP-868 / #314 — serialize streak read-modify-write across processes.
+ *
+ * The streak store is project-wide JSON under `.spine/runtime/` while approve /
+ * reject / auto-approve decisions run in separate processes (CLI, engine,
+ * supervisor). Without a lock, a concurrent increment and reset can both read
+ * the same prev count and the last writer wins whole-file — a lost reset leaves
+ * a stale high streak that unlocks auto-approve early.
+ *
+ * Uses the same project-local lock primitive as the batch-state writers
+ * (`withBatchStateLock`: exclusive lock file published via temp + `linkSync`,
+ * PID-liveness stale breaking, token-gated release, per-process re-entrancy).
+ * Sharing that lock file also serializes streak RMWs against batch-state
+ * writers, and any caller already inside a batch-state critical section
+ * composes re-entrantly instead of deadlocking. Streak critical sections never
+ * acquire the resume handoff lock, so the SP-722 lock-ordering rules hold.
+ *
+ * @template T
+ * @param {string} projectRoot
+ * @param {() => T} fn synchronous critical section
+ * @param {{ timeoutMs?: number }} [options]
+ * @returns {T} `fn`'s return value
+ */
+export function withGatePostureStreakLock(projectRoot, fn, options = {}) {
+	return /** @type {T} */ (withBatchStateLock(projectRoot, fn, options));
+}
 
 /**
  * Absolute path to the streak JSON file.
@@ -182,23 +210,27 @@ export function getKindStreak(projectRoot, kind) {
 
 /**
  * Increment category streak after an approval. Returns the new count.
+ * Read-modify-write runs under the streak lock (SP-868 / #314).
  * @param {string} projectRoot
  * @param {GateCategory | string} category
  * @returns {number}
  */
 export function incrementCategoryStreak(projectRoot, category) {
-	const state = loadGatePostureStreaks(projectRoot);
-	const prevRaw = state.categories[category];
-	const prev =
-		typeof prevRaw === "number" && Number.isInteger(prevRaw) && prevRaw >= 0 ? prevRaw : 0;
-	const next = prev + 1;
-	state.categories[category] = next;
-	saveGatePostureStreaks(projectRoot, state);
-	return next;
+	return withGatePostureStreakLock(projectRoot, () => {
+		const state = loadGatePostureStreaks(projectRoot);
+		const prevRaw = state.categories[category];
+		const prev =
+			typeof prevRaw === "number" && Number.isInteger(prevRaw) && prevRaw >= 0 ? prevRaw : 0;
+		const next = prev + 1;
+		state.categories[category] = next;
+		saveGatePostureStreaks(projectRoot, state);
+		return next;
+	});
 }
 
 /**
  * Increment kind streak after an approval. Returns the new count.
+ * Read-modify-write runs under the streak lock (SP-868 / #314).
  * @param {string} projectRoot
  * @param {string} kind
  * @returns {number}
@@ -207,40 +239,48 @@ export function incrementKindStreak(projectRoot, kind) {
 	if (typeof kind !== "string" || kind.trim() === "") {
 		throw new Error("gate posture kind streak key must be a non-empty string");
 	}
-	const state = loadGatePostureStreaks(projectRoot);
-	const prevRaw = state.kinds[kind];
-	const prev =
-		typeof prevRaw === "number" && Number.isInteger(prevRaw) && prevRaw >= 0 ? prevRaw : 0;
-	const next = prev + 1;
-	state.kinds[kind] = next;
-	saveGatePostureStreaks(projectRoot, state);
-	return next;
+	return withGatePostureStreakLock(projectRoot, () => {
+		const state = loadGatePostureStreaks(projectRoot);
+		const prevRaw = state.kinds[kind];
+		const prev =
+			typeof prevRaw === "number" && Number.isInteger(prevRaw) && prevRaw >= 0 ? prevRaw : 0;
+		const next = prev + 1;
+		state.kinds[kind] = next;
+		saveGatePostureStreaks(projectRoot, state);
+		return next;
+	});
 }
 
 /**
  * Reset category streak on reject or manual break.
+ * Read-modify-write runs under the streak lock (SP-868 / #314).
  * @param {string} projectRoot
  * @param {GateCategory | string} category
  * @returns {number} Always 0 after reset
  */
 export function resetCategoryStreak(projectRoot, category) {
-	const state = loadGatePostureStreaks(projectRoot);
-	state.categories[category] = 0;
-	saveGatePostureStreaks(projectRoot, state);
-	return 0;
+	return withGatePostureStreakLock(projectRoot, () => {
+		const state = loadGatePostureStreaks(projectRoot);
+		state.categories[category] = 0;
+		saveGatePostureStreaks(projectRoot, state);
+		return 0;
+	});
 }
 
 /**
  * Reset kind streak on reject or manual break.
+ * Read-modify-write runs under the streak lock (SP-868 / #314).
  * @param {string} projectRoot
  * @param {string} kind
  * @returns {number} Always 0 after reset
  */
 export function resetKindStreak(projectRoot, kind) {
-	const state = loadGatePostureStreaks(projectRoot);
-	state.kinds[kind] = 0;
-	saveGatePostureStreaks(projectRoot, state);
-	return 0;
+	return withGatePostureStreakLock(projectRoot, () => {
+		const state = loadGatePostureStreaks(projectRoot);
+		state.kinds[kind] = 0;
+		saveGatePostureStreaks(projectRoot, state);
+		return 0;
+	});
 }
 
 /**
@@ -249,7 +289,11 @@ export function resetKindStreak(projectRoot, kind) {
  * @returns {GatePostureStreakState}
  */
 export function resetAllStreaks(projectRoot) {
-	return saveGatePostureStreaks(projectRoot, emptyStreakState());
+	// Locked so a concurrent locked increment's read cannot straddle this whole
+	// store replacement and resurrect a stale-high count over it (SP-868 / #314).
+	return withGatePostureStreakLock(projectRoot, () =>
+		saveGatePostureStreaks(projectRoot, emptyStreakState()),
+	);
 }
 
 /**

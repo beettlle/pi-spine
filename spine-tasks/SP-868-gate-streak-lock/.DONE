@@ -1,0 +1,15 @@
+SP-868 complete — gate approval-streak RMW lock-protected (closes #314 remainder).
+
+Summary:
+- `src/batch/gate-posture-streak.mjs`: added `withGatePostureStreakLock` delegating to `withBatchStateLock` (same project-local lock primitive: temp+linkSync exclusive lock file, PID-liveness stale breaking, token-gated release, per-process re-entrancy). All five RMW functions (increment/reset category+kind, resetAll) run load→mutate→save inside it.
+- `src/batch/gate-posture-approve.mjs`: `maybeAutoApproveIntegrateGate` wraps streak read → decision → auto-approve + increment in the lock (read-decide-act atomic vs concurrent locked resets). SP-824 fail-closed + journal behavior preserved; lock-acquisition failure propagates fail-closed.
+- Tests: 4 lock/concurrency tests in `gate-posture-streak.test.mjs` (multi-process RMW, hold-and-observe no-lost-update, foreign-holder timeout, auto-approve lock proof) + 2 lock-timeout failure-path tests in `gate-posture-streak-failure.test.mjs` (reset fail-closed+journaled, increment journaled without approval reversal). Contract `fileScopeMustChange` satisfied.
+
+Verification:
+- Contract testCommand: exit 0 (lint, typecheck, 30 tests across the 4 contract files).
+- Full suite `./scripts/worker-verify.sh` with SPINE_IS_WORKER unset: exit 0 — 3264 pass, 0 fail.
+- Engine e2e gate sweeps (engine-gate-open, engine-lane-execution, detached-start-land-loop): exit 0.
+
+Notes:
+- `gate-posture-approve.mjs` kept at 499 LOC under the phase23 batch-loc-policy 500 cap (mergedTags compaction, semantics identical).
+- Runbook untouched (SP-866 owns it). STATUS.md carries discoveries.

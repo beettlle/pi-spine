@@ -19,6 +19,7 @@ import {
 	incrementKindStreak,
 	resetCategoryStreak,
 	resetKindStreak,
+	withGatePostureStreakLock,
 } from "./gate-posture-streak.mjs";
 import { gateRecordPath, loadGateRecord } from "./gate-evidence-read.mjs";
 import { appendJournalEvent } from "./journal.mjs";
@@ -373,61 +374,61 @@ export function maybeAutoApproveIntegrateGate(ctx) {
 		};
 	}
 
-	const consecutiveApprovals = getCategoryStreak(projectRoot, category);
-	/** @type {string[]} */
-	const mergedTags = [];
-	if (Array.isArray(gate.tags)) {
-		for (const tag of gate.tags) {
-			if (typeof tag === "string") mergedTags.push(tag);
+	// SP-868 / #314: streak read → decision → auto-approve + increment must be
+	// atomic against concurrent locked streak RMWs, or a stale high count read
+	// before a reset could unlock auto-approve. Lock-acquisition failure
+	// propagates (no auto-approve happened — fail-closed), matching batch-state
+	// writer behavior; production streak I/O re-enters this hold harmlessly.
+	return withGatePostureStreakLock(projectRoot, () => {
+		const consecutiveApprovals = getCategoryStreak(projectRoot, category);
+		const mergedTags = [...(Array.isArray(gate.tags) ? gate.tags : []), ...tags].filter(
+			(tag) => typeof tag === "string",
+		);
+
+		const evaluation = evaluateGatePosture({
+			category,
+			posture: categoryEntry.posture,
+			autoApproveAfterN: categoryEntry.autoApproveAfterN,
+			consecutiveApprovals,
+			tags: mergedTags,
+			alwaysBreakOn: postureConfig.alwaysBreakOn,
+		});
+
+		if (evaluation.decision !== "allow-auto") {
+			return {
+				ok: true,
+				approved: false,
+				evaluation,
+				optedIn,
+				category,
+				consecutiveApprovals,
+				reason: evaluation.reason,
+				gate,
+			};
 		}
-	}
-	for (const tag of tags) {
-		if (typeof tag === "string") mergedTags.push(tag);
-	}
 
-	const evaluation = evaluateGatePosture({
-		category,
-		posture: categoryEntry.posture,
-		autoApproveAfterN: categoryEntry.autoApproveAfterN,
-		consecutiveApprovals,
-		tags: mergedTags,
-		alwaysBreakOn: postureConfig.alwaysBreakOn,
-	});
+		const approved = approveIntegrateGate({
+			projectRoot,
+			batchId,
+			decidedBy: "auto",
+			postureEvaluation: evaluation,
+			streakIo,
+		});
 
-	if (evaluation.decision !== "allow-auto") {
 		return {
-			ok: true,
-			approved: false,
+			ok: approved.ok,
+			exitCode: approved.exitCode,
+			approved: approved.ok === true,
 			evaluation,
 			optedIn,
 			category,
-			consecutiveApprovals,
-			reason: evaluation.reason,
-			gate,
+			decidedBy: "auto",
+			gate: approved.gate ?? gate,
+			headline: approved.headline,
+			error: approved.error,
+			blockers: approved.blockers,
 		};
-	}
-
-	const approved = approveIntegrateGate({
-		projectRoot,
-		batchId,
-		decidedBy: "auto",
-		postureEvaluation: evaluation,
-		streakIo,
 	});
-
-	return {
-		ok: approved.ok,
-		exitCode: approved.exitCode,
-		approved: approved.ok === true,
-		evaluation,
-		optedIn,
-		category,
-		decidedBy: "auto",
-		gate: approved.gate ?? gate,
-		headline: approved.headline,
-		error: approved.error,
-		blockers: approved.blockers,
-	};
 }
 
 /**
