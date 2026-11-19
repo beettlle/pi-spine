@@ -62,6 +62,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 1aa2818  src/dashboard/server.mjs:107  WARNING  The regex /^(.+):(\d+)$/ is greedy and will incorrectly parse IPv6 literal hostna | advisory — noted, not blocking | contract review step |
+| reviewCommand failed (exit 2): Warning: proceeding with uncommitted changes; review scope may be unclear stet: rule budget of 1000 tokens dropped 207 rule secti | advisory — noted, not blocking | contract review step |
 | Bind-host gap confirmed: `assertLoopbackHost` guards bind host only (`createDashboardServer` ~L213, `listenDashboardServer` ~L277); request handler never checks `req.headers.host` — DNS-rebinding Host reads snapshots. | Addressed in Step 1 | `src/dashboard/server.mjs` |
 | `/api/snapshot` (L232) hard-codes `buildDashboardSnapshot(projectRoot)`, ignoring injected `buildSnapshot`; no try/catch — a throw inside the request listener is uncaught and kills the process. | Addressed in Step 1 | `src/dashboard/server.mjs` |
 | SSE paths unprotected: `/api/events` (L239) builds snapshot after `writeSseHeaders`; poll-hub `tick` (L146) calls `refreshSharedSnapshot` inside `setInterval` — throw = uncaught crash. `sseClients` Set is unbounded. | Addressed in Step 1 | `src/dashboard/server.mjs` |
