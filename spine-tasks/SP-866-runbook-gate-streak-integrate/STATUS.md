@@ -1,7 +1,7 @@
 # SP-866: Operator notes: gate streak fail-closed + integrate gate line — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — Gate streak + integrate banner docs
+**Status:** 🟡 In Execution
 **Last Updated:** 2026-11-18
 **Review Level:** 0
 **Review Counter:** 0
@@ -11,23 +11,23 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-865 landed or same-lane serialization; locate gate streak + integrate output docs
+- [x] Confirm SP-865 landed or same-lane serialization; locate gate streak + integrate output docs
 
 ---
 
 ### Step 1: Gate streak + integrate banner docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Document streak fail-closed / lock (#314 remainder)
-- [ ] Document post-success integrate gate line (#359)
-- [ ] Cross-link SP-868 / SP-871
+- [x] Document streak fail-closed / lock (#314 remainder)
+- [x] Document post-success integrate gate line (#359)
+- [x] Cross-link SP-868 / SP-871
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** 🔄 In Progress
 
 - [ ] `rg -l 'operator-runbook.md' tests/` and run only hits (none → note "no tests reference this doc")
 - [ ] Fix all failures

@@ -1103,6 +1103,8 @@ spine integrate --dry-run
 
 When `gates.requireBeforeIntegrate` is true (default after `spine init`), `spine integrate` **refuses** until the gate is approved.
 
+**Reading integrate output after approval (#359 / SP-871, v2.32.0):** the Gate line in integrate output describes the *gate-check outcome*, not gate configuration — `gateRequired` means "gates are configured", not "still needs approval". A **successful approved integrate** must not print `Gate: approval required before integrate`: expect `Gate: approved` (gate was required and satisfied) or no Gate line at all, with `→ spine batch complete` still the correct next step. The approval-required / `Gate: integrate blocked until approved` lines appear only when integrate actually stops on a pending gate. Dry-run may still note that approval *will* be required while the gate is pending — it must not claim approval is still needed after a completed merge. (Before SP-871, every integrate with gates configured printed the approval-required line above its own merge-success lines, making operators mistrust a successful land.)
+
 **Synthesis readback (`--synthesis`, #280 / SP-747):** `spine gate approve` and `spine gate reject` accept an optional `--synthesis "…"` note — the receiver's readback of what was reviewed, I-PASS-lite style. The text is persisted on the gate record and surfaced by `spine gate status` (human output and `--json`) when present:
 
 ```bash
@@ -1496,6 +1498,15 @@ Gates carry a `category` (`read` \| `write` \| `execute` \| `destroy` \| `networ
 | Sequence `--auto-approve-gate` | Separate blunt CLI path — still blocked for real pi unless stub/`--force`; posture opt-in does **not** bypass release gate-only loops |
 
 Keep real-pi and release sequences on manual `spine gate approve` between waves unless you have reviewed stub/`--force` risk. Prefer detached land loops so gate open + approve are not orphaned by a short-lived parent shell.
+
+#### Consecutive-approval streak: fail-closed reset + locked RMW (#314 — SP-824 / SP-868, v2.32.0)
+
+The "Reject resets the streak" control above is only safe if reset failures cannot leave a stale high count. Two packets close that hole:
+
+- **SP-824 (Partial #314) — reset fails closed; streak I/O failures are journaled.** After a reject, a failed streak reset attempts to remove the streak state and appends `gate.streak_io_failed` (`op: "reset"`, `recovered: true|false`) to the batch journal. While **any** batch journal under `.spine/runtime/<batchId>/journal/events.jsonl` records an unrecovered reset (`recovered: false`), posture auto-approve is blocked **project-wide**: the next gate evaluation returns `streak_unreliable` (decision `require-manual`) before even reading the streak — the streak state is untrustworthy, so auto-approve stays locked until recovered. Increment failures are also journaled (`op: "increment"`) but never reverse a persisted approval — that is the safe direction (worst case delays auto-approve).
+- **SP-868 (closes #314) — streak read-modify-write is lock-protected.** Increment, reset, and the streak read that decides allow-auto run under the same project-local lock file as batch-state writers (`withGatePostureStreakLock`, re-entrant with `withBatchStateLock`), so concurrent gate approve/reject decisions cannot race the counter into an early auto-approve. Lock-acquisition failure propagates fail-closed (no auto-approve happened), and corrupt streak JSON reads as a zero streak — never as an unlock.
+
+**Recovery from `streak_unreliable`:** fix the streak-file I/O problem first (permissions, disk, filesystem locking). The offending `gate.streak_io_failed` event stays in that batch's journal — runtime journals survive archiving — so the auto-approve lock is sticky until the stale runtime journal no longer records an unrecovered reset; clearing it is deliberate operator cleanup after the root cause is fixed, not an automatic reset. Manual `spine gate approve` is never blocked by `streak_unreliable`: the lock only disables posture *auto*-approve, so the land loop keeps working with one extra explicit approval.
 
 ---
 
