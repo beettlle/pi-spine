@@ -1,7 +1,7 @@
 # SP-872: Drop Taskplane rules from default worker alwaysInclude / init profile — Status
 
-**Current Step:** 4
-**Status:** 🟡 In Progress
+**Current Step:** Done
+**Status:** ✅ Complete — awaiting engine plan/final review (RL 1)
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -48,10 +48,19 @@
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged in STATUS.md
-- [ ] Create `spine-tasks/SP-872-drop-taskplane-default-alwaysinclude/.DONE`
+- [x] Discoveries logged in STATUS.md
+- [x] Create `spine-tasks/SP-872-drop-taskplane-default-alwaysinclude/.DONE`
+
+## Completion Criteria
+
+- [x] Default worker alwaysInclude is empty (`src/config/cursor-rules/profile.mjs`)
+- [x] Init template matches (`templates/rules-profile.json`)
+- [x] Tests updated and green (3 in-scope test files updated; contract suite 29/29 pass)
+- [x] Contract `testCommand` exits 0 (lint exit 0, typecheck exit 0, tests exit 0)
+
+> Coverage gate note: `npm run coverage:check` → 3285/3286 pass; the single failure is the out-of-scope `select.test.mjs` item in Discovery #1 (cannot be fixed within File Scope). Docs sentence for runbook:126 logged in Discovery #2. Both flagged for engine review / amended-scope follow-up.
 
 ---
 
