@@ -99,6 +99,7 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): cf72532  src/batch/gate-posture-approve.mjs:381  ERROR  The `consecutiveApprovals` variable is declared inside the `withGatePostu | advisory — noted, not blocking | contract review step |
 | Streak RMW now shares the batch-state lock file (`.spine/runtime/batch-state.lock`) via `withGatePostureStreakLock` — re-entrant per process, so gate calls nested inside batch-state sections pass through; streak critical sections never take the resume handoff lock (SP-722 ordering holds) | Kept (documented in helper JSDoc) | `src/batch/gate-posture-streak.mjs` |
 | `batch-loc-policy` (phase23 exit verify) caps `src/batch/*.mjs` at 500 LOC; `gate-posture-approve.mjs` had only 2 lines of headroom (498). New gated code fits because mergedTags compaction offset the lock wrapper. Future gate-posture work may need a module split | Noted for planners | `bin/spine-cli/verify.mjs` (untouched), `src/batch/gate-posture-approve.mjs` (499 LOC) |
 | Worker-session env (`SPINE_IS_WORKER=1`) breaks any test that spawns batch engines via subprocess; full suite must run with it unset (SP-482 guard works as designed) | Confirmed environmental; not a defect | `scripts/worker-verify.sh` usage |
