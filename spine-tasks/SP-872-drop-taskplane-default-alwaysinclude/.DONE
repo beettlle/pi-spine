@@ -1,20 +1,8 @@
-{
-  "taskId": "SP-872",
-  "task": "Drop Taskplane rules from default worker alwaysInclude / init profile",
-  "completedAt": "2026-11-18",
-  "closesIssue": 344,
-  "commits": [
-    "61ccfe94 feat(SP-872): complete Step 0 — preflight findings recorded",
-    "969671ac feat(SP-872): complete Step 1 — drop Taskplane from default worker alwaysInclude (#344)",
-    "3459c243 feat(SP-872): complete Step 2 — tests prove default alwaysInclude is empty",
-    "d8461f85 feat(SP-872): complete Step 3 — contract testCommand green; coverage evidence for out-of-scope select.test.mjs failure",
-    "97f5b429 fix(SP-872): drop Taskplane from default worker alwaysInclude (#344)"
-  ],
-  "verification": {
-    "lint": "exit 0",
-    "typecheck": "exit 0",
-    "contractTestCommand": "exit 0 (29 tests)",
-    "coverageCheck": "3285/3286 pass; 1 failure = out-of-scope select.test.mjs:53-63 (STATUS Discovery #1)"
-  },
-  "reviewerNote": "Final review should consider amending File Scope for tests/config/cursor-rules/select.test.mjs (3-line fix documented in STATUS Discovery #1) before post-integrate release:check."
-}
+SP-872 complete (revise cycle 1 addressed). Default worker alwaysInclude is empty
+(DEFAULT_RULES_PROFILE + templates/rules-profile.json); DEFAULT_SPINE_INIT_STANDARDS
+drop Taskplane entries; tests updated — profile, init-rules, worker-prompt, and
+select.test.mjs (fixed per engine REPLAN verdict: opt-in profile proves the
+alwaysInclude mechanism; default force-includes nothing). Verification: lint exit 0,
+typecheck exit 0, contract suite exit 0, full coverage run 3286/3286 pass, 91.45% >= 77%.
+Reviews: step-0 plan APPROVE (.reviews/0-20261119T005419.md); final REPLAN addressed
+(.reviews/final-20261119T005745.md).
