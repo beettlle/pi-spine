@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-11-19 (Phase 103 v2.32.0 **published** — tag `v2.32.0` / `28a826de`, npm `latest` 2.32.0 (OIDC stage + 2FA approve), global smoke OK; SP-865–SP-872 done; closed #309 #314 #313 #316 #359 #344; Next → SP-873)
+**Last Updated:** 2026-11-19 (Phase 104 v2.33.0 **packets staged** — scope approved; SP-873–SP-880 authored; Next → SP-881; execution paused)
 **Status:** Active
-**Next Task ID:** SP-873
+**Next Task ID:** SP-881
 
 ---
 
@@ -2810,6 +2810,23 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | **P1** | Stall epic docs + SAT-020 fixture | 11 | **Done (SP-060)** |
 | **P1** | 77% code coverage policy | 12 | **Staged (SP-061)** |
 | **P1** | Agent prompt improvements (worker/reviewer/supervisor) | 12 | **Staged (SP-062–069)** |
+
+
+
+### Phase 104 — Release v2.33.0: Sep/Oct bugs + run-metrics usage producers
+
+**Authoring:** 2026-11-19 · Manifest: `spine-tasks/_authoring/release-v2.33.0/manifest.md`. Scope approved 2026-11-19 (bug-only minor). Packets staged; **execution paused** pending operator resume.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-873 | Post-hoc Step 0 plan review prompt | S | #331 Closes | Staged |
+| SP-874 | Step-0 plan review ordering | S | #294 Closes | Staged |
+| SP-875 | Reconcile git helpers fail-closed | S | #310 Closes | Staged |
+| SP-876 | Matrix lane slot leak + packet errors | S | #311 Closes | Staged |
+| SP-877 | Audit leftovers (fileScope / contract.errors / fake-async) | S | #319 Closes | Staged |
+| SP-878 | Parse pi `--mode json` usage stream | S | #338 Partial | Staged |
+| SP-879 | Worker JSON usage → task metrics | S | #338 Partial | Staged (requires SP-878) |
+| SP-880 | Reviewer JSON usage → review metrics | S | #338 Closes | Staged (requires SP-878) |
 
 
 ### Phase 103 — Release v2.32.0: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop
