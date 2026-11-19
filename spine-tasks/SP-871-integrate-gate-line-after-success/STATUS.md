@@ -1,7 +1,7 @@
 # SP-871: After successful approved integrate, do not print Gate approval required — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 4: Documentation & Delivery
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,33 +11,33 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Trace where `gateRequired` is set on success vs GateBlocked
-- [ ] `rg -n "approval required before integrate" bin/ src/ tests/`
+- [x] Trace where `gateRequired` is set on success vs GateBlocked
+- [x] `rg -n "approval required before integrate" bin/ src/ tests/`
 
 ---
 
 ### Step 1: Fix success Gate line
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Success output: approved or omit; keep blocked messaging
-- [ ] Adjust result fields if needed so formatter can distinguish
+- [x] Success output: approved or omit; keep blocked messaging
+- [x] Adjust result fields if needed so formatter can distinguish
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Success vs blocked output assertions
+- [x] Success vs blocked output assertions
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
+- [x] Fix all failures
 
 ---
 
@@ -60,6 +60,10 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `gateRequired` semantics: `true` = gate configured, not "pending approval". Success result sets it from `gateCheck.required` (`src/batch/integrate.mjs`); GateBlocked failure results do not set it. | Fixed — formatter now branches on `failureClass`/`dryRun`/`ok` | `bin/spine-integrate.mjs` `formatIntegrateHuman` |
+| Forced gate bypass (`--force-integrate`) also satisfied the old buggy branch; added `gateForced` to success result so formatter omits the Gate line (does not falsely claim "approved"). | Fixed | `src/batch/integrate.mjs`, `bin/spine-integrate.mjs` |
+| `loadSpineConfig` requires `configVersion: 1`; configs with `version: 1` are rejected and silently fall back to defaults (gate not required). Initial e2e test config used `version` and both e2e tests failed. | Test-fixture fix | `tests/batch/integrate-gate-output.test.mjs` |
+| `alreadyMerged` success path returns before `gateCheck` is computed, so it carries no `gateRequired` — no Gate line printed there. | No change needed | `src/batch/integrate.mjs` |
 
 ---
 
@@ -68,6 +72,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-18 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-18 | Step 0 preflight | Traced `gateRequired` set sites; rg found single formatter occurrence `bin/spine-integrate.mjs:46` |
+| 2026-11-18 | Step 1 fix | `formatIntegrateHuman` branches: GateBlocked → blocked line; dry-run+pending → approval-required; ok+gateRequired+!gateForced → `Gate: approved`. Added `gateForced` to success result |
+| 2026-11-18 | Step 2 tests | `tests/batch/integrate-gate-output.test.mjs`: 6 formatter unit tests + 2 CLI e2e (approved-gate success / pending-gate blocked) |
+| 2026-11-18 | Step 3 verify | Contract testCommand exits 0 (lint, typecheck, 29 tests pass). First run caught `configVersion` vs `version` fixture bug — fixed |
 
 ---
 
