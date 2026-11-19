@@ -60,6 +60,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 5663fd7  tests/batch/integrate-gate-output.test.mjs:151  WARNING  The test 'CLI integrate with an approved required gate prints G | advisory — noted, not blocking | contract review step |
 | `scripts/worker-verify.sh` runs the full `npm test` which contains nested batch-engine spawn tests; under `SPINE_IS_WORKER=1` the SP-482 guard fails them. Full suite must run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset (PROMPT Environment) — engine-side at post-integrate release:check. | Documented; full suite verified passing env-unset in-worker | `scripts/worker-verify.sh`, `tests/batch/engine*.test.mjs` |
 | `gateRequired` semantics: `true` = gate configured, not "pending approval". Success result sets it from `gateCheck.required` (`src/batch/integrate.mjs`); GateBlocked failure results do not set it. | Fixed — formatter now branches on `failureClass`/`dryRun`/`ok` | `bin/spine-integrate.mjs` `formatIntegrateHuman` |
 | Forced gate bypass (`--force-integrate`) also satisfied the old buggy branch; added `gateForced` to success result so formatter omits the Gate line (does not falsely claim "approved"). | Fixed | `src/batch/integrate.mjs`, `bin/spine-integrate.mjs` |
