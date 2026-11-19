@@ -141,8 +141,8 @@ Release scope: SP-865,SP-866,SP-867,SP-868,SP-869,SP-870,SP-871,SP-872
 - [x] Operator approved publish bump type: minor (2026-11-19)
 - [x] `npm version minor` → `v2.32.0` (`28a826de`) + pushed
 - [x] `release.yml` succeeded — https://github.com/beettlle/pi-spine/actions/runs/44603720573
-- [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.32.0 — **BLOCKED**: local `npm` token E401; stage id in release.yml Stage step log
-- [ ] Post-publish smoke — deferred until approve
+- [x] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.32.0 (approved 2026-11-19)
+- [x] Post-publish smoke — `scripts/post-publish-smoke.sh 2.32.0` OK (global install + doctor)
 - [x] Every release-scoped `Closes #NNN` CLOSED (#309, #314, #313, #316, #359, #344)
 
 ---
@@ -164,7 +164,8 @@ Release scope: SP-865,SP-866,SP-867,SP-868,SP-869,SP-870,SP-871,SP-872
 - **Tag pushed:** yes — `v2.32.0`
 - **release.yml:** success — https://github.com/beettlle/pi-spine/actions/runs/44603720573
 - **GitHub Release:** https://github.com/beettlle/pi-spine/releases/tag/v2.32.0
-- **npm stage id:** see release.yml “Stage publish to npm” log line `pi-spine@2.32.0 (staged with id …)`
-- **Stage approved:** no — `npm stage approve` failed with E401 (invalid local `~/.npmrc` token). Trusted Publisher OIDC stage succeeded in CI.
-- **npm view:** still `2.31.0` until approve
+- **npm stage:** OIDC stage + maintainer 2FA approve completed 2026-11-19
+- **Stage approved:** yes
+- **npm view:** `2.32.0`
+- **Post-publish smoke:** OK — `/tmp/pi-spine-v232-post-publish-smoke.log`; global `pi-spine@2.32.0`
 
