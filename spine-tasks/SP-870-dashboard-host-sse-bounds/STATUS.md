@@ -1,6 +1,6 @@
 # SP-870: Dashboard: Host allowlist, snapshot error handling, injected buildSnapshot, bound SSE — Status
 
-**Current Step:** Step 2: Tests
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -29,9 +29,9 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Cover Host reject, injection, throw resilience, SSE cap
+- [x] Cover Host reject, injection, throw resilience, SSE cap
 
 ---
 
