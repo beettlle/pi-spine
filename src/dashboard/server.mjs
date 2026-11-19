@@ -19,6 +19,9 @@ export const DEFAULT_DASHBOARD_HOST = "127.0.0.1";
 export const DEFAULT_DASHBOARD_PORT = 8109;
 export const DEFAULT_DASHBOARD_POLL_MS = 2000;
 
+/** Maximum concurrent SSE clients before new connections get 503. */
+export const MAX_DASHBOARD_SSE_CLIENTS = 32;
+
 const STATIC_ROUTES = {
 	"/": { file: "index.html", contentType: "text/html; charset=utf-8" },
 	"/dashboard.css": { file: "dashboard.css", contentType: "text/css; charset=utf-8" },
@@ -77,6 +80,40 @@ export function assertLoopbackHost(host) {
 }
 
 /**
+ * Request-level Host allowlist (DNS-rebinding defense, #316).
+ *
+ * The bind host is loopback-checked separately via `assertLoopbackHost`; this
+ * guards the request `Host` header, which a browser sets from the page origin
+ * and cannot be overridden by attacker script. Only `127.0.0.1`, `localhost`,
+ * or those hostnames with an explicit port matching the listen port are
+ * allowed. Everything else — including IPv6 literals and look-alike domains —
+ * is rejected (deny by default).
+ *
+ * @param {string | undefined} hostHeader Raw `Host` header value.
+ * @param {number | undefined} listenPort Actual bound port (e.g. from `req.socket.localPort`).
+ * @returns {boolean} True when the Host header is loopback-only and port-consistent.
+ */
+export function isAllowedRequestHost(hostHeader, listenPort) {
+	const raw = String(hostHeader ?? "")
+		.trim()
+		.toLowerCase();
+	if (raw === "") return false;
+
+	let hostname = raw;
+	let portSuffix = "";
+	const portMatch = raw.match(/^(.+):(\d+)$/);
+	if (portMatch) {
+		hostname = portMatch[1];
+		portSuffix = portMatch[2];
+	}
+
+	if (hostname.startsWith("[")) return false; // IPv6 literals are not allowlisted
+	if (hostname !== "127.0.0.1" && hostname !== "localhost") return false;
+	if (portSuffix === "") return true;
+	return Number(portSuffix) === Number(listenPort ?? DEFAULT_DASHBOARD_PORT);
+}
+
+/**
  * @typedef {object} DashboardSseClient
  * @property {import("node:http").ServerResponse} res
  * @property {string} lastSerialized
@@ -88,7 +125,8 @@ export function assertLoopbackHost(host) {
  * @param {(projectRoot: string) => object} options.buildSnapshot
  * @returns {{
  *   sseClients: Set<DashboardSseClient>,
- *   attachSseClient: (res: import("node:http").ServerResponse) => void,
+ *   hasSseCapacity: () => boolean,
+ *   attachSseClient: (res: import("node:http").ServerResponse) => DashboardSseClient | null,
  *   detachSseClient: (client: DashboardSseClient) => void,
  *   refreshSharedSnapshot: () => { snapshot: object, serialized: string, generation: number },
  *   getSharedSnapshot: () => { snapshot: object | null, serialized: string, generation: number },
@@ -145,7 +183,12 @@ export function createSharedSnapshotPollHub({
 
 	const tick = () => {
 		if (sseClients.size === 0) return;
-		refreshSharedSnapshot();
+		try {
+			refreshSharedSnapshot();
+		} catch {
+			// Background poll: keep streaming the last good snapshot and retry on
+			// the next tick instead of crashing the server (SP-870 / #316).
+		}
 	};
 
 	const ensurePollTimer = () => {
@@ -159,7 +202,10 @@ export function createSharedSnapshotPollHub({
 		pollTimer = null;
 	};
 
+	const hasSseCapacity = () => sseClients.size < MAX_DASHBOARD_SSE_CLIENTS;
+
 	const attachSseClient = (res) => {
+		if (!hasSseCapacity()) return null;
 		const client = { res, lastSerialized: "" };
 		sseClients.add(client);
 		ensurePollTimer();
@@ -184,6 +230,7 @@ export function createSharedSnapshotPollHub({
 
 	return {
 		sseClients,
+		hasSseCapacity,
 		attachSseClient,
 		detachSseClient,
 		refreshSharedSnapshot,
@@ -223,6 +270,12 @@ export function createDashboardServer({
 
 	/** @type {import("node:http").Server} */
 	const server = http.createServer((req, res) => {
+		if (!isAllowedRequestHost(req.headers.host, req.socket.localPort ?? port)) {
+			res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+			res.end("Invalid Host header\n");
+			return;
+		}
+
 		const url = new URL(req.url ?? "/", `http://${host}:${port}`);
 
 		if (req.method === "GET" && serveStaticAsset(res, url.pathname)) {
@@ -230,19 +283,58 @@ export function createDashboardServer({
 		}
 
 		if (req.method === "GET" && url.pathname === "/api/snapshot") {
-			const snapshot = buildDashboardSnapshot(projectRoot);
+			let snapshot;
+			try {
+				snapshot = buildSnapshot(projectRoot);
+			} catch {
+				res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+				res.end(
+					JSON.stringify({ error: "snapshot_failed", message: "Snapshot build failed" }),
+				);
+				return;
+			}
 			res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
 			res.end(JSON.stringify(snapshot));
 			return;
 		}
 
 		if (req.method === "GET" && url.pathname === "/api/events") {
-			writeSseHeaders(res);
-			const client = pollHub.attachSseClient(res);
-			req.on("close", () => {
-				pollHub.detachSseClient(client);
-				if (!res.writableEnded) res.end();
-			});
+			if (!pollHub.hasSseCapacity()) {
+				res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
+				res.end("Too many dashboard SSE clients\n");
+				return;
+			}
+
+			// Build the initial snapshot BEFORE committing SSE headers: once
+			// writeHead runs, a 500 is no longer possible (ERR_HTTP_HEADERS_SENT).
+			const cached = pollHub.getSharedSnapshot();
+			if (!cached.snapshot) {
+				try {
+					pollHub.refreshSharedSnapshot();
+				} catch {
+					res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+					res.end("Snapshot build failed\n");
+					return;
+				}
+			}
+
+			try {
+				writeSseHeaders(res);
+				const client = pollHub.attachSseClient(res);
+				if (!client) {
+					// Lost a capacity slot between the check and attach; end cleanly.
+					if (!res.writableEnded) res.end();
+					return;
+				}
+				req.on("close", () => {
+					pollHub.detachSseClient(client);
+					if (!res.writableEnded) res.end();
+				});
+			} catch {
+				// Headers are committed here; destroying the connection keeps the
+				// server alive without corrupting the response.
+				res.destroy();
+			}
 			return;
 		}
 

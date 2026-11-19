@@ -1,6 +1,6 @@
 # SP-870: Dashboard: Host allowlist, snapshot error handling, injected buildSnapshot, bound SSE — Status
 
-**Current Step:** Step 1: Host + snapshot + SSE bounds
+**Current Step:** Step 2: Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -19,12 +19,12 @@
 ---
 
 ### Step 1: Host + snapshot + SSE bounds
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Host header allowlist
-- [ ] try/catch snapshot builds
-- [ ] honor injected `buildSnapshot` on `/api/snapshot`
-- [ ] cap SSE clients
+- [x] Host header allowlist
+- [x] try/catch snapshot builds
+- [x] honor injected `buildSnapshot` on `/api/snapshot`
+- [x] cap SSE clients
 
 ---
 
