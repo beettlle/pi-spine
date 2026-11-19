@@ -144,3 +144,17 @@ Release scope: SP-865,SP-866,SP-867,SP-868,SP-869,SP-870,SP-871,SP-872
 - [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.32.0
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 - [ ] Every release-scoped `Closes #NNN` CLOSED (#309, #314, #313, #316, #359, #344)
+
+---
+
+## Land log
+
+| Wave | Batch | Integrate SHA | release:check | Issues closed |
+|------|-------|---------------|---------------|---------------|
+| 0 | `20261118T215035-07b5` | `931b5b7b` | exit 0 — 3300/3300, 91.44% | #309 #314 #313 #316 #344 |
+| 1 | `20261119T164557-52e2` | `4bffa489` | exit 0 — 3308/3308, 91.51% | #359 |
+
+**Recovery:** Wave 0 — SP-872 REPLAN (File Scope + select.test.mjs); state_drift SP-870 healed via pause → retry SP-872 → kill wedged attached engine → resume --force; human_base_diverged on SP-872 STATUS.md resolved orch-first (merge main into orch, resolve conflict, gate reopen after tip drift).
+
+**Agent pin override:** none
+
