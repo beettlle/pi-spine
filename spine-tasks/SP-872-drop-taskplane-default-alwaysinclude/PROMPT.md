@@ -43,6 +43,7 @@ Closes #344 — Spine defaults no longer force Taskplane worker rules:
 - `templates/rules-profile.json`
 - `src/config/worker-context.mjs`
 - `tests/config/cursor-rules/profile.test.mjs`
+- `tests/config/cursor-rules/select.test.mjs`
 - `tests/cli/spine-init-rules.test.mjs`
 - `tests/batch/worker-prompt-rules.test.mjs`
 
@@ -50,9 +51,9 @@ Closes #344 — Spine defaults no longer force Taskplane worker rules:
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/config/cursor-rules/profile.test.mjs tests/cli/spine-init-rules.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/config/cursor-rules/profile.test.mjs tests/config/cursor-rules/select.test.mjs tests/cli/spine-init-rules.test.mjs tests/batch/worker-prompt-rules.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh lenient SP-872` |
-| fileScopeMustChange | `src/config/cursor-rules/profile.mjs`, `templates/rules-profile.json` |
+| fileScopeMustChange | `src/config/cursor-rules/profile.mjs`, `templates/rules-profile.json`, `tests/config/cursor-rules/select.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -70,6 +71,7 @@ Closes #344 — Spine defaults no longer force Taskplane worker rules:
 ### Step 2: Tests
 
 - [ ] Update assertions; prove default alwaysInclude is empty
+- [ ] Update `tests/config/cursor-rules/select.test.mjs` assertions that pin Taskplane in `DEFAULT_RULES_PROFILE.alwaysInclude`
 
 ### Step 3: Testing & Verification
 
@@ -109,4 +111,4 @@ Closes #344 — Spine defaults no longer force Taskplane worker rules:
 
 ## Amendments
 
-- None
+- 2026-11-18 — Final REPLAN: add `tests/config/cursor-rules/select.test.mjs` to File Scope, Contract `testCommand`, and `fileScopeMustChange` so the worker can fix the out-of-scope alwaysInclude assertion.
