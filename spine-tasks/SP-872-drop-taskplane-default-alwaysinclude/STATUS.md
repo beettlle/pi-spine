@@ -1,6 +1,6 @@
 # SP-872: Drop Taskplane rules from default worker alwaysInclude / init profile — Status
 
-**Current Step:** 3
+**Current Step:** 4
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -34,15 +34,21 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
-- [ ] Fix all failures
+- [x] Run Contract `testCommand`; engine runs stet `reviewCommand` (advisory)
+- [x] Fix all failures
+
+### Verification Evidence (Step 3)
+- `npm run lint` → exit 0
+- `npm run typecheck` → exit 0
+- Contract test suite (`profile.test.mjs`, `spine-init-rules.test.mjs`, `worker-prompt-rules.test.mjs`, `phase23-exit-verify.test.mjs`, `ts-nocheck-guard.test.mjs`) with `SPINE_WORKER_STUB=1` → exit 0, 29 tests pass
+- `npm run coverage:check` (full suite, 3286 tests) → **3285 pass / 1 fail**; the single failure is Discovery #1 (`tests/config/cursor-rules/select.test.mjs:53-63` "alwaysInclude from profile") — out of File Scope, no in-scope fix possible (the test builds its own minimal manifest and passes `profile: DEFAULT_RULES_PROFILE`). Not a coverage-threshold shortfall.
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Discoveries logged in STATUS.md
 - [ ] Create `spine-tasks/SP-872-drop-taskplane-default-alwaysinclude/.DONE`
