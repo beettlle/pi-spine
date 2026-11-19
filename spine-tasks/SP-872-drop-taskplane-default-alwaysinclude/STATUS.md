@@ -88,6 +88,7 @@ Engine final review (`.reviews/final-20261119T005745.md`) returned **REPLAN**: i
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 97cfbeb  tests/config/cursor-rules/select.test.mjs:69  ERROR  The assertion expects `withOptIn.paths` to include `.cursor/rules/t | advisory — noted, not blocking | contract review step |
 | #1 Out-of-scope `select.test.mjs` breakage | **Resolved** in revise cycle 1 (engine REPLAN verdict extended scope) | `tests/config/cursor-rules/select.test.mjs:52-87` |
 | #2 Docs stale: `docs/adoption/operator-runbook.md:126` says taskplane-worker-cursor.mdc is default alwaysInclude | Open — docs not in File Scope; suggested sentence: worker alwaysInclude is empty by default; Taskplane rules are opt-in via explicit `alwaysInclude` | `docs/adoption/operator-runbook.md:126` |
 | #3 Reviewer neverInclude kept per Mission item 1 | Done | `src/config/cursor-rules/profile.mjs` |
