@@ -1,7 +1,7 @@
 # SP-868: Gate approval-streak: lock streak read-modify-write (#314 remainder) — Status
 
-**Current Step:** Step 4
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Done — .DONE created
 **Last Updated:** 2026-11-18
 **Review Level:** 1
 **Review Counter:** 0
@@ -48,6 +48,10 @@
 3. `withGatePostureStreakLock times out against a live foreign holder instead of racing` — crafted lock owned by a live foreign PID (test runner ppid + probed OS starttime so stale-breaking never steals); asserts `/Timed out acquiring batch-state lock/`, streak untouched, holder lock file preserved.
 4. `auto-approve decision holds the streak lock through read, approve, and increment` — proof stub wrapping the real increment asserts the lock file exists at increment-commit time inside `maybeAutoApproveIntegrateGate`; gate approves (auto), streak 1→2, lock released.
 
+**Tests added to `tests/batch/gate-posture-streak-failure.test.mjs` (contract `fileScopeMustChange`; lock errors route through SP-824 machinery):**
+5. `streak reset lock timeout: fail-closed removal + journaled recovered:true` — foreign holder lock + injected reset that times out at 150ms via the real lock primitive; reject still persists, `gate.streak_io_failed` op=reset with `/Timed out acquiring batch-state lock/`, streak file removed (recovered), next read sees 0.
+6. `streak increment lock timeout: approval persists, journaled recovered:undefined` — same contention against the approve path; approval persists with decidedBy human, op=increment journaled, streak stays 0 (no approval reversal).
+
 Verification: 15/15 tests in the file pass (`node --experimental-strip-types --test`), including all pre-existing streak tests; `npm run lint` exit 0; `npm run typecheck` exit 0.
 
 ---
@@ -67,10 +71,20 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged (runbook owned by SP-866)
-- [ ] Create `spine-tasks/SP-868-gate-streak-lock/.DONE`
+- [x] Discoveries logged (runbook owned by SP-866)
+- [x] Create `spine-tasks/SP-868-gate-streak-lock/.DONE`
+
+**Completion criteria (PROMPT) verification:**
+- Streak RMW is lock-protected — ✅ 5 RMW fns + auto-approve read-decide-act under `withGatePostureStreakLock`.
+- SP-824 fail-closed tests still pass — ✅ `gate-posture-streak-failure.test.mjs` green in contract run.
+- Contract `testCommand` exits 0 — ✅ verified twice (after Step 2, after LOC fix).
+- Closes #314 — ✅ delivery commit `fix(SP-868): lock gate approval-streak RMW (#314)`.
+
+**Full-suite verification:** `./scripts/worker-verify.sh` (typecheck + `SPINE_WORKER_STUB=1 npm test`) with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset → **exit 0: 3264 pass, 0 fail** (243s). First attempt ran with the worker-session env inherited; subprocess-spawning tests correctly tripped the SP-482 nested-batch guard (`Nested batch start blocked: SPINE_IS_WORKER=1`) — environmental, not code-related; confirmed by re-running affected files with the env unset (8/8, then full suite green). PROMPT Environment note ("run with SPINE_IS_WORKER unset") is why the contract set excludes those files.
+
+**Docs:** none required by PROMPT Must-Update; runbook left to SP-866 as instructed.
 
 ---
 
@@ -85,6 +99,9 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Streak RMW now shares the batch-state lock file (`.spine/runtime/batch-state.lock`) via `withGatePostureStreakLock` — re-entrant per process, so gate calls nested inside batch-state sections pass through; streak critical sections never take the resume handoff lock (SP-722 ordering holds) | Kept (documented in helper JSDoc) | `src/batch/gate-posture-streak.mjs` |
+| `batch-loc-policy` (phase23 exit verify) caps `src/batch/*.mjs` at 500 LOC; `gate-posture-approve.mjs` had only 2 lines of headroom (498). New gated code fits because mergedTags compaction offset the lock wrapper. Future gate-posture work may need a module split | Noted for planners | `bin/spine-cli/verify.mjs` (untouched), `src/batch/gate-posture-approve.mjs` (499 LOC) |
+| Worker-session env (`SPINE_IS_WORKER=1`) breaks any test that spawns batch engines via subprocess; full suite must run with it unset (SP-482 guard works as designed) | Confirmed environmental; not a defect | `scripts/worker-verify.sh` usage |
 
 ---
 
@@ -97,6 +114,7 @@ Verification: 15/15 tests in the file pass (`node --experimental-strip-types --t
 | 2026-11-18 | Step 1 lock streak RMW | `withGatePostureStreakLock` added (delegates to `withBatchStateLock`); 5 RMW fns + auto-approve read-decide-act wrapped; 15/15 streak tests pass; typecheck clean |
 | 2026-11-18 | Step 2 lock tests | 4 SP-868 tests added (multi-process RMW, hold-and-observe, foreign-holder timeout, auto-approve lock proof); lint + typecheck exit 0 |
 | 2026-11-18 | Step 3 contract | testCommand exit 0 (28 tests) after LOC fix (508→499, mergedTags compaction); gate/sequence sweeps exit 0 (90 tests) |
+| 2026-11-18 | Step 4 delivery | worker-verify.sh exit 0 (3264 pass / 0 fail, env unset); engine e2e gate sweeps exit 0; failure-file lock-timeout tests added (6/6 pass, contract re-run exit 0); .DONE created |
 
 ---
 
