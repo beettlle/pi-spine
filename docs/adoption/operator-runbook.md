@@ -2238,6 +2238,7 @@ spine dashboard --port 8110
 In pi: `/spine-dashboard`
 
 - URL prints on listen (e.g. `http://127.0.0.1:8109`)
+- **Loopback-only Host (SP-870/#316):** requests whose `Host` header is not `127.0.0.1`/`localhost` (with the listen port, when a port is present) get 400 — access via other hostnames/DNS aliases is intentionally refused; concurrent SSE clients cap at 32 (further tabs get 503)
 - **Default view** (always visible): diagnosis banner (`headline`, `suggestedCommand`, action chips) and integrate gate status when applicable — same reconciliation fields as `spine status` (no `--diagnose` required). Banner badge color follows **`diagnosis`**, not macro phase.
 - **Active batch panels** (when a batch is reconciled): batch summary (raw `phase` + **macro phase** label), wave progress (wave index + macro phase), lane table (includes **Phase** column — worker/review activity inferred from journal events; **Elapsed**, **Done**, and **Rate** throughput columns — task-based elapsed time, completed task count, and tasks/hr derived from journal and run-metrics; **status row highlighting** — failed tasks red with `❌ FAILED — {exitReason}`, succeeded green with `✅ Done`, running amber), journal tail
 - **Read-only** — run CLI commands from your terminal (action chips copy suggested commands)
