@@ -1,6 +1,6 @@
 # SP-872: Drop Taskplane rules from default worker alwaysInclude / init profile — Status
 
-**Current Step:** 1
+**Current Step:** 2
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-18
 **Review Level:** 1
@@ -19,15 +19,15 @@
 ---
 
 ### Step 1: Drop Taskplane from defaults
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Empty worker alwaysInclude in DEFAULT_RULES_PROFILE + templates/rules-profile.json
-- [ ] Adjust DEFAULT_SPINE_INIT_STANDARDS per Mission item 3
+- [x] Empty worker alwaysInclude in DEFAULT_RULES_PROFILE + templates/rules-profile.json
+- [x] Adjust DEFAULT_SPINE_INIT_STANDARDS per Mission item 3
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Update assertions; prove default alwaysInclude is empty
 
