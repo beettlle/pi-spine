@@ -30,6 +30,7 @@
 **Status:** ✅ Complete
 
 - [x] Update assertions; prove default alwaysInclude is empty
+- [x] Update `tests/config/cursor-rules/select.test.mjs` assertions that pin Taskplane in `DEFAULT_RULES_PROFILE.alwaysInclude`
 
 ---
 
