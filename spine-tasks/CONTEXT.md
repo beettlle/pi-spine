@@ -2814,7 +2814,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 103 — Release v2.32.0: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop
 
-**Authoring:** 2026-11-18 · Manifest: `spine-tasks/_authoring/release-v2.32.0/manifest.md`. Scope approved 2026-11-18. **Tagged v2.32.0** 2026-11-19 — `28a826de`, release.yml OIDC stage OK (id in workflow log); npm approved; smoke OK. Closed #309 #314 #313 #316 #359 #344. Theme: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop.
+**Authoring:** 2026-11-18 · Manifest: `spine-tasks/_authoring/release-v2.32.0/manifest.md`. Scope approved 2026-11-18. **Published v2.32.0** 2026-11-19 — `28a826de`, tag `v2.32.0`, npm `latest` 2.32.0 (OIDC stage + 2FA approve), global smoke OK. Closed #309 #314 #313 #316 #359 #344. Theme: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
