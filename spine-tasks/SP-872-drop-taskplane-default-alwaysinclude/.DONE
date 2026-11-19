@@ -1,0 +1,20 @@
+{
+  "taskId": "SP-872",
+  "task": "Drop Taskplane rules from default worker alwaysInclude / init profile",
+  "completedAt": "2026-11-18",
+  "closesIssue": 344,
+  "commits": [
+    "61ccfe94 feat(SP-872): complete Step 0 — preflight findings recorded",
+    "969671ac feat(SP-872): complete Step 1 — drop Taskplane from default worker alwaysInclude (#344)",
+    "3459c243 feat(SP-872): complete Step 2 — tests prove default alwaysInclude is empty",
+    "d8461f85 feat(SP-872): complete Step 3 — contract testCommand green; coverage evidence for out-of-scope select.test.mjs failure",
+    "97f5b429 fix(SP-872): drop Taskplane from default worker alwaysInclude (#344)"
+  ],
+  "verification": {
+    "lint": "exit 0",
+    "typecheck": "exit 0",
+    "contractTestCommand": "exit 0 (29 tests)",
+    "coverageCheck": "3285/3286 pass; 1 failure = out-of-scope select.test.mjs:53-63 (STATUS Discovery #1)"
+  },
+  "reviewerNote": "Final review should consider amending File Scope for tests/config/cursor-rules/select.test.mjs (3-line fix documented in STATUS Discovery #1) before post-integrate release:check."
+}
