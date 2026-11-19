@@ -87,7 +87,11 @@ test("buildWorkerTailPrompt includes critical-rules for JS-scoped task", async (
 		);
 		assert.ok(
 			context.selection?.paths?.includes(".cursor/rules/taskplane-worker-cursor.mdc"),
-			"default always rule selected",
+			"alwaysApply rule selected via manifest always class",
+		);
+		assert.ok(
+			!(context.selection?.entries ?? []).some((entry) => entry.source === "alwaysInclude"),
+			"default profile contributes no alwaysInclude entries (SP-872)",
 		);
 	} finally {
 		await rm(root, { recursive: true, force: true });
@@ -152,7 +156,7 @@ test("worker profile neverInclude wins over alwaysInclude", async () => {
 		);
 		assert.ok(
 			result.selection?.paths?.includes(".cursor/rules/taskplane-worker-cursor.mdc"),
-			"default always rule still selected",
+			"alwaysApply rule still selected via manifest always class",
 		);
 	} finally {
 		await rm(root, { recursive: true, force: true });
@@ -253,6 +257,33 @@ test("buildWorkerContextAsync falls back to static context without .cursor/rules
 		assert.equal(result.selection?.mode, "static");
 		assert.match(result.text, /Static standard body/);
 		assert.doesNotMatch(result.text, /critical-rules-quick-reference/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("default profile does not force-include non-alwaysApply taskplane rules (SP-872)", async () => {
+	const root = await createRulesFixture();
+	try {
+		// Taskplane-style rule with only a description — manual spine class,
+		// selected only when explicitly listed in alwaysInclude/standards.
+		fs.writeFileSync(
+			path.join(root, ".cursor", "rules", "taskplane-task-authoring.mdc"),
+			"---\ndescription: Taskplane task authoring rules\n---\n# Taskplane authoring body.\n",
+			"utf-8",
+		);
+
+		const result = await buildWorkerContextAsync({
+			config: {},
+			projectRoot: root,
+			taskFileScope: FIXTURE_FILE_SCOPE,
+		});
+
+		assert.equal(result.selection?.mode, "auto");
+		assert.ok(
+			!result.selection?.paths?.includes(".cursor/rules/taskplane-task-authoring.mdc"),
+			"empty default alwaysInclude does not force-include taskplane rules",
+		);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
