@@ -50,6 +50,27 @@ test("selectRulesForWorker includes alwaysInclude and always-class rules", () =>
 		},
 	]);
 
+	// SP-872 (#344): default worker alwaysInclude is empty — Taskplane rules are
+	// opt-in. Prove the alwaysInclude selection mechanism with an explicit opt-in
+	// profile, then prove the default profile force-includes nothing.
+	const optInProfile = {
+		...DEFAULT_RULES_PROFILE,
+		worker: {
+			...DEFAULT_RULES_PROFILE.worker,
+			alwaysInclude: ["taskplane-worker-cursor.mdc"],
+		},
+	};
+
+	const withOptIn = selectRulesForWorker({
+		manifest,
+		profile: optInProfile,
+		fileScope: [],
+	});
+	assert.ok(
+		withOptIn.paths.includes(".cursor/rules/taskplane-worker-cursor.mdc"),
+		"alwaysInclude from profile",
+	);
+
 	const result = selectRulesForWorker({
 		manifest,
 		profile: DEFAULT_RULES_PROFILE,
@@ -57,8 +78,8 @@ test("selectRulesForWorker includes alwaysInclude and always-class rules", () =>
 	});
 
 	assert.ok(
-		result.paths.includes(".cursor/rules/taskplane-worker-cursor.mdc"),
-		"alwaysInclude from profile",
+		!result.paths.includes(".cursor/rules/taskplane-worker-cursor.mdc"),
+		"default alwaysInclude is empty — no Taskplane force-include",
 	);
 	assert.ok(
 		result.paths.includes(".cursor/rules/critical-rules-quick-reference.mdc"),

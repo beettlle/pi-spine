@@ -4,6 +4,7 @@ import {
 	resolveBatchStateFileForValidation,
 	validateBatchState,
 } from "../src/batch/state.mjs";
+import { batchIdRejectionReason } from "../src/batch/batch-id.mjs";
 
 /**
  * @param {object} options
@@ -22,9 +23,29 @@ export function runSpineState(options) {
 	}
 
 	const batchIdx = args.indexOf("--batch");
-	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
+	// SP-869 (#313): a bare `--batch` (flag without a value) is captured as ""
+	// so the validator below rejects it instead of falling back silently.
+	const batchId = batchIdx >= 0 ? (args[batchIdx + 1] ?? "") : null;
 	const json = args.includes("--json");
 	const diagnose = args.includes("--diagnose");
+
+	// SP-869 (#313): reject unsafe --batch IDs before state file path joins.
+	if (batchId != null) {
+		const reason = batchIdRejectionReason(batchId);
+		if (reason) {
+			const message = `Invalid batch ID ${JSON.stringify(String(batchId))}: ${reason}`;
+			if (json) {
+				return {
+					exitCode: 1,
+					output: `${JSON.stringify({ ok: false, error: message }, null, 2)}\n`,
+				};
+			}
+			return {
+				exitCode: 1,
+				output: `❌ ${message}\n  → spine state validate --batch <ID>\n`,
+			};
+		}
+	}
 
 	const resolved = resolveBatchStateFileForValidation(projectRoot, batchId);
 	if (!resolved.path) {

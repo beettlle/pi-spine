@@ -8,6 +8,7 @@ import {
 	startBatchDetached,
 } from "../src/batch/detached-start.mjs";
 import { dismissBatch } from "../src/batch/lifecycle.mjs";
+import { batchIdRejectionReason } from "../src/batch/batch-id.mjs";
 import { runBatchComplete } from "../src/cli/batch-complete.mjs";
 import { forceMergeWave, startBatch } from "../src/batch/engine.mjs";
 import { parseBatchStartWaveFilter } from "../src/planner/wave-scope.mjs";
@@ -158,8 +159,10 @@ export function parseBatchArgs(args) {
 
 	let batchId = null;
 	const batchIdx = args.indexOf("--batch");
-	if (batchIdx >= 0 && args[batchIdx + 1]) {
-		batchId = args[batchIdx + 1];
+	if (batchIdx >= 0) {
+		// SP-869 (#313): a bare `--batch` (flag without a value) must not fall
+		// through to active-batch fallbacks; capture "" so the validator rejects.
+		batchId = args[batchIdx + 1] ?? "";
 	}
 
 	let reason = null;
@@ -263,6 +266,17 @@ export async function runSpineBatch(options) {
 		return { exitCode: 0, output: printBatchHelp() };
 	}
 	const parsed = parseBatchArgs(args);
+
+	// SP-869 (#313): reject unsafe --batch IDs before any runtime path join.
+	if (parsed.batchId != null) {
+		const reason = batchIdRejectionReason(parsed.batchId);
+		if (reason) {
+			return {
+				exitCode: 1,
+				output: `Invalid batch ID ${JSON.stringify(String(parsed.batchId))}: ${reason}\n`,
+			};
+		}
+	}
 
 	if (parsed.subcommand === "dismiss") {
 		const result = dismissBatch({

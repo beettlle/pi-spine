@@ -13,6 +13,11 @@ import {
 	validateBatchId,
 } from "../../src/batch/batch-id.mjs";
 import { generateBatchId as generateBatchIdFromState } from "../../src/batch/state.mjs";
+import { runSpineBatch } from "../../bin/spine-batch.mjs";
+import { runSpineHandoff } from "../../src/cli/handoff.mjs";
+import { runSpineIntegrate } from "../../bin/spine-integrate.mjs";
+import { runSpineJournal } from "../../bin/spine-journal.mjs";
+import { runSpineState } from "../../bin/spine-state.mjs";
 import {
 	resolveFollowBatchId,
 	runJournalFollow,
@@ -164,6 +169,131 @@ test("lane logs --batch rejects traversal with a clear error", async () => {
 		});
 		assert.equal(result.exitCode, 1);
 		assert.match(result.output, /Invalid batch ID/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+// SP-869 (#313): every CLI --batch reader must reject unsafe IDs with a
+// non-zero exit and a clear error before any runtime path join.
+
+test("spine integrate --batch rejects traversal and option-shaped IDs", () => {
+	const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "spine-batch-id-"));
+	try {
+		// Option-shaped values are refused by the strict argv parser (exit 2).
+		const strict = runSpineIntegrate({ projectRoot: root, args: ["--batch", "--output=/tmp/pwn"] });
+		assert.equal(strict.exitCode, 2);
+		assert.match(strict.output, /Unknown option/);
+
+		// Values that parse cleanly are rejected by validation before use.
+		const traversal = runSpineIntegrate({ projectRoot: root, args: ["--batch", "../evil"] });
+		assert.equal(traversal.exitCode, 2);
+		assert.match(traversal.output, /Invalid batch ID/);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("spine batch --batch rejects traversal before dispatch", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-batch-id-"));
+	try {
+		const result = await runSpineBatch({ projectRoot: root, args: ["abort", "--batch", "../evil", "--yes"] });
+		assert.equal(result.exitCode, 1);
+		assert.match(result.output, /Invalid batch ID/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("spine journal replay/export --batch reject unsafe IDs", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-batch-id-"));
+	try {
+		const replay = runSpineJournal({ projectRoot: root, args: ["replay", "--batch", "../evil", "--json"] });
+		assert.equal(replay.exitCode, 1);
+		assert.match(replay.output, /Invalid batch ID/);
+
+		// `--output=/` would be consumed as the --batch value (option injection).
+		const exportResult = runSpineJournal({
+			projectRoot: root,
+			args: ["export", "--batch", "--output=/", "--format", "jsonl"],
+		});
+		assert.equal(exportResult.exitCode, 1);
+		assert.match(exportResult.output, /Invalid batch ID/);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("spine state validate --batch rejects traversal (human and json)", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-batch-id-"));
+	try {
+		const human = runSpineState({ projectRoot: root, args: ["validate", "--batch", "a..b"] });
+		assert.equal(human.exitCode, 1);
+		assert.match(human.output, /Invalid batch ID/);
+
+		const json = runSpineState({ projectRoot: root, args: ["validate", "--batch", "a..b", "--json"] });
+		assert.equal(json.exitCode, 1);
+		const payload = JSON.parse(json.output);
+		assert.equal(payload.ok, false);
+		assert.match(payload.error, /Invalid batch ID/);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("spine handoff --batch rejects traversal and whitespace", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-batch-id-"));
+	try {
+		for (const id of ["../evil", "white space"]) {
+			const result = runSpineHandoff({ projectRoot: root, args: ["--batch", id] });
+			assert.equal(result.exitCode, 1, `expected exit 1 for ${id}`);
+			assert.match(result.output, /Invalid batch ID/);
+		}
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("bare --batch (flag without a value) is rejected, never falling back to the active batch", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-batch-id-"));
+	try {
+		// Seed an active batch so a silent fallback would operate on it.
+		const statePath = path.join(root, ".spine", "batch-state.json");
+		fs.mkdirSync(path.dirname(statePath), { recursive: true });
+		const activeState = JSON.stringify({ batchId: "20260101T000000", status: "stopped" });
+		fs.writeFileSync(statePath, activeState, "utf-8");
+
+		// `spine batch dismiss --batch` (bare at end of argv).
+		const bareDismiss = await runSpineBatch({ projectRoot: root, args: ["dismiss", "--batch"] });
+		assert.equal(bareDismiss.exitCode, 1);
+		assert.match(bareDismiss.output, /Invalid batch ID ""/);
+
+		// `spine batch dismiss --batch --yes` (bare flag before another flag).
+		const bareBeforeFlag = await runSpineBatch({ projectRoot: root, args: ["dismiss", "--batch", "--yes"] });
+		assert.equal(bareBeforeFlag.exitCode, 1);
+		assert.match(bareBeforeFlag.output, /Invalid batch ID "--yes"/);
+
+		// The active batch state must be untouched (no silent dismiss fallback).
+		assert.equal(fs.readFileSync(statePath, "utf-8"), activeState);
+
+		// Journal replay/export: bare --batch must be rejected, not "missing".
+		const bareReplay = runSpineJournal({ projectRoot: root, args: ["replay", "--batch"] });
+		assert.equal(bareReplay.exitCode, 1);
+		assert.match(bareReplay.output, /Invalid batch ID ""/);
+
+		const bareExport = runSpineJournal({ projectRoot: root, args: ["export", "--batch"] });
+		assert.equal(bareExport.exitCode, 1);
+		assert.match(bareExport.output, /Invalid batch ID ""/);
+
+		// State validate: bare --batch must be rejected, not fall back to latest.
+		const bareState = runSpineState({ projectRoot: root, args: ["validate", "--batch"] });
+		assert.equal(bareState.exitCode, 1);
+		assert.match(bareState.output, /Invalid batch ID ""/);
+
+		// Handoff: bare --batch must be rejected, not fall back to the active batch.
+		const bareHandoff = runSpineHandoff({ projectRoot: root, args: ["--batch"] });
+		assert.equal(bareHandoff.exitCode, 1);
+		assert.match(bareHandoff.output, /Invalid batch ID ""/);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

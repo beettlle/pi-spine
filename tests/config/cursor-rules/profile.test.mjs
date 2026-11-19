@@ -12,9 +12,9 @@ import {
 	validateRulesProfile,
 } from "../../../src/config/cursor-rules/profile.mjs";
 
-test("DEFAULT_RULES_PROFILE seeds worker include and discovery excludes", () => {
+test("DEFAULT_RULES_PROFILE leaves worker alwaysInclude empty and keeps discovery excludes", () => {
 	assert.equal(DEFAULT_RULES_PROFILE.profileVersion, 1);
-	assert.ok(DEFAULT_RULES_PROFILE.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
+	assert.deepEqual(DEFAULT_RULES_PROFILE.worker.alwaysInclude, []);
 	assert.equal(DEFAULT_RULES_PROFILE.reviewer.enabled, true);
 	assert.equal(DEFAULT_RULES_PROFILE.reviewer.maxRules, 32);
 	assert.ok(
@@ -36,7 +36,7 @@ test("loadRulesProfile returns built-in defaults when file missing", async () =>
 		assert.equal(result.ok, true);
 		if (result.ok) {
 			assert.equal(result.source, "default");
-			assert.ok(result.profile.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
+			assert.deepEqual(result.profile.worker.alwaysInclude, []);
 			assert.equal(result.profile.worker.globMatch, true);
 			assert.equal(result.profile.reviewer.enabled, true);
 			assert.equal(result.profile.reviewer.maxRules, 32);

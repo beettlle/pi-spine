@@ -6,6 +6,7 @@ import {
 	readJournalEvents,
 	summarizeJournalEvent,
 } from "../src/batch/journal.mjs";
+import { batchIdRejectionReason } from "../src/batch/batch-id.mjs";
 
 /**
  * @param {string} timestamp
@@ -90,7 +91,18 @@ const JOURNAL_USAGE =
  */
 function runJournalReplay(projectRoot, args) {
 	const batchIdx = args.indexOf("--batch");
-	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
+	const batchId = batchIdx >= 0 ? (args[batchIdx + 1] ?? "") : null;
+	// SP-869 (#313): reject unsafe --batch IDs (including a bare flag with no
+	// value, captured as "") before journal path joins.
+	if (batchId != null) {
+		const reason = batchIdRejectionReason(batchId);
+		if (reason) {
+			return {
+				exitCode: 1,
+				output: `Invalid batch ID ${JSON.stringify(String(batchId))}: ${reason}\n${JOURNAL_USAGE}`,
+			};
+		}
+	}
 	const json = args.includes("--json");
 
 	if (!batchId) {
@@ -130,7 +142,18 @@ function runJournalExport(projectRoot, args) {
 	const exportUsage =
 		"Usage: spine journal export --batch {id} --format markdown|jsonl [--output path]\n";
 	const batchIdx = args.indexOf("--batch");
-	const batchId = batchIdx >= 0 ? args[batchIdx + 1] : null;
+	const batchId = batchIdx >= 0 ? (args[batchIdx + 1] ?? "") : null;
+	// SP-869 (#313): reject unsafe --batch IDs (including a bare flag with no
+	// value, captured as "") before journal path joins.
+	if (batchId != null) {
+		const reason = batchIdRejectionReason(batchId);
+		if (reason) {
+			return {
+				exitCode: 1,
+				output: `Invalid batch ID ${JSON.stringify(String(batchId))}: ${reason}\n${exportUsage}`,
+			};
+		}
+	}
 	const formatIdx = args.indexOf("--format");
 	const format = formatIdx >= 0 ? args[formatIdx + 1] : null;
 	const outputIdx = args.indexOf("--output");

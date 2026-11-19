@@ -68,6 +68,61 @@ export function validateBatchId(batchId) {
 	return /** @type {string} */ (batchId);
 }
 
+/**
+ * Allowlist pattern for review baselines (SP-869, issue #313).
+ *
+ * A baseline is interpolated into `git diff <baseline>..HEAD` argv
+ * (review-scope) and reviewer prompt text (review-step), so it must be a safe
+ * git object name: a full/short commit SHA or a plain ref (`main`,
+ * `origin/main`, `v1.2.3`). The first character must be alphanumeric so
+ * option-like values (`-`, `--output=…`) and absolute/traversal paths can
+ * never pass; the remainder allows only letters, digits, dot, dash, and
+ * slash. Whitespace, newlines, backslashes, and revision metacharacters
+ * (`~`, `^`, `:`, `@{`) are excluded.
+ */
+export const REVIEW_BASELINE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
+
+/**
+ * @param {unknown} baseline
+ * @returns {string|null} rejection reason, or null when the baseline is valid
+ */
+export function reviewBaselineRejectionReason(baseline) {
+	if (typeof baseline !== "string" || baseline.trim().length === 0) {
+		return "must be a non-empty string";
+	}
+	if (/^-/.test(baseline)) {
+		return "must not look like a command-line option";
+	}
+	if (/\s/.test(baseline)) {
+		return "must not contain whitespace or newlines";
+	}
+	if (baseline.includes("..")) {
+		return 'must not contain ".." path traversal sequences';
+	}
+	if (!REVIEW_BASELINE_PATTERN.test(baseline)) {
+		return (
+			`must match ${REVIEW_BASELINE_PATTERN} ` +
+			"(full/short commit SHA or plain git ref: letters, digits, dot, dash, slash)"
+		);
+	}
+	return null;
+}
+
+/**
+ * Assert a review baseline is safe for `git diff <baseline>..HEAD` argv and
+ * reviewer prompt text; throw otherwise (SP-869, issue #313).
+ *
+ * @param {unknown} baseline
+ * @returns {string} the validated baseline
+ */
+export function validateReviewBaseline(baseline) {
+	const reason = reviewBaselineRejectionReason(baseline);
+	if (reason) {
+		throw new Error(`Invalid review baseline ${JSON.stringify(String(baseline))}: ${reason}`);
+	}
+	return /** @type {string} */ (baseline);
+}
+
 const MAX_UNIQUIFY_ATTEMPTS = 64;
 
 /**

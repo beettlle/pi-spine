@@ -20,6 +20,7 @@ import {
 import { redactSecretsDeep, redactTextSecrets } from "../util/secret-redact.mjs";
 import { computePendingTasks } from "../batch/resume-multi-validate.mjs";
 import { formatJournalTailEntry } from "../dashboard/snapshot.mjs";
+import { batchIdRejectionReason } from "../batch/batch-id.mjs";
 
 const JOURNAL_TAIL_LIMIT = 10;
 
@@ -429,7 +430,9 @@ export function parseHandoffArgs(argv) {
 	const args = { batchId: null, json: false };
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
-		if (arg === "--batch") args.batchId = argv[++i] ?? null;
+		// SP-869 (#313): a bare `--batch` (flag without a value) is captured as ""
+		// so the validator below rejects it instead of falling back silently.
+		if (arg === "--batch") args.batchId = argv[++i] ?? "";
 		else if (arg === "--json") args.json = true;
 	}
 	return args;
@@ -443,6 +446,16 @@ export function parseHandoffArgs(argv) {
 export function runSpineHandoff(options) {
 	const { projectRoot, args: argv = [] } = options;
 	const args = parseHandoffArgs(argv);
+	// SP-869 (#313): reject unsafe --batch IDs before archive path joins.
+	if (args.batchId != null) {
+		const reason = batchIdRejectionReason(args.batchId);
+		if (reason) {
+			return {
+				exitCode: 1,
+				output: `Invalid batch ID ${JSON.stringify(String(args.batchId))}: ${reason}\n`,
+			};
+		}
+	}
 	const data = assembleHandoffData(projectRoot, args.batchId ?? undefined);
 	const handoffPath = path.resolve(projectRoot, data.handoffPath ?? resolveHandoffPath(projectRoot));
 	const markdown = renderHandoffMarkdown(data);

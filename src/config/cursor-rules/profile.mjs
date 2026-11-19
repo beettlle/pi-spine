@@ -39,11 +39,16 @@ export const RULES_PROFILE_REL_PATH = ".spine/rules-profile.json";
  * @property {RulesProfileDiscovery} discovery
  */
 
-/** Built-in profile when `.spine/rules-profile.json` is missing. */
+/**
+ * Built-in profile when `.spine/rules-profile.json` is missing.
+ * SP-872: worker `alwaysInclude` is empty — spine-native workers get their
+ * context from `alwaysApply` rules + glob matching. Taskplane rules are opt-in
+ * via an explicit `alwaysInclude` in the project profile (#344).
+ */
 export const DEFAULT_RULES_PROFILE = Object.freeze({
 	profileVersion: 1,
 	worker: Object.freeze({
-		alwaysInclude: Object.freeze(["taskplane-worker-cursor.mdc"]),
+		alwaysInclude: Object.freeze([]),
 		neverInclude: Object.freeze([]),
 		globMatch: true,
 	}),

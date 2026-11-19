@@ -1,0 +1,8 @@
+SP-872 complete (revise cycle 1 addressed). Default worker alwaysInclude is empty
+(DEFAULT_RULES_PROFILE + templates/rules-profile.json); DEFAULT_SPINE_INIT_STANDARDS
+drop Taskplane entries; tests updated — profile, init-rules, worker-prompt, and
+select.test.mjs (fixed per engine REPLAN verdict: opt-in profile proves the
+alwaysInclude mechanism; default force-includes nothing). Verification: lint exit 0,
+typecheck exit 0, contract suite exit 0, full coverage run 3286/3286 pass, 91.45% >= 77%.
+Reviews: step-0 plan APPROVE (.reviews/0-20261119T005419.md); final REPLAN addressed
+(.reviews/final-20261119T005745.md).

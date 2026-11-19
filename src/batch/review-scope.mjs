@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { parsePrompt } from "../tasks/packet/parse-prompt.mjs";
+import { validateReviewBaseline } from "./batch-id.mjs";
 
 /**
  * Paths excluded from reviewer glob scope (runtime artifacts, not product code).
@@ -73,6 +74,8 @@ export function resolvePlanReviewScopePaths(taskFolder) {
  * @returns {string[]}
  */
 export function resolveCodeReviewScopePaths(worktreePath, baseline, runGit = defaultRunGit) {
+	// SP-869 (#313): fail closed on unsafe baselines before git argv use.
+	if (baseline) validateReviewBaseline(baseline);
 	const args = baseline ? ["diff", "--name-only", `${baseline}..HEAD`] : ["diff", "--name-only"];
 	try {
 		const output = runGit("git", args, worktreePath);

@@ -15,13 +15,16 @@ import {
 import { loadRulesProfile } from "./cursor-rules/profile.mjs";
 import { selectRulesForWorker } from "./cursor-rules/select.mjs";
 
-/** Default injected standards for pi-spine / JS-CLI projects (matches bootstrap checklist). */
+/**
+ * Default injected standards for pi-spine / JS-CLI projects (matches bootstrap
+ * checklist). SP-872: Taskplane authoring/worker rules removed — spine-native
+ * defaults only; projects needing Taskplane opt in via `config.standards`
+ * (SP-093 superseded init seeding of this list; kept for static-context users).
+ */
 export const DEFAULT_SPINE_INIT_STANDARDS = [
 	".cursor/rules/javascript-3-development-standards.mdc",
 	".cursor/rules/general-llm-anti-patterns.mdc",
 	".cursor/rules/critical-rules-quick-reference.mdc",
-	".cursor/rules/taskplane-task-authoring.mdc",
-	".cursor/rules/taskplane-worker-cursor.mdc",
 ];
 
 export const DEFAULT_WORKER_CONTEXT_BYTE_CAP = 32_768;

@@ -33,7 +33,7 @@ test("runInit copies rules profile, discovers manifest, standards default []", a
 		const profile = JSON.parse(
 			fs.readFileSync(path.join(projectRoot, RULES_PROFILE_REL_PATH), "utf-8"),
 		);
-		assert.ok(profile.worker.alwaysInclude.includes("taskplane-worker-cursor.mdc"));
+		assert.ok(profile.worker.alwaysInclude.length === 0, "copied profile leaves alwaysInclude empty (SP-872)");
 	} finally {
 		await rm(projectRoot, { recursive: true, force: true });
 	}

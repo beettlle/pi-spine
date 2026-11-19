@@ -5,7 +5,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import picomatch from "picomatch";
 import { parseAggregateLineCoverage } from "../../scripts/coverage-parse.mjs";
 import {
 	isBaseFileScopeSatisfied,
@@ -24,6 +23,7 @@ import {
 import {
 	NPM_TEST_DASH_DASH_RE,
 	TEST_COMMAND_NPM_TEST_DASH_DASH_FIX_HINT,
+	findArtifactMatch,
 } from "../tasks/validate-contract-warn.mjs";
 import { formatRefusedContractMetacharMessage, isRefusedContractMetacharCommand } from "../tasks/packet/parse-prompt.mjs";
 import { buildContractTestEnv, runShellCommandAsync } from "./contract-spawn.mjs";
@@ -210,48 +210,6 @@ async function resolveLineCoverage(worktreePath, parsedContract, config, testCom
 }
 
 /**
- * @param {string} worktreePath
- * @param {string} artifactPattern
- * @returns {{ ok: boolean, matchedPath?: string }}
- */
-function findArtifactMatch(worktreePath, artifactPattern) {
-	const normalized = String(artifactPattern ?? "").replace(/\\/g, "/");
-	if (!normalized) {
-		return { ok: false };
-	}
-
-	if (!/[*?[\]{}]/.test(normalized)) {
-		const fullPath = path.join(worktreePath, normalized);
-		return fs.existsSync(fullPath) ? { ok: true, matchedPath: normalized } : { ok: false };
-	}
-
-	const baseDir = path.dirname(normalized);
-	const searchRoot = path.join(worktreePath, baseDir);
-	if (!fs.existsSync(searchRoot)) {
-		return { ok: false };
-	}
-
-	/** @type {Array<{ abs: string, rel: string }>} */
-	const stack = [{ abs: searchRoot, rel: baseDir === "." ? "" : baseDir }];
-	while (stack.length > 0) {
-		const { abs, rel } = /** @type {{ abs: string, rel: string }} */ (stack.pop());
-		for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
-			const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
-			const entryAbs = path.join(abs, entry.name);
-			if (entry.isDirectory()) {
-				stack.push({ abs: entryAbs, rel: entryRel });
-				continue;
-			}
-			if (picomatch(normalized, { dot: true })(entryRel)) {
-				return { ok: true, matchedPath: entryRel };
-			}
-		}
-	}
-
-	return { ok: false };
-}
-
-/**
  * Prepare lane worktree before contract testCommand (Flutter analyzer hygiene #78).
  *
  * @param {string} worktreePath
@@ -298,6 +256,29 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		maxBuffer: CONTRACT_TEST_COMMAND_MAX_BUFFER,
 	});
 	const indexAndWorktreeFiles = diffResult.exitCode === 0 ? diffResult.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
+	// Fail-closed (#309): a failed/timed-out `git diff` must not pass must-not-change
+	// on an empty file list. Only enforced when the contract declares patterns —
+	// without patterns there is no scope to verify either way.
+	const mustNotChangePatterns = parsedContract.fileScopeMustNotChange ?? [];
+	const diffFailed = diffResult.exitCode !== 0;
+
+	// Fail-closed (#309): `listChangedFiles` (contract-parse.mjs) swallows git
+	// errors into an empty or partial committed-file list, so a failed committed
+	// lookup could let must-not-change pass on incomplete evidence. Re-run the
+	// same committed range with a visible exit code — gated on declared
+	// must-not-change patterns (same scoping as the diffFailed gate).
+	const scopedSince = String(sinceCommit ?? "").trim();
+	const committedRange = scopedSince ? `${scopedSince}..HEAD` : `${baseBranch}...HEAD`;
+	const committedProbeCommand = `git diff --name-only ${committedRange}`;
+	const committedProbe = mustNotChangePatterns.length > 0 &&
+		!isRefusedContractMetacharCommand(committedProbeCommand)
+		? await runShellCommandAsync(worktreePath, committedProbeCommand, {
+			timeoutMs: 30 * 1000,
+			maxBuffer: CONTRACT_TEST_COMMAND_MAX_BUFFER,
+		})
+		: null;
+	const committedLookupFailed = mustNotChangePatterns.length > 0 &&
+		(committedProbe == null || committedProbe.exitCode !== 0);
 
 	const changedFiles = [...new Set([...committedFiles, ...indexAndWorktreeFiles])];
 
@@ -424,21 +405,46 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 		});
 	}
 
-	for (const pattern of parsedContract.fileScopeMustNotChange ?? []) {
-		const forbidden = changedFiles.filter((file) => matchesContractPattern(file, pattern));
-		if (forbidden.length === 0) {
-			checks.push({
-				field: "fileScopeMustNotChange",
-				ok: true,
-				message: `fileScopeMustNotChange respected: ${pattern}`,
-			});
-		} else {
-			for (const file of forbidden) {
+	if (mustNotChangePatterns.length > 0 && (diffFailed || committedLookupFailed)) {
+		const failureReasons = [];
+		if (diffFailed) {
+			failureReasons.push(
+				`git diff --name-only HEAD failed (${
+					diffResult.timedOut ? "timed out" : `exit ${diffResult.exitCode}`
+				})`,
+			);
+		}
+		if (committedLookupFailed) {
+			failureReasons.push(
+				committedProbe == null
+					? `git diff --name-only ${committedRange} refused (unsafe range)`
+					: `git diff --name-only ${committedRange} failed (${
+						committedProbe.timedOut ? "timed out" : `exit ${committedProbe.exitCode}`
+					})`,
+			);
+		}
+		checks.push({
+			field: "fileScopeMustNotChange",
+			ok: false,
+			message: `Contract fileScopeMustNotChange: ${failureReasons.join("; ")} — cannot verify must-not-change scope, failing closed (#309)`,
+		});
+	} else {
+		for (const pattern of mustNotChangePatterns) {
+			const forbidden = changedFiles.filter((file) => matchesContractPattern(file, pattern));
+			if (forbidden.length === 0) {
 				checks.push({
 					field: "fileScopeMustNotChange",
-					ok: false,
-					message: `Contract fileScopeMustNotChange: forbidden change ${file}`,
+					ok: true,
+					message: `fileScopeMustNotChange respected: ${pattern}`,
 				});
+			} else {
+				for (const file of forbidden) {
+					checks.push({
+						field: "fileScopeMustNotChange",
+						ok: false,
+						message: `Contract fileScopeMustNotChange: forbidden change ${file}`,
+					});
+				}
 			}
 		}
 	}
@@ -471,7 +477,9 @@ export async function verifyContract(worktreePath, parsedContract, config = {}) 
 			ok: match.ok,
 			message: match.ok
 				? `artifact exists: ${match.matchedPath ?? artifactPath}`
-				: `Contract artifactsMustExist: missing ${artifactPath}`,
+				: match.unsafe
+					? `Contract artifactsMustExist: rejected unsafe pattern ${artifactPath} — parent-directory traversal outside the lane worktree is not allowed (#309)`
+					: `Contract artifactsMustExist: missing ${artifactPath}`,
 		});
 	}
 

@@ -6,6 +6,7 @@
 
 import { isCliEntrypoint } from "./spine-cli/shared.mjs";
 import { parseStrictArgs, strictArgsError } from "./spine-cli/cli-args.mjs";
+import { validateBatchId } from "../src/batch/batch-id.mjs";
 import { loadBatchStateFile } from "../src/batch/reconcile.mjs";
 import {
 	approveIntegrateGate,
@@ -79,7 +80,8 @@ export function formatGateHuman(result, json = false) {
  * @param {string|null} batchId
  */
 function resolveActiveBatchId(projectRoot, batchId) {
-	if (batchId) return batchId;
+	// SP-869 (#313): reject unsafe --batch IDs before any .spine/runtime path join.
+	if (batchId) return validateBatchId(batchId);
 	const loaded = loadBatchStateFile(projectRoot, null);
 	if (!loaded.raw) return null;
 	return String(loaded.raw.batchId ?? loaded.raw.id ?? "");
@@ -104,7 +106,27 @@ export function runSpineGate(options) {
 	const action = parsed.positional[0] ?? "status";
 	const reason = parsed.values.get("--reason") ?? null;
 	const synthesis = parsed.values.get("--synthesis") ?? null;
-	const batchId = resolveActiveBatchId(projectRoot, parsed.values.get("--batch") ?? null);
+
+	let batchId;
+	try {
+		batchId = resolveActiveBatchId(projectRoot, parsed.values.get("--batch") ?? null);
+	} catch (err) {
+		// SP-869 (#313): invalid --batch exits non-zero with a clear error instead
+		// of interpolating raw input into runtime paths.
+		const error = err instanceof Error ? err.message : String(err);
+		const result = {
+			ok: false,
+			exitCode: 2,
+			headline: "Invalid --batch ID",
+			suggestedCommand: "spine gate status --batch <ID>",
+			error,
+		};
+		return {
+			exitCode: result.exitCode,
+			output: formatGateHuman(result, flags.has("--json")),
+			result,
+		};
+	}
 	if (!batchId) {
 		const result = {
 			ok: false,

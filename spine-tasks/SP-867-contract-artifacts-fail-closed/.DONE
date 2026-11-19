@@ -1,0 +1,7 @@
+done
+
+Revise cycle 1 addressed: final review (REVISE) blocking issue fixed —
+fileScopeMustNotChange now also fails when the committed-changes lookup fails
+(committed-range probe in contract-exec.mjs), not just when the uncommitted
+git diff fails. 2 new tests. Contract testCommand exit 0 (30/30); neighbor
+suites 33/33; coverage 90.22%; LOC 491/500. Commit: 9bae1642.
