@@ -42,11 +42,15 @@ export function formatIntegrateHuman(result, json = false) {
 	if (result.mergePlan) {
 		lines.push(`  Plan: ${result.mergePlan}`);
 	}
-	if (result.gateRequired) {
-		lines.push("", "  Gate: approval required before integrate");
-	}
 	if (result.failureClass === "GateBlocked") {
+		// Integrate actually stopped for a pending/missing/rejected gate (#359).
 		lines.push("", "  Gate: integrate blocked until approved");
+	} else if (result.dryRun && result.gatePending) {
+		// Dry-run plan: approval will be required before the real merge.
+		lines.push("", "  Gate: approval required before integrate");
+	} else if (result.ok && result.gateRequired && !result.gateForced) {
+		// Successful merge with a configured gate — it was satisfied, not pending (#359).
+		lines.push("", "  Gate: approved");
 	}
 
 	lines.push("", `  → ${result.suggestedCommand}`);

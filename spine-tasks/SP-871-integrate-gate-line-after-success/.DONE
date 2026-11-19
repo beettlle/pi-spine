@@ -1,0 +1,12 @@
+SP-871 complete.
+
+- `bin/spine-integrate.mjs` `formatIntegrateHuman`: success with a required approved gate prints `Gate: approved`; forced bypass omits the Gate line; blocked keeps `Gate: integrate blocked until approved`; dry-run mentions approval only when pending (#359).
+- `src/batch/integrate.mjs`: success result gains `gateForced` so the formatter can distinguish a forced bypass from a real approval.
+- `tests/batch/integrate-gate-output.test.mjs`: 6 formatter unit tests + 2 CLI e2e (approved-gate success / pending-gate blocked).
+
+Verification (foreground, in-session):
+- Contract testCommand exits 0 (lint, typecheck, 29 tests across the 4 contract files).
+- Full suite with SPINE_IS_WORKER/SPINE_WORKER_RUNNER unset (per PROMPT Environment): 3308 pass / 0 fail.
+- coverage:check: 91.51% in-scope line coverage (threshold 77%).
+
+STATUS.md current; discoveries logged; runbook untouched (SP-866 owns it).

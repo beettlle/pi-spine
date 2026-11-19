@@ -422,6 +422,7 @@ export function integrateOrchToBase(ctx) {
 			mergeCommit,
 			commitsAhead,
 			gateRequired: gateCheck.required ?? false,
+			gateForced: gateCheck.forced ?? false,
 			headline: `Integrated ${orchBranch} into ${baseBranch}`,
 			suggestedCommand: waiting?.suggestedCommand ?? "spine batch complete",
 			alternatives: waiting
