@@ -132,18 +132,18 @@ Release scope: SP-865,SP-866,SP-867,SP-868,SP-869,SP-870,SP-871,SP-872
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD`
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.32.0
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Every release-scoped `Closes #NNN` CLOSED (#309, #314, #313, #316, #359, #344)
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (wave0 `/tmp/pi-spine-post-integrate-wave-0.log`, wave1 `/tmp/pi-spine-post-integrate-wave-1.log`)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (3308/3308, 91.49% — `/tmp/pi-spine-v232-phase6-release-check.log`)
+- [x] CI workflow green on tag commit + docs commit (e.g. https://github.com/beettlle/pi-spine/actions/runs/44594902543)
+- [x] `git status` clean at bump
+- [x] Operator approved publish bump type: minor (2026-11-19)
+- [x] `npm version minor` → `v2.32.0` (`28a826de`) + pushed
+- [x] `release.yml` succeeded — https://github.com/beettlle/pi-spine/actions/runs/44603720573
+- [ ] Maintainer 2FA approve staged package; `npm view pi-spine version` = 2.32.0 — **BLOCKED**: local `npm` token E401; stage id in release.yml Stage step log
+- [ ] Post-publish smoke — deferred until approve
+- [x] Every release-scoped `Closes #NNN` CLOSED (#309, #314, #313, #316, #359, #344)
 
 ---
 
@@ -157,4 +157,14 @@ Release scope: SP-865,SP-866,SP-867,SP-868,SP-869,SP-870,SP-871,SP-872
 **Recovery:** Wave 0 — SP-872 REPLAN (File Scope + select.test.mjs); state_drift SP-870 healed via pause → retry SP-872 → kill wedged attached engine → resume --force; human_base_diverged on SP-872 STATUS.md resolved orch-first (merge main into orch, resolve conflict, gate reopen after tip drift).
 
 **Agent pin override:** none
+
+## Publish status (Phase 6)
+
+- **Version bumped:** yes — `2.32.0`
+- **Tag pushed:** yes — `v2.32.0`
+- **release.yml:** success — https://github.com/beettlle/pi-spine/actions/runs/44603720573
+- **GitHub Release:** https://github.com/beettlle/pi-spine/releases/tag/v2.32.0
+- **npm stage id:** see release.yml “Stage publish to npm” log line `pi-spine@2.32.0 (staged with id …)`
+- **Stage approved:** no — `npm stage approve` failed with E401 (invalid local `~/.npmrc` token). Trusted Publisher OIDC stage succeeded in CI.
+- **npm view:** still `2.31.0` until approve
 
