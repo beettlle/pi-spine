@@ -60,6 +60,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): Warning: proceeding with uncommitted changes; review scope may be unclear stet: rule budget of 1000 tokens dropped 187 rule secti | advisory — noted, not blocking | contract review step |
 | SP-878 API: `sumUsageFromPiJsonStream(input)` → `{tokensIn?, tokensOut?, estimatedUsd?}` (keys omitted when pi reports none); `extractTextFromPiJsonStream(input)` → human text segments | Confirmed | `src/batch/pi-json-usage.mjs` |
 | SP-837 emit sites: `runReviewPollLoop` records spawn-failure rows (~L339) and verdict rows (~L392); third site `task-agent-profile.mjs` (~L293) is the blocked row (no spawn → no usage) | Confirmed | `src/batch/engine-lanes/review-poll.mjs` |
 | Impact `buildReviewMetricRecord`: GitNexus UNKNOWN (symbol absent from index in this worktree) → confirmed via text search. Callers: `recordReviewMetric` (metrics.mjs) + direct test calls; `recordReviewMetric` callers: review-poll ×2, task-agent-profile ×1. `spawnReviewerPi` callers: review-step-run ×2, nested-reviewer-guard test, fake-async guard (must stay real-async — it returns `new Promise`, unchanged) | Confirmed | text search |
