@@ -22,15 +22,14 @@ function getTimestampForFilename(d = new Date()) {
 	return d.toISOString().replace(/[:.]/g, '-');
 }
 
-function writePlanArtifact({ projectRoot, plan }) {
+async function writePlanArtifact({ projectRoot, plan }) {
 	const runtimeDir = path.join(projectRoot, '.spine', 'runtime');
-	fs.mkdirSync(runtimeDir, { recursive: true });
+	await fs.promises.mkdir(runtimeDir, { recursive: true });
 	const timestamp = getTimestampForFilename();
 	const artifactPath = path.join(runtimeDir, `plan-${timestamp}.json`);
-	fs.writeFileSync(artifactPath, JSON.stringify(plan, null, 2), 'utf-8');
+	await fs.promises.writeFile(artifactPath, JSON.stringify(plan, null, 2), 'utf-8');
 	return artifactPath;
 }
-
 /**
  * Format a friendly informational message when pending scope has zero tasks.
  *
@@ -66,15 +65,16 @@ function formatEmptyPendingResult({ excludedCount = 0, discoveredCount = 0 }, la
 
 /**
  * Build the plan, write the artifact, and return formatted output.
- * SP-877 (#319): honestly synchronous — no await, no Promise.
+ * SP-877 (#319): the artifact write is a real `await` — the signature is
+ * no longer fake-async (async with zero awaits).
  *
  * @param {object} [options]
  * @param {string} [options.projectRoot]
  * @param {string} [options.scope]
  * @param {boolean} [options.json]
- * @returns {{ plan: object|null, artifactPath: string|null, output: string }}
+ * @returns {Promise<{ plan: object|null, artifactPath: string|null, output: string }>}
  */
-export function runSpinePlan({
+export async function runSpinePlan({
 	projectRoot = process.cwd(),
 	scope = 'all',
 	json = false,
@@ -109,7 +109,7 @@ export function runSpinePlan({
 		throw err;
 	}
 
-	const artifactPath = writePlanArtifact({ projectRoot, plan });
+	const artifactPath = await writePlanArtifact({ projectRoot, plan });
 
 	if (json) {
 		return { plan, artifactPath, output: JSON.stringify(plan, null, 2) };
@@ -118,13 +118,13 @@ export function runSpinePlan({
 	return { plan, artifactPath, output: formatPlanHuman(plan) };
 }
 
-function main() {
+async function main() {
 	const argv = process.argv.slice(2);
 	const json = argv.includes('--json');
 	const scope = argv.filter((a) => !a.startsWith('--')).join(' ') || 'all';
 
 	try {
-		const { output } = runSpinePlan({ projectRoot: process.cwd(), scope, json });
+		const { output } = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
 		process.stdout.write(output);
 	} catch (err) {
 		const msg = err?.message ?? String(err);
