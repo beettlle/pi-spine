@@ -1,7 +1,7 @@
 # SP-877: Audit leftovers: fileScope fallback, contract.errors, fake-async bin guard — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 2: Tests
+**Status:** 🔄 In Progress
 **Last Updated:** 2026-11-19
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm three leftover sites
-- [ ] Read fake-async guard scope
+- [x] Confirm three leftover sites
+- [x] Read fake-async guard scope
 
 ---
 
 ### Step 1: Three leftovers
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Validate fileScope env JSON
-- [ ] Surface contract.errors
-- [ ] Fix runSpinePlan + extend guard
+- [x] Validate fileScope env JSON
+- [x] Surface contract.errors
+- [x] Fix runSpinePlan + extend guard
 
 ---
 

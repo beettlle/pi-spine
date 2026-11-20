@@ -263,13 +263,49 @@ export async function runWorker({
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	const promptText = fs.existsSync(promptPath) ? fs.readFileSync(promptPath, "utf-8") : "";
 	const parsedPrompt = promptText ? parsePrompt(promptText) : null;
-	const contract = promptText ? parseContract(promptText) : { stallTimeoutMinutes: null, extendGraceOnFileScope: null, runCommand: null, testCommand: null };
+	const contract = promptText
+		? parseContract(promptText)
+		: {
+				stallTimeoutMinutes: null,
+				extendGraceOnFileScope: null,
+				runCommand: null,
+				testCommand: null,
+				errors: [],
+			};
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
 
 	const isExecute = parsedPrompt?.type === "execute";
 	const runCommand = contract.runCommand || contract.testCommand;
+
+	// SP-877 (#319): surface parseContract() errors instead of silently converting
+	// a malformed Contract table into the guaranteed-failing `echo … && exit 1`
+	// command. Execute tasks fail closed at preflight; pi workers proceed with the
+	// issues logged (their contract only feeds stall budgets, which tolerate nulls).
+	if (contract.errors.length > 0) {
+		const detail = contract.errors.join("; ");
+		if (projectRoot && batchId) {
+			appendJournalEvent(projectRoot, batchId, "worker.contract_parse_failed", {
+				taskId,
+				laneNumber,
+				correlationId: laneCorrelationId,
+				errors: contract.errors,
+				phase: "preflight",
+			});
+		}
+		if (isExecute) {
+			return {
+				ok: false,
+				exitCode: 1,
+				mode: workerMode,
+				output: `Contract parse failed: ${detail}`,
+				classification: "contract_parse_failed",
+				doneFound: false,
+			};
+		}
+		console.error(`worker-host: contract parse issues for ${taskId ?? taskFolder}: ${detail}`);
+	}
 
 	// #299 (SP-801): fail closed when the pi CLI is missing rather than silently
 	// falling back to the stub. Placed after the review gate so review-tool

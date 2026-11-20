@@ -64,7 +64,17 @@ function formatEmptyPendingResult({ excludedCount = 0, discoveredCount = 0 }, la
 	return { plan: null, artifactPath: null, output: lines.join('\n') };
 }
 
-export async function runSpinePlan({
+/**
+ * Build the plan, write the artifact, and return formatted output.
+ * SP-877 (#319): honestly synchronous — no await, no Promise.
+ *
+ * @param {object} [options]
+ * @param {string} [options.projectRoot]
+ * @param {string} [options.scope]
+ * @param {boolean} [options.json]
+ * @returns {{ plan: object|null, artifactPath: string|null, output: string }}
+ */
+export function runSpinePlan({
 	projectRoot = process.cwd(),
 	scope = 'all',
 	json = false,
@@ -108,13 +118,13 @@ export async function runSpinePlan({
 	return { plan, artifactPath, output: formatPlanHuman(plan) };
 }
 
-async function main() {
+function main() {
 	const argv = process.argv.slice(2);
 	const json = argv.includes('--json');
 	const scope = argv.filter((a) => !a.startsWith('--')).join(' ') || 'all';
 
 	try {
-		const { output } = await runSpinePlan({ projectRoot: process.cwd(), scope, json });
+		const { output } = runSpinePlan({ projectRoot: process.cwd(), scope, json });
 		process.stdout.write(output);
 	} catch (err) {
 		const msg = err?.message ?? String(err);

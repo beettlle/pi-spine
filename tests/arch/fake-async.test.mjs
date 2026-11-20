@@ -27,6 +27,10 @@ const MIGRATED_SYMBOLS = [
 	{ file: "src/batch/engine-lanes/merge.mjs", symbol: "mergeWaveLanesToOrch" },
 	{ file: "src/batch/engine-lanes/queue.mjs", symbol: "skipTaskDoneOnDisk" },
 	{ file: "src/batch/review-spawn.mjs", symbol: "spawnReviewerPi" },
+	// SP-877 (#319): bin/ symbols joined the guard; SWEPT_FILES below derives
+	// from this list, so these files are heuristic-swept too.
+	{ file: "bin/spine-plan.mjs", symbol: "runSpinePlan" },
+	{ file: "bin/spine-worker-runner.mjs", symbol: "resolveTaskFileScope" },
 ];
 
 /**
@@ -49,7 +53,24 @@ const SWEPT_FILES = [...new Set(MIGRATED_SYMBOLS.map((entry) => entry.file))];
  * @returns {string|null}
  */
 function extractBracedBody(source, fromIndex) {
-	const start = source.indexOf("{", fromIndex);
+	// SP-877 (#319): skip the parameter list first so destructured
+	// `function f({ a, b }) { … }` bodies are extracted from the body brace
+	// (the param brace previously balanced immediately, hiding real awaits).
+	const parenStart = source.indexOf("(", fromIndex);
+	if (parenStart < 0) return null;
+	let parenDepth = 0;
+	let start = -1;
+	for (let i = parenStart; i < source.length; i++) {
+		const ch = source[i];
+		if (ch === "(") parenDepth++;
+		else if (ch === ")") {
+			parenDepth--;
+			if (parenDepth === 0) {
+				start = source.indexOf("{", i + 1);
+				break;
+			}
+		}
+	}
 	if (start < 0) return null;
 	let depth = 0;
 	for (let i = start; i < source.length; i++) {
