@@ -38,15 +38,15 @@ Closes #310 — Reconcile git inspection must not fail open, and operator branch
 ## File Scope
 
 - `src/batch/reconcile-classify.mjs`
-- `tests/batch/reconcile-classify.test.mjs`
+- `tests/batch/reconcile-git-error.test.mjs`
 
 ## Contract
 
 | Field | Value |
 |-------|-------|
-| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/reconcile-classify.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
+| testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/reconcile-git-error.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-875` |
-| fileScopeMustChange | `src/batch/reconcile-classify.mjs`, `tests/batch/reconcile-classify.test.mjs` |
+| fileScopeMustChange | `src/batch/reconcile-classify.mjs`, `tests/batch/reconcile-git-error.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps

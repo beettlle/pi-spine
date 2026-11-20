@@ -232,6 +232,9 @@ export async function runWorker({
 
 	const workerBackend = useStub ? "subprocess" : resolveWorkerBackend(config);
 	const workerMode = useStub ? "stub" : workerBackend === "agentSession" ? "agentSession" : "pi";
+	// Preflight failure shape shared by the guards below (keeps worker-host under the 500-LOC policy).
+	/** @param {string} classification @param {string} output */
+	const failPreflight = (classification, output) => ({ ok: false, exitCode: 1, mode: workerMode, output, classification, doneFound: false });
 	const useLaunchScript = Boolean(
 		projectRoot ? resolveWorkerLaunchScript(projectRoot, config) : null,
 	);
@@ -249,27 +252,32 @@ export async function runWorker({
 				phase: "preflight",
 			});
 		}
-		return {
-			ok: false,
-			exitCode: 1,
-			mode: workerMode,
-			output: reviewCheck.error ?? "review tool unavailable",
-			classification: "review_failed",
-			doneFound: false,
-		};
+		return failPreflight("review_failed", reviewCheck.error ?? "review tool unavailable");
 	}
 
 	const taskSize = parseTaskSizeFromFolder(taskFolder);
 	const promptPath = path.join(taskFolder, "PROMPT.md");
 	const promptText = fs.existsSync(promptPath) ? fs.readFileSync(promptPath, "utf-8") : "";
 	const parsedPrompt = promptText ? parsePrompt(promptText) : null;
-	const contract = promptText ? parseContract(promptText) : { stallTimeoutMinutes: null, extendGraceOnFileScope: null, runCommand: null, testCommand: null };
+	const contract = promptText ? parseContract(promptText) : { stallTimeoutMinutes: null, extendGraceOnFileScope: null, runCommand: null, testCommand: null, errors: [] };
 	const stallConfig = resolveStallConfigForTask({ config, taskSize, contract });
 	const piTimeoutMs = resolveWorkerPiTimeoutMs({ config, taskSize, contract });
 	const startedAt = Date.now();
 
 	const isExecute = parsedPrompt?.type === "execute";
 	const runCommand = contract.runCommand || contract.testCommand;
+
+	// SP-877 (#319): surface parseContract() errors — execute tasks fail closed at
+	// preflight instead of the guaranteed-failing `echo … && exit 1` fallback; pi
+	// workers proceed (the contract only feeds stall budgets, which tolerate nulls).
+	if (contract.errors.length > 0) {
+		const detail = contract.errors.join("; ");
+		if (projectRoot && batchId) {
+			appendJournalEvent(projectRoot, batchId, "worker.contract_parse_failed", { taskId, laneNumber, correlationId: laneCorrelationId, errors: contract.errors, phase: "preflight" });
+		}
+		if (isExecute) return failPreflight("contract_parse_failed", `Contract parse failed: ${detail}`);
+		console.error(`worker-host: contract parse issues for ${taskId ?? taskFolder}: ${detail}`);
+	}
 
 	// #299 (SP-801): fail closed when the pi CLI is missing rather than silently
 	// falling back to the stub. Placed after the review gate so review-tool
@@ -286,15 +294,7 @@ export async function runWorker({
 				phase: "preflight",
 			});
 		}
-		return {
-			ok: false,
-			exitCode: 1,
-			mode: workerMode,
-			output:
-				"worker requires pi on PATH (fail closed); set SPINE_WORKER_STUB=1 only for stub runs",
-			classification: "launch_failed",
-			doneFound: false,
-		};
+		return failPreflight("launch_failed", "worker requires pi on PATH (fail closed); set SPINE_WORKER_STUB=1 only for stub runs");
 	}
 
 	const child = isExecute
