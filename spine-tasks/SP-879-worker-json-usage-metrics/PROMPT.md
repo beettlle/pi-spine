@@ -50,7 +50,7 @@ Partial #338 — Wire worker pi JSON usage into task metric fields.
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-usage-metrics.test.mjs tests/cli/phase23-exit-verify.test.mjs tests/arch/ts-nocheck-guard.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-879` |
-| fileScopeMustChange | `bin/spine-worker-runner.mjs`, `tests/batch/worker-usage-metrics.test.mjs` |
+| fileScopeMustChange | `tests/batch/worker-usage-metrics.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -111,4 +111,4 @@ Partial #338 — Wire worker pi JSON usage into task metric fields.
 
 ## Amendments
 
-- None
+- 2026-11-20: Redirect `fileScopeMustChange` to `tests/batch/worker-usage-metrics.test.mjs` only — `bin/spine-worker-runner.mjs` already landed on main via SP-877 (prelanded-file-scope). Worker may still edit worker-runner for usage wiring.
