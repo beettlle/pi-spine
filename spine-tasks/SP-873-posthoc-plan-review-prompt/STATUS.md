@@ -1,8 +1,8 @@
 # SP-873: Post-hoc Step 0 plan review: do not reject finished work as premature — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-11-19
+**Current Step:** Step 1 — Post-hoc plan prompt
+**Status:** 🟡 In Progress
+**Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,15 +11,15 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] GitNexus impact on plan prompt builder
-- [ ] Confirm call sites for plan reviewType
+- [x] GitNexus impact on plan prompt builder
+- [x] Confirm call sites for plan reviewType
 
 ---
 
 ### Step 1: Post-hoc plan prompt
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Add post-hoc wording to plan review prompt
 - [ ] Keep APPROVE/REVISE output contract
