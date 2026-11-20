@@ -71,8 +71,8 @@ test("buildReviewerPiArgs omits --model when reviewer model is inherit", async (
 		});
 
 		assert.equal(modelIndex(piArgs), -1);
-		assert.equal(thinkingIndex(piArgs), 3);
-		assert.equal(piArgs[4], "high");
+		assert.equal(thinkingIndex(piArgs), 5);
+		assert.equal(piArgs[6], "high");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -194,7 +194,8 @@ test("buildReviewerPiArgs cascades per-type inherit to top-level reviewer pin", 
 
 /**
  * Assert the full reviewer argv shape: optional leading `-ne`, then the stable
- * -p/--no-session/append-system-prompt/model/thinking/prompt spine.
+ * -p/--no-session/--mode json/append-system-prompt/model/thinking/prompt spine
+ * (SP-880 / #338 added --mode json so pi streams usage events).
  *
  * @param {string[]} piArgs
  * @param {{ withNe: boolean, model?: string, thinking?: string, systemPrompt: string, reviewPrompt: string, worktreePath: string }} expected
@@ -202,7 +203,7 @@ test("buildReviewerPiArgs cascades per-type inherit to top-level reviewer pin", 
 function assertReviewerArgShape(piArgs, expected) {
 	const wanted = [];
 	if (expected.withNe) wanted.push("-ne");
-	wanted.push("-p", "--no-session");
+	wanted.push("-p", "--no-session", "--mode", "json");
 	wanted.push("--append-system-prompt", path.join(expected.worktreePath, ".spine", "agents", "reviewer.md"));
 	wanted.push("--append-system-prompt", expected.systemPrompt);
 	if (expected.model) wanted.push("--model", expected.model);
