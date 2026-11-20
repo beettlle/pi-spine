@@ -62,6 +62,7 @@
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
 | reviewCommand failed (exit 1): 0754de8  bin/spine-worker-runner.mjs:286  WARNING  The guard `if (envScope)` treats an empty string as unset, so a worker spawned | advisory — noted, not blocking | contract review step |
+| reviewCommand failed (exit 1): 0754de8  bin/spine-worker-runner.mjs:286  WARNING  The guard `if (envScope)` treats an empty string as unset, so a worker spawned | advisory — noted, not blocking | contract review step |
 | reviewCommand failed (exit 1): 21d12c7  src/batch/reconcile-classify.mjs:140  WARNING  isFatalGitProbeFailure treats any Error with a string `code` property as  | advisory — noted, not blocking | contract review step |
 | git probes exit 1/128 = definitive "no" (missing ref / not ancestor / not a repo); timeout = `code:"ETIMEDOUT"` + `signal:"SIGTERM"`; missing binary = string code (ENOENT) — verified empirically with spawnSync probes |Encoded in `isFatalGitProbeFailure`; ordinary "no" answers stay silent to avoid false `git_unavailable` on every repo without an orch branch | src/batch/reconcile-classify.mjs |
 | `inspectHumanBaseSync` records fatal probe errors by mutating `ctx.git.gitInspectionError` (the inspectGitState signals object) so `deriveDiagnosis` flips to `git_unavailable` with no consumer changes | Documented in code; consumers (reconcile-batch, sync-base, integrate, resume-multi-validate) unchanged | src/batch/reconcile-classify.mjs |
