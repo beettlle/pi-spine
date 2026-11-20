@@ -1,7 +1,7 @@
 # SP-875: Reconcile git helpers: surface errors/timeouts; drop hardcoded operator branches — Status
 
-**Current Step:** Step 2 — Tests
-**Status:** 🟡 In Progress (Steps 0-1 done)
+**Current Step:** Step 3 — Testing & Verification
+**Status:** 🟡 In Progress (Steps 0-2 done)
 **Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -29,8 +29,8 @@
 ### Step 2: Tests
 **Status:** ⬜ Not Started
 
-- [ ] Timeout/failure → inspection error
-- [ ] Candidates exclude personal username
+- [x] Timeout/failure → inspection error — new tests: git-probe timeout (ETIMEDOUT shim) recorded as `inside_work_tree:` error; missing git binary (ENOENT) recorded; `inspectHumanBaseSync` timeout records `rev_parse(main):` into git signals + returns null.
+- [x] Candidates exclude personal username — new test asserts `orch/spine-<batchId>` present, no `cdelgado`/`operator` in any candidate, and `gitInspectionError === null` in a healthy repo (definitive-no stays silent).
 
 ---
 
