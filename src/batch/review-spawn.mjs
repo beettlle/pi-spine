@@ -19,6 +19,10 @@ import {
 	resolveWorkerOutputConfig,
 } from "./worker-output.mjs";
 import {
+	extractTextFromPiJsonStream,
+	sumUsageFromPiJsonStream,
+} from "./pi-json-usage.mjs";
+import {
 	parseTaskSizeFromFolder,
 	resolveReviewArtifactPollIntervalMs,
 	resolveReviewArtifactQuiescenceMs,
@@ -115,6 +119,10 @@ function reviewerPiCommandExists(cmd) {
  * extensions, so reviewers keep read/bash/write. `agents.reviewer.loadUserExtensions: true`
  * opts back into user extensions.
  *
+ * SP-880 / #338: reviewers run `--mode json` so pi's per-message `usage`/`cost` reaches
+ * {@link spawnReviewerPi}, which sums it into the spawn result; human-readable reviewer text
+ * is recovered from the stream's `message_end` events instead of discarded.
+ *
  * @param {object} params
  */
 export function buildReviewerPiArgs({
@@ -133,7 +141,7 @@ export function buildReviewerPiArgs({
 	if (config?.agents?.reviewer?.loadUserExtensions !== true) {
 		piArgs.push("-ne");
 	}
-	piArgs.push("-p", "--no-session");
+	piArgs.push("-p", "--no-session", "--mode", "json");
 	if (reviewerAgentPath && fs.existsSync(reviewerAgentPath)) {
 		piArgs.push("--append-system-prompt", reviewerAgentPath);
 	}
@@ -212,8 +220,37 @@ export function isEarlyArtifactHonorAllowed(reviewType, contractVerifyResult) {
 }
 
 /**
+ * Human-readable stdout tail for a reviewer spawn (SP-880 / #338).
+ *
+ * Reviewers run `pi --mode json`, so raw stdout is JSONL events. The tail
+ * carries the assistant text recovered from `message_end` events instead of
+ * JSON noise. When the stream yields no text — plain-text output, or a JSON
+ * stream cut before any assistant message ended — the raw (redacted) tail is
+ * kept so pre-stream diagnostics stay explainable.
+ *
+ * @param {string} raw
+ * @param {{ maxBytes: number }} outputConfig
+ * @returns {string}
+ */
+function buildReviewerHumanStdoutTail(raw, outputConfig) {
+	if (!raw) return "";
+	let segments;
+	try {
+		segments = extractTextFromPiJsonStream(raw);
+	} catch {
+		segments = [];
+	}
+	if (segments.length === 0) return redactWorkerOutput(raw, outputConfig);
+	return redactWorkerOutput(segments.join("\n\n"), outputConfig);
+}
+
+/**
  * @param {object} params
  * @returns {Promise<object>} Resolves with the reviewer spawn result (real async child-process wait).
+ *
+ * The result carries `usage` (`{tokensIn?, tokensOut?, estimatedUsd?}`, SP-880 / #338) summed
+ * from the pi JSON stream via the SP-878 parser whenever pi reported at least one finite
+ * value; the key is omitted entirely when pi reported none so rows never invent usage.
  */
 export function spawnReviewerPi({
 	worktreePath,
@@ -271,6 +308,10 @@ export function spawnReviewerPi({
 
 		let stdout = "";
 		let stderr = "";
+		// Raw JSONL capture, bounded like stdout so a chatty reviewer child cannot
+		// grow engine memory without bound. Truncated leading/partial lines are
+		// skipped by the SP-878 parser (it ignores non-JSON records).
+		let jsonStream = "";
 		let timedOut = false;
 		let settled = false;
 		let killTimer = /** @type {NodeJS.Timeout|undefined} */ (undefined);
@@ -282,18 +323,22 @@ export function spawnReviewerPi({
 			clearTimeout(timer);
 			clearInterval(pollTimer);
 			clearTimeout(killTimer);
+			// SP-880 / #338: sum provider-reported usage from the JSON stream. Only
+			// finite values pi actually reported appear on the result — never invented.
+			const usage = sumUsageFromPiJsonStream(jsonStream);
 			// Every result — including exit 0 — carries capture diagnostics so the
 			// engine can journal them when the reviewer produced no artifact.
 			resolve({
 				durationMs: Date.now() - startedAtMs,
 				stdoutTail: captureWorkerOutputTail(
-					redactWorkerOutput(stdout, outputConfig),
+					buildReviewerHumanStdoutTail(stdout, outputConfig),
 					outputConfig,
 				),
 				stderrTail: captureWorkerOutputTail(
 					redactWorkerOutput(stderr, outputConfig),
 					outputConfig,
 				),
+				...(Object.keys(usage).length > 0 ? { usage } : {}),
 				...result,
 			});
 		};
@@ -333,6 +378,7 @@ export function spawnReviewerPi({
 
 		child.stdout?.on("data", (chunk) => {
 			stdout = appendBoundedCapture(stdout, chunk, outputConfig.maxBytes);
+			jsonStream = appendBoundedCapture(jsonStream, chunk, outputConfig.maxBytes);
 		});
 
 		child.stderr?.on("data", (chunk) => {

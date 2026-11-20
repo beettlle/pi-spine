@@ -35,6 +35,10 @@ import {
 	truncateLiveLogBytes,
 	writeWorkerDoneMarker,
 } from "../src/batch/worker-output.mjs";
+import {
+	extractTextFromPiJsonStream,
+	sumUsageFromPiJsonStream,
+} from "../src/batch/pi-json-usage.mjs";
 import { buildWorkerTailPrompt, taskIdFromFolder } from "../src/batch/worker-prompt.mjs";
 import { taskIdFromFolderName } from "../src/tasks/packet/discover.mjs";
 import { DEFAULT_TASKS_ROOT } from "../src/config/spine-init-constants.mjs";
@@ -123,7 +127,11 @@ export async function buildWorkerPiArgs({
 	if (shouldWorkerUsePiNoExtensions({ projectRoot })) {
 		piArgs.push("-ne");
 	}
-	piArgs.push("-p", "--no-session");
+	// SP-879 (#338): JSON mode turns stdout into a structured NDJSON event
+	// stream so provider-reported usage can be persisted into run-metrics.
+	// Positional contract: `-ne? -p --no-session --mode json …` — existing
+	// argv tests assert indexes before this point and the tail prompt last.
+	piArgs.push("-p", "--no-session", "--mode", "json");
 	if (workerAgentPath && fs.existsSync(workerAgentPath)) {
 		piArgs.push("--append-system-prompt", workerAgentPath);
 	}
@@ -166,6 +174,107 @@ export function buildDoneMissingPiOutputFlush(result, config = {}) {
 		stderr: truncateLiveLogBytes(result?.stderr ?? "", maxBytes),
 		stdout: truncateLiveLogBytes(result?.stdout ?? "", maxBytes),
 	};
+}
+
+/** Sidecar filename the engine reads in recordLaneTaskMetric (engine-lanes/queue.mjs). Keep both definitions in sync. */
+const WORKER_USAGE_SIDECAR_FILENAME = "worker-usage.json";
+
+/**
+ * True when the parsed pi JSON stream reported at least one usage counter.
+ *
+ * @param {{tokensIn?: number, tokensOut?: number, estimatedUsd?: number}} usage
+ * @returns {boolean}
+ */
+export function hasWorkerUsage(usage) {
+	return usage.tokensIn !== undefined || usage.tokensOut !== undefined || usage.estimatedUsd !== undefined;
+}
+
+/**
+ * Sum provider-reported usage from a pi spawn result's JSON-mode stdout.
+ * Delegates to the SP-878 parser: only events pi actually reported are
+ * counted; non-JSON output yields `{}` so no usage is ever invented.
+ *
+ * @param {{stdout?: string|null}} result
+ * @returns {{tokensIn?: number, tokensOut?: number, estimatedUsd?: number}}
+ */
+export function workerUsageFromResult(result) {
+	const stdout = typeof result?.stdout === "string" ? result.stdout : "";
+	if (stdout.length === 0) return {};
+	return sumUsageFromPiJsonStream(stdout);
+}
+
+/**
+ * Remove a stale usage sidecar left by a previous attempt. Must run before
+ * every pi spawn so an attempt that produces no usage cannot inherit the
+ * previous attempt's totals.
+ *
+ * @param {string} taskFolder
+ * @returns {void}
+ */
+export function clearWorkerUsageSidecar(taskFolder) {
+	try {
+		fs.rmSync(path.join(taskFolder, WORKER_USAGE_SIDECAR_FILENAME), { force: true });
+	} catch {
+		// Sidecar hygiene is best-effort; a leftover file at worst carries a
+		// previous attempt's real usage, never an invented one.
+	}
+}
+
+/**
+ * Persist provider-reported usage next to the task packet. The engine reads
+ * this sidecar in recordLaneTaskMetric (engine-lanes/queue.mjs) and copies
+ * the finite counters onto the task metric record. Called only with totals
+ * the parser actually reported — never with defaults or guesses.
+ *
+ * @param {object} params
+ * @param {string} params.taskFolder
+ * @param {{tokensIn?: number, tokensOut?: number, estimatedUsd?: number}} params.usage
+ * @returns {string | null} sidecar path, or null when there is nothing to persist.
+ */
+export function persistWorkerUsageSidecar({ taskFolder, usage }) {
+	if (!taskFolder || !hasWorkerUsage(usage)) return null;
+	const sidecarPath = path.join(taskFolder, WORKER_USAGE_SIDECAR_FILENAME);
+	try {
+		fs.writeFileSync(
+			sidecarPath,
+			`${JSON.stringify(
+				{
+					schemaVersion: 1,
+					recordType: "worker-usage",
+					source: "pi-json-stdout",
+					endedAt: new Date().toISOString(),
+					...usage,
+				},
+				null,
+				"\t",
+			)}\n`,
+			"utf-8",
+		);
+		return sidecarPath;
+	} catch {
+		// Metrics are advisory: a read-only task folder must not fail the run.
+		return null;
+	}
+}
+
+/**
+ * Human-readable assistant text from a pi JSON-mode stream, for tee-ing into
+ * run logs now that stdout carries NDJSON instead of prose. Empty when the
+ * stream holds no assistant text segments. Capped by the caller.
+ *
+ * @param {{stdout?: string|null}} result
+ * @returns {string}
+ */
+export function workerPiLogTextFromResult(result) {
+	const stdout = typeof result?.stdout === "string" ? result.stdout : "";
+	if (stdout.length === 0) return "";
+	try {
+		return extractTextFromPiJsonStream(stdout).join("\n\n");
+	} catch {
+		// extractText only throws on non-string/non-iterable input, which the
+		// guard above rules out; kept defensive so log tee-ing never kills a run.
+		return "";
+	}
 }
 
 /**
@@ -352,6 +461,9 @@ async function runWorkerRunner() {
 	const mode = process.argv.includes("--stub") ? "stub" : "pi";
 
 	if (mode === "stub") {
+		// SP-879 (#338): a stub attempt never produces usage; drop any sidecar a
+		// previous real-pi attempt left so stub metrics carry no inherited costs.
+		clearWorkerUsageSidecar(taskFolder);
 		const parsedTaskId = taskIdFromFolderName(path.basename(taskFolder)) ?? "";
 		const failTasks = String(process.env.SPINE_WORKER_STUB_FAIL_TASKS ?? "")
 			.split(/[,\s]+/)
@@ -505,14 +617,26 @@ async function runWorkerRunner() {
 	}
 
 	const timeoutMs = Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS || 60 * 60 * 1000);
+	// SP-879 (#338): a sidecar from a previous attempt must never survive into
+	// this attempt's metrics — clear it before pi runs.
+	clearWorkerUsageSidecar(taskFolder);
 	const result = spawnSync("pi", piArgs, {
 		cwd: worktreePath || process.cwd(),
 		encoding: "utf-8",
 		timeout: timeoutMs,
 	});
 
+	// SP-879 (#338): persist provider-reported usage before any terminal exit so
+	// success, done-missing, and non-zero paths all carry real spend. The parser
+	// only counts events pi reported; when stdout holds nothing parseable no
+	// sidecar is written and no usage is invented (stub/execute never reach here).
+	const usage = workerUsageFromResult(result);
+	persistWorkerUsageSidecar({ taskFolder, usage });
+	const piLogText = workerPiLogTextFromResult(result);
+
 	if (result.error?.code === "ETIMEDOUT") {
 		console.error("pi worker timed out");
+		if (piLogText) process.stdout.write(`\n[pi assistant output]\n${truncateLiveLogBytes(piLogText, resolveWorkerOutputConfig(spineConfig).maxBytes)}\n`);
 		process.exit(124);
 	}
 
@@ -524,6 +648,11 @@ async function runWorkerRunner() {
 		}
 		process.stderr.write(result.stderr ?? "");
 		process.stdout.write(result.stdout ?? "");
+		if (piLogText) {
+			process.stdout.write(
+				`\n[pi assistant output]\n${truncateLiveLogBytes(piLogText, resolveWorkerOutputConfig(spineConfig).maxBytes)}\n`,
+			);
+		}
 		process.exit(result.status ?? 1);
 	}
 
@@ -533,6 +662,11 @@ async function runWorkerRunner() {
 		const flush = buildDoneMissingPiOutputFlush(result, spineConfig);
 		if (flush.stderr) process.stderr.write(flush.stderr);
 		if (flush.stdout) process.stdout.write(flush.stdout);
+		if (piLogText) {
+			process.stdout.write(
+				`\n[pi assistant output]\n${truncateLiveLogBytes(piLogText, resolveWorkerOutputConfig(spineConfig).maxBytes)}\n`,
+			);
+		}
 		process.exit(1);
 	}
 

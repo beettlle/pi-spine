@@ -258,6 +258,9 @@ export function resolveReviewMetricPins(config, reviewType) {
  * @param {"verdict"|"spawn_failed"|"timeout"|"provider_error"|"blocked"} [params.outcome]
  * @param {string} [params.failureReason]
  * @param {number} [params.endedAtMs]
+ * @param {{ tokensIn?: number, tokensOut?: number, estimatedUsd?: number }} [params.usage]
+ *   pi `--mode json` usage totals from the reviewer spawn (SP-880 / #338). Only finite
+ *   values are copied; absent/NaN/Infinity are omitted so rows never invent usage.
  */
 export function buildReviewMetricRecord({
 	batchId,
@@ -274,6 +277,7 @@ export function buildReviewMetricRecord({
 	outcome = "verdict",
 	failureReason,
 	endedAtMs = Date.now(),
+	usage,
 }) {
 	/** @type {Record<string, unknown>} */
 	const record = {
@@ -297,6 +301,15 @@ export function buildReviewMetricRecord({
 	if (Number.isFinite(attempt)) record.attempt = attempt;
 	if (Number.isFinite(durationMs)) record.durationMs = Math.max(0, /** @type {number} */ (durationMs));
 	if (typeof failureReason === "string" && failureReason !== "") record.failureReason = failureReason;
+	// SP-880 / #338: reviewer usage totals from the pi JSON stream. Same finite
+	// convention as task rows; keys stay absent when pi reported nothing. The
+	// metrics redaction allowlist (USAGE_KEYS) keeps these fields while redacting
+	// the rest of the record.
+	if (usage !== null && typeof usage === "object") {
+		if (Number.isFinite(usage.tokensIn)) record.tokensIn = usage.tokensIn;
+		if (Number.isFinite(usage.tokensOut)) record.tokensOut = usage.tokensOut;
+		if (Number.isFinite(usage.estimatedUsd)) record.estimatedUsd = usage.estimatedUsd;
+	}
 
 	return sanitizeMetricRecord(record);
 }
@@ -328,6 +341,8 @@ export function appendReviewMetric(projectRoot, record, config = {}) {
  * @param {number} [params.durationMs]
  * @param {"verdict"|"spawn_failed"|"timeout"|"provider_error"|"blocked"} [params.outcome]
  * @param {string} [params.failureReason]
+ * @param {{ tokensIn?: number, tokensOut?: number, estimatedUsd?: number }} [params.usage]
+ *   pi `--mode json` usage totals from the reviewer spawn result (SP-880 / #338).
  */
 export function recordReviewMetric({ projectRoot, config = {}, model, ...rest }) {
 	if (!isMetricsEnabled(config)) return null;

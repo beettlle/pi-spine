@@ -336,6 +336,8 @@ export async function runReviewPollLoop({
 						? `${reviewType}_review_provider_error`
 						: `${reviewType}_review_spawn_failed`;
 			// SP-837 (#325): one reviewer row per spawn failure / timeout / provider error.
+			// SP-880 (#338): forward spawn-result usage so failed reviewer spawns still
+			// attribute the tokens pi reported before failing (omitted when none).
 			recordReviewMetric({
 				projectRoot,
 				config,
@@ -352,6 +354,7 @@ export async function runReviewPollLoop({
 							? "provider_error"
 							: "spawn_failed",
 				failureReason: typeof reviewResult.reason === "string" ? reviewResult.reason : undefined,
+				usage: reviewResult.usage,
 			});
 			recordReviewTaskFailure({
 				projectRoot,
@@ -389,6 +392,8 @@ export async function runReviewPollLoop({
 			[attemptKey]: reviewAttempt + 1,
 		});
 		// SP-837 (#325): one reviewer row per recorded verdict (attempt is 1-based).
+		// SP-880 (#338): usage rides on the engine-review result (originating from
+		// the reviewer pi JSON stream) so verdict rows attribute cost by role/model.
 		recordReviewMetric({
 			projectRoot,
 			config,
@@ -400,6 +405,7 @@ export async function runReviewPollLoop({
 			attempt: reviewAttempt + 1,
 			durationMs: Date.now() - reviewStartedAt,
 			outcome: "verdict",
+			usage: reviewResult.usage,
 		});
 
 		if (reviewResult.verdict === passVerdict) {
