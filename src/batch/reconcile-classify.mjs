@@ -115,48 +115,6 @@ export function syncPersistedClassifications({ projectRoot, state }) {
 	return { changed };
 }
 
-/** @param {string} projectRoot */
-function isInsideGitRepo(projectRoot) {
-	try {
-		execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
-			cwd: projectRoot,
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-/** @param {string} projectRoot @param {string} ref */
-function gitRefExists(projectRoot, ref) {
-	try {
-		execFileSync("git", ["rev-parse", "--verify", ref], {
-			cwd: projectRoot,
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return true;
-	} catch {
-		return false;
-	}
-}
-
-/** @param {string} projectRoot @param {string} ancestor @param {string} descendant */
-function gitIsAncestor(projectRoot, ancestor, descendant) {
-	try {
-		execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
-			cwd: projectRoot,
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return true;
-	} catch {
-		return false;
-	}
-}
-
 /** @param {Record<string, any>} result @param {unknown} err @param {string} context */
 function recordGitInspectionError(result, err, context) {
 	const message = err instanceof Error ? err.message : String(err);
@@ -166,30 +124,96 @@ function recordGitInspectionError(result, err, context) {
 		: detail;
 }
 
-/** @param {string} projectRoot @param {string} batchId @returns {string[]} */
-function listOrchBranches(projectRoot, batchId) {
-	try {
-		const output = execFileSync("git", ["branch", "-a", "--list", "*orch*"], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			timeout: 5000,
-		});
+/**
+ * Distinguish a failed git probe from a definitive git answer (#310, fail closed).
+ *
+ * Empirically (verified against node's execFileSync): a definitive "no" — missing
+ * ref, not an ancestor, not a repository, missing object — exits 1 or 128 with a
+ * numeric `status`; a timeout surfaces as `code: "ETIMEDOUT"` + `signal: SIGTERM`;
+ * a missing binary is `code: "ENOENT"`. Only the latter classes are failures that
+ * must surface as inspection errors; ordinary "no" answers stay silent so
+ * reconcile does not cry git_unavailable on every repo without an orch branch.
+ *
+ * @param {unknown} err
+ * @returns {boolean} true when the failure is fatal (must be recorded)
+ */
+function isFatalGitProbeFailure(err) {
+	if (!(err instanceof Error)) return true;
+	const e = /** @type {Record<string, any>} */ (err);
+	if (typeof e.code === "string") return true; // ETIMEDOUT, ENOENT, EACCES, …
+	if (e.signal) return true; // killed by signal — no definitive answer
+	const status = typeof e.status === "number" ? e.status : undefined;
+	return status !== 1 && status !== 128; // 1/128 = git ran and answered "no"
+}
 
-		return output
-			.split(/\r?\n/)
-			.map((line) => line.trim().replace(/^\*?\s+/, "").replace(/^remotes\/[^/]+\//, ""))
-			.filter(Boolean)
-			.filter((branch) => branch.includes(batchId));
-	} catch {
-		return [];
+/**
+ * Run one read-only git probe (fail closed, #310). Returns execFileSync output
+ * (string when `capture`, truthy sentinel otherwise), or null when git answered
+ * "definitively no" (exit 1/128) OR the probe failed fatally. Fatal failures are
+ * recorded into `sink.gitInspectionError` via the existing pattern; callers keep
+ * their conservative false/[] semantics.
+ *
+ * @param {Record<string, any>|null} sink result object carrying gitInspectionError
+ * @param {string} context stable label recorded alongside the error
+ * @param {string} projectRoot
+ * @param {string[]} args git argv
+ * @param {boolean} [capture] capture stdout as string instead of Buffer
+ * @returns {string|Buffer|null}
+ */
+function probeGit(sink, context, projectRoot, args, capture = false) {
+	try {
+		return capture
+			? execFileSync("git", args, {
+					cwd: projectRoot,
+					encoding: "utf-8",
+					stdio: ["ignore", "pipe", "pipe"],
+					timeout: 5000,
+				})
+			: execFileSync("git", args, {
+					cwd: projectRoot,
+					stdio: ["ignore", "pipe", "pipe"],
+					timeout: 5000,
+				});
+	} catch (err) {
+		if (isFatalGitProbeFailure(err) && sink) {
+			recordGitInspectionError(sink, err, context);
+		}
+		return null;
 	}
+}
+
+/** @param {string} projectRoot @param {Record<string, any>} [sink] */
+function isInsideGitRepo(projectRoot, sink) {
+	return probeGit(sink ?? null, "inside_work_tree", projectRoot, ["rev-parse", "--is-inside-work-tree"]) !== null;
+}
+
+/** @param {string} projectRoot @param {string} ref @param {Record<string, any>} [sink] */
+function gitRefExists(projectRoot, ref, sink) {
+	return probeGit(sink ?? null, `ref_exists(${ref})`, projectRoot, ["rev-parse", "--verify", ref]) !== null;
+}
+
+/** @param {string} projectRoot @param {string} ancestor @param {string} descendant @param {Record<string, any>} [sink] */
+function gitIsAncestor(projectRoot, ancestor, descendant, sink) {
+	return probeGit(sink ?? null, `is_ancestor(${ancestor}..${descendant})`, projectRoot, ["merge-base", "--is-ancestor", ancestor, descendant]) !== null;
+}
+
+/** @param {string} projectRoot @param {string} batchId @param {Record<string, any>} [sink] @returns {string[]} */
+function listOrchBranches(projectRoot, batchId, sink) {
+	const output = probeGit(sink ?? null, "list_orch_branches", projectRoot, ["branch", "-a", "--list", "*orch*"], true);
+	if (typeof output !== "string") return [];
+
+	return output
+		.split(/\r?\n/)
+		.map((line) => line.trim().replace(/^\*?\s+/, "").replace(/^remotes\/[^/]+\//, ""))
+		.filter(Boolean)
+		.filter((branch) => branch.includes(batchId));
 }
 
 /** @param {{ projectRoot: string, batchId: string, baseBranch: string, orchBranch: string|null }} ctx */
 export function inspectGitState(ctx) {
 	const { projectRoot, batchId, baseBranch, orchBranch } = ctx;
 	const result = /** @type {Record<string, any>} */ ({
-		inGitRepo: isInsideGitRepo(projectRoot),
+		inGitRepo: false,
 		baseBranch,
 		orchBranch,
 		orchBranches: [],
@@ -199,6 +223,7 @@ export function inspectGitState(ctx) {
 		orchCommitsAhead: null,
 		gitInspectionError: null,
 	});
+	result.inGitRepo = isInsideGitRepo(projectRoot, result);
 
 	if (!result.inGitRepo) return result;
 
@@ -207,25 +232,25 @@ export function inspectGitState(ctx) {
 		return result;
 	}
 
-	const candidates = new Set(listOrchBranches(projectRoot, batchId));
+	const candidates = new Set(listOrchBranches(projectRoot, batchId, result));
 	if (orchBranch) candidates.add(orchBranch);
-	candidates.add(`orch/cdelgado-${batchId}`);
-	candidates.add(`orch/spine-*-${batchId}`.replace("*", "operator"));
+	// Generic orch branch naming convention only — never per-user patterns (#310).
+	candidates.add(`orch/spine-${batchId}`);
 
 	result.orchBranches = [...candidates].filter((branch) => !branch.includes("*"));
 
 	for (const branch of result.orchBranches) {
-		if (!gitRefExists(projectRoot, branch)) continue;
+		if (!gitRefExists(projectRoot, branch, result)) continue;
 		result.orchBranchExists = true;
-		if (gitIsAncestor(projectRoot, branch, baseBranch)) {
+		if (gitIsAncestor(projectRoot, branch, baseBranch, result)) {
 			result.orchMergedToBase = true;
 			result.mergedOrchBranch = branch;
 			break;
 		}
 	}
 
-	const resolvedOrch = orchBranch && gitRefExists(projectRoot, orchBranch) ? orchBranch : result.mergedOrchBranch;
-	if (resolvedOrch && gitRefExists(projectRoot, resolvedOrch) && !result.orchMergedToBase) {
+	const resolvedOrch = orchBranch && gitRefExists(projectRoot, orchBranch, result) ? orchBranch : result.mergedOrchBranch;
+	if (resolvedOrch && gitRefExists(projectRoot, resolvedOrch, result) && !result.orchMergedToBase) {
 		try {
 			result.orchCommitsAhead = countCommitsAhead(projectRoot, baseBranch, resolvedOrch);
 		} catch (err) {
@@ -258,90 +283,60 @@ export function inspectGitState(ctx) {
 	return result;
 }
 
-/** @param {string} projectRoot @param {string} refA @param {string} refB @returns {string[]} */
-export function listGitChangedPaths(projectRoot, refA, refB) {
+/** @param {string} projectRoot @param {string} refA @param {string} refB @param {Record<string, any>} [sink] @returns {string[]} */
+export function listGitChangedPaths(projectRoot, refA, refB, sink) {
 	if (!refA || !refB || refA === refB) return [];
-	try {
-		const output = execFileSync("git", ["diff", "--name-only", `${refA}..${refB}`], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return output
-			.split(/\r?\n/)
-			.map((line) => line.trim())
-			.filter(Boolean);
-	} catch {
-		return [];
-	}
+	const output = probeGit(sink ?? null, `changed_paths(${refA}..${refB})`, projectRoot, ["diff", "--name-only", `${refA}..${refB}`], true);
+	if (typeof output !== "string") return [];
+	return output
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
 }
 
 /** Paths from human commits since snapshot, excluding orch ancestry.
- * @param {string} projectRoot @param {string|null} snapshot @param {string|null} humanHead @param {string|null} orchBranch @returns {string[]}
+ * @param {string} projectRoot @param {string|null} snapshot @param {string|null} humanHead @param {string|null} orchBranch @param {Record<string, any>} [sink] @returns {string[]}
  */
-export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch) {
+export function listHumanOnlyPaths(projectRoot, snapshot, humanHead, orchBranch, sink) {
 	if (!snapshot || !humanHead || snapshot === humanHead) return [];
 	const args = ["log", "--name-only", "--pretty=format:", `${snapshot}..${humanHead}`];
-	if (orchBranch && gitRefExists(projectRoot, orchBranch)) {
+	if (orchBranch && gitRefExists(projectRoot, orchBranch, sink)) {
 		args.push("--not", orchBranch);
 	}
-	try {
-		const output = execFileSync("git", args, {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return [...new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))];
-	} catch {
-		return [];
-	}
+	const output = probeGit(sink ?? null, `human_only_paths(${snapshot}..${humanHead})`, projectRoot, args, true);
+	if (typeof output !== "string") return [];
+	return [...new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))];
 }
 
 /**
  * Paths touched on both sides only overlap when their contents differ: the same
  * template sync landing on main and orch is not a divergence. One `git diff`
- * call covers every candidate; a git failure keeps all candidates (fail closed).
+ * call covers every candidate; a definitive "no" answer narrows candidates,
+ * while a fatal failure (timeout, crash) keeps all candidates (fail closed) and
+ * is recorded into the inspection error (#310).
  *
  * @param {string} projectRoot @param {string} humanRef @param {string} orchRef @param {string[]} candidatePaths
+ * @param {Record<string, any>} [sink]
  * @returns {string[]}
  */
-function keepPathsWithDifferentContent(projectRoot, humanRef, orchRef, candidatePaths) {
+function keepPathsWithDifferentContent(projectRoot, humanRef, orchRef, candidatePaths, sink) {
 	if (candidatePaths.length === 0 || !orchRef) return candidatePaths;
-	try {
-		const output = execFileSync("git", ["diff", "--name-only", humanRef, orchRef, "--", ...candidatePaths], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		const differing = new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
-		return candidatePaths.filter((filePath) => differing.has(filePath));
-	} catch {
-		return candidatePaths;
-	}
+	const output = probeGit(sink ?? null, `diff_content(${humanRef}..${orchRef})`, projectRoot, ["diff", "--name-only", humanRef, orchRef, "--", ...candidatePaths], true);
+	if (typeof output !== "string") return candidatePaths;
+	const differing = new Set(output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+	return candidatePaths.filter((filePath) => differing.has(filePath));
 }
 
-/** @param {string} projectRoot @param {string} ref @param {string} filePath */
-function pathExistsAtRef(projectRoot, ref, filePath) {
-	try {
-		execFileSync("git", ["cat-file", "-e", `${ref}:${filePath}`], {
-			cwd: projectRoot,
-			stdio: ["ignore", "pipe", "pipe"],
-			timeout: 5000,
-		});
-		return true;
-	} catch {
-		return false;
-	}
+/** @param {string} projectRoot @param {string} ref @param {string} filePath @param {Record<string, any>} [sink] */
+function pathExistsAtRef(projectRoot, ref, filePath, sink) {
+	return probeGit(sink ?? null, `path_exists(${ref}:${filePath})`, projectRoot, ["cat-file", "-e", `${ref}:${filePath}`]) !== null;
 }
 
-/** @param {string} projectRoot @param {string} baseTip @param {string} snapshot */
-function humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot) {
-	const landPaths = listGitChangedPaths(projectRoot, snapshot, baseTip);
+/** @param {string} projectRoot @param {string} baseTip @param {string} snapshot @param {Record<string, any>} [sink] */
+function humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot, sink) {
+	const landPaths = listGitChangedPaths(projectRoot, snapshot, baseTip, sink);
 	for (const filePath of landPaths) {
-		if (!pathExistsAtRef(projectRoot, baseTip, filePath)) continue;
+		if (!pathExistsAtRef(projectRoot, baseTip, filePath, sink)) continue;
 		if (!fs.existsSync(path.join(projectRoot, filePath))) {
 			return true;
 		}
@@ -359,22 +354,11 @@ export function inspectHumanBaseSync(ctx) {
 	const snapshot = String(baseBranchHeadAtStart ?? "").trim();
 	if (!snapshot) return null;
 
-	let baseTip = "";
-	let humanHead = "";
-	try {
-		baseTip = execFileSync("git", ["rev-parse", baseBranch], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			timeout: 5000,
-		}).trim();
-		humanHead = execFileSync("git", ["rev-parse", "HEAD"], {
-			cwd: projectRoot,
-			encoding: "utf-8",
-			timeout: 5000,
-		}).trim();
-	} catch {
-		return null;
-	}
+	let baseTip = probeGit(git, `rev_parse(${baseBranch})`, projectRoot, ["rev-parse", baseBranch], true);
+	let humanHead = probeGit(git, "rev_parse(HEAD)", projectRoot, ["rev-parse", "HEAD"], true);
+	if (typeof baseTip !== "string" || typeof humanHead !== "string") return null;
+	baseTip = baseTip.trim();
+	humanHead = humanHead.trim();
 
 	const integrateCompleted = Array.isArray(journalEvents)
 		? journalEvents.some((/** @type {any} */ event) => event.type === "integrate.completed")
@@ -382,34 +366,37 @@ export function inspectHumanBaseSync(ctx) {
 	const landSucceeded =
 		git.orchMergedToBase ||
 		integrateCompleted ||
-		(baseTip !== snapshot && gitIsAncestor(projectRoot, snapshot, baseTip));
+		(baseTip !== snapshot && gitIsAncestor(projectRoot, snapshot, baseTip, git));
 
 	const resolvedOrch =
-		orchBranch && gitRefExists(projectRoot, orchBranch)
+		orchBranch && gitRefExists(projectRoot, orchBranch, git)
 			? orchBranch
-			: git.mergedOrchBranch && gitRefExists(projectRoot, git.mergedOrchBranch)
+			: git.mergedOrchBranch && gitRefExists(projectRoot, git.mergedOrchBranch, git)
 				? git.mergedOrchBranch
 				: null;
 
 	const branchResult = resolveCurrentGitBranch(projectRoot);
+	if (branchResult.error) {
+		recordGitInspectionError(git, new Error(branchResult.error), "current_branch");
+	}
 	const onBaseBranch = branchResult.branch === baseBranch;
 
 	const humanSinceSnapshot =
 		onBaseBranch &&
-		gitIsAncestor(projectRoot, snapshot, humanHead) &&
+		gitIsAncestor(projectRoot, snapshot, humanHead, git) &&
 		humanHead !== snapshot;
 	const humanPaths = humanSinceSnapshot
-		? listHumanOnlyPaths(projectRoot, snapshot, humanHead, resolvedOrch)
+		? listHumanOnlyPaths(projectRoot, snapshot, humanHead, resolvedOrch, git)
 		: [];
-	const landPaths = landSucceeded ? listGitChangedPaths(projectRoot, snapshot, baseTip) : [];
+	const landPaths = landSucceeded ? listGitChangedPaths(projectRoot, snapshot, baseTip, git) : [];
 	const orchPaths =
-		resolvedOrch && gitRefExists(projectRoot, resolvedOrch)
-			? listGitChangedPaths(projectRoot, snapshot, resolvedOrch)
+		resolvedOrch && gitRefExists(projectRoot, resolvedOrch, git)
+			? listGitChangedPaths(projectRoot, snapshot, resolvedOrch, git)
 			: landPaths;
 	const orchPathSet = new Set(orchPaths);
 	const touchedByBoth = humanPaths.filter((filePath) => orchPathSet.has(filePath));
 	const orchContentRef = resolvedOrch ?? baseTip;
-	const overlapPaths = keepPathsWithDifferentContent(projectRoot, humanHead, orchContentRef, touchedByBoth);
+	const overlapPaths = keepPathsWithDifferentContent(projectRoot, humanHead, orchContentRef, touchedByBoth, git);
 
 	if (overlapPaths.length > 0) {
 		return {
@@ -428,24 +415,19 @@ export function inspectHumanBaseSync(ctx) {
 	if (!landSucceeded) return null;
 
 	const needsCommitSync =
-		humanHead !== baseTip && onBaseBranch && gitIsAncestor(projectRoot, humanHead, baseTip);
+		humanHead !== baseTip && onBaseBranch && gitIsAncestor(projectRoot, humanHead, baseTip, git);
 	const needsPathSync =
-		onBaseBranch && humanHead === baseTip && humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot);
+		onBaseBranch && humanHead === baseTip && humanCheckoutNeedsPathSync(projectRoot, baseTip, snapshot, git);
 
 	if (!needsCommitSync && !needsPathSync) {
 		if (!onBaseBranch) {
-			const mergeBase = (() => {
-				try {
-					return execFileSync("git", ["merge-base", humanHead, baseTip], {
-						cwd: projectRoot,
-						encoding: "utf-8",
-						timeout: 5000,
-					}).trim();
-				} catch {
-					return "";
-				}
-			})();
-			if (mergeBase && mergeBase !== baseTip && gitIsAncestor(projectRoot, mergeBase, baseTip)) {
+			const mergeBase = probeGit(git, "merge_base", projectRoot, ["merge-base", humanHead, baseTip], true);
+			if (
+				typeof mergeBase === "string" &&
+				mergeBase.trim() &&
+				mergeBase.trim() !== baseTip &&
+				gitIsAncestor(projectRoot, mergeBase.trim(), baseTip, git)
+			) {
 				return {
 					diagnosis: "integrate_isolated_ok",
 					headline: `${baseBranch} advanced during batch; feature branch needs sync`,
