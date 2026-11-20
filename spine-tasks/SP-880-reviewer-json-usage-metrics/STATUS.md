@@ -1,6 +1,6 @@
 # SP-880: Reviewer: pi --mode json usage on review metric rows — Status
 
-**Current Step:** Step 1: Reviewer JSON + metric fields
+**Current Step:** Step 3: Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-19
 **Review Level:** 1
@@ -19,17 +19,17 @@
 ---
 
 ### Step 1: Reviewer JSON + metric fields
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] --mode json + parse
-- [ ] Usage on review metric records
+- [x] --mode json + parse
+- [x] Usage on review metric records
 
 ---
 
 ### Step 2: Fixture rollup test
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] End-to-end fixture → metrics show / rollup
+- [x] End-to-end fixture → metrics show / rollup
 
 ---
 
@@ -73,6 +73,8 @@
 |-----------|--------|---------|
 | 2026-11-19 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-19 | Step 0 preflight | SP-878 API + SP-837 emit sites confirmed; impact via text search (GitNexus UNKNOWN); runStepReview usage gap documented |
+| 2026-11-19 | Step 1–2 implementation | `--mode json` + SP-878 parse in spawnReviewerPi (human tails via message_end text); finite usage copied in buildReviewMetricRecord/recordReviewMetric; poll emit sites forward `reviewResult.usage`; 12-test file incl. `spine metrics show --json` fixture e2e |
+| 2026-11-19 | Out-of-scope edit (mechanical) | `tests/batch/review-spawn.test.mjs` (NOT in File Scope): required `--mode json` argv change broke 5 exact-shape/positional assertions; minimal fixture update (`assertReviewerArgShape` spine + inherit-test positions) to keep the required change's own test file green for post-integrate release:check. Documented per FR-WORK-06 |
 
 ---
 
