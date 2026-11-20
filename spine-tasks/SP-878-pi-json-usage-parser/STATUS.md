@@ -1,7 +1,7 @@
 # SP-878: Parse pi --mode json stream into usage totals — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete — all steps done
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,10 +35,10 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries in STATUS
-- [ ] Create .DONE
+- [x] Discoveries in STATUS
+- [x] Create .DONE
 
 ---
 
@@ -71,6 +71,7 @@
 | 2026-11-20 | Step 0 preflight | Confirmed pi 1.5.2 JSON event shapes from local docs (`docs/json.md`, `docs/message-types.md`); API sketched (see Discoveries) |
 | 2026-11-20 | Step 1 | `src/batch/pi-json-usage.mjs` + 3 fixtures + 16 unit tests implemented |
 | 2026-11-20 | Step 2 | Contract testCommand exits 0: lint clean, tsc ×2 clean, 25 tests pass (16 parser + phase23-exit-verify + ts-nocheck-guard) |
+| 2026-11-20 | Step 3 | Discoveries recorded; runbook checked (not affected); .DONE created |
 
 ---
 
