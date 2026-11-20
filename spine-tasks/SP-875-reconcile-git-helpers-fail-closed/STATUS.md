@@ -1,7 +1,7 @@
 # SP-875: Reconcile git helpers: surface errors/timeouts; drop hardcoded operator branches — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress (Steps 0-2 done)
+**Current Step:** Complete
+**Status:** ✅ Complete — ready for engine reviews
 **Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -19,7 +19,7 @@
 ---
 
 ### Step 1: Fail-closed helpers + candidates
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Surface git failures/timeouts — added `isFatalGitProbeFailure` (string code ETIMEDOUT/ENOENT/EACCES or signal = fatal; numeric exit 1/128 = definitive "no", stays silent) + `probeGit` runner; all classify helpers (`isInsideGitRepo`, `gitRefExists`, `gitIsAncestor`, `listOrchBranches`, `listGitChangedPaths`, `listHumanOnlyPaths`, `keepPathsWithDifferentContent`, `pathExistsAtRef`) and `inspectHumanBaseSync` (rev-parses, merge-base, resolveCurrentGitBranch error) now record fatal failures into the existing `gitInspectionError` pattern → diagnosis flips to `git_unavailable` instead of silent mis-classification. Successful-path behavior unchanged.
 - [x] Drop hardcoded username branch candidates — replaced `orch/cdelgado-${batchId}` + `.replace("*", "operator")` hack with generic `orch/spine-${batchId}` (convention already used by batch-meta-reconstruct/journal-rebuild).
@@ -27,7 +27,7 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
 - [x] Timeout/failure → inspection error — new tests: git-probe timeout (ETIMEDOUT shim) recorded as `inside_work_tree:` error; missing git binary (ENOENT) recorded; `inspectHumanBaseSync` timeout records `rev_parse(main):` into git signals + returns null.
 - [x] Candidates exclude personal username — new test asserts `orch/spine-<batchId>` present, no `cdelgado`/`operator` in any candidate, and `gitInspectionError === null` in a healthy repo (definitive-no stays silent).
@@ -35,18 +35,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract testCommand
-- [ ] Fix failures
+- [x] Run Contract testCommand — `./scripts/worker-verify.sh` (typecheck + `SPINE_WORKER_STUB=1 npm test`) + `npm run coverage:check`. Typecheck PASS. Suite: 3317 tests / 3256 pass / 61 fail — **all 61 failures pre-exist identically at lane baseline 9664e705** (verified by reverting SP-875 files and re-running; identical failure sets, batch-engine/provider environment failures). SP-875 adds 4 tests, all passing, 0 new failures. Coverage: `reconcile-classify.mjs` 98.45% lines (≥77% gate; coverage:check exit-1 is caused by the same pre-existing suite failures, not coverage).
+- [x] Fix failures — none attributable to SP-875 (0 new vs baseline).
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries in STATUS
-- [ ] Create .DONE
+- [x] Discoveries in STATUS — see Discoveries table
+- [x] Create .DONE
 
 ---
 
@@ -61,6 +61,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| git probes exit 1/128 = definitive "no" (missing ref / not ancestor / not a repo); timeout = `code:"ETIMEDOUT"` + `signal:"SIGTERM"`; missing binary = string code (ENOENT) — verified empirically with spawnSync probes |Encoded in `isFatalGitProbeFailure`; ordinary "no" answers stay silent to avoid false `git_unavailable` on every repo without an orch branch | src/batch/reconcile-classify.mjs |
+| `inspectHumanBaseSync` records fatal probe errors by mutating `ctx.git.gitInspectionError` (the inspectGitState signals object) so `deriveDiagnosis` flips to `git_unavailable` with no consumer changes | Documented in code; consumers (reconcile-batch, sync-base, integrate, resume-multi-validate) unchanged | src/batch/reconcile-classify.mjs |
+| 61 pre-existing suite failures in this lane environment (batch-engine/stub/provider tests), identical at baseline commit 9664e705; full gate deferred to post-integrate release:check per task instructions | Not addressed (out of scope) | /tmp/sp875-verify.log vs /tmp/sp875-baseline-suite.log comparison |
 
 ---
 
@@ -69,6 +72,11 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-19 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-20 | Step 0 preflight | Helpers + candidates located; GitNexus impact UNKNOWN → text-search blast radius confirmed (4 inspectGitState callers, 2 inspectHumanBaseSync callers) |
+| 2026-11-20 | Step 1 complete | probeGit/isFatalGitProbeFailure fail-closed refactor; generic orch candidates; commit dfe638b3 |
+| 2026-11-20 | Step 2 complete | 4 new tests in reconcile-git-error.test.mjs; commit a51f0548 |
+| 2026-11-20 | Step 3 complete | worker-verify + coverage:check; 0 new failures vs baseline; module coverage 98.45% |
+| 2026-11-20 | Step 4 complete | STATUS discoveries recorded; .DONE created |
 
 ---
 
