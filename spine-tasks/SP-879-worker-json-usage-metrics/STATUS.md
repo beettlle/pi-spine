@@ -61,6 +61,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): stet: rule budget of 1000 tokens dropped 187 rule section(s) from review prompts (e.g. ["critical-rules-quick-reference.mdc: 10.  | advisory — noted, not blocking | contract review step |
 | Sidecar transport: runner is a separate process; usage travels via `worker-usage.json` in the task packet folder, written on every real-pi terminal path when the SP-878 parser reports a counter | Implemented | `bin/spine-worker-runner.mjs` |
 | Stale-sidecar hygiene: cleared before each pi spawn and in stub mode, so stub retries never inherit a prior attempt's costs | Implemented | `bin/spine-worker-runner.mjs` |
 | Engine attach via `attachTaskUsageFromSidecar` inside `recordLaneTaskMetric` — single funnel covers success/failure/matrix/commit callers with no out-of-scope edits | Implemented | `src/batch/engine-lanes/queue.mjs` |
