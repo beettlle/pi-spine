@@ -145,6 +145,9 @@ test("throws TypeError when input is not a string or iterable of strings", () =>
 	assert.throws(() => sumUsageFromPiJsonStream(/** @type {any} */ (42)), TypeError);
 	assert.throws(() => sumUsageFromPiJsonStream(/** @type {any} */ (null)), TypeError);
 	assert.throws(() => sumUsageFromPiJsonStream(/** @type {any} */ ([1, 2])), TypeError);
+	assert.throws(() => sumUsageFromPiJsonStream(/** @type {any} */ ({})), TypeError);
+	assert.throws(() => extractTextFromPiJsonStream(/** @type {any} */ ({})), TypeError);
+	assert.throws(() => extractTextFromPiJsonStream(/** @type {any} */ (42)), TypeError);
 });
 
 test("extractTextFromPiJsonStream returns assistant text segments in stream order", () => {

@@ -4,8 +4,8 @@
 **Status:** ✅ Complete
 **Last Updated:** 2026-11-20
 **Review Level:** 1
-**Review Counter:** 0
-**Iteration:** 0
+**Review Counter:** 1
+**Iteration:** 1
 **Size:** S
 
 ---
@@ -53,6 +53,8 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Final review REVISE: input guard accepted non-iterable plain objects (`{}`), deferring failure to `for...of`'s generic "not iterable" TypeError instead of the documented module error; missing test case would have caught it | Fixed: shared `assertStreamInput` helper checks `typeof input[Symbol.iterator] === "function"`; both exports now use it; added `{}` cases for `sumUsageFromPiJsonStream` and `extractTextFromPiJsonStream` to the TypeError test; Contract testCommand re-run exits 0 | `.reviews/final-20261120T214326.md` |
+| reviewCommand failed (exit 1): d33409a  src/batch/pi-json-usage.mjs:182  ERROR  The input guard accepts any object (e.g. a plain object, Buffer, or non-iterable | resolved by REVISE fix above (guard now rejects non-iterables with the documented TypeError) | contract review step |
 | Usage-bearing pi JSON events: `message_end` (`message.usage`, authoritative), `message_update` (top-level cumulative `usage`), `compaction_end` (`result.usage`), `tool_execution_end` (`result.usage`, nested model work) | `message_update` excluded (double-counts with `message_end`); other three summed | `~/.pi/agent/.../docs/json.md` |
 | Usage shape `{input, output, cacheRead, cacheWrite, cacheWrite1h?, reasoning?, totalTokens, cost.total}`; `reasoning` already inside `output`; `cacheWrite1h` is a subset of `cacheWrite` | tokensIn = input + cacheRead + cacheWrite; tokensOut = output; never re-add `reasoning`/`cacheWrite1h` | `~/.pi/agent/.../docs/message-types.md` |
 | Metric record keys `tokensIn`/`tokensOut`/`estimatedUsd` guarded by `Number.isFinite` in `buildTaskMetricRecord` | Parser returns bare/undefined-key fields so SP-879 can spread directly | `src/batch/metrics.mjs` |
@@ -72,6 +74,7 @@
 | 2026-11-20 | Step 1 | `src/batch/pi-json-usage.mjs` + 3 fixtures + 16 unit tests implemented |
 | 2026-11-20 | Step 2 | Contract testCommand exits 0: lint clean, tsc ×2 clean, 25 tests pass (16 parser + phase23-exit-verify + ts-nocheck-guard) |
 | 2026-11-20 | Step 3 | Discoveries recorded; runbook checked (not affected); .DONE created |
+| 2026-11-20 | REVISE (final review) | Fixed input guards via shared `assertStreamInput` (`Symbol.iterator` check); added non-iterable-object test cases; Contract testCommand exits 0; committed + .DONE recreated |
 
 ---
 

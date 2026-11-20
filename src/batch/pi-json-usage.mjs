@@ -56,6 +56,28 @@ function finiteCount(value) {
 }
 
 /**
+ * Guard for stream-input parameters: a whole-NDJSON string, an array of
+ * records, or any iterable of record strings. Rejects everything else —
+ * including non-iterable plain objects, which `for...of` would otherwise
+ * reject with its own generic "not iterable" TypeError instead of this
+ * module's documented one.
+ *
+ * @param {PiJsonStreamInput} input
+ * @returns {void}
+ * @throws {TypeError} when input is neither a string nor iterable.
+ */
+function assertStreamInput(input) {
+	if (
+		typeof input !== "string" &&
+		(input === null ||
+			typeof input !== "object" ||
+			typeof /** @type {any} */ (input)[Symbol.iterator] !== "function")
+	) {
+		throw new TypeError("pi-json-usage: input must be a string or an iterable of strings");
+	}
+}
+
+/**
  * Normalize stream input into individual JSONL records. Strings split on LF
  * (pi framing: strict JSONL, optional preceding CR); iterables of strings are
  * treated as records and split further if they embed newlines.
@@ -179,9 +201,7 @@ function accumulateEvent(event, totals) {
  * @throws {TypeError} when input is not a string/iterable or records are not strings.
  */
 export function sumUsageFromPiJsonStream(input) {
-	if (typeof input !== "string" && (input === null || typeof input !== "object")) {
-		throw new TypeError("pi-json-usage: input must be a string or an iterable of strings");
-	}
+	assertStreamInput(input);
 	const totals = {
 		tokensIn: 0,
 		tokensOut: 0,
@@ -215,9 +235,7 @@ export function sumUsageFromPiJsonStream(input) {
  * @throws {TypeError} when input is not a string/iterable or records are not strings.
  */
 export function extractTextFromPiJsonStream(input) {
-	if (typeof input !== "string" && (input === null || typeof input !== "object")) {
-		throw new TypeError("pi-json-usage: input must be a string or an iterable of strings");
-	}
+	assertStreamInput(input);
 	/** @type {string[]} */
 	const segments = [];
 	for (const event of iterEvents(input)) {
