@@ -1,8 +1,8 @@
 # SP-879: Worker: pi --mode json usage into task metric fields — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-11-19
+**Current Step:** Step 3
+**Status:** 🔄 In Progress
+**Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,26 +11,26 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Confirm SP-878 API
-- [ ] Trace worker → recordLaneTaskMetric path
+- [x] Confirm SP-878 API
+- [x] Trace worker → recordLaneTaskMetric path
 
 ---
 
 ### Step 1: Worker JSON + attach usage
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] --mode json
-- [ ] Parse + set task usage before metric
+- [x] --mode json
+- [x] Parse + set task usage before metric
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Mock/fixture stdout → tokens on task record
-- [ ] Stub omits fields
+- [x] Mock/fixture stdout → tokens on task record
+- [x] Stub omits fields
 
 ---
 

@@ -4,9 +4,10 @@
  */
 
 import path from "node:path";
+import fs from "node:fs";
 import { loadTaskPacket } from "../../tasks/packet/index.mjs";
 import { appendJournalEvent } from "../journal.mjs";
-import { recordTaskTerminalMetric } from "../metrics.mjs";
+import { recordTaskTerminalMetric, resolveTaskMetricOutcome } from "../metrics.mjs";
 import { buildTaskLaneAssignments, countPlanTasks } from "../engine-scope.mjs";
 import {
 	recordTaskSucceeded,
@@ -27,6 +28,12 @@ import { laneTaskBranch, laneWorktreePath } from "../worktree.mjs";
  * @param {{ laneNumber?: number }} [params.lane]
  */
 export function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskFolder, lane }) {
+	// SP-879 (#338): attach provider-reported worker usage from the sidecar the
+	// runner wrote after the pi JSON run. Skipped tasks never ran a worker, so
+	// they must not inherit a stale committed sidecar from an earlier batch.
+	if (resolveTaskMetricOutcome(task) !== "skipped") {
+		attachTaskUsageFromSidecar({ taskFolder, task });
+	}
 	const metricParams = {
 		projectRoot,
 		batchId,
@@ -36,6 +43,52 @@ export function recordLaneTaskMetric({ projectRoot, batchId, task, config, taskF
 		laneNumber: lane?.laneNumber ?? task?.laneNumber,
 	};
 	recordTaskTerminalMetric(metricParams);
+}
+
+/** Sidecar filename the worker runner writes after a pi JSON run (bin/spine-worker-runner.mjs). Keep both definitions in sync. */
+const WORKER_USAGE_SIDECAR_FILENAME = "worker-usage.json";
+const WORKER_USAGE_KEYS = ["tokensIn", "tokensOut", "estimatedUsd"];
+
+/**
+ * Copy finite worker usage counters from the runner's `worker-usage.json`
+ * sidecar onto the task object before the metric record is built
+ * (`buildTaskMetricRecord` copies finite `task.tokens*` / `task.estimatedUsd`).
+ *
+ * Lenient by design: a missing, malformed, or partially valid sidecar never
+ * throws and never invents values — only present, finite, non-negative
+ * numbers are copied, and existing finite task fields win.
+ *
+ * @param {object} params
+ * @param {string} [params.taskFolder]
+ * @param {Record<string, any>} params.task
+ * @returns {boolean} true when at least one usage field was attached.
+ */
+export function attachTaskUsageFromSidecar({ taskFolder, task }) {
+	if (!taskFolder || !task) return false;
+	const sidecarPath = path.join(taskFolder, WORKER_USAGE_SIDECAR_FILENAME);
+	let raw;
+	try {
+		if (!fs.existsSync(sidecarPath)) return false;
+		raw = fs.readFileSync(sidecarPath, "utf-8");
+	} catch {
+		return false;
+	}
+	let parsed;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		return false;
+	}
+	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
+	let attached = false;
+	for (const key of WORKER_USAGE_KEYS) {
+		const value = parsed[key];
+		if (typeof value === "number" && Number.isFinite(value) && value >= 0 && !Number.isFinite(task[key])) {
+			task[key] = value;
+			attached = true;
+		}
+	}
+	return attached;
 }
 
 /**
