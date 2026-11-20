@@ -61,6 +61,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): fd5fa24  bin/spine-worker-runner.mjs:303  WARNING  The new strict validation throws an Error when SPINE_TASK_FILE_SCOPE is set bu | advisory — noted, not blocking | contract review step |
 | Making `runSpinePlan` sync breaks `assert.doesNotReject` in `tests/planner/plan-pending-empty.test.mjs` (out of File Scope) | Used mission's "or truly async" branch: real `await` on `fs.promises` artifact write in `bin/spine-plan.mjs`; out-of-scope test files untouched | `bin/spine-plan.mjs` |
 | `extractBracedBody` in the fake-async guard grabbed destructured parameter `{` instead of the body brace, misclassifying genuinely-async functions with destructured params (e.g. `buildWorkerPiArgs`) as fake-async once `bin/` was swept | Fixed extractor to skip the parameter list first; backward compatible for non-destructured signatures | `tests/arch/fake-async.test.mjs` |
 | Contract testCommand's `phase23-exit-verify` enforces src/batch ≤500 LOC (grandfather list empty); the SP-877 guard pushed `worker-host.mjs` to 535 | Added `failPreflight` literal-builder and let the three adjacent preflight guards (`review_failed`, `contract_parse_failed`, `launch_failed`) share it — behavior-neutral, file back to 499 LOC | `src/batch/worker-host.mjs` |
