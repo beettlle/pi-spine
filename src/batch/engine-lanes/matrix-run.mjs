@@ -38,7 +38,9 @@ import {
 	findContractCommandMetacharIssue,
 	isRefusedContractMetacharCommand,
 	parseContract,
+	parsePrompt,
 } from "../../tasks/packet/parse-prompt.mjs";
+import { loadTaskPacket } from "../../tasks/packet/index.mjs";
 import { verifyContract } from "../contract-verify.mjs";
 import { gitExec } from "../git-exec.mjs";
 
@@ -52,6 +54,55 @@ export function readParentContract(parentTaskFolderAbs) {
 	const promptPath = path.join(parentTaskFolderAbs, "PROMPT.md");
 	if (!fs.existsSync(promptPath)) return null;
 	return parseContract(fs.readFileSync(promptPath, "utf-8"));
+}
+
+/**
+ * Fail closed when a declared matrix packet fails to load (#311).
+ *
+ * `loadMatrixTaskRows` collapses every packet load error into `null`, which
+ * callers read as "not a matrix task" — silently demoting a matrix parent to
+ * plain worker mode, where its row fan-out never happens and raw `{matrix.*}`
+ * placeholders leak into the served prompt. When `loadMatrixTaskRows` returned
+ * null, re-load the packet here: if it throws and the raw PROMPT.md declares
+ * a `## Matrix` section, propagate a clear error instead of the silent
+ * demotion. Plain (non-matrix) packets keep the null → plain-worker behavior
+ * unchanged, and a missing PROMPT.md stays "not a task packet".
+ *
+ * @param {string} parentTaskFolderAbs Absolute parent task folder.
+ * @returns {void}
+ * @throws When the packet fails to load and the task declares `## Matrix`.
+ */
+function assertMatrixPacketLoaded(parentTaskFolderAbs) {
+	const promptPath = path.join(parentTaskFolderAbs, "PROMPT.md");
+	if (!fs.existsSync(promptPath)) return;
+	let packetError = null;
+	try {
+		loadTaskPacket(parentTaskFolderAbs);
+	} catch (err) {
+		packetError = err;
+	}
+	if (!packetError) return;
+	const message = packetError instanceof Error ? packetError.message : String(packetError);
+	let rawPrompt = null;
+	try {
+		rawPrompt = fs.readFileSync(promptPath, "utf-8");
+	} catch {
+		rawPrompt = null;
+	}
+	if (rawPrompt === null) {
+		// PROMPT.md exists but is unreadable (e.g. a directory): the packet is
+		// broken and whether it declared matrix is unknowable — fail closed.
+		throw new Error(
+			`task packet failed to load: ${parentTaskFolderAbs} — ${message}. Refusing to proceed on an unreadable packet (#311).`,
+			{ cause: packetError },
+		);
+	}
+	const declaresMatrix = Boolean(parsePrompt(rawPrompt).sections?.Matrix);
+	if (!declaresMatrix) return;
+	throw new Error(
+		`matrix packet failed to load: ${parentTaskFolderAbs} — ${message}. Refusing to demote a declared matrix task to plain worker mode (#311).`,
+		{ cause: packetError },
+	);
 }
 
 /**
@@ -513,8 +564,14 @@ export async function runMatrixTaskForResume({
 	laneCorrelationId,
 	fileScopePaths,
 }) {
-	const matrix = loadMatrixTaskRows(path.join(projectRoot, taskFolderRel));
-	if (!matrix) return { isMatrix: false };
+	const parentTaskFolderAbs = path.join(projectRoot, taskFolderRel);
+	const matrix = loadMatrixTaskRows(parentTaskFolderAbs);
+	if (!matrix) {
+		// Fail closed on a declared matrix packet that fails to load (#311);
+		// genuinely non-matrix packets still fall through to the plain path.
+		assertMatrixPacketLoaded(parentTaskFolderAbs);
+		return { isMatrix: false };
+	}
 	const result = await runMatrixTaskOnLane({
 		projectRoot,
 		state,
@@ -705,14 +762,17 @@ export async function runMatrixTaskOnLane({
 		// row's distinct lane identity. Always release so a crashed row cannot
 		// leak a slot and stall the batch.
 		const rowLaneNumber = await acquireLaneSlot(state, maxParallel);
-		// Per-row live status (#230): flip to `running` only once the row actually
-		// holds a slot, and persist so `spine status` sees it from another process.
-		const runningEntry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === row.rowId);
-		if (runningEntry) {
-			runningEntry.status = "running";
-			await saveEngineBatchState(projectRoot, state);
-		}
 		try {
+			// Per-row live status (#230): flip to `running` only once the row actually
+			// holds a slot, and persist so `spine status` sees it from another process.
+			// Inside the try (#311): this save is the first operation that can throw
+			// while the slot is held — before SP-876 it ran outside the try, so a
+			// save failure leaked the slot and stalled the global pool.
+			const runningEntry = task.matrixRows.find((/** @type {any} */ m) => m.rowId === row.rowId);
+			if (runningEntry) {
+				runningEntry.status = "running";
+				await saveEngineBatchState(projectRoot, state);
+			}
 			return await runMatrixSubLane({
 				projectRoot,
 				batchId,

@@ -1,0 +1,8 @@
+SP-874 complete — step-0 plan review ordering (#294)
+
+- findPlanReviewStepOrder: step-0 (min step) queued before later plan-review checkpoint steps
+- Step-filtered honor scan: later-step verdicts (journal or artifact) cannot satisfy the step-0 gate
+- runPlanReviewPhase: ordered per-step schedule, fail-closed at every step
+- Tests: tests/batch/review-plan-phase.test.mjs (10 cases, pass)
+- Contract testCommand: exit 0 (lint + typecheck + 19/19 tests)
+- Commits: 4406f5dd (fix), 099bc79f (test), 0dfc7c5d (STATUS)

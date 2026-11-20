@@ -271,17 +271,42 @@ export function writeStubDeliveryStatusIfNeeded({ taskFolder, tasksRoot = DEFAUL
 	return true;
 }
 
-function resolveTaskFileScope(taskFolder) {
+/**
+ * Resolve the task File Scope. `SPINE_TASK_FILE_SCOPE` (written by worker-spawn
+ * from the parsed Contract) wins when set. SP-877 (#319): a set-but-malformed
+ * value fails loudly instead of silently falling back to a PROMPT.md re-parse,
+ * which could hand the worker a stale or empty file scope.
+ *
+ * @param {string} taskFolder
+ * @returns {string[]}
+ * @throws {Error} when SPINE_TASK_FILE_SCOPE is set but is not valid JSON, not
+ *   an array, or contains non-string entries.
+ */
+export function resolveTaskFileScope(taskFolder) {
 	const envScope = process.env.SPINE_TASK_FILE_SCOPE;
 	if (envScope) {
+		let parsed;
 		try {
-			const parsed = JSON.parse(envScope);
-			if (Array.isArray(parsed)) {
-				return parsed.filter((entry) => typeof entry === "string");
-			}
-		} catch {
-			/* fall through to PROMPT parse */
+			parsed = JSON.parse(envScope);
+		} catch (err) {
+			const reason = err instanceof Error ? err.message : String(err);
+			throw new Error(
+				`SPINE_TASK_FILE_SCOPE is not valid JSON (${reason}); fix the value or unset it to re-parse PROMPT.md`,
+			);
 		}
+		if (!Array.isArray(parsed)) {
+			throw new Error(
+				`SPINE_TASK_FILE_SCOPE must be a JSON array of file paths, got ${typeof parsed}`,
+			);
+		}
+		return parsed.map((entry, index) => {
+			if (typeof entry !== "string") {
+				throw new Error(
+					`SPINE_TASK_FILE_SCOPE[${index}] must be a string, got ${typeof entry}`,
+				);
+			}
+			return entry;
+		});
 	}
 
 	const promptPath = path.join(taskFolder, "PROMPT.md");
@@ -463,13 +488,21 @@ async function runWorkerRunner() {
 
 	const projectRoot = process.env.SPINE_PROJECT_ROOT || worktreePath || process.cwd();
 	const spineConfig = loadSpineConfig(projectRoot).config ?? {};
-	const piArgs = await buildWorkerPiArgs({
-		worktreePath,
-		taskFolder,
-		donePath,
-		spineConfig,
-		journal: buildReviewJournal(),
-	});
+	// SP-877 (#319): malformed SPINE_TASK_FILE_SCOPE surfaces as a clear worker
+	// failure instead of an unhandled-rejection stack trace.
+	let piArgs;
+	try {
+		piArgs = await buildWorkerPiArgs({
+			worktreePath,
+			taskFolder,
+			donePath,
+			spineConfig,
+			journal: buildReviewJournal(),
+		});
+	} catch (err) {
+		console.error(err instanceof Error ? err.message : String(err));
+		process.exit(1);
+	}
 
 	const timeoutMs = Number(process.env.SPINE_WORKER_PI_TIMEOUT_MS || 60 * 60 * 1000);
 	const result = spawnSync("pi", piArgs, {
