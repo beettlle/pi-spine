@@ -1,6 +1,6 @@
 # SP-873: Post-hoc Step 0 plan review: do not reject finished work as premature — Status
 
-**Current Step:** Step 1 — Post-hoc plan prompt
+**Current Step:** Step 2 — Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-20
 **Review Level:** 1
@@ -19,15 +19,15 @@
 ---
 
 ### Step 1: Post-hoc plan prompt
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Add post-hoc wording to plan review prompt
-- [ ] Keep APPROVE/REVISE output contract
+- [x] Add post-hoc wording to plan review prompt
+- [x] Keep APPROVE/REVISE output contract
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Assert plan prompt includes post-hoc / after-worker guidance
 
