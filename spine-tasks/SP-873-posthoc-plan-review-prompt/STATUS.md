@@ -1,7 +1,7 @@
 # SP-873: Post-hoc Step 0 plan review: do not reject finished work as premature — Status
 
 **Current Step:** Complete
-**Status:** ✅ Complete (pending engine plan review)
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-20
 **Review Level:** 1
 **Review Counter:** 0
@@ -45,7 +45,7 @@
 **Status:** 🟡 In Progress
 
 - [x] Discoveries in STATUS
-- [ ] Create .DONE
+- [x] Create .DONE
 
 ---
 
