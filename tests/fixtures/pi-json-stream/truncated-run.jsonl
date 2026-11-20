@@ -1,0 +1,7 @@
+{"type":"session","version":3,"id":"c7d1e8a3-2b59-4f60-8e30-9a4c71fb66d2","timestamp":"2026-11-20T12:20:00.000Z","cwd":"/tmp/demo"}
+{"type":"agent_start"}
+{"type":"turn_start"}
+{"type":"message_start","message":{"role":"assistant","content":[],"stopReason":"pending","usage":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"totalTokens":0,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"timestamp":1763636402000}}
+{"type":"message_update","usage":{"input":80,"output":12,"cacheRead":0,"cacheWrite":0,"totalTokens":92,"cost":{"input":0.0003,"output":0.0001,"cacheRead":0,"cacheWrite":0,"total":0.0004}},"assistantMessageEvent":{"type":"text_delta","contentIndex":0,"delta":"Working on"}}
+{"type":"message_update","usage":{"input":80,"output":30,"cacheRead":0,"cacheWrite":0,"totalTokens":110,"cost":{"input":0.0003,"output":0.0002,"cacheRead":0,"cacheWrite":0,"total":0.0005}},"assistantMessageEvent":{"type":"text_delta","contentIndex":0,"delta":" it now"}}
+{"type":"agent_settled","aborted":true}

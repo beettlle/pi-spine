@@ -1,6 +1,6 @@
 # SP-878: Parse pi --mode json stream into usage totals — Status
 
-**Current Step:** Step 1 — Parser module + fixture
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-20
 **Review Level:** 1
@@ -19,18 +19,18 @@
 ---
 
 ### Step 1: Parser module + fixture
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Implement sumUsageFromPiJsonStream
-- [ ] Add fixture + unit tests; omit when empty
+- [x] Implement sumUsageFromPiJsonStream
+- [x] Add fixture + unit tests; omit when empty
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract testCommand
-- [ ] Fix failures
+- [x] Run Contract testCommand
+- [x] Fix failures
 
 ---
 
@@ -57,6 +57,9 @@
 | Usage shape `{input, output, cacheRead, cacheWrite, cacheWrite1h?, reasoning?, totalTokens, cost.total}`; `reasoning` already inside `output`; `cacheWrite1h` is a subset of `cacheWrite` | tokensIn = input + cacheRead + cacheWrite; tokensOut = output; never re-add `reasoning`/`cacheWrite1h` | `~/.pi/agent/.../docs/message-types.md` |
 | Metric record keys `tokensIn`/`tokensOut`/`estimatedUsd` guarded by `Number.isFinite` in `buildTaskMetricRecord` | Parser returns bare/undefined-key fields so SP-879 can spread directly | `src/batch/metrics.mjs` |
 | New `src/` files must not carry `@ts-nocheck` (arch guard); `tsconfig.batch.json` file list is out of scope so module is JSDoc-typed but untracked by tsc | Wrote strict JSDoc types anyway | `tests/arch/ts-nocheck-guard.test.mjs` |
+| API: `sumUsageFromPiJsonStream(string \| string[] \| Iterable<string>) → {tokensIn?, tokensOut?, estimatedUsd?}` and `extractTextFromPiJsonStream(same) → string[]` (log tee). Keys omitted when unreported; reported zeros kept; non-finite/negative counters ignored; malformed JSONL records skipped. tokensIn = input + cacheRead + cacheWrite (no `cacheWrite1h` re-add); tokensOut = output (no `reasoning` re-add) | Delivered in module JSDoc | `src/batch/pi-json-usage.mjs` |
+| Counting sources: assistant `message_end` `message.usage`, successful `compaction_end` `result.usage`, `tool_execution_end` nested `result.usage` (pi docs: not part of main usage → no double-count). `message_update` cumulative snapshots deliberately excluded → truncated streams under-count, never over-count | Delivered in module header + fixtures | `tests/fixtures/pi-json-stream/` |
+| `docs/adoption/operator-runbook.md` metrics section documents consumer commands (`spine metrics show/quota`), not the parser producer; unaffected until SP-879/SP-880 wire spawn | Checked — no update needed | `docs/adoption/operator-runbook.md` |
 
 ---
 
@@ -66,6 +69,8 @@
 |-----------|--------|---------|
 | 2026-11-19 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-20 | Step 0 preflight | Confirmed pi 1.5.2 JSON event shapes from local docs (`docs/json.md`, `docs/message-types.md`); API sketched (see Discoveries) |
+| 2026-11-20 | Step 1 | `src/batch/pi-json-usage.mjs` + 3 fixtures + 16 unit tests implemented |
+| 2026-11-20 | Step 2 | Contract testCommand exits 0: lint clean, tsc ×2 clean, 25 tests pass (16 parser + phase23-exit-verify + ts-nocheck-guard) |
 
 ---
 
