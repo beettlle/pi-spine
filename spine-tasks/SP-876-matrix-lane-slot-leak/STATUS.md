@@ -61,6 +61,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 1318b6b  src/batch/engine-lanes/matrix-run.mjs:567  ERROR  The change introduces a control-flow defect: when `loadMatrixTaskRows` | advisory — noted, not blocking | contract review step |
 | Fresh-run call site `runTaskOnLane` (src/batch/engine-lanes.mjs:128) has the same `loadMatrixTaskRows` null → plain-worker fallback but is **outside File Scope**; the fail-closed fix covers the in-scope `runMatrixTaskForResume` (resume.mjs / resume-multi-lanes.mjs). | Out of scope — needs follow-up SP task | src/batch/engine-lanes.mjs |
 | `loadMatrixTaskRows` collapse point is `catch { return null }` in src/batch/engine-lanes/matrix.mjs (also out of scope); fix implemented at the in-scope call site by re-loading the packet via `loadTaskPacket` + `parsePrompt(raw).sections.Matrix` detection. | Documented | src/batch/engine-lanes/matrix.mjs |
 | Slot-leak test arms a state entry whose `exitCode` getter throws once the `running` status flip fires — deterministic save failure in the exact formerly-unguarded window, no mocks (mock.module unavailable under contract test flags). | Test technique | tests/batch/matrix-run.test.mjs |

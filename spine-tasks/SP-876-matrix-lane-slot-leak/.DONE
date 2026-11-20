@@ -1,0 +1,6 @@
+SP-876 complete.
+
+- Slot leak: per-row saveEngineBatchState moved inside the try so releaseLaneSlot always runs once acquireLaneSlot succeeded (src/batch/engine-lanes/matrix-run.mjs).
+- Packet errors: runMatrixTaskForResume fails closed via assertMatrixPacketLoaded when a declared `## Matrix` packet fails to load; plain packets unchanged (engine-lanes.mjs fresh-run call site is out of File Scope — follow-up noted in STATUS).
+- Tests: tests/batch/matrix-run.test.mjs — 4 tests, mutation-verified against pre-fix code.
+- Verification: Contract testCommand exit 0; full stub suite 3322/3322 pass with SPINE_IS_WORKER/SPINE_WORKER_RUNNER unset.
