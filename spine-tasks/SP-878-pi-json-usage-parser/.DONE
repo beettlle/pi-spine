@@ -1,0 +1,15 @@
+SP-878 complete — REVISE cycle 1 addressed.
+
+Final review feedback (`.reviews/final-20261120T214326.md`) resolved:
+
+1. Input guards in `src/batch/pi-json-usage.mjs` replaced with shared
+   `assertStreamInput` helper that rejects non-iterable objects via a
+   `Symbol.iterator` function check, throwing the documented TypeError
+   instead of deferring to `for...of`'s generic error.
+2. Added missing non-iterable-object test cases (`{}`) for both
+   `sumUsageFromPiJsonStream` and `extractTextFromPiJsonStream` in
+   `tests/batch/pi-json-usage.test.mjs`.
+
+Verification: Contract testCommand (lint + typecheck + targeted tests)
+run in foreground, exit 0. GitNexus detect-changes clean (0 affected
+processes). Committed as 1f7b26de on lane branch.

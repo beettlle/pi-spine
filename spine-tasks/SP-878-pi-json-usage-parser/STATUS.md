@@ -53,6 +53,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): stet: rule budget of 1000 tokens dropped 187 rule section(s) from review prompts (e.g. ["critical-rules-quick-reference.mdc: 10.  | advisory — noted, not blocking | contract review step |
 | Final review REVISE: input guard accepted non-iterable plain objects (`{}`), deferring failure to `for...of`'s generic "not iterable" TypeError instead of the documented module error; missing test case would have caught it | Fixed: shared `assertStreamInput` helper checks `typeof input[Symbol.iterator] === "function"`; both exports now use it; added `{}` cases for `sumUsageFromPiJsonStream` and `extractTextFromPiJsonStream` to the TypeError test; Contract testCommand re-run exits 0 | `.reviews/final-20261120T214326.md` |
 | reviewCommand failed (exit 1): d33409a  src/batch/pi-json-usage.mjs:182  ERROR  The input guard accepts any object (e.g. a plain object, Buffer, or non-iterable | resolved by REVISE fix above (guard now rejects non-iterables with the documented TypeError) | contract review step |
 | Usage-bearing pi JSON events: `message_end` (`message.usage`, authoritative), `message_update` (top-level cumulative `usage`), `compaction_end` (`result.usage`), `tool_execution_end` (`result.usage`, nested model work) | `message_update` excluded (double-counts with `message_end`); other three summed | `~/.pi/agent/.../docs/json.md` |
