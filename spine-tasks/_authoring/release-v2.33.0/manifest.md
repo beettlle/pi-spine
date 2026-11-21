@@ -162,8 +162,8 @@ Validated 2026-11-19: spine tasks validate SP-873…SP-880 → 8 passed
 - [x] CI workflow green on `HEAD` (run 44842554393 success on `99bcdcf9`)
 - [x] `git status` clean
 - [x] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded (OIDC stage)
-- [ ] Maintainer 2FA approved staged package; `npm view pi-spine version` = 2.33.0
+- [x] `npm version minor` + `git push && git push --tags` (`74c2726f`, tag `v2.33.0`)
+- [x] `release.yml` succeeded (OIDC stage) — [run 44859656939](https://github.com/beettlle/pi-spine/actions/runs/44859656939)
+- [ ] Maintainer 2FA approved staged package; `npm view pi-spine version` = 2.33.0 (**awaiting approve** — still 2.32.0)
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 - [x] Close remaining `Closes #NNN` sweep (#331 #294 #310 #311 #319 #338 CLOSED)

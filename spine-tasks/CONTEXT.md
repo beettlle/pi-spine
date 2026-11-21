@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-19 (Phase 104 v2.33.0 **packets staged** — scope approved; SP-873–SP-880 authored; Next → SP-881; execution paused)
+**Last Updated:** 2026-11-21 (Phase 104 v2.33.0 **tagged** — tag `v2.33.0` / `74c2726f`, release.yml stage OK; awaiting npm 2FA approve; SP-873–SP-880 done; closed #331 #294 #310 #311 #319 #338; Next → SP-881)
 **Status:** Active
 **Next Task ID:** SP-881
 
@@ -2815,18 +2815,18 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 104 — Release v2.33.0: Sep/Oct bugs + run-metrics usage producers
 
-**Authoring:** 2026-11-19 · Manifest: `spine-tasks/_authoring/release-v2.33.0/manifest.md`. Scope approved 2026-11-19 (bug-only minor). Packets staged; **execution paused** pending operator resume.
+**Authoring:** 2026-11-19 · Manifest: `spine-tasks/_authoring/release-v2.33.0/manifest.md`. Scope approved 2026-11-19 (bug-only minor). **Tagged v2.33.0** 2026-11-21 — `74c2726f`, tag `v2.33.0`, release.yml stage OK ([run 44859656939](https://github.com/beettlle/pi-spine/actions/runs/44859656939)); **npm 2FA approve pending**. Closed #331 #294 #310 #311 #319 #338. Filed follow-ups #377 #378 #379; stet #40.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-873 | Post-hoc Step 0 plan review prompt | S | #331 Closes | Staged |
-| SP-874 | Step-0 plan review ordering | S | #294 Closes | Staged |
-| SP-875 | Reconcile git helpers fail-closed | S | #310 Closes | Staged |
-| SP-876 | Matrix lane slot leak + packet errors | S | #311 Closes | Staged |
-| SP-877 | Audit leftovers (fileScope / contract.errors / fake-async) | S | #319 Closes | Staged |
-| SP-878 | Parse pi `--mode json` usage stream | S | #338 Partial | Staged |
-| SP-879 | Worker JSON usage → task metrics | S | #338 Partial | Staged (requires SP-878) |
-| SP-880 | Reviewer JSON usage → review metrics | S | #338 Closes | Staged (requires SP-878) |
+| SP-873 | Post-hoc Step 0 plan review prompt | S | #331 Closes | Done — closed |
+| SP-874 | Step-0 plan review ordering | S | #294 Closes | Done — closed |
+| SP-875 | Reconcile git helpers fail-closed | S | #310 Closes | Done — closed |
+| SP-876 | Matrix lane slot leak + packet errors | S | #311 Closes | Done — closed |
+| SP-877 | Audit leftovers (fileScope / contract.errors / fake-async) | S | #319 Closes | Done — closed |
+| SP-878 | Parse pi `--mode json` usage stream | S | #338 Partial | Done |
+| SP-879 | Worker JSON usage → task metrics | S | #338 Partial | Done |
+| SP-880 | Reviewer JSON usage → review metrics | S | #338 Closes | Done — closed |
 
 
 ### Phase 103 — Release v2.32.0: contract/gate fail-closed + dashboard Host/SSE + Taskplane default drop
