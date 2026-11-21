@@ -115,11 +115,11 @@ Pending tasks: **0**. Next Task ID: **SP-881**.
 ## Publish checklist (Phase 5–6)
 
 - [x] All release-scoped tasks `.DONE` on `main` (outside-spine hotfix)
-- [ ] Post-integrate `release:check` green after each wave
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] CI workflow green on `HEAD`
-- [ ] `git status` clean
+- [x] Post-integrate `release:check` green (`/tmp/pi-spine-release-check-v2331.log`, exit 0, 3382 pass)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (`7be0f549`, exit 0)
+- [x] CI workflow green on `HEAD` — [run 44963133786](https://github.com/beettlle/pi-spine/actions/runs/44963133786) success
+- [x] `git status` clean
 - [ ] Operator approved publish bump type: **patch**
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
