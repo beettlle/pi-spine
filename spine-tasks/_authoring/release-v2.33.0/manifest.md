@@ -8,6 +8,7 @@
 **Operator approved scope:** yes (2026-11-19)
 **Worker model pin:** `zai/glm-5.3-flash`, quota fallback profile `allegretto` — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
+**Operator approved publish:** yes (2026-11-20) — bump **minor** → v2.33.0
 
 **Theme:** Bug-only minor. Clear the oldest open Sep/Oct `label:bug` backlog (plan-review dead ends, reconcile fail-open, matrix slot leaks, audit leftovers) plus #338 run-metrics usage producers (split into three S packets). No enhancements. No open documentation issues at intake.
 
@@ -160,7 +161,7 @@ Validated 2026-11-19: spine tasks validate SP-873…SP-880 → 8 passed
 - [x] `npm run release:check` green on final `HEAD` (re-run exit 0; first Phase 5 attempt aborted mid-suite flake)
 - [x] CI workflow green on `HEAD` (run 44842554393 success on `99bcdcf9`)
 - [x] `git status` clean
-- [ ] Operator approved publish bump type: **minor**
+- [x] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
 - [ ] Maintainer 2FA approved staged package; `npm view pi-spine version` = 2.33.0
