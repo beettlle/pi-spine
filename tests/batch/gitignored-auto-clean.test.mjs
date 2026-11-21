@@ -195,6 +195,12 @@ test("commitLaneAndValidateWorktree succeeds when only node_modules is gitignore
 	}
 });
 
+test("isGitignoredArtifactPath matches worker-usage.json sidecar (#380)", () => {
+	assert.equal(isGitignoredArtifactPath("spine-tasks/SP-089/worker-usage.json"), true);
+	assert.equal(isGitignoredArtifactPath("worker-usage.json"), true);
+	assert.equal(isGitignoredArtifactPath("spine-tasks/SP-089/STATUS.md"), false);
+});
+
 test("isGitignoredArtifactPath matches stet .review and spine runtime plan snapshots", () => {
 	assert.equal(isGitignoredArtifactPath(".review/lock"), true);
 	assert.equal(isGitignoredArtifactPath(".review/session.json"), true);

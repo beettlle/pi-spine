@@ -57,5 +57,8 @@ graphify-out/
 coverage-run.tap.log
 coverage-err.log
 
+# Engine-owned worker usage sidecar under task folders (SP-881 / #380)
+spine-tasks/**/worker-usage.json
+
 # Dependencies
 node_modules/

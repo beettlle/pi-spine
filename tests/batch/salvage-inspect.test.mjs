@@ -43,6 +43,33 @@ function writeSmokeTask(projectRoot, taskId, fileScopePath) {
 	);
 }
 
+test("inspectLaneSalvage ignores worker-usage.json as only dirty path (#380)", () => {
+	const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "salvage-usage-"));
+	const taskFolder = path.join(worktree, "spine-tasks", "SP-881-smoke");
+	fs.mkdirSync(taskFolder, { recursive: true });
+	fs.writeFileSync(path.join(taskFolder, "PROMPT.md"), "x\n", "utf-8");
+	execFileSync("git", ["init"], { cwd: worktree, stdio: "ignore" });
+	execFileSync("git", ["config", "user.email", "t@e.com"], { cwd: worktree, stdio: "ignore" });
+	execFileSync("git", ["config", "user.name", "T"], { cwd: worktree, stdio: "ignore" });
+	execFileSync("git", ["add", "-A"], { cwd: worktree, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "init"], { cwd: worktree, stdio: "ignore" });
+	fs.writeFileSync(
+		path.join(taskFolder, "worker-usage.json"),
+		JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 9 }),
+		"utf-8",
+	);
+
+	const inspection = inspectLaneSalvage({
+		worktreePath: worktree,
+		fileScopePaths: [],
+		taskFolder,
+	});
+	assert.equal(inspection.changedFileCount, 0);
+	assert.equal(inspection.salvageable, false);
+	assert.equal(inspection.dirtyPaths.length, 0);
+	fs.rmSync(worktree, { recursive: true, force: true });
+});
+
 test("inspectLaneSalvage scopes porcelain to file scope and task folder", () => {
 	const worktree = fs.mkdtempSync(path.join(os.tmpdir(), "salvage-scope-"));
 	const taskFolder = path.join(worktree, "spine-tasks", "TP-900-smoke");

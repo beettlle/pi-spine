@@ -17,6 +17,7 @@ import {
 	buildHeartbeatPayloadFields,
 	buildProgressSnapshotPayload,
 } from "./heartbeat-subprocess.mjs";
+import { isWorkerUsageSidecarPath } from "./worker-usage-sidecar.mjs";
 
 export {
 	clearGitPorcelainDebounceCache,
@@ -146,6 +147,8 @@ export function resolveScopedDirtyPaths(worktreePath, fileScopePaths, taskFolder
 		let filePath = line.length > 2 && line[2] === " " ? line.slice(3) : line.slice(2);
 		filePath = filePath.trim();
 		const renamed = filePath.includes(" -> ") ? filePath.split(" -> ").pop()?.trim() : filePath;
+		// SP-881 / #380: engine-owned usage sidecar is never salvageable product dirt.
+		if (renamed && isWorkerUsageSidecarPath(renamed)) continue;
 		if (renamed && inScope(renamed)) dirty.add(renamed);
 	}
 	return [...dirty].sort();

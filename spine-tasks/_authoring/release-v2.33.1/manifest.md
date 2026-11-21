@@ -114,7 +114,7 @@ Pending tasks: **0**. Next Task ID: **SP-881**.
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
+- [x] All release-scoped tasks `.DONE` on `main` (outside-spine hotfix)
 - [ ] Post-integrate `release:check` green after each wave
 - [ ] `spine preflight` green
 - [ ] `npm run release:check` green on final `HEAD`

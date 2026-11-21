@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-21 (Phase 105 v2.33.1 **packets staged** — emergency patch #380/#381; SP-881–SP-882 authored; Next → SP-883)
+**Last Updated:** 2026-11-21 (Phase 105 v2.33.1 **hotfix on main** — SP-881/#380 + SP-882/#381 landed outside-spine; Next → SP-883; publish pending)
 **Status:** Active
 **Next Task ID:** SP-883
 
@@ -2820,8 +2820,8 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
-| SP-881 | Exclude worker-usage.json from salvage/dirty | S | #380 Closes | Staged |
-| SP-882 | Summarize --mode json failure for task.failed | S | #381 Closes | Staged |
+| SP-881 | Exclude worker-usage.json from salvage/dirty | S | #380 Closes | Done — outside-spine hotfix |
+| SP-882 | Summarize --mode json failure for task.failed | S | #381 Closes | Done — outside-spine hotfix |
 
 
 ### Phase 104 — Release v2.33.0: Sep/Oct bugs + run-metrics usage producers

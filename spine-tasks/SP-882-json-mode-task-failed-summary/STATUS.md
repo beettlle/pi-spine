@@ -1,8 +1,8 @@
 # SP-882: Summarize pi --mode json failure output for task.failed journal — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
-**Last Updated:** 2026-11-21
+**Current Step:** Complete
+**Status:** ✅ Finished (outside-spine hotfix)
+**Last Updated:** 2026-11-21 (outside-spine hotfix)
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -11,41 +11,41 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Trace finalizeWorkerOutput → task.failed → capPayloadSize
-- [ ] Confirm SP-878 text extract API
+- [x] Trace finalizeWorkerOutput → task.failed → capPayloadSize
+- [x] Confirm SP-878 text extract API
 
 ---
 
 ### Step 1: JSON-mode failure summary
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Detect NDJSON / mode json output
-- [ ] Replace dump with compact summary + log ref
+- [x] Detect NDJSON / mode json output
+- [x] Replace dump with compact summary + log ref
 
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Oversized system-prompt fixture → under 32KiB readable summary
+- [x] Oversized system-prompt fixture → under 32KiB readable summary
 
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Run Contract testCommand
-- [ ] Fix failures
+- [x] Run Contract testCommand
+- [x] Fix failures
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries in STATUS
-- [ ] Create .DONE
+- [x] Discoveries in STATUS
+- [x] Create .DONE
 
 ---
 
@@ -80,3 +80,4 @@
 ## Notes
 
 Release v2.33.1 emergency patch.
+Implemented outside spine batch. finalizeWorkerOutput summarizes NDJSON failures under 32KiB.

@@ -122,6 +122,35 @@ test("resolveScopedDirtyPaths limits porcelain to file scope and task folder", (
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test("resolveScopedDirtyPaths excludes worker-usage.json sidecar (#380)", () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cp-usage-sidecar-"));
+	const taskFolder = path.join(dir, "spine-tasks", "SP-881-smoke");
+	fs.mkdirSync(taskFolder, { recursive: true });
+	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "base\n", "utf-8");
+
+	execFileSync("git", ["init"], { cwd: dir, stdio: "ignore" });
+	configureGitIdentity(dir);
+	execFileSync("git", ["add", "-A"], { cwd: dir, stdio: "ignore" });
+	execFileSync("git", ["commit", "-m", "init"], { cwd: dir, stdio: "ignore" });
+
+	fs.writeFileSync(path.join(taskFolder, "STATUS.md"), "changed\n", "utf-8");
+	fs.writeFileSync(
+		path.join(taskFolder, "worker-usage.json"),
+		JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 1 }),
+		"utf-8",
+	);
+
+	const dirty = resolveScopedDirtyPaths(dir, [], taskFolder);
+	assert.ok(dirty.some((p) => p.endsWith("STATUS.md")), `expected STATUS.md in ${JSON.stringify(dirty)}`);
+	assert.equal(
+		dirty.some((p) => p.endsWith("worker-usage.json")),
+		false,
+		`worker-usage.json must not be salvage dirty: ${JSON.stringify(dirty)}`,
+	);
+
+	fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test("lane.checkpoint_warning journal event and diagnose hints", () => {
 	const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cp-journal-"));
 	const batchId = "20260603T120000";

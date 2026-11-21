@@ -8,13 +8,17 @@ import { rm, mkdtemp } from "node:fs/promises";
 import {
 	BACKGROUND_VERIFICATION_HINT,
 	detectBackgroundedVerification,
+	finalizeWorkerOutput,
 	isWorkerDoneMarkerValid,
+	looksLikePiJsonNdjson,
 	parseWorkerDoneMarker,
 	persistWorkerOutputLog,
 	readWorkerDoneMarker,
+	summarizePiJsonFailureOutput,
 	writeWorkerDoneMarker,
 } from "../../src/batch/worker-output.mjs";
 import { buildWorkerDoneMissingHeadline } from "../../src/batch/diagnosis-worker-done-missing.mjs";
+import { MAX_PAYLOAD_BYTES } from "../../src/batch/journal.mjs";
 
 test("parseWorkerDoneMarker accepts legacy empty and text markers", () => {
 	assert.deepEqual(parseWorkerDoneMarker(""), { valid: true, legacy: true, kind: "empty" });
@@ -156,6 +160,81 @@ test("persistWorkerOutputLog writes atomically without temp leftovers", async ()
 		const logDir = path.dirname(result.logPath);
 		const entries = fs.readdirSync(logDir);
 		assert.equal(entries.some((name) => name.includes(".tmp")), false);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("looksLikePiJsonNdjson detects session/message_start streams (#381)", () => {
+	assert.equal(looksLikePiJsonNdjson('{"type":"session","version":3}\n'), true);
+	assert.equal(looksLikePiJsonNdjson("npm error Test failed"), false);
+});
+
+test("summarizePiJsonFailureOutput stays under journal cap and skips system prompt (#381)", () => {
+	const systemPreamble = "You are a coding assistant running inside pi".padEnd(40_000, "X");
+	const stream = [
+		JSON.stringify({ type: "session", version: 3, id: "t" }),
+		JSON.stringify({
+			type: "message_start",
+			message: { role: "system", content: "", sections: { preamble: systemPreamble } },
+		}),
+		JSON.stringify({
+			type: "message_end",
+			message: { role: "system", content: "", sections: { preamble: systemPreamble } },
+		}),
+		JSON.stringify({
+			type: "message_update",
+			message: {
+				role: "assistant",
+				content: [{ type: "text", text: "hello from assistant" }],
+			},
+		}),
+		JSON.stringify({ type: "error", error: "provider timeout" }),
+	].join("\n");
+
+	assert.ok(Buffer.byteLength(stream, "utf8") > MAX_PAYLOAD_BYTES);
+
+	const summary = summarizePiJsonFailureOutput(stream, {
+		exitCode: 143,
+		classification: "failed",
+		logRef: "lanes/lane-1/worker-output-SP-882.log",
+	});
+	assert.ok(Buffer.byteLength(summary, "utf8") < MAX_PAYLOAD_BYTES);
+	assert.match(summary, /exitCode=143/);
+	assert.match(summary, /provider timeout/);
+	assert.equal(summary.includes(systemPreamble.slice(0, 80)), false);
+	assert.match(summary, /fullLog: lanes\/lane-1\/worker-output-SP-882\.log/);
+});
+
+test("finalizeWorkerOutput journals JSON summary while persisting full stream (#381)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-json-fail-summary-"));
+	try {
+		const systemPreamble = "SYSTEM_PROMPT_MARKER".padEnd(50_000, "!");
+		const rawOutput = [
+			JSON.stringify({ type: "session", version: 3 }),
+			JSON.stringify({
+				type: "message_start",
+				message: { role: "system", content: "", sections: { preamble: systemPreamble } },
+			}),
+			JSON.stringify({ type: "agent_start" }),
+		].join("\n");
+
+		const finalized = finalizeWorkerOutput({
+			rawOutput,
+			classification: "failed",
+			ok: false,
+			projectRoot: root,
+			batchId: "20261121T000000",
+			laneNumber: 1,
+			taskId: "SP-882",
+			exitCode: 143,
+		});
+
+		assert.ok(finalized.logPath);
+		assert.ok(fs.readFileSync(finalized.logPath, "utf-8").includes("SYSTEM_PROMPT_MARKER"));
+		assert.ok(Buffer.byteLength(finalized.output, "utf8") < MAX_PAYLOAD_BYTES);
+		assert.match(finalized.output, /pi --mode json failure/);
+		assert.equal(finalized.output.includes("SYSTEM_PROMPT_MARKER"), false);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
