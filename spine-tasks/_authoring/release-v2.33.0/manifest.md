@@ -158,8 +158,8 @@ Validated 2026-11-19: spine tasks validate SP-873…SP-880 → 8 passed
 - [x] Post-integrate `release:check` green after **each wave** (`/tmp/pi-spine-post-integrate-wave-0.log`, `/tmp/pi-spine-post-integrate-wave-1.log`)
 - [x] `spine preflight` green
 - [x] `npm run release:check` green on final `HEAD` (re-run exit 0; first Phase 5 attempt aborted mid-suite flake)
-- [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
-- [ ] `git status` clean
+- [x] CI workflow green on `HEAD` (run 44842554393 success on `99bcdcf9`)
+- [x] `git status` clean
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
