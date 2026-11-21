@@ -154,10 +154,10 @@ Validated 2026-11-19: spine tasks validate SP-873…SP-880 → 8 passed
 
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (`/tmp/pi-spine-post-integrate-wave-0.log`, `/tmp/pi-spine-post-integrate-wave-1.log`)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (re-run exit 0; first Phase 5 attempt aborted mid-suite flake)
 - [ ] CI workflow green on `HEAD` (`gh run list --workflow ci.yml`)
 - [ ] `git status` clean
 - [ ] Operator approved publish bump type: **minor**
@@ -165,4 +165,4 @@ Validated 2026-11-19: spine tasks validate SP-873…SP-880 → 8 passed
 - [ ] `release.yml` succeeded (OIDC stage)
 - [ ] Maintainer 2FA approved staged package; `npm view pi-spine version` = 2.33.0
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Close remaining `Closes #NNN` sweep (expect #331 #294 #310 #311 #319 #338)
+- [x] Close remaining `Closes #NNN` sweep (#331 #294 #310 #311 #319 #338 CLOSED)
