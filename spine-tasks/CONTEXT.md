@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-11-21 (Phase 104 v2.33.0 **published** — tag `v2.33.0` / `74c2726f`, npm `latest` 2.33.0 (OIDC stage + 2FA approve), global smoke OK; SP-873–SP-880 done; closed #331 #294 #310 #311 #319 #338; Next → SP-881)
+**Last Updated:** 2026-11-21 (Phase 105 v2.33.1 **packets staged** — emergency patch #380/#381; SP-881–SP-882 authored; Next → SP-883)
 **Status:** Active
-**Next Task ID:** SP-881
+**Next Task ID:** SP-883
 
 ---
 
@@ -2811,6 +2811,17 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 | **P1** | 77% code coverage policy | 12 | **Staged (SP-061)** |
 | **P1** | Agent prompt improvements (worker/reviewer/supervisor) | 12 | **Staged (SP-062–069)** |
 
+
+
+
+### Phase 105 — Release v2.33.1: emergency patch worker-usage salvage + json-mode failure summary
+
+**Authoring:** 2026-11-21 · Manifest: `spine-tasks/_authoring/release-v2.33.1/manifest.md`. Scope approved 2026-11-21 (emergency patch for #380/#381). Packets staged.
+
+| SP-* | Summary | Size | Issue | Status |
+|------|---------|------|-------|--------|
+| SP-881 | Exclude worker-usage.json from salvage/dirty | S | #380 Closes | Staged |
+| SP-882 | Summarize --mode json failure for task.failed | S | #381 Closes | Staged |
 
 
 ### Phase 104 — Release v2.33.0: Sep/Oct bugs + run-metrics usage producers
