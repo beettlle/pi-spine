@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-21 (Phase 104 v2.33.0 **tagged** — tag `v2.33.0` / `74c2726f`, release.yml stage OK; awaiting npm 2FA approve; SP-873–SP-880 done; closed #331 #294 #310 #311 #319 #338; Next → SP-881)
+**Last Updated:** 2026-11-21 (Phase 104 v2.33.0 **published** — tag `v2.33.0` / `74c2726f`, npm `latest` 2.33.0 (OIDC stage + 2FA approve), global smoke OK; SP-873–SP-880 done; closed #331 #294 #310 #311 #319 #338; Next → SP-881)
 **Status:** Active
 **Next Task ID:** SP-881
 
@@ -2815,7 +2815,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 104 — Release v2.33.0: Sep/Oct bugs + run-metrics usage producers
 
-**Authoring:** 2026-11-19 · Manifest: `spine-tasks/_authoring/release-v2.33.0/manifest.md`. Scope approved 2026-11-19 (bug-only minor). **Tagged v2.33.0** 2026-11-21 — `74c2726f`, tag `v2.33.0`, release.yml stage OK ([run 44859656939](https://github.com/beettlle/pi-spine/actions/runs/44859656939)); **npm 2FA approve pending**. Closed #331 #294 #310 #311 #319 #338. Filed follow-ups #377 #378 #379; stet #40.
+**Authoring:** 2026-11-19 · Manifest: `spine-tasks/_authoring/release-v2.33.0/manifest.md`. Scope approved 2026-11-19 (bug-only minor). **Published v2.33.0** 2026-11-21 — `74c2726f`, tag `v2.33.0`, npm `latest` 2.33.0 (OIDC stage + 2FA approve), global smoke OK. Closed #331 #294 #310 #311 #319 #338. Filed follow-ups #377 #378 #379; stet #40.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|
