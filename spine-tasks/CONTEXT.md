@@ -1,8 +1,8 @@
 # General — Context
 
-**Last Updated:** 2026-11-22 (Phase 105 v2.33.1 **published** — tag `v2.33.1` / `834ee202`, npm `latest` 2.33.1 (OIDC stage + 2FA approve), global smoke OK; SP-881–SP-882 done; closed #380 #381; Next → SP-883)
+**Last Updated:** 2026-11-22 (Phase 106 v2.34.0 **authoring** — release scope SP-883–SP-889 for #382 epic children + #377–#379 bugs; Next → SP-890)
 **Status:** Active
-**Next Task ID:** SP-883
+**Next Task ID:** SP-890
 
 ---
 
