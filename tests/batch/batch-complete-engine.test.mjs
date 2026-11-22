@@ -17,7 +17,7 @@ import {
 	journalHasIntegrateProgressSignals,
 	reloadStateForTerminalWrite,
 } from "../../src/batch/lifecycle-archive.mjs";
-import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
+import { appendJournalEvent } from "../../src/batch/journal.mjs";
 import { recordBatchEnginePid } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
