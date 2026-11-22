@@ -1,0 +1,22 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 553-554
+spine-tasks/SP-885-retry-refresh-prompt/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-17,22,24-27,32,67-68
+src/batch/engine-lanes/orch-sync.mjs
+  h_2a17159c706ba1 11,135-242
+src/batch/retry.mjs
+  h_2a17159c706ba1 7-8,268,271,330-351,371-382,398
+tests/batch/retry-refresh-prompt.test.mjs
+  h_2a17159c706ba1 1-296
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "878693b98d4d32b711b7aee0782d70d13afa2533",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
