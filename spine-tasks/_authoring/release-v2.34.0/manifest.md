@@ -137,10 +137,13 @@ Wave 3: SP-889
 
 ## Risks and blockers
 
-- **Wave 0 batch `20261122T212439-3d55` aborted** (2026-11-22): all three workers died with **exit 143 SIGTERM** / “no assistant text… after system prompt” under host swap pressure (`vm.swapusage` ~11.3/12 GiB used). Retries identical. Tiny `pi -p -ne --model zai/glm-5.3-flash` smoke OK — not a dead API key. Recovery: abort+archive done; restart **serial** (one task / lower parallel) until host headroom recovers.
-- **#383 / #884 touch land/metrics hot paths** — M-sized; split if >4 impl steps or overlapping File Scope.
-- **Doctor advisories (non-blocking):** PATH pi mismatch; quota-risk escalate pins; stale worktrees; stet/LM Studio + swap pressure.
-- **Agent pin override:** none (infra SIGTERM ≠ content/contract; do not escalate models per #248).
+- **Root cause of wave0 SIGTERM (fixed `d26147ee`):** `pi --mode json` NDJSON (~2.2 MiB with extensions/rules) exceeded Node `spawnSync` default **1 MiB maxBuffer** → ENOBUFS/SIGTERM exit 143. Raised `WORKER_PI_JSON_MAX_BUFFER` to 64 MiB in `bin/spine-worker-runner.mjs`.
+- **SP-885 landed** batch `20261122T230441-a680`; #378 CLOSED. Post-integrate `release:check` green (3387 pass, 91.69% lines). Hit #379 complete race; finalized via `ensureLandLoopFinalizedAfterGateOrIntegrate` after zombie engine kill.
+- **#383 / #884 touch land/metrics hot paths** — M-sized.
+- **Doctor advisories (non-blocking):** PATH pi mismatch; quota-risk; stet/swap pressure.
+- **Agent pin override:** none.
+
+---
 
 ---
 
