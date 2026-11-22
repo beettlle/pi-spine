@@ -1,0 +1,25 @@
+docs/adoption/upstream-execution-workflow.md
+  s_73023642db9487::t_57c3f1b171d06c 56-70
+skills/create-spine-tasks/SKILL.md
+  s_73023642db9487::t_b6f18610451054 547-571,602
+skills/create-spine-tasks/references/prompt-template.md
+  s_73023642db9487::t_f940847be00eea 56
+spine-tasks/SP-883-thin-packet-conventions/STATUS.md
+  s_73023642db9487::t_3374b53b937c2f 3-4,14,16-17,22,24-27,32,34-35,40,42-44,59-60,69-70,82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e33ffa86d1ad184d9d99530efb35b771d5960220",
+  "prompts": {},
+  "sessions": {
+    "s_73023642db9487": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f2ec24f2-5023-4416-ab14-6eb0c6c99d35",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
