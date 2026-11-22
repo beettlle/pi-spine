@@ -1,6 +1,6 @@
 # SP-885: Refresh PROMPT.md into lane on batch retry — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
@@ -29,15 +29,15 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 
-- [ ] Tests cover refresh
-- [ ] Contract testCommand passing
+- [x] Tests cover refresh
+- [x] Contract testCommand passing
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** 🟡 In Progress
 
 - [ ] Must Update docs modified
 - [ ] Discoveries logged
@@ -56,6 +56,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| Full `tests/batch/` run inside the worker session fails only nested-batch-spawn tests (`attached-batch-exit`, `attached-multi-wave`) — the SP-482 guard blocks spawning when `SPINE_IS_WORKER=1`; verified those tests pass with `env -u SPINE_IS_WORKER`. Environmental, not from this change. | No action | worker session env |
+| GitNexus index is stale for the new symbols (`impact retryTask` → UNKNOWN; `detect_changes` mapped 0 symbols across 4 changed files) — blast radius established by text search: `retryTask` callers are `bin/spine-batch.mjs` CLI + tests only. | No action | STATUS execution log |
+| `skills/spine-release-operator/SKILL.md` line 459 recovery row "Contract fail → Fix PROMPT on main, commit, abort, dismiss, retry" is looser than needed now (abort/dismiss no longer required; plain `spine batch retry` refreshes the lane packet). Outside File Scope — not edited; suggest operator amend to "Fix PROMPT on main → `spine batch retry <taskId>` → resume" post-merge. | Follow-up suggested | `skills/spine-release-operator/SKILL.md:459` |
 
 ---
 
