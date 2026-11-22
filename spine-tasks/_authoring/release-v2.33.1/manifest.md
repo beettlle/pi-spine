@@ -8,6 +8,7 @@
 **Operator approved scope:** yes (2026-11-21) — emergency patch invoked for #380/#381
 **Worker model pin:** `zai/glm-5.3-flash`, quota fallback profile `allegretto` — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
+**Operator approved publish:** yes (2026-11-21) — bump **patch** → v2.33.1
 
 **Theme:** Emergency patch. Stop salvage thrash from `worker-usage.json` (#380) and stop journaling full `--mode json` system-prompt stdout into `task.failed` (#381). No enhancements. No open documentation issues required for hotfix.
 
@@ -120,7 +121,7 @@ Pending tasks: **0**. Next Task ID: **SP-881**.
 - [x] `npm run release:check` green on final `HEAD` (`7be0f549`, exit 0)
 - [x] CI workflow green on `HEAD` — [run 44963133786](https://github.com/beettlle/pi-spine/actions/runs/44963133786) success
 - [x] `git status` clean
-- [ ] Operator approved publish bump type: **patch**
+- [x] Operator approved publish bump type: **patch**
 - [ ] `npm version patch` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
 - [ ] Maintainer 2FA approved; `npm view pi-spine version` = 2.33.1
