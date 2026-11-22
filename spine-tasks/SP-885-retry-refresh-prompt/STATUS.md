@@ -56,6 +56,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): d68e580  src/batch/engine-lanes/orch-sync.mjs:234  WARNING  The commit success check `gitExec(...) !== null` is unreliable. `git  | advisory — noted, not blocking | contract review step |
 | Full `tests/batch/` run inside the worker session fails only nested-batch-spawn tests (`attached-batch-exit`, `attached-multi-wave`) — the SP-482 guard blocks spawning when `SPINE_IS_WORKER=1`; verified those tests pass with `env -u SPINE_IS_WORKER`. Environmental, not from this change. | No action | worker session env |
 | GitNexus index is stale for the new symbols (`impact retryTask` → UNKNOWN; `detect_changes` mapped 0 symbols across 4 changed files) — blast radius established by text search: `retryTask` callers are `bin/spine-batch.mjs` CLI + tests only. | No action | STATUS execution log |
 | `skills/spine-release-operator/SKILL.md` line 459 recovery row "Contract fail → Fix PROMPT on main, commit, abort, dismiss, retry" is looser than needed now (abort/dismiss no longer required; plain `spine batch retry` refreshes the lane packet). Outside File Scope — not edited; suggest operator amend to "Fix PROMPT on main → `spine batch retry <taskId>` → resume" post-merge. | Follow-up suggested | `skills/spine-release-operator/SKILL.md:459` |

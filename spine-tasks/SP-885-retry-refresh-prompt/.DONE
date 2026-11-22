@@ -1,0 +1,6 @@
+SP-885 complete — 2026-11-22
+
+- Retry refreshes PROMPT.md from base tasks root into lane worktree (#378): `refreshTaskPacketFromBase` in `src/batch/engine-lanes/orch-sync.mjs`, wired into `retryTask` (`src/batch/retry.mjs`) after `task.retry_requested`.
+- Best-effort: skips silently when base packet / lane worktree / lane packet folder is missing; pathspec commit touches only the packet file; journal `task.packet_refreshed` / `task.packet_refresh_failed`.
+- Tests: `tests/batch/retry-refresh-prompt.test.mjs` (4 cases). Contract testCommand green in foreground (lint + typecheck + 8/8 tests, exit 0). Full suite delegated to post-integrate release:check (worker-session SP-482 guard documented in STATUS Discoveries).
+- Runbook: "Packet refresh on retry (issue #378)" in docs/adoption/operator-runbook.md.
