@@ -1,0 +1,51 @@
+spine-tasks/CONTEXT.md
+  s_73023642db9487::t_88abfa5964d45d 3,5
+spine-tasks/SP-883-thin-packet-conventions/PROMPT.md
+  s_73023642db9487::t_7bf1ed2946bcea 1-102
+spine-tasks/SP-883-thin-packet-conventions/STATUS.md
+  s_73023642db9487::t_2830286df6f7f1 1-78
+spine-tasks/SP-884-run-metrics-tokens-live/PROMPT.md
+  s_73023642db9487::t_af6c44528dea8d 1-114
+spine-tasks/SP-884-run-metrics-tokens-live/STATUS.md
+  s_73023642db9487::t_81d43b21b00ef0 1-85
+spine-tasks/SP-885-retry-refresh-prompt/PROMPT.md
+  s_73023642db9487::t_a59ec633f47663 1-105
+spine-tasks/SP-885-retry-refresh-prompt/STATUS.md
+  s_73023642db9487::t_7784fdc4745db9 1-78
+spine-tasks/SP-886-batch-complete-land-race/PROMPT.md
+  s_73023642db9487::t_ed5f8b464caeae 1-104
+spine-tasks/SP-886-batch-complete-land-race/STATUS.md
+  s_73023642db9487::t_a95eb6857f52a2 1-78
+spine-tasks/SP-887-github-sync-on-land/PROMPT.md
+  s_73023642db9487::t_d79f1276f84c6d 1-119
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  s_73023642db9487::t_9e3a4aac049212 1-87
+spine-tasks/SP-888-hydrate-packet-from-issue/PROMPT.md
+  s_73023642db9487::t_fc14433862330d 1-108
+spine-tasks/SP-888-hydrate-packet-from-issue/STATUS.md
+  s_73023642db9487::t_f45bfc24029d21 1-78
+spine-tasks/SP-889-board-select-pending-tasks/PROMPT.md
+  s_73023642db9487::t_1bfeff29e3780e 1-110
+spine-tasks/SP-889-board-select-pending-tasks/STATUS.md
+  s_73023642db9487::t_16b131bcf3fc34 1-79
+spine-tasks/_authoring/release-v2.34.0/manifest.md
+  s_73023642db9487::t_4c3288294ae7b6 1-160
+spine-tasks/dependencies.json
+  s_73023642db9487::t_1dae5a4fa90b19 3,2211-2218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e68678a48a3e4c6d4180bd140e5d7ad5e2b4827f",
+  "prompts": {},
+  "sessions": {
+    "s_73023642db9487": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-f2ec24f2-5023-4416-ab14-6eb0c6c99d35",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
