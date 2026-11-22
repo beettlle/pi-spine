@@ -49,6 +49,14 @@ import {
 import { PROMPT_THINKING_LEVELS, parseContract, parsePrompt } from "../src/tasks/packet/parse-prompt.mjs";
 
 /**
+ * `pi --mode json` streams the full system prompt (rules + extension tool schemas)
+ * as one NDJSON event. Node's spawnSync default maxBuffer is 1 MiB; exceeding it
+ * kills the child with ENOBUFS → SIGTERM (exit 143) and truncates stdout mid-event.
+ * Keep this well above observed worker system-prompt sizes (multi-MiB with extensions).
+ */
+export const WORKER_PI_JSON_MAX_BUFFER = 64 * 1024 * 1024;
+
+/**
  * Actionable hint when pi worker spawn fails on duplicate extension tool registration.
  *
  * @param {string} output
@@ -624,6 +632,7 @@ async function runWorkerRunner() {
 		cwd: worktreePath || process.cwd(),
 		encoding: "utf-8",
 		timeout: timeoutMs,
+		maxBuffer: WORKER_PI_JSON_MAX_BUFFER,
 	});
 
 	// SP-879 (#338): persist provider-reported usage before any terminal exit so
@@ -638,6 +647,19 @@ async function runWorkerRunner() {
 		console.error("pi worker timed out");
 		if (piLogText) process.stdout.write(`\n[pi assistant output]\n${truncateLiveLogBytes(piLogText, resolveWorkerOutputConfig(spineConfig).maxBytes)}\n`);
 		process.exit(124);
+	}
+
+	if (result.error?.code === "ENOBUFS") {
+		console.error(
+			`pi --mode json stdout exceeded maxBuffer (${WORKER_PI_JSON_MAX_BUFFER} bytes); ` +
+				"raise WORKER_PI_JSON_MAX_BUFFER or shrink worker system prompt (rules/extensions).",
+		);
+		if (piLogText) {
+			process.stdout.write(
+				`\n[pi assistant output]\n${truncateLiveLogBytes(piLogText, resolveWorkerOutputConfig(spineConfig).maxBytes)}\n`,
+			);
+		}
+		process.exit(1);
 	}
 
 	if (result.status !== 0) {

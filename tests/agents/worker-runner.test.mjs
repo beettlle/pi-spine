@@ -9,10 +9,15 @@ import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 import test from "node:test";
 import {
+	WORKER_PI_JSON_MAX_BUFFER,
 	buildWorkerPiArgs,
 	formatPiExtensionConflictHint,
 } from "../../bin/spine-worker-runner.mjs";
 import { minimalValidPromptMarkdown } from "../helpers/smoke-task-prompt.mjs";
+
+test("WORKER_PI_JSON_MAX_BUFFER exceeds Node spawnSync default (1 MiB)", () => {
+	assert.ok(WORKER_PI_JSON_MAX_BUFFER > 1024 * 1024);
+});
 
 async function writeSmokeTask(root, taskId = "SP-480") {
 	const taskFolder = path.join(root, "spine-tasks", taskId);
