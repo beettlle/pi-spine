@@ -550,6 +550,8 @@ spine batch start <task-id>
 
 **Contract verify vs reviewer failure (issue #85):** When final `contract.verified` fails (`ok: false`), the engine records **`contract_failed`** (not `review_exhausted`) and does **not** re-run the worker or consume `maxFinalAttempts`. Journal includes `contract.failed`; run-metrics uses `failureKind: contract`. Edit `PROMPT.md` `testCommand` / scope, then `spine batch retry <id>`.
 
+**Packet refresh on retry (issue #378):** `spine batch retry <taskId>` copies `PROMPT.md` from the project tasks root into the lane task folder before the task re-runs, so a contract / `testCommand` / File Scope fix authored on base reaches the next worker run (the worker, contract verify, and final review all read the lane-worktree copy, which previously kept what the failed run saw). The refresh is committed in the lane worktree with a pathspec limited to the packet file, so uncommitted lane product work from the failed run stays untouched; the journal records `task.packet_refreshed` (or `task.packet_refresh_failed` if the copy errored — the retry itself still succeeds). `STATUS.md`, `.DONE`, and `.reviews/` are never overwritten, and retry skips the refresh silently when the base and lane copies already match. Manual `cp` of the fixed packet from the project tasks root into the lane worktree remains a valid interim fix on versions without this behavior.
+
 ### Worker backend default (FR-SHIP-09)
 
 **Default:** `lanes.workerBackend: subprocess` — lane workers spawn `pi -p` via `bin/spine-worker-runner.mjs`. This is the validated production path ([stub-free dogfood](../compatibility/stub-free-dogfood-report.md)).
