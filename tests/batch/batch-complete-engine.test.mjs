@@ -412,3 +412,48 @@ test("completeBatch keeps the generic refusal when the land-loop engine PID is d
 		await destroyGitRepo(projectRoot);
 	}
 });
+
+test("completeBatch reports pending — not a hard failure — for the first complete after integrate while finalize holds a PID-less active state (#379)", async () => {
+	const projectRoot = await initGitRepo("spine-complete-finalize-window-");
+	try {
+		const { fixture } = prepareCompletableBatch(projectRoot);
+		const statePath = path.join(projectRoot, ".spine", "batch-state.json");
+		// #379 finalize window: finalizeBatchForIntegrate clears the engine PID
+		// (#198) and saves BEFORE writing phase: completed, so the engine's
+		// finalize save leaves an active phase with no recorded PID on disk while
+		// the operator's pre-lock read already saw the terminal snapshot.
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		const restore = serveStaleStateOnFirstRead(statePath, fixture);
+		let first;
+		try {
+			first = completeBatch({ projectRoot });
+		} finally {
+			restore();
+		}
+
+		assert.equal(first.ok, false);
+		assert.equal(first.exitCode, 1);
+		assert.equal(
+			first.pending,
+			true,
+			"first complete after integrate must be pending, not batch_state_changed_during_terminal_write",
+		);
+		assert.equal(first.error, "engine_finishing_land_loop");
+		assert.equal(first.headline, "Engine is finishing the land loop — wait for it to complete");
+		assert.equal(first.suggestedCommand, "spine wait --until completed --timeout 10m");
+		assert.ok(fs.existsSync(statePath), "active batch-state must not be archived");
+		assert.ok(!fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
+
+		// The engine's finalize lands: the terminal phase is persisted.
+		writeSpineBatchState(projectRoot, fixture);
+
+		// The reported symptom "retry works": the next complete succeeds.
+		const second = completeBatch({ projectRoot });
+		assert.equal(second.ok, true, second.headline ?? second.error);
+		assert.equal(second.diagnosis, "completed");
+		assert.ok(fs.existsSync(archiveBatchStatePath(projectRoot, fixture.batchId)));
+		assert.ok(!fs.existsSync(statePath), "active batch-state is cleared after complete");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
