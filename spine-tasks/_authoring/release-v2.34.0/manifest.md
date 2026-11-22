@@ -73,7 +73,7 @@ Pending tasks: **0**. Next Task ID: **SP-883**.
 
 | SP-ID | Issue | Bucket | Size | Title | Notes |
 |-------|-------|--------|------|-------|-------|
-| SP-883 | #385 | doc | S | Thin-packet authoring conventions + advisory validate note | Closes #385; Partial #382 |
+| SP-883 | #385 | doc | S | Thin-packet authoring conventions + advisory validate note | **DONE** outside-spine `e33ffa86`; #385 CLOSED |
 | SP-884 | #377 | bug | M | Fix live run-metrics tokensIn/tokensOut after SP-878–880 | Closes #377 |
 | SP-885 | #378 | bug | S | Refresh PROMPT.md from base into lane on `batch retry` | Closes #378 |
 | SP-886 | #379 | bug | S | Eliminate `batch complete` vs land-loop finalize race | Closes #379 |
