@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-21 (Phase 105 v2.33.1 **hotfix on main** — SP-881/#380 + SP-882/#381 landed outside-spine; Next → SP-883; publish pending)
+**Last Updated:** 2026-11-22 (Phase 105 v2.33.1 **tagged** — tag `v2.33.1` / `834ee202`, release.yml stage OK; awaiting npm 2FA approve; SP-881–SP-882 done; closed #380 #381; Next → SP-883)
 **Status:** Active
 **Next Task ID:** SP-883
 
@@ -2816,7 +2816,7 @@ node bin/spine.mjs plan SP-656,SP-657,SP-658,SP-659,SP-660,SP-661,SP-662
 
 ### Phase 105 — Release v2.33.1: emergency patch worker-usage salvage + json-mode failure summary
 
-**Authoring:** 2026-11-21 · Manifest: `spine-tasks/_authoring/release-v2.33.1/manifest.md`. Scope approved 2026-11-21 (emergency patch for #380/#381). Packets staged.
+**Authoring:** 2026-11-21 · Manifest: `spine-tasks/_authoring/release-v2.33.1/manifest.md`. Scope approved 2026-11-21 (emergency patch #380/#381). **Tagged v2.33.1** 2026-11-22 — `834ee202`, tag `v2.33.1`, release.yml stage OK ([run 44968183458](https://github.com/beettlle/pi-spine/actions/runs/44968183458)); **npm 2FA approve pending**. Closed #380 #381.
 
 | SP-* | Summary | Size | Issue | Status |
 |------|---------|------|-------|--------|

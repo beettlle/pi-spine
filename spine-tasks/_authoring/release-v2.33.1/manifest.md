@@ -122,8 +122,8 @@ Pending tasks: **0**. Next Task ID: **SP-881**.
 - [x] CI workflow green on `HEAD` — [run 44963133786](https://github.com/beettlle/pi-spine/actions/runs/44963133786) success
 - [x] `git status` clean
 - [x] Operator approved publish bump type: **patch**
-- [ ] `npm version patch` + `git push && git push --tags`
-- [ ] `release.yml` succeeded (OIDC stage)
+- [x] `npm version patch` + `git push && git push --tags` (`834ee202`, tag `v2.33.1`)
+- [x] `release.yml` succeeded (OIDC stage) — [run 44968183458](https://github.com/beettlle/pi-spine/actions/runs/44968183458)
 - [ ] Maintainer 2FA approved; `npm view pi-spine version` = 2.33.1
 - [ ] Post-publish smoke
 - [ ] Close `Closes #NNN` sweep (expect #380 #381)
