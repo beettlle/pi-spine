@@ -53,6 +53,7 @@ Deterministic commands use the [execute-task variant](#execute-task-variant) ins
 ## Context to Read First
 
 > Only list docs the worker actually needs. Less is better.
+> **Thin packets (#385):** do not paste full GitHub issue threads here — use Mission `Closes #N` / `Partial #N` and keep narrative on the issue.
 
 - `[path/to/CONTEXT.md]`
 - `[path/to/specific-doc.md]` — [why needed]

@@ -53,6 +53,21 @@ Do you already have PROMPT.md / STATUS.md packets?
 
 ---
 
+## Dual-layer: GitHub Issues ↔ packets (#382)
+
+| Role | Source of truth |
+|------|-----------------|
+| Human / intake | GitHub Issues (goals, discussion, board visibility) |
+| Agent / engine | Task packets (`PROMPT.md`, `STATUS.md`, Contract, File Scope, `dependencies.json`, `.DONE`) |
+
+**Rejected:** Issue-tracker-only execution (issue bodies replacing packets as batch input). That would weaken Contract validation, File Scope, wave DAGs, and lane isolation.
+
+**Thin packets (#385):** Keep narrative in the issue; keep Contract / File Scope / Steps / Do NOT authoritative in the packet. Mission should be short and use `Closes #N` / `Partial #N` ([#147](https://github.com/beettlle/pi-spine/issues/147)) — do not paste unbounded issue threads into Context to Read First. See `create-spine-tasks` skill § Thin packets.
+
+**Related release work:** land sync on integrate (#383), hydrate from issue (#384), board label/milestone → pending task IDs (#386).
+
+---
+
 ## Path 1 — Spine-native (recommended default)
 
 ### Prerequisites
