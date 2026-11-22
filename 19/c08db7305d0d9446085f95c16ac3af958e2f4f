@@ -1,0 +1,20 @@
+spine-tasks/SP-886-batch-complete-land-race/STATUS.md
+  h_2a17159c706ba1 3-4
+src/batch/lifecycle-archive.mjs
+  h_2a17159c706ba1 8,49-77,89-94,106,142-156,160-172
+tests/batch/batch-complete-engine.test.mjs
+  h_2a17159c706ba1 16-20,338-458
+tests/batch/late-finalize-after-complete.test.mjs
+  h_2a17159c706ba1 4,6-9,11-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19c08db7305d0d9446085f95c16ac3af958e2f4f",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
