@@ -4,6 +4,8 @@
  */
 
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
+import { refreshTaskPacketFromBase } from "./engine-lanes/orch-sync.mjs";
+import { appendJournalEvent } from "./journal.mjs";
 import { reconcileOrphanRunningState } from "./reconcile.mjs";
 import { resolveRetryProfileOverride } from "./retry-profile.mjs";
 import {
@@ -263,9 +265,10 @@ export function retryTask({ projectRoot, taskId, profile = null, noEscalate = fa
 	}
 
 	// Classify before reset: `resetTaskForRetry` clears `exitReason` / `classification`.
+	const { config: spineConfig } = loadSpineConfig(projectRoot);
 	const profileDecision = resolveRetryProfileOverride({
 		task,
-		config: loadSpineConfig(projectRoot).config,
+		config: spineConfig,
 		profile,
 		noEscalate,
 	});
@@ -324,6 +327,28 @@ export function retryTask({ projectRoot, taskId, profile = null, noEscalate = fa
 		},
 	});
 
+	// Operator packet fixes on base must reach the next worker run (#378): the
+	// worker, contract verify, and final review all read PROMPT.md from the lane
+	// worktree copy, which still holds what the failed run saw.
+	const packetRefresh = refreshTaskPacketFromBase({
+		projectRoot,
+		state,
+		taskId,
+		task,
+		config: spineConfig,
+	});
+	if (state.batchId && packetRefresh.refreshed.length > 0) {
+		appendJournalEvent(projectRoot, state.batchId, "task.packet_refreshed", {
+			taskId,
+			files: packetRefresh.refreshed,
+		});
+	} else if (state.batchId && packetRefresh.ok === false) {
+		appendJournalEvent(projectRoot, state.batchId, "task.packet_refresh_failed", {
+			taskId,
+			error: packetRefresh.error,
+		});
+	}
+
 	if (unblocked) {
 		recordTaskTransition({
 			projectRoot,
@@ -343,6 +368,18 @@ export function retryTask({ projectRoot, taskId, profile = null, noEscalate = fa
 	if (retriedRowIds.length > 0) {
 		output += `\n  Matrix rows re-running: ${retriedRowIds.join(", ")} (succeeded rows carry over).`;
 	}
+	if (packetRefresh.refreshed.length > 0) {
+		output += `\n  Packet refreshed from base: ${packetRefresh.refreshed
+			.map((entry) =>
+				entry.committed
+					? `${entry.file} (committed ${entry.commitSha.slice(0, 12)})`
+					: `${entry.file} (copied; lane commit failed)`,
+			)
+			.join(", ")}.`;
+	}
+	if (!packetRefresh.ok) {
+		output += `\n  Packet refresh failed (retry proceeds with the lane packet): ${packetRefresh.error}.`;
+	}
 	if (profileDecision.escalation) {
 		output += `\n  Profile override: ${profileDecision.profileOverride} (${profileDecision.escalation === "auto" ? "escalatePolicy" : "--profile"}).`;
 	}
@@ -358,6 +395,7 @@ export function retryTask({ projectRoot, taskId, profile = null, noEscalate = fa
 		profileOverride: profileDecision.profileOverride,
 		escalation: profileDecision.escalation,
 		...(retriedRowIds.length > 0 ? { retriedRowIds } : {}),
+		...(packetRefresh.refreshed.length > 0 ? { packetRefreshed: packetRefresh.refreshed } : {}),
 		output,
 	};
 }
