@@ -13,7 +13,11 @@ import { formatLifecycleHuman } from "../../bin/spine-batch.mjs";
 import { loadSpineConfig } from "../../bin/spine-config.mjs";
 import { integrateOrchToBase } from "../../src/batch/integrate.mjs";
 import { archiveBatchStatePath, completeBatch } from "../../src/batch/lifecycle.mjs";
-import { reloadStateForTerminalWrite } from "../../src/batch/lifecycle-archive.mjs";
+import {
+	journalHasIntegrateProgressSignals,
+	reloadStateForTerminalWrite,
+} from "../../src/batch/lifecycle-archive.mjs";
+import { appendJournalEvent, readJournalEvents } from "../../src/batch/journal.mjs";
 import { recordBatchEnginePid } from "../../src/batch/state.mjs";
 import { laneTaskBranch, laneWorktreePath } from "../../src/batch/worktree.mjs";
 import { destroyGitRepo, initGitRepo } from "../helpers/git-fixture.mjs";
@@ -326,6 +330,127 @@ test("reloadStateForTerminalWrite keeps the generic refusal when the engine PID 
 
 		assert.equal(refusal.pending, undefined);
 		assert.equal(refusal.error, "batch_state_changed_during_terminal_write");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite returns pending for a PID-less active state inside the finalize window (#379)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-finalize-window-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		// #379: finalize clears the engine PID (#198) before writing the terminal
+		// phase — an active phase with no recorded PID mid-finalize.
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		// Real production signals, not mocks: gate approval + integrate completed.
+		appendJournalEvent(projectRoot, fixture.batchId, "gate.approved", { batchId: fixture.batchId });
+		appendJournalEvent(projectRoot, fixture.batchId, "integrate.completed", {
+			batchId: fixture.batchId,
+		});
+
+		const { refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+			// No deps: the default journal probe must detect the finalize window.
+		});
+
+		assert.equal(refusal.pending, true);
+		assert.equal(refusal.error, "engine_finishing_land_loop");
+		assert.equal(refusal.exitCode, 1);
+		assert.equal(refusal.headline, "Engine is finishing the land loop — wait for it to complete");
+		assert.equal(refusal.suggestedCommand, "spine wait --until completed --timeout 10m");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite keeps the generic refusal for a PID-less active state with no approval signals (fail-closed)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-pidless-no-signals-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		// No gate.approved / integrate.completed journal events: a paused batch
+		// or a resumed-for-real-work batch must keep failing closed.
+
+		const { refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+		});
+
+		assert.equal(refusal.pending, undefined);
+		assert.equal(refusal.error, "batch_state_changed_during_terminal_write");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite keeps the generic refusal for a recorded-but-dead PID even inside the finalize window (#371)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-dead-pid-signals-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		const state = { ...fixture, phase: "running" };
+		recordBatchEnginePid(state, DEAD_PID);
+		writeSpineBatchState(projectRoot, state);
+		appendJournalEvent(projectRoot, fixture.batchId, "gate.approved", { batchId: fixture.batchId });
+		appendJournalEvent(projectRoot, fixture.batchId, "integrate.completed", {
+			batchId: fixture.batchId,
+		});
+		assert.equal(
+			journalHasIntegrateProgressSignals(projectRoot, fixture.batchId),
+			true,
+			"setup: approval signals must be present so this pins the dead-PID distinction",
+		);
+
+		const { refusal } = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+		});
+
+		assert.equal(refusal.pending, undefined);
+		assert.equal(refusal.error, "batch_state_changed_during_terminal_write");
+	} finally {
+		await destroyGitRepo(projectRoot);
+	}
+});
+
+test("reloadStateForTerminalWrite honors an injected isFinalizeInFlight probe over journal signals (#379)", async () => {
+	const projectRoot = await initGitRepo("spine-reload-finalize-inject-");
+	try {
+		const fixture = completedBatchFixture("orch/spine-20260601T120000");
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		appendJournalEvent(projectRoot, fixture.batchId, "gate.approved", { batchId: fixture.batchId });
+
+		const overridden = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+			deps: { isFinalizeInFlight: () => false },
+		});
+		assert.equal(overridden.refusal.pending, undefined, "injected false must win over journal signals");
+		assert.equal(overridden.refusal.error, "batch_state_changed_during_terminal_write");
+
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		const injected = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+			deps: { isFinalizeInFlight: () => true },
+		});
+		assert.equal(injected.refusal.pending, true);
+		assert.equal(injected.refusal.error, "engine_finishing_land_loop");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}
