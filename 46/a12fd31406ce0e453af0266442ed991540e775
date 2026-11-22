@@ -1,0 +1,14 @@
+spine-tasks/SP-885-retry-refresh-prompt/STATUS.md
+  h_2a17159c706ba1 3-4,40,42-44,62,73-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46a12fd31406ce0e453af0266442ed991540e775",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
