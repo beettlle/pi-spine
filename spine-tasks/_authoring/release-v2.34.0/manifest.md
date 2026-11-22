@@ -137,10 +137,10 @@ Wave 3: SP-889
 
 ## Risks and blockers
 
-- **No pending packets** — entire scope is Phase 3 authoring; do not start Phase 4 until packets validate.
-- **#383 / #884 touch land/metrics hot paths** — M-sized; split in Phase 3 if >4 impl steps or overlapping File Scope.
-- **Doctor advisories (non-blocking):** PATH pi mismatch; quota-risk escalate pins; stale worktrees (7); stet/swap pressure on host — unload LM Studio before waves if needed.
-- **Doctor noted another spine/stet PID at intake** — `spine status --diagnose` was Idle; re-check before first `batch start`.
+- **Wave 0 batch `20261122T212439-3d55` aborted** (2026-11-22): all three workers died with **exit 143 SIGTERM** / “no assistant text… after system prompt” under host swap pressure (`vm.swapusage` ~11.3/12 GiB used). Retries identical. Tiny `pi -p -ne --model zai/glm-5.3-flash` smoke OK — not a dead API key. Recovery: abort+archive done; restart **serial** (one task / lower parallel) until host headroom recovers.
+- **#383 / #884 touch land/metrics hot paths** — M-sized; split if >4 impl steps or overlapping File Scope.
+- **Doctor advisories (non-blocking):** PATH pi mismatch; quota-risk escalate pins; stale worktrees; stet/LM Studio + swap pressure.
+- **Agent pin override:** none (infra SIGTERM ≠ content/contract; do not escalate models per #248).
 
 ---
 
