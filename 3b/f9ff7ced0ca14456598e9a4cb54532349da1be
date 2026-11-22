@@ -1,0 +1,20 @@
+spine-tasks/SP-885-retry-refresh-prompt/.DONE
+  h_2a17159c706ba1 1-6
+spine-tasks/SP-885-retry-refresh-prompt/.reviews/0-20261122T232524.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-885-retry-refresh-prompt/.reviews/final-20261122T233229.md
+  h_2a17159c706ba1 1-8
+spine-tasks/SP-885-retry-refresh-prompt/STATUS.md
+  h_2a17159c706ba1 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3bf9ff7ced0ca14456598e9a4cb54532349da1be",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
