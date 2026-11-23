@@ -19,10 +19,10 @@
 ---
 
 ### Step 1: Extract provider
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Create providers/github.mjs
-- [ ] Rewire sync-on-land
+- [x] Create providers/github.mjs — exports `defaultRunGh` (spawn options: cwd/encoding/stdio/timeout identical to original; result shape `{ status, stdout, stderr, error }`), `GH_CALL_TIMEOUT_MS`, `GhRunResult` typedef; optional `{ spawn }` injection seam for deterministic tests (repo pattern: `tests/doctor/inherit-provider-auth.test.mjs` `spawnFn`)
+- [x] Rewire sync-on-land — removed inlined `spawnSync` import, `GH_CALL_TIMEOUT_MS`, local typedef, and `defaultRunGh`; imports provider; call-site arrow wrapper unchanged; `GhRunResult` re-declared via `import()` type
 
 ---
 
