@@ -27,7 +27,7 @@ import { isLiveEngineInActivePhase } from "./lifecycle-archive.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
-import { syncIssuesAfterIntegrate } from "../integrations/github/sync-on-land.mjs";
+import { syncIssuesAfterIntegrate } from "../integrations/issues/sync-on-land.mjs";
 
 /**
  * @param {string} projectRoot
