@@ -92,9 +92,9 @@ async function withFixture(fn) {
 
 test("parseBoardSelectArgs: repeatable space-form labels, milestone, print-ids, scope passthrough", () => {
 	const parsed = parseBoardSelectArgs([
-		"--github-label",
+		"--issue-label",
 		"wave-a",
-		"--github-label",
+		"--issue-label",
 		"wave-b",
 		"--milestone",
 		"v2.35",
@@ -108,7 +108,7 @@ test("parseBoardSelectArgs: repeatable space-form labels, milestone, print-ids, 
 });
 
 test("parseBoardSelectArgs: equals forms and unknown flag passthrough", () => {
-	const parsed = parseBoardSelectArgs(["--github-label=bug", "--milestone=v2.35", "--json", "SP-001"]);
+	const parsed = parseBoardSelectArgs(["--issue-label=bug", "--milestone=v2.35", "--json", "SP-001"]);
 	assert.deepEqual(parsed.labels, ["bug"]);
 	assert.equal(parsed.milestone, "v2.35");
 	assert.equal(parsed.printIds, false);
@@ -124,9 +124,25 @@ test("parseBoardSelectArgs: no board flags leaves argv untouched", () => {
 });
 
 test("parseBoardSelectArgs: flag-looking token is never swallowed as a value", () => {
-	const parsed = parseBoardSelectArgs(["--github-label", "--json"]);
+	const parsed = parseBoardSelectArgs(["--issue-label", "--json"]);
 	assert.deepEqual(parsed.labels, []);
 	assert.deepEqual(parsed.rest, ["--json"]);
+});
+
+test("parseBoardSelectArgs: legacy --github-label is rejected fail-closed (no alias, SP-894)", () => {
+	assert.throws(
+		() => parseBoardSelectArgs(["--github-label", "wave-a"]),
+		(err) => {
+			assert.match(err.message, /--github-label/);
+			assert.match(err.message, /renamed to --issue-label/);
+			assert.equal(err.suggestedCommand, "spine plan --issue-label <label>");
+			return true;
+		},
+	);
+	assert.throws(
+		() => parseBoardSelectArgs(["--github-label=bug"]),
+		/renamed to --issue-label/,
+	);
 });
 
 test("buildGhIssueListArgs: open issues, bounded limit, JSON field selection", () => {
@@ -263,8 +279,8 @@ test("resolveBoardTaskIds: missing filters throws with suggestedCommand", () => 
 	assert.throws(
 		() => resolveBoardTaskIds({ tasksRoot: "/tmp", labels: [], milestone: null, runGh: stubGh().run }),
 		(err) => {
-			assert.match(err.message, /--github-label|--milestone/);
-			assert.equal(err.suggestedCommand, "spine plan --github-label <label>");
+			assert.match(err.message, /--issue-label|--milestone/);
+			assert.equal(err.suggestedCommand, "spine plan --issue-label <label>");
 			return true;
 		},
 	);
@@ -409,7 +425,7 @@ test("runBoardSelect: missing filters throws (selection refuses to guess)", asyn
 	await withFixture(async ({ tasksRoot }) => {
 		await assert.rejects(
 			() => runBoardSelect({ tasksRoot, labels: [], milestone: null, runGh: stubGh().run }),
-			/--github-label|--milestone/,
+			/--issue-label|--milestone/,
 		);
 	});
 });

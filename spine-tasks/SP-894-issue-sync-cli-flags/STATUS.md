@@ -1,7 +1,7 @@
 # SP-894: Issue-sync CLI flags — Status
 
-**Current Step:** Step 0: Preflight
-**Status:** 🔵 Step 0 in progress
+**Current Step:** Step 2: Testing & Verification
+**Status:** 🔵 Step 2 in progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** 🔵 In progress
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied (SP-893)
-- [ ] Grep old flag call sites
+- [x] Dependencies satisfied (SP-893)
+- [x] Grep old flag call sites
 
 ---
 
 ### Step 1: Rename public flags
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] --no-issue-sync
-- [ ] --issue-label
-- [ ] Tests + help
+- [x] --no-issue-sync
+- [x] --issue-label
+- [x] Tests + help
 
 ---
 

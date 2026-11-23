@@ -6,7 +6,7 @@
  * `spine plan` / `spine batch start`. Never starts batches, never polls, and
  * never mutates issue state; re-run when the board changes.
  *
- * CLI surface: `node bin/spine-plan.mjs --github-label <label>… [--milestone <m>] [--print-ids]`.
+ * CLI surface: `node bin/spine-plan.mjs --issue-label <label>… [--milestone <m>] [--print-ids]`.
  */
 
 import { spawnSync } from "node:child_process";
@@ -54,9 +54,16 @@ const MISSION_SECTION_RE = /^## Mission\s*\n([\s\S]*?)(?=^## |\s*$)/m;
  */
 
 /** argv flags that select a board rather than a scope. */
-const BOARD_LABEL_FLAG = "--github-label";
+const BOARD_LABEL_FLAG = "--issue-label";
 const BOARD_MILESTONE_FLAG = "--milestone";
 const BOARD_PRINT_IDS_FLAG = "--print-ids";
+
+/**
+ * Pre-SP-894 (#387) label flag spelling. Rejected fail-closed in
+ * `parseBoardSelectArgs` — no silent alias: scripts using the old flag
+ * must move to `--issue-label`.
+ */
+const LEGACY_BOARD_LABEL_FLAG = "--github-label";
 
 /**
  * @param {string} filePath
@@ -90,9 +97,11 @@ export function defaultRunGh(projectRoot, args) {
 }
 
 /**
- * Parse the board-select argv subset: repeatable `--github-label <label>`
- * (also `--github-label=<label>`), optional `--milestone <m>` (title or
- * number), and `--print-ids`. Unknown flags pass through in `rest`.
+ * Parse the board-select argv subset: repeatable `--issue-label <label>`
+ * (also `--issue-label=<label>`), optional `--milestone <m>` (title or
+ * number), and `--print-ids`. Unknown flags pass through in `rest`, except
+ * the retired `--github-label` spelling, which throws fail-closed (no
+ * silent alias; SP-894 / #387).
  *
  * @param {string[]} argv
  * @returns {{ labels: string[], milestone: string | null, printIds: boolean, rest: string[] }}
@@ -109,6 +118,13 @@ export function parseBoardSelectArgs(argv) {
 	let pendingFlag = null;
 
 	for (const arg of argv) {
+		if (arg === LEGACY_BOARD_LABEL_FLAG || arg.startsWith(`${LEGACY_BOARD_LABEL_FLAG}=`)) {
+			// SP-894 (#387): fail closed — the old flag spelling is rejected,
+			// never aliased; scripts must move to --issue-label.
+			const err = new Error("Unknown option: --github-label (renamed to --issue-label; old flag not accepted)");
+			err.suggestedCommand = "spine plan --issue-label <label>";
+			throw err;
+		}
 		if (pendingFlag !== null && !arg.startsWith("--")) {
 			if (pendingFlag === BOARD_LABEL_FLAG) {
 				labels.push(arg);
@@ -145,7 +161,7 @@ export function parseBoardSelectArgs(argv) {
 
 /**
  * `gh issue list` argv for the open-issue board pull. Fields `number`,
- * `labels`, `milestone` are filtered in-memory so multiple `--github-label`
+ * `labels`, `milestone` are filtered in-memory so multiple `--issue-label`
  * values keep documented any-match semantics regardless of gh's own
  * repeated-flag behavior.
  *
@@ -261,9 +277,9 @@ export function resolveBoardTaskIds({
 	const requestedMilestone = milestone == null ? null : String(milestone).trim();
 	if (requestedLabels.length === 0 && (requestedMilestone === null || requestedMilestone === "")) {
 		const err = new Error(
-			"Board selection needs at least one --github-label <label> or --milestone <title|number>",
+			"Board selection needs at least one --issue-label <label> or --milestone <title|number>",
 		);
-		err.suggestedCommand = "spine plan --github-label <label>";
+		err.suggestedCommand = "spine plan --issue-label <label>";
 		throw err;
 	}
 
@@ -424,7 +440,7 @@ export function formatBoardSelection({ filters, boardIssueCount, taskIds, readEr
 
 /**
  * Full board-select CLI path: resolve + format. Used by `bin/spine-plan.mjs`
- * when `--github-label` / `--milestone` are present.
+ * when `--issue-label` / `--milestone` are present.
  *
  * @param {object} [params]
  * @param {string} [params.projectRoot]
