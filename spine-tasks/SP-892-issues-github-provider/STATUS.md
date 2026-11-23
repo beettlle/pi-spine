@@ -1,7 +1,7 @@
 # SP-892: Extract issues github provider — Status
 
-**Current Step:** Step 3: Documentation & Delivery
-**Status:** 🟡 Step 3 in progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,10 +35,10 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged (see Discoveries table)
+- [x] Create `.DONE`
 
 ---
 
@@ -53,6 +53,11 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `mock.method` on `node:child_process` does not affect ESM named imports (snapshot bindings) — spawn cannot be stubbed from outside the provider module | Provider takes optional `{ spawn }` injection (repo pattern: `tests/doctor/inherit-provider-auth.test.mjs` `spawnFn`); default behavior identical | `src/integrations/issues/providers/github.mjs` |
+| `gh_missing` gate sits AFTER issue-link collection in `syncIssuesOnLand`; default-wiring test needs a task packet with a link to reach it | Test creates packet with `Closes #42.` | `tests/integrations/github/sync-on-land.test.mjs` |
+| GitNexus impact ambiguous: a mirrored `defaultRunGh` exists in `src/cli/board-select.mjs` (doc comment "Mirrors defaultRunGh in sync-on-land.mjs"); board-select is OUT of file scope — untouched; its mirror comment is now stale | Follow-up candidate for a future task (not SP-893 scope) | `src/cli/board-select.mjs:77` |
+| Impact index stale (7 commits behind) reported inflated CRITICAL blast radius (367 direct); grep verified the sync-on-land `defaultRunGh` is module-local with exactly one call site (line 281) | Behavior-preserving extraction; risk retired by one-site rewiring + green tests | `src/integrations/github/sync-on-land.mjs` |
+| Full suite (`worker-verify.sh` / `SPINE_WORKER_STUB=1 npm test`) fails in batch-engine/adoption areas (`tests/adoption/fixture-batch`, `replan-needs-replan`, `tests/batch/attached-batch-exit`, `attached-gate-limbo`) — CONFIRMED pre-existing: same files fail on pre-task commit `008b6bfa`; none import `sync-on-land` or the provider | Not caused by SP-892; full-suite gate is engine's post-integrate `release:check` per PROMPT/user instruction | `tests/adoption/`, `tests/batch/` |
 
 ---
 
@@ -61,16 +66,26 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-23 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-23 | Step 0 preflight | Extract surface identified; SP-891 path confirmed (85c9da05) |
+| 2026-11-23 | Step 1 extract | `providers/github.mjs` created; sync-on-land rewired; lint+typecheck clean |
+| 2026-11-23 | Step 2 verify | 7 provider tests + 1 wiring test added; 33/33 green; Contract testCommand EXIT=0 |
+| 2026-11-23 | Step 3 delivery | Full-suite batch-area failures verified pre-existing on `008b6bfa`; `.DONE` created |
 
 ---
 
 ## Blockers
 
-*None*
+*None* — Contract `testCommand` exits 0; full-suite batch-engine/adoption failures are pre-existing on the base commit (see Discoveries) and gated post-integrate.
 
 ---
 
 ## Notes
+
+**Completion Criteria**
+
+- [x] `providers/github.mjs` exists and is used by sync-on-land
+- [x] No behavior change in sync soft-fail paths (spawn options, result shape, soft-fail mapping byte-identical; tests cover ENOENT/non-zero/timeout shapes)
+- [x] Contract `testCommand` exits 0 (lint ✓, typecheck ✓ both tsconfigs, 33/33 tests ✓)
 
 Release v2.35.0 — Partial #387 (provider extract).
 
