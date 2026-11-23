@@ -41,7 +41,7 @@ Partial #387 — Add `src/integrations/issues/providers/github.mjs` holding the 
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/integrations/issues/providers-github.test.mjs tests/integrations/github/sync-on-land.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-892` |
-| fileScopeMustChange | `src/integrations/issues/providers/github.mjs`, `src/integrations/github/sync-on-land.mjs`, `tests/integrations/issues/providers-github.test.mjs` |
+| fileScopeMustChange | `src/integrations/issues/providers/github.mjs`, `tests/integrations/issues/providers-github.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -96,4 +96,4 @@ Partial #387 — Add `src/integrations/issues/providers/github.mjs` holding the 
 
 ## Amendments
 
-- None
+- **2026-11-23 prelanded:** `src/integrations/github/sync-on-land.mjs` already changed on main (SP-890/SP-891); removed from `fileScopeMustChange`. Worker may still edit it to import the extracted provider.

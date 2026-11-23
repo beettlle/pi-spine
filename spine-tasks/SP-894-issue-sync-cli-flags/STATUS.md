@@ -75,3 +75,5 @@
 Release v2.35.0 — Partial #387 (CLI flags).
 
 **File Scope note:** May touch `sync-on-land.mjs` / `integrate.mjs` for `noIssueSync` param rename. If so, serialize before SP-895 via deps (SP-895 depends on SP-894).
+
+**2026-11-23 prelanded amend:** `board-select.mjs` removed from `fileScopeMustChange` (already on main via SP-891); still in File Scope for `--issue-label`.

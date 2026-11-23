@@ -45,7 +45,7 @@ Partial #387 — Replace public CLI flags: `spine integrate --no-issue-sync` (wa
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/cli/board-select.test.mjs tests/integrations/issues/sync-on-land.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-894` |
-| fileScopeMustChange | `bin/spine-integrate.mjs`, `src/cli/board-select.mjs`, `tests/cli/board-select.test.mjs` |
+| fileScopeMustChange | `bin/spine-integrate.mjs`, `tests/cli/board-select.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -99,4 +99,4 @@ Partial #387 — Replace public CLI flags: `spine integrate --no-issue-sync` (wa
 
 ## Amendments
 
-- None
+- **2026-11-23 prelanded:** `src/cli/board-select.mjs` already changed on main (SP-891); removed from `fileScopeMustChange`. Worker may still edit it for `--issue-label`.

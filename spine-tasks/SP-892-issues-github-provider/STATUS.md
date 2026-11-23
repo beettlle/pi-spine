@@ -73,3 +73,5 @@
 ## Notes
 
 Release v2.35.0 — Partial #387 (provider extract).
+
+**2026-11-23 prelanded amend:** `sync-on-land.mjs` removed from `fileScopeMustChange` (already on main via SP-890/SP-891); still in File Scope for extract rewire.
