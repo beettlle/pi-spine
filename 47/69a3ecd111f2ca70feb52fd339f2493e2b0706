@@ -1,0 +1,51 @@
+spine-tasks/CONTEXT.md
+  s_89cc85cd05b067::t_954cde4c6dbe84 3,5
+spine-tasks/SP-890-integrations-issues-config/PROMPT.md
+  s_89cc85cd05b067::t_65ac43d6c14ed3 1-104
+spine-tasks/SP-890-integrations-issues-config/STATUS.md
+  s_89cc85cd05b067::t_f60dc9050efd87 1-77
+spine-tasks/SP-891-move-mission-issue-links/PROMPT.md
+  s_89cc85cd05b067::t_f9bf43301a0046 1-101
+spine-tasks/SP-891-move-mission-issue-links/STATUS.md
+  s_89cc85cd05b067::t_fcfd4a114f0b1a 1-75
+spine-tasks/SP-892-issues-github-provider/PROMPT.md
+  s_89cc85cd05b067::t_ff587d48fe22a3 1-99
+spine-tasks/SP-892-issues-github-provider/STATUS.md
+  s_89cc85cd05b067::t_896f6cb8eb20e9 1-75
+spine-tasks/SP-893-move-sync-on-land/PROMPT.md
+  s_89cc85cd05b067::t_39bd32e71d7ae9 1-100
+spine-tasks/SP-893-move-sync-on-land/STATUS.md
+  s_89cc85cd05b067::t_6fe56aa87d896c 1-74
+spine-tasks/SP-894-issue-sync-cli-flags/PROMPT.md
+  s_89cc85cd05b067::t_e2ac48f01921f3 1-102
+spine-tasks/SP-894-issue-sync-cli-flags/STATUS.md
+  s_89cc85cd05b067::t_2d0124b94883d7 1-77
+spine-tasks/SP-895-issues-journal-events/PROMPT.md
+  s_89cc85cd05b067::t_a1ded231587430 1-92
+spine-tasks/SP-895-issues-journal-events/STATUS.md
+  s_89cc85cd05b067::t_1a0bce15001749 1-74
+spine-tasks/SP-896-issues-docs-wording/PROMPT.md
+  s_89cc85cd05b067::t_3ea96945078b75 1-104
+spine-tasks/SP-896-issues-docs-wording/STATUS.md
+  s_89cc85cd05b067::t_5a07ff9c42f6cd 1-73
+spine-tasks/_authoring/release-v2.35.0/manifest.md
+  s_89cc85cd05b067::t_13d2801b0d009a 1-148
+spine-tasks/dependencies.json
+  s_89cc85cd05b067::t_b697d95e1ea1d3 3,2215-2245
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4769a3ecd111f2ca70feb52fd339f2493e2b0706",
+  "prompts": {},
+  "sessions": {
+    "s_89cc85cd05b067": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-ffb29bd7-7fa5-4970-a54b-4267cb64f6e9",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
