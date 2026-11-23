@@ -1,0 +1,22 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 191
+docs/adoption/upstream-execution-workflow.md
+  h_2a17159c706ba1 67-75
+skills/create-spine-tasks/SKILL.md
+  h_2a17159c706ba1 570-593,627
+spine-tasks/SP-888-hydrate-packet-from-issue/STATUS.md
+  h_2a17159c706ba1 3,31,33-35
+tests/tasks/from-issue.test.mjs
+  h_2a17159c706ba1 1-349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c63e8704308464610959a51bf0c969d43d27b25d",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
