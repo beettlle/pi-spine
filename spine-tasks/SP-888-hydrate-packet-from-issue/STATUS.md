@@ -1,7 +1,7 @@
 # SP-888: Hydrate SP-* packet from GitHub issue — Status
 
-**Current Step:** Not Started
-**Status:** 🔵 Ready for Execution
+**Current Step:** Step 1 — CLI scaffold
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Inspect spine tasks subcommand patterns
-- [ ] Confirm thin-packet Mission/Context from SP-883
+- [x] Inspect spine tasks subcommand patterns
+- [x] Confirm thin-packet Mission/Context from SP-883
 
 ---
 
