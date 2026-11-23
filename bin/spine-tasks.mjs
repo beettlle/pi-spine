@@ -404,7 +404,7 @@ async function handleTasksAnalyze(args) {
  * @param {object} [options]
  * @param {string} [options.projectRoot]
  * @param {number} [options.issueNumber]
- * @param {boolean} [options.closes] Mission first line "Closes #N" (default)
+ * @param {boolean} [options.closes] Mission first line "Closes #N" (CLI default when --partial absent)
  * @param {boolean} [options.partial] Mission first line "Partial #N"
  * @param {string|null} [options.taskId] Explicit task ID (else CONTEXT.md Next Task ID)
  * @param {string|null} [options.slug] Folder slug override
@@ -416,7 +416,7 @@ async function handleTasksAnalyze(args) {
 export async function runSpineTasksFromIssue({
 	projectRoot = process.cwd(),
 	issueNumber,
-	closes = true,
+	closes = false,
 	partial = false,
 	taskId = null,
 	slug = null,
