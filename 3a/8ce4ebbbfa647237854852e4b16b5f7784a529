@@ -1,0 +1,24 @@
+docs/adoption/agent-orchestrated-waves.md
+  h_2a17159c706ba1 102-103
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 498-501,522-553
+skills/spine-orchestrate-waves/SKILL.md
+  h_2a17159c706ba1 82
+spine-tasks/SP-889-board-select-pending-tasks/STATUS.md
+  h_2a17159c706ba1 3-4,32,34-36,61,72
+src/cli/board-select.mjs
+  h_2a17159c706ba1 112-117,121-123
+tests/cli/board-select.test.mjs
+  h_2a17159c706ba1 126-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3a8ce4ebbbfa647237854852e4b16b5f7784a529",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
