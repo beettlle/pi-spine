@@ -1,0 +1,20 @@
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 1374-1399
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 412-413
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  h_2a17159c706ba1 3,43,45-47
+src/config/spine-config-schema.mjs
+  h_2a17159c706ba1 252,259
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b1edd430eba32dd0745f0fa1914ef1ff743120a0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
