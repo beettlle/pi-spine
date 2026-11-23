@@ -1,0 +1,18 @@
+spine-tasks/SP-884-run-metrics-tokens-live/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-884-run-metrics-tokens-live/.reviews/final-20261123T014717.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-884-run-metrics-tokens-live/STATUS.md
+  h_2a17159c706ba1 68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f7db31b9bd501a868f2e5d1add845410458f6b5b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
