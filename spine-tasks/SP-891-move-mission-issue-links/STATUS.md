@@ -1,7 +1,7 @@
 # SP-891: Move mission-issue-links — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🟡 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -35,10 +35,10 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -64,6 +64,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-23 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-23 | Step 0 preflight | 3 importers mapped; SP-890 `.DONE` + schema/reader confirmed in `src/config/` |
+| 2026-11-23 | Step 1 move + rewire | `git mv` module + test to `integrations/issues/`; 3 import sites rewired; `git grep` old path = NONE |
+| 2026-11-23 | Step 2 contract | testCommand exit 0 (lint, typecheck ×2, 3 test files green) |
 
 ---
 
