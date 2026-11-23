@@ -1,0 +1,14 @@
+spine-tasks/SP-889-board-select-pending-tasks/STATUS.md
+  h_2a17159c706ba1 3-4,41,43-45,73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "63586c83eea11a88212053893449436d00d08df8",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
