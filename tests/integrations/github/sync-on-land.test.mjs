@@ -433,3 +433,21 @@ test("temp body files are cleaned up after sync", () => {
 	const bodyDir = path.join(projectRoot, ".spine", "github-sync");
 	assert.deepEqual(fs.readdirSync(bodyDir), []);
 });
+
+// --- default provider wiring (SP-892) ---
+
+test("sync without injected runGh wires the extracted provider default (skips on gh-missing)", () => {
+	const { params, projectRoot, tasksRoot } = baseParams({
+		doneTasks: [{ taskId: "SP-900", taskFolder: "SP-900-link" }],
+		runGh: undefined,
+		ghPresent: () => false,
+	});
+	makeTaskPacket(tasksRoot, "SP-900-link", "Closes #42.");
+	const result = syncIssuesOnLand(params);
+	assert.equal(result.ok, true);
+	assert.equal(result.skipped, true);
+	assert.equal(result.reason, "gh_missing");
+	assert.equal(result.softFailed, false);
+	assert.deepEqual(result.failures, []);
+	assert.ok(!fs.existsSync(path.join(projectRoot, ".spine", "github-sync"))); // no temp body files written
+});

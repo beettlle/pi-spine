@@ -1,0 +1,16 @@
+Contract testCommand failure log
+Command: npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/integrations/issues/providers-github.test.mjs tests/integrations/github/sync-on-land.test.mjs
+Exit code: 1
+Attempt: 1 of 2
+Timestamp: 2026-11-23T23:07:04.000Z
+Buffer overflow: no
+---
+
+> pi-spine@2.34.0 lint
+> eslint --max-warnings 0 src bin tests scripts
+
+
+> pi-spine@2.34.0 typecheck
+> tsc --project tsconfig.json --noEmit && tsc --project tsconfig.batch.json --noEmit
+
+

@@ -10,18 +10,15 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { parseMissionIssueLinks } from "../issues/mission-issue-links.mjs";
+import { defaultRunGh } from "../issues/providers/github.mjs";
 import { commandExists } from "../../util/command-exists.mjs";
 import { appendJournalEvent } from "../../batch/journal.mjs";
 import { resolveTasksRootPath } from "../../config/env-overrides.mjs";
 
 /** Terminal-success statuses whose `.DONE` landed work on the batch base. */
 const DONE_ON_BASE_STATUSES = new Set(["completed", "succeeded"]);
-
-/** Hard timeout per `gh` call so a hung CLI cannot stall the integrate path. */
-const GH_CALL_TIMEOUT_MS = 30_000;
 
 /** Directory (relative to projectRoot) for temp comment body files. */
 const BODY_DIR = path.join(".spine", "github-sync");
@@ -31,11 +28,7 @@ const BODY_DIR = path.join(".spine", "github-sync");
  */
 
 /**
- * @typedef {object} GhRunResult
- * @property {number | null} status
- * @property {string} [stdout]
- * @property {string} [stderr]
- * @property {Error | null} [error]
+ * @typedef {import("../issues/providers/github.mjs").GhRunResult} GhRunResult
  */
 
 /**
@@ -72,28 +65,6 @@ export function collectDoneOnBaseTasks(batch) {
 		done.push({ taskId, taskFolder });
 	}
 	return done;
-}
-
-/**
- * Default `gh` runner: array-args spawn (no shell), piped output, hard timeout.
- *
- * @param {string} projectRoot
- * @param {string[]} args
- * @returns {GhRunResult}
- */
-function defaultRunGh(projectRoot, args) {
-	const result = spawnSync("gh", args, {
-		cwd: projectRoot,
-		encoding: "utf-8",
-		stdio: ["ignore", "pipe", "pipe"],
-		timeout: GH_CALL_TIMEOUT_MS,
-	});
-	return {
-		status: result.status ?? null,
-		stdout: typeof result.stdout === "string" ? result.stdout : "",
-		stderr: typeof result.stderr === "string" ? result.stderr : "",
-		error: result.error ?? null,
-	};
 }
 
 /**
