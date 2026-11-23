@@ -1,7 +1,7 @@
 # SP-892: Extract issues github provider — Status
 
-**Current Step:** Step 1: Extract provider
-**Status:** 🟡 Step 1 in progress
+**Current Step:** Step 3: Documentation & Delivery
+**Status:** 🟡 Step 3 in progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -27,10 +27,10 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Provider + sync tests
-- [ ] Contract testCommand
+- [x] Provider + sync tests — new `tests/integrations/issues/providers-github.test.mjs` (7 tests: timeout constant, spawn options incl. no-shell/piped-stdio/hard-timeout, success mapping, non-zero soft-fail, ENOENT→null-status, non-string coercion, ETIMEDOUT shape); added default-wiring test to `sync-on-land.test.mjs` (gh-missing skip without injected `runGh`); all 33 tests green
+- [x] Contract testCommand — `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test ...` exited 0
 
 ---
 
