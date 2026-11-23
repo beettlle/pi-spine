@@ -1,7 +1,7 @@
 # SP-890: Config schema integrations.issues — Status
 
-**Current Step:** Step 3
-**Status:** 🔵 In progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -37,10 +37,10 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -72,6 +72,8 @@
 | 2026-11-23 | Step 0 complete | #387 AC read; impact analysis + caller map done (committed efeaa72e) |
 | 2026-11-23 | Step 1 complete | defaults/schema/reader changed; helper renamed `resolveIssueSyncOnLandConfig`; module path, journal events, CLI flag untouched (SP-891/894/895 scope) |
 | 2026-11-23 | Step 2 complete | Contract testCommand exit 0 (lint ✓ typecheck ✓ 32 targeted tests ✓); 61 full-suite failures confirmed pre-existing on baseline |
+| 2026-11-23 | Worktree stash incident resolved | Baseline-verification stash pop raced a background graphify hook rewrite of AGENTS.md/CLAUDE.md; both restored to committed HEAD (no content edits, out of scope), scoped files verified identical to stash, redundant stash entry dropped |
+| 2026-11-23 | Step 3 complete | All completion criteria met; Contract testCommand exit 0 re-verified on committed tree (cab6e8ed) |
 
 ---
 
