@@ -99,6 +99,8 @@ spine run sequence pending --attached --dry-run
 
 The agent can execute each printed block manually with judgment between steps. Use **detached** start for real execution (omit `--attached`).
 
+**Optional: board-driven wave selection (SP-889 / #386).** When the backlog is tracked with GitHub labels or a milestone, derive the wave's task IDs from the board instead of parsing plan output: `node bin/spine-plan.mjs --github-label wave-a --print-ids` resolves open issues to pending task IDs through Mission `Closes`/`Partial` links (SP-887 parser) and prints the comma-separated list ready for `spine batch start <ids>` / `spine plan "<ids>"`. Selection only — it never starts batches and never polls; the agent still re-runs `spine plan` on those IDs to confirm wave structure before starting. See the [operator runbook](./operator-runbook.md#board-selection-github-labelmilestone--pending-task-ids-sp-889--386).
+
 **Not recommended for real pi:** `spine run sequence pending --auto-approve-gate --force` bypasses evidence review and is restricted to stub/CI environments by safety gates.
 
 ---

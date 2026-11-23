@@ -495,6 +495,10 @@ spine batch start TP-012
 spine plan pending
 spine batch start pending
 
+# Board selection — GitHub label/milestone → pending task IDs (SP-889 / #386, from a checkout)
+node bin/spine-plan.mjs --github-label wave-a --print-ids
+spine batch start $(node bin/spine-plan.mjs --github-label wave-a --print-ids)
+
 # Multi-task (one wave, disjoint file scopes)
 spine batch start TP-043 TP-045 TP-046
 
@@ -514,6 +518,38 @@ spine batch start TP-012 --attached
 ```bash
 SPINE_WORKER_STUB=1 spine batch start <task-id>
 ```
+
+#### Board selection: GitHub label/milestone → pending task IDs (SP-889 / #386)
+
+Map open GitHub issues to pending spine task IDs through each task's Mission `Closes #N` / `Partial #N` links (the shared SP-887 parser — the same links [GitHub issue sync on land](#44-github-issue-sync-on-land-opt-in-383) closes on integrate):
+
+```bash
+# From a checkout (PATH global `spine plan` router does not forward board flags yet — see note)
+node bin/spine-plan.mjs --github-label wave-a --print-ids        # → SP-901,SP-906
+node bin/spine-plan.mjs --github-label wave-a --milestone v2.35  # union of both filters + hints
+node bin/spine-plan.mjs --milestone "v2.35" --json               # structured selection
+
+# Pipe straight into plan / batch start
+spine plan "$(node bin/spine-plan.mjs --github-label wave-a --print-ids)"
+spine batch start $(node bin/spine-plan.mjs --github-label wave-a --print-ids)
+```
+
+Semantics:
+
+| Rule | Behavior |
+|------|----------|
+| Issue pool | **Open** issues only (`gh issue list --state open`, one call per selection, no poller) |
+| Multiple `--github-label` values | Any-match (union of label boards) |
+| Label + milestone together | Union: issue matches the label **or** the milestone (title case-insensitive, or number) |
+| Task match | Task is selected when its PROMPT Mission links a board issue via `Closes`/`Partial` |
+| Pending filter | Tasks with `.DONE` or `.SUPERSEDED` are never selected |
+| Output | Comma-separated ID list (`--print-ids` for raw, default adds usage hints), both accepted by `spine plan` / `spine batch start` scope parsing |
+
+Requires `gh` authenticated for the target repo (`gh auth status`); failures print a `Suggested:` remediation line.
+
+**Non-goals (by design):** board selection never starts a batch, never mutates issue state, and never polls — it resolves once, prints, and exits. Re-run it when the board changes.
+
+**Router note:** the flags live in `bin/spine-plan.mjs`. The global `spine plan` router (`bin/spine-cli/plan.mjs`) drops unknown flags today, so run board selection from a checkout via `node bin/spine-plan.mjs` (see [PATH / `npm link` / checkout CLI](#path--npm-link--checkout-cli)). Forwarding the flags from the router shim is a one-line follow-up.
 
 #### Stub batch delivery (issue #67, SP-408)
 
