@@ -247,6 +247,18 @@ export async function runStepReview({
 	};
 	let spawnResult = await spawnReviewerPi(spawnParams);
 
+	// SP-884 (#377): forward the spawn's provider-reported usage onto every
+	// post-spawn return. spawnReviewerPi already summed the pi JSON stream
+	// (SP-878 parser — only reported counters, never invented); without this
+	// propagation the poll loop's `reviewResult.usage` is always undefined and
+	// live reviewer metric rows stay `withUsage: 0`. A closure (not a snapshot)
+	// so SP-814 re-spawns attribute the terminal attempt's stream.
+	/** @returns {{ usage?: { tokensIn?: number, tokensOut?: number, estimatedUsd?: number } }} */
+	const usageFields = () => {
+		const usage = /** @type {any} */ (spawnResult).usage;
+		return usage !== null && typeof usage === "object" && !Array.isArray(usage) ? { usage } : {};
+	};
+
 	/** @returns {ReturnType<typeof runStepReview>|null} */
 	const completeIfHonored = () =>
 		spawnResult.honored && spawnResult.honorReason === ARTIFACT_READY_HONOR_REASON
@@ -260,7 +272,7 @@ export async function runStepReview({
 			: null;
 
 	const honoredFirstAttempt = completeIfHonored();
-	if (honoredFirstAttempt) return honoredFirstAttempt;
+	if (honoredFirstAttempt) return { ...usageFields(), ...honoredFirstAttempt };
 
 	// One bounded re-spawn for transient no-artifact exits and non-timeout
 	// spawn failures (SP-814 / #332): journal the retry with diagnostics, then
@@ -295,7 +307,7 @@ export async function runStepReview({
 		spawnResult = await spawnReviewerPi(spawnParams);
 		attempt += 1;
 		const honoredRetry = completeIfHonored();
-		if (honoredRetry) return honoredRetry;
+		if (honoredRetry) return { ...usageFields(), ...honoredRetry };
 	}
 
 	// SP-820 / #334: classify the terminal attempt once, after the SP-814
@@ -325,7 +337,7 @@ export async function runStepReview({
 			reviewLevel,
 		});
 		if (honored) {
-			return honored;
+			return { ...usageFields(), ...honored };
 		}
 
 		const log = persistReviewerLogForAttempt({
@@ -353,6 +365,7 @@ export async function runStepReview({
 			...diagnostics,
 		});
 		return {
+			...usageFields(),
 			ok: false,
 			skipped: false,
 			reviewLevel,
@@ -396,6 +409,7 @@ export async function runStepReview({
 			...diagnostics,
 		});
 		return {
+			...usageFields(),
 			ok: false,
 			skipped: false,
 			reviewLevel,
@@ -422,6 +436,7 @@ export async function runStepReview({
 			artifactPath,
 		});
 		return {
+			...usageFields(),
 			ok: false,
 			skipped: false,
 			reviewLevel,
@@ -445,6 +460,7 @@ export async function runStepReview({
 	});
 
 	return {
+		...usageFields(),
 		ok,
 		skipped: false,
 		reviewLevel,

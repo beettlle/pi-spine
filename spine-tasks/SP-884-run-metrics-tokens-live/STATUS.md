@@ -1,6 +1,6 @@
 # SP-884: Fix live run-metrics tokensIn/tokensOut — Status
 
-**Current Step:** Step 1 — Fix live usage plumbing
+**Current Step:** Step 2 — Tests
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
@@ -20,11 +20,11 @@
 ---
 
 ### Step 1: Fix live usage plumbing
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Repair worker and/or reviewer path
-- [ ] Preserve omit-when-absent
-- [ ] Keep #380 sidecar dirty exclusions
+- [x] Repair worker and/or reviewer path
+- [x] Preserve omit-when-absent
+- [x] Keep #380 sidecar dirty exclusions
 
 ---
 
@@ -77,6 +77,7 @@
 |-----------|--------|---------|
 | 2026-11-22 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-22 | Step 0 preflight | Worker chain verified; reviewer drop proven with live-pi probe; scope amendment documented |
+| 2026-11-22 | Step 1 fix | `runStepReview` forwards `spawnResult.usage` on all post-spawn returns (live-pi probe now returns usage); queue sidecar schema guard added |
 
 ---
 
