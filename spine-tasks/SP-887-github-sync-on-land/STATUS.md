@@ -76,6 +76,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): e252df8  src/batch/integrate.mjs:418  WARNING  The comment claims 'syncIssuesAfterIntegrate never throws into this path', but the | advisory — noted, not blocking | contract review step |
 | `tests/integrations/` is not in the `npm test` glob; package.json is out of File Scope so the glob was not extended. Contract testCommand runs the two files explicitly; full suite (3397 tests) re-run green via worker-verify. | Follow-up suggested: add `tests/integrations/*.test.mjs` (and `/github/`) to the npm test glob so post-integrate release:check picks them up. | `package.json` (out of scope) |
 | `integrations.github.syncOnLand` was NOT added to the `spine settings set` field registry (`src/config/settings-fields.mjs` out of File Scope); enablement is documented as a direct `.spine/spine-config.json` edit, and validator `suggestedCommand`s point at editing the file. | Documented; registry entry can be added by a follow-up task. | `docs/adoption/operator-runbook.md` §4.4, `src/config/spine-config-schema.mjs` |
 | Sync runs only on the fresh integrate-success path (after `integrate.completed`); the `alreadyMerged` early-return never re-syncs — prevents duplicate comments/closes on re-run. | Implemented as designed. | `src/batch/integrate.mjs` |
