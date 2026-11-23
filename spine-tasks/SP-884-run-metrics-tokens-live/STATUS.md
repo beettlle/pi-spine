@@ -1,6 +1,6 @@
 # SP-884: Fix live run-metrics tokensIn/tokensOut — Status
 
-**Current Step:** Step 2 — Tests
+**Current Step:** Step 3 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
@@ -29,10 +29,10 @@
 ---
 
 ### Step 2: Tests
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Extend unit/fixture coverage
-- [ ] Assert usage keys when provided
+- [x] Extend unit/fixture coverage
+- [x] Assert usage keys when provided
 
 ---
 
@@ -78,6 +78,7 @@
 | 2026-11-22 | Task staged | PROMPT.md and STATUS.md created |
 | 2026-11-22 | Step 0 preflight | Worker chain verified; reviewer drop proven with live-pi probe; scope amendment documented |
 | 2026-11-22 | Step 1 fix | `runStepReview` forwards `spawnResult.usage` on all post-spawn returns (live-pi probe now returns usage); queue sidecar schema guard added |
+| 2026-11-22 | Step 2 tests | 4 new tests: real-`runStepReview` APPROVE / spawn-failed / no-stream integration cases + queue schema guard; contract suite 52/52 green |
 
 ---
 

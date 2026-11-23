@@ -302,6 +302,45 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 	}
 });
 
+test("attachTaskUsageFromSidecar rejects foreign record types and unknown schema versions", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-attach-usage-guard-"));
+	try {
+		const taskFolder = path.join(root, "spine-tasks", "SP-884-guard");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const writeSidecar = (body) =>
+			fs.writeFileSync(path.join(taskFolder, "worker-usage.json"), JSON.stringify(body), "utf-8");
+
+		// A file stamped as a different record type is not worker usage: a
+		// lookalike sidecar must not inject tokens into metric rows (SP-884).
+		writeSidecar({ recordType: "batch", schemaVersion: 1, tokensIn: 999, tokensOut: 999 });
+		const foreign = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: foreign }), false);
+		assert.equal(foreign.tokensIn, undefined);
+		assert.equal(foreign.tokensOut, undefined);
+
+		// Unknown future schema versions are rejected until the reader learns them.
+		writeSidecar({ recordType: "worker-usage", schemaVersion: 2, tokensIn: 999 });
+		const future = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: future }), false);
+		assert.equal(future.tokensIn, undefined);
+
+		// Producer-stamped and legacy unstamped sidecars stay accepted.
+		writeSidecar({ recordType: "worker-usage", schemaVersion: 1, tokensIn: 310, tokensOut: 75 });
+		const stamped = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: stamped }), true);
+		assert.equal(stamped.tokensIn, 310);
+		assert.equal(stamped.tokensOut, 75);
+
+		writeSidecar({ tokensIn: 5, estimatedUsd: 0.5 });
+		const legacy = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: legacy }), true);
+		assert.equal(legacy.tokensIn, 5);
+		assert.equal(legacy.estimatedUsd, 0.5);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test("recordLaneTaskMetric includes worker usage on the task record and omits it for skipped tasks", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-lane-metric-usage-"));
 	try {
