@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-22 (Phase 106 v2.34.0 **authoring** — release scope SP-883–SP-889 for #382 epic children + #377–#379 bugs; Next → SP-890)
+**Last Updated:** 2026-11-23 (Phase 106 v2.34.0 **tagged** — `v2.34.0` / OIDC stage green run `45219685709`; awaiting npm stage 2FA approve; SP-883–SP-889 done; closed #377–#379 #382–#386; Next → SP-890)
 **Status:** Active
 **Next Task ID:** SP-890
 

@@ -1,11 +1,12 @@
 # Release manifest — v2.34.0
 
 **Created:** 2026-11-22
-**Current version:** 2.33.1 (published; checkout HEAD `be0e645b` = `origin/main`)
+**Current version:** 2.34.0 (tag `v2.34.0` / `319ecd83`; npm `latest` still **2.33.1** until stage 2FA approve)
 **Target version:** v2.34.0
 **Bump type:** minor
 **Profile:** minor
 **Operator approved scope:** yes (2026-11-22) — include #386 with enh-budget override
+**Operator approved publish:** yes (2026-11-23) — bump **minor** → v2.34.0
 **Worker model pin:** `zai/glm-5.3-flash`, quota fallback profile `allegretto` — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
 
@@ -169,11 +170,11 @@ Wave 3: SP-889
 - [x] Post-integrate `release:check` green after **each wave** (logs under `/tmp/pi-spine-post-integrate-wave-*.log`)
 - [x] `spine preflight` green
 - [x] `npm run release:check` green on final `HEAD` (3436 pass, 91.33% lines) — log `/tmp/pi-spine-post-integrate-wave-889.log`
-- [x] CI workflow green on `HEAD` — [run 45115063153](https://github.com/beettlle/pi-spine/actions/runs/45115063153) `conclusion: success`
+- [x] CI workflow green on `HEAD` — [run 45115841096](https://github.com/beettlle/pi-spine/actions/runs/45115841096) (pre-bump docs) / release commit CI as applicable
 - [x] `git status` clean (`main` = `origin/main`)
-- [ ] Operator approved publish bump type: **minor**
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded (OIDC stage)
-- [ ] Maintainer 2FA approve staged package
+- [x] Operator approved publish bump type: **minor** (2026-11-23)
+- [x] `npm version minor` + `git push && git push --tags` → tag `v2.34.0` (`319ecd83`)
+- [x] `release.yml` succeeded (OIDC stage) — [run 45219685709](https://github.com/beettlle/pi-spine/actions/runs/45219685709); GH Release https://github.com/beettlle/pi-spine/releases/tag/v2.34.0
+- [ ] Maintainer 2FA approve staged package — **awaiting** (`npm view pi-spine version` still `2.33.1`)
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
 - [x] Close remaining release-scoped `Closes #NNN` — #377–#379, #382–#386 all **CLOSED**
