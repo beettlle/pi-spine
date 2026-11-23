@@ -1,7 +1,7 @@
 # SP-889: Select pending tasks from GitHub label/milestone — Status
 
-**Current Step:** 3 (Documentation & Delivery)
-**Status:** 🟡 Step 3 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete — .DONE created
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -38,11 +38,11 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Must Update docs modified
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Must Update docs modified
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -70,6 +70,7 @@
 | 2026-11-23 | Step 0 preflight | SP-887 parser API confirmed; CLI surface chosen (`bin/spine-plan.mjs` board flags); router gap logged |
 | 2026-11-23 | Step 1 implementation | `src/cli/board-select.mjs` + `bin/spine-plan.mjs` wiring; 26 unit tests green |
 | 2026-11-23 | Step 2 docs + verify | Runbook board-selection subsection; waves-doc + skill wave-picker note; CLI smoke with fake gh on PATH; Contract `testCommand` exit 0 (lint + typecheck + 27 tests) |
+| 2026-11-23 | Step 3 delivery | Completion criteria verified; final Contract `testCommand` exit 0; `.DONE` created |
 
 ---
 
