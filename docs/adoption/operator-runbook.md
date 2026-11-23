@@ -188,7 +188,7 @@ Catches invalid headings, missing sections, missing Testing step, Size XL, and (
 | `em dash` / invalid heading | Use `# Task: SP-042 — Title` with U+2014 em dash, not hyphen |
 | `Missing required sections` | Add Mission, Dependencies, File Scope, Steps, Completion Criteria, Do NOT |
 | `Testing` / missing Testing step | Add `### Step N: Testing & Verification` under Steps |
-| `Contract` missing or empty | Add `## Contract` table (§2.3) or set `contract.mode: "optional"` during migration |
+| `Contract` missing or empty | Add `## Contract` table (§2.3) or set `contract.mode: "optional"` during migration. `spine tasks from-issue` scaffolds ship an empty Contract table by design (#384) — fill the stub rows before validate/batch |
 | Size XL | Split into dependent S/M tasks (`skills/create-spine-tasks`) |
 
 ### 2.2 Preflight

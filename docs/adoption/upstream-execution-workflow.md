@@ -64,6 +64,15 @@ Do you already have PROMPT.md / STATUS.md packets?
 
 **Thin packets (#385):** Keep narrative in the issue; keep Contract / File Scope / Steps / Do NOT authoritative in the packet. Mission should be short and use `Closes #N` / `Partial #N` ([#147](https://github.com/beettlle/pi-spine/issues/147)) — do not paste unbounded issue threads into Context to Read First. See `create-spine-tasks` skill § Thin packets.
 
+**Hydrate path (#384):** `spine tasks from-issue <n> [--closes|--partial]` fetches an issue via `gh` and scaffolds `{tasksRoot}/SP-###-<slug>/` with thin-packet stubs — Mission `Closes #N` / `Partial #N`, Contract table **empty**, File Scope / Steps as `TODO(operator)` stubs, `STATUS.md` mirroring the steps. The scaffold:
+
+- never claims Contract completeness — `spine tasks validate <id>` fails ("Contract table is empty") until the operator fills the table, and must pass before `spine tasks analyze` / `spine plan` / `spine batch start` (validate-after-fill loop);
+- never writes `dependencies.json` edges — add real edges only, with confirmation;
+- reads `**Next Task ID:**` from `{tasksRoot}/CONTEXT.md` read-only for the folder ID (`--id SP-###` overrides), and touches CONTEXT.md only when `--next-id SP-###` is passed explicitly;
+- fails loud on gh errors, malformed issue JSON, or an existing task folder (exit 0 scaffolded · 1 fetch/validation · 2 config/tasksRoot).
+
+For full epics, keep the PRD decomposition workflow (Step A → Step C); `from-issue` is single-issue intake only and does not split work or infer File Scope.
+
 **Related release work:** land sync on integrate (#383), hydrate from issue (#384), board label/milestone → pending task IDs (#386).
 
 ---

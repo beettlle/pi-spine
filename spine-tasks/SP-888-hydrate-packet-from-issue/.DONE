@@ -1,0 +1,14 @@
+SP-888 complete — REVISE round 2 addressed (d172f7a3).
+
+Blocking issues from .reviews/final-20261123T034617.md resolved:
+1. Directory traversal: `--slug` override now validated against SLUG_RE
+   (/^[a-z0-9]+(?:-[a-z0-9]+)*$/, max 48) on the resolved slug before
+   folderName is built; violations throw FromIssueError (exit 1).
+2. Traversal test added: 13 malicious slugs assert "Invalid slug:" throw;
+   assertions confirm nothing is written inside or outside tasksRoot.
+
+Verification: Contract testCommand exit 0 — lint ✓, typecheck ✓,
+tests/tasks/from-issue.test.mjs 12/12 pass; arch guard suite 4/4.
+
+STATUS.md is current. Do not auto batch start; Contract stubs remain
+operator-filled per scaffold design.
