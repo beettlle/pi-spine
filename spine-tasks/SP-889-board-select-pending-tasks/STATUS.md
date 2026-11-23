@@ -57,6 +57,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): bdb91b3  bin/spine-plan.mjs:133  WARNING  Inconsistent newline handling: the board-select path appends a trailing newline (output | advisory — noted, not blocking | contract review step |
 | `bin/spine-cli/plan.mjs` `handlePlan` drops unknown flags (leaks flag value into scope string), so global `spine plan --github-label …` would misparse. That router shim is outside File Scope (FR-WORK-06) — documented surface is the direct entry `node bin/spine-plan.mjs --github-label …`. Follow-up (operator): forward argv from `handlePlan` to `bin/spine-plan.mjs` main to enable the global-router path. | Logged; follow-up suggested | STATUS, runbook §3 |
 | `skills/spine-release-operator/SKILL.md` checked, not affected — it does its own `gh issue list` intake for packet authoring (issue → new packet), a different workflow from mapping already-staged packets to task IDs | Checked, no change | — |
 
