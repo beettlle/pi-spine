@@ -63,7 +63,17 @@ export const INTEGRATE_DEFAULTS = Object.freeze({
 	allowHumanOnBaseBranch: "warn",
 });
 
-/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS; orchestrator: typeof ORCHESTRATOR_DEFAULTS }>} */
+/**
+ * Third-party integrations (SP-887 / #383). Everything is opt-in: the section
+ * only exists so `syncOnLand` reads as an explicit, documented default rather
+ * than an accidental undefined.
+ *
+ * @type {Readonly<{ github: Readonly<{ syncOnLand: boolean }> }>} */
+export const INTEGRATIONS_DEFAULTS = Object.freeze({
+	github: Object.freeze({ syncOnLand: false }),
+});
+
+/** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS; integrations: typeof INTEGRATIONS_DEFAULTS; orchestrator: typeof ORCHESTRATOR_DEFAULTS }>} */
 export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	review: REVIEW_DEFAULTS,
 	handoff: HANDOFF_DEFAULTS,
@@ -71,5 +81,6 @@ export const CONFIG_V2_SECTION_DEFAULTS = Object.freeze({
 	contract: CONTRACT_DEFAULTS,
 	lanes: LANES_DEFAULTS,
 	integrate: INTEGRATE_DEFAULTS,
+	integrations: INTEGRATIONS_DEFAULTS,
 	orchestrator: ORCHESTRATOR_DEFAULTS,
 });

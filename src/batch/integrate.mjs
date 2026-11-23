@@ -27,6 +27,7 @@ import { isLiveEngineInActivePhase } from "./lifecycle-archive.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
+import { syncIssuesAfterIntegrate } from "../integrations/github/sync-on-land.mjs";
 
 /**
  * @param {string} projectRoot
@@ -99,6 +100,7 @@ function postMergeCompletionSuggestion(raw) {
  * @param {boolean} [ctx.dryRun]
  * @param {string|null} [ctx.batchId]
  * @param {string|null} [ctx.batchStatePath]
+ * @param {boolean} [ctx.noGithubSync] Skip the opt-in post-integrate GitHub issue sync (#383).
  */
 export function integrateOrchToBase(ctx) {
 	const { projectRoot, dryRun = false } = ctx;
@@ -412,6 +414,18 @@ export function integrateOrchToBase(ctx) {
 			baseCheckedOutAtStart,
 		});
 
+		// Opt-in GitHub sync runs only on the fresh-success path — the
+		// `alreadyMerged` early-return above must not re-comment/close (#383).
+		// Best-effort: syncIssuesAfterIntegrate never throws into this path.
+		const githubSync = syncIssuesAfterIntegrate({
+			projectRoot,
+			batchId,
+			batch,
+			config,
+			mergeCommit,
+			noGithubSync: Boolean(ctx.noGithubSync),
+		});
+
 		const waiting = postMergeCompletionSuggestion(loaded.raw);
 		return {
 			ok: true,
@@ -428,6 +442,7 @@ export function integrateOrchToBase(ctx) {
 			alternatives: waiting
 				? ["spine batch complete", "spine status --diagnose"]
 				: ["spine status --diagnose"],
+			...(githubSync ? { githubSync } : {}),
 			...(dirtyOverlapWarning ? { warnings: [dirtyOverlapWarning] } : {}),
 		};
 	} catch (err) {

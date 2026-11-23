@@ -219,6 +219,49 @@ export function resolveSequenceStallMs({ config = {} } = {}) {
 	return DEFAULT_SEQUENCE_STALL_MS;
 }
 
+// --- Integrations (SP-887 / #383) ---
+
+/**
+ * Validate `integrations.github.syncOnLand` (opt-in GitHub issue sync on land).
+ * Structural only: the boolean flag must be a boolean when set. Absent values
+ * are valid (defaults to false via INTEGRATIONS_DEFAULTS).
+ *
+ * @param {Record<string, any>} config
+ * @returns {null | { code: string; message: string; suggestedCommand: string }}
+ */
+export function validateIntegrationsConfig(config) {
+	const integrations = config?.integrations;
+	if (integrations == null) {
+		return null;
+	}
+	if (!isPlainObject(integrations)) {
+		return {
+			code: "CONFIG_INTEGRATIONS_INVALID",
+			message: "integrations must be an object when set",
+			suggestedCommand: "spine init --force",
+		};
+	}
+	const github = integrations.github;
+	if (github == null) {
+		return null;
+	}
+	if (!isPlainObject(github)) {
+		return {
+			code: "CONFIG_INTEGRATIONS_INVALID",
+			message: "integrations.github must be an object when set",
+			suggestedCommand: "Edit .spine/spine-config.json: integrations.github must be an object",
+		};
+	}
+	if (github.syncOnLand != null && typeof github.syncOnLand !== "boolean") {
+		return {
+			code: "CONFIG_INTEGRATIONS_INVALID",
+			message: "integrations.github.syncOnLand must be a boolean when set",
+			suggestedCommand: "Edit .spine/spine-config.json: set integrations.github.syncOnLand to true or false",
+		};
+	}
+	return null;
+}
+
 // --- Named agent model profiles (SP-664 / GitHub #216) ---
 
 /**
