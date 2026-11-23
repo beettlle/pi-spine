@@ -11,7 +11,7 @@ import {
 	resolveIssueSyncOnLandConfig,
 	syncIssuesAfterIntegrate,
 	syncIssuesOnLand,
-} from "../../../src/integrations/github/sync-on-land.mjs";
+} from "../../../src/integrations/issues/sync-on-land.mjs";
 
 const BATCH_ID = "20261123T030000";
 
@@ -430,7 +430,7 @@ test("temp body files are cleaned up after sync", () => {
 	params.runGh = stubGh().run;
 	const result = syncIssuesOnLand(params);
 	assert.equal(result.synced.length, 1);
-	const bodyDir = path.join(projectRoot, ".spine", "github-sync");
+	const bodyDir = path.join(projectRoot, ".spine", "issues-sync");
 	assert.deepEqual(fs.readdirSync(bodyDir), []);
 });
 
@@ -449,5 +449,5 @@ test("sync without injected runGh wires the extracted provider default (skips on
 	assert.equal(result.reason, "gh_missing");
 	assert.equal(result.softFailed, false);
 	assert.deepEqual(result.failures, []);
-	assert.ok(!fs.existsSync(path.join(projectRoot, ".spine", "github-sync"))); // no temp body files written
+	assert.ok(!fs.existsSync(path.join(projectRoot, ".spine", "issues-sync"))); // no temp body files written
 });

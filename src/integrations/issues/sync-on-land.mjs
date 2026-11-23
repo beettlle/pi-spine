@@ -11,8 +11,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { parseMissionIssueLinks } from "../issues/mission-issue-links.mjs";
-import { defaultRunGh } from "../issues/providers/github.mjs";
+import { parseMissionIssueLinks } from "./mission-issue-links.mjs";
+import { defaultRunGh } from "./providers/github.mjs";
 import { commandExists } from "../../util/command-exists.mjs";
 import { appendJournalEvent } from "../../batch/journal.mjs";
 import { resolveTasksRootPath } from "../../config/env-overrides.mjs";
@@ -21,14 +21,14 @@ import { resolveTasksRootPath } from "../../config/env-overrides.mjs";
 const DONE_ON_BASE_STATUSES = new Set(["completed", "succeeded"]);
 
 /** Directory (relative to projectRoot) for temp comment body files. */
-const BODY_DIR = path.join(".spine", "github-sync");
+const BODY_DIR = path.join(".spine", "issues-sync");
 
 /**
- * @typedef {import("../issues/mission-issue-links.mjs").MissionIssueLinks} MissionIssueLinks
+ * @typedef {import("./mission-issue-links.mjs").MissionIssueLinks} MissionIssueLinks
  */
 
 /**
- * @typedef {import("../issues/providers/github.mjs").GhRunResult} GhRunResult
+ * @typedef {import("./providers/github.mjs").GhRunResult} GhRunResult
  */
 
 /**
