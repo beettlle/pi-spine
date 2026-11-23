@@ -46,7 +46,7 @@ Closes #384 — Add `spine tasks from-issue <n>` (and create-spine-tasks skill s
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/tasks/from-issue.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-888` |
-| fileScopeMustChange | `bin/spine-tasks.mjs`, `src/tasks/from-issue.mjs`, `tests/tasks/from-issue.test.mjs`, `skills/create-spine-tasks/SKILL.md` |
+| fileScopeMustChange | `bin/spine-tasks.mjs`, `src/tasks/from-issue.mjs`, `tests/tasks/from-issue.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -106,3 +106,4 @@ Closes #384 — Add `spine tasks from-issue <n>` (and create-spine-tasks skill s
 ## Amendments
 
 - None
+- **2026-11-22:** SKILL.md prelanded by SP-883; removed from mustChange.

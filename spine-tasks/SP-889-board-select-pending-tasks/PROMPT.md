@@ -46,7 +46,7 @@ Closes #386 — Map GitHub labels or a milestone to pending spine task IDs via M
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/cli/board-select.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-889` |
-| fileScopeMustChange | `src/cli/board-select.mjs`, `bin/spine-plan.mjs`, `tests/cli/board-select.test.mjs`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `src/cli/board-select.mjs`, `bin/spine-plan.mjs`, `tests/cli/board-select.test.mjs` |
 | fileScopeMustNotChange | `.review/**`, `bin/spine-tasks.mjs` |
 
 ## Steps
@@ -108,3 +108,4 @@ Closes #386 — Map GitHub labels or a milestone to pending spine task IDs via M
 ## Amendments
 
 - None
+- **2026-11-22 prelanded:** `docs/adoption/operator-runbook.md` already on main (SP-885/SP-886); removed from fileScopeMustChange.

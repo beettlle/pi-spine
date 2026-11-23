@@ -50,7 +50,7 @@ Closes #377 — Real-pi worker and reviewer metric rows must carry `tokensIn` / 
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/batch/worker-usage-metrics.test.mjs tests/batch/review-usage-metrics.test.mjs tests/batch/run-metrics.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-884` |
-| fileScopeMustChange | `bin/spine-worker-runner.mjs`, `src/batch/engine-lanes/queue.mjs`, `tests/batch/worker-usage-metrics.test.mjs` |
+| fileScopeMustChange | `src/batch/engine-lanes/queue.mjs`, `tests/batch/worker-usage-metrics.test.mjs`, `tests/batch/review-usage-metrics.test.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -112,3 +112,4 @@ Closes #377 — Real-pi worker and reviewer metric rows must carry `tokensIn` / 
 ## Amendments
 
 - None
+- **2026-11-22:** `bin/spine-worker-runner.mjs` prelanded by maxBuffer fix `d26147ee`; removed from mustChange — still edit if usage sidecar path needs more changes.

@@ -50,7 +50,7 @@ Closes #383 — After a linked task's `.DONE` is on the batch base (post-integra
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/integrations/github/mission-issue-links.test.mjs tests/integrations/github/sync-on-land.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-887` |
-| fileScopeMustChange | `src/integrations/github/mission-issue-links.mjs`, `src/integrations/github/sync-on-land.mjs`, `src/batch/integrate.mjs`, `docs/adoption/operator-runbook.md` |
+| fileScopeMustChange | `src/integrations/github/mission-issue-links.mjs`, `src/integrations/github/sync-on-land.mjs`, `src/batch/integrate.mjs` |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -117,3 +117,4 @@ Closes #383 — After a linked task's `.DONE` is on the batch base (post-integra
 ## Amendments
 
 - None
+- **2026-11-22 prelanded:** `docs/adoption/operator-runbook.md` already on main (SP-885/SP-886); removed from fileScopeMustChange.
