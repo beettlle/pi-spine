@@ -81,6 +81,7 @@ Pending-wait diagnosis chosen (mission option 3): `src/batch/lifecycle-archive.m
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): d6f4781  tests/batch/late-finalize-after-complete.test.mjs:21  WARNING  The test assumes the default git branch is 'main'. If the | advisory — noted, not blocking | contract review step |
 | reviewCommand failed (exit 1): 7bfa0b1  src/batch/lifecycle-archive.mjs:167  WARNING  The nullish coalescing operator (??) only falls back when deps.isFinalizeI | resolved in REVISE iteration 1 (`??` → `||`) | contract review step |
 
 ---
