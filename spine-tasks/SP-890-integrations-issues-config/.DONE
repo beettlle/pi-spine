@@ -1,0 +1,7 @@
+SP-890 complete — integrations.issues config schema (#387)
+
+- Schema: validateIntegrationsConfig accepts integrations.issues (provider string + syncOnLand boolean when set, structural only); rejects integrations.github fail-closed (key-presence check, CONFIG_INTEGRATIONS_INVALID, rename hint — no alias).
+- Defaults: INTEGRATIONS_DEFAULTS = { issues: { provider: "github", syncOnLand: false } }; applyConfigDefaults fills the section.
+- Reader: resolveIssueSyncOnLandConfig reads integrations.issues.syncOnLand; module path, journal events (github.issue_*), and --no-github-sync flag untouched (SP-891–SP-895 scope).
+- Tests: tests/config/integrations-issues-schema.test.mjs (new, 13 cases) + updated tests/integrations/github/sync-on-land.test.mjs (19 cases incl. legacy-key fail-closed reader check).
+- Contract testCommand exit 0 re-verified on committed tree (fcd13e3c). Full-suite failures (61) confirmed pre-existing on clean baseline; full suite gates at post-integrate release:check.
