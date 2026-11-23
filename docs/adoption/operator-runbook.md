@@ -1371,6 +1371,32 @@ git restore --source <baseBranch> -- <path>   # want the merged version? restore
 
 Integrate never syncs files into a checkout that is **not on base**: when the base branch is not checked out in the main worktree, the post-merge sync is skipped entirely — no sync, no `DirtyOverlap`. The merge commit is on the base ref and your checkout stays untouched; checking out the base branch later materializes the merged files.
 
+### 4.4 GitHub issue sync on land (opt-in, #383)
+
+After a successful integrate, spine can comment on and close GitHub issues referenced by task Mission links — the format from [#147](https://github.com/beettlle/pi-spine/issues/147): `Closes #N` / `Closes: #N` (close) and `Partial #N` / `Partial: #N` (comment only, issue left open). **Off by default**; enable per repo by adding the section to `.spine/spine-config.json` (not a `spine settings set` field):
+
+```json
+{
+  "integrations": { "github": { "syncOnLand": true } }
+}
+```
+
+| Mission link | Action after integrate success |
+|--------------|-------------------------------|
+| `Closes #N` | Comment (task, batch, merge commit) + `gh issue close --reason completed` |
+| `Partial #N` | Comment only — never closed |
+| No links | Nothing (no journal events) |
+
+Behavior guarantees:
+
+- **Only after a real integrate success.** The sync runs on the fresh-success path of `spine integrate` (after the `integrate.completed` journal event). `spine integrate --dry-run` never syncs, and re-running integrate against an already-merged orch does not re-comment or re-close.
+- **Only `.DONE` tasks.** Sync considers `completed`/`succeeded` tasks from the batch state; skipped or failed tasks never trigger closes.
+- **Soft failure.** Missing `gh` binary or `gh auth status` failure skips the sync with an actionable hint (install gh / `gh auth login` / manual §4.3c sweep) and journals `github.issue_sync_failed` — the integrate exit code never changes. Per-issue `gh` failures are journaled and the remaining issues still sync.
+- **Journal.** Every synced issue emits `github.issue_synced` with `issue`, `action` (`close`/`comment`), `taskId`, `closed`, `mergeCommit`.
+- **Escape hatches.** `spine integrate --no-github-sync` skips the sync for that run; keep the config off (default) to disable entirely. The manual close sweep in the release-operator skill §4.3c remains the fallback when the sync is disabled or soft-failed.
+
+Setup requirements when enabled: `gh` on PATH and authenticated (`gh auth status`) from the project root, with the repo resolvable from `git remote`. Config validation rejects non-boolean `integrations.github.syncOnLand` (`CONFIG_INTEGRATIONS_INVALID`).
+
 ---
 
 ## 5. Gate races

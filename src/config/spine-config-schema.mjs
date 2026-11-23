@@ -249,14 +249,14 @@ export function validateIntegrationsConfig(config) {
 		return {
 			code: "CONFIG_INTEGRATIONS_INVALID",
 			message: "integrations.github must be an object when set",
-			suggestedCommand: "spine settings set integrations.github.syncOnLand false",
+			suggestedCommand: "Edit .spine/spine-config.json: integrations.github must be an object",
 		};
 	}
 	if (github.syncOnLand != null && typeof github.syncOnLand !== "boolean") {
 		return {
 			code: "CONFIG_INTEGRATIONS_INVALID",
 			message: "integrations.github.syncOnLand must be a boolean when set",
-			suggestedCommand: "spine settings set integrations.github.syncOnLand false",
+			suggestedCommand: "Edit .spine/spine-config.json: set integrations.github.syncOnLand to true or false",
 		};
 	}
 	return null;

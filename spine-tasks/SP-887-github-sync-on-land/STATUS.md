@@ -1,6 +1,6 @@
 # SP-887: Opt-in GitHub issue sync on land — Status
 
-**Current Step:** Step 2 — Wire into integrate + docs
+**Current Step:** Step 3 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
@@ -40,11 +40,11 @@
 ---
 
 ### Step 2: Wire into integrate + docs
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Hook after successful integrate
-- [ ] Default off
-- [ ] Runbook + release-operator note
+- [x] Hook after successful integrate
+- [x] Default off
+- [x] Runbook + release-operator note
 
 ---
 
