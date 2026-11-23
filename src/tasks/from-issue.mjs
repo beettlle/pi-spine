@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * `spine tasks from-issue` — scaffold SP-* packet from a GitHub issue (#384).
  *
@@ -330,6 +329,7 @@ export function scaffoldTaskFolder({
 		throw new FromIssueError(`Invalid linkType: ${linkType}. Expected "closes" or "partial".`);
 	}
 
+	/** @type {string | null | undefined} */
 	let resolvedTaskId = taskId;
 	if (resolvedTaskId === undefined || resolvedTaskId === null || resolvedTaskId === "") {
 		resolvedTaskId = readNextTaskId(path.join(tasksRoot, "CONTEXT.md"));
@@ -345,13 +345,22 @@ export function scaffoldTaskFolder({
 
 	const folderName = `${resolvedTaskId}-${slug ?? slugifyTitle(issue.title)}`;
 	const folderPath = path.join(tasksRoot, folderName);
-	if (fs.existsSync(folderPath)) {
+	// Ensure the tasks root exists (race-free: recursive mkdir is a no-op when
+	// it already exists), then create the task folder atomically — EEXIST from
+	// the non-recursive call is the fail-loud duplicate guard.
+	fs.mkdirSync(tasksRoot, { recursive: true });
+	try {
+		fs.mkdirSync(folderPath, { recursive: false });
+	} catch (err) {
+		if (/** @type {NodeJS.ErrnoException} */ (err).code === "EEXIST") {
+			throw new FromIssueError(
+				`Task folder already exists: ${folderPath}. Pass --id/--slug or remove the folder first.`,
+			);
+		}
 		throw new FromIssueError(
-			`Task folder already exists: ${folderPath}. Pass --id/--slug or remove the folder first.`,
+			`Cannot create task folder ${folderPath}: ${err instanceof Error ? err.message : String(err)}`,
 		);
 	}
-
-	fs.mkdirSync(folderPath, { recursive: true });
 	const promptPath = path.join(folderPath, "PROMPT.md");
 	const statusPath = path.join(folderPath, "STATUS.md");
 	fs.writeFileSync(promptPath, buildPromptScaffold({ taskId: resolvedTaskId, issue, linkType, created }), "utf-8");
