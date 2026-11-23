@@ -3,7 +3,7 @@
  *
  * After a successful integrate (`.DONE` tasks on the batch base), comment on
  * and close issues referenced by task Mission `Closes #N` / `Partial #N`
- * links (format per #147). Strictly opt-in via `integrations.github.syncOnLand`
+ * links (format per #147). Strictly opt-in via `integrations.issues.syncOnLand`
  * (default off); every failure path is soft — integrate results never change
  * because `gh` is missing, unauthenticated, or a single issue call fails.
  */
@@ -39,13 +39,15 @@ const BODY_DIR = path.join(".spine", "github-sync");
  */
 
 /**
- * Resolve the opt-in flag. Missing/invalid config disables sync (default off).
+ * Resolve the opt-in flag (forge-neutral `integrations.issues` since SP-890/#387;
+ * legacy `integrations.github` is rejected at config validation). Missing/invalid
+ * config disables sync (default off).
  *
  * @param {Record<string, any> | null | undefined} config Effective spine config.
- * @returns {boolean} True only when `integrations.github.syncOnLand === true`.
+ * @returns {boolean} True only when `integrations.issues.syncOnLand === true`.
  */
-export function resolveGithubSyncOnLandConfig(config) {
-	return config?.integrations?.github?.syncOnLand === true;
+export function resolveIssueSyncOnLandConfig(config) {
+	return config?.integrations?.issues?.syncOnLand === true;
 }
 
 /**
@@ -160,7 +162,7 @@ export function buildLandCommentBody({ taskId, batchId, mergeCommit, action }) {
 			`Landed on \`main\` by **${taskId}** (batch \`${batchId}\`).`,
 			"",
 			commitLine +
-				"- Closed automatically by spine (`integrations.github.syncOnLand`).",
+				"- Closed automatically by spine (`integrations.issues.syncOnLand`).",
 			"",
 		].join("\n");
 	}
@@ -168,7 +170,7 @@ export function buildLandCommentBody({ taskId, batchId, mergeCommit, action }) {
 		`Partially addressed on \`main\` by **${taskId}** (batch \`${batchId}\`) — issue left open.`,
 		"",
 		commitLine +
-			"- Commented automatically by spine (`integrations.github.syncOnLand`).",
+			"- Commented automatically by spine (`integrations.issues.syncOnLand`).",
 		"",
 	].join("\n");
 }
@@ -331,7 +333,7 @@ export function syncIssuesOnLand({
 	if (noGithubSync) {
 		return skip("no_github_sync_flag");
 	}
-	if (!resolveGithubSyncOnLandConfig(config)) {
+	if (!resolveIssueSyncOnLandConfig(config)) {
 		return skip("sync_disabled");
 	}
 	if (!tasksRoot) {
@@ -386,9 +388,9 @@ export function syncIssuesOnLand({
 	if (!present("gh")) {
 		journal(projectRoot, batchId, "github.issue_sync_failed", {
 			reason: "gh_missing",
-			hint: "Install GitHub CLI (https://cli.github.com/) or disable integrations.github.syncOnLand",
+			hint: "Install GitHub CLI (https://cli.github.com/) or disable integrations.issues.syncOnLand",
 		});
-		return skip("gh_missing", "Install GitHub CLI (https://cli.github.com/) or disable integrations.github.syncOnLand");
+		return skip("gh_missing", "Install GitHub CLI (https://cli.github.com/) or disable integrations.issues.syncOnLand");
 	}
 
 	const auth = run(projectRoot, ["auth", "status"]);

@@ -8,7 +8,7 @@ import {
 	buildLandCommentBody,
 	collectDoneOnBaseTasks,
 	collectIssueLinksFromTasks,
-	resolveGithubSyncOnLandConfig,
+	resolveIssueSyncOnLandConfig,
 	syncIssuesAfterIntegrate,
 	syncIssuesOnLand,
 } from "../../../src/integrations/github/sync-on-land.mjs";
@@ -55,7 +55,7 @@ function baseParams(overrides = {}) {
 			batchId: BATCH_ID,
 			doneTasks: [],
 			tasksRoot,
-			config: { integrations: { github: { syncOnLand: true } } },
+			config: { integrations: { issues: { syncOnLand: true } } },
 			mergeCommit: "abc1234",
 			ghPresent: () => true,
 			runGh: stubGh().run,
@@ -69,15 +69,21 @@ function baseParams(overrides = {}) {
 // --- config resolution ---
 
 test("sync is disabled by default (missing config / missing flag)", () => {
-	assert.equal(resolveGithubSyncOnLandConfig(null), false);
-	assert.equal(resolveGithubSyncOnLandConfig({}), false);
-	assert.equal(resolveGithubSyncOnLandConfig({ integrations: {} }), false);
-	assert.equal(resolveGithubSyncOnLandConfig({ integrations: { github: {} } }), false);
-	assert.equal(resolveGithubSyncOnLandConfig({ integrations: { github: { syncOnLand: false } } }), false);
+	assert.equal(resolveIssueSyncOnLandConfig(null), false);
+	assert.equal(resolveIssueSyncOnLandConfig({}), false);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: {} }), false);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { issues: {} } }), false);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { issues: { syncOnLand: false } } }), false);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { issues: { provider: "github", syncOnLand: false } } }), false);
+});
+
+test("legacy integrations.github does not enable sync (fail closed, no alias)", () => {
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { github: { syncOnLand: true } } }), false);
 });
 
 test("sync enables only on explicit true", () => {
-	assert.equal(resolveGithubSyncOnLandConfig({ integrations: { github: { syncOnLand: true } } }), true);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { issues: { syncOnLand: true } } }), true);
+	assert.equal(resolveIssueSyncOnLandConfig({ integrations: { issues: { provider: "gitlab", syncOnLand: true } } }), true);
 });
 
 // --- DONE-on-base mapping ---
@@ -154,7 +160,7 @@ test("--no-github-sync skips before config evaluation", () => {
 test("disabled config skips without journal events", () => {
 	const { params, journal } = baseParams({
 		doneTasks: [{ taskId: "SP-1", taskFolder: null }],
-		config: { integrations: { github: { syncOnLand: false } } },
+		config: { integrations: { issues: { syncOnLand: false } } },
 	});
 	const result = syncIssuesOnLand(params);
 	assert.equal(result.skipped, true);
@@ -357,7 +363,7 @@ test("syncIssuesAfterIntegrate resolves tasksRoot from config and delegates", ()
 		batch: { tasks: [{ taskId: "SP-960", status: "completed", taskFolder: "SP-960-c" }] },
 		config: {
 			paths: { tasksRoot: "spine-tasks" },
-			integrations: { github: { syncOnLand: true } },
+			integrations: { issues: { syncOnLand: true } },
 		},
 		mergeCommit: "f00d",
 		ghPresent: () => true,
@@ -390,7 +396,7 @@ test("syncIssuesAfterIntegrate internal errors journal github.issue_sync_failed 
 		projectRoot,
 		batchId: BATCH_ID,
 		batch: { tasks: [{ taskId: "SP-962", status: "completed", taskFolder: "SP-962-c" }] },
-		config: { paths: { tasksRoot: "spine-tasks" }, integrations: { github: { syncOnLand: true } } },
+		config: { paths: { tasksRoot: "spine-tasks" }, integrations: { issues: { syncOnLand: true } } },
 		ghPresent: () => {
 			throw new Error("boom");
 		},
