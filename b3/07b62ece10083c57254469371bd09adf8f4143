@@ -1,0 +1,20 @@
+spine-tasks/SP-887-github-sync-on-land/.DONE
+  h_2a17159c706ba1 1-2
+spine-tasks/SP-887-github-sync-on-land/.reviews/0-20261123T023843.md
+  h_2a17159c706ba1 1-14
+spine-tasks/SP-887-github-sync-on-land/.reviews/final-20261123T025017.md
+  h_2a17159c706ba1 1-11
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  h_2a17159c706ba1 79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b307b62ece10083c57254469371bd09adf8f4143",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
