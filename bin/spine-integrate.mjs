@@ -11,9 +11,41 @@ Options:
   --batch ID           Target batch (default: active batch)
   --dry-run            Show the merge plan without changing anything
   --force-integrate    Bypass the gate (requires SPINE_ALLOW_FORCE=1)
+  --no-github-sync     Skip the opt-in post-integrate GitHub issue sync (#383)
   --json               Machine-readable output
   --help, -h           Show this help without changing state
 `;
+
+/**
+ * Human-readable GitHub sync summary lines (#383). Rendered after the merge
+ * details; soft failures show the hint without changing the exit code.
+ *
+ * @param {string[]} lines
+ * @param {object} sync githubSync summary from syncIssuesOnLand
+ */
+function appendGithubSyncLines(lines, sync) {
+	if (sync.skipped) {
+		if (sync.reason === "no_github_sync_flag") {
+			lines.push("", "  GitHub: sync skipped (--no-github-sync)");
+		}
+		return;
+	}
+	const synced = Array.isArray(sync.synced) ? sync.synced : [];
+	const failures = Array.isArray(sync.failures) ? sync.failures : [];
+	if (synced.length > 0) {
+		const closed = synced.filter((s) => s.closed).map((s) => `#${s.issue}`);
+		const commented = synced.filter((s) => !s.closed).map((s) => `#${s.issue}`);
+		const parts = [];
+		if (closed.length) parts.push(`closed ${closed.join(", ")}`);
+		if (commented.length) parts.push(`commented ${commented.join(", ")}`);
+		lines.push("", `  GitHub: synced ${synced.length} issue(s) — ${parts.join("; ")}`);
+	}
+	if (failures.length > 0) {
+		lines.push(`  GitHub: ${failures.length} issue(s) failed — see journal (github.issue_sync_failed)`);
+	} else if (synced.length === 0 && sync.softFailed && sync.hint) {
+		lines.push("", `  GitHub: sync skipped — ${sync.hint}`);
+	}
+}
 
 /**
  * @param {object} result
@@ -41,6 +73,9 @@ export function formatIntegrateHuman(result, json = false) {
 	}
 	if (result.mergePlan) {
 		lines.push(`  Plan: ${result.mergePlan}`);
+	}
+	if (result.githubSync) {
+		appendGithubSyncLines(lines, result.githubSync);
 	}
 	if (result.failureClass === "GateBlocked") {
 		// Integrate actually stopped for a pending/missing/rejected gate (#359).
@@ -75,7 +110,7 @@ export function runSpineIntegrate(options) {
 	const { projectRoot, args } = options;
 	const parsed = parseStrictArgs(args, {
 		valued: ["--batch"],
-		boolean: ["--dry-run", "--force-integrate", "--json"],
+		boolean: ["--dry-run", "--force-integrate", "--json", "--no-github-sync"],
 	});
 	const flags = parsed.flags;
 	if (parsed.help) {
@@ -108,6 +143,7 @@ export function runSpineIntegrate(options) {
 		dryRun: flags.has("--dry-run"),
 		batchId: parsed.values.get("--batch") ?? null,
 		forceIntegrate: flags.has("--force-integrate"),
+		noGithubSync: flags.has("--no-github-sync"),
 	});
 
 	return {

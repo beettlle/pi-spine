@@ -1,6 +1,6 @@
 # SP-887: Opt-in GitHub issue sync on land — Status
 
-**Current Step:** Step 1 — Parser + sync module
+**Current Step:** Step 2 — Wire into integrate + docs
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
@@ -31,11 +31,11 @@
 ---
 
 ### Step 1: Parser + sync module
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Mission Closes/Partial parser
-- [ ] Opt-in sync + soft-fail + dry-run
-- [ ] Journal github.issue_synced
+- [x] Mission Closes/Partial parser
+- [x] Opt-in sync + soft-fail + dry-run
+- [x] Journal github.issue_synced
 
 ---
 

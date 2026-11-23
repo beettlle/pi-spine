@@ -27,6 +27,8 @@ import { isLiveEngineInActivePhase } from "./lifecycle-archive.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
+import { resolveTasksRootPath } from "../config/env-overrides.mjs";
+import { collectDoneOnBaseTasks, syncIssuesOnLand } from "../integrations/github/sync-on-land.mjs";
 
 /**
  * @param {string} projectRoot
@@ -94,11 +96,53 @@ function postMergeCompletionSuggestion(raw) {
 }
 
 /**
+ * Opt-in GitHub issue sync after a successful integrate (SP-887 / #383).
+ * Best-effort only: never throws into the integrate success path, and any
+ * internal error journals as `github.issue_sync_failed` instead of failing
+ * the integrate.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.batch Parsed batch state.
+ * @param {object|null} params.config Effective spine config (null → sync disabled).
+ * @param {string|null} params.mergeCommit
+ * @param {boolean} params.noGithubSync `--no-github-sync` escape hatch.
+ * @returns {object|null} Sync summary, or null when the sync crashed internally.
+ */
+function runGithubSyncOnLand({ projectRoot, batchId, batch, config, mergeCommit, noGithubSync }) {
+	try {
+		return syncIssuesOnLand({
+			projectRoot,
+			batchId,
+			doneTasks: collectDoneOnBaseTasks(batch),
+			tasksRoot: config ? resolveTasksRootPath(projectRoot, config) : null,
+			config,
+			mergeCommit,
+			noGithubSync,
+		});
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		try {
+			appendJournalEvent(projectRoot, batchId, "github.issue_sync_failed", {
+				reason: "internal_error",
+				error: message.slice(0, 500),
+				hint: "spine status --diagnose",
+			});
+		} catch {
+			// Journal append must never mask the integrate success path.
+		}
+		return null;
+	}
+}
+
+/**
  * @param {object} ctx
  * @param {string} ctx.projectRoot
  * @param {boolean} [ctx.dryRun]
  * @param {string|null} [ctx.batchId]
  * @param {string|null} [ctx.batchStatePath]
+ * @param {boolean} [ctx.noGithubSync] Skip the opt-in post-integrate GitHub issue sync (#383).
  */
 export function integrateOrchToBase(ctx) {
 	const { projectRoot, dryRun = false } = ctx;
@@ -412,6 +456,17 @@ export function integrateOrchToBase(ctx) {
 			baseCheckedOutAtStart,
 		});
 
+		// Opt-in GitHub sync runs only on the fresh-success path — the
+		// `alreadyMerged` early-return above must not re-comment/close (#383).
+		const githubSync = runGithubSyncOnLand({
+			projectRoot,
+			batchId,
+			batch,
+			config,
+			mergeCommit,
+			noGithubSync: Boolean(ctx.noGithubSync),
+		});
+
 		const waiting = postMergeCompletionSuggestion(loaded.raw);
 		return {
 			ok: true,
@@ -428,6 +483,7 @@ export function integrateOrchToBase(ctx) {
 			alternatives: waiting
 				? ["spine batch complete", "spine status --diagnose"]
 				: ["spine status --diagnose"],
+			...(githubSync ? { githubSync } : {}),
 			...(dirtyOverlapWarning ? { warnings: [dirtyOverlapWarning] } : {}),
 		};
 	} catch (err) {
