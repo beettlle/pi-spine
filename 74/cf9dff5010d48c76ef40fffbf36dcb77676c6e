@@ -1,0 +1,20 @@
+spine-tasks/SP-889-board-select-pending-tasks/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-889-board-select-pending-tasks/.reviews/0-20261123T042949.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-889-board-select-pending-tasks/.reviews/final-20261123T043534.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-889-board-select-pending-tasks/STATUS.md
+  h_2a17159c706ba1 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "74cf9dff5010d48c76ef40fffbf36dcb77676c6e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
