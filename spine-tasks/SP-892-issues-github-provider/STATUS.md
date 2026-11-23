@@ -1,7 +1,7 @@
 # SP-892: Extract issues github provider — Status
 
-**Current Step:** Not started
-**Status:** ⚪ Pending
+**Current Step:** Step 1: Extract provider
+**Status:** 🟡 Step 1 in progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,10 +11,10 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied (SP-891)
-- [ ] Identify extract surface
+- [x] Dependencies satisfied (SP-891) — `src/integrations/issues/mission-issue-links.mjs` landed (commit 85c9da05); `defaultRunGh` (sync-on-land.mjs:76–95), `GH_CALL_TIMEOUT_MS` (line 24), `GhRunResult` typedef (lines 39–44) identified as extract surface
+- [x] Identify extract surface
 
 ---
 
