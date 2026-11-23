@@ -65,6 +65,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): f6da72b  src/batch/review-step-run.mjs:269  WARNING  The spread order `{ ...usageFields(), ...honoredFirstAttempt }` allows `hono | advisory — noted, not blocking | contract review step |
 | reviewCommand failed (exit 1): ce53096  src/batch/engine-lanes/queue.mjs:86  WARNING  The recordType and schemaVersion checks only reject values that are explic | **Fixed in REVISE cycle** — guard inverted to default-reject | `src/batch/engine-lanes/queue.mjs` |
 | Worker sidecar chain verified correct end-to-end (runner write → `attachTaskUsageFromSidecar` → `buildTaskMetricRecord`); all 48 existing contract tests pass | No worker-path bug found | `bin/spine-worker-runner.mjs`, `src/batch/engine-lanes/queue.mjs`, `src/batch/metrics.mjs` |
 | **Reviewer live drop found:** `spawnReviewerPi` computes real usage from the pi JSON stream (live-pi probe returned `{tokensIn:2696, tokensOut:81, estimatedUsd:0.006364}`), but `runStepReview` drops `spawnResult.usage` on every return path, so `runReviewPollLoop` always sees `usage: undefined` → reviewer rows stay `withUsage: 0` | Fix in Step 1 | `src/batch/review-step-run.mjs` |
