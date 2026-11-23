@@ -1,0 +1,20 @@
+bin/spine-tasks.mjs
+  h_2a17159c706ba1 156-157
+spine-tasks/SP-888-hydrate-packet-from-issue/STATUS.md
+  h_2a17159c706ba1 4,54,58-59,66,86
+src/tasks/from-issue.mjs
+  h_2a17159c706ba1 28-31,318,350-357
+tests/tasks/from-issue.test.mjs
+  h_2a17159c706ba1 201-244
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d172f7a3a304769d502c5c705ff1d192e7234a16",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
