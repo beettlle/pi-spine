@@ -79,6 +79,7 @@ START
 ## Wave picker algorithm
 
 1. Run `spine plan pending` (or `spine plan all` / explicit task scope).
+   - **Board-driven alternative (SP-889 / #386):** when the operator names a GitHub label or milestone, resolve the scope first — `node bin/spine-plan.mjs --github-label <label> --print-ids` (Mission `Closes`/`Partial` links → pending task IDs, selection only, no auto-start) — then plan that ID list to confirm wave structure.
 2. Parse wave index and task list:
    - **JSON:** `spine plan pending --json` → `waveCount`, per-wave `tasks[]`
    - **Text:** read wave headers from CLI output

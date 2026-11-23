@@ -109,16 +109,18 @@ export function parseBoardSelectArgs(argv) {
 	let pendingFlag = null;
 
 	for (const arg of argv) {
-		if (pendingFlag === BOARD_LABEL_FLAG) {
-			labels.push(arg);
+		if (pendingFlag !== null && !arg.startsWith("--")) {
+			if (pendingFlag === BOARD_LABEL_FLAG) {
+				labels.push(arg);
+			} else {
+				milestone = arg;
+			}
 			pendingFlag = null;
 			continue;
 		}
-		if (pendingFlag === BOARD_MILESTONE_FLAG) {
-			milestone = arg;
-			pendingFlag = null;
-			continue;
-		}
+		// Flag-looking token after a valueless flag (or bare flag): drop the
+		// pending flag so validation reports the missing value.
+		pendingFlag = null;
 		if (arg === BOARD_LABEL_FLAG || arg === BOARD_MILESTONE_FLAG) {
 			pendingFlag = arg;
 			continue;

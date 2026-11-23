@@ -123,6 +123,12 @@ test("parseBoardSelectArgs: no board flags leaves argv untouched", () => {
 	assert.deepEqual(parsed.rest, ["pending", "--json"]);
 });
 
+test("parseBoardSelectArgs: flag-looking token is never swallowed as a value", () => {
+	const parsed = parseBoardSelectArgs(["--github-label", "--json"]);
+	assert.deepEqual(parsed.labels, []);
+	assert.deepEqual(parsed.rest, ["--json"]);
+});
+
 test("buildGhIssueListArgs: open issues, bounded limit, JSON field selection", () => {
 	assert.deepEqual(buildGhIssueListArgs(), [
 		"issue",
