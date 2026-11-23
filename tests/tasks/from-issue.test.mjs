@@ -198,6 +198,50 @@ test('scaffoldTaskFolder fails loud without CONTEXT Next Task ID unless --id giv
 	}
 });
 
+test('scaffoldTaskFolder rejects traversal and unsafe slugs (directory traversal guard)', () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp888-traversal-'));
+	try {
+		const outsideDir = path.join(tmp, 'outside');
+		fs.mkdirSync(outsideDir, { recursive: true });
+		const tasksRoot = path.join(tmp, 'spine-tasks');
+		fs.mkdirSync(tasksRoot, { recursive: true });
+		fs.writeFileSync(path.join(tasksRoot, 'CONTEXT.md'), '**Next Task ID:** SP-890\n', 'utf-8');
+
+		const maliciousSlugs = [
+			'../../test-fail',
+			'..\/..\/..\/escape',
+			'a/b',
+			'..',
+			'.',
+			'.hidden',
+			'UPPER',
+			'sp--double-hyphen',
+			'-leading-hyphen',
+			'trailing-hyphen-',
+			'space space',
+			'',
+			'a'.repeat(49),
+		];
+		for (const slug of maliciousSlugs) {
+			assert.throws(
+				() => scaffoldTaskFolder({ tasksRoot, issue: ISSUE_384, linkType: 'closes', slug }),
+				/Invalid slug:/,
+				`expected rejection for slug: ${JSON.stringify(slug)}`,
+			);
+		}
+
+		// No folder escaped the tasks root or landed outside it.
+		assert.deepEqual(fs.readdirSync(outsideDir), [], 'no folders written outside tasksRoot');
+		assert.deepEqual(
+			fs.readdirSync(tasksRoot).filter((name) => name !== 'CONTEXT.md'),
+			[],
+			'no folders written inside tasksRoot',
+		);
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
 test('updateNextTaskId rewrites the counter only via explicit opt-in', () => {
 	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp888-nextid-'));
 	try {

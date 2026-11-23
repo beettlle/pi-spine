@@ -153,7 +153,8 @@ ${c.bold}From-issue options:${c.reset}
   --closes         Mission first line "Closes #N" (default)
   --partial        Mission first line "Partial #N"
   --id SP-###      Explicit task ID (default: CONTEXT.md Next Task ID, read-only)
-  --slug SLUG      Folder slug override (default: slugified issue title)
+  --slug SLUG      Folder slug override: lowercase alphanumerics + single hyphens,
+                   max 48 chars (default: slugified issue title)
   --next-id SP-### Update CONTEXT.md Next Task ID (explicit opt-in, never automatic)
   --gh CMD         gh command to invoke (default: gh)
   --json           Print scaffold summary as JSON

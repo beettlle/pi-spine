@@ -25,6 +25,10 @@ const NEXT_TASK_ID_LINE_RE = /^\*\*Next Task ID:\*\* ([A-Z][A-Z0-9]*-\d+)\s*$/m;
 const GH_ISSUE_JSON_FIELDS = "number,title,body";
 const GH_TIMEOUT_MS = 30_000;
 const SLUG_MAX_LENGTH = 48;
+// Safe folder slug: lowercase alphanumerics with single interior hyphens.
+// Excludes dots, slashes, whitespace, and uppercase — blocks path traversal
+// (`../`) and sibling-folder escapes from the `--slug` CLI override.
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
  * Fail-loud error for from-issue scaffolding. `exitCode` is surfaced by the
@@ -311,7 +315,7 @@ export function updateNextTaskId(contextPath, nextId) {
  * @param {{ number: number, title: string }} options.issue Fetched issue (title/body)
  * @param {"closes"|"partial"} options.linkType Mission link format
  * @param {string} [options.taskId] Explicit task ID; defaults to CONTEXT.md Next Task ID
- * @param {string} [options.slug] Folder slug override; defaults to slugified title
+ * @param {string} [options.slug] Folder slug override; defaults to slugified title. Validated: [a-z0-9-] only, max 48 chars
  * @param {string} [options.nextId] Explicit CONTEXT.md Next Task ID update (opt-in)
  * @param {string} [options.created] Override the Created date (ISO date)
  * @returns {{ taskId: string, folderPath: string, promptPath: string, statusPath: string, contextNextIdUpdated: boolean }}
@@ -343,7 +347,14 @@ export function scaffoldTaskFolder({
 		throw new FromIssueError(`Invalid task ID: "${resolvedTaskId}". Expected PREFIX-### (e.g. SP-890).`);
 	}
 
-	const folderName = `${resolvedTaskId}-${slug ?? slugifyTitle(issue.title)}`;
+	const resolvedSlug = slug ?? slugifyTitle(issue.title);
+	if (typeof resolvedSlug !== "string" || !SLUG_RE.test(resolvedSlug) || resolvedSlug.length > SLUG_MAX_LENGTH) {
+		throw new FromIssueError(
+			`Invalid slug: ${JSON.stringify(resolvedSlug ?? String(slug))}. Expected lowercase alphanumerics with single hyphens (no dots, slashes, or traversal), max ${SLUG_MAX_LENGTH} chars.`,
+		);
+	}
+
+	const folderName = `${resolvedTaskId}-${resolvedSlug}`;
 	const folderPath = path.join(tasksRoot, folderName);
 	// Ensure the tasks root exists (race-free: recursive mkdir is a no-op when
 	// it already exists), then create the task folder atomically — EEXIST from
