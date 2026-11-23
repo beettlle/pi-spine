@@ -12,7 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { parseMissionIssueLinks } from "./mission-issue-links.mjs";
+import { parseMissionIssueLinks } from "../issues/mission-issue-links.mjs";
 import { commandExists } from "../../util/command-exists.mjs";
 import { appendJournalEvent } from "../../batch/journal.mjs";
 import { resolveTasksRootPath } from "../../config/env-overrides.mjs";
@@ -27,7 +27,7 @@ const GH_CALL_TIMEOUT_MS = 30_000;
 const BODY_DIR = path.join(".spine", "github-sync");
 
 /**
- * @typedef {import("./mission-issue-links.mjs").MissionIssueLinks} MissionIssueLinks
+ * @typedef {import("../issues/mission-issue-links.mjs").MissionIssueLinks} MissionIssueLinks
  */
 
 /**

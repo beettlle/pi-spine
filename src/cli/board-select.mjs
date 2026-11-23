@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { compareTaskIds, discoverTasks } from "../tasks/packet/discover.mjs";
-import { parseMissionIssueLinks } from "../integrations/github/mission-issue-links.mjs";
+import { parseMissionIssueLinks } from "../integrations/issues/mission-issue-links.mjs";
 import { loadSpineConfig } from "../config/spine-config-load.mjs";
 import { resolveTasksRootPath } from "../config/env-overrides.mjs";
 import { missingConfigHint } from "../config/missing-config-hint.mjs";

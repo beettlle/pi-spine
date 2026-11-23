@@ -1,7 +1,7 @@
 # SP-891: Move mission-issue-links — Status
 
-**Current Step:** Not started
-**Status:** ⚪ Pending
+**Current Step:** Step 2 — Testing & Verification
+**Status:** 🟡 In Progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,19 +11,19 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied (SP-890)
-- [ ] List importers
-- [ ] Confirm SP-890 landed
+- [x] Dependencies satisfied (SP-890)
+- [x] List importers
+- [x] Confirm SP-890 landed
 
 ---
 
 ### Step 1: Move module + rewire imports
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Move file + delete old
-- [ ] Update imports + tests
+- [x] Move file + delete old
+- [x] Update imports + tests
 
 ---
 
