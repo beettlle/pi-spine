@@ -1,6 +1,6 @@
 # SP-888: Hydrate SP-* packet from GitHub issue — Status
 
-**Current Step:** Step 1 — CLI scaffold
+**Current Step:** Step 2 — Testing & Verification
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
@@ -19,11 +19,11 @@
 ---
 
 ### Step 1: CLI scaffold
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Implement spine tasks from-issue
-- [ ] Mission Closes/Partial + incomplete Contract stubs
-- [ ] No silent dependencies.json edges
+- [x] Implement spine tasks from-issue (`--closes`/`--partial`, `--id`, `--slug`, `--next-id`, `--gh`, `--json`; exit 0/1/2)
+- [x] Mission Closes/Partial + incomplete Contract stubs (empty Contract table → validate fails until operator fills)
+- [x] No silent dependencies.json edges (never written; CONTEXT.md read-only unless `--next-id`)
 
 ---
 

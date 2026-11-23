@@ -19,6 +19,10 @@ import {
 	loadTaskPacket,
 } from '../src/tasks/packet/index.mjs';
 import { collectStaleFileScopeMustChangeWarnings } from '../src/tasks/packet/validate-prompt.mjs';
+import {
+	fetchIssueViaGh,
+	scaffoldTaskFolder,
+} from '../src/tasks/from-issue.mjs';
 import { parseScope } from '../src/planner/scope.mjs';
 
 /**
@@ -126,6 +130,7 @@ ${c.bold}spine tasks${c.reset} — validate and analyze task PROMPT packets (FR-
 ${c.bold}Usage:${c.reset}
   spine tasks validate <scope> [--json] [--warnings-only]
   spine tasks analyze <scope> [--json]
+  spine tasks from-issue <n> [options]
 
 ${c.bold}Scope:${c.reset}
   Same resolution as ${c.cyan}spine plan${c.reset}: all, pending, task IDs, globs.
@@ -139,6 +144,20 @@ ${c.bold}Analyze:${c.reset}
   Deterministic structural checks: parallel file-scope overlap, dependency cycles,
   orphan task IDs (blocking); wave M-count, explore refs, PROMPT/JSON deps drift (warnings).
 
+${c.bold}From-issue (#384):${c.reset}
+  Fetch a GitHub issue via gh and scaffold {tasksRoot}/SP-###-<slug>/ with
+  thin-packet stubs. Contract/File Scope/Steps stay incomplete until the
+  operator fills them; dependencies.json is never written.
+
+${c.bold}From-issue options:${c.reset}
+  --closes         Mission first line "Closes #N" (default)
+  --partial        Mission first line "Partial #N"
+  --id SP-###      Explicit task ID (default: CONTEXT.md Next Task ID, read-only)
+  --slug SLUG      Folder slug override (default: slugified issue title)
+  --next-id SP-### Update CONTEXT.md Next Task ID (explicit opt-in, never automatic)
+  --gh CMD         gh command to invoke (default: gh)
+  --json           Print scaffold summary as JSON
+
 ${c.bold}Exit codes (validate):${c.reset}
   0  all selected tasks pass
   1  one or more PROMPT validation failures
@@ -149,12 +168,19 @@ ${c.bold}Exit codes (analyze):${c.reset}
   1  one or more blocking findings
   2  config, tasksRoot, or scope resolution error
 
+${c.bold}Exit codes (from-issue):${c.reset}
+  0  scaffold written
+  1  gh fetch, validation, or existing-folder error
+  2  config or tasksRoot resolution error
+
 ${c.bold}Examples:${c.reset}
   spine tasks validate all
   spine tasks validate pending --warnings-only
   spine tasks validate FX-101 --json
   spine tasks analyze pending
   spine tasks analyze all --json
+  spine tasks from-issue 384 --partial --id SP-890
+  spine tasks from-issue 384 --next-id SP-891   # explicit CONTEXT.md update
 `);
 }
 
@@ -370,6 +396,180 @@ async function handleTasksAnalyze(args) {
 }
 
 /**
+ * Scaffold an SP-* packet from a GitHub issue (#384). Thin-packet stubs only:
+ * Contract/File Scope/Steps stay incomplete until the operator fills them;
+ * dependencies.json is never written; CONTEXT.md Next Task ID is touched
+ * only when `nextId` is explicitly provided.
+ *
+ * @param {object} [options]
+ * @param {string} [options.projectRoot]
+ * @param {number} [options.issueNumber]
+ * @param {boolean} [options.closes] Mission first line "Closes #N" (default)
+ * @param {boolean} [options.partial] Mission first line "Partial #N"
+ * @param {string|null} [options.taskId] Explicit task ID (else CONTEXT.md Next Task ID)
+ * @param {string|null} [options.slug] Folder slug override
+ * @param {string|null} [options.nextId] Explicit CONTEXT.md Next Task ID update
+ * @param {string} [options.ghCommand]
+ * @param {boolean} [options.json]
+ * @returns {Promise<{output: string, exitCode: number}>}
+ */
+export async function runSpineTasksFromIssue({
+	projectRoot = process.cwd(),
+	issueNumber,
+	closes = true,
+	partial = false,
+	taskId = null,
+	slug = null,
+	nextId = null,
+	ghCommand = 'gh',
+	json = false,
+} = {}) {
+	if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+		throwTasksValidateError(`Invalid issue number: ${issueNumber ?? '(missing)'}. Expected a positive integer, e.g. spine tasks from-issue 384`);
+	}
+	if (closes && partial) {
+		throwTasksValidateError('Pass only one of --closes / --partial');
+	}
+
+	const configResult = loadSpineConfig(projectRoot);
+	if (configResult.error) {
+		throwTasksValidateError(configResult.error.message, {
+			suggestedCommand: configResult.error.suggestedCommand,
+		});
+	}
+	const tasksRoot = resolveTasksRootPath(projectRoot, configResult.config);
+	if (!tasksRoot) {
+		throwTasksValidateError('Cannot scaffold tasks: tasksRoot not configured', {
+			suggestedCommand: missingConfigHint(projectRoot).suggestedCommand,
+		});
+	}
+
+	let issue;
+	try {
+		issue = fetchIssueViaGh({ issueNumber, projectRoot, ghCommand });
+	} catch (err) {
+		throwTasksValidateError(err?.message ?? String(err), { exitCode: 1 });
+	}
+
+	let scaffold;
+	try {
+		scaffold = scaffoldTaskFolder({
+			tasksRoot,
+			issue,
+			linkType: partial ? 'partial' : 'closes',
+			taskId: taskId ?? undefined,
+			slug: slug ?? undefined,
+			nextId: nextId ?? undefined,
+		});
+	} catch (err) {
+		throwTasksValidateError(err?.message ?? String(err), { exitCode: 1 });
+	}
+
+	const missionLink = `${partial ? 'Partial' : 'Closes'} #${issueNumber}`;
+	if (json) {
+		const payload = {
+			taskId: scaffold.taskId,
+			issueNumber,
+			missionLink,
+			folder: path.relative(projectRoot, scaffold.folderPath),
+			promptPath: scaffold.promptPath,
+			statusPath: scaffold.statusPath,
+			contextNextIdUpdated: scaffold.contextNextIdUpdated,
+		};
+		return { output: `${JSON.stringify(payload, null, 2)}\n`, exitCode: 0 };
+	}
+
+	const relFolder = path.relative(projectRoot, scaffold.folderPath);
+	const contextNote = scaffold.contextNextIdUpdated
+		? `CONTEXT.md Next Task ID updated via --next-id`
+		: `CONTEXT.md unchanged (pass --next-id SP-### to update)`;
+	const output = [
+		`Scaffolded ${scaffold.taskId} from issue #${issueNumber}`,
+		'',
+		`  Folder:   ${relFolder}`,
+		`  Mission:  ${missionLink} — ${issue.title}`,
+		`  Contract: EMPTY — fill Contract / File Scope / Steps before batch start`,
+		`  CONTEXT:  ${contextNote}`,
+		'',
+		`Next: fill the stubs, then run ${c.cyan}spine tasks validate ${scaffold.taskId}${c.reset}.`,
+		`No dependencies.json edges were written (add real deps only, with confirmation).`,
+		'',
+	].join('\n');
+	return { output, exitCode: 0 };
+}
+
+/**
+ * @param {string[]} args
+ */
+async function handleTasksFromIssue(args) {
+	const rest = args.slice(1);
+	/** @type {Record<string, string|null>} */
+	const flagValues = { '--id': null, '--slug': null, '--next-id': null, '--gh': null };
+	const positionals = [];
+	let json = false;
+	let closes = false;
+	let partial = false;
+	for (let i = 0; i < rest.length; i++) {
+		const arg = rest[i];
+		if (arg === '--help' || arg === '-h') {
+			printTasksHelp();
+			return;
+		}
+		if (arg === '--json') {
+			json = true;
+			continue;
+		}
+		if (arg === '--closes') {
+			closes = true;
+			continue;
+		}
+		if (arg === '--partial') {
+			partial = true;
+			continue;
+		}
+		if (arg in flagValues) {
+			const value = rest[++i];
+			if (value === undefined || value.startsWith('--')) {
+				console.error(`Error: ${arg} requires a value.`);
+				process.exit(2);
+			}
+			flagValues[arg] = value;
+			continue;
+		}
+		if (arg.startsWith('--')) {
+			console.error(`Error: unknown from-issue flag: ${arg}\nRun ${c.cyan}spine help tasks${c.reset} for usage.`);
+			process.exit(2);
+		}
+		positionals.push(arg);
+	}
+	if (!closes && !partial) closes = true;
+
+	const issueNumber = Number(positionals[0]);
+	try {
+		const result = await runSpineTasksFromIssue({
+			projectRoot: process.cwd(),
+			issueNumber,
+			closes,
+			partial,
+			taskId: flagValues['--id'],
+			slug: flagValues['--slug'],
+			nextId: flagValues['--next-id'],
+			ghCommand: flagValues['--gh'] ?? 'gh',
+			json,
+		});
+		writeCommandResult(result);
+	} catch (err) {
+		const msg = err?.message ?? String(err);
+		if (err?.suggestedCommand) {
+			console.error(`Error: ${msg}\nSuggested: ${err.suggestedCommand}`);
+		} else {
+			console.error(`Error: ${msg}`);
+		}
+		process.exit(err?.exitCode ?? 2);
+	}
+}
+
+/**
  * @param {string[]} args
  */
 export async function handleTasks(args) {
@@ -380,6 +580,10 @@ export async function handleTasks(args) {
 	}
 	if (sub === 'analyze') {
 		await handleTasksAnalyze(args);
+		return;
+	}
+	if (sub === 'from-issue') {
+		await handleTasksFromIssue(args);
 		return;
 	}
 
