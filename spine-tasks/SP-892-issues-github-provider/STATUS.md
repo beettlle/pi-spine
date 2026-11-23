@@ -53,6 +53,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): a3aab5e  src/integrations/issues/providers/github.mjs:15  WARNING  Duplicate implementation of the `gh` CLI runner. `src/cli/boar | advisory — noted, not blocking | contract review step |
 | `mock.method` on `node:child_process` does not affect ESM named imports (snapshot bindings) — spawn cannot be stubbed from outside the provider module | Provider takes optional `{ spawn }` injection (repo pattern: `tests/doctor/inherit-provider-auth.test.mjs` `spawnFn`); default behavior identical | `src/integrations/issues/providers/github.mjs` |
 | `gh_missing` gate sits AFTER issue-link collection in `syncIssuesOnLand`; default-wiring test needs a task packet with a link to reach it | Test creates packet with `Closes #42.` | `tests/integrations/github/sync-on-land.test.mjs` |
 | GitNexus impact ambiguous: a mirrored `defaultRunGh` exists in `src/cli/board-select.mjs` (doc comment "Mirrors defaultRunGh in sync-on-land.mjs"); board-select is OUT of file scope — untouched; its mirror comment is now stale | Follow-up candidate for a future task (not SP-893 scope) | `src/cli/board-select.mjs:77` |
