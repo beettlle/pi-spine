@@ -1,0 +1,18 @@
+spine-tasks/SP-890-integrations-issues-config/.DONE
+  h_2a17159c706ba1 1-7
+spine-tasks/SP-890-integrations-issues-config/.reviews/0-20261123T192850.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-890-integrations-issues-config/.reviews/final-20261123T193434.md
+  h_2a17159c706ba1 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3cf3fe32fafab847a4a7246bb7c24fd78f7f78c3",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
