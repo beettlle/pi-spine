@@ -1,0 +1,22 @@
+spine-tasks/SP-884-run-metrics-tokens-live/.reviews/0-20261123T012900.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-884-run-metrics-tokens-live/.reviews/final-20261123T013625.md
+  h_2a17159c706ba1 1-14
+spine-tasks/SP-884-run-metrics-tokens-live/STATUS.md
+  h_2a17159c706ba1 4-5,59-60,68,74,90
+src/batch/engine-lanes/queue.mjs
+  h_2a17159c706ba1 84-89
+tests/batch/worker-usage-metrics.test.mjs
+  h_2a17159c706ba1 277,287,327,334-336,338-341,355
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6a731de261c10c2fb508d9717de115b37ac1a5aa",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
