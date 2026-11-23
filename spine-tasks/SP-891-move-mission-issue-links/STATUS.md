@@ -1,6 +1,6 @@
 # SP-891: Move mission-issue-links — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
@@ -28,9 +28,9 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand
+- [x] Contract testCommand (exit 0: lint + typecheck + 3 test files, dot reporter all green)
 
 ---
 
@@ -53,6 +53,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `src/integrations/issues/` did not pre-exist — SP-890 landed schema/defaults/reader under `src/config/`; this task created the dir via the move | Resolved | `src/integrations/issues/` |
+| gitnexus impact flagged CRITICAL (547 nodes) but edges were low-confidence file-level heuristics; exact `rg`/`git grep` confirmed exactly 3 literal importers, all rewired + covered by contract tests | Mitigated | STATUS notes |
+| `sync-on-land.mjs` carries a value import AND a JSDoc `@typedef {import(...)}` — both rewired to `../issues/` | Resolved | `src/integrations/github/sync-on-land.mjs` |
 
 ---
 
