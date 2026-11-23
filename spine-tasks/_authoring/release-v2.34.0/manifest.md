@@ -20,7 +20,7 @@
 | **M-size budget** | ≤ 4 M packets per wave | Serialize shared hot files via `dependencies.json` |
 | **Scope freeze** | End of Phase 3 | Later work → next minor/patch |
 | **Binary policy** | Checkout `node bin/spine.mjs` | Never `npm link`; global stays 2.33.1 until Phase 6 |
-| **Epic policy** | Children close; epic stays OPEN until #386 | Packets use `Closes #383/#384/#385/#377–#379`; `Partial #382` only if needed |
+| **Epic policy** | Close #382 when #383–#386 all land | Done 2026-11-23 — all four children + epic CLOSED |
 
 ---
 
@@ -147,17 +147,33 @@ Wave 3: SP-889
 
 ---
 
+## Execution log (Phase 4)
+
+| SP-ID | Issue | Batch | Result |
+|-------|-------|-------|--------|
+| SP-883 | #385 | outside-spine + later | DONE — #385 CLOSED |
+| SP-885 | #378 | `20261122T230441-a680` | DONE — #378 CLOSED |
+| SP-886 | #379 | (with 885 land) | DONE — #379 CLOSED |
+| SP-884 | #377 | `20261123T004523-5e9d` | DONE — #377 CLOSED (`0a667983`) |
+| SP-887 | #383 | `20261123T020418-8268` | DONE — #383 CLOSED (`5e7c5f5e`) |
+| SP-888 | #384 | `20261123T030746-c594` | DONE — #384 CLOSED (`c1d67e56`) |
+| SP-889 | #386 | `20261123T041540-fcea` | DONE — #386 CLOSED (`34a19220`); #382 CLOSED |
+
+**HEAD:** `34a19220` · `main` synced to `origin` · pending release scope: **0**
+
+---
+
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD` (typecheck, lint, tests, coverage — CI parity)
-- [ ] CI workflow green on `HEAD` (`ci.yml`)
-- [ ] `git status` clean
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (logs under `/tmp/pi-spine-post-integrate-wave-*.log`)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final `HEAD` (3436 pass, 91.33% lines) — log `/tmp/pi-spine-post-integrate-wave-889.log`
+- [x] CI workflow green on `HEAD` — [run 45115063153](https://github.com/beettlle/pi-spine/actions/runs/45115063153) `conclusion: success`
+- [x] `git status` clean (`main` = `origin/main`)
 - [ ] Operator approved publish bump type: **minor**
 - [ ] `npm version minor` + `git push && git push --tags`
 - [ ] `release.yml` succeeded (OIDC stage)
 - [ ] Maintainer 2FA approve staged package
 - [ ] Post-publish smoke per `docs/release/npm-publish.md`
-- [ ] Close remaining release-scoped `Closes #NNN` (sweep); leave #382/#386 OPEN
+- [x] Close remaining release-scoped `Closes #NNN` — #377–#379, #382–#386 all **CLOSED**
