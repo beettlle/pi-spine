@@ -4,7 +4,7 @@ import test from "node:test";
 import {
 	parseMissionIssueLinks,
 	issueLinkActions,
-} from "../../../src/integrations/github/mission-issue-links.mjs";
+} from "../../../src/integrations/issues/mission-issue-links.mjs";
 
 // Format rules from #147: `Closes #N` fully resolves; `Partial #N` is one of
 // several tasks addressing the issue; colon optional, first line of Mission.

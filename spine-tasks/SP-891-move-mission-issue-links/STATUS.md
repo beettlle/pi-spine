@@ -1,7 +1,7 @@
 # SP-891: Move mission-issue-links — Status
 
-**Current Step:** Not started
-**Status:** ⚪ Pending
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,34 +11,34 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied (SP-890)
-- [ ] List importers
-- [ ] Confirm SP-890 landed
+- [x] Dependencies satisfied (SP-890)
+- [x] List importers
+- [x] Confirm SP-890 landed
 
 ---
 
 ### Step 1: Move module + rewire imports
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Move file + delete old
-- [ ] Update imports + tests
+- [x] Move file + delete old
+- [x] Update imports + tests
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand
+- [x] Contract testCommand (exit 0: lint + typecheck + 3 test files, dot reporter all green)
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -53,6 +53,9 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| `src/integrations/issues/` did not pre-exist — SP-890 landed schema/defaults/reader under `src/config/`; this task created the dir via the move | Resolved | `src/integrations/issues/` |
+| gitnexus impact flagged CRITICAL (547 nodes) but edges were low-confidence file-level heuristics; exact `rg`/`git grep` confirmed exactly 3 literal importers, all rewired + covered by contract tests | Mitigated | STATUS notes |
+| `sync-on-land.mjs` carries a value import AND a JSDoc `@typedef {import(...)}` — both rewired to `../issues/` | Resolved | `src/integrations/github/sync-on-land.mjs` |
 
 ---
 
@@ -61,6 +64,9 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-23 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-23 | Step 0 preflight | 3 importers mapped; SP-890 `.DONE` + schema/reader confirmed in `src/config/` |
+| 2026-11-23 | Step 1 move + rewire | `git mv` module + test to `integrations/issues/`; 3 import sites rewired; `git grep` old path = NONE |
+| 2026-11-23 | Step 2 contract | testCommand exit 0 (lint, typecheck ×2, 3 test files green) |
 
 ---
 
