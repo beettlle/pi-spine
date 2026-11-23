@@ -1,0 +1,20 @@
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  h_2a17159c706ba1 3-4,60,62-64,79-84,93-98,110
+src/batch/integrate.mjs
+  h_2a17159c706ba1 30,419-420
+src/integrations/github/sync-on-land.mjs
+  h_2a17159c706ba1 18,203-263
+tests/integrations/github/sync-on-land.test.mjs
+  h_2a17159c706ba1 12,347-405
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bff43dff12f04a000103c75fac4f09f5dddf12e0",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
