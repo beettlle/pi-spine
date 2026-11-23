@@ -1,0 +1,20 @@
+src/config/defaults.mjs
+  h_2a17159c706ba1 67-72,74,76
+src/config/spine-config-schema.mjs
+  h_2a17159c706ba1 222,225-229,246-254,257-264,267-268,271,274-275
+src/integrations/github/sync-on-land.mjs
+  h_2a17159c706ba1 6,42-44,47,49-50,165,173,336,391,393
+tests/integrations/github/sync-on-land.test.mjs
+  h_2a17159c706ba1 11,58,72-81,85-86,163,366,399
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8e0c19713424e80fed48aa5b4fb418e9499fba51",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
