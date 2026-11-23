@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-23 (Phase 106 v2.34.0 **tagged** — `v2.34.0` / OIDC stage green run `45219685709`; awaiting npm stage 2FA approve; SP-883–SP-889 done; closed #377–#379 #382–#386; Next → SP-890)
+**Last Updated:** 2026-11-23 (Phase 106 v2.34.0 **published** — tag `v2.34.0` / `319ecd83`, npm `latest` 2.34.0 (OIDC stage + 2FA approve), global smoke OK; SP-883–SP-889 done; closed #377–#379 #382–#386; Next → SP-890)
 **Status:** Active
 **Next Task ID:** SP-890
 
