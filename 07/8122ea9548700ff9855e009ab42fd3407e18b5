@@ -1,0 +1,14 @@
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  h_2a17159c706ba1 3-5,14-18,20-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "078122ea9548700ff9855e009ab42fd3407e18b5",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
