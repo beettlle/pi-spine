@@ -274,7 +274,7 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 		const pinned = { taskId: "x", tokensIn: 5 };
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: 310, tokensOut: 75 }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 310, tokensOut: 75 }),
 			"utf-8",
 		);
 		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: pinned }), true);
@@ -284,7 +284,7 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 		// Negative and non-finite values are rejected (never invented).
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: -3, tokensOut: Number.POSITIVE_INFINITY }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: -3, tokensOut: Number.POSITIVE_INFINITY }),
 			"utf-8",
 		);
 		const guarded = { taskId: "y" };
@@ -302,6 +302,48 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 	}
 });
 
+test("attachTaskUsageFromSidecar rejects foreign record types and unknown schema versions", () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-attach-usage-guard-"));
+	try {
+		const taskFolder = path.join(root, "spine-tasks", "SP-884-guard");
+		fs.mkdirSync(taskFolder, { recursive: true });
+		const writeSidecar = (body) =>
+			fs.writeFileSync(path.join(taskFolder, "worker-usage.json"), JSON.stringify(body), "utf-8");
+
+		// A file stamped as a different record type is not worker usage: a
+		// lookalike sidecar must not inject tokens into metric rows (SP-884).
+		writeSidecar({ recordType: "batch", schemaVersion: 1, tokensIn: 999, tokensOut: 999 });
+		const foreign = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: foreign }), false);
+		assert.equal(foreign.tokensIn, undefined);
+		assert.equal(foreign.tokensOut, undefined);
+
+		// Unknown future schema versions are rejected until the reader learns them.
+		writeSidecar({ recordType: "worker-usage", schemaVersion: 2, tokensIn: 999 });
+		const future = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: future }), false);
+		assert.equal(future.tokensIn, undefined);
+
+		// A correctly producer-stamped sidecar stays accepted.
+		writeSidecar({ recordType: "worker-usage", schemaVersion: 1, tokensIn: 310, tokensOut: 75 });
+		const stamped = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: stamped }), true);
+		assert.equal(stamped.tokensIn, 310);
+		assert.equal(stamped.tokensOut, 75);
+
+		// Omitting the identity fields entirely must not bypass the guard
+		// either: an unstamped lookalike is not a legacy format (the writer has
+		// stamped identity since SP-879), so it attaches no usage at all.
+		writeSidecar({ tokensIn: 5, estimatedUsd: 0.5 });
+		const unstamped = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: unstamped }), false);
+		assert.equal(unstamped.tokensIn, undefined);
+		assert.equal(unstamped.estimatedUsd, undefined);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test("recordLaneTaskMetric includes worker usage on the task record and omits it for skipped tasks", () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "spine-lane-metric-usage-"));
 	try {
@@ -310,7 +352,7 @@ test("recordLaneTaskMetric includes worker usage on the task record and omits it
 		fs.mkdirSync(taskFolder, { recursive: true });
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: 310, tokensOut: 75, estimatedUsd: 1 }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 310, tokensOut: 75, estimatedUsd: 1 }),
 			"utf-8",
 		);
 

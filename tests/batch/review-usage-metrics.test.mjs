@@ -32,6 +32,7 @@ import {
 } from "../../src/batch/metrics.mjs";
 import { rollupMetrics } from "../../src/batch/metrics-rollup.mjs";
 import { runReviewPollLoop } from "../../src/batch/engine-lanes/review-poll.mjs";
+import { runStepReview } from "../../src/batch/review-step-run.mjs";
 import { sumUsageFromPiJsonStream } from "../../src/batch/pi-json-usage.mjs";
 
 const CLAUDE_REVIEWER = "anthropic/claude-sonnet-4-5";
@@ -106,11 +107,19 @@ async function withFakePiSpawn(root, scriptBody, run) {
 		workerRunner: process.env.SPINE_WORKER_RUNNER,
 		taskFolder: process.env.SPINE_TASK_FOLDER,
 		noPi: process.env.SPINE_REVIEW_TEST_NO_PI,
+		isWorker: process.env.SPINE_IS_WORKER,
+		reviewStub: process.env.SPINE_REVIEW_STUB,
+		workerStub: process.env.SPINE_WORKER_STUB,
 	};
 	process.env.PATH = `${binDir}${path.delimiter}${process.env.PATH ?? ""}`;
 	delete process.env.SPINE_WORKER_RUNNER;
 	delete process.env.SPINE_TASK_FOLDER;
 	delete process.env.SPINE_REVIEW_TEST_NO_PI;
+	// SP-884: runStepReview tests must spawn a real (fake-binary) pi even when
+	// executed inside a batch worker session or with stub review env inherited.
+	delete process.env.SPINE_IS_WORKER;
+	delete process.env.SPINE_REVIEW_STUB;
+	delete process.env.SPINE_WORKER_STUB;
 	try {
 		await run();
 	} finally {
@@ -121,6 +130,12 @@ async function withFakePiSpawn(root, scriptBody, run) {
 		else process.env.SPINE_TASK_FOLDER = prev.taskFolder;
 		if (prev.noPi === undefined) delete process.env.SPINE_REVIEW_TEST_NO_PI;
 		else process.env.SPINE_REVIEW_TEST_NO_PI = prev.noPi;
+		if (prev.isWorker === undefined) delete process.env.SPINE_IS_WORKER;
+		else process.env.SPINE_IS_WORKER = prev.isWorker;
+		if (prev.reviewStub === undefined) delete process.env.SPINE_REVIEW_STUB;
+		else process.env.SPINE_REVIEW_STUB = prev.reviewStub;
+		if (prev.workerStub === undefined) delete process.env.SPINE_WORKER_STUB;
+		else process.env.SPINE_WORKER_STUB = prev.workerStub;
 	}
 }
 
@@ -476,5 +491,125 @@ test("spine metrics show populates byRole/byModel from fixture stream records en
 		assert.match(human, /reviewer/);
 	} finally {
 		fs.rmSync(projectRoot, { recursive: true, force: true });
+	}
+});
+
+// ─── SP-884 (#377): the real runStepReview hop ───
+// SP-880's DI tests stub `runEngineReview`, so they cannot see the hop where
+// usage was actually lost: runStepReview (review-step-run.mjs) sits between
+// spawnReviewerPi (which sums the pi JSON stream) and the poll loop (which
+// emits metric rows). These tests drive the REAL runStepReview against a fake
+// pi that records the fixture stream, asserting usage survives on the result.
+
+/**
+ * Minimal task packet for runStepReview (code review required at level ≥ 2).
+ *
+ * @param {string} root
+ * @param {string} taskId
+ * @returns {string} task folder path
+ */
+function writeRunStepTask(root, taskId = "SP-884-run") {
+	const taskFolder = path.join(root, "spine-tasks", taskId);
+	fs.mkdirSync(taskFolder, { recursive: true });
+	fs.writeFileSync(
+		path.join(taskFolder, "PROMPT.md"),
+		`# Task: ${taskId}\n\n## Review Level: 2\n\n### Step 1: Ship it\n- [x] done\n`,
+		"utf-8",
+	);
+	return taskFolder;
+}
+
+test("runStepReview forwards fixture stream usage onto the APPROVE result (live hop)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-runstep-usage-ok-"));
+	try {
+		const fixturePath = path.join(root, "reviewer-stream.ndjson");
+		fs.writeFileSync(fixturePath, REVIEWER_JSON_FIXTURE, "utf-8");
+		// Usage is emitted BEFORE the artifact is written so the captured JSONL
+		// is complete regardless of artifact-poll timing (no early-honor race).
+		const script = [
+			"#!/bin/bash",
+			`cat '${fixturePath}'`,
+			'for arg in "$@"; do',
+			"  p=$(printf '%s' \"$arg\" | grep -oE '`[^`]*\\.reviews/[^`]*\\.md`' | tr -d '`' | head -1)",
+			'  if [ -n "$p" ]; then',
+			'    mkdir -p "${p%/*}"',
+			'    printf \'# Code Review\\n\\n### Verdict: APPROVE\\n\\nLooks good.\\n\' > "$p"',
+			"  fi",
+			"done",
+			"exit 0",
+		].join("\n");
+		await withFakePiSpawn(root, script, async () => {
+			const taskFolder = writeRunStepTask(root);
+			const result = await runStepReview({
+				taskFolder,
+				worktreePath: root,
+				stepNumber: 1,
+				reviewType: "code",
+				config: {},
+			});
+			assert.equal(result.spawnFailed, false, `spawn failed: ${result.error}`);
+			assert.equal(result.verdict, "APPROVE");
+			assert.deepEqual(result.usage, FIXTURE_USAGE);
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runStepReview keeps fixture usage on the spawn-failed result (exit 1, no artifact)", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-runstep-usage-fail-"));
+	try {
+		const fixturePath = path.join(root, "reviewer-stream.ndjson");
+		fs.writeFileSync(fixturePath, REVIEWER_JSON_FIXTURE, "utf-8");
+		const script = [`#!/bin/bash`, `cat '${fixturePath}'`, "exit 1"].join("\n");
+		await withFakePiSpawn(root, script, async () => {
+			const taskFolder = writeRunStepTask(root);
+			const result = await runStepReview({
+				taskFolder,
+				worktreePath: root,
+				stepNumber: 1,
+				reviewType: "code",
+				config: {},
+			});
+			assert.equal(result.spawnFailed, true);
+			assert.equal(result.verdict ?? null, null);
+			// Tokens pi reported before failing still attribute to the review
+			// attempt (the poll loop forwards them to the spawn_failed row).
+			assert.deepEqual(result.usage, FIXTURE_USAGE);
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
+
+test("runStepReview omits usage entirely when the pi stream reports none", async () => {
+	const root = await mkdtemp(path.join(os.tmpdir(), "spine-runstep-usage-absent-"));
+	try {
+		const script = [
+			"#!/bin/bash",
+			'for arg in "$@"; do',
+			"  p=$(printf '%s' \"$arg\" | grep -oE '`[^`]*\\.reviews/[^`]*\\.md`' | tr -d '`' | head -1)",
+			'  if [ -n "$p" ]; then',
+			'    mkdir -p "${p%/*}"',
+			'    printf \'# Code Review\\n\\n### Verdict: APPROVE\\n\\nLooks good.\\n\' > "$p"',
+			"  fi",
+			"done",
+			"exit 0",
+		].join("\n");
+		await withFakePiSpawn(root, script, async () => {
+			const taskFolder = writeRunStepTask(root);
+			const result = await runStepReview({
+				taskFolder,
+				worktreePath: root,
+				stepNumber: 1,
+				reviewType: "code",
+				config: {},
+			});
+			assert.equal(result.spawnFailed, false, `spawn failed: ${result.error}`);
+			assert.equal(result.verdict, "APPROVE");
+			assert.equal(result.usage, undefined, "no usage keys invented without a reported stream");
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
 	}
 });
