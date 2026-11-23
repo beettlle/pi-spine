@@ -422,14 +422,15 @@ test("reloadStateForTerminalWrite keeps the generic refusal for a recorded-but-d
 	}
 });
 
-test("reloadStateForTerminalWrite honors an injected isFinalizeInFlight probe over journal signals (#379)", async () => {
+test("reloadStateForTerminalWrite ORs the injected isFinalizeInFlight probe with journal signals (#379)", async () => {
 	const projectRoot = await initGitRepo("spine-reload-finalize-inject-");
 	try {
 		const fixture = completedBatchFixture("orch/spine-20260601T120000");
-		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
-		appendJournalEvent(projectRoot, fixture.batchId, "gate.approved", { batchId: fixture.batchId });
 
-		const overridden = reloadStateForTerminalWrite({
+		// No journal signals: a `false` probe must not force the pending wait —
+		// the generic hard refusal still applies (fail-closed preserved).
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		const probeFalseNoSignals = reloadStateForTerminalWrite({
 			projectRoot,
 			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
 			batchId: fixture.batchId,
@@ -437,11 +438,15 @@ test("reloadStateForTerminalWrite honors an injected isFinalizeInFlight probe ov
 			requireTerminalPhase: true,
 			deps: { isFinalizeInFlight: () => false },
 		});
-		assert.equal(overridden.refusal.pending, undefined, "injected false must win over journal signals");
-		assert.equal(overridden.refusal.error, "batch_state_changed_during_terminal_write");
+		assert.equal(probeFalseNoSignals.refusal.pending, undefined);
+		assert.equal(
+			probeFalseNoSignals.refusal.error,
+			"batch_state_changed_during_terminal_write",
+		);
 
+		// No journal signals: a `true` probe still forces the pending wait.
 		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
-		const injected = reloadStateForTerminalWrite({
+		const probeTrueNoSignals = reloadStateForTerminalWrite({
 			projectRoot,
 			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
 			batchId: fixture.batchId,
@@ -449,8 +454,30 @@ test("reloadStateForTerminalWrite honors an injected isFinalizeInFlight probe ov
 			requireTerminalPhase: true,
 			deps: { isFinalizeInFlight: () => true },
 		});
-		assert.equal(injected.refusal.pending, true);
-		assert.equal(injected.refusal.error, "engine_finishing_land_loop");
+		assert.equal(probeTrueNoSignals.refusal.pending, true);
+		assert.equal(probeTrueNoSignals.refusal.error, "engine_finishing_land_loop");
+
+		// `||`, not `??`: a `false` probe defers to the journal fallback, so
+		// journaled approval signals still yield the pending wait instead of a
+		// hard refusal that implies corruption.
+		writeSpineBatchState(projectRoot, { ...fixture, phase: "running" });
+		appendJournalEvent(projectRoot, fixture.batchId, "gate.approved", {
+			batchId: fixture.batchId,
+		});
+		const probeFalseWithSignals = reloadStateForTerminalWrite({
+			projectRoot,
+			batchStatePath: path.join(projectRoot, ".spine", "batch-state.json"),
+			batchId: fixture.batchId,
+			action: "complete",
+			requireTerminalPhase: true,
+			deps: { isFinalizeInFlight: () => false },
+		});
+		assert.equal(
+			probeFalseWithSignals.refusal.pending,
+			true,
+			"journal fallback must decide when the injected probe returns false",
+		);
+		assert.equal(probeFalseWithSignals.refusal.error, "engine_finishing_land_loop");
 	} finally {
 		await destroyGitRepo(projectRoot);
 	}

@@ -103,7 +103,7 @@ export function journalHasIntegrateProgressSignals(projectRoot, batchId) {
  * @param {string|null} [params.diagnosis] pre-lock diagnosis echoed on refusal
  * @param {object} [params.deps]
  * @param {(raw: object) => boolean} [params.deps.isEngineAlive] injectable engine liveness probe (#371)
- * @param {(raw: object) => boolean} [params.deps.isFinalizeInFlight] injectable finalize-window probe (#379); defaults to `journalHasIntegrateProgressSignals`
+ * @param {(raw: object) => boolean} [params.deps.isFinalizeInFlight] injectable extra finalize-window probe (#379); OR-ed with `journalHasIntegrateProgressSignals` — a `false` return defers to the journal fallback
  * @returns {{ state: { path: string, raw: object }|null, refusal: object|null }}
  */
 export function reloadStateForTerminalWrite({
@@ -165,8 +165,11 @@ export function reloadStateForTerminalWrite({
 			// A recorded-but-dead PID stays a hard refusal: an engine died while the
 			// phase was active and the state needs diagnosis, not a blind wait.
 			const enginePidRecorded = readBatchEnginePid(reloaded.raw) != null;
+			// `||`, not `??`: a probe returning `false` ("not in flight") must
+			// still defer to the journal fallback instead of short-circuiting the
+			// whole expression to `false` and masking journaled approval signals.
 			const finalizeInFlight =
-				deps.isFinalizeInFlight?.(reloaded.raw) ??
+				deps.isFinalizeInFlight?.(reloaded.raw) ||
 				journalHasIntegrateProgressSignals(projectRoot, batchId);
 			if (!enginePidRecorded && finalizeInFlight) {
 				return landLoopPending();

@@ -1,11 +1,11 @@
 # SP-886: Fix batch complete vs land-loop finalize race — Status
 
-**Current Step:** Complete
-**Status:** ✅ Complete — awaiting engine review
+**Current Step:** Complete (REVISE iteration 1 addressed)
+**Status:** 🔁 REVISE feedback addressed — awaiting engine re-review
 **Last Updated:** 2026-11-22
 **Review Level:** 1
-**Review Counter:** 0
-**Iteration:** 0
+**Review Counter:** 1
+**Iteration:** 1
 **Size:** S
 
 ---
@@ -62,6 +62,18 @@ Pending-wait diagnosis chosen (mission option 3): `src/batch/lifecycle-archive.m
 
 | # | Type | Step | Verdict | File |
 |---|------|------|---------|------|
+| 1 | plan | — | APPROVE | `.reviews/0-20261123T001015.md` |
+| 2 | final | — | REVISE | `.reviews/final-20261123T001920.md` |
+
+### REVISE iteration 1 (final review)
+
+**Feedback:** `src/batch/lifecycle-archive.mjs:166-168` — `??` short-circuits when the injected `deps.isFinalizeInFlight` probe returns `false` (a valid boolean), preventing the intended fallback to `journalHasIntegrateProgressSignals`; DI pattern brittle. Fix with `||` or an explicit ternary.
+
+**Resolution:**
+- `src/batch/lifecycle-archive.mjs`: `??` → `||` with a comment explaining the false-return-defers-to-journal semantics; JSDoc updated to "OR-ed with `journalHasIntegrateProgressSignals`".
+- `tests/batch/batch-complete-engine.test.mjs`: injection test rewritten to pin the `||` contract — probe `false` + no journal signals → hard refusal (fail-closed preserved); probe `true` + no signals → pending wait; probe `false` + journaled `gate.approved` → pending wait (journal fallback decides).
+- Production behavior unchanged: no production caller injects `isFinalizeInFlight`, so the journal probe remains the sole production source (confirmed by grep: only lifecycle-archive.mjs + the test reference it).
+- Impact analysis run pre-edit (GitNexus): `reloadStateForTerminalWrite` upstream blast radius CRITICAL (475 nodes, 5 processes); change confined to test-only DI expression, no production callers affected.
 
 ---
 
@@ -69,6 +81,7 @@ Pending-wait diagnosis chosen (mission option 3): `src/batch/lifecycle-archive.m
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): 7bfa0b1  src/batch/lifecycle-archive.mjs:167  WARNING  The nullish coalescing operator (??) only falls back when deps.isFinalizeI | resolved in REVISE iteration 1 (`??` → `||`) | contract review step |
 
 ---
 
@@ -81,6 +94,7 @@ Pending-wait diagnosis chosen (mission option 3): `src/batch/lifecycle-archive.m
 | 2026-11-22 | Step 1 | Pending-wait finalize-window branch in lifecycle-archive.mjs; fail-closed cases preserved |
 | 2026-11-22 | Step 2 | 6 regressions green; Contract testCommand exit 0 |
 | 2026-11-22 | Step 3 | Runbook §4 note added; SKILL §4.3 checked unaffected; `.DONE` created |
+| 2026-11-23 | REVISE iteration 1 | Final-review feedback addressed: `??` → `||` in lifecycle-archive.mjs, injection test pins OR semantics, contract testCommand re-run green |
 
 ---
 
