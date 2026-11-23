@@ -1,7 +1,7 @@
 # SP-886: Fix batch complete vs land-loop finalize race — Status
 
-**Current Step:** Step 2
-**Status:** 🟡 In Progress — Step 2 Testing & Verification
+**Current Step:** Complete
+**Status:** ✅ Complete — awaiting engine review
 **Last Updated:** 2026-11-22
 **Review Level:** 1
 **Review Counter:** 0
@@ -27,28 +27,34 @@
 ---
 
 ### Step 1: Eliminate false-hard failure
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Wait/retry or pending diagnosis for finalize race
-- [ ] Preserve fail-closed for true state changes
-- [ ] Keep journal observability
+- [x] Wait/retry or pending diagnosis for finalize race
+- [x] Preserve fail-closed for true state changes
+- [x] Keep journal observability
+
+Pending-wait diagnosis chosen (mission option 3): `src/batch/lifecycle-archive.mjs` — new `journalHasIntegrateProgressSignals` (gate.approved / integrate.completed journaled); `reloadStateForTerminalWrite` returns the soft `engine_finishing_land_loop` pending wait (same shape as #371) when phase is active, the PID is **absent** (finalize's #198 PID-clear signature), and finalize-window signals exist. Injected `deps.isFinalizeInFlight` overrides. Recorded-but-dead PID still hard-refuses (#371 crash signature); PID-less active state with NO approval signals (paused / resumed-for-real-work) still hard-refuses; `batch.late_finalize_skipped` (#293) untouched.
 
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Regression coverage
-- [ ] Contract testCommand passing
+- [x] Regression coverage
+- [x] Contract testCommand passing
+
+6 regressions added: e2e #379 (first complete pending → finalize lands → second complete archives) and 4 reload unit tests in tests/batch/batch-complete-engine.test.mjs; cross-module #379 in tests/batch/late-finalize-after-complete.test.mjs (real gate approve + integrate; asserts `batch.late_finalize_skipped` NOT journaled for this ordering). Contract `testCommand` exit 0: lint clean, typecheck clean, 17/17 targeted tests.
 
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Runbook updated
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Runbook updated
+- [x] Discoveries logged
+- [x] Create `.DONE`
+
+`docs/adoption/operator-runbook.md` §4 Land loop: "First complete after integrate (#379)" note — pending wait output, wait command, retry-succeeds guidance, and when `batch_state_changed_during_terminal_write` after integrate still means a real change (links to Agent-safe state_drift recovery #196). `skills/spine-release-operator/SKILL.md` §4.3 checked — NOT affected (documents the same approve → integrate → complete sequence; outside File Scope, no edit).
 
 ---
 
@@ -71,6 +77,10 @@
 | Timestamp | Action | Outcome |
 |-----------|--------|---------|
 | 2026-11-22 | Task staged | PROMPT.md and STATUS.md created |
+| 2026-11-22 | Step 0 | Root cause mapped (#198 PID-clear finalize window), #379 reproduced via failing regression |
+| 2026-11-22 | Step 1 | Pending-wait finalize-window branch in lifecycle-archive.mjs; fail-closed cases preserved |
+| 2026-11-22 | Step 2 | 6 regressions green; Contract testCommand exit 0 |
+| 2026-11-22 | Step 3 | Runbook §4 note added; SKILL §4.3 checked unaffected; `.DONE` created |
 
 ---
 

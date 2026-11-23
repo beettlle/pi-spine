@@ -1097,6 +1097,16 @@ spine batch complete
 git push origin main
 ```
 
+**First complete after integrate (#379, v2.33.x):** if the engine is still finishing its land-loop finalize (it clears its PID and persists the terminal phase as its last write, so the window can briefly outlive `spine integrate`), `spine batch complete` returns a **pending wait**, not an error:
+
+```text
+Batch lifecycle pending
+Engine is finishing the land loop — wait for it to complete
+  → spine wait --until completed --timeout 10m
+```
+
+This is normal, not corruption: nothing was archived and no state was lost. Run the suggested `spine wait --until completed --timeout 10m` (or simply re-run `spine batch complete` after a few seconds) — the retry succeeds and archives the batch. A hard `batch_state_changed_during_terminal_write` after integrate still means a real mid-write change (e.g. a dead engine left `phase=running` on disk); follow **[Agent-safe state_drift recovery (#196)](#agent-safe-state_drift-recovery-196)** for that case.
+
 Dry-run integrate:
 
 ```bash
