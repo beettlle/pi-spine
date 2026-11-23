@@ -81,11 +81,12 @@ export function attachTaskUsageFromSidecar({ taskFolder, task }) {
 	}
 	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
 	// SP-884 (#377): the sidecar is a process-boundary input (a child runner
-	// writes it). Accept legacy sidecars that omit producer identity, but reject
-	// files stamped as a different record type or an unknown future schema so a
-	// lookalike `worker-usage.json` cannot inject tokens into metric rows.
-	if (parsed.recordType !== undefined && parsed.recordType !== "worker-usage") return false;
-	if (parsed.schemaVersion !== undefined && parsed.schemaVersion !== 1) return false;
+	// writes it), so identity is required, not optional — default to rejection
+	// unless the file is explicitly stamped with the current record type and
+	// schema. The writer has stamped both fields since the sidecar shipped
+	// (SP-879), so an unstamped lookalike `worker-usage.json` is foreign input,
+	// not a legacy format: it must not inject tokens into metric rows.
+	if (parsed.recordType !== "worker-usage" || parsed.schemaVersion !== 1) return false;
 	let attached = false;
 	for (const key of WORKER_USAGE_KEYS) {
 		const value = parsed[key];

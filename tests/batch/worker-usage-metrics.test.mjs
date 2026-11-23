@@ -274,7 +274,7 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 		const pinned = { taskId: "x", tokensIn: 5 };
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: 310, tokensOut: 75 }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 310, tokensOut: 75 }),
 			"utf-8",
 		);
 		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: pinned }), true);
@@ -284,7 +284,7 @@ test("attachTaskUsageFromSidecar copies only finite non-negative reported counte
 		// Negative and non-finite values are rejected (never invented).
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: -3, tokensOut: Number.POSITIVE_INFINITY }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: -3, tokensOut: Number.POSITIVE_INFINITY }),
 			"utf-8",
 		);
 		const guarded = { taskId: "y" };
@@ -324,18 +324,21 @@ test("attachTaskUsageFromSidecar rejects foreign record types and unknown schema
 		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: future }), false);
 		assert.equal(future.tokensIn, undefined);
 
-		// Producer-stamped and legacy unstamped sidecars stay accepted.
+		// A correctly producer-stamped sidecar stays accepted.
 		writeSidecar({ recordType: "worker-usage", schemaVersion: 1, tokensIn: 310, tokensOut: 75 });
 		const stamped = { taskId: "SP-884-guard" };
 		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: stamped }), true);
 		assert.equal(stamped.tokensIn, 310);
 		assert.equal(stamped.tokensOut, 75);
 
+		// Omitting the identity fields entirely must not bypass the guard
+		// either: an unstamped lookalike is not a legacy format (the writer has
+		// stamped identity since SP-879), so it attaches no usage at all.
 		writeSidecar({ tokensIn: 5, estimatedUsd: 0.5 });
-		const legacy = { taskId: "SP-884-guard" };
-		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: legacy }), true);
-		assert.equal(legacy.tokensIn, 5);
-		assert.equal(legacy.estimatedUsd, 0.5);
+		const unstamped = { taskId: "SP-884-guard" };
+		assert.equal(attachTaskUsageFromSidecar({ taskFolder, task: unstamped }), false);
+		assert.equal(unstamped.tokensIn, undefined);
+		assert.equal(unstamped.estimatedUsd, undefined);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}
@@ -349,7 +352,7 @@ test("recordLaneTaskMetric includes worker usage on the task record and omits it
 		fs.mkdirSync(taskFolder, { recursive: true });
 		fs.writeFileSync(
 			path.join(taskFolder, "worker-usage.json"),
-			JSON.stringify({ tokensIn: 310, tokensOut: 75, estimatedUsd: 1 }),
+			JSON.stringify({ schemaVersion: 1, recordType: "worker-usage", tokensIn: 310, tokensOut: 75, estimatedUsd: 1 }),
 			"utf-8",
 		);
 
