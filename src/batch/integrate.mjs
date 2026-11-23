@@ -27,8 +27,7 @@ import { isLiveEngineInActivePhase } from "./lifecycle-archive.mjs";
 import { appendJournalEvent } from "./journal.mjs";
 import { countCommitsAhead } from "./lane-commit.mjs";
 import { inspectGitState, loadBatchStateFile, parseBatchState } from "./reconcile.mjs";
-import { resolveTasksRootPath } from "../config/env-overrides.mjs";
-import { collectDoneOnBaseTasks, syncIssuesOnLand } from "../integrations/github/sync-on-land.mjs";
+import { syncIssuesAfterIntegrate } from "../integrations/github/sync-on-land.mjs";
 
 /**
  * @param {string} projectRoot
@@ -93,47 +92,6 @@ function postMergeCompletionSuggestion(raw) {
 		suggestedCommand: "spine wait --until completed --timeout 10m",
 		alternatives: ["spine batch complete"],
 	};
-}
-
-/**
- * Opt-in GitHub issue sync after a successful integrate (SP-887 / #383).
- * Best-effort only: never throws into the integrate success path, and any
- * internal error journals as `github.issue_sync_failed` instead of failing
- * the integrate.
- *
- * @param {object} params
- * @param {string} params.projectRoot
- * @param {string} params.batchId
- * @param {object} params.batch Parsed batch state.
- * @param {object|null} params.config Effective spine config (null → sync disabled).
- * @param {string|null} params.mergeCommit
- * @param {boolean} params.noGithubSync `--no-github-sync` escape hatch.
- * @returns {object|null} Sync summary, or null when the sync crashed internally.
- */
-function runGithubSyncOnLand({ projectRoot, batchId, batch, config, mergeCommit, noGithubSync }) {
-	try {
-		return syncIssuesOnLand({
-			projectRoot,
-			batchId,
-			doneTasks: collectDoneOnBaseTasks(batch),
-			tasksRoot: config ? resolveTasksRootPath(projectRoot, config) : null,
-			config,
-			mergeCommit,
-			noGithubSync,
-		});
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		try {
-			appendJournalEvent(projectRoot, batchId, "github.issue_sync_failed", {
-				reason: "internal_error",
-				error: message.slice(0, 500),
-				hint: "spine status --diagnose",
-			});
-		} catch {
-			// Journal append must never mask the integrate success path.
-		}
-		return null;
-	}
 }
 
 /**
@@ -458,7 +416,8 @@ export function integrateOrchToBase(ctx) {
 
 		// Opt-in GitHub sync runs only on the fresh-success path — the
 		// `alreadyMerged` early-return above must not re-comment/close (#383).
-		const githubSync = runGithubSyncOnLand({
+		// Best-effort: syncIssuesAfterIntegrate never throws into this path.
+		const githubSync = syncIssuesAfterIntegrate({
 			projectRoot,
 			batchId,
 			batch,

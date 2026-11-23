@@ -15,6 +15,7 @@ import { spawnSync } from "node:child_process";
 import { parseMissionIssueLinks } from "./mission-issue-links.mjs";
 import { commandExists } from "../../util/command-exists.mjs";
 import { appendJournalEvent } from "../../batch/journal.mjs";
+import { resolveTasksRootPath } from "../../config/env-overrides.mjs";
 
 /** Terminal-success statuses whose `.DONE` landed work on the batch base. */
 const DONE_ON_BASE_STATUSES = new Set(["completed", "succeeded"]);
@@ -198,6 +199,67 @@ function writeCommentBodyFile({ projectRoot, batchId, issue, body }) {
 }
 
 /** @typedef {(projectRoot: string, batchId: string, type: string, payload?: Record<string, unknown>) => void} JournalAppendFn */
+
+/**
+ * Integrate entry point (#383): resolve the `.DONE`-on-base task set and
+ * tasksRoot from batch state + effective config, then run the sync. Best-effort
+ * only — never throws into the integrate success path; internal errors journal
+ * as `github.issue_sync_failed` instead of failing the integrate.
+ *
+ * @param {object} params
+ * @param {string} params.projectRoot
+ * @param {string} params.batchId
+ * @param {object} params.batch Parsed batch state.
+ * @param {Record<string, any> | null | undefined} params.config Effective spine config (null → sync disabled).
+ * @param {string | null} [params.mergeCommit] Integrate merge commit.
+ * @param {boolean} [params.noGithubSync] `--no-github-sync` escape hatch.
+ * @param {(projectRoot: string, args: string[]) => GhRunResult} [params.runGh] Injectable gh runner.
+ * @param {(cmd: string) => boolean} [params.ghPresent] Injectable gh probe.
+ * @param {JournalAppendFn} [params.journalAppend] Injectable journal appender.
+ * @param {(filePath: string) => string} [params.readTextFile] Injectable PROMPT reader.
+ * @returns {object | null} Sync summary, or null when the sync crashed internally.
+ */
+export function syncIssuesAfterIntegrate({
+	projectRoot,
+	batchId,
+	batch,
+	config,
+	mergeCommit = null,
+	noGithubSync = false,
+	runGh,
+	ghPresent,
+	journalAppend,
+	readTextFile,
+}) {
+	try {
+		return syncIssuesOnLand({
+			projectRoot,
+			batchId,
+			doneTasks: collectDoneOnBaseTasks(batch),
+			tasksRoot: config ? resolveTasksRootPath(projectRoot, config) : null,
+			config,
+			mergeCommit,
+			noGithubSync,
+			runGh,
+			ghPresent,
+			journalAppend,
+			readTextFile,
+		});
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		try {
+			const journal = journalAppend ?? appendJournalEvent;
+			journal(projectRoot, batchId, "github.issue_sync_failed", {
+				reason: "internal_error",
+				error: message.slice(0, 500),
+				hint: "spine status --diagnose",
+			});
+		} catch {
+			// Journal append must never mask the integrate success path.
+		}
+		return null;
+	}
+}
 
 /**
  * Sync GitHub issues for tasks whose `.DONE` landed on the batch base.

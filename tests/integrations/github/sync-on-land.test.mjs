@@ -9,6 +9,7 @@ import {
 	collectDoneOnBaseTasks,
 	collectIssueLinksFromTasks,
 	resolveGithubSyncOnLandConfig,
+	syncIssuesAfterIntegrate,
 	syncIssuesOnLand,
 } from "../../../src/integrations/github/sync-on-land.mjs";
 
@@ -341,6 +342,65 @@ test("null tasksRoot skips with hint", () => {
 	assert.equal(result.reason, "no_tasks_root");
 	assert.match(result.hint, /paths\.tasksRoot/);
 	assert.equal(journal.length, 0);
+});
+
+// --- integrate entry point (keeps src/batch/integrate.mjs thin, LOC cap) ---
+
+test("syncIssuesAfterIntegrate resolves tasksRoot from config and delegates", () => {
+	const { projectRoot, tasksRoot } = baseParams();
+	makeTaskPacket(tasksRoot, "SP-960-c", "Closes #71");
+	const gh = stubGh();
+	const journal = [];
+	const result = syncIssuesAfterIntegrate({
+		projectRoot,
+		batchId: BATCH_ID,
+		batch: { tasks: [{ taskId: "SP-960", status: "completed", taskFolder: "SP-960-c" }] },
+		config: {
+			paths: { tasksRoot: "spine-tasks" },
+			integrations: { github: { syncOnLand: true } },
+		},
+		mergeCommit: "f00d",
+		ghPresent: () => true,
+		runGh: gh.run,
+		journalAppend: (root, batchId, type, payload) => journal.push({ type, payload }),
+	});
+	assert.equal(result.skipped, false);
+	assert.equal(result.synced.length, 1);
+	assert.equal(result.synced[0].issue, 71);
+	assert.ok(gh.calls.some((c) => c[1] === "close" && c[2] === "71"));
+});
+
+test("syncIssuesAfterIntegrate null config disables without throwing", () => {
+	const { projectRoot } = baseParams();
+	const result = syncIssuesAfterIntegrate({
+		projectRoot,
+		batchId: BATCH_ID,
+		batch: { tasks: [{ taskId: "SP-961", status: "completed", taskFolder: null }] },
+		config: null,
+	});
+	assert.equal(result.skipped, true);
+	assert.equal(result.reason, "sync_disabled");
+});
+
+test("syncIssuesAfterIntegrate internal errors journal github.issue_sync_failed and return null", () => {
+	const { projectRoot, tasksRoot } = baseParams();
+	makeTaskPacket(tasksRoot, "SP-962-c", "Closes #72");
+	const journal = [];
+	const result = syncIssuesAfterIntegrate({
+		projectRoot,
+		batchId: BATCH_ID,
+		batch: { tasks: [{ taskId: "SP-962", status: "completed", taskFolder: "SP-962-c" }] },
+		config: { paths: { tasksRoot: "spine-tasks" }, integrations: { github: { syncOnLand: true } } },
+		ghPresent: () => {
+			throw new Error("boom");
+		},
+		journalAppend: (root, batchId, type, payload) => journal.push({ type, payload }),
+	});
+	assert.equal(result, null);
+	assert.equal(journal.length, 1);
+	assert.equal(journal[0].type, "github.issue_sync_failed");
+	assert.equal(journal[0].payload.reason, "internal_error");
+	assert.match(journal[0].payload.hint, /spine status --diagnose/);
 });
 
 // --- comment body ---
