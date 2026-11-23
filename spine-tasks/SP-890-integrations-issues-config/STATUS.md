@@ -1,7 +1,7 @@
 # SP-890: Config schema integrations.issues — Status
 
-**Current Step:** Not started
-**Status:** ⚪ Pending
+**Current Step:** Step 1
+**Status:** 🔵 In progress
 **Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
@@ -11,16 +11,16 @@
 ---
 
 ### Step 0: Preflight
-**Status:** ⚪ Pending
+**Status:** ✅ Complete
 
-- [ ] Dependencies satisfied (none)
-- [ ] Read #387 AC for config shape and fail-closed reject
-- [ ] Map current validateIntegrationsConfig + resolveGithubSyncOnLandConfig
+- [x] Dependencies satisfied (none)
+- [x] Read #387 AC for config shape and fail-closed reject
+- [x] Map current validateIntegrationsConfig + resolveGithubSyncOnLandConfig
 
 ---
 
 ### Step 1: Schema + defaults + reader
-**Status:** ⚪ Pending
+**Status:** 🔵 In progress
 
 - [ ] Defaults issues + provider
 - [ ] Validate + reject github
