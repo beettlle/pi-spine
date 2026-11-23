@@ -1,0 +1,16 @@
+spine-tasks/SP-888-hydrate-packet-from-issue/STATUS.md
+  h_2a17159c706ba1 4-5,52-55,63-64,81
+src/tasks/from-issue.mjs
+  h_2a17159c706ba1 332,348-359,361
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "47e7c86a8429d850ffae97b983a4c58707657bbb",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
