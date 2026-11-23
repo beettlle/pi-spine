@@ -1,0 +1,20 @@
+bin/spine-plan.mjs
+  h_2a17159c706ba1 17,125-150
+spine-tasks/SP-889-board-select-pending-tasks/STATUS.md
+  h_2a17159c706ba1 3-5,14,16-17,22,24-27,60,69-70
+src/cli/board-select.mjs
+  h_2a17159c706ba1 1-471
+tests/cli/board-select.test.mjs
+  h_2a17159c706ba1 1-424
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "afb11938f268749e5e3e668c3778f1cd4cec6bdf",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
