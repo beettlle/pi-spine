@@ -1,0 +1,14 @@
+spine-tasks/SP-884-run-metrics-tokens-live/STATUS.md
+  h_2a17159c706ba1 3-4,14,16-18,66-70,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4f2b91265f6a7ff0d536e06cd40e7f150d8fa303",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
