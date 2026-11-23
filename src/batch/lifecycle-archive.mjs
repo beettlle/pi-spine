@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { appendJournalEvent } from "./journal.mjs";
+import { appendJournalEvent, readJournalEvents } from "./journal.mjs";
 import {
 	clearActiveBatchStateIfMatches,
 	loadBatchStateFile,
@@ -47,6 +47,35 @@ export function isLiveEngineInActivePhase(raw, deps = {}) {
 }
 
 /**
+ * Journal signals that prove the batch is inside the land-loop finalize window
+ * (#379): the operator approved the integrate gate (`gate.approved`) or the
+ * orch branch already merged (`integrate.completed`). Past either point all
+ * tasks succeeded and merged, so an active-looking phase is finalize
+ * bookkeeping — resume can only take the post-merge limbo fast path — and not
+ * a batch that went active again for real work.
+ *
+ * @param {string} projectRoot
+ * @param {string} batchId
+ * @returns {boolean}
+ */
+export function journalHasIntegrateProgressSignals(projectRoot, batchId) {
+	if (!batchId) return false;
+	try {
+		return readJournalEvents(projectRoot, batchId).some((event) => {
+			const type = String(
+				/** @type {{ type?: string }} */
+				(event)?.type ?? "",
+			);
+			return type === "gate.approved" || type === "integrate.completed";
+		});
+	} catch {
+		// Fail closed: an unreadable journal cannot prove finalize is in
+		// flight, so the caller keeps the generic mid-write refusal.
+		return false;
+	}
+}
+
+/**
  * Re-read the active batch state inside the terminal lock section
  * (SP-792 / #301) so archive, history, and clear act on the freshest on-disk
  * snapshot instead of the pre-lock read, which goes stale when a concurrent
@@ -57,6 +86,12 @@ export function isLiveEngineInActivePhase(raw, deps = {}) {
  * — with `requireTerminalPhase` — the batch became active again mid-write.
  * Abort passes `requireTerminalPhase: false` because aborting a running
  * batch is its normal use case.
+ * Exception (#371, #379): when the active phase is the engine finishing its
+ * land-loop finalize — a live engine PID, or the finalize window itself (no
+ * recorded PID with `gate.approved`/`integrate.completed` already journaled,
+ * since finalize clears the PID before writing the terminal phase, #198) —
+ * the refusal is a soft `pending` wait with a wait command, not a hard
+ * failure that implies corruption.
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -68,6 +103,7 @@ export function isLiveEngineInActivePhase(raw, deps = {}) {
  * @param {string|null} [params.diagnosis] pre-lock diagnosis echoed on refusal
  * @param {object} [params.deps]
  * @param {(raw: object) => boolean} [params.deps.isEngineAlive] injectable engine liveness probe (#371)
+ * @param {(raw: object) => boolean} [params.deps.isFinalizeInFlight] injectable extra finalize-window probe (#379); OR-ed with `journalHasIntegrateProgressSignals` — a `false` return defers to the journal fallback
  * @returns {{ state: { path: string, raw: object }|null, refusal: object|null }}
  */
 export function reloadStateForTerminalWrite({
@@ -103,23 +139,40 @@ export function reloadStateForTerminalWrite({
 	if (requireTerminalPhase && !force) {
 		const phase = String(/** @type {{ phase?: string }} */ (reloaded.raw).phase ?? "");
 		if (ACTIVE_RESUME_PHASES.has(phase)) {
+			// #371 / #379: the engine is finishing its land loop, not crashing —
+			// report a pending wait instead of the generic mid-write failure.
+			const landLoopPending = () => ({
+				state: null,
+				refusal: {
+					ok: false,
+					exitCode: 1,
+					pending: true,
+					error: "engine_finishing_land_loop",
+					headline: "Engine is finishing the land loop — wait for it to complete",
+					suggestedCommand: "spine wait --until completed --timeout 10m",
+					diagnosis: diagnosis ?? null,
+					batchId,
+				},
+			});
 			// #371: a live engine turned the batch active again between the pre-lock
 			// read and this reload — it is finishing its land loop, not crashing.
-			// Report a pending wait instead of the generic mid-write failure.
 			if (isLiveEngineInActivePhase(reloaded.raw, deps)) {
-				return {
-					state: null,
-					refusal: {
-						ok: false,
-						exitCode: 1,
-						pending: true,
-						error: "engine_finishing_land_loop",
-						headline: "Engine is finishing the land loop — wait for it to complete",
-						suggestedCommand: "spine wait --until completed --timeout 10m",
-						diagnosis: diagnosis ?? null,
-						batchId,
-					},
-				};
+				return landLoopPending();
+			}
+			// #379: the finalize path clears the engine PID before writing the
+			// terminal phase (#198), so an active phase with no recorded PID is
+			// normal mid-finalize once the gate is approved / integrate completed.
+			// A recorded-but-dead PID stays a hard refusal: an engine died while the
+			// phase was active and the state needs diagnosis, not a blind wait.
+			const enginePidRecorded = readBatchEnginePid(reloaded.raw) != null;
+			// `||`, not `??`: a probe returning `false` ("not in flight") must
+			// still defer to the journal fallback instead of short-circuiting the
+			// whole expression to `false` and masking journaled approval signals.
+			const finalizeInFlight =
+				deps.isFinalizeInFlight?.(reloaded.raw) ||
+				journalHasIntegrateProgressSignals(projectRoot, batchId);
+			if (!enginePidRecorded && finalizeInFlight) {
+				return landLoopPending();
 			}
 			return { state: null, refusal: refuse() };
 		}
