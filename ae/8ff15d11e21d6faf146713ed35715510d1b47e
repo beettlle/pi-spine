@@ -1,0 +1,22 @@
+spine-tasks/SP-888-hydrate-packet-from-issue/.DONE
+  h_2a17159c706ba1 1-14
+spine-tasks/SP-888-hydrate-packet-from-issue/.reviews/0-20261123T032806.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-888-hydrate-packet-from-issue/.reviews/final-20261123T033345.md
+  h_2a17159c706ba1 1-48
+spine-tasks/SP-888-hydrate-packet-from-issue/.reviews/final-20261123T034617.md
+  h_2a17159c706ba1 1-14
+spine-tasks/SP-888-hydrate-packet-from-issue/.reviews/final-20261123T035105.md
+  h_2a17159c706ba1 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ae8ff15d11e21d6faf146713ed35715510d1b47e",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
