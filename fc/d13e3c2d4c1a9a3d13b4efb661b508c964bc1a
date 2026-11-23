@@ -1,0 +1,14 @@
+spine-tasks/SP-890-integrations-issues-config/STATUS.md
+  h_2a17159c706ba1 3-4,40,42-43,75-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fcd13e3c2d4c1a9a3d13b4efb661b508c964bc1a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
