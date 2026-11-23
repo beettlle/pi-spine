@@ -567,6 +567,30 @@ Closes #384 — Scaffold SP-* packets from a GitHub issue via `spine tasks from-
 
 **Advisory validate (deferred):** A warn-only `spine tasks validate` heuristic for mega Context dumps is **deferred** — hard to distinguish legitimate multi-doc Context from dumps without false positives, and hard-fail on any issue link is explicitly out of scope for #385. Authors rely on this DoR item until a later advisory lands.
 
+## Hydrate from a GitHub issue — `spine tasks from-issue` (#384 / #382)
+
+Thin CLI path from an open issue to a stub packet. Fetches the issue title via `gh issue view --json`, scaffolds `{tasksRoot}/SP-###-<slug>/`, and stops before inventing Contract content:
+
+```bash
+spine tasks from-issue 384                  # Mission "Closes #384" (default)
+spine tasks from-issue 384 --partial        # one of several tasks for the issue
+spine tasks from-issue 384 --id SP-890 --slug hydrate-issue
+spine tasks from-issue 384 --next-id SP-891 # explicit CONTEXT.md counter update
+```
+
+| Concern | Behavior |
+|---------|----------|
+| Task ID | `--id SP-###`, else **Next Task ID** read from `{tasksRoot}/CONTEXT.md` (read-only); fails loud when neither is available |
+| Mission | First line `Closes #N — <title>` / `Partial #N` ([#147](https://github.com/beettlle/pi-spine/issues/147)); thin pointer to the issue, never the pasted body (#385) |
+| Contract / File Scope / Steps | Required stubs with `TODO(operator)` markers; the Contract table ships **empty** so `spine tasks validate <id>` fails until the operator fills it |
+| `dependencies.json` | Never written — add real edges only, with confirmation |
+| CONTEXT.md | Unchanged unless `--next-id SP-###` is passed explicitly |
+| Exit codes | 0 scaffolded · 1 gh fetch / validation / existing-folder · 2 config or tasksRoot |
+
+**Validate-after-fill loop (required):** the operator fills Contract / File Scope / Steps, then `spine tasks validate <id>` must pass before `spine tasks analyze`, `spine plan`, or `spine batch start`. Never start a batch from a scaffold with empty Contract rows — the packet fails validation by design until the fill-in is done.
+
+**When to use which path:** `from-issue` is single-issue intake (one packet from one issue, operator completes the Contract). Use the full PRD decomposition workflow (Step A → Step C) when slicing an epic into many packets — the scaffold does not split work or infer File Scope.
+
 ---
 
 ## Unsupported (spine v1)
@@ -600,6 +624,7 @@ Before reporting launch commands:
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
 - [ ] Mission uses `Closes #N` or `Partial #N` on first line when tracking GitHub issues ([#147](https://github.com/beettlle/pi-spine/issues/147))
 - [ ] Thin packet: short Mission + `#N` pointer; Contract/File Scope/Steps/Do NOT complete locally — no pasted issue-thread mega-dumps in Context ([#385](https://github.com/beettlle/pi-spine/issues/385) / [Thin packets](#thin-packets-issue-narrative-vs-packet-contract--385--382))
+- [ ] Issue intake via `spine tasks from-issue`: Contract / File Scope / Steps filled and `spine tasks validate <id>` passing before plan/batch ([#384](https://github.com/beettlle/pi-spine/issues/384) / [Hydrate](#hydrate-from-a-github-issue--spine-tasks-from-issue-384--382))
 - [ ] Split-successor tasks include `Parent split: SP-###` in Context to Read First ([#146](https://github.com/beettlle/pi-spine/issues/146))
 - [ ] `## Do NOT` bans `.spine/`, `AGENTS.md`, `CLAUDE.md`, `.gitnexus/` ([#149](https://github.com/beettlle/pi-spine/issues/149))
 - [ ] Level 2+ only when operator environment supports cross-model review ([#150](https://github.com/beettlle/pi-spine/issues/150))

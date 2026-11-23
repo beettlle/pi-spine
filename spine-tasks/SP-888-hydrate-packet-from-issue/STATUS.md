@@ -1,6 +1,6 @@
 # SP-888: Hydrate SP-* packet from GitHub issue — Status
 
-**Current Step:** Step 2 — Testing & Verification
+**Current Step:** Step 3 — Documentation & Delivery
 **Status:** 🟡 In Progress
 **Last Updated:** 2026-11-22
 **Review Level:** 1
@@ -28,11 +28,11 @@
 ---
 
 ### Step 2: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Skill + validate-after-fill docs
-- [ ] Golden fixture
-- [ ] Contract testCommand passing
+- [x] Skill + validate-after-fill docs (SKILL.md § Hydrate from a GitHub issue + DoR item; upstream workflow hydrate path; runbook empty-Contract fix row)
+- [x] Golden fixture (tests/tasks/from-issue.test.mjs — scaffold shape, validate-fails-empty → passes-after-fill, 11 tests, 98.92% lines on from-issue.mjs)
+- [x] Contract testCommand passing (lint ✓, typecheck ✓, scoped suite 11/11 ✓)
 
 ---
 
