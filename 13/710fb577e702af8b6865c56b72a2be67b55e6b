@@ -1,0 +1,32 @@
+bin/spine-integrate.mjs
+  h_2a17159c706ba1 14,19-49,77-79,113,146
+spine-tasks/SP-887-github-sync-on-land/STATUS.md
+  h_2a17159c706ba1 3,34,36-38
+src/batch/integrate.mjs
+  h_2a17159c706ba1 30-31,98-138,145,459-469,486
+src/config/defaults.mjs
+  h_2a17159c706ba1 66-76,84
+src/config/spine-config-load.mjs
+  h_2a17159c706ba1 13,313-317
+src/config/spine-config-schema.mjs
+  h_2a17159c706ba1 222-264
+src/integrations/github/mission-issue-links.mjs
+  h_2a17159c706ba1 1-80
+src/integrations/github/sync-on-land.mjs
+  h_2a17159c706ba1 1-418
+tests/integrations/github/mission-issue-links.test.mjs
+  h_2a17159c706ba1 1-110
+tests/integrations/github/sync-on-land.test.mjs
+  h_2a17159c706ba1 1-369
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "13710fb577e702af8b6865c56b72a2be67b55e6b",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
