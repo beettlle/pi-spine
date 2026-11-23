@@ -1,0 +1,7 @@
+SP-891 complete — mission-issue-links moved to integrations/issues (#387)
+
+- Module + unit test git-mv\u0027d to src/integrations/issues/ and tests/integrations/issues/ (rename history preserved).
+- Import sites rewired: src/cli/board-select.mjs, src/integrations/github/sync-on-land.mjs (value + JSDoc typedef), test relative import.
+- Zero remaining old-path references (git grep verified).
+- Contract testCommand exit 0 on committed tree (lint + typecheck + 3 test files).
+- No parser behavior change; module content byte-identical (pure rename).
