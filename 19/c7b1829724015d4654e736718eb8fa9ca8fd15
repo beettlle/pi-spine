@@ -1,0 +1,22 @@
+spine-tasks/SP-886-batch-complete-land-race/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-886-batch-complete-land-race/.reviews/0-20261123T001015.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-886-batch-complete-land-race/.reviews/final-20261123T001920.md
+  h_2a17159c706ba1 1-13
+spine-tasks/SP-886-batch-complete-land-race/.reviews/final-20261123T002638.md
+  h_2a17159c706ba1 1-12
+spine-tasks/SP-886-batch-complete-land-race/STATUS.md
+  h_2a17159c706ba1 84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19c7b1829724015d4654e736718eb8fa9ca8fd15",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
