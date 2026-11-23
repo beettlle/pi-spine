@@ -64,13 +64,16 @@ export const INTEGRATE_DEFAULTS = Object.freeze({
 });
 
 /**
- * Third-party integrations (SP-887 / #383). Everything is opt-in: the section
- * only exists so `syncOnLand` reads as an explicit, documented default rather
- * than an accidental undefined.
+ * Third-party integrations (SP-887 / #383; forge-neutral rename SP-890 / #387).
+ * The section is the `issues` umbrella with a `provider` field: only the default
+ * provider `"github"` has a working backend today, and `syncOnLand` stays opt-in
+ * so the key reads as an explicit, documented default rather than an accidental
+ * undefined. The legacy `integrations.github` key is rejected fail-closed at
+ * validation time — no silent alias.
  *
- * @type {Readonly<{ github: Readonly<{ syncOnLand: boolean }> }>} */
+ * @type {Readonly<{ issues: Readonly<{ provider: string; syncOnLand: boolean }> }>} */
 export const INTEGRATIONS_DEFAULTS = Object.freeze({
-	github: Object.freeze({ syncOnLand: false }),
+	issues: Object.freeze({ provider: "github", syncOnLand: false }),
 });
 
 /** @type {Readonly<{ review: typeof REVIEW_DEFAULTS; handoff: typeof HANDOFF_DEFAULTS; metrics: typeof METRICS_DEFAULTS; contract: typeof CONTRACT_DEFAULTS; lanes: typeof LANES_DEFAULTS; integrate: typeof INTEGRATE_DEFAULTS; integrations: typeof INTEGRATIONS_DEFAULTS; orchestrator: typeof ORCHESTRATOR_DEFAULTS }>} */

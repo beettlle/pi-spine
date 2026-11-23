@@ -219,12 +219,14 @@ export function resolveSequenceStallMs({ config = {} } = {}) {
 	return DEFAULT_SEQUENCE_STALL_MS;
 }
 
-// --- Integrations (SP-887 / #383) ---
+// --- Integrations (SP-887 / #383; forge-neutral rename SP-890 / #387) ---
 
 /**
- * Validate `integrations.github.syncOnLand` (opt-in GitHub issue sync on land).
- * Structural only: the boolean flag must be a boolean when set. Absent values
- * are valid (defaults to false via INTEGRATIONS_DEFAULTS).
+ * Validate `integrations.issues` (forge-neutral issue-tracker section, #387).
+ * Structural only: `provider` must be a string when set (defaults to "github"
+ * via INTEGRATIONS_DEFAULTS) and `syncOnLand` must be a boolean when set
+ * (defaults to false). Absent values are valid. The legacy `integrations.github`
+ * key is rejected fail-closed — no silent alias (#387).
  *
  * @param {Record<string, any>} config
  * @returns {null | { code: string; message: string; suggestedCommand: string }}
@@ -241,22 +243,36 @@ export function validateIntegrationsConfig(config) {
 			suggestedCommand: "spine init --force",
 		};
 	}
-	const github = integrations.github;
-	if (github == null) {
-		return null;
-	}
-	if (!isPlainObject(github)) {
+	if ("github" in integrations) {
 		return {
 			code: "CONFIG_INTEGRATIONS_INVALID",
-			message: "integrations.github must be an object when set",
-			suggestedCommand: "Edit .spine/spine-config.json: integrations.github must be an object",
+			message: 'integrations.github is no longer supported — rename it to integrations.issues (the default provider remains "github")',
+			suggestedCommand: 'Edit .spine/spine-config.json: rename integrations.github to integrations.issues, e.g. "issues": { "provider": "github", "syncOnLand": true }',
 		};
 	}
-	if (github.syncOnLand != null && typeof github.syncOnLand !== "boolean") {
+	const issues = integrations.issues;
+	if (issues == null) {
+		return null;
+	}
+	if (!isPlainObject(issues)) {
 		return {
 			code: "CONFIG_INTEGRATIONS_INVALID",
-			message: "integrations.github.syncOnLand must be a boolean when set",
-			suggestedCommand: "Edit .spine/spine-config.json: set integrations.github.syncOnLand to true or false",
+			message: "integrations.issues must be an object when set",
+			suggestedCommand: "Edit .spine/spine-config.json: integrations.issues must be an object",
+		};
+	}
+	if (issues.provider != null && typeof issues.provider !== "string") {
+		return {
+			code: "CONFIG_INTEGRATIONS_INVALID",
+			message: "integrations.issues.provider must be a string when set",
+			suggestedCommand: 'Edit .spine/spine-config.json: set integrations.issues.provider to "github"',
+		};
+	}
+	if (issues.syncOnLand != null && typeof issues.syncOnLand !== "boolean") {
+		return {
+			code: "CONFIG_INTEGRATIONS_INVALID",
+			message: "integrations.issues.syncOnLand must be a boolean when set",
+			suggestedCommand: "Edit .spine/spine-config.json: set integrations.issues.syncOnLand to true or false",
 		};
 	}
 	return null;
