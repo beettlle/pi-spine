@@ -1,8 +1,8 @@
 # SP-884: Fix live run-metrics tokensIn/tokensOut — Status
 
-**Current Step:** Step 3 — Testing & Verification
-**Status:** 🟡 In Progress
-**Last Updated:** 2026-11-22
+**Current Step:** Complete
+**Status:** ✅ Complete — `.DONE` created
+**Last Updated:** 2026-11-23
 **Review Level:** 1
 **Review Counter:** 0
 **Iteration:** 0
@@ -37,18 +37,18 @@
 ---
 
 ### Step 3: Testing & Verification
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Contract testCommand passing
-- [ ] All failures fixed
+- [x] Contract testCommand passing
+- [x] All failures fixed
 
 ---
 
 ### Step 4: Documentation & Delivery
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -79,6 +79,10 @@
 | 2026-11-22 | Step 0 preflight | Worker chain verified; reviewer drop proven with live-pi probe; scope amendment documented |
 | 2026-11-22 | Step 1 fix | `runStepReview` forwards `spawnResult.usage` on all post-spawn returns (live-pi probe now returns usage); queue sidecar schema guard added |
 | 2026-11-22 | Step 2 tests | 4 new tests: real-`runStepReview` APPROVE / spawn-failed / no-stream integration cases + queue schema guard; contract suite 52/52 green |
+| 2026-11-23 | Step 3 verify | Contract `testCommand` (lint + typecheck + 3 test files) exit 0 in foreground |
+| 2026-11-23 | Runbook check | `docs/adoption/operator-runbook.md` already documents the intended usage-carrying rows (line 2298); behavior now matches docs — no doc change required |
+| 2026-11-23 | LOC cap fix | `review-step-run.mjs` compressed to 499 lines (repo caps `src/batch/*.mjs` at 500; phase23-exit-verify flagged 506) |
+| 2026-11-23 | Full suite | `worker-verify.sh` 3397/3397 pass, exit 0 (run with `SPINE_IS_WORKER`/`SPINE_WORKER_RUNNER` unset — the SP-482 nested-batch guard correctly blocks in-worker nested-batch tests otherwise) |
 
 ---
 

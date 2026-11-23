@@ -246,19 +246,13 @@ export async function runStepReview({
 		contractVerifyResult,
 	};
 	let spawnResult = await spawnReviewerPi(spawnParams);
-
-	// SP-884 (#377): forward the spawn's provider-reported usage onto every
-	// post-spawn return. spawnReviewerPi already summed the pi JSON stream
-	// (SP-878 parser — only reported counters, never invented); without this
-	// propagation the poll loop's `reviewResult.usage` is always undefined and
-	// live reviewer metric rows stay `withUsage: 0`. A closure (not a snapshot)
-	// so SP-814 re-spawns attribute the terminal attempt's stream.
-	/** @returns {{ usage?: { tokensIn?: number, tokensOut?: number, estimatedUsd?: number } }} */
+	// SP-884 (#377): forward spawnReviewerPi's provider-reported usage (SP-878
+	// parser, never invented) onto every post-spawn return; a closure so SP-814
+	// re-spawns attribute the terminal attempt's stream.
 	const usageFields = () => {
-		const usage = /** @type {any} */ (spawnResult).usage;
-		return usage !== null && typeof usage === "object" && !Array.isArray(usage) ? { usage } : {};
+		const u = /** @type {any} */ (spawnResult).usage;
+		return u !== null && typeof u === "object" && !Array.isArray(u) ? { usage: u } : {};
 	};
-
 	/** @returns {ReturnType<typeof runStepReview>|null} */
 	const completeIfHonored = () =>
 		spawnResult.honored && spawnResult.honorReason === ARTIFACT_READY_HONOR_REASON
