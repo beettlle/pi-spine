@@ -124,7 +124,20 @@ async function main() {
 	const json = argv.includes('--json');
 
 	// SP-889 (#386): board selection — GitHub label/milestone → pending task IDs.
-	const board = parseBoardSelectArgs(argv);
+	// SP-894 (#387): parseBoardSelectArgs throws fail-closed on the retired
+	// --github-label spelling; surface it with the standard error style.
+	let board;
+	try {
+		board = parseBoardSelectArgs(argv);
+	} catch (err) {
+		const msg = err?.message ?? String(err);
+		if (err?.suggestedCommand) {
+			console.error(`Error: ${msg}\nSuggested: ${err.suggestedCommand}`);
+		} else {
+			console.error(`Error: ${msg}`);
+		}
+		process.exit(1);
+	}
 	if (board.labels.length > 0 || (board.milestone !== null && board.milestone !== '')) {
 		try {
 			const { output } = await runBoardSelect({
