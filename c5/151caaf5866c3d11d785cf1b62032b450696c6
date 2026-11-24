@@ -1,0 +1,14 @@
+spine-tasks/SP-896-issues-docs-wording/STATUS.md
+  h_2a17159c706ba1 3-4,22,24,29,31,36,38-39,54-55,65-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c5151caaf5866c3d11d785cf1b62032b450696c6",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
