@@ -546,11 +546,11 @@ Packet shape decides most of a batch's token spend. Each choice below removes LL
 
 ## Thin packets (issue narrative vs packet Contract) — #385 / #382
 
-**Dual-layer seam:** GitHub Issues hold goals and discussion (human/intake SoR). Packets under `paths.tasksRoot` hold Contract, File Scope, Steps, Do NOT, and STATUS (agent/engine SoR). Do **not** paste full issue threads into worker context.
+**Dual-layer seam:** the issue tracker (GitHub provider by default) holds goals and discussion (human/intake SoR). Packets under `paths.tasksRoot` hold Contract, File Scope, Steps, Do NOT, and STATUS (agent/engine SoR). Do **not** paste full issue threads into worker context.
 
 | Layer | Keep here | Do not dump here |
 |-------|-----------|------------------|
-| GitHub issue | Narrative, ACs discussion, comments, board labels | Machine Contract / File Scope as the only source of truth |
+| Issue tracker entry (GitHub by default) | Narrative, ACs discussion, comments, board labels | Machine Contract / File Scope as the only source of truth |
 | Packet `## Mission` | One short paragraph + `Closes #N` / `Partial #N` pointing at the issue | Multi-page issue body or all comment history |
 | Packet Contract / File Scope / Steps / Do NOT | Complete, local, authoritative for the batch | “See issue for File Scope” without listing paths |
 | Context to Read First | Few high-signal paths the worker needs | Unbounded “read all comments on #N” or pasted mega-dumps |
@@ -560,16 +560,16 @@ Packet shape decides most of a batch's token spend. Each choice below removes LL
 ```markdown
 ## Mission
 
-Closes #384 — Scaffold SP-* packets from a GitHub issue via `spine tasks from-issue`. Keep Contract stubs incomplete until the operator fills File Scope.
+Closes #384 — Scaffold SP-* packets from an issue-tracker issue via `spine tasks from-issue`. Keep Contract stubs incomplete until the operator fills File Scope.
 ```
 
 **Fat-context anti-pattern:** Pasting the entire issue body plus comment thread into Context to Read First or Mission. Prefer the `#N` link and a one-line pointer; use `neverLoad` for docs that must stay out of worker context.
 
 **Advisory validate (deferred):** A warn-only `spine tasks validate` heuristic for mega Context dumps is **deferred** — hard to distinguish legitimate multi-doc Context from dumps without false positives, and hard-fail on any issue link is explicitly out of scope for #385. Authors rely on this DoR item until a later advisory lands.
 
-## Hydrate from a GitHub issue — `spine tasks from-issue` (#384 / #382)
+## Hydrate from a tracker issue — `spine tasks from-issue` (#384 / #382)
 
-Thin CLI path from an open issue to a stub packet. Fetches the issue title via `gh issue view --json`, scaffolds `{tasksRoot}/SP-###-<slug>/`, and stops before inventing Contract content:
+Thin CLI path from an open issue-tracker issue (GitHub provider by default) to a stub packet. Fetches the issue title via `gh issue view --json`, scaffolds `{tasksRoot}/SP-###-<slug>/`, and stops before inventing Contract content:
 
 ```bash
 spine tasks from-issue 384                  # Mission "Closes #384" (default)
@@ -622,9 +622,9 @@ Before reporting launch commands:
 - [ ] No LLM step waits on a long-running command — split authoring (`llm`) from running (`execute`) ([#276](https://github.com/beettlle/pi-spine/issues/276))
 - [ ] Size S/M/L — split if XL
 - [ ] PROMPT.md from template: Mission, Dependencies, Context, File Scope, Contract (SP-\*), Steps, Do NOT, Git Commit Convention, Amendments
-- [ ] Mission uses `Closes #N` or `Partial #N` on first line when tracking GitHub issues ([#147](https://github.com/beettlle/pi-spine/issues/147))
+- [ ] Mission uses `Closes #N` or `Partial #N` on first line when tracking issue-tracker issues (GitHub by default) ([#147](https://github.com/beettlle/pi-spine/issues/147))
 - [ ] Thin packet: short Mission + `#N` pointer; Contract/File Scope/Steps/Do NOT complete locally — no pasted issue-thread mega-dumps in Context ([#385](https://github.com/beettlle/pi-spine/issues/385) / [Thin packets](#thin-packets-issue-narrative-vs-packet-contract--385--382))
-- [ ] Issue intake via `spine tasks from-issue`: Contract / File Scope / Steps filled and `spine tasks validate <id>` passing before plan/batch ([#384](https://github.com/beettlle/pi-spine/issues/384) / [Hydrate](#hydrate-from-a-github-issue--spine-tasks-from-issue-384--382))
+- [ ] Issue intake via `spine tasks from-issue`: Contract / File Scope / Steps filled and `spine tasks validate <id>` passing before plan/batch ([#384](https://github.com/beettlle/pi-spine/issues/384) / [Hydrate](#hydrate-from-a-tracker-issue--spine-tasks-from-issue-384--382))
 - [ ] Split-successor tasks include `Parent split: SP-###` in Context to Read First ([#146](https://github.com/beettlle/pi-spine/issues/146))
 - [ ] `## Do NOT` bans `.spine/`, `AGENTS.md`, `CLAUDE.md`, `.gitnexus/` ([#149](https://github.com/beettlle/pi-spine/issues/149))
 - [ ] Level 2+ only when operator environment supports cross-model review ([#150](https://github.com/beettlle/pi-spine/issues/150))
