@@ -1,0 +1,18 @@
+spine-tasks/SP-895-issues-journal-events/.DONE
+  h_2a17159c706ba1 1
+spine-tasks/SP-895-issues-journal-events/.reviews/0-20261124T004322.md
+  h_2a17159c706ba1 1-9
+spine-tasks/SP-895-issues-journal-events/.reviews/final-20261124T004349.md
+  h_2a17159c706ba1 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0cd956f0e3e1fd04f8ab19e81407ddc775cec351",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
