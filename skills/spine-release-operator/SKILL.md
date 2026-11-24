@@ -407,9 +407,9 @@ git push origin main
 
 Do not let `main` drift far ahead of `origin` between waves — v2.12.1 ran **24 commits ahead** of `origin` at Phase 5 (F8, [#249](https://github.com/beettlle/pi-spine/issues/249)). Local-only releases may defer this push; record the deferral in the manifest publish checklist.
 
-### 4.3c Close GitHub issues for landed tasks (blocking hygiene)
+### 4.3c Close tracker issues for landed tasks (blocking hygiene)
 
-> **Automated sync (SP-887 / #383):** repos with `integrations.github.syncOnLand: true` get the `Closes #N` / `Partial #N` actions below applied automatically by `spine integrate` (close = comment + close; partial = comment only; journal `github.issue_synced` / `github.issue_sync_failed`; escape hatch `spine integrate --no-github-sync`). The default is **off** — when disabled or soft-failed (missing `gh`/auth), perform this §4.3c sweep manually.
+> **Automated sync (SP-887 / #383):** repos with `integrations.issues.syncOnLand: true` get the `Closes #N` / `Partial #N` actions below applied automatically by `spine integrate` (close = comment + close; partial = comment only; journal `issues.synced` / `issues.sync_failed`; escape hatch `spine integrate --no-issue-sync`). The default is **off** — when disabled or soft-failed (missing `gh`/auth), perform this §4.3c sweep manually.
 
 After §4.3a is green (and §4.3b push when remote publish is the goal), **close every open issue fully resolved by tasks that just landed** — same wave, same land loop. Do not wait for Phase 6 or npm publish.
 

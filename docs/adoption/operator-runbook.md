@@ -495,9 +495,9 @@ spine batch start TP-012
 spine plan pending
 spine batch start pending
 
-# Board selection — GitHub label/milestone → pending task IDs (SP-889 / #386, from a checkout)
-node bin/spine-plan.mjs --github-label wave-a --print-ids
-spine batch start $(node bin/spine-plan.mjs --github-label wave-a --print-ids)
+# Board selection — tracker label/milestone → pending task IDs (SP-889 / #386, from a checkout; provider defaults to GitHub)
+node bin/spine-plan.mjs --issue-label wave-a --print-ids
+spine batch start $(node bin/spine-plan.mjs --issue-label wave-a --print-ids)
 
 # Multi-task (one wave, disjoint file scopes)
 spine batch start TP-043 TP-045 TP-046
@@ -519,33 +519,33 @@ spine batch start TP-012 --attached
 SPINE_WORKER_STUB=1 spine batch start <task-id>
 ```
 
-#### Board selection: GitHub label/milestone → pending task IDs (SP-889 / #386)
+#### Board selection: tracker label/milestone → pending task IDs (SP-889 / #386)
 
-Map open GitHub issues to pending spine task IDs through each task's Mission `Closes #N` / `Partial #N` links (the shared SP-887 parser — the same links [GitHub issue sync on land](#44-github-issue-sync-on-land-opt-in-383) closes on integrate):
+Map open issue-tracker issues (GitHub provider by default) to pending spine task IDs through each task's Mission `Closes #N` / `Partial #N` links (the shared SP-887 parser — the same links [issue sync on land](#44-issue-sync-on-land-opt-in-383) close on integrate):
 
 ```bash
 # From a checkout (PATH global `spine plan` router does not forward board flags yet — see note)
-node bin/spine-plan.mjs --github-label wave-a --print-ids        # → SP-901,SP-906
-node bin/spine-plan.mjs --github-label wave-a --milestone v2.35  # union of both filters + hints
+node bin/spine-plan.mjs --issue-label wave-a --print-ids        # → SP-901,SP-906
+node bin/spine-plan.mjs --issue-label wave-a --milestone v2.35  # union of both filters + hints
 node bin/spine-plan.mjs --milestone "v2.35" --json               # structured selection
 
 # Pipe straight into plan / batch start
-spine plan "$(node bin/spine-plan.mjs --github-label wave-a --print-ids)"
-spine batch start $(node bin/spine-plan.mjs --github-label wave-a --print-ids)
+spine plan "$(node bin/spine-plan.mjs --issue-label wave-a --print-ids)"
+spine batch start $(node bin/spine-plan.mjs --issue-label wave-a --print-ids)
 ```
 
 Semantics:
 
 | Rule | Behavior |
 |------|----------|
-| Issue pool | **Open** issues only (`gh issue list --state open`, one call per selection, no poller) |
-| Multiple `--github-label` values | Any-match (union of label boards) |
+| Issue pool | **Open** tracker issues only (`gh issue list --state open` for the default GitHub provider, one call per selection, no poller) |
+| Multiple `--issue-label` values | Any-match (union of label boards) |
 | Label + milestone together | Union: issue matches the label **or** the milestone (title case-insensitive, or number) |
 | Task match | Task is selected when its PROMPT Mission links a board issue via `Closes`/`Partial` |
 | Pending filter | Tasks with `.DONE` or `.SUPERSEDED` are never selected |
 | Output | Comma-separated ID list (`--print-ids` for raw, default adds usage hints), both accepted by `spine plan` / `spine batch start` scope parsing |
 
-Requires `gh` authenticated for the target repo (`gh auth status`); failures print a `Suggested:` remediation line.
+Requires the tracker provider CLI authenticated for the target repo (`gh auth status` for the default GitHub provider); failures print a `Suggested:` remediation line.
 
 **Non-goals (by design):** board selection never starts a batch, never mutates issue state, and never polls — it resolves once, prints, and exits. Re-run it when the board changes.
 
@@ -1407,13 +1407,13 @@ git restore --source <baseBranch> -- <path>   # want the merged version? restore
 
 Integrate never syncs files into a checkout that is **not on base**: when the base branch is not checked out in the main worktree, the post-merge sync is skipped entirely — no sync, no `DirtyOverlap`. The merge commit is on the base ref and your checkout stays untouched; checking out the base branch later materializes the merged files.
 
-### 4.4 GitHub issue sync on land (opt-in, #383)
+### 4.4 Issue sync on land (opt-in, #383)
 
-After a successful integrate, spine can comment on and close GitHub issues referenced by task Mission links — the format from [#147](https://github.com/beettlle/pi-spine/issues/147): `Closes #N` / `Closes: #N` (close) and `Partial #N` / `Partial: #N` (comment only, issue left open). **Off by default**; enable per repo by adding the section to `.spine/spine-config.json` (not a `spine settings set` field):
+After a successful integrate, spine can comment on and close issue-tracker issues (default provider: GitHub) referenced by task Mission links — the format from [#147](https://github.com/beettlle/pi-spine/issues/147): `Closes #N` / `Closes: #N` (close) and `Partial #N` / `Partial: #N` (comment only, issue left open). **Off by default**; enable per repo by adding the section to `.spine/spine-config.json` (not a `spine settings set` field):
 
 ```json
 {
-  "integrations": { "github": { "syncOnLand": true } }
+  "integrations": { "issues": { "provider": "github", "syncOnLand": true } }
 }
 ```
 
@@ -1427,11 +1427,11 @@ Behavior guarantees:
 
 - **Only after a real integrate success.** The sync runs on the fresh-success path of `spine integrate` (after the `integrate.completed` journal event). `spine integrate --dry-run` never syncs, and re-running integrate against an already-merged orch does not re-comment or re-close.
 - **Only `.DONE` tasks.** Sync considers `completed`/`succeeded` tasks from the batch state; skipped or failed tasks never trigger closes.
-- **Soft failure.** Missing `gh` binary or `gh auth status` failure skips the sync with an actionable hint (install gh / `gh auth login` / manual §4.3c sweep) and journals `github.issue_sync_failed` — the integrate exit code never changes. Per-issue `gh` failures are journaled and the remaining issues still sync.
-- **Journal.** Every synced issue emits `github.issue_synced` with `issue`, `action` (`close`/`comment`), `taskId`, `closed`, `mergeCommit`.
-- **Escape hatches.** `spine integrate --no-github-sync` skips the sync for that run; keep the config off (default) to disable entirely. The manual close sweep in the release-operator skill §4.3c remains the fallback when the sync is disabled or soft-failed.
+- **Soft failure.** Missing `gh` binary or `gh auth status` failure skips the sync with an actionable hint (install gh / `gh auth login` / manual §4.3c sweep) and journals `issues.sync_failed` — the integrate exit code never changes. Per-issue `gh` failures are journaled and the remaining issues still sync.
+- **Journal.** Every synced issue emits `issues.synced` with `issue`, `action` (`close`/`comment`), `taskId`, `closed`, `mergeCommit`.
+- **Escape hatches.** `spine integrate --no-issue-sync` skips the sync for that run; keep the config off (default) to disable entirely. The manual close sweep in the release-operator skill §4.3c remains the fallback when the sync is disabled or soft-failed.
 
-Setup requirements when enabled: `gh` on PATH and authenticated (`gh auth status`) from the project root, with the repo resolvable from `git remote`. Config validation rejects non-boolean `integrations.github.syncOnLand` (`CONFIG_INTEGRATIONS_INVALID`).
+Setup requirements when enabled: the tracker provider CLI (`gh` for the default GitHub provider) on PATH and authenticated (`gh auth status`) from the project root, with the repo resolvable from `git remote`. Config validation rejects non-boolean `integrations.issues.syncOnLand` and the legacy `integrations.github` key (fail-closed, no silent alias) with `CONFIG_INTEGRATIONS_INVALID` — rename the section to `integrations.issues`; `provider` defaults to `"github"`.
 
 ---
 

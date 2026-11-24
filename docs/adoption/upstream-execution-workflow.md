@@ -53,11 +53,11 @@ Do you already have PROMPT.md / STATUS.md packets?
 
 ---
 
-## Dual-layer: GitHub Issues ↔ packets (#382)
+## Dual-layer: issue tracker ↔ packets (#382)
 
 | Role | Source of truth |
 |------|-----------------|
-| Human / intake | GitHub Issues (goals, discussion, board visibility) |
+| Human / intake | Issue tracker (GitHub provider by default; goals, discussion, board visibility) |
 | Agent / engine | Task packets (`PROMPT.md`, `STATUS.md`, Contract, File Scope, `dependencies.json`, `.DONE`) |
 
 **Rejected:** Issue-tracker-only execution (issue bodies replacing packets as batch input). That would weaken Contract validation, File Scope, wave DAGs, and lane isolation.
