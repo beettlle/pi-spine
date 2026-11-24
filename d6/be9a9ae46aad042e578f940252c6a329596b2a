@@ -1,0 +1,24 @@
+docs/adoption/agent-orchestrated-waves.md
+  h_2a17159c706ba1 102
+docs/adoption/operator-runbook.md
+  h_2a17159c706ba1 498-500,522,524,528-529,533-534,541-542,548,1410,1412,1416,1430-1432,1434
+docs/adoption/upstream-execution-workflow.md
+  h_2a17159c706ba1 56,60
+skills/create-spine-tasks/SKILL.md
+  h_2a17159c706ba1 549,553,563,570,572,625,627
+skills/spine-orchestrate-waves/SKILL.md
+  h_2a17159c706ba1 82
+skills/spine-release-operator/SKILL.md
+  h_2a17159c706ba1 410,412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6be9a9ae46aad042e578f940252c6a329596b2a",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
