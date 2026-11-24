@@ -1,7 +1,7 @@
 # SP-895: Journal events issues.synced — Status
 
-**Current Step:** Step 3 — Documentation & Delivery
-**Status:** 🔵 In Progress
+**Current Step:** Complete
+**Status:** ✅ Complete
 **Last Updated:** 2026-11-24
 **Review Level:** 1
 **Review Counter:** 0
@@ -34,10 +34,10 @@
 ---
 
 ### Step 3: Documentation & Delivery
-**Status:** 🔵 In Progress
+**Status:** ✅ Complete
 
-- [ ] Discoveries logged
-- [ ] Create `.DONE`
+- [x] Discoveries logged
+- [x] Create `.DONE`
 
 ---
 
@@ -66,6 +66,7 @@
 | 2026-11-24 | Step 0 preflight | SP-894 confirmed landed (merge `3ec907ea`); grep found old names in 2 in-scope files + out-of-scope docs/bin |
 | 2026-11-24 | Step 1 rename | sed literal rename in module + tests; grep confirms 0 old strings remain, new strings on 10 module / 9 test lines |
 | 2026-11-24 | Step 2 verification | Contract testCommand exit 0 (lint clean, typecheck clean, 24 tests pass) |
+| 2026-11-24 | Steps committed | `2e6b47b6` (Step 1 rename), `76fd4643` (STATUS steps 2-3) |
 
 ---
 
