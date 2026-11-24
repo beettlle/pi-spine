@@ -1,0 +1,21 @@
+spine-tasks/SP-895-issues-journal-events/PROMPT.md
+  s_58f292e8bf07b7::t_33bfb5155a4d2e 42,92
+spine-tasks/SP-895-issues-journal-events/STATUS.md
+  s_58f292e8bf07b7::t_59396bde7ba4d4 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "79f465ea24787d5e27fa8e7fb0d39a06566d1634",
+  "prompts": {},
+  "sessions": {
+    "s_58f292e8bf07b7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-5c9316c0-2fd9-4252-837f-67bf37dca07f",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
