@@ -1,0 +1,14 @@
+spine-tasks/SP-895-issues-journal-events/STATUS.md
+  h_2a17159c706ba1 3-4,37,39-40,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff3f63cd9e42455b31ca12fa0fce1e37f8e426ca",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
