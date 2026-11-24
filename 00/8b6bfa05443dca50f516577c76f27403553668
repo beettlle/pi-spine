@@ -1,0 +1,25 @@
+spine-tasks/SP-892-issues-github-provider/PROMPT.md
+  s_63142cdcd69c87::t_617a7d9d9f1bd5 44,99
+spine-tasks/SP-892-issues-github-provider/STATUS.md
+  s_63142cdcd69c87::t_beb93a0b55c18d 76-77
+spine-tasks/SP-894-issue-sync-cli-flags/PROMPT.md
+  s_63142cdcd69c87::t_b87b36ea01356d 48,102
+spine-tasks/SP-894-issue-sync-cli-flags/STATUS.md
+  s_63142cdcd69c87::t_46e6059dd9e510 78-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "008b6bfa05443dca50f516577c76f27403553668",
+  "prompts": {},
+  "sessions": {
+    "s_63142cdcd69c87": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "agent-855dc411-278b-40b5-9cad-b57816291e6d",
+        "model": "unknown"
+      },
+      "human_author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
