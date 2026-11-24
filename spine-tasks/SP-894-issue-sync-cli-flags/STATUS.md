@@ -53,6 +53,7 @@
 
 | Discovery | Disposition | Location |
 |-----------|-------------|----------|
+| reviewCommand failed (exit 1): stet: rule budget of 1000 tokens dropped 187 rule section(s) from review prompts (e.g. ["critical-rules-quick-reference.mdc: 10.  | advisory — noted, not blocking | contract review step |
 | `bin/spine-integrate.mjs` is a library module (no own `main`); real CLI surface is the `bin/spine.mjs` dispatcher → `bin/spine-cli/integrate.mjs` | Verified fail-closed through dispatcher: `spine integrate --no-github-sync` → exit 2 `Unknown option(s)`; `--no-issue-sync` accepted | `bin/spine-integrate.mjs` |
 | Legacy `--github-label` rejected fail-closed in `parseBoardSelectArgs` (throws with `suggestedCommand`); `bin/spine-plan.mjs` wraps it in the standard `Error:`/`Suggested:` style, exit 1 — no silent alias | Done | `src/cli/board-select.mjs`, `bin/spine-plan.mjs` |
 | Machine-readable skip reason renamed `no_github_sync_flag` → `no_issue_sync_flag` (internal reason string, not a journal event type; journal events untouched per SP-895) | Done | `src/integrations/issues/sync-on-land.mjs`, `tests/integrations/issues/sync-on-land.test.mjs` |
