@@ -1,0 +1,16 @@
+src/integrations/issues/sync-on-land.mjs
+  h_2a17159c706ba1 180,225,326,335,360,370,387,401,419,434
+tests/integrations/issues/sync-on-land.test.mjs
+  h_2a17159c706ba1 223,238,280-281,287,308,325,391,407
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2e6b47b622475fd7e5d42fa3d34cf8585dd5a9eb",
+  "prompts": {},
+  "humans": {
+    "h_2a17159c706ba1": {
+      "author": "Cesar Delgado <beettlle@gmail.com>"
+    }
+  }
+}
