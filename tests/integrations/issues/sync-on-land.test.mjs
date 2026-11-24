@@ -220,7 +220,7 @@ test("missing gh soft-fails with hint + journal, never throws", () => {
 	assert.match(result.hint, /GitHub CLI/);
 	assert.equal(gh.calls.length, 0);
 	assert.equal(journal.length, 1);
-	assert.equal(journal[0].type, "github.issue_sync_failed");
+	assert.equal(journal[0].type, "issues.sync_failed");
 	assert.equal(journal[0].payload.reason, "gh_missing");
 });
 
@@ -235,7 +235,7 @@ test("gh auth failure soft-fails with actionable hint", () => {
 	assert.equal(result.skipped, true);
 	assert.equal(result.reason, "gh_auth");
 	assert.match(result.hint, /gh auth login/);
-	assert.equal(journal[0].type, "github.issue_sync_failed");
+	assert.equal(journal[0].type, "issues.sync_failed");
 	assert.equal(journal[0].payload.reason, "gh_auth");
 });
 
@@ -277,14 +277,14 @@ test("Closes maps to comment + close; Partial maps to comment only", () => {
 	// Body arrives via --body-file, never inline (no shell quoting surface).
 	assert.deepEqual(commentCalls[0], ["issue", "comment", "31", "--body-file", commentCalls[0][4]]);
 	assert.match(bodySnapshots[0], /SP-600/);
-	assert.equal(journal.filter((j) => j.type === "github.issue_synced").length, 2);
-	const closedEvent = journal.find((j) => j.type === "github.issue_synced" && j.payload.issue === 31);
+	assert.equal(journal.filter((j) => j.type === "issues.synced").length, 2);
+	const closedEvent = journal.find((j) => j.type === "issues.synced" && j.payload.issue === 31);
 	assert.equal(closedEvent.payload.action, "close");
 	assert.equal(closedEvent.payload.closed, true);
 	assert.equal(closedEvent.payload.mergeCommit, "abc1234");
 });
 
-test("per-issue gh failure journals github.issue_sync_failed and continues", () => {
+test("per-issue gh failure journals issues.sync_failed and continues", () => {
 	const { params, journal, tasksRoot } = baseParams({
 		doneTasks: [
 			{ taskId: "SP-700", taskFolder: "SP-700-a" },
@@ -305,7 +305,7 @@ test("per-issue gh failure journals github.issue_sync_failed and continues", () 
 	assert.equal(result.failures.length, 1);
 	assert.equal(result.failures[0].issue, 41);
 	assert.match(result.failures[0].error, /HTTP 404/);
-	const failedEvents = journal.filter((j) => j.type === "github.issue_sync_failed");
+	const failedEvents = journal.filter((j) => j.type === "issues.sync_failed");
 	assert.equal(failedEvents.length, 1);
 	assert.equal(failedEvents[0].payload.reason, "comment_failed");
 	// No close attempted after the comment failed for #41.
@@ -322,7 +322,7 @@ test("failed close after successful comment journals close_failed with hint", ()
 	const result = syncIssuesOnLand(params);
 	assert.equal(result.synced.length, 0);
 	assert.equal(result.failures[0].issue, 51);
-	const failedEvent = journal.find((j) => j.type === "github.issue_sync_failed");
+	const failedEvent = journal.find((j) => j.type === "issues.sync_failed");
 	assert.equal(failedEvent.payload.reason, "close_failed");
 	assert.match(failedEvent.payload.hint, /gh issue close 51/);
 });
@@ -388,7 +388,7 @@ test("syncIssuesAfterIntegrate null config disables without throwing", () => {
 	assert.equal(result.reason, "sync_disabled");
 });
 
-test("syncIssuesAfterIntegrate internal errors journal github.issue_sync_failed and return null", () => {
+test("syncIssuesAfterIntegrate internal errors journal issues.sync_failed and return null", () => {
 	const { projectRoot, tasksRoot } = baseParams();
 	makeTaskPacket(tasksRoot, "SP-962-c", "Closes #72");
 	const journal = [];
@@ -404,7 +404,7 @@ test("syncIssuesAfterIntegrate internal errors journal github.issue_sync_failed 
 	});
 	assert.equal(result, null);
 	assert.equal(journal.length, 1);
-	assert.equal(journal[0].type, "github.issue_sync_failed");
+	assert.equal(journal[0].type, "issues.sync_failed");
 	assert.equal(journal[0].payload.reason, "internal_error");
 	assert.match(journal[0].payload.hint, /spine status --diagnose/);
 });

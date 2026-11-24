@@ -177,7 +177,7 @@ function writeCommentBodyFile({ projectRoot, batchId, issue, body }) {
  * Integrate entry point (#383): resolve the `.DONE`-on-base task set and
  * tasksRoot from batch state + effective config, then run the sync. Best-effort
  * only — never throws into the integrate success path; internal errors journal
- * as `github.issue_sync_failed` instead of failing the integrate.
+ * as `issues.sync_failed` instead of failing the integrate.
  *
  * @param {object} params
  * @param {string} params.projectRoot
@@ -222,7 +222,7 @@ export function syncIssuesAfterIntegrate({
 		const message = err instanceof Error ? err.message : String(err);
 		try {
 			const journal = journalAppend ?? appendJournalEvent;
-			journal(projectRoot, batchId, "github.issue_sync_failed", {
+			journal(projectRoot, batchId, "issues.sync_failed", {
 				reason: "internal_error",
 				error: message.slice(0, 500),
 				hint: "spine status --diagnose",
@@ -323,7 +323,7 @@ export function syncIssuesOnLand({
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		journal(projectRoot, batchId, "github.issue_sync_failed", {
+		journal(projectRoot, batchId, "issues.sync_failed", {
 			reason: "parse_error",
 			error: message.slice(0, 500),
 			hint: "spine status --diagnose",
@@ -332,7 +332,7 @@ export function syncIssuesOnLand({
 	}
 	planned.push(...collection.links);
 	for (const readError of collection.readErrors) {
-		journal(projectRoot, batchId, "github.issue_sync_failed", {
+		journal(projectRoot, batchId, "issues.sync_failed", {
 			reason: "prompt_unreadable",
 			error: readError.slice(0, 500),
 			hint: "spine status --diagnose",
@@ -357,7 +357,7 @@ export function syncIssuesOnLand({
 	}
 
 	if (!present("gh")) {
-		journal(projectRoot, batchId, "github.issue_sync_failed", {
+		journal(projectRoot, batchId, "issues.sync_failed", {
 			reason: "gh_missing",
 			hint: "Install GitHub CLI (https://cli.github.com/) or disable integrations.issues.syncOnLand",
 		});
@@ -367,7 +367,7 @@ export function syncIssuesOnLand({
 	const auth = run(projectRoot, ["auth", "status"]);
 	if ((auth.status ?? 1) !== 0) {
 		const stderr = (auth.stderr ?? "").trim().slice(0, 500);
-		journal(projectRoot, batchId, "github.issue_sync_failed", {
+		journal(projectRoot, batchId, "issues.sync_failed", {
 			reason: "gh_auth",
 			error: stderr,
 			hint: "Run `gh auth login`, then re-run `spine integrate` (or close manually per the release-operator runbook §4.3c)",
@@ -384,7 +384,7 @@ export function syncIssuesOnLand({
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			failures.push({ taskId, issue, action, error: message });
-			journal(projectRoot, batchId, "github.issue_sync_failed", {
+			journal(projectRoot, batchId, "issues.sync_failed", {
 				issue,
 				action,
 				taskId,
@@ -398,7 +398,7 @@ export function syncIssuesOnLand({
 		if ((comment.status ?? 1) !== 0) {
 			const stderr = (comment.stderr ?? comment.stdout ?? "").trim().slice(0, 500) || "gh issue comment failed";
 			failures.push({ taskId, issue, action, error: stderr });
-			journal(projectRoot, batchId, "github.issue_sync_failed", {
+			journal(projectRoot, batchId, "issues.sync_failed", {
 				issue,
 				action,
 				taskId,
@@ -416,7 +416,7 @@ export function syncIssuesOnLand({
 			if ((close.status ?? 1) !== 0) {
 				const stderr = (close.stderr ?? close.stdout ?? "").trim().slice(0, 500) || "gh issue close failed";
 				failures.push({ taskId, issue, action, error: stderr });
-				journal(projectRoot, batchId, "github.issue_sync_failed", {
+				journal(projectRoot, batchId, "issues.sync_failed", {
 					issue,
 					action,
 					taskId,
@@ -431,7 +431,7 @@ export function syncIssuesOnLand({
 		}
 		bodyFile.cleanup();
 		synced.push({ taskId, issue, action, closed });
-		journal(projectRoot, batchId, "github.issue_synced", {
+		journal(projectRoot, batchId, "issues.synced", {
 			issue,
 			action,
 			taskId,
