@@ -1,6 +1,6 @@
 # General — Context
 
-**Last Updated:** 2026-11-24 (Phase 107 v2.35.0 **tagged** — SP-890–SP-896 DONE, #387 CLOSED; tag `v2.35.0` / OIDC stage await 2FA; Next → SP-897)
+**Last Updated:** 2026-11-24 (Phase 107 v2.35.0 **published** — SP-890–SP-896 DONE, #387 CLOSED; npm `pi-spine@2.35.0` / tag `v2.35.0`; Next → SP-897)
 **Status:** Active
 **Next Task ID:** SP-897
 

@@ -1,7 +1,7 @@
 # Release manifest — v2.35.0
 
 **Created:** 2026-11-23
-**Current version:** 2.35.0 (tag `v2.35.0` / `2b8ef799`; npm stage `d53b3f4b-d291-49cc-9b8e-3126e5e66184` — **awaiting 2FA approve**)
+**Current version:** 2.35.0 (published; tag `v2.35.0` / `2b8ef799`; npm `latest` **2.35.0**)
 **Target version:** v2.35.0
 **Bump type:** minor
 **Profile:** minor
@@ -163,6 +163,6 @@ Wave 6: SP-896
 - [x] Operator approved publish bump type: **minor** (2026-11-24)
 - [x] `npm version minor` + `git push && git push --tags` → tag `v2.35.0` (`2b8ef799`)
 - [x] `release.yml` succeeded (OIDC stage) — [run 45314048333](https://github.com/beettlle/pi-spine/actions/runs/45314048333); GH Release https://github.com/beettlle/pi-spine/releases/tag/v2.35.0
-- [ ] Maintainer 2FA approve staged package — stage `d53b3f4b-d291-49cc-9b8e-3126e5e66184` (status: validating); `npm view pi-spine version` still **2.34.0** until approve
-- [ ] Post-publish smoke — `scripts/post-publish-smoke.sh 2.35.0` after approve
+- [x] Maintainer 2FA approve staged package — stage `d53b3f4b-d291-49cc-9b8e-3126e5e66184` approved; `npm view pi-spine version` = **2.35.0**
+- [x] Post-publish smoke — `scripts/post-publish-smoke.sh 2.35.0` OK; global `spine --version` = 2.35.0
 - [x] Close remaining release-scoped `Closes #NNN` — #387 **CLOSED**
