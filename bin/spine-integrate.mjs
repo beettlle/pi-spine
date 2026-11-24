@@ -11,7 +11,7 @@ Options:
   --batch ID           Target batch (default: active batch)
   --dry-run            Show the merge plan without changing anything
   --force-integrate    Bypass the gate (requires SPINE_ALLOW_FORCE=1)
-  --no-github-sync     Skip the opt-in post-integrate GitHub issue sync (#383)
+  --no-issue-sync      Skip the opt-in post-integrate GitHub issue sync (#383)
   --json               Machine-readable output
   --help, -h           Show this help without changing state
 `;
@@ -25,8 +25,8 @@ Options:
  */
 function appendGithubSyncLines(lines, sync) {
 	if (sync.skipped) {
-		if (sync.reason === "no_github_sync_flag") {
-			lines.push("", "  GitHub: sync skipped (--no-github-sync)");
+		if (sync.reason === "no_issue_sync_flag") {
+			lines.push("", "  GitHub: sync skipped (--no-issue-sync)");
 		}
 		return;
 	}
@@ -110,7 +110,7 @@ export function runSpineIntegrate(options) {
 	const { projectRoot, args } = options;
 	const parsed = parseStrictArgs(args, {
 		valued: ["--batch"],
-		boolean: ["--dry-run", "--force-integrate", "--json", "--no-github-sync"],
+		boolean: ["--dry-run", "--force-integrate", "--json", "--no-issue-sync"],
 	});
 	const flags = parsed.flags;
 	if (parsed.help) {
@@ -143,7 +143,7 @@ export function runSpineIntegrate(options) {
 		dryRun: flags.has("--dry-run"),
 		batchId: parsed.values.get("--batch") ?? null,
 		forceIntegrate: flags.has("--force-integrate"),
-		noGithubSync: flags.has("--no-github-sync"),
+		noIssueSync: flags.has("--no-issue-sync"),
 	});
 
 	return {

@@ -185,7 +185,7 @@ function writeCommentBodyFile({ projectRoot, batchId, issue, body }) {
  * @param {object} params.batch Parsed batch state.
  * @param {Record<string, any> | null | undefined} params.config Effective spine config (null → sync disabled).
  * @param {string | null} [params.mergeCommit] Integrate merge commit.
- * @param {boolean} [params.noGithubSync] `--no-github-sync` escape hatch.
+ * @param {boolean} [params.noIssueSync] `--no-issue-sync` escape hatch.
  * @param {(projectRoot: string, args: string[]) => GhRunResult} [params.runGh] Injectable gh runner.
  * @param {(cmd: string) => boolean} [params.ghPresent] Injectable gh probe.
  * @param {JournalAppendFn} [params.journalAppend] Injectable journal appender.
@@ -198,7 +198,7 @@ export function syncIssuesAfterIntegrate({
 	batch,
 	config,
 	mergeCommit = null,
-	noGithubSync = false,
+	noIssueSync = false,
 	runGh,
 	ghPresent,
 	journalAppend,
@@ -212,7 +212,7 @@ export function syncIssuesAfterIntegrate({
 			tasksRoot: config ? resolveTasksRootPath(projectRoot, config) : null,
 			config,
 			mergeCommit,
-			noGithubSync,
+			noIssueSync,
 			runGh,
 			ghPresent,
 			journalAppend,
@@ -247,7 +247,7 @@ export function syncIssuesAfterIntegrate({
  * @param {Record<string, any> | null | undefined} params.config Effective config.
  * @param {string | null} [params.mergeCommit] Integrate merge commit.
  * @param {boolean} [params.dryRun] Plan only — no gh calls, no journal.
- * @param {boolean} [params.noGithubSync] `--no-github-sync` escape hatch.
+ * @param {boolean} [params.noIssueSync] `--no-issue-sync` escape hatch.
  * @param {(projectRoot: string, args: string[]) => GhRunResult} [params.runGh] Injectable gh runner.
  * @param {(cmd: string) => boolean} [params.ghPresent] Injectable gh probe.
  * @param {JournalAppendFn} [params.journalAppend] Injectable journal appender.
@@ -272,7 +272,7 @@ export function syncIssuesOnLand({
 	config,
 	mergeCommit = null,
 	dryRun = false,
-	noGithubSync = false,
+	noIssueSync = false,
 	runGh,
 	ghPresent,
 	journalAppend,
@@ -301,8 +301,8 @@ export function syncIssuesOnLand({
 		planned,
 	});
 
-	if (noGithubSync) {
-		return skip("no_github_sync_flag");
+	if (noIssueSync) {
+		return skip("no_issue_sync_flag");
 	}
 	if (!resolveIssueSyncOnLandConfig(config)) {
 		return skip("sync_disabled");

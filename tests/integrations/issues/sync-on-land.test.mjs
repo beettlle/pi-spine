@@ -145,15 +145,15 @@ test("collectIssueLinksFromTasks falls back to taskId folder and records read er
 
 // --- escape hatches ---
 
-test("--no-github-sync skips before config evaluation", () => {
+test("--no-issue-sync skips before config evaluation", () => {
 	const { params, journal } = baseParams({
 		doneTasks: [{ taskId: "SP-1", taskFolder: null }],
 		config: null,
-		noGithubSync: true,
+		noIssueSync: true,
 	});
 	const result = syncIssuesOnLand(params);
 	assert.equal(result.skipped, true);
-	assert.equal(result.reason, "no_github_sync_flag");
+	assert.equal(result.reason, "no_issue_sync_flag");
 	assert.equal(journal.length, 0);
 });
 

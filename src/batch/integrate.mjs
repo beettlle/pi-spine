@@ -100,7 +100,7 @@ function postMergeCompletionSuggestion(raw) {
  * @param {boolean} [ctx.dryRun]
  * @param {string|null} [ctx.batchId]
  * @param {string|null} [ctx.batchStatePath]
- * @param {boolean} [ctx.noGithubSync] Skip the opt-in post-integrate GitHub issue sync (#383).
+ * @param {boolean} [ctx.noIssueSync] Skip the opt-in post-integrate GitHub issue sync (#383).
  */
 export function integrateOrchToBase(ctx) {
 	const { projectRoot, dryRun = false } = ctx;
@@ -423,7 +423,7 @@ export function integrateOrchToBase(ctx) {
 			batch,
 			config,
 			mergeCommit,
-			noGithubSync: Boolean(ctx.noGithubSync),
+			noIssueSync: Boolean(ctx.noIssueSync),
 		});
 
 		const waiting = postMergeCompletionSuggestion(loaded.raw);
