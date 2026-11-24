@@ -1,11 +1,12 @@
 # Release manifest — v2.35.0
 
 **Created:** 2026-11-23
-**Current version:** 2.34.0
+**Current version:** 2.35.0 (tag `v2.35.0` / `2b8ef799`; npm stage `d53b3f4b-d291-49cc-9b8e-3126e5e66184` — **awaiting 2FA approve**)
 **Target version:** v2.35.0
 **Bump type:** minor
 **Profile:** minor
 **Operator approved scope:** yes (2026-11-23) — SP-891 split into S packets; start development
+**Operator approved publish:** yes (2026-11-24) — bump **minor** → v2.35.0
 **Worker model pin:** `zai/glm-5.3-flash`, quota fallback profile `allegretto` — do not change mid-release ([#248](https://github.com/beettlle/pi-spine/issues/248))
 **Agent pin override:** none
 
@@ -135,14 +136,33 @@ Wave 6: SP-896
 
 ---
 
+## Execution log (Phase 4)
+
+| SP-ID | Issue | Batch | Result |
+|-------|-------|-------|--------|
+| SP-890 | #387 | `20261123T185351-42ce` | DONE |
+| SP-891 | #387 | `20261123T202505-d3ad` | DONE |
+| SP-892 | #387 | `20261123T215213-86ff` | DONE |
+| SP-893 | #387 | `20261123T232853-1f37` | DONE |
+| SP-894 | #387 | `20261123T235355-04b6` | DONE |
+| SP-895 | #387 | `20261124T004019-6b1e` | DONE |
+| SP-896 | #387 | `20261124T010846-bc2e` | DONE — #387 CLOSED |
+
+**HEAD (pre-bump):** `a463c9bb` · `main` synced · pending release scope: **0**
+
+---
+
 ## Publish checklist (Phase 5–6)
 
-- [ ] All release-scoped tasks `.DONE` on `main`
-- [ ] Post-integrate `release:check` green after **each wave** (log paths recorded)
-- [ ] `spine preflight` green
-- [ ] `npm run release:check` green on final `HEAD`
-- [ ] `git status` clean
-- [ ] Operator approved publish bump type: minor
-- [ ] `npm version minor` + `git push && git push --tags`
-- [ ] `release.yml` succeeded
-- [ ] Post-publish smoke per `docs/release/npm-publish.md`
+- [x] All release-scoped tasks `.DONE` on `main`
+- [x] Post-integrate `release:check` green after **each wave** (logs `/tmp/pi-spine-post-integrate-wave-*.log`)
+- [x] `spine preflight` green
+- [x] `npm run release:check` green on final pre-bump `HEAD` `a463c9bb` (3450 pass, 91.32% lines) — `/tmp/pi-spine-release-check.log`; `preversion` re-check on bump (3450 pass, 91.37%)
+- [x] CI workflow green on `a463c9bb` — [run 45305824435](https://github.com/beettlle/pi-spine/actions/runs/45305824435)
+- [x] `git status` clean (`main` = `origin/main` after tag push)
+- [x] Operator approved publish bump type: **minor** (2026-11-24)
+- [x] `npm version minor` + `git push && git push --tags` → tag `v2.35.0` (`2b8ef799`)
+- [x] `release.yml` succeeded (OIDC stage) — [run 45314048333](https://github.com/beettlle/pi-spine/actions/runs/45314048333); GH Release https://github.com/beettlle/pi-spine/releases/tag/v2.35.0
+- [ ] Maintainer 2FA approve staged package — stage `d53b3f4b-d291-49cc-9b8e-3126e5e66184` (status: validating); `npm view pi-spine version` still **2.34.0** until approve
+- [ ] Post-publish smoke — `scripts/post-publish-smoke.sh 2.35.0` after approve
+- [x] Close remaining release-scoped `Closes #NNN` — #387 **CLOSED**
