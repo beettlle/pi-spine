@@ -39,7 +39,7 @@ Partial #387 — Rename journal event types from `github.issue_synced` / `github
 |-------|-------|
 | testCommand | `npm run lint && npm run typecheck && SPINE_WORKER_STUB=1 node --experimental-strip-types --test --test-reporter=dot tests/integrations/issues/sync-on-land.test.mjs` |
 | reviewCommand | `bash scripts/spine-stet-contract-run.sh default SP-895` |
-| fileScopeMustChange | `spine-tasks/SP-895-issues-journal-events/STATUS.md` |
+| fileScopeMustChange | |
 | fileScopeMustNotChange | `.review/**` |
 
 ## Steps
@@ -89,4 +89,4 @@ Partial #387 — Rename journal event types from `github.issue_synced` / `github
 
 ## Amendments
 
-- **2026-11-23 prelanded:** `src/integrations/issues/sync-on-land.mjs` and `tests/integrations/issues/sync-on-land.test.mjs` already changed on main (SP-893/SP-894); redirected `fileScopeMustChange` to STATUS.md. Worker must still edit those File Scope paths for the journal rename.
+- **2026-11-23 prelanded:** `src/integrations/issues/sync-on-land.mjs` and `tests/integrations/issues/sync-on-land.test.mjs` already changed on main (SP-893/SP-894); cleared `fileScopeMustChange` (no non-stale delivery path). Worker must still edit those File Scope paths for the journal rename; Contract `testCommand` enforces the rename.

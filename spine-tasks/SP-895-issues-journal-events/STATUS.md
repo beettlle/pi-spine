@@ -73,4 +73,4 @@
 
 Release v2.35.0 — Partial #387 (journal). Depends on SP-894 to avoid File Scope clash on sync-on-land.
 
-**2026-11-23 prelanded amend:** sync-on-land + tests removed from `fileScopeMustChange` (already on main via SP-893/SP-894); still in File Scope for journal event rename. Contract mustChange → this STATUS.md.
+**2026-11-23 prelanded amend:** sync-on-land + tests removed from `fileScopeMustChange` (already on main via SP-893/SP-894); still in File Scope for journal event rename. Contract `testCommand` enforces rename.
